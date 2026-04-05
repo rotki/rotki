@@ -79,17 +79,17 @@ def test_morpho_deposit_base(
     assert vault_token.underlying_tokens is not None
     assert len(vault_token.underlying_tokens) == 1
     assert vault_token.underlying_tokens[0].address == underlying_addr
-    timestamp, user_address, gas_amount, deposit_amount, receive_amount = TimestampMS(1731100821000), base_accounts[0], '0.000007106536379632', '51.573591', '51.333358693113784641'  # noqa: E501
+    user_address = base_accounts[0]
     assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=0,
-            timestamp=timestamp,
+            timestamp=(timestamp := TimestampMS(1731100821000)),
             location=Location.BASE,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            amount=FVal(gas_amount),
+            amount=FVal(gas_amount := '0.000007106536379632'),
             location_label=user_address,
             notes=f'Burn {gas_amount} ETH for gas',
             counterparty=CPT_GAS,
@@ -101,7 +101,7 @@ def test_morpho_deposit_base(
             event_type=HistoryEventType.INFORMATIONAL,
             event_subtype=HistoryEventSubType.APPROVE,
             asset=A_BASE_USDC,
-            amount=FVal(deposit_amount),
+            amount=FVal(deposit_amount := '51.573591'),
             location_label=user_address,
             notes=f'Set USDC spending approval of {user_address} by 0x23055618898e202386e6c13955a58D3C68200BFB to {deposit_amount}',  # noqa: E501
             address=string_to_evm_address('0x23055618898e202386e6c13955a58D3C68200BFB'),
@@ -127,7 +127,7 @@ def test_morpho_deposit_base(
             event_type=HistoryEventType.RECEIVE,
             event_subtype=HistoryEventSubType.RECEIVE_WRAPPED,
             asset=vault_token,
-            amount=FVal(receive_amount),
+            amount=FVal(receive_amount := '51.333358693113784641'),
             location_label=user_address,
             notes=f'Receive {receive_amount} mwUSDC after deposit in a Morpho vault',
             counterparty=CPT_MORPHO,
@@ -156,17 +156,17 @@ def test_morpho_deposit_base_bundler(
         underlying=string_to_evm_address('0x4200000000000000000000000000000000000006'),
     )
     events, _ = get_decoded_events_of_transaction(evm_inquirer=base_inquirer, tx_hash=tx_hash)
-    timestamp, user_address, gas_amount = TimestampMS(1731679657000), base_accounts[0], '0.000033559670856685'  # noqa: E501
+    user_address = base_accounts[0]
     assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=0,
-            timestamp=timestamp,
+            timestamp=(timestamp := TimestampMS(1731679657000)),
             location=Location.BASE,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            amount=FVal(gas_amount),
+            amount=FVal(gas_amount := '0.000033559670856685'),
             location_label=user_address,
             notes=f'Burn {gas_amount} ETH for gas',
             counterparty=CPT_GAS,
@@ -267,17 +267,17 @@ def test_morpho_withdraw_base(
         underlying=string_to_evm_address('0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913'),
     )
     events, _ = get_decoded_events_of_transaction(evm_inquirer=base_inquirer, tx_hash=tx_hash)
-    timestamp, user_address, gas_amount, return_amount, withdraw_amount = TimestampMS(1731408939000), base_accounts[0], '0.000009372834639654', '9951.725252259523570499', '10000'  # noqa: E501
+    user_address = base_accounts[0]
     assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=0,
-            timestamp=timestamp,
+            timestamp=(timestamp := TimestampMS(1731408939000)),
             location=Location.BASE,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            amount=FVal(gas_amount),
+            amount=FVal(gas_amount := '0.000009372834639654'),
             location_label=user_address,
             notes=f'Burn {gas_amount} ETH for gas',
             counterparty=CPT_GAS,
@@ -289,7 +289,7 @@ def test_morpho_withdraw_base(
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.RETURN_WRAPPED,
             asset=Asset(f'eip155:8453/erc20:{vault_addr}'),
-            amount=FVal(return_amount),
+            amount=FVal(return_amount := '9951.725252259523570499'),
             location_label=user_address,
             notes=f'Return {return_amount} mwUSDC to a Morpho vault',
             counterparty=CPT_MORPHO,
@@ -302,7 +302,7 @@ def test_morpho_withdraw_base(
             event_type=HistoryEventType.WITHDRAWAL,
             event_subtype=HistoryEventSubType.REDEEM_WRAPPED,
             asset=A_BASE_USDC,
-            amount=FVal(withdraw_amount),
+            amount=FVal(withdraw_amount := '10000'),
             location_label=user_address,
             notes=f'Withdraw {withdraw_amount} USDC from a Morpho vault',
             counterparty=CPT_MORPHO,
@@ -320,17 +320,17 @@ def test_morpho_claim_reward_base(
     tx_hash = deserialize_evm_tx_hash('0xf1c08fcee3717217b30cbd5e120a4079837e319064d8c01a28d9fb7f44fcb88b')  # noqa: E501
     _add_morpho_reward_distributor(chain_id=ChainID.BASE, address='0x5400dBb270c956E8985184335A1C62AcA6Ce1333')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=base_inquirer, tx_hash=tx_hash)
-    timestamp, user_address, gas_amount, reward_amount = TimestampMS(1731272621000), base_accounts[0], '0.000024248426432951', '0.033158'  # noqa: E501
+    user_address = base_accounts[0]
     assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=0,
-            timestamp=timestamp,
+            timestamp=(timestamp := TimestampMS(1731272621000)),
             location=Location.BASE,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            amount=FVal(gas_amount),
+            amount=FVal(gas_amount := '0.000024248426432951'),
             location_label=user_address,
             notes=f'Burn {gas_amount} ETH for gas',
             counterparty=CPT_GAS,
@@ -342,7 +342,7 @@ def test_morpho_claim_reward_base(
             event_type=HistoryEventType.RECEIVE,
             event_subtype=HistoryEventSubType.REWARD,
             asset=A_BASE_USDC,
-            amount=FVal(reward_amount),
+            amount=FVal(reward_amount := '0.033158'),
             location_label=user_address,
             notes=f'Claim {reward_amount} USDC from Morpho',
             counterparty=CPT_MORPHO,
@@ -365,17 +365,17 @@ def test_morpho_deposit_ethereum(
         underlying=string_to_evm_address('0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48'),
     )
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
-    timestamp, user_address, gas_amount, deposit_amount, receive_amount = TimestampMS(1731354683000), ethereum_accounts[0], '0.019537376734385857', '200', '194.826292786685129719'  # noqa: E501
+    user_address = ethereum_accounts[0]
     assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=0,
-            timestamp=timestamp,
+            timestamp=(timestamp := TimestampMS(1731354683000)),
             location=Location.ETHEREUM,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            amount=FVal(gas_amount),
+            amount=FVal(gas_amount := '0.019537376734385857'),
             location_label=user_address,
             notes=f'Burn {gas_amount} ETH for gas',
             counterparty=CPT_GAS,
@@ -387,7 +387,7 @@ def test_morpho_deposit_ethereum(
             event_type=HistoryEventType.INFORMATIONAL,
             event_subtype=HistoryEventSubType.APPROVE,
             asset=A_USDC,
-            amount=FVal(deposit_amount),
+            amount=FVal(deposit_amount := '200'),
             location_label=user_address,
             notes=f'Set USDC spending approval of {user_address} by 0x4095F064B8d3c3548A3bebfd0Bbfd04750E30077 to {deposit_amount}',  # noqa: E501
             address=string_to_evm_address('0x4095F064B8d3c3548A3bebfd0Bbfd04750E30077'),
@@ -413,7 +413,7 @@ def test_morpho_deposit_ethereum(
             event_type=HistoryEventType.RECEIVE,
             event_subtype=HistoryEventSubType.RECEIVE_WRAPPED,
             asset=Asset(f'eip155:1/erc20:{vault_addr}'),
-            amount=FVal(receive_amount),
+            amount=FVal(receive_amount := '194.826292786685129719'),
             location_label=user_address,
             notes=f'Receive {receive_amount} USUALUSDC+ after deposit in a Morpho vault',
             counterparty=CPT_MORPHO,
@@ -436,17 +436,17 @@ def test_morpho_withdraw_ethereum(
         underlying=string_to_evm_address('0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48'),
     )
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
-    timestamp, user_address, gas_amount, approve_amount, return_amount, withdraw_amount = TimestampMS(1731405887000), ethereum_accounts[0], '0.035931819008110328', '1141398.660779466856241893', '1141393.264141539859656044', '1172000'  # noqa: E501
+    user_address = ethereum_accounts[0]
     assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=0,
-            timestamp=timestamp,
+            timestamp=(timestamp := TimestampMS(1731405887000)),
             location=Location.ETHEREUM,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            amount=FVal(gas_amount),
+            amount=FVal(gas_amount := '0.035931819008110328'),
             location_label=user_address,
             notes=f'Burn {gas_amount} ETH for gas',
             counterparty=CPT_GAS,
@@ -458,7 +458,7 @@ def test_morpho_withdraw_ethereum(
             event_type=HistoryEventType.INFORMATIONAL,
             event_subtype=HistoryEventSubType.APPROVE,
             asset=Asset(f'eip155:1/erc20:{vault_addr}'),
-            amount=FVal(approve_amount),
+            amount=FVal(approve_amount := '1141398.660779466856241893'),
             location_label=user_address,
             notes=f'Set USUALUSDC+ spending approval of {user_address} by 0x4095F064B8d3c3548A3bebfd0Bbfd04750E30077 to {approve_amount}',  # noqa: E501
             address=string_to_evm_address('0x4095F064B8d3c3548A3bebfd0Bbfd04750E30077'),
@@ -470,7 +470,7 @@ def test_morpho_withdraw_ethereum(
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.RETURN_WRAPPED,
             asset=Asset(f'eip155:1/erc20:{vault_addr}'),
-            amount=FVal(return_amount),
+            amount=FVal(return_amount := '1141393.264141539859656044'),
             location_label=user_address,
             notes=f'Return {return_amount} USUALUSDC+ to a Morpho vault',
             counterparty=CPT_MORPHO,
@@ -483,7 +483,7 @@ def test_morpho_withdraw_ethereum(
             event_type=HistoryEventType.WITHDRAWAL,
             event_subtype=HistoryEventSubType.REDEEM_WRAPPED,
             asset=A_USDC,
-            amount=FVal(withdraw_amount),
+            amount=FVal(withdraw_amount := '1172000'),
             location_label=user_address,
             notes=f'Withdraw {withdraw_amount} USDC from a Morpho vault',
             counterparty=CPT_MORPHO,
@@ -501,17 +501,17 @@ def test_morpho_claim_reward_ethereum(
     tx_hash = deserialize_evm_tx_hash('0x1a6775590dfffdc2da036ec280627a65c57140b921d5afd11cabe913c78edcba')  # noqa: E501
     _add_morpho_reward_distributor(chain_id=ChainID.ETHEREUM, address='0x330eefa8a787552DC5cAd3C3cA644844B1E61Ddb')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
-    timestamp, user_address, reward_amount = TimestampMS(1730476199000), ethereum_accounts[0], '13.56253'  # noqa: E501
+    user_address = ethereum_accounts[0]
     assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=285,
-            timestamp=timestamp,
+            timestamp=TimestampMS(1730476199000),
             location=Location.ETHEREUM,
             event_type=HistoryEventType.RECEIVE,
             event_subtype=HistoryEventSubType.REWARD,
             asset=A_USDT,
-            amount=FVal(reward_amount),
+            amount=FVal(reward_amount := '13.56253'),
             location_label=user_address,
             notes=f'Claim {reward_amount} USDT from Morpho',
             counterparty=CPT_MORPHO,
@@ -534,16 +534,16 @@ def test_morpho_deposit_eth_and_weth_base(
         underlying=string_to_evm_address('0x4200000000000000000000000000000000000006'),
     )
     events, _ = get_decoded_events_of_transaction(evm_inquirer=base_inquirer, tx_hash=tx_hash)
-    timestamp, user_address, gas_amount, deposit1_amount, deposit2_amount, receive_amount = TimestampMS(1737414513000), base_accounts[0], '0.000014687937701214', '0.030990676336768753', '0.000009323663231247', '0.030971714651894301'  # noqa: E501
+    user_address = base_accounts[0]
     assert events == [EvmEvent(
         tx_ref=tx_hash,
         sequence_index=0,
-        timestamp=timestamp,
+        timestamp=(timestamp := TimestampMS(1737414513000)),
         location=Location.BASE,
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_ETH,
-        amount=FVal(gas_amount),
+        amount=FVal(gas_amount := '0.000014687937701214'),
         location_label=user_address,
         notes=f'Burn {gas_amount} ETH for gas',
         counterparty=CPT_GAS,
@@ -555,7 +555,7 @@ def test_morpho_deposit_eth_and_weth_base(
         event_type=HistoryEventType.DEPOSIT,
         event_subtype=HistoryEventSubType.DEPOSIT_FOR_WRAPPED,
         asset=A_ETH,
-        amount=FVal(deposit1_amount),
+        amount=FVal(deposit1_amount := '0.030990676336768753'),
         location_label=user_address,
         notes=f'Deposit {deposit1_amount} ETH in a Morpho vault',
         counterparty=CPT_MORPHO,
@@ -569,7 +569,7 @@ def test_morpho_deposit_eth_and_weth_base(
         event_type=HistoryEventType.DEPOSIT,
         event_subtype=HistoryEventSubType.DEPOSIT_FOR_WRAPPED,
         asset=A_WETH_BASE,
-        amount=FVal(deposit2_amount),
+        amount=FVal(deposit2_amount := '0.000009323663231247'),
         location_label=user_address,
         notes=f'Deposit {deposit2_amount} WETH in a Morpho vault',
         counterparty=CPT_MORPHO,
@@ -583,7 +583,7 @@ def test_morpho_deposit_eth_and_weth_base(
         event_type=HistoryEventType.RECEIVE,
         event_subtype=HistoryEventSubType.RECEIVE_WRAPPED,
         asset=Asset(f'eip155:8453/erc20:{vault_addr}'),
-        amount=FVal(receive_amount),
+        amount=FVal(receive_amount := '0.030971714651894301'),
         location_label=user_address,
         notes=f'Receive {receive_amount} exmWETH after deposit in a Morpho vault',
         counterparty=CPT_MORPHO,

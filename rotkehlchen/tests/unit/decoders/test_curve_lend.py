@@ -161,17 +161,17 @@ def test_vault_deposit(
 ) -> None:
     tx_hash = deserialize_evm_tx_hash('0xd7e237db5c10970fd4a5a8bccfc87412fad75680d1358a5d39b4a76ba9ffafa6')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=arbitrum_one_inquirer, tx_hash=tx_hash)  # noqa: E501
-    timestamp, user_address, gas_amount, approve_amount, deposit_amount, receive_amount = TimestampMS(1732052219000), arbitrum_one_accounts[0], '0.00000265801', '115792089237316195423570985008687907853269984665640564039400.04103445561341153', '57.542973457516228405', '55862.682306216187960829'  # noqa: E501
+    user_address = arbitrum_one_accounts[0]
     assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=0,
-            timestamp=timestamp,
+            timestamp=(timestamp := TimestampMS(1732052219000)),
             location=Location.ARBITRUM_ONE,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            amount=FVal(gas_amount),
+            amount=FVal(gas_amount := '0.00000265801'),
             location_label=user_address,
             notes=f'Burn {gas_amount} ETH for gas',
             counterparty=CPT_GAS,
@@ -183,7 +183,7 @@ def test_vault_deposit(
             event_type=HistoryEventType.INFORMATIONAL,
             event_subtype=HistoryEventSubType.APPROVE,
             asset=arbitrum_vault_underlying_token,
-            amount=FVal(approve_amount),
+            amount=FVal(approve_amount := '115792089237316195423570985008687907853269984665640564039400.04103445561341153'),  # noqa: E501
             location_label=user_address,
             notes=f'Set crvUSD spending approval of {user_address} by {arbitrum_vault_token.evm_address} to {approve_amount}',  # noqa: E501
             address=arbitrum_vault_token.evm_address,
@@ -195,7 +195,7 @@ def test_vault_deposit(
             event_type=HistoryEventType.DEPOSIT,
             event_subtype=HistoryEventSubType.DEPOSIT_FOR_WRAPPED,
             asset=arbitrum_vault_underlying_token,
-            amount=FVal(deposit_amount),
+            amount=FVal(deposit_amount := '57.542973457516228405'),
             location_label=user_address,
             notes=f'Deposit {deposit_amount} crvUSD in a Curve lending vault',
             counterparty=CPT_CURVE,
@@ -208,7 +208,7 @@ def test_vault_deposit(
             event_type=HistoryEventType.RECEIVE,
             event_subtype=HistoryEventSubType.RECEIVE_WRAPPED,
             asset=arbitrum_vault_token,
-            amount=FVal(receive_amount),
+            amount=FVal(receive_amount := '55862.682306216187960829'),
             location_label=user_address,
             notes=f'Receive {receive_amount} cvcrvUSD after deposit in a Curve lending vault',
             counterparty=CPT_CURVE,
@@ -228,17 +228,17 @@ def test_vault_withdraw(
 ) -> None:
     tx_hash = deserialize_evm_tx_hash('0x8f4fe62eebad90a24fd8fb74835dfa3c3cf9d3c38b20ade6425dde54ca98bdd4')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=optimism_inquirer, tx_hash=tx_hash)
-    timestamp, user_address, gas_amount, return_amount, withdraw_amount = TimestampMS(1728498363000), optimism_accounts[0], '0.000003575441143222', '99843.76002478005399335', '99.84376024374592538'  # noqa: E501
+    user_address = optimism_accounts[0]
     assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=0,
-            timestamp=timestamp,
+            timestamp=(timestamp := TimestampMS(1728498363000)),
             location=Location.OPTIMISM,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            amount=FVal(gas_amount),
+            amount=FVal(gas_amount := '0.000003575441143222'),
             location_label=user_address,
             notes=f'Burn {gas_amount} ETH for gas',
             counterparty=CPT_GAS,
@@ -250,7 +250,7 @@ def test_vault_withdraw(
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.RETURN_WRAPPED,
             asset=optimism_vault_token,
-            amount=FVal(return_amount),
+            amount=FVal(return_amount := '99843.76002478005399335'),
             location_label=user_address,
             notes=f'Return {return_amount} cvcrvUSD to a Curve lending vault',
             counterparty=CPT_CURVE,
@@ -263,7 +263,7 @@ def test_vault_withdraw(
             event_type=HistoryEventType.WITHDRAWAL,
             event_subtype=HistoryEventSubType.REDEEM_WRAPPED,
             asset=optimism_vault_underlying_token,
-            amount=FVal(withdraw_amount),
+            amount=FVal(withdraw_amount := '99.84376024374592538'),
             location_label=user_address,
             notes=f'Withdraw {withdraw_amount} crvUSD from a Curve lending vault',
             counterparty=CPT_CURVE,
@@ -282,17 +282,17 @@ def test_create_loan(
 ) -> None:
     tx_hash = deserialize_evm_tx_hash('0xcaaba5f6206de1a1d3a82a213616548b928397052300057a420ff8083d385b78')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
-    timestamp, user_address, gas_amount, deposit_amount, receive_amount = TimestampMS(1731831407000), ethereum_accounts[0], '0.004991520607076806', '0.00011219', '6.178023671273738089'  # noqa: E501
+    user_address = ethereum_accounts[0]
     assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=0,
-            timestamp=timestamp,
+            timestamp=(timestamp := TimestampMS(1731831407000)),
             location=Location.ETHEREUM,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            amount=FVal(gas_amount),
+            amount=FVal(gas_amount := '0.004991520607076806'),
             location_label=user_address,
             notes=f'Burn {gas_amount} ETH for gas',
             counterparty=CPT_GAS,
@@ -304,7 +304,7 @@ def test_create_loan(
             event_type=HistoryEventType.DEPOSIT,
             event_subtype=HistoryEventSubType.DEPOSIT_TO_PROTOCOL,
             asset=A_WBTC,
-            amount=FVal(deposit_amount),
+            amount=FVal(deposit_amount := '0.00011219'),
             location_label=user_address,
             notes=f'Deposit {deposit_amount} WBTC as collateral on Curve',
             counterparty=CPT_CURVE,
@@ -317,7 +317,7 @@ def test_create_loan(
             event_type=HistoryEventType.WITHDRAWAL,
             event_subtype=HistoryEventSubType.GENERATE_DEBT,
             asset=ethereum_vault_underlying_token,
-            amount=FVal(receive_amount),
+            amount=FVal(receive_amount := '6.178023671273738089'),
             location_label=user_address,
             notes=f'Borrow {receive_amount} crvUSD from Curve',
             counterparty=CPT_CURVE,
@@ -337,17 +337,17 @@ def test_borrow_more(
 ) -> None:
     tx_hash = deserialize_evm_tx_hash('0x6b18af9bf79af5b73a88d6049a4c4e6e67cb6ff43f505b6363e48f3c7aa492ff')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
-    timestamp, user_address, gas_amount, deposit_amount, receive_amount = TimestampMS(1731312083000), ethereum_accounts[0], '0.005761739463351035', '2', '53000'  # noqa: E501
+    user_address = ethereum_accounts[0]
     assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=0,
-            timestamp=timestamp,
+            timestamp=(timestamp := TimestampMS(1731312083000)),
             location=Location.ETHEREUM,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            amount=FVal(gas_amount),
+            amount=FVal(gas_amount := '0.005761739463351035'),
             location_label=user_address,
             notes=f'Burn {gas_amount} ETH for gas',
             counterparty=CPT_GAS,
@@ -359,7 +359,7 @@ def test_borrow_more(
             event_type=HistoryEventType.DEPOSIT,
             event_subtype=HistoryEventSubType.DEPOSIT_TO_PROTOCOL,
             asset=A_WBTC,
-            amount=FVal(deposit_amount),
+            amount=FVal(deposit_amount := '2'),
             location_label=user_address,
             notes=f'Deposit {deposit_amount} WBTC as collateral on Curve',
             counterparty=CPT_CURVE,
@@ -372,7 +372,7 @@ def test_borrow_more(
             event_type=HistoryEventType.WITHDRAWAL,
             event_subtype=HistoryEventSubType.GENERATE_DEBT,
             asset=ethereum_vault_underlying_token,
-            amount=FVal(receive_amount),
+            amount=FVal(receive_amount := '53000'),
             location_label=user_address,
             notes=f'Borrow {receive_amount} crvUSD from Curve',
             counterparty=CPT_CURVE,
@@ -391,17 +391,17 @@ def test_create_leveraged_position_with_collateral_asset(
 ) -> None:
     tx_hash = deserialize_evm_tx_hash('0x94b703880541dd23c4d0d76b3d5bb4ed36e97e5ef7c164fcc8ec081395953699')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
-    timestamp, user_address, gas_amount, deposit_amount = TimestampMS(1730919179000), ethereum_accounts[0], '0.014631358400811703', '0.72'  # noqa: E501
+    user_address = ethereum_accounts[0]
     assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=0,
-            timestamp=timestamp,
+            timestamp=(timestamp := TimestampMS(1730919179000)),
             location=Location.ETHEREUM,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            amount=FVal(gas_amount),
+            amount=FVal(gas_amount := '0.014631358400811703'),
             location_label=user_address,
             notes=f'Burn {gas_amount} ETH for gas',
             counterparty=CPT_GAS,
@@ -413,7 +413,7 @@ def test_create_leveraged_position_with_collateral_asset(
             event_type=HistoryEventType.DEPOSIT,
             event_subtype=HistoryEventSubType.DEPOSIT_TO_PROTOCOL,
             asset=A_WBTC,
-            amount=FVal(deposit_amount),
+            amount=FVal(deposit_amount := '0.72'),
             location_label=user_address,
             notes=f'Deposit {deposit_amount} WBTC into a leveraged Curve position',
             counterparty=CPT_CURVE,
@@ -433,17 +433,17 @@ def test_create_leveraged_position_with_borrowed_asset(
 ) -> None:
     tx_hash = deserialize_evm_tx_hash('0x609e8b1b6cf5465441b6d7093b3429b6f8b3c19e0f73c45c8b8f66a47fa9f1bd')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=arbitrum_one_inquirer, tx_hash=tx_hash)  # noqa: E501
-    timestamp, user_address, gas_amount, deposit_amount, approve_amount = TimestampMS(1732282256000), arbitrum_one_accounts[0], '0.000812275832834', '3246.108076837089130632', '115792089237316195423570985008687907853269984665640563990215.977712874902778703'  # noqa: E501
+    user_address = arbitrum_one_accounts[0]
     assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=0,
-            timestamp=timestamp,
+            timestamp=(timestamp := TimestampMS(1732282256000)),
             location=Location.ARBITRUM_ONE,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            amount=FVal(gas_amount),
+            amount=FVal(gas_amount := '0.000812275832834'),
             location_label=user_address,
             notes=f'Burn {gas_amount} ETH for gas',
             counterparty=CPT_GAS,
@@ -455,7 +455,7 @@ def test_create_leveraged_position_with_borrowed_asset(
             event_type=HistoryEventType.DEPOSIT,
             event_subtype=HistoryEventSubType.DEPOSIT_TO_PROTOCOL,
             asset=arbitrum_vault_underlying_token,
-            amount=FVal(deposit_amount),
+            amount=FVal(deposit_amount := '3246.108076837089130632'),
             location_label=user_address,
             notes=f'Deposit {deposit_amount} crvUSD into a leveraged Curve position',
             counterparty=CPT_CURVE,
@@ -469,7 +469,7 @@ def test_create_leveraged_position_with_borrowed_asset(
             event_type=HistoryEventType.INFORMATIONAL,
             event_subtype=HistoryEventSubType.APPROVE,
             asset=arbitrum_vault_underlying_token,
-            amount=FVal(approve_amount),
+            amount=FVal(approve_amount := '115792089237316195423570985008687907853269984665640563990215.977712874902778703'),  # noqa: E501
             location_label=user_address,
             notes=f'Set crvUSD spending approval of {user_address} by 0x61C404B60ee9c5fB09F70F9A645DD38fE5b3A956 to {approve_amount}',  # noqa: E501
             address=string_to_evm_address('0x61C404B60ee9c5fB09F70F9A645DD38fE5b3A956'),
@@ -487,17 +487,17 @@ def test_partially_repay_loan(
 ) -> None:
     tx_hash = deserialize_evm_tx_hash('0xec6ea0854141775c7adaf90e5e29c7f34574d3725411f7fe2d354505bb2377ac')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=arbitrum_one_inquirer, tx_hash=tx_hash)  # noqa: E501
-    timestamp, user_address, gas_amount, repay_amount, approve_amount = TimestampMS(1732021665000), arbitrum_one_accounts[0], '0.00000807639', '75.812999322471416588', '115792089237316195423570985008687907853269984665640564038872.139121074632427607'  # noqa: E501
+    user_address = arbitrum_one_accounts[0]
     assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=0,
-            timestamp=timestamp,
+            timestamp=(timestamp := TimestampMS(1732021665000)),
             location=Location.ARBITRUM_ONE,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            amount=FVal(gas_amount),
+            amount=FVal(gas_amount := '0.00000807639'),
             location_label=user_address,
             notes=f'Burn {gas_amount} ETH for gas',
             counterparty=CPT_GAS,
@@ -509,7 +509,7 @@ def test_partially_repay_loan(
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.PAYBACK_DEBT,
             asset=arbitrum_vault_underlying_token,
-            amount=FVal(repay_amount),
+            amount=FVal(repay_amount := '75.812999322471416588'),
             location_label=user_address,
             notes=f'Repay {repay_amount} crvUSD to Curve',
             counterparty=CPT_CURVE,
@@ -522,7 +522,7 @@ def test_partially_repay_loan(
             event_type=HistoryEventType.INFORMATIONAL,
             event_subtype=HistoryEventSubType.APPROVE,
             asset=arbitrum_vault_underlying_token,
-            amount=FVal(approve_amount),
+            amount=FVal(approve_amount := '115792089237316195423570985008687907853269984665640564038872.139121074632427607'),  # noqa: E501
             location_label=user_address,
             notes=f'Set crvUSD spending approval of {user_address} by 0xB5c6082d3307088C98dA8D79991501E113e6365d to {approve_amount}',  # noqa: E501
             address=string_to_evm_address('0xB5c6082d3307088C98dA8D79991501E113e6365d'),
@@ -540,17 +540,17 @@ def test_close_loan_using_collateral(
 ) -> None:
     tx_hash = deserialize_evm_tx_hash('0xcca62e6832e2df6f4ff3ca5240069e2d4548dfd23ed8f08c448e4917b916d3df')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=arbitrum_one_inquirer, tx_hash=tx_hash)  # noqa: E501
-    timestamp, user_address, gas_amount, receive1_amount, receive2_amount = TimestampMS(1732139413000), arbitrum_one_accounts[0], '0.00000751744', '0.311352637896780974', '0.009899999999999997'  # noqa: E501
+    user_address = arbitrum_one_accounts[0]
     assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=0,
-            timestamp=timestamp,
+            timestamp=(timestamp := TimestampMS(1732139413000)),
             location=Location.ARBITRUM_ONE,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            amount=FVal(gas_amount),
+            amount=FVal(gas_amount := '0.00000751744'),
             location_label=user_address,
             notes=f'Burn {gas_amount} ETH for gas',
             counterparty=CPT_GAS,
@@ -562,7 +562,7 @@ def test_close_loan_using_collateral(
             event_type=HistoryEventType.WITHDRAWAL,
             event_subtype=HistoryEventSubType.WITHDRAW_FROM_PROTOCOL,
             asset=arbitrum_vault_underlying_token,
-            amount=FVal(receive1_amount),
+            amount=FVal(receive1_amount := '0.311352637896780974'),
             location_label=user_address,
             notes=f'Withdraw {receive1_amount} crvUSD from Curve after repaying loan',
             counterparty=CPT_CURVE,
@@ -575,7 +575,7 @@ def test_close_loan_using_collateral(
             event_type=HistoryEventType.WITHDRAWAL,
             event_subtype=HistoryEventSubType.WITHDRAW_FROM_PROTOCOL,
             asset=A_WETH_ARB,
-            amount=FVal(receive2_amount),
+            amount=FVal(receive2_amount := '0.009899999999999997'),
             location_label=user_address,
             notes=f'Withdraw {receive2_amount} WETH from Curve after repaying loan',
             counterparty=CPT_CURVE,
@@ -594,17 +594,17 @@ def test_close_loan_using_borrowed(
 ) -> None:
     tx_hash = deserialize_evm_tx_hash('0x34443f7d317affc6bd2c05207f1ff57b29a15039f7bdc0442feb53e279ba81b2')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=arbitrum_one_inquirer, tx_hash=tx_hash)  # noqa: E501
-    timestamp, user_address, gas_amount, repay_amount, receive_amount, approve_amount = TimestampMS(1731958927000), arbitrum_one_accounts[0], '0.000008437093425', '0.001195651117770074', '0.450001578098145238', '115792089237316195423570985008687907853269984665640564036198.434455739459094936'  # noqa: E501
+    user_address = arbitrum_one_accounts[0]
     assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=0,
-            timestamp=timestamp,
+            timestamp=(timestamp := TimestampMS(1731958927000)),
             location=Location.ARBITRUM_ONE,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            amount=FVal(gas_amount),
+            amount=FVal(gas_amount := '0.000008437093425'),
             location_label=user_address,
             notes=f'Burn {gas_amount} ETH for gas',
             counterparty=CPT_GAS,
@@ -616,7 +616,7 @@ def test_close_loan_using_borrowed(
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.PAYBACK_DEBT,
             asset=arbitrum_vault_underlying_token,
-            amount=FVal(repay_amount),
+            amount=FVal(repay_amount := '0.001195651117770074'),
             location_label=user_address,
             notes=f'Repay {repay_amount} crvUSD to Curve',
             counterparty=CPT_CURVE,
@@ -629,7 +629,7 @@ def test_close_loan_using_borrowed(
             event_type=HistoryEventType.WITHDRAWAL,
             event_subtype=HistoryEventSubType.WITHDRAW_FROM_PROTOCOL,
             asset=A_WETH_ARB,
-            amount=FVal(receive_amount),
+            amount=FVal(receive_amount := '0.450001578098145238'),
             location_label=user_address,
             notes=f'Withdraw {receive_amount} WETH from Curve after repaying loan',
             counterparty=CPT_CURVE,
@@ -642,7 +642,7 @@ def test_close_loan_using_borrowed(
             event_type=HistoryEventType.INFORMATIONAL,
             event_subtype=HistoryEventSubType.APPROVE,
             asset=arbitrum_vault_underlying_token,
-            amount=FVal(approve_amount),
+            amount=FVal(approve_amount := '115792089237316195423570985008687907853269984665640564036198.434455739459094936'),  # noqa: E501
             location_label=user_address,
             notes=f'Set crvUSD spending approval of {user_address} by 0xB5c6082d3307088C98dA8D79991501E113e6365d to {approve_amount}',  # noqa: E501
             address=string_to_evm_address('0xB5c6082d3307088C98dA8D79991501E113e6365d'),
@@ -659,17 +659,17 @@ def test_remove_collateral(
 ) -> None:
     tx_hash = deserialize_evm_tx_hash('0x9798a5e29c83428b79279202514cc61137c04f3fe2150ab36cf4c767a0fb5aab')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=arbitrum_one_inquirer, tx_hash=tx_hash)  # noqa: E501
-    timestamp, user_address, gas_amount, receive_amount = TimestampMS(1731862176000), arbitrum_one_accounts[0], '0.00000584546', '0.1'  # noqa: E501
+    user_address = arbitrum_one_accounts[0]
     assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=0,
-            timestamp=timestamp,
+            timestamp=(timestamp := TimestampMS(1731862176000)),
             location=Location.ARBITRUM_ONE,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            amount=FVal(gas_amount),
+            amount=FVal(gas_amount := '0.00000584546'),
             location_label=user_address,
             notes=f'Burn {gas_amount} ETH for gas',
             counterparty=CPT_GAS,
@@ -681,7 +681,7 @@ def test_remove_collateral(
             event_type=HistoryEventType.WITHDRAWAL,
             event_subtype=HistoryEventSubType.WITHDRAW_FROM_PROTOCOL,
             asset=A_WETH_ARB,
-            amount=FVal(receive_amount),
+            amount=FVal(receive_amount := '0.1'),
             location_label=user_address,
             notes=f'Withdraw {receive_amount} WETH from Curve loan collateral',
             counterparty=CPT_CURVE,
@@ -699,17 +699,17 @@ def test_add_collateral(
 ) -> None:
     tx_hash = deserialize_evm_tx_hash('0x8090a4ac2314e1700ea6e77d480a2cb576722110febb6a9ea321df7ae7a2988d')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=arbitrum_one_inquirer, tx_hash=tx_hash)  # noqa: E501
-    timestamp, user_address, gas_amount, deposit_amount, approve_amount = TimestampMS(1731700246000), arbitrum_one_accounts[0], '0.00000464924', '0.022629905446385494', '115792089237316195423570985008687907853269984665640564039456.319129670009705311'  # noqa: E501
+    user_address = arbitrum_one_accounts[0]
     assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=0,
-            timestamp=timestamp,
+            timestamp=(timestamp := TimestampMS(1731700246000)),
             location=Location.ARBITRUM_ONE,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            amount=FVal(gas_amount),
+            amount=FVal(gas_amount := '0.00000464924'),
             location_label=user_address,
             notes=f'Burn {gas_amount} ETH for gas',
             counterparty=CPT_GAS,
@@ -721,7 +721,7 @@ def test_add_collateral(
             event_type=HistoryEventType.DEPOSIT,
             event_subtype=HistoryEventSubType.DEPOSIT_TO_PROTOCOL,
             asset=A_WETH_ARB,
-            amount=FVal(deposit_amount),
+            amount=FVal(deposit_amount := '0.022629905446385494'),
             location_label=user_address,
             notes=f'Deposit {deposit_amount} WETH as collateral on Curve',
             counterparty=CPT_CURVE,
@@ -734,7 +734,7 @@ def test_add_collateral(
             event_type=HistoryEventType.INFORMATIONAL,
             event_subtype=HistoryEventSubType.APPROVE,
             asset=A_WETH_ARB,
-            amount=FVal(approve_amount),
+            amount=FVal(approve_amount := '115792089237316195423570985008687907853269984665640564039456.319129670009705311'),  # noqa: E501
             location_label=user_address,
             notes=f'Set WETH spending approval of {user_address} by 0xB5c6082d3307088C98dA8D79991501E113e6365d to {approve_amount}',  # noqa: E501
             address=string_to_evm_address('0xB5c6082d3307088C98dA8D79991501E113e6365d'),
@@ -751,17 +751,17 @@ def test_deposit_into_lending_vault_gauge(
 ) -> None:
     tx_hash = deserialize_evm_tx_hash('0x547aa41360bb39e32e14d4d70bf2a2285635d6c9306549f5e62fbaa355500f9e')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=arbitrum_one_inquirer, tx_hash=tx_hash)  # noqa: E501
-    timestamp, user_address, gas_amount, deposit_and_receive_amount = TimestampMS(1741528686000), arbitrum_one_accounts[0], '0.000004084593092', '35147690.896605748325841967'  # noqa: E501
-    expected_events = [
+    user_address = arbitrum_one_accounts[0]
+    assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=0,
-            timestamp=timestamp,
+            timestamp=(timestamp := TimestampMS(1741528686000)),
             location=Location.ARBITRUM_ONE,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            amount=FVal(gas_amount),
+            amount=FVal(gas_amount := '0.000004084593092'),
             location_label=user_address,
             notes=f'Burn {gas_amount} ETH for gas',
             counterparty=CPT_GAS,
@@ -773,7 +773,7 @@ def test_deposit_into_lending_vault_gauge(
             event_type=HistoryEventType.DEPOSIT,
             event_subtype=HistoryEventSubType.DEPOSIT_FOR_WRAPPED,
             asset=Asset('eip155:42161/erc20:0x0E6Ad128D7E217439bEEa90695FE7ec859c7F98C'),
-            amount=FVal(deposit_and_receive_amount),
+            amount=FVal(deposit_and_receive_amount := '35147690.896605748325841967'),
             location_label=user_address,
             notes=f'Deposit {deposit_and_receive_amount} cvcrvUSD into cvcrvUSD-gauge',
             counterparty=CPT_CURVE,
@@ -793,7 +793,6 @@ def test_deposit_into_lending_vault_gauge(
             address=ZERO_ADDRESS,
         ),
     ]
-    assert events == expected_events
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
@@ -805,17 +804,17 @@ def test_withdraw_from_lending_vault_gauge(
 ) -> None:
     tx_hash = deserialize_evm_tx_hash('0xe4e6ce22451a1dbadbb72b99123ce4a04d8b56f63be6fd49f0b6493430bdb772')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=arbitrum_one_inquirer, tx_hash=tx_hash)  # noqa: E501
-    timestamp, user_address, gas_amount, return_and_withdrawn_amount = TimestampMS(1741752784000), arbitrum_one_accounts[0], '0.000005044185033', '95369.61296121579592937'  # noqa: E501
-    expected_events = [
+    user_address = arbitrum_one_accounts[0]
+    assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=0,
-            timestamp=timestamp,
+            timestamp=(timestamp := TimestampMS(1741752784000)),
             location=Location.ARBITRUM_ONE,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            amount=FVal(gas_amount),
+            amount=FVal(gas_amount := '0.000005044185033'),
             location_label=user_address,
             notes=f'Burn {gas_amount} ETH for gas',
             counterparty=CPT_GAS,
@@ -827,7 +826,7 @@ def test_withdraw_from_lending_vault_gauge(
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.RETURN_WRAPPED,
             asset=Asset('eip155:42161/erc20:0x6ba9bF35158dCB0dC9F71CFe1EED9D5c75cd3836'),
-            amount=FVal(return_and_withdrawn_amount),
+            amount=FVal(return_and_withdrawn_amount := '95369.61296121579592937'),
             location_label=user_address,
             notes=f'Return {return_and_withdrawn_amount} cvcrvUSD-gauge to withdraw from curve lending vault gauge',  # noqa: E501
             counterparty=CPT_CURVE,
@@ -847,7 +846,6 @@ def test_withdraw_from_lending_vault_gauge(
             address=string_to_evm_address('0x6ba9bF35158dCB0dC9F71CFe1EED9D5c75cd3836'),
         ),
     ]
-    assert events == expected_events
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
@@ -859,17 +857,17 @@ def test_claim_rewards_from_lending_vault_gauge(
 ) -> None:
     tx_hash = deserialize_evm_tx_hash('0x8ada83b9904451335617d625c9f9ba255af193be786149c2914a1f81468d85fe')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=arbitrum_one_inquirer, tx_hash=tx_hash)  # noqa: E501
-    timestamp, user_address, gas_amount, reward_amount = TimestampMS(1740833839000), arbitrum_one_accounts[0], '0.0000008302', '0.037091751198938204'  # noqa: E501
+    user_address = arbitrum_one_accounts[0]
     assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=0,
-            timestamp=timestamp,
+            timestamp=(timestamp := TimestampMS(1740833839000)),
             location=Location.ARBITRUM_ONE,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            amount=FVal(gas_amount),
+            amount=FVal(gas_amount := '0.0000008302'),
             location_label=user_address,
             notes=f'Burn {gas_amount} ETH for gas',
             counterparty=CPT_GAS,
@@ -881,7 +879,7 @@ def test_claim_rewards_from_lending_vault_gauge(
             event_type=HistoryEventType.RECEIVE,
             event_subtype=HistoryEventSubType.REWARD,
             asset=A_ARB,
-            amount=FVal(reward_amount),
+            amount=FVal(reward_amount := '0.037091751198938204'),
             location_label=user_address,
             notes=f'Receive {reward_amount} ARB rewards from curve lending cvcrvUSD-gauge',
             counterparty=CPT_CURVE,

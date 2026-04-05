@@ -45,12 +45,11 @@ def test_compound_ether_deposit(ethereum_inquirer):
     """
     tx_hash = deserialize_evm_tx_hash('0x06a8b9f758b0471886186c2a48dea189b3044916c7f94ee7f559026fefd91c39')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
-    timestamp = TimestampMS(1598639099000)
-    expected_events = [
+    assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=0,
-            timestamp=timestamp,
+            timestamp=(timestamp := TimestampMS(1598639099000)),
             location=Location.ETHEREUM,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
@@ -86,7 +85,6 @@ def test_compound_ether_deposit(ethereum_inquirer):
             counterparty=CPT_COMPOUND,
             address=string_to_evm_address('0x4Ddc2D193948926D02f9B1fE9e1daa0718270ED5'),
         )]
-    assert events == expected_events
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
@@ -97,12 +95,11 @@ def test_compound_ether_withdraw(ethereum_inquirer):
     """
     tx_hash = deserialize_evm_tx_hash('0x024bd402420c3ba2f95b875f55ce2a762338d2a14dac4887b78174254c9ab807')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
-    timestamp = TimestampMS(1598813490000)
-    expected_events = [
+    assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=0,
-            timestamp=timestamp,
+            timestamp=(timestamp := TimestampMS(1598813490000)),
             location=Location.ETHEREUM,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
@@ -138,7 +135,6 @@ def test_compound_ether_withdraw(ethereum_inquirer):
             counterparty=CPT_COMPOUND,
             address=string_to_evm_address('0x4Ddc2D193948926D02f9B1fE9e1daa0718270ED5'),
         )]
-    assert events == expected_events
 
 
 @pytest.mark.vcr
@@ -149,15 +145,14 @@ def test_compound_deposit_with_comp_claim(ethereum_inquirer):
     """
     tx_hash = deserialize_evm_tx_hash('0xfdbfe6e9ce822bd988054945c86f2dff1fac6a12b4acb0b68c8805b5aa3b30ba')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
-    timestamp = TimestampMS(1607572696000)
     amount = FVal('14309.930911242041089052')
     wrapped_amount = FVal('687371.5068874')
     interest = FVal('0.076123031460129653')
-    expected_events = [
+    assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=0,
-            timestamp=timestamp,
+            timestamp=(timestamp := TimestampMS(1607572696000)),
             location=Location.ETHEREUM,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
@@ -206,7 +201,6 @@ def test_compound_deposit_with_comp_claim(ethereum_inquirer):
             counterparty=CPT_COMPOUND,
             address=string_to_evm_address('0x5d3a536E4D6DbD6114cc1Ead35777bAB948E3643'),
         )]
-    assert events == expected_events
 
 
 @pytest.mark.vcr
@@ -217,13 +211,12 @@ def test_compound_multiple_comp_claim(ethereum_inquirer):
     as a simple receive.
     """
     tx_hash = deserialize_evm_tx_hash('0x25d341421044fa27006c0ec8df11067d80f69b2d2135065828f1992fa6868a49')  # noqa: E501
-    timestamp = TimestampMS(1622430975000)
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
-    expected_events = [
+    assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=0,
-            timestamp=timestamp,
+            timestamp=(timestamp := TimestampMS(1622430975000)),
             location=Location.ETHEREUM,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
@@ -298,7 +291,6 @@ def test_compound_multiple_comp_claim(ethereum_inquirer):
             counterparty=CPT_COMPOUND,
             address=string_to_evm_address('0x3d9819210A31b4961b30EF54bE2aeD79B9c9Cd3B'),
         )]
-    assert events == expected_events
 
 
 @pytest.mark.vcr
@@ -309,18 +301,17 @@ def test_compound_comp_claim_last_transfer(ethereum_inquirer, ethereum_accounts)
     the transfer being last the last event
     """
     tx_hash = deserialize_evm_tx_hash('0xbd2dcb1121bf230a855788a77aa054dc1aae7a898cb4a7d7c45c5866f3f887ac')  # noqa: E501
-    timestamp = TimestampMS(1622430975000)
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
-    timestamp, gas_amount, amount = TimestampMS(1672433507000), '0.0041468661739364', '12.817402848098541218'  # noqa: E501
+    amount = '12.817402848098541218'
     expected_events = [EvmEvent(
         tx_ref=tx_hash,
         sequence_index=0,
-        timestamp=timestamp,
+        timestamp=(timestamp := TimestampMS(1672433507000)),
         location=Location.ETHEREUM,
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_ETH,
-        amount=FVal(gas_amount),
+        amount=FVal(gas_amount := '0.0041468661739364'),
         location_label=ethereum_accounts[0],
         notes=f'Burn {gas_amount} ETH for gas',
         counterparty=CPT_GAS,
@@ -349,7 +340,7 @@ def test_compound_borrow(ethereum_inquirer: 'EthereumInquirer') -> None:
     """
     tx_hash = deserialize_evm_tx_hash('0x036338316a076590a496791a729d3459934a89d6eb512f765cf0e28f9eb8b50c')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
-    expected_events = [
+    assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=0,
@@ -377,7 +368,6 @@ def test_compound_borrow(ethereum_inquirer: 'EthereumInquirer') -> None:
             address=string_to_evm_address('0x39AA39c021dfbaE8faC545936693aC917d5E7563'),
         ),
     ]
-    assert expected_events == events
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
@@ -388,7 +378,7 @@ def test_compound_payback(ethereum_inquirer: 'EthereumInquirer') -> None:
     """
     tx_hash = deserialize_evm_tx_hash('0x000da925508a1a2f322f6fb74592baf9a75bb9f971cb3a72a5deb0526d39757d')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
-    expected_events = [
+    assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=0,
@@ -429,7 +419,6 @@ def test_compound_payback(ethereum_inquirer: 'EthereumInquirer') -> None:
             address=string_to_evm_address('0x39AA39c021dfbaE8faC545936693aC917d5E7563'),
         ),
     ]
-    assert expected_events == events
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
@@ -440,7 +429,7 @@ def test_compound_borrow_eth(ethereum_inquirer: 'EthereumInquirer') -> None:
     """
     tx_hash = deserialize_evm_tx_hash('0x00035065f364453ca4585ab5d4ee7dacc59a3f7acc305644c334fdfff3a2527f')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
-    expected_events = [
+    assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=0,
@@ -468,7 +457,6 @@ def test_compound_borrow_eth(ethereum_inquirer: 'EthereumInquirer') -> None:
             address=string_to_evm_address('0x4Ddc2D193948926D02f9B1fE9e1daa0718270ED5'),
         ),
     ]
-    assert expected_events == events
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
@@ -479,7 +467,7 @@ def test_compound_repays_eth(ethereum_inquirer: 'EthereumInquirer') -> None:
     """
     tx_hash = deserialize_evm_tx_hash('0x0007416c8caa441ce07c61dbf2455b3068d21d9bffbfbbfca9f1016d7c3ca33f')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
-    expected_events = [
+    assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=0,
@@ -507,7 +495,6 @@ def test_compound_repays_eth(ethereum_inquirer: 'EthereumInquirer') -> None:
             address=string_to_evm_address('0xf859A1AD94BcF445A406B892eF0d3082f4174088'),
         ),
     ]
-    assert expected_events == events
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])

@@ -84,7 +84,7 @@ def test_multiple_deposits(database, ethereum_inquirer, ethereum_accounts):
             write_cursor,
             validators=validators,
         )
-    expected_events = [
+    assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=0,
@@ -121,7 +121,6 @@ def test_multiple_deposits(database, ethereum_inquirer, ethereum_accounts):
             depositor=user_address,
         ),
     ]
-    assert events == expected_events
 
 
 @pytest.mark.vcr
@@ -144,12 +143,11 @@ def test_deposit_with_anonymous_event(database, ethereum_inquirer, ethereum_acco
     user_address = ethereum_accounts[0]
     proxy_address = ethereum_accounts[1]
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
-    timestamp = TimestampMS(1669806275000)
     assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=0,
-            timestamp=timestamp,
+            timestamp=(timestamp := TimestampMS(1669806275000)),
             location=Location.ETHEREUM,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,

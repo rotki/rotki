@@ -16,12 +16,11 @@ from rotkehlchen.types import Location, TimestampMS, deserialize_evm_tx_hash
 def test_airdrop_claim(ethereum_inquirer, ethereum_accounts):
     tx_hash = deserialize_evm_tx_hash('0x6635d1e12fed1a95019a53e6f6495c586891bf7b41bccfc5838f9b1703a9c20c')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
-    timestamp = TimestampMS(1634470709000)
-    expected_events = [
+    assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=243,
-            timestamp=timestamp,
+            timestamp=TimestampMS(1634470709000),
             location=Location.ETHEREUM,
             event_type=HistoryEventType.RECEIVE,
             event_subtype=HistoryEventSubType.AIRDROP,
@@ -34,4 +33,3 @@ def test_airdrop_claim(ethereum_inquirer, ethereum_accounts):
             extra_data={AIRDROP_IDENTIFIER_KEY: 'shapeshift'},
         ),
     ]
-    assert events == expected_events

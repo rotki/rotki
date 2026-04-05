@@ -51,18 +51,16 @@ def test_added_owner(ethereum_inquirer, ethereum_accounts):
     multisig_address = ethereum_accounts[1]
     new_owner = '0xa0DD8E6c5440a424cD19f5Ec30F8fa485E814247'
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
-    timestamp = TimestampMS(1611089364000)
-    gas_amount_str = '0.004625442'
-    expected_events = [
+    assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=0,
-            timestamp=timestamp,
+            timestamp=(timestamp := TimestampMS(1611089364000)),
             location=Location.ETHEREUM,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            amount=FVal(gas_amount_str),
+            amount=FVal(gas_amount_str := '0.004625442'),
             location_label=user_address,
             notes=f'Burn {gas_amount_str} ETH for gas',
             counterparty=CPT_GAS,
@@ -81,7 +79,6 @@ def test_added_owner(ethereum_inquirer, ethereum_accounts):
             address=multisig_address,
         ),
     ]
-    assert events == expected_events
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
@@ -97,18 +94,16 @@ def test_removed_owner(ethereum_inquirer, ethereum_accounts):
     multisig_address = ethereum_accounts[1]
     removed_owner = '0x8a7dbC2824AcaC4d272289a33b255C3F1f3cdf32'
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
-    timestamp = TimestampMS(1623789005000)
-    gas_amount_str = '0.00130834'
-    expected_events = [
+    assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=0,
-            timestamp=timestamp,
+            timestamp=(timestamp := TimestampMS(1623789005000)),
             location=Location.ETHEREUM,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            amount=FVal(gas_amount_str),
+            amount=FVal(gas_amount_str := '0.00130834'),
             location_label=user_address,
             notes=f'Burn {gas_amount_str} ETH for gas',
             counterparty=CPT_GAS,
@@ -127,7 +122,6 @@ def test_removed_owner(ethereum_inquirer, ethereum_accounts):
             address=multisig_address,
         ),
     ]
-    assert events == expected_events
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
@@ -142,18 +136,16 @@ def test_changed_threshold(ethereum_inquirer, ethereum_accounts):
     user_address = ethereum_accounts[0]
     multisig_address = ethereum_accounts[1]
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
-    timestamp = TimestampMS(1614713692000)
-    gas_amount_str = '0.005093127'
-    expected_events = [
+    assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=0,
-            timestamp=timestamp,
+            timestamp=(timestamp := TimestampMS(1614713692000)),
             location=Location.ETHEREUM,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            amount=FVal(gas_amount_str),
+            amount=FVal(gas_amount_str := '0.005093127'),
             location_label=user_address,
             notes=f'Burn {gas_amount_str} ETH for gas',
             counterparty=CPT_GAS,
@@ -172,7 +164,6 @@ def test_changed_threshold(ethereum_inquirer, ethereum_accounts):
             address=multisig_address,
         ),
     ]
-    assert events == expected_events
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
@@ -185,18 +176,16 @@ def test_execution_success(ethereum_inquirer, ethereum_accounts):
     user_address = ethereum_accounts[0]
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     multisig_address = '0xFEB4acf3df3cDEA7399794D0869ef76A6EfAff52'
-    timestamp = TimestampMS(1656087756000)
-    gas_amount_str = '0.006953999441541852'
-    expected_events = [
+    assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=0,
-            timestamp=timestamp,
+            timestamp=(timestamp := TimestampMS(1656087756000)),
             location=Location.ETHEREUM,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            amount=FVal(gas_amount_str),
+            amount=FVal(gas_amount_str := '0.006953999441541852'),
             location_label=user_address,
             notes=f'Burn {gas_amount_str} ETH for gas',
             counterparty=CPT_GAS,
@@ -215,7 +204,6 @@ def test_execution_success(ethereum_inquirer, ethereum_accounts):
             address=multisig_address,
         ),
     ]
-    assert events == expected_events
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
@@ -228,18 +216,16 @@ def test_execution_failure(ethereum_inquirer, ethereum_accounts):
     user_address = ethereum_accounts[0]
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     multisig_address = '0xFEB4acf3df3cDEA7399794D0869ef76A6EfAff52'
-    timestamp = TimestampMS(1599570321000)
-    gas_amount_str = '0.020435096'
-    expected_events = [
+    assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=0,
-            timestamp=timestamp,
+            timestamp=(timestamp := TimestampMS(1599570321000)),
             location=Location.ETHEREUM,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            amount=FVal(gas_amount_str),
+            amount=FVal(gas_amount_str := '0.020435096'),
             location_label=user_address,
             notes=f'Burn {gas_amount_str} ETH for gas',
             counterparty=CPT_GAS,
@@ -258,7 +244,6 @@ def test_execution_failure(ethereum_inquirer, ethereum_accounts):
             address=multisig_address,
         ),
     ]
-    assert events == expected_events
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
@@ -287,7 +272,7 @@ def test_safe_mastercopy_upgrade_on_base(base_inquirer, base_accounts) -> None:
         end_ts=Timestamp(1756713400),
     )
     events, _ = get_decoded_events_of_transaction(evm_inquirer=base_inquirer, tx_hash=tx_hash)
-    expected_events = [
+    assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=0,
@@ -315,7 +300,6 @@ def test_safe_mastercopy_upgrade_on_base(base_inquirer, base_accounts) -> None:
             address=base_accounts[1],
         ),
     ]
-    assert events == expected_events
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
@@ -325,18 +309,16 @@ def test_safe_creation(ethereum_inquirer, ethereum_accounts):
     tx_hash = deserialize_evm_tx_hash('0xa9e3c581f39403a0a2eb5a3e604be715c0a4ee8aa4bcc9bddece5c268b47e233')  # noqa: E501
     user_address = ethereum_accounts[0]
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
-    timestamp = TimestampMS(1691846051000)
-    gas_amount_str = '0.004928138478008416'
-    expected_events = [
+    assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=0,
-            timestamp=timestamp,
+            timestamp=(timestamp := TimestampMS(1691846051000)),
             location=Location.ETHEREUM,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            amount=FVal(gas_amount_str),
+            amount=FVal(gas_amount_str := '0.004928138478008416'),
             location_label=user_address,
             notes=f'Burn {gas_amount_str} ETH for gas',
             counterparty=CPT_GAS,
@@ -355,38 +337,33 @@ def test_safe_creation(ethereum_inquirer, ethereum_accounts):
             address=string_to_evm_address('0x2eb2B9300036807A7674997e6c6874601275EDDD'),
         ),
     ]
-    assert events == expected_events
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('polygon_pos_accounts', [['0xc37b40ABdB939635068d3c5f13E7faF686F03B65']])  # yabir.eth  # noqa: E501
 def test_safe_spam(polygon_pos_inquirer, polygon_pos_accounts):
     """Test that a safe transaction if from an unrelated account, does not appear in events"""
-    tx_hash = deserialize_evm_tx_hash('0xefb07f4d166d6887eada96e61fd6821bfdf889d5435d75ab44d4ca0fa7627396')  # noqa: E501
     user_address = polygon_pos_accounts[0]
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=polygon_pos_inquirer,
-        tx_hash=tx_hash,
+        tx_hash=(tx_hash := deserialize_evm_tx_hash('0xefb07f4d166d6887eada96e61fd6821bfdf889d5435d75ab44d4ca0fa7627396')),  # noqa: E501
     )
-    timestamp = TimestampMS(1651102781000)
-    amount_str = '0.00637462961483049'
     spam_contract = '0xC63c477465a792537D291ADb32Ed15c0095E106B'
-    expected_events = [
+    assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=431,
-            timestamp=timestamp,
+            timestamp=TimestampMS(1651102781000),
             location=Location.POLYGON_POS,
             event_type=HistoryEventType.RECEIVE,
             event_subtype=HistoryEventSubType.NONE,
             asset=Asset('eip155:137/erc20:0x580A84C73811E1839F75d86d75d88cCa0c241fF4'),
-            amount=FVal(amount_str),
+            amount=FVal(amount_str := '0.00637462961483049'),
             location_label=user_address,
             notes=f'Receive {amount_str} QI from {spam_contract} to {user_address}',
             address=spam_contract,
         ),
     ]
-    assert events == expected_events
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
@@ -398,7 +375,7 @@ def test_safe_vesting_claim(ethereum_inquirer, ethereum_accounts):
     tx_hash = deserialize_evm_tx_hash('0xc831d94b43be533e83562da9bc10b38b4bab6ce6046c3a9baf76c5359634625a')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     user_address, multisig_address, timestamp, gas, amount = ethereum_accounts[0], ethereum_accounts[1], TimestampMS(1717404395000), '0.00123180896602807', '20549.221611721611721612'  # noqa: E501
-    expected_events = [
+    assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=0,
@@ -439,7 +416,6 @@ def test_safe_vesting_claim(ethereum_inquirer, ethereum_accounts):
             address=multisig_address,
         ),
     ]
-    assert events == expected_events
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
@@ -451,7 +427,7 @@ def test_safe_lock(ethereum_inquirer, ethereum_accounts):
     tx_hash = deserialize_evm_tx_hash('0xad3d976ae02cf82f109cc2d2f3e8f2f10df6a00a4825e3f04cf0e1b7e68a06b8')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     user_address, multisig_address, timestamp, gas, amount = ethereum_accounts[0], ethereum_accounts[1], TimestampMS(1719926867000), '0.00072087801264352', '5115.763372'  # noqa: E501
-    expected_events = [
+    assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=0,
@@ -516,7 +492,6 @@ def test_safe_lock(ethereum_inquirer, ethereum_accounts):
             address=multisig_address,
         ),
     ]
-    assert events == expected_events
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
@@ -528,7 +503,7 @@ def test_safe_unlock(ethereum_inquirer, ethereum_accounts):
     tx_hash = deserialize_evm_tx_hash('0x51d4c06ff00be729fe5bc79215253e45e65ce4c8531cd249633c6e76754c89d0')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     user_address, multisig_address, timestamp, gas, amount = ethereum_accounts[0], ethereum_accounts[1], TimestampMS(1721101211000), '0.0003433', '1026.126150242296748346'  # noqa: E501
-    expected_events = [
+    assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=0,
@@ -569,7 +544,6 @@ def test_safe_unlock(ethereum_inquirer, ethereum_accounts):
             address=multisig_address,
         ),
     ]
-    assert events == expected_events
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
@@ -581,7 +555,7 @@ def test_safe_withdraw_unlocked(ethereum_inquirer, ethereum_accounts):
     tx_hash = deserialize_evm_tx_hash('0x9520c7e117225afc930d1092bf35c17e6726c6564ed4e757eeb6a3c29d10304b')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     user_address, multisig_address, timestamp, gas, amount = ethereum_accounts[0], ethereum_accounts[1], TimestampMS(1721130791000), '0.00095328952396285', '2404.451820314008697626'  # noqa: E501
-    expected_events = [
+    assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=0,
@@ -622,7 +596,6 @@ def test_safe_withdraw_unlocked(ethereum_inquirer, ethereum_accounts):
             address=multisig_address,
         ),
     ]
-    assert events == expected_events
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
@@ -634,7 +607,7 @@ def test_safepass_start_vesting_claim(ethereum_inquirer, ethereum_accounts):
     tx_hash = deserialize_evm_tx_hash('0xfd07173651763370557d8300a8f5891d26ec7055238d6daf4f53c3f060d0f42d')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     user_address, multisig_address, timestamp, gas = ethereum_accounts[0], ethereum_accounts[1], TimestampMS(1735818059000), '0.00149046414099075'  # noqa: E501
-    expected_events = [
+    assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=0,
@@ -675,7 +648,6 @@ def test_safepass_start_vesting_claim(ethereum_inquirer, ethereum_accounts):
             address=multisig_address,
         ),
     ]
-    assert events == expected_events
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
@@ -687,7 +659,7 @@ def test_safepass_vesting_claim(ethereum_inquirer, ethereum_accounts):
     tx_hash = deserialize_evm_tx_hash('0x26eb93c73ca61ab2a8df16ce5ce861142fb21b67e5aa466a13c4a0ca7744fe5c')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     user_address, multisig_address, timestamp, gas, amount = ethereum_accounts[0], ethereum_accounts[1], TimestampMS(1765106423000), '0.000143501926752041', '829'  # noqa: E501
-    expected_events = [
+    assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=0,
@@ -728,7 +700,6 @@ def test_safepass_vesting_claim(ethereum_inquirer, ethereum_accounts):
             address=multisig_address,
         ),
     ]
-    assert events == expected_events
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
@@ -740,7 +711,7 @@ def test_safe_added_owner_indexed(gnosis_inquirer, gnosis_accounts):
     tx_hash = deserialize_evm_tx_hash('0x42536687dbc0c93d6b18c451c458def1e9d78476f610c8909be31bf2ffd56a69')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=gnosis_inquirer, tx_hash=tx_hash)
     user_address, multisig_address, timestamp, gas = gnosis_accounts[0], gnosis_accounts[1], TimestampMS(1747908200000), '0.000097393118048512'  # noqa: E501
-    expected_events = [
+    assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=0,
@@ -781,7 +752,6 @@ def test_safe_added_owner_indexed(gnosis_inquirer, gnosis_accounts):
             address=multisig_address,
         ),
     ]
-    assert events == expected_events
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])

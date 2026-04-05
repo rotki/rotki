@@ -21,17 +21,18 @@ def test_claim(ethereum_inquirer, ethereum_accounts):
     tx_hash = deserialize_evm_tx_hash('0x8a2bf33211bb1903ee3db7ca5a7bef10b168fdd68701cd3c9dc17c7b0c60a3f7')  # noqa: E501
     user_address = ethereum_accounts[0]
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
-    timestamp, gas, amount, period = TimestampMS(1672197467000), '0.00120340458490378', '1079.056809836717269824', 1671062400  # noqa: E501
-    expected_events = [
+    amount = '1079.056809836717269824'
+    period = 1671062400
+    assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=0,
-            timestamp=timestamp,
+            timestamp=(timestamp := TimestampMS(1672197467000)),
             location=Location.ETHEREUM,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            amount=FVal(gas),
+            amount=FVal(gas := '0.00120340458490378'),
             location_label=user_address,
             notes=f'Burn {gas} ETH for gas',
             counterparty=CPT_GAS,
@@ -50,4 +51,3 @@ def test_claim(ethereum_inquirer, ethereum_accounts):
             address=PALADIN_MERKLE_DISTRIBUTOR_V2,
         ),
     ]
-    assert events == expected_events

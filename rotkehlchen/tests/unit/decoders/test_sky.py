@@ -26,12 +26,11 @@ from rotkehlchen.types import Location, TimestampMS, deserialize_evm_tx_hash
 def test_migrate_dai(ethereum_inquirer, ethereum_accounts):
     tx_hash = deserialize_evm_tx_hash('0xda915701a7634628d8301d44a4e122599f05a1281286ab416f5101c79a24e408')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
-    timestamp = TimestampMS(1726732211000)
     gas_amount, migrated_amount = '0.001933756075256005', '10086.448037727051859359'
     expected_events = [EvmEvent(
         tx_ref=tx_hash,
         sequence_index=0,
-        timestamp=timestamp,
+        timestamp=(timestamp := TimestampMS(1726732211000)),
         location=Location.ETHEREUM,
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
@@ -172,12 +171,11 @@ def test_migrate_dai_susds(ethereum_inquirer, ethereum_accounts):
 def test_migrate_maker(ethereum_inquirer, ethereum_accounts):
     tx_hash = deserialize_evm_tx_hash('0xbfa0b5489a1f4b28c416d0ef8cbcbbc9d7d4fea8c3f1d53830b2cd5f78252b79')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
-    timestamp = TimestampMS(1726760855000)
     gas_amount, migrated_amount, received_amount = '0.00127609766341068', '0.75001216', '18000.29184'  # noqa: E501
     expected_events = [EvmEvent(
         tx_ref=tx_hash,
         sequence_index=0,
-        timestamp=timestamp,
+        timestamp=(timestamp := TimestampMS(1726760855000)),
         location=Location.ETHEREUM,
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,

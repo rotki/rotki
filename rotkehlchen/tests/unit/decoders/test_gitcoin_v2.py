@@ -19,10 +19,9 @@ from rotkehlchen.types import Location, TimestampMS, deserialize_evm_tx_hash
 @pytest.mark.parametrize('db_settings', LEGACY_TESTS_INDEXER_ORDER)
 @pytest.mark.parametrize('optimism_accounts', [['0x9531C059098e3d194fF87FebB587aB07B30B1306']])
 def test_optimism_donation_received(optimism_inquirer, optimism_accounts):
-    tx_hash = deserialize_evm_tx_hash('0x08685669305ee26060a5a78ae70065aec76d9e62a35f0837c291fb1232f33601')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=optimism_inquirer,
-        tx_hash=tx_hash,
+        tx_hash=(tx_hash := deserialize_evm_tx_hash('0x08685669305ee26060a5a78ae70065aec76d9e62a35f0837c291fb1232f33601')),  # noqa: E501
     )
     user_address, timestamp, amount_str, donator = optimism_accounts[0], TimestampMS(1692176477000), '0.00122', '0xf0C2007aD05a8d66e98be932C698c232292eC8eA'  # noqa: E501
     expected_events = [EvmEvent(
@@ -295,7 +294,6 @@ def test_optimism_many_donations_different_strategies(optimism_inquirer, optimis
 def test_optimism_grant_payout(optimism_inquirer, optimism_accounts):
     tx_hash = deserialize_evm_tx_hash('0x84110136c94ceb71c72afb27ccb517eb33f77a8a419d125101644e2c43294815')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=optimism_inquirer, tx_hash=tx_hash)
-    amount_str = '1228.529999999999934464'
     expected_events = [EvmEvent(
         tx_ref=tx_hash,
         sequence_index=73,
@@ -304,7 +302,7 @@ def test_optimism_grant_payout(optimism_inquirer, optimism_accounts):
         event_type=HistoryEventType.RECEIVE,
         event_subtype=HistoryEventSubType.DONATE,
         asset=Asset('eip155:10/erc20:0xDA10009cBd5D07dd0CeCc66161FC93D7c9000da1'),  # DAI
-        amount=FVal(amount_str),
+        amount=FVal(amount_str := '1228.529999999999934464'),
         location_label=optimism_accounts[0],
         notes=f'Receive matching payout of {amount_str} DAI for a gitcoin round',
         counterparty=CPT_GITCOIN,
@@ -318,7 +316,6 @@ def test_optimism_grant_payout(optimism_inquirer, optimism_accounts):
 def test_ethereum_grant_payout(ethereum_inquirer, ethereum_accounts):
     tx_hash = deserialize_evm_tx_hash('0x66ff5be7841f05cc9cb53fd0307460690f91203c52490f5bbfdeabe8462be50b')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
-    amount_str = '20000'
     expected_events = [EvmEvent(
         tx_ref=tx_hash,
         sequence_index=313,
@@ -327,7 +324,7 @@ def test_ethereum_grant_payout(ethereum_inquirer, ethereum_accounts):
         event_type=HistoryEventType.RECEIVE,
         event_subtype=HistoryEventSubType.DONATE,
         asset=A_DAI,
-        amount=FVal(amount_str),
+        amount=FVal(amount_str := '20000'),
         location_label=ethereum_accounts[0],
         notes=f'Receive matching payout of {amount_str} DAI for a gitcoin round',
         counterparty=CPT_GITCOIN,
@@ -339,10 +336,9 @@ def test_ethereum_grant_payout(ethereum_inquirer, ethereum_accounts):
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('polygon_pos_accounts', [['0x9531C059098e3d194fF87FebB587aB07B30B1306']])
 def test_polygon_donation_matic_received(polygon_pos_inquirer, polygon_pos_accounts):
-    tx_hash = deserialize_evm_tx_hash('0x32837e03ac3e9066f09c1ee0807c533aa1bef5e3119b98dcacdd1ca631bc7ca6')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=polygon_pos_inquirer,
-        tx_hash=tx_hash,
+        tx_hash=(tx_hash := deserialize_evm_tx_hash('0x32837e03ac3e9066f09c1ee0807c533aa1bef5e3119b98dcacdd1ca631bc7ca6')),  # noqa: E501
     )
     user_address, timestamp, amount_str, donator = polygon_pos_accounts[0], TimestampMS(1700595622000), '4', '0x6017B1d17f4D7547dC4aac88fbD0AA1826e7e6CE'  # noqa: E501
     expected_events = [EvmEvent(
@@ -365,10 +361,9 @@ def test_polygon_donation_matic_received(polygon_pos_inquirer, polygon_pos_accou
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('polygon_pos_accounts', [['0x9531C059098e3d194fF87FebB587aB07B30B1306']])
 def test_polygon_donation_token_received(polygon_pos_inquirer, polygon_pos_accounts):
-    tx_hash = deserialize_evm_tx_hash('0x17601356467af0cfcf3a62f93879b504695b8690545b2b8669da5ec0f3a2a91b')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=polygon_pos_inquirer,
-        tx_hash=tx_hash,
+        tx_hash=(tx_hash := deserialize_evm_tx_hash('0x17601356467af0cfcf3a62f93879b504695b8690545b2b8669da5ec0f3a2a91b')),  # noqa: E501
     )
     user_address, timestamp, amount_str, donator = polygon_pos_accounts[0], TimestampMS(1700593336000), '1.5', '0x3d1f546F05834423Acc7e4CA1169ae320cee9AF0'  # noqa: E501
     expected_events = [EvmEvent(
@@ -391,10 +386,9 @@ def test_polygon_donation_token_received(polygon_pos_inquirer, polygon_pos_accou
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('polygon_pos_accounts', [['0x9531C059098e3d194fF87FebB587aB07B30B1306']])
 def test_polygon_apply_to_round(polygon_pos_inquirer, polygon_pos_accounts):
-    tx_hash = deserialize_evm_tx_hash('0x51c1909ce9268f453d4b7136b0fecb72d8da567f406c37014dd8ad8ed05c9a1f')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=polygon_pos_inquirer,
-        tx_hash=tx_hash,
+        tx_hash=(tx_hash := deserialize_evm_tx_hash('0x51c1909ce9268f453d4b7136b0fecb72d8da567f406c37014dd8ad8ed05c9a1f')),  # noqa: E501
     )
     user_address, timestamp, gas_str = polygon_pos_accounts[0], TimestampMS(1699442294000), '0.05638388497968273'  # noqa: E501
     expected_events = [EvmEvent(
@@ -430,10 +424,9 @@ def test_polygon_apply_to_round(polygon_pos_inquirer, polygon_pos_accounts):
 @pytest.mark.parametrize('ethereum_accounts', [['0x9531C059098e3d194fF87FebB587aB07B30B1306']])
 def test_ethereum_voted_without_application_index(ethereum_inquirer, ethereum_accounts):
     """Test that voted events missing the application index are properly seen as donations"""
-    tx_hash = deserialize_evm_tx_hash('0xdcb6d2282b34a3cb7637ac65d8b7f1d0e8f2bc149379767f0b6f9ba2afa8a359')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=ethereum_inquirer,
-        tx_hash=tx_hash,
+        tx_hash=(tx_hash := deserialize_evm_tx_hash('0xdcb6d2282b34a3cb7637ac65d8b7f1d0e8f2bc149379767f0b6f9ba2afa8a359')),  # noqa: E501
     )
     user_address, timestamp, amount, donator = ethereum_accounts[0], TimestampMS(1673960015000), '0.0035', '0xcD9a4e7C2ad6AAae7Ac25c2139d71739d9Fa2284'  # noqa: E501
     expected_events = [EvmEvent(
@@ -456,10 +449,9 @@ def test_ethereum_voted_without_application_index(ethereum_inquirer, ethereum_ac
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('arbitrum_one_accounts', [['0x9531C059098e3d194fF87FebB587aB07B30B1306']])
 def test_allocated_receive_token(arbitrum_one_inquirer, arbitrum_one_accounts):
-    tx_hash = deserialize_evm_tx_hash('0x0388c141d93924d4737c4c52956469ecdb2c0a8dd9b3802317994c027d0a38af')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=arbitrum_one_inquirer,
-        tx_hash=tx_hash,
+        tx_hash=(tx_hash := deserialize_evm_tx_hash('0x0388c141d93924d4737c4c52956469ecdb2c0a8dd9b3802317994c027d0a38af')),  # noqa: E501
     )
     user_address, timestamp, amount, donator = arbitrum_one_accounts[0], TimestampMS(1729693571000), '1.77', '0x830862F98399520f351273B12FD3C622a226bDfE'  # noqa: E501
     expected_events = [EvmEvent(
@@ -482,10 +474,9 @@ def test_allocated_receive_token(arbitrum_one_inquirer, arbitrum_one_accounts):
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('arbitrum_one_accounts', [['0x514e84986C09Ca52661eeE5EC8a3E6b645c54388']])
 def test_allocated_donate_token(arbitrum_one_inquirer, arbitrum_one_accounts):
-    tx_hash = deserialize_evm_tx_hash('0x9509a7be197f1926a480f0c02251c5b1f7d4fc4334a77c991efb61f55c243e5f')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=arbitrum_one_inquirer,
-        tx_hash=tx_hash,
+        tx_hash=(tx_hash := deserialize_evm_tx_hash('0x9509a7be197f1926a480f0c02251c5b1f7d4fc4334a77c991efb61f55c243e5f')),  # noqa: E501
     )
     user_address, timestamp, gas, amount, approve = arbitrum_one_accounts[0], TimestampMS(1729720900000), '0.00000367783', '2', '4'  # noqa: E501
     expected_events = [EvmEvent(
@@ -557,10 +548,9 @@ def test_allocated_donate_token(arbitrum_one_inquirer, arbitrum_one_accounts):
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('arbitrum_one_accounts', [['0x173a7942Ac9989d8A2203051bF22E673BcDa6e9D']])
 def test_allocated_donate_eth(arbitrum_one_inquirer, arbitrum_one_accounts):
-    tx_hash = deserialize_evm_tx_hash('0x92450a269e9dc36bb78e3c631104eec0e9e190f5672e666bcd6397f310617849')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=arbitrum_one_inquirer,
-        tx_hash=tx_hash,
+        tx_hash=(tx_hash := deserialize_evm_tx_hash('0x92450a269e9dc36bb78e3c631104eec0e9e190f5672e666bcd6397f310617849')),  # noqa: E501
     )
     user_address, timestamp, gas, amount = arbitrum_one_accounts[0], TimestampMS(1729747404000), '0.00000219175', '0.001'  # noqa: E501
     expected_events = [EvmEvent(
@@ -608,10 +598,9 @@ def test_allocated_donate_eth(arbitrum_one_inquirer, arbitrum_one_accounts):
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('arbitrum_one_accounts', [['0x9531C059098e3d194fF87FebB587aB07B30B1306']])
 def test_registered(arbitrum_one_inquirer, arbitrum_one_accounts):
-    tx_hash = deserialize_evm_tx_hash('0x75d7138bc9f43954d64120d29be217274e08a6e27a7f3634e5dbc6f1f466e372')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=arbitrum_one_inquirer,
-        tx_hash=tx_hash,
+        tx_hash=(tx_hash := deserialize_evm_tx_hash('0x75d7138bc9f43954d64120d29be217274e08a6e27a7f3634e5dbc6f1f466e372')),  # noqa: E501
     )
     user_address, timestamp, gas, recipient_id = arbitrum_one_accounts[0], TimestampMS(1727784046000), '0.0000047042', '0x73B00B94762f800A244B6a84617Adbf07b9520a8'  # noqa: E501
     expected_events = [EvmEvent(
@@ -724,10 +713,9 @@ def test_update_profile_metadata(optimism_inquirer, optimism_accounts):
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('arbitrum_one_accounts', [['0x9531C059098e3d194fF87FebB587aB07B30B1306']])
 def test_registered_retro_strategy(arbitrum_one_inquirer, arbitrum_one_accounts):
-    tx_hash = deserialize_evm_tx_hash('0xaab8dd47ad5c05cb8a2d5aee387b1b3c2c716abdfb7508cf63c0125e7d9752ed')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=arbitrum_one_inquirer,
-        tx_hash=tx_hash,
+        tx_hash=(tx_hash := deserialize_evm_tx_hash('0xaab8dd47ad5c05cb8a2d5aee387b1b3c2c716abdfb7508cf63c0125e7d9752ed')),  # noqa: E501
     )
     user_address, timestamp, gas, recipient_id = arbitrum_one_accounts[0], TimestampMS(1742385330000), '0.000010743737208', '0x73B00B94762f800A244B6a84617Adbf07b9520a8'  # noqa: E501
     expected_events = [EvmEvent(

@@ -54,14 +54,13 @@ def test_weth_deposit(ethereum_inquirer):
     https://etherscan.io/tx/0x5bb623b365def9650816dcbaf1babde8fd0ebed737db36d3a033d7cf63792daf
     """
     tx_hash = deserialize_evm_tx_hash('0x5bb623b365def9650816dcbaf1babde8fd0ebed737db36d3a033d7cf63792daf')  # noqa: E501
-    timestamp = TimestampMS(1666256147000)
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     assert len(events) == 3
-    expected_events = [
+    assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=0,
-            timestamp=timestamp,
+            timestamp=(timestamp := TimestampMS(1666256147000)),
             location=Location.ETHEREUM,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
@@ -98,7 +97,6 @@ def test_weth_deposit(ethereum_inquirer):
             address=WETH_MAINNET_ADDRESS,
         ),
     ]
-    assert events == expected_events
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
@@ -109,14 +107,13 @@ def test_weth_withdrawal(ethereum_inquirer):
     https://etherscan.io/tx/0x1f3aa6f7d33bfaaaf9cdd92b16fecdf911341601c02ad89b4ec0b80c66c28a07
     """
     tx_hash = deserialize_evm_tx_hash('0x1f3aa6f7d33bfaaaf9cdd92b16fecdf911341601c02ad89b4ec0b80c66c28a07')  # noqa: E501
-    timestamp = TimestampMS(1666256147000)
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     assert len(events) == 3
-    expected_events = [
+    assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=0,
-            timestamp=timestamp,
+            timestamp=(timestamp := TimestampMS(1666256147000)),
             location=Location.ETHEREUM,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
@@ -153,7 +150,6 @@ def test_weth_withdrawal(ethereum_inquirer):
             address=WETH_MAINNET_ADDRESS,
         ),
     ]
-    assert events == expected_events
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
@@ -164,14 +160,13 @@ def test_weth_interaction_with_protocols_deposit(database, ethereum_inquirer):
     https://etherscan.io/tx/0xab0dec3785632c567365c48ea1fd1178f0998773136a555912625d2668ef53e9
     """
     tx_hash = deserialize_evm_tx_hash('0xab0dec3785632c567365c48ea1fd1178f0998773136a555912625d2668ef53e9')  # noqa: E501
-    timestamp = TimestampMS(1666595591000)
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     assert len(events) == 4
-    expected_events = [
+    assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=0,
-            timestamp=timestamp,
+            timestamp=(timestamp := TimestampMS(1666595591000)),
             location=Location.ETHEREUM,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
@@ -221,7 +216,6 @@ def test_weth_interaction_with_protocols_deposit(database, ethereum_inquirer):
             address=ZERO_ADDRESS,
         ),
     ]
-    assert events == expected_events
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
@@ -235,7 +229,7 @@ def test_weth_interaction_with_protocols_withdrawal(ethereum_inquirer):
     timesatmp = TimestampMS(1666284551000)
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     assert len(events) == 3
-    expected_events = [
+    assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=0,
@@ -276,7 +270,6 @@ def test_weth_interaction_with_protocols_withdrawal(ethereum_inquirer):
             address=string_to_evm_address('0xC36442b4a4522E871399CD717aBDD847Ab11FE88'),
         ),
     ]
-    assert events == expected_events
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
@@ -287,14 +280,13 @@ def test_weth_interaction_errors(ethereum_inquirer):
     https://etherscan.io/tx/0x4ca19c97b7533e74f36dff18acf0115055f63f9d8ae078dfc8ab15ceb14d2f2d
     """
     tx_hash = deserialize_evm_tx_hash('0x4ca19c97b7533e74f36dff18acf0115055f63f9d8ae078dfc8ab15ceb14d2f2d')  # noqa: E501
-    timestamp = TimestampMS(1666800983000)
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     assert len(events) == 3
-    expected_events = [
+    assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=0,
-            timestamp=timestamp,
+            timestamp=(timestamp := TimestampMS(1666800983000)),
             location=Location.ETHEREUM,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
@@ -329,7 +321,6 @@ def test_weth_interaction_errors(ethereum_inquirer):
             address=string_to_evm_address('0xe66B31678d6C16E9ebf358268a790B763C133750'),
         ),
     ]
-    assert events == expected_events
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
@@ -338,14 +329,13 @@ def test_wxdai_unwrap(gnosis_inquirer, gnosis_accounts):
     user_address = gnosis_accounts[0]
     tx_hash = deserialize_evm_tx_hash('0xa6af9ea737de26c87a36367fd896a8fe471049f4c18ac909901336aaccbf2369')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=gnosis_inquirer, tx_hash=tx_hash)
-    timestamp = TimestampMS(1707739650000)
     gas_amount, unwrapped_amount = '0.0000886822502438', '555.374747825771664891'
     wxdai_address = A_WXDAI.resolve_to_evm_token().evm_address
-    expected_events = [
+    assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=0,
-            timestamp=timestamp,
+            timestamp=(timestamp := TimestampMS(1707739650000)),
             location=Location.GNOSIS,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
@@ -383,8 +373,6 @@ def test_wxdai_unwrap(gnosis_inquirer, gnosis_accounts):
         ),
     ]
 
-    assert events == expected_events
-
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('gnosis_accounts', [['0xd6f585378F3232E440B165AD56658bFcA76D1B32']])
@@ -392,14 +380,13 @@ def test_wxdai_wrap(gnosis_inquirer, gnosis_accounts):
     user_address = gnosis_accounts[0]
     tx_hash = deserialize_evm_tx_hash('0x8cf8362f36e5a76912bc05ef804c0ea4b4f2de54700afe9ced99aa486f3dd0e8')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=gnosis_inquirer, tx_hash=tx_hash)
-    timestamp = TimestampMS(1707744465000)
     gas_amount, wrapped_amount = '0.0000586761', '103'
     wxdai_address = A_WXDAI.resolve_to_evm_token().evm_address
-    expected_events = [
+    assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=0,
-            timestamp=timestamp,
+            timestamp=(timestamp := TimestampMS(1707744465000)),
             location=Location.GNOSIS,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
@@ -437,24 +424,20 @@ def test_wxdai_wrap(gnosis_inquirer, gnosis_accounts):
         ),
     ]
 
-    assert events == expected_events
-
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('arbitrum_one_accounts', [['0xBE6660FBE96B61B72Bf35FFaB40eB2CA886A7f85']])
 def test_weth_withdraw_arbitrum_one(arbitrum_one_inquirer, arbitrum_one_accounts):
-    tx_hash = deserialize_evm_tx_hash('0xc19c7e1e0af7819b1922a287d034540e8f8dba4e065317d6483d48ac27e727e9')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=arbitrum_one_inquirer,
-        tx_hash=tx_hash,
+        tx_hash=(tx_hash := deserialize_evm_tx_hash('0xc19c7e1e0af7819b1922a287d034540e8f8dba4e065317d6483d48ac27e727e9')),  # noqa: E501
     )
-    timestamp = TimestampMS(1712238368000)
     amount, gas_fees = '0.00052', '0.00000108547'
-    expected_events = [
+    assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=0,
-            timestamp=timestamp,
+            timestamp=(timestamp := TimestampMS(1712238368000)),
             location=Location.ARBITRUM_ONE,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
@@ -491,19 +474,17 @@ def test_weth_withdraw_arbitrum_one(arbitrum_one_inquirer, arbitrum_one_accounts
             address=WETH_ARB_ADDRESS,
         ),
     ]
-    assert events == expected_events
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('arbitrum_one_accounts', [['0x7aBAee8F04EFd689961115f7A28bAA2E73Be6703']])
 def test_weth_deposit_arbitrum_one(arbitrum_one_inquirer, arbitrum_one_accounts):
-    tx_hash = deserialize_evm_tx_hash('0x57cc837c6f3d84c8fa3db8a7405f7244f11d32152159edf5ba79f5a7c34919b8')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=arbitrum_one_inquirer,
-        tx_hash=tx_hash,
+        tx_hash=(tx_hash := deserialize_evm_tx_hash('0x57cc837c6f3d84c8fa3db8a7405f7244f11d32152159edf5ba79f5a7c34919b8')),  # noqa: E501
     )
     user, amount, gas_fees, timestamp = arbitrum_one_accounts[0], '0.007767825959188763', '0.000001382891214', TimestampMS(1712328694000)  # noqa: E501
-    expected_events = [
+    assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=0,
@@ -544,7 +525,6 @@ def test_weth_deposit_arbitrum_one(arbitrum_one_inquirer, arbitrum_one_accounts)
             address=WETH_ARB_ADDRESS,
         ),
     ]
-    assert events == expected_events
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
@@ -553,13 +533,12 @@ def test_weth_deposit_arbitrum_one(arbitrum_one_inquirer, arbitrum_one_accounts)
 def test_weth_withdraw_optimism(optimism_inquirer, optimism_accounts):
     tx_hash = deserialize_evm_tx_hash('0x4a6b47e1f622a8ad059bd0723c53f2c71f12e7b105d2ef2ff4dff07ac1f185c0')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=optimism_inquirer, tx_hash=tx_hash)
-    timestamp = TimestampMS(1712240095000)
     amount, gas_fees = '0.000518962654328944', '0.000001897927938075'
-    expected_events = [
+    assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=0,
-            timestamp=timestamp,
+            timestamp=(timestamp := TimestampMS(1712240095000)),
             location=Location.OPTIMISM,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
@@ -596,7 +575,6 @@ def test_weth_withdraw_optimism(optimism_inquirer, optimism_accounts):
             address=WETH_OP_BASE_ADDRESS,
         ),
     ]
-    assert events == expected_events
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
@@ -605,13 +583,12 @@ def test_weth_withdraw_optimism(optimism_inquirer, optimism_accounts):
 def test_weth_deposit_optimism(optimism_inquirer, optimism_accounts):
     tx_hash = deserialize_evm_tx_hash('0x42074e2228be1716f84888f1993fa62443f591945b21dfbf159a64ae467990c4')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=optimism_inquirer, tx_hash=tx_hash)
-    timestamp = TimestampMS(1712241853000)
     amount, gas_fees = '0.0345', '0.000002820767318933'
-    expected_events = [
+    assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=0,
-            timestamp=timestamp,
+            timestamp=(timestamp := TimestampMS(1712241853000)),
             location=Location.OPTIMISM,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
@@ -648,7 +625,6 @@ def test_weth_deposit_optimism(optimism_inquirer, optimism_accounts):
             address=WETH_OP_BASE_ADDRESS,
         ),
     ]
-    assert events == expected_events
 
 
 @pytest.mark.vcr(allow_playback_repeats=True, filter_query_parameters=['apikey'])
@@ -656,13 +632,12 @@ def test_weth_deposit_optimism(optimism_inquirer, optimism_accounts):
 def test_weth_withdraw_scroll(scroll_inquirer, scroll_accounts, allow_scroll_etherscan):
     tx_hash = deserialize_evm_tx_hash('0x88f49633073a7667f93eb888ec2151c26f449cc10afca565a15f8df68ee20f82')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=scroll_inquirer, tx_hash=tx_hash)
-    timestamp = TimestampMS(1712239879000)
     amount, gas_fees = '0.00211824', '0.000194659253936861'
-    expected_events = [
+    assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=0,
-            timestamp=timestamp,
+            timestamp=(timestamp := TimestampMS(1712239879000)),
             location=Location.SCROLL,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
@@ -699,7 +674,6 @@ def test_weth_withdraw_scroll(scroll_inquirer, scroll_accounts, allow_scroll_eth
             address=WETH_SCROLL_ADDRESS,
         ),
     ]
-    assert events == expected_events
 
 
 @pytest.mark.vcr(allow_playback_repeats=True, filter_query_parameters=['apikey'])
@@ -707,13 +681,12 @@ def test_weth_withdraw_scroll(scroll_inquirer, scroll_accounts, allow_scroll_eth
 def test_weth_deposit_scroll(scroll_inquirer, scroll_accounts, allow_scroll_etherscan):
     tx_hash = deserialize_evm_tx_hash('0x1fa6d87801891fcea66a9be2d4fce1c52569c5ce30579fbe7de37eb05bd247f8')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=scroll_inquirer, tx_hash=tx_hash)
-    timestamp = TimestampMS(1712239897000)
     amount, gas_fees = '0.135', '0.000199290832110225'
-    expected_events = [
+    assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=0,
-            timestamp=timestamp,
+            timestamp=(timestamp := TimestampMS(1712239897000)),
             location=Location.SCROLL,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
@@ -750,7 +723,6 @@ def test_weth_deposit_scroll(scroll_inquirer, scroll_accounts, allow_scroll_ethe
             address=WETH_SCROLL_ADDRESS,
         ),
     ]
-    assert events == expected_events
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
@@ -759,13 +731,12 @@ def test_weth_deposit_scroll(scroll_inquirer, scroll_accounts, allow_scroll_ethe
 def test_weth_withdraw_base(base_inquirer, base_accounts):
     tx_hash = deserialize_evm_tx_hash('0x8d54608c2f684d880ad40a16cf9b82525c51520798ae8875d543d3338327ddad')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=base_inquirer, tx_hash=tx_hash)
-    timestamp = TimestampMS(1712239837000)
     amount, gas_fees = '0.00022448658511341', '0.000000533995613184'
-    expected_events = [
+    assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=0,
-            timestamp=timestamp,
+            timestamp=(timestamp := TimestampMS(1712239837000)),
             location=Location.BASE,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
@@ -802,7 +773,6 @@ def test_weth_withdraw_base(base_inquirer, base_accounts):
             address=WETH_OP_BASE_ADDRESS,
         ),
     ]
-    assert events == expected_events
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
@@ -810,7 +780,7 @@ def test_weth_withdraw_base(base_inquirer, base_accounts):
 @pytest.mark.parametrize('base_accounts', [['0xf396e7dbb20489D47F2daBfDA013163223B892a0']])
 def test_weth_deposit_base(base_inquirer, base_accounts):
     events, _ = get_decoded_events_of_transaction(evm_inquirer=base_inquirer, tx_hash=(tx_hash := deserialize_evm_tx_hash('0x0d418e4a858ca5faf00c36b685561ca0fdac52ebd10364bf2cb6d7b5969e84e5')))  # noqa: E501
-    expected_events = [
+    assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=0,
@@ -851,7 +821,6 @@ def test_weth_deposit_base(base_inquirer, base_accounts):
             address=WETH_OP_BASE_ADDRESS,
         ),
     ]
-    assert events == expected_events
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
@@ -899,18 +868,16 @@ def test_weth_withdraw_base_without_transfer_log(
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('polygon_pos_accounts', [['0x33C0Aae5b2b6Eae2a6286B3a6621B55DcC02dC9e']])
 def test_wmatic_deposit_polygon_pos(polygon_pos_inquirer, polygon_pos_accounts):
-    tx_hash = deserialize_evm_tx_hash('0xba581391d417a6dcc31031f1cf7cba6e63b701a8680828445ffdde73777843e1')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=polygon_pos_inquirer,
-        tx_hash=tx_hash,
+        tx_hash=(tx_hash := deserialize_evm_tx_hash('0xba581391d417a6dcc31031f1cf7cba6e63b701a8680828445ffdde73777843e1')),  # noqa: E501
     )
-    timestamp = TimestampMS(1712851902000)
     amount, gas_fees = '119.97566999849747', '0.007112105381183941'
-    expected_events = [
+    assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=0,
-            timestamp=timestamp,
+            timestamp=(timestamp := TimestampMS(1712851902000)),
             location=Location.POLYGON_POS,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
@@ -947,24 +914,21 @@ def test_wmatic_deposit_polygon_pos(polygon_pos_inquirer, polygon_pos_accounts):
             address=WMATIC_ADDRESS,
         ),
     ]
-    assert events == expected_events
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('polygon_pos_accounts', [['0xdAA9E3CA7500d7Ba3855dF9d8BCCde229C13919e']])
 def test_wmatic_withdraw_polygon_pos(polygon_pos_inquirer, polygon_pos_accounts):
-    tx_hash = deserialize_evm_tx_hash('0xe90ed71875ff44ea45ea960d006ec4c0ccb86506cba494471aba4ba9dc86123f')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=polygon_pos_inquirer,
-        tx_hash=tx_hash,
+        tx_hash=(tx_hash := deserialize_evm_tx_hash('0xe90ed71875ff44ea45ea960d006ec4c0ccb86506cba494471aba4ba9dc86123f')),  # noqa: E501
     )
-    timestamp = TimestampMS(1712851796000)
     amount, gas_fees = '4.9750995', '0.007687202027240021'
-    expected_events = [
+    assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=0,
-            timestamp=timestamp,
+            timestamp=(timestamp := TimestampMS(1712851796000)),
             location=Location.POLYGON_POS,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
@@ -1001,4 +965,3 @@ def test_wmatic_withdraw_polygon_pos(polygon_pos_inquirer, polygon_pos_accounts)
             address=WMATIC_ADDRESS,
         ),
     ]
-    assert events == expected_events

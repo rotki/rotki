@@ -35,17 +35,17 @@ def test_airdrop_claim(
 ) -> None:
     tx_hash = deserialize_evm_tx_hash('0x1bf831eb53a09cbd1ed309b938d3a09d0a00c17cd777830e3a47f49422eff3e6')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=optimism_inquirer, tx_hash=tx_hash)
-    timestamp, user_address, gas_amount, token_amount = TimestampMS(1732720037000), optimism_accounts[0], '0.000002227023099306', '181.44172120901'  # noqa: E501
+    user_address = optimism_accounts[0]
     assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=0,
-            timestamp=timestamp,
+            timestamp=(timestamp := TimestampMS(1732720037000)),
             location=Location.OPTIMISM,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            amount=FVal(gas_amount),
+            amount=FVal(gas_amount := '0.000002227023099306'),
             location_label=user_address,
             notes=f'Burn {gas_amount} ETH for gas',
             counterparty=CPT_GAS,
@@ -57,7 +57,7 @@ def test_airdrop_claim(
             event_type=HistoryEventType.RECEIVE,
             event_subtype=HistoryEventSubType.AIRDROP,
             asset=Asset(WCT_TOKEN_ID),
-            amount=FVal(token_amount),
+            amount=FVal(token_amount := '181.44172120901'),
             location_label=user_address,
             notes=f'Claim {token_amount} WCT from walletconnect airdrop',
             counterparty=CPT_WALLETCONNECT,
@@ -76,17 +76,18 @@ def test_stake(
 ) -> None:
     tx_hash = deserialize_evm_tx_hash('0xcc691ea8eeb56fd5f5ceb98879e3571ee167a2ac4c5bad4c9463127262d096af')  # noqa: E501
     events, decoder = get_decoded_events_of_transaction(evm_inquirer=optimism_inquirer, tx_hash=tx_hash)  # noqa: E501
-    timestamp, user_address, gas_amount, token_amount, lock_timestamp = TimestampMS(1732726673000), optimism_accounts[0], '0.000000666285515991', '184.286559270201', 1734566400  # noqa: E501
+    user_address = optimism_accounts[0]
+    lock_timestamp = 1734566400
     assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=0,
-            timestamp=timestamp,
+            timestamp=(timestamp := TimestampMS(1732726673000)),
             location=Location.OPTIMISM,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            amount=FVal(gas_amount),
+            amount=FVal(gas_amount := '0.000000666285515991'),
             location_label=user_address,
             notes=f'Burn {gas_amount} ETH for gas',
             counterparty=CPT_GAS,
@@ -98,7 +99,7 @@ def test_stake(
             event_type=HistoryEventType.STAKING,
             event_subtype=HistoryEventSubType.DEPOSIT_ASSET,
             asset=Asset(WCT_TOKEN_ID),
-            amount=FVal(token_amount),
+            amount=FVal(token_amount := '184.286559270201'),
             location_label=user_address,
             notes=f'Stake {token_amount} WCT until {decoder.decoders["Walletconnect"].timestamp_to_date(lock_timestamp)}',  # type: ignore  # noqa: E501
             counterparty=CPT_WALLETCONNECT,
@@ -117,17 +118,17 @@ def test_unstake(
 ) -> None:
     tx_hash = deserialize_evm_tx_hash('0x73d20d4ad0af8350fa66e9d8ee5a83b65b5099cde5a9ae51299c440793951b18')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=optimism_inquirer, tx_hash=tx_hash)
-    timestamp, user_address, gas_amount, token_amount = TimestampMS(1732792847000), optimism_accounts[0], '0.000004252055654884', '248'  # noqa: E501
+    user_address = optimism_accounts[0]
     assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=0,
-            timestamp=timestamp,
+            timestamp=(timestamp := TimestampMS(1732792847000)),
             location=Location.OPTIMISM,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            amount=FVal(gas_amount),
+            amount=FVal(gas_amount := '0.000004252055654884'),
             location_label=user_address,
             notes=f'Burn {gas_amount} ETH for gas',
             counterparty=CPT_GAS,
@@ -139,7 +140,7 @@ def test_unstake(
             event_type=HistoryEventType.STAKING,
             event_subtype=HistoryEventSubType.REMOVE_ASSET,
             asset=Asset(WCT_TOKEN_ID),
-            amount=FVal(token_amount),
+            amount=FVal(token_amount := '248'),
             location_label=user_address,
             notes=f'Unstake {token_amount} WCT',
             counterparty=CPT_WALLETCONNECT,
@@ -164,17 +165,18 @@ def test_increase_lock(
     )
     tx_hash = deserialize_evm_tx_hash('0xbf5de8df32c5faa598b56f0235f51ca779a659ee4686e959d89fc38798c62c54')  # noqa: E501
     events, decoder = get_decoded_events_of_transaction(evm_inquirer=optimism_inquirer, tx_hash=tx_hash)  # noqa: E501
-    timestamp, user_address, gas_amount, unlock_time = TimestampMS(1732793011000), optimism_accounts[0], '0.000002761170017713', 1736985600  # noqa: E501
+    user_address = optimism_accounts[0]
+    unlock_time = 1736985600
     assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=0,
-            timestamp=timestamp,
+            timestamp=(timestamp := TimestampMS(1732793011000)),
             location=Location.OPTIMISM,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            amount=FVal(gas_amount),
+            amount=FVal(gas_amount := '0.000002761170017713'),
             location_label=user_address,
             notes=f'Burn {gas_amount} ETH for gas',
             counterparty=CPT_GAS,
@@ -206,17 +208,18 @@ def test_update_lock(
     """Updates an existing staking lock by adding more WCT to it"""
     tx_hash = deserialize_evm_tx_hash('0xf5c75dc26c66075cea2105cae62f31200a2518123b6106876229e661573bada7')  # noqa: E501
     events, decoder = get_decoded_events_of_transaction(evm_inquirer=optimism_inquirer, tx_hash=tx_hash)  # noqa: E501
-    timestamp, user_address, gas_amount, token_amount, unlock_time = TimestampMS(1732792963000), optimism_accounts[0], '0.000003454138559574', '100.003508602839', 1738800000  # noqa: E501
+    user_address = optimism_accounts[0]
+    unlock_time = 1738800000
     assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=0,
-            timestamp=timestamp,
+            timestamp=(timestamp := TimestampMS(1732792963000)),
             location=Location.OPTIMISM,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            amount=FVal(gas_amount),
+            amount=FVal(gas_amount := '0.000003454138559574'),
             location_label=user_address,
             notes=f'Burn {gas_amount} ETH for gas',
             counterparty=CPT_GAS,
@@ -228,7 +231,7 @@ def test_update_lock(
             event_type=HistoryEventType.STAKING,
             event_subtype=HistoryEventSubType.DEPOSIT_ASSET,
             asset=Asset(WCT_TOKEN_ID),
-            amount=FVal(token_amount),
+            amount=FVal(token_amount := '100.003508602839'),
             location_label=user_address,
             notes=f'Stake {token_amount} WCT until {decoder.decoders["Walletconnect"].timestamp_to_date(unlock_time)}',  # type: ignore  # noqa: E501
             counterparty=CPT_WALLETCONNECT,

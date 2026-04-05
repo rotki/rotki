@@ -21,7 +21,7 @@ def test_aura_finance_deposit_arb(arbitrum_one_inquirer, arbitrum_one_accounts):
     tx_hash = deserialize_evm_tx_hash('0x9c3b996891eb0ffb5261486ff77c69c20a332499b9cf4196df7fab2c2123ea5f')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=arbitrum_one_inquirer, tx_hash=tx_hash)  # noqa: E501
     user_address, timestamp, gas_str, deposit_amount, receive_amount, approve_amount = arbitrum_one_accounts[0], TimestampMS(1732504225000), '0.00000372964', '2.862546191448752712', '2.054508357973208982', '115792089237316195423570985008687907853269984665640564039448.345378216051229581'  # noqa: E501
-    expected_events = [
+    assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=0,
@@ -74,7 +74,6 @@ def test_aura_finance_deposit_arb(arbitrum_one_inquirer, arbitrum_one_accounts):
             address=ZERO_ADDRESS,
         ),
     ]
-    assert events == expected_events
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
@@ -84,7 +83,7 @@ def test_aura_finance_claim_rewards_base(base_inquirer, base_accounts):
     tx_hash = deserialize_evm_tx_hash('0xffbc4716efdb4dbd7671c969599827313166fc507e2564ff1222a317d47e7a70')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=base_inquirer, tx_hash=tx_hash)
     user_address, timestamp, gas_str, claim_amount_1, claim_amount_2 = base_accounts[0], TimestampMS(1721018721000), '0.000001321340972471', '8.383663297617516524', '6.566591452101315364'  # noqa: E501
-    expected_events = [
+    assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=0,
@@ -125,7 +124,6 @@ def test_aura_finance_claim_rewards_base(base_inquirer, base_accounts):
             address=string_to_evm_address('0x8b2970c237656d3895588B99a8bFe977D5618201'),
         ),
     ]
-    assert events == expected_events
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
@@ -135,7 +133,7 @@ def test_aura_finance_lock_aura_from_base_to_ethereum(base_inquirer, base_accoun
     tx_hash = deserialize_evm_tx_hash('0xe0a6fd1bd40451d4b42c520b41a39ab569bf4aae43b741efbe228da40fed91ad')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=base_inquirer, tx_hash=tx_hash)
     user_address, timestamp, gas_str, bridge_fee_amount, locked_amount = base_accounts[0], TimestampMS(1732631175000), '0.000007432156846576', '0.011914017676630994', '90'  # noqa: E501
-    expected_events = [
+    assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=0,
@@ -176,7 +174,6 @@ def test_aura_finance_lock_aura_from_base_to_ethereum(base_inquirer, base_accoun
             address=ZERO_ADDRESS,
         ),
     ]
-    assert events == expected_events
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
@@ -185,7 +182,7 @@ def test_aura_finance_lock_aura_ethereum(ethereum_inquirer, ethereum_accounts):
     tx_hash = deserialize_evm_tx_hash('0x69a2c2e3e7c80f7ca3207041f09bb2799b760b937ba985af65fd69faa7487336')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     user_address, timestamp, gas_str, approval_amount, locked_amount = ethereum_accounts[0], TimestampMS(1732623719000), '0.002081603016233576', '115792089237316195423570985008687907853269984665640563943628.250490697661436953', '4675.24673564105539589'  # noqa: E501
-    expected_events = [
+    assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=0,
@@ -225,7 +222,6 @@ def test_aura_finance_lock_aura_ethereum(ethereum_inquirer, ethereum_accounts):
             address=string_to_evm_address('0x3Fa73f1E5d8A792C80F426fc8F84FBF7Ce9bBCAC'),
         ),
     ]
-    assert events == expected_events
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
@@ -246,7 +242,7 @@ def test_aura_finance_booster_deposit_ethereum(ethereum_inquirer, ethereum_accou
     assert len(pool_token.underlying_tokens) == 1
     assert pool_token.underlying_tokens[0].address == string_to_evm_address('0xfbfaD5fa9E99081da6461F36f229B5cC88A64c63')  # noqa: E501
     user_address, timestamp, gas_str, approval_amount, deposit_amount, receive_amount = ethereum_accounts[0], TimestampMS(1732603247000), '0.004522784347764904', '3046599999999999952014.290938920480356746', '17520.54161498940427181', '17520.54161498940427181'  # noqa: E501
-    expected_events = [
+    assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=0,
@@ -299,7 +295,6 @@ def test_aura_finance_booster_deposit_ethereum(ethereum_inquirer, ethereum_accou
             address=ZERO_ADDRESS,
         ),
     ]
-    assert events == expected_events
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
@@ -308,7 +303,7 @@ def test_aura_finance_claim_rewards_arb(arbitrum_one_inquirer, arbitrum_one_acco
     tx_hash = deserialize_evm_tx_hash('0x3ee95df7dfb12a183ef7ccb408e320a6a909561fe8da5408b3897ebd336b5420')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=arbitrum_one_inquirer, tx_hash=tx_hash)  # noqa: E501
     user_address, timestamp, gas_str, claim_amount_1, claim_amount_2, claim_amount_3 = arbitrum_one_accounts[0], TimestampMS(1735459868000), '0.00000266091', '0.096740702346661316', '0.097900452506457258', '0.14964073351979476'  # noqa: E501
-    expected_events = [
+    assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=0,
@@ -362,7 +357,6 @@ def test_aura_finance_claim_rewards_arb(arbitrum_one_inquirer, arbitrum_one_acco
             address=string_to_evm_address('0xE26200262c84444F7fFf83443B3Cf956Ec680325'),
         ),
     ]
-    assert events == expected_events
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
@@ -372,7 +366,7 @@ def test_aura_finance_get_rewards_base(base_inquirer, base_accounts):
     tx_hash = deserialize_evm_tx_hash('0xc54f5bc1b45b151dd7e106a45fea82a0bbb0dd1a48b5e71be2d8b9f36fbcb704')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=base_inquirer, tx_hash=tx_hash)
     user_address, timestamp, gas_str, claim_amount_1, claim_amount_2, claim_amount_3 = base_accounts[0], TimestampMS(1733666205000), '0.000003758872604736', '0.016918933596764049', '0.018407669504926201', '0.018747704109670571'  # noqa: E501
-    expected_events = [
+    assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=0,
@@ -426,7 +420,6 @@ def test_aura_finance_get_rewards_base(base_inquirer, base_accounts):
             address=string_to_evm_address('0xB8d8674a6a7BaA9D2aEE2dfE4b50Da5095Ee1ed4'),
         ),
     ]
-    assert events == expected_events
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
@@ -435,7 +428,7 @@ def test_aura_finance_claim_rewards_eth(ethereum_inquirer, ethereum_accounts):
     tx_hash = deserialize_evm_tx_hash('0xefc4dac1c3cf3b7058ae35427edeb984286ade8097717479294999992c508aee')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     user_address, timestamp, gas_str, claim_amount_1, claim_amount_2, claim_amount_3, claim_amount_4, claim_amount_5, claim_amount_6, claim_amount_7, claim_amount_8 = ethereum_accounts[0], TimestampMS(1735498547000), '0.002203275422715936', '112.627896656336279713', '114.159636050862453116', '77.020600939024296766', '8.274820603749552408', '184.126157708212142242', '186.630273453043827374', '170.528893362154769237', '216.7944203094842023'  # noqa: E501
-    expected_events = [
+    assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=0,
@@ -554,16 +547,14 @@ def test_aura_finance_claim_rewards_eth(ethereum_inquirer, ethereum_accounts):
             address=string_to_evm_address('0xAc16927429c5c7Af63dD75BC9d8a58c63FfD0147'),
         ),
     ]
-    assert events == expected_events
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('arbitrum_one_accounts', [['0x1A02715cf60f0544dEfDB676A3ffeeE710b04115']])
 def test_claim_and_withdraw(arbitrum_one_inquirer, arbitrum_one_accounts):
-    tx_hash = deserialize_evm_tx_hash('0xfd54629dda6c8a533a0a8019ccdd9dded867cba1bc623d91a75527b571c66ac9')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=arbitrum_one_inquirer,
-        tx_hash=tx_hash,
+        tx_hash=(tx_hash := deserialize_evm_tx_hash('0xfd54629dda6c8a533a0a8019ccdd9dded867cba1bc623d91a75527b571c66ac9')),  # noqa: E501
     )
     assert events == [EvmEvent(
             tx_ref=tx_hash,

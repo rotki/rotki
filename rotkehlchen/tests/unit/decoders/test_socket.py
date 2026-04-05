@@ -20,12 +20,11 @@ def test_optimism_to_arb_bridge(optimism_inquirer, optimism_accounts):
     events, _ = get_decoded_events_of_transaction(evm_inquirer=optimism_inquirer, tx_hash=tx_hash)
     user_address = optimism_accounts[0]
     bridged_amount, gas_amount = '360.791433', '0.000035854553456552'
-    timestamp = TimestampMS(1705844449000)
     assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=0,
-            timestamp=timestamp,
+            timestamp=(timestamp := TimestampMS(1705844449000)),
             location=Location.OPTIMISM,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
@@ -54,19 +53,17 @@ def test_optimism_to_arb_bridge(optimism_inquirer, optimism_accounts):
 @pytest.mark.vcr
 @pytest.mark.parametrize('arbitrum_one_accounts', [['0xc37b40ABdB939635068d3c5f13E7faF686F03B65']])
 def test_bridge_eth(arbitrum_one_inquirer, arbitrum_one_accounts):
-    tx_hash = deserialize_evm_tx_hash('0xb1e29bebca0300ff02ee478dfa6c0c2197169761e1c0dcc87418c53a6530d3a5')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=arbitrum_one_inquirer,
-        tx_hash=tx_hash,
+        tx_hash=(tx_hash := deserialize_evm_tx_hash('0xb1e29bebca0300ff02ee478dfa6c0c2197169761e1c0dcc87418c53a6530d3a5')),  # noqa: E501
     )
     user_address = arbitrum_one_accounts[0]
     bridged_amount, gas_amount = '0.01', '0.0000464928'
-    timestamp = TimestampMS(1696328657000)
     assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=0,
-            timestamp=timestamp,
+            timestamp=(timestamp := TimestampMS(1696328657000)),
             location=Location.ARBITRUM_ONE,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,

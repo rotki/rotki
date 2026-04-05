@@ -32,17 +32,17 @@ def test_efp_list_creation(
 ) -> None:
     tx_hash = deserialize_evm_tx_hash('0x6318183faa985769055925890bea8afd81145a2466c0cfefcc3c42282205749f')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=base_inquirer, tx_hash=tx_hash)
-    timestamp, user_address, gas_amount = TimestampMS(1727210173000), base_accounts[0], '0.000001943732883081'  # noqa: E501
+    user_address = base_accounts[0]
     assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=0,
-            timestamp=timestamp,
+            timestamp=(timestamp := TimestampMS(1727210173000)),
             location=Location.BASE,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            amount=FVal(gas_amount),
+            amount=FVal(gas_amount := '0.000001943732883081'),
             location_label=user_address,
             notes=f'Burn {gas_amount} ETH for gas',
             counterparty=CPT_GAS,
@@ -84,17 +84,17 @@ def test_efp_list_operations_base(
 ) -> None:
     tx_hash = deserialize_evm_tx_hash('0x73bcb4d09d122edf406da978e8c256de1394050d0f8152db9eb74d79f4d821aa')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=base_inquirer, tx_hash=tx_hash)
-    timestamp, user_address, gas_amount = TimestampMS(1731678515000), base_accounts[0], '0.000007264164076207'  # noqa: E501
+    user_address = base_accounts[0]
     assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=0,
-            timestamp=timestamp,
+            timestamp=(timestamp := TimestampMS(1731678515000)),
             location=Location.BASE,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            amount=FVal(gas_amount),
+            amount=FVal(gas_amount := '0.000007264164076207'),
             location_label=user_address,
             notes=f'Burn {gas_amount} ETH for gas',
             counterparty=CPT_GAS,
@@ -159,17 +159,17 @@ def test_efp_list_operations_optimism(
 ) -> None:
     tx_hash = deserialize_evm_tx_hash('0x9cdb42b0d1dfa4d61025894721a3a841845eb45fb08bbe619379530d2b67ffff')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=optimism_inquirer, tx_hash=tx_hash)
-    timestamp, user_address, gas_amount = TimestampMS(1731685871000), optimism_accounts[0], '0.000000746188721518'  # noqa: E501
+    user_address = optimism_accounts[0]
     assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=0,
-            timestamp=timestamp,
+            timestamp=(timestamp := TimestampMS(1731685871000)),
             location=Location.OPTIMISM,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            amount=FVal(gas_amount),
+            amount=FVal(gas_amount := '0.000000746188721518'),
             location_label=user_address,
             notes=f'Burn {gas_amount} ETH for gas',
             counterparty=CPT_GAS,
@@ -209,17 +209,17 @@ def test_efp_list_operations_ethereum(
 ) -> None:
     tx_hash = deserialize_evm_tx_hash('0x3cde46b44c8eb9712949ba149ca566c65af5bdbac0d26682b43777b53ab92669')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
-    timestamp, user_address, gas_amount = TimestampMS(1728767939000), ethereum_accounts[0], '0.00074678442257622'  # noqa: E501
+    user_address = ethereum_accounts[0]
     assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=0,
-            timestamp=timestamp,
+            timestamp=(timestamp := TimestampMS(1728767939000)),
             location=Location.ETHEREUM,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            amount=FVal(gas_amount),
+            amount=FVal(gas_amount := '0.00074678442257622'),
             location_label=user_address,
             notes=f'Burn {gas_amount} ETH for gas',
             counterparty=CPT_GAS,

@@ -21,12 +21,11 @@ def test_donation(ethereum_inquirer, ethereum_accounts):
     )
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     user_address = ethereum_accounts[0]
-    timestamp = TimestampMS(1706095919000)
     donated_amount, gas_fees = '2', '0.00306450894012447'
     expected_events = [EvmEvent(
         tx_ref=tx_hash,
         sequence_index=0,
-        timestamp=timestamp,
+        timestamp=(timestamp := TimestampMS(1706095919000)),
         location=Location.ETHEREUM,
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
@@ -86,12 +85,11 @@ def test_fund_raising(ethereum_inquirer, ethereum_accounts):
     )
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     user_address = ethereum_accounts[0]
-    timestamp = TimestampMS(1706711399000)
     paid_amount, gas_fees = '0.4', '0.003792515741532086'
     expected_events = [EvmEvent(
         tx_ref=tx_hash,
         sequence_index=0,
-        timestamp=timestamp,
+        timestamp=(timestamp := TimestampMS(1706711399000)),
         location=Location.ETHEREUM,
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,

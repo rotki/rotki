@@ -25,12 +25,11 @@ def test_lqty_v2_staking_deposit_with_rewards(ethereum_inquirer, ethereum_accoun
     """Test Liquity V2 staking deposit transaction that also claims previous rewards"""
     tx_hash = deserialize_evm_tx_hash('0x80d85ccacbc3acdbc797ed580044c0d5427d19f70d9d1b67d724bdc7bd4aeff8')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
-    timestamp = TimestampMS(1750380179000)
-    expected_events = [
+    assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=0,
-            timestamp=timestamp,
+            timestamp=(timestamp := TimestampMS(1750380179000)),
             location=Location.ETHEREUM,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
@@ -99,7 +98,6 @@ def test_lqty_v2_staking_deposit_with_rewards(ethereum_inquirer, ethereum_accoun
             address='0x807DEf5E7d057DF05C796F4bc75C3Fe82Bd6EeE1',
         ),
     ]
-    assert events == expected_events
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
@@ -108,13 +106,12 @@ def test_lqty_v2_staking_withdraw_with_rewards(ethereum_inquirer, ethereum_accou
     """Test Liquity V2 staking withdraw transaction that also claims previous rewards"""
     tx_hash = deserialize_evm_tx_hash('0xc2288994345ca7c3f7be017c2b3f4e0b32b394b0b7331f6e5fbafafd76daaa8f')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
-    timestamp = TimestampMS(1750495547000)
 
-    expected_events = [
+    assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=0,
-            timestamp=timestamp,
+            timestamp=(timestamp := TimestampMS(1750495547000)),
             location=Location.ETHEREUM,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
@@ -151,7 +148,6 @@ def test_lqty_v2_staking_withdraw_with_rewards(ethereum_inquirer, ethereum_accou
             address='0x807DEf5E7d057DF05C796F4bc75C3Fe82Bd6EeE1',
         ),
     ]
-    assert events == expected_events
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])

@@ -34,12 +34,10 @@ from rotkehlchen.utils.misc import ts_ms_to_sec
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('gnosis_accounts', [['0x7EcB43E01425c66a783A3065F782ccF304b39B99']])
 def test_gnosis_pay_cashback(gnosis_inquirer, gnosis_accounts):
-    tx_hash = deserialize_evm_tx_hash('0x1c6f58c55ba2eeef7e08ed4725d16ae479d1b4210b39e647a9b282af6ffb9470')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=gnosis_inquirer,
-        tx_hash=tx_hash,
+        tx_hash=(tx_hash := deserialize_evm_tx_hash('0x1c6f58c55ba2eeef7e08ed4725d16ae479d1b4210b39e647a9b282af6ffb9470')),  # noqa: E501
     )
-    amount = '0.8527869407'
     assert events == [
         EvmEvent(
             sequence_index=8,
@@ -48,7 +46,7 @@ def test_gnosis_pay_cashback(gnosis_inquirer, gnosis_accounts):
             event_type=HistoryEventType.RECEIVE,
             event_subtype=HistoryEventSubType.CASHBACK,
             asset=Asset('eip155:100/erc20:0x9C58BAcC331c9aa871AFD802DB6379a98e80CEdb'),
-            amount=FVal(amount),
+            amount=FVal(amount := '0.8527869407'),
             location_label=gnosis_accounts[0],
             notes=f'Receive cashback of {amount} GNO from Gnosis Pay',
             tx_ref=tx_hash,
@@ -63,12 +61,10 @@ def test_gnosis_pay_cashback(gnosis_inquirer, gnosis_accounts):
     '0xc746598C9dD7FC62EF8775445F2F375aCbaCa7AE',  # user's gnosis pay safe
 ]])
 def test_gnosis_pay_referral(gnosis_inquirer, gnosis_accounts):
-    tx_hash = deserialize_evm_tx_hash('0xc778b8c23b823d6cec199ece516ab68658c7caafb508104f2a0c9de4d0358529')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=gnosis_inquirer,
-        tx_hash=tx_hash,
+        tx_hash=(tx_hash := deserialize_evm_tx_hash('0xc778b8c23b823d6cec199ece516ab68658c7caafb508104f2a0c9de4d0358529')),  # noqa: E501
     )
-    amount = '30.23'
     assert events == [
         EvmEvent(
             sequence_index=18,
@@ -77,7 +73,7 @@ def test_gnosis_pay_referral(gnosis_inquirer, gnosis_accounts):
             event_type=HistoryEventType.RECEIVE,
             event_subtype=HistoryEventSubType.REWARD,
             asset=Asset('eip155:100/erc20:0x420CA0f9B9b604cE0fd9C18EF134C705e5Fa3430'),
-            amount=FVal(amount),
+            amount=FVal(amount := '30.23'),
             location_label=gnosis_accounts[0],
             notes=f'Receive referral reward of {amount} EURe from Gnosis Pay',
             tx_ref=tx_hash,
@@ -92,14 +88,12 @@ def test_gnosis_pay_referral(gnosis_inquirer, gnosis_accounts):
     '0xF4a1fB1689104479De1EcADfA472A9B866D08B16',  # user's gnosis pay safe
 ]])
 def test_gnosis_pay_spend(gnosis_inquirer, gnosis_accounts, rotki_premium_object):
-    tx_hash = deserialize_evm_tx_hash('0xe8d666d6acf22e5a50dfea7ece1473558a854dfa04441ea9b3d0898843364ad8')  # noqa: E501
     events, gnosis_txs_decoder = get_decoded_events_of_transaction(
         evm_inquirer=gnosis_inquirer,
-        tx_hash=tx_hash,
+        tx_hash=(tx_hash := deserialize_evm_tx_hash('0xe8d666d6acf22e5a50dfea7ece1473558a854dfa04441ea9b3d0898843364ad8')),  # noqa: E501
     )
     gnosispay_decoder = gnosis_txs_decoder.decoders.get('GnosisPay')
     gnosis_txs_decoder.premium = rotki_premium_object
-    amount = '8.5'
     expected_events = [
         EvmEvent(
             sequence_index=29,
@@ -108,7 +102,7 @@ def test_gnosis_pay_spend(gnosis_inquirer, gnosis_accounts, rotki_premium_object
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.PAYMENT,
             asset=Asset('eip155:100/erc20:0x420CA0f9B9b604cE0fd9C18EF134C705e5Fa3430'),
-            amount=FVal(amount),
+            amount=FVal(amount := '8.5'),
             location_label=gnosis_accounts[0],
             notes=f'Spend {amount} EURe via Gnosis Pay',
             tx_ref=tx_hash,
@@ -207,14 +201,12 @@ def test_gnosis_pay_spend(gnosis_inquirer, gnosis_accounts, rotki_premium_object
     '0x49e52a677BD19E50beE3642a8050A5A08a6EC697',  # user's gnosis pay safe
 ]])
 def test_gnosis_pay_refund(gnosis_inquirer, gnosis_accounts):
-    tx_hash = deserialize_evm_tx_hash('0x5f659bbc5214b358ffa5474c4209fad0587b7a9735b5965e7475c2bcb893ad38')  # noqa: E501
     events, gnosis_txs_decoder = get_decoded_events_of_transaction(
         evm_inquirer=gnosis_inquirer,
-        tx_hash=tx_hash,
+        tx_hash=(tx_hash := deserialize_evm_tx_hash('0x5f659bbc5214b358ffa5474c4209fad0587b7a9735b5965e7475c2bcb893ad38')),  # noqa: E501
     )
     gnosispay_decoder = gnosis_txs_decoder.decoders.get('GnosisPay')
 
-    amount = '2.35'
     expected_events = [
         EvmEvent(
             sequence_index=10,
@@ -223,7 +215,7 @@ def test_gnosis_pay_refund(gnosis_inquirer, gnosis_accounts):
             event_type=HistoryEventType.RECEIVE,
             event_subtype=HistoryEventSubType.REFUND,
             asset=Asset('eip155:100/erc20:0x420CA0f9B9b604cE0fd9C18EF134C705e5Fa3430'),
-            amount=FVal(amount),
+            amount=FVal(amount := '2.35'),
             location_label=gnosis_accounts[0],
             notes=f'Receive refund of {amount} EURe from Gnosis Pay',
             tx_ref=tx_hash,

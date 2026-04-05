@@ -114,10 +114,9 @@ def _set_beefy_cache(chain_id: ChainID, entries: list[tuple[str, str, bool]]) ->
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0x71b278042bFf0537CbAc1d5cF2197Bd8f4f79EeF']])
 def test_zap_deposit_to_beefy(ethereum_inquirer, ethereum_accounts, beefy_cache):
-    tx_hash = deserialize_evm_tx_hash('0xab6fab1441b7f6843109eb1c903e93c7d24536d09a81aced724302e1c8002c71')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=ethereum_inquirer,
-        tx_hash=tx_hash,
+        tx_hash=(tx_hash := deserialize_evm_tx_hash('0xab6fab1441b7f6843109eb1c903e93c7d24536d09a81aced724302e1c8002c71')),  # noqa: E501
     )
     assert events == [EvmEvent(
         tx_ref=tx_hash,
@@ -163,10 +162,9 @@ def test_zap_deposit_to_beefy(ethereum_inquirer, ethereum_accounts, beefy_cache)
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0xfaC2F11ba2577D5122DC1EC5301d35B16688251E']])
 def test_zap_withdrawal_from_beefy(ethereum_inquirer, ethereum_accounts, beefy_cache):
-    tx_hash = deserialize_evm_tx_hash('0x3dab2b65117b4c3953a20e6d850a7aa1b15351de30382cea31a4dba795ec3101')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=ethereum_inquirer,
-        tx_hash=tx_hash,
+        tx_hash=(tx_hash := deserialize_evm_tx_hash('0x3dab2b65117b4c3953a20e6d850a7aa1b15351de30382cea31a4dba795ec3101')),  # noqa: E501
     )
     assert events == [EvmEvent(
         tx_ref=tx_hash,
@@ -224,10 +222,9 @@ def test_zap_withdrawal_from_beefy(ethereum_inquirer, ethereum_accounts, beefy_c
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0x7B8e047dFa4B27314C6A7EA5067e356F38666089']])
 def test_deposit_to_beefy(ethereum_inquirer, ethereum_accounts, beefy_cache):
-    tx_hash = deserialize_evm_tx_hash('0x5d11116ca9ff5edc826394f93c7ee81057119899daa0a9a77d384909584d816e')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=ethereum_inquirer,
-        tx_hash=tx_hash,
+        tx_hash=(tx_hash := deserialize_evm_tx_hash('0x5d11116ca9ff5edc826394f93c7ee81057119899daa0a9a77d384909584d816e')),  # noqa: E501
     )
     assert events == [EvmEvent(
         tx_ref=tx_hash,
@@ -285,10 +282,9 @@ def test_deposit_to_beefy(ethereum_inquirer, ethereum_accounts, beefy_cache):
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0xA2d238002Bf1A91fed3C218fA770C4933d833ead']])
 def test_withdrawal_from_beefy(ethereum_inquirer, ethereum_accounts, beefy_cache):
-    tx_hash = deserialize_evm_tx_hash('0xda0a5066e573451465447a0d84d2b62b14dd980b3df7421c639b1beea9f9ec4a')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=ethereum_inquirer,
-        tx_hash=tx_hash,
+        tx_hash=(tx_hash := deserialize_evm_tx_hash('0xda0a5066e573451465447a0d84d2b62b14dd980b3df7421c639b1beea9f9ec4a')),  # noqa: E501
     )
     assert events == [EvmEvent(
         tx_ref=tx_hash,
@@ -369,10 +365,9 @@ def test_deposit_to_beefy_morpho_vault(
         chain_id=ChainID.BASE,
         entries=[(beefy_vault.evm_address, base_inquirer.wrapped_native_token.evm_address, False)],
     )
-    tx_hash = deserialize_evm_tx_hash('0x9ec67f14375ce96036b23f4b13c38dcee6d74973d4be0ba81c775674450da340')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=base_inquirer,
-        tx_hash=tx_hash,
+        tx_hash=(tx_hash := deserialize_evm_tx_hash('0x9ec67f14375ce96036b23f4b13c38dcee6d74973d4be0ba81c775674450da340')),  # noqa: E501
     )
     assert events == [EvmEvent(
         tx_ref=tx_hash,
@@ -549,10 +544,9 @@ def test_withdrawal_from_beefy_clm_vault(
         chain_id=ChainID.ARBITRUM_ONE,
         entries=[(rcow_token.evm_address, cow_token.evm_address, False)],
     )
-    tx_hash = deserialize_evm_tx_hash('0xc964a5c62d7ce489e8d21d5a222bebbb11fccd802fe250cf66118a17f06e9ee5')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=arbitrum_one_inquirer,
-        tx_hash=tx_hash,
+        tx_hash=(tx_hash := deserialize_evm_tx_hash('0xc964a5c62d7ce489e8d21d5a222bebbb11fccd802fe250cf66118a17f06e9ee5')),  # noqa: E501
     )
     assert events == [EvmEvent(
         tx_ref=tx_hash,
@@ -626,10 +620,9 @@ def test_deposit_eth_to_beefy_vault_with_harvest_call_reward(
         arbitrum_one_inquirer: 'ArbitrumOneInquirer',
         arbitrum_one_accounts: list['ChecksumEvmAddress'],
 ) -> None:
-    tx_hash = deserialize_evm_tx_hash('0x9ade23d1ea48257b13e983d0a542fafbfa1dd195975a94b8d3505ef767527167')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=arbitrum_one_inquirer,
-        tx_hash=tx_hash,
+        tx_hash=(tx_hash := deserialize_evm_tx_hash('0x9ade23d1ea48257b13e983d0a542fafbfa1dd195975a94b8d3505ef767527167')),  # noqa: E501
     )
     assert events == [EvmEvent(
         tx_ref=tx_hash,
@@ -694,10 +687,9 @@ def test_deposit_usdc_to_beefy_vault_with_harvest_call_reward(
     """This test differs from the deposit-eth one above in that the charged_fees tx log event
     has the values in the data instead of as log topics.
     """
-    tx_hash = deserialize_evm_tx_hash('0x6dc43b963357b6a40adea87129030430d145deb4463d43bec8be324a4e2190e0')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=arbitrum_one_inquirer,
-        tx_hash=tx_hash,
+        tx_hash=(tx_hash := deserialize_evm_tx_hash('0x6dc43b963357b6a40adea87129030430d145deb4463d43bec8be324a4e2190e0')),  # noqa: E501
     )
     assert events == [EvmEvent(
         tx_ref=tx_hash,
@@ -789,10 +781,9 @@ def test_withdrawal_from_beefy_receiving_eth(
         chain_id=ChainID.OPTIMISM,
         entries=[(cow_token.evm_address, optimism_inquirer.wrapped_native_token.evm_address, False)],  # noqa: E501
     )
-    tx_hash = deserialize_evm_tx_hash('0x1fb86d2bcbccde112422984862ac5ed4f88a2414b86a740ed64ea082b099ee2a')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=optimism_inquirer,
-        tx_hash=tx_hash,
+        tx_hash=(tx_hash := deserialize_evm_tx_hash('0x1fb86d2bcbccde112422984862ac5ed4f88a2414b86a740ed64ea082b099ee2a')),  # noqa: E501
     )
     assert events == [EvmEvent(
         tx_ref=tx_hash,
@@ -1232,10 +1223,9 @@ def test_unstake_beefy_reward_pool_with_reward(
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0x356a14285c8D2d351682D6E6fEF0213ddEd8Abad']])
 def test_legacy_boost_exit(ethereum_inquirer, ethereum_accounts, beefy_cache):
-    tx_hash = deserialize_evm_tx_hash('0x79be37675ed545796804fcb146cb7ba08915d6c032fe99cb8005a877dc9974b4')  # noqa: E501
     get_decoded_events_of_transaction(
         evm_inquirer=ethereum_inquirer,
-        tx_hash=tx_hash,
+        tx_hash=deserialize_evm_tx_hash('0x79be37675ed545796804fcb146cb7ba08915d6c032fe99cb8005a877dc9974b4'),
     )
     # TODO @yabirgb(#11317): Fix the beefy decoder to process correctly boost exits
     legacy_vault = EvmToken('eip155:1/erc20:0xbd313b13ed794B86Bd161885F8e170769E0e68b2')

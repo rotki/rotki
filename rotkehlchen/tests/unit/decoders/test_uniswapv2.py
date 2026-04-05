@@ -50,7 +50,7 @@ ADDY_4 = string_to_evm_address('0x43e141534d718D72552De1B606a5FCBc72256cD7')
 def test_uniswap_v2_swap(ethereum_inquirer):
     tx_hash = deserialize_evm_tx_hash('0x67cf6c4ce5078f9750a14afd2f5070c327caf8c5180bdee2be59644ac59974e1')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
-    expected_events = [
+    assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=0,
@@ -89,7 +89,6 @@ def test_uniswap_v2_swap(ethereum_inquirer):
             address=UNISWAP_V2_ROUTER,
         ),
     ]
-    assert events == expected_events
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
@@ -98,12 +97,11 @@ def test_uniswap_v2_swap_eth_returned(ethereum_inquirer):
     """Test a transaction where eth is swapped and some of it is returned due to change in price"""
     tx_hash = deserialize_evm_tx_hash('0x20ecc226c438a8803a6195d8031ae7dd97a27351e6b7429621b36194121b9b76')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
-    timestamp = TimestampMS(1634652419000)
-    expected_events = [
+    assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=0,
-            timestamp=timestamp,
+            timestamp=(timestamp := TimestampMS(1634652419000)),
             location=Location.ETHEREUM,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
@@ -151,7 +149,6 @@ def test_uniswap_v2_swap_eth_returned(ethereum_inquirer):
             address=UNISWAP_V2_ROUTER,
         ),
     ]
-    assert events == expected_events
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
@@ -224,7 +221,7 @@ def test_uniswap_v2_add_liquidity(ethereum_inquirer):
         chain_id=ChainID.ETHEREUM,
         token_type=TokenKind.ERC20,
     )
-    expected_events = [
+    assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=0,
@@ -280,7 +277,6 @@ def test_uniswap_v2_add_liquidity(ethereum_inquirer):
             address=pool_address,
         ),
     ]
-    assert events == expected_events
     lp_token = EvmToken(lp_token_identifier)
     assert lp_token.protocol == CPT_UNISWAP_V2
     assert lp_token.symbol == 'UNI-V2 DAI-USDC'
@@ -292,7 +288,7 @@ def test_uniswap_v2_remove_liquidity(ethereum_inquirer):
     """This checks that removing liquidity from a Uniswap V2 pool is decoded properly."""
     tx_hash = deserialize_evm_tx_hash('0x0936a16e1d3655e832c60bed52040fd5ac0d99d03865d11225b3183dba318f43')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
-    expected_events = [
+    assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=0,
@@ -360,7 +356,6 @@ def test_uniswap_v2_remove_liquidity(ethereum_inquirer):
             extra_data={'pool_address': '0xB4e16d0168e52d35CaCD2c6185b44281Ec28C9Dc'},
         ),
     ]
-    assert events == expected_events
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
@@ -379,10 +374,9 @@ def test_uniswap_v2_swap_events_order(
     It checks that an approval event does not come between trade events.
     """
     tx_hash = '0xec15324d55274d9ad3181ed2f29d29e9812841e5e79aa9228a0f3ef4d3ce8d2c'
-    tx_hash = deserialize_evm_tx_hash(tx_hash)
     user_address = ethereum_accounts[0]
     transaction = EvmTransaction(
-        tx_hash=tx_hash,
+        tx_hash=(tx_hash := deserialize_evm_tx_hash(tx_hash)),
         chain_id=ChainID.ETHEREUM,
         timestamp=Timestamp(1672784687),
         block_number=16329226,
@@ -500,7 +494,7 @@ def test_uniswap_v2_swap_events_order(
         decoder.reload_data(cursor)
 
     events, _, _ = decoder._decode_transaction(transaction=transaction, tx_receipt=receipt)
-    expected_events = [
+    assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             timestamp=1672784687000,
@@ -552,7 +546,6 @@ def test_uniswap_v2_swap_events_order(
             address=string_to_evm_address('0x0d0d65E7A7dB277d3E0F5E1676325E75f3340455'),
         ),
     ]
-    assert events == expected_events
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
@@ -562,7 +555,7 @@ def test_remove_liquidity_with_weth(ethereum_inquirer, ethereum_accounts):
     tx_hash = deserialize_evm_tx_hash('0x00007120e5281e9bdf9a57739e3ecaf736013e4a1a31ecfe44f719c229cc2cbd')  # noqa: E501
     user_address = ethereum_accounts[0]
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
-    expected_events = [
+    assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=0,
@@ -619,7 +612,6 @@ def test_remove_liquidity_with_weth(ethereum_inquirer, ethereum_accounts):
             extra_data={'pool_address': '0xFfA98A091331Df4600F87C9164cD27e8a5CD2405'},
         ),
     ]
-    assert events == expected_events
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
@@ -628,13 +620,12 @@ def test_claim_airdrop(ethereum_inquirer, ethereum_accounts):
     tx_hash = deserialize_evm_tx_hash('0x0e50e7374e0ffbe0aea82dbe94a04ab0da3981f3bfb1a66927eb250c7aff29e3')  # noqa: E501
     user_address = ethereum_accounts[0]
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
-    timestamp = TimestampMS(1600446008000)
     gas_amount, claimed_amount = '0.027890731101011885', '408.638074'
-    expected_events = [
+    assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=0,
-            timestamp=timestamp,
+            timestamp=(timestamp := TimestampMS(1600446008000)),
             location=Location.ETHEREUM,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
@@ -660,7 +651,6 @@ def test_claim_airdrop(ethereum_inquirer, ethereum_accounts):
             extra_data={AIRDROP_IDENTIFIER_KEY: 'uniswap'},
         ),
     ]
-    assert events == expected_events
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])

@@ -475,10 +475,9 @@ def test_gauge_deposit(
             key_parts=(CacheType.BALANCER_V3_GAUGES, str(ethereum_inquirer.chain_id.value)),
             values=['0x70A1c01902DAb7a45dcA1098Ca76A8314dd8aDbA'],
         )
-    tx_hash = deserialize_evm_tx_hash('0x50ce5d69c6856fe4501b537b81cddea6327d3082a908e587775a6356a31ab6c8')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=ethereum_inquirer,
-        tx_hash=tx_hash,
+        tx_hash=(tx_hash := deserialize_evm_tx_hash('0x50ce5d69c6856fe4501b537b81cddea6327d3082a908e587775a6356a31ab6c8')),  # noqa: E501
         load_global_caches=load_global_caches,
     )
     assert events == [EvmEvent(
@@ -543,10 +542,9 @@ def test_gauge_withdrawal(
             key_parts=(CacheType.BALANCER_V3_GAUGES, str(base_inquirer.chain_id.value)),
             values=['0x70DB188E5953f67a4B16979a2ceA26248b315401'],
         )
-    tx_hash = deserialize_evm_tx_hash('0xd00e99e4e26704e5207b7b322424fb7ee625b850726f599ddd4100a86844ecfb')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=base_inquirer,
-        tx_hash=tx_hash,
+        tx_hash=(tx_hash := deserialize_evm_tx_hash('0xd00e99e4e26704e5207b7b322424fb7ee625b850726f599ddd4100a86844ecfb')),  # noqa: E501
         load_global_caches=load_global_caches,
     )
     assert events == [EvmEvent(

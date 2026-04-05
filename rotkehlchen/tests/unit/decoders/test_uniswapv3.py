@@ -62,7 +62,7 @@ ADDY_5 = string_to_evm_address('0xa931b486F661540c6D709aE6DfC8BcEF347ea437')
 def test_uniswap_v3_swap(ethereum_inquirer):
     tx_hash = deserialize_evm_tx_hash('0x1c50c336329a7ee41f722ce5d848ebd066b72bf44a1eaafcaa92e8c0282049d2')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
-    expected_events = [
+    assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=0,
@@ -101,7 +101,6 @@ def test_uniswap_v3_swap(ethereum_inquirer):
             address=string_to_evm_address('0xE592427A0AEce92De3Edee1F18E0157C05861564'),
         ),
     ]
-    assert events == expected_events
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
@@ -111,7 +110,7 @@ def test_uniswap_v3_swap_received_token2(ethereum_inquirer):
     the pool."""
     tx_hash = deserialize_evm_tx_hash('0x116b3a9c0b2a4857605e336438c8e4c91897a9ef2af23178f9dbceba85264bd9')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
-    expected_events = [
+    assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=0,
@@ -150,7 +149,6 @@ def test_uniswap_v3_swap_received_token2(ethereum_inquirer):
             address=string_to_evm_address('0x68b3465833fb72A70ecDF485E0e4C7bD8665Fc45'),
         ),
     ]
-    assert events == expected_events
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
@@ -159,7 +157,7 @@ def test_uniswap_v3_swap_by_aggregator(ethereum_inquirer):
     """This checks that swap(s) initiated by an aggregator is decoded properly."""
     tx_hash = deserialize_evm_tx_hash('0x14e73a3bbced025ae22245eae0045972c1664fc01038b2ba6b1153590f536948')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
-    expected_events = [
+    assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=253,
@@ -210,7 +208,6 @@ def test_uniswap_v3_swap_by_aggregator(ethereum_inquirer):
             counterparty=CPT_COWSWAP,
         ),
     ]
-    assert events == expected_events
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
@@ -360,7 +357,7 @@ def test_swap_tokens_to_tokens_single_receipt(ethereum_inquirer, ethereum_accoun
     tx_hash = deserialize_evm_tx_hash('0x3ae92fa63a9cf672906036beb18ece09592a8a471bd7f15e4385ca5011615e51')  # noqa: E501
     user_address = ethereum_accounts[0]
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
-    expected_events = [
+    assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=0,
@@ -399,7 +396,6 @@ def test_swap_tokens_to_tokens_single_receipt(ethereum_inquirer, ethereum_accoun
             address=string_to_evm_address('0x68b3465833fb72A70ecDF485E0e4C7bD8665Fc45'),
         ),
     ]
-    assert events == expected_events
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
@@ -408,7 +404,7 @@ def test_swap_tokens_to_tokens_multiple_receipts(ethereum_inquirer, ethereum_acc
     tx_hash = deserialize_evm_tx_hash('0xa4e0dbf77bf7a9721e1ba4ecf44ed6ea8dcb1c16e9e784b6fefa30749f64e7c0')  # noqa: E501
     user_address = ethereum_accounts[0]
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
-    expected_events = [
+    assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=0,
@@ -447,7 +443,6 @@ def test_swap_tokens_to_tokens_multiple_receipts(ethereum_inquirer, ethereum_acc
             address=string_to_evm_address('0x68b3465833fb72A70ecDF485E0e4C7bD8665Fc45'),
         ),
     ]
-    assert events == expected_events
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
@@ -462,7 +457,7 @@ def test_uniswap_v3_remove_liquidity(ethereum_inquirer):
     tx_hash = deserialize_evm_tx_hash('0x76c312fe1c8604de5175c37dcbbb99cc8699336f3e4840e9e29e3383970f6c6d ')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     assert len(events) == 3
-    expected_events = [
+    assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=0,
@@ -503,7 +498,6 @@ def test_uniswap_v3_remove_liquidity(ethereum_inquirer):
             address=string_to_evm_address('0xC36442b4a4522E871399CD717aBDD847Ab11FE88'),
         ),
     ]
-    assert events == expected_events
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
@@ -512,7 +506,7 @@ def test_uniswap_v3_add_liquidity(ethereum_inquirer):
     """Check that adding liquidity to a Uniswap V3 LP is decoded properly."""
     tx_hash = deserialize_evm_tx_hash('0x6bf3588f669a784adf5def3c0db149b0cdbcca775e472bb35f00acedee263c4c')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
-    expected_events = [
+    assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=0,
@@ -566,7 +560,6 @@ def test_uniswap_v3_add_liquidity(ethereum_inquirer):
             address=ZERO_ADDRESS,
         ),
     ]
-    assert events == expected_events
 
     # Ensure the position token's name and symbol are set correctly
     position_token = get_evm_token(
@@ -663,10 +656,9 @@ def test_uniswap_v3_swap_by_universal_router(ethereum_inquirer, ethereum_account
     tx_hash = deserialize_evm_tx_hash('0xd2fe13a9727b2ff3f9458154afb8e59216864b57e0aacffeedc3d3d4cff1c43d')  # noqa: E501
     user_address = ethereum_accounts[0]
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
-    timestamp = TimestampMS(1698949487000)
     assert events == [EvmEvent(
         sequence_index=0,
-        timestamp=timestamp,
+        timestamp=(timestamp := TimestampMS(1698949487000)),
         location=Location.ETHEREUM,
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
@@ -709,12 +701,11 @@ def test_uniswap_v3_weth_deposit(ethereum_inquirer, ethereum_accounts):
     tx_hash = deserialize_evm_tx_hash('0xdb9a489fa0404facc9ee514ce9e08a8dffdd5bbc051ed1fbc8d165cc4dc408f3 ')  # noqa: E501
     user_address = ethereum_accounts[0]
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
-    timestamp = TimestampMS(1705025555000)
     rai_amount, weth_amount = '5409.802671424102374943', '5.964487282596591371'
     nft_id = '645638'
     assert events == [EvmEvent(
         sequence_index=102,
-        timestamp=timestamp,
+        timestamp=(timestamp := TimestampMS(1705025555000)),
         location=Location.ETHEREUM,
         event_type=HistoryEventType.INFORMATIONAL,
         event_subtype=HistoryEventSubType.NONE,
@@ -770,22 +761,20 @@ def test_uniswap_v3_weth_deposit(ethereum_inquirer, ethereum_accounts):
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('arbitrum_one_accounts', [['0xEEb775c27a0d476B145d2e3B4dCd10A0A5Bd064F']])
 def test_swap_on_arbitrum(arbitrum_one_inquirer, arbitrum_one_accounts):
-    tx_hash = deserialize_evm_tx_hash('0x8fe6f4f80e34eebc8e61ad638d57fde3ec4a975817ee08ab209562d00a6aa217')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=arbitrum_one_inquirer,
-        tx_hash=tx_hash,
+        tx_hash=(tx_hash := deserialize_evm_tx_hash('0x8fe6f4f80e34eebc8e61ad638d57fde3ec4a975817ee08ab209562d00a6aa217')),  # noqa: E501
     )
-    timestamp, swap_amount, receive_amount, gas_fees = TimestampMS(1710224315000), '0.21', '416.708088668961143612', '0.0001952302'  # noqa: E501
-    expected_events = [
+    assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=0,
-            timestamp=timestamp,
+            timestamp=(timestamp := TimestampMS(1710224315000)),
             location=Location.ARBITRUM_ONE,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            amount=FVal(gas_fees),
+            amount=FVal(gas_fees := '0.0001952302'),
             location_label=arbitrum_one_accounts[0],
             notes=f'Burn {gas_fees} ETH for gas',
             counterparty=CPT_GAS,
@@ -796,7 +785,7 @@ def test_swap_on_arbitrum(arbitrum_one_inquirer, arbitrum_one_accounts):
             location=Location.ARBITRUM_ONE,
             event_subtype=HistoryEventSubType.SPEND,
             asset=A_ETH,
-            amount=FVal(swap_amount),
+            amount=FVal(swap_amount := '0.21'),
             location_label=arbitrum_one_accounts[0],
             notes=f'Swap {swap_amount} ETH via Uniswap V3 auto router',
             counterparty=CPT_UNISWAP_V3,
@@ -808,14 +797,13 @@ def test_swap_on_arbitrum(arbitrum_one_inquirer, arbitrum_one_accounts):
             location=Location.ARBITRUM_ONE,
             event_subtype=HistoryEventSubType.RECEIVE,
             asset=A_ARB,
-            amount=FVal(receive_amount),
+            amount=FVal(receive_amount := '416.708088668961143612'),
             location_label=arbitrum_one_accounts[0],
             notes=f'Receive {receive_amount} ARB as the result of a swap via Uniswap V3 auto router',  # noqa: E501
             counterparty=CPT_UNISWAP_V3,
             address=UNISWAP_UNIVERSAL_ROUTER,
         ),
     ]
-    assert events == expected_events
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
@@ -824,17 +812,16 @@ def test_swap_on_arbitrum(arbitrum_one_inquirer, arbitrum_one_accounts):
 def test_swap_on_base(base_inquirer, base_accounts):
     tx_hash = deserialize_evm_tx_hash('0x2125ff35709009b9782f8351db3cb5a44a0bf088c3f38de08d92eb3906394635')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=base_inquirer, tx_hash=tx_hash)
-    timestamp, swap_amount, receive_amount, gas_fees = TimestampMS(1710230035000), '0.005', '10083924.460996717903453391', '0.000189731906791024'  # noqa: E501
-    expected_events = [
+    assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=0,
-            timestamp=timestamp,
+            timestamp=(timestamp := TimestampMS(1710230035000)),
             location=Location.BASE,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            amount=FVal(gas_fees),
+            amount=FVal(gas_fees := '0.000189731906791024'),
             location_label=base_accounts[0],
             notes=f'Burn {gas_fees} ETH for gas',
             counterparty=CPT_GAS,
@@ -845,7 +832,7 @@ def test_swap_on_base(base_inquirer, base_accounts):
             location=Location.BASE,
             event_subtype=HistoryEventSubType.SPEND,
             asset=A_ETH,
-            amount=FVal(swap_amount),
+            amount=FVal(swap_amount := '0.005'),
             location_label=base_accounts[0],
             notes=f'Swap {swap_amount} ETH via Uniswap V3 auto router',
             counterparty=CPT_UNISWAP_V3,
@@ -857,14 +844,13 @@ def test_swap_on_base(base_inquirer, base_accounts):
             location=Location.BASE,
             event_subtype=HistoryEventSubType.RECEIVE,
             asset=Asset('eip155:8453/erc20:0x7299cD731d0712dB09E7dF43fD670D75Db3319Bc'),
-            amount=FVal(receive_amount),
+            amount=FVal(receive_amount := '10083924.460996717903453391'),
             location_label=base_accounts[0],
             notes=f'Receive {receive_amount} NESSY as the result of a swap via Uniswap V3 auto router',  # noqa: E501
             counterparty=CPT_UNISWAP_V3,
             address=UNISWAP_UNIVERSAL_ROUTER,
         ),
     ]
-    assert events == expected_events
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
@@ -873,17 +859,16 @@ def test_swap_on_base(base_inquirer, base_accounts):
 def test_swap_on_optimism(optimism_inquirer, optimism_accounts):
     tx_hash = deserialize_evm_tx_hash('0xfbaacab45a9d788c993f08a65652e7a363a82ee2343152ffa41d07c5456d1fe7')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=optimism_inquirer, tx_hash=tx_hash)
-    timestamp, swap_amount, receive_amount, gas_fees = TimestampMS(1710230523000), '23.093637251974648887', '23.084554', '0.000335793972468462'  # noqa: E501
-    expected_events = [
+    assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=0,
-            timestamp=timestamp,
+            timestamp=(timestamp := TimestampMS(1710230523000)),
             location=Location.OPTIMISM,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            amount=FVal(gas_fees),
+            amount=FVal(gas_fees := '0.000335793972468462'),
             location_label=optimism_accounts[0],
             notes=f'Burn {gas_fees} ETH for gas',
             counterparty=CPT_GAS,
@@ -894,7 +879,7 @@ def test_swap_on_optimism(optimism_inquirer, optimism_accounts):
             location=Location.OPTIMISM,
             event_subtype=HistoryEventSubType.SPEND,
             asset=Asset('eip155:10/erc20:0xDA10009cBd5D07dd0CeCc66161FC93D7c9000da1'),
-            amount=FVal(swap_amount),
+            amount=FVal(swap_amount := '23.093637251974648887'),
             location_label=optimism_accounts[0],
             notes=f'Swap {swap_amount} DAI via Uniswap V3 auto router',
             counterparty=CPT_UNISWAP_V3,
@@ -906,35 +891,32 @@ def test_swap_on_optimism(optimism_inquirer, optimism_accounts):
             location=Location.OPTIMISM,
             event_subtype=HistoryEventSubType.RECEIVE,
             asset=Asset('eip155:10/erc20:0x7F5c764cBc14f9669B88837ca1490cCa17c31607'),
-            amount=FVal(receive_amount),
+            amount=FVal(receive_amount := '23.084554'),
             location_label=optimism_accounts[0],
             notes=f'Receive {receive_amount} USDC.e as the result of a swap via Uniswap V3 auto router',  # noqa: E501
             counterparty=CPT_UNISWAP_V3,
             address=UNISWAP_UNIVERSAL_ROUTER,
         ),
     ]
-    assert events == expected_events
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('polygon_pos_accounts', [['0x9d38bC769b4E88da3f4c31a06b626ef88a21065C']])
 def test_swap_on_polygon_pos(polygon_pos_inquirer, polygon_pos_accounts):
-    tx_hash = deserialize_evm_tx_hash('0x2004f7b593d4ddf9372d78adb4b89852fa70eafa42418793b142a881b4171974')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=polygon_pos_inquirer,
-        tx_hash=tx_hash,
+        tx_hash=(tx_hash := deserialize_evm_tx_hash('0x2004f7b593d4ddf9372d78adb4b89852fa70eafa42418793b142a881b4171974')),  # noqa: E501
     )
-    timestamp, swap_amount, receive_amount, gas_fees = TimestampMS(1710231022000), '0.017521626565388156', '0.00097703', '0.025131590391178764'  # noqa: E501
-    expected_events = [
+    assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=0,
-            timestamp=timestamp,
+            timestamp=(timestamp := TimestampMS(1710231022000)),
             location=Location.POLYGON_POS,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_POL,
-            amount=FVal(gas_fees),
+            amount=FVal(gas_fees := '0.025131590391178764'),
             location_label=polygon_pos_accounts[0],
             notes=f'Burn {gas_fees} POL for gas',
             counterparty=CPT_GAS,
@@ -945,7 +927,7 @@ def test_swap_on_polygon_pos(polygon_pos_inquirer, polygon_pos_accounts):
             location=Location.POLYGON_POS,
             event_subtype=HistoryEventSubType.SPEND,
             asset=A_WETH_POLYGON,
-            amount=FVal(swap_amount),
+            amount=FVal(swap_amount := '0.017521626565388156'),
             location_label=polygon_pos_accounts[0],
             notes=f'Swap {swap_amount} WETH via Uniswap V3 auto router',
             counterparty=CPT_UNISWAP_V3,
@@ -957,14 +939,13 @@ def test_swap_on_polygon_pos(polygon_pos_inquirer, polygon_pos_accounts):
             location=Location.POLYGON_POS,
             event_subtype=HistoryEventSubType.RECEIVE,
             asset=Asset('eip155:137/erc20:0x1BFD67037B42Cf73acF2047067bd4F2C47D9BfD6'),
-            amount=FVal(receive_amount),
+            amount=FVal(receive_amount := '0.00097703'),
             location_label=polygon_pos_accounts[0],
             notes=f'Receive {receive_amount} WBTC as the result of a swap via Uniswap V3 auto router',  # noqa: E501
             counterparty=CPT_UNISWAP_V3,
             address=UNISWAP_UNIVERSAL_ROUTER,
         ),
     ]
-    assert events == expected_events
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
@@ -973,17 +954,16 @@ def test_swap_on_polygon_pos(polygon_pos_inquirer, polygon_pos_accounts):
 def test_add_liquidity_on_optimism(optimism_inquirer, optimism_accounts):
     tx_hash = deserialize_evm_tx_hash('0x96bd0e37e1734b5e73f9abdf30b39c4e4a6879667c2d01a7be2d95a85cc0b0cc')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=optimism_inquirer, tx_hash=tx_hash)
-    timestamp, approval, op_deposit, usdc_deposit, gas_fees = TimestampMS(1713269405000), '0.000129292741769402', '10975.908530657738737186', '32.212735', '0.000027353637451875'  # noqa: E501
-    expected_events = [
+    assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=0,
-            timestamp=timestamp,
+            timestamp=(timestamp := TimestampMS(1713269405000)),
             location=Location.OPTIMISM,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            amount=FVal(gas_fees),
+            amount=FVal(gas_fees := '0.000027353637451875'),
             location_label=optimism_accounts[0],
             notes=f'Burn {gas_fees} ETH for gas',
             counterparty=CPT_GAS,
@@ -995,7 +975,7 @@ def test_add_liquidity_on_optimism(optimism_inquirer, optimism_accounts):
             event_type=HistoryEventType.INFORMATIONAL,
             event_subtype=HistoryEventSubType.APPROVE,
             asset=A_OP,
-            amount=FVal(approval),
+            amount=FVal(approval := '0.000129292741769402'),
             location_label=optimism_accounts[0],
             notes=f'Set OP spending approval of 0x9A539f692cDE873D6B882fc326c8d62D4cEA8048 by 0xC36442b4a4522E871399CD717aBDD847Ab11FE88 to {approval}',  # noqa: E501
             address=string_to_evm_address('0xC36442b4a4522E871399CD717aBDD847Ab11FE88'),
@@ -1007,7 +987,7 @@ def test_add_liquidity_on_optimism(optimism_inquirer, optimism_accounts):
             event_type=HistoryEventType.DEPOSIT,
             event_subtype=HistoryEventSubType.DEPOSIT_FOR_WRAPPED,
             asset=Asset('eip155:10/erc20:0x0b2C639c533813f4Aa9D7837CAf62653d097Ff85'),  # USDC
-            amount=FVal(usdc_deposit),
+            amount=FVal(usdc_deposit := '32.212735'),
             location_label=optimism_accounts[0],
             notes=f'Deposit {usdc_deposit} USDC to Uniswap V3 LP 550709',
             counterparty=CPT_UNISWAP_V3,
@@ -1020,7 +1000,7 @@ def test_add_liquidity_on_optimism(optimism_inquirer, optimism_accounts):
             event_type=HistoryEventType.DEPOSIT,
             event_subtype=HistoryEventSubType.DEPOSIT_FOR_WRAPPED,
             asset=A_OP,
-            amount=FVal(op_deposit),
+            amount=FVal(op_deposit := '10975.908530657738737186'),
             location_label=optimism_accounts[0],
             notes=f'Deposit {op_deposit} OP to Uniswap V3 LP 550709',
             counterparty=CPT_UNISWAP_V3,
@@ -1040,7 +1020,6 @@ def test_add_liquidity_on_optimism(optimism_inquirer, optimism_accounts):
             address=ZERO_ADDRESS,
         ),
     ]
-    assert events == expected_events
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
@@ -1165,7 +1144,7 @@ def test_receive_position_token_on_arbitrum(
 def test_uniswap_v3_universal_router_2(ethereum_inquirer, ethereum_accounts):
     tx_hash = deserialize_evm_tx_hash('0x8c1aab138325e03f5bc20e676b8a242d470922003c3be4a76c386a4e67ce7bce')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
-    expected_events = [
+    assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=0,
@@ -1204,4 +1183,3 @@ def test_uniswap_v3_universal_router_2(ethereum_inquirer, ethereum_accounts):
             address=UNISWAP_UNIVERSAL_ROUTER_V2,
         ),
     ]
-    assert events == expected_events

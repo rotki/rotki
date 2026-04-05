@@ -40,13 +40,11 @@ def test_booster_deposit(
         database,
         ethereum_inquirer: 'EthereumInquirer',
 ) -> None:
-    tx_hash = deserialize_evm_tx_hash('0x8f643dc245ce64085197692ed98309a94fd176a1e7394e8967ae7bfa10ad1f8f')  # noqa: E501
 
-    timestamp = TimestampMS(1655810357000)
     user_address = ethereum_accounts[0]
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=ethereum_inquirer,
-        tx_hash=tx_hash,
+        tx_hash=(tx_hash := deserialize_evm_tx_hash('0x8f643dc245ce64085197692ed98309a94fd176a1e7394e8967ae7bfa10ad1f8f')),  # noqa: E501
     )
     mocked_notifier = database.msg_aggregator.rotki_notifier
     assert mocked_notifier.pop_message() == MockedWsMessage(
@@ -64,11 +62,11 @@ def test_booster_deposit(
             'blockchain': 'eth',
         },
     )
-    expected_events = [
+    assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=0,
-            timestamp=timestamp,
+            timestamp=(timestamp := TimestampMS(1655810357000)),
             location=Location.ETHEREUM,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
@@ -96,7 +94,6 @@ def test_booster_deposit(
             extra_data={'gauge_address': '0x008aEa5036b819B4FEAEd10b2190FBb3954981E8'},
         ),
     ]
-    assert events == expected_events
 
 
 @pytest.mark.vcr
@@ -104,13 +101,12 @@ def test_booster_deposit(
 def test_booster_withdraw(ethereum_inquirer, ethereum_accounts):
     tx_hash = deserialize_evm_tx_hash('0x79fcbafa4367e0563d3e614f774c5e4257c4e41f124ae8288980a310e2b2b547')  # noqa: E501
     user_address = ethereum_accounts[0]
-    timestamp = TimestampMS(1655877898000)
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
-    expected_events = [
+    assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=0,
-            timestamp=timestamp,
+            timestamp=(timestamp := TimestampMS(1655877898000)),
             location=Location.ETHEREUM,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
@@ -153,15 +149,13 @@ def test_booster_withdraw(ethereum_inquirer, ethereum_accounts):
             extra_data=None,
         ),
     ]
-    assert events == expected_events
 
 
 @pytest.mark.parametrize('ethereum_accounts', [[string_to_evm_address('0xFb305A40Dac406BdCF3b85F6311e5430770f44bA')]])  # noqa: E501
 def test_cvxcrv_get_reward(database, ethereum_inquirer, eth_transactions):
-    tx_hash = deserialize_evm_tx_hash('0x5e62ce39159fcdf528905d044e5387c8f21a1eca015d08cebc652bfb9c183611')  # noqa: E501
     user_address = string_to_evm_address('0xFb305A40Dac406BdCF3b85F6311e5430770f44bA')
     transaction = EvmTransaction(
-        tx_hash=tx_hash,
+        tx_hash=(tx_hash := deserialize_evm_tx_hash('0x5e62ce39159fcdf528905d044e5387c8f21a1eca015d08cebc652bfb9c183611')),  # noqa: E501
         chain_id=ChainID.ETHEREUM,
         timestamp=1655675488,
         block_number=14998088,
@@ -238,12 +232,11 @@ def test_cvxcrv_get_reward(database, ethereum_inquirer, eth_transactions):
         decoder.reload_data(cursor)
 
     events, _, _ = decoder._decode_transaction(transaction=transaction, tx_receipt=receipt)
-    timestamp = TimestampMS(1655675488000)
-    expected_events = [
+    assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=0,
-            timestamp=timestamp,
+            timestamp=(timestamp := TimestampMS(1655675488000)),
             location=Location.ETHEREUM,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
@@ -301,7 +294,6 @@ def test_cvxcrv_get_reward(database, ethereum_inquirer, eth_transactions):
             extra_data=None,
         ),
     ]
-    assert events == expected_events
 
 
 @pytest.mark.vcr
@@ -309,13 +301,12 @@ def test_cvxcrv_get_reward(database, ethereum_inquirer, eth_transactions):
 def test_cvxcrv_withdraw(ethereum_inquirer, ethereum_accounts):
     tx_hash = deserialize_evm_tx_hash('0x0a804804cc62f615b72dff55e8c245d9b69aa8f8ed3de549101ae128a4ae432b')  # noqa: E501
     user_address = ethereum_accounts[0]
-    timestamp = TimestampMS(1655747494000)
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
-    expected_events = [
+    assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=0,
-            timestamp=timestamp,
+            timestamp=(timestamp := TimestampMS(1655747494000)),
             location=Location.ETHEREUM,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
@@ -343,7 +334,6 @@ def test_cvxcrv_withdraw(ethereum_inquirer, ethereum_accounts):
             extra_data=None,
         ),
     ]
-    assert events == expected_events
 
 
 @pytest.mark.vcr
@@ -351,13 +341,12 @@ def test_cvxcrv_withdraw(ethereum_inquirer, ethereum_accounts):
 def test_cvxcrv_stake(ethereum_inquirer, ethereum_accounts):
     tx_hash = deserialize_evm_tx_hash('0x3cc0b25887e2f0dac7f86fabd81aaafb1e041e84dbe8167885073c443320ad5f')  # noqa: E501
     user_address = ethereum_accounts[0]
-    timestamp = TimestampMS(1655750059000)
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
-    expected_events = [
+    assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=0,
-            timestamp=timestamp,
+            timestamp=(timestamp := TimestampMS(1655750059000)),
             location=Location.ETHEREUM,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
@@ -399,15 +388,13 @@ def test_cvxcrv_stake(ethereum_inquirer, ethereum_accounts):
             extra_data=None,
         ),
     ]
-    assert events == expected_events
 
 
 @pytest.mark.parametrize('ethereum_accounts', [[string_to_evm_address('0x5B186c93A50D3CB435fE2933427d36E6Dc688e4b')]])  # noqa: E501
 def test_cvx_stake(database, ethereum_inquirer, eth_transactions):
-    tx_hash = deserialize_evm_tx_hash('0xc33246acb86798b81fe650061061d32751c53879d46ece6991fb4a3eda808103')  # noqa: E501
     user_address = string_to_evm_address('0x5B186c93A50D3CB435fE2933427d36E6Dc688e4b')
     transaction = EvmTransaction(
-        tx_hash=tx_hash,
+        tx_hash=(tx_hash := deserialize_evm_tx_hash('0xc33246acb86798b81fe650061061d32751c53879d46ece6991fb4a3eda808103')),  # noqa: E501
         chain_id=ChainID.ETHEREUM,
         timestamp=0,
         block_number=0,
@@ -467,7 +454,7 @@ def test_cvx_stake(database, ethereum_inquirer, eth_transactions):
         decoder.reload_data(cursor)
 
     events, _, _ = decoder._decode_transaction(transaction=transaction, tx_receipt=receipt)
-    expected_events = [
+    assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=0,
@@ -513,15 +500,13 @@ def test_cvx_stake(database, ethereum_inquirer, eth_transactions):
             extra_data=None,
         ),
     ]
-    assert events == expected_events
 
 
 @pytest.mark.parametrize('ethereum_accounts', [[string_to_evm_address('0x95c5582D781d507A084c9E5f885C77BabACf8EeA')]])  # noqa: E501
 def test_cvx_get_reward(database, ethereum_inquirer, eth_transactions):
-    tx_hash = deserialize_evm_tx_hash('0xdaead2f96859462b5800584ecdcf30f2b83a1ca2c36c49a838b23e43c61d803f')  # noqa: E501
     user_address = '0x95c5582D781d507A084c9E5f885C77BabACf8EeA'
     transaction = EvmTransaction(
-        tx_hash=tx_hash,
+        tx_hash=(tx_hash := deserialize_evm_tx_hash('0xdaead2f96859462b5800584ecdcf30f2b83a1ca2c36c49a838b23e43c61d803f')),  # noqa: E501
         chain_id=ChainID.ETHEREUM,
         timestamp=0,
         block_number=0,
@@ -608,7 +593,7 @@ def test_cvx_get_reward(database, ethereum_inquirer, eth_transactions):
         decoder.reload_data(cursor)
 
     events, _, _ = decoder._decode_transaction(transaction=transaction, tx_receipt=receipt)
-    expected_events = [
+    assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=0,
@@ -640,15 +625,13 @@ def test_cvx_get_reward(database, ethereum_inquirer, eth_transactions):
             extra_data=None,
         ),
     ]
-    assert events == expected_events
 
 
 @pytest.mark.parametrize('ethereum_accounts', [[string_to_evm_address('0x84BCE169c271e1c1777715bb0dd38Ad9e6381BAa')]])  # noqa: E501
 def test_cvx_withdraw(database, ethereum_inquirer, eth_transactions):
-    tx_hash = deserialize_evm_tx_hash('0xe725bd6e00b840f4fb8f73cd7286bfa18b04a24ca9278cac7249218ee9f420a8')  # noqa: E501
     user_address = string_to_evm_address('0x84BCE169c271e1c1777715bb0dd38Ad9e6381BAa')
     transaction = EvmTransaction(
-        tx_hash=tx_hash,
+        tx_hash=(tx_hash := deserialize_evm_tx_hash('0xe725bd6e00b840f4fb8f73cd7286bfa18b04a24ca9278cac7249218ee9f420a8')),  # noqa: E501
         chain_id=ChainID.ETHEREUM,
         timestamp=0,
         block_number=0,
@@ -699,7 +682,7 @@ def test_cvx_withdraw(database, ethereum_inquirer, eth_transactions):
         decoder.reload_data(cursor)
 
     events, _, _ = decoder._decode_transaction(transaction=transaction, tx_receipt=receipt)
-    expected_events = [
+    assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=0,
@@ -731,15 +714,13 @@ def test_cvx_withdraw(database, ethereum_inquirer, eth_transactions):
             extra_data=None,
         ),
     ]
-    assert events == expected_events
 
 
 @pytest.mark.parametrize('ethereum_accounts', [[string_to_evm_address('0x999EcCEa3C4f9219B1B1B42b4830e62c26004B40')]])  # noqa: E501
 def test_claimzap_abracadabras(database, ethereum_inquirer, eth_transactions):
-    tx_hash = deserialize_evm_tx_hash('0xe03d27127fda879144ea4cc587470bd37040be9921ff6a90f48d4efd0cb4fe13')  # noqa: E501
     user_address = string_to_evm_address('0x999EcCEa3C4f9219B1B1B42b4830e62c26004B40')
     transaction = EvmTransaction(
-        tx_hash=tx_hash,
+        tx_hash=(tx_hash := deserialize_evm_tx_hash('0xe03d27127fda879144ea4cc587470bd37040be9921ff6a90f48d4efd0cb4fe13')),  # noqa: E501
         chain_id=ChainID.ETHEREUM,
         timestamp=0,
         block_number=0,
@@ -782,7 +763,7 @@ def test_claimzap_abracadabras(database, ethereum_inquirer, eth_transactions):
         decoder.reload_data(cursor)
 
     events, _, _ = decoder._decode_transaction(transaction=transaction, tx_receipt=receipt)
-    expected_events = [
+    assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=0,
@@ -814,15 +795,13 @@ def test_claimzap_abracadabras(database, ethereum_inquirer, eth_transactions):
             extra_data=None,
         ),
     ]
-    assert events == expected_events
 
 
 @pytest.mark.parametrize('ethereum_accounts', [[string_to_evm_address('0x0C3Cc503EaE928Ed6B5b01B8a9EE8de2855d03Ac')]])  # noqa: E501
 def test_claimzap_cvx_locker(database, ethereum_inquirer, eth_transactions):
-    tx_hash = deserialize_evm_tx_hash('0x53e092e6f25e540d6323af851a1e889276096d58ec25495aef4500467ef2753c')  # noqa: E501
     user_address = string_to_evm_address('0x0C3Cc503EaE928Ed6B5b01B8a9EE8de2855d03Ac')
     transaction = EvmTransaction(
-        tx_hash=tx_hash,
+        tx_hash=(tx_hash := deserialize_evm_tx_hash('0x53e092e6f25e540d6323af851a1e889276096d58ec25495aef4500467ef2753c')),  # noqa: E501
         chain_id=ChainID.ETHEREUM,
         timestamp=0,
         block_number=0,
@@ -874,7 +853,7 @@ def test_claimzap_cvx_locker(database, ethereum_inquirer, eth_transactions):
         decoder.reload_data(cursor)
 
     events, _, _ = decoder._decode_transaction(transaction=transaction, tx_receipt=receipt)
-    expected_events = [
+    assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=0,
@@ -906,7 +885,6 @@ def test_claimzap_cvx_locker(database, ethereum_inquirer, eth_transactions):
             extra_data=None,
         ),
     ]
-    assert events == expected_events
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
@@ -918,18 +896,16 @@ def test_convex_claim_pending_rewards(ethereum_inquirer, ethereum_accounts, load
     in the pool. In this case the user is rewarded for performing this action.
     """
     user_address = ethereum_accounts[0]
-    tx_hash = deserialize_evm_tx_hash('0xf3b8bbb2996515bc276626378ad85bc241051cac5d09c709ae9447665a3babd6')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=ethereum_inquirer,
-        tx_hash=tx_hash,
+        tx_hash=(tx_hash := deserialize_evm_tx_hash('0xf3b8bbb2996515bc276626378ad85bc241051cac5d09c709ae9447665a3babd6')),  # noqa: E501
         load_global_caches=load_global_caches,
     )
-    timestamp = TimestampMS(1683871727000)
-    expected_events = [
+    assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=0,
-            timestamp=timestamp,
+            timestamp=(timestamp := TimestampMS(1683871727000)),
             location=Location.ETHEREUM,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
@@ -954,7 +930,6 @@ def test_convex_claim_pending_rewards(ethereum_inquirer, ethereum_accounts, load
             address=string_to_evm_address('0xF403C135812408BFbE8713b5A23a04b3D48AAE31'),
         ),
     ]
-    assert events == expected_events
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
@@ -967,13 +942,12 @@ def test_convex_withdraw_expired_lock(ethereum_inquirer, ethereum_accounts):
     user_address = ethereum_accounts[0]
     tx_hash = deserialize_evm_tx_hash('0x4b707540ec6eebf5e787c88df149e8141d2c295cda8a514da6d6111cf2deca40')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
-    timestamp = TimestampMS(1704839507000)
     gas_str, amount_str = '0.008929295372796715', '26633.698252368450151266'
-    expected_events = [
+    assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=0,
-            timestamp=timestamp,
+            timestamp=(timestamp := TimestampMS(1704839507000)),
             location=Location.ETHEREUM,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
@@ -998,4 +972,3 @@ def test_convex_withdraw_expired_lock(ethereum_inquirer, ethereum_accounts):
             address=CVX_LOCKER_V2,
         ),
     ]
-    assert events == expected_events

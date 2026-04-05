@@ -68,19 +68,17 @@ def test_add_liquidity_v2(optimism_transaction_decoder, optimism_accounts, load_
     """Check that adding liquidity to a velodrome v2 pool is properly decoded."""
     _add_velodrome_pool(WETH_OP_POOL_ADDRESS)
     assert GlobalDBHandler.get_evm_token(address=WETH_OP_POOL_ADDRESS, chain_id=ChainID.OPTIMISM) is None  # noqa: E501
-    tx_hash = deserialize_evm_tx_hash('0xa1cf038ca08b51971314b4f8e006b455f2a82f113899e5eb7818ac1528605bfc')  # noqa: E501
     user_address = optimism_accounts[0]
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=optimism_transaction_decoder.evm_inquirer,
-        tx_hash=tx_hash,
+        tx_hash=(tx_hash := deserialize_evm_tx_hash('0xa1cf038ca08b51971314b4f8e006b455f2a82f113899e5eb7818ac1528605bfc')),  # noqa: E501
         load_global_caches=load_global_caches,
     )
-    timestamp = TimestampMS(1693573631000)
-    expected_events = [
+    assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=0,
-            timestamp=timestamp,
+            timestamp=(timestamp := TimestampMS(1693573631000)),
             location=Location.OPTIMISM,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
@@ -142,7 +140,6 @@ def test_add_liquidity_v2(optimism_transaction_decoder, optimism_accounts, load_
             notes=f'Receive 0.172627291949741834 vAMMV2-WETH/OP after depositing in velodrome pool {WETH_OP_POOL_ADDRESS}',  # noqa: E501
         ),
     ]
-    assert events == expected_events
     assert EvmToken(WETH_OP_LP_TOKEN).protocol == CPT_VELODROME
 
 
@@ -156,20 +153,18 @@ def test_add_liquidity_v1(optimism_transaction_decoder, optimism_accounts, load_
     """Check that adding liquidity to a velodrome v1 pool is properly decoded."""
     _add_velodrome_pool(pool := string_to_evm_address('0x6fE665F19517Cd6076866dB0548177d0E628156a'))  # noqa: E501
     assert GlobalDBHandler.get_evm_token(address=pool, chain_id=ChainID.OPTIMISM) is None
-    tx_hash = deserialize_evm_tx_hash('0x779c2c762ed7ca5d2236ac548f9e9bdc723a8bc9d6d8feba9e3baea9456bbac9')  # noqa: E501
     user_address = optimism_accounts[0]
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=optimism_transaction_decoder.evm_inquirer,
-        tx_hash=tx_hash,
+        tx_hash=(tx_hash := deserialize_evm_tx_hash('0x779c2c762ed7ca5d2236ac548f9e9bdc723a8bc9d6d8feba9e3baea9456bbac9')),  # noqa: E501
         load_global_caches=load_global_caches,
     )
-    timestamp = TimestampMS(1685968046000)
     lp_token_identifier = evm_address_to_identifier(pool, ChainID.OPTIMISM, TokenKind.ERC20)
-    expected_events = [
+    assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=0,
-            timestamp=timestamp,
+            timestamp=(timestamp := TimestampMS(1685968046000)),
             location=Location.OPTIMISM,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
@@ -219,7 +214,6 @@ def test_add_liquidity_v1(optimism_transaction_decoder, optimism_accounts, load_
             notes=f'Receive 21.069827457300304618 vAMM-RED/VELO after depositing in velodrome pool {pool}',  # noqa: E501
         ),
     ]
-    assert events == expected_events
     assert EvmToken(lp_token_identifier).protocol == CPT_VELODROME
 
 
@@ -229,19 +223,17 @@ def test_add_liquidity_v1(optimism_transaction_decoder, optimism_accounts, load_
 def test_remove_liquidity_v2(optimism_transaction_decoder, optimism_accounts, load_global_caches):
     """Check that removing liquidity from a velodrome v2 pool is properly decoded."""
     _add_velodrome_pool(string_to_evm_address('0xd25711EdfBf747efCE181442Cc1D8F5F8fc8a0D3'))
-    tx_hash = deserialize_evm_tx_hash('0x81351bf9ca6d78bff92d2b714d68dd7c785bb70de0e250bc7bc6ab073736d1ce')  # noqa: E501
     user_address = optimism_accounts[0]
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=optimism_transaction_decoder.evm_inquirer,
-        tx_hash=tx_hash,
+        tx_hash=(tx_hash := deserialize_evm_tx_hash('0x81351bf9ca6d78bff92d2b714d68dd7c785bb70de0e250bc7bc6ab073736d1ce')),  # noqa: E501
         load_global_caches=load_global_caches,
     )
-    timestamp = TimestampMS(1694677251000)
-    expected_events = [
+    assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=0,
-            timestamp=timestamp,
+            timestamp=(timestamp := TimestampMS(1694677251000)),
             location=Location.OPTIMISM,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
@@ -303,7 +295,6 @@ def test_remove_liquidity_v2(optimism_transaction_decoder, optimism_accounts, lo
             notes=f'Remove 2.995474411210852897 OP from velodrome pool {WETH_OP_POOL_ADDRESS}',
         ),
     ]
-    assert events == expected_events
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
@@ -312,19 +303,17 @@ def test_remove_liquidity_v2(optimism_transaction_decoder, optimism_accounts, lo
 def test_remove_liquidity_v1(optimism_transaction_decoder, optimism_accounts, load_global_caches):
     """Check that removing liquidity from a velodrome v1 pool is properly decoded."""
     _add_velodrome_pool(pool := string_to_evm_address('0x47029bc8f5CBe3b464004E87eF9c9419a48018cd'))  # noqa: E501
-    tx_hash = deserialize_evm_tx_hash('0x9b564c266aea871c14fbe120d060d1713f0ba524452906af3592360594b946f6')  # noqa: E501
     user_address = optimism_accounts[0]
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=optimism_transaction_decoder.evm_inquirer,
-        tx_hash=tx_hash,
+        tx_hash=(tx_hash := deserialize_evm_tx_hash('0x9b564c266aea871c14fbe120d060d1713f0ba524452906af3592360594b946f6')),  # noqa: E501
         load_global_caches=load_global_caches,
     )
-    timestamp = TimestampMS(1695202305000)
-    expected_events = [
+    assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=0,
-            timestamp=timestamp,
+            timestamp=(timestamp := TimestampMS(1695202305000)),
             location=Location.OPTIMISM,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
@@ -386,7 +375,6 @@ def test_remove_liquidity_v1(optimism_transaction_decoder, optimism_accounts, lo
             notes=f'Remove 205.545843 USDC.e from velodrome pool {pool}',
         ),
     ]
-    assert events == expected_events
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
@@ -396,19 +384,17 @@ def test_swap_eth_to_token_v2(optimism_accounts, optimism_transaction_decoder, l
     """Check that swapping eth to token in velodrome v2 is properly decoded."""
     _add_velodrome_pool(string_to_evm_address('0x3f42Dc59DC4dF5cD607163bC620168f7FF7aB970'))
     _add_velodrome_pool(string_to_evm_address('0x2fE304b407c7fAb2a3c10962F14dB751468a4f5b'))
-    tx_hash = deserialize_evm_tx_hash('0x8d65dc5a77aaceabac3b80fd28f8fa3cd45143748c2d31598706580f68d724da')  # noqa: E501
     user_address = optimism_accounts[0]
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=optimism_transaction_decoder.evm_inquirer,
-        tx_hash=tx_hash,
+        tx_hash=(tx_hash := deserialize_evm_tx_hash('0x8d65dc5a77aaceabac3b80fd28f8fa3cd45143748c2d31598706580f68d724da')),  # noqa: E501
         load_global_caches=load_global_caches,
     )
-    timestamp = TimestampMS(1693572877000)
-    expected_events = [
+    assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=0,
-            timestamp=timestamp,
+            timestamp=(timestamp := TimestampMS(1693572877000)),
             location=Location.OPTIMISM,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
@@ -443,7 +429,6 @@ def test_swap_eth_to_token_v2(optimism_accounts, optimism_transaction_decoder, l
             notes=f'Receive 11.895061655417592619 OP as the result of a swap in {CPT_VELODROME}',
         ),
     ]
-    assert events == expected_events
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
@@ -455,19 +440,17 @@ def test_swap_eth_to_token_v2(optimism_accounts, optimism_transaction_decoder, l
 def test_swap_eth_to_token_v1(optimism_accounts, optimism_transaction_decoder, load_global_caches):
     """Check that swapping eth to token in velodrome v1 is properly decoded."""
     _add_velodrome_pool(string_to_evm_address('0x7866C6072B09539fC0FDE82963846b80203d7beb'))
-    tx_hash = deserialize_evm_tx_hash('0xaa6b816c09863eab80f6184ab4112d7fea3a813c194dcebf08b6d4e13df22354')  # noqa: E501
     user_address = optimism_accounts[0]
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=optimism_transaction_decoder.evm_inquirer,
-        tx_hash=tx_hash,
+        tx_hash=(tx_hash := deserialize_evm_tx_hash('0xaa6b816c09863eab80f6184ab4112d7fea3a813c194dcebf08b6d4e13df22354')),  # noqa: E501
         load_global_caches=load_global_caches,
     )
-    timestamp = TimestampMS(1695194435000)
-    expected_events = [
+    assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=0,
-            timestamp=timestamp,
+            timestamp=(timestamp := TimestampMS(1695194435000)),
             location=Location.OPTIMISM,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
@@ -502,7 +485,6 @@ def test_swap_eth_to_token_v1(optimism_accounts, optimism_transaction_decoder, l
             notes=f'Receive 0.130694520044655821 agEUR as the result of a swap in {CPT_VELODROME}',
         ),
     ]
-    assert events == expected_events
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
@@ -514,19 +496,17 @@ def test_swap_eth_to_token_v1(optimism_accounts, optimism_transaction_decoder, l
 def test_swap_token_to_eth_v2(optimism_accounts, optimism_transaction_decoder, load_global_caches):
     """Check that swapping token to eth in velodrome v2 is properly decoded."""
     _add_velodrome_pool(string_to_evm_address('0xd25711EdfBf747efCE181442Cc1D8F5F8fc8a0D3'))
-    tx_hash = deserialize_evm_tx_hash('0x15c46045b9a4b03d15f0260f6518563f9a050fd693712330d9c05bedef833886')  # noqa: E501
     user_address = optimism_accounts[0]
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=optimism_transaction_decoder.evm_inquirer,
-        tx_hash=tx_hash,
+        tx_hash=(tx_hash := deserialize_evm_tx_hash('0x15c46045b9a4b03d15f0260f6518563f9a050fd693712330d9c05bedef833886')),  # noqa: E501
         load_global_caches=load_global_caches,
     )
-    timestamp = TimestampMS(1695108881000)
-    expected_events = [
+    assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=0,
-            timestamp=timestamp,
+            timestamp=(timestamp := TimestampMS(1695108881000)),
             location=Location.OPTIMISM,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
@@ -573,7 +553,6 @@ def test_swap_token_to_eth_v2(optimism_accounts, optimism_transaction_decoder, l
             notes=f'Receive 0.0770899907450713 ETH as the result of a swap in {CPT_VELODROME}',
         ),
     ]
-    assert events == expected_events
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
@@ -583,19 +562,17 @@ def test_swap_token_to_eth_v1(optimism_accounts, optimism_transaction_decoder, l
     """Check that swapping token to eth in velodrome v1 is properly decoded."""
     _add_velodrome_pool(string_to_evm_address('0xe8537b6FF1039CB9eD0B71713f697DDbaDBb717d'))
     _add_velodrome_pool(string_to_evm_address('0x79c912FEF520be002c2B6e57EC4324e260f38E50'))
-    tx_hash = deserialize_evm_tx_hash('0x10d52ec5cf06d1b5b48a346334c8f0e6ef83bd281c371d762d3c163e37f629d8')  # noqa: E501
     user_address = optimism_accounts[0]
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=optimism_transaction_decoder.evm_inquirer,
-        tx_hash=tx_hash,
+        tx_hash=(tx_hash := deserialize_evm_tx_hash('0x10d52ec5cf06d1b5b48a346334c8f0e6ef83bd281c371d762d3c163e37f629d8')),  # noqa: E501
         load_global_caches=load_global_caches,
     )
-    timestamp = TimestampMS(1695155023000)
-    expected_events = [
+    assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=0,
-            timestamp=timestamp,
+            timestamp=(timestamp := TimestampMS(1695155023000)),
             location=Location.OPTIMISM,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
@@ -630,7 +607,6 @@ def test_swap_token_to_eth_v1(optimism_accounts, optimism_transaction_decoder, l
             notes=f'Receive 0.181508840163183003 ETH as the result of a swap in {CPT_VELODROME}',
         ),
     ]
-    assert events == expected_events
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
@@ -643,19 +619,17 @@ def test_swap_tokens_v2(optimism_accounts, optimism_transaction_decoder, load_gl
     """Check that swapping tokens in velodrome v2 is properly decoded."""
     _add_velodrome_pool(string_to_evm_address('0x1f8b46abe1EAbF5A60CbBB5Fb2e4a6A46fA0b6e6'))
     _add_velodrome_pool(string_to_evm_address('0xBf75051F6e6dF9fEcF90d9bebbBB08a85950858C'))
-    tx_hash = deserialize_evm_tx_hash('0x8c36e51bc4d3deec6a4c06a59179083adfd9caa8a5ad7e957e639d5792c9e139')  # noqa: E501
     user_address = optimism_accounts[0]
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=optimism_transaction_decoder.evm_inquirer,
-        tx_hash=tx_hash,
+        tx_hash=(tx_hash := deserialize_evm_tx_hash('0x8c36e51bc4d3deec6a4c06a59179083adfd9caa8a5ad7e957e639d5792c9e139')),  # noqa: E501
         load_global_caches=load_global_caches,
     )
-    timestamp = TimestampMS(1697106165000)
-    expected_events = [
+    assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=0,
-            timestamp=timestamp,
+            timestamp=(timestamp := TimestampMS(1697106165000)),
             location=Location.OPTIMISM,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
@@ -702,7 +676,6 @@ def test_swap_tokens_v2(optimism_accounts, optimism_transaction_decoder, load_gl
             notes=f'Receive 1122.945013439390360367 DUSD as the result of a swap in {CPT_VELODROME}',  # noqa: E501
         ),
     ]
-    assert events == expected_events
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
@@ -711,19 +684,17 @@ def test_swap_tokens_v2(optimism_accounts, optimism_transaction_decoder, load_gl
 def test_swap_tokens_v1(optimism_accounts, optimism_transaction_decoder, load_global_caches):
     """Check that swapping tokens in velodrome v1 is properly decoded."""
     _add_velodrome_pool(string_to_evm_address('0xcdd41009E74bD1AE4F7B2EeCF892e4bC718b9302'))
-    tx_hash = deserialize_evm_tx_hash('0x398538615367f778e9bb7fd95b3f96ee52e2192880b6f6331f91530ae4c829d9')  # noqa: E501
     user_address = optimism_accounts[0]
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=optimism_transaction_decoder.evm_inquirer,
-        tx_hash=tx_hash,
+        tx_hash=(tx_hash := deserialize_evm_tx_hash('0x398538615367f778e9bb7fd95b3f96ee52e2192880b6f6331f91530ae4c829d9')),  # noqa: E501
         load_global_caches=load_global_caches,
     )
-    timestamp = TimestampMS(1695193815000)
-    expected_events = [
+    assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=0,
-            timestamp=timestamp,
+            timestamp=(timestamp := TimestampMS(1695193815000)),
             location=Location.OPTIMISM,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
@@ -758,7 +729,6 @@ def test_swap_tokens_v1(optimism_accounts, optimism_transaction_decoder, load_gl
             notes=f'Receive 67.507104801871949085 OP as the result of a swap in {CPT_VELODROME}',
         ),
     ]
-    assert events == expected_events
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
@@ -774,19 +744,17 @@ def test_stake_lp_token_to_gauge_v2(optimism_accounts, optimism_transaction_deco
         protocol=CPT_VELODROME,
         symbol='vAMMV2-WETH/OP',
     )
-    tx_hash = deserialize_evm_tx_hash('0x1bfa588dc839b13205e80bbfd7b7748a4c599854a03b52bb5476d6edae2e95a9')  # noqa: E501
     user_address = optimism_accounts[0]
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=optimism_transaction_decoder.evm_inquirer,
-        tx_hash=tx_hash,
+        tx_hash=(tx_hash := deserialize_evm_tx_hash('0x1bfa588dc839b13205e80bbfd7b7748a4c599854a03b52bb5476d6edae2e95a9')),  # noqa: E501
         load_global_caches=load_global_caches,
     )
-    timestamp = TimestampMS(1694639877000)
-    expected_events = [
+    assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=0,
-            timestamp=timestamp,
+            timestamp=(timestamp := TimestampMS(1694639877000)),
             location=Location.OPTIMISM,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
@@ -822,7 +790,6 @@ def test_stake_lp_token_to_gauge_v2(optimism_accounts, optimism_transaction_deco
             notes=f'Deposit 0.172627291949741834 vAMMV2-WETH/OP into {WETH_OP_GAUGE_ADDRESS} velodrome gauge',  # noqa: E501,
         ),
     ]
-    assert events == expected_events
     assert EvmToken(WETH_OP_LP_TOKEN).protocol == CPT_VELODROME
 
 
@@ -831,19 +798,17 @@ def test_stake_lp_token_to_gauge_v2(optimism_accounts, optimism_transaction_deco
 @pytest.mark.parametrize('optimism_accounts', [['0x78C13393Aee675DD7ED07ce992210750D1F5dB88']])
 def test_unstake_lp_token_to_gauge_v2(optimism_accounts, optimism_transaction_decoder, load_global_caches):  # noqa: E501
     """Check that withdrawing lp tokens from a velodrome v2 gauge is properly decoded."""
-    tx_hash = deserialize_evm_tx_hash('0xe774e27053cab2c9cc293d6b1010d024a9a6af57fb6645ca52f0c5a26d117eeb')  # noqa: E501
     user_address = optimism_accounts[0]
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=optimism_transaction_decoder.evm_inquirer,
-        tx_hash=tx_hash,
+        tx_hash=(tx_hash := deserialize_evm_tx_hash('0xe774e27053cab2c9cc293d6b1010d024a9a6af57fb6645ca52f0c5a26d117eeb')),  # noqa: E501
         load_global_caches=load_global_caches,
     )
-    timestamp = TimestampMS(1694676717000)
-    expected_events = [
+    assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=0,
-            timestamp=timestamp,
+            timestamp=(timestamp := TimestampMS(1694676717000)),
             location=Location.OPTIMISM,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
@@ -867,7 +832,6 @@ def test_unstake_lp_token_to_gauge_v2(optimism_accounts, optimism_transaction_de
             notes=f'Withdraw 0.172627291949741834 vAMMV2-WETH/OP from {WETH_OP_GAUGE_ADDRESS} velodrome gauge',  # noqa: E501,
         ),
     ]
-    assert events == expected_events
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
@@ -876,20 +840,18 @@ def test_unstake_lp_token_to_gauge_v2(optimism_accounts, optimism_transaction_de
 @pytest.mark.parametrize('optimism_accounts', [['0xf9AEb52bB4eF74E1987dd295E4Df326d41D0d0fF']])
 def test_get_reward_from_gauge_v2(optimism_accounts, optimism_transaction_decoder, load_global_caches):  # noqa: E501
     """Check claiming rewards from a velodrome v2 gauge is properly decoded."""
-    tx_hash = deserialize_evm_tx_hash('0x9d0eae3c2d2cda853e77a2571a7c702507beb015c08b40406e03baa4b1dde505')  # noqa: E501
     user_address = optimism_accounts[0]
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=optimism_transaction_decoder.evm_inquirer,
-        tx_hash=tx_hash,
+        tx_hash=(tx_hash := deserialize_evm_tx_hash('0x9d0eae3c2d2cda853e77a2571a7c702507beb015c08b40406e03baa4b1dde505')),  # noqa: E501
         load_global_caches=load_global_caches,
     )
-    timestamp = TimestampMS(1695116021000)
     gauge_address = string_to_evm_address('0x84195De69B8B131ddAa4Be4F75633fCD7F430b7c')
-    expected_events = [
+    assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=0,
-            timestamp=timestamp,
+            timestamp=(timestamp := TimestampMS(1695116021000)),
             location=Location.OPTIMISM,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
@@ -913,7 +875,6 @@ def test_get_reward_from_gauge_v2(optimism_accounts, optimism_transaction_decode
             notes=f'Receive 872.22115188616298484 VELO rewards from {gauge_address} velodrome gauge',  # noqa: E501,
         ),
     ]
-    assert events == expected_events
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
@@ -925,7 +886,7 @@ def test_unlock_velo(optimism_accounts, optimism_transaction_decoder):
         evm_inquirer=optimism_transaction_decoder.evm_inquirer,
         tx_hash=tx_hash,
     )
-    expected_events = [
+    assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=0,
@@ -966,7 +927,6 @@ def test_unlock_velo(optimism_accounts, optimism_transaction_decoder):
             notes=f'Receive {withdrawn_amt} VELO from vote escrow after burning veNFT-27891',
         ),
     ]
-    assert events == expected_events
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
@@ -978,7 +938,7 @@ def test_lock_velo(optimism_accounts, optimism_transaction_decoder):
         evm_inquirer=optimism_transaction_decoder.evm_inquirer,
         tx_hash=tx_hash,
     )
-    expected_events = [
+    assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=0,
@@ -1032,7 +992,6 @@ def test_lock_velo(optimism_accounts, optimism_transaction_decoder):
             notes=f'Receive veNFT-30079 for locking {lock_amount} VELO in vote escrow',
         ),
     ]
-    assert events == expected_events
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
@@ -1044,7 +1003,7 @@ def test_increase_locked_amount(optimism_accounts, optimism_transaction_decoder)
         evm_inquirer=optimism_transaction_decoder.evm_inquirer,
         tx_hash=tx_hash,
     )
-    expected_events = [
+    assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=0,
@@ -1085,7 +1044,6 @@ def test_increase_locked_amount(optimism_accounts, optimism_transaction_decoder)
             extra_data={'token_id': 20820},
         ),
     ]
-    assert events == expected_events
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
@@ -1097,7 +1055,7 @@ def test_increase_unlock_time(optimism_accounts, optimism_transaction_decoder):
         evm_inquirer=optimism_transaction_decoder.evm_inquirer,
         tx_hash=tx_hash,
     )
-    expected_events = [
+    assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=0,
@@ -1126,7 +1084,6 @@ def test_increase_unlock_time(optimism_accounts, optimism_transaction_decoder):
             notes='Increase unlock time to 12/06/2025 for VELO veNFT-30064',
         ),
     ]
-    assert events == expected_events
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
@@ -1150,7 +1107,7 @@ def test_claim_bribes(optimism_accounts, optimism_transaction_decoder, globaldb)
         evm_inquirer=optimism_transaction_decoder.evm_inquirer,
         tx_hash=tx_hash,
     )
-    expected_events = [
+    assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=0,
@@ -1217,4 +1174,3 @@ def test_claim_bribes(optimism_accounts, optimism_transaction_decoder, globaldb)
             notes=f'Claim {receive_amount_4} tBTC from velodrome as a fee',
         ),
     ]
-    assert events == expected_events

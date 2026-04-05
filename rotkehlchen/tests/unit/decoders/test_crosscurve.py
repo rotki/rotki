@@ -44,17 +44,16 @@ def test_crosscurve_bridge_send(optimism_inquirer: 'OptimismInquirer', optimism_
     """
     tx_hash = deserialize_evm_tx_hash('0xa2f971ba5af848948e0930ab0f86b70751d595e7c79111aa863681a117924e71')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=optimism_inquirer, tx_hash=tx_hash)
-    timestamp, gas, fee_amount, bridge_amount = TimestampMS(1757661563000), '0.000000012981416497', '0.000009019739891817', '119.844544'  # noqa: E501
     assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=0,
-            timestamp=timestamp,
+            timestamp=(timestamp := TimestampMS(1757661563000)),
             location=Location.OPTIMISM,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            amount=FVal(gas),
+            amount=FVal(gas := '0.000000012981416497'),
             location_label=(user_address := optimism_accounts[0]),
             notes=f'Burn {gas} ETH for gas',
             counterparty=CPT_GAS,
@@ -66,7 +65,7 @@ def test_crosscurve_bridge_send(optimism_inquirer: 'OptimismInquirer', optimism_
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            amount=FVal(fee_amount),
+            amount=FVal(fee_amount := '0.000009019739891817'),
             location_label=user_address,
             notes=f'Pay {fee_amount} ETH as CrossCurve bridge fee',
             counterparty=CPT_CROSSCURVE,
@@ -79,7 +78,7 @@ def test_crosscurve_bridge_send(optimism_inquirer: 'OptimismInquirer', optimism_
             event_type=HistoryEventType.DEPOSIT,
             event_subtype=HistoryEventSubType.BRIDGE,
             asset=Asset('eip155:10/erc20:0x0b2C639c533813f4Aa9D7837CAf62653d097Ff85'),
-            amount=FVal(bridge_amount),
+            amount=FVal(bridge_amount := '119.844544'),
             location_label=user_address,
             notes=f'Bridge {bridge_amount} USDC via CrossCurve',
             counterparty=CPT_CROSSCURVE,
@@ -93,17 +92,16 @@ def test_crosscurve_bridge_send(optimism_inquirer: 'OptimismInquirer', optimism_
 def test_crosscurve_bridge_send_arbitrum(arbitrum_one_inquirer: 'ArbitrumOneInquirer', arbitrum_one_accounts: list[ChecksumEvmAddress]) -> None:  # noqa: E501
     tx_hash = deserialize_evm_tx_hash('0x03177504cf5ed18c8cc29bc19a08c9f3ffb23d7f66b62ca43cdcba92346d621c')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=arbitrum_one_inquirer, tx_hash=tx_hash)  # noqa: E501
-    timestamp, gas, fee_amount, bridge_amount = TimestampMS(1741867858000), '0.00001096576', '0.000001467792495776', '12.694988'  # noqa: E501
     assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=0,
-            timestamp=timestamp,
+            timestamp=(timestamp := TimestampMS(1741867858000)),
             location=Location.ARBITRUM_ONE,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            amount=FVal(gas),
+            amount=FVal(gas := '0.00001096576'),
             location_label=(user_address := arbitrum_one_accounts[0]),
             notes=f'Burn {gas} ETH for gas',
             counterparty=CPT_GAS,
@@ -115,7 +113,7 @@ def test_crosscurve_bridge_send_arbitrum(arbitrum_one_inquirer: 'ArbitrumOneInqu
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            amount=FVal(fee_amount),
+            amount=FVal(fee_amount := '0.000001467792495776'),
             location_label=user_address,
             notes=f'Pay {fee_amount} ETH as CrossCurve bridge fee',
             counterparty=CPT_CROSSCURVE,
@@ -128,7 +126,7 @@ def test_crosscurve_bridge_send_arbitrum(arbitrum_one_inquirer: 'ArbitrumOneInqu
             event_type=HistoryEventType.DEPOSIT,
             event_subtype=HistoryEventSubType.BRIDGE,
             asset=Asset('eip155:42161/erc20:0xaf88d065e77c8cC2239327C5EDb3A432268e5831'),
-            amount=FVal(bridge_amount),
+            amount=FVal(bridge_amount := '12.694988'),
             location_label=user_address,
             notes=f'Bridge {bridge_amount} USDC via CrossCurve',
             counterparty=CPT_CROSSCURVE,
@@ -145,17 +143,16 @@ def test_crosscurve_bridge_receive_via_curve(arbitrum_one_inquirer: 'ArbitrumOne
     """
     tx_hash = deserialize_evm_tx_hash('0x6d7d84478fe237e905ebfa831d2abe107d8cf5b0969cf8eaa5306f992ad85c24')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=arbitrum_one_inquirer, tx_hash=tx_hash)  # noqa: E501
-    timestamp, receive_amount = TimestampMS(1729787659000), '452.673538'
     assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=49,
-            timestamp=timestamp,
+            timestamp=TimestampMS(1729787659000),
             location=Location.ARBITRUM_ONE,
             event_type=HistoryEventType.WITHDRAWAL,
             event_subtype=HistoryEventSubType.BRIDGE,
             asset=Asset('eip155:42161/erc20:0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8'),
-            amount=FVal(receive_amount),
+            amount=FVal(receive_amount := '452.673538'),
             location_label=arbitrum_one_accounts[0],
             notes=f'Bridge {receive_amount} USDC.e via CrossCurve',
             counterparty=CPT_CROSSCURVE,
@@ -169,17 +166,16 @@ def test_crosscurve_bridge_receive_via_curve(arbitrum_one_inquirer: 'ArbitrumOne
 def test_crosscurve_bridge_receive(gnosis_inquirer: 'GnosisInquirer', gnosis_accounts: list[ChecksumEvmAddress]) -> None:  # noqa: E501
     tx_hash = deserialize_evm_tx_hash('0xd2c1698e07e82e0d0b61c5d22fb2c5f993f21a515322ba890678e772a13d0e08')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=gnosis_inquirer, tx_hash=tx_hash)
-    timestamp, receive_amount = TimestampMS(1757661890000), '101.714686532017583041'
     assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=50,
-            timestamp=timestamp,
+            timestamp=TimestampMS(1757661890000),
             location=Location.GNOSIS,
             event_type=HistoryEventType.WITHDRAWAL,
             event_subtype=HistoryEventSubType.BRIDGE,
             asset=Asset('eip155:100/erc20:0x420CA0f9B9b604cE0fd9C18EF134C705e5Fa3430'),
-            amount=FVal(receive_amount),
+            amount=FVal(receive_amount := '101.714686532017583041'),
             location_label=(gnosis_accounts[0]),
             notes=f'Bridge {receive_amount} EURe via CrossCurve',
             counterparty=CPT_CROSSCURVE,

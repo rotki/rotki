@@ -48,13 +48,12 @@ def _pendle_cache(globaldb: 'GlobalDBHandler') -> None:
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0xFd83CCCecef02a334e6A86e7eA8D0aa0F61f1Faf']])
 def test_lock_pendle(ethereum_inquirer, ethereum_accounts):
-    tx_hash = deserialize_evm_tx_hash('0xc8b252de1a62daa57d4fe294f371e67550e087fdeffe972261e1acc890d84bd5')  # noqa: E501
     events, decoder = get_decoded_events_of_transaction(
         evm_inquirer=ethereum_inquirer,
-        tx_hash=tx_hash,
+        tx_hash=(tx_hash := deserialize_evm_tx_hash('0xc8b252de1a62daa57d4fe294f371e67550e087fdeffe972261e1acc890d84bd5')),  # noqa: E501
     )
     user_address, timestamp, gas_amount, approval_amount, out_amount, locked_amount, lock_timestamp = ethereum_accounts[0], TimestampMS(1742478515000), '0.00118595784570676', '11.106239093069566243', '0.003254870108208791', '1110.62390930695662426', 1747267200  # noqa: E501
-    expected_events = [
+    assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=0,
@@ -108,7 +107,6 @@ def test_lock_pendle(ethereum_inquirer, ethereum_accounts):
             address=string_to_evm_address('0x4f30A9D41B80ecC5B94306AB4364951AE3170210'),
         ),
     ]
-    assert events == expected_events
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
@@ -117,7 +115,7 @@ def test_unlock_pendle(ethereum_inquirer, ethereum_accounts):
     tx_hash = deserialize_evm_tx_hash('0x5bbfd3175156e347edb917f02311cbc7723d6f61d5bed532e7cfb947fe5b4d72')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     user_address, timestamp, gas_amount, withdrawn_amount = ethereum_accounts[0], TimestampMS(1742472839000), '0.000059142779024945', '4497.51803084'  # noqa: E501
-    expected_events = [
+    assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=0,
@@ -145,25 +143,23 @@ def test_unlock_pendle(ethereum_inquirer, ethereum_accounts):
             address=string_to_evm_address('0x4f30A9D41B80ecC5B94306AB4364951AE3170210'),
         ),
     ]
-    assert events == expected_events
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0x4aCAeaD5249770F268F18284Ef7e71039DC127Fb']])
 def test_buy_pt(ethereum_inquirer, ethereum_accounts):
-    tx_hash = deserialize_evm_tx_hash('0x4374352cb86470cc895b7ad433a5ea6e8c62a7d0016434600fa1446ebaea857b')  # noqa: E501
     assert get_evm_token(
         evm_address=(pt_token_addr := string_to_evm_address('0xeA1180804bDBA8aC04E2a4406B11fb7970c474f1')),  # noqa: E501
         chain_id=ethereum_inquirer.chain_id,
     ) is None
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=ethereum_inquirer,
-        tx_hash=tx_hash,
+        tx_hash=(tx_hash := deserialize_evm_tx_hash('0x4374352cb86470cc895b7ad433a5ea6e8c62a7d0016434600fa1446ebaea857b')),  # noqa: E501
     )
     assert (pt_token := get_evm_token(evm_address=pt_token_addr, chain_id=ethereum_inquirer.chain_id)) is not None  # noqa: E501
     assert pt_token.protocol == CPT_PENDLE
     user_address, timestamp, gas_amount, approval_amount, out_amount, in_amount, interest_amount = ethereum_accounts[0], TimestampMS(1742355155000), '0.00033753258899598', '50.014942', '5001.535682', '5066.377589', '1.535939'  # noqa: E501
-    expected_events = [
+    assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=0,
@@ -230,7 +226,6 @@ def test_buy_pt(ethereum_inquirer, ethereum_accounts):
             address=string_to_evm_address('0x8539B41CA14148d1F7400d399723827a80579414'),
         ),
     ]
-    assert events == expected_events
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
@@ -409,13 +404,12 @@ def test_return_pt(ethereum_inquirer, ethereum_accounts, pendle_cache):
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0xAeF32637DbE2cC1ed4e8b04bE1363bE583724947']])
 def test_buy_yt(ethereum_inquirer, ethereum_accounts):
-    tx_hash = deserialize_evm_tx_hash('0x08cb3b86393593946047da9fd672278820815e884b199ed913a9f95fa2280cff')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=ethereum_inquirer,
-        tx_hash=tx_hash,
+        tx_hash=(tx_hash := deserialize_evm_tx_hash('0x08cb3b86393593946047da9fd672278820815e884b199ed913a9f95fa2280cff')),  # noqa: E501
     )
     user_address, timestamp, gas_amount, out_amount, in_amount = ethereum_accounts[0], TimestampMS(1741190135000), '0.000361416310494255', '0.016', '0.11143761'  # noqa: E501
-    expected_events = [
+    assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=0,
@@ -457,19 +451,17 @@ def test_buy_yt(ethereum_inquirer, ethereum_accounts):
             address=ZERO_ADDRESS,
         ),
     ]
-    assert events == expected_events
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0xC1466a0a0e2a8BB9304823087643Fec98957a73B']])
 def test_sell_yt(ethereum_inquirer, ethereum_accounts):
-    tx_hash = deserialize_evm_tx_hash('0xfde90002b389234406d1f3a600166d9023c12263047007ddc7886ca99e23e15e')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=ethereum_inquirer,
-        tx_hash=tx_hash,
+        tx_hash=(tx_hash := deserialize_evm_tx_hash('0xfde90002b389234406d1f3a600166d9023c12263047007ddc7886ca99e23e15e')),  # noqa: E501
     )
     user_address, timestamp, gas_amount, revoke_amount, out_amount, in_amount = ethereum_accounts[0], TimestampMS(1742901911000), '0.00024787188908118', '0', '5.98230108', '0.00114182'  # noqa: E501
-    expected_events = [
+    assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=0,
@@ -522,7 +514,6 @@ def test_sell_yt(ethereum_inquirer, ethereum_accounts):
             address=string_to_evm_address('0xC781c0cC527CB8C351bE3A64c690216c535C6F36'),
         ),
     ]
-    assert events == expected_events
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
@@ -533,15 +524,14 @@ def test_add_liquidity(base_inquirer, base_accounts):
         evm_address=(lp_token_addr := string_to_evm_address('0xE15578523937ed7F08E8F7a1Fa8a021E07025a08')),  # noqa: E501
         chain_id=base_inquirer.chain_id,
     ) is None
-    tx_hash = deserialize_evm_tx_hash('0x04ca9cb81658c528c2a026d8aa9df5798b473d3a8be8e0215ed3efd444a89456')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=base_inquirer,
-        tx_hash=tx_hash,
+        tx_hash=(tx_hash := deserialize_evm_tx_hash('0x04ca9cb81658c528c2a026d8aa9df5798b473d3a8be8e0215ed3efd444a89456')),  # noqa: E501
     )
     assert (lp_token := get_evm_token(evm_address=lp_token_addr, chain_id=base_inquirer.chain_id)) is not None  # noqa: E501
     assert lp_token.protocol == CPT_PENDLE
     user_address, timestamp, gas_amount, out_amount, in_amount = base_accounts[0], TimestampMS(1743007437000), '0.000000641175932399', '222', '113.156787685931457114'  # noqa: E501
-    expected_events = [
+    assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=0,
@@ -582,20 +572,18 @@ def test_add_liquidity(base_inquirer, base_accounts):
             address=ZERO_ADDRESS,
         ),
     ]
-    assert events == expected_events
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0xe1685a3D1aE79B7C85829fcCe57D62a02eac61a5']])
 def test_swap_using_kyber(ethereum_inquirer, ethereum_accounts):
     """This checks for swaps where the receive event comes after the swap event."""
-    tx_hash = deserialize_evm_tx_hash('0xf0c60f4d2a87716bb4f3a7a62ed2d196448fe8435da7413edeaf20120b7d618a')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=ethereum_inquirer,
-        tx_hash=tx_hash,
+        tx_hash=(tx_hash := deserialize_evm_tx_hash('0xf0c60f4d2a87716bb4f3a7a62ed2d196448fe8435da7413edeaf20120b7d618a')),  # noqa: E501
     )
     user_address, timestamp, gas_amount, revoke_amount, out_amount, in_amount = ethereum_accounts[0], TimestampMS(1743012491000), '0.00020274888980646', '0', '6.453525486228687704', '7.457926'  # noqa: E501
-    expected_events = [
+    assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=0,
@@ -646,20 +634,18 @@ def test_swap_using_kyber(ethereum_inquirer, ethereum_accounts):
             address=string_to_evm_address('0x888888888889758F76e7103c6CbF23ABbF58F946'),
         ),
     ]
-    assert events == expected_events
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0x21f2a9b5F420245d86E8Faa753022dA01946B13F']])
 def test_swap_using_kyber_2(ethereum_inquirer, ethereum_accounts):
     """This checks for swaps where the receive event comes before the swap event."""
-    tx_hash = deserialize_evm_tx_hash('0xe3e3b9467890b233007917900fb7b9282d2c14c3381e1db0de2850523ba24359')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=ethereum_inquirer,
-        tx_hash=tx_hash,
+        tx_hash=(tx_hash := deserialize_evm_tx_hash('0xe3e3b9467890b233007917900fb7b9282d2c14c3381e1db0de2850523ba24359')),  # noqa: E501
     )
     user_address, timestamp, gas_amount, out_amount, in_amount = ethereum_accounts[0], TimestampMS(1743064667000), '0.00010481829185758', '5.634264087233128405', '0.00424279429101785'  # noqa: E501
-    expected_events = [
+    assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=0,
@@ -698,19 +684,17 @@ def test_swap_using_kyber_2(ethereum_inquirer, ethereum_accounts):
             address=string_to_evm_address('0x888888888889758F76e7103c6CbF23ABbF58F946'),
         ),
     ]
-    assert events == expected_events
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0xc68Ca8A21AAcF167E234F8d08F5d9d115fae2F8d']])
 def test_swap_using_odos(ethereum_inquirer, ethereum_accounts):
-    tx_hash = deserialize_evm_tx_hash('0x55fdb8d8f9b8968904e022798049f5c56103f06854c5575e9c09cee1aa2314f9')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=ethereum_inquirer,
-        tx_hash=tx_hash,
+        tx_hash=(tx_hash := deserialize_evm_tx_hash('0x55fdb8d8f9b8968904e022798049f5c56103f06854c5575e9c09cee1aa2314f9')),  # noqa: E501
     )
     user_address, timestamp, gas_amount, out_amount, in_amount = ethereum_accounts[0], TimestampMS(1743083231000), '0.000421634677180424', '307.491735', '307.738865329882018479'  # noqa: E501
-    expected_events = [
+    assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=0,
@@ -749,7 +733,6 @@ def test_swap_using_odos(ethereum_inquirer, ethereum_accounts):
             address=string_to_evm_address('0x888888888889758F76e7103c6CbF23ABbF58F946'),
         ),
     ]
-    assert events == expected_events
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
@@ -1086,15 +1069,14 @@ def test_remove_liquidity(base_inquirer, base_accounts, pendle_cache):
         evm_address=(lp_token_addr := string_to_evm_address('0xE15578523937ed7F08E8F7a1Fa8a021E07025a08')),  # noqa: E501
         chain_id=base_inquirer.chain_id,
     ) is None
-    tx_hash = deserialize_evm_tx_hash('0x60ab64b9c8c560ffccd2bfbf5411be2efdd8d241296d3bfe778d905001db663d')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=base_inquirer,
-        tx_hash=tx_hash,
+        tx_hash=(tx_hash := deserialize_evm_tx_hash('0x60ab64b9c8c560ffccd2bfbf5411be2efdd8d241296d3bfe778d905001db663d')),  # noqa: E501
     )
     assert (lp_token := get_evm_token(evm_address=lp_token_addr, chain_id=base_inquirer.chain_id)) is not None  # noqa: E501
     assert lp_token.protocol == CPT_PENDLE
     user_address, timestamp, gas_amount, approve_amount, out_amount, in_amount, reward_amount = base_accounts[0], TimestampMS(1743008107000), '0.000000772529310385', '0.501902187294857254', '51.498097812705142746', '101.027879453122635516', '0.038804848288942801'  # noqa: E501
-    expected_events = [
+    assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=0,
@@ -1160,19 +1142,17 @@ def test_remove_liquidity(base_inquirer, base_accounts, pendle_cache):
             address=lp_token.evm_address,
         ),
     ]
-    assert events == expected_events
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0x11B6AA86Cd8EFB8B4452cc7f9c0C6fcc188D92F0']])
 def test_redeem_due_rewards_and_interests(ethereum_inquirer, ethereum_accounts, pendle_cache):
-    tx_hash = deserialize_evm_tx_hash('0xe6a4e6b2df756c4dabc1bb1c275338207e6c1e06f2f7f2ffae566c87f76dbf95')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=ethereum_inquirer,
-        tx_hash=tx_hash,
+        tx_hash=(tx_hash := deserialize_evm_tx_hash('0xe6a4e6b2df756c4dabc1bb1c275338207e6c1e06f2f7f2ffae566c87f76dbf95')),  # noqa: E501
     )
     user_address, timestamp, gas_amount, approve_amount, in_amount, reward_amount = ethereum_accounts[0], TimestampMS(1743612395000), '0.00047191725218462', '0.001409507994839191', '0.140950799483919151', '466.678734752621960369'  # noqa: E501
-    expected_events = [
+    assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=0,
@@ -1225,19 +1205,17 @@ def test_redeem_due_rewards_and_interests(ethereum_inquirer, ethereum_accounts, 
             address=string_to_evm_address('0xfd5Cf95E8b886aCE955057cA4DC69466e793FBBE'),
         ),
     ]
-    assert events == expected_events
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0x743D7B30661d65B41960Bf6b5d1bB93CF7972A73']])
 def test_redeem_due_rewards_multiple_tokens(ethereum_inquirer, ethereum_accounts, pendle_cache):
-    tx_hash = deserialize_evm_tx_hash('0xd6307558bb3252cb0b6bd9af91eaf97fcc1423181cd44db7bc187d29440322c1')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=ethereum_inquirer,
-        tx_hash=tx_hash,
+        tx_hash=(tx_hash := deserialize_evm_tx_hash('0xd6307558bb3252cb0b6bd9af91eaf97fcc1423181cd44db7bc187d29440322c1')),  # noqa: E501
     )
     user_address, timestamp, gas_amount, sy_weeth_amount, pendle_amount = ethereum_accounts[0], TimestampMS(1713128123000), '0.002537430445956456', '0.010279749482167444', '1.305613281699848198'  # noqa: E501
-    expected_events = [
+    assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=0,
@@ -1278,4 +1256,3 @@ def test_redeem_due_rewards_multiple_tokens(ethereum_inquirer, ethereum_accounts
             address=string_to_evm_address('0xF32e58F92e60f4b0A37A69b95d642A471365EAe8'),
         ),
     ]
-    assert events == expected_events

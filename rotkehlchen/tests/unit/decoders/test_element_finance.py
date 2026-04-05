@@ -21,13 +21,12 @@ def test_claim_airdrop(ethereum_inquirer):
     https://etherscan.io/tx/0x1e58aed1baf70b57e6e3e880e1890e7fe607fddc94d62986c38fe70e483e594b
     """
     tx_hash = deserialize_evm_tx_hash('0x1e58aed1baf70b57e6e3e880e1890e7fe607fddc94d62986c38fe70e483e594b')  # noqa: E501
-    timestamp = TimestampMS(1652910214000)
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
-    expected_events = [
+    assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=0,
-            timestamp=timestamp,
+            timestamp=(timestamp := TimestampMS(1652910214000)),
             location=Location.ETHEREUM,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
@@ -52,4 +51,3 @@ def test_claim_airdrop(ethereum_inquirer):
             extra_data={AIRDROP_IDENTIFIER_KEY: 'elfi'},
         ),
     ]
-    assert events == expected_events

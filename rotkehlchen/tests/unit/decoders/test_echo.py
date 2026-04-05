@@ -21,12 +21,13 @@ USDC_TOKEN = Asset('eip155:8453/erc20:0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913
 def test_echo_fund(base_inquirer, base_accounts):
     tx_hash = deserialize_evm_tx_hash('0x6f16132d373dbba06259d04bd1e83771343c7ac17ac0a4e74fad645ed9d809de')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=base_inquirer, tx_hash=tx_hash)
-    timestamp, fund_amount, deal_address = TimestampMS(1736535363000), '5887', string_to_evm_address('0xeC14eD2470FaCe0a60a41c945Cc586aFbcc3273C')  # noqa: E501
+    fund_amount = '5887'
+    deal_address = string_to_evm_address('0xeC14eD2470FaCe0a60a41c945Cc586aFbcc3273C')
     assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=262,
-            timestamp=timestamp,
+            timestamp=(timestamp := TimestampMS(1736535363000)),
             location=Location.BASE,
             event_type=HistoryEventType.INFORMATIONAL,
             event_subtype=HistoryEventSubType.APPROVE,
@@ -59,12 +60,12 @@ def test_echo_fund(base_inquirer, base_accounts):
 def test_echo_refund(base_inquirer, base_accounts):
     tx_hash = deserialize_evm_tx_hash('0xfaeea0e01cecda7849efb3f27aa216c567366e10237b717a75587ff05ad7a7c6')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=base_inquirer, tx_hash=tx_hash)
-    timestamp, deal_address = TimestampMS(1730227259000), string_to_evm_address('0x241F8222D1c80a4FDc25f9FC00181Eec770131A2')  # noqa: E501
+    deal_address = string_to_evm_address('0x241F8222D1c80a4FDc25f9FC00181Eec770131A2')
     assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=492,
-            timestamp=timestamp,
+            timestamp=TimestampMS(1730227259000),
             location=Location.BASE,
             event_type=HistoryEventType.WITHDRAWAL,
             event_subtype=HistoryEventSubType.WITHDRAW_FROM_PROTOCOL,

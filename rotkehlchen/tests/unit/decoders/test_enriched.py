@@ -28,9 +28,8 @@ def test_1inch_claim(database, ethereum_inquirer, eth_transactions):
     """Data for claim taken from
     https://etherscan.io/tx/0x0582a0db79de3fa21d3b92a8658e0b1034c51ea54a8e06ea84fbb91d41b8fe17
     """
-    tx_hash = deserialize_evm_tx_hash('0x0582a0db79de3fa21d3b92a8658e0b1034c51ea54a8e06ea84fbb91d41b8fe17')  # noqa: E501
     transaction = EvmTransaction(
-        tx_hash=tx_hash,
+        tx_hash=(tx_hash := deserialize_evm_tx_hash('0x0582a0db79de3fa21d3b92a8658e0b1034c51ea54a8e06ea84fbb91d41b8fe17')),  # noqa: E501
         chain_id=ChainID.ETHEREUM,
         timestamp=1646375440,
         block_number=14351442,
@@ -81,14 +80,13 @@ def test_1inch_claim(database, ethereum_inquirer, eth_transactions):
         decoder.reload_data(cursor)
     events, _, _ = decoder._decode_transaction(transaction=transaction, tx_receipt=receipt)
     assert len(events) == 2
-    timestamp = TimestampMS(1646375440000)
-    expected_events = [
+    assert events == [
         EvmEvent(
             tx_ref=deserialize_evm_tx_hash(
                 '0x0582a0db79de3fa21d3b92a8658e0b1034c51ea54a8e06ea84fbb91d41b8fe17',
             ),
             sequence_index=0,
-            timestamp=timestamp,
+            timestamp=(timestamp := TimestampMS(1646375440000)),
             location=Location.ETHEREUM,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
@@ -115,7 +113,6 @@ def test_1inch_claim(database, ethereum_inquirer, eth_transactions):
             extra_data={AIRDROP_IDENTIFIER_KEY: '1inch'},
         ),
     ]
-    assert events == expected_events
 
 
 @pytest.mark.parametrize('ethereum_accounts', [['0xdF5CEF8Dc0CEA8DC200F09280915d1CD7a016BDe']])
@@ -123,9 +120,8 @@ def test_gitcoin_claim(database, ethereum_inquirer, eth_transactions):
     """Data for claim taken from
     https://etherscan.io/tx/0x0e22cbdbac56c785f186bec44d715ab0834ceeadd96573c030f2fae1550b64fa
     """
-    tx_hash = deserialize_evm_tx_hash('0x0e22cbdbac56c785f186bec44d715ab0834ceeadd96573c030f2fae1550b64fa')  # noqa: E501
     transaction = EvmTransaction(
-        tx_hash=tx_hash,
+        tx_hash=(tx_hash := deserialize_evm_tx_hash('0x0e22cbdbac56c785f186bec44d715ab0834ceeadd96573c030f2fae1550b64fa')),  # noqa: E501
         chain_id=ChainID.ETHEREUM,
         timestamp=1646375440,
         block_number=14351442,
@@ -176,7 +172,7 @@ def test_gitcoin_claim(database, ethereum_inquirer, eth_transactions):
         decoder.reload_data(cursor)
     events, _, _ = decoder._decode_transaction(transaction=transaction, tx_receipt=receipt)
     assert len(events) == 2
-    expected_events = [
+    assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=0,
@@ -205,4 +201,3 @@ def test_gitcoin_claim(database, ethereum_inquirer, eth_transactions):
             extra_data={AIRDROP_IDENTIFIER_KEY: 'gitcoin'},
         ),
     ]
-    assert events == expected_events

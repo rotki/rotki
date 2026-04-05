@@ -379,19 +379,17 @@ def test_prove_withdrawal(ethereum_inquirer, ethereum_accounts):
     """
     tx_hash = deserialize_evm_tx_hash('0xc68e09838d421ea4cdde39a30917579943a29d74e3d93266b52ee8ebdc841f78')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
-    timestamp = TimestampMS(1694198291000)
     user_address = ethereum_accounts[0]
-    gas_str = '0.015525942536120381'
     assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=0,
-            timestamp=timestamp,
+            timestamp=(timestamp := TimestampMS(1694198291000)),
             location=Location.ETHEREUM,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            amount=FVal(gas_str),
+            amount=FVal(gas_str := '0.015525942536120381'),
             location_label=user_address,
             notes=f'Burn {gas_str} ETH for gas',
             counterparty=CPT_GAS,

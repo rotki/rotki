@@ -23,17 +23,18 @@ from rotkehlchen.types import Location, TimestampMS, deserialize_evm_tx_hash
 def test_optimism_stake_deposit(optimism_inquirer, optimism_accounts):
     tx_hash = deserialize_evm_tx_hash('0x875d69d471b2c31c5175848b11f68815e197fd609509cee420075685d21feccb')  # noqa: E501
     events, decoder = get_decoded_events_of_transaction(evm_inquirer=optimism_inquirer, tx_hash=tx_hash)  # noqa: E501
-    timestamp, user, gas, amount = TimestampMS(1733231821000), optimism_accounts[0], '0.00000045219580173', '416.766115409070747461'  # noqa: E501
-    expected_events = [
+    user = optimism_accounts[0]
+    amount = '416.766115409070747461'
+    assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=0,
-            timestamp=timestamp,
+            timestamp=(timestamp := TimestampMS(1733231821000)),
             location=Location.OPTIMISM,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            amount=FVal(gas),
+            amount=FVal(gas := '0.00000045219580173'),
             location_label=optimism_accounts[0],
             notes=f'Burn {gas} ETH for gas',
             counterparty=CPT_GAS,
@@ -77,7 +78,6 @@ def test_optimism_stake_deposit(optimism_inquirer, optimism_accounts):
             address=ZERO_ADDRESS,
         ),
     ]
-    assert events == expected_events
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
@@ -86,17 +86,17 @@ def test_optimism_stake_deposit(optimism_inquirer, optimism_accounts):
 def test_optimism_lock(optimism_inquirer, optimism_accounts):
     tx_hash = deserialize_evm_tx_hash('0x160a78b4ce5001b407db9f5fca3e64fcc0619995d8888c66605f69525eed0270')  # noqa: E501
     events, decoder = get_decoded_events_of_transaction(evm_inquirer=optimism_inquirer, tx_hash=tx_hash)  # noqa: E501
-    timestamp, user, gas, giv_amount, pow_amount = TimestampMS(1733231841000), optimism_accounts[0], '0.000000453377609571', '416.766115409070747461', '172.630177184494281415'  # noqa: E501
-    expected_events = [
+    user = optimism_accounts[0]
+    assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=0,
-            timestamp=timestamp,
+            timestamp=(timestamp := TimestampMS(1733231841000)),
             location=Location.OPTIMISM,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            amount=FVal(gas),
+            amount=FVal(gas := '0.000000453377609571'),
             location_label=optimism_accounts[0],
             notes=f'Burn {gas} ETH for gas',
             counterparty=CPT_GAS,
@@ -108,7 +108,7 @@ def test_optimism_lock(optimism_inquirer, optimism_accounts):
             event_type=HistoryEventType.INFORMATIONAL,
             event_subtype=HistoryEventSubType.DEPOSIT_ASSET,
             asset=EvmToken(decoder.decoders['Giveth'].giv_token_id),
-            amount=FVal(giv_amount),
+            amount=FVal(giv_amount := '416.766115409070747461'),
             location_label=user,
             notes=f'Lock {giv_amount} GIV for 1 round/s',
             counterparty=CPT_GIVETH,
@@ -121,14 +121,13 @@ def test_optimism_lock(optimism_inquirer, optimism_accounts):
             event_type=HistoryEventType.RECEIVE,
             event_subtype=HistoryEventSubType.RECEIVE_WRAPPED,
             asset=EvmToken(decoder.decoders['Giveth'].pow_token_id),
-            amount=FVal(pow_amount),
+            amount=FVal(pow_amount := '172.630177184494281415'),
             location_label=user,
             notes=f'Receive {pow_amount} POW after locking GIV',
             counterparty=CPT_GIVETH,
             address=ZERO_ADDRESS,
         ),
     ]
-    assert events == expected_events
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
@@ -137,17 +136,18 @@ def test_optimism_lock(optimism_inquirer, optimism_accounts):
 def test_optimism_withdraw(optimism_inquirer, optimism_accounts):
     tx_hash = deserialize_evm_tx_hash('0xd687dcd65be8a2a9aea83123a9bdae775232af23e5846f01ade70f3f5280d392')  # noqa: E501
     events, decoder = get_decoded_events_of_transaction(evm_inquirer=optimism_inquirer, tx_hash=tx_hash)  # noqa: E501
-    timestamp, user, gas, amount = TimestampMS(1732744801000), optimism_accounts[0], '0.000000258591448555', '798.24369413782804452'  # noqa: E501
-    expected_events = [
+    user = optimism_accounts[0]
+    amount = '798.24369413782804452'
+    assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=0,
-            timestamp=timestamp,
+            timestamp=(timestamp := TimestampMS(1732744801000)),
             location=Location.OPTIMISM,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            amount=FVal(gas),
+            amount=FVal(gas := '0.000000258591448555'),
             location_label=optimism_accounts[0],
             notes=f'Burn {gas} ETH for gas',
             counterparty=CPT_GAS,
@@ -179,7 +179,6 @@ def test_optimism_withdraw(optimism_inquirer, optimism_accounts):
             address=decoder.decoders['Giveth'].givpower_staking_address,
         ),
     ]
-    assert events == expected_events
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
@@ -188,17 +187,18 @@ def test_optimism_withdraw(optimism_inquirer, optimism_accounts):
 def test_optimism_claim(optimism_inquirer, optimism_accounts):
     tx_hash = deserialize_evm_tx_hash('0x2144b2417404977fe2b4b4064b58cdaafc90e416e68a5ad16c04989cc025f3b1')  # noqa: E501
     events, decoder = get_decoded_events_of_transaction(evm_inquirer=optimism_inquirer, tx_hash=tx_hash)  # noqa: E501
-    timestamp, user, gas, amount = TimestampMS(1732520935000), optimism_accounts[0], '0.000001950934408636', '55.906071953178772758'  # noqa: E501
-    expected_events = [
+    user = optimism_accounts[0]
+    amount = '55.906071953178772758'
+    assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=0,
-            timestamp=timestamp,
+            timestamp=(timestamp := TimestampMS(1732520935000)),
             location=Location.OPTIMISM,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            amount=FVal(gas),
+            amount=FVal(gas := '0.000001950934408636'),
             location_label=optimism_accounts[0],
             notes=f'Burn {gas} ETH for gas',
             counterparty=CPT_GAS,
@@ -217,7 +217,6 @@ def test_optimism_claim(optimism_inquirer, optimism_accounts):
             address=decoder.decoders['Giveth'].distro_address,
         ),
     ]
-    assert events == expected_events
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
@@ -225,17 +224,18 @@ def test_optimism_claim(optimism_inquirer, optimism_accounts):
 def test_gnosis_claim(gnosis_inquirer, gnosis_accounts):
     tx_hash = deserialize_evm_tx_hash('0x8a7edd5f0008f8838664404a2b2aab593b705149044865cbdeb75d2126130949')  # noqa: E501
     events, decoder = get_decoded_events_of_transaction(evm_inquirer=gnosis_inquirer, tx_hash=tx_hash)  # noqa: E501
-    timestamp, user, gas, amount = TimestampMS(1733756450000), gnosis_accounts[0], '0.000142777694803742', '66405.135269385928501434'  # noqa: E501
-    expected_events = [
+    user = gnosis_accounts[0]
+    amount = '66405.135269385928501434'
+    assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=0,
-            timestamp=timestamp,
+            timestamp=(timestamp := TimestampMS(1733756450000)),
             location=Location.GNOSIS,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_XDAI,
-            amount=FVal(gas),
+            amount=FVal(gas := '0.000142777694803742'),
             location_label=user,
             notes=f'Burn {gas} XDAI for gas',
             counterparty=CPT_GAS,
@@ -254,7 +254,6 @@ def test_gnosis_claim(gnosis_inquirer, gnosis_accounts):
             address=decoder.decoders['Giveth'].distro_address,
         ),
     ]
-    assert events == expected_events
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
@@ -262,17 +261,17 @@ def test_gnosis_claim(gnosis_inquirer, gnosis_accounts):
 def test_gnosis_lock(gnosis_inquirer, gnosis_accounts):
     tx_hash = deserialize_evm_tx_hash('0x9a79d704dd637460a17bb3897df522c56deb4848d9d3b5630424c545e47172b5')  # noqa: E501
     events, decoder = get_decoded_events_of_transaction(evm_inquirer=gnosis_inquirer, tx_hash=tx_hash)  # noqa: E501
-    timestamp, user, gas, giv_amount, pow_amount = TimestampMS(1733685985000), gnosis_accounts[0], '0.00026284575126455', '2617.351674315678177796', '10982.806567405488178331'  # noqa: E501
-    expected_events = [
+    user = gnosis_accounts[0]
+    assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=0,
-            timestamp=timestamp,
+            timestamp=(timestamp := TimestampMS(1733685985000)),
             location=Location.GNOSIS,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_XDAI,
-            amount=FVal(gas),
+            amount=FVal(gas := '0.00026284575126455'),
             location_label=user,
             notes=f'Burn {gas} XDAI for gas',
             counterparty=CPT_GAS,
@@ -284,7 +283,7 @@ def test_gnosis_lock(gnosis_inquirer, gnosis_accounts):
             event_type=HistoryEventType.INFORMATIONAL,
             event_subtype=HistoryEventSubType.DEPOSIT_ASSET,
             asset=EvmToken(decoder.decoders['Giveth'].giv_token_id),
-            amount=FVal(giv_amount),
+            amount=FVal(giv_amount := '2617.351674315678177796'),
             location_label=user,
             notes=f'Lock {giv_amount} GIV for 26 round/s',
             counterparty=CPT_GIVETH,
@@ -297,14 +296,13 @@ def test_gnosis_lock(gnosis_inquirer, gnosis_accounts):
             event_type=HistoryEventType.RECEIVE,
             event_subtype=HistoryEventSubType.RECEIVE_WRAPPED,
             asset=EvmToken(decoder.decoders['Giveth'].pow_token_id),
-            amount=FVal(pow_amount),
+            amount=FVal(pow_amount := '10982.806567405488178331'),
             location_label=user,
             notes=f'Receive {pow_amount} POW after locking GIV',
             counterparty=CPT_GIVETH,
             address=ZERO_ADDRESS,
         ),
     ]
-    assert events == expected_events
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
@@ -312,17 +310,18 @@ def test_gnosis_lock(gnosis_inquirer, gnosis_accounts):
 def test_gnosis_stake_deposit(gnosis_inquirer, gnosis_accounts):
     tx_hash = deserialize_evm_tx_hash('0xaee26eb3b311b318292d4c29c2ad9b050fc339bfaef6da2f329a43cdb89dcd9b')  # noqa: E501
     events, decoder = get_decoded_events_of_transaction(evm_inquirer=gnosis_inquirer, tx_hash=tx_hash)  # noqa: E501
-    timestamp, user, gas, amount = TimestampMS(1733536070000), gnosis_accounts[0], '0.000391221856613286', '100913.342801097979277274'  # noqa: E501
+    user = gnosis_accounts[0]
+    amount = '100913.342801097979277274'
     expected_events = [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=0,
-            timestamp=timestamp,
+            timestamp=(timestamp := TimestampMS(1733536070000)),
             location=Location.GNOSIS,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_XDAI,
-            amount=FVal(gas),
+            amount=FVal(gas := '0.000391221856613286'),
             location_label=user,
             notes=f'Burn {gas} XDAI for gas',
             counterparty=CPT_GAS,
@@ -374,17 +373,18 @@ def test_gnosis_stake_deposit(gnosis_inquirer, gnosis_accounts):
 def test_gnosis_withdraw(gnosis_inquirer, gnosis_accounts):
     tx_hash = deserialize_evm_tx_hash('0x277949402fb601446f5b8c7e751e72df0f4687b38612935211542b3f4b3f2cf4')  # noqa: E501
     events, decoder = get_decoded_events_of_transaction(evm_inquirer=gnosis_inquirer, tx_hash=tx_hash)  # noqa: E501
-    timestamp, user, gas, amount = TimestampMS(1733322280000), gnosis_accounts[0], '0.00046583297133306', '4927.159556510935243873'  # noqa: E501
-    expected_events = [
+    user = gnosis_accounts[0]
+    amount = '4927.159556510935243873'
+    assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=0,
-            timestamp=timestamp,
+            timestamp=(timestamp := TimestampMS(1733322280000)),
             location=Location.GNOSIS,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_XDAI,
-            amount=FVal(gas),
+            amount=FVal(gas := '0.00046583297133306'),
             location_label=user,
             notes=f'Burn {gas} XDAI for gas',
             counterparty=CPT_GAS,
@@ -416,7 +416,6 @@ def test_gnosis_withdraw(gnosis_inquirer, gnosis_accounts):
             address=GNOSIS_GIVPOWERSTAKING_WRAPPER,
         ),
     ]
-    assert events == expected_events
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])

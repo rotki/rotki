@@ -97,18 +97,16 @@ def test_vote_cast_with_reason(optimism_inquirer, optimism_accounts):
     tx_hash = deserialize_evm_tx_hash('0xced69de2a81814554b9f69a19240737f0728f94bd67d94c73f960d24f99343bd')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=optimism_inquirer, tx_hash=tx_hash)
     user_address = optimism_accounts[0]
-    timestamp = TimestampMS(1706051703000)
-    gas_amount = '0.000022621225472652'
     assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=0,
-            timestamp=timestamp,
+            timestamp=(timestamp := TimestampMS(1706051703000)),
             location=Location.OPTIMISM,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=Asset('ETH'),
-            amount=FVal(gas_amount),
+            amount=FVal(gas_amount := '0.000022621225472652'),
             location_label=user_address,
             notes=f'Burn {gas_amount} ETH for gas',
             counterparty=CPT_GAS,

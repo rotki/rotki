@@ -16,19 +16,16 @@ from rotkehlchen.types import Location, TimestampMS, deserialize_evm_tx_hash
 def test_gnt_glm_migration(ethereum_inquirer, ethereum_accounts):
     tx_hash = deserialize_evm_tx_hash('0x86baa45e4ab48d1db26df82da1a6f654fe96f1254ace5883b6397d7f55eb11a4')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
-    timestamp = TimestampMS(1646777828000)
-    gas_str = '0.00560851737819982'
-    amount_str = '5920'
-    expected_events = [
+    assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=0,
-            timestamp=timestamp,
+            timestamp=(timestamp := TimestampMS(1646777828000)),
             location=Location.ETHEREUM,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            amount=FVal(gas_str),
+            amount=FVal(gas_str := '0.00560851737819982'),
             location_label=ethereum_accounts[0],
             notes=f'Burn {gas_str} ETH for gas',
             counterparty=CPT_GAS,
@@ -40,7 +37,7 @@ def test_gnt_glm_migration(ethereum_inquirer, ethereum_accounts):
             event_type=HistoryEventType.MIGRATE,
             event_subtype=HistoryEventSubType.SPEND,
             asset=Asset('eip155:1/erc20:0xa74476443119A942dE498590Fe1f2454d7D4aC0d'),
-            amount=FVal(amount_str),
+            amount=FVal(amount_str := '5920'),
             location_label=ethereum_accounts[0],
             notes=f'Migrate {amount_str} GNT to GLM',
             counterparty=CPT_GOLEM,
@@ -60,4 +57,3 @@ def test_gnt_glm_migration(ethereum_inquirer, ethereum_accounts):
             address=GNT_MIGRATION_ADDRESS,
         ),
     ]
-    assert events == expected_events
