@@ -8,6 +8,7 @@ from rotkehlchen.chain.evm.decoding.airdrops import match_airdrop_claim
 from rotkehlchen.chain.evm.decoding.interfaces import EvmDecoderInterface
 from rotkehlchen.chain.evm.decoding.structures import (
     DEFAULT_EVM_DECODING_OUTPUT,
+    ActionItem,
     EvmDecodingOutput,
 )
 from rotkehlchen.chain.optimism.modules.walletconnect.constants import WALLETCONECT_STAKE_WEIGHT
@@ -22,6 +23,7 @@ from .constants import (
     CPT_WALLETCONNECT,
     WALLETCONECT_AIRDROP_CLAIM,
     WALLETCONNECT_CPT_DETAILS,
+    WALLETCONNECT_REWARD_DISTRIBUTOR,
     WCT_TOKEN_ID,
 )
 
@@ -38,6 +40,7 @@ log = RotkehlchenLogsAdapter(logger)
 
 TOKENS_CLAIMED: Final = b'\x89n\x03If\xea\xaf\x1a\xdcT\xac\xc0\xf2W\x05o\xeb\xbd0\x0c\x9eG\x18,\xf7a\x98,\xf1\xf5\xe40'  # noqa: E501
 STAKING_WITHDRAW: Final = b"\x02\xf2Rp\xa4\xd8{\xeau\xdbT\x1c\xdf\xe5Y3J'[J#5 \xedl\n$)f|\xca\x94"
+REWARDS_CLAIMED: Final = b'\x94\xa8\xe1\x91j1\xbb\x1e(d\xba\xc7\x8al\x85\xe5\xde3\xa2\xf0\xfc\x06m\xfd<\xdami\xf5\xd3\xd5('  # noqa: E501
 
 
 class WalletconnectDecoder(EvmDecoderInterface, CustomizableDateMixin):
@@ -151,6 +154,28 @@ class WalletconnectDecoder(EvmDecoderInterface, CustomizableDateMixin):
 
         return DEFAULT_EVM_DECODING_OUTPUT
 
+    def _decode_rewards_claimed(self, context: 'DecoderContext') -> EvmDecodingOutput:
+        """Decodes WalletConnect staking reward claim events via an ActionItem."""
+        if context.tx_log.topics[0] != REWARDS_CLAIMED:
+            return DEFAULT_EVM_DECODING_OUTPUT
+
+        amount = token_normalized_value_decimals(
+            token_amount=int.from_bytes(context.tx_log.data[0:32]),
+            token_decimals=DEFAULT_TOKEN_DECIMALS,
+        )
+        return EvmDecodingOutput(action_items=[ActionItem(
+            action='transform',
+            from_event_type=HistoryEventType.RECEIVE,
+            from_event_subtype=HistoryEventSubType.NONE,
+            asset=Asset(WCT_TOKEN_ID),
+            amount=amount,
+            location_label=bytes_to_address(context.tx_log.topics[2]),
+            to_event_type=HistoryEventType.STAKING,
+            to_event_subtype=HistoryEventSubType.REWARD,
+            to_notes=f'Claim {amount} WCT from WalletConnect staking reward',
+            to_counterparty=CPT_WALLETCONNECT,
+        )])
+
     def _decode_staking(self, context: 'DecoderContext') -> EvmDecodingOutput:
         """Decodes WalletConnect staking related activity"""
         if context.tx_log.topics[0] == STAKING_DEPOSIT:
@@ -166,6 +191,7 @@ class WalletconnectDecoder(EvmDecoderInterface, CustomizableDateMixin):
         return {
             WALLETCONECT_AIRDROP_CLAIM: (self._decode_airdop_claim,),
             WALLETCONECT_STAKE_WEIGHT: (self._decode_staking,),
+            WALLETCONNECT_REWARD_DISTRIBUTOR: (self._decode_rewards_claimed,),
         }
 
     @staticmethod
