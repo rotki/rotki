@@ -1,7 +1,12 @@
 import logging
 from abc import abstractmethod
 from collections.abc import Callable, Sequence
+from http.client import RemoteDisconnected
 from typing import TYPE_CHECKING, Any
+
+import requests
+from gevent.event import Event
+from gevent.lock import RLock, Semaphore
 
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.api.websockets.typedefs import (
@@ -43,6 +48,108 @@ ExchangeQueryBalances = tuple[dict[AssetWithOracles, Balance] | None, str]
 
 ExchangeHistoryFailCallback = Callable[[str], None]
 ExchangeHistoryNewStepCallback = Callable[[str], None]
+
+
+class RecoveringExchangeSession(requests.Session):
+    """Session wrapper that retries once after recoverable keep-alive disconnects."""
+
+    def __init__(self, exchange: 'ExchangeWithoutApiSecret') -> None:
+        super().__init__()
+        self.exchange = exchange
+        self._recovery_lock = Semaphore()
+        self._session_state_lock = RLock()
+        self._session_reset_gate = RLock()
+        self._session_reset_ready = Event()
+        self._session_reset_ready.set()
+        self._session_inflight_requests = 0
+
+    def _register_request_start(self) -> None:
+        """Mark request start and update reset-readiness state.
+
+        A reset is only safe once there are no other in-flight requests using
+        this session. As soon as concurrency appears (`inflight > 1`), clear
+        `_session_reset_ready` so the resetter waits before closing session.
+        """
+        with self._session_state_lock:
+            self._session_inflight_requests += 1
+            if self._session_inflight_requests > 1:
+                self._session_reset_ready.clear()
+
+    def _register_request_end(self) -> None:
+        """Mark request end and signal when reset becomes safe again."""
+        with self._session_state_lock:
+            self._session_inflight_requests -= 1
+            if self._session_inflight_requests <= 1:
+                self._session_reset_ready.set()
+
+    def _reset_exchange_session(self) -> None:
+        """Reset exchange session once no other request uses this session.
+
+        We acquire `_session_reset_gate` to block new request registration,
+        wait for `_session_reset_ready` if another request is still in flight,
+        and then swap the exchange session.
+        """
+        with self._session_reset_gate:
+            with self._session_state_lock:
+                should_wait = self._session_inflight_requests > 1
+            if should_wait:
+                self._session_reset_ready.wait()
+
+            old_headers = dict(self.exchange.session.headers)
+            self.exchange.session.close()
+            self.exchange.session = self.exchange._create_session(headers=old_headers)
+
+    @staticmethod
+    def _is_recoverable_connection_error(error: requests.RequestException) -> bool:
+        """Return whether a connection error comes from `RemoteDisconnected`.
+
+        We only retry `requests.ConnectionError` failures caused by the remote end
+        closing a keep-alive socket without sending a response.
+
+        In requests/urllib3 this can appear either directly in `error.args` or
+        wrapped one level deeper (for example inside `urllib3.ProtocolError`).
+        """
+        if not isinstance(error, requests.ConnectionError):
+            return False
+
+        for arg in error.args:
+            if isinstance(arg, RemoteDisconnected):
+                return True
+            if isinstance(arg, BaseException) and any(
+                isinstance(inner, RemoteDisconnected) for inner in arg.args
+            ):
+                return True
+
+        return False
+
+    def request(self, *args: Any, **kwargs: Any) -> requests.Response:
+        with self._session_reset_gate:
+            self._register_request_start()
+        try:
+            return super().request(*args, **kwargs)
+        except requests.RequestException as e:
+            if not self._is_recoverable_connection_error(e):
+                raise
+
+            # Use the semaphore to ensure only one greenlet performs recovery.
+            # If another greenlet is already recovering, wait for it to finish
+            # and then retry with the new session.
+            if not self._recovery_lock.acquire(blocking=False):
+                # Another greenlet is recovering; wait for it to finish
+                self._recovery_lock.acquire(blocking=True)
+                self._recovery_lock.release()
+                # Retry with the session that was reset by the other greenlet
+                return self.exchange.session.request(*args, **kwargs)
+
+            try:
+                # Retry once with a fresh session after stale keep-alive disconnects.
+                # Subsequent failures in this chain bubble up.
+                self._reset_exchange_session()
+                return self.exchange.session.request(*args, **kwargs)
+            finally:
+                self._recovery_lock.release()
+        finally:
+            self._register_request_end()
 
 
 class ExchangeWithExtras:
@@ -87,9 +194,18 @@ class ExchangeWithoutApiSecret(CacheableMixIn, LockableQueryMixIn):
         self.api_key = api_key
         self.msg_aggregator = msg_aggregator
         self.first_connection_made = False
-        self.session = create_session()
-        set_user_agent(self.session)
+        self.session = self._create_session()
         log.info(f'Initialized {location!s} exchange {name}')
+
+    def _create_session(self, headers: dict[str, str | bytes] | None = None) -> requests.Session:
+        """Special create session that uses RecoveringExchangeSession to recover
+        on RemoteDisconnected errors
+        """
+        session = create_session(session=RecoveringExchangeSession(self))
+        set_user_agent(session)
+        if headers is not None:
+            session.headers.update(headers)
+        return session
 
     def reset_to_db_credentials(self) -> None:
         """Resets the exchange credentials to the ones saved in the DB"""

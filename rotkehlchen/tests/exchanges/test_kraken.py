@@ -3,6 +3,7 @@ import warnings as test_warnings
 from collections import defaultdict
 from contextlib import ExitStack
 from http import HTTPStatus
+from http.client import RemoteDisconnected
 from pathlib import Path
 from typing import TYPE_CHECKING, cast
 from unittest.mock import _patch, patch
@@ -11,6 +12,8 @@ from uuid import uuid4
 import gevent
 import pytest
 import requests
+from gevent.event import Event
+from urllib3.exceptions import ProtocolError
 
 from rotkehlchen.accounting.mixins.event import AccountingEventType
 from rotkehlchen.accounting.structures.balance import Balance
@@ -38,6 +41,7 @@ from rotkehlchen.db.filtering import HistoryEventFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.db.settings import ModifiableDBSettings
 from rotkehlchen.errors.asset import UnknownAsset
+from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.exchanges.kraken import Kraken
 from rotkehlchen.fval import FVal
@@ -225,11 +229,13 @@ def test_querying_rate_limit_exhaustion(kraken, database):
     patch_kraken = patch.object(kraken.session, 'post', side_effect=mock_response)
     patch_retries = patch('rotkehlchen.exchanges.kraken.KRAKEN_QUERY_TRIES', new=2)
     patch_dividend = patch('rotkehlchen.exchanges.kraken.KRAKEN_BACKOFF_DIVIDEND', new=1)
+    patch_sleep = patch('rotkehlchen.exchanges.kraken.gevent.sleep')
 
     with ExitStack() as stack:
         stack.enter_context(gevent.Timeout(8))
         stack.enter_context(patch_retries)
         stack.enter_context(patch_dividend)
+        stack.enter_context(patch_sleep)
         stack.enter_context(patch_kraken)
         kraken.query_history_events()
 
@@ -242,6 +248,152 @@ def test_querying_rate_limit_exhaustion(kraken, database):
 
     assert from_ts == 0
     assert to_ts == 1609950165, 'should have saved only until the last trades timestamp'
+
+
+def test_kraken_retries_after_remote_disconnect(kraken) -> None:
+    kraken.use_original_kraken = True
+
+    initial_session = kraken.session
+    response_text = (
+        '{"error":[],"result":{"ledger":{"L1":{"refid":"AOEXXV-61T63-AKPSJ0",'
+        '"time":1609950165.4497,"type":"trade","subtype":"","aclass":"currency",'
+        '"asset":"KFEE","amount":"0.00","fee":"1.145","balance":"0.00"}},"count":1}}'
+    )
+
+    with (
+        patch(
+            'requests.sessions.Session.send',
+            side_effect=[
+                requests.ConnectionError(
+                    'Connection aborted.',
+                    RemoteDisconnected('Remote end closed connection without response'),
+                ),
+                MockResponse(200, response_text),
+            ],
+        ) as post_patch,
+        patch('rotkehlchen.exchanges.kraken.gevent.sleep') as sleep_patch,
+    ):
+        response = kraken.api_query('Ledgers', {'start': 1, 'end': 2})
+
+    assert response['count'] == 1
+    assert len(response['ledger']) == 1
+    assert post_patch.call_count == 2
+    assert kraken.session is not initial_session
+    sleep_patch.assert_not_called()
+
+
+def test_kraken_does_not_retry_other_request_exceptions(kraken) -> None:
+    kraken.use_original_kraken = True
+
+    initial_session = kraken.session
+
+    with (
+        patch(
+            'requests.sessions.Session.post',
+            side_effect=requests.exceptions.ReadTimeout('timed out'),
+        ) as post_patch,
+        patch.object(kraken.session, 'close') as close_patch,
+        pytest.raises(RemoteError, match='timed out'),
+    ):
+        kraken.api_query('Ledgers', {'start': 1, 'end': 2})
+
+    assert post_patch.call_count == 1
+    assert kraken.session is initial_session
+    close_patch.assert_not_called()
+
+
+def test_kraken_retries_after_wrapped_remote_disconnect(kraken) -> None:
+    kraken.use_original_kraken = True
+
+    response_text = (
+        '{"error":[],"result":{"ledger":{"L1":{"refid":"AOEXXV-61T63-AKPSJ0",'
+        '"time":1609950165.4497,"type":"trade","subtype":"","aclass":"currency",'
+        '"asset":"KFEE","amount":"0.00","fee":"1.145","balance":"0.00"}},"count":1}}'
+    )
+
+    with patch(
+        'requests.sessions.Session.send',
+        side_effect=[
+            requests.exceptions.ConnectionError(ProtocolError(
+                'Connection aborted.',
+                RemoteDisconnected('Remote end closed connection without response'),
+            )),
+            MockResponse(200, response_text),
+        ],
+    ) as post_patch, patch('rotkehlchen.exchanges.kraken.gevent.sleep') as sleep_patch:
+        response = kraken.api_query('Ledgers', {'start': 1, 'end': 2})
+
+    assert response['count'] == 1
+    assert len(response['ledger']) == 1
+    assert post_patch.call_count == 2
+    sleep_patch.assert_not_called()
+
+
+def test_kraken_waits_before_resetting_session_if_another_request_is_in_flight(kraken) -> None:
+    """Ensure reset waits until other in-flight session requests complete.
+
+    Strategy:
+    1. Start a "slow" request on the exchange session and block it in `send()`.
+    2. While it is still in flight, start a second request that raises a recoverable
+       connection error (`ConnectionError` wrapping `RemoteDisconnected`).
+    3. Instrument `initial_session.close()` and verify close is *not* performed
+       before the slow request completes.
+    """
+    kraken.use_original_kraken = True
+
+    slow_started = Event()
+    allow_slow_finish = Event()
+    slow_finished = Event()
+    close_while_slow = False
+    recover_attempt = 0
+    initial_session = kraken.session
+
+    def mock_send(*args, **kwargs):  # pylint: disable=unused-argument
+        nonlocal recover_attempt
+        request = kwargs.get('request') or args[0]
+        if request.url.endswith('/slow'):
+            slow_started.set()
+            assert allow_slow_finish.wait(timeout=2) is True
+            slow_finished.set()
+            return MockResponse(200, '{}')
+
+        if request.url.endswith('/recover'):
+            if recover_attempt == 0:
+                recover_attempt += 1
+                # First recover request fails with the wrapped disconnect variant.
+                # Recovery code should catch this and reset the session.
+                raise requests.exceptions.ConnectionError(ProtocolError(
+                    'Connection aborted.',
+                    RemoteDisconnected('Remote end closed connection without response'),
+                ))
+
+            return MockResponse(200, '{}')
+
+        raise AssertionError(f'Unexpected request url: {request.url}')
+
+    original_close = initial_session.close
+
+    def tracked_close() -> None:
+        nonlocal close_while_slow
+        if slow_started.is_set() and not slow_finished.is_set():
+            close_while_slow = True
+        original_close()
+
+    with (
+        patch('requests.sessions.Session.send', side_effect=mock_send),
+        patch.object(initial_session, 'close', side_effect=tracked_close),
+    ):
+        slow_greenlet = gevent.spawn(kraken.session.get, 'https://rotki.test/slow')
+        assert slow_started.wait(timeout=2) is True
+
+        recover_greenlet = gevent.spawn(kraken.session.get, 'https://rotki.test/recover')
+        gevent.sleep(0)
+
+        allow_slow_finish.set()
+        gevent.joinall([slow_greenlet, recover_greenlet], timeout=2, raise_error=True)
+
+    assert recover_attempt == 1
+    assert close_while_slow is False
 
 
 def test_querying_deposits_withdrawals(kraken):

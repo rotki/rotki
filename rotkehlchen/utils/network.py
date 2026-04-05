@@ -18,7 +18,10 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
-def create_session(max_backoff_secs: float = 30) -> requests.Session:
+def create_session(
+        max_backoff_secs: float = 30,
+        session: requests.Session | None = None,
+) -> requests.Session:
     """Create a requests session configured to retry on connection, read, and
     specific server errors.
 
@@ -32,7 +35,7 @@ def create_session(max_backoff_secs: float = 30) -> requests.Session:
     to failed DNS lookups, socket connections and connection timeouts, never to requests
     where data has made it to the server.
     """
-    session = requests.Session()
+    session = session or requests.Session()
     # we don't use total in the adapter because it seems to trigger on certain bad status codes
     # like too many requests even when status_forcelist is set to an empty list. This
     # configuration worked fine for what we could test in real scenarios in the e2e tests.
