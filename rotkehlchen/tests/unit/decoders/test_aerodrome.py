@@ -87,20 +87,18 @@ def test_add_liquidity(
     GlobalDBHandler.delete_asset_by_identifier(
         identifier=evm_address_to_identifier(address=pool, chain_id=ChainID.BASE),
     )
-    tx_hash = deserialize_evm_tx_hash('0xb71a1339c700a110d61655387d422bb982252a3b55de7f571ced3b9f00d9beee')  # noqa: E501
     user_address = base_accounts[0]
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=base_transaction_decoder.evm_inquirer,
-        tx_hash=tx_hash,
+        tx_hash=(tx_hash := deserialize_evm_tx_hash('0xb71a1339c700a110d61655387d422bb982252a3b55de7f571ced3b9f00d9beee')),  # noqa: E501
         load_global_caches=load_global_caches,
     )
-    timestamp = TimestampMS(1706708913000)
     gas_amount, deposited_wsteth, deposited_weth, received_amount = '0.000071386738065118', '2.595314266724358628', '2.99450075155017638', '2.787544746858080184'  # noqa: E501
-    expected_events = [
+    assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=0,
-            timestamp=timestamp,
+            timestamp=(timestamp := TimestampMS(1706708913000)),
             location=Location.BASE,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
@@ -162,7 +160,6 @@ def test_add_liquidity(
             notes=f'Receive {received_amount} vAMM-WETH/wstETH after depositing in aerodrome pool {WSTETH_POOL_ADDRESS}',  # noqa: E501
         ),
     ]
-    assert events == expected_events
     assert EvmToken(pool_token.identifier).protocol == CPT_AERODROME
 
 
@@ -184,20 +181,18 @@ def test_stake_lp_token_to_gauge(base_accounts, base_transaction_decoder, load_g
     GlobalDBHandler.delete_asset_by_identifier(
         identifier=evm_address_to_identifier(address=pool, chain_id=ChainID.BASE),
     )
-    tx_hash = deserialize_evm_tx_hash('0x9a0cd1ab0b8e5dbf2718b1c87dad239f7f3a9ed8ff2e07643922b190f80ae898 ')  # noqa: E501
     user_address = base_accounts[0]
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=base_transaction_decoder.evm_inquirer,
-        tx_hash=tx_hash,
+        tx_hash=(tx_hash := deserialize_evm_tx_hash('0x9a0cd1ab0b8e5dbf2718b1c87dad239f7f3a9ed8ff2e07643922b190f80ae898 ')),  # noqa: E501
         load_global_caches=load_global_caches,
     )
-    timestamp = TimestampMS(1706708947000)
     gas_amount, deposited_amount = '0.000038383457555312', '2.787544746858080184'
-    expected_events = [
+    assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=0,
-            timestamp=timestamp,
+            timestamp=(timestamp := TimestampMS(1706708947000)),
             location=Location.BASE,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
@@ -233,7 +228,6 @@ def test_stake_lp_token_to_gauge(base_accounts, base_transaction_decoder, load_g
             notes=f'Deposit {deposited_amount} vAMM-WETH/wstETH into {WSTETH_GAUGE_ADDRESS} aerodrome gauge',  # noqa: E501
         ),
     ]
-    assert events == expected_events
     assert EvmToken(pool_token.identifier).protocol == CPT_AERODROME
 
 
@@ -255,25 +249,23 @@ def test_remove_liquidity(base_accounts, base_transaction_decoder, load_global_c
     GlobalDBHandler.delete_asset_by_identifier(
         identifier=evm_address_to_identifier(address=pool_address, chain_id=ChainID.BASE),
     )
-    tx_hash = deserialize_evm_tx_hash('0x847ed0b6bd3f1b030cc84eee74c2c238dd93e0b689c87d44bce7f3591173ef0d')  # noqa: E501
     user_address = base_accounts[0]
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=base_transaction_decoder.evm_inquirer,
-        tx_hash=tx_hash,
+        tx_hash=(tx_hash := deserialize_evm_tx_hash('0x847ed0b6bd3f1b030cc84eee74c2c238dd93e0b689c87d44bce7f3591173ef0d')),  # noqa: E501
         load_global_caches=load_global_caches,
     )
-    timestamp = TimestampMS(1706789989000)
     gas_amount, lp_amount, aero_amount, usdbc_amount = '0.000088467182445046', '0.000053130643452706', '190.426331639958037231', '15.035115'  # noqa: E501
     pool_token = Asset(evm_address_to_identifier(
         address=pool_address,
         chain_id=ChainID.BASE,
         token_type=TokenKind.ERC20,
     ))
-    expected_events = [
+    assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=0,
-            timestamp=timestamp,
+            timestamp=(timestamp := TimestampMS(1706789989000)),
             location=Location.BASE,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
@@ -335,7 +327,6 @@ def test_remove_liquidity(base_accounts, base_transaction_decoder, load_global_c
             notes=f'Remove {usdbc_amount} USDbC from aerodrome pool {pool_address}',
         ),
     ]
-    assert events == expected_events
     assert EvmToken(pool_token.identifier).protocol == CPT_AERODROME
 
 
@@ -348,7 +339,7 @@ def test_unlock_aero(base_accounts, base_transaction_decoder):
         evm_inquirer=base_transaction_decoder.evm_inquirer,
         tx_hash=tx_hash,
     )
-    expected_events = [
+    assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=0,
@@ -389,7 +380,6 @@ def test_unlock_aero(base_accounts, base_transaction_decoder):
             notes=f'Receive {withdrawn_amt} AERO from vote escrow after burning veNFT-71294',
         ),
     ]
-    assert events == expected_events
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
@@ -401,7 +391,7 @@ def test_lock_aero(base_accounts, base_transaction_decoder):
         evm_inquirer=base_transaction_decoder.evm_inquirer,
         tx_hash=tx_hash,
     )
-    expected_events = [
+    assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=0,
@@ -455,7 +445,6 @@ def test_lock_aero(base_accounts, base_transaction_decoder):
             notes=f'Receive veNFT-71991 for locking {lock_amount} AERO in vote escrow',
         ),
     ]
-    assert events == expected_events
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
@@ -467,7 +456,7 @@ def test_increase_locked_amount(base_accounts, base_transaction_decoder):
         evm_inquirer=base_transaction_decoder.evm_inquirer,
         tx_hash=tx_hash,
     )
-    expected_events = [
+    assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=0,
@@ -508,7 +497,6 @@ def test_increase_locked_amount(base_accounts, base_transaction_decoder):
             extra_data={'token_id': 3334},
         ),
     ]
-    assert events == expected_events
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
@@ -520,7 +508,7 @@ def test_increase_unlock_time(base_accounts, base_transaction_decoder):
         evm_inquirer=base_transaction_decoder.evm_inquirer,
         tx_hash=tx_hash,
     )
-    expected_events = [
+    assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=0,
@@ -549,7 +537,6 @@ def test_increase_unlock_time(base_accounts, base_transaction_decoder):
             notes='Increase unlock time to 10/04/2025 for AERO veNFT-16247',
         ),
     ]
-    assert events == expected_events
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
@@ -561,7 +548,7 @@ def test_vote(base_accounts, base_transaction_decoder):
         evm_inquirer=base_transaction_decoder.evm_inquirer,
         tx_hash=tx_hash,
     )
-    expected_events = [
+    assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=0,
@@ -589,7 +576,6 @@ def test_vote(base_accounts, base_transaction_decoder):
             notes='Cast 1805.00657141664811293 votes for pool 0xDbdfAc0F9268EF02c34Ed58c9Fab3517a98444dc',  # noqa: E501
         ),
     ]
-    assert events == expected_events
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
@@ -602,10 +588,9 @@ def test_swap(base_transaction_decoder, base_accounts, load_global_caches):
     https://basescan.org/address/0x266c8f8cda4360506b8d32dc5c4102350a069acd#code#F1#L95
     """  # noqa: E501
     _add_aerodrome_pool(string_to_evm_address('0x4F9Dc2229f2357B27C22db56cB39582c854Ad6d5'))
-    tx_hash = deserialize_evm_tx_hash('0x260538961f3f2e17a43d26732f1105f739f9cf79622a3df8986c279c6d69a450')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=base_transaction_decoder.evm_inquirer,
-        tx_hash=tx_hash,
+        tx_hash=(tx_hash := deserialize_evm_tx_hash('0x260538961f3f2e17a43d26732f1105f739f9cf79622a3df8986c279c6d69a450')),  # noqa: E501
         load_global_caches=load_global_caches,
     )
     assert events == [EvmEvent(
@@ -680,10 +665,9 @@ def test_swap_via_settler_router_on_base(
         base_accounts: list['ChecksumEvmAddress'],
         allow_base_routescan: None,
 ) -> None:
-    tx_hash = deserialize_evm_tx_hash('0x3a02a2df62ec9d633e73771b48806c2fc8a47f64bf97058cc561e20c6fe037c4')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=base_transaction_decoder.evm_inquirer,
-        tx_hash=tx_hash,
+        tx_hash=(tx_hash := deserialize_evm_tx_hash('0x3a02a2df62ec9d633e73771b48806c2fc8a47f64bf97058cc561e20c6fe037c4')),  # noqa: E501
     )
     expected_events = [EvmEvent(
         tx_ref=tx_hash,

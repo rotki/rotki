@@ -14,13 +14,12 @@ from rotkehlchen.types import Location, TimestampMS, deserialize_evm_tx_hash
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0xd312551890858CC313Bf1718F502FF9fcDB2e6ff']])
 def test_subscribe(ethereum_inquirer, ethereum_accounts):
-    tx_hash = deserialize_evm_tx_hash('0x6c9e1aac8818eb5d40761f8c65041a227aec8d4d140b7e1684be80259b0f2138')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=ethereum_inquirer,
-        tx_hash=tx_hash,
+        tx_hash=(tx_hash := deserialize_evm_tx_hash('0x6c9e1aac8818eb5d40761f8c65041a227aec8d4d140b7e1684be80259b0f2138')),  # noqa: E501
     )
     user_address, timestamp, gas = ethereum_accounts[0], TimestampMS(1676641271000), '0.02686452'
-    expected_events = [
+    assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=0,
@@ -49,19 +48,17 @@ def test_subscribe(ethereum_inquirer, ethereum_accounts):
             address=SUB_STORAGE,
         ),
     ]
-    assert events == expected_events
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0xd312551890858CC313Bf1718F502FF9fcDB2e6ff']])
 def test_deactivate_sub(ethereum_inquirer, ethereum_accounts):
-    tx_hash = deserialize_evm_tx_hash('0x646352346021b3747143dfff704b6b61b736fd86479b5c1bdb0145c92e5d92a0')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=ethereum_inquirer,
-        tx_hash=tx_hash,
+        tx_hash=(tx_hash := deserialize_evm_tx_hash('0x646352346021b3747143dfff704b6b61b736fd86479b5c1bdb0145c92e5d92a0')),  # noqa: E501
     )
     user_address, timestamp, gas = ethereum_accounts[0], TimestampMS(1677329195000), '0.00099726'
-    expected_events = [
+    assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=0,
@@ -90,4 +87,3 @@ def test_deactivate_sub(ethereum_inquirer, ethereum_accounts):
             address=SUB_STORAGE,
         ),
     ]
-    assert events == expected_events

@@ -45,16 +45,15 @@ def test_swap_token_to_token(ethereum_inquirer, ethereum_accounts):
     tx_hash = deserialize_evm_tx_hash('0xd4d16ea74bbf806715f5f0e799fd5e8befbf369a9e5461fa9c0ed88d72bd06e4')  # noqa: E501
     user_address = ethereum_accounts[0]
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
-    timestamp = TimestampMS(1676976635000)
     full_amount = FVal('0.15463537')
     raw_amount = '0.15395918'
     fee_amount = '0.00067619'
     assert full_amount == FVal(raw_amount) + FVal(fee_amount)
-    expected_events = [
+    assert events == [
         EvmSwapEvent(
             tx_ref=tx_hash,
             sequence_index=0,
-            timestamp=timestamp,
+            timestamp=(timestamp := TimestampMS(1676976635000)),
             location=Location.ETHEREUM,
             event_subtype=HistoryEventSubType.SPEND,
             asset=A_WBTC,
@@ -89,7 +88,6 @@ def test_swap_token_to_token(ethereum_inquirer, ethereum_accounts):
             address=GPV2_SETTLEMENT_ADDRESS,
         ),
     ]
-    assert events == expected_events
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
@@ -98,12 +96,12 @@ def test_swap_token_to_token_limit_order(ethereum_inquirer, ethereum_accounts):
     tx_hash = deserialize_evm_tx_hash('0x7674d6e3b8905cc4c6bc525d6cfa12dbb52de3093be0fe68038dfa7dafbdd849')  # noqa: E501
     user_address = ethereum_accounts[0]
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
-    timestamp, spend_amount, receive_amount, fee_amount, a_pendle = TimestampMS(1726757699000), '295.166018766331437412', '1145.856590417709400049', '4.833981233668562588', Asset('eip155:1/erc20:0x808507121B80c02388fAd14726482e061B8da827')  # noqa: E501
+    a_pendle = Asset('eip155:1/erc20:0x808507121B80c02388fAd14726482e061B8da827')
     assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=222,
-            timestamp=timestamp,
+            timestamp=(timestamp := TimestampMS(1726757699000)),
             location=Location.ETHEREUM,
             event_type=HistoryEventType.INFORMATIONAL,
             event_subtype=HistoryEventSubType.APPROVE,
@@ -119,7 +117,7 @@ def test_swap_token_to_token_limit_order(ethereum_inquirer, ethereum_accounts):
             location=Location.ETHEREUM,
             event_subtype=HistoryEventSubType.SPEND,
             asset=a_pendle,
-            amount=FVal(spend_amount),
+            amount=FVal(spend_amount := '295.166018766331437412'),
             location_label=user_address,
             notes=f'Swap {spend_amount} PENDLE in a cowswap limit order',
             counterparty=CPT_COWSWAP,
@@ -131,7 +129,7 @@ def test_swap_token_to_token_limit_order(ethereum_inquirer, ethereum_accounts):
             location=Location.ETHEREUM,
             event_subtype=HistoryEventSubType.RECEIVE,
             asset=Asset('eip155:1/erc20:0x22Fc5A29bd3d6CCe19a06f844019fd506fCe4455'),
-            amount=FVal(receive_amount),
+            amount=FVal(receive_amount := '1145.856590417709400049'),
             location_label=user_address,
             notes=f'Receive {receive_amount} ePendle as the result of a cowswap limit order',
             counterparty=CPT_COWSWAP,
@@ -143,7 +141,7 @@ def test_swap_token_to_token_limit_order(ethereum_inquirer, ethereum_accounts):
             location=Location.ETHEREUM,
             event_subtype=HistoryEventSubType.FEE,
             asset=a_pendle,
-            amount=FVal(fee_amount),
+            amount=FVal(fee_amount := '4.833981233668562588'),
             location_label=user_address,
             notes=f'Spend {fee_amount} PENDLE as a cowswap fee',
             counterparty=CPT_COWSWAP,
@@ -158,16 +156,15 @@ def test_swap_token_to_eth(ethereum_inquirer, ethereum_accounts):
     tx_hash = deserialize_evm_tx_hash('0xd4d16ea74bbf806715f5f0e799fd5e8befbf369a9e5461fa9c0ed88d72bd06e4')  # noqa: E501
     user_address = ethereum_accounts[0]
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
-    timestamp = TimestampMS(1676976635000)
     full_amount = FVal('99.99')
     raw_amount = '89.682951'
     fee_amount = '10.307049'
     assert full_amount == FVal(raw_amount) + FVal(fee_amount)
-    expected_events = [
+    assert events == [
         EvmSwapEvent(
             tx_ref=tx_hash,
             sequence_index=0,
-            timestamp=timestamp,
+            timestamp=(timestamp := TimestampMS(1676976635000)),
             location=Location.ETHEREUM,
             event_subtype=HistoryEventSubType.SPEND,
             asset=A_USDT,
@@ -202,7 +199,6 @@ def test_swap_token_to_eth(ethereum_inquirer, ethereum_accounts):
             address=GPV2_SETTLEMENT_ADDRESS,
         ),
     ]
-    assert events == expected_events
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
@@ -213,17 +209,16 @@ def test_swap_token_to_eth_with_other_trade(ethereum_inquirer, ethereum_accounts
     tx_hash = deserialize_evm_tx_hash('0x31051b28d2b0a0365c2b518778af91180355f130f1fcf2b199faecd256093cc9')  # noqa: E501
     user_address = ethereum_accounts[0]
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
-    timestamp, approval, amount_out, amount_in, fee_amount = TimestampMS(1718357603000), '115792089237316195423570985008687907853269984665640564039457.584007913129639935', '4987.831513391671511611', '0.861165556733956932', '12.168486608328488389'  # noqa: E501
-    expected_events = [
+    assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=1,
-            timestamp=timestamp,
+            timestamp=(timestamp := TimestampMS(1718357603000)),
             location=Location.ETHEREUM,
             event_type=HistoryEventType.INFORMATIONAL,
             event_subtype=HistoryEventSubType.APPROVE,
             asset=EvmToken('eip155:1/erc20:0x236501327e701692a281934230AF0b6BE8Df3353'),
-            amount=FVal(approval),
+            amount=FVal(approval := '115792089237316195423570985008687907853269984665640564039457.584007913129639935'),  # noqa: E501
             location_label=user_address,
             notes=f'Set FLT spending approval of {user_address} by 0xC92E8bdf79f0507f65a392b0ab4667716BFE0110 to {approval}',  # noqa: E501
             address=string_to_evm_address('0xC92E8bdf79f0507f65a392b0ab4667716BFE0110'),
@@ -234,7 +229,7 @@ def test_swap_token_to_eth_with_other_trade(ethereum_inquirer, ethereum_accounts
             location=Location.ETHEREUM,
             event_subtype=HistoryEventSubType.SPEND,
             asset=EvmToken('eip155:1/erc20:0x236501327e701692a281934230AF0b6BE8Df3353'),
-            amount=FVal(amount_out),
+            amount=FVal(amount_out := '4987.831513391671511611'),
             location_label=user_address,
             notes=f'Swap {amount_out} FLT in a cowswap market order',
             counterparty=CPT_COWSWAP,
@@ -246,7 +241,7 @@ def test_swap_token_to_eth_with_other_trade(ethereum_inquirer, ethereum_accounts
             location=Location.ETHEREUM,
             event_subtype=HistoryEventSubType.RECEIVE,
             asset=A_ETH,
-            amount=FVal(amount_in),
+            amount=FVal(amount_in := '0.861165556733956932'),
             location_label=user_address,
             notes=f'Receive {amount_in} ETH as the result of a cowswap market order',
             counterparty=CPT_COWSWAP,
@@ -258,14 +253,13 @@ def test_swap_token_to_eth_with_other_trade(ethereum_inquirer, ethereum_accounts
             location=Location.ETHEREUM,
             event_subtype=HistoryEventSubType.FEE,
             asset=EvmToken('eip155:1/erc20:0x236501327e701692a281934230AF0b6BE8Df3353'),
-            amount=FVal(fee_amount),
+            amount=FVal(fee_amount := '12.168486608328488389'),
             location_label=user_address,
             notes=f'Spend {fee_amount} FLT as a cowswap fee',
             counterparty=CPT_COWSWAP,
             address=GPV2_SETTLEMENT_ADDRESS,
         ),
     ]
-    assert events == expected_events
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
@@ -274,16 +268,15 @@ def test_swap_eth_to_token(ethereum_inquirer, ethereum_accounts):
     tx_hash = deserialize_evm_tx_hash('0xe2d6aa636623989061f1d762b19ca6fe6bc0edb5a890cf5a934a8fc6d42dcaca')  # noqa: E501
     user_address = ethereum_accounts[0]
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
-    timestamp = TimestampMS(1676987243000)
     full_amount = FVal('24.311042505395616962')
     raw_amount = '24.304521595868826446'
     fee_amount = '0.006520909526790516'
     assert full_amount == FVal(raw_amount) + FVal(fee_amount)
-    expected_events = [
+    assert events == [
         EvmSwapEvent(
             tx_ref=tx_hash,
             sequence_index=0,
-            timestamp=timestamp,
+            timestamp=(timestamp := TimestampMS(1676987243000)),
             location=Location.ETHEREUM,
             event_subtype=HistoryEventSubType.SPEND,
             asset=A_ETH,
@@ -318,7 +311,6 @@ def test_swap_eth_to_token(ethereum_inquirer, ethereum_accounts):
             address=GPV2_SETTLEMENT_ADDRESS,
         ),
     ]
-    assert events == expected_events
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
@@ -335,7 +327,6 @@ def test_2_decoded_swaps(ethereum_inquirer, ethereum_accounts):
     user_address_1, user_address_2 = ethereum_accounts
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
 
-    timestamp = TimestampMS(1676976635000)
     asset_fund = Asset('eip155:1/erc20:0xe9B076B476D8865cDF79D1Cf7DF420EE397a7f75')
     full_amount1 = FVal('16000')
     raw_amount1 = '15977.954584364'
@@ -346,11 +337,11 @@ def test_2_decoded_swaps(ethereum_inquirer, ethereum_accounts):
     fee_amount2 = '10.307049'
     assert full_amount2 == FVal(raw_amount2) + FVal(fee_amount2)
 
-    expected_events = [
+    assert events == [
         EvmEvent(  # approval
             tx_ref=tx_hash,
             sequence_index=9,
-            timestamp=timestamp,
+            timestamp=(timestamp := TimestampMS(1676976635000)),
             location=Location.ETHEREUM,
             event_type=HistoryEventType.INFORMATIONAL,
             event_subtype=HistoryEventSubType.APPROVE,
@@ -434,7 +425,6 @@ def test_2_decoded_swaps(ethereum_inquirer, ethereum_accounts):
             address=GPV2_SETTLEMENT_ADDRESS,
         ),
     ]
-    assert events == expected_events
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
@@ -443,7 +433,7 @@ def test_place_eth_order(ethereum_inquirer, ethereum_accounts):
     tx_hash = deserialize_evm_tx_hash('0x3619cc8d8f60541df0ea7d96d923efa4c783f53491af0d3ed1ed31de9fe15bcf')  # noqa: E501
     user_address = ethereum_accounts[0]
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
-    expected_events = [
+    assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=0,
@@ -471,7 +461,6 @@ def test_place_eth_order(ethereum_inquirer, ethereum_accounts):
             address=string_to_evm_address('0x40A50cf069e992AA4536211B23F286eF88752187'),
         ),
     ]
-    assert events == expected_events
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
@@ -480,7 +469,7 @@ def test_place_xdai_order(gnosis_inquirer, gnosis_accounts):
     tx_hash = deserialize_evm_tx_hash('0x0fa7c5936310a7fefa2b62597aea88fd152f73e736eee805d26e9337f461bc4f')  # noqa: E501
     user_address = gnosis_accounts[0]
     events, _ = get_decoded_events_of_transaction(evm_inquirer=gnosis_inquirer, tx_hash=tx_hash)
-    expected_events = [
+    assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=0,
@@ -508,7 +497,6 @@ def test_place_xdai_order(gnosis_inquirer, gnosis_accounts):
             address=string_to_evm_address('0x40A50cf069e992AA4536211B23F286eF88752187'),
         ),
     ]
-    assert events == expected_events
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
@@ -520,7 +508,7 @@ def test_swap_bnb_to_aave(
 ) -> None:
     tx_hash = deserialize_evm_tx_hash('0x2ef3e17313340294f80b2ac03f6e6d602da2f6617fdf9bb0aeda9d29f6a4960e')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=binance_sc_inquirer, tx_hash=tx_hash)  # noqa: E501
-    expected_events = [
+    assert events == [
         EvmSwapEvent(
             tx_ref=tx_hash,
             sequence_index=0,
@@ -559,7 +547,6 @@ def test_swap_bnb_to_aave(
             address=GPV2_SETTLEMENT_ADDRESS,
         ),
     ]
-    assert expected_events == events
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
@@ -571,7 +558,7 @@ def test_bnb_create_order(
 ) -> None:
     tx_hash = deserialize_evm_tx_hash('0xd1bd1b511948bcbef89304a4a6004eed3e99bb36b90b19a814ab3b3719cc98ad')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=binance_sc_inquirer, tx_hash=tx_hash)  # noqa: E501
-    expected_events = [
+    assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=0,
@@ -599,7 +586,6 @@ def test_bnb_create_order(
             address=string_to_evm_address('0xbA3cB449bD2B4ADddBc894D8697F5170800EAdeC'),
         ),
     ]
-    assert expected_events == events
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
@@ -608,7 +594,7 @@ def test_invalidate_eth_order(ethereum_inquirer, ethereum_accounts):
     tx_hash = deserialize_evm_tx_hash('0x5769b4634ae26ec93aebc80a50e0676b0793af485041b249652bd7ee6703a9f5')  # noqa: E501
     user_address = ethereum_accounts[0]
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
-    expected_events = [
+    assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=0,
@@ -636,7 +622,6 @@ def test_invalidate_eth_order(ethereum_inquirer, ethereum_accounts):
             address=string_to_evm_address('0x40A50cf069e992AA4536211B23F286eF88752187'),
         ),
     ]
-    assert events == expected_events
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
@@ -645,7 +630,7 @@ def test_invalidate_gnosis_order(gnosis_inquirer, gnosis_accounts):
     tx_hash = deserialize_evm_tx_hash('0x68927e822317242ac1c0a0c71f2303725fc998164f1bb812f61b3053ef2a9a02')  # noqa: E501
     user_address = gnosis_accounts[0]
     events, _ = get_decoded_events_of_transaction(evm_inquirer=gnosis_inquirer, tx_hash=tx_hash)
-    expected_events = [
+    assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=0,
@@ -673,7 +658,6 @@ def test_invalidate_gnosis_order(gnosis_inquirer, gnosis_accounts):
             address=string_to_evm_address('0x40A50cf069e992AA4536211B23F286eF88752187'),
         ),
     ]
-    assert events == expected_events
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
@@ -682,7 +666,7 @@ def test_refund_eth_order(ethereum_inquirer, ethereum_accounts):
     tx_hash = deserialize_evm_tx_hash('0x424f29ad7b865d764d89fe28767a7f34d177cad71cc123a2a8c0209aa0b70fda')  # noqa: E501
     user_address = ethereum_accounts[0]
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
-    expected_events = [
+    assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=0,
@@ -698,7 +682,6 @@ def test_refund_eth_order(ethereum_inquirer, ethereum_accounts):
             address=string_to_evm_address('0x40A50cf069e992AA4536211B23F286eF88752187'),
         ),
     ]
-    assert events == expected_events
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
@@ -707,7 +690,7 @@ def test_refund_gnosis_order(gnosis_inquirer, gnosis_accounts):
     tx_hash = deserialize_evm_tx_hash('0xb37be7c154ef4fb0fd291c647c21013abb10428181e64ba1c6305b77df929d0e')  # noqa: E501
     user_address = gnosis_accounts[0]
     events, _ = get_decoded_events_of_transaction(evm_inquirer=gnosis_inquirer, tx_hash=tx_hash)
-    expected_events = [
+    assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=0,
@@ -723,7 +706,6 @@ def test_refund_gnosis_order(gnosis_inquirer, gnosis_accounts):
             address=string_to_evm_address('0x40A50cf069e992AA4536211B23F286eF88752187'),
         ),
     ]
-    assert events == expected_events
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
@@ -732,16 +714,15 @@ def test_swap_gnosis_tokens(gnosis_inquirer, gnosis_accounts):
     tx_hash = deserialize_evm_tx_hash('0x024e1da9dc2bf7ff88dd22643857979fcd954103860698203257b6db27778482')  # noqa: E501
     user_address = gnosis_accounts[0]
     events, _ = get_decoded_events_of_transaction(evm_inquirer=gnosis_inquirer, tx_hash=tx_hash)
-    timestamp = TimestampMS(1691567755000)
     full_amount = FVal('59.848803')
     raw_amount = '59.847255'
     fee_amount = '0.001548'
     assert full_amount == FVal(raw_amount) + FVal(fee_amount)
-    expected_events = [
+    assert events == [
         EvmSwapEvent(
             tx_ref=tx_hash,
             sequence_index=0,
-            timestamp=timestamp,
+            timestamp=(timestamp := TimestampMS(1691567755000)),
             location=Location.GNOSIS,
             event_subtype=HistoryEventSubType.SPEND,
             asset=Asset('eip155:100/erc20:0xDDAfbb505ad214D7b80b1f830fcCc89B60fb7A83'),
@@ -776,7 +757,6 @@ def test_swap_gnosis_tokens(gnosis_inquirer, gnosis_accounts):
             address=GPV2_SETTLEMENT_ADDRESS,
         ),
     ]
-    assert events == expected_events
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
@@ -784,7 +764,7 @@ def test_swap_gnosis_tokens(gnosis_inquirer, gnosis_accounts):
 def test_swap_gnosis_monerium(gnosis_inquirer, gnosis_accounts):
     """The annoying problem with monerium's multiple versions messing with the decoder matching"""
     events, _ = get_decoded_events_of_transaction(evm_inquirer=gnosis_inquirer, tx_hash=(tx_hash := deserialize_evm_tx_hash('0x4f34125588875b708faae04c0711473171982b48f7c0f2de8ca33bc5dcc974a3')))  # noqa: E501
-    expected_events = [
+    assert events == [
         EvmSwapEvent(
             tx_ref=tx_hash,
             sequence_index=0,
@@ -811,7 +791,6 @@ def test_swap_gnosis_monerium(gnosis_inquirer, gnosis_accounts):
             address=GPV2_SETTLEMENT_ADDRESS,
         ),
     ]
-    assert events == expected_events
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
@@ -820,12 +799,11 @@ def test_ethereum_claim_airdrop(ethereum_inquirer, ethereum_accounts):
     tx_hash = deserialize_evm_tx_hash('0x8d33a6f1c37da1e2b77a4595425360361b6db79ec8811ff2eef810ebb9942044')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     user_address = ethereum_accounts[0]
-    timestamp = TimestampMS(1644614818000)
     amount = FVal('15922.558465644366037906')
     assert events == [
         EvmEvent(
             sequence_index=0,
-            timestamp=timestamp,
+            timestamp=(timestamp := TimestampMS(1644614818000)),
             location=Location.ETHEREUM,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
@@ -859,12 +837,11 @@ def test_gnosis_claim_airdrop(gnosis_inquirer, gnosis_accounts):
     user_address = gnosis_accounts[0]
     tx_hash = deserialize_evm_tx_hash('0x85540c0cb716efa6027ff9415c700ecb36d382aafa18749b9e66c67e66f47b8d')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=gnosis_inquirer, tx_hash=tx_hash)
-    timestamp = TimestampMS(1644617690000)
     amount = FVal('34.73918333042108124')
     assert events == [
         EvmEvent(
             sequence_index=0,
-            timestamp=timestamp,
+            timestamp=(timestamp := TimestampMS(1644617690000)),
             location=Location.GNOSIS,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
@@ -898,12 +875,11 @@ def test_ethereum_vested_claim(ethereum_inquirer, ethereum_accounts):
     tx_hash = deserialize_evm_tx_hash('0xb6b58ea77542bfeec311c2df5707fe002b62c5a5d648aa17892d680f4e0d6e07')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     user_address = ethereum_accounts[0]
-    timestamp = TimestampMS(1704960791000)
     gas, amount = '0.001562177312628784', '4278.42414719412947787'
     assert events == [
         EvmEvent(
             sequence_index=0,
-            timestamp=timestamp,
+            timestamp=(timestamp := TimestampMS(1704960791000)),
             location=Location.ETHEREUM,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
@@ -949,12 +925,11 @@ def test_gnosis_vested_claim(gnosis_inquirer, gnosis_accounts):
     tx_hash = deserialize_evm_tx_hash('0x57ecb8f87eed5548cb375ea695531d6849843d6217771a5c25c957058a460243')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=gnosis_inquirer, tx_hash=tx_hash)
     user_address = gnosis_accounts[0]
-    timestamp = TimestampMS(1707738405000)
     gas, amount = '0.000520287498374868', '99.807039723201809834'
     assert events == [
         EvmEvent(
             sequence_index=0,
-            timestamp=timestamp,
+            timestamp=(timestamp := TimestampMS(1707738405000)),
             location=Location.GNOSIS,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
@@ -1000,16 +975,15 @@ def test_gnosis_claim_airdrop_with_xdai_payment(gnosis_inquirer, gnosis_accounts
     user_address = gnosis_accounts[0]
     tx_hash = deserialize_evm_tx_hash('0x1b82f080f70f00d63be3da2bed93834c254517640406aec949126020f7deb4c4')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=gnosis_inquirer, tx_hash=tx_hash)
-    timestamp, gas_amount, payment_amount, claim_amount = TimestampMS(1644614725000), '0.00012231000065232', '864.055299539170506912', '5760.36866359447004608'  # noqa: E501
     assert events == [
         EvmEvent(
             sequence_index=0,
-            timestamp=timestamp,
+            timestamp=(timestamp := TimestampMS(1644614725000)),
             location=Location.GNOSIS,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_XDAI,
-            amount=FVal(gas_amount),
+            amount=FVal(gas_amount := '0.00012231000065232'),
             location_label=user_address,
             notes=f'Burn {gas_amount} XDAI for gas',
             tx_ref=tx_hash,
@@ -1020,7 +994,7 @@ def test_gnosis_claim_airdrop_with_xdai_payment(gnosis_inquirer, gnosis_accounts
             location=Location.GNOSIS,
             event_subtype=HistoryEventSubType.SPEND,
             asset=A_XDAI,
-            amount=FVal(payment_amount),
+            amount=FVal(payment_amount := '864.055299539170506912'),
             location_label=user_address,
             notes=f'Pay {payment_amount} XDAI to claim vCOW',
             tx_ref=tx_hash,
@@ -1032,7 +1006,7 @@ def test_gnosis_claim_airdrop_with_xdai_payment(gnosis_inquirer, gnosis_accounts
             location=Location.GNOSIS,
             event_subtype=HistoryEventSubType.RECEIVE,
             asset=A_GNOSIS_VCOW,
-            amount=FVal(claim_amount),
+            amount=FVal(claim_amount := '5760.36866359447004608'),
             location_label=user_address,
             notes=f'Claim {claim_amount} vCOW from cowswap airdrop',
             tx_ref=tx_hash,
@@ -1049,16 +1023,15 @@ def test_gnosis_claim_airdrop_with_gno_payment(gnosis_inquirer, gnosis_accounts)
     user_address = gnosis_accounts[0]
     tx_hash = deserialize_evm_tx_hash('0xdae21fd2a64756326ba0bf119b8ee33cf41480fb758d0d7f17168fcc01622da1')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=gnosis_inquirer, tx_hash=tx_hash)
-    timestamp, gas_amount, claim1_amount, payment_amount, claim2_amount = TimestampMS(1645776935000), '0.000259548002076384', '3559.387459031416241036', '2.085578589276220452', '3559.387459031416239786'  # noqa: E501
     assert events == [
         EvmEvent(
             sequence_index=0,
-            timestamp=timestamp,
+            timestamp=(timestamp := TimestampMS(1645776935000)),
             location=Location.GNOSIS,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_XDAI,
-            amount=FVal(gas_amount),
+            amount=FVal(gas_amount := '0.000259548002076384'),
             location_label=user_address,
             notes=f'Burn {gas_amount} XDAI for gas',
             tx_ref=tx_hash,
@@ -1070,7 +1043,7 @@ def test_gnosis_claim_airdrop_with_gno_payment(gnosis_inquirer, gnosis_accounts)
             event_type=HistoryEventType.RECEIVE,
             event_subtype=HistoryEventSubType.AIRDROP,
             asset=A_GNOSIS_VCOW,
-            amount=FVal(claim1_amount),
+            amount=FVal(claim1_amount := '3559.387459031416241036'),
             location_label=user_address,
             notes=f'Claim {claim1_amount} vCOW from cowswap airdrop',
             tx_ref=tx_hash,
@@ -1083,7 +1056,7 @@ def test_gnosis_claim_airdrop_with_gno_payment(gnosis_inquirer, gnosis_accounts)
             location=Location.GNOSIS,
             event_subtype=HistoryEventSubType.SPEND,
             asset=Asset('eip155:100/erc20:0x9C58BAcC331c9aa871AFD802DB6379a98e80CEdb'),
-            amount=FVal(payment_amount),
+            amount=FVal(payment_amount := '2.085578589276220452'),
             location_label=user_address,
             notes=f'Pay {payment_amount} GNO to claim vCOW',
             tx_ref=tx_hash,
@@ -1095,7 +1068,7 @@ def test_gnosis_claim_airdrop_with_gno_payment(gnosis_inquirer, gnosis_accounts)
             location=Location.GNOSIS,
             event_subtype=HistoryEventSubType.RECEIVE,
             asset=A_GNOSIS_VCOW,
-            amount=FVal(claim2_amount),
+            amount=FVal(claim2_amount := '3559.387459031416239786'),
             location_label=user_address,
             notes=f'Claim {claim2_amount} vCOW from cowswap airdrop',
             tx_ref=tx_hash,
@@ -1109,14 +1082,13 @@ def test_gnosis_claim_airdrop_with_gno_payment(gnosis_inquirer, gnosis_accounts)
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('arbitrum_one_accounts', [['0xc37b40ABdB939635068d3c5f13E7faF686F03B65']])
 def test_swap_token_to_token_arb(arbitrum_one_inquirer, arbitrum_one_accounts):
-    tx_hash = deserialize_evm_tx_hash('0xd1b5ca7b7616f827216d4fd541f87b5c4571e568754f1d05ad87370975d4c69a')  # noqa: E501
     user_address = arbitrum_one_accounts[0]
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=arbitrum_one_inquirer,
-        tx_hash=tx_hash,
+        tx_hash=(tx_hash := deserialize_evm_tx_hash('0xd1b5ca7b7616f827216d4fd541f87b5c4571e568754f1d05ad87370975d4c69a')),  # noqa: E501
     )
     swapped_amount, received_amount, fee_amount, timestamp = '0.208028640823960926', '0.228831', '0.011665366552986548', TimestampMS(1717523107000)  # noqa: E501
-    expected_events = [
+    assert events == [
         EvmEvent(  # approval
             tx_ref=tx_hash,
             sequence_index=6,
@@ -1167,7 +1139,6 @@ def test_swap_token_to_token_arb(arbitrum_one_inquirer, arbitrum_one_accounts):
             address=GPV2_SETTLEMENT_ADDRESS,
         ),
     ]
-    assert events == expected_events
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
@@ -1178,14 +1149,14 @@ def test_gnosis_eure_v2(
 ):
     tx_hash = deserialize_evm_tx_hash('0xf751e1aa988888ab9edfa14ac98022c7d8241664f481fde40a418723b0fed009')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=gnosis_inquirer, tx_hash=tx_hash)
-    timestamp, swap_amount, received_amount, fee_amount, user_address = TimestampMS(1725445370000), '0.00009974865514625', '0.254038701346779266', '0.00000025134485375', gnosis_accounts[0]  # noqa: E501
+    user_address = gnosis_accounts[0]
     assert events == [EvmSwapEvent(
         sequence_index=0,
-        timestamp=timestamp,
+        timestamp=(timestamp := TimestampMS(1725445370000)),
         location=Location.GNOSIS,
         event_subtype=HistoryEventSubType.SPEND,
         asset=Asset('eip155:100/erc20:0x6C76971f98945AE98dD7d4DFcA8711ebea946eA6'),
-        amount=FVal(swap_amount),
+        amount=FVal(swap_amount := '0.00009974865514625'),
         location_label=user_address,
         notes=f'Swap {swap_amount} wstETH in a cowswap market order',
         tx_ref=tx_hash,
@@ -1197,7 +1168,7 @@ def test_gnosis_eure_v2(
         location=Location.GNOSIS,
         event_subtype=HistoryEventSubType.RECEIVE,
         asset=Asset('eip155:100/erc20:0x420CA0f9B9b604cE0fd9C18EF134C705e5Fa3430'),
-        amount=FVal(received_amount),
+        amount=FVal(received_amount := '0.254038701346779266'),
         location_label=user_address,
         notes=f'Receive {received_amount} EURe as the result of a cowswap market order',
         tx_ref=tx_hash,
@@ -1210,7 +1181,7 @@ def test_gnosis_eure_v2(
         location=Location.GNOSIS,
         event_subtype=HistoryEventSubType.FEE,
         asset=Asset('eip155:100/erc20:0x6C76971f98945AE98dD7d4DFcA8711ebea946eA6'),
-        amount=FVal(fee_amount),
+        amount=FVal(fee_amount := '0.00000025134485375'),
         location_label=user_address,
         notes=f'Spend {fee_amount} wstETH as a cowswap fee',
         counterparty=CPT_COWSWAP,
@@ -1336,10 +1307,9 @@ def test_cowswap_gnosis_token_to_native_via_curve(gnosis_inquirer, gnosis_accoun
     """Test that swapping a token for native XDAI on gnosis via cowswap is decoded
     correctly when the cowswap solver routes through a Curve pool. The Curve decoder
     must not claim the native XDAI transfer from the settlement to the user."""
-    tx_hash = deserialize_evm_tx_hash('0xa251a5069f7bddf590381ed6716f122f09df18ac89a6479ca6086b7981539a7e')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=gnosis_inquirer,
-        tx_hash=tx_hash,
+        tx_hash=(tx_hash := deserialize_evm_tx_hash('0xa251a5069f7bddf590381ed6716f122f09df18ac89a6479ca6086b7981539a7e')),  # noqa: E501
         load_global_caches=[CPT_CURVE],
     )
     user_address = gnosis_accounts[0]

@@ -21,13 +21,11 @@ def test_lock_gno(ethereum_inquirer, ethereum_accounts):
     tx_hash = deserialize_evm_tx_hash('0xe74bd8d81a057942d734d16303d74b9ae01dcd5659488f7955c36d6be5b107fe')  # noqa: E501
     user_address = ethereum_accounts[0]
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
-    timestamp = TimestampMS(1643833498000)
-    amount_str = '5.207408513473562376'
-    expected_events = [
+    assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=0,
-            timestamp=timestamp,
+            timestamp=(timestamp := TimestampMS(1643833498000)),
             location=Location.ETHEREUM,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
@@ -45,7 +43,7 @@ def test_lock_gno(ethereum_inquirer, ethereum_accounts):
             event_type=HistoryEventType.DEPOSIT,
             event_subtype=HistoryEventSubType.DEPOSIT_FOR_WRAPPED,
             asset=A_GNO,
-            amount=FVal(amount_str),
+            amount=FVal(amount_str := '5.207408513473562376'),
             location_label=user_address,
             notes=f'Deposit {amount_str} GNO to the locking contract',
             counterparty=CPT_LOCKEDGNO,
@@ -65,7 +63,6 @@ def test_lock_gno(ethereum_inquirer, ethereum_accounts):
             address=LOCKED_GNO_ADDRESS,
         ),
     ]
-    assert events == expected_events
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
@@ -74,13 +71,11 @@ def test_unlock_gno(ethereum_inquirer, ethereum_accounts):
     tx_hash = deserialize_evm_tx_hash('0x60b03b2bf3861c68a508f54a233d9ed742ddcd57899e730c57cc10f2939b0df0')  # noqa: E501
     user_address = ethereum_accounts[0]
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
-    timestamp = TimestampMS(1682246147000)
-    amount_str = '7.232204655685847974'
-    expected_events = [
+    assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=0,
-            timestamp=timestamp,
+            timestamp=(timestamp := TimestampMS(1682246147000)),
             location=Location.ETHEREUM,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
@@ -98,7 +93,7 @@ def test_unlock_gno(ethereum_inquirer, ethereum_accounts):
             event_type=HistoryEventType.WITHDRAWAL,
             event_subtype=HistoryEventSubType.REDEEM_WRAPPED,
             asset=A_GNO,
-            amount=FVal(amount_str),
+            amount=FVal(amount_str := '7.232204655685847974'),
             location_label=user_address,
             notes=f'Receive {amount_str} GNO back from the locking contract',
             counterparty=CPT_LOCKEDGNO,
@@ -118,4 +113,3 @@ def test_unlock_gno(ethereum_inquirer, ethereum_accounts):
             address=LOCKED_GNO_ADDRESS,
         ),
     ]
-    assert events == expected_events

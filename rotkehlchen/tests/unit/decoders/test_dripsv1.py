@@ -83,7 +83,7 @@ def test_enduser_collect(ethereum_inquirer, ethereum_accounts):
     tx_hash = deserialize_evm_tx_hash('0x38b957eaa21ba7a35c8713559680329f4b6b04bd46db00b54217c9d590c1a514')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     gas, amount, timestamp = '0.0003162699', '125.835582561728229714', TimestampMS(1660733511000)
-    expected_events = [
+    assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=0,
@@ -111,7 +111,6 @@ def test_enduser_collect(ethereum_inquirer, ethereum_accounts):
             address=string_to_evm_address('0x73043143e0A6418cc45d82D4505B096b802FD365'),
         ),
     ]
-    assert events == expected_events
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
@@ -212,7 +211,7 @@ def test_give(ethereum_inquirer, ethereum_accounts):
     tx_hash = deserialize_evm_tx_hash('0x104b65d6b29a133b6eb7950da6abed747c3a806356da5a351a94bbb73ca2271e')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     gas, amount, timestamp = '0.001515204384196608', '1', TimestampMS(1660666663000)
-    expected_events = [
+    assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=0,
@@ -240,7 +239,6 @@ def test_give(ethereum_inquirer, ethereum_accounts):
             address=string_to_evm_address('0x73043143e0A6418cc45d82D4505B096b802FD365'),
         ),
     ]
-    assert events == expected_events
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
@@ -249,7 +247,7 @@ def test_set_drips(ethereum_inquirer, ethereum_accounts):
     tx_hash = deserialize_evm_tx_hash('0x86b8ea87f33cc6ac11286d229840e75f9328380f1b2b2c50ba93f173a97762dc')  # noqa: E501
     events, decoder = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)  # noqa: E501
     gas, amount, timestamp, per_sec_amount, end_ts = '0.005778677878564032', '50', TimestampMS(1654597232000), '0.000001929012345679', 1667557232  # noqa: E501
-    expected_events = [
+    assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=0,
@@ -303,4 +301,3 @@ def test_set_drips(ethereum_inquirer, ethereum_accounts):
             address=string_to_evm_address('0x73043143e0A6418cc45d82D4505B096b802FD365'),
         ),
     ]
-    assert events == expected_events

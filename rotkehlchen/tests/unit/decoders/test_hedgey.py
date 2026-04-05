@@ -25,16 +25,16 @@ def test_delegate_vested_tokens_with_vault_creation(
 ):
     tx_hash = deserialize_evm_tx_hash('0x50dc56b705219f9f26e1749d4dabefbac7fae4e60925f4c57cb8a42687adf703')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
-    timestamp, gas, user_address = TimestampMS(1738025567000), '0.002012111196478005', ethereum_accounts[0]  # noqa: E501
-    expected_events = [
+    user_address = ethereum_accounts[0]
+    assert events == [
         EvmEvent(
             sequence_index=0,
-            timestamp=timestamp,
+            timestamp=(timestamp := TimestampMS(1738025567000)),
             location=Location.ETHEREUM,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            amount=FVal(gas),
+            amount=FVal(gas := '0.002012111196478005'),
             location_label=ethereum_accounts[0],
             notes=f'Burn {gas} ETH for gas',
             tx_ref=tx_hash,
@@ -54,7 +54,6 @@ def test_delegate_vested_tokens_with_vault_creation(
             address=ENS_ADDRESS,
         ),
     ]
-    assert events == expected_events
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
@@ -65,16 +64,16 @@ def test_delegate_plans(
 ):
     tx_hash = deserialize_evm_tx_hash('0xf5317d7926c5b3f269604ea983a8ed9a6240dfdbabcccd33a12dd135b9b2389a')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
-    timestamp, gas, user_address = TimestampMS(1738067495000), '0.000156863123427816', ethereum_accounts[0]  # noqa: E501
-    expected_events = [
+    user_address = ethereum_accounts[0]
+    assert events == [
         EvmEvent(
             sequence_index=0,
-            timestamp=timestamp,
+            timestamp=(timestamp := TimestampMS(1738067495000)),
             location=Location.ETHEREUM,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            amount=FVal(gas),
+            amount=FVal(gas := '0.000156863123427816'),
             location_label=ethereum_accounts[0],
             notes=f'Burn {gas} ETH for gas',
             tx_ref=tx_hash,
@@ -94,7 +93,6 @@ def test_delegate_plans(
             address=ENS_ADDRESS,
         ),
     ]
-    assert events == expected_events
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
@@ -105,16 +103,17 @@ def test_redeem_plans(
 ):
     tx_hash = deserialize_evm_tx_hash('0xb85eb3fb6496fa51ac3d43d230ea729b52593bd2781b2b9dfab638aab7011719')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
-    timestamp, gas, user_address, amount = TimestampMS(1737473963000), '0.000964573778269605', ethereum_accounts[0], '119.425418569253784576'  # noqa: E501
-    expected_events = [
+    user_address = ethereum_accounts[0]
+    amount = '119.425418569253784576'
+    assert events == [
         EvmEvent(
             sequence_index=0,
-            timestamp=timestamp,
+            timestamp=(timestamp := TimestampMS(1737473963000)),
             location=Location.ETHEREUM,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            amount=FVal(gas),
+            amount=FVal(gas := '0.000964573778269605'),
             location_label=ethereum_accounts[0],
             notes=f'Burn {gas} ETH for gas',
             tx_ref=tx_hash,
@@ -134,4 +133,3 @@ def test_redeem_plans(
             address=VOTING_TOKEN_LOCKUPS,
         ),
     ]
-    assert events == expected_events

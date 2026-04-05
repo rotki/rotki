@@ -49,7 +49,6 @@ if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
     from rotkehlchen.chain.polygon_pos.node_inquirer import PolygonPOSInquirer
 
-
 A_ADAI_V1 = Asset('eip155:1/erc20:0xfC1E690f61EFd961294b3e1Ce3313fBD8aa4f85d')
 ADDY = '0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12'
 ADDY2 = '0x5727c0481b90a129554395937612d8b9301D6c7b'
@@ -62,14 +61,13 @@ def test_aave_deposit_v1(ethereum_inquirer):
     https://etherscan.io/tx/0x930879d66d13c37edf25cdbb2d2e85b65c3b2a026529ff4085146bb7a5398410
     """
     tx_hash = deserialize_evm_tx_hash('0x930879d66d13c37edf25cdbb2d2e85b65c3b2a026529ff4085146bb7a5398410')  # noqa: E501
-    timestamp = TimestampMS(1595376667000)
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     amount = '2507.675873220870275072'
-    expected_events = [
+    assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=0,
-            timestamp=timestamp,
+            timestamp=(timestamp := TimestampMS(1595376667000)),
             location=Location.ETHEREUM,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
@@ -119,7 +117,6 @@ def test_aave_deposit_v1(ethereum_inquirer):
             address=ZERO_ADDRESS,
         ),
     ]
-    assert expected_events == events
 
 
 @pytest.mark.vcr
@@ -129,15 +126,13 @@ def test_aave_withdraw_v1(ethereum_inquirer):
     https://etherscan.io/tx/0x4fed67963375a3f90916f0cf7cb9e4d12644629e36233025b36060494ffba486
     """
     tx_hash = deserialize_evm_tx_hash('0x4fed67963375a3f90916f0cf7cb9e4d12644629e36233025b36060494ffba486')  # noqa: E501
-    timestamp = TimestampMS(1598217272000)
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     amount = '7968.408929477087756071'
-    interest = '88.663672238882760399'
-    expected_events = [
+    assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=0,
-            timestamp=timestamp,
+            timestamp=(timestamp := TimestampMS(1598217272000)),
             location=Location.ETHEREUM,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
@@ -180,14 +175,13 @@ def test_aave_withdraw_v1(ethereum_inquirer):
             event_type=HistoryEventType.RECEIVE,
             event_subtype=HistoryEventSubType.REWARD,
             asset=A_ADAI_V1,
-            amount=FVal(interest),
+            amount=FVal(interest := '88.663672238882760399'),
             location_label=ADDY,
             notes=f'Gain {interest} aDAI from aave-v1 as interest',
             counterparty=CPT_AAVE_V1,
             address=ZERO_ADDRESS,
         ),
     ]
-    assert expected_events == events
 
 
 @pytest.mark.vcr
@@ -199,8 +193,7 @@ def test_aave_eth_withdraw_v1(ethereum_inquirer):
     tx_hash = deserialize_evm_tx_hash('0xbd333bdd5784c10630aac5683e63f703e660a78d06f95b2ff2a8788a8dade787')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     amount = '1.000240847792940067'
-    interest = '0.000240847792940067'
-    expected_events = [
+    assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=0,
@@ -247,14 +240,13 @@ def test_aave_eth_withdraw_v1(ethereum_inquirer):
             event_type=HistoryEventType.RECEIVE,
             event_subtype=HistoryEventSubType.REWARD,
             asset=A_AETH_V1,
-            amount=FVal(interest),
+            amount=FVal(interest := '0.000240847792940067'),
             location_label=ADDY2,
             notes=f'Gain {interest} aETH from aave-v1 as interest',
             counterparty=CPT_AAVE_V1,
             address=ZERO_ADDRESS,
         ),
     ]
-    assert expected_events == events
 
 
 @pytest.mark.parametrize('ethereum_accounts', [[string_to_evm_address('0x2715273613632226985186221669179813245119')]])  # noqa: E501
@@ -263,10 +255,9 @@ def test_aave_v2_enable_collateral(database, ethereum_inquirer, eth_transactions
     Data taken from
     https://etherscan.io/tx/0xc97b35f42c64a69c01d0e0e4106a655e385c8fa21c812c59a6172199e99cdb7e
     """
-    tx_hash = deserialize_evm_tx_hash('0xc97b35f42c64a69c01d0e0e4106a655e385c8fa21c812c59a6172199e99cdb7e')  # noqa: E501
     user_address = string_to_evm_address('0x2715273613632226985186221669179813245119')
     transaction = EvmTransaction(
-        tx_hash=tx_hash,
+        tx_hash=(tx_hash := deserialize_evm_tx_hash('0xc97b35f42c64a69c01d0e0e4106a655e385c8fa21c812c59a6172199e99cdb7e')),  # noqa: E501
         chain_id=ChainID.ETHEREUM,
         timestamp=0,
         block_number=0,
@@ -307,7 +298,7 @@ def test_aave_v2_enable_collateral(database, ethereum_inquirer, eth_transactions
         transactions=eth_transactions,
     )
     events, _, _ = decoder._decode_transaction(transaction=transaction, tx_receipt=receipt)
-    expected_events = [
+    assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=0,
@@ -339,7 +330,6 @@ def test_aave_v2_enable_collateral(database, ethereum_inquirer, eth_transactions
             address=string_to_evm_address('0x7d2768dE32b0b80b7a3454c06BdAc94A69DDc7A9'),
         ),
     ]
-    assert events == expected_events
 
 
 @pytest.mark.parametrize('ethereum_accounts', [[string_to_evm_address('0x2715273613632226985186221669179813245119')]])  # noqa: E501
@@ -348,10 +338,9 @@ def test_aave_v2_disable_collateral(database, ethereum_inquirer, eth_transaction
     Data taken from
     https://etherscan.io/tx/0x8fe440f37fd0fa1467067a195ea862db1f96c40634ea7bb3782cc3c3431e9b5c
     """
-    tx_hash = deserialize_evm_tx_hash('0x8fe440f37fd0fa1467067a195ea862db1f96c40634ea7bb3782cc3c3431e9b5c')  # noqa: E501
     user_address = string_to_evm_address('0x2715273613632226985186221669179813245119')
     transaction = EvmTransaction(
-        tx_hash=tx_hash,
+        tx_hash=(tx_hash := deserialize_evm_tx_hash('0x8fe440f37fd0fa1467067a195ea862db1f96c40634ea7bb3782cc3c3431e9b5c')),  # noqa: E501
         chain_id=ChainID.ETHEREUM,
         timestamp=0,
         block_number=0,
@@ -392,7 +381,7 @@ def test_aave_v2_disable_collateral(database, ethereum_inquirer, eth_transaction
         transactions=eth_transactions,
     )
     events, _, _ = decoder._decode_transaction(transaction=transaction, tx_receipt=receipt)
-    expected_events = [
+    assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=0,
@@ -424,7 +413,6 @@ def test_aave_v2_disable_collateral(database, ethereum_inquirer, eth_transaction
             address=string_to_evm_address('0x7d2768dE32b0b80b7a3454c06BdAc94A69DDc7A9'),
         ),
     ]
-    assert events == expected_events
 
 
 @pytest.mark.parametrize('ethereum_accounts', [[string_to_evm_address('0x2715273613632226985186221669179813245119')]])  # noqa: E501
@@ -433,10 +421,9 @@ def test_aave_v2_deposit(database, ethereum_inquirer, eth_transactions):
     Data taken from
     https://etherscan.io/tx/0xf79939503543d76942e076a117ee8467565925f8c6efef973a8e2a6baed4616a
     """
-    tx_hash = deserialize_evm_tx_hash('0xf79939503543d76942e076a117ee8467565925f8c6efef973a8e2a6baed4616a')  # noqa: E501
     user_address = string_to_evm_address('0x2715273613632226985186221669179813245119')
     transaction = EvmTransaction(
-        tx_hash=tx_hash,
+        tx_hash=(tx_hash := deserialize_evm_tx_hash('0xf79939503543d76942e076a117ee8467565925f8c6efef973a8e2a6baed4616a')),  # noqa: E501
         chain_id=ChainID.ETHEREUM,
         timestamp=0,
         block_number=0,
@@ -497,7 +484,7 @@ def test_aave_v2_deposit(database, ethereum_inquirer, eth_transactions):
         dbevmtx.add_transactions(cursor, [transaction], relevant_address=None)
         decoder.reload_data(cursor)
     events, _, _ = decoder._decode_transaction(transaction=transaction, tx_receipt=receipt)
-    expected_events = [
+    assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=0,
@@ -544,7 +531,6 @@ def test_aave_v2_deposit(database, ethereum_inquirer, eth_transactions):
             address=ZERO_ADDRESS,
         ),
     ]
-    assert events == expected_events
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
@@ -555,17 +541,17 @@ def test_aave_v2_deposit(database, ethereum_inquirer, eth_transactions):
 def test_aave_v2_withdraw(ethereum_inquirer, ethereum_accounts):
     tx_hash = deserialize_evm_tx_hash('0x8fe440f37fd0fa1467067a195ea862db1f96c40634ea7bb3782cc3c3431e9b5c')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
-    timestamp, gas_amount, user_address = TimestampMS(1660809759000), '0.0217873', ethereum_accounts[0]  # noqa: E501
-    expected_events = [
+    user_address = ethereum_accounts[0]
+    assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=0,
-            timestamp=timestamp,
+            timestamp=(timestamp := TimestampMS(1660809759000)),
             location=Location.ETHEREUM,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            amount=FVal(gas_amount),
+            amount=FVal(gas_amount := '0.0217873'),
             location_label=user_address,
             notes=f'Burn {gas_amount} ETH for gas',
             counterparty=CPT_GAS,
@@ -616,7 +602,6 @@ def test_aave_v2_withdraw(ethereum_inquirer, ethereum_accounts):
             address=string_to_evm_address('0x030bA81f1c18d280636F32af80b9AAd02Cf0854e'),
         ),
     ]
-    assert events == expected_events
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
@@ -624,19 +609,17 @@ def test_aave_v2_withdraw(ethereum_inquirer, ethereum_accounts):
 def test_aave_v2_borrow(ethereum_inquirer, ethereum_accounts):
     tx_hash = deserialize_evm_tx_hash('0x6c8af2a4157632e33fac9d94a03619f54d318ce1254998aabc5384053eb98ffb')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
-    timestamp = TimestampMS(1622302530000)
-    gas_amount = '0.014311845'
     user_address = ethereum_accounts[0]
-    expected_events = [
+    assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=0,
-            timestamp=timestamp,
+            timestamp=(timestamp := TimestampMS(1622302530000)),
             location=Location.ETHEREUM,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            amount=FVal(gas_amount),
+            amount=FVal(gas_amount := '0.014311845'),
             location_label=user_address,
             notes=f'Burn {gas_amount} ETH for gas',
             counterparty=CPT_GAS,
@@ -673,7 +656,6 @@ def test_aave_v2_borrow(ethereum_inquirer, ethereum_accounts):
             address=string_to_evm_address('0xCC12AbE4ff81c9378D670De1b57F8e0Dd228D77a'),
         ),
     ]
-    assert events == expected_events
 
 
 @pytest.mark.parametrize('ethereum_accounts', [[string_to_evm_address('0x00000000000Cd56832cE5dfBcBFf02e7eC639BC9')]])  # noqa: E501
@@ -682,10 +664,9 @@ def test_aave_v2_repay(database, ethereum_inquirer, eth_transactions):
     Data taken from
     https://etherscan.io/tx/0x2d43c327482127821603555b00e9feb67e8de1c412a57f55e0fc8ae6bbb32d11
     """
-    tx_hash = deserialize_evm_tx_hash('0x2d43c327482127821603555b00e9feb67e8de1c412a57f55e0fc8ae6bbb32d11')  # noqa: E501
     user_address = string_to_evm_address('0x00000000000Cd56832cE5dfBcBFf02e7eC639BC9')
     transaction = EvmTransaction(
-        tx_hash=tx_hash,
+        tx_hash=(tx_hash := deserialize_evm_tx_hash('0x2d43c327482127821603555b00e9feb67e8de1c412a57f55e0fc8ae6bbb32d11')),  # noqa: E501
         chain_id=ChainID.ETHEREUM,
         timestamp=0,
         block_number=0,
@@ -745,7 +726,7 @@ def test_aave_v2_repay(database, ethereum_inquirer, eth_transactions):
         transactions=eth_transactions,
     )
     events, _, _ = decoder._decode_transaction(transaction=transaction, tx_receipt=receipt)
-    expected_events = [
+    assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=0,
@@ -792,7 +773,6 @@ def test_aave_v2_repay(database, ethereum_inquirer, eth_transactions):
             address=string_to_evm_address('0x35f6B052C598d933D69A4EEC4D04c73A191fE6c2'),
         ),
     ]
-    assert events == expected_events
 
 
 @pytest.mark.vcr
@@ -806,13 +786,12 @@ def test_aave_v2_liquidation(
     """
     tx_hash = deserialize_evm_tx_hash('0x2077a54ecae4a06c553f96c120acc0237887fdd1fc2596aab103f6681712974d')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
-    timestamp = TimestampMS(1684738775000)
     user_address = ethereum_accounts[0]
-    expected_events = [
+    assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=6,
-            timestamp=timestamp,
+            timestamp=(timestamp := TimestampMS(1684738775000)),
             location=Location.ETHEREUM,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.PAYBACK_DEBT,
@@ -838,7 +817,6 @@ def test_aave_v2_liquidation(
             address=string_to_evm_address('0x7d2768dE32b0b80b7a3454c06BdAc94A69DDc7A9'),
         ),
     ]
-    assert expected_events == events
 
 
 @pytest.mark.vcr
@@ -852,13 +830,12 @@ def test_aave_v1_liquidation(
     """
     tx_hash = deserialize_evm_tx_hash('0x75ef28b5593efd3f0f9eff338e234f59b2bd34a7148a90ce020122900722a832')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
-    timestamp = TimestampMS(1659244817000)
     user_address = ethereum_accounts[0]
-    expected_events = [
+    assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=187,
-            timestamp=timestamp,
+            timestamp=(timestamp := TimestampMS(1659244817000)),
             location=Location.ETHEREUM,
             event_type=HistoryEventType.RECEIVE,
             event_subtype=HistoryEventSubType.GENERATE_DEBT,
@@ -885,7 +862,6 @@ def test_aave_v1_liquidation(
             extra_data={'is_liquidation': True},
         ),
     ]
-    assert expected_events == events
 
 
 @pytest.mark.vcr
@@ -897,7 +873,7 @@ def test_aave_v2_supply_ether(ethereum_inquirer, ethereum_accounts):
     """
     tx_hash = deserialize_evm_tx_hash('0xefc9040c100829a391a636f02eb96a9361bd0bc2ca5e8e5f97bbc4a1831cdec9')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
-    expected_events = [
+    assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=0,
@@ -959,24 +935,21 @@ def test_aave_v2_supply_ether(ethereum_inquirer, ethereum_accounts):
             address=ZERO_ADDRESS,
         ),
     ]
-    assert events == expected_events
 
 
 @pytest.mark.vcr
 @pytest.mark.parametrize('polygon_pos_accounts', [['0x572f60c0b887203324149D9C308574BcF2dfaD82']])
 def test_aave_v2_borrow_polygon(polygon_pos_inquirer, polygon_pos_accounts) -> None:
-    tx_hash = deserialize_evm_tx_hash('0x2c2777e24bc8a59171e33d54c2a87d846fc23e7f21a32b99d22397e64429b39c')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=polygon_pos_inquirer,
-        tx_hash=tx_hash,
+        tx_hash=(tx_hash := deserialize_evm_tx_hash('0x2c2777e24bc8a59171e33d54c2a87d846fc23e7f21a32b99d22397e64429b39c')),  # noqa: E501
     )
-    timestamp = TimestampMS(1711437462000)
     borrowed_amount, gas_fees = '5060', '0.033400048613703322'
-    expected_events = [
+    assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=0,
-            timestamp=timestamp,
+            timestamp=(timestamp := TimestampMS(1711437462000)),
             location=Location.POLYGON_POS,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
@@ -1013,7 +986,6 @@ def test_aave_v2_borrow_polygon(polygon_pos_inquirer, polygon_pos_accounts) -> N
             address=string_to_evm_address('0x27F8D03b3a2196956ED754baDc28D73be8830A6e'),
         ),
     ]
-    assert events == expected_events
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
@@ -1022,16 +994,15 @@ def test_aave_stake(ethereum_inquirer: 'EthereumInquirer', ethereum_accounts: li
     """Test that the decoder can decode the stake event from Aave"""
     tx_hash = deserialize_evm_tx_hash('0xfaf96358784483a96a61db6aa4ecf4ac87294b841671ca208de6b5d8f83edf17')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
-    timestamp, staked, gas_fees, approval_amount = TimestampMS(1716118019000), '5.126267078394001645', '0.000367527', '115792089237316195423570985008687907853269984665640564038985.825837738726184306'  # noqa: E501
-    expected_events = [
+    assert events == [
         EvmEvent(
             sequence_index=0,
-            timestamp=timestamp,
+            timestamp=(timestamp := TimestampMS(1716118019000)),
             location=Location.ETHEREUM,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            amount=FVal(gas_fees),
+            amount=FVal(gas_fees := '0.000367527'),
             location_label=ethereum_accounts[0],
             notes=f'Burn {gas_fees} ETH for gas',
             tx_ref=tx_hash,
@@ -1043,7 +1014,7 @@ def test_aave_stake(ethereum_inquirer: 'EthereumInquirer', ethereum_accounts: li
             event_type=HistoryEventType.INFORMATIONAL,
             event_subtype=HistoryEventSubType.APPROVE,
             asset=A_AAVE,
-            amount=FVal(approval_amount),
+            amount=FVal(approval_amount := '115792089237316195423570985008687907853269984665640564038985.825837738726184306'),  # noqa: E501
             location_label=ethereum_accounts[0],
             notes=f'Set AAVE spending approval of {ethereum_accounts[0]} by {STK_AAVE_ADDR} to {approval_amount}',  # noqa: E501
             tx_ref=tx_hash,
@@ -1055,7 +1026,7 @@ def test_aave_stake(ethereum_inquirer: 'EthereumInquirer', ethereum_accounts: li
             event_type=HistoryEventType.STAKING,
             event_subtype=HistoryEventSubType.DEPOSIT_ASSET,
             asset=A_AAVE,
-            amount=FVal(staked),
+            amount=FVal(staked := '5.126267078394001645'),
             location_label=ethereum_accounts[0],
             notes=f'Stake {staked} AAVE',
             tx_ref=tx_hash,
@@ -1076,7 +1047,6 @@ def test_aave_stake(ethereum_inquirer: 'EthereumInquirer', ethereum_accounts: li
             address=ZERO_ADDRESS,
         ),
     ]
-    assert events == expected_events
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
@@ -1086,16 +1056,15 @@ def test_aave_stake_behalfof(ethereum_inquirer: 'EthereumInquirer', ethereum_acc
     The implementation of the proxy contract was different back then."""
     tx_hash = deserialize_evm_tx_hash('0x5532a19bdd4aa26656dc5099d80862a5218cbaf7c96f30cae4a8bb0d19803bfc')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
-    timestamp, staked, gas_fees, approval_amount = TimestampMS(1684566515000), '58.469937', '0.011340746321963024', '115792089237316195423570985008687907853269984665640564039399.114070913129639935'  # noqa: E501
-    expected_events = [
+    assert events == [
         EvmEvent(
             sequence_index=0,
-            timestamp=timestamp,
+            timestamp=(timestamp := TimestampMS(1684566515000)),
             location=Location.ETHEREUM,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            amount=FVal(gas_fees),
+            amount=FVal(gas_fees := '0.011340746321963024'),
             location_label=ethereum_accounts[0],
             notes=f'Burn {gas_fees} ETH for gas',
             tx_ref=tx_hash,
@@ -1107,7 +1076,7 @@ def test_aave_stake_behalfof(ethereum_inquirer: 'EthereumInquirer', ethereum_acc
             event_type=HistoryEventType.INFORMATIONAL,
             event_subtype=HistoryEventSubType.APPROVE,
             asset=A_AAVE,
-            amount=FVal(approval_amount),
+            amount=FVal(approval_amount := '115792089237316195423570985008687907853269984665640564039399.114070913129639935'),  # noqa: E501
             location_label=ethereum_accounts[0],
             notes=f'Set AAVE spending approval of {ethereum_accounts[0]} by {STK_AAVE_ADDR} to {approval_amount}',  # noqa: E501
             tx_ref=tx_hash,
@@ -1119,7 +1088,7 @@ def test_aave_stake_behalfof(ethereum_inquirer: 'EthereumInquirer', ethereum_acc
             event_type=HistoryEventType.STAKING,
             event_subtype=HistoryEventSubType.DEPOSIT_ASSET,
             asset=A_AAVE,
-            amount=FVal(staked),
+            amount=FVal(staked := '58.469937'),
             location_label=ethereum_accounts[0],
             notes=f'Stake {staked} AAVE',
             tx_ref=tx_hash,
@@ -1140,7 +1109,6 @@ def test_aave_stake_behalfof(ethereum_inquirer: 'EthereumInquirer', ethereum_acc
             address=ZERO_ADDRESS,
         ),
     ]
-    assert events == expected_events
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
@@ -1149,16 +1117,15 @@ def test_aave_unstake(ethereum_inquirer: 'EthereumInquirer', ethereum_accounts: 
     """Test that the decoder can decode the unstake/redeem event from Aave"""
     tx_hash = deserialize_evm_tx_hash('0xaaef5990d08a0f4cb83b0f98b995f734c96ab6dca41bf7de54c3719fe463ce24')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
-    timestamp, unstaked, gas_fees = TimestampMS(1716216731000), '2.71357', '0.001456740929488432'
-    expected_events = [
+    assert events == [
         EvmEvent(
             sequence_index=0,
-            timestamp=timestamp,
+            timestamp=(timestamp := TimestampMS(1716216731000)),
             location=Location.ETHEREUM,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            amount=FVal(gas_fees),
+            amount=FVal(gas_fees := '0.001456740929488432'),
             location_label=ethereum_accounts[0],
             notes=f'Burn {gas_fees} ETH for gas',
             tx_ref=tx_hash,
@@ -1170,7 +1137,7 @@ def test_aave_unstake(ethereum_inquirer: 'EthereumInquirer', ethereum_accounts: 
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.RETURN_WRAPPED,
             asset=Asset(STKAAVE_IDENTIFIER),
-            amount=FVal(unstaked),
+            amount=FVal(unstaked := '2.71357'),
             location_label=ethereum_accounts[0],
             notes=f'Unstake {unstaked} stkAAVE',
             tx_ref=tx_hash,
@@ -1191,7 +1158,6 @@ def test_aave_unstake(ethereum_inquirer: 'EthereumInquirer', ethereum_accounts: 
             counterparty=CPT_AAVE,
         ),
     ]
-    assert events == expected_events
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
@@ -1200,16 +1166,15 @@ def test_aave_unstake_old(ethereum_inquirer: 'EthereumInquirer', ethereum_accoun
     """Test that the decoder can decode the unstake/redeem event from Aave back in 2022"""
     tx_hash = deserialize_evm_tx_hash('0x4d28e34be9ccc8a64d0fe9bc30982700b042cd0bdbe7c3bc3968107dce6471e3')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
-    timestamp, unstaked, gas_fees = TimestampMS(1648296289000), '31.703464134297535778', '0.006477313887656742'  # noqa: E501
-    expected_events = [
+    assert events == [
         EvmEvent(
             sequence_index=0,
-            timestamp=timestamp,
+            timestamp=(timestamp := TimestampMS(1648296289000)),
             location=Location.ETHEREUM,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            amount=FVal(gas_fees),
+            amount=FVal(gas_fees := '0.006477313887656742'),
             location_label=ethereum_accounts[0],
             notes=f'Burn {gas_fees} ETH for gas',
             tx_ref=tx_hash,
@@ -1221,7 +1186,7 @@ def test_aave_unstake_old(ethereum_inquirer: 'EthereumInquirer', ethereum_accoun
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.RETURN_WRAPPED,
             asset=Asset(STKAAVE_IDENTIFIER),
-            amount=FVal(unstaked),
+            amount=FVal(unstaked := '31.703464134297535778'),
             location_label=ethereum_accounts[0],
             notes=f'Unstake {unstaked} stkAAVE',
             tx_ref=tx_hash,
@@ -1242,7 +1207,6 @@ def test_aave_unstake_old(ethereum_inquirer: 'EthereumInquirer', ethereum_accoun
             counterparty=CPT_AAVE,
         ),
     ]
-    assert events == expected_events
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
@@ -1251,16 +1215,16 @@ def test_stake_reward(ethereum_inquirer: 'EthereumInquirer', ethereum_accounts: 
     """Test that the decoder can decode aave reward claiming"""
     tx_hash = deserialize_evm_tx_hash('0xc8ed217572a15a81891ad6480a56150d5b2721c9e517564c3e8ead4439cdcb62')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
-    timestamp, gas_fees, amount = TimestampMS(1712099315000), '0.002299167729873168', '0.724507060516081735'  # noqa: E501
-    expected_events = [
+    amount = '0.724507060516081735'
+    assert events == [
         EvmEvent(
             sequence_index=0,
-            timestamp=timestamp,
+            timestamp=(timestamp := TimestampMS(1712099315000)),
             location=Location.ETHEREUM,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            amount=FVal(gas_fees),
+            amount=FVal(gas_fees := '0.002299167729873168'),
             location_label=ethereum_accounts[0],
             notes=f'Burn {gas_fees} ETH for gas',
             tx_ref=tx_hash,
@@ -1280,7 +1244,6 @@ def test_stake_reward(ethereum_inquirer: 'EthereumInquirer', ethereum_accounts: 
             counterparty=CPT_AAVE,
         ),
     ]
-    assert events == expected_events
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
@@ -1292,7 +1255,7 @@ def test_stake_reward_and_restake(ethereum_inquirer: 'EthereumInquirer', ethereu
         tx_hash=(tx_hash := deserialize_evm_tx_hash('0xd140498b2fd93004f21125a4e4ad0d902f34b69b00759e0e8234d4ea0c83199d')),  # noqa: E501
         relevant_address=ethereum_accounts[0],
     )
-    expected_events = [
+    assert events == [
         EvmEvent(
             sequence_index=0,
             timestamp=(timestamp := TimestampMS(1712957855000)),
@@ -1346,7 +1309,6 @@ def test_stake_reward_and_restake(ethereum_inquirer: 'EthereumInquirer', ethereu
             address=ZERO_ADDRESS,
         ),
     ]
-    assert events == expected_events
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
@@ -1356,16 +1318,16 @@ def test_stake_reward_from_incentives(ethereum_inquirer: 'EthereumInquirer', eth
     which takes it from the aave incentives"""
     tx_hash = deserialize_evm_tx_hash('0x376c51a492f3f309c408b00278fbb77e54adcbb883f9e0fc190c5478fc153bbf')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
-    timestamp, gas_fees, amount = TimestampMS(1649141661000), '0.03959433', '14.159467670600490614'
-    expected_events = [
+    amount = '14.159467670600490614'
+    assert events == [
         EvmEvent(
             sequence_index=0,
-            timestamp=timestamp,
+            timestamp=(timestamp := TimestampMS(1649141661000)),
             location=Location.ETHEREUM,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            amount=FVal(gas_fees),
+            amount=FVal(gas_fees := '0.03959433'),
             location_label=ethereum_accounts[0],
             notes=f'Burn {gas_fees} ETH for gas',
             tx_ref=tx_hash,
@@ -1411,27 +1373,26 @@ def test_stake_reward_from_incentives(ethereum_inquirer: 'EthereumInquirer', eth
             counterparty=CPT_AAVE,
         ),
     ]
-    assert events == expected_events
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('polygon_pos_accounts', [['0x9131C96c791A5aAd3dF4F8C85Acc755a8dD487Ed']])
 def test_polygon_incentives(polygon_pos_inquirer: 'PolygonPOSInquirer', polygon_pos_accounts: list['ChecksumEvmAddress']) -> None:  # noqa: E501
-    tx_hash = deserialize_evm_tx_hash('0x6ebaa1502335caa7aa9b6589169885d0361e96bab9ed3b1264308a716d6524c3')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=polygon_pos_inquirer,
-        tx_hash=tx_hash,
+        tx_hash=(tx_hash := deserialize_evm_tx_hash('0x6ebaa1502335caa7aa9b6589169885d0361e96bab9ed3b1264308a716d6524c3')),  # noqa: E501
     )
-    timestamp, user, gas_fees, amount = TimestampMS(1677815446000), polygon_pos_accounts[0], '0.010600028218383051', '2.703388364402691276'  # noqa: E501
-    expected_events = [
+    user = polygon_pos_accounts[0]
+    amount = '2.703388364402691276'
+    assert events == [
         EvmEvent(
             sequence_index=0,
-            timestamp=timestamp,
+            timestamp=(timestamp := TimestampMS(1677815446000)),
             location=Location.POLYGON_POS,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_POL,
-            amount=FVal(gas_fees),
+            amount=FVal(gas_fees := '0.010600028218383051'),
             location_label=user,
             notes=f'Burn {gas_fees} POL for gas',
             tx_ref=tx_hash,
@@ -1451,7 +1412,6 @@ def test_polygon_incentives(polygon_pos_inquirer: 'PolygonPOSInquirer', polygon_
             counterparty=CPT_AAVE_V2,
         ),
     ]
-    assert events == expected_events
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
@@ -1461,7 +1421,7 @@ def test_mainnet_aave_v2_migrate_to_v3_(ethereum_inquirer, ethereum_accounts) ->
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
 
     amount_out, amount_in, approval_amount, gas_fees, timestamp, user = '84.521918902842181053', '76.326951198340166536', '115792089237316195423570985008687907853269984665640564039373.062089010287458882', '0.010769376235131354', TimestampMS(1675004267000), ethereum_accounts[0]  # noqa: E501
-    expected_events = [
+    assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=0,
@@ -1539,4 +1499,3 @@ def test_mainnet_aave_v2_migrate_to_v3_(ethereum_inquirer, ethereum_accounts) ->
             counterparty=CPT_AAVE_V3,
         ),
     ]
-    assert events == expected_events

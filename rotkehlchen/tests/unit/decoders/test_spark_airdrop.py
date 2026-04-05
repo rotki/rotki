@@ -28,7 +28,7 @@ def test_spark_airdrop_claim(ethereum_inquirer, ethereum_accounts):
         tx_hash=tx_hash,
     )
     user_address, timestamp, gas_amount, claimed_amount = ethereum_accounts[0], TimestampMS(1750283303000), '0.000095432422616478', '5400'  # noqa: E501
-    expected_events = [
+    assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=0,
@@ -57,7 +57,6 @@ def test_spark_airdrop_claim(ethereum_inquirer, ethereum_accounts):
             extra_data={'airdrop_identifier': 'spark'},
         ),
     ]
-    assert events == expected_events
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
@@ -72,7 +71,7 @@ def test_spark_staking(ethereum_inquirer, ethereum_accounts):
         tx_hash=tx_hash,
     )
     user_address, timestamp, gas_amount, staked_amount = ethereum_accounts[0], TimestampMS(1750212503000), '0.000263240428824864', '2169.948625059716493489'  # noqa: E501
-    expected_events = [
+    assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=0,
@@ -113,4 +112,3 @@ def test_spark_staking(ethereum_inquirer, ethereum_accounts):
             address=string_to_evm_address('0x0000000000000000000000000000000000000000'),
         ),
     ]
-    assert events == expected_events

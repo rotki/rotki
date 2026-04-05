@@ -21,20 +21,16 @@ def test_lock_glm(ethereum_inquirer, ethereum_accounts):
     tx_hash = deserialize_evm_tx_hash('0x29944efad254413b5eccdd5f13f14642ab830dbf51d5f2cfc59cf4957f33671a')  # noqa: E501
     user_address = ethereum_accounts[0]
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
-    timestamp = TimestampMS(1697572739000)
-    gas_str = '0.000721453620442015'
-    approval_str = '199999000'
-    amount_str = '1000'
-    expected_events = [
+    assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=0,
-            timestamp=timestamp,
+            timestamp=(timestamp := TimestampMS(1697572739000)),
             location=Location.ETHEREUM,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            amount=FVal(gas_str),
+            amount=FVal(gas_str := '0.000721453620442015'),
             location_label=user_address,
             notes=f'Burn {gas_str} ETH for gas',
             counterparty=CPT_GAS,
@@ -46,7 +42,7 @@ def test_lock_glm(ethereum_inquirer, ethereum_accounts):
             event_type=HistoryEventType.INFORMATIONAL,
             event_subtype=HistoryEventSubType.APPROVE,
             asset=A_GLM,
-            amount=FVal(approval_str),
+            amount=FVal(approval_str := '199999000'),
             location_label=user_address,
             notes=f'Set GLM spending approval of {user_address} by {OCTANT_DEPOSITS} to {approval_str}',  # noqa: E501
             address=OCTANT_DEPOSITS,
@@ -58,14 +54,13 @@ def test_lock_glm(ethereum_inquirer, ethereum_accounts):
             event_type=HistoryEventType.DEPOSIT,
             event_subtype=HistoryEventSubType.DEPOSIT_TO_PROTOCOL,
             asset=A_GLM,
-            amount=FVal(amount_str),
+            amount=FVal(amount_str := '1000'),
             location_label=user_address,
             notes=f'Lock {amount_str} GLM in Octant',
             counterparty=CPT_OCTANT,
             address=OCTANT_DEPOSITS,
         ),
     ]
-    assert events == expected_events
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
@@ -74,19 +69,16 @@ def test_unlock_glm(ethereum_inquirer, ethereum_accounts):
     tx_hash = deserialize_evm_tx_hash('0x6705075bef0c3d9167c95a4a6c4911d6cc4055365e12fc445acd1039b157b1ab')  # noqa: E501
     user_address = ethereum_accounts[0]
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
-    timestamp = TimestampMS(1697527487000)
-    gas_str = '0.000482531053547631'
-    amount_str = '500'
-    expected_events = [
+    assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=0,
-            timestamp=timestamp,
+            timestamp=(timestamp := TimestampMS(1697527487000)),
             location=Location.ETHEREUM,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            amount=FVal(gas_str),
+            amount=FVal(gas_str := '0.000482531053547631'),
             location_label=user_address,
             notes=f'Burn {gas_str} ETH for gas',
             counterparty=CPT_GAS,
@@ -98,14 +90,13 @@ def test_unlock_glm(ethereum_inquirer, ethereum_accounts):
             event_type=HistoryEventType.WITHDRAWAL,
             event_subtype=HistoryEventSubType.WITHDRAW_FROM_PROTOCOL,
             asset=A_GLM,
-            amount=FVal(amount_str),
+            amount=FVal(amount_str := '500'),
             location_label=user_address,
             notes=f'Unlock {amount_str} GLM from Octant',
             counterparty=CPT_OCTANT,
             address=OCTANT_DEPOSITS,
         ),
     ]
-    assert events == expected_events
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
@@ -114,19 +105,16 @@ def test_claim_rewards(ethereum_inquirer, ethereum_accounts):
     tx_hash = deserialize_evm_tx_hash('0xfc9b4ca277dcfd8000830aee13f8785b15516ce55a432c0d68f1bbdc0f599a49')  # noqa: E501
     user_address = ethereum_accounts[0]
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
-    timestamp = TimestampMS(1706775971000)
-    gas_str = '0.000818835884130552'
-    amount_str = '7.989863001451442888'
-    expected_events = [
+    assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=0,
-            timestamp=timestamp,
+            timestamp=(timestamp := TimestampMS(1706775971000)),
             location=Location.ETHEREUM,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            amount=FVal(gas_str),
+            amount=FVal(gas_str := '0.000818835884130552'),
             location_label=user_address,
             notes=f'Burn {gas_str} ETH for gas',
             counterparty=CPT_GAS,
@@ -138,14 +126,13 @@ def test_claim_rewards(ethereum_inquirer, ethereum_accounts):
             event_type=HistoryEventType.RECEIVE,
             event_subtype=HistoryEventSubType.REWARD,
             asset=A_ETH,
-            amount=FVal(amount_str),
+            amount=FVal(amount_str := '7.989863001451442888'),
             location_label=user_address,
             notes=f'Claim {amount_str} ETH as Octant epoch 2 reward',
             counterparty=CPT_OCTANT,
             address=OCTANT_REWARDS,
         ),
     ]
-    assert events == expected_events
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
@@ -153,7 +140,7 @@ def test_claim_rewards(ethereum_inquirer, ethereum_accounts):
 def test_lock_glm_v2(ethereum_inquirer, ethereum_accounts):
     tx_hash = deserialize_evm_tx_hash('0x117d78603f8a20f3c8ce29145d2f485d27688c922e09f532132fe33ecddcfe71')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
-    expected_events = [
+    assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=0,
@@ -193,4 +180,3 @@ def test_lock_glm_v2(ethereum_inquirer, ethereum_accounts):
             address=OCTANT_DEPOSITS_V2,
         ),
     ]
-    assert events == expected_events

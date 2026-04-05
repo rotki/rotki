@@ -202,10 +202,9 @@ def test_votemarket_claim(
         arbitrum_one_inquirer: 'ArbitrumOneInquirer',
         arbitrum_one_accounts: list['ChecksumEvmAddress'],
 ) -> None:
-    tx_hash = deserialize_evm_tx_hash('0x3242696cf8a0ec3133f1b9051c72d4276680b463f350eaa2fb78fe35e61d2df1')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=arbitrum_one_inquirer,
-        tx_hash=tx_hash,
+        tx_hash=(tx_hash := deserialize_evm_tx_hash('0x3242696cf8a0ec3133f1b9051c72d4276680b463f350eaa2fb78fe35e61d2df1')),  # noqa: E501
     )
     assert events == [EvmEvent(
         tx_ref=tx_hash,
@@ -345,10 +344,9 @@ def test_votemarket_bridge_out(
         arbitrum_one_inquirer: 'ArbitrumOneInquirer',
         arbitrum_one_accounts: list['ChecksumEvmAddress'],
 ) -> None:
-    tx_hash = deserialize_evm_tx_hash('0x64e762b0ce41613885695864d491b34a786e7f72e601df5a56d26b5fd82ecaa5')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=arbitrum_one_inquirer,
-        tx_hash=tx_hash,
+        tx_hash=(tx_hash := deserialize_evm_tx_hash('0x64e762b0ce41613885695864d491b34a786e7f72e601df5a56d26b5fd82ecaa5')),  # noqa: E501
     )
     assert events == [EvmEvent(
         tx_ref=tx_hash,

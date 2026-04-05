@@ -38,12 +38,11 @@ def test_optimism_airdrop_1_claim(optimism_inquirer):
     """
     tx_hash = deserialize_evm_tx_hash('0xda810d7e1757c6ce7387b437c26472f802eec47404e60d4f1eaa9f23bf8d8b73')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=optimism_inquirer, tx_hash=tx_hash)
-    timestamp = TimestampMS(1673337921000)
-    expected_events = [
+    assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=0,
-            timestamp=timestamp,
+            timestamp=(timestamp := TimestampMS(1673337921000)),
             location=Location.OPTIMISM,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
@@ -67,7 +66,6 @@ def test_optimism_airdrop_1_claim(optimism_inquirer):
             address=OPTIMISM_AIRDROP_1,
             extra_data={AIRDROP_IDENTIFIER_KEY: 'optimism_1'},
         )]
-    assert expected_events == events
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
@@ -76,17 +74,16 @@ def test_optimism_airdrop_1_claim(optimism_inquirer):
 def test_optimism_airdrop_4_claim(optimism_accounts, optimism_inquirer):
     tx_hash = deserialize_evm_tx_hash('0xb5b478b321a81ae03565dd72bd625fcb203a97f017670b28e306a893414ae83b')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=optimism_inquirer, tx_hash=tx_hash)
-    timestamp, gas_amount, claim_amount = TimestampMS(1712777987000), '0.000007620095114963', '6000'  # noqa: E501
-    expected_events = [
+    assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=0,
-            timestamp=timestamp,
+            timestamp=(timestamp := TimestampMS(1712777987000)),
             location=Location.OPTIMISM,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            amount=FVal(gas_amount),
+            amount=FVal(gas_amount := '0.000007620095114963'),
             location_label=optimism_accounts[0],
             notes=f'Burn {gas_amount} ETH for gas',
             counterparty=CPT_GAS,
@@ -98,14 +95,13 @@ def test_optimism_airdrop_4_claim(optimism_accounts, optimism_inquirer):
             event_type=HistoryEventType.RECEIVE,
             event_subtype=HistoryEventSubType.AIRDROP,
             asset=A_OP,
-            amount=FVal(claim_amount),
+            amount=FVal(claim_amount := '6000'),
             location_label=optimism_accounts[0],
             notes=f'Claim {claim_amount} OP from the optimism airdrop 4',
             counterparty=CPT_OPTIMISM,
             address=OPTIMISM_AIRDROP_4,
             extra_data={AIRDROP_IDENTIFIER_KEY: 'optimism_4'},
         )]
-    assert expected_events == events
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
@@ -114,17 +110,16 @@ def test_optimism_airdrop_4_claim(optimism_accounts, optimism_inquirer):
 def test_optimism_airdrop_5_claim(optimism_accounts, optimism_inquirer):
     tx_hash = deserialize_evm_tx_hash('0xc017fb7d0a9362f7aa681ed6fa695779d1d8dd22dbabbc4aa77fb40c6bc8bda8')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=optimism_inquirer, tx_hash=tx_hash)
-    timestamp, gas_amount, claim_amount = TimestampMS(1729405689000), '0.00000030058552275', '150'
-    expected_events = [
+    assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=0,
-            timestamp=timestamp,
+            timestamp=(timestamp := TimestampMS(1729405689000)),
             location=Location.OPTIMISM,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            amount=FVal(gas_amount),
+            amount=FVal(gas_amount := '0.00000030058552275'),
             location_label=optimism_accounts[0],
             notes=f'Burn {gas_amount} ETH for gas',
             counterparty=CPT_GAS,
@@ -136,14 +131,13 @@ def test_optimism_airdrop_5_claim(optimism_accounts, optimism_inquirer):
             event_type=HistoryEventType.RECEIVE,
             event_subtype=HistoryEventSubType.AIRDROP,
             asset=A_OP,
-            amount=FVal(claim_amount),
+            amount=FVal(claim_amount := '150'),
             location_label=optimism_accounts[0],
             notes=f'Claim {claim_amount} OP from the optimism airdrop 5',
             counterparty=CPT_OPTIMISM,
             address=OPTIMISM_AIRDROP_5,
             extra_data={AIRDROP_IDENTIFIER_KEY: 'optimism_5'},
         )]
-    assert expected_events == events
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
@@ -152,17 +146,16 @@ def test_optimism_airdrop_5_claim(optimism_accounts, optimism_inquirer):
 def test_optimism_airdrop_3_distribution(optimism_accounts, optimism_inquirer):
     tx_hash = deserialize_evm_tx_hash('0x178e96280c38d2b0b40143e3794b89747ee544b2a273b64eb3fb09392c220cfa')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=optimism_inquirer, tx_hash=tx_hash)
-    timestamp, claim_amount = TimestampMS(1695060701000), '1518.05545398906'
-    expected_events = [
+    assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=913,
-            timestamp=timestamp,
+            timestamp=TimestampMS(1695060701000),
             location=Location.OPTIMISM,
             event_type=HistoryEventType.RECEIVE,
             event_subtype=HistoryEventSubType.AIRDROP,
             asset=A_OP,
-            amount=FVal(claim_amount),
+            amount=FVal(claim_amount := '1518.05545398906'),
             location_label=optimism_accounts[0],
             notes=f'Receive {claim_amount} OP from the optimism airdrop 3',
             counterparty=CPT_OPTIMISM,
@@ -170,7 +163,6 @@ def test_optimism_airdrop_3_distribution(optimism_accounts, optimism_inquirer):
             extra_data={AIRDROP_IDENTIFIER_KEY: 'optimism_3'},
         ),
     ]
-    assert expected_events == events
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
@@ -179,17 +171,16 @@ def test_optimism_airdrop_3_distribution(optimism_accounts, optimism_inquirer):
 def test_optimism_airdrop_2_distribution(optimism_accounts, optimism_inquirer):
     tx_hash = deserialize_evm_tx_hash('0xce2215e8d2141d7a0a2e45d9c07ca7599d9b762447e77f0b3e65f3fa2fc49b9f')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=optimism_inquirer, tx_hash=tx_hash)
-    timestamp, claim_amount = TimestampMS(1675972022000), '4.036252419409362'
-    expected_events = [
+    assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=308,
-            timestamp=timestamp,
+            timestamp=TimestampMS(1675972022000),
             location=Location.OPTIMISM,
             event_type=HistoryEventType.RECEIVE,
             event_subtype=HistoryEventSubType.AIRDROP,
             asset=A_OP,
-            amount=FVal(claim_amount),
+            amount=FVal(claim_amount := '4.036252419409362'),
             location_label=optimism_accounts[0],
             notes=f'Receive {claim_amount} OP from the optimism airdrop 2',
             counterparty=CPT_OPTIMISM,
@@ -197,7 +188,6 @@ def test_optimism_airdrop_2_distribution(optimism_accounts, optimism_inquirer):
             extra_data={AIRDROP_IDENTIFIER_KEY: 'optimism_2'},
         ),
     ]
-    assert expected_events == events
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
@@ -206,17 +196,16 @@ def test_optimism_airdrop_2_distribution(optimism_accounts, optimism_inquirer):
 def test_optimism_airdrop_1_distribution(optimism_accounts, optimism_inquirer):
     tx_hash = deserialize_evm_tx_hash('0xc0e1ee0ea2f3683c5186a078aea67a84009c42d6cf55002725da1adbe0614ac8')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=optimism_inquirer, tx_hash=tx_hash)
-    timestamp, claim_amount = TimestampMS(1694801257000), '409.426292836590288896'
-    expected_events = [
+    assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=117,
-            timestamp=timestamp,
+            timestamp=TimestampMS(1694801257000),
             location=Location.OPTIMISM,
             event_type=HistoryEventType.RECEIVE,
             event_subtype=HistoryEventSubType.AIRDROP,
             asset=A_OP,
-            amount=FVal(claim_amount),
+            amount=FVal(claim_amount := '409.426292836590288896'),
             location_label=optimism_accounts[0],
             notes=f'Receive {claim_amount} OP from the optimism airdrop 1',
             counterparty=CPT_OPTIMISM,
@@ -224,7 +213,6 @@ def test_optimism_airdrop_1_distribution(optimism_accounts, optimism_inquirer):
             extra_data={AIRDROP_IDENTIFIER_KEY: 'optimism_1'},
         ),
     ]
-    assert expected_events == events
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
@@ -236,12 +224,11 @@ def test_optimism_delegate_change(optimism_inquirer):
     """
     tx_hash = deserialize_evm_tx_hash('0xe0b31814f787385ab9f680c2ecf7e20e6dd2f880d979a44487768add26faa594')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=optimism_inquirer, tx_hash=tx_hash)
-    timestamp = TimestampMS(1673338011000)
-    expected_events = [
+    assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=0,
-            timestamp=timestamp,
+            timestamp=(timestamp := TimestampMS(1673338011000)),
             location=Location.OPTIMISM,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
@@ -264,4 +251,3 @@ def test_optimism_delegate_change(optimism_inquirer):
             counterparty=CPT_OPTIMISM,
             address=string_to_evm_address('0x4200000000000000000000000000000000000042'),
         )]
-    assert expected_events == events

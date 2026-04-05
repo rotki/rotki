@@ -38,10 +38,9 @@ A_BPT = Asset('eip155:1/erc20:0x59A19D8c652FA0284f44113D0ff9aBa70bd46fB4')
 @pytest.mark.parametrize('load_global_caches', [[CPT_BALANCER_V2]])
 @pytest.mark.parametrize('ethereum_accounts', [['0x20A1CF262Cd3A42a50D226fD728104119e6fD0a1']])
 def test_balancer_v2_swap(ethereum_inquirer, ethereum_accounts, load_global_caches):
-    tx_hash = deserialize_evm_tx_hash('0x35dd639ba80940cb14d79c965002a11ea2aef17bbf1f1b85cc03c336da1ddebe')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=ethereum_inquirer,
-        tx_hash=tx_hash,
+        tx_hash=(tx_hash := deserialize_evm_tx_hash('0x35dd639ba80940cb14d79c965002a11ea2aef17bbf1f1b85cc03c336da1ddebe')),  # noqa: E501
         load_global_caches=load_global_caches,
     )
     user_address, timestamp, gas_str = ethereum_accounts[0], TimestampMS(1669622603000), '0.001085530186197622'  # noqa: E501
@@ -90,10 +89,9 @@ def test_balancer_v2_swap(ethereum_inquirer, ethereum_accounts, load_global_cach
 @pytest.mark.parametrize('load_global_caches', [[CPT_BALANCER_V1]])
 @pytest.mark.parametrize('ethereum_accounts', [['0x7716a99194d758c8537F056825b75Dd0C8FDD89f']])
 def test_balancer_v1_join(ethereum_inquirer, ethereum_accounts, load_global_caches):
-    tx_hash = deserialize_evm_tx_hash('0xb9dff9df4e3838c75d354d62c4596d94e5eb8904e07cee07a3b7ffa611c05544')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=ethereum_inquirer,
-        tx_hash=tx_hash,
+        tx_hash=(tx_hash := deserialize_evm_tx_hash('0xb9dff9df4e3838c75d354d62c4596d94e5eb8904e07cee07a3b7ffa611c05544')),  # noqa: E501
         load_global_caches=load_global_caches,
     )
     user_address, timestamp, gas_str = ethereum_accounts[0], TimestampMS(1597144247000), '0.0141724'  # noqa: E501
@@ -144,14 +142,13 @@ def test_balancer_v1_join(ethereum_inquirer, ethereum_accounts, load_global_cach
 @pytest.mark.parametrize('load_global_caches', [[CPT_BALANCER_V1]])
 @pytest.mark.parametrize('ethereum_accounts', [['0x7716a99194d758c8537F056825b75Dd0C8FDD89f']])
 def test_balancer_v1_exit(ethereum_inquirer, ethereum_accounts, load_global_caches):
-    tx_hash = deserialize_evm_tx_hash('0xfa1dfeb83480e51a15137a93cb0eba9ac92c1b6b0ee0bd8551a422c1ed83695b')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=ethereum_inquirer,
-        tx_hash=tx_hash,
+        tx_hash=(tx_hash := deserialize_evm_tx_hash('0xfa1dfeb83480e51a15137a93cb0eba9ac92c1b6b0ee0bd8551a422c1ed83695b')),  # noqa: E501
         load_global_caches=load_global_caches,
     )
     user_address, timestamp, gas_str = ethereum_accounts[0], TimestampMS(1597243001000), '0.03071222'  # noqa: E501
-    expected_events = [
+    assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=0,
@@ -206,7 +203,6 @@ def test_balancer_v1_exit(ethereum_inquirer, ethereum_accounts, load_global_cach
             address=string_to_evm_address('0x59A19D8c652FA0284f44113D0ff9aBa70bd46fB4'),
         ),
     ]
-    assert events == expected_events
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
@@ -214,14 +210,13 @@ def test_balancer_v1_exit(ethereum_inquirer, ethereum_accounts, load_global_cach
 @pytest.mark.parametrize('ethereum_accounts', [['0x549C0421c69Be943A2A60e76B19b4A801682cBD3']])
 def test_deposit_with_excess_tokens(ethereum_inquirer, ethereum_accounts, load_global_caches):
     """Verify that when a refund is made for a deposit in balancer v1 this is properly decoded"""
-    tx_hash = deserialize_evm_tx_hash('0x22162f5c71261421db82a03ba4ad13725ef4fe9639c62bf6702538f980fbe7ba')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=ethereum_inquirer,
-        tx_hash=tx_hash,
+        tx_hash=(tx_hash := deserialize_evm_tx_hash('0x22162f5c71261421db82a03ba4ad13725ef4fe9639c62bf6702538f980fbe7ba')),  # noqa: E501
         load_global_caches=load_global_caches,
     )
     user_address, timestamp = ethereum_accounts[0], TimestampMS(1593186380000)
-    expected_events = [
+    assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=0,
@@ -313,7 +308,6 @@ def test_deposit_with_excess_tokens(ethereum_inquirer, ethereum_accounts, load_g
             address=string_to_evm_address('0x9ED47950144e51925166192Bf0aE95553939030a'),
         ),
     ]
-    assert events == expected_events
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
@@ -321,10 +315,9 @@ def test_deposit_with_excess_tokens(ethereum_inquirer, ethereum_accounts, load_g
 @pytest.mark.parametrize('ethereum_accounts', [['0xAB12253171A0d73df64B115cD43Fe0A32Feb9dAA']])
 def test_balancer_trade(ethereum_inquirer, ethereum_accounts, load_global_caches):
     """Test a balancer trade of token to token"""
-    tx_hash = deserialize_evm_tx_hash('0xc9e8094d4435c3786bbb28b64546ecdf8a1f384057319e715eab7f28cfb01e4f')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=ethereum_inquirer,
-        tx_hash=tx_hash,
+        tx_hash=(tx_hash := deserialize_evm_tx_hash('0xc9e8094d4435c3786bbb28b64546ecdf8a1f384057319e715eab7f28cfb01e4f')),  # noqa: E501
         load_global_caches=load_global_caches,
     )
     user_address, timestamp, gas_str = ethereum_accounts[0], TimestampMS(1643362575000), '0.01196446449981698'  # noqa: E501
@@ -385,7 +378,6 @@ def test_balancer_v1_non_proxy_join(
             values=['0x0ce69A796aBe0c0451585aA88F6F45ebaC9E12dc'],
         )
 
-    tx_hash = deserialize_evm_tx_hash('0xbba2e9e46c773b91b1528e48af1ed479132353473726d75e7a0f74bfb687613e')  # noqa: E501
     balancer_qqq_weth_pool_token = get_or_create_evm_token(
         userdb=ethereum_inquirer.database,
         evm_address=string_to_evm_address('0x0ce69A796aBe0c0451585aA88F6F45ebaC9E12dc'),
@@ -405,11 +397,11 @@ def test_balancer_v1_non_proxy_join(
     )
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=ethereum_inquirer,
-        tx_hash=tx_hash,
+        tx_hash=(tx_hash := deserialize_evm_tx_hash('0xbba2e9e46c773b91b1528e48af1ed479132353473726d75e7a0f74bfb687613e')),  # noqa: E501
         load_global_caches=load_global_caches,
     )
     user_address, timestamp, gas_str, approve_amt, receive_amt, deposit_qqq_amt, deposit_weth_amt = ethereum_accounts[0], TimestampMS(1730837051000), '0.002106711205202376', '0.000000001', '4152.559258169060848717', '3545739.463723403', '0.726672467956343618'  # noqa: E501
-    expected_events = [
+    assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=0,
@@ -475,21 +467,19 @@ def test_balancer_v1_non_proxy_join(
             address=balancer_qqq_weth_pool_token.evm_address,
         ),
     ]
-    assert events == expected_events
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('load_global_caches', [[CPT_BALANCER_V1]])
 @pytest.mark.parametrize('ethereum_accounts', [['0x6D3B90747dbf5883bF88fF7Eb5fCC86f408b5409']])
 def test_balancer_v1_non_proxy_exit(ethereum_inquirer, ethereum_accounts, load_global_caches):
-    tx_hash = deserialize_evm_tx_hash('0x2a1b671429d1a2c797ba0b46735f029e69a85ba514a4d1132eab6b22c7052540')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=ethereum_inquirer,
-        tx_hash=tx_hash,
+        tx_hash=(tx_hash := deserialize_evm_tx_hash('0x2a1b671429d1a2c797ba0b46735f029e69a85ba514a4d1132eab6b22c7052540')),  # noqa: E501
         load_global_caches=load_global_caches,
     )
     user_address, pool_address, timestamp, gas_str, return_amt, withdrawn_sfrx_eth_amt, withdrawn_fxs_amt = ethereum_accounts[0], string_to_evm_address('0x11F2A400de0a2FC93a32F88D8779d8199152c6a4'), TimestampMS(1730953079000), '0.001983415737154446', '224630.905650719593790621', '11.361467105948316099', '18310.050732769125107569'  # noqa: E501
-    expected_events = [
+    assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=0,
@@ -543,21 +533,19 @@ def test_balancer_v1_non_proxy_exit(ethereum_inquirer, ethereum_accounts, load_g
             address=pool_address,
         ),
     ]
-    assert events == expected_events
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('load_global_caches', [[CPT_BALANCER_V1]])
 @pytest.mark.parametrize('arbitrum_one_accounts', [['0xE3B73F6f37F782128Ebe11e058B23BA0bA6c03C3']])
 def test_balancer_v1_exit_arbitrum(arbitrum_one_inquirer, arbitrum_one_accounts, load_global_caches):  # noqa: E501
-    tx_hash = deserialize_evm_tx_hash('0xf674623c5877257dbb9e8d328ff56e5dfda4f5a650ea51be3100261a1f8aae65')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=arbitrum_one_inquirer,
-        tx_hash=tx_hash,
+        tx_hash=(tx_hash := deserialize_evm_tx_hash('0xf674623c5877257dbb9e8d328ff56e5dfda4f5a650ea51be3100261a1f8aae65')),  # noqa: E501
         load_global_caches=load_global_caches,
     )
     user_address, pool_address, timestamp, gas_str, return_amt, withdrawn_usdc_amt, withdrawn_wsteth_amt = arbitrum_one_accounts[0], string_to_evm_address('0xFEa755D5523F3A78c0945141AD396d4E970D2fab'), TimestampMS(1728651192000), '0.00000317535', '1.822676898893300983', '11.664549', '0.004234826018688223'  # noqa: E501
-    expected_events = [
+    assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=0,
@@ -611,7 +599,6 @@ def test_balancer_v1_exit_arbitrum(arbitrum_one_inquirer, arbitrum_one_accounts,
             address=pool_address,
         ),
     ]
-    assert events == expected_events
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
@@ -654,7 +641,7 @@ def test_balancer_v1_join_gnosis(gnosis_inquirer, gnosis_accounts, load_global_c
         load_global_caches=load_global_caches,
     )
     user_address, timestamp, gas_str, receive_amt, deposit_gno_amt, deposit_cow_amt = gnosis_accounts[0], TimestampMS(1731355510000), '0.0002310674', '68.63749617341156454', '0.048302073768085864', '30.933559190570998685'  # noqa: E501
-    expected_events = [
+    assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=0,
@@ -708,7 +695,6 @@ def test_balancer_v1_join_gnosis(gnosis_inquirer, gnosis_accounts, load_global_c
             address=balancer_gno_cow_pool_token.evm_address,
         ),
     ]
-    assert events == expected_events
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
@@ -717,7 +703,7 @@ def test_balancer_v2_exit_ethereum(ethereum_inquirer, ethereum_accounts):
     tx_hash = deserialize_evm_tx_hash('0xcc1636487bd419892133c0e1245e2f427819193fbaef68270111580291c0b285')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     user_address, timestamp, gas_str, return_amt, withdrawn_rsweth_amt = ethereum_accounts[0], TimestampMS(1731642119000), '0.003934656379000305', '14.957821596922618203', '14.953427656474271108'  # noqa: E501
-    expected_events = [
+    assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=0,
@@ -758,7 +744,6 @@ def test_balancer_v2_exit_ethereum(ethereum_inquirer, ethereum_accounts):
             address=VAULT_ADDRESS,
         ),
     ]
-    assert events == expected_events
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
@@ -767,7 +752,7 @@ def test_balancer_v2_exit_gnosis(gnosis_inquirer, gnosis_accounts):
     tx_hash = deserialize_evm_tx_hash('0x1a9e201fcec608a49dd6b106c46818f2f898401f6439dc5e619869ad48167a3a')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=gnosis_inquirer, tx_hash=tx_hash)
     user_address, timestamp, gas_str, return_amt, withdrawn_sdai_amt = gnosis_accounts[0], TimestampMS(1731923340000), '0.0003807456', '2403.555042425564723735', '2215.645258238073851336'  # noqa: E501
-    expected_events = [
+    assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=0,
@@ -808,7 +793,6 @@ def test_balancer_v2_exit_gnosis(gnosis_inquirer, gnosis_accounts):
             address=VAULT_ADDRESS,
         ),
     ]
-    assert events == expected_events
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
@@ -817,7 +801,7 @@ def test_balancer_v2_join_gnosis(gnosis_inquirer, gnosis_accounts):
     tx_hash = deserialize_evm_tx_hash('0x1915189b0ad23d6c8e6f23df298e92504ec7537dfa8d52571c60193bc598a8b8')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=gnosis_inquirer, tx_hash=tx_hash)
     user_address, timestamp, gas_str, receive_amt, deposit_sdai_amt = gnosis_accounts[0], TimestampMS(1729441770000), '0.0003671558', '2403.555042425564723735', '2229.291979360811376949'  # noqa: E501
-    expected_events = [
+    assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=0,
@@ -858,7 +842,6 @@ def test_balancer_v2_join_gnosis(gnosis_inquirer, gnosis_accounts):
             address=ZERO_ADDRESS,
         ),
     ]
-    assert events == expected_events
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
@@ -871,7 +854,7 @@ def test_reth_arb(
     tx_hash = deserialize_evm_tx_hash('0x6b380e483cb301cb060434e31bf053c0b55cd357e8c18f01d3573d850273954e')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=arbitrum_one_inquirer, tx_hash=tx_hash)  # noqa: E501
     user_address, timestamp, gas_str, receive_amt, deposit_reth_amt = arbitrum_one_accounts[0], TimestampMS(1733867520000), '0.00000838391546', '0.027783312185816836', '0.025'  # noqa: E501
-    expected_events = [
+    assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=0,
@@ -924,7 +907,6 @@ def test_reth_arb(
             address=ZERO_ADDRESS,
         ),
     ]
-    assert events == expected_events
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
@@ -948,14 +930,13 @@ def test_balancer_v2_join_with_gauge_deposit(
             key_parts=(CacheType.BALANCER_V2_GAUGES, str(optimism_inquirer.chain_id.value)),
             values=['0xCc2E1CB5d8DeA77F08D19f875F381f34f997d96c'],
         )
-    tx_hash = deserialize_evm_tx_hash('0x1e8d94f4d4bb05b8d868bc558293782f4e7ce2eaa87f3f1f6d1377a15ab1a6f0')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=optimism_inquirer,
-        tx_hash=tx_hash,
+        tx_hash=(tx_hash := deserialize_evm_tx_hash('0x1e8d94f4d4bb05b8d868bc558293782f4e7ce2eaa87f3f1f6d1377a15ab1a6f0')),  # noqa: E501
         load_global_caches=load_global_caches,
     )
     user_address, timestamp, gas_amount, approval_amount, receive_amount, deposit_usdce_amount, deposit_usdt_amount = optimism_accounts[0], TimestampMS(1706002351000), '0.000273096837250597', '115792089237316195423570985008687907853269984665640564039457584007912319.640092', '1753.970737231540926176', '809.999843', '957.891739'  # noqa: E501
-    expected_events = [
+    assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=0,
@@ -1047,7 +1028,6 @@ def test_balancer_v2_join_with_gauge_deposit(
             address=ZERO_ADDRESS,
         ),
     ]
-    assert events == expected_events
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
@@ -1070,14 +1050,13 @@ def test_balancer_gauge_withdrawal(
             key_parts=(CacheType.BALANCER_V2_GAUGES, str(ethereum_inquirer.chain_id.value)),
             values=['0xdf54d2Dd06F8Be3B0c4FfC157bE54EC9cca91F3C'],
         )
-    tx_hash = deserialize_evm_tx_hash('0xcbb4179ac94618cd419d4185b5137ce02f5ffaef810a1c209dedab79e837b3af')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=ethereum_inquirer,
-        tx_hash=tx_hash,
+        tx_hash=(tx_hash := deserialize_evm_tx_hash('0xcbb4179ac94618cd419d4185b5137ce02f5ffaef810a1c209dedab79e837b3af')),  # noqa: E501
         load_global_caches=load_global_caches,
     )
     user_address, timestamp, gas_amount, withdrawn_amount = ethereum_accounts[0], TimestampMS(1719060983000), '0.001454091177763647', '0.426822578640463022'  # noqa: E501
-    expected_events = [
+    assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=0,
@@ -1118,7 +1097,6 @@ def test_balancer_gauge_withdrawal(
             address=string_to_evm_address('0xdf54d2Dd06F8Be3B0c4FfC157bE54EC9cca91F3C'),
         ),
     ]
-    assert events == expected_events
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
@@ -1178,7 +1156,7 @@ def test_balancer_v2_swap_repeated_pair_netted_transfers(gnosis_inquirer, gnosis
         tx_hash=(tx_hash := deserialize_evm_tx_hash('0x47321dcb43441dfb6295a9e34a2591fba26a15e557977e4d92460a3205f71459')),  # noqa: E501
         load_global_caches=load_global_caches,
     )
-    expected_events = [
+    assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=0,
@@ -1217,4 +1195,3 @@ def test_balancer_v2_swap_repeated_pair_netted_transfers(gnosis_inquirer, gnosis
             address=VAULT_ADDRESS,
         ),
     ]
-    assert events == expected_events

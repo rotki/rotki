@@ -143,17 +143,16 @@ def test_deposit_yearn_v3(
     )
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     user_address, vault_address = ethereum_accounts[0], string_to_evm_address('0xBF319dDC2Edc1Eb6FDf9910E39b37Be221C8805F')  # noqa: E501
-    timestamp, gas_amount, deposit_amount, receive_amount, approve_amount = TimestampMS(1722289343000), '0.000357122879546472', '7445', '7336.974656759870797081', '57896044618658097711785492504343953926634992332820282012283.792003956564819967'  # noqa: E501
     assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=0,
-            timestamp=timestamp,
+            timestamp=(timestamp := TimestampMS(1722289343000)),
             location=Location.ETHEREUM,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            amount=FVal(gas_amount),
+            amount=FVal(gas_amount := '0.000357122879546472'),
             location_label=user_address,
             notes=f'Burn {gas_amount} ETH for gas',
             counterparty=CPT_GAS,
@@ -165,7 +164,7 @@ def test_deposit_yearn_v3(
             event_type=HistoryEventType.INFORMATIONAL,
             event_subtype=HistoryEventSubType.APPROVE,
             asset=Asset('eip155:1/erc20:0xf939E0A03FB07F59A73314E73794Be0E57ac1b4E'),
-            amount=FVal(approve_amount),
+            amount=FVal(approve_amount := '57896044618658097711785492504343953926634992332820282012283.792003956564819967'),  # noqa: E501
             location_label=user_address,
             notes=f'Set crvUSD spending approval of {user_address} by {vault_address} to {approve_amount}',  # noqa: E501
             address=vault_address,
@@ -177,7 +176,7 @@ def test_deposit_yearn_v3(
             event_type=HistoryEventType.DEPOSIT,
             event_subtype=HistoryEventSubType.DEPOSIT_FOR_WRAPPED,
             asset=Asset('eip155:1/erc20:0xf939E0A03FB07F59A73314E73794Be0E57ac1b4E'),
-            amount=FVal(deposit_amount),
+            amount=FVal(deposit_amount := '7445'),
             location_label=user_address,
             notes=f'Deposit {deposit_amount} crvUSD in yearn-v3 vault crvUSD-2 yVault',
             counterparty=CPT_YEARN_V3,
@@ -190,7 +189,7 @@ def test_deposit_yearn_v3(
             event_type=HistoryEventType.RECEIVE,
             event_subtype=HistoryEventSubType.RECEIVE_WRAPPED,
             asset=Asset('eip155:1/erc20:0xBF319dDC2Edc1Eb6FDf9910E39b37Be221C8805F'),
-            amount=FVal(receive_amount),
+            amount=FVal(receive_amount := '7336.974656759870797081'),
             location_label=user_address,
             notes=f'Receive {receive_amount} yvcrvUSD-2 after deposit in a yearn-v3 vault',
             counterparty=CPT_YEARN_V3,
@@ -293,17 +292,17 @@ def test_deposit_yearn_v2(
         )],
     )
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
-    timestamp, user_address, gas_amount, deposit_amount, receive_amount, approve_amount = TimestampMS(1729145687000), ethereum_accounts[0], '0.001446241576196176', '38541.366598671832692528', '38514.207134567395983686', '57896044618658097711785492504343953926634992332820281981187.425405284732127439'  # noqa: E501
+    user_address = ethereum_accounts[0]
     assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=0,
-            timestamp=timestamp,
+            timestamp=(timestamp := TimestampMS(1729145687000)),
             location=Location.ETHEREUM,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            amount=FVal(gas_amount),
+            amount=FVal(gas_amount := '0.001446241576196176'),
             location_label=user_address,
             notes=f'Burn {gas_amount} ETH for gas',
             counterparty=CPT_GAS,
@@ -315,7 +314,7 @@ def test_deposit_yearn_v2(
             event_type=HistoryEventType.INFORMATIONAL,
             event_subtype=HistoryEventSubType.APPROVE,
             asset=Asset('eip155:1/erc20:0xef484de8C07B6e2d732A92B5F78e81B38f99f95E'),
-            amount=FVal(approve_amount),
+            amount=FVal(approve_amount := '57896044618658097711785492504343953926634992332820281981187.425405284732127439'),  # noqa: E501
             location_label=user_address,
             notes=f'Set crvDOLA spending approval of {user_address} by {YEARN_PARTNER_TRACKER} to {approve_amount}',  # noqa: E501
             address=YEARN_PARTNER_TRACKER,
@@ -327,7 +326,7 @@ def test_deposit_yearn_v2(
             event_type=HistoryEventType.DEPOSIT,
             event_subtype=HistoryEventSubType.DEPOSIT_FOR_WRAPPED,
             asset=Asset('eip155:1/erc20:0xef484de8C07B6e2d732A92B5F78e81B38f99f95E'),
-            amount=FVal(deposit_amount),
+            amount=FVal(deposit_amount := '38541.366598671832692528'),
             location_label=user_address,
             notes=f'Deposit {deposit_amount} crvDOLA in yearn-v2 vault',
             counterparty=CPT_YEARN_V2,
@@ -340,7 +339,7 @@ def test_deposit_yearn_v2(
             event_type=HistoryEventType.RECEIVE,
             event_subtype=HistoryEventSubType.RECEIVE_WRAPPED,
             asset=Asset('eip155:1/erc20:0xcC2EFb8bEdB6eD69ADeE0c3762470c38D4730C50'),
-            amount=FVal(receive_amount),
+            amount=FVal(receive_amount := '38514.207134567395983686'),
             location_label=user_address,
             notes=f'Receive {receive_amount} yvCurve-crvDOLA-f after deposit in a yearn-v2 vault',
             counterparty=CPT_YEARN_V2,
@@ -374,17 +373,17 @@ def test_increase_deposit_yearn_v2(
         )],
     )
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
-    timestamp, user_address, gas_amount, deposit_amount, receive_amount = TimestampMS(1729346255000), ethereum_accounts[0], '0.0020739662607066', '10000', '9035.10865'  # noqa: E501
+    user_address = ethereum_accounts[0]
     assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=0,
-            timestamp=timestamp,
+            timestamp=(timestamp := TimestampMS(1729346255000)),
             location=Location.ETHEREUM,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            amount=FVal(gas_amount),
+            amount=FVal(gas_amount := '0.0020739662607066'),
             location_label=user_address,
             notes=f'Burn {gas_amount} ETH for gas',
             counterparty=CPT_GAS,
@@ -396,7 +395,7 @@ def test_increase_deposit_yearn_v2(
             event_type=HistoryEventType.DEPOSIT,
             event_subtype=HistoryEventSubType.DEPOSIT_FOR_WRAPPED,
             asset=A_USDC,
-            amount=FVal(deposit_amount),
+            amount=FVal(deposit_amount := '10000'),
             location_label=user_address,
             notes=f'Deposit {deposit_amount} USDC in yearn-v2 vault',
             counterparty=CPT_YEARN_V2,
@@ -409,7 +408,7 @@ def test_increase_deposit_yearn_v2(
             event_type=HistoryEventType.RECEIVE,
             event_subtype=HistoryEventSubType.RECEIVE_WRAPPED,
             asset=Asset('eip155:1/erc20:0xa354F35829Ae975e850e23e9615b11Da1B3dC4DE'),
-            amount=FVal(receive_amount),
+            amount=FVal(receive_amount := '9035.10865'),
             location_label=user_address,
             notes=f'Receive {receive_amount} yvUSDC after deposit in a yearn-v2 vault',
             counterparty=CPT_YEARN_V2,

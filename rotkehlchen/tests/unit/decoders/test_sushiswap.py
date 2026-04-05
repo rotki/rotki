@@ -41,17 +41,16 @@ ADDY_3 = string_to_evm_address('0x3D6a724247c4B133C3b279558e90EdD0c5d25751')
 def test_sushiswap_single_swap(ethereum_inquirer):
     tx_hash = deserialize_evm_tx_hash('0xbfe3c8a13c325a32736beb34ea170053cdbbd1740a9c3ceca52060906b7f87bd')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
-    timestamp, gas, swap_amount, received_amount, approved_amount = TimestampMS(1622840771000), '0.001815413', '19.157411925828275084', '18.47349725628421943', '115792089237316195423570985008687907853269984665640564039438.426595987301364851'  # noqa: E501
-    expected_events = [
+    assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=0,
-            timestamp=timestamp,
+            timestamp=(timestamp := TimestampMS(1622840771000)),
             location=Location.ETHEREUM,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            amount=FVal(gas),
+            amount=FVal(gas := '0.001815413'),
             location_label=ADDY_1,
             notes=f'Burn {gas} ETH for gas',
             counterparty=CPT_GAS,
@@ -63,7 +62,7 @@ def test_sushiswap_single_swap(ethereum_inquirer):
             event_type=HistoryEventType.INFORMATIONAL,
             event_subtype=HistoryEventSubType.APPROVE,
             asset=Asset('eip155:1/erc20:0x62B9c7356A2Dc64a1969e19C23e4f579F9810Aa7'),
-            amount=FVal(approved_amount),
+            amount=FVal(approved_amount := '115792089237316195423570985008687907853269984665640564039438.426595987301364851'),  # noqa: E501
             location_label=ADDY_1,
             notes=f'Set cvxCRV spending approval of {ADDY_1} by 0xd9e1cE17f2641f24aE83637ab66a2cca9C378B9F to {approved_amount}',  # noqa: E501
             counterparty=None,
@@ -75,7 +74,7 @@ def test_sushiswap_single_swap(ethereum_inquirer):
             location=Location.ETHEREUM,
             event_subtype=HistoryEventSubType.SPEND,
             asset=EvmToken('eip155:1/erc20:0x62B9c7356A2Dc64a1969e19C23e4f579F9810Aa7'),
-            amount=FVal(swap_amount),
+            amount=FVal(swap_amount := '19.157411925828275084'),
             location_label=ADDY_1,
             notes=f'Swap {swap_amount} cvxCRV in Sushiswap V2 from {ADDY_1}',
             counterparty=CPT_SUSHISWAP_V2,
@@ -87,14 +86,13 @@ def test_sushiswap_single_swap(ethereum_inquirer):
             location=Location.ETHEREUM,
             event_subtype=HistoryEventSubType.RECEIVE,
             asset=EvmToken('eip155:1/erc20:0xD533a949740bb3306d119CC777fa900bA034cd52'),
-            amount=FVal(received_amount),
+            amount=FVal(received_amount := '18.47349725628421943'),
             location_label=ADDY_1,
             notes=f'Receive {received_amount} CRV in Sushiswap V2 from {ADDY_1}',
             counterparty=CPT_SUSHISWAP_V2,
             address=string_to_evm_address('0x33F6DDAEa2a8a54062E021873bCaEE006CdF4007'),
         ),
     ]
-    assert events == expected_events
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
@@ -103,17 +101,17 @@ def test_sushiswap_v2_remove_liquidity(ethereum_inquirer):
     """This checks that removing liquidity to Sushiswap V2 pool is decoded properly"""
     tx_hash = deserialize_evm_tx_hash('0x4720a52fc768591cb3997da3a2eab76c54b69176f3c3f8d9a817c2d60dd449ac')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
-    timestamp, gas_amount, spent_amount, removed_eth, removed_usdt, pool_address = TimestampMS(1672888271000), '0.006668386', '0.0000243611620791', '1.122198589808876532', '1408.739932', string_to_evm_address('0x06da0fd433C1A5d7a4faa01111c044910A184553')  # noqa: E501
-    expected_events = [
+    pool_address = string_to_evm_address('0x06da0fd433C1A5d7a4faa01111c044910A184553')
+    assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=0,
-            timestamp=timestamp,
+            timestamp=(timestamp := TimestampMS(1672888271000)),
             location=Location.ETHEREUM,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            amount=FVal(gas_amount),
+            amount=FVal(gas_amount := '0.006668386'),
             location_label=ADDY_2,
             notes=f'Burn {gas_amount} ETH for gas',
             counterparty=CPT_GAS,
@@ -125,7 +123,7 @@ def test_sushiswap_v2_remove_liquidity(ethereum_inquirer):
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.RETURN_WRAPPED,
             asset=Asset('eip155:1/erc20:0x06da0fd433C1A5d7a4faa01111c044910A184553'),
-            amount=FVal(spent_amount),
+            amount=FVal(spent_amount := '0.0000243611620791'),
             location_label=ADDY_2,
             notes=f'Send {spent_amount} SLP WETH-USDT to Sushiswap V2 pool',
             counterparty=CPT_SUSHISWAP_V2,
@@ -138,7 +136,7 @@ def test_sushiswap_v2_remove_liquidity(ethereum_inquirer):
             event_type=HistoryEventType.WITHDRAWAL,
             event_subtype=HistoryEventSubType.REDEEM_WRAPPED,
             asset=A_ETH,
-            amount=FVal(removed_eth),
+            amount=FVal(removed_eth := '1.122198589808876532'),
             location_label=ADDY_2,
             notes=f'Remove {removed_eth} ETH from Sushiswap V2 LP {pool_address}',
             counterparty=CPT_SUSHISWAP_V2,
@@ -152,7 +150,7 @@ def test_sushiswap_v2_remove_liquidity(ethereum_inquirer):
             event_type=HistoryEventType.WITHDRAWAL,
             event_subtype=HistoryEventSubType.REDEEM_WRAPPED,
             asset=A_USDT,
-            amount=FVal(removed_usdt),
+            amount=FVal(removed_usdt := '1408.739932'),
             location_label=ADDY_2,
             notes=f'Remove {removed_usdt} USDT from Sushiswap V2 LP 0x06da0fd433C1A5d7a4faa01111c044910A184553',  # noqa: E501
             counterparty=CPT_SUSHISWAP_V2,
@@ -160,7 +158,6 @@ def test_sushiswap_v2_remove_liquidity(ethereum_inquirer):
             extra_data={'pool_address': pool_address},
         ),
     ]
-    assert events == expected_events
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
@@ -169,22 +166,22 @@ def test_sushiswap_v2_add_liquidity(ethereum_inquirer):
     """This checks that adding liquidity to Sushiswap V2 pool is decoded properly"""
     tx_hash = deserialize_evm_tx_hash('0x2ce6f92f4020fdc4ed69a173b10c1dd2811184fac34d56188270950db1152f3a')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
-    timestamp, gas_amount, received_amount, deposited_eth, deposited_usdt, pool_address = TimestampMS(1672893947000), '0.0030789891485573', '0.000000017297304741', '0.000797012710918264', '0.999992', string_to_evm_address('0x06da0fd433C1A5d7a4faa01111c044910A184553')  # noqa: E501
+    pool_address = string_to_evm_address('0x06da0fd433C1A5d7a4faa01111c044910A184553')
     lp_token_identifier = evm_address_to_identifier(
         address=pool_address,
         chain_id=ChainID.ETHEREUM,
         token_type=TokenKind.ERC20,
     )
-    expected_events = [
+    assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=0,
-            timestamp=timestamp,
+            timestamp=(timestamp := TimestampMS(1672893947000)),
             location=Location.ETHEREUM,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            amount=FVal(gas_amount),
+            amount=FVal(gas_amount := '0.0030789891485573'),
             location_label=ADDY_3,
             notes=f'Burn {gas_amount} ETH for gas',
             counterparty=CPT_GAS,
@@ -196,7 +193,7 @@ def test_sushiswap_v2_add_liquidity(ethereum_inquirer):
             event_type=HistoryEventType.DEPOSIT,
             event_subtype=HistoryEventSubType.DEPOSIT_FOR_WRAPPED,
             asset=A_ETH,
-            amount=FVal(deposited_eth),
+            amount=FVal(deposited_eth := '0.000797012710918264'),
             location_label=ADDY_3,
             notes=f'Deposit {deposited_eth} ETH to Sushiswap V2 LP {pool_address}',
             counterparty=CPT_SUSHISWAP_V2,
@@ -210,7 +207,7 @@ def test_sushiswap_v2_add_liquidity(ethereum_inquirer):
             event_type=HistoryEventType.DEPOSIT,
             event_subtype=HistoryEventSubType.DEPOSIT_FOR_WRAPPED,
             asset=A_USDT,
-            amount=FVal(deposited_usdt),
+            amount=FVal(deposited_usdt := '0.999992'),
             location_label=ADDY_3,
             notes=f'Deposit {deposited_usdt} USDT to Sushiswap V2 LP {pool_address}',
             counterparty=CPT_SUSHISWAP_V2,
@@ -224,14 +221,13 @@ def test_sushiswap_v2_add_liquidity(ethereum_inquirer):
             event_type=HistoryEventType.RECEIVE,
             event_subtype=HistoryEventSubType.RECEIVE_WRAPPED,
             asset=Asset(lp_token_identifier),
-            amount=FVal(received_amount),
+            amount=FVal(received_amount := '0.000000017297304741'),
             location_label=ADDY_3,
             notes=f'Receive {received_amount} SLP WETH-USDT from Sushiswap V2 pool',
             counterparty=CPT_SUSHISWAP_V2,
             address=pool_address,
         ),
     ]
-    assert events == expected_events
     assert EvmToken(lp_token_identifier).protocol == CPT_SUSHISWAP_V2
 
 

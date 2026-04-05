@@ -19,13 +19,12 @@ from rotkehlchen.types import Location, TimestampMS, deserialize_evm_tx_hash
 def test_airdrop_claim(ethereum_inquirer, ethereum_accounts):
     tx_hash = deserialize_evm_tx_hash('0xc04e88de26d3466e64a243c15db181342152d0b771b0e8e224920ea9b28fe7e0')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
-    timestamp = TimestampMS(1712868707000)
     gas_amount_str, claimed_amount = '0.00203104493516988', '5000'
-    expected_events = [
+    assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=0,
-            timestamp=timestamp,
+            timestamp=(timestamp := TimestampMS(1712868707000)),
             location=Location.ETHEREUM,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
@@ -49,7 +48,6 @@ def test_airdrop_claim(ethereum_inquirer, ethereum_accounts):
             address=DEV_REWARD_DISTRIBUTOR,
         ),
     ]
-    assert events == expected_events
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
@@ -57,17 +55,16 @@ def test_airdrop_claim(ethereum_inquirer, ethereum_accounts):
 def test_airdrop_swap(ethereum_inquirer, ethereum_accounts):
     tx_hash = deserialize_evm_tx_hash('0x1db2028d68fbdc19e770307dd968c24c8fa4211b26eb512a938223f89d11450a')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
-    timestamp, gas_amount_str, claimed_amount = TimestampMS(1718357447000), '0.00059501796565782', '5000'  # noqa: E501
-    expected_events = [
+    assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=0,
-            timestamp=timestamp,
+            timestamp=(timestamp := TimestampMS(1718357447000)),
             location=Location.ETHEREUM,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            amount=FVal(gas_amount_str),
+            amount=FVal(gas_amount_str := '0.00059501796565782'),
             location_label=ethereum_accounts[0],
             notes=f'Burn {gas_amount_str} ETH for gas',
             counterparty=CPT_GAS,
@@ -79,7 +76,7 @@ def test_airdrop_swap(ethereum_inquirer, ethereum_accounts):
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.NONE,
             asset=EvmToken('eip155:1/erc20:0x6081d7F04a8c31e929f25152d4ad37c83638C62b'),
-            amount=FVal(claimed_amount),
+            amount=FVal(claimed_amount := '5000'),
             location_label=ethereum_accounts[0],
             notes=f'Burn {claimed_amount} FLT-DROP',
             counterparty=CPT_FLUENCE,
@@ -99,4 +96,3 @@ def test_airdrop_swap(ethereum_inquirer, ethereum_accounts):
             address=DEV_REWARD_DISTRIBUTOR,
         ),
     ]
-    assert events == expected_events

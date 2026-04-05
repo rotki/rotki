@@ -16,19 +16,17 @@ from rotkehlchen.types import Location, TimestampMS, deserialize_evm_tx_hash
 @pytest.mark.parametrize('ethereum_accounts', [['0x692C673814eDB9Fe6DB2a6F4227F40524240Cbec']])
 def test_matic_to_pol_migration(ethereum_inquirer, ethereum_accounts):
     tx_hash = deserialize_evm_tx_hash('0x6c30b202e7223ea93b9d1c898d7012b699d14bec5434e8839fc290858718f6a2')  # noqa: E501
-    timestamp = TimestampMS(1698285215000)
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     amount = '10000.28'
-    gas_str = '0.001792178291324676'
     expected_events = [EvmEvent(
         tx_ref=tx_hash,
         sequence_index=0,
-        timestamp=timestamp,
+        timestamp=(timestamp := TimestampMS(1698285215000)),
         location=Location.ETHEREUM,
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_ETH,
-        amount=FVal(gas_str),
+        amount=FVal(gas_str := '0.001792178291324676'),
         location_label=ethereum_accounts[0],
         notes=f'Burn {gas_str} ETH for gas',
         counterparty=CPT_GAS,

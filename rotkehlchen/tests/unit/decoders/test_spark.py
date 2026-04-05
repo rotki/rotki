@@ -23,7 +23,7 @@ def test_deposit_usdc_into_savings(base_inquirer, base_accounts):
     tx_hash = deserialize_evm_tx_hash('0xc63747c31bc5ac9d62e9217a44681463724bd36c74ea2b6ffe90cbeafbcf91a8')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=base_inquirer, tx_hash=tx_hash)
     user_address, timestamp, gas_amount, out_amount, in_amount = base_accounts[0], TimestampMS(1736935243000), '0.000003809323980083', '18.364226', '17.867188'  # noqa: E501
-    expected_events = [
+    assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=0,
@@ -64,7 +64,6 @@ def test_deposit_usdc_into_savings(base_inquirer, base_accounts):
             address=string_to_evm_address('0x1601843c5E9bC251A3272907010AFa41Fa18347E'),
         ),
     ]
-    assert events == expected_events
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
@@ -74,7 +73,7 @@ def test_withdraw_usdc_from_savings(base_inquirer, base_accounts):
     tx_hash = deserialize_evm_tx_hash('0x46d434c03ff6721fff43cbc1b1570ee3739dbd32f84d4531c5ca0a556a0dc433')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=base_inquirer, tx_hash=tx_hash)
     user_address, timestamp, gas_amount, out_amount, in_amount = base_accounts[0], TimestampMS(1736937043000), '0.000003506413757861', '16.539774682836928356', '17'  # noqa: E501
-    expected_events = [
+    assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=0,
@@ -115,7 +114,6 @@ def test_withdraw_usdc_from_savings(base_inquirer, base_accounts):
             address=string_to_evm_address('0x1601843c5E9bC251A3272907010AFa41Fa18347E'),
         ),
     ]
-    assert events == expected_events
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
@@ -142,7 +140,7 @@ def test_deposit_to_spark(ethereum_inquirer, ethereum_accounts):
     tx_hash = deserialize_evm_tx_hash('0xe7ae42aa6b3815b135c5dfe62222421e43013d30ec132f18d52b396229ce5c6a')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     user_address, timestamp, gas_amount, out_amount, in_amount = ethereum_accounts[0], TimestampMS(1737005627000), '0.000511374451566069', '5839855.131490784645058218', '5839855.131490784645058218'  # noqa: E501
-    expected_events = [
+    assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=0,
@@ -196,7 +194,6 @@ def test_deposit_to_spark(ethereum_inquirer, ethereum_accounts):
             address=ZERO_ADDRESS,
         ),
     ]
-    assert events == expected_events
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
@@ -223,7 +220,7 @@ def test_withdraw_from_spark(gnosis_inquirer, gnosis_accounts):
     tx_hash = deserialize_evm_tx_hash('0x783c3199d405cbf9a9f95ac31e6aeeb0c092d405d4abd56ec2cd3c62b760b3e8')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=gnosis_inquirer, tx_hash=tx_hash)
     user_address, timestamp, gas_amount, out_amount, in_amount, interest_amount = gnosis_accounts[0], TimestampMS(1737008645000), '0.0002680834', '0.73523915024913116', '0.73523915024913116', '0.002274206849231879'  # noqa: E501
-    expected_events = [
+    assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=0,
@@ -289,7 +286,6 @@ def test_withdraw_from_spark(gnosis_inquirer, gnosis_accounts):
             counterparty=CPT_SPARK,
         ),
     ]
-    assert events == expected_events
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
@@ -395,12 +391,11 @@ def test_susdc_ethereum_redeem(ethereum_inquirer, ethereum_accounts):
 def test_redeem_susds(ethereum_inquirer, ethereum_accounts):
     tx_hash = deserialize_evm_tx_hash('0x2e5bac2cb234a4388d45754656bad35cc03c7dde7745de10b5b605ff28187d52')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
-    timestamp = TimestampMS(1726736615000)
     gas_amount, returned_amount, withdrawn_amount = '0.002553705360907168', '76400.28490997120343213', '76424.11'  # noqa: E501
     assert events == [EvmEvent(
         tx_ref=tx_hash,
         sequence_index=0,
-        timestamp=timestamp,
+        timestamp=(timestamp := TimestampMS(1726736615000)),
         location=Location.ETHEREUM,
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
@@ -443,12 +438,11 @@ def test_redeem_susds(ethereum_inquirer, ethereum_accounts):
 def test_deposit_susds(ethereum_inquirer, ethereum_accounts):
     tx_hash = deserialize_evm_tx_hash('0xe9ca86a0ce9c0226d65203805b77d13697ad5e579989505562638095dc45cac4')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
-    timestamp = TimestampMS(1726754135000)
     gas_amount, deposited_amount, withdrawn_amount = '0.003750084090503928', '5114.68', '5112.913299374006156278'  # noqa: E501
     assert events == [EvmEvent(
         tx_ref=tx_hash,
         sequence_index=0,
-        timestamp=timestamp,
+        timestamp=(timestamp := TimestampMS(1726754135000)),
         location=Location.ETHEREUM,
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
@@ -585,10 +579,9 @@ def test_deposit_dai_to_sdai(ethereum_inquirer, ethereum_accounts):
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('gnosis_accounts', [['0x78E87757861185Ec5e8C0EF6BF0C69Fa7832df6C']])
 def test_deposit_xdai_to_sdai(gnosis_inquirer, gnosis_accounts):
-    tx_hash = deserialize_evm_tx_hash('0x1342646cab122d58f0b7dfae404dad5235d42224de881099dc05e59477bb93aa')  # noqa: E501
     actual_events, _ = get_decoded_events_of_transaction(
         evm_inquirer=gnosis_inquirer,
-        tx_hash=tx_hash,
+        tx_hash=(tx_hash := deserialize_evm_tx_hash('0x1342646cab122d58f0b7dfae404dad5235d42224de881099dc05e59477bb93aa')),  # noqa: E501
     )
     gas_amount, deposit_amount, receive_amount = '0.000367251244452481', '315', '303.052244055946806232'  # noqa: E501
     assert actual_events == [
@@ -637,10 +630,9 @@ def test_deposit_xdai_to_sdai(gnosis_inquirer, gnosis_accounts):
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('gnosis_accounts', [['0x4fFAD6ac852c0Af0AA301376F4C5Dea3a928b120']])
 def test_withdraw_xdai_from_sdai(gnosis_inquirer, gnosis_accounts):
-    tx_hash = deserialize_evm_tx_hash('0xe23ee1ac52b8981723c737b01781691b965c5819cccccdb98e7c8cb5894dddbb')  # noqa: E501
     actual_events, _ = get_decoded_events_of_transaction(
         evm_inquirer=gnosis_inquirer,
-        tx_hash=tx_hash,
+        tx_hash=(tx_hash := deserialize_evm_tx_hash('0xe23ee1ac52b8981723c737b01781691b965c5819cccccdb98e7c8cb5894dddbb')),  # noqa: E501
     )
     gas_amount, received_amount, sent_amount = '0.0003018867380459', '36546.085557613238621948', '35168.419304792460265156'  # noqa: E501
     assert actual_events == [
@@ -690,17 +682,15 @@ def test_withdraw_xdai_from_sdai(gnosis_inquirer, gnosis_accounts):
 @pytest.mark.parametrize('gnosis_accounts', [['0x5938852FE18Ad6963322FB98D1fDDA5c24DD8a0E']])
 def test_deposit_wxdai_to_sdai(gnosis_inquirer, gnosis_accounts):
     user_address = gnosis_accounts[0]
-    tx_hash = deserialize_evm_tx_hash('0xd406f40ecd2538d41adb2e645c8fb6d32cec5485510798bfed5d991c258d4b1d')  # noqa: E501
     actual_events, _ = get_decoded_events_of_transaction(
         evm_inquirer=gnosis_inquirer,
-        tx_hash=tx_hash,
+        tx_hash=(tx_hash := deserialize_evm_tx_hash('0xd406f40ecd2538d41adb2e645c8fb6d32cec5485510798bfed5d991c258d4b1d')),  # noqa: E501
     )
-    timestamp = TimestampMS(1706794335000)
     withdraw_amount, deposit_amount, gas_amount = '319.006747127200240848', '331.313258668881367296', '0.0006162151'  # noqa: E501
     assert actual_events == [
         EvmEvent(
             sequence_index=0,
-            timestamp=timestamp,
+            timestamp=(timestamp := TimestampMS(1706794335000)),
             location=Location.GNOSIS,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
@@ -744,17 +734,15 @@ def test_deposit_wxdai_to_sdai(gnosis_inquirer, gnosis_accounts):
 @pytest.mark.parametrize('gnosis_accounts', [['0x23727b54163F63CffdD8B7769e0eCb13Df253b4e']])
 def test_withdraw_wxdai_from_sdai(gnosis_inquirer, gnosis_accounts):
     user_address = gnosis_accounts[0]
-    tx_hash = deserialize_evm_tx_hash('0xd7e2123adc6c8f4fd8ced74733010cf47dba2bd4e0e5c468d63d53942b9e2dd3')  # noqa: E501
     actual_events, _ = get_decoded_events_of_transaction(
         evm_inquirer=gnosis_inquirer,
-        tx_hash=tx_hash,
+        tx_hash=(tx_hash := deserialize_evm_tx_hash('0xd7e2123adc6c8f4fd8ced74733010cf47dba2bd4e0e5c468d63d53942b9e2dd3')),  # noqa: E501
     )
-    timestamp = TimestampMS(1706699405000)
     gas_amount, redeem_amount, received_amount = '0.0002100203', '66725.257159368617313463', '69285.250334740811647229'  # noqa: E501
     assert actual_events == [
         EvmEvent(
             sequence_index=0,
-            timestamp=timestamp,
+            timestamp=(timestamp := TimestampMS(1706699405000)),
             location=Location.GNOSIS,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,

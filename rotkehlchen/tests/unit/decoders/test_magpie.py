@@ -42,15 +42,14 @@ def test_magpie_eth_to_token_swap(
     )
     events, _ = get_decoded_events_of_transaction(evm_inquirer=base_inquirer, tx_hash=tx_hash)
     user_address = base_accounts[0]
-    timestamp = TimestampMS(1747100759000)
     gas_amount = '0.000000857490760886'  # actual gas from test
     spend_amount = '0.00005'  # 50000000000000 / 10^18
     receive_amount = '3.603360047987326035'  # actual amount from test
-    expected_events = [
+    assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=0,
-            timestamp=timestamp,
+            timestamp=(timestamp := TimestampMS(1747100759000)),
             location=Location.BASE,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
@@ -85,7 +84,6 @@ def test_magpie_eth_to_token_swap(
             address=BASE_MAGPIE_V3_ROUTER,
         ),
     ]
-    assert expected_events == events
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
@@ -102,7 +100,6 @@ def test_magpie_token_to_token_swap(
     events, _ = get_decoded_events_of_transaction(evm_inquirer=base_inquirer, tx_hash=tx_hash)
     user_address = base_accounts[0]
 
-    timestamp = TimestampMS(1747098901000)
     gas_amount = '0.000005597469523105'  # actual gas from output
     rabby_fee_amount = '0.009750330804687233'  # Fee to Rabby
     spend_amount = '3.890381991070206089'  # VIRTUAL swapped (router amount)
@@ -110,11 +107,11 @@ def test_magpie_token_to_token_swap(
     virtual_asset = Asset('eip155:8453/erc20:0x0b3e328455c4059EEb9e3f84b5543F74E24e7E1b')
     usdc_asset = Asset('eip155:8453/erc20:0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913')  # USDC
 
-    expected_events = [
+    assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=0,
-            timestamp=timestamp,
+            timestamp=(timestamp := TimestampMS(1747098901000)),
             location=Location.BASE,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
@@ -191,7 +188,6 @@ def test_magpie_token_to_token_swap(
             address=BASE_MAGPIE_V3_ROUTER,
         ),
     ]
-    assert expected_events == events
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
@@ -207,18 +203,17 @@ def test_magpie_arbitrum_token_to_token_swap(
     events, _ = get_decoded_events_of_transaction(evm_inquirer=arbitrum_one_inquirer, tx_hash=tx_hash)  # noqa: E501
     user_address = arbitrum_one_accounts[0]
 
-    timestamp = TimestampMS(1747117715000)
     gas_amount = '0.0000023453'  # actual gas from transaction
     rabby_fee_amount = '2.240491123389503579'  # TROVE Fee to Rabby
     spend_amount = '893.955958232411928011'  # TROVE swapped (router amount)
     receive_amount = '0.000813622663851767'  # ETH received
     trove_asset = Asset('eip155:42161/erc20:0x982239D38Af50B0168dA33346d85Fb12929c4c07')
 
-    expected_events = [
+    assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=0,
-            timestamp=timestamp,
+            timestamp=(timestamp := TimestampMS(1747117715000)),
             location=Location.ARBITRUM_ONE,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
@@ -296,8 +291,6 @@ def test_magpie_arbitrum_token_to_token_swap(
         ),
     ]
 
-    assert expected_events == events
-
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0xe4B13d4de7E85E2a763BD440Bc9bf921C69Bc905']])
@@ -312,7 +305,6 @@ def test_magpie_ethereum_usds_to_usdc_swap(
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     user_address = ethereum_accounts[0]
 
-    timestamp = TimestampMS(1749670655000)
     gas_amount = '0.000536018493464816'  # actual gas cost
     rabby_fee_amount = '0.015'  # USDS fee to Rabby
     spend_amount = '5.985'  # USDS amount to Magpie
@@ -320,11 +312,11 @@ def test_magpie_ethereum_usds_to_usdc_swap(
     usds_asset = Asset('eip155:1/erc20:0xdC035D45d973E3EC169d2276DDab16f1e407384F')
     usdc_asset = Asset('eip155:1/erc20:0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48')
 
-    expected_events = [
+    assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=0,
-            timestamp=timestamp,
+            timestamp=(timestamp := TimestampMS(1749670655000)),
             location=Location.ETHEREUM,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
@@ -372,8 +364,6 @@ def test_magpie_ethereum_usds_to_usdc_swap(
         ),
     ]
 
-    assert expected_events == events
-
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('polygon_pos_accounts', [['0x6361f989EFf9fE22E8a8C08aCe34f0d30b760a4E']])
@@ -388,18 +378,17 @@ def test_magpie_polygon_pol_to_usdc_swap(
     events, _ = get_decoded_events_of_transaction(evm_inquirer=polygon_pos_inquirer, tx_hash=tx_hash)  # noqa: E501
     user_address = polygon_pos_accounts[0]
 
-    timestamp = TimestampMS(1749654622000)
     gas_amount = '0.022836'  # actual gas from events
     spend_amount = '24.988096505635070242'  # POL sent to Magpie (actual from events)
     receive_amount = '5.809487'  # USDC received (actual from events)
     pol_asset = Asset('eip155:137/erc20:0x0000000000000000000000000000000000001010')  # POL native
     usdc_asset = Asset('eip155:137/erc20:0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359')  # USDC.e
 
-    expected_events = [
+    assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=0,
-            timestamp=timestamp,
+            timestamp=(timestamp := TimestampMS(1749654622000)),
             location=Location.POLYGON_POS,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
@@ -434,5 +423,3 @@ def test_magpie_polygon_pol_to_usdc_swap(
             address=POLYGON_MAGPIE_V3_1_ROUTER,
         ),
     ]
-
-    assert expected_events == events

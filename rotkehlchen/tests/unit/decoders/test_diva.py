@@ -17,17 +17,15 @@ from rotkehlchen.types import Location, TimestampMS, deserialize_evm_tx_hash
 @pytest.mark.vcr
 @pytest.mark.parametrize('ethereum_accounts', [['0xc37b40ABdB939635068d3c5f13E7faF686F03B65']])
 def test_diva_delegate(ethereum_inquirer, ethereum_accounts):
-    tx_hash = deserialize_evm_tx_hash('0x806081bcc60a40db22bae2c1729f240f48de4b73e76b673fc4767bcee4f1c704')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=ethereum_inquirer,
-        tx_hash=tx_hash,
+        tx_hash=(tx_hash := deserialize_evm_tx_hash('0x806081bcc60a40db22bae2c1729f240f48de4b73e76b673fc4767bcee4f1c704')),  # noqa: E501
     )
-    timestamp = TimestampMS(1690964039000)
-    expected_events = [
+    assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=0,
-            timestamp=timestamp,
+            timestamp=(timestamp := TimestampMS(1690964039000)),
             location=Location.ETHEREUM,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
@@ -51,7 +49,6 @@ def test_diva_delegate(ethereum_inquirer, ethereum_accounts):
             counterparty=CPT_DIVA,
         ),
     ]
-    assert events == expected_events
 
 
 @pytest.mark.vcr
@@ -59,12 +56,11 @@ def test_diva_delegate(ethereum_inquirer, ethereum_accounts):
 def test_diva_claim(ethereum_inquirer, ethereum_accounts):
     tx_hash = deserialize_evm_tx_hash('0xc66dd53da9837e5197f95d32065807706a118dc2ff326a5e3bf8844b8ee261c2')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
-    timestamp = TimestampMS(1688847971000)
-    expected_events = [
+    assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=0,
-            timestamp=timestamp,
+            timestamp=(timestamp := TimestampMS(1688847971000)),
             location=Location.ETHEREUM,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
@@ -103,7 +99,6 @@ def test_diva_claim(ethereum_inquirer, ethereum_accounts):
             counterparty=CPT_DIVA,
         ),
     ]
-    assert events == expected_events
 
 
 @pytest.mark.vcr
@@ -113,18 +108,16 @@ def test_vote_cast(ethereum_inquirer, ethereum_accounts):
     tx_hash = deserialize_evm_tx_hash('0x640818700732a7345f085d14377adf285098ae33747da21444e594a64c905d41')  # noqa: E501
     user_address = ethereum_accounts[0]
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
-    timestamp = TimestampMS(1694557811000)
-    gas_str = '0.00074796777559248'
-    expected_events = [
+    assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=0,
-            timestamp=timestamp,
+            timestamp=(timestamp := TimestampMS(1694557811000)),
             location=Location.ETHEREUM,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            amount=FVal(gas_str),
+            amount=FVal(gas_str := '0.00074796777559248'),
             location_label=user_address,
             notes=f'Burn {gas_str} ETH for gas',
             counterparty=CPT_GAS,
@@ -144,4 +137,3 @@ def test_vote_cast(ethereum_inquirer, ethereum_accounts):
             address=DIVA_GOVERNOR,
         ),
     ]
-    assert events == expected_events

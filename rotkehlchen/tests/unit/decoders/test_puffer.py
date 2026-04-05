@@ -23,16 +23,15 @@ from rotkehlchen.types import Location, TimestampMS, deserialize_evm_tx_hash
 def test_pufferxeigen_s2_airdrop(ethereum_inquirer, ethereum_accounts):
     tx_hash = deserialize_evm_tx_hash('0x4e42f307effc0dc7fdfbf72d54a9a86b4b0d96cf1a14f1069717e2d637bf5561')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
-    timestamp, gas_amount, claim_amount = TimestampMS(1726953011000), '0.001071196143585596', '9.61696139158485'  # noqa: E501
     expected_events = [EvmEvent(
         tx_ref=tx_hash,
         sequence_index=0,
-        timestamp=timestamp,
+        timestamp=(timestamp := TimestampMS(1726953011000)),
         location=Location.ETHEREUM,
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_ETH,
-        amount=FVal(gas_amount),
+        amount=FVal(gas_amount := '0.001071196143585596'),
         location_label=ethereum_accounts[0],
         notes=f'Burn {gas_amount} ETH for gas',
         counterparty=CPT_GAS,
@@ -44,7 +43,7 @@ def test_pufferxeigen_s2_airdrop(ethereum_inquirer, ethereum_accounts):
         event_type=HistoryEventType.RECEIVE,
         event_subtype=HistoryEventSubType.AIRDROP,
         asset=Asset(EIGEN_TOKEN_ID),
-        amount=FVal(claim_amount),
+        amount=FVal(claim_amount := '9.61696139158485'),
         location_label=ethereum_accounts[0],
         notes=f'Claim {claim_amount} EIGEN from PufferXEigen S2 airdrop',
         counterparty=CPT_PUFFER,
@@ -58,16 +57,15 @@ def test_pufferxeigen_s2_airdrop(ethereum_inquirer, ethereum_accounts):
 def test_puffer_s1_airdrop_2_campaigns(ethereum_inquirer, ethereum_accounts):
     tx_hash = deserialize_evm_tx_hash('0x5f5111b2ebdc3fa8f7bcf4659d898fafc00fc7df5e727f1edabf246ee89c68f9')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
-    timestamp, gas_amount, claim_amount1, claim_amount2 = TimestampMS(1728945107000), '0.002975374594297972', '70', '210'  # noqa: E501
     expected_events = [EvmEvent(
         tx_ref=tx_hash,
         sequence_index=0,
-        timestamp=timestamp,
+        timestamp=(timestamp := TimestampMS(1728945107000)),
         location=Location.ETHEREUM,
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
         asset=A_ETH,
-        amount=FVal(gas_amount),
+        amount=FVal(gas_amount := '0.002975374594297972'),
         location_label=ethereum_accounts[0],
         notes=f'Burn {gas_amount} ETH for gas',
         counterparty=CPT_GAS,
@@ -79,7 +77,7 @@ def test_puffer_s1_airdrop_2_campaigns(ethereum_inquirer, ethereum_accounts):
         event_type=HistoryEventType.RECEIVE,
         event_subtype=HistoryEventSubType.AIRDROP,
         asset=Asset(PUFFER_TOKEN_ID),
-        amount=FVal(claim_amount1),
+        amount=FVal(claim_amount1 := '70'),
         location_label=ethereum_accounts[0],
         notes=f'Claim {claim_amount1} PUFFER from Puffer S1 airdrop',
         counterparty=CPT_PUFFER,
@@ -92,7 +90,7 @@ def test_puffer_s1_airdrop_2_campaigns(ethereum_inquirer, ethereum_accounts):
         event_type=HistoryEventType.RECEIVE,
         event_subtype=HistoryEventSubType.AIRDROP,
         asset=Asset(PUFFER_TOKEN_ID),
-        amount=FVal(claim_amount2),
+        amount=FVal(claim_amount2 := '210'),
         location_label=ethereum_accounts[0],
         notes=f'Claim {claim_amount2} PUFFER from Puffer S1 airdrop',
         counterparty=CPT_PUFFER,

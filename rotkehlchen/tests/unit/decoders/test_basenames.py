@@ -45,17 +45,18 @@ def test_basenames_register(
 ) -> None:
     tx_hash = deserialize_evm_tx_hash('0x20280b43dbcfa86cdf0703d2e9f8f2ef200839b2ee0e819d895515d3adb74eff')  # noqa: E501
     events, decoder = get_decoded_events_of_transaction(evm_inquirer=base_inquirer, tx_hash=tx_hash)  # noqa: E501
-    timestamp, user_address, gas_amount, token_id = TimestampMS(1726738619000), base_accounts[0], '0.000001963384627852', 26612040215479394739615825115912800930061094786769410446114278812336794170041  # noqa: E501
+    user_address = base_accounts[0]
+    token_id = 26612040215479394739615825115912800930061094786769410446114278812336794170041
     assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=0,
-            timestamp=timestamp,
+            timestamp=(timestamp := TimestampMS(1726738619000)),
             location=Location.BASE,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            amount=FVal(gas_amount),
+            amount=FVal(gas_amount := '0.000001963384627852'),
             location_label=user_address,
             notes=f'Burn {gas_amount} ETH for gas',
             counterparty=CPT_GAS,
@@ -162,17 +163,18 @@ def test_basenames_register_with_discount(
 ) -> None:
     tx_hash = deserialize_evm_tx_hash('0x9a7021f26ecabdd0d3a3781cec24a452851d97849defa9862a18230a9e72fbd9')  # noqa: E501
     events, decoder = get_decoded_events_of_transaction(evm_inquirer=base_inquirer, tx_hash=tx_hash)  # noqa: E501
-    timestamp, user_address, gas_amount, token_id = TimestampMS(1730993703000), base_accounts[0], '0.000005269375874545', 7069226722341729763252382492637378743849472286311622838562285205711946962668  # noqa: E501
+    user_address = base_accounts[0]
+    token_id = 7069226722341729763252382492637378743849472286311622838562285205711946962668
     assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=0,
-            timestamp=timestamp,
+            timestamp=(timestamp := TimestampMS(1730993703000)),
             location=Location.BASE,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            amount=FVal(gas_amount),
+            amount=FVal(gas_amount := '0.000005269375874545'),
             location_label=user_address,
             notes=f'Burn {gas_amount} ETH for gas',
             counterparty=CPT_GAS,
@@ -279,17 +281,17 @@ def test_basenames_set_attribute(
 ) -> None:
     tx_hash = deserialize_evm_tx_hash('0xb46d5e9cedf468d6c1cd9c5a07f7147448cfd5a0d591b6f57a8216edc2475cc4')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=base_inquirer, tx_hash=tx_hash)
-    timestamp, user_address, gas_amount = TimestampMS(1730993863000), base_accounts[0], '0.000000860174471941'  # noqa: E501
+    user_address = base_accounts[0]
     assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=0,
-            timestamp=timestamp,
+            timestamp=(timestamp := TimestampMS(1730993863000)),
             location=Location.BASE,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            amount=FVal(gas_amount),
+            amount=FVal(gas_amount := '0.000000860174471941'),
             location_label=user_address,
             notes=f'Burn {gas_amount} ETH for gas',
             counterparty=CPT_GAS,
@@ -319,17 +321,17 @@ def test_basenames_content_hash_changed(
 ) -> None:
     tx_hash = deserialize_evm_tx_hash('0x1803ee8ecced1de613a331de58d7091e9fa0f4f98ec78bb9882b20b27b357aa7')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=base_inquirer, tx_hash=tx_hash)
-    timestamp, user_address, gas_amount = TimestampMS(1725571165000), base_accounts[0], '0.000000178301347708'  # noqa: E501
+    user_address = base_accounts[0]
     assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=0,
-            timestamp=timestamp,
+            timestamp=(timestamp := TimestampMS(1725571165000)),
             location=Location.BASE,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            amount=FVal(gas_amount),
+            amount=FVal(gas_amount := '0.000000178301347708'),
             location_label=user_address,
             notes=f'Burn {gas_amount} ETH for gas',
             counterparty=CPT_GAS,
@@ -386,11 +388,11 @@ def test_basenames_transfer_name(database, base_inquirer, action, base_accounts,
         to_address = '0x2B97eb170a57fa2B5ea499b9f0176Ef587c6F54d'
 
     events, _ = get_decoded_events_of_transaction(evm_inquirer=base_inquirer, tx_hash=tx_hash)
-    timestamp, token_id = TimestampMS(1731055033000), 112426549028048856546593988202926666418642845280196262619695088491431122056723  # noqa: E501
+    token_id = 112426549028048856546593988202926666418642845280196262619695088491431122056723
     gas_event = EvmEvent(
         tx_ref=tx_hash,
         sequence_index=0,
-        timestamp=timestamp,
+        timestamp=(timestamp := TimestampMS(1731055033000)),
         location=Location.BASE,
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.FEE,
@@ -430,17 +432,17 @@ def test_basenames_new_owner(
 ) -> None:
     tx_hash = deserialize_evm_tx_hash('0x9c107455c41ac041b274d0c9f4a792e2cdccf3fb3abd31a117fb14570461b429')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=base_inquirer, tx_hash=tx_hash)
-    timestamp, user_address, gas_amount = TimestampMS(1730924307000), base_accounts[0], '0.000001274267527917'  # noqa: E501
+    user_address = base_accounts[0]
     assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=0,
-            timestamp=timestamp,
+            timestamp=(timestamp := TimestampMS(1730924307000)),
             location=Location.BASE,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            amount=FVal(gas_amount),
+            amount=FVal(gas_amount := '0.000001274267527917'),
             location_label=user_address,
             notes=f'Burn {gas_amount} ETH for gas',
             counterparty=CPT_GAS,
@@ -494,12 +496,12 @@ def test_basenames_ignore_untracked_events(
     """Regression test for https://github.com/rotki/rotki/issues/11551"""
     tx_hash = deserialize_evm_tx_hash('0x2cb9dcf83b3fd1bbbec4cd5f8d0b688bfc3f6aadd99081f28eaccafcd26c4243')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=base_inquirer, tx_hash=tx_hash)
-    timestamp, user_address = TimestampMS(1770188169000), base_accounts[0]
+    user_address = base_accounts[0]
     assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=812,
-            timestamp=timestamp,
+            timestamp=TimestampMS(1770188169000),
             location=Location.BASE,
             event_type=HistoryEventType.RECEIVE,
             event_subtype=HistoryEventSubType.NONE,

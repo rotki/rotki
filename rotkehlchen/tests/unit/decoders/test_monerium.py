@@ -18,7 +18,6 @@ if TYPE_CHECKING:
     from rotkehlchen.chain.arbitrum_one.node_inquirer import ArbitrumOneInquirer
     from rotkehlchen.chain.gnosis.node_inquirer import GnosisInquirer
 
-
 A_POLYGON_EURE = Asset('eip155:137/erc20:0x18ec0A6E18E5bc3784fDd3a3634b31245ab704F6')
 
 
@@ -27,8 +26,7 @@ A_POLYGON_EURE = Asset('eip155:137/erc20:0x18ec0A6E18E5bc3784fDd3a3634b31245ab70
 def test_minting_monerium_on_eth(ethereum_inquirer, ethereum_accounts):
     tx_hash = deserialize_evm_tx_hash(val='0x4ed9db44c5ee4ba6a4cf3e8e9b386f0b857afebad8339a92666e175c747bdd74')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
-    amount_str = '1500'
-    expected_events = [
+    assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=113,
@@ -37,13 +35,12 @@ def test_minting_monerium_on_eth(ethereum_inquirer, ethereum_accounts):
             event_type=HistoryEventType.RECEIVE,
             event_subtype=HistoryEventSubType.NONE,
             asset=A_ETH_EURE,
-            amount=FVal(amount_str),
+            amount=FVal(amount_str := '1500'),
             location_label=ethereum_accounts[0],
             notes=f'Mint {amount_str} EURe',
             counterparty=CPT_MONERIUM,
         ),
     ]
-    assert events == expected_events
 
 
 @pytest.mark.vcr
@@ -51,8 +48,7 @@ def test_minting_monerium_on_eth(ethereum_inquirer, ethereum_accounts):
 def test_burning_monerium_on_eth(ethereum_inquirer, ethereum_accounts):
     tx_hash = deserialize_evm_tx_hash(val='0x10d953610921f39d9d20722082077e03ec8db8d9c75e4b301d0d552119fd0354')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
-    amount_str = '1161210.84'
-    expected_events = [
+    assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=171,
@@ -61,25 +57,22 @@ def test_burning_monerium_on_eth(ethereum_inquirer, ethereum_accounts):
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.NONE,
             asset=A_ETH_EURE,
-            amount=FVal(amount_str),
+            amount=FVal(amount_str := '1161210.84'),
             location_label=ethereum_accounts[0],
             notes=f'Burn {amount_str} EURe',
             counterparty=CPT_MONERIUM,
         ),
     ]
-    assert events == expected_events
 
 
 @pytest.mark.vcr
 @pytest.mark.parametrize('polygon_pos_accounts', [['0x762e5f511c219823eeC73C743C8245807A53E123']])
 def test_minting_monerium_on_matic(polygon_pos_inquirer, polygon_pos_accounts):
-    tx_hash = deserialize_evm_tx_hash(val='0xb240acc158fb2cdcdebc7321ca4a96f71b371379e2a78a9a7f27d0718a2e3735')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=polygon_pos_inquirer,
-        tx_hash=tx_hash,
+        tx_hash=(tx_hash := deserialize_evm_tx_hash(val='0xb240acc158fb2cdcdebc7321ca4a96f71b371379e2a78a9a7f27d0718a2e3735')),  # noqa: E501
     )
-    amount_str = '95'
-    expected_events = [
+    assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=176,
@@ -88,25 +81,22 @@ def test_minting_monerium_on_matic(polygon_pos_inquirer, polygon_pos_accounts):
             event_type=HistoryEventType.RECEIVE,
             event_subtype=HistoryEventSubType.NONE,
             asset=A_POLYGON_EURE,
-            amount=FVal(amount_str),
+            amount=FVal(amount_str := '95'),
             location_label=polygon_pos_accounts[0],
             notes=f'Mint {amount_str} EURe',
             counterparty=CPT_MONERIUM,
         ),
     ]
-    assert events == expected_events
 
 
 @pytest.mark.vcr
 @pytest.mark.parametrize('polygon_pos_accounts', [['0x0A251dF99A88A20a93876205Fb7f5Faf2E85A481']])
 def test_burning_monerium_on_matic(polygon_pos_inquirer, polygon_pos_accounts):
-    tx_hash = deserialize_evm_tx_hash(val='0xeaed8e3e862a9b41189e9039c825ee57fb80385801b8ac5c3ed70339baf243e5')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=polygon_pos_inquirer,
-        tx_hash=tx_hash,
+        tx_hash=(tx_hash := deserialize_evm_tx_hash(val='0xeaed8e3e862a9b41189e9039c825ee57fb80385801b8ac5c3ed70339baf243e5')),  # noqa: E501
     )
-    amount_str = '208.93'
-    expected_events = [
+    assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=418,
@@ -115,25 +105,22 @@ def test_burning_monerium_on_matic(polygon_pos_inquirer, polygon_pos_accounts):
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.NONE,
             asset=A_POLYGON_EURE,
-            amount=FVal(amount_str),
+            amount=FVal(amount_str := '208.93'),
             location_label=polygon_pos_accounts[0],
             notes=f'Burn {amount_str} EURe',
             counterparty=CPT_MONERIUM,
         ),
     ]
-    assert events == expected_events
 
 
 @pytest.mark.vcr
 @pytest.mark.parametrize('gnosis_accounts', [['0x9566E3e6F55D4378243E55DE8e037Ee8E6e4de7E']])
 def test_minting_monerium_on_gnosis(gnosis_inquirer, gnosis_accounts):
-    tx_hash = deserialize_evm_tx_hash(val='0x31183d757f530f799872600e6fe8644e3c20a1f90d02de9e89d0463454b400fa')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=gnosis_inquirer,
-        tx_hash=tx_hash,
+        tx_hash=(tx_hash := deserialize_evm_tx_hash(val='0x31183d757f530f799872600e6fe8644e3c20a1f90d02de9e89d0463454b400fa')),  # noqa: E501
     )
-    amount_str = '66'
-    expected_events = [
+    assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=371,
@@ -142,13 +129,12 @@ def test_minting_monerium_on_gnosis(gnosis_inquirer, gnosis_accounts):
             event_type=HistoryEventType.RECEIVE,
             event_subtype=HistoryEventSubType.NONE,
             asset=A_GNOSIS_EURE,
-            amount=FVal(amount_str),
+            amount=FVal(amount_str := '66'),
             location_label=gnosis_accounts[0],
             notes=f'Mint {amount_str} EURe',
             counterparty=CPT_MONERIUM,
         ),
     ]
-    assert events == expected_events
 
 
 @pytest.mark.vcr
@@ -156,8 +142,7 @@ def test_minting_monerium_on_gnosis(gnosis_inquirer, gnosis_accounts):
 def test_burning_monerium_on_gnosis(gnosis_inquirer, gnosis_accounts):
     tx_hash = deserialize_evm_tx_hash(val='0xae087f309231e4dc1fa84927888deb6c56b9980e63f9cc049cbe2d7d2bc503e6')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=gnosis_inquirer, tx_hash=tx_hash)
-    amount_str = '1'
-    expected_events = [
+    assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=500,
@@ -166,13 +151,12 @@ def test_burning_monerium_on_gnosis(gnosis_inquirer, gnosis_accounts):
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.NONE,
             asset=A_GNOSIS_EURE,
-            amount=FVal(amount_str),
+            amount=FVal(amount_str := '1'),
             location_label=gnosis_accounts[0],
             notes=f'Burn {amount_str} EURe',
             counterparty=CPT_MONERIUM,
         ),
     ]
-    assert events == expected_events
 
 
 @pytest.mark.vcr
@@ -180,8 +164,7 @@ def test_burning_monerium_on_gnosis(gnosis_inquirer, gnosis_accounts):
 def test_burnfrom_monerium_on_gnosis(gnosis_inquirer, gnosis_accounts):
     tx_hash = deserialize_evm_tx_hash(val='0xf04a5d84e6749828ff63991fb3323944472346c3b2c421e51d9999283d18f1fd')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=gnosis_inquirer, tx_hash=tx_hash)
-    amount_str = '501.04'
-    expected_events = [
+    assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=497,
@@ -190,13 +173,12 @@ def test_burnfrom_monerium_on_gnosis(gnosis_inquirer, gnosis_accounts):
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.NONE,
             asset=A_GNOSIS_EURE,
-            amount=FVal(amount_str),
+            amount=FVal(amount_str := '501.04'),
             location_label=gnosis_accounts[0],
             notes=f'Burn {amount_str} EURe',
             counterparty=CPT_MONERIUM,
         ),
     ]
-    assert events == expected_events
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
@@ -205,10 +187,9 @@ def test_mint_v2_eure(
         gnosis_inquirer: 'GnosisInquirer',
         gnosis_accounts: list['ChecksumEvmAddress'],
 ):
-    tx_hash = deserialize_evm_tx_hash(val='0x859af3a118c2f2503dca9aba17421cfe46bfe1b9e2585988cded6cc3da0dc0f4')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=gnosis_inquirer,
-        tx_hash=tx_hash,
+        tx_hash=(tx_hash := deserialize_evm_tx_hash(val='0x859af3a118c2f2503dca9aba17421cfe46bfe1b9e2585988cded6cc3da0dc0f4')),  # noqa: E501
     )
     assert events == [EvmEvent(
         tx_ref=tx_hash,
@@ -231,13 +212,11 @@ def test_burn_v2_eure_gnosis(
         gnosis_inquirer: 'GnosisInquirer',
         gnosis_accounts: list['ChecksumEvmAddress'],
 ):
-    tx_hash = deserialize_evm_tx_hash(val='0xeaf8521348335bce75863507c48dd48c36ebbd43e2f774524a0d5b3cfa5d594e')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=gnosis_inquirer,
-        tx_hash=tx_hash,
+        tx_hash=(tx_hash := deserialize_evm_tx_hash(val='0xeaf8521348335bce75863507c48dd48c36ebbd43e2f774524a0d5b3cfa5d594e')),  # noqa: E501
     )
-    amount_str = '905.02'
-    expected_events = [
+    assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=27,
@@ -246,13 +225,12 @@ def test_burn_v2_eure_gnosis(
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.NONE,
             asset=Asset('eip155:100/erc20:0x420CA0f9B9b604cE0fd9C18EF134C705e5Fa3430'),
-            amount=FVal(amount_str),
+            amount=FVal(amount_str := '905.02'),
             location_label=gnosis_accounts[0],
             notes=f'Burn {amount_str} EURe',
             counterparty=CPT_MONERIUM,
         ),
     ]
-    assert events == expected_events
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
@@ -261,10 +239,9 @@ def test_mint_eure_on_arbitrum(
         arbitrum_one_inquirer: 'ArbitrumOneInquirer',
         arbitrum_one_accounts: list['ChecksumEvmAddress'],
 ):
-    tx_hash = deserialize_evm_tx_hash('0x792faaede6cd025d0a630669bf8fde06f51cc16aceebb67a09430536fea25109')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=arbitrum_one_inquirer,
-        tx_hash=tx_hash,
+        tx_hash=(tx_hash := deserialize_evm_tx_hash('0x792faaede6cd025d0a630669bf8fde06f51cc16aceebb67a09430536fea25109')),  # noqa: E501
     )
     assert events == [EvmEvent(
         tx_ref=tx_hash,
@@ -287,10 +264,9 @@ def test_burn_eure_on_arbitrum(
         arbitrum_one_inquirer: 'ArbitrumOneInquirer',
         arbitrum_one_accounts: list['ChecksumEvmAddress'],
 ):
-    tx_hash = deserialize_evm_tx_hash('0xd403cb41ddb6ae65fbfea44e1f8be8edb20ac5bc2252d69387b16bae3c5f7694')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=arbitrum_one_inquirer,
-        tx_hash=tx_hash,
+        tx_hash=(tx_hash := deserialize_evm_tx_hash('0xd403cb41ddb6ae65fbfea44e1f8be8edb20ac5bc2252d69387b16bae3c5f7694')),  # noqa: E501
     )
     assert events == [EvmEvent(
         tx_ref=tx_hash,

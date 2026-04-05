@@ -23,17 +23,16 @@ from rotkehlchen.types import Location, TimestampMS, deserialize_evm_tx_hash
 def test_claim(ethereum_inquirer, ethereum_accounts):
     tx_hash = deserialize_evm_tx_hash('0xc626898273896eb771e9725137849dd104e388aad49687068a7681b5c54893fe')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
-    timestamp, gas_str = TimestampMS(1713555527000), '0.000567969103578996'
-    expected_events = [
+    assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=0,
-            timestamp=timestamp,
+            timestamp=(timestamp := TimestampMS(1713555527000)),
             location=Location.ETHEREUM,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            amount=FVal(gas_str),
+            amount=FVal(gas_str := '0.000567969103578996'),
             location_label=ethereum_accounts[0],
             notes=f'Burn {gas_str} ETH for gas',
             counterparty=CPT_GAS,
@@ -66,7 +65,6 @@ def test_claim(ethereum_inquirer, ethereum_accounts):
             extra_data={AIRDROP_IDENTIFIER_KEY: 'omni'},
         ),
     ]
-    assert events == expected_events
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
@@ -74,17 +72,16 @@ def test_claim(ethereum_inquirer, ethereum_accounts):
 def test_stake(ethereum_inquirer, ethereum_accounts):
     tx_hash = deserialize_evm_tx_hash('0x66f47dc448d7371eeccaa500af1aea76a1620de56c621187be83b1cc19bf861c')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
-    timestamp, gas_str, omni_str = TimestampMS(1713604307000), '0.00061736344563685', '5.06213676'
-    expected_events = [
+    assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=0,
-            timestamp=timestamp,
+            timestamp=(timestamp := TimestampMS(1713604307000)),
             location=Location.ETHEREUM,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            amount=FVal(gas_str),
+            amount=FVal(gas_str := '0.00061736344563685'),
             location_label=ethereum_accounts[0],
             notes=f'Burn {gas_str} ETH for gas',
             counterparty=CPT_GAS,
@@ -108,14 +105,13 @@ def test_stake(ethereum_inquirer, ethereum_accounts):
             event_type=HistoryEventType.STAKING,
             event_subtype=HistoryEventSubType.DEPOSIT_ASSET,
             asset=Asset(OMNI_TOKEN_ID),
-            amount=FVal(omni_str),
+            amount=FVal(omni_str := '5.06213676'),
             location_label=ethereum_accounts[0],
             notes=f'Stake {omni_str} OMNI',
             counterparty=CPT_OMNI,
             address=OMNI_STAKING_CONTRACT,
         ),
     ]
-    assert events == expected_events
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
@@ -123,17 +119,16 @@ def test_stake(ethereum_inquirer, ethereum_accounts):
 def test_claim_and_stake(ethereum_inquirer, ethereum_accounts):
     tx_hash = deserialize_evm_tx_hash('0x630c32c20d75c51ffe7b1db1cb3d82d357a8db4da10c1c5b212e01f8e92f6310')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
-    timestamp, gas_str, omni_str = TimestampMS(1713602555000), '0.000645708531342875', '15.3275649'
-    expected_events = [
+    assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=0,
-            timestamp=timestamp,
+            timestamp=(timestamp := TimestampMS(1713602555000)),
             location=Location.ETHEREUM,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            amount=FVal(gas_str),
+            amount=FVal(gas_str := '0.000645708531342875'),
             location_label=ethereum_accounts[0],
             notes=f'Burn {gas_str} ETH for gas',
             counterparty=CPT_GAS,
@@ -158,7 +153,7 @@ def test_claim_and_stake(ethereum_inquirer, ethereum_accounts):
             event_type=HistoryEventType.RECEIVE,
             event_subtype=HistoryEventSubType.AIRDROP,
             asset=Asset(OMNI_TOKEN_ID),
-            amount=FVal(omni_str),
+            amount=FVal(omni_str := '15.3275649'),
             location_label=ethereum_accounts[0],
             notes=f'Claim {omni_str} OMNI from the Omni genesis airdrop',
             counterparty=CPT_OMNI,
@@ -179,4 +174,3 @@ def test_claim_and_stake(ethereum_inquirer, ethereum_accounts):
             address=OMNI_STAKING_CONTRACT,
         ),
     ]
-    assert events == expected_events

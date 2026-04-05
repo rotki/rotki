@@ -29,12 +29,11 @@ def test_bridge_dai_from_ethereum(ethereum_inquirer, ethereum_accounts):
     tx_hash = deserialize_evm_tx_hash('0xe17f61edb9fe278720679ecfd5498f75082e38bf4779e5e6403a551f5084ee23')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     user_address = ethereum_accounts[0]
-    timestamp = TimestampMS(1697470703000)
     amount = FVal('19.997099097418611102')
     assert events == [
         EvmEvent(
             sequence_index=0,
-            timestamp=timestamp,
+            timestamp=(timestamp := TimestampMS(1697470703000)),
             location=Location.ETHEREUM,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
@@ -104,12 +103,11 @@ def test_bridge_dai_from_ethereum_nolog(ethereum_inquirer, ethereum_accounts):
     tx_hash = deserialize_evm_tx_hash('0x196e7d687e1e2ce280dbe7f52b6ffe5a61d3a851b38740a37d1d00caffce7562')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     user_address = ethereum_accounts[0]
-    timestamp = TimestampMS(1705093391000)
     gas, amount = '0.00115669008897503', '193.961036565990280733'
     assert events == [
         EvmEvent(
             sequence_index=0,
-            timestamp=timestamp,
+            timestamp=(timestamp := TimestampMS(1705093391000)),
             location=Location.ETHEREUM,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
@@ -142,12 +140,11 @@ def test_withdraw_dai_to_ethereum(ethereum_inquirer, ethereum_accounts):
     user_address = ethereum_accounts[0]
     tx_hash = deserialize_evm_tx_hash('0xb151a9294e7cdf9b62d5716eff3d69cc96c6fa3f1279b1d36c16896bd9cb3b32')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
-    timestamp = TimestampMS(1697473655000)
     amount = FVal(900)
     assert events == [
         EvmEvent(
             sequence_index=0,
-            timestamp=timestamp,
+            timestamp=(timestamp := TimestampMS(1697473655000)),
             location=Location.ETHEREUM,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
@@ -180,12 +177,11 @@ def test_withdraw_dai_from_gnosis(gnosis_inquirer, gnosis_accounts):
     user_address = gnosis_accounts[0]
     tx_hash = deserialize_evm_tx_hash('0x1a7014cbc1e6af2558c3a3cafd7fe87d8d67d27242b5abe8af0d4bf51a5230f6')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=gnosis_inquirer, tx_hash=tx_hash)
-    timestamp = TimestampMS(1697473395000)
     amount = FVal(900)
     assert events == [
         EvmEvent(
             sequence_index=0,
-            timestamp=timestamp,
+            timestamp=(timestamp := TimestampMS(1697473395000)),
             location=Location.GNOSIS,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,

@@ -37,17 +37,17 @@ def test_polygon_pos_bridge_l2_deposit(
 ) -> None:
     tx_hash = deserialize_evm_tx_hash('0xa97396d6b61f213ebf194807553c06768fb9d1ca04ba30bfafb1a788357f3c36')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=polygon_pos_inquirer, tx_hash=tx_hash)  # noqa: E501
-    timestamp, user_address, gas_amount, deposit_amount = TimestampMS(1729861499000), polygon_pos_accounts[0], '0.0016145640090944', '80.675001498474753918'  # noqa: E501
+    user_address = polygon_pos_accounts[0]
     assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=0,
-            timestamp=timestamp,
+            timestamp=(timestamp := TimestampMS(1729861499000)),
             location=Location.POLYGON_POS,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_POL,
-            amount=FVal(gas_amount),
+            amount=FVal(gas_amount := '0.0016145640090944'),
             location_label=user_address,
             notes=f'Burn {gas_amount} POL for gas',
             counterparty=CPT_GAS,
@@ -59,7 +59,7 @@ def test_polygon_pos_bridge_l2_deposit(
             event_type=HistoryEventType.DEPOSIT,
             event_subtype=HistoryEventSubType.BRIDGE,
             asset=Asset('eip155:137/erc20:0x61299774020dA444Af134c82fa83E3810b309991'),
-            amount=FVal(deposit_amount),
+            amount=FVal(deposit_amount := '80.675001498474753918'),
             location_label=user_address,
             notes=f'Bridge {deposit_amount} RNDR from Polygon POS to Ethereum via Polygon bridge',
             counterparty=CPT_POLYGON,
@@ -76,17 +76,17 @@ def test_polygon_pos_bridge_l2_plasma_deposit(
 ) -> None:
     tx_hash = deserialize_evm_tx_hash('0x8b86c3f67ce0497075fd4d7ffa0c57a0b4c752bace3e0764f6e7a8b8f6a720a9')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=polygon_pos_inquirer, tx_hash=tx_hash)  # noqa: E501
-    timestamp, user_address, gas_amount, deposit_amount = TimestampMS(1729875073000), polygon_pos_accounts[0], '0.00456586488143955', '57008.16996625583804992'  # noqa: E501
+    user_address = polygon_pos_accounts[0]
     assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=0,
-            timestamp=timestamp,
+            timestamp=(timestamp := TimestampMS(1729875073000)),
             location=Location.POLYGON_POS,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_POL,
-            amount=FVal(gas_amount),
+            amount=FVal(gas_amount := '0.00456586488143955'),
             location_label=user_address,
             notes=f'Burn {gas_amount} POL for gas',
             counterparty=CPT_GAS,
@@ -98,7 +98,7 @@ def test_polygon_pos_bridge_l2_plasma_deposit(
             event_type=HistoryEventType.DEPOSIT,
             event_subtype=HistoryEventSubType.BRIDGE,
             asset=A_POL,
-            amount=FVal(deposit_amount),
+            amount=FVal(deposit_amount := '57008.16996625583804992'),
             location_label=user_address,
             notes=f'Bridge {deposit_amount} POL from Polygon POS to Ethereum via Polygon bridge',
             counterparty=CPT_POLYGON,
@@ -115,17 +115,17 @@ def test_polygon_pos_bridge_l2_withdraw(
 ) -> None:
     tx_hash = deserialize_evm_tx_hash('0x74b36dd98fb9e3a6bf9fa4cd6ba2066cd3fa86797b206bd709cfb097bb0c85a4')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=polygon_pos_inquirer, tx_hash=tx_hash)  # noqa: E501
-    timestamp, user_address, bridge_amount = TimestampMS(1729879355000), polygon_pos_accounts[0], '892014.616138'  # noqa: E501
+    user_address = polygon_pos_accounts[0]
     assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=293,
-            timestamp=timestamp,
+            timestamp=TimestampMS(1729879355000),
             location=Location.POLYGON_POS,
             event_type=HistoryEventType.WITHDRAWAL,
             event_subtype=HistoryEventSubType.BRIDGE,
             asset=Asset('eip155:137/erc20:0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174'),
-            amount=FVal(bridge_amount),
+            amount=FVal(bridge_amount := '892014.616138'),
             location_label=user_address,
             notes=f'Bridge {bridge_amount} USDC from Ethereum to Polygon POS via Polygon bridge',
             counterparty=CPT_POLYGON,

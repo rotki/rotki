@@ -53,12 +53,11 @@ ADDY = '0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12'
 def test_hop_l2_deposit(ethereum_inquirer):
     tx_hash = deserialize_evm_tx_hash('0xd46640417a686b399b2f2a920b0c58a35095759365cbe7b795bddec34b8c5eee')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
-    timestamp = TimestampMS(1653219722000)
-    expected_events = [
+    assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=0,
-            timestamp=timestamp,
+            timestamp=(timestamp := TimestampMS(1653219722000)),
             location=Location.ETHEREUM,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
@@ -81,7 +80,6 @@ def test_hop_l2_deposit(ethereum_inquirer):
             counterparty=CPT_HOP,
             address=string_to_evm_address('0xb8901acB165ed027E32754E0FFe830802919727f'),
         )]
-    assert expected_events == events
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
@@ -89,17 +87,16 @@ def test_hop_l2_deposit(ethereum_inquirer):
 def test_hop_l2_deposit_usdc(ethereum_inquirer, ethereum_accounts):
     tx_hash = deserialize_evm_tx_hash('0xac42ca2d88194c0ee219f6c71c98fe566667151a1dc235d17d993b6985342062')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
-    timestamp, gas_fee, bridge_amount = TimestampMS(1710955643000), '0.005802319111323689', '3700'
-    expected_events = [
+    assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=0,
-            timestamp=timestamp,
+            timestamp=(timestamp := TimestampMS(1710955643000)),
             location=Location.ETHEREUM,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            amount=FVal(gas_fee),
+            amount=FVal(gas_fee := '0.005802319111323689'),
             location_label=ethereum_accounts[0],
             notes=f'Burn {gas_fee} ETH for gas',
             counterparty=CPT_GAS,
@@ -111,14 +108,13 @@ def test_hop_l2_deposit_usdc(ethereum_inquirer, ethereum_accounts):
             event_type=HistoryEventType.DEPOSIT,
             event_subtype=HistoryEventSubType.BRIDGE,
             asset=A_USDC,
-            amount=FVal(bridge_amount),
+            amount=FVal(bridge_amount := '3700'),
             location_label=ethereum_accounts[0],
             notes=f'Bridge {bridge_amount} USDC to Arbitrum One via Hop protocol',
             counterparty=CPT_HOP,
             address=string_to_evm_address('0x3666f603Cc164936C1b87e207F36BEBa4AC5f18a'),
         ),
     ]
-    assert expected_events == events
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
@@ -130,7 +126,7 @@ def test_hop_optimism_eth_receive(optimism_inquirer):
     """
     tx_hash = deserialize_evm_tx_hash('0x8394c39e1f030a04aa8359f0322257632282a7dfa419b3c9ffc8ab61205a815d')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=optimism_inquirer, tx_hash=tx_hash)
-    expected_events = [
+    assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=0,
@@ -145,7 +141,6 @@ def test_hop_optimism_eth_receive(optimism_inquirer):
             counterparty=CPT_HOP,
             address=string_to_evm_address('0x86cA30bEF97fB651b8d866D45503684b90cb3312'),
         )]
-    assert expected_events == events
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
@@ -160,7 +155,7 @@ def test_hop_optimism_eth_receive_no_event(optimism_inquirer, optimism_accounts)
     tx_hash = deserialize_evm_tx_hash('0x3e18e3a0220857ecce91ad79065f10a663128926854b6087161fd0364c7f76f5')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=optimism_inquirer, tx_hash=tx_hash)
     bridge_amount, timestamp, user_address = '0.03958480553397407', TimestampMS(1666977475000), optimism_accounts[0]  # noqa: E501
-    expected_events = [
+    assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=0,
@@ -176,7 +171,6 @@ def test_hop_optimism_eth_receive_no_event(optimism_inquirer, optimism_accounts)
             address=string_to_evm_address('0x86cA30bEF97fB651b8d866D45503684b90cb3312'),
         ),
     ]
-    assert events == expected_events
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
@@ -184,24 +178,23 @@ def test_hop_optimism_eth_receive_no_event(optimism_inquirer, optimism_accounts)
 def test_hop_usdc_bridge(ethereum_inquirer, ethereum_accounts):
     tx_hash = deserialize_evm_tx_hash('0xdca89892d6a738c2ea278d93a5e1757b2f946f4e24c4aa02d59a0abf6a8e5f4b')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
-    timestamp, bridge_amount, user_address = TimestampMS(1715038763000), '9006.683634', ethereum_accounts[0]  # noqa: E501
-    expected_events = [
+    user_address = ethereum_accounts[0]
+    assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=167,
-            timestamp=timestamp,
+            timestamp=TimestampMS(1715038763000),
             location=Location.ETHEREUM,
             event_type=HistoryEventType.WITHDRAWAL,
             event_subtype=HistoryEventSubType.BRIDGE,
             asset=A_USDC,
-            amount=FVal(bridge_amount),
+            amount=FVal(bridge_amount := '9006.683634'),
             location_label=user_address,
             notes=f'Bridge {bridge_amount} USDC via Hop protocol',
             counterparty=CPT_HOP,
             address=string_to_evm_address('0x3666f603Cc164936C1b87e207F36BEBa4AC5f18a'),
         ),
     ]
-    assert events == expected_events
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
@@ -210,24 +203,23 @@ def test_hop_usdc_bridge(ethereum_inquirer, ethereum_accounts):
 def test_hop_eth_bridge_optimism(optimism_inquirer, optimism_accounts):
     tx_hash = deserialize_evm_tx_hash('0x4f1e95506c10f061ddfe28a7437f3b651959ff17f1e2a7a148c8896147ee357e')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=optimism_inquirer, tx_hash=tx_hash)
-    timestamp, bridge_amount, user_address = TimestampMS(1643122781000), '0.10392672200478311', optimism_accounts[0]  # noqa: E501
-    expected_events = [
+    user_address = optimism_accounts[0]
+    assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=0,
-            timestamp=timestamp,
+            timestamp=TimestampMS(1643122781000),
             location=Location.OPTIMISM,
             event_type=HistoryEventType.WITHDRAWAL,
             event_subtype=HistoryEventSubType.BRIDGE,
             asset=A_ETH,
-            amount=FVal(bridge_amount),
+            amount=FVal(bridge_amount := '0.10392672200478311'),
             location_label=user_address,
             notes=f'Bridge {bridge_amount} ETH via Hop protocol',
             counterparty=CPT_HOP,
             address=string_to_evm_address('0x86cA30bEF97fB651b8d866D45503684b90cb3312'),
         ),
     ]
-    assert events == expected_events
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
@@ -235,24 +227,23 @@ def test_hop_eth_bridge_optimism(optimism_inquirer, optimism_accounts):
 def test_hop_eth_bridge_gnosis(gnosis_inquirer: 'GnosisInquirer', gnosis_accounts):
     tx_hash = deserialize_evm_tx_hash('0x8765cf6596ff1794679509fcc0ecd5adf921464859f08992944f6d6a7e905d98')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=gnosis_inquirer, tx_hash=tx_hash)
-    timestamp, bridge_amount, user_address = TimestampMS(1715179605000), '0.008909890056139906', gnosis_accounts[0]  # noqa: E501
-    expected_events = [
+    user_address = gnosis_accounts[0]
+    assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=11,
-            timestamp=timestamp,
+            timestamp=TimestampMS(1715179605000),
             location=Location.GNOSIS,
             event_type=HistoryEventType.WITHDRAWAL,
             event_subtype=HistoryEventSubType.BRIDGE,
             asset=Asset('eip155:100/erc20:0x6A023CCd1ff6F2045C3309768eAd9E68F978f6e1'),
-            amount=FVal(bridge_amount),
+            amount=FVal(bridge_amount := '0.008909890056139906'),
             location_label=user_address,
             notes=f'Bridge {bridge_amount} WETH via Hop protocol',
             counterparty=CPT_HOP,
             address=string_to_evm_address('0x03D7f750777eC48d39D080b020D83Eb2CB4e3547'),
         ),
     ]
-    assert events == expected_events
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
@@ -260,24 +251,23 @@ def test_hop_eth_bridge_gnosis(gnosis_inquirer: 'GnosisInquirer', gnosis_account
 def test_hop_usdc_bridge_gnosis(gnosis_inquirer: 'GnosisInquirer', gnosis_accounts):
     tx_hash = deserialize_evm_tx_hash('0xd00e4cd1223d962ef841c16977142856c1f54d4e87fae417c58520270e3a9420')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=gnosis_inquirer, tx_hash=tx_hash)
-    timestamp, bridge_amount, user_address = TimestampMS(1710961255000), '23.482715', gnosis_accounts[0]  # noqa: E501
-    expected_events = [
+    user_address = gnosis_accounts[0]
+    assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=2021,
-            timestamp=timestamp,
+            timestamp=TimestampMS(1710961255000),
             location=Location.GNOSIS,
             event_type=HistoryEventType.WITHDRAWAL,
             event_subtype=HistoryEventSubType.BRIDGE,
             asset=Asset('eip155:100/erc20:0xDDAfbb505ad214D7b80b1f830fcCc89B60fb7A83'),
-            amount=FVal(bridge_amount),
+            amount=FVal(bridge_amount := '23.482715'),
             location_label=user_address,
             notes=f'Bridge {bridge_amount} USDC via Hop protocol',
             counterparty=CPT_HOP,
             address=string_to_evm_address('0x76b22b8C1079A44F1211D867D68b1eda76a635A7'),
         ),
     ]
-    assert events == expected_events
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
@@ -285,98 +275,91 @@ def test_hop_usdc_bridge_gnosis(gnosis_inquirer: 'GnosisInquirer', gnosis_accoun
 def test_hop_hop_bridge_gnosis(gnosis_inquirer: 'GnosisInquirer', gnosis_accounts):
     tx_hash = deserialize_evm_tx_hash('0x93a644818341e6ac22e499ac1ab73c11b6d8e55ff52ecc529125dc28790d7df1')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=gnosis_inquirer, tx_hash=tx_hash)
-    timestamp, bridge_amount, user_address = TimestampMS(1697084045000), '6854.931542581763573457', gnosis_accounts[0]  # noqa: E501
-    expected_events = [
+    user_address = gnosis_accounts[0]
+    assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=2,
-            timestamp=timestamp,
+            timestamp=TimestampMS(1697084045000),
             location=Location.GNOSIS,
             event_type=HistoryEventType.WITHDRAWAL,
             event_subtype=HistoryEventSubType.BRIDGE,
             asset=Asset('eip155:100/erc20:0xc5102fE9359FD9a28f877a67E36B0F050d81a3CC'),
-            amount=FVal(bridge_amount),
+            amount=FVal(bridge_amount := '6854.931542581763573457'),
             location_label=user_address,
             notes=f'Bridge {bridge_amount} HOP via Hop protocol',
             counterparty=CPT_HOP,
             address=ZERO_ADDRESS,
         ),
     ]
-    assert events == expected_events
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('polygon_pos_accounts', [['0x8f7043fF95c088b5727bF7889b4d868DF92F6a58']])
 def test_hop_eth_bridge_polygon_pos(polygon_pos_inquirer: 'PolygonPOSInquirer', polygon_pos_accounts):  # noqa: E501
-    tx_hash = deserialize_evm_tx_hash('0xcb26a59c87d41de4d6dd688a9ff8400b4e981f7e38d25787616ec0f81b4dccca')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=polygon_pos_inquirer,
-        tx_hash=tx_hash,
+        tx_hash=(tx_hash := deserialize_evm_tx_hash('0xcb26a59c87d41de4d6dd688a9ff8400b4e981f7e38d25787616ec0f81b4dccca')),  # noqa: E501
     )
-    timestamp, bridge_amount, user_address = TimestampMS(1715182468000), '0.00371160659018274', polygon_pos_accounts[0]  # noqa: E501
-    expected_events = [
+    user_address = polygon_pos_accounts[0]
+    assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=30,
-            timestamp=timestamp,
+            timestamp=TimestampMS(1715182468000),
             location=Location.POLYGON_POS,
             event_type=HistoryEventType.WITHDRAWAL,
             event_subtype=HistoryEventSubType.BRIDGE,
             asset=A_WETH_POLYGON,
-            amount=FVal(bridge_amount),
+            amount=FVal(bridge_amount := '0.00371160659018274'),
             location_label=user_address,
             notes=f'Bridge {bridge_amount} WETH via Hop protocol',
             counterparty=CPT_HOP,
             address=string_to_evm_address('0xc315239cFb05F1E130E7E28E603CEa4C014c57f0'),
         ),
     ]
-    assert events == expected_events
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('db_settings', LEGACY_TESTS_INDEXER_ORDER)
 @pytest.mark.parametrize('base_accounts', [['0xC0b263b8315FAABC27BC0479a5A547281c049C1c']])
 def test_hop_eth_bridge_base(base_inquirer: 'BaseInquirer', base_accounts):
-    tx_hash = deserialize_evm_tx_hash('0xd78eb0f79fa4af1e140641ef260499a6e138b6398d2c4cdcd2e7c488ee8cb20e')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=base_inquirer,
-        tx_hash=tx_hash,
+        tx_hash=(tx_hash := deserialize_evm_tx_hash('0xd78eb0f79fa4af1e140641ef260499a6e138b6398d2c4cdcd2e7c488ee8cb20e')),  # noqa: E501
     )
-    timestamp, bridge_amount, user_address = TimestampMS(1715184391000), '0.895370313537560075', base_accounts[0]  # noqa: E501
-    expected_events = [
+    user_address = base_accounts[0]
+    assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=0,
-            timestamp=timestamp,
+            timestamp=TimestampMS(1715184391000),
             location=Location.BASE,
             event_type=HistoryEventType.WITHDRAWAL,
             event_subtype=HistoryEventSubType.BRIDGE,
             asset=A_ETH,
-            amount=FVal(bridge_amount),
+            amount=FVal(bridge_amount := '0.895370313537560075'),
             location_label=user_address,
             notes=f'Bridge {bridge_amount} ETH via Hop protocol',
             counterparty=CPT_HOP,
             address=string_to_evm_address('0x10541b07d8Ad2647Dc6cD67abd4c03575dade261'),
         ),
     ]
-    assert events == expected_events
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('arbitrum_one_accounts', [['0x32C885EcE06EBC8F6bEf6C2052E400226C087e08']])
 def test_hop_eth_bridge_l2_to_l1_arbitrum_one(arbitrum_one_inquirer: 'ArbitrumOneInquirer', arbitrum_one_accounts):  # noqa: E501
-    tx_hash = deserialize_evm_tx_hash('0x4fb91812763e6af24465ee014a306b8322beb612aa51f26b657772447744ae94')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=arbitrum_one_inquirer,
-        tx_hash=tx_hash,
+        tx_hash=(tx_hash := deserialize_evm_tx_hash('0x4fb91812763e6af24465ee014a306b8322beb612aa51f26b657772447744ae94')),  # noqa: E501
     )
-    timestamp = TimestampMS(1715614190000)
     bridge_amount, gas_fee, hop_fee, user_address = '0.194877831029822766', '0.00000323542', '0.004034870881159123', arbitrum_one_accounts[0]  # noqa: E501
-    expected_events = [
+    assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=0,
-            timestamp=timestamp,
+            timestamp=(timestamp := TimestampMS(1715614190000)),
             location=Location.ARBITRUM_ONE,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
@@ -413,7 +396,6 @@ def test_hop_eth_bridge_l2_to_l1_arbitrum_one(arbitrum_one_inquirer: 'ArbitrumOn
             address=string_to_evm_address('0x33ceb27b39d2Bb7D2e61F7564d3Df29344020417'),
         ),
     ]
-    assert events == expected_events
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
@@ -421,42 +403,39 @@ def test_hop_eth_bridge_l2_to_l1_arbitrum_one(arbitrum_one_inquirer: 'ArbitrumOn
 def test_hop_eth_bridge_l2_to_l1_ethereum(ethereum_inquirer: 'EthereumInquirer', ethereum_accounts):  # noqa: E501
     tx_hash = deserialize_evm_tx_hash('0x15704d966705b423b1f747d9413a474f35647e676a5f7ec2bed5ae83bf4f5e38')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
-    timestamp, bridge_amount, user_address = TimestampMS(1715614211000), '0.194877831029822766', ethereum_accounts[0]  # noqa: E501
-    expected_events = [
+    user_address = ethereum_accounts[0]
+    assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=0,
-            timestamp=timestamp,
+            timestamp=TimestampMS(1715614211000),
             location=Location.ETHEREUM,
             event_type=HistoryEventType.WITHDRAWAL,
             event_subtype=HistoryEventSubType.BRIDGE,
             asset=A_ETH,
-            amount=FVal(bridge_amount),
+            amount=FVal(bridge_amount := '0.194877831029822766'),
             location_label=user_address,
             notes=f'Bridge {bridge_amount} ETH via Hop protocol',
             counterparty=CPT_HOP,
             address=string_to_evm_address('0xb8901acB165ed027E32754E0FFe830802919727f'),
         ),
     ]
-    assert events == expected_events
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('arbitrum_one_accounts', [['0x0a6c69327d517568E6308F1E1CD2fD2B2b3cd4BF']])
 def test_hop_magic_bridge_l2_to_l1_arbitrum_one(arbitrum_one_inquirer: 'ArbitrumOneInquirer', arbitrum_one_accounts):  # noqa: E501
-    tx_hash = deserialize_evm_tx_hash('0x05c2c5f18e9acc193f34c611e176d9e65f34d420ba80c7546e0ba0c124d510e3')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=arbitrum_one_inquirer,
-        tx_hash=tx_hash,
+        tx_hash=(tx_hash := deserialize_evm_tx_hash('0x05c2c5f18e9acc193f34c611e176d9e65f34d420ba80c7546e0ba0c124d510e3')),  # noqa: E501
     )
-    timestamp = TimestampMS(1715564239000)
     bridge_amount, gas_fee, bridge_fee, user_address = '690.64074354910030513', '0.00000257294', '5.136762511171047454', arbitrum_one_accounts[0]  # noqa: E501
     approval_amount = '115792089237316195423570985008687907853269984665640563953113.341386879395299329'  # noqa: E501
-    expected_events = [
+    assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=0,
-            timestamp=timestamp,
+            timestamp=(timestamp := TimestampMS(1715564239000)),
             location=Location.ARBITRUM_ONE,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
@@ -505,7 +484,6 @@ def test_hop_magic_bridge_l2_to_l1_arbitrum_one(arbitrum_one_inquirer: 'Arbitrum
             address=string_to_evm_address('0x50a3a623d00fd8b8a4F3CbC5aa53D0Bc6FA912DD'),
         ),
     ]
-    assert events == expected_events
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
@@ -513,24 +491,23 @@ def test_hop_magic_bridge_l2_to_l1_arbitrum_one(arbitrum_one_inquirer: 'Arbitrum
 def test_hop_usdc_bridge_l2_to_l1_ethereum(ethereum_inquirer: 'EthereumInquirer', ethereum_accounts):  # noqa: E501
     tx_hash = deserialize_evm_tx_hash('0xc76dbb99825d1e53488426b5cf93f7ff71b5fd1fccd41259537e84824a950cc9')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
-    timestamp, bridge_amount, user_address = TimestampMS(1715208275000), '60786.713495', ethereum_accounts[0]  # noqa: E501
-    expected_events = [
+    user_address = ethereum_accounts[0]
+    assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=182,
-            timestamp=timestamp,
+            timestamp=TimestampMS(1715208275000),
             location=Location.ETHEREUM,
             event_type=HistoryEventType.WITHDRAWAL,
             event_subtype=HistoryEventSubType.BRIDGE,
             asset=A_USDC,
-            amount=FVal(bridge_amount),
+            amount=FVal(bridge_amount := '60786.713495'),
             location_label=user_address,
             notes=f'Bridge {bridge_amount} USDC via Hop protocol',
             counterparty=CPT_HOP,
             address=string_to_evm_address('0x3666f603Cc164936C1b87e207F36BEBa4AC5f18a'),
         ),
     ]
-    assert events == expected_events
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
@@ -538,17 +515,17 @@ def test_hop_usdc_bridge_l2_to_l1_ethereum(ethereum_inquirer: 'EthereumInquirer'
 def test_hop_usdc_bridge_l2_to_l1_gnosis(gnosis_inquirer: 'GnosisInquirer', gnosis_accounts):
     tx_hash = deserialize_evm_tx_hash('0x0c6084399c873b06407f073acec89ffd9693ac0c7df4befd9e45e4178b5ae869')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=gnosis_inquirer, tx_hash=tx_hash)
-    timestamp, bridge_amount, gas_fees, user_address = TimestampMS(1715204760000), '60786.713495', '0.0001299435', gnosis_accounts[0]  # noqa: E501
-    expected_events = [
+    user_address = gnosis_accounts[0]
+    assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=0,
-            timestamp=timestamp,
+            timestamp=(timestamp := TimestampMS(1715204760000)),
             location=Location.GNOSIS,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_XDAI,
-            amount=FVal(gas_fees),
+            amount=FVal(gas_fees := '0.0001299435'),
             location_label=user_address,
             notes=f'Burn {gas_fees} XDAI for gas',
             counterparty=CPT_GAS,
@@ -560,35 +537,33 @@ def test_hop_usdc_bridge_l2_to_l1_gnosis(gnosis_inquirer: 'GnosisInquirer', gnos
             event_type=HistoryEventType.DEPOSIT,
             event_subtype=HistoryEventSubType.BRIDGE,
             asset=Asset('eip155:100/erc20:0x9ec9551d4A1a1593b0ee8124D98590CC71b3B09D'),
-            amount=FVal(bridge_amount),
+            amount=FVal(bridge_amount := '60786.713495'),
             location_label=user_address,
             notes=f'Burn {bridge_amount} of Hop hUSDC',
             counterparty=CPT_HOP,
             address=ZERO_ADDRESS,
         ),
     ]
-    assert events == expected_events
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('arbitrum_one_accounts', [['0x0e414c1c4780df6c09c2f1070990768D44B70b1D', '0xA63734db2c674122EEd383aea7698C68aAbf749e']])  # noqa: E501
 def test_hop_eth_bridge_arbitrum_custom_recipient(arbitrum_one_inquirer: 'ArbitrumOneInquirer', arbitrum_one_accounts):  # noqa: E501
-    tx_hash = deserialize_evm_tx_hash('0x88b6fce15afacab9fa77caaf8d42d30d7a517f9f5ae6b7d6c37795309ac90383')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=arbitrum_one_inquirer,
-        tx_hash=tx_hash,
+        tx_hash=(tx_hash := deserialize_evm_tx_hash('0x88b6fce15afacab9fa77caaf8d42d30d7a517f9f5ae6b7d6c37795309ac90383')),  # noqa: E501
     )
-    timestamp, gas, bridge_amount, hop_fee, user_address = TimestampMS(1715946201000), '0.00000266018', '0.000880551717232904', '0.000118862618614123', arbitrum_one_accounts[0]  # noqa: E501
-    expected_events = [
+    user_address = arbitrum_one_accounts[0]
+    assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=0,
-            timestamp=timestamp,
+            timestamp=(timestamp := TimestampMS(1715946201000)),
             location=Location.ARBITRUM_ONE,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            amount=FVal(gas),
+            amount=FVal(gas := '0.00000266018'),
             location_label=user_address,
             notes=f'Burn {gas} ETH for gas',
             counterparty=CPT_GAS,
@@ -600,7 +575,7 @@ def test_hop_eth_bridge_arbitrum_custom_recipient(arbitrum_one_inquirer: 'Arbitr
             event_type=HistoryEventType.DEPOSIT,
             event_subtype=HistoryEventSubType.BRIDGE,
             asset=A_ETH,
-            amount=FVal(bridge_amount),
+            amount=FVal(bridge_amount := '0.000880551717232904'),
             location_label=user_address,
             notes=f'Bridge {bridge_amount} ETH to Base at address {arbitrum_one_accounts[1]} via Hop protocol',  # noqa: E501
             counterparty=CPT_HOP,
@@ -613,14 +588,13 @@ def test_hop_eth_bridge_arbitrum_custom_recipient(arbitrum_one_inquirer: 'Arbitr
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            amount=FVal(hop_fee),
+            amount=FVal(hop_fee := '0.000118862618614123'),
             location_label=user_address,
             notes=f'Spend {hop_fee} ETH as a hop fee',
             counterparty=CPT_HOP,
             address=string_to_evm_address('0x33ceb27b39d2Bb7D2e61F7564d3Df29344020417'),
         ),
     ]
-    assert events == expected_events
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
@@ -635,16 +609,15 @@ def test_hop_add_liquidity(
 ):
     tx_hash = deserialize_evm_tx_hash('0xa50286f6288ca13452a490d766aaf969d20cce7035b514423a7b1432fd329cc5')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=base_inquirer, tx_hash=tx_hash)
-    timestamp, gas, lp_amount, lp_token_amount = TimestampMS(1714582939000), '0.000013783759721971', '0.025', '0.023220146656543904'  # noqa: E501
-    expected_events = [
+    assert events == [
         EvmEvent(
             sequence_index=0,
-            timestamp=timestamp,
+            timestamp=(timestamp := TimestampMS(1714582939000)),
             location=Location.BASE,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            amount=FVal(gas),
+            amount=FVal(gas := '0.000013783759721971'),
             location_label=base_accounts[0],
             notes=f'Burn {gas} ETH for gas',
             tx_ref=tx_hash,
@@ -656,7 +629,7 @@ def test_hop_add_liquidity(
             event_type=HistoryEventType.DEPOSIT,
             event_subtype=HistoryEventSubType.DEPOSIT_FOR_WRAPPED,
             asset=A_WETH_BASE,
-            amount=FVal(lp_amount),
+            amount=FVal(lp_amount := '0.025'),
             location_label=base_accounts[0],
             notes=f'Deposit {lp_amount} WETH to Hop',
             tx_ref=tx_hash,
@@ -669,7 +642,7 @@ def test_hop_add_liquidity(
             event_type=HistoryEventType.RECEIVE,
             event_subtype=HistoryEventSubType.RECEIVE_WRAPPED,
             asset=Asset('eip155:8453/erc20:0xe9605BEc1c5C3E81F974F80b8dA9fBEFF4845d4D'),
-            amount=FVal(lp_token_amount),
+            amount=FVal(lp_token_amount := '0.023220146656543904'),
             location_label=base_accounts[0],
             notes=f'Receive {lp_token_amount} HOP-LP-ETH after providing liquidity in Hop',
             tx_ref=tx_hash,
@@ -677,7 +650,6 @@ def test_hop_add_liquidity(
             address=ZERO_ADDRESS,
         ),
     ]
-    assert events == expected_events
     assert EvmToken('eip155:8453/erc20:0xe9605BEc1c5C3E81F974F80b8dA9fBEFF4845d4D').protocol == CPT_HOP  # noqa: E501
     with GlobalDBHandler().conn.read_ctx() as cursor:
         assert globaldb_get_unique_cache_value(
@@ -699,21 +671,19 @@ def test_hop_add_liquidity_2(
         arbitrum_one_inquirer: 'ArbitrumOneInquirer',
         arbitrum_one_accounts: list['ChecksumEvmAddress'],
 ):
-    tx_hash = deserialize_evm_tx_hash('0x52ab27e8f15148c0f41df0114429321d2a1e9411f2ea2fe7c8fb9c663bc09ecb')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=arbitrum_one_inquirer,
-        tx_hash=tx_hash,
+        tx_hash=(tx_hash := deserialize_evm_tx_hash('0x52ab27e8f15148c0f41df0114429321d2a1e9411f2ea2fe7c8fb9c663bc09ecb')),  # noqa: E501
     )
-    timestamp, gas, lp_amount, lp_amount_2, lp_token_amount, approval_amount_1, approval_amount_2 = TimestampMS(1716391406000), '0.00000298668', '0.001', '0.005129453530970625', '0.005676129314105837', '115792089237316195423570985008687907853269984665640564039457.583007913129639935', '115792089237316195423570985008687907853269984665640564039457.57887845959866931'  # noqa: E501
-    expected_events = [
+    assert events == [
         EvmEvent(
             sequence_index=0,
-            timestamp=timestamp,
+            timestamp=(timestamp := TimestampMS(1716391406000)),
             location=Location.ARBITRUM_ONE,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            amount=FVal(gas),
+            amount=FVal(gas := '0.00000298668'),
             location_label=arbitrum_one_accounts[0],
             notes=f'Burn {gas} ETH for gas',
             tx_ref=tx_hash,
@@ -725,7 +695,7 @@ def test_hop_add_liquidity_2(
             event_type=HistoryEventType.INFORMATIONAL,
             event_subtype=HistoryEventSubType.APPROVE,
             asset=A_WETH_ARB,
-            amount=FVal(approval_amount_1),
+            amount=FVal(approval_amount_1 := '115792089237316195423570985008687907853269984665640564039457.583007913129639935'),  # noqa: E501
             location_label=arbitrum_one_accounts[0],
             notes=f'Set WETH spending approval of {arbitrum_one_accounts[0]} by 0x652d27c0F72771Ce5C76fd400edD61B406Ac6D97 to {approval_amount_1}',  # noqa: E501
             tx_ref=tx_hash,
@@ -737,7 +707,7 @@ def test_hop_add_liquidity_2(
             event_type=HistoryEventType.INFORMATIONAL,
             event_subtype=HistoryEventSubType.APPROVE,
             asset=Asset('eip155:42161/erc20:0xDa7c0de432a9346bB6e96aC74e3B61A36d8a77eB'),
-            amount=FVal(approval_amount_2),
+            amount=FVal(approval_amount_2 := '115792089237316195423570985008687907853269984665640564039457.57887845959866931'),  # noqa: E501
             location_label=arbitrum_one_accounts[0],
             notes=f'Set hETH spending approval of {arbitrum_one_accounts[0]} by 0x652d27c0F72771Ce5C76fd400edD61B406Ac6D97 to {approval_amount_2}',  # noqa: E501
             tx_ref=tx_hash,
@@ -749,7 +719,7 @@ def test_hop_add_liquidity_2(
             event_type=HistoryEventType.DEPOSIT,
             event_subtype=HistoryEventSubType.DEPOSIT_FOR_WRAPPED,
             asset=A_WETH_ARB,
-            amount=FVal(lp_amount),
+            amount=FVal(lp_amount := '0.001'),
             location_label=arbitrum_one_accounts[0],
             notes=f'Deposit {lp_amount} WETH to Hop',
             tx_ref=tx_hash,
@@ -762,7 +732,7 @@ def test_hop_add_liquidity_2(
             event_type=HistoryEventType.DEPOSIT,
             event_subtype=HistoryEventSubType.DEPOSIT_FOR_WRAPPED,
             asset=Asset('eip155:42161/erc20:0xDa7c0de432a9346bB6e96aC74e3B61A36d8a77eB'),
-            amount=FVal(lp_amount_2),
+            amount=FVal(lp_amount_2 := '0.005129453530970625'),
             location_label=arbitrum_one_accounts[0],
             notes=f'Deposit {lp_amount_2} hETH to Hop',
             tx_ref=tx_hash,
@@ -775,7 +745,7 @@ def test_hop_add_liquidity_2(
             event_type=HistoryEventType.RECEIVE,
             event_subtype=HistoryEventSubType.RECEIVE_WRAPPED,
             asset=Asset('eip155:42161/erc20:0x59745774Ed5EfF903e615F5A2282Cae03484985a'),
-            amount=FVal(lp_token_amount),
+            amount=FVal(lp_token_amount := '0.005676129314105837'),
             location_label=arbitrum_one_accounts[0],
             notes=f'Receive {lp_token_amount} HOP-LP-ETH after providing liquidity in Hop',
             tx_ref=tx_hash,
@@ -783,7 +753,6 @@ def test_hop_add_liquidity_2(
             address=ZERO_ADDRESS,
         ),
     ]
-    assert events == expected_events
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
@@ -795,16 +764,15 @@ def test_hop_remove_liquidity(
 ):
     tx_hash = deserialize_evm_tx_hash('0xc3662d3d68f845dd848c9df2aef4efedf9c9a01580872619a2f4eaafdbf98feb')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=base_inquirer, tx_hash=tx_hash)
-    timestamp, gas, lp_amount, withdrawn = TimestampMS(1714729295000), '0.000019101983974486', '0.75', '0.807405509354959205'  # noqa: E501
-    expected_events = [
+    assert events == [
         EvmEvent(
             sequence_index=0,
-            timestamp=timestamp,
+            timestamp=(timestamp := TimestampMS(1714729295000)),
             location=Location.BASE,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            amount=FVal(gas),
+            amount=FVal(gas := '0.000019101983974486'),
             location_label=base_accounts[0],
             notes=f'Burn {gas} ETH for gas',
             tx_ref=tx_hash,
@@ -828,7 +796,7 @@ def test_hop_remove_liquidity(
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.RETURN_WRAPPED,
             asset=Asset('eip155:8453/erc20:0xe9605BEc1c5C3E81F974F80b8dA9fBEFF4845d4D'),
-            amount=FVal(lp_amount),
+            amount=FVal(lp_amount := '0.75'),
             location_label=base_accounts[0],
             notes=f'Return {lp_amount} HOP-LP-ETH',
             tx_ref=tx_hash,
@@ -841,7 +809,7 @@ def test_hop_remove_liquidity(
             event_type=HistoryEventType.WITHDRAWAL,
             event_subtype=HistoryEventSubType.REDEEM_WRAPPED,
             asset=A_WETH_BASE,
-            amount=FVal(withdrawn),
+            amount=FVal(withdrawn := '0.807405509354959205'),
             location_label=base_accounts[0],
             notes=f'Withdraw {withdrawn} WETH from Hop',
             tx_ref=tx_hash,
@@ -849,7 +817,6 @@ def test_hop_remove_liquidity(
             address=string_to_evm_address('0x0ce6c85cF43553DE10FC56cecA0aef6Ff0DD444d'),
         ),
     ]
-    assert events == expected_events
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
@@ -861,16 +828,15 @@ def test_hop_remove_liquidity_2(
 ):
     tx_hash = deserialize_evm_tx_hash('0x4995c8896bb845ab506b759530d35e306d6ef5418630b60bbf26ca0fae90fcaa')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=base_inquirer, tx_hash=tx_hash)
-    timestamp, gas, lp_amount, withdrawn_1, withdrawn_2 = TimestampMS(1716298905000), '0.000020283535960823', '0.014812373943526529', '0.008484007194088721', '0.007520340659511852'  # noqa: E501
-    expected_events = [
+    assert events == [
         EvmEvent(
             sequence_index=0,
-            timestamp=timestamp,
+            timestamp=(timestamp := TimestampMS(1716298905000)),
             location=Location.BASE,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            amount=FVal(gas),
+            amount=FVal(gas := '0.000020283535960823'),
             location_label=base_accounts[0],
             notes=f'Burn {gas} ETH for gas',
             tx_ref=tx_hash,
@@ -894,7 +860,7 @@ def test_hop_remove_liquidity_2(
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.RETURN_WRAPPED,
             asset=Asset('eip155:8453/erc20:0xe9605BEc1c5C3E81F974F80b8dA9fBEFF4845d4D'),
-            amount=FVal(lp_amount),
+            amount=FVal(lp_amount := '0.014812373943526529'),
             location_label=base_accounts[0],
             notes=f'Return {lp_amount} HOP-LP-ETH',
             tx_ref=tx_hash,
@@ -907,7 +873,7 @@ def test_hop_remove_liquidity_2(
             event_type=HistoryEventType.WITHDRAWAL,
             event_subtype=HistoryEventSubType.REDEEM_WRAPPED,
             asset=A_WETH_BASE,
-            amount=FVal(withdrawn_1),
+            amount=FVal(withdrawn_1 := '0.008484007194088721'),
             location_label=base_accounts[0],
             notes=f'Withdraw {withdrawn_1} WETH from Hop',
             tx_ref=tx_hash,
@@ -920,7 +886,7 @@ def test_hop_remove_liquidity_2(
             event_type=HistoryEventType.WITHDRAWAL,
             event_subtype=HistoryEventSubType.REDEEM_WRAPPED,
             asset=Asset('eip155:8453/erc20:0xC1985d7a3429cDC85E59E2E4Fcc805b857e6Ee2E'),
-            amount=FVal(withdrawn_2),
+            amount=FVal(withdrawn_2 := '0.007520340659511852'),
             location_label=base_accounts[0],
             notes=f'Withdraw {withdrawn_2} hETH from Hop',
             tx_ref=tx_hash,
@@ -928,7 +894,6 @@ def test_hop_remove_liquidity_2(
             address=string_to_evm_address('0x0ce6c85cF43553DE10FC56cecA0aef6Ff0DD444d'),
         ),
     ]
-    assert events == expected_events
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
@@ -939,16 +904,15 @@ def test_hop_remove_liquidity_usdc_gnosis(
 ):
     tx_hash = deserialize_evm_tx_hash('0x5833d34d7f20ee4e71b902dac85a025f40739a1d646091553104a3e345a38f81')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=gnosis_inquirer, tx_hash=tx_hash)
-    timestamp, gas, lp_amount, withdrawn, withdrawn_2, approval_amount = TimestampMS(1716258450000), '0.000645488318952488', '2.138240168467212015', '0.258527', '2.026586', '0.861759831532787985'  # noqa: E501
-    expected_events = [
+    assert events == [
         EvmEvent(
             sequence_index=0,
-            timestamp=timestamp,
+            timestamp=(timestamp := TimestampMS(1716258450000)),
             location=Location.GNOSIS,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_XDAI,
-            amount=FVal(gas),
+            amount=FVal(gas := '0.000645488318952488'),
             location_label=gnosis_accounts[0],
             notes=f'Burn {gas} XDAI for gas',
             tx_ref=tx_hash,
@@ -960,7 +924,7 @@ def test_hop_remove_liquidity_usdc_gnosis(
             event_type=HistoryEventType.INFORMATIONAL,
             event_subtype=HistoryEventSubType.APPROVE,
             asset=Asset('eip155:100/erc20:0x9D373d22FD091d7f9A6649EB067557cc12Fb1A0A'),
-            amount=FVal(approval_amount),
+            amount=FVal(approval_amount := '0.861759831532787985'),
             location_label=gnosis_accounts[0],
             notes=f'Set HOP-LP-USDC spending approval of {gnosis_accounts[0]} by 0x5C32143C8B198F392d01f8446b754c181224ac26 to {approval_amount}',  # noqa: E501
             tx_ref=tx_hash,
@@ -972,7 +936,7 @@ def test_hop_remove_liquidity_usdc_gnosis(
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.RETURN_WRAPPED,
             asset=Asset('eip155:100/erc20:0x9D373d22FD091d7f9A6649EB067557cc12Fb1A0A'),
-            amount=FVal(lp_amount),
+            amount=FVal(lp_amount := '2.138240168467212015'),
             location_label=gnosis_accounts[0],
             notes=f'Return {lp_amount} HOP-LP-USDC',
             tx_ref=tx_hash,
@@ -985,7 +949,7 @@ def test_hop_remove_liquidity_usdc_gnosis(
             event_type=HistoryEventType.WITHDRAWAL,
             event_subtype=HistoryEventSubType.REDEEM_WRAPPED,
             asset=Asset('eip155:100/erc20:0xDDAfbb505ad214D7b80b1f830fcCc89B60fb7A83'),
-            amount=FVal(withdrawn),
+            amount=FVal(withdrawn := '0.258527'),
             location_label=gnosis_accounts[0],
             notes=f'Withdraw {withdrawn} USDC from Hop',
             tx_ref=tx_hash,
@@ -998,7 +962,7 @@ def test_hop_remove_liquidity_usdc_gnosis(
             event_type=HistoryEventType.WITHDRAWAL,
             event_subtype=HistoryEventSubType.REDEEM_WRAPPED,
             asset=Asset('eip155:100/erc20:0x9ec9551d4A1a1593b0ee8124D98590CC71b3B09D'),
-            amount=FVal(withdrawn_2),
+            amount=FVal(withdrawn_2 := '2.026586'),
             location_label=gnosis_accounts[0],
             notes=f'Withdraw {withdrawn_2} hUSDC from Hop',
             tx_ref=tx_hash,
@@ -1006,7 +970,6 @@ def test_hop_remove_liquidity_usdc_gnosis(
             address=string_to_evm_address('0x5C32143C8B198F392d01f8446b754c181224ac26'),
         ),
     ]
-    assert events == expected_events
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
@@ -1018,25 +981,23 @@ def test_hop_stake(
         arbitrum_one_inquirer: 'ArbitrumOneInquirer',
         arbitrum_one_accounts: list['ChecksumEvmAddress'],
 ):
-    tx_hash = deserialize_evm_tx_hash('0x6329984b82cb85903fee9fef61fb77cdf848ff6344056156da2e66676ad91473')  # noqa: E501
     get_decoded_events_of_transaction(  # decode the deposit tx to process the LP token
         evm_inquirer=arbitrum_one_inquirer,
         tx_hash=deserialize_evm_tx_hash('0x52ab27e8f15148c0f41df0114429321d2a1e9411f2ea2fe7c8fb9c663bc09ecb'),
     )
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=arbitrum_one_inquirer,
-        tx_hash=tx_hash,
+        tx_hash=(tx_hash := deserialize_evm_tx_hash('0x6329984b82cb85903fee9fef61fb77cdf848ff6344056156da2e66676ad91473')),  # noqa: E501
     )
-    timestamp, gas, stake_amount, approval_amount = TimestampMS(1716391575000), '0.00000183398', '0.005676129314105837', '115792089237316195423570985008687907853269984665640564039457.578331783815534098'  # noqa: E501
-    expected_events = [
+    assert events == [
         EvmEvent(
             sequence_index=0,
-            timestamp=timestamp,
+            timestamp=(timestamp := TimestampMS(1716391575000)),
             location=Location.ARBITRUM_ONE,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            amount=FVal(gas),
+            amount=FVal(gas := '0.00000183398'),
             location_label=arbitrum_one_accounts[0],
             notes=f'Burn {gas} ETH for gas',
             tx_ref=tx_hash,
@@ -1048,7 +1009,7 @@ def test_hop_stake(
             event_type=HistoryEventType.STAKING,
             event_subtype=HistoryEventSubType.DEPOSIT_ASSET,
             asset=Asset('eip155:42161/erc20:0x59745774Ed5EfF903e615F5A2282Cae03484985a'),
-            amount=FVal(stake_amount),
+            amount=FVal(stake_amount := '0.005676129314105837'),
             location_label=arbitrum_one_accounts[0],
             notes=f'Stake {stake_amount} HOP-LP-ETH in Hop',
             tx_ref=tx_hash,
@@ -1061,14 +1022,13 @@ def test_hop_stake(
             event_type=HistoryEventType.INFORMATIONAL,
             event_subtype=HistoryEventSubType.APPROVE,
             asset=Asset('eip155:42161/erc20:0x59745774Ed5EfF903e615F5A2282Cae03484985a'),
-            amount=FVal(approval_amount),
+            amount=FVal(approval_amount := '115792089237316195423570985008687907853269984665640564039457.578331783815534098'),  # noqa: E501
             location_label=arbitrum_one_accounts[0],
             notes=f'Set HOP-LP-ETH spending approval of {arbitrum_one_accounts[0]} by 0x755569159598f3702bdD7DFF6233A317C156d3Dd to {approval_amount}',  # noqa: E501
             tx_ref=tx_hash,
             address=string_to_evm_address('0x755569159598f3702bdD7DFF6233A317C156d3Dd'),
         ),
     ]
-    assert events == expected_events
     inquirer.inject_evm_managers([(arbitrum_one_inquirer.chain_id, arbitrum_one_manager)])
     assert inquirer.find_usd_price(Asset('eip155:42161/erc20:0x59745774Ed5EfF903e615F5A2282Cae03484985a')).is_close(1995.56814825)  # noqa: E501
 
@@ -1079,21 +1039,19 @@ def test_hop_stake_2(
         arbitrum_one_inquirer: 'ArbitrumOneInquirer',
         arbitrum_one_accounts: list['ChecksumEvmAddress'],
 ):
-    tx_hash = deserialize_evm_tx_hash('0xe0c1f6f152422784a4e4346d84af7d32fda95eab17da257f3fdc5121f4a6fbc8')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=arbitrum_one_inquirer,
-        tx_hash=tx_hash,
+        tx_hash=(tx_hash := deserialize_evm_tx_hash('0xe0c1f6f152422784a4e4346d84af7d32fda95eab17da257f3fdc5121f4a6fbc8')),  # noqa: E501
     )
-    timestamp, gas, stake_amount, approval_amount = TimestampMS(1718269403000), '0.00000199918', '0.005676129314105837', '115792089237316195423570985008687907853269984665640564039457.578331783815534098'  # noqa: E501
-    expected_events = [
+    assert events == [
         EvmEvent(
             sequence_index=0,
-            timestamp=timestamp,
+            timestamp=(timestamp := TimestampMS(1718269403000)),
             location=Location.ARBITRUM_ONE,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            amount=FVal(gas),
+            amount=FVal(gas := '0.00000199918'),
             location_label=arbitrum_one_accounts[0],
             notes=f'Burn {gas} ETH for gas',
             tx_ref=tx_hash,
@@ -1105,7 +1063,7 @@ def test_hop_stake_2(
             event_type=HistoryEventType.STAKING,
             event_subtype=HistoryEventSubType.DEPOSIT_ASSET,
             asset=Asset('eip155:42161/erc20:0x59745774Ed5EfF903e615F5A2282Cae03484985a'),
-            amount=FVal(stake_amount),
+            amount=FVal(stake_amount := '0.005676129314105837'),
             location_label=arbitrum_one_accounts[0],
             notes=f'Stake {stake_amount} HOP-LP-ETH in Hop',
             tx_ref=tx_hash,
@@ -1118,14 +1076,13 @@ def test_hop_stake_2(
             event_type=HistoryEventType.INFORMATIONAL,
             event_subtype=HistoryEventSubType.APPROVE,
             asset=Asset('eip155:42161/erc20:0x59745774Ed5EfF903e615F5A2282Cae03484985a'),
-            amount=FVal(approval_amount),
+            amount=FVal(approval_amount := '115792089237316195423570985008687907853269984665640564039457.578331783815534098'),  # noqa: E501
             location_label=arbitrum_one_accounts[0],
             notes=f'Set HOP-LP-ETH spending approval of {arbitrum_one_accounts[0]} by 0x00001fcF29c5Fd7846E4332AfBFaA48701D727f5 to {approval_amount}',  # noqa: E501
             tx_ref=tx_hash,
             address=string_to_evm_address('0x00001fcF29c5Fd7846E4332AfBFaA48701D727f5'),
         ),
     ]
-    assert events == expected_events
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
@@ -1134,21 +1091,19 @@ def test_hop_claim_rewards(
         arbitrum_one_inquirer: 'ArbitrumOneInquirer',
         arbitrum_one_accounts: list['ChecksumEvmAddress'],
 ):
-    tx_hash = deserialize_evm_tx_hash('0x905c1f8cf4b94d49b18f14fc7c403df653f731999ef5262b6aa92dbe5ad0423f')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=arbitrum_one_inquirer,
-        tx_hash=tx_hash,
+        tx_hash=(tx_hash := deserialize_evm_tx_hash('0x905c1f8cf4b94d49b18f14fc7c403df653f731999ef5262b6aa92dbe5ad0423f')),  # noqa: E501
     )
-    timestamp, gas, reward_amount = TimestampMS(1716445828000), '0.00000098192', '1.556162863261353191'  # noqa: E501
-    expected_events = [
+    assert events == [
         EvmEvent(
             sequence_index=0,
-            timestamp=timestamp,
+            timestamp=(timestamp := TimestampMS(1716445828000)),
             location=Location.ARBITRUM_ONE,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            amount=FVal(gas),
+            amount=FVal(gas := '0.00000098192'),
             location_label=arbitrum_one_accounts[0],
             notes=f'Burn {gas} ETH for gas',
             tx_ref=tx_hash,
@@ -1160,7 +1115,7 @@ def test_hop_claim_rewards(
             event_type=HistoryEventType.STAKING,
             event_subtype=HistoryEventSubType.REWARD,
             asset=Asset('eip155:42161/erc20:0xc5102fE9359FD9a28f877a67E36B0F050d81a3CC'),
-            amount=FVal(reward_amount),
+            amount=FVal(reward_amount := '1.556162863261353191'),
             location_label=arbitrum_one_accounts[0],
             notes=f'Claim {reward_amount} HOP from Hop',
             tx_ref=tx_hash,
@@ -1168,7 +1123,6 @@ def test_hop_claim_rewards(
             address=string_to_evm_address('0x755569159598f3702bdD7DFF6233A317C156d3Dd'),
         ),
     ]
-    assert events == expected_events
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
@@ -1177,21 +1131,19 @@ def test_hop_claim_rewards_2(
         arbitrum_one_inquirer: 'ArbitrumOneInquirer',
         arbitrum_one_accounts: list['ChecksumEvmAddress'],
 ):
-    tx_hash = deserialize_evm_tx_hash('0x85b7ca62b27f78f59bcb9fd52ab18c05f3f143ff4df00c70d4f9a3edfa5eea19')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=arbitrum_one_inquirer,
-        tx_hash=tx_hash,
+        tx_hash=(tx_hash := deserialize_evm_tx_hash('0x85b7ca62b27f78f59bcb9fd52ab18c05f3f143ff4df00c70d4f9a3edfa5eea19')),  # noqa: E501
     )
-    timestamp, gas, reward_amount = TimestampMS(1718278937000), '0.00000171746', '1.305947476028639625'  # noqa: E501
-    expected_events = [
+    assert events == [
         EvmEvent(
             sequence_index=0,
-            timestamp=timestamp,
+            timestamp=(timestamp := TimestampMS(1718278937000)),
             location=Location.ARBITRUM_ONE,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            amount=FVal(gas),
+            amount=FVal(gas := '0.00000171746'),
             location_label=arbitrum_one_accounts[0],
             notes=f'Burn {gas} ETH for gas',
             tx_ref=tx_hash,
@@ -1203,7 +1155,7 @@ def test_hop_claim_rewards_2(
             event_type=HistoryEventType.STAKING,
             event_subtype=HistoryEventSubType.REWARD,
             asset=A_ARB,
-            amount=FVal(reward_amount),
+            amount=FVal(reward_amount := '1.305947476028639625'),
             location_label=arbitrum_one_accounts[0],
             notes=f'Claim {reward_amount} ARB from Hop',
             tx_ref=tx_hash,
@@ -1211,7 +1163,6 @@ def test_hop_claim_rewards_2(
             address=string_to_evm_address('0x00001fcF29c5Fd7846E4332AfBFaA48701D727f5'),
         ),
     ]
-    assert events == expected_events
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
@@ -1221,21 +1172,19 @@ def test_hop_claim_merkle_rewards(
         optimism_inquirer: 'OptimismInquirer',
         optimism_accounts: list['ChecksumEvmAddress'],
 ):
-    tx_hash = deserialize_evm_tx_hash('0x7f8114d30702cd540154b01a666ef6a7cf4dab8c4d657efa9e0503413243d2f3')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=optimism_inquirer,
-        tx_hash=tx_hash,
+        tx_hash=(tx_hash := deserialize_evm_tx_hash('0x7f8114d30702cd540154b01a666ef6a7cf4dab8c4d657efa9e0503413243d2f3')),  # noqa: E501
     )
-    timestamp, gas, reward_amount = TimestampMS(1747908883000), '0.000000228471368276', '0.18'
-    expected_events = [
+    assert events == [
         EvmEvent(
             sequence_index=0,
-            timestamp=timestamp,
+            timestamp=(timestamp := TimestampMS(1747908883000)),
             location=Location.OPTIMISM,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            amount=FVal(gas),
+            amount=FVal(gas := '0.000000228471368276'),
             location_label=optimism_accounts[0],
             notes=f'Burn {gas} ETH for gas',
             tx_ref=tx_hash,
@@ -1247,7 +1196,7 @@ def test_hop_claim_merkle_rewards(
             event_type=HistoryEventType.STAKING,
             event_subtype=HistoryEventSubType.REWARD,
             asset=A_OP,
-            amount=FVal(reward_amount),
+            amount=FVal(reward_amount := '0.18'),
             location_label=optimism_accounts[0],
             notes=f'Claim {reward_amount} OP from Hop',
             tx_ref=tx_hash,
@@ -1255,7 +1204,6 @@ def test_hop_claim_merkle_rewards(
             address=string_to_evm_address('0x45269F59aA76bB491D0Fc4c26F468D8E1EE26b73'),
         ),
     ]
-    assert events == expected_events
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
@@ -1264,21 +1212,19 @@ def test_hop_unstake(
         arbitrum_one_inquirer: 'ArbitrumOneInquirer',
         arbitrum_one_accounts: list['ChecksumEvmAddress'],
 ):
-    tx_hash = deserialize_evm_tx_hash('0x4bdf31c7bbe27ccbb9a5d381596b6f4d8cf9583d111af43d5b0b5d76bb8f6751')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=arbitrum_one_inquirer,
-        tx_hash=tx_hash,
+        tx_hash=(tx_hash := deserialize_evm_tx_hash('0x4bdf31c7bbe27ccbb9a5d381596b6f4d8cf9583d111af43d5b0b5d76bb8f6751')),  # noqa: E501
     )
-    timestamp, gas, unstake_amount, reward_amount = TimestampMS(1716446062000), '0.00000160545', '0.000958469117996842', '0.000025838435799823'  # noqa: E501
-    expected_events = [
+    assert events == [
         EvmEvent(
             sequence_index=0,
-            timestamp=timestamp,
+            timestamp=(timestamp := TimestampMS(1716446062000)),
             location=Location.ARBITRUM_ONE,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            amount=FVal(gas),
+            amount=FVal(gas := '0.00000160545'),
             location_label=arbitrum_one_accounts[0],
             notes=f'Burn {gas} ETH for gas',
             tx_ref=tx_hash,
@@ -1290,7 +1236,7 @@ def test_hop_unstake(
             event_type=HistoryEventType.STAKING,
             event_subtype=HistoryEventSubType.REMOVE_ASSET,
             asset=Asset('eip155:42161/erc20:0x59745774Ed5EfF903e615F5A2282Cae03484985a'),
-            amount=FVal(unstake_amount),
+            amount=FVal(unstake_amount := '0.000958469117996842'),
             location_label=arbitrum_one_accounts[0],
             notes=f'Unstake {unstake_amount} HOP-LP-ETH from Hop',
             tx_ref=tx_hash,
@@ -1303,7 +1249,7 @@ def test_hop_unstake(
             event_type=HistoryEventType.STAKING,
             event_subtype=HistoryEventSubType.REWARD,
             asset=Asset('eip155:42161/erc20:0xc5102fE9359FD9a28f877a67E36B0F050d81a3CC'),
-            amount=FVal(reward_amount),
+            amount=FVal(reward_amount := '0.000025838435799823'),
             location_label=arbitrum_one_accounts[0],
             notes=f'Claim {reward_amount} HOP from Hop',
             tx_ref=tx_hash,
@@ -1311,7 +1257,6 @@ def test_hop_unstake(
             address=string_to_evm_address('0x755569159598f3702bdD7DFF6233A317C156d3Dd'),
         ),
     ]
-    assert events == expected_events
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
@@ -1322,16 +1267,15 @@ def test_hop_stake_gnosis(
 ):
     tx_hash = deserialize_evm_tx_hash('0xf3b00cb365594bf9b2894af0edf852d04411db49b5fe9c07708186f75bce5385')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=gnosis_inquirer, tx_hash=tx_hash)
-    timestamp, gas, stake_amount, approval_amount = TimestampMS(1710600070000), '0.00017891077758659', '1.927208027730675426', '115792089237316195423570985008687907853269984665640564039453.729591857668289083'  # noqa: E501
-    expected_events = [
+    assert events == [
         EvmEvent(
             sequence_index=0,
-            timestamp=timestamp,
+            timestamp=(timestamp := TimestampMS(1710600070000)),
             location=Location.GNOSIS,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_XDAI,
-            amount=FVal(gas),
+            amount=FVal(gas := '0.00017891077758659'),
             location_label=gnosis_accounts[0],
             notes=f'Burn {gas} XDAI for gas',
             tx_ref=tx_hash,
@@ -1343,7 +1287,7 @@ def test_hop_stake_gnosis(
             event_type=HistoryEventType.STAKING,
             event_subtype=HistoryEventSubType.DEPOSIT_ASSET,
             asset=Asset('eip155:100/erc20:0x5b10222f2Ada260AAf6C6fC274bd5810AF9d33c0'),
-            amount=FVal(stake_amount),
+            amount=FVal(stake_amount := '1.927208027730675426'),
             location_label=gnosis_accounts[0],
             notes=f'Stake {stake_amount} HOP-LP-USDT in Hop',
             tx_ref=tx_hash,
@@ -1356,14 +1300,13 @@ def test_hop_stake_gnosis(
             event_type=HistoryEventType.INFORMATIONAL,
             event_subtype=HistoryEventSubType.APPROVE,
             asset=Asset('eip155:100/erc20:0x5b10222f2Ada260AAf6C6fC274bd5810AF9d33c0'),
-            amount=FVal(approval_amount),
+            amount=FVal(approval_amount := '115792089237316195423570985008687907853269984665640564039453.729591857668289083'),  # noqa: E501
             location_label=gnosis_accounts[0],
             notes=f'Set HOP-LP-USDT spending approval of {gnosis_accounts[0]} by 0x2C2Ab81Cf235e86374468b387e241DF22459A265 to {approval_amount}',  # noqa: E501
             tx_ref=tx_hash,
             address=string_to_evm_address('0x2C2Ab81Cf235e86374468b387e241DF22459A265'),
         ),
     ]
-    assert events == expected_events
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
@@ -1374,16 +1317,15 @@ def test_hop_claim_rewards_gnosis(
 ):
     tx_hash = deserialize_evm_tx_hash('0x5ad3d5050d43ec08883c76116d9328b6bf61dd8478c082bfe21bd97eb237c4b1')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=gnosis_inquirer, tx_hash=tx_hash)
-    timestamp, gas, reward_amount = TimestampMS(1710597650000), '0.000149113056096078', '0.001269493516433091'  # noqa: E501
-    expected_events = [
+    assert events == [
         EvmEvent(
             sequence_index=0,
-            timestamp=timestamp,
+            timestamp=(timestamp := TimestampMS(1710597650000)),
             location=Location.GNOSIS,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_XDAI,
-            amount=FVal(gas),
+            amount=FVal(gas := '0.000149113056096078'),
             location_label=gnosis_accounts[0],
             notes=f'Burn {gas} XDAI for gas',
             tx_ref=tx_hash,
@@ -1395,7 +1337,7 @@ def test_hop_claim_rewards_gnosis(
             event_type=HistoryEventType.STAKING,
             event_subtype=HistoryEventSubType.REWARD,
             asset=Asset('eip155:100/erc20:0x9C58BAcC331c9aa871AFD802DB6379a98e80CEdb'),
-            amount=FVal(reward_amount),
+            amount=FVal(reward_amount := '0.001269493516433091'),
             location_label=gnosis_accounts[0],
             notes=f'Claim {reward_amount} GNO from Hop',
             tx_ref=tx_hash,
@@ -1403,7 +1345,6 @@ def test_hop_claim_rewards_gnosis(
             address=string_to_evm_address('0x2C2Ab81Cf235e86374468b387e241DF22459A265'),
         ),
     ]
-    assert events == expected_events
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
@@ -1414,16 +1355,15 @@ def test_hop_unstake_gnosis(
 ):
     tx_hash = deserialize_evm_tx_hash('0x10e32923be7fd7beda4551badb4fb3ca1a708268884e540d92c73b88596f3ac4')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=gnosis_inquirer, tx_hash=tx_hash)
-    timestamp, gas, unstake_amount, reward_amount = TimestampMS(1708463325000), '0.000669895628651568', '30000', '0.91583970339645'  # noqa: E501
-    expected_events = [
+    assert events == [
         EvmEvent(
             sequence_index=0,
-            timestamp=timestamp,
+            timestamp=(timestamp := TimestampMS(1708463325000)),
             location=Location.GNOSIS,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_XDAI,
-            amount=FVal(gas),
+            amount=FVal(gas := '0.000669895628651568'),
             location_label=gnosis_accounts[0],
             notes=f'Burn {gas} XDAI for gas',
             tx_ref=tx_hash,
@@ -1435,7 +1375,7 @@ def test_hop_unstake_gnosis(
             event_type=HistoryEventType.STAKING,
             event_subtype=HistoryEventSubType.REMOVE_ASSET,
             asset=Asset('eip155:100/erc20:0x5b10222f2Ada260AAf6C6fC274bd5810AF9d33c0'),
-            amount=FVal(unstake_amount),
+            amount=FVal(unstake_amount := '30000'),
             location_label=gnosis_accounts[0],
             notes=f'Unstake {unstake_amount} HOP-LP-USDT from Hop',
             tx_ref=tx_hash,
@@ -1448,7 +1388,7 @@ def test_hop_unstake_gnosis(
             event_type=HistoryEventType.STAKING,
             event_subtype=HistoryEventSubType.REWARD,
             asset=Asset('eip155:100/erc20:0x9C58BAcC331c9aa871AFD802DB6379a98e80CEdb'),
-            amount=FVal(reward_amount),
+            amount=FVal(reward_amount := '0.91583970339645'),
             location_label=gnosis_accounts[0],
             notes=f'Claim {reward_amount} GNO from Hop',
             tx_ref=tx_hash,
@@ -1456,7 +1396,6 @@ def test_hop_unstake_gnosis(
             address=string_to_evm_address('0x2C2Ab81Cf235e86374468b387e241DF22459A265'),
         ),
     ]
-    assert events == expected_events
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
@@ -1464,17 +1403,16 @@ def test_hop_unstake_gnosis(
 def test_vote_cast(ethereum_inquirer):
     tx_hash = deserialize_evm_tx_hash('0xc6116ef064b0a713eb50cb55a1e76ef947ebdba9cbfba9a71498dacb6b75ba0e')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
-    timestamp, gas = TimestampMS(1671494483000), '0.00186503943913884'
-    expected_events = [
+    assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=0,
-            timestamp=timestamp,
+            timestamp=(timestamp := TimestampMS(1671494483000)),
             location=Location.ETHEREUM,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            amount=FVal(gas),
+            amount=FVal(gas := '0.00186503943913884'),
             location_label=ADDY,
             notes=f'Burn {gas} ETH for gas',
             counterparty=CPT_GAS,
@@ -1492,7 +1430,6 @@ def test_vote_cast(ethereum_inquirer):
             counterparty=CPT_HOP,
             address=HOP_GOVERNOR,
         )]
-    assert expected_events == events
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
@@ -1504,16 +1441,15 @@ def test_hop_add_liquidity_optimism_usdc(
 ):
     tx_hash = deserialize_evm_tx_hash('0x891d2b68a1ecc36b1c14943ddaece1ee50d0d895ca20b9ad61640aa531b8755e')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=optimism_inquirer, tx_hash=tx_hash)
-    timestamp, gas, lp_amount, lp_token_amount, approval_amount = TimestampMS(1670628821000), '0.00006011384375604', '11208.995146', '10843.63570237678072025', '115792089237316195423570985008687907853269984665640564039457584007901920.644789'  # noqa: E501
-    expected_events = [
+    assert events == [
         EvmEvent(
             sequence_index=0,
-            timestamp=timestamp,
+            timestamp=(timestamp := TimestampMS(1670628821000)),
             location=Location.OPTIMISM,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            amount=FVal(gas),
+            amount=FVal(gas := '0.00006011384375604'),
             location_label=optimism_accounts[0],
             notes=f'Burn {gas} ETH for gas',
             tx_ref=tx_hash,
@@ -1525,7 +1461,7 @@ def test_hop_add_liquidity_optimism_usdc(
             event_type=HistoryEventType.INFORMATIONAL,
             event_subtype=HistoryEventSubType.APPROVE,
             asset=Asset('eip155:10/erc20:0x7F5c764cBc14f9669B88837ca1490cCa17c31607'),
-            amount=FVal(approval_amount),
+            amount=FVal(approval_amount := '115792089237316195423570985008687907853269984665640564039457584007901920.644789'),  # noqa: E501
             location_label=optimism_accounts[0],
             notes=f'Set USDC.e spending approval of {optimism_accounts[0]} by 0x3c0FFAca566fCcfD9Cc95139FEF6CBA143795963 to {approval_amount}',  # noqa: E501
             tx_ref=tx_hash,
@@ -1537,7 +1473,7 @@ def test_hop_add_liquidity_optimism_usdc(
             event_type=HistoryEventType.DEPOSIT,
             event_subtype=HistoryEventSubType.DEPOSIT_FOR_WRAPPED,
             asset=Asset('eip155:10/erc20:0x7F5c764cBc14f9669B88837ca1490cCa17c31607'),
-            amount=FVal(lp_amount),
+            amount=FVal(lp_amount := '11208.995146'),
             location_label=optimism_accounts[0],
             notes=f'Deposit {lp_amount} USDC.e to Hop',
             tx_ref=tx_hash,
@@ -1550,7 +1486,7 @@ def test_hop_add_liquidity_optimism_usdc(
             event_type=HistoryEventType.RECEIVE,
             event_subtype=HistoryEventSubType.RECEIVE_WRAPPED,
             asset=Asset('eip155:10/erc20:0x2e17b8193566345a2Dd467183526dEdc42d2d5A8'),
-            amount=FVal(lp_token_amount),
+            amount=FVal(lp_token_amount := '10843.63570237678072025'),
             location_label=optimism_accounts[0],
             notes=f'Receive {lp_token_amount} HOP-LP-USDC after providing liquidity in Hop',
             tx_ref=tx_hash,
@@ -1558,4 +1494,3 @@ def test_hop_add_liquidity_optimism_usdc(
             address=ZERO_ADDRESS,
         ),
     ]
-    assert events == expected_events

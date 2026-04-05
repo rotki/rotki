@@ -876,10 +876,9 @@ def test_swap_with_unrelated_curve_deposit(
 ) -> None:
     """Regression test for a bug where an unrelated curve deposit was causing the spend half of the
     swap to be incorrectly decoded."""
-    tx_hash = deserialize_evm_tx_hash('0xb65c9b6566bf9d7f6e6313523560e0683f63bfadcadd9e4e8444819f96803401')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=gnosis_inquirer,
-        tx_hash=tx_hash,
+        tx_hash=(tx_hash := deserialize_evm_tx_hash('0xb65c9b6566bf9d7f6e6313523560e0683f63bfadcadd9e4e8444819f96803401')),  # noqa: E501
         load_global_caches=load_global_caches,
     )
     assert events == [EvmEvent(
@@ -943,10 +942,9 @@ def test_curve_deposit_interfering_with_paraswap_swap(
 ) -> None:
     """Regression test for a bug where a curve deposit was causing the spend half of the
     paraswap swap to be incorrectly decoded as a curve return wrapped event."""
-    tx_hash = deserialize_evm_tx_hash('0x863e33760f41500e261e8e9a81be18af2dc68f494803c22802e922a4771a91ce')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=gnosis_inquirer,
-        tx_hash=tx_hash,
+        tx_hash=(tx_hash := deserialize_evm_tx_hash('0x863e33760f41500e261e8e9a81be18af2dc68f494803c22802e922a4771a91ce')),  # noqa: E501
         load_global_caches=load_global_caches,
     )
     assert events == [EvmEvent(

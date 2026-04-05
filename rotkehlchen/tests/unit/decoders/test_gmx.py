@@ -22,14 +22,12 @@ from rotkehlchen.types import Location, TimestampMS, deserialize_evm_tx_hash
 @pytest.mark.vcr
 @pytest.mark.parametrize('arbitrum_one_accounts', [['0x22E798f9440F563B92AAE24E94C75DfA499e3d3E']])
 def test_swap_in_gmx(arbitrum_one_inquirer, arbitrum_one_accounts):
-    tx_hash = deserialize_evm_tx_hash('0x5969392c45eaf7e6e3453e2405afb23eb2424e8e4ba2d14e38943fdcdab55d5f')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=arbitrum_one_inquirer,
-        tx_hash=tx_hash,
+        tx_hash=(tx_hash := deserialize_evm_tx_hash('0x5969392c45eaf7e6e3453e2405afb23eb2424e8e4ba2d14e38943fdcdab55d5f')),  # noqa: E501
     )
     user_address = arbitrum_one_accounts[0]
     gas_amount, swap_amount, received_amount = '0.0001812982', '14964.074104', '947.4907214801'
-    timestamp = TimestampMS(1705481044000)
     a_usdce = Asset('eip155:42161/erc20:0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8')
     a_link = Asset('eip155:42161/erc20:0xf97f4df75117a78c1A5a0DBb814Af92458539FB4')
 
@@ -37,7 +35,7 @@ def test_swap_in_gmx(arbitrum_one_inquirer, arbitrum_one_accounts):
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=0,
-            timestamp=timestamp,
+            timestamp=(timestamp := TimestampMS(1705481044000)),
             location=Location.ARBITRUM_ONE,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
@@ -89,19 +87,17 @@ def test_swap_in_gmx(arbitrum_one_inquirer, arbitrum_one_accounts):
 @pytest.mark.vcr
 @pytest.mark.parametrize('arbitrum_one_accounts', [['0x0C0e6d63A7933e1C2dE16E1d5E61dB1cA802BF51']])
 def test_long_in_gmx(arbitrum_one_inquirer, arbitrum_one_accounts):
-    tx_hash = deserialize_evm_tx_hash('0x99eed649e7845813353b29dba0ac248dc328253051a778ca895a0a6c34092798')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=arbitrum_one_inquirer,
-        tx_hash=tx_hash,
+        tx_hash=(tx_hash := deserialize_evm_tx_hash('0x99eed649e7845813353b29dba0ac248dc328253051a778ca895a0a6c34092798')),  # noqa: E501
     )
     user_address = arbitrum_one_accounts[0]
     gas_amount, amount_deposited, fee_amount = '0.0001744401', '0.000785648767580506', '0.00021'
-    timestamp = TimestampMS(1705487645000)
     assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=0,
-            timestamp=timestamp,
+            timestamp=(timestamp := TimestampMS(1705487645000)),
             location=Location.ARBITRUM_ONE,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
@@ -144,20 +140,18 @@ def test_long_in_gmx(arbitrum_one_inquirer, arbitrum_one_accounts):
 @pytest.mark.vcr
 @pytest.mark.parametrize('arbitrum_one_accounts', [['0x3D4d8A52D5717b09CA1e1980393d244Ac258C6AA']])
 def test_decrease_short_in_gmx(arbitrum_one_inquirer, arbitrum_one_accounts):
-    tx_hash = deserialize_evm_tx_hash('0xa3dd437d57689479db67ce685c4b70ee9bdbfbcc53f99fc343f73c89edaafe7a')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=arbitrum_one_inquirer,
-        tx_hash=tx_hash,
+        tx_hash=(tx_hash := deserialize_evm_tx_hash('0xa3dd437d57689479db67ce685c4b70ee9bdbfbcc53f99fc343f73c89edaafe7a')),  # noqa: E501
     )
     user_address = arbitrum_one_accounts[0]
     amount_withdrawn, fee_amount = '140.09783', '0.000215'
-    timestamp = TimestampMS(1705498390000)
     a_usdc = Asset('eip155:42161/erc20:0xaf88d065e77c8cC2239327C5EDb3A432268e5831')
     assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=18,
-            timestamp=timestamp,
+            timestamp=(timestamp := TimestampMS(1705498390000)),
             location=Location.ARBITRUM_ONE,
             event_type=HistoryEventType.WITHDRAWAL,
             event_subtype=HistoryEventSubType.WITHDRAW_FROM_PROTOCOL,
@@ -188,21 +182,19 @@ def test_decrease_short_in_gmx(arbitrum_one_inquirer, arbitrum_one_accounts):
 @pytest.mark.vcr
 @pytest.mark.parametrize('arbitrum_one_accounts', [['0xB5E10681aA81cd65D74912015220999044b9520C']])
 def test_stake_gmx(arbitrum_one_inquirer, arbitrum_one_accounts):
-    tx_hash = deserialize_evm_tx_hash('0x682aa15cb8d49021ae5b12c89f6d0138387c4819b1a31b80f67b70aac55d199c')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=arbitrum_one_inquirer,
-        tx_hash=tx_hash,
+        tx_hash=(tx_hash := deserialize_evm_tx_hash('0x682aa15cb8d49021ae5b12c89f6d0138387c4819b1a31b80f67b70aac55d199c')),  # noqa: E501
     )
     user_address = arbitrum_one_accounts[0]
     gas_amount, staked_amount = '0.0000631134', '15.9'
     approve_amount = '115792089237316195423570985008687907853269984665640564039169.929301629384984299'  # noqa: E501
-    timestamp = TimestampMS(1707120778000)
     sgmx_address = string_to_evm_address('0x908C4D94D34924765f1eDc22A1DD098397c59dD4')
-    expected_events = [
+    assert events == [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=0,
-            timestamp=timestamp,
+            timestamp=(timestamp := TimestampMS(1707120778000)),
             location=Location.ARBITRUM_ONE,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
@@ -303,4 +295,3 @@ def test_stake_gmx(arbitrum_one_inquirer, arbitrum_one_accounts):
             address=ZERO_ADDRESS,
         ),
     ]
-    assert events == expected_events
