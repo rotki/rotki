@@ -2393,27 +2393,35 @@ class DBHandler:
             query: str,
             entry: tuple[Any, ...],
             relevant_address: SolanaAddress | ChecksumEvmAddress | None,
-    ) -> int | None:
-        """Helper to write an entry of a tuple type and handle address mapping"""
+    ) -> tuple[int | None, bool]:
+        """Helper to write an entry of a tuple type and handle address mapping.
+
+        Returns (row_id, is_new) where is_new is True if the row was freshly inserted.
+        row_id is None only when a non-UNIQUE constraint error (or InterfaceError) occurs.
+        """
         tx_id = None
+        is_new = False
         try:
             write_cursor.execute(query, entry)
             if tuple_type == 'evm_transaction':
+                is_new = write_cursor.rowcount == 1  # capture before SELECT resets rowcount
                 tx_id = write_cursor.execute(
                     'SELECT identifier FROM evm_transactions WHERE tx_hash=? AND chain_id=?',
                     (entry[0], entry[1]),
                 ).fetchone()[0]
                 mapping_table = 'evmtx_address_mappings'
             elif tuple_type == 'solana_transaction':
+                is_new = write_cursor.rowcount == 1
                 tx_id = write_cursor.execute(
                     'SELECT identifier FROM solana_transactions WHERE signature=?',
                     (entry[4],),  # signature is the 5th element (index 4) in the entry tuple
                 ).fetchone()[0]
                 mapping_table = 'solanatx_address_mappings'
             elif tuple_type == 'solana_instruction':
-                return write_cursor.lastrowid  # return the auto-generated instruction ID
+                is_new = write_cursor.rowcount == 1
+                return write_cursor.lastrowid if is_new else None, is_new
             else:
-                return tx_id
+                return tx_id, is_new
 
             # add address mapping if relevant_address is provided and transaction exists
             if relevant_address is not None and tx_id is not None:
@@ -2430,7 +2438,7 @@ class DBHandler:
         except sqlcipher.InterfaceError:  # pylint: disable=no-member
             log.critical(f'Interface error with tuple: {entry}')
 
-        return tx_id  # return the transaction id (new or existing or None)
+        return tx_id, is_new  # row_id (new or existing or None on error), and is_new flag
 
     def add_margin_positions(self, write_cursor: 'DBCursor', margin_positions: list[MarginPosition]) -> None:  # noqa: E501
         margin_tuples: list[tuple[Any, ...]] = []

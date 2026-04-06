@@ -70,8 +70,8 @@ class DBEvmTx(DBCommonTx[ChecksumEvmAddress, EvmTransaction, EVMTxHash, EvmTrans
             write_cursor: 'DBCursor',
             evm_transactions: list[EvmTransaction],
             relevant_address: ChecksumEvmAddress | None,
-    ) -> None:
-        """Adds evm transactions to the database"""
+    ) -> list[EVMTxHash]:
+        """Adds evm transactions to the database. Returns list of newly-inserted tx hashes."""
         query = """
             INSERT OR IGNORE INTO evm_transactions(
               tx_hash,
@@ -88,8 +88,9 @@ class DBEvmTx(DBCommonTx[ChecksumEvmAddress, EvmTransaction, EVMTxHash, EvmTrans
               nonce)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """
+        newly_inserted: list[EVMTxHash] = []
         for tx in evm_transactions:
-            if (row_id := self.db.write_single_tuple(
+            row_id, is_new = self.db.write_single_tuple(
                 write_cursor=write_cursor,
                 tuple_type='evm_transaction',
                 query=query,
@@ -108,16 +109,20 @@ class DBEvmTx(DBCommonTx[ChecksumEvmAddress, EvmTransaction, EVMTxHash, EvmTrans
                     tx.nonce,
                 ),
                 relevant_address=relevant_address,
-            )) is not None and tx.authorization_list is not None:
+            )
+            if is_new:
+                newly_inserted.append(tx.tx_hash)
+            if row_id is not None and tx.authorization_list is not None:
                 self.db.write_tuples(
                     write_cursor=write_cursor,
                     tuple_type='evm_transactions_authorization',
                     query='INSERT OR IGNORE INTO evm_transactions_authorizations(tx_id, nonce, delegated_address) VALUES (?, ?, ?)',  # noqa: E501
                     tuples=[
-                        (row_id, entry.nonce, entry.delegated_address)
-                        for entry in tx.authorization_list
+                        (row_id, auth.nonce, auth.delegated_address)
+                        for auth in tx.authorization_list
                     ],
                 )
+        return newly_inserted
 
     def add_evm_internal_transactions(
             self,

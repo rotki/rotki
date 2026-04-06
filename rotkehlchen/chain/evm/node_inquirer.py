@@ -466,7 +466,7 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
             save_query=False,
         ) == expected_balance
 
-    def _query(self, method: Callable, call_order: Sequence[WeightedNode], **kwargs: Any) -> Any:
+    def _query(self, method: Callable, call_order: Sequence[WeightedNode] | None = None, **kwargs: Any) -> Any:  # noqa: E501
         """Queries evm related data by performing a query of the provided method to all given nodes
 
         The first node in the call order that gets a successful response returns.
@@ -475,6 +475,8 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
         - RequestTooLargeError if we encounter a 414 error from etherscan-like
           indexers or gas limit errors from RPC nodes.
         """
+        if call_order is None:
+            call_order = self.default_call_order()
         gas_limit_error_seen = False
         for node_idx, weighted_node in enumerate(call_order):
             node_info = weighted_node.node_info
@@ -577,7 +579,7 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
     def get_latest_block_number(self, call_order: Sequence[WeightedNode] | None = None) -> int:
         return self._query(
             method=self._get_latest_block_number,
-            call_order=call_order if call_order is not None else self.default_call_order(),
+            call_order=call_order,
         )
 
     def get_block_by_number(
@@ -587,7 +589,7 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
     ) -> dict[str, Any]:
         return self._query(
             method=self._get_block_by_number,
-            call_order=call_order if call_order is not None else self.default_call_order(),
+            call_order=call_order,
             num=num,
         )
 
@@ -617,7 +619,7 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
     ) -> str:
         return self._query(
             method=self._get_code,
-            call_order=call_order if call_order is not None else self.default_call_order(),
+            call_order=call_order,
             account=account,
         )
 
@@ -686,7 +688,7 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
     ) -> Any:
         return self._query(
             method=self._call_contract,
-            call_order=call_order if call_order is not None else self.default_call_order(),
+            call_order=call_order,
             contract_address=contract_address,
             abi=abi,
             method_name=method_name,
@@ -798,7 +800,7 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
     ) -> dict[str, Any] | None:
         return self._query(
             method=self._get_transaction_receipt,
-            call_order=call_order if call_order is not None else self.default_call_order(),
+            call_order=call_order,
             tx_hash=tx_hash,
             must_exist=must_exist,
         )
@@ -814,7 +816,7 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
         and we are connected to at least one node that can retrieve it.
         """
         tx_receipt = self.maybe_get_transaction_receipt(
-            call_order=call_order if call_order is not None else self.default_call_order(),
+            call_order=call_order,
             tx_hash=tx_hash,
             must_exist=True,
         )
@@ -866,7 +868,7 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
         """Gets transaction by hash and raw receipt data"""
         return self._query(
             method=self._get_transaction_by_hash,
-            call_order=call_order if call_order is not None else self.default_call_order(),
+            call_order=call_order,
             tx_hash=tx_hash,
             must_exist=must_exist,
         )
@@ -882,7 +884,7 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
         and we are connected to at least 1 node that can retrieve it.
         """
         result = self.maybe_get_transaction_by_hash(
-            call_order=call_order if call_order is not None else self.default_call_order(),
+            call_order=call_order,
             tx_hash=tx_hash,
             must_exist=True,
         )
