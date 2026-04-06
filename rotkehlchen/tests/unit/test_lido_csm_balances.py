@@ -90,7 +90,7 @@ def test_lido_csm_balances_skips_on_error():
         side_effect=_raise_remote_error,
     ), patch.object(
         Inquirer,
-        'find_usd_price',
+        'find_price',
         return_value=FVal('2000'),
     ), patch.object(
         LidoCsmMetricsFetcher,
