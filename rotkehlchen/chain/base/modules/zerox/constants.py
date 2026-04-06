@@ -15,4 +15,11 @@ SETTLER_ROUTERS: Final = {
     string_to_evm_address('0x47146d81B68b737316d0636D5135849d364bB0c8'),  # commit: 314cd36a7e7eff34dda31423510104323fd30ebe  # noqa: E501
     string_to_evm_address('0x49fb9C16B9b2a19452633573603c837673fD7E04'),
     string_to_evm_address('0xdc5d8200A030798BC6227240f68b4dD9542686ef'),
+    string_to_evm_address('0xe972c110de8CFf2Befcd114c4122efC56e161DB6'),
+    string_to_evm_address('0x785648669b8E90A75a6A8DE682258957f9028462'),
+    string_to_evm_address('0xEA758CaC6115309b325c582Fd0782d79e3502177'),
+    string_to_evm_address('0xcaf2dA315f5a5499299A312b8a86faAfe4BAD959'),
+    string_to_evm_address('0xB538fC5F024932a025AE1042Dd0F89B91197d610'),
+    string_to_evm_address('0x92A2ebd4889BB53ff399e8792745B0AF1c35C0E3'),
+    string_to_evm_address('0xBeC2C2f65085c674Da686B8229FA2b42f9b2f27B'),
 }
