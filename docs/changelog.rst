@@ -7,6 +7,7 @@ Changelog
 * :feature:`7492` Added an event direction column (in/out/neutral) to the PnL CSV export.
 * :feature:`11816` Support importing events from Coinledger CSV.
 * :feature:`-` Crosscurve events will now be properly decoded.
+* :feature:`-` 0x swaps through the latest settler  will now be properly decoded.
 * :feature:`-` Transactions involving stkGHO will now be decoded properly.
 * :feature:`8145` WOOFi swaps, staking, and vault transactions will now be properly decoded on all supported EVM chains with associated balances properly detected.
 * :feature:`11693` Bitcoin wallet addition is now simplified with single-field auto-detection of xpub type from the key prefix.

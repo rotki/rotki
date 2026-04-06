@@ -1760,3 +1760,59 @@ def test_base_settler_zerox_swap(base_inquirer, base_accounts) -> None:
         counterparty=CPT_ZEROX,
         address=string_to_evm_address('0xdc5d8200A030798BC6227240f68b4dD9542686ef'),
     )]
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('ethereum_accounts', [['0x3Ba6eB0e4327B96aDe6D4f3b578724208a590CEF']])
+def test_zerox_regression_missing_settler(ethereum_inquirer, ethereum_accounts) -> None:
+    tx_hash = deserialize_evm_tx_hash('0x5938e7bb41150365aa64e9dc5325febeeef698c216c39070d9e92bd7ffa66a9b')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
+    assert events == [EvmEvent(
+        tx_ref=tx_hash,
+        sequence_index=0,
+        timestamp=(timestamp := TimestampMS(1775362847000)),
+        location=Location.ETHEREUM,
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.FEE,
+        asset=A_ETH,
+        amount=(gas_amount := FVal('0.000067705373341906')),
+        location_label=(user := ethereum_accounts[0]),
+        notes=f'Burn {gas_amount} ETH for gas',
+        counterparty=CPT_GAS,
+    ), EvmEvent(
+        tx_ref=tx_hash,
+        sequence_index=428,
+        timestamp=timestamp,
+        location=Location.ETHEREUM,
+        event_type=HistoryEventType.INFORMATIONAL,
+        event_subtype=HistoryEventSubType.APPROVE,
+        asset=Asset('eip155:1/erc20:0xB58E61C3098d85632Df34EecfB899A1Ed80921cB'),
+        amount=(approval_amount := FVal('300')),
+        location_label=user,
+        notes=f'Set ZCHF spending approval of {user} by 0x000000000022D473030F116dDEE9F6B43aC78BA3 to {approval_amount}',  # noqa: E501
+        address=string_to_evm_address('0x000000000022D473030F116dDEE9F6B43aC78BA3'),
+    ), EvmSwapEvent(
+        tx_ref=tx_hash,
+        sequence_index=429,
+        timestamp=timestamp,
+        location=Location.ETHEREUM,
+        event_subtype=HistoryEventSubType.SPEND,
+        asset=Asset('eip155:1/erc20:0xB58E61C3098d85632Df34EecfB899A1Ed80921cB'),
+        amount=(out_amount := FVal('100')),
+        location_label=user,
+        notes=f'Swap {out_amount} ZCHF via the 0x protocol',
+        counterparty=CPT_ZEROX,
+        address=string_to_evm_address('0xf48A3f7c0575c85cF4529aa220Caf3c055773f1C'),
+    ), EvmSwapEvent(
+        tx_ref=tx_hash,
+        sequence_index=430,
+        timestamp=timestamp,
+        location=Location.ETHEREUM,
+        event_subtype=HistoryEventSubType.RECEIVE,
+        asset=Asset('eip155:1/erc20:0x01791F726B4103694969820be083196cC7c045fF'),
+        amount=(in_amount := FVal('1048.060900433824474469')),
+        location_label=user,
+        notes=f'Receive {in_amount} YB as the result of a swap via the 0x protocol',
+        counterparty=CPT_ZEROX,
+        address=string_to_evm_address('0xf48A3f7c0575c85cF4529aa220Caf3c055773f1C'),
+    )]
