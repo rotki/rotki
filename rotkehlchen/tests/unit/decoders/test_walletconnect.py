@@ -9,6 +9,7 @@ from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.chain.optimism.modules.walletconnect.constants import (
     CPT_WALLETCONNECT,
     WALLETCONECT_STAKE_WEIGHT,
+    WALLETCONNECT_REWARD_DISTRIBUTOR,
     WCT_TOKEN_ID,
 )
 from rotkehlchen.constants.assets import A_ETH
@@ -239,3 +240,41 @@ def test_update_lock(
             extra_data={'until': unlock_time},
         ),
     ]
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('optimism_accounts', [['0x3bae0F9811fB3869267CaFf8B5a1bAF00a352935']])
+def test_claim_staking_reward(
+        optimism_inquirer: 'OptimismInquirer',
+        optimism_accounts: list['ChecksumEvmAddress'],
+) -> None:
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=optimism_inquirer,
+        tx_hash=(tx_hash := deserialize_evm_tx_hash('0xa82527d5cc77fb8a6bb1826621b55e30fb7f3263cec678753ff1974f889cb6dc')),  # noqa: E501
+    )
+    assert events == [EvmEvent(
+        tx_ref=tx_hash,
+        sequence_index=0,
+        timestamp=(timestamp := TimestampMS(1775401085000)),
+        location=Location.OPTIMISM,
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.FEE,
+        asset=A_ETH,
+        amount=FVal(gas_amount := '0.000000413672527681'),
+        location_label=(user := optimism_accounts[0]),
+        notes=f'Burn {gas_amount} ETH for gas',
+        counterparty=CPT_GAS,
+    ), EvmEvent(
+        tx_ref=tx_hash,
+        sequence_index=284,
+        timestamp=timestamp,
+        location=Location.OPTIMISM,
+        event_type=HistoryEventType.STAKING,
+        event_subtype=HistoryEventSubType.REWARD,
+        asset=Asset(WCT_TOKEN_ID),
+        amount=FVal(token_amount := '0.439483930018545307'),
+        location_label=user,
+        notes=f'Claim {token_amount} WCT from WalletConnect staking reward',
+        counterparty=CPT_WALLETCONNECT,
+        address=WALLETCONNECT_REWARD_DISTRIBUTOR,
+    )]
