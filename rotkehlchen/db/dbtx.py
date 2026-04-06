@@ -35,8 +35,8 @@ class DBCommonTx(ABC, Generic[T_Address, T_Transaction, T_TxHash, T_TxFilterQuer
             write_cursor: 'DBCursor',
             solana_transactions: list[T_Transaction],
             relevant_address: T_Address | None,
-    ) -> None:
-        """Add transactions to the database."""
+    ) -> list[T_TxHash]:
+        """Add transactions to the database. Returns list of newly-inserted tx hashes."""
 
     @abstractmethod
     def get_transactions(

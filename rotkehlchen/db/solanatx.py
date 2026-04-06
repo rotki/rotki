@@ -58,17 +58,21 @@ class DBSolanaTx(DBCommonTx[SolanaAddress, SolanaTransaction, Signature, SolanaT
             write_cursor: 'DBCursor',
             solana_transactions: list[SolanaTransaction],
             relevant_address: SolanaAddress | None,
-    ) -> None:
-        """Add solana transactions to the database"""
+    ) -> list[Signature]:
+        """Add solana transactions to the database. Returns list of newly-inserted signatures."""
         query = """INSERT OR IGNORE INTO solana_transactions(slot, fee, block_time, success, signature) VALUES (?, ?, ?, ?, ?)"""  # noqa: E501
+        newly_inserted: list[Signature] = []
         for tx in solana_transactions:
-            if (tx_id := self.db.write_single_tuple(
+            tx_id, is_new = self.db.write_single_tuple(
                 write_cursor=write_cursor,
                 tuple_type='solana_transaction',
                 query=query,
                 entry=(tx.slot, tx.fee, tx.block_time, int(tx.success), tx.signature.to_bytes()),
                 relevant_address=relevant_address,
-            )) is None:
+            )
+            if is_new:
+                newly_inserted.append(tx.signature)
+            if tx_id is None:
                 continue
 
             self.db.write_tuples(
@@ -81,7 +85,7 @@ class DBSolanaTx(DBCommonTx[SolanaAddress, SolanaTransaction, Signature, SolanaT
                 ],
             )
             for instruction in tx.instructions:  # insert instructions
-                if (instruction_id := self.db.write_single_tuple(
+                instruction_id, _ = self.db.write_single_tuple(
                     write_cursor=write_cursor,
                     tuple_type='solana_instruction',
                     query='INSERT OR IGNORE INTO solana_tx_instructions(tx_id, execution_index, parent_execution_index, program_id_index, data) VALUES (?, ?, ?, ?, ?)',  # noqa: E501
@@ -93,7 +97,8 @@ class DBSolanaTx(DBCommonTx[SolanaAddress, SolanaTransaction, Signature, SolanaT
                         instruction.data,
                     ),
                     relevant_address=None,
-                )) is not None:
+                )
+                if instruction_id is not None:
                     self.db.write_tuples(
                         write_cursor=write_cursor,
                         tuple_type='solana_instruction_account',
@@ -103,6 +108,8 @@ class DBSolanaTx(DBCommonTx[SolanaAddress, SolanaTransaction, Signature, SolanaT
                             for order, account_address in enumerate(instruction.accounts)
                         ],
                     )
+
+        return newly_inserted
 
     @staticmethod
     def add_token_account_mappings(

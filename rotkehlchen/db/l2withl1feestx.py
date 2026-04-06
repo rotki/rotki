@@ -11,6 +11,7 @@ from rotkehlchen.types import (
     ChainID,
     ChecksumEvmAddress,
     EvmTransactionAuthorization,
+    EVMTxHash,
     deserialize_evm_tx_hash,
 )
 
@@ -30,12 +31,12 @@ class DBL2WithL1FeesTx(DBEvmTx):
             write_cursor: 'DBCursor',
             evm_transactions: list[L2WithL1FeesTransaction],  # type: ignore[override]
             relevant_address: ChecksumEvmAddress | None,
-    ) -> None:
-        """Adds L2WithL1Fees transactions to the database
+    ) -> list[EVMTxHash]:
+        """Adds L2WithL1Fees transactions to the database. Returns newly-inserted tx hashes.
 
         These transactions are used by all L2 chains with an extra L1 fee structure
         """
-        super().add_transactions(
+        newly_inserted = super().add_transactions(
             write_cursor,
             evm_transactions,  # type: ignore[arg-type]
             relevant_address,
@@ -48,6 +49,7 @@ class DBL2WithL1FeesTx(DBEvmTx):
             evm_transactions WHERE tx_hash=? and chain_id=?
         """
         write_cursor.executemany(query, tx_tuples)
+        return newly_inserted
 
     def _form_evm_transaction_dbquery(self, query: str, bindings: list[Any]) -> tuple[str, list[tuple]]:  # noqa: E501
         base_select = (
