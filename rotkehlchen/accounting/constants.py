@@ -295,7 +295,7 @@ EVENT_CATEGORY_DETAILS = {
         DEFAULT: EventCategoryDetails(label='fee', icon='lu-banknote'),
         CPT_GAS: EventCategoryDetails(label='gas fee', icon='lu-flame'),
     }, EventCategory.FAIL: {DEFAULT: EventCategoryDetails(
-        label='Failed',
+        label='failed',
         icon='lu-circle-x',
         color='error',
     )}, EventCategory.MEV_REWARD: {DEFAULT: EventCategoryDetails(
@@ -314,16 +314,16 @@ EVENT_CATEGORY_DETAILS = {
         label='apply',
         icon='lu-circle-arrow-out-up-right',
     )}, EventCategory.STAKE_DEPOSIT: {DEFAULT: EventCategoryDetails(
-        label='Stake',
+        label='stake',
         icon='lu-layers-in',
     )}, EventCategory.UNSTAKE: {DEFAULT: EventCategoryDetails(
-        label='Unstake',
+        label='unstake',
         icon='lu-layers-out',
     )}, EventCategory.STAKE_EXIT: {DEFAULT: EventCategoryDetails(
         label='exit',
         icon='lu-layers-out',
     )}, EventCategory.ATTEST: {DEFAULT: EventCategoryDetails(
-        label='Attest',
+        label='attest',
         icon='lu-feather',
     )}, EventCategory.PAY: {DEFAULT: EventCategoryDetails(
         label='pay',
@@ -338,13 +338,13 @@ EVENT_CATEGORY_DETAILS = {
         label='receive interest',
         icon='lu-sprout',
     )}, EventCategory.CASHBACK: {DEFAULT: EventCategoryDetails(
-        label='Cashback',
+        label='cashback',
         icon='lu-badge-dollar-sign',
     )}, EventCategory.HACK_LOSS: {DEFAULT: EventCategoryDetails(
-        label='Hack',
+        label='hack',
         icon='lu-skull',
     )}, EventCategory.CLAWBACK: {DEFAULT: EventCategoryDetails(
-        label='Clawback',
+        label='clawback',
         icon='lu-undo-2',
     )}, EventCategory.MINT_NFT: {DEFAULT: EventCategoryDetails(
         label='mint nft',
@@ -353,7 +353,7 @@ EVENT_CATEGORY_DETAILS = {
         label='burn',
         icon='lu-flame-kindling',
     )}, EventCategory.COMBINE: {DEFAULT: EventCategoryDetails(
-        label='Combine',
+        label='combine',
         icon='lu-combine',
     )}, EventCategory.DELEGATE: {DEFAULT: EventCategoryDetails(
         label='delegate',

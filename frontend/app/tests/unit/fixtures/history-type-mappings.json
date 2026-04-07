@@ -408,7 +408,7 @@
       "stake deposit": {
         "counterparty_mappings": {
           "default": {
-            "label": "Stake",
+            "label": "stake",
             "icon": "lu-layers-in"
           }
         },
@@ -417,7 +417,7 @@
       "stake withdrawal": {
         "counterparty_mappings": {
           "default": {
-            "label": "Unstake",
+            "label": "unstake",
             "icon": "lu-layers-out"
           }
         },
