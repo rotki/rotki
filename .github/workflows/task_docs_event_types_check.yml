@@ -1,0 +1,68 @@
+name: Check event-types docs sync
+
+on:
+  pull_request:
+    branches:
+      - master
+      - develop
+      - bugfixes
+    paths:
+      - 'rotkehlchen/history/events/structures/types.py'
+      - 'rotkehlchen/accounting/constants.py'
+      - 'tools/scripts/generate_event_types_docs.py'
+  push:
+    branches:
+      - master
+      - develop
+      - bugfixes
+    paths:
+      - 'rotkehlchen/history/events/structures/types.py'
+      - 'rotkehlchen/accounting/constants.py'
+      - 'tools/scripts/generate_event_types_docs.py'
+
+permissions: { }
+
+jobs:
+  check-event-types-docs:
+    name: 'Event types docs sync'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout main repo
+        uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+
+      - name: Load env
+        uses: rotki/action-env@v3
+        with:
+          env_file: .github/.env.ci
+
+      - name: Setup python
+        uses: actions/setup-python@v6
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          enable-cache: true
+          version: ${{ env.UV_VERSION }}
+          cache-dependency-glob: "uv.lock"
+
+      - name: Install dependencies
+        run: uv sync --no-dev --group lint
+
+      - name: Checkout docs repo
+        uses: actions/checkout@v6
+        with:
+          repository: rotki/docs
+          ref: main
+          path: _docs
+          persist-credentials: false
+
+      - name: Check event-types.md is in sync
+        run: |
+          uv run python tools/scripts/generate_event_types_docs.py \
+            --check _docs/usage-guides/event-types.md
