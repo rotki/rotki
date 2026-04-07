@@ -1,9 +1,9 @@
 allowUnusedPatches: true
-shamefullyHoist: true
-saveExact: true
-minimumReleaseAge: 10080
-shellEmulator: true
 blockExoticSubdeps: true
+minimumReleaseAge: 10080
+saveExact: true
+shamefullyHoist: true
+shellEmulator: true
 strictDepBuilds: true
 trustPolicy: no-downgrade
 trustPolicyExclude:
