@@ -44,7 +44,7 @@ db_name: Literal['user', 'global'] = args.db_name
 db_script = USER_DB_CREATE_TABLES if db_name == 'user' else GLOBAL_DB_CREATE_TABLES
 index_script = USER_DB_CREATE_INDEXES if db_name == 'user' else GLOBAL_DB_CREATE_INDEXES
 regexp_result = re.findall(
-    pattern=r'createtableifnotexists(.+?)\((.+?)\);',
+    pattern=r'createtableifnotexists(.+?)\((.+?)\)(?:withoutrowid)?;',
     # Replacing new lines and white spaces since they may vary if by an accident code of a
     # db upgrade was a bit different from the one that creates new tables
     string=db_script_normalizer(db_script),
