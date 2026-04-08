@@ -703,18 +703,18 @@ def test_multiple_balance_queries_not_concurrent(
         ), json={'async_query': True})
         task_id_one_exchange = assert_ok_async_response(response)
         if separate_blockchain_calls:
-            response = requests.get(api_url_for(
+            response = requests.post(api_url_for(
                 rotkehlchen_api_server_with_exchanges,
                 'blockchainbalancesresource',
             ), json={'async_query': True, 'blockchain': 'ETH'})
             task_id_blockchain_eth = assert_ok_async_response(response)
-            response = requests.get(api_url_for(
+            response = requests.post(api_url_for(
                 rotkehlchen_api_server_with_exchanges,
                 'blockchainbalancesresource',
             ), json={'async_query': True, 'blockchain': 'BTC'})
             task_id_blockchain_btc = assert_ok_async_response(response)
         else:
-            response = requests.get(api_url_for(
+            response = requests.post(api_url_for(
                 rotkehlchen_api_server_with_exchanges,
                 'blockchainbalancesresource',
             ), json={'async_query': True})
@@ -747,8 +747,20 @@ def test_multiple_balance_queries_not_concurrent(
                 task_id_blockchain,
                 timeout=ASYNC_TASK_WAIT_TIMEOUT * 2,
             )
-        assert eth.call_count == 1, 'eth balance query should only fire once'
-        assert btc.call_count == 1, 'btc balance query should only happen once'
+        assert eth.call_count == 2, 'eth balance query should happen once per refresh call'
+        assert btc.call_count == 2, 'btc balance query should happen once per refresh call'
+        assert_proper_sync_response_with_result(requests.get(api_url_for(
+            rotkehlchen_api_server_with_exchanges,
+            'named_blockchain_balances_resource',
+            blockchain=SupportedBlockchain.ETHEREUM.serialize(),
+        )))
+        assert_proper_sync_response_with_result(requests.get(api_url_for(
+            rotkehlchen_api_server_with_exchanges,
+            'named_blockchain_balances_resource',
+            blockchain=SupportedBlockchain.BITCOIN.serialize(),
+        )))
+        assert eth.call_count == 2, 'eth balance query should not increase on cached GET'
+        assert btc.call_count == 2, 'btc balance query should not increase on cached GET'
         assert bn.call_count == 2, 'binance balance query should do 2 calls'
 
     assert_all_balances(

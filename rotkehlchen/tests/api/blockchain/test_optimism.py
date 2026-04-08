@@ -43,11 +43,11 @@ def test_add_optimism_blockchain_account(rotkehlchen_api_server: 'APIServer') ->
         },
     )
     assert_proper_response(response)
-    response = requests.get(api_url_for(
+    response = requests.post(api_url_for(
         rotkehlchen_api_server,
         'named_blockchain_balances_resource',
         blockchain=optimism_chain_key,
-    ))
+    ), json={'async_query': False})
     result = assert_proper_sync_response_with_result(response)
 
     # Check per account
@@ -108,15 +108,13 @@ def test_add_optimism_blockchain_account(rotkehlchen_api_server: 'APIServer') ->
     assert set(result[TEST_ADDY]['tokens']) == set(optimism_tokens)
 
     # and query balances again to see tokens also appear
-    response = requests.get(
+    response = requests.post(
         api_url_for(
             rotkehlchen_api_server,
             'named_blockchain_balances_resource',
             blockchain=optimism_chain_key,
         ),
-        json={
-            'ignore_cache': True,
-        },
+        json={'async_query': False},
     )
     result = assert_proper_sync_response_with_result(response)
 

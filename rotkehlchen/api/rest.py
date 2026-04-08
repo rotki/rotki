@@ -694,6 +694,17 @@ class RestAPI:
                 from_cache=True,
                 addresses=addresses,
             )
+            if self._should_refresh_blockchain_balances(
+                blockchain=blockchain,
+                balances=balances,
+                last_refresh_ts=self.rotkehlchen.chains_aggregator.get_blockchain_balances_last_query_ts(blockchain),
+                addresses=addresses,
+            ):
+                balances = self.rotkehlchen.chains_aggregator.query_balances(
+                    blockchain=blockchain,
+                    ignore_cache=True,
+                    addresses=addresses,
+                )
             result = self._serialize_blockchain_balances(
                 balances=balances,
                 blockchain=blockchain,

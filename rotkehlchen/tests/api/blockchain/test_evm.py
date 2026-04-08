@@ -51,6 +51,7 @@ from rotkehlchen.utils.misc import ts_now
 
 if TYPE_CHECKING:
     from rotkehlchen.api.server import APIServer
+    from rotkehlchen.db.drivers.gevent import DBCursor
     from rotkehlchen.tests.fixtures.websockets import WebsocketReader
 
 ADDY = string_to_evm_address('0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045')
@@ -93,10 +94,10 @@ def test_add_same_evm_account_for_multiple_chains(rotkehlchen_api_server: 'APISe
             },
         )
         assert_proper_response(response)
-        response = requests.get(api_url_for(
+        response = requests.post(api_url_for(
             rotkehlchen_api_server,
             'blockchainbalancesresource',
-        ))
+        ), json={'async_query': False})
         result = assert_proper_sync_response_with_result(response)
 
     for chain, native_token in ((SupportedBlockchain.ETHEREUM, A_ETH), (SupportedBlockchain.AVALANCHE, A_AVAX)):  # noqa: E501
@@ -262,6 +263,7 @@ def test_add_multievm_accounts(rotkehlchen_api_server: 'APIServer') -> None:
     original_modify_blockchain_accounts = rotki.chains_aggregator.modify_blockchain_accounts
 
     def new_modify_blockchain_accounts(
+            write_cursor: 'DBCursor',
             blockchain: SupportedBlockchain,
             accounts: ListOfBlockchainAddresses,
             append_or_remove: Literal['append', 'remove'],
@@ -680,11 +682,13 @@ def test_evm_account_addition_preserves_labels_across_chains(rotkehlchen_api_ser
     initial_accounts_data, addies_to_start_with = [], [(SupportedBlockchain.ETHEREUM, addy := string_to_evm_address('0x9531C059098e3d194fF87FebB587aB07B30B1306'), (label := 'rotki ens'))]  # noqa: E501
     blockchain = rotkehlchen_api_server.rest_api.rotkehlchen.chains_aggregator
     for chain, addy, label in addies_to_start_with:
-        blockchain.modify_blockchain_accounts(
-            blockchain=chain,
-            accounts=[addy],
-            append_or_remove='append',
-        )
+        with blockchain.database.user_write() as write_cursor:
+            blockchain.modify_blockchain_accounts(
+                write_cursor=write_cursor,
+                blockchain=chain,
+                accounts=[addy],
+                append_or_remove='append',
+            )
         initial_accounts_data.append(BlockchainAccountData(
             chain=chain,
             address=addy,

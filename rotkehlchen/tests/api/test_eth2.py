@@ -843,12 +843,12 @@ def test_query_eth2_balances(
 
     async_query = random.choice([False, True])
     if query_all_balances:
-        response = requests.get(api_url_for(
+        response = requests.post(api_url_for(
             rotkehlchen_api_server,
             'blockchainbalancesresource',
         ), json={'async_query': async_query})
     else:
-        response = requests.get(api_url_for(
+        response = requests.post(api_url_for(
             rotkehlchen_api_server,
             'named_blockchain_balances_resource',
             blockchain='ETH2',
@@ -887,7 +887,7 @@ def test_query_eth2_balances(
         rotkehlchen_api_server,
         'named_blockchain_balances_resource',
         blockchain='ETH2',
-    ), json={'async_query': False, 'ignore_cache': True})
+    ))
     outcome = assert_proper_sync_response_with_result(response)
 
     assert len(outcome['per_account']) == 1  # only ETH2
@@ -1193,7 +1193,7 @@ def test_balances_get_deleted_when_removing_validator(
     )
     assert_proper_sync_response_with_result(response)
 
-    response = requests.get(api_url_for(  # query eth2 balances
+    response = requests.post(api_url_for(  # query eth2 balances
         rotkehlchen_api_server,
         'named_blockchain_balances_resource',
         blockchain='ETH2',
@@ -1213,7 +1213,7 @@ def test_balances_get_deleted_when_removing_validator(
         rotkehlchen_api_server,
         'named_blockchain_balances_resource',
         blockchain='ETH2',
-    ), json={'async_query': False})
+    ))
     result = assert_proper_sync_response_with_result(response)
     assert len(result['totals']['assets']) == 0  # no assets in balances
 

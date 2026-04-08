@@ -137,10 +137,10 @@ def test_query_bitcoin_blockchain_bech32_balances(
     # query all balances
     with ExitStack() as stack:
         setup.enter_blockchain_patches(stack)
-        response = requests.get(api_url_for(
+        response = requests.post(api_url_for(
             rotkehlchen_api_server,
             'blockchainbalancesresource',
-        ))
+        ), json={'async_query': False})
     result = assert_proper_sync_response_with_result(response)
     assert_btc_balances_result(
         result=result,
@@ -174,7 +174,7 @@ def test_query_blockchain_balances(
     # First query only ETH and token balances
     with ExitStack() as stack:
         setup.enter_ethereum_patches(stack)
-        response = requests.get(api_url_for(
+        response = requests.post(api_url_for(
             rotkehlchen_api_server,
             'named_blockchain_balances_resource',
             blockchain='ETH',
@@ -197,7 +197,7 @@ def test_query_blockchain_balances(
 
     # Then query only BTC balances
     with setup.bitcoin_patch:
-        response = requests.get(api_url_for(
+        response = requests.post(api_url_for(
             rotkehlchen_api_server,
             'named_blockchain_balances_resource',
             blockchain='BTC',
@@ -218,7 +218,7 @@ def test_query_blockchain_balances(
     # Finally query all balances
     with ExitStack() as stack:
         setup.enter_blockchain_patches(stack)
-        response = requests.get(api_url_for(
+        response = requests.post(api_url_for(
             rotkehlchen_api_server,
             'blockchainbalancesresource',
         ), json={'async_query': async_query})
@@ -919,7 +919,7 @@ def test_blockchain_accounts_endpoint_errors(
     ) as response:
         assert_error_response(
             response=response,
-            contained_in_msg=f'Tried to remove unknown ETH accounts {unknown_account}',
+            contained_in_msg=f"Blockchain account/s {unknown_account} don't exist",
         )
 
     # Provide not existing but valid BTC account for removal
@@ -930,7 +930,7 @@ def test_blockchain_accounts_endpoint_errors(
     ) as response:
         assert_error_response(
             response=response,
-            contained_in_msg=f'Tried to remove unknown BTC accounts {unknown_btc_account}',
+            contained_in_msg=f"Blockchain account/s {unknown_btc_account} don't exist",
         )
 
     # Provide list with one valid and one invalid account and make sure that nothing
@@ -1776,7 +1776,7 @@ def test_remove_nonexisting_blockchain_account_along_with_existing(
         ), json={'accounts': [ethereum_accounts[0], unknown_account]})
     assert_error_response(
         response=response,
-        contained_in_msg=f'Tried to remove unknown ETH accounts {unknown_account}',
+        contained_in_msg=f"Blockchain account/s {unknown_account} don't exist",
         status_code=HTTPStatus.BAD_REQUEST,
     )
     # Also make sure that no account was removed from the DB

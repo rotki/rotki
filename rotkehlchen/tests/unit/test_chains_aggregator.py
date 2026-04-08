@@ -121,11 +121,13 @@ def test_detect_evm_accounts(blockchain: 'ChainsAggregator') -> None:
     ]
 
     for chain, addy, label in addies_to_start_with:
-        blockchain.modify_blockchain_accounts(
-            blockchain=chain,
-            accounts=[addy],
-            append_or_remove='append',
-        )
+        with blockchain.database.user_write() as write_cursor:
+            blockchain.modify_blockchain_accounts(
+                write_cursor=write_cursor,
+                blockchain=chain,
+                accounts=[addy],
+                append_or_remove='append',
+            )
         initial_accounts_data.append(BlockchainAccountData(
             chain=chain,
             address=addy,

@@ -764,7 +764,7 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
 
     def sync_bitcoin_accounts_with_db(
             self,
-            cursor: 'DBCursor',
+            write_cursor: 'DBCursor',
             blockchain: Literal[SupportedBlockchain.BITCOIN, SupportedBlockchain.BITCOIN_CASH],
     ) -> None:
         """Call this function after having deleted BTC/BCH accounts from the DB to
@@ -774,11 +774,12 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
         addresses from the DB.
         """
         db_btc_accounts = getattr(
-            self.database.get_blockchain_accounts(cursor),
+            self.database.get_blockchain_accounts(write_cursor),
             blockchain.get_key(),
         )
         accounts_to_remove = [x for x in getattr(self.accounts, blockchain.get_key()) if x not in db_btc_accounts]  # noqa: E501
         self.modify_blockchain_accounts(
+            write_cursor=write_cursor,
             blockchain=blockchain,
             accounts=accounts_to_remove,
             append_or_remove='remove',
@@ -786,6 +787,7 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
 
     def remove_single_blockchain_accounts(
             self,
+            write_cursor: 'DBCursor',
             blockchain: SupportedBlockchain,
             accounts: ListOfBlockchainAddresses,
     ) -> None:
@@ -812,6 +814,7 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
             )
 
         self.modify_blockchain_accounts(
+            write_cursor=write_cursor,
             blockchain=blockchain,
             accounts=accounts,
             append_or_remove='remove',
@@ -860,6 +863,7 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
 
     def modify_blockchain_accounts(
             self,
+            write_cursor: 'DBCursor',
             blockchain: SupportedBlockchain,
             accounts: ListOfBlockchainAddresses,
             append_or_remove: Literal['append', 'remove'],
@@ -909,18 +913,18 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
         if append_or_remove == 'remove':  # at addition no balances are queried so no need
             self.totals = self.balances.recalculate_totals()
 
-        with self.database.user_write() as write_cursor:
-            for account in accounts:
-                self.database.delete_blockchain_balances_cache(
-                    write_cursor=write_cursor,
-                    blockchain=blockchain,
-                    address=account,
-                )
-            self.database.delete_dynamic_cache(
+        # delete cache from the db for the accounts removed
+        for account in accounts:
+            self.database.delete_blockchain_balances_cache(
                 write_cursor=write_cursor,
-                name=DBCacheDynamic.LAST_BLOCKCHAIN_BALANCES_QUERY_TS,
-                blockchain=blockchain.serialize(),
+                blockchain=blockchain,
+                address=account,
             )
+        self.database.delete_dynamic_cache(
+            write_cursor=write_cursor,
+            name=DBCacheDynamic.LAST_BLOCKCHAIN_BALANCES_QUERY_TS,
+            blockchain=blockchain.serialize(),
+        )
 
     @protect_with_lock()
     @cache_response_timewise(forward_ignore_cache=True)
@@ -937,9 +941,10 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
 
         # Before querying the new balances, delete the ones in memory if any
         self.balances.eth2.clear()
+        eth2_addresses = self.queried_addresses_for_module('eth2')
         balance_mapping = eth2.get_balances(
-            addresses=self.queried_addresses_for_module('eth2'),
-            fetch_validators_for_eth1=ignore_cache,
+            addresses=eth2_addresses,
+            fetch_validators_for_eth1=ignore_cache and len(eth2_addresses) != 0,
         )
         for pubkey, balance in balance_mapping.items():
             self.balances.eth2[pubkey] = BalanceSheet()
@@ -1268,11 +1273,13 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
         added_chains, failed_chains = [], []
         for chain in chains:
             try:
-                self.modify_blockchain_accounts(
-                    blockchain=chain,
-                    accounts=[address],
-                    append_or_remove='append',
-                )
+                with self.database.user_write() as write_cursor:
+                    self.modify_blockchain_accounts(
+                        write_cursor=write_cursor,
+                        blockchain=chain,
+                        accounts=[address],
+                        append_or_remove='append',
+                    )
             except InputError:
                 log.debug(f'Not adding {address} to {chain} since it already exists')
                 failed_chains.append(chain)
@@ -1467,6 +1474,16 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
         self.flush_cache('query_balances', blockchain=None, ignore_cache=True, addresses=None)
         self.flush_cache('query_balances', blockchain=SupportedBlockchain.ETHEREUM_BEACONCHAIN, ignore_cache=False, addresses=None)  # noqa: E501
         self.flush_cache('query_balances', blockchain=SupportedBlockchain.ETHEREUM_BEACONCHAIN, ignore_cache=True, addresses=None)  # noqa: E501
+        with self.database.user_write() as write_cursor:
+            self.database.delete_blockchain_balances_cache(
+                write_cursor=write_cursor,
+                blockchain=SupportedBlockchain.ETHEREUM_BEACONCHAIN,
+            )
+            self.database.delete_dynamic_cache(
+                write_cursor=write_cursor,
+                name=DBCacheDynamic.LAST_BLOCKCHAIN_BALANCES_QUERY_TS,
+                blockchain=SupportedBlockchain.ETHEREUM_BEACONCHAIN.serialize(),
+            )
 
     def get_all_counterparties(self) -> set['CounterpartyDetails']:
         """
