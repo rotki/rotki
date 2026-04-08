@@ -1,4 +1,4 @@
-import type { BlockchainBalancePayload, FetchBlockchainBalancePayload } from '@/types/blockchain/balances';
+import type { BlockchainBalancePayload } from '@/types/blockchain/balances';
 import { useSupportedChains } from '@/composables/info/chains';
 import { waitUntilIdle } from '@/composables/status';
 import { useValueThreshold } from '@/composables/usd-value-threshold';
@@ -11,7 +11,8 @@ import { useBalanceProcessingService } from './services/use-balance-processing-s
 import { useLoopringBalanceService } from './services/use-loopring-balance-service';
 
 interface UseBlockchainBalancesReturn {
-  fetchBlockchainBalances: (payload?: BlockchainBalancePayload, periodic?: boolean) => Promise<void>;
+  fetchBlockchainBalances: (payload?: BlockchainBalancePayload) => Promise<void>;
+  refreshBlockchainBalances: (payload?: BlockchainBalancePayload, periodic?: boolean) => Promise<void>;
   fetchLoopringBalances: (refresh: boolean) => Promise<void>;
 }
 
@@ -20,33 +21,43 @@ export function useBlockchainBalances(): UseBlockchainBalancesReturn {
   const { getIsLoading } = useStatusStore();
   const valueThreshold = useValueThreshold(BalanceSource.BLOCKCHAIN);
 
-  // Use services
-  const { handleFetch } = useBalanceProcessingService();
+  const { handleCachedFetch, handleRefresh } = useBalanceProcessingService();
   const { fetchLoopringBalances } = useLoopringBalanceService();
   const { queueBalanceQueries } = useBalanceQueue();
 
-  const fetchSingleChain = async (payload: FetchBlockchainBalancePayload, periodic: boolean): Promise<void> => {
-    if (getIsLoading(Section.BLOCKCHAIN, payload.blockchain)) {
-      if (periodic)
-        return;
-      await waitUntilIdle(Section.BLOCKCHAIN, payload.blockchain);
-    }
-
-    await handleFetch(payload, get(valueThreshold));
+  // Cached DB read — always fires immediately, no loading checks needed
+  const fetchBlockchainBalances = async (
+    payload: BlockchainBalancePayload = {},
+  ): Promise<void> => {
+    const { addresses, blockchain, isXpub = false } = payload;
+    const chains = blockchain ? arrayify(blockchain) : get(supportedChains).map(chain => chain.id);
+    await Promise.allSettled(
+      chains.map(async (chain) => {
+        await handleCachedFetch({ addresses, blockchain: chain, isXpub }, get(valueThreshold));
+      }),
+    );
   };
 
-  const fetchBlockchainBalances = async (
-    payload: BlockchainBalancePayload = { ignoreCache: false },
+  // Network refresh — queued with loading checks to avoid overloading nodes
+  const refreshBlockchainBalances = async (
+    payload: BlockchainBalancePayload = {},
     periodic = false,
   ): Promise<void> => {
-    const { addresses, blockchain, ignoreCache = false, isXpub = false } = payload;
+    const { addresses, blockchain, isXpub = false } = payload;
     const chains = blockchain ? arrayify(blockchain) : get(supportedChains).map(chain => chain.id);
-
-    await queueBalanceQueries(chains, async blockchain => fetchSingleChain({ addresses, blockchain, ignoreCache, isXpub }, periodic));
+    await queueBalanceQueries(chains, async (chain) => {
+      if (getIsLoading(Section.BLOCKCHAIN, chain)) {
+        if (periodic)
+          return;
+        await waitUntilIdle(Section.BLOCKCHAIN, chain);
+      }
+      await handleRefresh({ addresses, blockchain: chain, isXpub });
+    });
   };
 
   return {
     fetchBlockchainBalances,
     fetchLoopringBalances,
+    refreshBlockchainBalances,
   };
 }

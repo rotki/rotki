@@ -8,16 +8,15 @@ import { BlockchainRefreshButtonBehaviour } from '@/types/settings/frontend-sett
 import { arrayify } from '@/utils/array';
 
 export const useBalanceRefresh = createSharedComposable(() => {
-  const { fetchBlockchainBalances, fetchLoopringBalances } = useBlockchainBalances();
+  const { fetchLoopringBalances, refreshBlockchainBalances } = useBlockchainBalances();
   const { fetchConnectedExchangeBalances, fetchSelectedExchangeBalances } = useExchanges();
   const { blockchainRefreshButtonBehaviour } = storeToRefs(useFrontendSettingsStore());
 
-  const refreshBlockchainBalances = async (blockchain?: string | string[]): Promise<void> => {
+  const refreshBlockchainBalancesFn = async (blockchain?: string | string[]): Promise<void> => {
     const chain = blockchain ? arrayify(blockchain) : undefined;
     const pending: Promise<any>[] = [
-      fetchBlockchainBalances({
+      refreshBlockchainBalances({
         blockchain: chain,
-        ignoreCache: true,
       }),
     ];
 
@@ -41,7 +40,7 @@ export const useBalanceRefresh = createSharedComposable(() => {
       await massDetectTokens(chain);
 
     else
-      await refreshBlockchainBalances(chain);
+      await refreshBlockchainBalancesFn(chain);
   };
 
   const refreshBalance = async (balanceSource: string): Promise<void> => {
@@ -59,7 +58,7 @@ export const useBalanceRefresh = createSharedComposable(() => {
     handleBlockchainRefresh,
     massDetectTokens,
     refreshBalance,
-    refreshBlockchainBalances,
+    refreshBlockchainBalances: refreshBlockchainBalancesFn,
     refreshExchangeBalance,
   };
 });

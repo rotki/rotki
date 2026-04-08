@@ -9,11 +9,11 @@ vi.mock('@/modules/staking/eth/composables/use-eth-validator-fetching', () => ({
   })),
 }));
 
-const mockFetchBlockchainBalances = vi.fn();
+const mockRefreshBlockchainBalances = vi.fn();
 
 vi.mock('@/modules/balances/use-blockchain-balances', () => ({
   useBlockchainBalances: vi.fn(() => ({
-    fetchBlockchainBalances: mockFetchBlockchainBalances,
+    refreshBlockchainBalances: mockRefreshBlockchainBalances,
   })),
 }));
 
@@ -41,7 +41,7 @@ describe('useEthValidatorWatchers', () => {
   it('should refresh validators and balances when premium changes and eth2 is enabled', async () => {
     mockIsEth2Enabled.mockReturnValue(true);
     mockFetchEthStakingValidators.mockResolvedValue(undefined);
-    mockFetchBlockchainBalances.mockResolvedValue(undefined);
+    mockRefreshBlockchainBalances.mockResolvedValue(undefined);
 
     const { useEthValidatorWatchers } = await import(
       '@/modules/staking/eth/composables/use-eth-validator-watchers',
@@ -53,9 +53,8 @@ describe('useEthValidatorWatchers', () => {
     await flushPromises();
 
     expect(mockFetchEthStakingValidators).toHaveBeenCalledWith({ ignoreCache: true });
-    expect(mockFetchBlockchainBalances).toHaveBeenCalledWith({
+    expect(mockRefreshBlockchainBalances).toHaveBeenCalledWith({
       blockchain: 'eth2',
-      ignoreCache: true,
     });
   });
 
@@ -70,6 +69,6 @@ describe('useEthValidatorWatchers', () => {
     await flushPromises();
 
     expect(mockFetchEthStakingValidators).not.toHaveBeenCalled();
-    expect(mockFetchBlockchainBalances).not.toHaveBeenCalled();
+    expect(mockRefreshBlockchainBalances).not.toHaveBeenCalled();
   });
 });

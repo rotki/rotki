@@ -31,10 +31,10 @@ vi.mock('@/composables/info/chains', () => ({
   }),
 }));
 
-const mockFetchBlockchainBalances = vi.fn().mockResolvedValue(undefined);
+const mockRefreshBlockchainBalances = vi.fn().mockResolvedValue(undefined);
 vi.mock('@/modules/balances/use-blockchain-balances', () => ({
   useBlockchainBalances: vi.fn().mockReturnValue({
-    fetchBlockchainBalances: mockFetchBlockchainBalances,
+    refreshBlockchainBalances: mockRefreshBlockchainBalances,
   }),
 }));
 
@@ -81,9 +81,8 @@ describe('useTokenDetectionOrchestrator', () => {
       expect(mockQueueTokenDetection).toHaveBeenCalledWith('eth', ['0xaddr1', '0xaddr2'], expect.any(Function));
       expect(mockFetchDetectedTokens).toHaveBeenCalledWith('eth', '0xaddr1');
       expect(mockFetchDetectedTokens).toHaveBeenCalledWith('eth', '0xaddr2');
-      expect(mockFetchBlockchainBalances).toHaveBeenCalledWith({
+      expect(mockRefreshBlockchainBalances).toHaveBeenCalledWith({
         blockchain: 'eth',
-        ignoreCache: true,
       });
     });
 
@@ -94,7 +93,7 @@ describe('useTokenDetectionOrchestrator', () => {
       await detectTokens(['eth', 'optimism'], ['0xaddr1']);
 
       expect(mockQueueTokenDetection).toHaveBeenCalledTimes(2);
-      expect(mockFetchBlockchainBalances).toHaveBeenCalledTimes(2);
+      expect(mockRefreshBlockchainBalances).toHaveBeenCalledTimes(2);
     });
 
     it('should skip balance refresh when option is false', async () => {
@@ -104,7 +103,7 @@ describe('useTokenDetectionOrchestrator', () => {
       await detectTokens('eth', ['0xaddr1'], { refreshBalancesAfter: false });
 
       expect(mockQueueTokenDetection).toHaveBeenCalledOnce();
-      expect(mockFetchBlockchainBalances).not.toHaveBeenCalled();
+      expect(mockRefreshBlockchainBalances).not.toHaveBeenCalled();
     });
 
     it('should filter out addresses already being detected', async () => {
@@ -131,7 +130,7 @@ describe('useTokenDetectionOrchestrator', () => {
 
       // No addresses left to queue, but balance refresh still happens
       expect(mockQueueTokenDetection).not.toHaveBeenCalled();
-      expect(mockFetchBlockchainBalances).toHaveBeenCalledOnce();
+      expect(mockRefreshBlockchainBalances).toHaveBeenCalledOnce();
     });
   });
 
@@ -148,7 +147,7 @@ describe('useTokenDetectionOrchestrator', () => {
       await detectAllTokens();
 
       expect(mockQueueTokenDetection).toHaveBeenCalledTimes(2);
-      expect(mockFetchBlockchainBalances).toHaveBeenCalledTimes(2);
+      expect(mockRefreshBlockchainBalances).toHaveBeenCalledTimes(2);
     });
 
     it('should detect tokens only for specified chains', async () => {

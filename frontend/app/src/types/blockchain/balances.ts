@@ -47,6 +47,7 @@ export type BlockchainAssetBalances = z.infer<typeof BlockchainAssetBalances>;
 const PerAccountBalances = z.record(z.string(), BlockchainAssetBalances.or(BtcBalances));
 
 export const BlockchainBalances = z.object({
+  lastRefreshTs: z.record(z.string(), z.number()).optional(),
   perAccount: PerAccountBalances,
   totals: BlockchainTotals,
 });
@@ -56,7 +57,6 @@ export type BlockchainBalances = z.infer<typeof BlockchainBalances>;
 export interface BlockchainBalancePayload {
   readonly addresses?: string[];
   readonly blockchain?: string | string[];
-  readonly ignoreCache: boolean;
   readonly isXpub?: boolean;
 }
 
@@ -64,5 +64,4 @@ export interface FetchBlockchainBalancePayload {
   readonly addresses?: string[];
   readonly isXpub?: boolean;
   readonly blockchain: string;
-  readonly ignoreCache: boolean;
 }

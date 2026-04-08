@@ -1,6 +1,7 @@
 <script lang="ts" setup>
 import BlockchainBalanceRefreshBehaviourMenu
   from '@/components/dashboard/blockchain-balance/BlockchainBalanceRefreshBehaviourMenu.vue';
+import BlockchainBalanceStalenessIndicator from '@/components/helper/BlockchainBalanceStalenessIndicator.vue';
 import { useBlockchainTotalSummary } from '@/modules/balances/blockchain/use-blockchain-total-summary';
 import { useBalanceRefresh } from '@/modules/balances/use-balance-refresh';
 import SummaryCard from '@/modules/dashboard/summary/SummaryCard.vue';
@@ -44,6 +45,9 @@ const isLoading = logicOr(isBlockchainLoading, isTokenDetecting);
           :key="total.chain"
           :total="total"
         />
+      </div>
+      <div class="px-6 pt-2 text-end">
+        <BlockchainBalanceStalenessIndicator />
       </div>
     </SummaryCard>
   </div>

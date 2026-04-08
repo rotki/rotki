@@ -4,12 +4,11 @@ import { createStateHandler } from '@/modules/messaging/utils';
 
 export function createRefreshBalancesHandler(): StateHandler {
   // Capture functions at handler creation time (in setup context)
-  const { fetchBlockchainBalances } = useBlockchainBalances();
+  const { refreshBlockchainBalances } = useBlockchainBalances();
 
   return createStateHandler(async (data) => {
-    await fetchBlockchainBalances({
+    await refreshBlockchainBalances({
       blockchain: data.blockchain,
-      ignoreCache: true,
     });
   });
 }

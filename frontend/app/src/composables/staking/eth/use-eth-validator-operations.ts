@@ -22,7 +22,7 @@ interface UseEthValidatorOperationsReturn {
 export function useEthValidatorOperations(): UseEthValidatorOperationsReturn {
   const { showConfirmation } = useAccountDelete();
   const { fetchEthStakingValidators } = useEthStaking();
-  const { fetchBlockchainBalances } = useBlockchainBalances();
+  const { refreshBlockchainBalances } = useBlockchainBalances();
   const { useIsTaskRunning } = useTaskStore();
   const { isLoading: loading } = useSectionStatus(Section.BLOCKCHAIN, Blockchain.ETH2);
 
@@ -48,9 +48,8 @@ export function useEthValidatorOperations(): UseEthValidatorOperationsReturn {
 
   async function refresh(): Promise<void> {
     await fetchEthStakingValidators({ ignoreCache: true });
-    await fetchBlockchainBalances({
+    await refreshBlockchainBalances({
       blockchain: Blockchain.ETH2,
-      ignoreCache: true,
     });
   }
 
