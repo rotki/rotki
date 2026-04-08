@@ -240,7 +240,7 @@ async function startColibriService(colibriPort: number, logDir: string): Promise
     '--api-cors=http://localhost:*',
   ];
 
-  startProcess('cargo run -- ', colors.red(COLIBRI), COLIBRI, colibriArgs, {
+  startProcess('cargo run --locked -- ', colors.red(COLIBRI), COLIBRI, colibriArgs, {
     cwd: path.join('..', 'colibri'),
   });
   return availableColibriPort;

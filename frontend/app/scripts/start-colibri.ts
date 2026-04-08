@@ -49,7 +49,7 @@ function startColibri(options: ColibriOptions): void {
   const binaryPath = path.join(workDir, 'target', 'release', 'colibri');
   const useBinary = process.env.CI && fs.existsSync(binaryPath);
 
-  const command = useBinary ? binaryPath : 'cargo run --';
+  const command = useBinary ? binaryPath : 'cargo run --locked --';
   consola.info(`Starting Colibri in ${workDir} using ${useBinary ? 'pre-built binary' : 'cargo run'}`);
 
   backend = spawn(command, args, {
