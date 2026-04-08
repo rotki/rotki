@@ -62,7 +62,7 @@ class ColibriConfigBuilder {
     assert(cmd !== '', 'Command must be set');
     this.cmd = cmd;
     if (cmd === 'cargo') {
-      this.args.push('run', '--');
+      this.args.push('run', '--locked', '--');
     }
     return this;
   }
