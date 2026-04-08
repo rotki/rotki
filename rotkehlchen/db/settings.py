@@ -80,6 +80,11 @@ DEFAULT_AUTO_DELETE_CALENDAR_ENTRIES: Final = True
 DEFAULT_AUTO_CREATE_CALENDAR_REMINDERS: Final = True
 DEFAULT_ASK_USER_UPON_SIZE_DISCREPANCY: Final = True
 DEFAULT_AUTO_DETECT_TOKENS: Final = True
+DEFAULT_EVMCHAINS_TO_SKIP_DETECTION: Final = (
+    SupportedBlockchain.POLYGON_POS,
+    SupportedBlockchain.GNOSIS,
+    SupportedBlockchain.BASE,
+)
 DEFAULT_CSV_EXPORT_DELIMITER: Final = ','
 DEFAULT_ASSET_MOVEMENT_AMOUNT_TOLERANCE: Final = FVal('0.005')
 DEFAULT_ASSET_MOVEMENT_TIME_RANGE: Final = HOUR_IN_SECONDS * 20
@@ -252,7 +257,7 @@ class DBSettings:
     ssf_graph_multiplier: int = DEFAULT_SSF_GRAPH_MULTIPLIER
     last_data_migration: int = DEFAULT_LAST_DATA_MIGRATION
     non_syncing_exchanges: frozenset[ExchangeLocationID] = field(default_factory=frozenset)
-    evmchains_to_skip_detection: Sequence[SUPPORTED_EVM_EVMLIKE_CHAINS_TYPE] = field(default_factory=list)  # Both EVM and EVMLike chains # noqa: E501
+    evmchains_to_skip_detection: Sequence[SUPPORTED_EVM_EVMLIKE_CHAINS_TYPE] = DEFAULT_EVMCHAINS_TO_SKIP_DETECTION  # Both EVM and EVMLike chains # noqa: E501
     cost_basis_method: CostBasisMethod = DEFAULT_COST_BASIS_METHOD
     treat_eth2_as_eth: bool = DEFAULT_TREAT_ETH2_AS_ETH
     eth_staking_taxable_after_withdrawal_enabled: bool = DEFAULT_ETH_STAKING_TAXABLE_AFTER_WITHDRAWAL_ENABLED  # noqa: E501
