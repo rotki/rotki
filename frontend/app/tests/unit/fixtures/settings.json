@@ -22,16 +22,16 @@
     "calculate_past_cost_basis": true,
     "display_date_in_localtime": true,
     "current_price_oracles": [
-      "coingecko",
       "defillama",
+      "coingecko",
       "cryptocompare",
       "uniswapv2",
       "uniswapv3"
     ],
     "historical_price_oracles": [
+      "defillama",
       "cryptocompare",
-      "coingecko",
-      "defillama"
+      "coingecko"
     ],
     "pnl_csv_with_formulas": true,
     "pnl_csv_have_summary": false,

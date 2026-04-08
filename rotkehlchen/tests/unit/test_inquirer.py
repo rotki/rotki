@@ -93,6 +93,7 @@ from rotkehlchen.inquirer import (
     Inquirer,
 )
 from rotkehlchen.interfaces import CurrentPriceOracleInterface
+from rotkehlchen.oracles.structures import DEFAULT_CURRENT_PRICE_ORACLES_ORDER
 from rotkehlchen.tests.conftest import TestEnvironment, requires_env
 from rotkehlchen.tests.unit.decoders.test_curve_lend import (
     fixture_ethereum_vault_token,  # noqa: F401
@@ -127,6 +128,29 @@ UNDERLYING_ASSET_PRICES = {
     A_CRV: FVal('10'),
     A_USD: FVal('1'),
 }
+
+LEGACY_CURRENT_PRICE_ORACLES_ORDER = (
+    CurrentPriceOracle.COINGECKO,
+    CurrentPriceOracle.DEFILLAMA,
+    CurrentPriceOracle.CRYPTOCOMPARE,
+    CurrentPriceOracle.UNISWAPV2,
+    CurrentPriceOracle.UNISWAPV3,
+)
+
+
+@pytest.fixture(name='current_price_oracles_order')
+def fixture_current_price_oracles_order(
+        request,
+        should_mock_current_price_queries: bool,
+) -> tuple[CurrentPriceOracle, ...]:
+    """Keep legacy oracle priority for VCR tests to avoid cassette churn."""
+    if (
+            request.node.get_closest_marker('vcr') is not None and
+            not should_mock_current_price_queries
+    ):
+        return LEGACY_CURRENT_PRICE_ORACLES_ORDER
+
+    return DEFAULT_CURRENT_PRICE_ORACLES_ORDER
 
 
 @pytest.mark.skipif(
