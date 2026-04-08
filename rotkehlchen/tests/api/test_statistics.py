@@ -1,5 +1,6 @@
 import contextlib
 from contextlib import ExitStack
+from datetime import UTC, datetime
 from http import HTTPStatus
 from typing import TYPE_CHECKING, Any
 from unittest.mock import patch
@@ -708,9 +709,17 @@ def test_query_events_analysis(
         'ETHEREUM': 1,
         'BASE': 1,
     }
-    assert result['top_days_by_number_of_transactions'] == [
-        {'timestamp': 1734307200, 'amount': '4'},
-    ]
+    assert result['top_days_by_number_of_transactions'] == [{
+        # The API groups by local calendar day (SQL `localtime`), so this expected
+        # bucket start must be derived in local tz and converted back to UTC.
+        'timestamp': int(datetime.fromtimestamp(1734373795, tz=UTC).astimezone().replace(
+            hour=0,
+            minute=0,
+            second=0,
+            microsecond=0,
+        ).astimezone(UTC).timestamp()),
+        'amount': '4',
+    }]
     assert result['gnosis_max_payments_by_currency'] == [{'symbol': 'EUR', 'amount': '42.24'}]
     assert result['transactions_per_protocol'] == [{'protocol': 'ens', 'transactions': 1}]
     assert result['score'] == 1684
