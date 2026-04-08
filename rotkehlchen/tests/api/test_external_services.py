@@ -94,6 +94,7 @@ def test_etherscan_re_enabled(rotkehlchen_api_server: 'APIServer') -> None:
 
 @pytest.mark.parametrize('include_etherscan_key', [False])
 @pytest.mark.parametrize('include_beaconchain_key', [False])
+@pytest.mark.parametrize('include_blockscout_key', [False])
 def test_delete_external_service(rotkehlchen_api_server: 'APIServer') -> None:
     """Tests that delete external service credentials works"""
     # Add some data and see that the response shows they are added
