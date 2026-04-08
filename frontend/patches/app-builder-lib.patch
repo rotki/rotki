@@ -1,0 +1,15 @@
+diff --git a/out/util/packageMetadata.js b/out/util/packageMetadata.js
+index 2f74568906659672295ca1f3f20f9b9c1195a110..42e27aac062fc79cf992eca3f21fe9b263b52c36 100644
+--- a/out/util/packageMetadata.js
++++ b/out/util/packageMetadata.js
+@@ -90,6 +90,10 @@ function checkDependencies(dependencies, errors) {
+                 updaterVersion = match[1];
+             }
+         }
++        // pnpm catalog: protocol - version is resolved by pnpm, skip validation
++        if (updaterVersion === "catalog:" || updaterVersion.startsWith("catalog:")) {
++            return;
++        }
+         // for testing auto-update using workspace electron-updater
+         const prefixes = ["link:", "file:"];
+         for (const prefix of prefixes) {
