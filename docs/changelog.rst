@@ -6,6 +6,7 @@ Changelog
 * :feature:`11982` Blockscout users can add their PRO API key.
 * :feature:`7492` Added an event direction column (in/out/neutral) to the PnL CSV export.
 * :feature:`11816` Support importing events from Coinledger CSV.
+* :feature:`1706` Blockchain balances are now cached and will display faster when opening rotki again.
 * :feature:`-` Crosscurve events will now be properly decoded.
 * :feature:`-` 0x swaps through the latest settler  will now be properly decoded.
 * :feature:`-` Transactions involving stkGHO will now be decoded properly.

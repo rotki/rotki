@@ -26,7 +26,7 @@ export const useTokenDetectionOrchestrator = createSharedComposable((): UseToken
   const { setMassDetecting } = useTokenDetectionStore();
   const { addresses } = useAccountAddresses();
   const { supportsTransactions, txEvmChains } = useSupportedChains();
-  const { fetchBlockchainBalances } = useBlockchainBalances();
+  const { refreshBlockchainBalances } = useBlockchainBalances();
   const { queueTokenDetection } = useBalanceQueue();
   const { isTaskRunning } = useTaskStore();
 
@@ -46,9 +46,8 @@ export const useTokenDetectionOrchestrator = createSharedComposable((): UseToken
 
   const refreshBalancesForChains = async (chains: string[]): Promise<void> => {
     await Promise.allSettled(chains.map(async chain =>
-      fetchBlockchainBalances({
+      refreshBlockchainBalances({
         blockchain: chain,
-        ignoreCache: true,
       }),
     ));
   };

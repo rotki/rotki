@@ -1725,6 +1725,7 @@
       "invalid_format": "Invalid CSV format. Must contain \"chain\" and \"address\" columns.",
       "message": "Error importing blockchain accounts: {error}"
     },
+    "last_refresh_tooltip": "Last time blockchain balances were refreshed",
     "solana_warning": "This is an initial Solana integration. Only a few protocols are currently supported, but more will be added over time.",
     "tabs": {
       "accounts": "Accounts",

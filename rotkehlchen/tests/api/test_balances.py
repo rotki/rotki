@@ -591,7 +591,7 @@ def test_uniswap_v3_v4_balances(
         (v4_nft := 'eip155:42161/erc721:0xd88F38F930b7952f2DB2432Cb002E7abbF3dD869/61912'),
     ]
 
-    response = requests.get(
+    response = requests.post(
         api_url_for(rotkehlchen_api_server, 'blockchainbalancesresource'),
         json={'blockchain': SupportedBlockchain.ARBITRUM_ONE.serialize()},
     )
@@ -703,18 +703,18 @@ def test_multiple_balance_queries_not_concurrent(
         ), json={'async_query': True})
         task_id_one_exchange = assert_ok_async_response(response)
         if separate_blockchain_calls:
-            response = requests.get(api_url_for(
+            response = requests.post(api_url_for(
                 rotkehlchen_api_server_with_exchanges,
                 'blockchainbalancesresource',
             ), json={'async_query': True, 'blockchain': 'ETH'})
             task_id_blockchain_eth = assert_ok_async_response(response)
-            response = requests.get(api_url_for(
+            response = requests.post(api_url_for(
                 rotkehlchen_api_server_with_exchanges,
                 'blockchainbalancesresource',
             ), json={'async_query': True, 'blockchain': 'BTC'})
             task_id_blockchain_btc = assert_ok_async_response(response)
         else:
-            response = requests.get(api_url_for(
+            response = requests.post(api_url_for(
                 rotkehlchen_api_server_with_exchanges,
                 'blockchainbalancesresource',
             ), json={'async_query': True})
@@ -747,8 +747,20 @@ def test_multiple_balance_queries_not_concurrent(
                 task_id_blockchain,
                 timeout=ASYNC_TASK_WAIT_TIMEOUT * 2,
             )
-        assert eth.call_count == 1, 'eth balance query should only fire once'
-        assert btc.call_count == 1, 'btc balance query should only happen once'
+        assert eth.call_count == 2, 'eth balance query should happen once per refresh call'
+        assert btc.call_count == 2, 'btc balance query should happen once per refresh call'
+        assert_proper_sync_response_with_result(requests.get(api_url_for(
+            rotkehlchen_api_server_with_exchanges,
+            'named_blockchain_balances_resource',
+            blockchain=SupportedBlockchain.ETHEREUM.serialize(),
+        )))
+        assert_proper_sync_response_with_result(requests.get(api_url_for(
+            rotkehlchen_api_server_with_exchanges,
+            'named_blockchain_balances_resource',
+            blockchain=SupportedBlockchain.BITCOIN.serialize(),
+        )))
+        assert eth.call_count == 2, 'eth balance query should not increase on cached GET'
+        assert btc.call_count == 2, 'btc balance query should not increase on cached GET'
         assert bn.call_count == 2, 'binance balance query should do 2 calls'
 
     assert_all_balances(
@@ -769,12 +781,14 @@ def test_multiple_balance_queries_not_concurrent(
         eth_balances=setup.eth_balances,
         token_balances=setup.token_balances,
         also_btc=not separate_blockchain_calls,
+        expect_non_zero_values=False,
     )
     assert_btc_balances_result(
         result=outcome_btc,
         btc_accounts=btc_accounts,
         btc_balances=setup.btc_balances,
         also_eth=not separate_blockchain_calls,
+        expect_non_zero_values=False,
     )
 
 
@@ -802,13 +816,13 @@ def test_balances_caching_mixup(
     # Test all balances request by requesting to not save the data
     with ExitStack() as stack:
         setup.enter_blockchain_patches(stack)
-        response_btc = requests.get(api_url_for(
+        response_btc = requests.post(api_url_for(
             rotkehlchen_api_server,
             'named_blockchain_balances_resource',
             blockchain=SupportedBlockchain.BITCOIN.serialize(),
         ), json={'async_query': True})
         eth_chain_key = SupportedBlockchain.ETHEREUM.serialize()
-        response_eth = requests.get(api_url_for(
+        response_eth = requests.post(api_url_for(
             rotkehlchen_api_server,
             'named_blockchain_balances_resource',
             blockchain=eth_chain_key,
@@ -843,7 +857,7 @@ def test_query_ksm_balances(rotkehlchen_api_server: 'APIServer', ksm_accounts: l
     expected.
     """
     ksm_chain_key = SupportedBlockchain.KUSAMA.serialize()
-    response = requests.get(
+    response = requests.post(
         api_url_for(
             rotkehlchen_api_server,
             'named_blockchain_balances_resource',
@@ -892,7 +906,7 @@ def test_query_avax_balances(rotkehlchen_api_server: 'APIServer') -> None:
     avax_chain_key = SupportedBlockchain.AVALANCHE.serialize()
     with ExitStack() as stack:
         setup.enter_blockchain_patches(stack)
-        response = requests.get(
+        response = requests.post(
             api_url_for(
                 rotkehlchen_api_server,
                 'named_blockchain_balances_resource',
@@ -1055,10 +1069,10 @@ def test_blockchain_balances_refresh(
             """Refreshes blockchain balances `num` number of times"""
             result = None
             for _ in range(num):
-                response = requests.get(api_url_for(
+                response = requests.post(api_url_for(
                     rotkehlchen_api_server,
                     'blockchainbalancesresource',
-                ), json={'async_query': False, 'blockchain': 'ETH', 'ignore_cache': True})
+                ), json={'async_query': False, 'blockchain': 'ETH'})
                 result = assert_proper_sync_response_with_result(response)
             assert result is not None
             return result
@@ -1193,7 +1207,7 @@ def test_query_liquity_balances(
         user_address=ethereum_accounts[0],
         proxy_address=string_to_evm_address('0x7F7A44b2cA9db79D4b295687A596ee88961007e9'),
     ):
-        response = requests.get(
+        response = requests.post(
             api_url_for(
                 rotkehlchen_api_server,
                 'named_blockchain_balances_resource',
@@ -1312,7 +1326,7 @@ def test_solana_staking_balances(
 ) -> None:
     """Test that querying balances for a solana account with staked SOL correctly
     includes the staked balance"""
-    result = assert_proper_sync_response_with_result(requests.get(
+    result = assert_proper_sync_response_with_result(requests.post(
         api_url_for(rotkehlchen_api_server, 'blockchainbalancesresource'),
         json={'blockchain': 'SOLANA', 'async_query': False},
     ))
@@ -1331,7 +1345,7 @@ def test_blockchain_balances_specific_addresses(
     """Test that querying blockchain balances for specific addresses works correctly"""
 
     # Query only the first address
-    partial_result = assert_proper_sync_response_with_result(requests.get(
+    partial_result = assert_proper_sync_response_with_result(requests.post(
         api_url_for(rotkehlchen_api_server, 'blockchainbalancesresource'),
         json={
             'blockchain': 'ETH',
@@ -1347,7 +1361,7 @@ def test_blockchain_balances_specific_addresses(
 
     # Test with another address - this returns the existing balances dict with
     # the new balances of the recently added address merged in
-    result = assert_proper_sync_response_with_result(requests.get(
+    result = assert_proper_sync_response_with_result(requests.post(
         api_url_for(rotkehlchen_api_server, 'blockchainbalancesresource'),
         json={
             'blockchain': 'ETH',

@@ -8,6 +8,7 @@ import AccountImportProgress from '@/components/accounts/AccountImportProgress.v
 import EthStakingValidators from '@/components/accounts/EthStakingValidators.vue';
 import EvmAccountPageButtons from '@/components/accounts/EvmAccountPageButtons.vue';
 import AccountDialog from '@/components/accounts/management/AccountDialog.vue';
+import BlockchainBalanceStalenessIndicator from '@/components/helper/BlockchainBalanceStalenessIndicator.vue';
 import TablePageLayout from '@/components/layout/TablePageLayout.vue';
 import { useAccountCategoryHelper } from '@/composables/accounts/use-account-category-helper';
 import { Module, useModuleEnabled } from '@/composables/session/modules';
@@ -111,6 +112,7 @@ watchImmediate(route, (route) => {
     ]"
   >
     <template #buttons>
+      <BlockchainBalanceStalenessIndicator class="self-center" />
       <EvmAccountPageButtons
         :is-accounts-tab-selected="isAccountsTabSelected"
         :add-disabled="isAddDisabled"

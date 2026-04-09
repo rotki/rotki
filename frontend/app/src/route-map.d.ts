@@ -17,8 +17,7 @@ import type {
 
 declare module 'vue-router' {
   interface TypesConfig {
-    ParamParsers:
-      | never
+    ParamParsers: never
   }
 }
 

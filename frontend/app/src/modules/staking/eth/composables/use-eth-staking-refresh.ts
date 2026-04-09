@@ -33,7 +33,7 @@ export function useEthStakingRefresh(callbacks: RefreshCallbacks): UseEthStaking
   const { useIsTaskRunning } = useTaskStore();
   const { stakingValidatorsLimits } = storeToRefs(useBlockchainValidatorsStore());
   const { fetchEthStakingValidators } = useEthStaking();
-  const { fetchBlockchainBalances } = useBlockchainBalances();
+  const { fetchBlockchainBalances, refreshBlockchainBalances } = useBlockchainBalances();
   const { isFirstLoad } = useStatusUpdater(performanceSection);
 
   function createLastRefreshStorage(username: string): Ref<number> {
@@ -57,10 +57,17 @@ export function useEthStakingRefresh(callbacks: RefreshCallbacks): UseEthStaking
 
   async function refresh(userInitiated = false): Promise<void> {
     const refreshValidators = async (userInitiated: boolean): Promise<void> => {
-      await fetchBlockchainBalances({
-        blockchain: Blockchain.ETH2,
-        ignoreCache: userInitiated || isFirstLoad(),
-      });
+      const shouldRefresh = userInitiated || isFirstLoad();
+      if (shouldRefresh) {
+        await refreshBlockchainBalances({
+          blockchain: Blockchain.ETH2,
+        });
+      }
+      else {
+        await fetchBlockchainBalances({
+          blockchain: Blockchain.ETH2,
+        });
+      }
       await fetchEthStakingValidators({
         ignoreCache: userInitiated || isFirstLoad(),
       });

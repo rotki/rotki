@@ -6,7 +6,7 @@ import sys
 import tempfile
 import traceback
 from collections import defaultdict
-from collections.abc import Callable, Sequence
+from collections.abc import Callable, Mapping, Sequence
 from http import HTTPStatus
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Literal, Optional, overload
@@ -54,6 +54,7 @@ from rotkehlchen.assets.resolver import AssetResolver
 from rotkehlchen.balances.historical import HistoricalBalancesManager
 from rotkehlchen.balances.manual import ManuallyTrackedBalance
 from rotkehlchen.chain.accounts import OptionalBlockchainAccount, SingleBlockchainAccountData
+from rotkehlchen.chain.balances import BlockchainBalancesUpdate
 from rotkehlchen.chain.ethereum.airdrops import check_airdrops
 from rotkehlchen.chain.ethereum.modules.eth2.structures import PerformanceStatusFilter
 from rotkehlchen.chain.ethereum.modules.lido_csm.metrics import LidoCsmMetricsFetcher
@@ -681,7 +682,6 @@ class RestAPI:
     def query_blockchain_balances(
             self,
             blockchain: SupportedBlockchain | None,
-            ignore_cache: bool,
             value_threshold: FVal | None = None,
             addresses: ListOfBlockchainAddresses | None = None,
     ) -> dict[str, Any]:
@@ -689,46 +689,27 @@ class RestAPI:
         status_code = HTTPStatus.OK
         result = None
         try:
-            balances = self.rotkehlchen.chains_aggregator.query_balances(
-                blockchain=blockchain,
-                ignore_cache=ignore_cache,
+            balances = self.rotkehlchen.chains_aggregator.get_balances_update(
+                chain=blockchain,
+                from_cache=True,
                 addresses=addresses,
             )
-
-            # Filter balances before serialization
-            if value_threshold is not None:
-                for _, chain_balances in balances.per_account:
-                    filtered_balances: dict[BlockchainAddress, BalanceSheet | Balance] = {}
-                    for account, account_data in chain_balances.items():
-                        if isinstance(account_data, BalanceSheet):
-                            filtered_assets: defaultdict[Asset, defaultdict[str, Balance]] = defaultdict(lambda: defaultdict(Balance))  # noqa: E501
-                            filtered_liabilities: defaultdict[Asset, defaultdict[str, Balance]] = defaultdict(lambda: defaultdict(Balance))  # noqa: E501
-
-                            for asset, asset_balances in account_data.assets.items():
-                                for key, balance in asset_balances.items():
-                                    if balance.value > value_threshold:
-                                        filtered_assets[asset][key] = balance
-
-                            for asset, asset_balances in account_data.liabilities.items():
-                                for key, balance in asset_balances.items():
-                                    if balance.value > value_threshold:
-                                        filtered_liabilities[asset][key] = balance
-
-                            if len(filtered_assets) != 0 or len(filtered_liabilities) != 0:
-                                new_balance_sheet = BalanceSheet(
-                                    assets=filtered_assets,
-                                    liabilities=filtered_liabilities,
-                                )
-                                filtered_balances[account] = new_balance_sheet
-                        elif isinstance(account_data, Balance):
-                            # For BTC and BCH, account_data is a single Balance object
-                            if account_data.value > value_threshold:
-                                filtered_balances[account] = account_data
-
-                    chain_balances.clear()
-                    chain_balances.update(filtered_balances)
-
-            result = balances.serialize()
+            if self._should_refresh_blockchain_balances(
+                blockchain=blockchain,
+                balances=balances,
+                last_refresh_ts=self.rotkehlchen.chains_aggregator.get_blockchain_balances_last_query_ts(blockchain),
+                addresses=addresses,
+            ):
+                balances = self.rotkehlchen.chains_aggregator.query_balances(
+                    blockchain=blockchain,
+                    ignore_cache=True,
+                    addresses=addresses,
+                )
+            result = self._serialize_blockchain_balances(
+                balances=balances,
+                blockchain=blockchain,
+                value_threshold=value_threshold,
+            )
 
         except EthSyncError as e:
             msg = str(e)
@@ -738,6 +719,98 @@ class RestAPI:
             status_code = HTTPStatus.BAD_GATEWAY
 
         return {'result': result, 'message': msg, 'status_code': status_code}
+
+    @async_api_call()
+    def refresh_blockchain_balances(
+            self,
+            blockchain: SupportedBlockchain | None,
+            addresses: ListOfBlockchainAddresses | None = None,
+    ) -> dict[str, Any]:
+        msg, status_code, result = '', HTTPStatus.OK, None
+        try:
+            balances = self.rotkehlchen.chains_aggregator.query_balances(
+                blockchain=blockchain,
+                ignore_cache=True,
+                addresses=addresses,
+            )
+            result = self._serialize_blockchain_balances(
+                balances=balances,
+                blockchain=blockchain,
+                value_threshold=None,
+            )
+        except EthSyncError as e:
+            msg = str(e)
+            status_code = HTTPStatus.CONFLICT
+        except RemoteError as e:
+            msg = str(e)
+            status_code = HTTPStatus.BAD_GATEWAY
+
+        return {'result': result, 'message': msg, 'status_code': status_code}
+
+    def _should_refresh_blockchain_balances(
+            self,
+            blockchain: SupportedBlockchain | None,
+            balances: BlockchainBalancesUpdate,
+            last_refresh_ts: Mapping[str, Timestamp],
+            addresses: ListOfBlockchainAddresses | None,
+    ) -> bool:
+        if all(len(chain_balances) == 0 for _, chain_balances in balances.per_account):
+            return True
+
+        chains = SupportedBlockchain if blockchain is None else (blockchain,)
+        for supported_chain in chains:
+            if addresses is not None and blockchain is not None:
+                has_accounts = len(addresses) != 0
+            elif supported_chain == SupportedBlockchain.ETHEREUM_BEACONCHAIN:
+                has_accounts = len(self.rotkehlchen.chains_aggregator.queried_addresses_for_module('eth2')) != 0  # noqa: E501
+            else:
+                has_accounts = len(self.rotkehlchen.chains_aggregator.accounts.get(supported_chain)) != 0  # noqa: E501
+
+            if has_accounts is True and supported_chain.serialize() not in last_refresh_ts:
+                return True
+
+        return False
+
+    def _serialize_blockchain_balances(
+            self,
+            balances: BlockchainBalancesUpdate,
+            blockchain: SupportedBlockchain | None,
+            value_threshold: FVal | None,
+    ) -> dict[str, Any]:
+        if value_threshold is not None:
+            for _, chain_balances in balances.per_account:
+                filtered_balances: dict[BlockchainAddress, BalanceSheet | Balance] = {}
+                for account, account_data in chain_balances.items():
+                    if isinstance(account_data, BalanceSheet):
+                        filtered_assets: defaultdict[Asset, defaultdict[str, Balance]] = defaultdict(lambda: defaultdict(Balance))  # noqa: E501
+                        filtered_liabilities: defaultdict[Asset, defaultdict[str, Balance]] = defaultdict(lambda: defaultdict(Balance))  # noqa: E501
+
+                        for asset, asset_balances in account_data.assets.items():
+                            for key, balance in asset_balances.items():
+                                if balance.value > value_threshold:
+                                    filtered_assets[asset][key] = balance
+
+                        for asset, asset_balances in account_data.liabilities.items():
+                            for key, balance in asset_balances.items():
+                                if balance.value > value_threshold:
+                                    filtered_liabilities[asset][key] = balance
+
+                        if len(filtered_assets) != 0 or len(filtered_liabilities) != 0:
+                            filtered_balances[account] = BalanceSheet(
+                                assets=filtered_assets,
+                                liabilities=filtered_liabilities,
+                            )
+                    elif account_data.value > value_threshold:
+                        filtered_balances[account] = account_data
+
+                chain_balances.clear()
+                chain_balances.update(filtered_balances)
+
+        result = balances.serialize()
+        if (last_refresh_ts := self.rotkehlchen.chains_aggregator.get_blockchain_balances_last_query_ts(blockchain)) != {}:  # noqa: E501
+            result['last_refresh_ts'] = last_refresh_ts
+
+        return result
 
     @async_api_call()
     def get_xpub_balances(

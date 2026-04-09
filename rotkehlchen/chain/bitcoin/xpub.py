@@ -223,13 +223,14 @@ class XpubManager:
                         object_reference_keys=['address'],
                     )
 
-        if len(new_addresses) != 0:
-            self.chains_aggregator.modify_blockchain_accounts(
-                blockchain=xpub_data.blockchain,
-                accounts=new_addresses,
-                append_or_remove='append',
-            )
-            with self.db.user_write() as write_cursor:
+        with self.db.user_write() as write_cursor:
+            if len(new_addresses) != 0:
+                self.chains_aggregator.modify_blockchain_accounts(
+                    write_cursor=write_cursor,
+                    blockchain=xpub_data.blockchain,
+                    accounts=new_addresses,
+                    append_or_remove='append',
+                )
                 self.db.add_blockchain_accounts(
                     write_cursor=write_cursor,
                     account_data=[BlockchainAccountData(
@@ -239,7 +240,7 @@ class XpubManager:
                         tags=xpub_data.tags,
                     ) for x in new_addresses],
                 )
-        with self.db.user_write() as write_cursor:
+
             self.db.ensure_xpub_mappings_exist(
                 write_cursor=write_cursor,
                 xpub_data=xpub_data,

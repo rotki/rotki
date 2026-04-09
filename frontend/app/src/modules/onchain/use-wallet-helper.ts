@@ -16,7 +16,7 @@ interface UseWalletHelperReturn {
 
 export function useWalletHelper(): UseWalletHelperReturn {
   const { allEvmChains, getChain } = useSupportedChains();
-  const { fetchBlockchainBalances } = useBlockchainBalances();
+  const { refreshBlockchainBalances } = useBlockchainBalances();
   const { addTransactionHash } = useHistoryTransactions();
 
   function getEvmChainNameFromChainId(chainId: number | bigint): string {
@@ -42,9 +42,8 @@ export function useWalletHelper(): UseWalletHelperReturn {
     const { chain, initiatorAddress: address } = tx;
 
     await Promise.all([
-      fetchBlockchainBalances({
+      refreshBlockchainBalances({
         blockchain: chain,
-        ignoreCache: true,
       }),
       addTransactionHash({
         associatedAddress: address,

@@ -4,6 +4,7 @@ import { useBalancesApi } from '@/composables/api/balances';
 import { useBlockchainAccountManagement } from '@/modules/accounts/use-blockchain-account-management';
 import { useExchanges } from '@/modules/balances/exchanges/use-exchanges';
 import { useManualBalances } from '@/modules/balances/manual/use-manual-balances';
+import { useBlockchainBalances } from '@/modules/balances/use-blockchain-balances';
 import { useNotifications } from '@/modules/notifications/use-notifications';
 import { usePriceRefresh } from '@/modules/prices/use-price-refresh';
 import { usePriceTaskManager } from '@/modules/prices/use-price-task-manager';
@@ -22,6 +23,7 @@ export const useBalanceFetching = createSharedComposable(() => {
   const { runTask } = useTaskHandler();
   const { t } = useI18n({ useScope: 'global' });
   const { fetchNetValue } = useStatisticsDataFetching();
+  const { refreshBlockchainBalances } = useBlockchainBalances();
 
   const fetchBalances = async (payload: Partial<AllBalancePayload> = {}): Promise<void> => {
     const outcome = await runTask(
@@ -42,6 +44,8 @@ export const useBalanceFetching = createSharedComposable(() => {
   const fetch = async (): Promise<void> => {
     await fetchExchangeRates();
     await Promise.allSettled([fetchManualBalances(), refreshAccounts(), fetchConnectedExchangeBalances()]);
+
+    startPromise(refreshBlockchainBalances());
     startPromise(fetchBalances());
   };
 

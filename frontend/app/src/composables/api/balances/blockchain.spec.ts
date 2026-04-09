@@ -73,7 +73,7 @@ describe('composables/api/balances/blockchain', () => {
       );
 
       const { queryBlockchainBalances } = useBlockchainBalancesApi();
-      const payload: FetchBlockchainBalancePayload = { blockchain: 'btc', ignoreCache: false };
+      const payload: FetchBlockchainBalancePayload = { blockchain: 'btc' };
       const result = await queryBlockchainBalances(payload);
 
       expect(capturedUrl).toContain('/balances/blockchains/btc');
@@ -100,7 +100,6 @@ describe('composables/api/balances/blockchain', () => {
       const { queryBlockchainBalances } = useBlockchainBalancesApi();
       const payload: FetchBlockchainBalancePayload = {
         blockchain: 'eth',
-        ignoreCache: false,
       };
       const result = await queryBlockchainBalances(payload);
 
@@ -108,7 +107,7 @@ describe('composables/api/balances/blockchain', () => {
       expect(result.taskId).toBe(789);
     });
 
-    it('should include addresses and ignore_cache params', async () => {
+    it('should include addresses param', async () => {
       let capturedParams: URLSearchParams | null = null;
 
       server.use(
@@ -128,13 +127,12 @@ describe('composables/api/balances/blockchain', () => {
       const payload: FetchBlockchainBalancePayload = {
         blockchain: 'eth',
         addresses: ['0x1234', '0x5678'],
-        ignoreCache: true,
       };
       await queryBlockchainBalances(payload);
 
       expect(capturedParams!.get('async_query')).toBe('true');
       expect(capturedParams!.get('addresses')).toBe('0x1234,0x5678');
-      expect(capturedParams!.get('ignore_cache')).toBe('true');
+      expect(capturedParams!.get('ignore_cache')).toBeNull();
     });
 
     it('should include value_threshold when provided', async () => {
@@ -154,7 +152,7 @@ describe('composables/api/balances/blockchain', () => {
       );
 
       const { queryBlockchainBalances } = useBlockchainBalancesApi();
-      const payload: FetchBlockchainBalancePayload = { blockchain: '', ignoreCache: false };
+      const payload: FetchBlockchainBalancePayload = { blockchain: '' };
       await queryBlockchainBalances(payload, '1000');
 
       expect(capturedParams!.get('value_threshold')).toBe('1000');
@@ -170,11 +168,88 @@ describe('composables/api/balances/blockchain', () => {
       );
 
       const { queryBlockchainBalances } = useBlockchainBalancesApi();
-      const payload: FetchBlockchainBalancePayload = { blockchain: '', ignoreCache: false };
+      const payload: FetchBlockchainBalancePayload = { blockchain: '' };
 
       await expect(queryBlockchainBalances(payload))
         .rejects
         .toThrow('Failed to fetch balances');
+    });
+  });
+
+  describe('refreshBlockchainBalances', () => {
+    it('should send POST to refresh balances for specific blockchain', async () => {
+      let capturedBody: DefaultBodyType = null;
+      let capturedUrl = '';
+
+      server.use(
+        http.post(`${backendUrl}/api/1/balances/blockchains/eth`, async ({ request }) => {
+          capturedUrl = request.url;
+          capturedBody = await request.json();
+          return HttpResponse.json({
+            result: {
+              task_id: 500,
+            },
+            message: '',
+          });
+        }),
+      );
+
+      const { refreshBlockchainBalances } = useBlockchainBalancesApi();
+      const payload: FetchBlockchainBalancePayload = {
+        blockchain: 'eth',
+        addresses: ['0x1234'],
+      };
+      const result = await refreshBlockchainBalances(payload);
+
+      expect(capturedUrl).toContain('/balances/blockchains/eth');
+      expect(capturedBody).toEqual({
+        addresses: ['0x1234'],
+        async_query: true,
+      });
+      expect(result.taskId).toBe(500);
+    });
+
+    it('should send POST to refresh all blockchain balances', async () => {
+      let capturedBody: DefaultBodyType = null;
+
+      server.use(
+        http.post(`${backendUrl}/api/1/balances/blockchains`, async ({ request }) => {
+          capturedBody = await request.json();
+          return HttpResponse.json({
+            result: {
+              task_id: 501,
+            },
+            message: '',
+          });
+        }),
+      );
+
+      const { refreshBlockchainBalances } = useBlockchainBalancesApi();
+      const payload: FetchBlockchainBalancePayload = {
+        blockchain: '',
+      };
+      const result = await refreshBlockchainBalances(payload);
+
+      expect(capturedBody).toEqual({
+        async_query: true,
+      });
+      expect(result.taskId).toBe(501);
+    });
+
+    it('should throw error on failure', async () => {
+      server.use(
+        http.post(`${backendUrl}/api/1/balances/blockchains`, () =>
+          HttpResponse.json({
+            result: null,
+            message: 'Refresh failed',
+          })),
+      );
+
+      const { refreshBlockchainBalances } = useBlockchainBalancesApi();
+
+      await expect(refreshBlockchainBalances({ blockchain: '' }))
+        .rejects
+        .toThrow('Refresh failed');
     });
   });
 
@@ -199,13 +274,11 @@ describe('composables/api/balances/blockchain', () => {
       const payload: FetchBlockchainBalancePayload = {
         blockchain: 'btc',
         addresses: ['xpub6ABC123...'],
-        ignoreCache: true,
       };
       const result = await queryXpubBalances(payload);
 
       expect(capturedParams!.get('async_query')).toBe('true');
       expect(capturedParams!.get('xpub')).toBe('xpub6ABC123...');
-      expect(capturedParams!.get('ignore_cache')).toBe('true');
       expect(result.taskId).toBe(300);
     });
 
@@ -220,7 +293,7 @@ describe('composables/api/balances/blockchain', () => {
 
       const { queryXpubBalances } = useBlockchainBalancesApi();
 
-      await expect(queryXpubBalances({ blockchain: 'btc', ignoreCache: false }))
+      await expect(queryXpubBalances({ blockchain: 'btc' }))
         .rejects
         .toThrow('Invalid xpub');
     });

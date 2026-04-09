@@ -68,11 +68,11 @@ def test_add_avax_blockchain_account(rotkehlchen_api_server: 'APIServer') -> Non
         wait_for_async_task(rotkehlchen_api_server, task_id)
     else:
         assert_proper_response(response)
-    response = requests.get(api_url_for(
+    response = requests.post(api_url_for(
         rotkehlchen_api_server,
         'named_blockchain_balances_resource',
         blockchain=avalanche_chain_key,
-    ))
+    ), json={'async_query': False})
     result = assert_proper_sync_response_with_result(response)
 
     # Check per account
@@ -96,10 +96,11 @@ def test_remove_avax_blockchain_account(rotkehlchen_api_server: 'APIServer') -> 
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     async_query = random.choice([False, True])
 
-    requests.get(api_url_for(
+    requests.post(api_url_for(
         rotkehlchen_api_server,
-        'blockchainbalancesresource',
-    ))  # to populate balances
+        'named_blockchain_balances_resource',
+        blockchain=SupportedBlockchain.AVALANCHE.serialize(),
+    ), json={'async_query': False})  # to populate balances
     response = requests.delete(
         api_url_for(
             rotkehlchen_api_server,

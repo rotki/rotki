@@ -7,7 +7,7 @@ import { useBlockchainValidatorsStore } from '@/store/blockchain/validators';
 export function useEthValidatorWatchers(): void {
   const { isEth2Enabled } = useBlockchainValidatorsStore();
   const { fetchEthStakingValidators } = useEthValidatorFetching();
-  const { fetchBlockchainBalances } = useBlockchainBalances();
+  const { refreshBlockchainBalances } = useBlockchainBalances();
   const premium = usePremium();
 
   watch(premium, async () => {
@@ -15,9 +15,8 @@ export function useEthValidatorWatchers(): void {
       await fetchEthStakingValidators({
         ignoreCache: true,
       });
-      await fetchBlockchainBalances({
+      await refreshBlockchainBalances({
         blockchain: Blockchain.ETH2,
-        ignoreCache: true,
       });
     }
   });

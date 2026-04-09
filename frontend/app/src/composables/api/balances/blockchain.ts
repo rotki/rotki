@@ -11,6 +11,7 @@ import { EvmTokensRecord } from '@/types/balances';
 
 interface UseBlockchainBalancesApiReturn {
   queryBlockchainBalances: (payload: FetchBlockchainBalancePayload, valueThreshold?: string) => Promise<PendingTask>;
+  refreshBlockchainBalances: (payload: FetchBlockchainBalancePayload) => Promise<PendingTask>;
   queryXpubBalances: (payload: FetchBlockchainBalancePayload) => Promise<PendingTask>;
   queryLoopringBalances: () => Promise<PendingTask>;
   fetchDetectedTokens: (chain: string, addresses: string[] | null) => Promise<EvmTokensRecord>;
@@ -27,7 +28,7 @@ export function useBlockchainBalancesApi(): UseBlockchainBalancesApiReturn {
     return PendingTaskSchema.parse(response);
   };
 
-  const queryBlockchainBalances = async ({ addresses, blockchain, ignoreCache }: FetchBlockchainBalancePayload, valueThreshold?: string): Promise<PendingTask> => {
+  const queryBlockchainBalances = async ({ addresses, blockchain }: FetchBlockchainBalancePayload, valueThreshold?: string): Promise<PendingTask> => {
     let url = '/balances/blockchains';
     if (blockchain)
       url += `/${blockchain}`;
@@ -36,7 +37,6 @@ export function useBlockchainBalancesApi(): UseBlockchainBalancesApiReturn {
       query: {
         addresses,
         asyncQuery: true,
-        ignoreCache: ignoreCache ? true : undefined,
         valueThreshold,
       },
       validStatuses: VALID_WITH_PARAMS_SESSION_AND_EXTERNAL_SERVICE,
@@ -44,11 +44,24 @@ export function useBlockchainBalancesApi(): UseBlockchainBalancesApiReturn {
     return PendingTaskSchema.parse(response);
   };
 
-  const queryXpubBalances = async ({ addresses, blockchain, ignoreCache }: FetchBlockchainBalancePayload): Promise<PendingTask> => {
+  const refreshBlockchainBalances = async ({ addresses, blockchain }: FetchBlockchainBalancePayload): Promise<PendingTask> => {
+    let url = '/balances/blockchains';
+    if (blockchain)
+      url += `/${blockchain}`;
+
+    const response = await api.post<PendingTask>(url, {
+      addresses,
+      asyncQuery: true,
+    }, {
+      validStatuses: VALID_WITH_PARAMS_SESSION_AND_EXTERNAL_SERVICE,
+    });
+    return PendingTaskSchema.parse(response);
+  };
+
+  const queryXpubBalances = async ({ addresses, blockchain }: FetchBlockchainBalancePayload): Promise<PendingTask> => {
     const response = await api.get<PendingTask>(`/blockchains/${blockchain}/xpub`, {
       query: {
         asyncQuery: true,
-        ignoreCache: ignoreCache ? true : undefined,
         xpub: addresses && addresses.length > 0 ? addresses[0] : undefined,
       },
       validStatuses: VALID_WITH_PARAMS_SESSION_AND_EXTERNAL_SERVICE,
@@ -96,5 +109,6 @@ export function useBlockchainBalancesApi(): UseBlockchainBalancesApiReturn {
     queryBlockchainBalances,
     queryLoopringBalances,
     queryXpubBalances,
+    refreshBlockchainBalances,
   };
 }

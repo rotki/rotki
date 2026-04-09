@@ -2036,9 +2036,8 @@ class ExchangeBalanceQuerySchema(AsyncQueryArgumentSchema, ValueThresholdSchema)
     ignore_cache = fields.Boolean(load_default=False)
 
 
-class BlockchainBalanceQuerySchema(AsyncQueryArgumentSchema, ValueThresholdSchema):
+class BlockchainBalanceBaseSchema(AsyncQueryArgumentSchema):
     blockchain = BlockchainField(load_default=None)
-    ignore_cache = fields.Boolean(load_default=False)
     addresses = DelimitedOrNormalList(NonEmptyStringField(), load_default=None)
 
     @validates_schema
@@ -2054,6 +2053,10 @@ class BlockchainBalanceQuerySchema(AsyncQueryArgumentSchema, ValueThresholdSchem
                     address=address,
                     blockchain=blockchain,
                 )
+
+
+class BlockchainBalanceQuerySchema(BlockchainBalanceBaseSchema, ValueThresholdSchema):
+    ...
 
 
 class StatisticsAssetBalanceSchema(TimestampRangeSchema):

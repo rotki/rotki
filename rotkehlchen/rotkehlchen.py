@@ -908,12 +908,13 @@ class Rotkehlchen:
                 action='adding',
                 data_type='blockchain accounts',
             )
-        self.chains_aggregator.modify_blockchain_accounts(
-            blockchain=chain,
-            accounts=[entry.address for entry in account_data],
-            append_or_remove='append',
-        )
         with self.data.db.user_write() as write_cursor:
+            self.chains_aggregator.modify_blockchain_accounts(
+                write_cursor=write_cursor,
+                blockchain=chain,
+                accounts=[entry.address for entry in account_data],
+                append_or_remove='append',
+            )
             self.data.db.add_blockchain_accounts(
                 write_cursor=write_cursor,
                 account_data=[x.to_blockchain_account_data(chain) for x in account_data],
@@ -1032,9 +1033,10 @@ class Rotkehlchen:
         May raise:
         - InputError if a non-existing account was given to remove
         """
-        self.chains_aggregator.remove_single_blockchain_accounts(
+        self.chains_aggregator.check_accounts_existence(
             blockchain=blockchain,
             accounts=accounts,
+            append_or_remove='remove',
         )
         with contextlib.ExitStack() as stack:
             if blockchain in EVM_CHAINS_WITH_TRANSACTIONS:
@@ -1044,8 +1046,14 @@ class Rotkehlchen:
                 self.maybe_kill_running_tx_query_tasks(blockchain, evm_addresses)
                 stack.enter_context(evm_manager.transactions.wait_until_no_query_for(evm_addresses))
                 stack.enter_context(evm_manager.transactions.missing_receipts_lock)
-                stack.enter_context(evm_manager.transactions_decoder.undecoded_tx_query_lock)
+                if hasattr(evm_manager.transactions_decoder, 'undecoded_tx_query_lock'):
+                    stack.enter_context(evm_manager.transactions_decoder.undecoded_tx_query_lock)
             write_cursor = stack.enter_context(self.data.db.user_write())
+            self.chains_aggregator.remove_single_blockchain_accounts(
+                write_cursor=write_cursor,
+                blockchain=blockchain,
+                accounts=accounts,
+            )
             self.data.db.remove_single_blockchain_accounts(write_cursor, blockchain, accounts)
 
     def get_history_query_status(self) -> dict[str, str]:

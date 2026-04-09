@@ -39,6 +39,7 @@ vi.mock('@/composables/assets/common', () => ({
 vi.mock('@/composables/api/balances/blockchain', () => ({
   useBlockchainBalancesApi: vi.fn().mockReturnValue({
     queryBlockchainBalances: vi.fn().mockResolvedValue({ taskId: 1 }),
+    refreshBlockchainBalances: vi.fn().mockResolvedValue({ taskId: 4 }),
     queryLoopringBalances: vi.fn().mockResolvedValue({ taskId: 2 }),
     queryXpubBalances: vi.fn().mockResolvedValue({ taskId: 3 }),
   }),
@@ -149,30 +150,29 @@ describe('useBlockchainBalances', () => {
       expect(api.queryBlockchainBalances).toHaveBeenCalledWith({
         addresses: undefined,
         blockchain: 'eth',
-        ignoreCache: false,
         isXpub: false,
       }, undefined);
     });
+  });
 
-    it('should fetch particular blockchain - default', () => {
+  describe('refreshBlockchainBalances', () => {
+    it('should refresh particular blockchain - default', () => {
       const call = async (periodic = true): Promise<void> => {
-        await blockchainBalances.fetchBlockchainBalances(
+        await blockchainBalances.refreshBlockchainBalances(
           {
             blockchain: Blockchain.ETH,
-            ignoreCache: true,
           },
           periodic,
         );
       };
 
       const assert = (times = 1): void => {
-        expect(api.queryBlockchainBalances).toHaveBeenCalledTimes(times);
-        expect(api.queryBlockchainBalances).toHaveBeenCalledWith({
+        expect(api.refreshBlockchainBalances).toHaveBeenCalledTimes(times);
+        expect(api.refreshBlockchainBalances).toHaveBeenCalledWith({
           addresses: undefined,
           blockchain: Blockchain.ETH,
-          ignoreCache: true,
           isXpub: false,
-        }, undefined);
+        });
       };
 
       startPromise(call());
@@ -181,23 +181,21 @@ describe('useBlockchainBalances', () => {
 
     it('should ignore periodic balance refresh, when there are other task running', async () => {
       const call = async (periodic = true): Promise<void> => {
-        await blockchainBalances.fetchBlockchainBalances(
+        await blockchainBalances.refreshBlockchainBalances(
           {
             blockchain: Blockchain.ETH,
-            ignoreCache: true,
           },
           periodic,
         );
       };
 
       const assert = (times = 1): void => {
-        expect(api.queryBlockchainBalances).toHaveBeenCalledTimes(times);
-        expect(api.queryBlockchainBalances).toHaveBeenCalledWith({
+        expect(api.refreshBlockchainBalances).toHaveBeenCalledTimes(times);
+        expect(api.refreshBlockchainBalances).toHaveBeenCalledWith({
           addresses: undefined,
           blockchain: Blockchain.ETH,
-          ignoreCache: true,
           isXpub: false,
-        }, undefined);
+        });
       };
 
       const { useIsLoading } = useStatusStore();
@@ -215,23 +213,21 @@ describe('useBlockchainBalances', () => {
 
     it('should queue manual balance refresh, after other task is done', async () => {
       const call = async (periodic = true): Promise<void> => {
-        await blockchainBalances.fetchBlockchainBalances(
+        await blockchainBalances.refreshBlockchainBalances(
           {
             blockchain: Blockchain.ETH,
-            ignoreCache: true,
           },
           periodic,
         );
       };
 
       const assert = (times = 1): void => {
-        expect(api.queryBlockchainBalances).toHaveBeenCalledTimes(times);
-        expect(api.queryBlockchainBalances).toHaveBeenCalledWith({
+        expect(api.refreshBlockchainBalances).toHaveBeenCalledTimes(times);
+        expect(api.refreshBlockchainBalances).toHaveBeenCalledWith({
           addresses: undefined,
           blockchain: Blockchain.ETH,
-          ignoreCache: true,
           isXpub: false,
-        }, undefined);
+        });
       };
 
       const { useIsLoading } = useStatusStore();
@@ -248,7 +244,7 @@ describe('useBlockchainBalances', () => {
       assert(2);
     });
 
-    it('should fetch balances with isXpub flag set to true', async () => {
+    it('should refresh balances with isXpub flag set to true', async () => {
       const { updateAccounts } = useBlockchainAccountsStore();
 
       // Add a BTC account first
@@ -259,16 +255,14 @@ describe('useBlockchainBalances', () => {
         ),
       ]);
 
-      await blockchainBalances.fetchBlockchainBalances({
+      await blockchainBalances.refreshBlockchainBalances({
         blockchain: Blockchain.BTC,
-        ignoreCache: true,
         isXpub: true,
       });
 
       expect(api.queryXpubBalances).toHaveBeenCalledWith({
         addresses: undefined,
         blockchain: Blockchain.BTC,
-        ignoreCache: true,
         isXpub: true,
       });
     });

@@ -86,11 +86,11 @@ def test_add_ksm_blockchain_account(
     )
     task_id = assert_ok_async_response(response)
     wait_for_async_task(rotkehlchen_api_server, task_id)
-    response = requests.get(api_url_for(
+    response = requests.post(api_url_for(
         rotkehlchen_api_server,
         'named_blockchain_balances_resource',
         blockchain=kusama_chain_key,
-    ))
+    ), json={'async_query': False})
     result = assert_proper_sync_response_with_result(response)
 
     # Check per account
@@ -119,10 +119,11 @@ def test_remove_ksm_blockchain_account(rotkehlchen_api_server: 'APIServer') -> N
     """
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     kusama_chain_key = SupportedBlockchain.KUSAMA.serialize()
-    requests.get(api_url_for(
+    requests.post(api_url_for(
         rotkehlchen_api_server,
-        'blockchainbalancesresource',
-    ))  # to populate balances
+        'named_blockchain_balances_resource',
+        blockchain=kusama_chain_key,
+    ), json={'async_query': False})  # to populate balances
     response = requests.delete(
         api_url_for(
             rotkehlchen_api_server,

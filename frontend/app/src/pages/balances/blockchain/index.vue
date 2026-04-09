@@ -5,6 +5,7 @@ import AssetBalances from '@/components/AssetBalances.vue';
 import BlockchainBalanceRefreshBehaviourMenu
   from '@/components/dashboard/blockchain-balance/BlockchainBalanceRefreshBehaviourMenu.vue';
 import VisibleColumnsSelector from '@/components/dashboard/VisibleColumnsSelector.vue';
+import BlockchainBalanceStalenessIndicator from '@/components/helper/BlockchainBalanceStalenessIndicator.vue';
 import PriceRefresh from '@/components/helper/PriceRefresh.vue';
 import TablePageLayout from '@/components/layout/TablePageLayout.vue';
 import HideSmallBalances from '@/components/settings/HideSmallBalances.vue';
@@ -89,9 +90,12 @@ onMounted(() => {
                 <BlockchainBalanceRefreshBehaviourMenu />
               </template>
             </SummaryCardRefreshMenu>
-            <CardTitle class="ml-2">
-              {{ t('blockchain_balances.title') }}
-            </CardTitle>
+            <div class="flex flex-col ml-2">
+              <CardTitle>
+                {{ t('blockchain_balances.title') }}
+              </CardTitle>
+              <BlockchainBalanceStalenessIndicator />
+            </div>
           </div>
           <CardTitle class="order-0 whitespace-nowrap" />
           <div class="order-3 xl:order-1 flex flex-wrap md:flex-nowrap grow justify-end w-full xl:w-auto items-center gap-2 overflow-hidden pt-1.5 -mt-1 xl:pl-6">

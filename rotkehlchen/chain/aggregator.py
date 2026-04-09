@@ -70,11 +70,13 @@ from rotkehlchen.chain.optimism.modules.walletconnect.balances import Walletconn
 from rotkehlchen.chain.substrate.manager import wait_until_a_node_is_available
 from rotkehlchen.chain.substrate.utils import SUBSTRATE_NODE_CONNECTION_TIMEOUT
 from rotkehlchen.constants import DEFAULT_BALANCE_LABEL, ZERO
-from rotkehlchen.constants.assets import A_DAI, A_ETH, A_ETH2
+from rotkehlchen.constants.assets import A_BCH, A_BTC, A_DAI, A_ETH, A_ETH2
+from rotkehlchen.constants.timing import HOUR_IN_SECONDS
 from rotkehlchen.db.addressbook import DBAddressbook
-from rotkehlchen.db.cache import DBCacheStatic
+from rotkehlchen.db.cache import DBCacheDynamic, DBCacheStatic
 from rotkehlchen.db.eth2 import DBEth2
 from rotkehlchen.db.queried_addresses import QueriedAddresses
+from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.asset import UnknownAsset, WrongAssetType
 from rotkehlchen.errors.misc import (
     EthSyncError,
@@ -85,6 +87,7 @@ from rotkehlchen.errors.misc import (
 )
 from rotkehlchen.externalapis.etherscan_like import HasChainActivity
 from rotkehlchen.fval import FVal
+from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.greenlets.manager import GreenletManager
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.premium.premium import Premium
@@ -109,6 +112,7 @@ from rotkehlchen.types import (
     ListOfBlockchainAddresses,
     ModuleName,
     SupportedBlockchain,
+    Timestamp,
 )
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.interfaces import EthereumModule, ProgressUpdater
@@ -504,13 +508,111 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
 
         return instance
 
-    def get_balances_update(self, chain: SupportedBlockchain | None) -> BlockchainBalancesUpdate:
+    def get_balances_update(
+            self,
+            chain: SupportedBlockchain | None,
+            from_cache: bool = False,
+            addresses: ListOfBlockchainAddresses | None = None,
+    ) -> BlockchainBalancesUpdate:
         """Returns a balances update to be consumed by the API."""
+        if from_cache is True:
+            with self.database.conn.read_ctx() as cursor:
+                balances = self.database.get_blockchain_balances_cache(
+                    cursor=cursor,
+                    blockchain=chain,
+                    addresses=addresses,
+                )
+                last_query_ts = self.get_blockchain_balances_last_query_ts(
+                    chain=chain,
+                    cursor=cursor,
+                )
+
+            self._populate_cached_balances_values(
+                balances=balances,
+                last_query_ts=last_query_ts,
+            )
+            return BlockchainBalancesUpdate(
+                given_chain=chain,
+                per_account=balances,
+                totals=balances.recalculate_totals(),
+            )
+
         return BlockchainBalancesUpdate(
             given_chain=chain,
             per_account=self.balances.copy(),
             totals=self.totals.copy(),
         )
+
+    def get_blockchain_balances_last_query_ts(
+            self,
+            chain: SupportedBlockchain | None,
+            cursor: 'DBCursor | None' = None,
+    ) -> dict[str, Timestamp]:
+        chains = SupportedBlockchain if chain is None else (chain,)
+        if cursor is not None:
+            return {
+                supported_chain.serialize(): query_ts
+                for supported_chain in chains
+                if (query_ts := self.database.get_dynamic_cache(
+                    cursor=cursor,
+                    name=DBCacheDynamic.LAST_BLOCKCHAIN_BALANCES_QUERY_TS,
+                    blockchain=supported_chain.serialize(),
+                )) is not None
+            }
+
+        with self.database.conn.read_ctx() as read_cursor:
+            return self.get_blockchain_balances_last_query_ts(chain=chain, cursor=read_cursor)
+
+    def _populate_cached_balances_values(
+            self,
+            balances: BlockchainBalances,
+            last_query_ts: dict[str, Timestamp],
+    ) -> None:
+        main_currency = CachedSettings().main_currency
+        price_cache: dict[tuple[str, Timestamp], FVal] = {}
+
+        def get_price(asset: CryptoAsset, timestamp: Timestamp) -> FVal:
+            cache_key = (asset.identifier, timestamp)
+            if cache_key in price_cache:
+                return price_cache[cache_key]
+
+            if asset == main_currency:
+                price = FVal(1)
+            elif (price_entry := GlobalDBHandler.get_historical_price(
+                from_asset=asset,
+                to_asset=main_currency,
+                timestamp=timestamp,
+                max_seconds_distance=HOUR_IN_SECONDS,
+            )) is not None:
+                price = FVal(price_entry.price)
+            else:
+                price = ZERO
+
+            price_cache[cache_key] = price
+            return price
+
+        for chain, chain_balances in balances.chains_with_tokens():
+            if (query_ts := last_query_ts.get(chain.serialize())) is None:
+                continue
+
+            for account_balances in chain_balances.values():
+                for category in (account_balances.assets, account_balances.liabilities):
+                    for asset, labeled_balances in category.items():
+                        price = get_price(asset.resolve_to_crypto_asset(), query_ts)
+                        for balance in labeled_balances.values():
+                            balance.value = balance.amount * price
+
+        for chain, chain_balances in balances.bitcoin_chains():
+            if (query_ts := last_query_ts.get(chain.serialize())) is None:
+                continue
+
+            native_asset = (
+                A_BTC if chain == SupportedBlockchain.BITCOIN else A_BCH
+            ).resolve_to_crypto_asset()
+            price = get_price(native_asset, query_ts)
+
+            for balance in chain_balances.values():
+                balance.value = balance.amount * price
 
     def check_accounts_existence(
             self,
@@ -554,7 +656,6 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
             )
 
     @protect_with_lock(arguments_matter=True)
-    @cache_response_timewise(forward_ignore_cache=True)
     def query_balances(
             self,
             blockchain: SupportedBlockchain | None = None,
@@ -576,12 +677,14 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
         for chain in SupportedBlockchain if blockchain is None else [blockchain]:
             if chain == SupportedBlockchain.ETHEREUM_BEACONCHAIN:
                 self.query_eth2_balances(ignore_cache=ignore_cache)
+                self._update_blockchain_balances_cache(blockchain=chain, addresses=addresses)
                 continue
 
             if ignore_cache is True and chain.is_bitcoin():
                 xpub_manager.check_for_new_xpub_addresses(blockchain=chain)  # type: ignore[arg-type] # mypy doesn't understand is_bitcoin()
 
             self._query_chain_balances(blockchain=chain, ignore_cache=ignore_cache, addresses=addresses)  # noqa: E501
+            self._update_blockchain_balances_cache(blockchain=chain, addresses=addresses)
 
         self.totals = self.balances.recalculate_totals()
         return self.get_balances_update(blockchain)
@@ -595,23 +698,73 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
             # Kwargs here is so linters don't complain when the "magic" ignore_cache kwarg is given
             **kwargs: Any,
     ) -> None:
+        existing_balances = self.balances.get(chain=blockchain)
         if addresses is None or len(addresses) == 0:
+            existing_balances.clear()
             if len(accounts := self.accounts.get(blockchain)) == 0:
                 return
         else:
             accounts = addresses  # type: ignore  # they are both sequences.
+            for account in accounts:
+                existing_balances.pop(account, None)  # type: ignore[arg-type]
 
-        self.balances.set(
-            chain=blockchain,
-            balances=(  # Ethereum balances are handled differently to include eth module balances.
+        existing_balances.update(
+            (  # Ethereum balances are handled differently to include eth module balances.
                 self.query_eth_balances(accounts) if blockchain == SupportedBlockchain.ETHEREUM  # type: ignore[arg-type]  # will be checksum addresses
                 else self.get_chain_manager(blockchain).query_balances(accounts)
             ),
         )
 
+    def _update_blockchain_balances_cache(
+            self,
+            blockchain: SupportedBlockchain,
+            addresses: ListOfBlockchainAddresses | None = None,
+    ) -> None:
+        with self.database.user_write() as write_cursor:
+            balances_to_store: dict[str, BalanceSheet | Balance]
+            if addresses is None or len(addresses) == 0:
+                self.database.delete_blockchain_balances_cache(
+                    write_cursor=write_cursor,
+                    blockchain=blockchain,
+                )
+                balances_to_store = dict(self.balances.get(blockchain).items())
+            else:
+                for address in addresses:
+                    self.database.delete_blockchain_balances_cache(
+                        write_cursor=write_cursor,
+                        blockchain=blockchain,
+                        address=address,
+                    )
+                balances_to_store = {
+                    address: balance
+                    for address, balance in self.balances.get(blockchain).items()
+                    if address in addresses
+                }
+
+            if len(balances_to_store) == 0:
+                self.database.delete_dynamic_cache(
+                    write_cursor=write_cursor,
+                    name=DBCacheDynamic.LAST_BLOCKCHAIN_BALANCES_QUERY_TS,
+                    blockchain=blockchain.serialize(),
+                )
+                return
+
+            self.database.set_blockchain_balances_cache(
+                write_cursor=write_cursor,
+                blockchain=blockchain,
+                balances=balances_to_store,
+            )
+            refresh_ts = ts_now()
+            self.database.set_dynamic_cache(
+                write_cursor=write_cursor,
+                name=DBCacheDynamic.LAST_BLOCKCHAIN_BALANCES_QUERY_TS,
+                value=refresh_ts,
+                blockchain=blockchain.serialize(),
+            )
+
     def sync_bitcoin_accounts_with_db(
             self,
-            cursor: 'DBCursor',
+            write_cursor: 'DBCursor',
             blockchain: Literal[SupportedBlockchain.BITCOIN, SupportedBlockchain.BITCOIN_CASH],
     ) -> None:
         """Call this function after having deleted BTC/BCH accounts from the DB to
@@ -621,11 +774,12 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
         addresses from the DB.
         """
         db_btc_accounts = getattr(
-            self.database.get_blockchain_accounts(cursor),
+            self.database.get_blockchain_accounts(write_cursor),
             blockchain.get_key(),
         )
         accounts_to_remove = [x for x in getattr(self.accounts, blockchain.get_key()) if x not in db_btc_accounts]  # noqa: E501
         self.modify_blockchain_accounts(
+            write_cursor=write_cursor,
             blockchain=blockchain,
             accounts=accounts_to_remove,
             append_or_remove='remove',
@@ -633,6 +787,7 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
 
     def remove_single_blockchain_accounts(
             self,
+            write_cursor: 'DBCursor',
             blockchain: SupportedBlockchain,
             accounts: ListOfBlockchainAddresses,
     ) -> None:
@@ -659,6 +814,7 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
             )
 
         self.modify_blockchain_accounts(
+            write_cursor=write_cursor,
             blockchain=blockchain,
             accounts=accounts,
             append_or_remove='remove',
@@ -707,6 +863,7 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
 
     def modify_blockchain_accounts(
             self,
+            write_cursor: 'DBCursor',
             blockchain: SupportedBlockchain,
             accounts: ListOfBlockchainAddresses,
             append_or_remove: Literal['append', 'remove'],
@@ -756,6 +913,19 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
         if append_or_remove == 'remove':  # at addition no balances are queried so no need
             self.totals = self.balances.recalculate_totals()
 
+        # delete cache from the db for the accounts removed
+        for account in accounts:
+            self.database.delete_blockchain_balances_cache(
+                write_cursor=write_cursor,
+                blockchain=blockchain,
+                address=account,
+            )
+        self.database.delete_dynamic_cache(
+            write_cursor=write_cursor,
+            name=DBCacheDynamic.LAST_BLOCKCHAIN_BALANCES_QUERY_TS,
+            blockchain=blockchain.serialize(),
+        )
+
     @protect_with_lock()
     @cache_response_timewise(forward_ignore_cache=True)
     def query_eth2_balances(self, ignore_cache: bool) -> None:
@@ -771,9 +941,10 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
 
         # Before querying the new balances, delete the ones in memory if any
         self.balances.eth2.clear()
+        eth2_addresses = self.queried_addresses_for_module('eth2')
         balance_mapping = eth2.get_balances(
-            addresses=self.queried_addresses_for_module('eth2'),
-            fetch_validators_for_eth1=ignore_cache,
+            addresses=eth2_addresses,
+            fetch_validators_for_eth1=ignore_cache and len(eth2_addresses) != 0,
         )
         for pubkey, balance in balance_mapping.items():
             self.balances.eth2[pubkey] = BalanceSheet()
@@ -1102,11 +1273,13 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
         added_chains, failed_chains = [], []
         for chain in chains:
             try:
-                self.modify_blockchain_accounts(
-                    blockchain=chain,
-                    accounts=[address],
-                    append_or_remove='append',
-                )
+                with self.database.user_write() as write_cursor:
+                    self.modify_blockchain_accounts(
+                        write_cursor=write_cursor,
+                        blockchain=chain,
+                        accounts=[address],
+                        append_or_remove='append',
+                    )
             except InputError:
                 log.debug(f'Not adding {address} to {chain} since it already exists')
                 failed_chains.append(chain)
@@ -1301,6 +1474,16 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
         self.flush_cache('query_balances', blockchain=None, ignore_cache=True, addresses=None)
         self.flush_cache('query_balances', blockchain=SupportedBlockchain.ETHEREUM_BEACONCHAIN, ignore_cache=False, addresses=None)  # noqa: E501
         self.flush_cache('query_balances', blockchain=SupportedBlockchain.ETHEREUM_BEACONCHAIN, ignore_cache=True, addresses=None)  # noqa: E501
+        with self.database.user_write() as write_cursor:
+            self.database.delete_blockchain_balances_cache(
+                write_cursor=write_cursor,
+                blockchain=SupportedBlockchain.ETHEREUM_BEACONCHAIN,
+            )
+            self.database.delete_dynamic_cache(
+                write_cursor=write_cursor,
+                name=DBCacheDynamic.LAST_BLOCKCHAIN_BALANCES_QUERY_TS,
+                blockchain=SupportedBlockchain.ETHEREUM_BEACONCHAIN.serialize(),
+            )
 
     def get_all_counterparties(self) -> set['CounterpartyDetails']:
         """

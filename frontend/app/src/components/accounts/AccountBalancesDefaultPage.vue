@@ -5,6 +5,7 @@ import AccountBalances from '@/components/accounts/AccountBalances.vue';
 import AccountBalancesExportImport from '@/components/accounts/AccountBalancesExportImport.vue';
 import AccountImportProgress from '@/components/accounts/AccountImportProgress.vue';
 import AccountDialog from '@/components/accounts/management/AccountDialog.vue';
+import BlockchainBalanceStalenessIndicator from '@/components/helper/BlockchainBalanceStalenessIndicator.vue';
 import TablePageLayout from '@/components/layout/TablePageLayout.vue';
 import { useAccountCategoryHelper } from '@/composables/accounts/use-account-category-helper';
 import { useBlockchainAccountLoading } from '@/modules/accounts/use-account-loading';
@@ -63,6 +64,7 @@ onMounted(async () => {
     ]"
   >
     <template #buttons>
+      <BlockchainBalanceStalenessIndicator class="self-center" />
       <RuiButton
         data-cy="blockchain-account-refresh"
         variant="outlined"

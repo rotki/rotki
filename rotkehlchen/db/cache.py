@@ -57,6 +57,11 @@ class AddressArgType(TypedDict):
     address: ChecksumEvmAddress | BTCAddress | SolanaAddress
 
 
+class BlockchainArgType(TypedDict):
+    """Type of kwargs, used to get the value of `LAST_BLOCKCHAIN_BALANCES_QUERY_TS`"""
+    blockchain: str
+
+
 class IndexArgType(TypedDict):
     """Type of kwargs, used to get the value of `DBCacheDynamic.LAST_PRODUCED_BLOCKS_QUERY_TS`"""
     index: int
@@ -118,6 +123,10 @@ class DBCacheDynamic(Enum):
     LINEA_AIRDROP_ALLOCATION: Final = 'linea_airdrop_allocation_{address}', lambda x: x
     SOLANA_TOKEN_ACCOUNT: Final = 'solana_token_account_{address}', _deserialize_solana_token_account_from_str  # noqa: E501
     CUSTOMIZED_EVENT_ORIGINAL_SEQ_IDX: Final = 'customized_event_original_{group_identifier}_{sequence_index}', _deserialize_int_from_str  # noqa: E501
+    LAST_BLOCKCHAIN_BALANCES_QUERY_TS: Final = (
+        '{blockchain}_last_balances_query_ts',
+        _deserialize_timestamp_from_str,
+    )
 
     @overload
     def get_db_key(self, **kwargs: Unpack[LabeledLocationArgsType]) -> str:
@@ -129,6 +138,10 @@ class DBCacheDynamic(Enum):
 
     @overload
     def get_db_key(self, **kwargs: Unpack[AddressArgType]) -> str:
+        ...
+
+    @overload
+    def get_db_key(self, **kwargs: Unpack[BlockchainArgType]) -> str:
         ...
 
     @overload

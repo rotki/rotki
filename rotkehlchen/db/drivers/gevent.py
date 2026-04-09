@@ -330,8 +330,13 @@ class DBConnection:
         In order for savepoints to work then, we will need to open a savepoint instead of a write
         transaction in that case. This should be used sparingly.
         """
+        current_id = get_greenlet_name(gevent.getcurrent())
+        if self._conn.in_transaction is True and self.write_greenlet_id == current_id:
+            with self.savepoint_ctx() as cursor:
+                yield cursor
+                return
+
         if len(self.savepoints) != 0:
-            current_id = get_greenlet_name(gevent.getcurrent())
             if current_id != self.savepoint_greenlet_id:
                 # savepoint exists but in other greenlet. Wait till it's done.
                 while self.savepoint_greenlet_id is not None:

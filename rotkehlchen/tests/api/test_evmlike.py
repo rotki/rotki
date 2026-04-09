@@ -126,7 +126,7 @@ def test_evmlike_blockchain_balances(
             'query_balances',
             wraps=mocked_get_balances,
     ) as balance_query:
-        response = requests.get(
+        response = requests.post(
             api_url_for(
                 rotkehlchen_api_server,
                 'blockchainbalancesresource',
@@ -134,6 +134,7 @@ def test_evmlike_blockchain_balances(
         )
         result = assert_proper_sync_response_with_result(response)
         assert balance_query.call_count == 1
+        result.pop('last_refresh_ts', None)
         assert result == {
             'per_account': {
                 'zksync_lite': {

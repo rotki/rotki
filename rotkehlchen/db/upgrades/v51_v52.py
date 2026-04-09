@@ -66,6 +66,21 @@ def upgrade_v51_to_v52(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
             'ON bitcoin_events_addresses(address)',
         )
 
+    @progress_step(description='Create blockchain balances cache table.')
+    def _create_blockchain_balances_cache_table(write_cursor: 'DBCursor') -> None:
+        write_cursor.execute("""
+        CREATE TABLE IF NOT EXISTS blockchain_balances_cache (
+            blockchain TEXT NOT NULL,
+            address TEXT NOT NULL,
+            asset TEXT NOT NULL,
+            label TEXT NOT NULL DEFAULT '',
+            category CHAR(1) NOT NULL DEFAULT('A'),
+            amount TEXT NOT NULL,
+            FOREIGN KEY(asset) REFERENCES assets(identifier) ON UPDATE CASCADE,
+            PRIMARY KEY (blockchain, address, asset, label, category)
+        ) WITHOUT ROWID;
+        """)
+
     @progress_step(description='Backfill bitcoin event address mappings from notes.')
     def _backfill_bitcoin_address_mappings(write_cursor: 'DBCursor') -> None:
         rows = write_cursor.execute(
