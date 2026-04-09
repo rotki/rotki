@@ -340,6 +340,9 @@ class AssetWithOracles(AssetWithSymbol, abc.ABC):
             raise UnsupportedAsset(f'{self.identifier} is not supported by coingecko')
         return coingecko_str
 
+    def has_coingecko(self) -> bool:
+        return self.coingecko is not None and self.coingecko != ''
+
     def to_dict(self) -> dict[str, Any]:
         return super(AssetWithOracles, self).to_dict() | {
             'cryptocompare': self.cryptocompare,
