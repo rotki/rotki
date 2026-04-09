@@ -10,7 +10,6 @@ import { enqueue, startQueue, stopQueue, WEBSITE_ID } from '@/modules/sigil/use-
 import { router } from '@/router';
 import { useMainStore } from '@/store/main';
 import { useSessionAuthStore } from '@/store/session/auth';
-import { usePremiumStore } from '@/store/session/premium';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { logger } from '@/utils/logging';
 
@@ -49,7 +48,6 @@ export const useSigil = createPersistentSharedComposable(({ acquireBusy, release
   const { logged } = storeToRefs(useSessionAuthStore());
   const { submitUsageAnalytics } = storeToRefs(useGeneralSettingsStore());
   const { isDevelop } = storeToRefs(useMainStore());
-  const { capabilities } = storeToRefs(usePremiumStore());
 
   // Initialize handlers in Vue context so they can resolve stores/composables.
   const collectSessionConfig = useSessionConfigHandler();
@@ -86,10 +84,6 @@ export const useSigil = createPersistentSharedComposable(({ acquireBusy, release
     if (sessionReadyHandled)
       return;
     sessionReadyHandled = true;
-
-    // Wait for premium capabilities to load so plan/tier is accurate.
-    if (!get(capabilities))
-      await until(capabilities).not.toBeUndefined({ timeout: 5000 }).catch(() => {});
 
     chronicle('session_config', collectSessionConfig());
     chronicle('exchanges_summary', collectExchangesSummary());

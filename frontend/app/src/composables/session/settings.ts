@@ -3,6 +3,7 @@ import type { UserSettingsModel } from '@/types/user';
 import { BigNumber, TimeFramePersist } from '@rotki/common';
 import { useThemeMigration } from '@/composables/settings/theme';
 import { getBnFormat } from '@/data/amount-formatter';
+import { usePremiumWatchers } from '@/modules/premium/use-premium-watchers';
 import { useSettingsOperations } from '@/modules/settings/use-settings-operations';
 import { usePremiumStore } from '@/store/session/premium';
 import { useAccountingSettingsStore } from '@/store/settings/accounting';
@@ -17,6 +18,7 @@ interface UseSessionSettingsReturn {
 
 export function useSessionSettings(): UseSessionSettingsReturn {
   const { premium, premiumSync } = storeToRefs(usePremiumStore());
+  const { fetchCapabilities } = usePremiumWatchers();
   const { update: updateFrontendSettings } = useFrontendSettingsStore();
   const { updateFrontendSetting } = useSettingsOperations();
   const { update: updateAccountingSettings } = useAccountingSettingsStore();
@@ -53,6 +55,7 @@ export function useSessionSettings(): UseSessionSettingsReturn {
     set(premiumSync, premiumShouldSync);
     updateGeneralSettings(general);
     updateAccountingSettings(accounting);
+    await fetchCapabilities();
   };
 
   return {

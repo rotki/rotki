@@ -224,7 +224,7 @@ describe('modules/premium/use-feature-access', () => {
   });
 
   describe('usePremiumStore - API Integration', () => {
-    it('should fetch and parse capabilities when premium status becomes true', async () => {
+    it('should fetch and parse capabilities via fetchCapabilities', async () => {
       const mockCapabilities: PremiumCapabilities = {
         [PremiumFeature.ASSET_MOVEMENT_MATCHING]: cap(false, 'Advanced'),
         [PremiumFeature.ETH_STAKING_VIEW]: cap(true),
@@ -233,16 +233,15 @@ describe('modules/premium/use-feature-access', () => {
       };
 
       server.use(mockPremiumCapabilities(mockCapabilities));
-      usePremiumWatchers();
+      const { fetchCapabilities } = usePremiumWatchers();
 
       const store = usePremiumStore();
       const { capabilities, premium } = storeToRefs(store);
 
       set(premium, true);
+      await fetchCapabilities();
 
-      await vi.waitFor(() => {
-        expect(get(capabilities)).toEqual(mockCapabilities);
-      });
+      expect(get(capabilities)).toEqual(mockCapabilities);
     });
 
     it('should handle API response with missing capabilities', async () => {
@@ -251,22 +250,21 @@ describe('modules/premium/use-feature-access', () => {
       };
 
       server.use(mockPremiumCapabilities<Partial<PremiumCapabilities>>(partialCapabilities));
-      usePremiumWatchers();
+      const { fetchCapabilities } = usePremiumWatchers();
 
       const store = usePremiumStore();
       const { premium } = storeToRefs(store);
 
       set(premium, true);
+      await fetchCapabilities();
 
       const { allowed: ethStakingAllowed } = useFeatureAccess(PremiumFeature.ETH_STAKING_VIEW);
       const { allowed: eventAnalysisAllowed } = useFeatureAccess(PremiumFeature.EVENT_ANALYSIS_VIEW);
       const { allowed: graphsAllowed } = useFeatureAccess(PremiumFeature.GRAPHS_VIEW);
 
-      await vi.waitFor(() => {
-        expect(get(ethStakingAllowed)).toBe(true);
-        expect(get(eventAnalysisAllowed)).toBe(false);
-        expect(get(graphsAllowed)).toBe(false);
-      });
+      expect(get(ethStakingAllowed)).toBe(true);
+      expect(get(eventAnalysisAllowed)).toBe(false);
+      expect(get(graphsAllowed)).toBe(false);
     });
 
     it('should handle all capabilities set to false', async () => {
@@ -278,16 +276,15 @@ describe('modules/premium/use-feature-access', () => {
       };
 
       server.use(mockPremiumCapabilities(allFalseCapabilities));
-      usePremiumWatchers();
+      const { fetchCapabilities } = usePremiumWatchers();
 
       const store = usePremiumStore();
       const { capabilities, premium } = storeToRefs(store);
 
       set(premium, true);
+      await fetchCapabilities();
 
-      await vi.waitFor(() => {
-        expect(get(capabilities)).toEqual(allFalseCapabilities);
-      });
+      expect(get(capabilities)).toEqual(allFalseCapabilities);
 
       const { allowed: ethStakingAllowed } = useFeatureAccess(PremiumFeature.ETH_STAKING_VIEW);
       const { allowed: graphsAllowed } = useFeatureAccess(PremiumFeature.GRAPHS_VIEW);
@@ -304,21 +301,19 @@ describe('modules/premium/use-feature-access', () => {
       server.use(
         http.get(`${backendUrl}/api/1/premium/capabilities`, apiCallSpy),
       );
-      usePremiumWatchers();
+      const { fetchCapabilities } = usePremiumWatchers();
 
       const store = usePremiumStore();
       const { capabilities, premium } = storeToRefs(store);
 
       set(premium, true);
+      await fetchCapabilities();
 
-      await vi.waitFor(() => {
-        expect(apiCallSpy).toHaveBeenCalled();
-      });
-
+      expect(apiCallSpy).toHaveBeenCalled();
       expect(get(capabilities)).toBeUndefined();
     });
 
-    it('should refetch capabilities when premium status becomes false', async () => {
+    it('should clear capabilities on logout', async () => {
       const mockCapabilities: PremiumCapabilities = {
         [PremiumFeature.ASSET_MOVEMENT_MATCHING]: cap(true),
         [PremiumFeature.ETH_STAKING_VIEW]: cap(true),
@@ -327,58 +322,24 @@ describe('modules/premium/use-feature-access', () => {
       };
 
       server.use(mockPremiumCapabilities(mockCapabilities));
-      usePremiumWatchers();
+      const { fetchCapabilities } = usePremiumWatchers();
 
       const store = usePremiumStore();
       const { capabilities, premium } = storeToRefs(store);
+      const { logged } = storeToRefs(useSessionAuthStore());
 
       set(premium, true);
-      await vi.waitFor(() => {
-        expect(get(capabilities)).toEqual(mockCapabilities);
-      });
+      await fetchCapabilities();
 
-      set(premium, false);
-      await vi.waitFor(() => {
-        expect(get(capabilities)).toEqual(mockCapabilities);
-      });
-    });
+      expect(get(capabilities)).toEqual(mockCapabilities);
 
-    it('should not fetch capabilities if premium was already true', async () => {
-      const mockCapabilities: PremiumCapabilities = {
-        [PremiumFeature.ASSET_MOVEMENT_MATCHING]: cap(true),
-        [PremiumFeature.ETH_STAKING_VIEW]: cap(true),
-        [PremiumFeature.EVENT_ANALYSIS_VIEW]: cap(true),
-        [PremiumFeature.GRAPHS_VIEW]: cap(true),
-      };
-
-      const apiCallSpy = vi.fn(() => HttpResponse.json<ActionResult<PremiumCapabilities>>({
-        message: '',
-        result: mockCapabilities,
-      }, { status: 200 }));
-
-      server.use(
-        http.get(`${backendUrl}/api/1/premium/capabilities`, apiCallSpy),
-      );
-      usePremiumWatchers();
-
-      const store = usePremiumStore();
-      const { capabilities, premium } = storeToRefs(store);
-
-      set(premium, true);
-
-      await vi.waitFor(() => {
-        expect(get(capabilities)).toEqual(mockCapabilities);
-      });
-
-      const callCount = apiCallSpy.mock.calls.length;
-
-      set(premium, true);
+      set(logged, false);
       await nextTick();
 
-      expect(apiCallSpy).toHaveBeenCalledTimes(callCount);
+      expect(get(capabilities)).toBeUndefined();
     });
 
-    it('should integrate with useFeatureAccess after API call', async () => {
+    it('should integrate with useFeatureAccess after fetchCapabilities', async () => {
       const mockCapabilities: PremiumCapabilities = {
         [PremiumFeature.ASSET_MOVEMENT_MATCHING]: cap(false),
         [PremiumFeature.ETH_STAKING_VIEW]: cap(true),
@@ -387,7 +348,7 @@ describe('modules/premium/use-feature-access', () => {
       };
 
       server.use(mockPremiumCapabilities(mockCapabilities));
-      usePremiumWatchers();
+      const { fetchCapabilities } = usePremiumWatchers();
 
       const store = usePremiumStore();
       const { premium } = storeToRefs(store);
@@ -401,12 +362,11 @@ describe('modules/premium/use-feature-access', () => {
       expect(get(eventAnalysisAllowed)).toBe(false);
 
       set(premium, true);
+      await fetchCapabilities();
 
-      await vi.waitFor(() => {
-        expect(get(ethStakingAllowed)).toBe(true);
-        expect(get(graphsAllowed)).toBe(true);
-        expect(get(eventAnalysisAllowed)).toBe(false);
-      });
+      expect(get(ethStakingAllowed)).toBe(true);
+      expect(get(graphsAllowed)).toBe(true);
+      expect(get(eventAnalysisAllowed)).toBe(false);
     });
 
     it('should handle gnosis pay and monerium capabilities', async () => {
@@ -416,7 +376,7 @@ describe('modules/premium/use-feature-access', () => {
       };
 
       server.use(mockPremiumCapabilities(mockCapabilities));
-      usePremiumWatchers();
+      const { fetchCapabilities } = usePremiumWatchers();
 
       const store = usePremiumStore();
       const { premium } = storeToRefs(store);
@@ -428,13 +388,12 @@ describe('modules/premium/use-feature-access', () => {
       expect(get(moneriumAllowed)).toBe(false);
 
       set(premium, true);
+      await fetchCapabilities();
 
-      await vi.waitFor(() => {
-        expect(get(gnosisPayAllowed)).toBe(true);
-        expect(get(moneriumAllowed)).toBe(false);
-        expect(get(gnosisPayTier)).toBe('Advanced');
-        expect(get(moneriumTier)).toBe('Advanced');
-      });
+      expect(get(gnosisPayAllowed)).toBe(true);
+      expect(get(moneriumAllowed)).toBe(false);
+      expect(get(gnosisPayTier)).toBe('Advanced');
+      expect(get(moneriumTier)).toBe('Advanced');
     });
   });
 });
