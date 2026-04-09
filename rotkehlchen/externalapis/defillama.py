@@ -113,23 +113,26 @@ class Defillama(
         - UnsupportedAsset
         """
         if asset.is_evm_token() is True:
-            asset = asset.resolve_to_evm_token()
+            resolved_token = asset.resolve_to_evm_token()
+            if resolved_token.has_coingecko():
+                return f'coingecko:{resolved_token.to_coingecko()}'
+
             # The evm names for chains that we give don't match what defillama
             # uses in all the cases
-            if asset.chain_id == ChainID.POLYGON_POS:
+            if resolved_token.chain_id == ChainID.POLYGON_POS:
                 chain_name = 'polygon'
-            elif asset.chain_id == ChainID.ARBITRUM_ONE:
+            elif resolved_token.chain_id == ChainID.ARBITRUM_ONE:
                 chain_name = 'arbitrum'
-            elif asset.chain_id == ChainID.BINANCE_SC:
+            elif resolved_token.chain_id == ChainID.BINANCE_SC:
                 chain_name = 'bsc'
-            elif asset.chain_id == ChainID.AVALANCHE:
+            elif resolved_token.chain_id == ChainID.AVALANCHE:
                 chain_name = 'avax'
-            elif asset.chain_id == ChainID.ZKSYNC_ERA:
+            elif resolved_token.chain_id == ChainID.ZKSYNC_ERA:
                 chain_name = 'era'
             else:
-                chain_name = str(asset.chain_id)
+                chain_name = str(resolved_token.chain_id)
 
-            return f'{chain_name}:{asset.evm_address}'
+            return f'{chain_name}:{resolved_token.evm_address}'
         elif asset.is_solana_token():
             return f'solana:{asset.resolve_to_solana_token().mint_address}'
 
