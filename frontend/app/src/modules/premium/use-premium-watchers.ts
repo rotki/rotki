@@ -3,17 +3,16 @@ import { useSessionAuthStore } from '@/store/session/auth';
 import { usePremiumStore } from '@/store/session/premium';
 import { logger } from '@/utils/logging';
 
-export function usePremiumWatchers(): void {
+interface UsePremiumWatchersReturn {
+  fetchCapabilities: () => Promise<void>;
+}
+
+export function usePremiumWatchers(): UsePremiumWatchersReturn {
   const api = usePremiumCredentialsApi();
-  const { capabilities, premium } = storeToRefs(usePremiumStore());
+  const { capabilities } = storeToRefs(usePremiumStore());
   const { logged } = storeToRefs(useSessionAuthStore());
 
-  watchImmediate([premium, logged], async ([, isLogged]) => {
-    if (!isLogged) {
-      set(capabilities, undefined);
-      return;
-    }
-
+  async function fetchCapabilities(): Promise<void> {
     try {
       const result = await api.getPremiumCapabilities();
       set(capabilities, result);
@@ -21,5 +20,13 @@ export function usePremiumWatchers(): void {
     catch (error: unknown) {
       logger.error('Failed to fetch premium capabilities:', error);
     }
+  }
+
+  watch(logged, (isLogged) => {
+    if (!isLogged) {
+      set(capabilities, undefined);
+    }
   });
+
+  return { fetchCapabilities };
 }
