@@ -162,13 +162,19 @@ export class ProcessManager {
     this.log(`Currently running: ${tasks.length} tasks`);
 
     const pids = tasks.filter(task => task.name === this.command).map(task => task.pid);
+
+    if (pids.length === 0) {
+      this.log(`No running ${this.processName} processes found, skipping taskkill`);
+      return;
+    }
+
     this.log(`Detected the following running rotki-core processes: ${pids.join(', ')}`);
 
     const args = ['/f', '/t'];
 
     for (const pid of pids) args.push('/PID', pid.toString());
 
-    this.log(`Preparing to call "taskill ${args.join(' ')}" on the rotki-core processes`);
+    this.log(`Preparing to call "taskkill ${args.join(' ')}" on the rotki-core processes`);
 
     try {
       spawnSync('taskkill', args);
@@ -209,25 +215,28 @@ export class ProcessManager {
   }
 
   private async waitForTermination(processes: ProcessDescriptor[], processIds: number[]) {
-    function stillRunning(process: ProcessDescriptor[]): number {
-      return process.filter(({ pid }) => processIds.includes(pid)).length;
+    function stillRunning(procs: ProcessDescriptor[]): number {
+      return procs.filter(({ pid }) => processIds.includes(pid)).length;
     }
 
-    const running = stillRunning(processes);
-    if (running === 0) {
+    let remaining = stillRunning(processes);
+    if (remaining === 0) {
       this.log('The process killed successfully');
       return;
     }
 
     for (let i = 0; i < 10; i++) {
-      this.log(`The ${running} processes are still running. Waiting for 2 seconds`);
+      this.log(`${remaining} processes still running. Waiting for 2 seconds`);
       await wait(2000);
       processes = await psList();
-      if (stillRunning(processes) === 0) {
+      remaining = stillRunning(processes);
+      if (remaining === 0) {
         this.log('The process killed successfully');
-        break;
+        return;
       }
     }
+
+    this.log(`Failed to kill ${remaining} processes after 20 seconds of waiting`);
   }
 
   private cleanup() {

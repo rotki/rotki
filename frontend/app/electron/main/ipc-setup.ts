@@ -176,14 +176,66 @@ export class IpcManager {
     startPromise(this.oauthHandlers.clearOAuthCookies('startup'));
   }
 
-  cleanup(): void {
+  async cleanup(): Promise<void> {
     this.logger.info('Cleaning up IPC manager resources...');
 
-    // Stop WebSocket server
-    this.walletBridgeWebSocketServer.stop();
+    // Remove all ipcMain.on() listeners registered in initialize()
+    const onChannels = [
+      IpcCommands.SYNC_GET_DEBUG,
+      IpcCommands.SYNC_API_URL,
+      IpcCommands.PREMIUM_LOGIN,
+      IpcCommands.LOG_TO_FILE,
+      IpcCommands.TRAY_UPDATE,
+      IpcCommands.USER_LOGOUT,
+    ] as const;
+
+    for (const channel of onChannels) {
+      ipcMain.removeAllListeners(channel);
+    }
+
+    // Remove all ipcMain.handle() handlers registered in initialize()
+    const handleChannels = [
+      IpcCommands.INVOKE_CLOSE_APP,
+      IpcCommands.INVOKE_OPEN_URL,
+      IpcCommands.INVOKE_OPEN_DIRECTORY,
+      IpcCommands.INVOKE_OPEN_PATH,
+      IpcCommands.INVOKE_CONFIG,
+      IpcCommands.INVOKE_VERSION,
+      IpcCommands.INVOKE_IS_MAC,
+      IpcCommands.INVOKE_THEME,
+      IpcCommands.INVOKE_SUBPROCESS_START,
+      IpcCommands.INVOKE_UPDATE_CHECK,
+      IpcCommands.INVOKE_DOWNLOAD_UPDATE,
+      IpcCommands.INVOKE_INSTALL_UPDATE,
+      IpcCommands.INVOKE_STORE_PASSWORD,
+      IpcCommands.INVOKE_GET_PASSWORD,
+      IpcCommands.INVOKE_CLEAR_PASSWORD,
+      IpcCommands.INVOKE_WALLET_IMPORT,
+      IpcCommands.OPEN_WALLET_CONNECT_BRIDGE,
+      IpcCommands.WALLET_BRIDGE_HTTP_LISTENING,
+      IpcCommands.WALLET_BRIDGE_WS_LISTENING,
+      IpcCommands.WALLET_BRIDGE_CLIENT_READY,
+      IpcCommands.WALLET_BRIDGE_REQUEST,
+      IpcCommands.WALLET_BRIDGE_IS_CLIENT_CONNECTED,
+      IpcCommands.WALLET_BRIDGE_STOP_SERVERS,
+      IpcCommands.WALLET_BRIDGE_GET_PROVIDERS,
+      IpcCommands.WALLET_BRIDGE_SELECT_PROVIDER,
+      IpcCommands.WALLET_BRIDGE_GET_SELECTED_PROVIDER,
+    ] as const;
+
+    for (const channel of handleChannels) {
+      ipcMain.removeHandler(channel);
+    }
+
+    this.callbacks = null;
+    this.logger.info('IPC handlers removed');
+
+    // Stop WebSocket server and wait for connections to close
+    await this.walletBridgeWebSocketServer.stop();
 
     // Cleanup wallet import handlers (they manage their own servers)
     this.walletImportHandlers.cleanup();
+    this.logger.info('IPC cleanup complete');
   }
 
   private readonly handleBridgeDisconnected = (): void => {

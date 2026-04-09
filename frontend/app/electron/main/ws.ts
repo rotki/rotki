@@ -104,7 +104,9 @@ export class WalletBridgeWebSocketServer {
 
     this.idleTimer = setTimeout(() => {
       this.logger.info('WebSocket connection idle timeout reached, closing connection');
-      this.disconnect();
+      this.disconnect().catch((error) => {
+        this.logger.error('Failed to disconnect on idle timeout:', error);
+      });
     }, IDLE_TIMEOUT_MS);
   }
 
@@ -219,7 +221,7 @@ export class WalletBridgeWebSocketServer {
   }
 
   /** Disconnect all connections and stop the server */
-  public disconnect(): void {
+  public async disconnect(): Promise<void> {
     // Clear idle timer
     this.clearIdleTimer();
 
@@ -232,21 +234,26 @@ export class WalletBridgeWebSocketServer {
     // Clear all connection mappings
     this.connectionManager.clearAll();
 
-    if (this.wsServer) {
-      this.wsServer.close();
-      this.wsServer = undefined;
-    }
-
     // Reject all pending requests
     this.pendingRequests.forEach(({ reject }) => {
       reject(new Error('Wallet bridge disconnected'));
     });
     this.pendingRequests.clear();
+
+    // Await server close to ensure all connections are terminated
+    if (this.wsServer) {
+      const server = this.wsServer;
+      this.wsServer = undefined;
+      await new Promise<void>((resolve) => {
+        server.close(() => resolve());
+      });
+      this.logger.info('Wallet bridge WebSocket server stopped');
+    }
   }
 
   /** Stop the server (alias for disconnect) */
-  public stop(): void {
-    this.disconnect();
+  public async stop(): Promise<void> {
+    await this.disconnect();
   }
 
   public setOnBridgeDisconnected(callback: () => void): void {

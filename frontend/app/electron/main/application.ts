@@ -195,20 +195,37 @@ export class Application {
     app.removeAllListeners('before-quit');
   }
 
+  private static readonly quitTimeoutMs = 30_000;
+
   private async quit() {
+    this.logger.info('Quit initiated, starting cleanup...');
     this.cleanup();
     this.menu.cleanup();
     this.window.cleanup();
+    this.logger.info('Window destroyed');
     this.tray.cleanup();
-    this.ipc.cleanup();
+
+    const gracefulShutdown = async (): Promise<void> => {
+      await this.ipc.cleanup();
+      this.logger.info('IPC cleanup complete, terminating subprocesses...');
+      await this.processHandler.terminateProcesses(false, false);
+      this.logger.info('Subprocess termination complete');
+    };
+
+    const timeout = new Promise<never>((_, reject) => {
+      setTimeout(() => reject(new Error('Quit timeout exceeded')), Application.quitTimeoutMs);
+    });
+
     try {
-      await this.processHandler.terminateProcesses();
+      await Promise.race([gracefulShutdown(), timeout]);
+    }
+    catch (error: any) {
+      this.logger.warn(`Quit error: ${error.message}`);
     }
     finally {
-      // In some cases the app object might be already disposed
+      this.logger.info('Calling app.exit()');
       try {
-        if (process.platform !== 'win32')
-          app.exit();
+        app.exit();
       }
       catch (error: any) {
         if (error.message !== 'Object has been destroyed')

@@ -219,13 +219,19 @@ export class WindowManager {
     // Reset startup error state
     this.startupError = null;
     this.rendererReady = false;
-    // Clean up window listeners
-    this.window?.removeAllListeners('show');
-    this.window?.removeAllListeners('hide');
-    this.window?.removeAllListeners('close');
-    this.window?.removeAllListeners('closed');
-    this.listener = null;
+    // Clean up window listeners and destroy the window
+    const win = this.window;
     this.window = null;
+    this.listener = null;
+    if (win) {
+      win.removeAllListeners('show');
+      win.removeAllListeners('hide');
+      win.removeAllListeners('close');
+      win.removeAllListeners('closed');
+      if (!win.isDestroyed()) {
+        win.destroy();
+      }
+    }
   }
 
   private setupEventListeners(window: BrowserWindow) {
