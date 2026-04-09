@@ -84,9 +84,6 @@ class Environment:
         self.os = platform.system()
         self.target_arch = os.environ.get('MACOS_BUILD_ARCH', self.arch)
 
-        if self.is_mac():
-            os.environ.setdefault('ONEFILE', '0')
-
         self.rotki_version = rotki_version
         if os.environ.get('ROTKI_VERSION') is None:
             os.environ.setdefault('ROTKI_VERSION', self.rotki_version)
@@ -505,27 +502,6 @@ class MacPackaging:
                 sys.exit(1)
         self.cleanup_keychain()
 
-    @log_group('zip')
-    def perform_zip(self) -> None:
-        """
-        Creates a zip from the directory that contains the backend, checksums it
-        and moves them to the dist/ directory.
-        """
-        backend_directory = self.__storage.backend_directory
-        os.chdir(backend_directory)
-        zip_filename = f'{BACKEND_PREFIX}-{self.__environment.rotki_version}-{self.__environment.backend_suffix()}.zip'  # noqa: E501
-        ret_code = subprocess.call(
-            f'zip -vr "{zip_filename}" {BACKEND_PREFIX}/ -x "*.DS_Store"',
-            shell=True,
-        )
-        if ret_code != 0:
-            logger.error('zip failed')
-            sys.exit(1)
-        zip_file = backend_directory / zip_filename
-        checksum_file = Checksum.generate(self.__environment, zip_file)
-        self.__storage.move_to_dist(zip_file)
-        self.__storage.move_to_dist(checksum_file)
-
 
 class BackendBuilder:
     def __init__(
@@ -643,16 +619,20 @@ class BackendBuilder:
 
     def __move_to_dist(self) -> None:
         """
-        Generates a checksum for the backend and moves it along with a copy of the backend
-        to the dist/ directory. The backend file is copied instead of moved because the original
-        will be needed for electron-builder.
+        Generates a zipped backend artifact from the onedir output,
+        creates its checksum and moves both to the dist/ directory.
         """
         backend_directory = self.__storage.backend_directory
-        os.chdir(backend_directory)
-        filename = f'{BACKEND_PREFIX}-{self.__env.rotki_version}-{self.__env.backend_suffix()}'
-        file = backend_directory / filename
-        checksum_file = Checksum.generate(self.__env, file)
-        self.__storage.copy_to_dist(file)
+        backend_bundle_dir = backend_directory / BACKEND_PREFIX
+        if not backend_bundle_dir.exists():
+            logger.error(f'missing backend bundle directory: {backend_bundle_dir}')
+            sys.exit(1)
+
+        suffix = self.__env.backend_suffix().removesuffix('.exe')
+        archive_basename = backend_directory / f'{BACKEND_PREFIX}-{self.__env.rotki_version}-{suffix}'  # noqa: E501
+        archive_path = Path(shutil.make_archive(str(archive_basename), 'zip', backend_directory, BACKEND_PREFIX))  # noqa: E501
+        checksum_file = Checksum.generate(self.__env, archive_path)
+        self.__storage.move_to_dist(archive_path)
         self.__storage.move_to_dist(checksum_file)
 
     def _move_colibri_to_dist(self) -> None:
@@ -691,15 +671,11 @@ class BackendBuilder:
         self.__sanity_check()
         self.__package()
 
-        # When building for mac perform_zip() is
-        # responsible for moving the packaged backend to dist
         if mac is not None:
             backend_directory = self.__storage.backend_directory / BACKEND_PREFIX
             mac.sign(paths=backend_directory.glob('**/*'))
-            mac.perform_zip()
-        else:
-            self.__move_to_dist()
 
+        self.__move_to_dist()
         self._move_colibri_to_dist()
 
     @staticmethod
@@ -785,12 +761,8 @@ class BackendBuilder:
         """
         Packages the rotki backend using PyInstaller with Python optimizations.
 
-        In Linux, Windows the method will create an one-file bundled executable.
-
-        In macOS it will create an one-folder bundle containing an executable.
-        The reason we use the one-folder approach for macOS is due to signing.
-        All the bundled files have to be individually signed with a valid key
-        otherwise the backend will not start and will give cryptic errors instead.
+        The backend is built in one-folder mode on all platforms.
+        On macOS, bundled files are signed before creating the archive artifact.
         """
         self.__storage.prepare_backend()
         backend_directory = self.__storage.backend_directory

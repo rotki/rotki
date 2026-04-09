@@ -1,6 +1,5 @@
 import type { BackendOptions } from '@shared/ipc';
 import fs from 'node:fs';
-import os from 'node:os';
 import path from 'node:path';
 import process from 'node:process';
 import { assert } from '@rotki/common';
@@ -108,9 +107,23 @@ export const RotkiCoreConfig = {
     }
     else {
       const resources = process.resourcesPath ? process.resourcesPath : import.meta.dirname;
-      const binaryDirectory = os.platform() === 'darwin'
-        ? path.join(resources, BACKEND_DIRECTORY, 'rotki-core')
-        : path.join(resources, BACKEND_DIRECTORY);
+      const backendDirectory = path.join(resources, BACKEND_DIRECTORY);
+      const candidateBinaryDirectories: string[] = [
+        path.join(backendDirectory, 'rotki-core'),
+        backendDirectory,
+      ];
+
+      const binaryDirectory = candidateBinaryDirectories.find((directory: string) => {
+        if (!fs.existsSync(directory))
+          return false;
+
+        return fs.statSync(directory).isDirectory();
+      });
+
+      if (!binaryDirectory) {
+        const searched = candidateBinaryDirectories.join(', ');
+        throw new RotkiConfigError(`No backend directory found. Searched: ${searched}`, false);
+      }
 
       const files = fs.readdirSync(binaryDirectory);
 
