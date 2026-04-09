@@ -26,6 +26,7 @@ Changelog
 * :feature:`-` CCTP v2 events will now be properly decoded.
 * :bug:`-` rotki will now recover more reliably when an exchange closes idle API connections, reducing failed requests after the app has been left open for a while.
 * :bug:`-` WalletConnect staking reward claims will now be properly decoded.
+* :bug:`11317` Beefy legacy boost exit events will now be properly decoded.
 
 * :release:`1.42.1 <2025-03-26>`
 * :bug:`-` Asset icons in the Docker deployment will no longer fail to load due to an invalid base URL when constructing icon URLs.
