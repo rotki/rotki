@@ -2,16 +2,13 @@
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": [
     "config:recommended",
-    ":dependencyDashboard"
+    ":dependencyDashboardApproval",
+    ":pinAllExceptPeerDependencies",
+    ":separateMultipleMajorReleases"
   ],
   "dependencyDashboardAutoclose": false,
-  "prCreation": "not-pending",
   "minimumReleaseAge": "7 days",
   "packageRules": [
-    {
-      "matchPackageNames": ["*"],
-      "enabled": false
-    },
     {
       "allowedVersions": "/^(24)\\./",
       "groupName": "Node.js",
