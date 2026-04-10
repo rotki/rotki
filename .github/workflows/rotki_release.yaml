@@ -24,7 +24,7 @@ jobs:
       upload_url: ${{ steps.create_release.outputs.upload_url }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           persist-credentials: false
 
@@ -119,13 +119,13 @@ jobs:
       contents: write
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           fetch-depth: 0
           persist-credentials: false
 
       - name: Load env
-        uses: rotki/action-env@v3
+        uses: rotki/action-env@v4
         with:
           env_file: .github/.env.ci
 
@@ -133,24 +133,24 @@ jobs:
         run: echo "RELEASE_VERSION=${GITHUB_REF#refs/*/}" >> "$GITHUB_ENV"
 
       - name: Set up python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: ${{ env.PYTHON_VERSION }}
 
       - name: Install uv
-        uses: astral-sh/setup-uv@v5
+        uses: astral-sh/setup-uv@v7
         with:
           enable-cache: false
           version: ${{ env.UV_VERSION }}
           cache-dependency-glob: "uv.lock"
 
       - name: Setup pnpm
-        uses: pnpm/action-setup@v4
+        uses: pnpm/action-setup@v5
         with:
           package_json_file: frontend/package.json
 
       - name: Setup node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version-file: 'frontend/.nvmrc'
 
@@ -173,7 +173,7 @@ jobs:
             dist/*.sha512
             dist/rotki-core-*-linux.zip
 
-      - uses: actions/attest-build-provenance@v1
+      - uses: actions/attest-build-provenance@v4
         with:
           subject-path: |
             dist/rotki-core-*-linux.zip
@@ -213,13 +213,13 @@ jobs:
       contents: write
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           fetch-depth: 0
           persist-credentials: false
 
       - name: Load env
-        uses: rotki/action-env@v3
+        uses: rotki/action-env@v4
         with:
           env_file: .github/.env.ci
 
@@ -228,7 +228,7 @@ jobs:
         run: rustup target add aarch64-apple-darwin
 
       - name: Cache python pkg
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: ~/python*.pkg
           key: ${{ runner.os }}-python-${{ env.PYTHON_VERSION }}-${{ env.PYTHON_MACOS }}-${{ matrix.os.arch }}
@@ -237,19 +237,19 @@ jobs:
         run: packaging/setup-macos-python.sh "${PYTHON_VERSION}" "${PYTHON_MACOS}"
 
       - name: Install uv
-        uses: astral-sh/setup-uv@v5
+        uses: astral-sh/setup-uv@v7
         with:
           enable-cache: false
           version: ${{ env.UV_VERSION }}
           cache-dependency-glob: "uv.lock"
 
       - name: Setup pnpm
-        uses: pnpm/action-setup@v4
+        uses: pnpm/action-setup@v5
         with:
           package_json_file: frontend/package.json
 
       - name: Setup node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version-file: 'frontend/.nvmrc'
 
@@ -271,7 +271,7 @@ jobs:
         run: mv dist/latest-mac.yml dist/latest-mac-${{ matrix.os.arch }}.yml
 
       - name: upload latest-mac.yml
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: latest-mac-${{ matrix.os.arch }}
           path: dist/latest-mac-*.yml
@@ -286,7 +286,7 @@ jobs:
             dist/*.sha512
             dist/rotki-core-*-macos-*.zip
 
-      - uses: actions/attest-build-provenance@v1
+      - uses: actions/attest-build-provenance@v4
         with:
           subject-path: |
             dist/*.zip
@@ -300,18 +300,18 @@ jobs:
       contents: write
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           fetch-depth: 0
           persist-credentials: false
 
       - name: Setup node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version-file: 'frontend/.nvmrc'
 
       - name: download latest-mac.yml artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           path: latest-mac
           pattern: latest-mac-*
@@ -344,13 +344,13 @@ jobs:
       contents: write
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           fetch-depth: 0
           persist-credentials: false
 
       - name: Load env
-        uses: rotki/action-env@v3
+        uses: rotki/action-env@v4
         with:
           env_file: .github/.env.ci
 
@@ -358,24 +358,24 @@ jobs:
         run: echo "RELEASE_VERSION=${GITHUB_REF#refs/*/}" >> "$GITHUB_ENV"
 
       - name: Set up python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: ${{ env.PYTHON_VERSION }}
 
       - name: Install uv
-        uses: astral-sh/setup-uv@v5
+        uses: astral-sh/setup-uv@v7
         with:
           enable-cache: false
           version: ${{ env.UV_VERSION }}
           cache-dependency-glob: "uv.lock"
 
       - name: Setup pnpm
-        uses: pnpm/action-setup@v4
+        uses: pnpm/action-setup@v5
         with:
           package_json_file: frontend/package.json
 
       - name: Setup node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version-file: 'frontend/.nvmrc'
 
@@ -401,7 +401,7 @@ jobs:
             dist/*.sha512
             dist/rotki-core-*-windows.zip
 
-      - uses: actions/attest-build-provenance@v1
+      - uses: actions/attest-build-provenance@v4
         with:
           subject-path: |
             dist/*.exe
@@ -425,7 +425,7 @@ jobs:
       contents: write
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           persist-credentials: false
 
@@ -437,19 +437,19 @@ jobs:
 
       - name: Docker meta
         id: meta
-        uses: docker/metadata-action@v5
+        uses: docker/metadata-action@v6
         with:
           images: |
             ${{ github.repository }}
 
       - name: Login to DockerHub
-        uses: docker/login-action@v3
+        uses: docker/login-action@v4
         with:
           username: ${{ secrets.DOCKERHUB_USER }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@v4
 
       - name: Rotki Version
         id: rotki_version
@@ -457,7 +457,7 @@ jobs:
 
       - name: Build and push by digest
         id: docker_build
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           context: .
           file: ./Dockerfile
@@ -480,7 +480,7 @@ jobs:
           touch "${TEMP}/digests/${digest#sha256:}"
 
       - name: Upload digest
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: digests-${{ env.PLATFORM_PAIR }}
           path: ${{ runner.temp }}/digests/*
@@ -494,24 +494,24 @@ jobs:
     environment: docker
     steps:
       - name: Download digests
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           path: ${{ runner.temp }}/digests
           pattern: digests-*
           merge-multiple: true
 
       - name: Login to Docker Hub
-        uses: docker/login-action@v3
+        uses: docker/login-action@v4
         with:
           username: ${{ secrets.DOCKERHUB_USER }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@v4
 
       - name: Docker meta
         id: meta
-        uses: docker/metadata-action@v5
+        uses: docker/metadata-action@v6
         with:
           images: |
             ${{ github.repository }}
