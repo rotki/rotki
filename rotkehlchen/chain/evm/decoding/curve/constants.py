@@ -112,9 +112,13 @@ CURVE_METAREGISTRY_METHODS = [
     'get_coins',
     'get_underlying_coins',
 ]
-# The address provider address is same for all the supported chains
-# https://docs.curve.finance/deployments/contract-deployments/#address-provider
+# Curve address provider is the same for many chains but changes in some specific cases.
+# https://docs.curve.finance/developer/deployments?search=address-provider
 CURVE_ADDRESS_PROVIDER: Final = string_to_evm_address('0x5ffe7FB82894076ECB99A30D6A32e969e6e35E98')
+CURVE_ADDRESS_PROVIDER_BY_CHAIN: Final = {
+    ChainID.HYPERLIQUID: string_to_evm_address('0x1764ee18e8B3ccA4787249Ceb249356192594585'),
+    ChainID.MONAD: string_to_evm_address('0x4574921eb950d3Fd5B01562162EC566Cb8bc3648'),
+}
 # This is used in these evm chains(ethereum, optimism, gnosis, polygon, arbitrum)
 # https://github.com/curvefi/curve-router-ng/blob/1014d3691bd9df935dc06fc5988484b0614d1fd5/v1.0/README.md
 CURVE_SWAP_ROUTER_V1: Final = string_to_evm_address('0xF0d4c12A5768D806021F80a262B4d39d26C58b8D')

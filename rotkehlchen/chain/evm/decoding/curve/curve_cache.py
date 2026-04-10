@@ -7,6 +7,7 @@ from rotkehlchen.chain.evm.contracts import EvmContract
 from rotkehlchen.chain.evm.decoding.curve.constants import (
     CPT_CURVE,
     CURVE_ADDRESS_PROVIDER,
+    CURVE_ADDRESS_PROVIDER_BY_CHAIN,
     CURVE_API_URL,
     CURVE_CHAIN_ID,
     CURVE_METAREGISTRY_METHODS,
@@ -227,7 +228,20 @@ def _query_curve_data_from_chain(
     """Query all curve information(lp tokens, pools, gauges, pool coins) from the metaregistry.
     `reload_all` controls whether to refresh all pools or only query new pools.
     """
-    address_provider = evm_inquirer.contracts.contract(CURVE_ADDRESS_PROVIDER)
+    address_provider_address = CURVE_ADDRESS_PROVIDER_BY_CHAIN.get(
+        evm_inquirer.chain_id,
+        CURVE_ADDRESS_PROVIDER,
+    )
+
+    if (address_provider := evm_inquirer.contracts.contract_by_address(
+        address=address_provider_address,
+    )) is None:
+        log.error(
+            f'Failed to retrieve Curve address provider contract {address_provider_address} '
+            f'on {evm_inquirer.chain_name}. Skipping Curve cache update.',
+        )
+        return []
+
     try:
         metaregistry_address = deserialize_evm_address(address_provider.call(
             node_inquirer=evm_inquirer,
