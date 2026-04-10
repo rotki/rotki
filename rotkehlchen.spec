@@ -13,11 +13,9 @@ from rotkehlchen.types import CHAINS_WITH_TRANSACTION_DECODERS, Location
 from rotkehlchen.utils.misc import get_system_spec
 
 """
-PyInstaller spec file to build single file or dir distributions
+PyInstaller spec file to build one-folder distributions.
 """
 
-# Set to false to produce an exploded single-dir
-ONEFILE = int(os.environ.get('ONEFILE', True))
 MACOS_IDENTITY = os.environ.get('IDENTITY', None)
 
 
@@ -97,49 +95,33 @@ a = Entrypoint(
 
 pyz = PYZ(a.pure, a.zipped_data, cipher=None)
 
-if ONEFILE:
-    exe = EXE(
-        pyz,
-        a.scripts,
-        a.binaries,
-        a.zipfiles,
-        a.datas,
-        name=executable_name,
-        debug=False,
-        strip=False,
-        upx=False,
-        runtime_tmpdir=None,
-        console=True,
-    )
-else:
+identity = None
+entitlements = None
+if MACOS_IDENTITY is not None:
+    identity = MACOS_IDENTITY
+    entitlements = 'packaging/entitlements.plist'
 
-    identity = None
-    entitlements = None
-    if MACOS_IDENTITY is not None:
-        identity = MACOS_IDENTITY
-        entitlements = 'packaging/entitlements.plist'
+exe = EXE(
+    pyz,
+    a.scripts,
+    exclude_binaries=True,
+    name=executable_name,
+    debug=False,
+    strip=False,
+    upx=False,
+    console=True,
+    codesign_identity=identity,
+    entitlements_file=entitlements,
+)
 
-    exe = EXE(
-        pyz,
-        a.scripts,
-        exclude_binaries=True,
-        name=executable_name,
-        debug=False,
-        strip=False,
-        upx=False,
-        console=True,
-        codesign_identity=identity,
-        entitlements_file=entitlements,
-    )
-
-    coll = COLLECT(
-        exe,
-        a.binaries,
-        a.zipfiles,
-        a.datas,
-        strip=False,
-        upx=False,
-        name='rotki-core',
-        codesign_identity=identity,
-        entitlements_file=entitlements,
-    )
+coll = COLLECT(
+    exe,
+    a.binaries,
+    a.zipfiles,
+    a.datas,
+    strip=False,
+    upx=False,
+    name='rotki-core',
+    codesign_identity=identity,
+    entitlements_file=entitlements,
+)

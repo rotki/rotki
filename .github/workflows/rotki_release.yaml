@@ -61,7 +61,7 @@ jobs:
               - [AppImage](https://github.com/rotki/rotki/releases/download/${{ env.RELEASE_VERSION }}/rotki-linux_x86_64-${{ env.RELEASE_VERSION }}.AppImage)
               - [Tar with executable](https://github.com/rotki/rotki/releases/download/${{ env.RELEASE_VERSION }}/rotki-linux_x64-${{ env.RELEASE_VERSION }}.tar.xz)
               - [deb package](https://github.com/rotki/rotki/releases/download/${{ env.RELEASE_VERSION }}/rotki-linux_amd64-${{ env.RELEASE_VERSION }}.deb)
-              - [Standalone Backend](https://github.com/rotki/rotki/releases/download/${{ env.RELEASE_VERSION }}/rotki-core-${{ steps.change_log.outputs.version }}-linux)
+              - [Standalone Backend](https://github.com/rotki/rotki/releases/download/${{ env.RELEASE_VERSION }}/rotki-core-${{ steps.change_log.outputs.version }}-linux.zip)
             - **OSX**
               - arm64
                 - [DMG](https://github.com/rotki/rotki/releases/download/${{ env.RELEASE_VERSION }}/rotki-darwin_arm64-${{ env.RELEASE_VERSION }}.dmg)
@@ -72,7 +72,7 @@ jobs:
               - [Standalone Backend](https://github.com/rotki/rotki/releases/download/${{ env.RELEASE_VERSION }}/rotki-core-${{ steps.change_log.outputs.version }}-macos.zip)
             - **Windows**
               - [Windows executable](https://github.com/rotki/rotki/releases/download/${{ env.RELEASE_VERSION }}/rotki-win32_x64-${{ env.RELEASE_VERSION }}.exe)
-              - [Standalone Backend](https://github.com/rotki/rotki/releases/download/${{ env.RELEASE_VERSION }}/rotki-core-${{ steps.change_log.outputs.version }}-windows.exe)
+              - [Standalone Backend](https://github.com/rotki/rotki/releases/download/${{ env.RELEASE_VERSION }}/rotki-core-${{ steps.change_log.outputs.version }}-windows.zip)
             
             Optionally, you can also [verify the integrity](https://docs.rotki.com/requirement-and-installation/packaged-binaries.html#verifying-integrity) of the aforementioned binaries using the following checksums:
             
@@ -80,7 +80,7 @@ jobs:
               - [AppImage checksum](https://github.com/rotki/rotki/releases/download/${{ env.RELEASE_VERSION }}/rotki-linux_x86_64-${{ env.RELEASE_VERSION }}.AppImage.sha512)
               - [Tar with executable checksum](https://github.com/rotki/rotki/releases/download/${{ env.RELEASE_VERSION }}/rotki-linux_x64-${{ env.RELEASE_VERSION }}.tar.xz.sha512)
               - [deb package](https://github.com/rotki/rotki/releases/download/${{ env.RELEASE_VERSION }}/rotki-linux_amd64-${{ env.RELEASE_VERSION }}.deb.sha512)
-              - [Standalone Backend](https://github.com/rotki/rotki/releases/download/${{ env.RELEASE_VERSION }}/rotki-core-${{ steps.change_log.outputs.version }}-linux.sha512)
+              - [Standalone Backend](https://github.com/rotki/rotki/releases/download/${{ env.RELEASE_VERSION }}/rotki-core-${{ steps.change_log.outputs.version }}-linux.zip.sha512)
             - **OSX**
               - arm64
                 - [DMG checksum](https://github.com/rotki/rotki/releases/download/${{ env.RELEASE_VERSION }}/rotki-darwin_arm64-${{ env.RELEASE_VERSION }}.dmg.sha512)
@@ -91,7 +91,7 @@ jobs:
               - [Standalone Backend](https://github.com/rotki/rotki/releases/download/${{ env.RELEASE_VERSION }}/rotki-core-backend-${{ steps.change_log.outputs.version }}-macos.zip.sha512)
             - **Windows**
               - [Windows executable checksum](https://github.com/rotki/rotki/releases/download/${{ env.RELEASE_VERSION }}/rotki-win32_x64-${{ env.RELEASE_VERSION }}.exe.sha512)
-              - [Standalone Backend](https://github.com/rotki/rotki/releases/download/${{ env.RELEASE_VERSION }}/rotki-core-${{ steps.change_log.outputs.version }}-windows.exe.sha512)
+              - [Standalone Backend](https://github.com/rotki/rotki/releases/download/${{ env.RELEASE_VERSION }}/rotki-core-${{ steps.change_log.outputs.version }}-windows.zip.sha512)
 
             # Release Highlights
             ----
@@ -171,12 +171,12 @@ jobs:
           draft: true
           files: |
             dist/*.sha512
-            dist/rotki-core-*-linux
+            dist/rotki-core-*-linux.zip
 
       - uses: actions/attest-build-provenance@v1
         with:
           subject-path: |
-            dist/rotki-core-*-linux
+            dist/rotki-core-*-linux.zip
             dist/*.deb
             dist/*.AppImage
             dist/*.tar.xz
@@ -399,11 +399,13 @@ jobs:
           draft: true
           files: |
             dist/*.sha512
-            dist/rotki-core-*-windows.exe
+            dist/rotki-core-*-windows.zip
 
       - uses: actions/attest-build-provenance@v1
         with:
-          subject-path: dist/*.exe
+          subject-path: |
+            dist/*.exe
+            dist/rotki-core-*-windows.zip
 
   docker:
     name: 'Build docker images'
