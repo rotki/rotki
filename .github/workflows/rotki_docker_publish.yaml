@@ -19,7 +19,7 @@ jobs:
       REGCTL_SUM: 'df25ceaadf190ec73804023657673128a62d909cca12ccd7a9a727a0b6df84b846b00a89ae581bf179528d74dce6a12fb8b7f5e55e546615b75e0a5e5c56c227'
     steps:
       - name: Login to DockerHub
-        uses: docker/login-action@v4
+        uses: docker/login-action@4907a6ddec9925e35a0a9e82d7399ccc52663121  # v4.1.0
         with:
           username: ${{ secrets.DOCKERHUB_USER }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
@@ -29,7 +29,7 @@ jobs:
         run: echo "version=${GITHUB_REF#refs/*/}" >> "$GITHUB_OUTPUT"
 
       - name: Cache regctl
-        uses: actions/cache@v5
+        uses: actions/cache@668228422ae6a00e4ad889ee87cd7109ec5666a7  # v5.0.4
         with:
           path: regctl-linux-amd64
           key: ${{ runner.os }}-regctl-${{ env.REGCTL }}

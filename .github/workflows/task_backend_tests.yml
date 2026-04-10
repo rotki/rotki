@@ -38,13 +38,13 @@ jobs:
       contents: read
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
         with:
           fetch-depth: 2
           persist-credentials: false
 
       - name: Checkout test caching
-        uses: actions/checkout@v6
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
         with:
           repository: rotki/test-caching
           path: test-caching
@@ -83,24 +83,24 @@ jobs:
           echo "VCR setup: $SOURCE_BRANCH not fully rebased on $TARGET_BRANCH" && exit 1
 
       - name: Load env
-        uses: rotki/action-env@v4
+        uses: rotki/action-env@49f59e650cfdc8796c4ac6533ec044b190d83f9a  # v4.0.0
         with:
           env_file: .github/.env.ci
 
       - name: Setup python
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405  # v6.2.0
         with:
           python-version: ${{ env.PYTHON_VERSION }}
 
       - name: Install uv
-        uses: astral-sh/setup-uv@v7
+        uses: astral-sh/setup-uv@37802adc94f370d6bfd71619e3f0bf239e1f3b78  # v7.6.0
         with:
           enable-cache: true
           version: ${{ env.UV_VERSION }}
           cache-dependency-glob: "uv.lock"
 
       - name: Cache rotkehlchen test directory
-        uses: actions/cache@v5
+        uses: actions/cache@668228422ae6a00e4ad889ee87cd7109ec5666a7  # v5.0.4
         with:
           path: ~/.cache/.rotkehlchen-test-dir
           key: ${{ runner.os }}-testdir
@@ -165,7 +165,7 @@ jobs:
 
       - name: Upload coverage artifacts
         if: ${{ inputs.collect_coverage }}
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f  # v7.0.0
         with:
           name: coverage-${{ inputs.os }}-${{ matrix.test-group }}
           path: .coverage.${{ matrix.test-group }}
