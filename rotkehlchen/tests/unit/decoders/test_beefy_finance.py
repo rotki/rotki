@@ -66,6 +66,11 @@ def _beefy_cache(database: 'DBHandler') -> None:
             '0',
         )),
         ','.join((
+            string_to_evm_address('0x46EA5993fdDC27E4f770eFfB6921F401101Cbd59'),
+            string_to_evm_address('0x637213593e31Bc25F49D37C74B43a89eb1743D73'),
+            '0',
+        )),
+        ','.join((
             string_to_evm_address('0xbd313b13ed794B86Bd161885F8e170769E0e68b2'),
             string_to_evm_address('0x46EA5993fdDC27E4f770eFfB6921F401101Cbd59'),
             '1',
@@ -1223,14 +1228,56 @@ def test_unstake_beefy_reward_pool_with_reward(
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0x356a14285c8D2d351682D6E6fEF0213ddEd8Abad']])
 def test_legacy_boost_exit(ethereum_inquirer, ethereum_accounts, beefy_cache):
-    get_decoded_events_of_transaction(
+    """Test that a Beefy legacy boost exit() decodes as unstake + reward claim."""
+    events, _ = get_decoded_events_of_transaction(
         evm_inquirer=ethereum_inquirer,
-        tx_hash=deserialize_evm_tx_hash('0x79be37675ed545796804fcb146cb7ba08915d6c032fe99cb8005a877dc9974b4'),
+        tx_hash=(tx_hash := deserialize_evm_tx_hash('0x79be37675ed545796804fcb146cb7ba08915d6c032fe99cb8005a877dc9974b4')),  # noqa: E501
+        relevant_address=(user_address := ethereum_accounts[0]),
+        load_global_caches=[CPT_BEEFY_FINANCE],
     )
-    # TODO @yabirgb(#11317): Fix the beefy decoder to process correctly boost exits
     legacy_vault = EvmToken('eip155:1/erc20:0xbd313b13ed794B86Bd161885F8e170769E0e68b2')
     assert (
         len(legacy_vault.underlying_tokens) == 1 and
         legacy_vault.underlying_tokens[0].address == '0x46EA5993fdDC27E4f770eFfB6921F401101Cbd59'
     )
     assert legacy_vault.name == 'Reward Moo Curve ShezETH-ETH'
+    expected_events = [EvmEvent(
+        tx_ref=tx_hash,
+        sequence_index=0,
+        timestamp=(timestamp := TimestampMS(1755847487000)),
+        location=Location.ETHEREUM,
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.FEE,
+        asset=A_ETH,
+        amount=FVal(gas_amount := '0.000160735603245864'),
+        notes=f'Burn {gas_amount} ETH for gas',
+        counterparty=CPT_GAS,
+        location_label=user_address,
+    ), EvmEvent(
+        tx_ref=tx_hash,
+        sequence_index=1,
+        timestamp=timestamp,
+        location=Location.ETHEREUM,
+        event_type=HistoryEventType.STAKING,
+        event_subtype=HistoryEventSubType.REDEEM_WRAPPED,
+        asset=(moo_token := EvmToken('eip155:1/erc20:0x46EA5993fdDC27E4f770eFfB6921F401101Cbd59')),
+        amount=FVal(receive_amount := '0.048193130730977916'),
+        location_label=user_address,
+        notes=f'Receive {receive_amount} {moo_token.symbol} after unstaking from Beefy',
+        counterparty=CPT_BEEFY_FINANCE,
+        address=legacy_vault.evm_address,
+    ), EvmEvent(
+        tx_ref=tx_hash,
+        sequence_index=2,
+        timestamp=timestamp,
+        location=Location.ETHEREUM,
+        event_type=HistoryEventType.RECEIVE,
+        event_subtype=HistoryEventSubType.REWARD,
+        asset=(shezmu_token := EvmToken('eip155:1/erc20:0x5fE72ed557d8a02FFf49B3B826792c765d5cE162')),  # noqa: E501
+        amount=FVal(reward_amount := '0.431818543798147125'),
+        location_label=user_address,
+        notes=f'Receive {reward_amount} {shezmu_token.symbol} as Beefy staking reward',
+        counterparty=CPT_BEEFY_FINANCE,
+        address=legacy_vault.evm_address,
+    )]
+    assert events == expected_events

@@ -13,8 +13,8 @@ from rotkehlchen.assets.utils import (
 from rotkehlchen.chain.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.decoding.utils import maybe_reshuffle_events
 from rotkehlchen.chain.ethereum.utils import should_update_protocol_cache
-from rotkehlchen.chain.evm.constants import REWARD_PAID_TOPIC, ZERO_ADDRESS
-from rotkehlchen.chain.evm.decoding.constants import ERC20_OR_ERC721_TRANSFER
+from rotkehlchen.chain.evm.constants import REWARD_PAID_TOPIC, REWARD_PAID_TOPIC_V2, ZERO_ADDRESS
+from rotkehlchen.chain.evm.decoding.constants import ERC20_OR_ERC721_TRANSFER, WITHDRAWN
 from rotkehlchen.chain.evm.decoding.interfaces import EvmDecoderInterface, ReloadableDecoderMixin
 from rotkehlchen.chain.evm.decoding.structures import (
     DEFAULT_EVM_DECODING_OUTPUT,
@@ -80,6 +80,40 @@ class BeefyFinanceCommonDecoder(EvmDecoderInterface, ReloadableDecoderMixin):
             (vault_info := self.vaults.get(address)) is not None and
             self.vaults.get(vault_info[0]) is not None
         )
+
+    def _decode_legacy_boost_exit(
+            self,
+            tx_log: EvmTxReceiptLog,
+            unmatched_receive_events: list['EvmEvent'],
+            ordered_events: list['EvmEvent'],
+            transaction: EvmTransaction,
+    ) -> None:
+        """Decode a Withdrawn event from a legacy boost contract.
+        These contracts don't burn an ERC20 token but instead emit a Withdrawn(address,uint256)
+        event and transfer the underlying moo token back to the user.
+        """
+        if (vault_info := self.vaults.get(tx_log.address)) is None:
+            return
+
+        underlying_address = vault_info[0]
+        withdrawn_amount = int.from_bytes(tx_log.data[:32])
+        for event in unmatched_receive_events:
+            if (
+                (resolved_asset := event.asset.resolve_to_crypto_asset()).is_evm_token() and
+                resolved_asset.evm_address == underlying_address and  # type: ignore[attr-defined]  # this is an evm token
+                event.amount == asset_normalized_value(
+                    amount=withdrawn_amount,
+                    asset=resolved_asset,
+                )
+            ):
+                event.counterparty = CPT_BEEFY_FINANCE
+                event.event_type = HistoryEventType.STAKING
+                event.event_subtype = HistoryEventSubType.REDEEM_WRAPPED
+                event.notes = f'Receive {event.amount} {resolved_asset.symbol} after unstaking from Beefy'  # noqa: E501
+                ordered_events.append(event)
+                return
+
+        log.error(f'Failed to find Beefy legacy boost withdrawn event in transaction {transaction}')  # noqa: E501
 
     def _ensure_vault_tokens(self, all_logs: list[EvmTxReceiptLog]) -> None:
         """Ensure vault/underlying tokens exist before decoding Beefy events.
@@ -167,31 +201,61 @@ class BeefyFinanceCommonDecoder(EvmDecoderInterface, ReloadableDecoderMixin):
             if len(unmatched_receive_events) == 0:
                 return events
 
+            ordered_events: list[EvmEvent] = []
             for tx_log in all_logs:
-                if tx_log.topics[0] != REWARD_PAID_TOPIC:
-                    continue
+                if tx_log.topics[0] == WITHDRAWN:
+                    self._decode_legacy_boost_exit(
+                        tx_log=tx_log,
+                        unmatched_receive_events=unmatched_receive_events,
+                        ordered_events=ordered_events,
+                        transaction=transaction,
+                    )
+                elif tx_log.topics[0] == REWARD_PAID_TOPIC:
+                    reward_token = bytes_to_address(tx_log.topics[2])
+                    reward_amount = int.from_bytes(tx_log.data[:32])
+                    for event in unmatched_receive_events:
+                        if (
+                            event.location_label == bytes_to_address(tx_log.topics[1]) and
+                            (
+                                resolved_asset := event.asset.resolve_to_crypto_asset()
+                            ).is_evm_token() and
+                            resolved_asset.evm_address == reward_token and  # type: ignore[attr-defined]  # this is an evm token
+                            event.amount == asset_normalized_value(
+                                amount=reward_amount,
+                                asset=resolved_asset,
+                            )
+                        ):
+                            event.counterparty = CPT_BEEFY_FINANCE
+                            event.event_subtype = HistoryEventSubType.REWARD
+                            event.notes = f'Receive {event.amount} {resolved_asset.symbol} as Beefy staking reward'  # noqa: E501
+                            ordered_events.append(event)
+                            break
+                    else:
+                        log.error(f'Failed to find Beefy reward pool reward event in transaction {transaction}')  # noqa: E501
+                elif tx_log.topics[0] == REWARD_PAID_TOPIC_V2:
+                    reward_amount = int.from_bytes(tx_log.data[:32])
+                    for event in unmatched_receive_events:
+                        if (
+                            event.location_label == bytes_to_address(tx_log.topics[1]) and
+                            event.amount == asset_normalized_value(
+                                amount=reward_amount,
+                                asset=(resolved_asset := event.asset.resolve_to_crypto_asset()),
+                            ) and
+                            event not in ordered_events
+                        ):
+                            event.counterparty = CPT_BEEFY_FINANCE
+                            event.event_subtype = HistoryEventSubType.REWARD
+                            event.notes = f'Receive {event.amount} {resolved_asset.symbol} as Beefy staking reward'  # noqa: E501
+                            ordered_events.append(event)
+                            break
+                    else:
+                        log.error(f'Failed to find Beefy reward pool reward event in transaction {transaction}')  # noqa: E501
 
-                reward_token = bytes_to_address(tx_log.topics[2])
-                reward_amount = int.from_bytes(tx_log.data[:32])
-                for event in unmatched_receive_events:
-                    if (
-                        event.location_label == bytes_to_address(tx_log.topics[1]) and
-                        (
-                            resolved_asset := event.asset.resolve_to_crypto_asset()
-                        ).is_evm_token() and
-                        resolved_asset.evm_address == reward_token and  # type: ignore[attr-defined]  # this is an evm token
-                        event.amount == asset_normalized_value(
-                            amount=reward_amount,
-                            asset=resolved_asset,
-                        )
-                    ):
-                        event.counterparty = CPT_BEEFY_FINANCE
-                        event.event_subtype = HistoryEventSubType.REWARD
-                        event.notes = f'Receive {event.amount} {resolved_asset.symbol} as Beefy staking reward'  # noqa: E501
-                        break
-                else:
-                    log.error(f'Failed to find Beefy reward pool reward event in transaction {transaction}')  # noqa: E501
-
+            if len(ordered_events) > 0:
+                maybe_reshuffle_events(
+                    ordered_events=ordered_events,
+                    events_list=events,
+                )
             return events
 
         spend_asset_addresses = []
@@ -445,13 +509,14 @@ class BeefyFinanceCommonDecoder(EvmDecoderInterface, ReloadableDecoderMixin):
         return DEFAULT_EVM_DECODING_OUTPUT
 
     def _decode_vault_activity(self, context: DecoderContext) -> EvmDecodingOutput:
-        if (
-            context.tx_log.topics[0] != ERC20_OR_ERC721_TRANSFER or
-            context.tx_log.address != context.transaction.to_address
-        ):
+        if context.tx_log.address != context.transaction.to_address:
             return DEFAULT_EVM_DECODING_OUTPUT
 
-        if len(context.tx_log.topics) < 3:
+        topic = context.tx_log.topics[0]
+        if topic in (WITHDRAWN, REWARD_PAID_TOPIC_V2):
+            return EvmDecodingOutput(matched_counterparty=CPT_BEEFY_FINANCE)
+
+        if topic != ERC20_OR_ERC721_TRANSFER or len(context.tx_log.topics) < 3:
             return DEFAULT_EVM_DECODING_OUTPUT
 
         if ZERO_ADDRESS in (bytes_to_address(context.tx_log.topics[1]), bytes_to_address(context.tx_log.topics[2])):  # noqa: E501
