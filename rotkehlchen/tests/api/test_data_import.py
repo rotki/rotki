@@ -28,6 +28,7 @@ from rotkehlchen.tests.utils.dataimport import (
     assert_blockfi_trades_import_results,
     assert_blockfi_transactions_import_results,
     assert_blockpit_import_results,
+    assert_coinbasepro_import_results,
     assert_cointracking_import_results,
     assert_cryptocom_import_results,
     assert_cryptocom_special_events_import_results,
@@ -748,4 +749,22 @@ def test_blockpit_history_import(rotkehlchen_api_server: 'APIServer') -> None:
     assert assert_proper_sync_response_with_result(response) is True
 
     assert_blockpit_import_results(rotki)
+    assert_all_events_have_csv_marker(rotki)
+
+
+def test_coinbasepro_import(rotkehlchen_api_server: 'APIServer') -> None:
+    """Test that data import works for GDAX/Coinbase Pro csv files"""
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+    dir_path = Path(__file__).resolve().parent.parent
+
+    filepath = dir_path / 'data' / 'coinbasepro.csv'
+    json_data = {'source': 'coinbasepro', 'file': str(filepath)}
+    response = requests.put(
+        api_url_for(
+            rotkehlchen_api_server,
+            'dataimportresource',
+        ), json=json_data,
+    )
+    assert assert_proper_sync_response_with_result(response) is True
+    assert_coinbasepro_import_results(rotki)
     assert_all_events_have_csv_marker(rotki)

@@ -3858,3 +3858,227 @@ def assert_blockpit_import_results(rotki: Rotkehlchen):
     ]
     for actual, expected in zip(history_events, expected_history_events, strict=True):
         assert_is_equal_history_event(actual=actual, expected=expected)
+
+
+def assert_coinbasepro_import_results(rotki: Rotkehlchen) -> None:
+    """A utility function to help assert on correctness of importing data from GDAX/Coinbase Pro"""
+    with rotki.data.db.conn.read_ctx() as cursor:
+        history_events = DBHistoryEvents(rotki.data.db).get_history_events_internal(
+            cursor=cursor,
+            filter_query=HistoryEventFilterQuery.make(),
+        )
+
+    warnings = rotki.msg_aggregator.consume_warnings()
+    errors = rotki.msg_aggregator.consume_errors()
+    assert len(errors) == 0
+    assert len(warnings) == 0
+    assert len(history_events) == 21
+
+    gid = '1xyz'  # placeholder; comparison is done without group_identifier
+    # Events are ordered by (timestamp ASC, sequence_index ASC)
+    expected_history_events: list[HistoryBaseEntry] = [
+        # deposit 2.5 BTC
+        AssetMovement(
+            identifier=1,
+            group_identifier=gid,
+            timestamp=TimestampMS(1521110551000),
+            location=Location.COINBASEPRO,
+            asset=A_BTC,
+            event_subtype=HistoryEventSubType.RECEIVE,
+            amount=FVal('2.5'),
+        ),
+        # Trade 10201: buy 52.3 ETH for 1.14732 BTC, fee 0.00344196 BTC
+        SwapEvent(
+            identifier=7,
+            group_identifier=gid,
+            timestamp=TimestampMS(1521111312000),
+            location=Location.COINBASEPRO,
+            asset=A_BTC,
+            event_subtype=HistoryEventSubType.SPEND,
+            amount=FVal('1.14732'),
+        ),
+        SwapEvent(
+            identifier=8,
+            group_identifier=gid,
+            timestamp=TimestampMS(1521111312000),
+            location=Location.COINBASEPRO,
+            asset=A_ETH,
+            event_subtype=HistoryEventSubType.RECEIVE,
+            amount=FVal('52.3'),
+        ),
+        SwapEvent(
+            identifier=9,
+            group_identifier=gid,
+            timestamp=TimestampMS(1521111312000),
+            location=Location.COINBASEPRO,
+            asset=A_BTC,
+            event_subtype=HistoryEventSubType.FEE,
+            amount=FVal('0.00344196'),
+        ),
+        # deposit 3 BTC
+        AssetMovement(
+            identifier=2,
+            group_identifier=gid,
+            timestamp=TimestampMS(1526825317000),
+            location=Location.COINBASEPRO,
+            asset=A_BTC,
+            event_subtype=HistoryEventSubType.RECEIVE,
+            amount=FVal('3'),
+        ),
+        # Trade 20502: buy 155.741 ETH for 2.81205 BTC, fee 0.00843615 BTC
+        SwapEvent(
+            identifier=10,
+            group_identifier=gid,
+            timestamp=TimestampMS(1526825564000),
+            location=Location.COINBASEPRO,
+            asset=A_BTC,
+            event_subtype=HistoryEventSubType.SPEND,
+            amount=FVal('2.81205'),
+        ),
+        SwapEvent(
+            identifier=11,
+            group_identifier=gid,
+            timestamp=TimestampMS(1526825564000),
+            location=Location.COINBASEPRO,
+            asset=A_ETH,
+            event_subtype=HistoryEventSubType.RECEIVE,
+            amount=FVal('155.741'),
+        ),
+        SwapEvent(
+            identifier=12,
+            group_identifier=gid,
+            timestamp=TimestampMS(1526825564000),
+            location=Location.COINBASEPRO,
+            asset=A_BTC,
+            event_subtype=HistoryEventSubType.FEE,
+            amount=FVal('0.00843615'),
+        ),
+        # withdrawal 208.041 ETH
+        AssetMovement(
+            identifier=3,
+            group_identifier=gid,
+            timestamp=TimestampMS(1533925995000),
+            location=Location.COINBASEPRO,
+            asset=A_ETH,
+            event_subtype=HistoryEventSubType.SPEND,
+            amount=FVal('208.041'),
+        ),
+        # deposit 0.25 BTC
+        AssetMovement(
+            identifier=4,
+            group_identifier=gid,
+            timestamp=TimestampMS(1560331064000),
+            location=Location.COINBASEPRO,
+            asset=A_BTC,
+            event_subtype=HistoryEventSubType.RECEIVE,
+            amount=FVal('0.25'),
+        ),
+        # deposit 5 BTC
+        AssetMovement(
+            identifier=5,
+            group_identifier=gid,
+            timestamp=TimestampMS(1560426128000),
+            location=Location.COINBASEPRO,
+            asset=A_BTC,
+            event_subtype=HistoryEventSubType.RECEIVE,
+            amount=FVal('5'),
+        ),
+        # withdrawal 1.5 BTC
+        AssetMovement(
+            identifier=6,
+            group_identifier=gid,
+            timestamp=TimestampMS(1561994913000),
+            location=Location.COINBASEPRO,
+            asset=A_BTC,
+            event_subtype=HistoryEventSubType.SPEND,
+            amount=FVal('1.5'),
+        ),
+        # Trades 305441-305443 all at same timestamp, ordered by (seq_index, rowid)
+        # seq=0 (SPEND) events first
+        SwapEvent(
+            identifier=13,
+            group_identifier=gid,
+            timestamp=TimestampMS(1562019258000),
+            location=Location.COINBASEPRO,
+            asset=A_BTC,
+            event_subtype=HistoryEventSubType.SPEND,
+            amount=FVal('0.000531'),
+        ),
+        SwapEvent(
+            identifier=16,
+            group_identifier=gid,
+            timestamp=TimestampMS(1562019258000),
+            location=Location.COINBASEPRO,
+            asset=A_BTC,
+            event_subtype=HistoryEventSubType.SPEND,
+            amount=FVal('0.000885'),
+        ),
+        SwapEvent(
+            identifier=19,
+            group_identifier=gid,
+            timestamp=TimestampMS(1562019258000),
+            location=Location.COINBASEPRO,
+            asset=A_BTC,
+            event_subtype=HistoryEventSubType.SPEND,
+            amount=FVal('0.653286'),
+        ),
+        # seq=1 (RECEIVE) events
+        SwapEvent(
+            identifier=14,
+            group_identifier=gid,
+            timestamp=TimestampMS(1562019258000),
+            location=Location.COINBASEPRO,
+            asset=A_ETH,
+            event_subtype=HistoryEventSubType.RECEIVE,
+            amount=FVal('0.015'),
+        ),
+        SwapEvent(
+            identifier=17,
+            group_identifier=gid,
+            timestamp=TimestampMS(1562019258000),
+            location=Location.COINBASEPRO,
+            asset=A_ETH,
+            event_subtype=HistoryEventSubType.RECEIVE,
+            amount=FVal('0.025'),
+        ),
+        SwapEvent(
+            identifier=20,
+            group_identifier=gid,
+            timestamp=TimestampMS(1562019258000),
+            location=Location.COINBASEPRO,
+            asset=A_ETH,
+            event_subtype=HistoryEventSubType.RECEIVE,
+            amount=FVal('18.46'),
+        ),
+        # seq=2 (FEE) events
+        SwapEvent(
+            identifier=15,
+            group_identifier=gid,
+            timestamp=TimestampMS(1562019258000),
+            location=Location.COINBASEPRO,
+            asset=A_BTC,
+            event_subtype=HistoryEventSubType.FEE,
+            amount=FVal('0.00000159'),
+        ),
+        SwapEvent(
+            identifier=18,
+            group_identifier=gid,
+            timestamp=TimestampMS(1562019258000),
+            location=Location.COINBASEPRO,
+            asset=A_BTC,
+            event_subtype=HistoryEventSubType.FEE,
+            amount=FVal('0.00000266'),
+        ),
+        SwapEvent(
+            identifier=21,
+            group_identifier=gid,
+            timestamp=TimestampMS(1562019258000),
+            location=Location.COINBASEPRO,
+            asset=A_BTC,
+            event_subtype=HistoryEventSubType.FEE,
+            amount=FVal('0.00195986'),
+        ),
+    ]
+
+    for actual, expected in zip(history_events, expected_history_events, strict=True):
+        assert_is_equal_history_event(actual=actual, expected=expected)
