@@ -65,4 +65,4 @@ jobs:
       - name: Check event-types.md is in sync
         run: |
           uv run python tools/scripts/generate_event_types_docs.py \
-            --check _docs/usage-guides/event-types.md
+            --check _docs/usage-guides/tax-accounting/event-types.md
