@@ -42,7 +42,10 @@ from rotkehlchen.tests.utils.dataimport import (
 )
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+
     from rotkehlchen.api.server import APIServer
+    from rotkehlchen.rotkehlchen import Rotkehlchen
     from rotkehlchen.tests.fixtures.websockets import WebsocketReader
 
 
@@ -107,44 +110,33 @@ def test_data_import_cointracking(
 
 
 @pytest.mark.parametrize('number_of_eth_accounts', [0])
-def test_data_import_cryptocom(rotkehlchen_api_server: 'APIServer') -> None:
-    """Test that the data import endpoint works successfully for cryptocom"""
+@pytest.mark.parametrize(('source', 'filename', 'assert_fn'), [
+    ('cryptocom', 'cryptocom_trades_list.csv', assert_cryptocom_import_results),
+    ('cryptocom', 'cryptocom_special_events.csv', assert_cryptocom_special_events_import_results),
+    ('blockfi_transactions', 'blockfi-transactions.csv', assert_blockfi_transactions_import_results),  # noqa: E501
+    ('blockfi_trades', 'blockfi-trades.csv', assert_blockfi_trades_import_results),
+    ('shapeshift_trades', 'shapeshift-trade-history.csv', assert_shapeshift_trades_import_results),
+    ('uphold_transactions', 'uphold-transaction-history.csv', assert_uphold_transactions_import_results),  # noqa: E501
+    ('bisq_trades', 'bisq_trades.csv', assert_bisq_trades_import_results),
+    ('bitstamp', 'bitstamp.csv', assert_bitstamp_trades_import_results),
+    ('blockpit', 'blockpit_transactions.csv', assert_blockpit_import_results),
+    ('coinbasepro', 'coinbasepro.csv', assert_coinbasepro_import_results),
+])
+def test_data_import_simple(
+        rotkehlchen_api_server: 'APIServer',
+        source: str,
+        filename: str,
+        assert_fn: 'Callable[[Rotkehlchen], None]',
+) -> None:
+    """Test that the data import endpoint works for simple single-file sources."""
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
-    dir_path = Path(__file__).resolve().parent.parent
-    filepath = dir_path / 'data' / 'cryptocom_trades_list.csv'
-
-    json_data = {'source': 'cryptocom', 'file': str(filepath)}
+    filepath = Path(__file__).resolve().parent.parent / 'data' / filename
     response = requests.put(
-        api_url_for(
-            rotkehlchen_api_server,
-            'dataimportresource',
-        ), json=json_data,
+        api_url_for(rotkehlchen_api_server, 'dataimportresource'),
+        json={'source': source, 'file': str(filepath)},
     )
-    result = assert_proper_sync_response_with_result(response)
-    assert result is True
-    # And also assert data was imported successfully
-    assert_cryptocom_import_results(rotki)
-    assert_all_events_have_csv_marker(rotki)
-
-
-@pytest.mark.parametrize('number_of_eth_accounts', [0])
-def test_data_import_cryptocom_special_types(rotkehlchen_api_server: 'APIServer') -> None:
-    """Test that the data import endpoint works successfully for cryptocom"""
-    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
-    dir_path = Path(__file__).resolve().parent.parent
-    filepath = dir_path / 'data' / 'cryptocom_special_events.csv'
-
-    json_data = {'source': 'cryptocom', 'file': str(filepath)}
-    response = requests.put(
-        api_url_for(
-            rotkehlchen_api_server,
-            'dataimportresource',
-        ), json=json_data,
-    )
-    result = assert_proper_sync_response_with_result(response)
-    assert result is True
-    # And also assert data was imported successfully
-    assert_cryptocom_special_events_import_results(rotki)
+    assert assert_proper_sync_response_with_result(response) is True
+    assert_fn(rotki)
     assert_all_events_have_csv_marker(rotki)
 
 
@@ -170,48 +162,6 @@ def test_data_import_bitmex_wallet_history(rotkehlchen_api_server: 'APIServer') 
     assert_all_events_have_csv_marker(rotki)
 
 
-@pytest.mark.parametrize('number_of_eth_accounts', [0])
-def test_data_import_blockfi_transactions(rotkehlchen_api_server: 'APIServer') -> None:
-    """Test that the data import endpoint works successfully for blockfi transactions"""
-    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
-    dir_path = Path(__file__).resolve().parent.parent
-    filepath = dir_path / 'data' / 'blockfi-transactions.csv'
-
-    json_data = {'source': 'blockfi_transactions', 'file': str(filepath)}
-    response = requests.put(
-        api_url_for(
-            rotkehlchen_api_server,
-            'dataimportresource',
-        ), json=json_data,
-    )
-    result = assert_proper_sync_response_with_result(response)
-    assert result is True
-    # And also assert data was imported successfully
-    assert_blockfi_transactions_import_results(rotki)
-    assert_all_events_have_csv_marker(rotki)
-
-
-@pytest.mark.parametrize('number_of_eth_accounts', [0])
-def test_data_import_blockfi_trades(rotkehlchen_api_server: 'APIServer') -> None:
-    """Test that the data import endpoint works successfully for blockfi trades"""
-    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
-    dir_path = Path(__file__).resolve().parent.parent
-    filepath = dir_path / 'data' / 'blockfi-trades.csv'
-
-    json_data = {'source': 'blockfi_trades', 'file': str(filepath)}
-    response = requests.put(
-        api_url_for(
-            rotkehlchen_api_server,
-            'dataimportresource',
-        ), json=json_data,
-    )
-    result = assert_proper_sync_response_with_result(response)
-    assert result is True
-    # And also assert data was imported successfully
-    assert_blockfi_trades_import_results(rotki)
-    assert_all_events_have_csv_marker(rotki)
-
-
 @pytest.mark.parametrize('legacy_messages_via_websockets', [True])
 @pytest.mark.parametrize('number_of_eth_accounts', [0])
 def test_data_import_nexo(
@@ -234,69 +184,6 @@ def test_data_import_nexo(
     assert result is True
     # And also assert data was imported successfully
     assert_nexo_results(rotki, websocket_connection)
-    assert_all_events_have_csv_marker(rotki)
-
-
-@pytest.mark.parametrize('number_of_eth_accounts', [0])
-def test_data_import_shapeshift_trades(rotkehlchen_api_server: 'APIServer') -> None:
-    """Test that the data import endpoint works successfully for shapeshift trades"""
-    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
-    dir_path = Path(__file__).resolve().parent.parent
-    filepath = dir_path / 'data' / 'shapeshift-trade-history.csv'
-
-    json_data = {'source': 'shapeshift_trades', 'file': str(filepath)}
-    response = requests.put(
-        api_url_for(
-            rotkehlchen_api_server,
-            'dataimportresource',
-        ), json=json_data,
-    )
-    result = assert_proper_sync_response_with_result(response)
-    assert result is True
-    # And also assert data was imported successfully
-    assert_shapeshift_trades_import_results(rotki)
-    assert_all_events_have_csv_marker(rotki)
-
-
-@pytest.mark.parametrize('number_of_eth_accounts', [0])
-def test_data_import_uphold_transactions(rotkehlchen_api_server: 'APIServer') -> None:
-    """Test that the data import endpoint works successfully for uphold trades"""
-    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
-    dir_path = Path(__file__).resolve().parent.parent
-    filepath = dir_path / 'data' / 'uphold-transaction-history.csv'
-
-    json_data = {'source': 'uphold_transactions', 'file': str(filepath)}
-    response = requests.put(
-        api_url_for(
-            rotkehlchen_api_server,
-            'dataimportresource',
-        ), json=json_data,
-    )
-    result = assert_proper_sync_response_with_result(response)
-    assert result is True
-    # And also assert data was imported successfully
-    assert_uphold_transactions_import_results(rotki)
-    assert_all_events_have_csv_marker(rotki)
-
-
-@pytest.mark.parametrize('number_of_eth_accounts', [0])
-def test_data_import_bisq_transactions(rotkehlchen_api_server: 'APIServer') -> None:
-    """Test that the data import endpoint works successfully for bisq trades"""
-    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
-    dir_path = Path(__file__).resolve().parent.parent
-    filepath = dir_path / 'data' / 'bisq_trades.csv'
-
-    json_data = {'source': 'bisq_trades', 'file': str(filepath)}
-    response = requests.put(
-        api_url_for(
-            rotkehlchen_api_server,
-            'dataimportresource',
-        ), json=json_data,
-    )
-    result = assert_proper_sync_response_with_result(response)
-    assert result is True
-    # And also assert data was imported successfully
-    assert_bisq_trades_import_results(rotki)
     assert_all_events_have_csv_marker(rotki)
 
 
@@ -664,25 +551,6 @@ def test_bitcoin_tax_import(rotkehlchen_api_server: 'APIServer') -> None:
     assert_all_events_have_csv_marker(rotki)
 
 
-def test_bitstamp_import(rotkehlchen_api_server: 'APIServer') -> None:
-    """Test that data import works for Bitstamp transaction csv files"""
-    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
-    dir_path = Path(__file__).resolve().parent.parent
-
-    # First test a trades type csv import
-    filepath = dir_path / 'data' / 'bitstamp.csv'
-    json_data = {'source': 'bitstamp', 'file': str(filepath)}
-    response = requests.put(
-        api_url_for(
-            rotkehlchen_api_server,
-            'dataimportresource',
-        ), json=json_data,
-    )
-    assert assert_proper_sync_response_with_result(response) is True
-    assert_bitstamp_trades_import_results(rotki)
-    assert_all_events_have_csv_marker(rotki)
-
-
 def test_bittrex_history_import(rotkehlchen_api_server: 'APIServer') -> None:
     """Test that data import works both for bittrex csv files"""
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
@@ -730,41 +598,4 @@ def test_kucoin_history_import(rotkehlchen_api_server: 'APIServer') -> None:
         assert assert_proper_sync_response_with_result(response) is True
 
     assert_kucoin_import_results(rotki)
-    assert_all_events_have_csv_marker(rotki)
-
-
-def test_blockpit_history_import(rotkehlchen_api_server: 'APIServer') -> None:
-    """Test that data import works for blockpit csv files"""
-    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
-    dir_path = Path(__file__).resolve().parent.parent
-
-    filepath = dir_path / 'data' / 'blockpit_transactions.csv'
-    json_data = {'source': 'blockpit', 'file': str(filepath)}
-    response = requests.put(
-        api_url_for(
-            rotkehlchen_api_server,
-            'dataimportresource',
-        ), json=json_data,
-    )
-    assert assert_proper_sync_response_with_result(response) is True
-
-    assert_blockpit_import_results(rotki)
-    assert_all_events_have_csv_marker(rotki)
-
-
-def test_coinbasepro_import(rotkehlchen_api_server: 'APIServer') -> None:
-    """Test that data import works for GDAX/Coinbase Pro csv files"""
-    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
-    dir_path = Path(__file__).resolve().parent.parent
-
-    filepath = dir_path / 'data' / 'coinbasepro.csv'
-    json_data = {'source': 'coinbasepro', 'file': str(filepath)}
-    response = requests.put(
-        api_url_for(
-            rotkehlchen_api_server,
-            'dataimportresource',
-        ), json=json_data,
-    )
-    assert assert_proper_sync_response_with_result(response) is True
-    assert_coinbasepro_import_results(rotki)
     assert_all_events_have_csv_marker(rotki)
