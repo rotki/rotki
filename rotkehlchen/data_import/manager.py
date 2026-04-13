@@ -20,6 +20,7 @@ from rotkehlchen.data_import.importers.rotki_events import RotkiGenericEventsImp
 from rotkehlchen.data_import.importers.rotki_trades import RotkiGenericTradesImporter
 from rotkehlchen.data_import.importers.shapeshift_trades import ShapeshiftTradesImporter
 from rotkehlchen.data_import.importers.uphold_transactions import UpholdTransactionsImporter
+from rotkehlchen.data_import.importers.xaman import XamanImporter
 from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.utils.mixins.enums import SerializableEnumNameMixin
 
@@ -47,6 +48,7 @@ class DataImportSource(SerializableEnumNameMixin):
     BLOCKPIT = 17
     COINLEDGER = 18
     COINBASEPRO = 19
+    XAMAN = 20
 
 
 class CSVDataImporter:
@@ -102,6 +104,8 @@ class CSVDataImporter:
             importer = CoinledgerImporter(db=self.db)
         elif source == DataImportSource.COINBASEPRO:
             importer = CoinbaseProImporter(db=self.db)
+        elif source == DataImportSource.XAMAN:
+            importer = XamanImporter(db=self.db)
         else:
             raise AssertionError(f'Unknown DataImportSource value {source}')
 
