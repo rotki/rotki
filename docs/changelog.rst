@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :feature:`12028` "Ignore/Unignore in accounting" labels are now "Exclude/Include from accounting (PnL)" for clarity.
 * :feature:`11068` rotki now also counts staked solana balances.
 * :feature:`11982` Blockscout users can add their PRO API key.
 * :feature:`7492` Added an event direction column (in/out/neutral) to the PnL CSV export.

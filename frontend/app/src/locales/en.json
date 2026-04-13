@@ -705,8 +705,8 @@
     },
     "ignore": {
       "error": {
-        "description": "Failed to ignore the selected actions: {error}",
-        "title": "Ignoring actions failed"
+        "description": "Failed to exclude the selected actions: {error}",
+        "title": "Excluding actions failed"
       }
     },
     "kraken_staking": {
@@ -1008,8 +1008,8 @@
     },
     "unignore": {
       "error": {
-        "description": "Failed to unignore the selected actions: {error}",
-        "title": "Unignoring actions failed"
+        "description": "Failed to include the selected actions: {error}",
+        "title": "Including actions failed"
       }
     }
   },
@@ -1911,7 +1911,7 @@
       "start_date": "filter by the starting date of the period"
     },
     "here": "here",
-    "ignored_in_accounting": "Ignored in Accounting",
+    "ignored_in_accounting": "Excluded from accounting (PnL)",
     "important_notice": "Important notice:",
     "label": "Label",
     "liabilities": "Liabilities",
@@ -3610,9 +3610,9 @@
     }
   },
   "ignore_buttons": {
-    "ignore": "Ignore",
-    "ignore_tooltip": "Ignored the selected actions in the profit/loss report",
-    "unignore": "Unignore",
+    "ignore": "Exclude",
+    "ignore_tooltip": "Excluded the selected actions from the profit/loss report",
+    "unignore": "Include",
     "unignore_tooltip": "Included the selected actions in the profit/loss report"
   },
   "import_data": {
@@ -5504,7 +5504,7 @@
       "confirmation": {
         "delete": {
           "complete_transaction_multiple": "You have selected all events from {count} complete EVM transactions. Deleting all events will delete the entire transactions.",
-          "complete_transaction_options": "Would you like to delete the transaction(s) or ignore them in accounting?",
+          "complete_transaction_options": "Would you like to delete the transaction(s) or exclude them from accounting?",
           "complete_transaction_single": "You have selected all events from a complete EVM transaction. Deleting all events will delete the entire transaction.",
           "complete_transaction_title": "Complete Transaction Selected",
           "delete_transaction": "Delete Transaction",
@@ -5516,12 +5516,12 @@
           "title": "Delete Event"
         },
         "ignore": {
-          "action": "Yes, Ignore the Transaction",
-          "action_short": "Ignore in Accounting",
-          "confirm": "Confirm Ignore",
-          "message": "A transaction requires at least 1 event. Do you want to ignore the transaction in accounting instead?",
-          "message_multiple": "Are you sure you want to ignore {count} transaction(s) in accounting?",
-          "title": "Ignore Transaction in Accounting"
+          "action": "Yes, Exclude the Transaction",
+          "action_short": "Exclude from Accounting",
+          "confirm": "Confirm Exclusion",
+          "message": "A transaction requires at least 1 event. Do you want to exclude the transaction from accounting instead?",
+          "message_multiple": "Are you sure you want to exclude {count} transaction(s) from accounting?",
+          "title": "Exclude Transaction from Accounting"
         },
         "reset": {
           "custom_events_warning": "This transaction contains custom events. Redecoding will remove all custom events and regenerate them from the chain data.",
@@ -5723,11 +5723,11 @@
       "hidden_ignored_assets_warning": "Some events in this group are hidden because they contain ignored assets. Click to show.",
       "ignore": {
         "error": {
-          "message": "Failed to ignore events in accounting",
-          "title": "Ignore Failed"
+          "message": "Failed to exclude events from accounting",
+          "title": "Exclusion Failed"
         },
-        "success": "{count} transaction ignored successfully | {count} transactions ignored successfully",
-        "title": "Ignore Transactions"
+        "success": "{count} transaction excluded successfully | {count} transactions excluded successfully",
+        "title": "Exclude Transactions"
       },
       "note": {
         "merchant_code": "Merchant Code: {code}"
@@ -5736,13 +5736,13 @@
         "all_matching_selected": "All events in {count} groups are selected",
         "create_rule": "Set custom accounting rule",
         "delete_selected": "Delete selected events",
-        "ignore": "Ignore in accounting",
+        "ignore": "Exclude from accounting (PnL)",
         "no_events": "There is no event to select",
         "select_all_matching": "Select all matching events",
         "select_all_page": "Select all on this page",
         "selected_count": "{count} selected",
         "tooltip": "Select multiple events",
-        "unignore": "Unignore in accounting"
+        "unignore": "Include in accounting (PnL)"
       },
       "show_missing_acquisition": "Showing event for missing acquisition",
       "show_negative_balance": "Highlighting event where negative balances detected",
@@ -5831,7 +5831,7 @@
         }
       }
     },
-    "ignore": "Ignore events in Accounting",
+    "ignore": "Exclude events from Accounting",
     "protocol_cache_updates": {
       "hint": "Refreshing {protocol} cache on {chain} ({processed}/{total})",
       "no_ongoing": "No ongoing refresh happening.",
@@ -5870,7 +5870,7 @@
       "no_exchanges": "You don't have any exchanges connected. Please {link} first."
     },
     "title": "History Events",
-    "unignore": "Unignore events in Accounting"
+    "unignore": "Include events in Accounting"
   },
   "underlying_token_manager": {
     "delete_tooltip": "Delete the underlying token",
