@@ -249,7 +249,7 @@ export function useHistoryEventsDeletion(
           }
           resolve();
         },
-        // Secondary: Ignore in accounting
+        // Secondary: Exclude from accounting (PnL)
         async () => {
           await handleIgnoreOption(transactions, remainingEventIds);
           resolve();

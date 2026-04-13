@@ -1132,7 +1132,7 @@
     "events": "Events",
     "exchange": "Exchange",
     "here": "here",
-    "ignored_in_accounting": "Ignored in Accounting",
+
     "important_notice": "Important notice:",
     "location": "Location",
     "name": "Name",
@@ -1947,12 +1947,7 @@
       "title": "No entries to ignore | No entries to unignore"
     }
   },
-  "ignore_buttons": {
-    "ignore": "Ignore",
-    "ignore_tooltip": "Ignored the selected actions in the profit/loss report",
-    "unignore": "Unignore",
-    "unignore_tooltip": "Included the selected actions in the profit/loss report"
-  },
+
   "import_data": {
     "binance": {
       "line_one": "Οι στήλες που επεξεργαζόμαστε περιλαμβάνουν: User_ID, UTC_Time, Account, Operation, Coin, Change και Remark.",
@@ -3061,11 +3056,6 @@
         "delete": {
           "message": "Are you sure you want to delete the event?",
           "title": "Delete Event"
-        },
-        "ignore": {
-          "action": "Yes, Ignore the Transaction",
-          "message": "A transaction requires at least 1 event. Do you want to ignore the transaction in accounting instead?",
-          "title": "Cannot Delete Event"
         }
       },
       "dialog": {
@@ -3159,10 +3149,8 @@
       "tx_hash": "filter by tx hash(es) or signature(s)",
       "validator_index": "filter by validator index(es)"
     },
-    "ignore": "Ignore Tx in Accounting",
     "refresh_tooltip": "Fetch latest events",
-    "title": "History Events",
-    "unignore": "Unignore Tx in Accounting"
+    "title": "History Events"
   },
   "underlying_token_manager": {
     "delete_tooltip": "Delete the underlying token",

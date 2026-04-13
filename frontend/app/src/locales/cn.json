@@ -1158,7 +1158,7 @@
       "start_date": "按期间的开始日期过滤"
     },
     "here": "这儿",
-    "ignored_in_accounting": "在会计中忽略",
+    "ignored_in_accounting": "已从会计中排除 (PnL)",
     "important_notice": "重要通知:",
     "location": "位置",
     "multi_chain": "多链",
@@ -1991,9 +1991,9 @@
     }
   },
   "ignore_buttons": {
-    "ignore": "忽略",
-    "ignore_tooltip": "忽略损益报告中的选定操作",
-    "unignore": "无视",
+    "ignore": "排除",
+    "ignore_tooltip": "从损益报告中排除选定的操作",
+    "unignore": "包含",
     "unignore_tooltip": "在损益报告中包含选定的操作"
   },
   "import_data": {
@@ -3290,10 +3290,10 @@
       "tx_hash": "按 tx hash (es) 过滤",
       "validator_index": "按 validator_index(s) 过滤"
     },
-    "ignore": "在会计中忽略 Tx",
+    "ignore": "从会计中排除 Tx",
     "refresh_tooltip": "获取最新事件",
     "title": "历史事件",
-    "unignore": "在会计中忽略交易"
+    "unignore": "在会计中包含交易"
   },
   "underlying_token_manager": {
     "delete_tooltip": "删除底层代币",

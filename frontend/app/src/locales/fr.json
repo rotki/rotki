@@ -1308,7 +1308,7 @@
       "start_date": "filtrer par la date de début de la période"
     },
     "here": "ici",
-    "ignored_in_accounting": "Ignoré dans la comptabilité",
+    "ignored_in_accounting": "Exclu de la comptabilité (PnL)",
     "important_notice": "Remarque importante :",
     "location": "Emplacement",
     "multi_chain": "Multi Chaîne",
@@ -2217,9 +2217,9 @@
     }
   },
   "ignore_buttons": {
-    "ignore": "Ignorer",
-    "ignore_tooltip": "Ignorer les actions sélectionnées dans le rapport de profit/perte",
-    "unignore": "Ne plus ignorer",
+    "ignore": "Exclure",
+    "ignore_tooltip": "Exclure les actions sélectionnées du rapport de profit/perte",
+    "unignore": "Inclure",
     "unignore_tooltip": "Inclure les actions sélectionnées dans le rapport de profit/perte"
   },
   "import_data": {
@@ -3470,8 +3470,8 @@
           "title": "Supprimer Événement"
         },
         "ignore": {
-          "action": "Oui, Ignorer la Transaction",
-          "message": "Une transaction nécessite au moins 1 événement. Voulez-vous l'ignorer dans le compte au lieu?",
+          "action": "Oui, Exclure la Transaction",
+          "message": "Une transaction nécessite au moins 1 événement. Voulez-vous l'exclure de la comptabilité à la place ?",
           "title": "Impossible de Supprimer Événement"
         }
       },
@@ -3681,10 +3681,10 @@
         }
       }
     },
-    "ignore": "Ignorer les événements dans le compte",
+    "ignore": "Exclure les événements de la comptabilité",
     "refresh_tooltip": "Récupérer les événements les plus récents",
     "title": "Historique des événements",
-    "unignore": "Annuler l'ignorance des événements dans le compte"
+    "unignore": "Inclure les événements dans la comptabilité"
   },
   "underlying_token_manager": {
     "delete_tooltip": "Supprimer le jeton sous-jacent",
