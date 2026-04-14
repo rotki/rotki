@@ -8,20 +8,20 @@ edition = "2021"
 log = "0.4.29"
 # For the asynchronous Rest API
 reqwest = { version = "0.13.2", features = ["json", "query"]}
-tokio = { version = "1.50.0", features = ["rt-multi-thread", "fs"]}
-axum = "0.8.6"
+tokio = { version = "1.51.1", features = ["rt-multi-thread", "fs"]}
+axum = "0.8.9"
 # for serialization of structs via the API
 serde = { version = "1.0.217", features = ["derive"] }
 # For reading / manipulating json data from a string response
-serde_json = "1.0.135"
+serde_json = "1.0.149"
 # For md5 checksum in icon cache matching
 md5 = "0.8.0"
 # To retrieve OS-specific directories
 dirs = "6.0.0"
 # for CLI args parsing
-clap = { version = "4.5.60", features = ["string"] }
+clap = { version = "4.6.0", features = ["string"] }
 # for globalDB and other sqlite operations
-rusqlite = { version = "0.37.0", features = ["bundled", "bundled-sqlcipher-vendored-openssl"] }
+rusqlite = { version = "0.39.0", features = ["bundled", "bundled-sqlcipher-vendored-openssl"] }
 async-sqlite = {version = "0.5.3" }
 # for cors and network
 tower-http = {version = "0.6.2", features = ["cors", "trace"]}
@@ -30,23 +30,23 @@ tower-http = {version = "0.6.2", features = ["cors", "trace"]}
 # a request happens and keeps information about it. We use tracing to extract those events and
 # log them.
 tracing = "0.1.44"
-tracing-subscriber = { version = "0.3.16", features = ["env-filter"]}
+tracing-subscriber = { version = "0.3.23", features = ["env-filter"]}
 # Used to keep log files that rotate when they reach certain size. Is not available in tracing
 # directly (they have a PR but not merged)
 file-rotate = "0.8.0"
 # used when parsing cors. It is from rust itself
 glob = "0.3.2"
 # used for smart contract interaction
-alloy = {version = "1.7.3", features = ["contract"]}
+alloy = {version = "2.0.0", features = ["contract"]}
 base64 = "0.22.1"
-thiserror = "2.0.16"
+thiserror = "2.0.18"
 # Used for Levenshtein distance in asset search to mirror Python's behavior.
 strsim = "0.11.1"
 
 [dev-dependencies]
-mockito = "1.6.1"
-tokio = { version = "1.50.0", features = ["test-util"]}
-rand = "0.10.0"
+mockito = "1.7.2"
+tokio = { version = "1.51.1", features = ["test-util"]}
+rand = "0.10.1"
 regex = "1.12.3"
 
 [build-dependencies]
