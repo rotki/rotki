@@ -38,6 +38,7 @@ const emit = defineEmits<{
   'redecode': [event: PullEventPayload];
   'redecode-with-options': [event: PullEventPayload];
   'delete-tx': [data: LocationAndTxRef];
+  'delete-events': [ids: number[]];
   'fix-duplicate': [];
   'ignore-duplicate': [];
 }>();
@@ -120,6 +121,7 @@ const isCard = computed<boolean>(() => variant === 'card');
         @redecode="emit('redecode', $event)"
         @redecode-with-options="emit('redecode-with-options', $event)"
         @delete-tx="emit('delete-tx', $event)"
+        @delete-events="emit('delete-events', $event)"
         @fix-duplicate="emit('fix-duplicate')"
         @ignore-duplicate="emit('ignore-duplicate')"
       />
@@ -227,6 +229,7 @@ const isCard = computed<boolean>(() => variant === 'card');
       @redecode="emit('redecode', $event)"
       @redecode-with-options="emit('redecode-with-options', $event)"
       @delete-tx="emit('delete-tx', $event)"
+      @delete-events="emit('delete-events', $event)"
       @fix-duplicate="emit('fix-duplicate')"
       @ignore-duplicate="emit('ignore-duplicate')"
     />

@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`-` External swap events (manual trades) can now be deleted from the history events view.
 * :feature:`12028` "Ignore/Unignore in accounting" labels are now "Exclude/Include from accounting (PnL)" for clarity.
 * :feature:`11068` rotki now also counts staked solana balances.
 * :feature:`11982` Blockscout users can add their PRO API key.

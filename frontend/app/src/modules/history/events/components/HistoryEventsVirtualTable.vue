@@ -299,6 +299,7 @@ function isShowingIgnoredAssets(groupId: string): boolean {
             @redecode="redecode($event, row.data.groupIdentifier)"
             @redecode-with-options="redecodeWithOptions($event, row.data.groupIdentifier)"
             @delete-tx="confirmTxAndEventsDelete($event)"
+            @delete-events="confirmDelete({ type: 'delete', ids: $event })"
             @fix-duplicate="emit('refresh')"
             @ignore-duplicate="emit('refresh')"
           />

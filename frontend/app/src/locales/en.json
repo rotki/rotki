@@ -5460,6 +5460,7 @@
     "actions": {
       "add_event": "Add new event",
       "add_event_here": "Add new event here",
+      "delete_event": "Delete event",
       "delete_transaction": "Delete transaction & events",
       "redecode_events": "Redecode events",
       "redecode_page": "Redecode page",

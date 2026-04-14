@@ -45,6 +45,7 @@ const emit = defineEmits<{
   'redecode': [event: PullEventPayload];
   'redecode-with-options': [event: PullEventPayload];
   'delete-tx': [data: LocationAndTxRef];
+  'delete-events': [ids: number[]];
   'fix-duplicate': [];
   'ignore-duplicate': [];
 }>();
@@ -163,9 +164,16 @@ function redecodeWithOptions(event: DecodableEventType): void {
   });
 }
 
-function deleteTxAndEvents(params: LocationAndTxRef) {
-  return emit('delete-tx', params);
+function deleteTxAndEvents(params: LocationAndTxRef): void {
+  emit('delete-tx', params);
 }
+
+function deleteEvents(): void {
+  const ids = groupEvents?.map(e => e.identifier) ?? [event.identifier];
+  emit('delete-events', ids);
+}
+
+const canDeleteEvents = computed<boolean>(() => !get(eventWithTxRef) && !get(blockEvent));
 
 function hideAddAction(item: HistoryEvent): boolean {
   return isGroupEditableHistoryEvent(item);
@@ -345,6 +353,18 @@ function confirmIgnoreDuplicate(): void {
             <RuiIcon name="lu-trash-2" />
           </template>
           {{ t('transactions.actions.delete_transaction') }}
+        </RuiButton>
+        <RuiButton
+          v-else-if="canDeleteEvents"
+          variant="list"
+          color="error"
+          :disabled="loading"
+          @click="deleteEvents()"
+        >
+          <template #prepend>
+            <RuiIcon name="lu-trash-2" />
+          </template>
+          {{ t('transactions.actions.delete_event') }}
         </RuiButton>
         <RuiDivider class="my-2" />
         <RuiButton
