@@ -57,6 +57,67 @@ Endpoints
 
 In this section we will see the information about the individual endpoints of the API and a detailed explanation of how each one can be used to interact with rotki.
 
+Colibri endpoints
+=================
+
+.. note::
+   Endpoints in this section are served by Colibri (Rust service), not the Python backend.
+   They do not use the ``/api/(version)/`` prefix.
+
+Query oracle prices
+-------------------
+
+.. http:get:: /prices/oracle
+
+   Doing a ``GET`` on this endpoint returns rows from the global ``price_history`` table.
+   Results are ordered by ``timestamp DESC, from_asset, to_asset, source_type``.
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      GET /prices/oracle?from_asset=ETH&to_asset=USD&source_type=defillama&from_timestamp=1700000000&to_timestamp=1800000000&limit=50&offset=0 HTTP/1.1
+      Host: localhost:4343
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+          "result": [
+              {
+                  "from_asset": "ETH",
+                  "to_asset": "USD",
+                  "source_type": "defillama",
+                  "timestamp": 1700000100,
+                  "price": "2012.42"
+              }
+          ],
+          "message": ""
+      }
+
+   :query string[optional] from_asset: Filter by ``price_history.from_asset``
+   :query string[optional] to_asset: Filter by ``price_history.to_asset``
+   :query string[optional] source_type: Price oracle/source filter. Accepted values are db chars ``A``..``I`` (case-insensitive) or oracle names ``manual``, ``coingecko``, ``cryptocompare``, ``fiat`` (preferred), ``xratescom`` (legacy alias), ``manualcurrent``/``manual_current``, ``defillama``, ``uniswap2``/``uniswapv2``, ``uniswap3``/``uniswapv3``, ``alchemy``. ``blockchain`` is rejected because it is not stored in ``price_history``.
+   :query integer[optional] from_timestamp: Inclusive lower bound for ``timestamp``
+   :query integer[optional] to_timestamp: Inclusive upper bound for ``timestamp``
+   :query integer[optional] limit: Number of rows to return. Defaults to ``100``.
+   :query integer[optional] offset: Pagination offset. Defaults to ``0``.
+
+   :resjson list result: A list of matching ``price_history`` rows.
+   :resjson string from_asset: The source asset identifier.
+   :resjson string to_asset: The quote asset identifier.
+   :resjson string source_type: Oracle source name (``manual``, ``coingecko``, ``cryptocompare``, ``fiat``, ``manualcurrent``, ``defillama``, ``uniswapv2``, ``uniswapv3``, ``alchemy``).
+   :resjson integer timestamp: UNIX timestamp in seconds.
+   :resjson string price: Price stored as string.
+
+   :statuscode 200: Query was successful.
+   :statuscode 400: Invalid ``source_type`` value.
+   :statuscode 500: Internal Colibri error.
+
 Handling user creation, sign-in, log-out and querying
 =======================================================
 

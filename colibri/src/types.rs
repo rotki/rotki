@@ -1,5 +1,9 @@
 use serde::{Deserialize, Serialize};
 
+pub trait SerializableDBEnum {
+    fn serialize_for_db(self) -> String;
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 #[repr(u32)]
 pub enum AssetType {
@@ -29,6 +33,12 @@ pub enum AssetType {
     SolanaToken = 25,
     Nft = 26,
     CustomAsset = 27,
+}
+
+impl SerializableDBEnum for AssetType {
+    fn serialize_for_db(self) -> String {
+        ((self as u32 + 64) as u8 as char).to_string()
+    }
 }
 
 impl AssetType {
@@ -144,6 +154,98 @@ impl AssetType {
             AssetType::SolanaToken => "solana token".to_string(),
             AssetType::Nft => "nft".to_string(),
             AssetType::CustomAsset => "custom asset".to_string(),
+        }
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[repr(u32)]
+pub enum PriceOracle {
+    Manual = 1,
+    Coingecko = 2,
+    Cryptocompare = 3,
+    Xratescom = 4,
+    ManualCurrent = 5,
+    Defillama = 6,
+    UniswapV2 = 7,
+    UniswapV3 = 8,
+    Alchemy = 9,
+}
+
+impl SerializableDBEnum for PriceOracle {
+    fn serialize_for_db(self) -> String {
+        ((self as u32 + 64) as u8 as char).to_string()
+    }
+}
+
+impl PriceOracle {
+    pub fn serialize(self) -> String {
+        match self {
+            PriceOracle::Manual => "manual".to_string(),
+            PriceOracle::Coingecko => "coingecko".to_string(),
+            PriceOracle::Cryptocompare => "cryptocompare".to_string(),
+            PriceOracle::Xratescom => "fiat".to_string(),
+            PriceOracle::ManualCurrent => "manualcurrent".to_string(),
+            PriceOracle::Defillama => "defillama".to_string(),
+            PriceOracle::UniswapV2 => "uniswapv2".to_string(),
+            PriceOracle::UniswapV3 => "uniswapv3".to_string(),
+            PriceOracle::Alchemy => "alchemy".to_string(),
+        }
+    }
+
+    pub fn deserialize(value: &str) -> Result<Self, String> {
+        let normalized = value.trim().to_lowercase();
+        if normalized.len() == 1 {
+            return Self::deserialize_from_db(&normalized.to_uppercase());
+        }
+
+        match normalized.as_str() {
+            "manual" => Ok(PriceOracle::Manual),
+            "coingecko" => Ok(PriceOracle::Coingecko),
+            "cryptocompare" => Ok(PriceOracle::Cryptocompare),
+            "fiat" | "xratescom" => Ok(PriceOracle::Xratescom),
+            "manualcurrent" | "manual_current" => Ok(PriceOracle::ManualCurrent),
+            "defillama" => Ok(PriceOracle::Defillama),
+            "uniswap2" | "uniswapv2" => Ok(PriceOracle::UniswapV2),
+            "uniswap3" | "uniswapv3" => Ok(PriceOracle::UniswapV3),
+            "alchemy" => Ok(PriceOracle::Alchemy),
+            "blockchain" => {
+                Err("source_type blockchain is not stored in price_history".to_string())
+            }
+            _ => Err(format!("Invalid source_type value: {value}")),
+        }
+    }
+
+    pub fn deserialize_from_db(value: &str) -> Result<Self, String> {
+        if value.len() != 1 {
+            return Err(format!(
+                "Failed to deserialize PriceOracle DB value from multi-character value: {value}"
+            ));
+        }
+
+        let code = value.chars().next().ok_or_else(|| {
+            "Failed to deserialize PriceOracle DB value from empty string".to_string()
+        })? as u32;
+
+        if code < 65 {
+            return Err(format!(
+                "Failed to deserialize PriceOracle DB value {value}"
+            ));
+        }
+
+        match code - 64 {
+            1 => Ok(PriceOracle::Manual),
+            2 => Ok(PriceOracle::Coingecko),
+            3 => Ok(PriceOracle::Cryptocompare),
+            4 => Ok(PriceOracle::Xratescom),
+            5 => Ok(PriceOracle::ManualCurrent),
+            6 => Ok(PriceOracle::Defillama),
+            7 => Ok(PriceOracle::UniswapV2),
+            8 => Ok(PriceOracle::UniswapV3),
+            9 => Ok(PriceOracle::Alchemy),
+            _ => Err(format!(
+                "Failed to deserialize PriceOracle DB value {value}"
+            )),
         }
     }
 }
@@ -307,5 +409,39 @@ mod tests {
         assert_eq!(ChainID::Optimism.to_name(), "optimism");
         assert_eq!(ChainID::ArbitrumOne.to_name(), "arbitrum_one");
         assert_eq!(ChainID::PolygonPos.to_name(), "polygon_pos");
+    }
+
+    #[test]
+    fn test_price_oracle_serializable_db_enum() {
+        assert_eq!(PriceOracle::Manual.serialize_for_db(), "A");
+        assert_eq!(PriceOracle::Coingecko.serialize_for_db(), "B");
+        assert_eq!(PriceOracle::Xratescom.serialize_for_db(), "D");
+        assert_eq!(PriceOracle::Defillama.serialize_for_db(), "F");
+        assert_eq!(PriceOracle::Xratescom.serialize(), "fiat");
+    }
+
+    #[test]
+    fn test_price_oracle_deserialize_from_frontend_value() {
+        assert_eq!(
+            PriceOracle::deserialize("defillama").unwrap(),
+            PriceOracle::Defillama
+        );
+        assert_eq!(
+            PriceOracle::deserialize("xratescom").unwrap(),
+            PriceOracle::Xratescom
+        );
+        assert_eq!(
+            PriceOracle::deserialize("fiat").unwrap(),
+            PriceOracle::Xratescom
+        );
+        assert_eq!(
+            PriceOracle::deserialize("F").unwrap(),
+            PriceOracle::Defillama
+        );
+        assert_eq!(
+            PriceOracle::deserialize("manualcurrent").unwrap(),
+            PriceOracle::ManualCurrent
+        );
+        assert!(PriceOracle::deserialize("blockchain").is_err());
     }
 }

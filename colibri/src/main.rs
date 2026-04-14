@@ -79,6 +79,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             "/assets/search/levenshtein",
             routing::post(api::assets::search_assets_levenshtein),
         )
+        .route(
+            "/prices/oracle",
+            routing::get(api::prices::get_oracle_prices),
+        )
         .route("/user", routing::post(api::database::unlock_user))
         .route("/user/logout", routing::post(api::database::logout_user))
         .route(

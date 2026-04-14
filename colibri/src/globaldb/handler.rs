@@ -1,5 +1,7 @@
 use crate::blockchain::{RpcNode, SupportedBlockchain};
-use rusqlite::{Connection, Result};
+use crate::types::PriceOracle;
+use rusqlite::{types::Type, types::Value, Connection, Result};
+use serde::Serialize;
 use std::path::PathBuf;
 use std::sync::Arc;
 use tokio::sync::Mutex;
@@ -7,6 +9,26 @@ use tokio::sync::Mutex;
 #[derive(Clone)]
 pub struct GlobalDB {
     pub conn: Arc<Mutex<Connection>>,
+}
+
+#[derive(Clone, Debug, Serialize)]
+pub struct OraclePriceEntry {
+    pub from_asset: String,
+    pub to_asset: String,
+    pub source_type: String,
+    pub timestamp: i64,
+    pub price: String,
+}
+
+#[derive(Clone, Debug, Default)]
+pub struct OraclePricesQueryFilters {
+    pub from_asset: Option<String>,
+    pub to_asset: Option<String>,
+    pub source_type: Option<String>,
+    pub from_timestamp: Option<i64>,
+    pub to_timestamp: Option<i64>,
+    pub limit: Option<u32>,
+    pub offset: Option<u32>,
 }
 
 /// The GlobalDB handler for Colibri
@@ -136,6 +158,88 @@ impl GlobalDB {
         let result = stmt.exists(rusqlite::params![asset_id])?;
         Ok(result)
     }
+
+    pub async fn query_oracle_prices(
+        &self,
+        filters: OraclePricesQueryFilters,
+    ) -> Result<Vec<OraclePriceEntry>> {
+        let conn = self.conn.lock().await;
+        let mut conditions: Vec<String> = Vec::new();
+        let mut params: Vec<Value> = Vec::new();
+        let OraclePricesQueryFilters {
+            from_asset,
+            to_asset,
+            source_type,
+            from_timestamp,
+            to_timestamp,
+            limit,
+            offset,
+        } = filters;
+
+        if let Some(from_asset) = from_asset {
+            conditions.push("from_asset = ?".to_string());
+            params.push(Value::Text(from_asset));
+        }
+        if let Some(to_asset) = to_asset {
+            conditions.push("to_asset = ?".to_string());
+            params.push(Value::Text(to_asset));
+        }
+        if let Some(source_type) = source_type {
+            conditions.push("source_type = ?".to_string());
+            params.push(Value::Text(source_type));
+        }
+        if let Some(from_timestamp) = from_timestamp {
+            conditions.push("timestamp >= ?".to_string());
+            params.push(Value::Integer(from_timestamp));
+        }
+        if let Some(to_timestamp) = to_timestamp {
+            conditions.push("timestamp <= ?".to_string());
+            params.push(Value::Integer(to_timestamp));
+        }
+
+        let where_clause = if conditions.is_empty() {
+            String::new()
+        } else {
+            format!("WHERE {}", conditions.join(" AND "))
+        };
+
+        params.push(Value::Integer(i64::from(limit.unwrap_or(100))));
+        params.push(Value::Integer(i64::from(offset.unwrap_or(0))));
+
+        let query = format!(
+            "SELECT from_asset, to_asset, source_type, timestamp, price
+            FROM price_history
+            {where_clause}
+            ORDER BY timestamp DESC, from_asset, to_asset, source_type
+            LIMIT ? OFFSET ?"
+        );
+
+        let mut stmt = conn.prepare(&query)?;
+        let mut rows = stmt.query(rusqlite::params_from_iter(params.iter()))?;
+        let mut prices: Vec<OraclePriceEntry> = Vec::new();
+        while let Some(row) = rows.next()? {
+            let db_source_type: String = row.get(2)?;
+            let source_type = PriceOracle::deserialize_from_db(&db_source_type)
+                .map_err(|error| {
+                    rusqlite::Error::FromSqlConversionFailure(
+                        2,
+                        Type::Text,
+                        Box::new(std::io::Error::new(std::io::ErrorKind::InvalidData, error)),
+                    )
+                })?
+                .serialize();
+
+            prices.push(OraclePriceEntry {
+                from_asset: row.get(0)?,
+                to_asset: row.get(1)?,
+                source_type,
+                timestamp: row.get(3)?,
+                price: row.get(4)?,
+            });
+        }
+
+        Ok(prices)
+    }
 }
 
 /// macro that creates a copy of the globaldb in the rotkehlchen data folder
@@ -220,5 +324,64 @@ mod test {
             globaldb.get_assets_in_collection(99999).await.unwrap(),
             Vec::<String>::new(),
         );
+    }
+
+    #[tokio::test]
+    async fn test_query_oracle_prices_with_filters_and_pagination() {
+        let globaldb = create_globaldb!().await.unwrap();
+        {
+            let conn = globaldb.conn.lock().await;
+            conn.execute(
+                "INSERT OR REPLACE INTO price_history(from_asset, to_asset, source_type, timestamp, price) VALUES(?, ?, ?, ?, ?)",
+                rusqlite::params!["ETH", "USD", "B", 4102444800_i64, "1234.5"],
+            )
+            .unwrap();
+            conn.execute(
+                "INSERT OR REPLACE INTO price_history(from_asset, to_asset, source_type, timestamp, price) VALUES(?, ?, ?, ?, ?)",
+                rusqlite::params!["ETH", "USD", "C", 4102444801_i64, "2234.5"],
+            )
+            .unwrap();
+            conn.execute(
+                "INSERT OR REPLACE INTO price_history(from_asset, to_asset, source_type, timestamp, price) VALUES(?, ?, ?, ?, ?)",
+                rusqlite::params!["ETH", "USD", "B", 4102444802_i64, "3234.5"],
+            )
+            .unwrap();
+        }
+
+        let filtered = globaldb
+            .query_oracle_prices(super::OraclePricesQueryFilters {
+                from_asset: Some("ETH".to_string()),
+                to_asset: Some("USD".to_string()),
+                source_type: Some("B".to_string()),
+                from_timestamp: Some(4102444800_i64),
+                to_timestamp: Some(4102444803_i64),
+                limit: Some(10),
+                offset: Some(0),
+            })
+            .await
+            .unwrap();
+
+        assert_eq!(filtered.len(), 2);
+        assert_eq!(filtered[0].timestamp, 4102444802_i64);
+        assert_eq!(filtered[1].timestamp, 4102444800_i64);
+        assert_eq!(filtered[0].source_type, "coingecko");
+        assert_eq!(filtered[1].source_type, "coingecko");
+
+        let paginated = globaldb
+            .query_oracle_prices(super::OraclePricesQueryFilters {
+                from_asset: Some("ETH".to_string()),
+                to_asset: Some("USD".to_string()),
+                source_type: Some("B".to_string()),
+                from_timestamp: Some(4102444800_i64),
+                to_timestamp: Some(4102444803_i64),
+                limit: Some(1),
+                offset: Some(1),
+            })
+            .await
+            .unwrap();
+
+        assert_eq!(paginated.len(), 1);
+        assert_eq!(paginated[0].timestamp, 4102444800_i64);
+        assert_eq!(paginated[0].price, "1234.5");
     }
 }
