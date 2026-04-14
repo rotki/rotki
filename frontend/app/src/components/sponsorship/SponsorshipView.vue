@@ -10,27 +10,7 @@ const { drawer } = defineProps<{
 
 const { t } = useI18n({ useScope: 'global' });
 
-const { appVersion } = storeToRefs(useMainStore());
-
-const demoMode = import.meta.env.VITE_DEMO_MODE;
-
-const version = computed<string>(() => {
-  const version = get(appVersion);
-  if (demoMode === undefined) {
-    return version;
-  }
-
-  const sanitizedVersion = version.replace('.dev', '');
-  const splitVersion = sanitizedVersion.split('.');
-  if (demoMode === 'minor') {
-    splitVersion[1] = `${parseInt(splitVersion[1]) + 1}`;
-    splitVersion[2] = '0';
-  }
-  else if (demoMode === 'patch') {
-    splitVersion[2] = `${parseInt(splitVersion[2]) + 1}`;
-  }
-  return splitVersion.join('.');
-});
+const { appVersion: version } = storeToRefs(useMainStore());
 
 interface Sponsor {
   image: string;
