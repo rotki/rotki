@@ -6,8 +6,11 @@ import NotificationPopup from '@/components/status/notifications/NotificationPop
 import { useInterop } from '@/composables/electron-interop';
 import { initGraph } from '@/composables/init-graph';
 import { useCoreScroll } from '@/composables/use-core-scroll';
+import SettingsSuggestionsDialog from '@/modules/settings/suggestions/SettingsSuggestionsDialog.vue';
+import { useSettingsSuggestions } from '@/modules/settings/suggestions/use-settings-suggestions';
 import { useSessionAuthStore } from '@/store/session/auth';
 import { useAreaVisibilityStore } from '@/store/session/visibility';
+import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { useStatisticsStore } from '@/store/statistics';
 
 const visibilityStore = useAreaVisibilityStore();
@@ -20,6 +23,8 @@ const { updateTray } = useInterop();
 const { scrollToTop, shouldShowScrollToTopButton } = useCoreScroll();
 
 const { isXlAndDown } = useBreakpoint();
+const { applySelected, dismissAll } = useSettingsSuggestions();
+const frontendStore = useFrontendSettingsStore();
 
 const pinnedPadding = computed<string | undefined>(() => {
   if (get(showPinned) && !get(isXlAndDown))
@@ -43,6 +48,12 @@ onBeforeMount(() => {
 <template>
   <div class="app__content">
     <NotificationPopup />
+    <SettingsSuggestionsDialog
+      v-model="frontendStore.showSuggestionsDialog"
+      :suggestions="frontendStore.pendingSuggestions"
+      @apply="applySelected($event)"
+      @dismiss="dismissAll()"
+    />
     <AppDrawer />
 
     <header

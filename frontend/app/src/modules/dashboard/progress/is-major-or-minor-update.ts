@@ -6,7 +6,10 @@ import semver from 'semver';
  * @param lastVersion The previous version string
  * @returns True if it's a major or minor update, false otherwise
  */
-export function isMajorOrMinorUpdate(currentVersion: string | null, lastVersion: string | null): boolean {
+export function isMajorOrMinorUpdate(
+  currentVersion: string | null,
+  lastVersion: string | null,
+): boolean {
   if (!lastVersion || !currentVersion)
     return false;
 

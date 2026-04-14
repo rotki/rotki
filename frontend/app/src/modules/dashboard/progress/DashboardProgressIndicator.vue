@@ -7,14 +7,18 @@ import IdleQuerySection from '@/modules/dashboard/progress/components/IdleQueryS
 import { useUnifiedProgress } from '@/modules/dashboard/progress/composables/use-unified-progress';
 import { useHistoricalBalancesStore } from '@/modules/history/balances/store';
 import { useMainStore } from '@/store/main';
-import { isMajorOrMinorUpdate } from '@/utils/version';
+import { isMajorOrMinorUpdate } from './is-major-or-minor-update';
 
 const { t } = useI18n({ useScope: 'global' });
 
 const justUpdated = ref<boolean>(false);
 
 const { appVersion } = storeToRefs(useMainStore());
-const { isProcessing: isHistoricalBalanceProcessing, processingPercentage: historicalBalancePercentage, processingProgress: historicalBalanceProgress } = storeToRefs(useHistoricalBalancesStore());
+const {
+  isProcessing: isHistoricalBalanceProcessing,
+  processingPercentage: historicalBalancePercentage,
+  processingProgress: historicalBalanceProgress,
+} = storeToRefs(useHistoricalBalancesStore());
 
 const {
   balanceProgress,
@@ -65,17 +69,10 @@ function dismissBalanceProgress(): void {
   });
 }
 
-const hasHistoryProgress = logicAnd(
-  hasTxAccounts,
-  historyProgress,
-  processing,
-);
+const hasHistoryProgress = logicAnd(hasTxAccounts, historyProgress, processing);
 
 const showHistoryProgress = logicAnd(
-  useRefWithDebounce(logicOr(
-    hasHistoryProgress,
-    showIdleMessage,
-  ), 300),
+  useRefWithDebounce(logicOr(hasHistoryProgress, showIdleMessage), 300),
   logicNot(historyStatusDismissedRecently),
 );
 
@@ -180,13 +177,13 @@ onMounted(async () => {
           color="primary"
           @click="navigateToHistory()"
         >
-          {{ t('dashboard.history_query_indicator.go_to_history_events') }}
+          {{ t("dashboard.history_query_indicator.go_to_history_events") }}
         </RuiButton>
         <RuiButton
           variant="text"
           icon
           size="sm"
-          @click="showBalanceProgress ? dismissBalanceProgress () : dismissHistoryProgress()"
+          @click="showBalanceProgress ? dismissBalanceProgress() : dismissHistoryProgress()"
         >
           <RuiIcon
             name="lu-x"

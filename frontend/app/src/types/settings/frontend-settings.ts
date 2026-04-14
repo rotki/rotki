@@ -70,11 +70,21 @@ export enum DashboardTableType {
 }
 
 const DashboardTablesVisibleColumns = z.object({
-  [DashboardTableType.ASSETS]: TableColumnEnum.default(Defaults.DEFAULT_DASHBOARD_TABLE_VISIBLE_COLUMNS),
-  [DashboardTableType.BLOCKCHAIN_ASSET_BALANCES]: TableColumnEnum.default(Defaults.DEFAULT_DASHBOARD_TABLE_VISIBLE_COLUMNS),
-  [DashboardTableType.LIABILITIES]: TableColumnEnum.default(Defaults.DEFAULT_DASHBOARD_TABLE_VISIBLE_COLUMNS),
-  [DashboardTableType.LIQUIDITY_POSITION]: TableColumnEnum.default(Defaults.DEFAULT_DASHBOARD_TABLE_VISIBLE_COLUMNS),
-  [DashboardTableType.NFT]: TableColumnEnum.default(Defaults.DEFAULT_DASHBOARD_TABLE_VISIBLE_COLUMNS),
+  [DashboardTableType.ASSETS]: TableColumnEnum.default(
+    Defaults.DEFAULT_DASHBOARD_TABLE_VISIBLE_COLUMNS,
+  ),
+  [DashboardTableType.BLOCKCHAIN_ASSET_BALANCES]: TableColumnEnum.default(
+    Defaults.DEFAULT_DASHBOARD_TABLE_VISIBLE_COLUMNS,
+  ),
+  [DashboardTableType.LIABILITIES]: TableColumnEnum.default(
+    Defaults.DEFAULT_DASHBOARD_TABLE_VISIBLE_COLUMNS,
+  ),
+  [DashboardTableType.LIQUIDITY_POSITION]: TableColumnEnum.default(
+    Defaults.DEFAULT_DASHBOARD_TABLE_VISIBLE_COLUMNS,
+  ),
+  [DashboardTableType.NFT]: TableColumnEnum.default(
+    Defaults.DEFAULT_DASHBOARD_TABLE_VISIBLE_COLUMNS,
+  ),
 });
 
 const VersionUpdateCheckFrequency = z.number().min(-1).max(Constraints.MAX_HOURS_DELAY).int();
@@ -108,23 +118,45 @@ export enum BalanceSource {
   MANUAL = 'MANUAL',
 }
 
-export const BalanceValueThresholdV0 = z.object({
-  [BalanceSource.BLOCKCHAIN]: z.string().default('0'),
-  [BalanceSource.EXCHANGES]: z.string().default('0'),
-  [BalanceSource.MANUAL]: z.string().default('0'),
-}).optional();
+export const BalanceValueThresholdV0 = z
+  .object({
+    [BalanceSource.BLOCKCHAIN]: z.string().default('0'),
+    [BalanceSource.EXCHANGES]: z.string().default('0'),
+    [BalanceSource.MANUAL]: z.string().default('0'),
+  })
+  .optional();
 
 export const BalanceValueThreshold = z.partialRecord(z.enum(BalanceSource), z.string().optional());
 
 export type BalanceValueThreshold = z.infer<typeof BalanceValueThreshold>;
 
-const EvmQueryIndicatorMinOutOfSyncPeriod = z.number().min(1).max(Constraints.MAX_HOURS_DELAY).int();
-const EvmQueryIndicatorDismissalThreshold = z.number().min(1).max(Constraints.MAX_HOURS_DELAY).int();
+const EvmQueryIndicatorMinOutOfSyncPeriod = z
+  .number()
+  .min(1)
+  .max(Constraints.MAX_HOURS_DELAY)
+  .int();
+const EvmQueryIndicatorDismissalThreshold = z
+  .number()
+  .min(1)
+  .max(Constraints.MAX_HOURS_DELAY)
+  .int();
 
-const NewlyDetectedTokensMaxCount = z.number().min(Constraints.NEWLY_DETECTED_TOKENS_MIN_COUNT).max(Constraints.NEWLY_DETECTED_TOKENS_MAX_COUNT).int();
-const NewlyDetectedTokensTtlDays = z.number().min(Constraints.NEWLY_DETECTED_TOKENS_MIN_TTL_DAYS).max(Constraints.NEWLY_DETECTED_TOKENS_MAX_TTL_DAYS).int();
+const NewlyDetectedTokensMaxCount = z
+  .number()
+  .min(Constraints.NEWLY_DETECTED_TOKENS_MIN_COUNT)
+  .max(Constraints.NEWLY_DETECTED_TOKENS_MAX_COUNT)
+  .int();
+const NewlyDetectedTokensTtlDays = z
+  .number()
+  .min(Constraints.NEWLY_DETECTED_TOKENS_MIN_TTL_DAYS)
+  .max(Constraints.NEWLY_DETECTED_TOKENS_MAX_TTL_DAYS)
+  .int();
 
-const PasswordConfirmationInterval = z.number().min(Constraints.PASSWORD_CONFIRMATION_MIN_SECONDS).max(Constraints.PASSWORD_CONFIRMATION_MAX_SECONDS).int();
+const PasswordConfirmationInterval = z
+  .number()
+  .min(Constraints.PASSWORD_CONFIRMATION_MIN_SECONDS)
+  .max(Constraints.PASSWORD_CONFIRMATION_MAX_SECONDS)
+  .int();
 const LastPasswordConfirmed = z.number().int().nonnegative();
 const EnablePasswordConfirmation = z.boolean();
 
@@ -139,7 +171,8 @@ export const FrontendSettings = z.object({
   darkTheme: ThemeColors.default(DARK_COLORS),
   dashboardTablesVisibleColumns: DashboardTablesVisibleColumns.default(() => ({
     [DashboardTableType.ASSETS]: Defaults.DEFAULT_DASHBOARD_TABLE_VISIBLE_COLUMNS,
-    [DashboardTableType.BLOCKCHAIN_ASSET_BALANCES]: Defaults.DEFAULT_DASHBOARD_TABLE_VISIBLE_COLUMNS,
+    [DashboardTableType.BLOCKCHAIN_ASSET_BALANCES]:
+      Defaults.DEFAULT_DASHBOARD_TABLE_VISIBLE_COLUMNS,
     [DashboardTableType.LIABILITIES]: Defaults.DEFAULT_DASHBOARD_TABLE_VISIBLE_COLUMNS,
     [DashboardTableType.LIQUIDITY_POSITION]: Defaults.DEFAULT_DASHBOARD_TABLE_VISIBLE_COLUMNS,
     [DashboardTableType.NFT]: Defaults.DEFAULT_DASHBOARD_TABLE_VISIBLE_COLUMNS,
@@ -150,22 +183,33 @@ export const FrontendSettings = z.object({
   defiSetupDone: z.boolean().default(false),
   enableAliasNames: z.boolean().default(true),
   enablePasswordConfirmation: EnablePasswordConfirmation.default(true),
-  evmQueryIndicatorDismissalThreshold: EvmQueryIndicatorDismissalThreshold.default(Defaults.DEFAULT_EVM_QUERY_INDICATOR_DISMISSAL_THRESHOLD),
-  evmQueryIndicatorMinOutOfSyncPeriod: EvmQueryIndicatorMinOutOfSyncPeriod.default(Defaults.DEFAULT_EVM_QUERY_INDICATOR_MIN_OUT_OF_SYNC_PERIOD),
+  evmQueryIndicatorDismissalThreshold: EvmQueryIndicatorDismissalThreshold.default(
+    Defaults.DEFAULT_EVM_QUERY_INDICATOR_DISMISSAL_THRESHOLD,
+  ),
+  evmQueryIndicatorMinOutOfSyncPeriod: EvmQueryIndicatorMinOutOfSyncPeriod.default(
+    Defaults.DEFAULT_EVM_QUERY_INDICATOR_MIN_OUT_OF_SYNC_PERIOD,
+  ),
   explorers: ExplorersSettings.default({}),
   graphZeroBased: z.boolean().default(false),
   ignoreSnapshotError: z.boolean().default(false),
   itemsPerPage: z.number().positive().int().default(10),
   language: SupportedLanguageEnum.default(SupportedLanguage.EN),
+  lastAppliedSettingsVersion: z.string().default('0.0.0'),
   lastKnownTimeframe: TimeFramePeriodEnum.default(TimeFramePeriod.ALL),
   lastPasswordConfirmed: LastPasswordConfirmed.default(0),
   lightTheme: ThemeColors.default(LIGHT_COLORS),
   minimumDigitToBeAbbreviated: z.number().default(MINIMUM_DIGIT_TO_BE_ABBREVIATED),
-  newlyDetectedTokensMaxCount: NewlyDetectedTokensMaxCount.default(Defaults.DEFAULT_NEWLY_DETECTED_TOKENS_MAX_COUNT),
-  newlyDetectedTokensTtlDays: NewlyDetectedTokensTtlDays.default(Defaults.DEFAULT_NEWLY_DETECTED_TOKENS_TTL_DAYS),
+  newlyDetectedTokensMaxCount: NewlyDetectedTokensMaxCount.default(
+    Defaults.DEFAULT_NEWLY_DETECTED_TOKENS_MAX_COUNT,
+  ),
+  newlyDetectedTokensTtlDays: NewlyDetectedTokensTtlDays.default(
+    Defaults.DEFAULT_NEWLY_DETECTED_TOKENS_TTL_DAYS,
+  ),
   nftsInNetValue: z.boolean().default(true),
   notifyNewNfts: z.boolean().optional().default(false),
-  passwordConfirmationInterval: PasswordConfirmationInterval.default(Defaults.DEFAULT_PASSWORD_CONFIRMATION_INTERVAL),
+  passwordConfirmationInterval: PasswordConfirmationInterval.default(
+    Defaults.DEFAULT_PASSWORD_CONFIRMATION_INTERVAL,
+  ),
   persistPrivacySettings: z.boolean().default(false),
   persistTableSorting: z.boolean().default(false),
   privacyMode: PrivacyModeEnum.default(PrivacyMode.NORMAL),
@@ -175,11 +219,15 @@ export const FrontendSettings = z.object({
   }),
   queryPeriod: z.preprocess(
     queryPeriod =>
-      Math.min(Number.parseInt(queryPeriod as string) || Defaults.DEFAULT_QUERY_PERIOD, Constraints.MAX_SECONDS_DELAY),
+      Math.min(
+        Number.parseInt(queryPeriod as string) || Defaults.DEFAULT_QUERY_PERIOD,
+        Constraints.MAX_SECONDS_DELAY,
+      ),
     QueryPeriod.default(Defaults.DEFAULT_QUERY_PERIOD),
   ),
   refreshPeriod: z.preprocess(
-    refreshPeriod => Math.min(Number.parseInt(refreshPeriod as string) || -1, Constraints.MAX_MINUTES_DELAY),
+    refreshPeriod =>
+      Math.min(Number.parseInt(refreshPeriod as string) || -1, Constraints.MAX_MINUTES_DELAY),
     RefreshPeriod.default(-1),
   ),
   renderAllNftImages: z.boolean().default(true),
@@ -201,7 +249,8 @@ export const FrontendSettings = z.object({
   versionUpdateCheckFrequency: z.preprocess(
     versionUpdateCheckFrequency =>
       Math.min(
-        Number.parseInt(versionUpdateCheckFrequency as string) || Defaults.DEFAULT_VERSION_UPDATE_CHECK_FREQUENCY,
+        Number.parseInt(versionUpdateCheckFrequency as string) ||
+        Defaults.DEFAULT_VERSION_UPDATE_CHECK_FREQUENCY,
         Constraints.MAX_HOURS_DELAY,
       ),
     VersionUpdateCheckFrequency.default(Defaults.DEFAULT_VERSION_UPDATE_CHECK_FREQUENCY),
@@ -229,7 +278,7 @@ export function parseFrontendSettings(settings: string): FrontendSettings {
   }
 
   // Strip invalid fields and force schemaVersion so defaults can fill them in
-  const cleanData: Record<string, unknown> = { ...(data as Record<string, unknown>) };
+  const cleanData: Record<string, unknown> = { ...data };
   const invalidKeys: string[] = [];
   for (const issue of result.error.issues) {
     const key = issue.path[0];
@@ -239,7 +288,9 @@ export function parseFrontendSettings(settings: string): FrontendSettings {
     }
   }
 
-  logger.error(`Failed to parse frontend settings, invalid keys: [${invalidKeys.join(', ')}]. Attempting recovery`);
+  logger.error(
+    `Failed to parse frontend settings, invalid keys: [${invalidKeys.join(', ')}]. Attempting recovery`,
+  );
   cleanData.schemaVersion = FRONTEND_SETTINGS_SCHEMA_VERSION;
 
   const retryResult = FrontendSettings.safeParse(cleanData);
@@ -251,7 +302,9 @@ export function parseFrontendSettings(settings: string): FrontendSettings {
   return getDefaultFrontendSettings();
 }
 
-export function getDefaultFrontendSettings(props: Partial<FrontendSettings> = {}): FrontendSettings {
+export function getDefaultFrontendSettings(
+  props: Partial<FrontendSettings> = {},
+): FrontendSettings {
   return FrontendSettings.parse({
     schemaVersion: FRONTEND_SETTINGS_SCHEMA_VERSION,
     ...props,

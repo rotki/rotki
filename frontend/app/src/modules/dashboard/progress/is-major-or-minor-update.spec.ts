@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { isMajorOrMinorUpdate } from '@/utils/version';
+import { isMajorOrMinorUpdate } from './is-major-or-minor-update';
 
-describe('utils/version', () => {
+describe('isMajorOrMinorUpdate', () => {
   describe('major version changes', () => {
     it('should return true for major version updates', () => {
       expect(isMajorOrMinorUpdate('2.0.0', '1.40.1')).toBe(true);
