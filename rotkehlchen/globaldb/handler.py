@@ -3,7 +3,7 @@ import shutil
 from collections.abc import Callable, Iterator
 from pathlib import Path
 from time import perf_counter
-from typing import TYPE_CHECKING, Any, Literal, Optional, Union, cast, overload
+from typing import TYPE_CHECKING, Any, Final, Literal, Optional, Union, cast, overload
 
 import rsqlite
 from gevent.lock import Semaphore
@@ -77,6 +77,7 @@ if TYPE_CHECKING:
     )
     from rotkehlchen.user_messages import MessagesAggregator
 
+MANUAL_SERIALIZED: Final = HistoricalPriceOracle.MANUAL.serialize_for_db()
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
@@ -100,14 +101,45 @@ ALL_ASSETS_TABLES_QUERY_WITH_COLLECTIONS = (
 )
 
 
-def _prioritize_manual_balances_query() -> tuple[str, Literal['A']]:
-    """Prioritize manual price if it exists and choose the timestamp closest to the target.
-    Return the order statement for the query and the type to prioritize already serialized.
+def _prioritize_manual_balances_query(
+        sources: tuple[HistoricalPriceOracle, ...] | None = None,
+        timestamp: Timestamp | None = None,
+) -> tuple[str, list]:
+    """Build ORDER BY clause and query bindings for historical price lookup.
+
+    The ORDER BY applies only to rows that already matched the WHERE clause.
+    Priority is:
+      1. row with timestamp closest to ``timestamp``
+      2. for equally-close rows, manual prices first
+      3. then explicit source order (if provided)
+      4. any non-listed sources last
     """
-    return (
-        ' ORDER BY CASE WHEN source_type=? THEN 0 ELSE 1 END, ABS(timestamp - ?)',
-        'A',  # HistoricalPriceOracle.MANUAL.serialize_for_db(),
-    )
+    bindings: list = [MANUAL_SERIALIZED]
+    if sources is None:
+        source_priority_case = 'CASE WHEN source_type=? THEN 0 ELSE 1 END'
+    else:
+        # assign a numerical priority to the rows based on the oracle priority order
+        # so then the SQL query sorts by it
+        case_parts, priority = ['CASE WHEN source_type=? THEN 0'], 1
+        for source in sources:
+            if source == HistoricalPriceOracle.MANUAL:
+                continue
+
+            case_parts.append(f'WHEN source_type=? THEN {priority}')
+            bindings.append(source.serialize_for_db())
+            priority += 1
+
+        # 999 is an intentionally very low-priority rank for any source not explicitly
+        # listed above. This keeps unknown/unlisted sources after all preferred ones.
+        case_parts.append('ELSE 999 END')
+        source_priority_case = ' '.join(case_parts)
+
+    if timestamp is not None:
+        # ABS(timestamp - ?) is the first placeholder in ORDER BY, so timestamp
+        # must be bound first, followed by the CASE placeholders for source_type.
+        bindings = [timestamp, *bindings]
+
+    return f' ORDER BY ABS(timestamp - ?), {source_priority_case}', bindings
 
 
 class GlobalDBHandler:
@@ -1472,7 +1504,7 @@ class GlobalDBHandler:
             to_asset: 'Asset',
             timestamp: Timestamp,
             max_seconds_distance: int,
-            source: HistoricalPriceOracle | None = None,
+            sources: tuple[HistoricalPriceOracle, ...] | None = None,
     ) -> Optional['HistoricalPrice']:
         """Gets the price around a particular timestamp
 
@@ -1483,14 +1515,22 @@ class GlobalDBHandler:
             'WHERE from_asset=? AND to_asset=? AND timestamp between ? AND ?'
         )
         querylist = [from_asset.identifier, to_asset.identifier, timestamp - max_seconds_distance, timestamp + max_seconds_distance]  # noqa: E501
-        if source is not None:
-            querystr += ' AND source_type=? '
-            querylist.append(source.serialize_for_db())
+        if sources is not None:
+            if (amount := len(sources)) == 0:
+                return None
 
-        # prioritize manual price if it exists and choose the timestamp closest to the target
-        order_str, priority_type = _prioritize_manual_balances_query()
+            placeholders = ', '.join(['?'] * amount)
+            querystr += f' AND source_type IN ({placeholders}) '
+            querylist.extend(source_entry.serialize_for_db() for source_entry in sources)
+
+        # pick the row closest to the target timestamp first, then break ties by
+        # source preference (manual first, then configured oracle order)
+        order_str, order_bindings = _prioritize_manual_balances_query(
+            sources=sources,
+            timestamp=timestamp,
+        )
         querystr += order_str
-        querylist += [priority_type, timestamp]
+        querylist += order_bindings
 
         with GlobalDBHandler().conn.read_ctx() as cursor:
             if (result := cursor.execute(querystr, querylist).fetchone()) is None:
@@ -1522,13 +1562,11 @@ class GlobalDBHandler:
             for from_asset, to_asset, timestamp in query_data:
                 querylist.append((from_asset.identifier, to_asset.identifier, timestamp - max_seconds_distance, timestamp + max_seconds_distance))  # noqa: E501
 
-        order_str, priority_type = _prioritize_manual_balances_query()
-        querystr += order_str
         prices_results: list[HistoricalPrice | None] = []
         with GlobalDBHandler().conn.read_ctx() as cursor:
             for query_entry, (_, _, queried_timestamp) in zip(querylist, query_data, strict=True):
-                # to the params add the arguments to prioritize manual prices
-                result = cursor.execute(querystr, query_entry + (priority_type, queried_timestamp)).fetchone()  # below last index of the result tuple is ignored in deserialize  # noqa: E501
+                order_str, order_bindings = _prioritize_manual_balances_query(timestamp=queried_timestamp)  # noqa: E501
+                result = cursor.execute(querystr + order_str, query_entry + tuple(order_bindings)).fetchone()  # noqa: E501
                 if result is None:
                     prices_results.append(None)
                     continue
