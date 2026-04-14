@@ -23,10 +23,11 @@ export const useMainStore = defineStore('main', () => {
     return appVersion.includes('dev') ? false : !!downloadUrl;
   });
 
-  const appVersion = computed(() => {
-    const { version: appVersion } = get(version);
-    const indexOfDev = appVersion.indexOf('dev');
-    return indexOfDev > 0 ? appVersion.slice(0, Math.max(0, indexOfDev + 3)) : appVersion;
+  const appVersion = computed<string>(() => {
+    const { version: rawVersion } = get(version);
+    const indexOfDev = rawVersion.indexOf('dev');
+    const baseVersion = indexOfDev > 0 ? rawVersion.slice(0, Math.max(0, indexOfDev + 3)) : rawVersion;
+    return applyDemoMode(baseVersion);
   });
 
   const isDevelop = computed<boolean>(() => {
@@ -62,6 +63,26 @@ export const useMainStore = defineStore('main', () => {
     version,
   };
 });
+
+const demoMode = import.meta.env.VITE_DEMO_MODE;
+
+/**
+ * In demo mode, simulate a release version for testing version-gated features.
+ * setuptools-scm already bumps the patch in dev builds, so 'patch' just strips '.dev'.
+ */
+function applyDemoMode(version: string): string {
+  if (demoMode === undefined)
+    return version;
+
+  const sanitized = version.replace('.dev', '');
+  if (demoMode === 'minor') {
+    const parts = sanitized.split('.');
+    parts[1] = `${Number.parseInt(parts[1]) + 1}`;
+    parts[2] = '0';
+    return parts.join('.');
+  }
+  return sanitized;
+}
 
 function defaultVersion(): Version {
   return {
