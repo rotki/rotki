@@ -1,3 +1,4 @@
+import type { PendingSuggestion } from '@/modules/settings/suggestions/settings-suggestions';
 import { useItemsPerPage } from '@/composables/session/use-items-per-page';
 import { useComputedRef } from '@/composables/utils/useComputedRef';
 import { PrivacyMode } from '@/types/session';
@@ -12,6 +13,7 @@ export const useFrontendSettingsStore = defineStore('settings/frontend', () => {
   const defiSetupDone = useComputedRef(settings, 'defiSetupDone');
   const enablePasswordConfirmation = useComputedRef(settings, 'enablePasswordConfirmation');
   const language = useComputedRef(settings, 'language');
+  const lastAppliedSettingsVersion = useComputedRef(settings, 'lastAppliedSettingsVersion');
   const timeframeSetting = useComputedRef(settings, 'timeframeSetting');
   const visibleTimeframes = useComputedRef(settings, 'visibleTimeframes');
   const lastKnownTimeframe = useComputedRef(settings, 'lastKnownTimeframe');
@@ -45,7 +47,10 @@ export const useFrontendSettingsStore = defineStore('settings/frontend', () => {
   const dateInputFormat = useComputedRef(settings, 'dateInputFormat');
   const versionUpdateCheckFrequency = useComputedRef(settings, 'versionUpdateCheckFrequency');
   const enableAliasNames = useComputedRef(settings, 'enableAliasNames');
-  const blockchainRefreshButtonBehaviour = useComputedRef(settings, 'blockchainRefreshButtonBehaviour');
+  const blockchainRefreshButtonBehaviour = useComputedRef(
+    settings,
+    'blockchainRefreshButtonBehaviour',
+  );
   const savedFilters = useComputedRef(settings, 'savedFilters');
   const balanceValueThreshold = useComputedRef(settings, 'balanceValueThreshold');
   const useHistoricalAssetBalances = useComputedRef(settings, 'useHistoricalAssetBalances');
@@ -54,13 +59,22 @@ export const useFrontendSettingsStore = defineStore('settings/frontend', () => {
   const privacyMode = useComputedRef(settings, 'privacyMode');
   const scrambleData = useComputedRef(settings, 'scrambleData');
   const scrambleMultiplier = useComputedRef(settings, 'scrambleMultiplier');
-  const evmQueryIndicatorMinOutOfSyncPeriod = useComputedRef(settings, 'evmQueryIndicatorMinOutOfSyncPeriod');
-  const evmQueryIndicatorDismissalThreshold = useComputedRef(settings, 'evmQueryIndicatorDismissalThreshold');
+  const evmQueryIndicatorMinOutOfSyncPeriod = useComputedRef(
+    settings,
+    'evmQueryIndicatorMinOutOfSyncPeriod',
+  );
+  const evmQueryIndicatorDismissalThreshold = useComputedRef(
+    settings,
+    'evmQueryIndicatorDismissalThreshold',
+  );
   const lastPasswordConfirmed = useComputedRef(settings, 'lastPasswordConfirmed');
   const passwordConfirmationInterval = useComputedRef(settings, 'passwordConfirmationInterval');
 
   const shouldShowAmount = computed(() => get(privacyMode) < PrivacyMode.SEMI_PRIVATE);
   const shouldShowPercentage = computed(() => get(privacyMode) < PrivacyMode.PRIVATE);
+
+  const pendingSuggestions = ref<PendingSuggestion[]>([]);
+  const showSuggestionsDialog = shallowRef<boolean>(false);
 
   const globalItemsPerPage = useItemsPerPage();
 
@@ -95,6 +109,7 @@ export const useFrontendSettingsStore = defineStore('settings/frontend', () => {
     ignoreSnapshotError,
     itemsPerPage,
     language,
+    lastAppliedSettingsVersion,
     lastKnownTimeframe,
     lastPasswordConfirmed,
     lightTheme,
@@ -104,6 +119,7 @@ export const useFrontendSettingsStore = defineStore('settings/frontend', () => {
     nftsInNetValue,
     notifyNewNfts,
     passwordConfirmationInterval,
+    pendingSuggestions,
     persistPrivacySettings,
     persistTableSorting,
     privacyMode,
@@ -119,6 +135,7 @@ export const useFrontendSettingsStore = defineStore('settings/frontend', () => {
     shouldShowAmount,
     shouldShowPercentage,
     showGraphRangeSelector,
+    showSuggestionsDialog,
     subscriptDecimals,
     thousandSeparator,
     timeframeSetting,

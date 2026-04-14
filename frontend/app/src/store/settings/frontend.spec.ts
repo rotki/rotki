@@ -5,7 +5,14 @@ import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { CurrencyLocation } from '@/types/currency-location';
 import { DateFormat } from '@/types/date-format';
 import { PrivacyMode } from '@/types/session';
-import { BalanceSource, BlockchainRefreshButtonBehaviour, DashboardTableType, type FrontendSettings, Quarter, SupportedLanguage } from '@/types/settings/frontend-settings';
+import {
+  BalanceSource,
+  BlockchainRefreshButtonBehaviour,
+  DashboardTableType,
+  type FrontendSettings,
+  Quarter,
+  SupportedLanguage,
+} from '@/types/settings/frontend-settings';
 import { TableColumn } from '@/types/table-column';
 
 describe('useFrontendSettingsStore', () => {
@@ -29,6 +36,7 @@ describe('useFrontendSettingsStore', () => {
       schemaVersion: 2,
       defiSetupDone: true,
       language: SupportedLanguage.EN,
+      lastAppliedSettingsVersion: '0.0.0',
       timeframeSetting: TimeFramePeriod.YEAR,
       lastKnownTimeframe: TimeFramePeriod.TWO_WEEKS,
       visibleTimeframes: [
@@ -171,7 +179,9 @@ describe('useFrontendSettingsStore', () => {
     expect(store.dateInputFormat).toBe(DateFormat.DateMonthYearHourMinuteSecond);
     expect(store.versionUpdateCheckFrequency).toBe(24);
     expect(store.enableAliasNames).toBe(true);
-    expect(store.blockchainRefreshButtonBehaviour).toBe(BlockchainRefreshButtonBehaviour.ONLY_REFRESH_BALANCES);
+    expect(store.blockchainRefreshButtonBehaviour).toBe(
+      BlockchainRefreshButtonBehaviour.ONLY_REFRESH_BALANCES,
+    );
     expect(store.savedFilters).toMatchObject({});
     expect(store.persistPrivacySettings).toBe(false);
   });

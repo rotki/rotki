@@ -20,6 +20,7 @@ describe('user-types', () => {
       schemaVersion: 2,
       defiSetupDone: true,
       language: SupportedLanguage.EN,
+      lastAppliedSettingsVersion: '0.0.0',
       timeframeSetting: TimeFramePeriod.YEAR,
       lastKnownTimeframe: TimeFramePeriod.TWO_WEEKS,
       visibleTimeframes: [

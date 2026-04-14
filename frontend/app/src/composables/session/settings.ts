@@ -4,6 +4,7 @@ import { BigNumber, TimeFramePersist } from '@rotki/common';
 import { useThemeMigration } from '@/composables/settings/theme';
 import { getBnFormat } from '@/data/amount-formatter';
 import { usePremiumWatchers } from '@/modules/premium/use-premium-watchers';
+import { useSettingsSuggestions } from '@/modules/settings/suggestions/use-settings-suggestions';
 import { useSettingsOperations } from '@/modules/settings/use-settings-operations';
 import { usePremiumStore } from '@/store/session/premium';
 import { useAccountingSettingsStore } from '@/store/settings/accounting';
@@ -25,15 +26,22 @@ export function useSessionSettings(): UseSessionSettingsReturn {
   const { update: updateGeneralSettings } = useGeneralSettingsStore();
   const { setConnectedExchanges, update: updateSessionSettings } = useSessionSettingsStore();
   const { checkDefaultThemeVersion } = useThemeMigration();
+  const { checkForSuggestions } = useSettingsSuggestions();
 
   const initialize = async (
-    { accounting, general, other: { frontendSettings, havePremium, premiumShouldSync } }: UserSettingsModel,
+    {
+      accounting,
+      general,
+      other: { frontendSettings, havePremium, premiumShouldSync },
+    }: UserSettingsModel,
     exchanges: Exchange[],
   ): Promise<void> => {
     if (frontendSettings) {
       const { lastKnownTimeframe, persistPrivacySettings, timeframeSetting } = frontendSettings;
       const { decimalSeparator, thousandSeparator } = frontendSettings;
-      const timeframe = timeframeSetting !== TimeFramePersist.REMEMBER ? timeframeSetting : lastKnownTimeframe;
+      const timeframe = timeframeSetting !== TimeFramePersist.REMEMBER
+        ? timeframeSetting
+        : lastKnownTimeframe;
 
       updateFrontendSettings(frontendSettings);
       setConnectedExchanges(exchanges);
@@ -42,6 +50,7 @@ export function useSessionSettings(): UseSessionSettingsReturn {
         FORMAT: getBnFormat(thousandSeparator, decimalSeparator),
       });
       checkDefaultThemeVersion();
+      checkForSuggestions(frontendSettings, general);
 
       if (!persistPrivacySettings) {
         await updateFrontendSetting({

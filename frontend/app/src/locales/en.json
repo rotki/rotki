@@ -5093,6 +5093,21 @@
       "title": "Security"
     }
   },
+  "settings_suggestions": {
+    "apply_selected": "Apply selected",
+    "current_price_oracles_v1_43": "Prioritize DefiLlama for current prices (less rate limiting)",
+    "dialog": {
+      "adding": "Adding:",
+      "description": "The following settings have new recommended defaults. Select which ones you would like to update.",
+      "disabled": "Disabled",
+      "enabled": "Enabled",
+      "title": "New recommended settings",
+      "version_group": "New in {version}"
+    },
+    "evm_chains_skip_detection_v1_43": "Disable auto-detection for chains with high spam activity",
+    "historical_price_oracles_v1_43": "Prioritize DefiLlama for historical prices (less rate limiting)",
+    "keep_current": "Keep current"
+  },
   "snapshot_action_button": {
     "force_save": "Force save",
     "ignore_errors_label": "Ignore Errors",
