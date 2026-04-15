@@ -1984,7 +1984,7 @@ Query the historical price of assets
 
 .. http:put:: /api/(version)/assets/prices/historical
 
-    Manually adds the price of an asset against another asset at a certain timestamp to the database. If a manual price for the specified asset pair and timestamp already exists, it is replaced with the new price provided.
+    Adds the price of an asset against another asset at a certain timestamp to the database. If a historical price for the specified asset pair, timestamp and ``source_type`` already exists, it is replaced with the new price provided.
 
 
    **Example Request**:
@@ -1999,13 +1999,15 @@ Query the historical price of assets
             "from_asset": "eip155:1/erc20:0xD71eCFF9342A5Ced620049e616c5035F1dB98620",
             "to_asset": "USD",
             "timestamp": 1611166335,
-            "price": "1.20"
+            "price": "1.20",
+            "source_type": "coingecko"
        }
 
    :reqjson string from_asset: The asset for which the price is given.
    :reqjson string to_asset: The asset against which the price is given.
-   :reqjson int timestamp: The unix timestamp for which to save the price
+   :reqjson int timestamp: The unix timestamp for which to save the price.
    :reqjson string price: Price at the timestamp given.
+   :reqjson string source_type: Required. Historical price source/oracle. Common values include ``manual``, ``coingecko``, ``cryptocompare``, ``fiat``, ``defillama``, ``uniswapv2``, ``uniswapv3`` and ``alchemy``.
 
 
    **Example Response**:
@@ -2020,7 +2022,7 @@ Query the historical price of assets
           "message": ""
       }
 
-   :resjson object result: true if the manual price was correctly stored in the database, false otherwise.
+   :resjson object result: true if the historical price was correctly stored in the database, false otherwise.
    :statuscode 200: Operation sent to database.
    :statuscode 400: Provided JSON is in some way malformed.
    :statuscode 500: Internal rotki error
@@ -2028,15 +2030,14 @@ Query the historical price of assets
 
 .. http:patch:: /api/(version)/assets/prices/historical
 
-    Edits price for a manually added price if it already exists in the database. Returns false
-    if no entry was updated.
+    Edits a previously stored historical price entry if it already exists in the database for the provided asset pair, timestamp and ``source_type``. Returns false if no entry was updated.
 
 
    **Example Request**:
 
    .. http:example:: curl wget httpie python-requests
 
-      PUT /api/1/assets/prices/historical HTTP/1.1
+      PATCH /api/1/assets/prices/historical HTTP/1.1
       Host: localhost:5042
       Content-Type: application/json;charset=UTF-8
 
@@ -2044,13 +2045,15 @@ Query the historical price of assets
             "from_asset": "eip155:1/erc20:0xD71eCFF9342A5Ced620049e616c5035F1dB98620",
             "to_asset": "USD",
             "timestamp": 1611166335,
-            "price": "1.20"
+            "price": "1.20",
+            "source_type": "coingecko"
        }
 
    :reqjson string from_asset: The asset for which the price is given.
    :reqjson string to_asset: The asset against which the price is given.
-   :reqjson int timestamp: The unix timestamp for which the price was saved
+   :reqjson int timestamp: The unix timestamp for which the price was saved.
    :reqjson string price: New price at the timestamp given.
+   :reqjson string source_type: Required. Historical price source/oracle.
 
 
    **Example Response**:
@@ -2126,7 +2129,7 @@ Query the historical price of assets
 
 .. http:delete:: /api/(version)/assets/prices/historical
 
-    Deletes price of an asset against another asset at a certain timestamp from the database.
+    Deletes a historical price of an asset against another asset at a certain timestamp from the database for the provided ``source_type``.
 
 
    **Example Request**:
@@ -2140,12 +2143,14 @@ Query the historical price of assets
        {
         "from_asset": "eip155:1/erc20:0xD71eCFF9342A5Ced620049e616c5035F1dB98620",
         "to_asset": "USD",
-        "timestamp": 1611166335
+        "timestamp": 1611166335,
+        "source_type": "coingecko"
        }
 
    :reqjson string from_asset: The asset for which the price is given.
    :reqjson string to_asset: The asset against which the price is given.
-   :reqjson int timestamp: The unix timestamp for which to save the price
+   :reqjson int timestamp: The unix timestamp for which to save the price.
+   :reqjson string source_type: Required. Historical price source/oracle.
 
    **Example Response**:
 

@@ -3232,6 +3232,10 @@ class TimedManualPriceSchema(ManualPriceSchema):
     timestamp = TimestampUntilNowField(required=True)
 
 
+class TimedHistoricalPriceSchema(TimedManualPriceSchema):
+    source_type = HistoricalPriceOracleField(required=True)
+
+
 class SnapshotTimestampQuerySchema(Schema):
     timestamp = TimestampField(required=True)
 
@@ -3245,6 +3249,10 @@ class ManualPriceDeleteSchema(Schema):
     from_asset = AssetField(expected_type=Asset, required=True)
     to_asset = AssetField(expected_type=Asset, required=True)
     timestamp = TimestampField(required=True)
+
+
+class HistoricalPriceDeleteSchema(ManualPriceDeleteSchema):
+    source_type = HistoricalPriceOracleField(required=True)
 
 
 class SingleFileSchema(Schema):

@@ -114,6 +114,7 @@ from rotkehlchen.api.v1.schemas import (
     GnosisPaySiweChallengeSchema,
     HistoricalAssetsPriceSchema,
     HistoricalPerAssetBalanceSchema,
+    HistoricalPriceDeleteSchema,
     HistoricalPricesPerAssetSchema,
     HistoryEventSchema,
     HistoryEventsDeletionSchema,
@@ -131,7 +132,6 @@ from rotkehlchen.api.v1.schemas import (
     ManuallyTrackedBalancesAddSchema,
     ManuallyTrackedBalancesDeleteSchema,
     ManuallyTrackedBalancesEditSchema,
-    ManualPriceDeleteSchema,
     ManualPriceRegisteredSchema,
     ManualPriceSchema,
     MatchAssetMovementsSchema,
@@ -183,7 +183,7 @@ from rotkehlchen.api.v1.schemas import (
     StatisticsValueDistributionSchema,
     StringIdentifierSchema,
     TagSchema,
-    TimedManualPriceSchema,
+    TimedHistoricalPriceSchema,
     TimestampRangeSchema,
     TransactionDecodingSchema,
     TransactionQuerySchema,
@@ -2618,10 +2618,10 @@ class LatestAssetsPriceResource(BaseMethodView):
 class HistoricalAssetsPriceResource(BaseMethodView):
 
     post_schema = HistoricalAssetsPriceSchema()
-    put_schema = TimedManualPriceSchema()
-    patch_schema = TimedManualPriceSchema()
+    put_schema = TimedHistoricalPriceSchema()
+    patch_schema = TimedHistoricalPriceSchema()
     get_schema = ManualPriceRegisteredSchema()
-    delete_schema = ManualPriceDeleteSchema()
+    delete_schema = HistoricalPriceDeleteSchema()
 
     @require_loggedin_user()
     @use_kwargs(post_schema, location='json')
@@ -2646,12 +2646,14 @@ class HistoricalAssetsPriceResource(BaseMethodView):
             to_asset: Asset,
             price: Price,
             timestamp: Timestamp,
+            source_type: HistoricalPriceOracle,
     ) -> Response:
-        return self.rest_api.add_manual_price(
+        return self.rest_api.add_historical_price(
             from_asset=from_asset,
             to_asset=to_asset,
             price=price,
             timestamp=timestamp,
+            source_type=source_type,
         )
 
     @use_kwargs(patch_schema, location='json')
@@ -2661,12 +2663,14 @@ class HistoricalAssetsPriceResource(BaseMethodView):
             to_asset: Asset,
             price: Price,
             timestamp: Timestamp,
+            source_type: HistoricalPriceOracle,
     ) -> Response:
-        return self.rest_api.edit_manual_price(
+        return self.rest_api.edit_historical_price(
             from_asset=from_asset,
             to_asset=to_asset,
             price=price,
             timestamp=timestamp,
+            source_type=source_type,
         )
 
     @use_kwargs(get_schema, location='json_and_query_and_view_args')
@@ -2679,11 +2683,13 @@ class HistoricalAssetsPriceResource(BaseMethodView):
             from_asset: Asset,
             to_asset: Asset,
             timestamp: Timestamp,
+            source_type: HistoricalPriceOracle,
     ) -> Response:
-        return self.rest_api.delete_manual_price(
+        return self.rest_api.delete_historical_price(
             from_asset=from_asset,
             to_asset=to_asset,
             timestamp=timestamp,
+            source_type=source_type,
         )
 
 

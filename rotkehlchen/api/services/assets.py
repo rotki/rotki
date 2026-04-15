@@ -706,17 +706,18 @@ class AssetsService:
             'status_code': HTTPStatus.CONFLICT,
         }
 
-    def add_manual_price(
+    def add_historical_price(
             self,
             from_asset: Asset,
             to_asset: Asset,
             price: Price,
             timestamp: Timestamp,
+            source_type: HistoricalPriceOracle,
     ) -> dict[str, Any]:
         historical_price = HistoricalPrice(
             from_asset=from_asset,
             to_asset=to_asset,
-            source=HistoricalPriceOracle.MANUAL,
+            source=source_type,
             timestamp=timestamp,
             price=price,
         )
@@ -725,21 +726,22 @@ class AssetsService:
             return {'result': True, 'message': '', 'status_code': HTTPStatus.OK}
         return {
             'result': False,
-            'message': 'Failed to store manual price',
+            'message': f'Failed to store historical price for source {source_type!s}',
             'status_code': HTTPStatus.CONFLICT,
         }
 
-    def edit_manual_price(
+    def edit_historical_price(
             self,
             from_asset: Asset,
             to_asset: Asset,
             price: Price,
             timestamp: Timestamp,
+            source_type: HistoricalPriceOracle,
     ) -> dict[str, Any]:
         historical_price = HistoricalPrice(
             from_asset=from_asset,
             to_asset=to_asset,
-            source=HistoricalPriceOracle.MANUAL,
+            source=source_type,
             timestamp=timestamp,
             price=price,
         )
@@ -748,7 +750,7 @@ class AssetsService:
             return {'result': True, 'message': '', 'status_code': HTTPStatus.OK}
         return {
             'result': False,
-            'message': 'Failed to edit manual price',
+            'message': f'Failed to edit historical price for source {source_type!s}',
             'status_code': HTTPStatus.CONFLICT,
         }
 
@@ -760,18 +762,24 @@ class AssetsService:
         prices = GlobalDBHandler.get_manual_prices(from_asset, to_asset)
         return {'result': prices, 'message': '', 'status_code': HTTPStatus.OK}
 
-    def delete_manual_price(
+    def delete_historical_price(
             self,
             from_asset: Asset,
             to_asset: Asset,
             timestamp: Timestamp,
+            source_type: HistoricalPriceOracle,
     ) -> dict[str, Any]:
-        deleted = GlobalDBHandler.delete_manual_price(from_asset, to_asset, timestamp)
+        deleted = GlobalDBHandler.delete_historical_price(
+            from_asset=from_asset,
+            to_asset=to_asset,
+            timestamp=timestamp,
+            source_type=source_type,
+        )
         if deleted:
             return {'result': True, 'message': '', 'status_code': HTTPStatus.OK}
         return {
             'result': False,
-            'message': 'Failed to delete manual price',
+            'message': f'Failed to delete historical price for source {source_type!s}',
             'status_code': HTTPStatus.CONFLICT,
         }
 

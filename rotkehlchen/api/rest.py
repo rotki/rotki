@@ -2338,33 +2338,37 @@ class RestAPI:
             status_code=HTTPStatus.OK,
         )
 
-    def add_manual_price(
+    def add_historical_price(
             self,
             from_asset: Asset,
             to_asset: Asset,
             price: Price,
             timestamp: Timestamp,
+            source_type: HistoricalPriceOracle,
     ) -> Response:
-        response_data = self.assets_service.add_manual_price(
+        response_data = self.assets_service.add_historical_price(
             from_asset=from_asset,
             to_asset=to_asset,
             price=price,
             timestamp=timestamp,
+            source_type=source_type,
         )
         return make_response_from_dict(response_data)
 
-    def edit_manual_price(
+    def edit_historical_price(
             self,
             from_asset: Asset,
             to_asset: Asset,
             price: Price,
             timestamp: Timestamp,
+            source_type: HistoricalPriceOracle,
     ) -> Response:
-        response_data = self.assets_service.edit_manual_price(
+        response_data = self.assets_service.edit_historical_price(
             from_asset=from_asset,
             to_asset=to_asset,
             price=price,
             timestamp=timestamp,
+            source_type=source_type,
         )
         return make_response_from_dict(response_data)
 
@@ -2379,16 +2383,18 @@ class RestAPI:
         )
         return make_response_from_dict(response_data)
 
-    def delete_manual_price(
+    def delete_historical_price(
             self,
             from_asset: Asset,
             to_asset: Asset,
             timestamp: Timestamp,
+            source_type: HistoricalPriceOracle,
     ) -> Response:
-        response_data = self.assets_service.delete_manual_price(
+        response_data = self.assets_service.delete_historical_price(
             from_asset=from_asset,
             to_asset=to_asset,
             timestamp=timestamp,
+            source_type=source_type,
         )
         return make_response_from_dict(response_data)
 
