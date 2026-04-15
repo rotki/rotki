@@ -122,7 +122,7 @@ def _prioritize_manual_balances_query(
         # so then the SQL query sorts by it
         case_parts, priority = ['CASE WHEN source_type=? THEN 0'], 1
         for source in sources:
-            if source == HistoricalPriceOracle.MANUAL:
+            if source == HistoricalPriceOracle.MANUAL:  # manual price entries always first
                 continue
 
             case_parts.append(f'WHEN source_type=? THEN {priority}')

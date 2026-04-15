@@ -54,7 +54,7 @@ from rotkehlchen.chain.evm.decoding.curve.lend.utils import get_curve_vault_toke
 from rotkehlchen.chain.evm.decoding.gearbox.constants import CPT_GEARBOX
 from rotkehlchen.chain.evm.decoding.gearbox.gearbox_cache import (
     ensure_gearbox_lp_underlying_tokens,
-    read_gearbox_data_from_cache,
+    read_gearbox_farming_token_to_pool_addresses,
 )
 from rotkehlchen.chain.evm.decoding.hop.constants import CPT_HOP
 from rotkehlchen.chain.evm.decoding.morpho.constants import CPT_MORPHO
@@ -1144,21 +1144,10 @@ class Inquirer:
     def find_gearbox_price(self, token: EvmToken) -> Price | None:
         node_inquirer = self.get_evm_manager(chain_id=token.chain_id).node_inquirer
         underlying_token = None
-        farming_tokens = {token.farming_pool_token for token in read_gearbox_data_from_cache(token.chain_id)[0].values()}  # noqa: E501
-        if token in farming_tokens:
-            farming_contract = EvmContract(
-                address=token.evm_address,
-                abi=node_inquirer.contracts.abi('GEARBOX_FARMING_POOL'),
-                deployed_block=0,  # not used here
-            )
-            try:
-                lp_token = farming_contract.call(node_inquirer=node_inquirer, method_name='stakingToken')  # noqa: E501
-                lp_token = deserialize_evm_address(lp_token)
-            except (RemoteError, BlockchainQueryError, DeserializationError) as e:
-                log.error(f'Failed to query stakingToken method in {node_inquirer.chain_name} Gearbox Pool {token.evm_address}. {e!s}')  # noqa: E501
-                return None
-        else:
-            lp_token = token.evm_address
+        farming_token_pool_mapping = read_gearbox_farming_token_to_pool_addresses(token.chain_id)
+        # - farming token -> map to pool token via farming_token_pool_mapping[token.identifier]
+        # - regular LP/pool token -> there is no mapping entry, LP token is just token.evm_address
+        lp_token = farming_token_pool_mapping.get(token.identifier, token.evm_address)
 
         with GlobalDBHandler().conn.read_ctx() as cursor:
             maybe_underlying_tokens = GlobalDBHandler.fetch_underlying_tokens(
