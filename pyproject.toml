@@ -45,7 +45,7 @@ dependencies = [
     "maxminddb==2.6.3",
     "pywin32==306; sys_platform == 'win32'",
     "miniupnpc==2.3.3",
-    "cryptography==46.0.5",
+    "cryptography==46.0.7",
     "py-machineid==0.8.0",
     "more-itertools==10.6.0",  # for peekable iterators
     "regex==2025.11.3",  # used for unicode information in detection of spam tokens
@@ -85,7 +85,7 @@ changelog = "https://github.com/rotki/rotki/blob/develop/docs/changelog.rst"
 
 [dependency-groups]
 dev = [
-    "pytest==9.0.2",
+    "pytest==9.0.3",
     "pytest-icdiff==0.9",
     "pytest-xdist==3.8.0",
     "bump2version==1.0.1",
