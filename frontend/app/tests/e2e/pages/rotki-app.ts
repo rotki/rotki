@@ -45,8 +45,8 @@ export class RotkiApp {
     await disableAnimations(this.page);
 
     await this.page.locator('[data-cy=connection-loading__content]').waitFor({ state: 'detached' });
-    await this.page.locator('[data-cy=account-management-forms]').scrollIntoViewIfNeeded();
     await this.page.locator('[data-cy=account-management-forms]').waitFor({ state: 'visible' });
+    await this.page.locator('[data-cy=account-management-forms]').scrollIntoViewIfNeeded();
 
     // Check if we're on the login page (accounts exist) or create page (fresh start)
     // On fresh start without any accounts, it might show create account form directly
