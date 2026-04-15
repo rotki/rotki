@@ -79,7 +79,7 @@ catalog:
   fake-indexeddb: 6.2.5
   flag-icons: 7.5.0
   flush-promises: 1.0.2
-  happy-dom: 20.8.8
+  happy-dom: 20.8.9
   http-proxy-middleware: 3.0.5
   husky: 9.1.7
   imask: 7.6.1
@@ -108,7 +108,7 @@ catalog:
   unplugin-vue-components: 32.0.0
   utf-8-validate: 6.0.6
   vanilla-jsoneditor: 3.12.0
-  vite: 7.3.1
+  vite: 7.3.2
   vite-plugin-checker: 0.12.0
   vite-plugin-vue-devtools: 8.1.1
   vitest: 4.1.2
