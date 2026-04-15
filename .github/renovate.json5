@@ -4,8 +4,7 @@
     "config:recommended",
     ":dependencyDashboard",
     ":dependencyDashboardApproval",
-    ":pinAllExceptPeerDependencies",
-    ":separateMultipleMajorReleases"
+    ":pinAllExceptPeerDependencies"
   ],
   "dependencyDashboardAutoclose": false,
   "minimumReleaseAge": "7 days",
@@ -14,6 +13,10 @@
       "allowedVersions": "/^(24)\\./",
       "groupName": "Node.js",
       "matchPackageNames": ["@types/node", "node"]
+    },
+    {
+      "allowedVersions": "<=3",
+      "matchPackageNames": ["tailwindcss"]
     }
   ]
 }
