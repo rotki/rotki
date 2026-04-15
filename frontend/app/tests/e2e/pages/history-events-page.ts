@@ -206,6 +206,7 @@ export class HistoryEventsPage {
 
   async fillSolanaSwapEventForm(data: SolanaSwapEventFixture): Promise<void> {
     await this.fillDatetime();
+    await this.page.locator('[data-cy=tx-ref] input').click();
     await this.page.locator('[data-cy=tx-ref] input').fill(data.txRef);
     await selectAsset(this.page, '[data-cy=spend-asset]', data.spendAsset, data.spendAssetId);
     await this.page.locator('[data-cy=spend-amount] input').clear();
