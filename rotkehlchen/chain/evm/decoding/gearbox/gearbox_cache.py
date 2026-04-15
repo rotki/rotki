@@ -24,6 +24,7 @@ from rotkehlchen.errors.misc import (
 )
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.globaldb.cache import (
+    compute_cache_key,
     globaldb_get_general_cache_keys_and_values_like,
     globaldb_get_general_cache_values,
     globaldb_get_unique_cache_value,
@@ -140,6 +141,36 @@ def read_gearbox_data_from_cache(chain_id: ChainID | None) -> tuple[dict[Checksu
             )
 
     return (pools,)
+
+
+def read_gearbox_farming_token_to_pool_addresses(
+        chain_id: ChainID,
+) -> dict[str, ChecksumEvmAddress]:
+    """Read farming token -> pool address mapping with a single DB query.
+
+    This is optimized for pricing where we only need to know whether a gearbox token
+    is a farming token and, if so, which LP/pool token contract to query.
+    """
+    chain_id_suffix_len = len(chain_id_serialized := str(chain_id.serialize()))
+    key_prefix_len = len(key_prefix := compute_cache_key((CacheType.GEARBOX_POOL_FARMING_TOKEN,)))
+    mapping: dict[str, ChecksumEvmAddress] = {}
+    with GlobalDBHandler().conn.read_ctx() as cursor:
+        rows = cursor.execute(
+            'SELECT key, value FROM unique_cache WHERE key LIKE ? AND key LIKE ?',
+            (f'{key_prefix}%', f'%{chain_id_serialized}'),
+        ).fetchall()
+
+    for key, farming_token in rows:
+        pool_address_raw = key[key_prefix_len:-chain_id_suffix_len]
+        try:
+            pool_address = deserialize_evm_address(pool_address_raw)
+        except DeserializationError:
+            log.error(f'Could not deserialize gearbox pool address {pool_address_raw} from cache key {key}')  # noqa: E501
+            continue
+
+        mapping[farming_token] = pool_address
+
+    return mapping
 
 
 def register_token(

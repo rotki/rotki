@@ -42,6 +42,7 @@ from rotkehlchen.chain.evm.decoding.gearbox.gearbox_cache import (
     get_gearbox_pool_tokens,
     query_gearbox_data,
     read_gearbox_data_from_cache,
+    read_gearbox_farming_token_to_pool_addresses,
 )
 from rotkehlchen.chain.evm.decoding.superfluid.utils import (
     _get_token_list as get_superfluid_token_list,
@@ -542,6 +543,9 @@ def test_gearbox_cache(ethereum_inquirer: EthereumInquirer):
         farming_pool_token=None,
         lp_tokens=set(),
     )
+
+    farming_token_to_pool = read_gearbox_farming_token_to_pool_addresses(ChainID.ETHEREUM)
+    assert farming_token_to_pool['eip155:1/erc20:0x9ef444a6d7F4A5adcd68FD5329aA5240C90E14d2'] == usdc_pool.evm_address  # noqa: E501
 
     assert mock_notify.call_args_list == [
         make_call_object(CPT_GEARBOX, ChainID.ETHEREUM, processed=0, total=0),

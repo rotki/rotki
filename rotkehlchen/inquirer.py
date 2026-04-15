@@ -54,7 +54,7 @@ from rotkehlchen.chain.evm.decoding.curve.lend.utils import get_curve_vault_toke
 from rotkehlchen.chain.evm.decoding.gearbox.constants import CPT_GEARBOX
 from rotkehlchen.chain.evm.decoding.gearbox.gearbox_cache import (
     ensure_gearbox_lp_underlying_tokens,
-    read_gearbox_data_from_cache,
+    read_gearbox_farming_token_to_pool_addresses,
 )
 from rotkehlchen.chain.evm.decoding.hop.constants import CPT_HOP
 from rotkehlchen.chain.evm.decoding.morpho.constants import CPT_MORPHO
@@ -685,12 +685,26 @@ class Inquirer:
         else:
             found_prices = usd_found_prices
 
-        if (  # EURe collection assets are pegged to EUR
-                len(eur_collection_assets) > 0 and
-                (eur_to_target := Inquirer.find_price(from_asset=A_EUR, to_asset=to_asset)) != ZERO_PRICE  # noqa: E501
-        ):
-            for from_asset in eur_collection_assets:
-                found_prices[from_asset] = eur_to_target, CurrentPriceOracle.FIAT
+        if len(eur_collection_assets) > 0:
+            # EURe collection assets are pegged to EUR (1:1 by definition).
+            # Avoid running the full oracle pipeline for the EUR→target conversion.
+            if to_asset == A_EUR:
+                for from_asset in eur_collection_assets:
+                    found_prices[from_asset] = Price(ONE), CurrentPriceOracle.FIAT
+            else:
+                try:  # For fiat targets, use cached fiat pair (DB + xratescom, no oracles)
+                    eur_to_target_result = Inquirer._query_fiat_pair(
+                        base=A_EUR.resolve_to_fiat_asset(),
+                        quote=to_asset.resolve_to_fiat_asset(),
+                    )
+                    eur_to_target = eur_to_target_result[0] if eur_to_target_result is not None else ZERO_PRICE  # noqa: E501
+                except (UnknownAsset, WrongAssetType):
+                    # to_asset is not fiat — fall back to full pipeline (rare case)
+                    eur_to_target = Inquirer.find_price(from_asset=A_EUR, to_asset=to_asset)
+
+                if eur_to_target != ZERO_PRICE:
+                    for from_asset in eur_collection_assets:
+                        found_prices[from_asset] = eur_to_target, CurrentPriceOracle.FIAT
 
         return assets_without_special_price, found_prices
 
@@ -1038,11 +1052,11 @@ class Inquirer:
         except UnknownAsset:
             return None
 
-        # Get price for each token in the pool
-        prices = []
+        # Get price for each token in the pool (batched to avoid N independent oracle calls)
+        token_prices = Inquirer.find_usd_prices(tokens)  # type: ignore[arg-type]
+        prices: list[Price] = []
         for token in tokens:
-            price = self.find_usd_price(token)
-            if price == ZERO_PRICE:
+            if (price := token_prices.get(token, ZERO_PRICE)) == ZERO_PRICE:
                 log.error(
                     f'Could not calculate price for {lp_token} due to inability to '
                     f'fetch price for {token}.',
@@ -1130,21 +1144,10 @@ class Inquirer:
     def find_gearbox_price(self, token: EvmToken) -> Price | None:
         node_inquirer = self.get_evm_manager(chain_id=token.chain_id).node_inquirer
         underlying_token = None
-        farming_tokens = {token.farming_pool_token for token in read_gearbox_data_from_cache(token.chain_id)[0].values()}  # noqa: E501
-        if token in farming_tokens:
-            farming_contract = EvmContract(
-                address=token.evm_address,
-                abi=node_inquirer.contracts.abi('GEARBOX_FARMING_POOL'),
-                deployed_block=0,  # not used here
-            )
-            try:
-                lp_token = farming_contract.call(node_inquirer=node_inquirer, method_name='stakingToken')  # noqa: E501
-                lp_token = deserialize_evm_address(lp_token)
-            except (RemoteError, BlockchainQueryError, DeserializationError) as e:
-                log.error(f'Failed to query stakingToken method in {node_inquirer.chain_name} Gearbox Pool {token.evm_address}. {e!s}')  # noqa: E501
-                return None
-        else:
-            lp_token = token.evm_address
+        farming_token_pool_mapping = read_gearbox_farming_token_to_pool_addresses(token.chain_id)
+        # - farming token -> map to pool token via farming_token_pool_mapping[token.identifier]
+        # - regular LP/pool token -> there is no mapping entry, LP token is just token.evm_address
+        lp_token = farming_token_pool_mapping.get(token.identifier, token.evm_address)
 
         with GlobalDBHandler().conn.read_ctx() as cursor:
             maybe_underlying_tokens = GlobalDBHandler.fetch_underlying_tokens(
@@ -1265,11 +1268,6 @@ class Inquirer:
 
         underlying_token_price = self.find_usd_price(underlying_token)
         # Get the price per share from the yearn contract
-        contract = EvmContract(
-            address=token.evm_address,
-            abi=ethereum.node_inquirer.contracts.abi(vault_abi),
-            deployed_block=0,
-        )
         try:
             price_per_share = contract.call(ethereum.node_inquirer, 'pricePerShare')
         except (RemoteError, BlockchainQueryError) as e:

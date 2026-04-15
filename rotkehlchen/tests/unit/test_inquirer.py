@@ -528,17 +528,17 @@ def test_find_aerodrome_lp_token_price(inquirer, base_manager):
 @pytest.mark.parametrize('should_mock_current_price_queries', [False])
 def test_find_curve_lp_token_price(inquirer: 'Inquirer', blockchain: 'ChainsAggregator'):
     tested_tokens: dict[ChainID, tuple[str, FVal]] = {
-        ChainID.ETHEREUM: ('0xA3D87FffcE63B53E0d54fAa1cc983B7eB0b74A9c', FVal('1820.36')),
+        ChainID.ETHEREUM: ('0xA3D87FffcE63B53E0d54fAa1cc983B7eB0b74A9c', FVal('954.52')),
         # 3CRV-OP-gauge
-        ChainID.OPTIMISM: ('0x4456d13Fc6736e8e8330394c0C622103E06ea419', FVal('1685.47')),
+        ChainID.OPTIMISM: ('0x4456d13Fc6736e8e8330394c0C622103E06ea419', FVal('1741.90')),
         # Curve.fi amDAI/amUSDC/amUSDT (am3CRV)
         ChainID.POLYGON_POS: ('0xE7a24EF0C5e95Ffb0f6684b813A78F2a3AD7D171', FVal('1.14')),
         # crvUSDT-gauge
-        ChainID.ARBITRUM_ONE: ('0xB08FEf57bFcc5f7bF0EF69C0c090849d497C8F8A', FVal('1.07')),
+        ChainID.ARBITRUM_ONE: ('0xB08FEf57bFcc5f7bF0EF69C0c090849d497C8F8A', FVal('0.95')),
         # tricrypto
-        ChainID.BASE: ('0x63Eb7846642630456707C3efBb50A03c79B89D81', FVal('1.04')),
+        ChainID.BASE: ('0x63Eb7846642630456707C3efBb50A03c79B89D81', FVal('1.03')),
         # crvusdusdt-gauge
-        ChainID.GNOSIS: ('0xC2EfDbC1a21D82A677380380eB282a963A6A6ada', FVal('0.99')),
+        ChainID.GNOSIS: ('0xC2EfDbC1a21D82A677380380eB282a963A6A6ada', FVal('4.17')),
     }
 
     inquirer.inject_evm_managers([
@@ -642,9 +642,9 @@ def test_eur_pegged_asset_special_price(inquirer: 'Inquirer') -> None:
     # Verify the asset is loaded in the cached set
     assert A_ETH_EURE.identifier in Inquirer.eur_pegged_assets
 
-    # Test pricing to USD: EUR→USD rate is used
+    # Test pricing to USD: EUR→USD rate is used via _query_fiat_pair
     eur_usd_rate = Price(FVal('1.1'))
-    with patch.object(Inquirer, 'find_price', return_value=eur_usd_rate):
+    with patch.object(Inquirer, '_query_fiat_pair', return_value=(eur_usd_rate, CurrentPriceOracle.FIAT)):  # noqa: E501
         assets_without_price, found_prices = Inquirer._get_special_prices(
             from_assets=[A_ETH_EURE],
             to_asset=A_USD,
@@ -656,8 +656,8 @@ def test_eur_pegged_asset_special_price(inquirer: 'Inquirer') -> None:
     assert price == eur_usd_rate
     assert oracle == CurrentPriceOracle.FIAT
 
-    # Test that when EUR→target price is zero, the asset is not priced
-    with patch.object(Inquirer, 'find_price', return_value=ZERO_PRICE):
+    # Test that when EUR→target price is unavailable, the asset is not priced
+    with patch.object(Inquirer, '_query_fiat_pair', return_value=None):
         assets_without_price, found_prices = Inquirer._get_special_prices(
             from_assets=[A_ETH_EURE],
             to_asset=A_USD,
@@ -674,12 +674,15 @@ def test_eur_pegged_asset_special_price_non_usd(inquirer: 'Inquirer') -> None:
 
     eur_jpy_rate = Price(FVal('162.5'))
 
-    def mock_find_price(from_asset, to_asset, **kwargs):  # pylint: disable=unused-argument
-        if from_asset == A_EUR:
-            return eur_jpy_rate
-        return ZERO_PRICE
+    def mock_query_fiat_pair(base, quote):  # pylint: disable=unused-argument
+        if base == A_EUR.resolve_to_fiat_asset() and quote == A_JPY.resolve_to_fiat_asset():
+            return (eur_jpy_rate, CurrentPriceOracle.FIAT)
+        return None
 
-    with patch.object(Inquirer, 'find_price', side_effect=mock_find_price):
+    with (
+        patch.object(Inquirer, '_query_fiat_pair', side_effect=mock_query_fiat_pair),
+        patch.object(Inquirer, 'find_price', return_value=ZERO_PRICE),
+    ):
         assets_without_price, found_prices = Inquirer._get_special_prices(
             from_assets=[A_ETH_EURE, A_KFEE],
             to_asset=A_JPY,
