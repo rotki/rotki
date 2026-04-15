@@ -1,10 +1,10 @@
 import type { Ref } from 'vue';
+import type { Collection } from '@/modules/common/collection';
 import type { HistoryEventRequestPayload } from '@/modules/history/events/request-types';
-import type { Collection } from '@/types/collection';
 import { assert, bigNumberify, HistoryEventEntryType } from '@rotki/common';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { RequestCancelledError } from '@/modules/api/request-queue/errors';
-import { HistoryEventAccountingRuleStatus, type HistoryEventEntry, type HistoryEventRow } from '@/types/history/events/schemas';
+import { HistoryEventAccountingRuleStatus, type HistoryEventEntry, type HistoryEventRow } from '@/modules/history/events/schemas';
 
 const mockItemsPerPage = ref<number>(10);
 

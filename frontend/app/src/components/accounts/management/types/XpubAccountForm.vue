@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { XpubManage } from '@/composables/accounts/blockchain/use-account-manage';
-import type { ValidationErrors } from '@/types/api/errors';
-import type { XpubPayload } from '@/types/blockchain/accounts';
+import type { XpubPayload } from '@/modules/accounts/blockchain-accounts';
+import type { ValidationErrors } from '@/modules/api/types/errors';
 import { assert } from '@rotki/common';
 import { omit } from 'es-toolkit';
 import XpubInput from '@/components/accounts/blockchain/XpubInput.vue';

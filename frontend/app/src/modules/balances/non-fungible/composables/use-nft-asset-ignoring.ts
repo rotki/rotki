@@ -1,7 +1,7 @@
 import type { MaybeRefOrGetter, Ref } from 'vue';
-import type { ActionStatus } from '@/types/action';
-import type { IgnoredAssetsHandlingType } from '@/types/asset';
-import type { NonFungibleBalance } from '@/types/nfbalances';
+import type { IgnoredAssetsHandlingType } from '@/modules/assets/types';
+import type { NonFungibleBalance } from '@/modules/balances/types/nfbalances';
+import type { ActionStatus } from '@/modules/common/action';
 import { startPromise } from '@shared/utils';
 import { useAssetsStore } from '@/modules/assets/use-assets-store';
 import { useIgnoredAssetConfirmation } from '@/modules/assets/use-ignored-asset-confirmation';

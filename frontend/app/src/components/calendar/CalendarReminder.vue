@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import type { CalendarEvent } from '@/types/history/calendar';
-import type { CalendarReminderTemporaryPayload, CalenderReminderPayload } from '@/types/history/calendar/reminder';
+import type { CalendarReminderTemporaryPayload, CalenderReminderPayload } from '@/modules/history/calendar/reminder';
+import type { CalendarEvent } from '@/modules/history/calendar/types';
 import CalendarReminderEntry from '@/components/calendar/CalendarReminderEntry.vue';
 import { useCalendarReminderApi } from '@/composables/history/calendar/reminder';
 import { useNotificationDispatcher } from '@/modules/notifications/use-notification-dispatcher';

@@ -3,7 +3,7 @@ import type { Filters, Matcher } from '@/composables/filters/assets';
 import AssetStatusFilter from '@/components/asset-manager/AssetStatusFilter.vue';
 import IgnoreButtons from '@/components/history/IgnoreButtons.vue';
 import TableFilter from '@/components/table-filter/TableFilter.vue';
-import { IgnoredAssetHandlingType, type IgnoredAssetsHandlingType } from '@/types/asset';
+import { IgnoredAssetHandlingType, type IgnoredAssetsHandlingType } from '@/modules/assets/types';
 
 interface IgnoredFilter {
   onlyShowOwned: boolean;

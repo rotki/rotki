@@ -4,13 +4,13 @@ import TablePageLayout from '@/components/layout/TablePageLayout.vue';
 import CardTitle from '@/components/typography/CardTitle.vue';
 import { usePremium } from '@/composables/premium';
 import { useRefWithDebounce } from '@/composables/ref';
+import { NoteLocation } from '@/modules/common/notes';
 import HistoricalBalancesContent from '@/modules/history/balances/HistoricalBalancesContent.vue';
 import NegativeBalancesDialog from '@/modules/history/balances/NegativeBalancesDialog.vue';
 import { useHistoricalBalancesStore } from '@/modules/history/balances/store';
 import { useHistoricalBalances } from '@/modules/history/balances/use-historical-balances';
 import { TaskType } from '@/modules/tasks/task-type';
 import { useTaskStore } from '@/modules/tasks/use-task-store';
-import { NoteLocation } from '@/types/notes';
 
 definePage({
   meta: {

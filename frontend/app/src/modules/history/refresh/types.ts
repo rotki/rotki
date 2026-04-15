@@ -1,6 +1,6 @@
-import type { Exchange } from '@/types/exchanges';
-import type { ChainAddress, TransactionChainType } from '@/types/history/events';
-import type { OnlineHistoryEventsQueryType } from '@/types/history/events/schemas';
+import type { Exchange } from '@/modules/balances/types/exchanges';
+import type { ChainAddress, TransactionChainType } from '@/modules/history/events/event-payloads';
+import type { OnlineHistoryEventsQueryType } from '@/modules/history/events/schemas';
 
 export interface HistoryRefreshEventData {
   accounts?: ChainAddress[];

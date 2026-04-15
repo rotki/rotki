@@ -1,4 +1,3 @@
-import type { AssetBalances } from '@/types/balances';
 import type {
   AddressData,
   Balances,
@@ -8,7 +7,8 @@ import type {
   BlockchainAccountRequestPayload,
   BlockchainAccountWithBalance,
   ValidatorData,
-} from '@/types/blockchain/accounts';
+} from '@/modules/accounts/blockchain-accounts';
+import type { AssetBalances } from '@/modules/balances/types/balances';
 import type {
   AssetProtocolBalances,
   BlockchainAssetBalances,
@@ -16,8 +16,8 @@ import type {
   BlockchainTotals,
   BtcBalances,
   EthBalance,
-} from '@/types/blockchain/balances';
-import type { Collection } from '@/types/collection';
+} from '@/modules/balances/types/blockchain-balances';
+import type { Collection } from '@/modules/common/collection';
 import { type Balance, Zero } from '@rotki/common';
 import { camelCase, omit } from 'es-toolkit';
 import { isEmpty } from 'es-toolkit/compat';

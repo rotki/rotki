@@ -1,4 +1,4 @@
-import type { AllBalancePayload } from '@/types/blockchain/accounts';
+import type { AllBalancePayload } from '@/modules/accounts/blockchain-accounts';
 import { startPromise } from '@shared/utils';
 import { useBalancesApi } from '@/composables/api/balances';
 import { useBlockchainAccountManagement } from '@/modules/accounts/use-blockchain-account-management';

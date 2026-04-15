@@ -1,5 +1,5 @@
 import type { MaybeRefOrGetter } from 'vue';
-import type { ProtocolMetadata } from '@/types/defi';
+import type { ProtocolMetadata } from '@/modules/defi/types';
 import { decodeHtmlEntities } from '@rotki/common';
 import { camelCase } from 'es-toolkit';
 import { useDefiApi } from '@/composables/api/defi';

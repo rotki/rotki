@@ -1,8 +1,8 @@
 import type { MaybeRef } from 'vue';
 import type * as Vue from 'vue';
-import type { Collection } from '@/types/collection';
-import type { NonFungibleBalance, NonFungibleBalancesRequestPayload } from '@/types/nfbalances';
-import type { LocationQuery } from '@/types/route';
+import type { NonFungibleBalance, NonFungibleBalancesRequestPayload } from '@/modules/balances/types/nfbalances';
+import type { Collection } from '@/modules/common/collection';
+import type { LocationQuery } from '@/modules/table/route';
 import { startPromise } from '@shared/utils';
 import flushPromises from 'flush-promises';
 import { afterEach, assertType, beforeAll, beforeEach, describe, expect, expectTypeOf, it, vi } from 'vitest';

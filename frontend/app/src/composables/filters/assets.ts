@@ -1,9 +1,9 @@
 import type { Ref } from 'vue';
 import type { FilterSchema } from '@/composables/use-pagination-filter/types';
-import type { MatchedKeyword, SearchMatcher } from '@/types/filtering';
+import type { MatchedKeyword, SearchMatcher } from '@/modules/table/filtering';
 import { z } from 'zod/v4';
 import { useSupportedChains } from '@/composables/info/chains';
-import { SOLANA_CHAIN } from '@/types/asset';
+import { SOLANA_CHAIN } from '@/modules/assets/types';
 import { arrayify } from '@/utils/array';
 
 enum AssetFilterKeys {

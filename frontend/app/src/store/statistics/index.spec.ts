@@ -4,8 +4,8 @@ import { get } from '@vueuse/core';
 import { createPinia, setActivePinia } from 'pinia';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { defaultGeneralSettings } from '@/data/factories';
+import { useCurrencies } from '@/modules/amount-display/currencies';
 import { useGeneralSettingsStore } from '@/store/settings/general';
-import { useCurrencies } from '@/types/currencies';
 import { useStatisticsStore } from './index';
 
 // Store reference for accessing currency in mocks

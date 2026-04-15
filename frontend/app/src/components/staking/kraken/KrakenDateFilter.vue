@@ -1,6 +1,6 @@
 <script lang="ts" setup>
-import type { MatchedKeyword, SearchMatcher } from '@/types/filtering';
-import type { KrakenStakingDateFilter } from '@/types/staking';
+import type { KrakenStakingDateFilter } from '@/modules/staking/staking-types';
+import type { MatchedKeyword, SearchMatcher } from '@/modules/table/filtering';
 import { assert } from '@rotki/common';
 import TableFilter from '@/components/table-filter/TableFilter.vue';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';

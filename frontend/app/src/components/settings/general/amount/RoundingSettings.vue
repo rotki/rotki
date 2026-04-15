@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { RoundingMode } from '@/types/settings/frontend-settings';
+import type { RoundingMode } from '@/modules/settings/types/frontend-settings';
 import { type BigNumber, bigNumberify } from '@rotki/common';
 import RoundingSelector from '@/components/settings/general/amount/RoundingSelector.vue';
 import { FiatDisplay, ValueDisplay } from '@/modules/amount-display/components';

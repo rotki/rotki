@@ -1,3 +1,3 @@
-import type { AddSolanaSwapEventPayload } from '@/types/history/events/schemas';
+import type { AddSolanaSwapEventPayload } from '@/modules/history/events/schemas';
 
 export type SolanaSwapFormData = Required<AddSolanaSwapEventPayload>;

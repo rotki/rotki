@@ -3,7 +3,7 @@ import type {
   MatchedKeyword,
   SearchMatcher,
 
-} from '@/types/filtering';
+} from '@/modules/table/filtering';
 import { assert, type EthStakingCombinedFilter } from '@rotki/common';
 import TableFilter from '@/components/table-filter/TableFilter.vue';
 import { isValidStatus, validStatuses } from '@/composables/filters/eth-validator';

@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import type { CreateAccountPayload, LoginCredentials, PremiumSetup } from '@/types/login';
+import type { CreateAccountPayload, LoginCredentials, PremiumSetup } from '@/modules/account/login';
 import { externalLinks } from '@shared/external-links';
 import CreateAccountSubmitAnalytics
   from '@/components/account-management/create-account/analytics/CreateAccountSubmitAnalytics.vue';

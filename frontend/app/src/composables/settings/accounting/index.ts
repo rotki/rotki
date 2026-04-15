@@ -1,14 +1,14 @@
 import type { MaybeRef } from 'vue';
-import type { TaskMeta } from '@/modules/tasks/types';
-import type { ActionStatus } from '@/types/action';
-import type { Collection } from '@/types/collection';
+import type { ActionStatus } from '@/modules/common/action';
+import type { Collection } from '@/modules/common/collection';
 import type {
   AccountingRuleConflict,
   AccountingRuleConflictRequestPayload,
   AccountingRuleConflictResolution,
   AccountingRuleEntry,
   AccountingRuleRequestPayload,
-} from '@/types/settings/accounting';
+} from '@/modules/settings/types/accounting';
+import type { TaskMeta } from '@/modules/tasks/types';
 import { useAccountingApi } from '@/composables/api/settings/accounting-api';
 import { useInterop } from '@/composables/electron-interop';
 import { getErrorMessage, useNotifications } from '@/modules/notifications/use-notifications';

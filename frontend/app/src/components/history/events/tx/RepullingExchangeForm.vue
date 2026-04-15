@@ -1,7 +1,7 @@
 <script lang="ts" setup>
-import type { ValidationErrors } from '@/types/api/errors';
-import type { Exchange } from '@/types/exchanges';
-import type { RepullingTransactionPayload } from '@/types/history/events';
+import type { ValidationErrors } from '@/modules/api/types/errors';
+import type { Exchange } from '@/modules/balances/types/exchanges';
+import type { RepullingTransactionPayload } from '@/modules/history/events/event-payloads';
 import useVuelidate from '@vuelidate/core';
 import { required } from '@vuelidate/validators';
 import LocationIcon from '@/components/history/LocationIcon.vue';

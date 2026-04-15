@@ -1,12 +1,12 @@
 import type { ComputedRef, DeepReadonly, MaybeRefOrGetter, Ref } from 'vue';
 import type ServiceKey from '@/components/settings/api-keys/ServiceKey.vue';
+import type { ExternalServiceKey, ExternalServiceKeys, ExternalServiceName } from '@/modules/external-services/types';
 import type { ConfirmationMessage } from '@/modules/history/events/composables/use-deletion-strategies';
-import type { ExternalServiceKey, ExternalServiceKeys, ExternalServiceName } from '@/types/user';
 import { toCapitalCase } from '@rotki/common';
 import { useExternalServicesApi } from '@/composables/api/settings/external-services-api';
+import { DialogType } from '@/modules/common/dialogs';
 import { useConfirmStore } from '@/store/confirm';
 import { useSessionAuthStore } from '@/store/session/auth';
-import { DialogType } from '@/types/dialogs';
 import { getErrorMessage } from '@/utils/error-handling';
 import { logger } from '@/utils/logging';
 

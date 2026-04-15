@@ -1,4 +1,4 @@
-import type { ActionStatus } from '@/types/action';
+import type { ActionStatus } from '@/modules/common/action';
 import { promiseTimeout } from '@vueuse/core';
 import { useUsersApi } from '@/composables/api/session/users';
 import { useInterop } from '@/composables/electron-interop';

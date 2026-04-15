@@ -4,7 +4,7 @@ import type {
   AddressBookLocation,
   AddressBookPayload,
   AddressBookRequestPayload,
-} from '@/types/eth-names';
+} from '@/modules/address-names/eth-names';
 import ChainSelect from '@/components/accounts/blockchain/ChainSelect.vue';
 import AddressBookFormDialog from '@/components/address-book-manager/AddressBookFormDialog.vue';
 import AddressBookManagementMore from '@/components/address-book-manager/AddressBookManagementMore.vue';

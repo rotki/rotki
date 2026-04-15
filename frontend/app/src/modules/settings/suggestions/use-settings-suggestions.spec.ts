@@ -1,12 +1,12 @@
-import type { GeneralSettings } from '@/types/user';
+import type { GeneralSettings } from '@/modules/settings/types/user-settings';
 import { describe, expect, it } from 'vitest';
 import { defaultGeneralSettings } from '@/data/factories';
-import { Currency } from '@/types/currencies';
+import { Currency } from '@/modules/amount-display/currencies';
 import {
   type FrontendSettings,
   getDefaultFrontendSettings,
-} from '@/types/settings/frontend-settings';
-import { PriceOracle } from '@/types/settings/price-oracle';
+} from '@/modules/settings/types/frontend-settings';
+import { PriceOracle } from '@/modules/settings/types/price-oracle';
 import { getSuggestionKey, type VersionSuggestions } from './settings-suggestions';
 import { collectPendingSuggestions } from './use-settings-suggestions';
 

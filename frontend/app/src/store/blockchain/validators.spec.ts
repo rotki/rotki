@@ -1,4 +1,4 @@
-import type { ValidatorData } from '@/types/blockchain/accounts';
+import type { ValidatorData } from '@/modules/accounts/blockchain-accounts';
 import { type Balance, Blockchain, Zero } from '@rotki/common';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';

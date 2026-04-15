@@ -3,7 +3,7 @@ import AccountingCsvExportSetting from '@/components/settings/accounting/Account
 import AccountingTradeSettings from '@/components/settings/accounting/AccountingTradeSettings.vue';
 import AccountingRuleSetting from '@/components/settings/accounting/rule/AccountingRuleSetting.vue';
 import SettingsPage from '@/components/settings/controls/SettingsPage.vue';
-import { NoteLocation } from '@/types/notes';
+import { NoteLocation } from '@/modules/common/notes';
 
 definePage({
   meta: {

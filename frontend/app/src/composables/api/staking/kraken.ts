@@ -2,7 +2,7 @@ import type { PendingTask } from '@/modules/tasks/types';
 import { transformCase } from '@rotki/common';
 import { api } from '@/modules/api/rotki-api';
 import { VALID_WITH_SESSION_AND_EXTERNAL_SERVICE } from '@/modules/api/utils';
-import { emptyPagination, KrakenStakingEvents, type KrakenStakingPagination } from '@/types/staking';
+import { emptyPagination, KrakenStakingEvents, type KrakenStakingPagination } from '@/modules/staking/staking-types';
 
 interface UseKrakenApiReturn {
   refreshKrakenStaking: () => Promise<PendingTask>;

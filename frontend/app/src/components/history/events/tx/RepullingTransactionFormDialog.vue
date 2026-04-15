@@ -1,6 +1,6 @@
 <script lang="ts" setup>
-import type { Exchange } from '@/types/exchanges';
-import type { RepullingEthStakingPayload, RepullingExchangeEventsPayload, RepullingTransactionPayload } from '@/types/history/events';
+import type { Exchange } from '@/modules/balances/types/exchanges';
+import type { RepullingEthStakingPayload, RepullingExchangeEventsPayload, RepullingTransactionPayload } from '@/modules/history/events/event-payloads';
 import dayjs from 'dayjs';
 import { useTemplateRef } from 'vue';
 import BigDialog from '@/components/dialogs/BigDialog.vue';
@@ -8,13 +8,13 @@ import RepullingTransactionForm, { type AccountType } from '@/components/history
 import { type RepullingTransactionResult, useHistoryTransactions } from '@/composables/history/events/tx';
 import { useRepullingTransactionForm } from '@/composables/history/events/tx/use-repulling-transaction-form';
 import { HISTORY_EVENT_ACTIONS, type HistoryEventAction } from '@/composables/history/events/types';
+import { ApiValidationError } from '@/modules/api/types/errors';
+import { OnlineHistoryEventsQueryType } from '@/modules/history/events/schemas';
 import { useDecodingStatusStore } from '@/modules/history/use-decoding-status-store';
 import { TaskType } from '@/modules/tasks/task-type';
 import { useTaskStore } from '@/modules/tasks/use-task-store';
 import { useConfirmStore } from '@/store/confirm';
 import { useMessageStore } from '@/store/message';
-import { ApiValidationError } from '@/types/api/errors';
-import { OnlineHistoryEventsQueryType } from '@/types/history/events/schemas';
 import { getErrorMessage } from '@/utils/error-handling';
 import { logger } from '@/utils/logging';
 

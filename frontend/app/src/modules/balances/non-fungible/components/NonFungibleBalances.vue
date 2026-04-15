@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { Module } from '@/types/modules';
+import type { Module } from '@/modules/common/modules';
 import NonFungibleBalancesFilter from '@/components/accounts/balances/NonFungibleBalancesFilter.vue';
 import SuccessDisplay from '@/components/display/SuccessDisplay.vue';
 import NftDetails from '@/components/helper/NftDetails.vue';

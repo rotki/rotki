@@ -2,8 +2,8 @@ import { bigNumberify } from '@rotki/common';
 import { updateGeneralSettings } from '@test/utils/general-settings';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { useFiatConversion } from '@/modules/amount-display/composables/use-fiat-conversion';
+import { useCurrencies } from '@/modules/amount-display/currencies';
 import { useBalancePricesStore } from '@/store/balances/prices';
-import { useCurrencies } from '@/types/currencies';
 
 describe('modules/amount-display/composables/use-fiat-conversion', () => {
   beforeEach(() => {

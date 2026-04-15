@@ -10,7 +10,7 @@ import {
   type ManualPricePayload,
   ManualPrices,
   NftPriceArray,
-} from '@/types/prices';
+} from '@/modules/prices/price-types';
 
 interface UseAssetPriceApiReturn {
   fetchHistoricalPrices: (payload?: Partial<ManualPricePayload>) => Promise<HistoricalPrice[]>;

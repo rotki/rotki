@@ -1,10 +1,10 @@
-import type { SupportedCurrency } from '@/types/currencies';
-import type { HistoricPricesPayload } from '@/types/prices';
+import type { SupportedCurrency } from '@/modules/amount-display/currencies';
+import type { HistoricPricesPayload } from '@/modules/prices/price-types';
 import { BigNumber } from '@rotki/common';
 import { server } from '@test/setup-files/server';
 import { type DefaultBodyType, http, HttpResponse } from 'msw';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { PriceOracle } from '@/types/settings/price-oracle';
+import { PriceOracle } from '@/modules/settings/types/price-oracle';
 
 vi.unmock('@/composables/api/balances/price');
 

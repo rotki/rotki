@@ -1,13 +1,6 @@
-import type { Eth2Validator } from '@/types/balances';
+import type { Eth2Validator } from '@/modules/balances/types/balances';
 import { assert, type Eth2ValidatorEntry, type EthValidatorFilter, type Nullable, onlyIfTruthy } from '@rotki/common';
 import { omit } from 'es-toolkit';
-import { api } from '@/modules/api/rotki-api';
-import {
-  VALID_WITH_PARAMS_SESSION_AND_EXTERNAL_SERVICE,
-  VALID_WITH_SESSION_AND_EXTERNAL_SERVICE,
-  VALID_WITH_SESSION_STATUS,
-} from '@/modules/api/utils';
-import { type PendingTask, PendingTaskSchema } from '@/modules/tasks/types';
 import {
   type AccountPayload,
   BitcoinAccounts,
@@ -16,8 +9,15 @@ import {
   type DeleteXpubParams,
   type GeneralAccountData,
   type XpubAccountPayload,
-} from '@/types/blockchain/accounts';
-import { type BtcChains, isBtcChain } from '@/types/blockchain/chains';
+} from '@/modules/accounts/blockchain-accounts';
+import { api } from '@/modules/api/rotki-api';
+import {
+  VALID_WITH_PARAMS_SESSION_AND_EXTERNAL_SERVICE,
+  VALID_WITH_SESSION_AND_EXTERNAL_SERVICE,
+  VALID_WITH_SESSION_STATUS,
+} from '@/modules/api/utils';
+import { type BtcChains, isBtcChain } from '@/modules/onchain/chains';
+import { type PendingTask, PendingTaskSchema } from '@/modules/tasks/types';
 
 function payloadToData({ address, label, tags }: Omit<BlockchainAccountPayload, 'blockchain'>, isAdd = false): {
   accounts: GeneralAccountData[];

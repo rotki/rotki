@@ -1,5 +1,5 @@
 import type { Pinia } from 'pinia';
-import type { EvmChainInfo } from '@/types/api/chains';
+import type { EvmChainInfo } from '@/modules/api/types/chains';
 import { Blockchain } from '@rotki/common';
 import { createCustomPinia } from '@test/utils/create-pinia';
 import { libraryDefaults } from '@test/utils/provide-defaults';

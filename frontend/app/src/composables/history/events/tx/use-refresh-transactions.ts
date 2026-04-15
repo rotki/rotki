@@ -1,6 +1,6 @@
 import type { RefreshTransactionsParams } from './types';
-import type { Exchange } from '@/types/exchanges';
-import type { ChainAddress } from '@/types/history/events';
+import type { Exchange } from '@/modules/balances/types/exchanges';
+import type { ChainAddress } from '@/modules/history/events/event-payloads';
 import { startPromise } from '@shared/utils';
 import { useHistoryTransactionDecoding } from '@/composables/history/events/tx/decoding';
 import { useRefreshHandlers } from '@/composables/history/events/tx/refresh-handlers';
@@ -10,12 +10,12 @@ import { useSupportedChains } from '@/composables/info/chains';
 import { useSchedulerState } from '@/composables/session/use-scheduler-state';
 import { Section, Status, useStatusUpdater } from '@/composables/status';
 import { useExchangeData } from '@/modules/balances/exchanges/use-exchange-data';
+import { OnlineHistoryEventsQueryType } from '@/modules/history/events/schemas';
 import { useDecodingStatusStore } from '@/modules/history/use-decoding-status-store';
 import { sigilBus } from '@/modules/sigil/event-bus';
 import { useEventsQueryStatusStore } from '@/store/history/query-status/events-query-status';
 import { useTxQueryStatusStore } from '@/store/history/query-status/tx-query-status';
 import { useHistoryRefreshStateStore } from '@/store/history/refresh-state';
-import { OnlineHistoryEventsQueryType } from '@/types/history/events/schemas';
 import { LimitedParallelizationQueue } from '@/utils/limited-parallelization-queue';
 import { logger } from '@/utils/logging';
 

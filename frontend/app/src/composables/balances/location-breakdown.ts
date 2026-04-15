@@ -1,9 +1,9 @@
 import type { AssetBalanceWithPrice, BigNumber } from '@rotki/common';
-import type { AssetBalances } from '@/types/balances';
-import type { Balances } from '@/types/blockchain/accounts';
-import type { AssetProtocolBalances } from '@/types/blockchain/balances';
-import type { ExchangeInfo } from '@/types/exchanges';
-import type { ManualBalanceWithValue } from '@/types/manual-balances';
+import type { Balances } from '@/modules/accounts/blockchain-accounts';
+import type { AssetBalances } from '@/modules/balances/types/balances';
+import type { AssetProtocolBalances } from '@/modules/balances/types/blockchain-balances';
+import type { ExchangeInfo } from '@/modules/balances/types/exchanges';
+import type { ManualBalanceWithValue } from '@/modules/balances/types/manual-balances';
 import { computed, type ComputedRef, type MaybeRefOrGetter } from 'vue';
 import { summarizeAssetProtocols } from '@/composables/balances/asset-summary';
 import { blockchainToAssetProtocolBalances, manualToAssetProtocolBalances } from '@/composables/balances/balance-transformations';

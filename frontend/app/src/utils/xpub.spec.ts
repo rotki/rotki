@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { XpubKeyType } from '@/types/blockchain/accounts';
+import { XpubKeyType } from '@/modules/accounts/blockchain-accounts';
 import { detectXpubType, getKeyType, getPrefix, guessPrefix, isBtcAddress, isPrefixed, XpubPrefix } from './xpub';
 
 describe('detectXpubType', () => {

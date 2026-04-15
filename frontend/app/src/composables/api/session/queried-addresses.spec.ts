@@ -1,8 +1,8 @@
-import type { QueriedAddressPayload } from '@/types/session';
+import type { QueriedAddressPayload } from '@/modules/session/types';
 import { server } from '@test/setup-files/server';
 import { type DefaultBodyType, http, HttpResponse } from 'msw';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { Module } from '@/types/modules';
+import { Module } from '@/modules/common/modules';
 
 vi.unmock('@/composables/api/session/queried-addresses');
 

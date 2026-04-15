@@ -1,9 +1,9 @@
 import type { Ref } from 'vue';
 import type { RepullingTransactionResult } from '@/composables/history/events/tx';
 import type { HistoryEventAction } from '@/composables/history/events/types';
-import type { Collection } from '@/types/collection';
-import type { Exchange } from '@/types/exchanges';
-import type { HistoryEventRow } from '@/types/history/events/schemas';
+import type { Exchange } from '@/modules/balances/types/exchanges';
+import type { Collection } from '@/modules/common/collection';
+import type { HistoryEventRow } from '@/modules/history/events/schemas';
 import { type Blockchain, Severity } from '@rotki/common';
 import { afterEach, beforeEach, describe, expect, it, type Mock, vi } from 'vitest';
 import { Routes } from '@/router/routes';

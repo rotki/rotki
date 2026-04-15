@@ -1,5 +1,5 @@
 import type { Ref } from 'vue';
-import type { Collection } from '@/types/collection';
+import type { Collection } from '@/modules/common/collection';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { type InternalTxConflict, type InternalTxConflictsCountResponse, InternalTxConflictStatuses } from './types';
 import { useInternalTxConflicts } from './use-internal-tx-conflicts';

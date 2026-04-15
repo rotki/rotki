@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import type { SwapEventUserNotes } from '@/types/history/events/schemas';
+import type { SwapEventUserNotes } from '@/modules/history/events/schemas';
 
 const userNotes = defineModel<SwapEventUserNotes>({ required: true });
 

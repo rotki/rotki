@@ -1,7 +1,7 @@
 import type { BigNumber } from '@rotki/common';
 import type { MaybeRef } from 'vue';
-import type { Collection } from '@/types/collection';
-import type { ManualBalanceRequestPayload, ManualBalanceWithPrice } from '@/types/manual-balances';
+import type { ManualBalanceRequestPayload, ManualBalanceWithPrice } from '@/modules/balances/types/manual-balances';
+import type { Collection } from '@/modules/common/collection';
 import { useBalancesStore } from '@/modules/balances/use-balances-store';
 import { usePriceUtils } from '@/modules/prices/use-price-utils';
 import { sortAndFilterManualBalance } from '@/utils/balances/manual/manual-balances';

@@ -1,5 +1,5 @@
 import type { useAssetIconApi } from '@/composables/api/assets/icon';
-import type { AssetMergePayload, AssetUpdatePayload } from '@/types/asset';
+import type { AssetMergePayload, AssetUpdatePayload } from '@/modules/assets/types';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useAssetsApi } from '@/composables/api/assets';
 import { useAssets } from '@/composables/assets';

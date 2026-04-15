@@ -1,8 +1,8 @@
-import type { QueriedAddresses, QueriedAddressPayload } from '@/types/session';
+import type { QueriedAddresses, QueriedAddressPayload } from '@/modules/session/types';
 import { createPinia, setActivePinia } from 'pinia';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { Module } from '@/modules/common/modules';
 import { useSessionMetadataStore } from '@/store/session/metadata';
-import { Module } from '@/types/modules';
 import '@test/i18n';
 
 const mockQueriedAddresses = vi.fn();

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { Tag } from '@/types/tags';
+import type { Tag } from '@/modules/tags/tags';
 import { invertColor, randomColor } from '@rotki/common';
 import useVuelidate from '@vuelidate/core';
 import { helpers, required } from '@vuelidate/validators';

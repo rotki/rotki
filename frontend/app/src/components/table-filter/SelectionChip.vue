@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { Suggestion } from '@/types/filtering';
+import type { Suggestion } from '@/modules/table/filtering';
 import SuggestedItem from '@/components/table-filter/SuggestedItem.vue';
 
 defineOptions({

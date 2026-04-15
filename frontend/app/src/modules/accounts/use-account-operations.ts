@@ -1,6 +1,6 @@
 import type { MaybeRef } from 'vue';
+import type { AddressBookSimplePayload } from '@/modules/address-names/eth-names';
 import type { TaskMeta } from '@/modules/tasks/types';
-import type { AddressBookSimplePayload } from '@/types/eth-names';
 import { Blockchain } from '@rotki/common';
 import { startPromise } from '@shared/utils';
 import { useBlockchainAccountsApi } from '@/composables/api/blockchain/accounts';
@@ -10,10 +10,10 @@ import { useBlockchainAccounts } from '@/modules/accounts/use-blockchain-account
 import { useEnsOperations } from '@/modules/address-names/use-ens-operations';
 import { useAccountAddresses } from '@/modules/balances/blockchain/use-account-addresses';
 import { useBlockchainBalances } from '@/modules/balances/use-blockchain-balances';
+import { Section } from '@/modules/common/status';
 import { useNotifications } from '@/modules/notifications/use-notifications';
 import { TaskType } from '@/modules/tasks/task-type';
 import { isActionableFailure, useTaskHandler } from '@/modules/tasks/use-task-handler';
-import { Section } from '@/types/status';
 import { awaitParallelExecution } from '@/utils/await-parallel-execution';
 import { uniqueStrings } from '@/utils/data';
 import { logger } from '@/utils/logging';

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { ExplorerUrls } from '@/types/asset/asset-urls';
+import type { ExplorerUrls } from '@/modules/assets/asset-urls';
 import { type BigNumber, Blockchain } from '@rotki/common';
 import Flag from '@/components/common/Flag.vue';
 import MerchantIcon from '@/components/common/MerchantIcon.vue';

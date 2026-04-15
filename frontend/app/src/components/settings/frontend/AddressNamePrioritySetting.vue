@@ -4,8 +4,7 @@ import PrioritizedList from '@/components/helper/PrioritizedList.vue';
 import SettingsOption from '@/components/settings/controls/SettingsOption.vue';
 import EnableEnsNamesSetting from '@/components/settings/frontend/EnableEnsNamesSetting.vue';
 import { useAddressNameResolution } from '@/modules/address-names/use-address-name-resolution';
-import { useGeneralSettingsStore } from '@/store/settings/general';
-import { PrioritizedListData, type PrioritizedListItemData } from '@/types/settings/prioritized-list-data';
+import { PrioritizedListData, type PrioritizedListItemData } from '@/modules/settings/types/prioritized-list-data';
 import {
   BLOCKCHAIN_ACCOUNT_PRIO_LIST_ITEM,
   ENS_NAMES_PRIO_LIST_ITEM,
@@ -14,7 +13,8 @@ import {
   HARDCODED_MAPPINGS_PRIO_LIST_ITEM,
   type PrioritizedListId,
   PRIVATE_ADDRESSBOOK_PRIO_LIST_ITEM,
-} from '@/types/settings/prioritized-list-id';
+} from '@/modules/settings/types/prioritized-list-id';
+import { useGeneralSettingsStore } from '@/store/settings/general';
 
 const currentAddressNamePriorities = ref<PrioritizedListId[]>([]);
 const { addressNamePriority } = storeToRefs(useGeneralSettingsStore());

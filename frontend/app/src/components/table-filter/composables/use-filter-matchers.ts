@@ -1,5 +1,5 @@
 import type { ComputedRef, MaybeRefOrGetter, Ref } from 'vue';
-import type { SearchMatcher, Suggestion } from '@/types/filtering';
+import type { SearchMatcher, Suggestion } from '@/modules/table/filtering';
 import { getTextToken } from '@rotki/common';
 import { compareTextByKeyword } from '@/utils/assets';
 

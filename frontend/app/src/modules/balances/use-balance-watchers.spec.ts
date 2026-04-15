@@ -1,6 +1,6 @@
 import type { EffectScope } from 'vue';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { BalanceSource, type BalanceValueThreshold } from '@/types/settings/frontend-settings';
+import { BalanceSource, type BalanceValueThreshold } from '@/modules/settings/types/frontend-settings';
 
 const fetchManualBalances = vi.fn(async (): Promise<void> => {});
 const fetchConnectedExchangeBalances = vi.fn(async (): Promise<void> => {});

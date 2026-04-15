@@ -1,10 +1,10 @@
-import type { Collection } from '@/types/collection';
 import type {
   ManualBalance,
   ManualBalanceRequestPayload,
   ManualBalanceWithPrice,
   ManualBalanceWithValue,
-} from '@/types/manual-balances';
+} from '@/modules/balances/types/manual-balances';
+import type { Collection } from '@/modules/common/collection';
 import { type BigNumber, Zero } from '@rotki/common';
 import { camelCase } from 'es-toolkit';
 import { includes } from '@/utils/blockchain/accounts/common';

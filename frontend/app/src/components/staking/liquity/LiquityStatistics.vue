@@ -3,8 +3,8 @@ import { type AssetBalance, type Balance, type BigNumber, type LiquityPoolDetail
 import BalanceDisplay from '@/components/display/BalanceDisplay.vue';
 import { useSectionStatus } from '@/composables/status';
 import { FiatDisplay } from '@/modules/amount-display/components';
+import { Section } from '@/modules/common/status';
 import { usePriceUtils } from '@/modules/prices/use-price-utils';
-import { Section } from '@/types/status';
 import { bigNumberSum } from '@/utils/calculation';
 
 const { pool = null, statistic = null } = defineProps<{

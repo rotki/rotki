@@ -1,6 +1,6 @@
 import type { Ref } from 'vue';
-import type { NonFungibleBalance } from '@/types/nfbalances';
-import type { ManualPriceFormPayload } from '@/types/prices';
+import type { NonFungibleBalance } from '@/modules/balances/types/nfbalances';
+import type { ManualPriceFormPayload } from '@/modules/prices/price-types';
 import { useAssetPricesApi } from '@/composables/api/assets/prices';
 import { useNotifications } from '@/modules/notifications/use-notifications';
 import { useConfirmStore } from '@/store/confirm';

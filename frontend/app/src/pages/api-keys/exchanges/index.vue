@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { DataTableColumn, DataTableSortColumn } from '@rotki/ui-library';
-import type { Exchange, ExchangeFormData } from '@/types/exchanges';
+import type { Exchange, ExchangeFormData } from '@/modules/balances/types/exchanges';
 import { externalLinks } from '@shared/external-links';
 import ExternalLink from '@/components/helper/ExternalLink.vue';
 import RowActions from '@/components/helper/RowActions.vue';

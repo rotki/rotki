@@ -1,4 +1,4 @@
-import type { DatabaseInfo } from '@/types/backup';
+import type { DatabaseInfo } from '@/modules/session/backup';
 import { mockT } from '@test/i18n';
 import { RuiAlertStub } from '@test/stubs/RuiAlert';
 import { RuiAutoCompleteStub } from '@test/stubs/RuiAutoComplete';

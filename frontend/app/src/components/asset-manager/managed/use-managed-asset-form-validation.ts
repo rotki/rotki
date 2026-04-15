@@ -1,5 +1,5 @@
 import type { ComputedRef, ModelRef, Ref } from 'vue';
-import type { ValidationErrors } from '@/types/api/errors';
+import type { ValidationErrors } from '@/modules/api/types/errors';
 import { isValidEthAddress, isValidSolanaAddress } from '@rotki/common';
 import useVuelidate from '@vuelidate/core';
 import { helpers, required, requiredIf } from '@vuelidate/validators';

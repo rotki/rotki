@@ -9,15 +9,15 @@ import BlockchainRpcNodeFormDialog from '@/components/settings/general/rpc/Block
 import { useEvmNodesApi } from '@/composables/api/settings/evm-nodes-api';
 import { useSupportedChains } from '@/composables/info/chains';
 import { useNotificationDispatcher } from '@/modules/notifications/use-notification-dispatcher';
-import { useConfirmStore } from '@/store/confirm';
-import { useMessageStore } from '@/store/message';
-import { useSessionMetadataStore } from '@/store/session/metadata';
 import {
   type BlockchainRpcNode,
   type BlockchainRpcNodeList,
   type BlockchainRpcNodeManageState,
   getPlaceholderNode,
-} from '@/types/settings/rpc';
+} from '@/modules/settings/types/rpc';
+import { useConfirmStore } from '@/store/confirm';
+import { useMessageStore } from '@/store/message';
+import { useSessionMetadataStore } from '@/store/session/metadata';
 import { getErrorMessage } from '@/utils/error-handling';
 
 const { chain } = defineProps<{

@@ -1,6 +1,6 @@
 import { api } from '@/modules/api/rotki-api';
 import { VALID_WITH_SESSION_STATUS } from '@/modules/api/utils';
-import { type ExternalServiceKey, ExternalServiceKeys } from '@/types/user';
+import { type ExternalServiceKey, ExternalServiceKeys } from '@/modules/external-services/types';
 
 interface UseExternalServicesApiReturn {
   queryExternalServices: () => Promise<ExternalServiceKeys>;

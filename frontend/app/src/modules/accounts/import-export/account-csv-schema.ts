@@ -1,6 +1,6 @@
 import type { StakingValidatorManage } from '@/composables/accounts/blockchain/use-account-manage';
-import type { Eth2Validator } from '@/types/balances';
-import type { AccountPayload } from '@/types/blockchain/accounts';
+import type { AccountPayload } from '@/modules/accounts/blockchain-accounts';
+import type { Eth2Validator } from '@/modules/balances/types/balances';
 import { Blockchain } from '@rotki/common';
 import { z } from 'zod/v4';
 

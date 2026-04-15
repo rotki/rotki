@@ -1,5 +1,5 @@
 import type { ComputedRef, Ref } from 'vue';
-import type { GalleryNft } from '@/types/nfts';
+import type { GalleryNft } from '@/modules/assets/nfts';
 import { type TablePaginationData, useBreakpoint } from '@rotki/ui-library';
 
 interface UseNftGalleryLayoutReturn {

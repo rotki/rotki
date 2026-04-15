@@ -1,6 +1,6 @@
 <script setup lang="ts" generic="T extends BlockchainAccountBalance">
 import type { AccountDataRow } from '../../types';
-import type { BlockchainAccountBalance } from '@/types/blockchain/accounts';
+import type { BlockchainAccountBalance } from '@/modules/accounts/blockchain-accounts';
 import TokenDetection from '@/components/accounts/blockchain/TokenDetection.vue';
 import RowActions from '@/components/helper/RowActions.vue';
 import { useSupportedChains } from '@/composables/info/chains';

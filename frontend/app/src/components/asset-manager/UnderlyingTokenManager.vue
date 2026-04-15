@@ -4,7 +4,7 @@ import useVuelidate from '@vuelidate/core';
 import { between, helpers, numeric, required } from '@vuelidate/validators';
 import SimpleTable from '@/components/common/SimpleTable.vue';
 import RowActions from '@/components/helper/RowActions.vue';
-import { evmTokenKindsData } from '@/types/blockchain/chains';
+import { evmTokenKindsData } from '@/modules/onchain/chains';
 import { toMessages } from '@/utils/validation';
 
 const modelValue = defineModel<UnderlyingToken[]>({ required: true });

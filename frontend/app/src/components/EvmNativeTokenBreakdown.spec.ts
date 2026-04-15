@@ -1,9 +1,9 @@
 import type { useAssetIconApi } from '@/composables/api/assets/icon';
-import type { EvmChainInfo } from '@/types/api/chains';
-import type { BlockchainAccount } from '@/types/blockchain/accounts';
-import type { BlockchainBalances } from '@/types/blockchain/balances';
-import type { ExchangeData } from '@/types/exchanges';
-import type { ManualBalanceWithValue } from '@/types/manual-balances';
+import type { BlockchainAccount } from '@/modules/accounts/blockchain-accounts';
+import type { EvmChainInfo } from '@/modules/api/types/chains';
+import type { BlockchainBalances } from '@/modules/balances/types/blockchain-balances';
+import type { ExchangeData } from '@/modules/balances/types/exchanges';
+import type { ManualBalanceWithValue } from '@/modules/balances/types/manual-balances';
 import { bigNumberify, type Blockchain } from '@rotki/common';
 import { libraryDefaults } from '@test/utils/provide-defaults';
 import { type ComponentMountingOptions, mount, type VueWrapper } from '@vue/test-utils';
@@ -11,8 +11,8 @@ import { type Pinia, setActivePinia } from 'pinia';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import EvmNativeTokenBreakdown from '@/components/EvmNativeTokenBreakdown.vue';
 import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
+import { BalanceType } from '@/modules/balances/types/balances';
 import { useBalancesStore } from '@/modules/balances/use-balances-store';
-import { BalanceType } from '@/types/balances';
 
 vi.mock('@/composables/info/chains', async (): Promise<Record<string, unknown>> => {
   const { computed } = await import('vue');

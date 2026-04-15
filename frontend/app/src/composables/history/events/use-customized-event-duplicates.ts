@@ -1,7 +1,7 @@
 import type { ComputedRef, Ref } from 'vue';
-import type { ActionStatus } from '@/types/action';
-import type { Collection } from '@/types/collection';
-import type { HistoryEventCollectionRow, HistoryEventEntry, HistoryEventEntryWithMeta } from '@/types/history/events/schemas';
+import type { ActionStatus } from '@/modules/common/action';
+import type { Collection } from '@/modules/common/collection';
+import type { HistoryEventCollectionRow, HistoryEventEntry, HistoryEventEntryWithMeta } from '@/modules/history/events/schemas';
 import { useHistoryEventsApi } from '@/composables/api/history/events';
 import { type CustomizedEventDuplicates, useCustomizedEventDuplicatesApi } from '@/composables/api/history/events/customized-event-duplicates';
 import { getErrorMessage, useNotifications } from '@/modules/notifications/use-notifications';

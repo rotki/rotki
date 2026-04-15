@@ -1,10 +1,10 @@
 import type { MaybeRefOrGetter } from 'vue';
-import type { ActionDataEntry } from '@/types/action';
+import type { ActionDataEntry } from '@/modules/common/action';
 import type {
   HistoryEventCategoryDetailWithId,
   HistoryEventCategoryMapping,
   HistoryEventTypeData,
-} from '@/types/history/events/event-type';
+} from '@/modules/history/events/event-type';
 import { HistoryEventEntryType, toCapitalCase, toSentenceCase, toSnakeCase } from '@rotki/common';
 import { startPromise } from '@shared/utils';
 import { cloneDeep } from 'es-toolkit';

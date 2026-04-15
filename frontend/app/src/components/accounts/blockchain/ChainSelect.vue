@@ -1,5 +1,5 @@
 <script setup lang="ts" generic="T extends string | string[]">
-import type { ChainInfo } from '@/types/api/chains';
+import type { ChainInfo } from '@/modules/api/types/chains';
 import { Blockchain } from '@rotki/common';
 import ChainDisplay from '@/components/accounts/blockchain/ChainDisplay.vue';
 import { useSupportedChains } from '@/composables/info/chains';

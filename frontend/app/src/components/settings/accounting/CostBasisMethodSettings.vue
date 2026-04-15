@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { CostBasisMethod } from '@/types/user';
+import type { CostBasisMethod } from '@/modules/settings/types/user-settings';
 import ListItem from '@/components/common/ListItem.vue';
 import { useCostBasisMethod } from '@/composables/reports';
 

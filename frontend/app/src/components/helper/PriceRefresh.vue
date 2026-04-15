@@ -2,8 +2,8 @@
 import { useAggregatedBalances } from '@/composables/balances/use-aggregated-balances';
 import { useSectionStatus } from '@/composables/status';
 import { useBalancesLoading } from '@/modules/balances/use-balance-loading';
+import { Section } from '@/modules/common/status';
 import { usePriceRefresh } from '@/modules/prices/use-price-refresh';
-import { Section } from '@/types/status';
 
 const emit = defineEmits<{
   click: [];

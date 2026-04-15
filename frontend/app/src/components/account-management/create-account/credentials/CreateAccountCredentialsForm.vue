@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { LoginCredentials } from '@/types/login';
+import type { LoginCredentials } from '@/modules/account/login';
 import useVuelidate from '@vuelidate/core';
 import { helpers, required, sameAs } from '@vuelidate/validators';
 import { useRefPropVModel } from '@/utils/model';

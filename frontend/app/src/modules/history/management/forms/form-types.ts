@@ -3,7 +3,7 @@ import type {
   GroupEditableHistoryEvents,
   SolanaSwapEvent,
   StandaloneEditableEvents,
-} from '@/types/history/events/schemas';
+} from '@/modules/history/events/schemas';
 
 export interface AddEventData {
   type: 'add';

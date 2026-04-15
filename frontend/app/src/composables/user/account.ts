@@ -1,5 +1,5 @@
 import type { Ref } from 'vue';
-import type { CreateAccountPayload, LoginCredentials } from '@/types/login';
+import type { CreateAccountPayload, LoginCredentials } from '@/modules/account/login';
 import { wait } from '@shared/utils';
 import dayjs from 'dayjs';
 import { useBackendManagement } from '@/composables/backend';

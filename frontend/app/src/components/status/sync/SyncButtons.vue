@@ -2,7 +2,7 @@
 import { usePremium } from '@/composables/premium';
 import { useSync } from '@/composables/session/sync';
 import { useBalancesLoading } from '@/modules/balances/use-balance-loading';
-import { SYNC_DOWNLOAD, SYNC_UPLOAD, type SyncAction } from '@/types/session/sync';
+import { SYNC_DOWNLOAD, SYNC_UPLOAD, type SyncAction } from '@/modules/session/sync';
 
 const { pending, disabled = false } = defineProps<{
   pending: boolean;

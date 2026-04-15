@@ -1,5 +1,5 @@
-import type { PaginationRequestPayload } from '@/types/common';
-import type { FilterObjectWithBehaviour } from '@/types/filtering';
+import type { PaginationRequestPayload } from '@/modules/common/common-types';
+import type { FilterObjectWithBehaviour } from '@/modules/table/filtering';
 
 export interface HistoryEventRequestPayload extends PaginationRequestPayload<{ timestamp: number }> {
   readonly fromTimestamp?: string | number;

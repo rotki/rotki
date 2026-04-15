@@ -1,4 +1,4 @@
-import type { PeriodicClientQueryResult } from '@/types/session';
+import type { PeriodicClientQueryResult } from '@/modules/session/types';
 import { createPinia, setActivePinia } from 'pinia';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useSessionMetadataStore } from '@/store/session/metadata';

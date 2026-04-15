@@ -1,6 +1,6 @@
 import type { ComputedRef, Ref } from 'vue';
-import type { AddressData, BlockchainAccount } from '@/types/blockchain/accounts';
-import type { GalleryNft, Nfts } from '@/types/nfts';
+import type { AddressData, BlockchainAccount } from '@/modules/accounts/blockchain-accounts';
+import type { GalleryNft, Nfts } from '@/modules/assets/nfts';
 import { assert, BigNumber } from '@rotki/common';
 import { getAccountAddress } from '@/utils/blockchain/accounts/utils';
 import { uniqueStrings } from '@/utils/data';

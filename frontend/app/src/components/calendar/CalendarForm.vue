@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import type { ValidationErrors } from '@/types/api/errors';
-import type { AddressData, BlockchainAccount } from '@/types/blockchain/accounts';
-import type { CalendarEvent } from '@/types/history/calendar';
+import type { AddressData, BlockchainAccount } from '@/modules/accounts/blockchain-accounts';
+import type { ValidationErrors } from '@/modules/api/types/errors';
+import type { CalendarEvent } from '@/modules/history/calendar/types';
 import useVuelidate from '@vuelidate/core';
 import { helpers, required } from '@vuelidate/validators';
 import { useTemplateRef } from 'vue';
@@ -12,7 +12,7 @@ import CounterpartyInput from '@/components/inputs/CounterpartyInput.vue';
 import DateTimePicker from '@/components/inputs/DateTimePicker.vue';
 import { useFormStateWatcher } from '@/composables/form';
 import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
-import { isBlockchain } from '@/types/blockchain/chains';
+import { isBlockchain } from '@/modules/onchain/chains';
 import { hasAccountAddress } from '@/utils/blockchain/accounts';
 import { getAccountAddress } from '@/utils/blockchain/accounts/utils';
 import { refOptional, useRefPropVModel } from '@/utils/model';

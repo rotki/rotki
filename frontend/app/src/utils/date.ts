@@ -9,7 +9,7 @@ import utc from 'dayjs/plugin/utc';
 import weekday from 'dayjs/plugin/weekday';
 import weekOfYear from 'dayjs/plugin/weekOfYear';
 import { markRaw, type Ref } from 'vue';
-import { DateFormat } from '@/types/date-format';
+import { DateFormat } from '@/modules/common/date-format';
 
 export function getDateInputISOFormat(format: DateFormat): string {
   return {

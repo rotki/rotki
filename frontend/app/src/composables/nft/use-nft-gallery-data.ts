@@ -1,6 +1,6 @@
 import type { ComputedRef, Ref } from 'vue';
-import type { GalleryNft, Nft, Nfts } from '@/types/nfts';
-import type { NftPrice } from '@/types/prices';
+import type { GalleryNft, Nft, Nfts } from '@/modules/assets/nfts';
+import type { NftPrice } from '@/modules/prices/price-types';
 import { keyBy } from 'es-toolkit';
 import { useAssetPricesApi } from '@/composables/api/assets/prices';
 import { useNfts } from '@/composables/assets/nft';

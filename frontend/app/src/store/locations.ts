@@ -1,5 +1,5 @@
-import type { TradeLocationData } from '@/types/history/trade/location';
-import type { AllLocation } from '@/types/location';
+import type { AllLocation } from '@/modules/common/location';
+import type { TradeLocationData } from '@/modules/history/trade/location';
 import { toSentenceCase } from '@rotki/common';
 import { getPublicProtocolImagePath } from '@/utils/file';
 

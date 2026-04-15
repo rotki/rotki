@@ -1,17 +1,17 @@
 import type { Writeable } from '@rotki/common';
 import type { TablePaginationData } from '@rotki/ui-library';
 import type { ComputedRef, Ref } from 'vue';
-import type { BlockchainAccount } from '@/types/blockchain/accounts';
-import type { Collection } from '@/types/collection';
-import type { CalendarEvent, CalendarEventRequestPayload } from '@/types/history/calendar';
+import type { BlockchainAccount } from '@/modules/accounts/blockchain-accounts';
+import type { Collection } from '@/modules/common/collection';
+import type { CalendarEvent, CalendarEventRequestPayload } from '@/modules/history/calendar/types';
 import { startPromise } from '@shared/utils';
 import dayjs, { type Dayjs } from 'dayjs';
 import { isEqual } from 'es-toolkit';
 import { useCalendarApi } from '@/composables/history/calendar';
 import { usePaginationFilters } from '@/composables/use-pagination-filter';
 import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
-import { isBlockchain } from '@/types/blockchain/chains';
-import { RouterAccountsSchema } from '@/types/route';
+import { isBlockchain } from '@/modules/onchain/chains';
+import { RouterAccountsSchema } from '@/modules/table/route';
 import { getAccountAddress } from '@/utils/blockchain/accounts/utils';
 
 interface UseCalendarDataReturn {

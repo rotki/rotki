@@ -1,6 +1,6 @@
 import type { Pinia } from 'pinia';
 import type { AccountDataRow } from '../../types';
-import type { BlockchainAccountGroupWithBalance, BlockchainAccountWithBalance } from '@/types/blockchain/accounts';
+import type { BlockchainAccountGroupWithBalance, BlockchainAccountWithBalance } from '@/modules/accounts/blockchain-accounts';
 import { bigNumberify } from '@rotki/common';
 import { mount, type VueWrapper } from '@vue/test-utils';
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';

@@ -1,5 +1,5 @@
 import type { NotificationHandler } from '../interfaces';
-import type { CalendarEventWithReminder } from '@/types/history/calendar';
+import type { CalendarEventWithReminder } from '@/modules/history/calendar/types';
 import { NotificationCategory, Severity } from '@rotki/common';
 import { startPromise } from '@shared/utils';
 import dayjs from 'dayjs';

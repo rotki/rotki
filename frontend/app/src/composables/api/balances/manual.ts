@@ -3,8 +3,8 @@ import {
   VALID_WITH_PARAMS_SESSION_AND_EXTERNAL_SERVICE,
   VALID_WITH_SESSION_AND_EXTERNAL_SERVICE,
 } from '@/modules/api/utils';
+import { type ManualBalance, ManualBalances, type RawManualBalance } from '@/modules/balances/types/manual-balances';
 import { type PendingTask, PendingTaskSchema } from '@/modules/tasks/types';
-import { type ManualBalance, ManualBalances, type RawManualBalance } from '@/types/manual-balances';
 
 interface UseManualBalancesApiReturn {
   addManualBalances: (balances: RawManualBalance[]) => Promise<PendingTask>;

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { BaseSuggestion, MatchedKeywordWithBehaviour, SearchMatcher, Suggestion } from '@/types/filtering';
+import type { BaseSuggestion, MatchedKeywordWithBehaviour, SearchMatcher, Suggestion } from '@/modules/table/filtering';
 import { getTextToken } from '@rotki/common';
 import FilterEntry from '@/components/table-filter/FilterEntry.vue';
 import SuggestedItem from '@/components/table-filter/SuggestedItem.vue';

@@ -1,4 +1,4 @@
-import type { ProtocolBalances } from '@/types/blockchain/balances';
+import type { ProtocolBalances } from '@/modules/balances/types/blockchain-balances';
 import { bigNumberify } from '@rotki/common';
 import {
   createTestBalance,

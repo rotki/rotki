@@ -1,11 +1,11 @@
-import type { Collection } from '@/types/collection';
 import type {
   AddressBookEntries,
   AddressBookEntry,
   AddressBookLocation,
   AddressBookRequestPayload,
   AddressBookSimplePayload,
-} from '@/types/eth-names';
+} from '@/modules/address-names/eth-names';
+import type { Collection } from '@/modules/common/collection';
 import { useAddressesNamesApi } from '@/composables/api/blockchain/addresses-names';
 import { useAddressNameResolution } from '@/modules/address-names/use-address-name-resolution';
 import { useNotifications } from '@/modules/notifications/use-notifications';

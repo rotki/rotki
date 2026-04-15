@@ -1,5 +1,5 @@
 import type { ComputedRef, MaybeRefOrGetter } from 'vue';
-import type { EvmChainInfo } from '@/types/api/chains';
+import type { EvmChainInfo } from '@/modules/api/types/chains';
 import { getTextToken } from '@rotki/common';
 import { useSupportedChains } from '@/composables/info/chains';
 import { useAccountAddresses } from '@/modules/balances/blockchain/use-account-addresses';

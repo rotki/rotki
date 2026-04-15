@@ -1,6 +1,6 @@
 import { type AssetInfo, getAddressFromEvmIdentifier, isEvmIdentifier } from '@rotki/common';
+import { CUSTOM_ASSET } from '@/modules/assets/types';
 import { useGeneralSettingsStore } from '@/store/settings/general';
-import { CUSTOM_ASSET } from '@/types/asset';
 
 export function useResolveAssetIdentifier(): (identifier: string) => string {
   const { treatEth2AsEth } = storeToRefs(useGeneralSettingsStore());

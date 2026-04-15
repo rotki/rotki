@@ -1,5 +1,5 @@
 import type { ComputedRef, MaybeRefOrGetter, Ref } from 'vue';
-import type { Collection, CollectionResponse } from '@/types/collection';
+import type { Collection, CollectionResponse } from '@/modules/common/collection';
 import { type BigNumber, Zero } from '@rotki/common';
 import { usePremium } from '@/composables/premium';
 

@@ -1,4 +1,4 @@
-import { SupportedLanguage } from '@/types/settings/frontend-settings';
+import { SupportedLanguage } from '@/modules/settings/types/frontend-settings';
 
 export const supportedLanguages = [
   {

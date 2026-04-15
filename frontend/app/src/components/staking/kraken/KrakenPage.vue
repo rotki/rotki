@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { RouteLocationRaw } from 'vue-router';
-import type { KrakenStakingDateFilter } from '@/types/staking';
+import type { KrakenStakingDateFilter } from '@/modules/staking/staking-types';
 import AppImage from '@/components/common/AppImage.vue';
 import FullSizeContent from '@/components/common/FullSizeContent.vue';
 import InternalLink from '@/components/helper/InternalLink.vue';
@@ -10,13 +10,13 @@ import KrakenStaking from '@/components/staking/kraken/KrakenStaking.vue';
 import KrakenStakingPagePlaceholder from '@/components/staking/kraken/KrakenStakingPagePlaceholder.vue';
 import { usePremium } from '@/composables/premium';
 import { useSectionStatus } from '@/composables/status';
+import { Section } from '@/modules/common/status';
 import { usePriceRefresh } from '@/modules/prices/use-price-refresh';
 import { useKrakenStakingOperations } from '@/modules/staking/kraken/use-kraken-staking-operations';
 import { Routes } from '@/router/routes';
 import { useHistoricCachePriceStore } from '@/store/prices/historic';
 import { useSessionSettingsStore } from '@/store/settings/session';
 import { useKrakenStakingStore } from '@/store/staking/kraken';
-import { Section } from '@/types/status';
 import { getPublicProtocolImagePath } from '@/utils/file';
 
 const filters = ref<KrakenStakingDateFilter>({});

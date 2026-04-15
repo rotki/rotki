@@ -1,4 +1,4 @@
-import type { EvmTokensRecord } from '@/types/balances';
+import type { EvmTokensRecord } from '@/modules/balances/types/balances';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import '@test/i18n';
 

@@ -1,7 +1,7 @@
 import type { MaybeRef } from 'vue';
+import type { Collection } from '@/modules/common/collection';
+import type { PaginationRequestPayload } from '@/modules/common/common-types';
 import type { MissingMapping } from '@/modules/data/schemas';
-import type { Collection } from '@/types/collection';
-import type { PaginationRequestPayload } from '@/types/common';
 import { getPage, type ItemFilter } from '@/modules/data/pagination';
 import { useDatabase } from '@/modules/data/use-database';
 import { logger } from '@/utils/logging';

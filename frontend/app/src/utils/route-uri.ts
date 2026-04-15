@@ -1,4 +1,4 @@
-import type { LocationQuery } from '@/types/route';
+import type { LocationQuery } from '@/modules/table/route';
 
 export function toUriEncoded(queryParams: LocationQuery): string {
   return encodeURIComponent(

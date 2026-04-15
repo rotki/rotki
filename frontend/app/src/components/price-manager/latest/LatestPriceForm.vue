@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import type { ValidationErrors } from '@/types/api/errors';
-import type { ManualPriceFormPayload } from '@/types/prices';
+import type { ValidationErrors } from '@/modules/api/types/errors';
+import type { ManualPriceFormPayload } from '@/modules/prices/price-types';
 import useVuelidate from '@vuelidate/core';
 import { helpers, required } from '@vuelidate/validators';
 import AmountInput from '@/components/inputs/AmountInput.vue';

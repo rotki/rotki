@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { ProfitLossReportPeriod } from '@/types/reports';
+import type { ProfitLossReportPeriod } from '@/modules/reports/report-types';
 import DateDisplay from '@/components/display/DateDisplay.vue';
 
 defineProps<{

@@ -1,5 +1,5 @@
 import type { Nullable } from '@rotki/common';
-import type { Pinned } from '@/types/session';
+import type { Pinned } from '@/modules/session/types';
 import { PINNED_DEFAULT_WIDTH } from '@/composables/use-sidebar-resize-constants';
 
 export const useAreaVisibilityStore = defineStore('session/visibility', () => {

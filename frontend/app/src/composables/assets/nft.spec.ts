@@ -1,4 +1,4 @@
-import type { NftResponse } from '@/types/nfts';
+import type { NftResponse } from '@/modules/assets/nfts';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useAssetsApi } from '@/composables/api/assets';
 import { useNfts } from '@/composables/assets/nft';

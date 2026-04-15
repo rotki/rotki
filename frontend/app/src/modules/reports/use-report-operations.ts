@@ -1,14 +1,14 @@
 import type { MaybeRef } from 'vue';
-import type { Collection, CollectionResponse } from '@/types/collection';
-import type { AddressBookSimplePayload } from '@/types/eth-names';
-import type { ProfitLossEvent, ProfitLossEventsPayload } from '@/types/reports';
+import type { AddressBookSimplePayload } from '@/modules/address-names/eth-names';
+import type { Collection, CollectionResponse } from '@/modules/common/collection';
+import type { ProfitLossEvent, ProfitLossEventsPayload } from '@/modules/reports/report-types';
 import { Blockchain } from '@rotki/common';
 import { startPromise } from '@shared/utils';
 import { useReportsApi } from '@/composables/api/reports';
 import { useEnsOperations } from '@/modules/address-names/use-ens-operations';
 import { getErrorMessage, useNotifications } from '@/modules/notifications/use-notifications';
+import { isBlockchain } from '@/modules/onchain/chains';
 import { defaultReportEvents, useReportsStore } from '@/store/reports';
-import { isBlockchain } from '@/types/blockchain/chains';
 import { mapCollectionResponse } from '@/utils/collection';
 import { getEthAddressesFromText } from '@/utils/history';
 import { logger } from '@/utils/logging';

@@ -1,14 +1,14 @@
 <script setup lang="ts">
-import type { BlockchainRpcNode, BlockchainRpcNodeManageState } from '@/types/settings/rpc';
+import type { BlockchainRpcNode, BlockchainRpcNodeManageState } from '@/modules/settings/types/rpc';
 import { assert, Blockchain } from '@rotki/common';
 import { omit } from 'es-toolkit';
 import BigDialog from '@/components/dialogs/BigDialog.vue';
 import BlockchainRpcNodeForm from '@/components/settings/general/rpc/BlockchainRpcNodeForm.vue';
 import { useEvmNodesApi } from '@/composables/api/settings/evm-nodes-api';
 import { useSupportedChains } from '@/composables/info/chains';
+import { ApiValidationError, type ValidationErrors } from '@/modules/api/types/errors';
+import { isBlockchain } from '@/modules/onchain/chains';
 import { useMessageStore } from '@/store/message';
-import { ApiValidationError, type ValidationErrors } from '@/types/api/errors';
-import { isBlockchain } from '@/types/blockchain/chains';
 import { getErrorMessage } from '@/utils/error-handling';
 
 const model = defineModel<BlockchainRpcNodeManageState | undefined>({ required: true });

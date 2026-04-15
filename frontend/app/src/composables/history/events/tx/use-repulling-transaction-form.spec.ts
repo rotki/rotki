@@ -1,5 +1,5 @@
-import type { Accounts, BlockchainAccount } from '@/types/blockchain/accounts';
-import type { RepullingTransactionPayload } from '@/types/history/events';
+import type { Accounts, BlockchainAccount } from '@/modules/accounts/blockchain-accounts';
+import type { RepullingTransactionPayload } from '@/modules/history/events/event-payloads';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   getTimeRangeInDays,

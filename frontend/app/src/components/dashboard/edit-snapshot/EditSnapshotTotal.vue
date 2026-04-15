@@ -1,13 +1,13 @@
 <script setup lang="ts">
-import type { BalanceSnapshot, LocationDataSnapshot } from '@/types/snapshots';
+import type { BalanceSnapshot, LocationDataSnapshot } from '@/modules/dashboard/snapshots';
 import { assert, type BigNumber, bigNumberify, One, Zero } from '@rotki/common';
 import useVuelidate from '@vuelidate/core';
 import { helpers, required } from '@vuelidate/validators';
 import AmountInput from '@/components/inputs/AmountInput.vue';
 import { FiatDisplay } from '@/modules/amount-display/components';
+import { CURRENCY_USD } from '@/modules/amount-display/currencies';
 import { useHistoricPriceCache } from '@/modules/prices/use-historic-price-cache';
 import { useGeneralSettingsStore } from '@/store/settings/general';
-import { CURRENCY_USD } from '@/types/currencies';
 import { bigNumberSum } from '@/utils/calculation';
 import { isNft } from '@/utils/nft';
 import { toMessages } from '@/utils/validation';

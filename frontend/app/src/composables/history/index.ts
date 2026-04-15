@@ -1,9 +1,9 @@
 import type { Ref } from 'vue';
-import type { ActionStatus } from '@/types/action';
+import type { ActionStatus } from '@/modules/common/action';
 import type {
   IgnorePayload,
-} from '@/types/history/ignored';
-import type { EntryMeta } from '@/types/history/meta';
+} from '@/modules/history/ignored';
+import type { EntryMeta } from '@/modules/history/meta';
 import { useHistoryIgnoringApi } from '@/composables/api/history/ignore';
 import { getErrorMessage, useNotifications } from '@/modules/notifications/use-notifications';
 import { uniqueStrings } from '@/utils/data';

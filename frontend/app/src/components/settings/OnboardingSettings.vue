@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { Writeable } from '@rotki/common';
 import type { BackendOptions } from '@shared/ipc';
-import type { BackendConfiguration } from '@/types/backend';
+import type { BackendConfiguration } from '@/modules/app/backend';
 import useVuelidate from '@vuelidate/core';
 import { and, helpers, minValue, numeric, required } from '@vuelidate/validators';
 import { isEqual } from 'es-toolkit';

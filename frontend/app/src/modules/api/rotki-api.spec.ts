@@ -3,8 +3,8 @@ import { http, HttpResponse } from 'msw';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { defaultApiUrls } from '@/modules/api/api-urls';
 import { RotkiApi } from '@/modules/api/rotki-api';
-import { ApiValidationError } from '@/types/api/errors';
-import { HTTPStatus } from '@/types/api/http';
+import { ApiValidationError } from '@/modules/api/types/errors';
+import { HTTPStatus } from '@/modules/api/types/http';
 
 const backendUrl = process.env.VITE_BACKEND_URL;
 

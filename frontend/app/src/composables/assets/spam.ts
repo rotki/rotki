@@ -1,4 +1,4 @@
-import type { ActionStatus } from '@/types/action';
+import type { ActionStatus } from '@/modules/common/action';
 import { useAssetSpamApi } from '@/composables/api/assets/spam';
 import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
 import { useIgnoredAssetOperations } from '@/modules/assets/use-ignored-asset-operations';

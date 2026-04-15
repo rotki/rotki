@@ -1,4 +1,4 @@
-import type { BlockchainRpcNode } from '@/types/settings/rpc';
+import type { BlockchainRpcNode } from '@/modules/settings/types/rpc';
 import { Blockchain } from '@rotki/common';
 import { server } from '@test/setup-files/server';
 import { type DefaultBodyType, http, HttpResponse } from 'msw';

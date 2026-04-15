@@ -1,5 +1,5 @@
-import type { AssetMap } from '@/types/asset';
-import type { EthWithdrawalEvent } from '@/types/history/events/schemas';
+import type { AssetMap } from '@/modules/assets/types';
+import type { EthWithdrawalEvent } from '@/modules/history/events/schemas';
 import { bigNumberify, HistoryEventEntryType } from '@rotki/common';
 import { type ComponentMountingOptions, mount, type VueWrapper } from '@vue/test-utils';
 import dayjs from 'dayjs';

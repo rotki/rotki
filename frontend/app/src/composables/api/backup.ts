@@ -1,6 +1,6 @@
 import { api } from '@/modules/api/rotki-api';
 import { VALID_WITH_SESSION_STATUS } from '@/modules/api/utils';
-import { type DatabaseInfo, DatabaseInfoSchema } from '@/types/backup';
+import { type DatabaseInfo, DatabaseInfoSchema } from '@/modules/session/backup';
 
 interface UseBackupApiReturn {
   info: () => Promise<DatabaseInfo>;

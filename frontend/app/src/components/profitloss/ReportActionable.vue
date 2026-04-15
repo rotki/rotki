@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { Report } from '@/types/reports';
+import type { Report } from '@/modules/reports/report-types';
 import ReportActionableCard from '@/components/profitloss/ReportActionableCard.vue';
 import { useReportsStore } from '@/store/reports';
 

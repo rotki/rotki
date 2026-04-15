@@ -1,12 +1,12 @@
 <script setup lang="ts">
 import type LatestPriceForm from '@/components/price-manager/latest/LatestPriceForm.vue';
-import type { AddressBookPayload } from '@/types/eth-names';
+import type { AddressBookPayload } from '@/modules/address-names/eth-names';
 import { useTemplateRef } from 'vue';
 import AddressBookForm from '@/components/address-book-manager/AddressBookForm.vue';
 import BigDialog from '@/components/dialogs/BigDialog.vue';
 import { useAddressBookOperations } from '@/modules/address-names/use-address-book-operations';
+import { ApiValidationError, type ValidationErrors } from '@/modules/api/types/errors';
 import { useMessageStore } from '@/store/message';
-import { ApiValidationError, type ValidationErrors } from '@/types/api/errors';
 import { getErrorMessage } from '@/utils/error-handling';
 
 const open = defineModel<boolean>('open', { required: true });

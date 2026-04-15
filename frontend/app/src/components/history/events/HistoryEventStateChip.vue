@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { HistoryEventState } from '@/types/history/events/schemas';
+import type { HistoryEventState } from '@/modules/history/events/schemas';
 import { useHistoryEventStateMapping } from '@/composables/history/events/mapping/state';
 
 const { state } = defineProps<{

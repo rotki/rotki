@@ -1,4 +1,4 @@
-import type { SearchMatcher, StringSuggestionMatcher } from '@/types/filtering';
+import type { SearchMatcher, StringSuggestionMatcher } from '@/modules/table/filtering';
 import { get } from '@vueuse/shared';
 import { describe, expect, it } from 'vitest';
 import { ref } from 'vue';

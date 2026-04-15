@@ -9,7 +9,7 @@ import { useDynamicMessages } from '@/composables/dynamic-messages';
 import { Module, useModuleEnabled } from '@/composables/session/modules';
 import { useBalancesLoading } from '@/modules/balances/use-balance-loading';
 import DashboardProgressIndicator from '@/modules/dashboard/progress/DashboardProgressIndicator.vue';
-import { DashboardTableType } from '@/types/settings/frontend-settings';
+import { DashboardTableType } from '@/modules/settings/types/frontend-settings';
 import PoolTable from './liquidity-pools/PoolTable.vue';
 import Summary from './summary/Summary.vue';
 

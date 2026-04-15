@@ -1,6 +1,6 @@
 import type { MaybeRef } from 'vue';
 import type { InternalTxConflict, InternalTxConflictsCountResponse, InternalTxConflictsRequestPayload } from './types';
-import type { Collection, CollectionResponse } from '@/types/collection';
+import type { Collection, CollectionResponse } from '@/modules/common/collection';
 import { api } from '@/modules/api/rotki-api';
 import { mapCollectionResponse } from '@/utils/collection';
 import { nonEmptyProperties } from '@/utils/data';

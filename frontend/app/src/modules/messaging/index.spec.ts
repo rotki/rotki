@@ -1,4 +1,4 @@
-import type { EvmChainInfo } from '@/types/api/chains';
+import type { EvmChainInfo } from '@/modules/api/types/chains';
 import { assert, type Blockchain } from '@rotki/common';
 import { mount } from '@vue/test-utils';
 import { beforeAll, describe, expect, it, vi } from 'vitest';

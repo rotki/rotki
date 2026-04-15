@@ -3,7 +3,7 @@ import type { FilterSchema } from '@/composables/use-pagination-filter/types';
 import type {
   MatchedKeywordWithBehaviour,
   SearchMatcher,
-} from '@/types/filtering';
+} from '@/modules/table/filtering';
 import {
   HistoryEventEntryType,
   isValidAddress,

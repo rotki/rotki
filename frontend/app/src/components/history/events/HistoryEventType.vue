@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { RuiIcons } from '@rotki/ui-library';
-import type { HistoryEventEntry, HistoryEventState } from '@/types/history/events/schemas';
+import type { HistoryEventEntry, HistoryEventState } from '@/modules/history/events/schemas';
 import HistoryEventAccount from '@/components/history/events/HistoryEventAccount.vue';
 import HistoryEventStateChip from '@/components/history/events/HistoryEventStateChip.vue';
 import HistoryEventTypeCombination from '@/components/history/events/HistoryEventTypeCombination.vue';

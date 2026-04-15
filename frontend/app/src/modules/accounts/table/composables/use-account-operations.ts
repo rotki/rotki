@@ -1,5 +1,5 @@
 import type { AccountDataRow } from '../types';
-import type { BlockchainAccountBalance } from '@/types/blockchain/accounts';
+import type { BlockchainAccountBalance } from '@/modules/accounts/blockchain-accounts';
 import { type ShowConfirmationParams, useAccountDelete } from '@/composables/accounts/blockchain/use-account-delete';
 import { type AccountManageState, editBlockchainAccount } from '@/composables/accounts/blockchain/use-account-manage';
 import { useAddressBookForm } from '@/composables/address-book/form';

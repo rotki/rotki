@@ -1,11 +1,11 @@
-import type { BlockchainBalancePayload } from '@/types/blockchain/balances';
+import type { BlockchainBalancePayload } from '@/modules/balances/types/blockchain-balances';
 import { useSupportedChains } from '@/composables/info/chains';
 import { waitUntilIdle } from '@/composables/status';
 import { useValueThreshold } from '@/composables/usd-value-threshold';
 import { useBalanceQueue } from '@/modules/balances/use-balance-queue';
+import { Section } from '@/modules/common/status';
+import { BalanceSource } from '@/modules/settings/types/frontend-settings';
 import { useStatusStore } from '@/store/status';
-import { BalanceSource } from '@/types/settings/frontend-settings';
-import { Section } from '@/types/status';
 import { arrayify } from '@/utils/array';
 import { useBalanceProcessingService } from './services/use-balance-processing-service';
 import { useLoopringBalanceService } from './services/use-loopring-balance-service';

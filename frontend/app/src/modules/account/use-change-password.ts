@@ -1,5 +1,5 @@
-import type { ActionStatus } from '@/types/action';
-import type { ChangePasswordPayload } from '@/types/session';
+import type { ActionStatus } from '@/modules/common/action';
+import type { ChangePasswordPayload } from '@/modules/session/types';
 import { useUsersApi } from '@/composables/api/session/users';
 import { useInterop } from '@/composables/electron-interop';
 import { getErrorMessage, useNotifications } from '@/modules/notifications/use-notifications';

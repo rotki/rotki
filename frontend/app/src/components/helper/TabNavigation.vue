@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { RouteLocationRaw } from 'vue-router';
-import { getClass, type TabContent } from '@/types/tabs';
+import { getClass, type TabContent } from '@/modules/common/tabs';
 
 const { tabs, hideRouterView = false, child = false, plain = false } = defineProps<{
   tabs: TabContent[];

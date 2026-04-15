@@ -1,8 +1,8 @@
-import type { FetchBlockchainBalancePayload } from '@/types/blockchain/balances';
+import type { FetchBlockchainBalancePayload } from '@/modules/balances/types/blockchain-balances';
 import { server } from '@test/setup-files/server';
 import { type DefaultBodyType, http, HttpResponse } from 'msw';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { Module } from '@/types/modules';
+import { Module } from '@/modules/common/modules';
 import { useBlockchainBalancesApi } from './blockchain';
 
 const backendUrl = process.env.VITE_BACKEND_URL;

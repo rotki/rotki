@@ -1,4 +1,4 @@
-import type { EvmHistoryEvent } from '@/types/history/events/schemas';
+import type { EvmHistoryEvent } from '@/modules/history/events/schemas';
 import { bigNumberify, HistoryEventEntryType } from '@rotki/common';
 import { type ComponentMountingOptions, mount, type VueWrapper } from '@vue/test-utils';
 import { createPinia, setActivePinia } from 'pinia';

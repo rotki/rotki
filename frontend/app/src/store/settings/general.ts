@@ -1,7 +1,7 @@
-import type { GeneralSettings } from '@/types/user';
+import type { GeneralSettings } from '@/modules/settings/types/user-settings';
 import { useComputedRef } from '@/composables/utils/useComputedRef';
 import { defaultGeneralSettings } from '@/data/factories';
-import { type SupportedCurrency, useCurrencies } from '@/types/currencies';
+import { type SupportedCurrency, useCurrencies } from '@/modules/amount-display/currencies';
 
 export const useGeneralSettingsStore = defineStore('settings/general', () => {
   const { defaultCurrency } = useCurrencies();

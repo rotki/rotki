@@ -6,10 +6,10 @@ import { useEth2Api } from '@/composables/api/staking/eth2';
 import { usePremium } from '@/composables/premium';
 import { useStatusUpdater } from '@/composables/status';
 import { useBlockchainAccountData } from '@/modules/balances/blockchain/use-blockchain-account-data';
+import { Section, Status } from '@/modules/common/status';
 import { useNotifications } from '@/modules/notifications/use-notifications';
 import { TaskType } from '@/modules/tasks/task-type';
 import { isActionableFailure, useTaskHandler } from '@/modules/tasks/use-task-handler';
-import { Section, Status } from '@/types/status';
 import { isAccountWithBalanceValidator } from '@/utils/blockchain/accounts';
 import { logger } from '@/utils/logging';
 

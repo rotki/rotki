@@ -1,20 +1,20 @@
-import type { ActionStatus } from '@/types/action';
-import type { KrakenAccountType } from '@/types/exchanges';
-import type { Module } from '@/types/modules';
-import type { FrontendSettingsPayload } from '@/types/settings/frontend-settings';
-import type { SettingsUpdate } from '@/types/user';
+import type { KrakenAccountType } from '@/modules/balances/types/exchanges';
+import type { ActionStatus } from '@/modules/common/action';
+import type { Module } from '@/modules/common/modules';
+import type { FrontendSettingsPayload } from '@/modules/settings/types/frontend-settings';
+import type { SettingsUpdate } from '@/modules/settings/types/user-settings';
 import { assert, BigNumber } from '@rotki/common';
 import { useSettingsApi } from '@/composables/api/settings/settings-api';
 import { useItemsPerPage } from '@/composables/session/use-items-per-page';
 import { getBnFormat } from '@/data/amount-formatter';
 import { snakeCaseTransformer } from '@/modules/api/transformers';
+import { ApiValidationError } from '@/modules/api/types/errors';
 import { getErrorMessage, useNotifications } from '@/modules/notifications/use-notifications';
 import { useQueriedAddressOperations } from '@/modules/session/use-queried-address-operations';
 import { usePremiumStore } from '@/store/session/premium';
 import { useAccountingSettingsStore } from '@/store/settings/accounting';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { useGeneralSettingsStore } from '@/store/settings/general';
-import { ApiValidationError } from '@/types/api/errors';
 import { uniqueStrings } from '@/utils/data';
 import { logger } from '@/utils/logging';
 

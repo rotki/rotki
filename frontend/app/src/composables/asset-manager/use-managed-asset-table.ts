@@ -1,7 +1,7 @@
 import type { SupportedAsset } from '@rotki/common';
 import type { DataTableColumn, DataTableSortData, TablePaginationData } from '@rotki/ui-library';
 import type { ComputedRef, MaybeRefOrGetter, Ref } from 'vue';
-import type { Collection } from '@/types/collection';
+import type { Collection } from '@/modules/common/collection';
 import { some } from 'es-toolkit/compat';
 import { TableId, useRememberTableSorting } from '@/modules/table/use-remember-table-sorting';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { CalendarReminderTemporaryPayload } from '@/types/history/calendar/reminder';
+import type { CalendarReminderTemporaryPayload } from '@/modules/history/calendar/reminder';
 import useVuelidate from '@vuelidate/core';
 import { helpers, maxValue, minValue, required } from '@vuelidate/validators';
 import AmountInput from '@/components/inputs/AmountInput.vue';

@@ -1,10 +1,10 @@
-import type { Collection } from '@/types/collection';
+import type { Collection } from '@/modules/common/collection';
 import type {
   ProfitLossEvent,
   ReportActionableItem,
   ReportError,
   Reports,
-} from '@/types/reports';
+} from '@/modules/reports/report-types';
 
 function emptyError(): ReportError {
   return {

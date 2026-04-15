@@ -1,13 +1,13 @@
 import type { Nullable } from '@rotki/common';
-import type { FetchBlockchainBalancePayload } from '@/types/blockchain/balances';
-import type { PurgeableModule } from '@/types/modules';
+import type { FetchBlockchainBalancePayload } from '@/modules/balances/types/blockchain-balances';
+import type { PurgeableModule } from '@/modules/common/modules';
 import { api } from '@/modules/api/rotki-api';
 import {
   VALID_WITH_PARAMS_SESSION_AND_EXTERNAL_SERVICE,
   VALID_WITH_SESSION_AND_EXTERNAL_SERVICE,
 } from '@/modules/api/utils';
+import { EvmTokensRecord } from '@/modules/balances/types/balances';
 import { type PendingTask, PendingTaskSchema } from '@/modules/tasks/types';
-import { EvmTokensRecord } from '@/types/balances';
 
 interface UseBlockchainBalancesApiReturn {
   queryBlockchainBalances: (payload: FetchBlockchainBalancePayload, valueThreshold?: string) => Promise<PendingTask>;

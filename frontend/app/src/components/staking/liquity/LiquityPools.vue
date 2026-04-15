@@ -2,7 +2,7 @@
 import type { LiquityPoolDetailEntry } from '@rotki/common';
 import BalanceDisplay from '@/components/display/BalanceDisplay.vue';
 import { useSectionStatus } from '@/composables/status';
-import { Section } from '@/types/status';
+import { Section } from '@/modules/common/status';
 
 defineProps<{ pool: LiquityPoolDetailEntry | null }>();
 

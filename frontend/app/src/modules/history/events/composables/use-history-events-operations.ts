@@ -1,14 +1,14 @@
 import type { ComputedRef, Ref } from 'vue';
-import type { HistoryEventDeletePayload, HistoryEventsTableEmitFn, HistoryEventUnlinkPayload } from '@/modules/history/events/types';
 import type {
   LinkedMovementMatch,
   LocationAndTxRef,
   PullEventPayload,
-} from '@/types/history/events';
+} from '@/modules/history/events/event-payloads';
 import type {
   HistoryEventEntry,
   HistoryEventRow,
-} from '@/types/history/events/schemas';
+} from '@/modules/history/events/schemas';
+import type { HistoryEventDeletePayload, HistoryEventsTableEmitFn, HistoryEventUnlinkPayload } from '@/modules/history/events/types';
 import { HistoryEventEntryType } from '@rotki/common';
 import { useHistoryEventsApi } from '@/composables/api/history/events';
 import { useAssetMovementMatchingApi } from '@/composables/api/history/events/asset-movement-matching';

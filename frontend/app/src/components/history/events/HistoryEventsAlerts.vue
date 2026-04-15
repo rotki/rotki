@@ -4,9 +4,9 @@ import { useCustomizedEventDuplicates } from '@/composables/history/events/use-c
 import { useUnmatchedAssetMovements } from '@/composables/history/events/use-unmatched-asset-movements';
 import { useRefWithDebounce } from '@/composables/ref';
 import { useStatusUpdater } from '@/composables/status';
+import { Section } from '@/modules/common/status';
 import { useInternalTxConflicts } from '@/modules/history/internal-tx-conflicts/use-internal-tx-conflicts';
 import { Routes } from '@/router/routes';
-import { Section } from '@/types/status';
 
 const show = defineModel<boolean>('show', { required: true });
 

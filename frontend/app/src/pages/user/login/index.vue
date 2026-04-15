@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { LoginCredentials } from '@/types/login';
+import type { LoginCredentials } from '@/modules/account/login';
 import AccountManagementAside from '@/components/account-management/AccountManagementAside.vue';
 import AccountManagementFooterText from '@/components/account-management/AccountManagementFooterText.vue';
 import AdaptiveFooterButton from '@/components/account-management/AdaptiveFooterButton.vue';

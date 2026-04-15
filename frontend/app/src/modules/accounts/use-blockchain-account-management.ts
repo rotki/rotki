@@ -1,5 +1,5 @@
-import type { AddAccountsPayload, XpubAccountPayload } from '@/types/blockchain/accounts';
-import type { ChainAddress } from '@/types/history/events';
+import type { AddAccountsPayload, XpubAccountPayload } from '@/modules/accounts/blockchain-accounts';
+import type { ChainAddress } from '@/modules/history/events/event-payloads';
 import { startPromise } from '@shared/utils';
 import { useSupportedChains } from '@/composables/info/chains';
 import { useAccountAdditionService } from '@/modules/accounts/use-account-addition-service';

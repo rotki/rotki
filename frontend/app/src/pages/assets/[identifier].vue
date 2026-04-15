@@ -14,9 +14,9 @@ import { type AssetResolutionOptions, useAssetInfoRetrieval } from '@/composable
 import { useAggregatedBalances } from '@/composables/balances/use-aggregated-balances';
 import { usePremium } from '@/composables/premium';
 import HashLink from '@/modules/common/links/HashLink.vue';
+import { NoteLocation } from '@/modules/common/notes';
 import { useAssetPageActions } from '@/pages/assets/use-asset-page-actions';
 import { AssetAmountAndValueOverTime } from '@/premium/premium';
-import { NoteLocation } from '@/types/notes';
 import { getPublicServiceImagePath } from '@/utils/file';
 
 definePage({

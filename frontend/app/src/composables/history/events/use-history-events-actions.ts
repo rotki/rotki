@@ -1,13 +1,13 @@
 import type { MaybeRefOrGetter, Ref } from 'vue';
 import type { DialogEventHandlers } from '@/components/history/events/dialog-types';
-import type { HistoryRefreshEventData } from '@/modules/history/refresh/types';
-import type { Collection } from '@/types/collection';
+import type { Collection } from '@/modules/common/collection';
 import type {
   LocationAndTxRef,
   PullEthBlockEventPayload,
   PullLocationTransactionPayload,
-} from '@/types/history/events';
-import type { HistoryEventRow } from '@/types/history/events/schemas';
+} from '@/modules/history/events/event-payloads';
+import type { HistoryEventRow } from '@/modules/history/events/schemas';
+import type { HistoryRefreshEventData } from '@/modules/history/refresh/types';
 import { type Blockchain, HistoryEventEntryType } from '@rotki/common';
 import { startPromise } from '@shared/utils';
 import { useHistoryEventMappings } from '@/composables/history/events/mapping';

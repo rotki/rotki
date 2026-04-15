@@ -1,13 +1,13 @@
 <script setup lang="ts">
 import type { AccountManage } from '@/composables/accounts/blockchain/use-account-manage';
-import type { ValidationErrors } from '@/types/api/errors';
-import type { Module } from '@/types/modules';
+import type { ValidationErrors } from '@/modules/api/types/errors';
+import type { Module } from '@/modules/common/modules';
 import { assert, Blockchain } from '@rotki/common';
 import AddressInput from '@/components/accounts/blockchain/AddressInput.vue';
 import AccountDataInput from '@/components/accounts/management/inputs/AccountDataInput.vue';
 import ModuleActivator from '@/components/accounts/ModuleActivator.vue';
 import { useSupportedChains } from '@/composables/info/chains';
-import { isBtcChain } from '@/types/blockchain/chains';
+import { isBtcChain } from '@/modules/onchain/chains';
 
 const modelValue = defineModel<AccountManage>({ required: true });
 

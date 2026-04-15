@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { AccountingRuleAction, AccountingRuleEntry } from '@/types/settings/accounting';
+import type { AccountingRuleAction, AccountingRuleEntry } from '@/modules/settings/types/accounting';
 import AccountingRuleEventsDialog from '@/components/settings/accounting/rule/AccountingRuleEventsDialog.vue';
 
 export interface ActionDialogContext {

@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import type { ValidationErrors } from '@/types/api/errors';
-import type { BlockchainRpcNodeManageState } from '@/types/settings/rpc';
+import type { ValidationErrors } from '@/modules/api/types/errors';
+import type { BlockchainRpcNodeManageState } from '@/modules/settings/types/rpc';
 import useVuelidate from '@vuelidate/core';
 import { between, required, requiredIf } from '@vuelidate/validators';
 import { isEmpty } from 'es-toolkit/compat';

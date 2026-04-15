@@ -1,4 +1,4 @@
-import type { AccountPayload, Accounts, BlockchainAccount } from '@/types/blockchain/accounts';
+import type { AccountPayload, Accounts, BlockchainAccount } from '@/modules/accounts/blockchain-accounts';
 import { getAccountAddress } from '@/utils/blockchain/accounts/utils';
 import { removeTags, renameTags } from '@/utils/tags';
 

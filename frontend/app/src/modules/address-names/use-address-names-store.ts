@@ -1,4 +1,4 @@
-import type { EthNames } from '@/types/eth-names';
+import type { EthNames } from '@/modules/address-names/eth-names';
 
 export const useAddressNamesStore = defineStore('blockchains/accounts/addresses-names', () => {
   const ensNames = shallowRef<EthNames>({});

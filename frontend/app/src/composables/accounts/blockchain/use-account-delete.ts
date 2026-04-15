@@ -2,15 +2,15 @@ import type {
   BlockchainAccountBalance,
   EthereumValidator,
   XpubData,
-} from '@/types/blockchain/accounts';
+} from '@/modules/accounts/blockchain-accounts';
 import { Blockchain } from '@rotki/common';
 import { useSupportedChains } from '@/composables/info/chains';
 import { useBlockchainAccounts } from '@/modules/accounts/use-blockchain-accounts-api';
 import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
 import { useEthStaking } from '@/modules/accounts/use-eth-staking';
 import { useBalancesStore } from '@/modules/balances/use-balances-store';
+import { isBlockchain } from '@/modules/onchain/chains';
 import { useConfirmStore } from '@/store/confirm';
-import { isBlockchain } from '@/types/blockchain/chains';
 import { awaitParallelExecution } from '@/utils/await-parallel-execution';
 import { getAccountAddress, isXpubAccount } from '@/utils/blockchain/accounts/utils';
 import { uniqueStrings } from '@/utils/data';

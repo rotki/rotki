@@ -2,7 +2,7 @@
 import type {
   LocationAndTxRef,
   PullEventPayload,
-} from '@/types/history/events';
+} from '@/modules/history/events/event-payloads';
 import type {
   EthBlockEvent,
   EvmHistoryEvent,
@@ -12,7 +12,7 @@ import type {
   SolanaEvent,
   SolanaSwapEvent,
   StandaloneEditableEvents,
-} from '@/types/history/events/schemas';
+} from '@/modules/history/events/schemas';
 import { DuplicateHandlingStatus } from '@/composables/history/events/types';
 import { useCustomizedEventDuplicates } from '@/composables/history/events/use-customized-event-duplicates';
 import { useReportIssue } from '@/composables/report-issue';

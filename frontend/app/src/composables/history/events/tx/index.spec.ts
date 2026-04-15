@@ -1,9 +1,9 @@
-import type { EvmChainInfo } from '@/types/api/chains';
+import type { EvmChainInfo } from '@/modules/api/types/chains';
 import type {
   EditEvmHistoryEventPayload,
   EvmHistoryEvent,
   HistoryEventRow,
-} from '@/types/history/events/schemas';
+} from '@/modules/history/events/schemas';
 import { assert, type Blockchain } from '@rotki/common';
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { useHistoryEventsApi } from '@/composables/api/history/events';

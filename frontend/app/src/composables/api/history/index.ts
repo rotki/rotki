@@ -1,7 +1,7 @@
 import { api } from '@/modules/api/rotki-api';
 import { VALID_WITH_SESSION_STATUS } from '@/modules/api/utils';
-import { type AllLocationResponse, AllLocationResponseSchema, type LocationLabel, LocationLabelsSchema } from '@/types/location';
-import { ReportProgress } from '@/types/reports';
+import { type AllLocationResponse, AllLocationResponseSchema, type LocationLabel, LocationLabelsSchema } from '@/modules/common/location';
+import { ReportProgress } from '@/modules/reports/report-types';
 
 interface UseHistoryApiReturn {
   getProgress: () => Promise<ReportProgress>;

@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import type { ValidationErrors } from '@/types/api/errors';
-import type { ManualBalance, RawManualBalance } from '@/types/manual-balances';
+import type { ValidationErrors } from '@/modules/api/types/errors';
+import type { ManualBalance, RawManualBalance } from '@/modules/balances/types/manual-balances';
 import useVuelidate from '@vuelidate/core';
 import { helpers, required } from '@vuelidate/validators';
 import ManualBalancesPriceForm from '@/components/accounts/manual-balances/ManualBalancesPriceForm.vue';

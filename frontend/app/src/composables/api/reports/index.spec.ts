@@ -1,4 +1,4 @@
-import type { ProfitLossEventsPayload, ProfitLossReportDebugPayload, ProfitLossReportPeriod } from '@/types/reports';
+import type { ProfitLossEventsPayload, ProfitLossReportDebugPayload, ProfitLossReportPeriod } from '@/modules/reports/report-types';
 import { BigNumber } from '@rotki/common';
 import { server } from '@test/setup-files/server';
 import { type DefaultBodyType, http, HttpResponse } from 'msw';

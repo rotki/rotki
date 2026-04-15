@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { CalendarEvent } from '@/types/history/calendar';
+import type { CalendarEvent } from '@/modules/history/calendar/types';
 import dayjs, { type Dayjs } from 'dayjs';
 import { computed } from 'vue';
 import CalendarEventList from '@/components/calendar/CalendarEventList.vue';

@@ -1,12 +1,12 @@
-import type { AddressBookEntry } from '@/types/eth-names';
+import type { AddressBookEntry } from '@/modules/address-names/eth-names';
 import { Blockchain } from '@rotki/common';
 import flushPromises from 'flush-promises';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useAddressesNamesApi } from '@/composables/api/blockchain/addresses-names';
 import { useAddressNameResolution } from '@/modules/address-names/use-address-name-resolution';
 import { useAddressNamesStore } from '@/modules/address-names/use-address-names-store';
+import { getDefaultFrontendSettings } from '@/modules/settings/types/frontend-settings';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
-import { getDefaultFrontendSettings } from '@/types/settings/frontend-settings';
 
 vi.mock('@/composables/api/blockchain/addresses-names', () => ({
   useAddressesNamesApi: vi.fn().mockReturnValue({

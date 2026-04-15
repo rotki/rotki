@@ -1,4 +1,4 @@
-import type { AllBalancePayload } from '@/types/blockchain/accounts';
+import type { AllBalancePayload } from '@/modules/accounts/blockchain-accounts';
 import { server } from '@test/setup-files/server';
 import { http, HttpResponse } from 'msw';
 import { beforeEach, describe, expect, it, vi } from 'vitest';

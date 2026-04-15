@@ -3,9 +3,9 @@ import { server } from '@test/setup-files/server';
 import { http, HttpResponse } from 'msw';
 import { type Pinia, setActivePinia } from 'pinia';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { type PremiumCapabilities, PremiumFeature, type PremiumFeatureCapability } from '@/modules/session/types';
 import { useSessionAuthStore } from '@/store/session/auth';
 import { usePremiumStore } from '@/store/session/premium';
-import { type PremiumCapabilities, PremiumFeature, type PremiumFeatureCapability } from '@/types/session';
 import { useFeatureAccess } from './use-feature-access';
 import { usePremiumWatchers } from './use-premium-watchers';
 

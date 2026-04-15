@@ -1,8 +1,8 @@
 import { TimeFramePeriod } from '@rotki/common';
 import { SECONDS_PER_DAY } from '@/data/constraints';
-import { CurrencyLocation } from '@/types/currency-location';
-import { DateFormat } from '@/types/date-format';
-import { TableColumn } from '@/types/table-column';
+import { CurrencyLocation } from '@/modules/amount-display/currency-location';
+import { DateFormat } from '@/modules/common/date-format';
+import { TableColumn } from '@/modules/table/table-column';
 
 export const Defaults = {
   ANONYMOUS_USAGE_ANALYTICS: true,

@@ -1,6 +1,6 @@
 <script setup lang="ts">
+import type { EvmHistoryEvent, NewEvmHistoryEventPayload } from '@/modules/history/events/schemas';
 import type { StandaloneEventData } from '@/modules/history/management/forms/form-types';
-import type { EvmHistoryEvent, NewEvmHistoryEventPayload } from '@/types/history/events/schemas';
 import { HistoryEventEntryType, Zero } from '@rotki/common';
 import dayjs from 'dayjs';
 import AmountInput from '@/components/inputs/AmountInput.vue';

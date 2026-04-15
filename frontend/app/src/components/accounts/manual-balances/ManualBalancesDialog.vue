@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { ManualBalance, RawManualBalance } from '@/types/manual-balances';
+import type { ManualBalance, RawManualBalance } from '@/modules/balances/types/manual-balances';
 import { startPromise } from '@shared/utils';
 import { useTemplateRef } from 'vue';
 import ManualBalancesForm from '@/components/accounts/manual-balances/ManualBalancesForm.vue';

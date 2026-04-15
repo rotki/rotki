@@ -1,9 +1,9 @@
 import type { AssetBalanceWithPrice } from '@rotki/common';
 import type { MaybeRefOrGetter, Ref } from 'vue';
 import { startPromise } from '@shared/utils';
+import { isEvmNativeToken } from '@/modules/assets/types';
+import { DashboardTableType } from '@/modules/settings/types/frontend-settings';
 import { Routes } from '@/router/routes';
-import { isEvmNativeToken } from '@/types/asset';
-import { DashboardTableType } from '@/types/settings/frontend-settings';
 
 interface UseDashboardAssetOperationsReturn {
   expanded: Ref<AssetBalanceWithPrice[]>;

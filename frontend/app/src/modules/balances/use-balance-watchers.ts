@@ -5,8 +5,8 @@ import { useExchanges } from '@/modules/balances/exchanges/use-exchanges';
 import { useManualBalances } from '@/modules/balances/manual/use-manual-balances';
 import { useBalancesStore } from '@/modules/balances/use-balances-store';
 import { useBlockchainBalances } from '@/modules/balances/use-blockchain-balances';
+import { BalanceSource } from '@/modules/settings/types/frontend-settings';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
-import { BalanceSource } from '@/types/settings/frontend-settings';
 
 export function useBalanceWatchers(): void {
   const { fetchManualBalances } = useManualBalances();

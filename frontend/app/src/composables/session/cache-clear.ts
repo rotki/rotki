@@ -1,5 +1,5 @@
 import type { MaybeRef, Ref } from 'vue';
-import type { BaseMessage } from '@/types/messages';
+import type { BaseMessage } from '@/modules/messaging/base-message';
 import { useConfirmStore } from '@/store/confirm';
 
 interface UseCacheClearReturn<T> {

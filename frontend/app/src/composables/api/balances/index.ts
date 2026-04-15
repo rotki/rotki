@@ -1,4 +1,4 @@
-import type { AllBalancePayload } from '@/types/blockchain/accounts';
+import type { AllBalancePayload } from '@/modules/accounts/blockchain-accounts';
 import { api } from '@/modules/api/rotki-api';
 import { type PendingTask, PendingTaskSchema } from '@/modules/tasks/types';
 

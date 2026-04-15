@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { AssetUpdateConflictResult, AssetVersionUpdate, ConflictResolution } from '@/types/asset';
+import type { AssetUpdateConflictResult, AssetVersionUpdate, ConflictResolution } from '@/modules/assets/types';
 import AssetConflictDialog from '@/components/status/update/AssetConflictDialog.vue';
 import AssetUpdateInlineConfirm from '@/components/status/update/AssetUpdateInlineConfirm.vue';
 import AssetUpdateMessage from '@/components/status/update/AssetUpdateMessage.vue';

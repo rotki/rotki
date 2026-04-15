@@ -1,5 +1,5 @@
 import type { Pinia } from 'pinia';
-import type { DashboardMessage, WelcomeMessage } from '@/types/dynamic-messages';
+import type { DashboardMessage, WelcomeMessage } from '@/modules/messaging/dynamic-messages';
 import { server } from '@test/setup-files/server';
 import dayjs from 'dayjs';
 import { http, HttpResponse } from 'msw';

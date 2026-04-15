@@ -1,9 +1,9 @@
-import type { Eth2Validator } from '@/types/balances';
+import type { Eth2Validator } from '@/modules/balances/types/balances';
 import { Blockchain, type Eth2ValidatorEntry, type EthValidatorFilter } from '@rotki/common';
 import { server } from '@test/setup-files/server';
 import { type DefaultBodyType, http, HttpResponse } from 'msw';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { type AccountPayload, type DeleteXpubParams, type XpubAccountPayload, XpubKeyType } from '@/types/blockchain/accounts';
+import { type AccountPayload, type DeleteXpubParams, type XpubAccountPayload, XpubKeyType } from '@/modules/accounts/blockchain-accounts';
 import { useBlockchainAccountsApi } from './accounts';
 
 const backendUrl = process.env.VITE_BACKEND_URL;

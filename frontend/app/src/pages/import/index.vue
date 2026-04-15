@@ -4,7 +4,7 @@ import ExternalLink from '@/components/helper/ExternalLink.vue';
 import HintMenuIcon from '@/components/HintMenuIcon.vue';
 import GroupedImport from '@/components/import/GroupedImport.vue';
 import TablePageLayout from '@/components/layout/TablePageLayout.vue';
-import { NoteLocation } from '@/types/notes';
+import { NoteLocation } from '@/modules/common/notes';
 
 definePage({
   meta: {

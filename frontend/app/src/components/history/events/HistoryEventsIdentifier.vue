@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { HistoryEventEntry } from '@/types/history/events/schemas';
+import type { HistoryEventEntry } from '@/modules/history/events/schemas';
 import { Blockchain, HistoryEventEntryType, toSentenceCase, toSnakeCase } from '@rotki/common';
 import HashLink from '@/modules/common/links/HashLink.vue';
 import {

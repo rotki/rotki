@@ -6,11 +6,11 @@ import GeneratedIcon from '@/components/helper/display/icons/GeneratedIcon.vue';
 import CounterpartyDisplay from '@/components/history/CounterpartyDisplay.vue';
 import { type AssetResolutionOptions, useAssetInfoRetrieval } from '@/composables/assets/retrieval';
 import { useCopy } from '@/composables/copy';
+import { useCurrencies } from '@/modules/amount-display/currencies';
+import { SOLANA_CHAIN, SOLANA_TOKEN } from '@/modules/assets/types';
 import { useAssetIconCheck } from '@/modules/assets/use-asset-icon-check';
 import { useAssetsStore } from '@/modules/assets/use-assets-store';
-import { SOLANA_CHAIN, SOLANA_TOKEN } from '@/types/asset';
-import { isBlockchain } from '@/types/blockchain/chains';
-import { useCurrencies } from '@/types/currencies';
+import { isBlockchain } from '@/modules/onchain/chains';
 
 interface AssetIconProps {
   identifier: string;

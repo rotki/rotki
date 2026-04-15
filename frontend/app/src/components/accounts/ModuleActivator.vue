@@ -1,12 +1,12 @@
 <script setup lang="ts">
-import type { CamelCase } from '@/types/common';
+import type { CamelCase } from '@/modules/common/common-types';
 import { transformCase } from '@rotki/common';
 import AppImage from '@/components/common/AppImage.vue';
 import { useAccountLoading } from '@/composables/accounts/loading';
+import { type Module, SUPPORTED_MODULES } from '@/modules/common/modules';
 import { useQueriedAddressOperations } from '@/modules/session/use-queried-address-operations';
 import { useSessionMetadataStore } from '@/store/session/metadata';
 import { useGeneralSettingsStore } from '@/store/settings/general';
-import { type Module, SUPPORTED_MODULES } from '@/types/modules';
 
 const emit = defineEmits<{
   'update:selection': [modules: Module[]];

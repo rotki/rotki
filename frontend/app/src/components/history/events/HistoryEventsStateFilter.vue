@@ -2,7 +2,7 @@
 import type { HistoryEventsToggles } from '@/components/history/events/dialog-types';
 import TableStatusFilter from '@/components/helper/TableStatusFilter.vue';
 import { useHistoryEventStateMapping } from '@/composables/history/events/mapping/state';
-import { HistoryEventState } from '@/types/history/events/schemas';
+import { HistoryEventState } from '@/modules/history/events/schemas';
 import { useRefPropVModel } from '@/utils/model';
 
 const toggles = defineModel<HistoryEventsToggles>('toggles', { required: true });

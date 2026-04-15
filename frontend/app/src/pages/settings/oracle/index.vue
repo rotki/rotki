@@ -4,7 +4,7 @@ import OracleCacheManagement from '@/components/settings/data-security/oracle/Or
 import OraclePenaltySettings from '@/components/settings/data-security/oracle/OraclePenaltySettings.vue';
 import PriceOracleSettings from '@/components/settings/PriceOracleSettings.vue';
 import { SettingsCategoryIds } from '@/composables/settings/types';
-import { NoteLocation } from '@/types/notes';
+import { NoteLocation } from '@/modules/common/notes';
 
 definePage({
   meta: {

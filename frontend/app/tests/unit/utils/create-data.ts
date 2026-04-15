@@ -1,7 +1,7 @@
-import type { ManualBalanceWithPrice } from '@/types/manual-balances';
-import type { AssetPrice } from '@/types/prices';
+import type { ManualBalanceWithPrice } from '@/modules/balances/types/manual-balances';
+import type { AssetPrice } from '@/modules/prices/price-types';
 import { type Balance, bigNumberify, type ProtocolBalance } from '@rotki/common';
-import { BalanceType } from '@/types/balances';
+import { BalanceType } from '@/modules/balances/types/balances';
 
 export function createTestBalanceResponse(amount: number, value: number): {
   amount: string;

@@ -4,8 +4,7 @@ import PrioritizedList from '@/components/helper/PrioritizedList.vue';
 import SettingsOption from '@/components/settings/controls/SettingsOption.vue';
 import SettingCategoryHeader from '@/components/settings/SettingCategoryHeader.vue';
 import { useHistoricPriceCache } from '@/modules/prices/use-historic-price-cache';
-import { useGeneralSettingsStore } from '@/store/settings/general';
-import { PrioritizedListData, type PrioritizedListItemData } from '@/types/settings/prioritized-list-data';
+import { PrioritizedListData, type PrioritizedListItemData } from '@/modules/settings/types/prioritized-list-data';
 import {
   ALCHEMY_PRIO_LIST_ITEM,
   COINGECKO_PRIO_LIST_ITEM,
@@ -14,7 +13,8 @@ import {
   type PrioritizedListId,
   UNISWAP2_PRIO_LIST_ITEM,
   UNISWAP3_PRIO_LIST_ITEM,
-} from '@/types/settings/prioritized-list-id';
+} from '@/modules/settings/types/prioritized-list-id';
+import { useGeneralSettingsStore } from '@/store/settings/general';
 
 const currentOracles = ref<PrioritizedListId[]>([]);
 const historicOracles = ref<PrioritizedListId[]>([]);

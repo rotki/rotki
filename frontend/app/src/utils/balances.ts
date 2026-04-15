@@ -6,7 +6,7 @@ import type {
 } from '@rotki/common';
 import type { DataTableSortData } from '@rotki/ui-library';
 import type { PlainAssetInfoReturn } from '@/composables/assets/retrieval';
-import type { AssetBreakdown } from '@/types/blockchain/accounts';
+import type { AssetBreakdown } from '@/modules/accounts/blockchain-accounts';
 import { getSortItems } from '@/utils/assets';
 import { sortDesc, zeroBalance } from '@/utils/bignumbers';
 import { balanceSum, bigNumberSum } from '@/utils/calculation';

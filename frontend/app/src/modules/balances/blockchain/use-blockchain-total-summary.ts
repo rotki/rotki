@@ -1,6 +1,6 @@
 import type { BigNumber } from '@rotki/common';
 import type { ComputedRef } from 'vue';
-import type { BlockchainTotal } from '@/types/blockchain';
+import type { BlockchainTotal } from '@/modules/onchain/blockchain-types';
 import { isEmpty } from 'es-toolkit/compat';
 import { useBalancesStore } from '@/modules/balances/use-balances-store';
 import { sortDesc } from '@/utils/bignumbers';

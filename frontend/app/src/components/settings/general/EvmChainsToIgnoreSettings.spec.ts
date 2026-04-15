@@ -1,11 +1,11 @@
-import type { SettingsUpdate } from '@/types/user';
+import type { SettingsUpdate } from '@/modules/settings/types/user-settings';
 import { libraryDefaults } from '@test/utils/provide-defaults';
 import { mount, type VueWrapper } from '@vue/test-utils';
 import flushPromises from 'flush-promises';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import EvmChainsToIgnoreSettings from '@/components/settings/general/EvmChainsToIgnoreSettings.vue';
+import { ApiValidationError } from '@/modules/api/types/errors';
 import { useMainStore } from '@/store/main';
-import { ApiValidationError } from '@/types/api/errors';
 
 vi.mock('@/composables/api/settings/settings-api', async (): Promise<Record<string, unknown>> => {
   const mod = await vi.importActual<typeof import('@/composables/api/settings/settings-api')>(

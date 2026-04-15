@@ -1,11 +1,11 @@
 import type { PendingSuggestion } from '@/modules/settings/suggestions/settings-suggestions';
 import { useItemsPerPage } from '@/composables/session/use-items-per-page';
 import { useComputedRef } from '@/composables/utils/useComputedRef';
-import { PrivacyMode } from '@/types/session';
+import { PrivacyMode } from '@/modules/session/types';
 import {
   type FrontendSettings,
   getDefaultFrontendSettings,
-} from '@/types/settings/frontend-settings';
+} from '@/modules/settings/types/frontend-settings';
 
 export const useFrontendSettingsStore = defineStore('settings/frontend', () => {
   const settings = ref<FrontendSettings>(markRaw(getDefaultFrontendSettings()));

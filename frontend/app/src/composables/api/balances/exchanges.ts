@@ -4,14 +4,14 @@ import {
   VALID_WITH_PARAMS_SESSION_AND_EXTERNAL_SERVICE,
   VALID_WITH_SESSION_STATUS,
 } from '@/modules/api/utils';
-import { type PendingTask, PendingTaskSchema } from '@/modules/tasks/types';
 import {
   type Exchange,
   type ExchangeFormData,
   Exchanges,
   ExchangeSavingsCollectionResponse,
   type ExchangeSavingsRequestPayload,
-} from '@/types/exchanges';
+} from '@/modules/balances/types/exchanges';
+import { type PendingTask, PendingTaskSchema } from '@/modules/tasks/types';
 
 export interface UseExchangeApiReturn {
   queryRemoveExchange: ({ location, name }: Exchange) => Promise<boolean>;

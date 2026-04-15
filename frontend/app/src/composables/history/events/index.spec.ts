@@ -1,8 +1,8 @@
 import type { MaybeRef } from 'vue';
 import type * as Vue from 'vue';
+import type { Collection } from '@/modules/common/collection';
 import type { HistoryEventRequestPayload } from '@/modules/history/events/request-types';
-import type { Collection } from '@/types/collection';
-import type { HistoryEvent, HistoryEventRow } from '@/types/history/events/schemas';
+import type { HistoryEvent, HistoryEventRow } from '@/modules/history/events/schemas';
 import { type Account, Blockchain } from '@rotki/common';
 import { startPromise } from '@shared/utils';
 import flushPromises from 'flush-promises';
@@ -10,9 +10,9 @@ import { afterEach, assertType, beforeAll, beforeEach, describe, expect, expectT
 import { type Filters, type Matcher, useHistoryEventFilter } from '@/composables/filters/events';
 import { useHistoryEvents } from '@/composables/history/events';
 import { usePaginationFilters } from '@/composables/use-pagination-filter';
+import { FilterBehaviour } from '@/modules/table/filtering';
+import { type LocationQuery, RouterAccountsSchema } from '@/modules/table/route';
 import { useMainStore } from '@/store/main';
-import { FilterBehaviour } from '@/types/filtering';
-import { type LocationQuery, RouterAccountsSchema } from '@/types/route';
 
 vi.mock('vue', async (): Promise<Record<string, unknown>> => {
   const mod = await vi.importActual<typeof Vue>('vue');

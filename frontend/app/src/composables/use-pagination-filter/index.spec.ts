@@ -1,8 +1,8 @@
 import type { EffectScope, MaybeRef, Ref } from 'vue';
 import type { FilterSchema } from '@/composables/use-pagination-filter/types';
-import type { Collection } from '@/types/collection';
-import type { PaginationRequestPayload } from '@/types/common';
-import type { MatchedKeywordWithBehaviour, SearchMatcher } from '@/types/filtering';
+import type { Collection } from '@/modules/common/collection';
+import type { PaginationRequestPayload } from '@/modules/common/common-types';
+import type { MatchedKeywordWithBehaviour, SearchMatcher } from '@/modules/table/filtering';
 import flushPromises from 'flush-promises';
 import { afterEach, beforeAll, beforeEach, describe, expect, it, type Mock, vi } from 'vitest';
 import { z } from 'zod/v4';

@@ -4,8 +4,8 @@ import { get, set } from '@vueuse/core';
 import { isEqual } from 'es-toolkit';
 import { useExternalApiKeys } from '@/composables/settings/api-keys/external';
 import { useMoneriumOAuth } from '@/modules/external-services/monerium/use-monerium-auth';
+import { OnlineHistoryEventsQueryType } from '@/modules/history/events/schemas';
 import { PremiumFeature, useFeatureAccess } from '@/modules/premium/use-feature-access';
-import { OnlineHistoryEventsQueryType } from '@/types/history/events/schemas';
 
 const modelValue = defineModel<OnlineHistoryEventsQueryType[]>({ required: true });
 const search = defineModel<string>('search', { required: true });

@@ -1,8 +1,7 @@
-import type { ActionStatus } from '@/types/action';
-import type { CollectionResponse } from '@/types/collection';
+import type { ActionStatus } from '@/modules/common/action';
+import type { CollectionResponse } from '@/modules/common/collection';
 import { omit } from 'es-toolkit';
 import { api } from '@/modules/api/rotki-api';
-import { type PendingTask, PendingTaskSchema } from '@/modules/tasks/types';
 import {
   type ProfitLossEvent,
   ProfitLossEventsCollectionResponse,
@@ -13,7 +12,8 @@ import {
   type ProfitLossReportPeriod,
   ReportActionableItem,
   Reports,
-} from '@/types/reports';
+} from '@/modules/reports/report-types';
+import { type PendingTask, PendingTaskSchema } from '@/modules/tasks/types';
 import { downloadFileByUrl } from '@/utils/download';
 import { getErrorMessage } from '@/utils/error-handling';
 

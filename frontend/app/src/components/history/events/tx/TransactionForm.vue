@@ -1,7 +1,7 @@
 <script lang="ts" setup>
-import type { ValidationErrors } from '@/types/api/errors';
-import type { AddressData, BlockchainAccount } from '@/types/blockchain/accounts';
-import type { AddTransactionHashPayload } from '@/types/history/events';
+import type { AddressData, BlockchainAccount } from '@/modules/accounts/blockchain-accounts';
+import type { ValidationErrors } from '@/modules/api/types/errors';
+import type { AddTransactionHashPayload } from '@/modules/history/events/event-payloads';
 import { Blockchain, isValidTxHashOrSignature } from '@rotki/common';
 import useVuelidate from '@vuelidate/core';
 import { helpers, required } from '@vuelidate/validators';

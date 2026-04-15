@@ -1,6 +1,6 @@
 import { api } from '@/modules/api/rotki-api';
 import { VALID_WITH_SESSION_STATUS } from '@/modules/api/utils';
-import { type Tag, Tags } from '@/types/tags';
+import { type Tag, Tags } from '@/modules/tags/tags';
 
 interface UseTagsApiReturn {
   queryTags: () => Promise<Tags>;

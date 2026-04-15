@@ -4,12 +4,12 @@ import dayjs from 'dayjs';
 import { useSectionStatus, useStatusUpdater } from '@/composables/status';
 import { useEthStaking } from '@/modules/accounts/use-eth-staking';
 import { useBlockchainBalances } from '@/modules/balances/use-blockchain-balances';
+import { Section } from '@/modules/common/status';
+import { OnlineHistoryEventsQueryType } from '@/modules/history/events/schemas';
 import { TaskType } from '@/modules/tasks/task-type';
 import { useTaskStore } from '@/modules/tasks/use-task-store';
 import { useBlockchainValidatorsStore } from '@/store/blockchain/validators';
 import { useSessionAuthStore } from '@/store/session/auth';
-import { OnlineHistoryEventsQueryType } from '@/types/history/events/schemas';
-import { Section } from '@/types/status';
 import { logger } from '@/utils/logging';
 
 interface RefreshCallbacks {

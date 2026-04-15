@@ -1,6 +1,6 @@
 import type { StakingValidatorManage } from './use-account-manage';
-import type { ActionStatus } from '@/types/action';
-import type { ValidationErrors } from '@/types/api/errors';
+import type { ValidationErrors } from '@/modules/api/types/errors';
+import type { ActionStatus } from '@/modules/common/action';
 import { Blockchain } from '@rotki/common';
 import { type Pinia, setActivePinia } from 'pinia';
 import { beforeEach, describe, expect, it, vi } from 'vitest';

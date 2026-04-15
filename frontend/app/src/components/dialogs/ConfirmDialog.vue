@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { DialogType, themes } from '@/types/dialogs';
+import { DialogType, themes } from '@/modules/common/dialogs';
 
 const {
   confirmType = DialogType.INFO,

@@ -1,9 +1,9 @@
-import type { ManualBalance, RawManualBalance } from '@/types/manual-balances';
+import type { ManualBalance, RawManualBalance } from '@/modules/balances/types/manual-balances';
 import { bigNumberify } from '@rotki/common';
 import { server } from '@test/setup-files/server';
 import { type DefaultBodyType, http, HttpResponse } from 'msw';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { BalanceType } from '@/types/balances';
+import { BalanceType } from '@/modules/balances/types/balances';
 import { useManualBalancesApi } from './manual';
 
 const backendUrl = process.env.VITE_BACKEND_URL;

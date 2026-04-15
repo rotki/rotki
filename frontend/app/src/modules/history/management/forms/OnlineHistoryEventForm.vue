@@ -1,6 +1,6 @@
 <script setup lang="ts">
+import type { NewOnlineHistoryEventPayload, OnlineHistoryEvent } from '@/modules/history/events/schemas';
 import type { StandaloneEventData } from '@/modules/history/management/forms/form-types';
-import type { NewOnlineHistoryEventPayload, OnlineHistoryEvent } from '@/types/history/events/schemas';
 import { HistoryEventEntryType, Zero } from '@rotki/common';
 import { generateUUID } from '@shared/utils';
 import dayjs from 'dayjs';

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { TradeLocationData } from '@/types/history/trade/location';
+import type { TradeLocationData } from '@/modules/history/trade/location';
 import { isEqual } from 'es-toolkit';
 import LocationIcon from '@/components/history/LocationIcon.vue';
 import { useLocations } from '@/composables/locations';

@@ -3,9 +3,9 @@ import type { ComputedRef, MaybeRefOrGetter, Ref, WritableComputedRef } from 'vu
 import type {
   BlockchainAccountGroupWithBalance,
   BlockchainAccountRequestPayload,
-} from '@/types/blockchain/accounts';
-import type { Collection } from '@/types/collection';
-import type { LocationQuery, RawLocationQuery } from '@/types/route';
+} from '@/modules/accounts/blockchain-accounts';
+import type { Collection } from '@/modules/common/collection';
+import type { LocationQuery, RawLocationQuery } from '@/modules/table/route';
 import {
   AccountExternalFilterSchema,
   type Filters,

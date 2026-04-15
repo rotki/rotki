@@ -2,7 +2,7 @@ import type { MaybeRefOrGetter } from 'vue';
 import { Blockchain } from '@rotki/common';
 import { omit } from 'es-toolkit';
 import { api } from '@/modules/api/rotki-api';
-import { type BlockchainRpcNode, BlockchainRpcNodeList } from '@/types/settings/rpc';
+import { type BlockchainRpcNode, BlockchainRpcNodeList } from '@/modules/settings/types/rpc';
 
 const READ_ONLY_FIELDS = ['isArchive'] as const;
 

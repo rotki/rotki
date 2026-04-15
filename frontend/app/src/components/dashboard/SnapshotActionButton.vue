@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { Writeable } from '@rotki/common';
-import type { AllBalancePayload } from '@/types/blockchain/accounts';
+import type { AllBalancePayload } from '@/modules/accounts/blockchain-accounts';
 import { startPromise } from '@shared/utils';
 import SnapshotImportDialog from '@/components/dashboard/SnapshotImportDialog.vue';
 import DateDisplay from '@/components/display/DateDisplay.vue';

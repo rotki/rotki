@@ -1,5 +1,5 @@
 import type { MaybeRef } from 'vue';
-import type { Collection } from '@/types/collection';
+import type { Collection } from '@/modules/common/collection';
 import { OwnedAssets, type SupportedAsset } from '@rotki/common';
 import { api } from '@/modules/api/rotki-api';
 import {
@@ -15,7 +15,7 @@ import {
   SOLANA_CHAIN,
   SOLANA_TOKEN,
   SupportedAssets,
-} from '@/types/asset';
+} from '@/modules/assets/types';
 import { mapCollectionResponse } from '@/utils/collection';
 
 interface UseAssetManagementApiReturn {

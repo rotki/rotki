@@ -1,23 +1,23 @@
 import type { MaybeRef } from 'vue';
+import type { AddressBookSimplePayload } from '@/modules/address-names/eth-names';
+import type { ActionStatus } from '@/modules/common/action';
+import type { Collection } from '@/modules/common/collection';
 import type { HistoryEventRequestPayload } from '@/modules/history/events/request-types';
-import type { ActionStatus } from '@/types/action';
-import type { Collection } from '@/types/collection';
-import type { AddressBookSimplePayload } from '@/types/eth-names';
 import type {
   AddHistoryEventPayload,
   HistoryEventCollectionRow,
   HistoryEventRow,
   HistoryEventsCollectionResponse,
   ModifyHistoryEventPayload,
-} from '@/types/history/events/schemas';
+} from '@/modules/history/events/schemas';
 import { startPromise } from '@shared/utils';
 import { useHistoryEventsApi } from '@/composables/api/history/events';
 import { useSupportedChains } from '@/composables/info/chains';
 import { useEnsOperations } from '@/modules/address-names/use-ens-operations';
 import { RequestCancelledError } from '@/modules/api/request-queue/errors';
+import { ApiValidationError, type ValidationErrors } from '@/modules/api/types/errors';
 import { useNotifications } from '@/modules/notifications/use-notifications';
 import { useHistoryStore } from '@/store/history';
-import { ApiValidationError, type ValidationErrors } from '@/types/api/errors';
 import { arrayify } from '@/utils/array';
 import { defaultCollectionState, mapCollectionResponse } from '@/utils/collection';
 import { millisecondsToSeconds } from '@/utils/date';

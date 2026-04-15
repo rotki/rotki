@@ -1,9 +1,9 @@
-import type { EvmChainAddress } from '@/types/history/events';
+import type { EvmChainAddress } from '@/modules/history/events/event-payloads';
 import { defaultApiUrls } from '@/modules/api/api-urls';
 import { api } from '@/modules/api/rotki-api';
 import { VALID_WITHOUT_SESSION_STATUS } from '@/modules/api/utils';
+import { AssetMap, AssetsWithId } from '@/modules/assets/types';
 import { type PendingTask, PendingTaskSchema } from '@/modules/tasks/types';
-import { AssetMap, AssetsWithId } from '@/types/asset';
 
 export interface AssetSearchParams {
   value: string;

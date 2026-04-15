@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { OkxLocation } from '@/types/exchanges';
+import type { OkxLocation } from '@/modules/balances/types/exchanges';
 import Flag from '@/components/common/Flag.vue';
 
 defineProps<{

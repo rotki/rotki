@@ -1,7 +1,7 @@
 import { api } from '@/modules/api/rotki-api';
 import { VALID_WITH_SESSION_AND_EXTERNAL_SERVICE } from '@/modules/api/utils';
+import { type ProtocolMetadata, ProtocolMetadataArraySchema } from '@/modules/defi/types';
 import { type PendingTask, PendingTaskSchema } from '@/modules/tasks/types';
-import { type ProtocolMetadata, ProtocolMetadataArraySchema } from '@/types/defi';
 
 interface UseDefiApiReturn {
   fetchAirdrops: () => Promise<PendingTask>;

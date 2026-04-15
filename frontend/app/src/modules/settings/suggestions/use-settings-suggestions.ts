@@ -1,5 +1,5 @@
-import type { FrontendSettings, FrontendSettingsPayload } from '@/types/settings/frontend-settings';
-import type { GeneralSettings, SettingsUpdate } from '@/types/user';
+import type { FrontendSettings, FrontendSettingsPayload } from '@/modules/settings/types/frontend-settings';
+import type { GeneralSettings, SettingsUpdate } from '@/modules/settings/types/user-settings';
 import { startPromise } from '@shared/utils';
 import { isEqual } from 'es-toolkit';
 import { useSettingsOperations } from '@/modules/settings/use-settings-operations';

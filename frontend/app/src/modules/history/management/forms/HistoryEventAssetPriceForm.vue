@@ -1,20 +1,20 @@
 <script setup lang="ts">
 import type { Validation } from '@vuelidate/core';
-import type { ActionStatus } from '@/types/action';
-import type { NewHistoryEventPayload } from '@/types/history/events/schemas';
-import type { HistoricalPriceFormPayload } from '@/types/prices';
+import type { ActionStatus } from '@/modules/common/action';
+import type { NewHistoryEventPayload } from '@/modules/history/events/schemas';
+import type { HistoricalPriceFormPayload } from '@/modules/prices/price-types';
 import { assert, type BigNumber, toSentenceCase } from '@rotki/common';
 import AmountInput from '@/components/inputs/AmountInput.vue';
 import AssetSelect from '@/components/inputs/AssetSelect.vue';
 import TwoFieldsAmountInput from '@/components/inputs/TwoFieldsAmountInput.vue';
 import { useAssetPricesApi } from '@/composables/api/assets/prices';
+import { ApiValidationError, type ValidationErrors } from '@/modules/api/types/errors';
 import ToggleLocationLink from '@/modules/history/management/forms/common/ToggleLocationLink.vue';
 import { useHistoricPriceCache } from '@/modules/prices/use-historic-price-cache';
 import { usePriceTaskManager } from '@/modules/prices/use-price-task-manager';
 import { TaskType } from '@/modules/tasks/task-type';
 import { useTaskStore } from '@/modules/tasks/use-task-store';
 import { useGeneralSettingsStore } from '@/store/settings/general';
-import { ApiValidationError, type ValidationErrors } from '@/types/api/errors';
 import { bigNumberifyFromRef } from '@/utils/bignumbers';
 import { millisecondsToSeconds } from '@/utils/date';
 import { getErrorMessage } from '@/utils/error-handling';

@@ -1,10 +1,10 @@
 import type { ComputedRef } from 'vue';
-import type { ManualBalance, ManualBalanceWithPrice } from '@/types/manual-balances';
+import type { ManualBalance, ManualBalanceWithPrice } from '@/modules/balances/types/manual-balances';
 import { omit } from 'es-toolkit';
 import { useSectionStatus } from '@/composables/status';
 import { useManualBalances } from '@/modules/balances/manual/use-manual-balances';
+import { Section } from '@/modules/common/status';
 import { useConfirmStore } from '@/store/confirm';
-import { Section } from '@/types/status';
 
 interface UseManualBalanceTableActionsReturn {
   prepareForEdit: (balance: ManualBalanceWithPrice) => ManualBalance;

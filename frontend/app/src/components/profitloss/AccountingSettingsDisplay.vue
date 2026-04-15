@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import type { ActionDataEntry } from '@/types/action';
-import type { BaseAccountingSettings, CostBasisMethod } from '@/types/user';
+import type { ActionDataEntry } from '@/modules/common/action';
+import type { BaseAccountingSettings, CostBasisMethod } from '@/modules/settings/types/user-settings';
 import SuccessDisplay from '@/components/display/SuccessDisplay.vue';
 import { useCostBasisMethod } from '@/composables/reports';
 

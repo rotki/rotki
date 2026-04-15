@@ -5,10 +5,10 @@ import { updateGeneralSettings } from '@test/utils/general-settings';
 import { mount, type VueWrapper } from '@vue/test-utils';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import AssetAmountDisplay from '@/modules/amount-display/components/AssetAmountDisplay.vue';
+import { useCurrencies } from '@/modules/amount-display/currencies';
+import { CurrencyLocation } from '@/modules/amount-display/currency-location';
+import { getDefaultFrontendSettings } from '@/modules/settings/types/frontend-settings';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
-import { useCurrencies } from '@/types/currencies';
-import { CurrencyLocation } from '@/types/currency-location';
-import { getDefaultFrontendSettings } from '@/types/settings/frontend-settings';
 
 const mockUseAssetInfo = vi.fn().mockImplementation(() => computed(() => ({ symbol: 'ETH' })));
 

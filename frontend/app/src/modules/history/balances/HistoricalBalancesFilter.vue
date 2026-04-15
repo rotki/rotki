@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import type { ValidationErrors } from '@/types/api/errors';
-import type { AddressData, BlockchainAccount } from '@/types/blockchain/accounts';
-import type { LocationLabel } from '@/types/location';
+import type { AddressData, BlockchainAccount } from '@/modules/accounts/blockchain-accounts';
+import type { ValidationErrors } from '@/modules/api/types/errors';
+import type { LocationLabel } from '@/modules/common/location';
 import BlockchainAccountSelector from '@/components/helper/BlockchainAccountSelector.vue';
 import LocationSelector from '@/components/helper/LocationSelector.vue';
 import LocationLabelSelector from '@/components/history/LocationLabelSelector.vue';

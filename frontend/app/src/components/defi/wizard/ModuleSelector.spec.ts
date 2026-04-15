@@ -6,8 +6,8 @@ import { createPinia, type Pinia, setActivePinia } from 'pinia';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import ModuleSelector from '@/components/defi/wizard/ModuleSelector.vue';
 import { useSettingsApi } from '@/composables/api/settings/settings-api';
+import { Module } from '@/modules/common/modules';
 import { useGeneralSettingsStore } from '@/store/settings/general';
-import { Module } from '@/types/modules';
 
 vi.mock('@/composables/api/settings/settings-api', (): Record<string, unknown> => ({
   useSettingsApi: vi.fn().mockReturnValue({

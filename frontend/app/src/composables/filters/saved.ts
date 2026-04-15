@@ -1,6 +1,6 @@
 import type { ComputedRef, MaybeRefOrGetter } from 'vue';
-import type { ActionStatus } from '@/types/action';
-import type { BaseSuggestion, SavedFilterLocation, Suggestion } from '@/types/filtering';
+import type { ActionStatus } from '@/modules/common/action';
+import type { BaseSuggestion, SavedFilterLocation, Suggestion } from '@/modules/table/filtering';
 import { useSettingsOperations } from '@/modules/settings/use-settings-operations';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
 

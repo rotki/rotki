@@ -2,7 +2,7 @@
 import ModuleNotActive from '@/components/defi/ModuleNotActive.vue';
 import { Module, useModuleEnabled } from '@/composables/session/modules';
 import NonFungibleBalances from '@/modules/balances/non-fungible/components/NonFungibleBalances.vue';
-import { NoteLocation } from '@/types/notes';
+import { NoteLocation } from '@/modules/common/notes';
 
 definePage({
   meta: {

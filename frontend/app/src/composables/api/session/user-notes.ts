@@ -1,7 +1,7 @@
 import type { MaybeRef } from 'vue';
-import type { Collection } from '@/types/collection';
+import type { Collection } from '@/modules/common/collection';
 import { api } from '@/modules/api/rotki-api';
-import { type UserNote, UserNoteCollectionResponse, type UserNotesRequestPayload } from '@/types/notes';
+import { type UserNote, UserNoteCollectionResponse, type UserNotesRequestPayload } from '@/modules/common/notes';
 import { mapCollectionResponse } from '@/utils/collection';
 
 interface UseUserNotesApiReturn {

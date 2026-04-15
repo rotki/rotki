@@ -1,4 +1,4 @@
-import type { AddressBookPayload, AddressBookSimplePayload } from '@/types/eth-names';
+import type { AddressBookPayload, AddressBookSimplePayload } from '@/modules/address-names/eth-names';
 
 function defaultPayload(): AddressBookPayload {
   return {

@@ -4,7 +4,7 @@ import type {
   MatchedKeywordWithBehaviour,
   SearchMatcher,
   Suggestion,
-} from '@/types/filtering';
+} from '@/modules/table/filtering';
 import { assert } from '@rotki/common';
 import { arrayify } from '@/utils/array';
 

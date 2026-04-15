@@ -4,12 +4,12 @@ import { getTextToken } from '@rotki/common';
 import { cloneDeep, isEqual } from 'es-toolkit';
 import { useSupportedChains } from '@/composables/info/chains';
 import { useAccountAddresses } from '@/modules/balances/blockchain/use-account-addresses';
-import HistoryRefreshAddressSelection from '@/modules/history/refresh/HistoryRefreshAddressSelection.vue';
-import HistoryRefreshChainItem from '@/modules/history/refresh/HistoryRefreshChainItem.vue';
 import {
   type ChainAddress,
   TransactionChainType,
-} from '@/types/history/events';
+} from '@/modules/history/events/event-payloads';
+import HistoryRefreshAddressSelection from '@/modules/history/refresh/HistoryRefreshAddressSelection.vue';
+import HistoryRefreshChainItem from '@/modules/history/refresh/HistoryRefreshChainItem.vue';
 
 const modelValue = defineModel<ChainAddress[]>({ required: true });
 const selectedChain = defineModel<string | undefined>('chain', { required: true });

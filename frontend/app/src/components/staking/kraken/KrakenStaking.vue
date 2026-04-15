@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { KrakenStakingDateFilter } from '@/types/staking';
+import type { KrakenStakingDateFilter } from '@/modules/staking/staking-types';
 import { type AssetBalance, HistoryEventEntryType } from '@rotki/common';
 import HistoryEventsView from '@/components/history/events/HistoryEventsView.vue';
 import KrakenDateFilter from '@/components/staking/kraken/KrakenDateFilter.vue';

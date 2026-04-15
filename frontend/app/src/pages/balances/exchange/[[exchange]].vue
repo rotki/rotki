@@ -11,12 +11,12 @@ import { useAggregatedBalances } from '@/composables/balances/use-aggregated-bal
 import { FiatDisplay } from '@/modules/amount-display/components';
 import { useBinanceSavings } from '@/modules/balances/exchanges/use-binance-savings';
 import { useBalanceRefresh } from '@/modules/balances/use-balance-refresh';
+import { NoteLocation } from '@/modules/common/notes';
+import { BalanceSource } from '@/modules/settings/types/frontend-settings';
 import { TaskType } from '@/modules/tasks/task-type';
 import { useTaskStore } from '@/modules/tasks/use-task-store';
 import { Routes } from '@/router/routes';
 import { useSessionSettingsStore } from '@/store/settings/session';
-import { NoteLocation } from '@/types/notes';
-import { BalanceSource } from '@/types/settings/frontend-settings';
 import { uniqueStrings } from '@/utils/data';
 
 definePage({

@@ -1,5 +1,5 @@
-import type { ActionStatus } from '@/types/action';
-import type { Tag } from '@/types/tags';
+import type { ActionStatus } from '@/modules/common/action';
+import type { Tag } from '@/modules/tags/tags';
 import { invertColor, randomColor } from '@rotki/common';
 import { useTagsApi } from '@/composables/api/tags';
 import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';

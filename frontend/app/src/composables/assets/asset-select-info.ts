@@ -1,7 +1,7 @@
 import type { AssetInfo } from '@rotki/common';
 import type { ComputedRef, MaybeRefOrGetter } from 'vue';
 import type { AssetStringField } from '@/composables/assets/retrieval';
-import type { AssetMap } from '@/types/asset';
+import type { AssetMap } from '@/modules/assets/types';
 import { startPromise } from '@shared/utils';
 import { useAssetInfoApi } from '@/composables/api/assets/info';
 import { processAssetInfo, useResolveAssetIdentifier } from '@/composables/assets/common';

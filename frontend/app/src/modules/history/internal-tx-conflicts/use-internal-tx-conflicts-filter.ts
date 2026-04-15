@@ -1,5 +1,5 @@
 import type { FilterSchema } from '@/composables/use-pagination-filter/types';
-import type { MatchedKeywordWithBehaviour, SearchMatcher } from '@/types/filtering';
+import type { MatchedKeywordWithBehaviour, SearchMatcher } from '@/modules/table/filtering';
 import { useSupportedChains } from '@/composables/info/chains';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { dateDeserializer, dateRangeValidator, dateSerializer, getDateInputISOFormat } from '@/utils/date';

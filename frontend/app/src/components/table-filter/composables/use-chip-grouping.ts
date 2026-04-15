@@ -1,5 +1,5 @@
 import type { ComputedRef, Ref } from 'vue';
-import type { Suggestion } from '@/types/filtering';
+import type { Suggestion } from '@/modules/table/filtering';
 import { isEqual } from 'es-toolkit';
 
 export type ChipDisplayType = 'normal' | 'grouped' | 'hidden';

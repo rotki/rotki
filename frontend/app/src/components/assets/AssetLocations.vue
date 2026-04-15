@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { DataTableColumn, DataTableSortData, TablePaginationData } from '@rotki/ui-library';
-import type { AddressData, BlockchainAccount } from '@/types/blockchain/accounts';
+import type { AddressData, BlockchainAccount } from '@/modules/accounts/blockchain-accounts';
 import { type BigNumber, Blockchain } from '@rotki/common';
 import { type AssetLocation, useAssetLocationsData } from '@/components/assets/use-asset-locations-data';
 import LabeledAddressDisplay from '@/components/display/LabeledAddressDisplay.vue';
@@ -11,8 +11,8 @@ import LocationDisplay from '@/components/history/LocationDisplay.vue';
 import TagFilter from '@/components/inputs/TagFilter.vue';
 import TagDisplay from '@/components/tags/TagDisplay.vue';
 import { FiatDisplay, ValueDisplay } from '@/modules/amount-display/components';
+import { CURRENCY_USD } from '@/modules/amount-display/currencies';
 import { TableId, useRememberTableSorting } from '@/modules/table/use-remember-table-sorting';
-import { CURRENCY_USD } from '@/types/currencies';
 
 const { identifier } = defineProps<{ identifier: string }>();
 

@@ -1,12 +1,12 @@
 <script setup lang="ts">
 import type { ComponentExposed } from 'vue-component-type-helpers';
-import type { ExchangeFormData } from '@/types/exchanges';
+import type { ExchangeFormData } from '@/modules/balances/types/exchanges';
 import { assert } from '@rotki/common';
 import BigDialog from '@/components/dialogs/BigDialog.vue';
 import ExchangeKeysForm from '@/components/settings/api-keys/exchange/ExchangeKeysForm.vue';
+import { ApiValidationError, type ValidationErrors } from '@/modules/api/types/errors';
 import { useExchanges } from '@/modules/balances/exchanges/use-exchanges';
 import { useMessageStore } from '@/store/message';
-import { ApiValidationError, type ValidationErrors } from '@/types/api/errors';
 import { getErrorMessage } from '@/utils/error-handling';
 
 const modelValue = defineModel<ExchangeFormData | undefined>({ required: true });

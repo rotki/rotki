@@ -1,19 +1,19 @@
+import type { ExchangeBalancePayload } from '@/modules/accounts/blockchain-accounts';
 import type { ExchangeMeta } from '@/modules/tasks/types';
-import type { ExchangeBalancePayload } from '@/types/blockchain/accounts';
 import { assert, toSentenceCase } from '@rotki/common';
 import { startPromise } from '@shared/utils';
 import { useExchangeApi } from '@/composables/api/balances/exchanges';
 import { useStatusUpdater } from '@/composables/status';
 import { useValueThreshold } from '@/composables/usd-value-threshold';
+import { AssetBalances } from '@/modules/balances/types/balances';
+import { type EditExchange, Exchange, type ExchangeFormData } from '@/modules/balances/types/exchanges';
 import { useBalancesStore } from '@/modules/balances/use-balances-store';
+import { Section, Status } from '@/modules/common/status';
 import { useNotifications } from '@/modules/notifications/use-notifications';
+import { BalanceSource } from '@/modules/settings/types/frontend-settings';
 import { TaskType } from '@/modules/tasks/task-type';
 import { isActionableFailure, useTaskHandler } from '@/modules/tasks/use-task-handler';
 import { useSessionSettingsStore } from '@/store/settings/session';
-import { AssetBalances } from '@/types/balances';
-import { type EditExchange, Exchange, type ExchangeFormData } from '@/types/exchanges';
-import { BalanceSource } from '@/types/settings/frontend-settings';
-import { Section, Status } from '@/types/status';
 import { getErrorMessage } from '@/utils/error-handling';
 
 interface UseExchangesReturn {

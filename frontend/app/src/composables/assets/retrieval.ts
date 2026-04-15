@@ -1,7 +1,7 @@
 import type { ComputedRef, MaybeRefOrGetter } from 'vue';
+import type { ERC20Token } from '@/modules/accounts/blockchain-accounts';
+import type { EvmChainAddress } from '@/modules/history/events/event-payloads';
 import type { TaskMeta } from '@/modules/tasks/types';
-import type { ERC20Token } from '@/types/blockchain/accounts';
-import type { EvmChainAddress } from '@/types/history/events';
 import {
   type AssetInfoWithId,
   getAddressFromEvmIdentifier,
@@ -16,11 +16,11 @@ import {
 import { type AssetSearchParams, useAssetInfoApi } from '@/composables/api/assets/info';
 import { processAssetInfo, useResolveAssetIdentifier } from '@/composables/assets/common';
 import { useSupportedChains } from '@/composables/info/chains';
+import { type AssetsWithId, EVM_TOKEN, SOLANA_CHAIN, SOLANA_TOKEN } from '@/modules/assets/types';
 import { useAssetInfoCache } from '@/modules/assets/use-asset-info-cache';
 import { getErrorMessage, useNotifications } from '@/modules/notifications/use-notifications';
 import { TaskType } from '@/modules/tasks/task-type';
 import { isActionableFailure, useTaskHandler } from '@/modules/tasks/use-task-handler';
-import { type AssetsWithId, EVM_TOKEN, SOLANA_CHAIN, SOLANA_TOKEN } from '@/types/asset';
 import { isAbortError } from '@/utils';
 
 export interface AssetResolutionOptions {

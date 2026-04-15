@@ -1,20 +1,20 @@
 import type { MaybeRef } from 'vue';
-import type { TaskMeta } from '@/modules/tasks/types';
-import type { Collection } from '@/types/collection';
 import type {
   NonFungibleBalance,
   NonFungibleBalancesCollectionResponse,
   NonFungibleBalancesRequestPayload,
-} from '@/types/nfbalances';
+} from '@/modules/balances/types/nfbalances';
+import type { Collection } from '@/modules/common/collection';
+import type { TaskMeta } from '@/modules/tasks/types';
 import { useNftBalancesApi } from '@/composables/api/balances/nft';
 import { useStatusUpdater } from '@/composables/status';
 import { useBalancesStore } from '@/modules/balances/use-balances-store';
+import { Module } from '@/modules/common/modules';
+import { Section, Status } from '@/modules/common/status';
 import { useNotifications } from '@/modules/notifications/use-notifications';
 import { TaskType } from '@/modules/tasks/task-type';
 import { isActionableFailure, useTaskHandler } from '@/modules/tasks/use-task-handler';
 import { useGeneralSettingsStore } from '@/store/settings/general';
-import { Module } from '@/types/modules';
-import { Section, Status } from '@/types/status';
 import { mapCollectionResponse } from '@/utils/collection';
 import { logger } from '@/utils/logging';
 

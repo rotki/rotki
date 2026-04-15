@@ -1,4 +1,4 @@
-import type { ChainAddress } from '@/types/history/events';
+import type { ChainAddress } from '@/modules/history/events/event-payloads';
 import {
   TransactionsQueryStatus,
   type UnifiedTransactionStatusData,

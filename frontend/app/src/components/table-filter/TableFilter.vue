@@ -4,7 +4,7 @@ import type {
   SavedFilterLocation,
   SearchMatcher,
   Suggestion,
-} from '@/types/filtering';
+} from '@/modules/table/filtering';
 import { type AssetInfo, getTextToken } from '@rotki/common';
 import { useChipGrouping } from '@/components/table-filter/composables/use-chip-grouping';
 import { useFilterMatchers } from '@/components/table-filter/composables/use-filter-matchers';

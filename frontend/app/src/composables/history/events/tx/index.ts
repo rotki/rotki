@@ -1,5 +1,4 @@
-import type { TaskMeta } from '@/modules/tasks/types';
-import type { ActionStatus } from '@/types/action';
+import type { ActionStatus } from '@/modules/common/action';
 import type {
   AddTransactionHashPayload,
   RepullingEthStakingPayload,
@@ -8,16 +7,17 @@ import type {
   RepullingExchangeEventsResponse,
   RepullingTransactionPayload,
   RepullingTransactionResponse,
-} from '@/types/history/events';
+} from '@/modules/history/events/event-payloads';
+import type { TaskMeta } from '@/modules/tasks/types';
 import { toHumanReadable } from '@rotki/common';
 import { useHistoryEventsApi } from '@/composables/api/history/events';
 import { useRefreshTransactions } from '@/composables/history/events/tx/use-refresh-transactions';
 import { displayDateFormatter } from '@/data/date-formatter';
+import { ApiValidationError, type ValidationErrors } from '@/modules/api/types/errors';
 import { getErrorMessage, useNotifications } from '@/modules/notifications/use-notifications';
 import { TaskType } from '@/modules/tasks/task-type';
 import { isActionableFailure, useTaskHandler } from '@/modules/tasks/use-task-handler';
 import { useGeneralSettingsStore } from '@/store/settings/general';
-import { ApiValidationError, type ValidationErrors } from '@/types/api/errors';
 import { logger } from '@/utils/logging';
 
 export interface RepullingTransactionResult {

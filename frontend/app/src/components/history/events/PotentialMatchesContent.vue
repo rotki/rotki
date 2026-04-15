@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { HistoryEventCollectionRow } from '@/types/history/events/schemas';
+import type { HistoryEventCollectionRow } from '@/modules/history/events/schemas';
 import { bigNumberify } from '@rotki/common';
 import PotentialMatchesList from '@/components/history/events/PotentialMatchesList.vue';
 import { useHistoryEventsApi } from '@/composables/api/history/events';

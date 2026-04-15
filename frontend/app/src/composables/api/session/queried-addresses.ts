@@ -1,6 +1,6 @@
 import { api } from '@/modules/api/rotki-api';
 import { VALID_WITH_SESSION_STATUS } from '@/modules/api/utils';
-import { type QueriedAddresses, QueriedAddressesSchema, type QueriedAddressPayload } from '@/types/session';
+import { type QueriedAddresses, QueriedAddressesSchema, type QueriedAddressPayload } from '@/modules/session/types';
 
 interface UseQueriedAddressApiReturn {
   queriedAddresses: () => Promise<QueriedAddresses>;

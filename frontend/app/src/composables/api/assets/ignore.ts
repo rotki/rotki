@@ -1,7 +1,7 @@
 import { defaultApiUrls } from '@/modules/api/api-urls';
 import { api } from '@/modules/api/rotki-api';
 import { VALID_WITHOUT_SESSION_STATUS } from '@/modules/api/utils';
-import { IgnoredAssetResponse } from '@/types/asset';
+import { IgnoredAssetResponse } from '@/modules/assets/types';
 
 interface UseAssetIgnoreApiReturn {
   getIgnoredAssets: () => Promise<string[]>;

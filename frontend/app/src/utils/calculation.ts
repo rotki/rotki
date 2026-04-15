@@ -1,4 +1,4 @@
-import type { ProtocolBalances } from '@/types/blockchain/balances';
+import type { ProtocolBalances } from '@/modules/balances/types/blockchain-balances';
 import { type Balance, type BigNumber, Zero } from '@rotki/common';
 
 export function assetSum(balances: Record<string, ProtocolBalances>, isAssetIgnored: (asset: string) => boolean): BigNumber {

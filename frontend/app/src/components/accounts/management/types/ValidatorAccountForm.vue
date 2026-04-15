@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { ComponentExposed } from 'vue-component-type-helpers';
 import type { StakingValidatorManage } from '@/composables/accounts/blockchain/use-account-manage';
-import type { ValidationErrors } from '@/types/api/errors';
+import type { ValidationErrors } from '@/modules/api/types/errors';
 import { assert } from '@rotki/common';
 import Eth2Input from '@/components/accounts/blockchain/Eth2Input.vue';
 import { TaskType } from '@/modules/tasks/task-type';

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { AssetVersionUpdate } from '@/types/asset';
+import type { AssetVersionUpdate } from '@/modules/assets/types';
 
 const versions = defineModel<AssetVersionUpdate>('versions', { required: true });
 

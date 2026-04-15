@@ -6,7 +6,7 @@ import LanguageSelectorItem from '@/components/settings/general/language/Languag
 import { useLocale } from '@/composables/session/use-locale';
 import { SettingsHighlightIds } from '@/composables/settings/types';
 import { supportedLanguages } from '@/data/supported-language';
-import { SupportedLanguage } from '@/types/settings/frontend-settings';
+import { SupportedLanguage } from '@/modules/settings/types/frontend-settings';
 
 defineOptions({
   inheritAttrs: false,

@@ -1,11 +1,11 @@
 <script setup lang="ts">
 import type { DataTableSortData, TablePaginationData } from '@rotki/ui-library';
 import type { DuplicateHandlingStatus, HighlightType } from '@/composables/history/events/types';
+import type { Collection } from '@/modules/common/collection';
 import type { UseHistoryEventsSelectionModeReturn } from '@/modules/history/events/composables/use-selection-mode';
 import type { HistoryEventRequestPayload } from '@/modules/history/events/request-types';
+import type { HistoryEventEntry, HistoryEventRow } from '@/modules/history/events/schemas';
 import type { HistoryEventsTableEmits } from '@/modules/history/events/types';
-import type { Collection } from '@/types/collection';
-import type { HistoryEventEntry, HistoryEventRow } from '@/types/history/events/schemas';
 import UpgradeRow from '@/components/history/UpgradeRow.vue';
 import { useHistoryEventsData } from '../composables/use-history-events-data';
 import { useHistoryEventsForms } from '../composables/use-history-events-forms';

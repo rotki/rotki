@@ -1,6 +1,6 @@
-import type { SupportedCurrency } from '@/types/currencies';
-import type { AssetPrices } from '@/types/prices';
-import type { ExchangeRates } from '@/types/user';
+import type { SupportedCurrency } from '@/modules/amount-display/currencies';
+import type { AssetPrices } from '@/modules/prices/price-types';
+import type { ExchangeRates } from '@/modules/settings/types/user-settings';
 
 export const useBalancePricesStore = defineStore('balances/prices', () => {
   const prices = shallowRef<AssetPrices>({});

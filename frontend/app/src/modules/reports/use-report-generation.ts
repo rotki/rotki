@@ -1,5 +1,5 @@
+import type { ProfitLossReportDebugPayload, ProfitLossReportPeriod } from '@/modules/reports/report-types';
 import type { TaskMeta } from '@/modules/tasks/types';
-import type { ProfitLossReportDebugPayload, ProfitLossReportPeriod } from '@/types/reports';
 import { useHistoryApi } from '@/composables/api/history';
 import { useReportsApi } from '@/composables/api/reports';
 import { useReportOperations } from '@/modules/reports/use-report-operations';

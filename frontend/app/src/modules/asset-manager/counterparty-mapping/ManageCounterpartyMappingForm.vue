@@ -1,6 +1,6 @@
 <script setup lang="ts">
+import type { ValidationErrors } from '@/modules/api/types/errors';
 import type { CounterpartyMapping } from '@/modules/asset-manager/counterparty-mapping/schema';
-import type { ValidationErrors } from '@/types/api/errors';
 import useVuelidate from '@vuelidate/core';
 import { helpers, required } from '@vuelidate/validators';
 import AssetSelect from '@/components/inputs/AssetSelect.vue';

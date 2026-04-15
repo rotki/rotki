@@ -1,6 +1,6 @@
-import type { ActionStatus } from '@/types/action';
+import type { ActionStatus } from '@/modules/common/action';
 import { api } from '@/modules/api/rotki-api';
-import { ProcessSkippedHistoryEventsResponse, SkippedHistoryEventsSummary } from '@/types/history/events';
+import { ProcessSkippedHistoryEventsResponse, SkippedHistoryEventsSummary } from '@/modules/history/events/event-payloads';
 import { downloadFileByUrl } from '@/utils/download';
 import { getErrorMessage } from '@/utils/error-handling';
 

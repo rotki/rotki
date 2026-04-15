@@ -1,5 +1,5 @@
-import type { Collection } from '@/types/collection';
-import type { EntryMeta, EntryWithMeta } from '@/types/history/meta';
+import type { Collection } from '@/modules/common/collection';
+import type { EntryMeta, EntryWithMeta } from '@/modules/history/meta';
 import { isValidEthAddress } from '@rotki/common';
 import { uniqueStrings } from '@/utils/data';
 

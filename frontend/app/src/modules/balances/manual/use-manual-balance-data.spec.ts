@@ -1,16 +1,16 @@
-import type { ManualBalanceWithValue } from '@/types/manual-balances';
-import type { AssetPrices } from '@/types/prices';
+import type { ManualBalanceWithValue } from '@/modules/balances/types/manual-balances';
+import type { AssetPrices } from '@/modules/prices/price-types';
 import { bigNumberify } from '@rotki/common';
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useManualBalancesApi } from '@/composables/api/balances/manual';
 import { TRADE_LOCATION_BANKS, TRADE_LOCATION_BLOCKCHAIN } from '@/data/defaults';
+import { Currency, CURRENCY_USD } from '@/modules/amount-display/currencies';
 import { useManualBalanceData } from '@/modules/balances/manual/use-manual-balance-data';
 import { useManualBalances } from '@/modules/balances/manual/use-manual-balances';
+import { BalanceType } from '@/modules/balances/types/balances';
 import { useBalancesStore } from '@/modules/balances/use-balances-store';
 import { useBalancePricesStore } from '@/store/balances/prices';
 import { useGeneralSettingsStore } from '@/store/settings/general';
-import { BalanceType } from '@/types/balances';
-import { Currency, CURRENCY_USD } from '@/types/currencies';
 
 const runTaskMock = vi.fn();
 

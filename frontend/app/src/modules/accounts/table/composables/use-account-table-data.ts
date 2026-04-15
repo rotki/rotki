@@ -1,10 +1,10 @@
 import type { BigNumber } from '@rotki/common';
 import type { ComputedRef, MaybeRefOrGetter, Ref, WritableComputedRef } from 'vue';
 import type { AccountDataRow } from '../types';
-import type { BlockchainAccountBalance } from '@/types/blockchain/accounts';
-import type { Collection } from '@/types/collection';
+import type { BlockchainAccountBalance } from '@/modules/accounts/blockchain-accounts';
+import type { Collection } from '@/modules/common/collection';
 import { isEmpty } from 'es-toolkit/compat';
-import { LOOPRING_CHAIN } from '@/types/blockchain';
+import { LOOPRING_CHAIN } from '@/modules/onchain/blockchain-types';
 import { sum } from '@/utils/balances';
 import { getAccountId, getGroupId } from '@/utils/blockchain/accounts/utils';
 

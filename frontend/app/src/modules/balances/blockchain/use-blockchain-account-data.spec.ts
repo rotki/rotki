@@ -1,5 +1,5 @@
-import type { BitcoinAccounts, BlockchainAccount, BlockchainAccountGroupWithBalance } from '@/types/blockchain/accounts';
-import type { BlockchainTotals, BtcBalances } from '@/types/blockchain/balances';
+import type { BitcoinAccounts, BlockchainAccount, BlockchainAccountGroupWithBalance } from '@/modules/accounts/blockchain-accounts';
+import type { BlockchainTotals, BtcBalances } from '@/modules/balances/types/blockchain-balances';
 import { type Balance, bigNumberify, Blockchain, Zero } from '@rotki/common';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';

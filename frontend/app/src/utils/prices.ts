@@ -1,11 +1,11 @@
 import type { Balance } from '@rotki/common';
-import type { AssetBalances } from '@/types/balances';
+import type { AssetBalances } from '@/modules/balances/types/balances';
 import type {
   AssetProtocolBalances,
   BlockchainAssetBalances,
-} from '@/types/blockchain/balances';
-import type { ManualBalanceWithValue } from '@/types/manual-balances';
-import type { AssetPrices } from '@/types/prices';
+} from '@/modules/balances/types/blockchain-balances';
+import type { ManualBalanceWithValue } from '@/modules/balances/types/manual-balances';
+import type { AssetPrices } from '@/modules/prices/price-types';
 
 export function updateBalancesPrices(
   balances: AssetProtocolBalances,

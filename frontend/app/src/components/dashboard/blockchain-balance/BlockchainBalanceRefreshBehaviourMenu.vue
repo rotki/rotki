@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import SettingsOption from '@/components/settings/controls/SettingsOption.vue';
+import { BlockchainRefreshButtonBehaviour } from '@/modules/settings/types/frontend-settings';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
-import { BlockchainRefreshButtonBehaviour } from '@/types/settings/frontend-settings';
 
 const { blockchainRefreshButtonBehaviour } = storeToRefs(useFrontendSettingsStore());
 

@@ -1,6 +1,6 @@
 import type { ComputedRef, MaybeRefOrGetter } from 'vue';
-import type { EthDetectedTokensInfo, EvmTokensRecord } from '@/types/balances';
-import type { BlockchainAssetBalances } from '@/types/blockchain/balances';
+import type { EthDetectedTokensInfo, EvmTokensRecord } from '@/modules/balances/types/balances';
+import type { BlockchainAssetBalances } from '@/modules/balances/types/blockchain-balances';
 import { useSupportedChains } from '@/composables/info/chains';
 import { useAssetsStore } from '@/modules/assets/use-assets-store';
 import { useTokenDetectionOrchestrator } from '@/modules/balances/blockchain/use-token-detection-orchestrator';

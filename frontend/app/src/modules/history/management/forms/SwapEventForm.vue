@@ -1,7 +1,7 @@
 <script setup lang="ts">
+import type { ValidationErrors } from '@/modules/api/types/errors';
+import type { AddSwapEventPayload, FeeEntry, SwapEvent, SwapEventUserNotes } from '@/modules/history/events/schemas';
 import type { GroupEventData } from '@/modules/history/management/forms/form-types';
-import type { ValidationErrors } from '@/types/api/errors';
-import type { AddSwapEventPayload, FeeEntry, SwapEvent, SwapEventUserNotes } from '@/types/history/events/schemas';
 import { assert, HistoryEventEntryType } from '@rotki/common';
 import { generateUUID } from '@shared/utils';
 import useVuelidate from '@vuelidate/core';

@@ -9,7 +9,7 @@ import {
   type OnlineHistoryEvent,
   type SolanaSwapEvent,
   type SwapEvent,
-} from '@/types/history/events/schemas';
+} from '@/modules/history/events/schemas';
 import { hideDeleteAction, hideEditAction, shouldDeleteGroup } from './event-action-visibility';
 
 const commonFields = {

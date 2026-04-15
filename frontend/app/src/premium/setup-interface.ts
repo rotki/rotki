@@ -6,8 +6,8 @@ import type {
   Themes,
   TimeUnit,
 } from '@rotki/common';
-import type { DateFormat } from '@/types/date-format';
-import type { FrontendSettingsPayload } from '@/types/settings/frontend-settings';
+import type { DateFormat } from '@/modules/common/date-format';
+import type { FrontendSettingsPayload } from '@/modules/settings/types/frontend-settings';
 import dayjs from 'dayjs';
 import { useGraph } from '@/composables/graphs';
 import { useSettingsOperations } from '@/modules/settings/use-settings-operations';

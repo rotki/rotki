@@ -2,8 +2,8 @@ import type { DialogShowOptions } from '@/components/history/events/dialog-types
 import type {
   PullEthBlockEventPayload,
   PullLocationTransactionPayload,
-} from '@/types/history/events';
-import type { HistoryEventEntry, HistoryEventRow } from '@/types/history/events/schemas';
+} from '@/modules/history/events/event-payloads';
+import type { HistoryEventEntry, HistoryEventRow } from '@/modules/history/events/schemas';
 
 interface HistoryEventIgnorePayload {
   readonly type: 'ignore';

@@ -6,17 +6,17 @@ import SettingsOption from '@/components/settings/controls/SettingsOption.vue';
 import SettingCategoryHeader from '@/components/settings/SettingCategoryHeader.vue';
 import { useSupportedChains } from '@/composables/info/chains';
 import { useExternalApiKeys } from '@/composables/settings/api-keys/external';
-import { useSettingsOperations } from '@/modules/settings/use-settings-operations';
-import { Routes } from '@/router/routes';
-import { useGeneralSettingsStore } from '@/store/settings/general';
-import { EvmIndexer } from '@/types/settings/evm-indexer';
-import { PrioritizedListData } from '@/types/settings/prioritized-list-data';
+import { EvmIndexer } from '@/modules/settings/types/evm-indexer';
+import { PrioritizedListData } from '@/modules/settings/types/prioritized-list-data';
 import {
   BLOCKSCOUT_PRIO_LIST_ITEM,
   ETHERSCAN_PRIO_LIST_ITEM,
   type PrioritizedListId,
   ROUTESCAN_PRIO_LIST_ITEM,
-} from '@/types/settings/prioritized-list-id';
+} from '@/modules/settings/types/prioritized-list-id';
+import { useSettingsOperations } from '@/modules/settings/use-settings-operations';
+import { Routes } from '@/router/routes';
+import { useGeneralSettingsStore } from '@/store/settings/general';
 
 defineProps<{
   id?: string;

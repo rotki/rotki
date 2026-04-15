@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { BalanceSnapshot, LocationDataSnapshot, Snapshot, SnapshotPayload } from '@/types/snapshots';
+import type { BalanceSnapshot, LocationDataSnapshot, Snapshot, SnapshotPayload } from '@/modules/dashboard/snapshots';
 import EditBalancesSnapshotTable from '@/components/dashboard/edit-snapshot/EditBalancesSnapshotTable.vue';
 import EditLocationDataSnapshotTable from '@/components/dashboard/edit-snapshot/EditLocationDataSnapshotTable.vue';
 import EditSnapshotTotal from '@/components/dashboard/edit-snapshot/EditSnapshotTotal.vue';

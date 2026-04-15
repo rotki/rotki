@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { TabContent } from '@/types/tabs';
+import type { TabContent } from '@/modules/common/tabs';
 import TabNavigation from '@/components/helper/TabNavigation.vue';
 import TablePageLayout from '@/components/layout/TablePageLayout.vue';
 import { useAppRoutes } from '@/router/routes';

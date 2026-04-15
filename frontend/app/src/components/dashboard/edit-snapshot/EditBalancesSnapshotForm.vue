@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { BigNumber } from '@rotki/common';
-import type { BalanceSnapshotPayload } from '@/types/snapshots';
+import type { BalanceSnapshotPayload } from '@/modules/dashboard/snapshots';
 import useVuelidate from '@vuelidate/core';
 import { helpers, required } from '@vuelidate/validators';
 import EditBalancesSnapshotAssetPriceForm from '@/components/dashboard/edit-snapshot/EditBalancesSnapshotAssetPriceForm.vue';

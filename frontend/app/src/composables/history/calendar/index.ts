@@ -1,5 +1,5 @@
 import type { MaybeRef } from 'vue';
-import type { Collection } from '@/types/collection';
+import type { Collection } from '@/modules/common/collection';
 import { api } from '@/modules/api/rotki-api';
 import {
   type AddCalendarEventResponse,
@@ -8,7 +8,7 @@ import {
   CalendarEventCollectionResponse,
   type CalendarEventPayload,
   type CalendarEventRequestPayload,
-} from '@/types/history/calendar';
+} from '@/modules/history/calendar/types';
 import { mapCollectionResponse } from '@/utils/collection';
 
 interface UseCalendarApiReturn {

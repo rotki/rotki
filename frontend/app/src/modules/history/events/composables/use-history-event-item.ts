@@ -1,7 +1,7 @@
 import type { Blockchain } from '@rotki/common';
 import type { ComputedRef, MaybeRefOrGetter } from 'vue';
 import type { UseHistoryEventsSelectionModeReturn } from '@/modules/history/events/composables/use-selection-mode';
-import type { HistoryEventEntry } from '@/types/history/events/schemas';
+import type { HistoryEventEntry } from '@/modules/history/events/schemas';
 import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
 import { useSupportedChains } from '@/composables/info/chains';
 import { useAssetsStore } from '@/modules/assets/use-assets-store';

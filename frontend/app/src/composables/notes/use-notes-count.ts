@@ -2,7 +2,7 @@ import type { ComputedRef, Ref } from 'vue';
 import { createSharedComposable } from '@vueuse/core';
 import { useUserNotesApi } from '@/composables/api/session/user-notes';
 import { useNoteLocation } from '@/composables/notes/use-note-location';
-import { NoteLocation } from '@/types/notes';
+import { NoteLocation } from '@/modules/common/notes';
 
 interface UseNotesCountReturn {
   globalNotesCount: Ref<number>;

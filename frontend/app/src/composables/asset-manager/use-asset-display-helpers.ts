@@ -1,7 +1,7 @@
 import type { ComputedRef, MaybeRefOrGetter } from 'vue';
-import type { Collection } from '@/types/collection';
+import type { Collection } from '@/modules/common/collection';
 import { getAddressFromEvmIdentifier, isEvmIdentifier, type SupportedAsset, toSentenceCase } from '@rotki/common';
-import { CUSTOM_ASSET } from '@/types/asset';
+import { CUSTOM_ASSET } from '@/modules/assets/types';
 
 interface AssetDisplay {
   customAssetType: string;

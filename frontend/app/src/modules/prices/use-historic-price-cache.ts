@@ -9,11 +9,11 @@ import {
 import { usePriceApi } from '@/composables/api/balances/price';
 import { createItemCache } from '@/composables/item-cache';
 import { useNotifications } from '@/modules/notifications/use-notifications';
+import { HistoricPrices } from '@/modules/prices/price-types';
 import { TaskType } from '@/modules/tasks/task-type';
 import { isActionableFailure, useTaskHandler } from '@/modules/tasks/use-task-handler';
 import { useHistoricCachePriceStore } from '@/store/prices/historic';
 import { useGeneralSettingsStore } from '@/store/settings/general';
-import { HistoricPrices } from '@/types/prices';
 
 interface UseHistoricPriceCacheReturn {
   cache: ReturnType<typeof createItemCache<BigNumber>>['cache'];

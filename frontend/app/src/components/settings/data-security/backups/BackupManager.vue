@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { DatabaseInfo, UserDbBackup, UserDbBackupWithId } from '@/types/backup';
+import type { DatabaseInfo, UserDbBackup, UserDbBackupWithId } from '@/modules/session/backup';
 import { Severity } from '@rotki/common';
 import DatabaseBackups from '@/components/settings/data-security/backups/DatabaseBackups.vue';
 import SettingCategoryHeader from '@/components/settings/SettingCategoryHeader.vue';

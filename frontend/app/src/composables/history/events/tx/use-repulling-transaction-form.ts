@@ -1,4 +1,4 @@
-import type { RepullingTransactionPayload } from '@/types/history/events';
+import type { RepullingTransactionPayload } from '@/modules/history/events/event-payloads';
 import { createSharedComposable, get, useArrayMap } from '@vueuse/core';
 import dayjs from 'dayjs';
 import { computed, type ComputedRef } from 'vue';

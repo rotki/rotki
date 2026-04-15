@@ -3,8 +3,8 @@ import type { ComputedRef, MaybeRefOrGetter } from 'vue';
 import type { WrapStatisticsResult } from '@/composables/api/statistics/wrap';
 import { get } from '@vueuse/shared';
 import { useExternalApiKeys } from '@/composables/settings/api-keys/external';
+import { useCurrencies } from '@/modules/amount-display/currencies';
 import { PremiumFeature, useFeatureAccess } from '@/modules/premium/use-feature-access';
-import { useCurrencies } from '@/types/currencies';
 
 interface GnosisPayResult {
   amount: BigNumber;

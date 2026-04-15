@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { DataTableColumn, DataTableSortData } from '@rotki/ui-library';
-import type { MissingAcquisition } from '@/types/reports';
+import type { MissingAcquisition } from '@/modules/reports/report-types';
 import { assert, type BigNumber } from '@rotki/common';
 import DateDisplay from '@/components/display/DateDisplay.vue';
 import AssetDetails from '@/components/helper/AssetDetails.vue';

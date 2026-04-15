@@ -1,4 +1,4 @@
-import type { ExchangeFormData, ExchangeSavingsRequestPayload } from '@/types/exchanges';
+import type { ExchangeFormData, ExchangeSavingsRequestPayload } from '@/modules/balances/types/exchanges';
 import { BigNumber } from '@rotki/common';
 import { server } from '@test/setup-files/server';
 import { type DefaultBodyType, http, HttpResponse } from 'msw';

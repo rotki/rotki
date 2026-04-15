@@ -1,4 +1,4 @@
-import type { MatchedKeywordWithBehaviour, SearchMatcher, StringSuggestionMatcher, Suggestion } from '@/types/filtering';
+import type { MatchedKeywordWithBehaviour, SearchMatcher, StringSuggestionMatcher, Suggestion } from '@/modules/table/filtering';
 import { get, set } from '@vueuse/shared';
 import { describe, expect, it, vi } from 'vitest';
 import { type Ref, ref } from 'vue';

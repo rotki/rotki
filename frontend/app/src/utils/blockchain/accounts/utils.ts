@@ -1,4 +1,4 @@
-import type { AddressData, BlockchainAccountData, ValidatorData, XpubData } from '@/types/blockchain/accounts';
+import type { AddressData, BlockchainAccountData, ValidatorData, XpubData } from '@/modules/accounts/blockchain-accounts';
 
 export function getXpubId(data: Omit<XpubData, 'type'>): string {
   if (!data.derivationPath)

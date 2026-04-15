@@ -5,9 +5,9 @@ import AssetDetails from '@/components/helper/AssetDetails.vue';
 import SettingsItem from '@/components/settings/controls/SettingsItem.vue';
 import ExplorerInput from '@/components/settings/explorers/ExplorerInput.vue';
 import { useValueOrDefault } from '@/composables/utils/useValueOrDefault';
+import { type ExplorerUrls, explorerUrls } from '@/modules/assets/asset-urls';
 import { useSettingsOperations } from '@/modules/settings/use-settings-operations';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
-import { type ExplorerUrls, explorerUrls } from '@/types/asset/asset-urls';
 
 const extraExplorers = ['ETC'] as const;
 

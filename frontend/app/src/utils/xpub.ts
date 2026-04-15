@@ -1,5 +1,5 @@
 import { isValidBchAddress, isValidBtcAddress } from '@rotki/common';
-import { XpubKeyType } from '@/types/blockchain/accounts';
+import { XpubKeyType } from '@/modules/accounts/blockchain-accounts';
 
 export enum XpubPrefix {
   P2TR = 'p2tr',

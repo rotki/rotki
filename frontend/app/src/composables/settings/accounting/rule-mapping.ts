@@ -1,5 +1,5 @@
 import type { MaybeRefOrGetter } from 'vue';
-import type { AccountingRuleLinkedSettingMap } from '@/types/settings/accounting';
+import type { AccountingRuleLinkedSettingMap } from '@/modules/settings/types/accounting';
 import { assert, toHumanReadable, transformCase } from '@rotki/common';
 import { useAccountingApi } from '@/composables/api/settings/accounting-api';
 import { useAccountingSettingsStore } from '@/store/settings/accounting';

@@ -1,5 +1,5 @@
 import type { ComputedRef, MaybeRefOrGetter } from 'vue';
-import type { SearchMatcher } from '@/types/filtering';
+import type { SearchMatcher } from '@/modules/table/filtering';
 
 interface UseMatcherUtilsReturn {
   validKeys: ComputedRef<string[]>;

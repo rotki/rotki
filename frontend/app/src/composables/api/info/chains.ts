@@ -1,5 +1,5 @@
 import { api } from '@/modules/api/rotki-api';
-import { EvmChainEntries, SupportedChains } from '@/types/api/chains';
+import { EvmChainEntries, SupportedChains } from '@/modules/api/types/chains';
 
 interface UseSupportedChainsApiReturn {
   fetchSupportedChains: () => Promise<SupportedChains>;

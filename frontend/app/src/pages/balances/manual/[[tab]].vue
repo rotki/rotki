@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { ManualBalance, RawManualBalance } from '@/types/manual-balances';
+import type { ManualBalance, RawManualBalance } from '@/modules/balances/types/manual-balances';
 import { Zero } from '@rotki/common';
 import { startPromise } from '@shared/utils';
 import ManualBalancesDialog from '@/components/accounts/manual-balances/ManualBalancesDialog.vue';
@@ -10,11 +10,11 @@ import HideSmallBalances from '@/components/settings/HideSmallBalances.vue';
 import { useSectionStatus } from '@/composables/status';
 import { TRADE_LOCATION_EXTERNAL } from '@/data/defaults';
 import { useManualBalances } from '@/modules/balances/manual/use-manual-balances';
+import { BalanceType } from '@/modules/balances/types/balances';
+import { NoteLocation } from '@/modules/common/notes';
+import { Section } from '@/modules/common/status';
 import { useHistoryDataFetching } from '@/modules/history/use-history-data-fetching';
-import { BalanceType } from '@/types/balances';
-import { NoteLocation } from '@/types/notes';
-import { BalanceSource } from '@/types/settings/frontend-settings';
-import { Section } from '@/types/status';
+import { BalanceSource } from '@/modules/settings/types/frontend-settings';
 
 definePage({
   meta: {

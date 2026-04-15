@@ -5,8 +5,8 @@ import GraphSettingsCategory from '@/components/settings/frontend/GraphSettingsC
 import InterfaceOnlyCategory from '@/components/settings/frontend/InterfaceOnlyCategory.vue';
 import ThemeSettingsCategory from '@/components/settings/frontend/ThemeSettingsCategory.vue';
 import { SettingsCategoryIds } from '@/composables/settings/types';
+import { NoteLocation } from '@/modules/common/notes';
 import NewlyDetectedTokensSettingsCategory from '@/modules/newly-detected-tokens/settings/NewlyDetectedTokensSettingsCategory.vue';
-import { NoteLocation } from '@/types/notes';
 
 definePage({
   meta: {

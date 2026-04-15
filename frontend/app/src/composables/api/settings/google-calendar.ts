@@ -9,7 +9,7 @@ import {
   GoogleCalendarStatusSchema,
   type GoogleCalendarSyncResult,
   GoogleCalendarSyncResultSchema,
-} from '@/types/settings/google-calendar';
+} from '@/modules/settings/types/google-calendar';
 
 export function useGoogleCalendarApi(): {
   getStatus: () => Promise<GoogleCalendarStatus>;

@@ -3,17 +3,17 @@ import { useBlockchainBalancesApi } from '@/composables/api/balances/blockchain'
 import { useSupportedChains } from '@/composables/info/chains';
 import { useStatusUpdater } from '@/composables/status';
 import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
-import { useBalancesStore } from '@/modules/balances/use-balances-store';
-import { useBlockchainRefreshTimestampsStore } from '@/modules/balances/use-blockchain-refresh-timestamps-store';
-import { useNotifications } from '@/modules/notifications/use-notifications';
-import { TaskType } from '@/modules/tasks/task-type';
-import { isActionableFailure, useTaskHandler } from '@/modules/tasks/use-task-handler';
 import {
   BlockchainBalances,
   type BtcBalances,
   type FetchBlockchainBalancePayload,
-} from '@/types/blockchain/balances';
-import { Section, Status } from '@/types/status';
+} from '@/modules/balances/types/blockchain-balances';
+import { useBalancesStore } from '@/modules/balances/use-balances-store';
+import { useBlockchainRefreshTimestampsStore } from '@/modules/balances/use-blockchain-refresh-timestamps-store';
+import { Section, Status } from '@/modules/common/status';
+import { useNotifications } from '@/modules/notifications/use-notifications';
+import { TaskType } from '@/modules/tasks/task-type';
+import { isActionableFailure, useTaskHandler } from '@/modules/tasks/use-task-handler';
 import { convertBtcBalances } from '@/utils/blockchain/accounts';
 import { logger } from '@/utils/logging';
 

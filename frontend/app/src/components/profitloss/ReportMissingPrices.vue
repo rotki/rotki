@@ -1,16 +1,16 @@
 <script setup lang="ts">
 import type { BigNumber } from '@rotki/common';
 import type { DataTableColumn, DataTableSortData } from '@rotki/ui-library';
-import type { HistoricalPrice, HistoricalPriceDeletePayload, HistoricalPriceFormPayload } from '@/types/prices';
-import type { EditableMissingPrice, MissingPrice } from '@/types/reports';
+import type { HistoricalPrice, HistoricalPriceDeletePayload, HistoricalPriceFormPayload } from '@/modules/prices/price-types';
+import type { EditableMissingPrice, MissingPrice } from '@/modules/reports/report-types';
 import DateDisplay from '@/components/display/DateDisplay.vue';
 import AssetDetails from '@/components/helper/AssetDetails.vue';
 import AmountInput from '@/components/inputs/AmountInput.vue';
 import { useAssetPricesApi } from '@/composables/api/assets/prices';
+import { ApiValidationError } from '@/modules/api/types/errors';
 import { useHistoricPriceCache } from '@/modules/prices/use-historic-price-cache';
 import { usePriceTaskManager } from '@/modules/prices/use-price-task-manager';
 import { TableId, useRememberTableSorting } from '@/modules/table/use-remember-table-sorting';
-import { ApiValidationError } from '@/types/api/errors';
 import { getErrorMessage } from '@/utils/error-handling';
 
 const { items, isPinned } = defineProps<{

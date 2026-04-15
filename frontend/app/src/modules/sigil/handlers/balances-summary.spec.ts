@@ -1,4 +1,4 @@
-import type { Accounts } from '@/types/blockchain/accounts';
+import type { Accounts } from '@/modules/accounts/blockchain-accounts';
 import { beforeEach, describe, expect, it } from 'vitest';
 
 function stubAccount(address: string): Accounts[string][number] {

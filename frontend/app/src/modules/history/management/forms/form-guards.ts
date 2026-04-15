@@ -5,7 +5,7 @@ import type {
   HistoryEvent,
   SolanaEvent,
   SolanaSwapEvent,
-} from '@/types/history/events/schemas';
+} from '@/modules/history/events/schemas';
 import { HistoryEventEntryType } from '@rotki/common';
 import { isEvmEvent, isEvmSwapEvent, isSolanaEvent, isSolanaSwapEvent } from '@/utils/history/events';
 

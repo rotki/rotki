@@ -1,8 +1,8 @@
 import type {
   EthereumValidator,
   EthereumValidatorRequestPayload,
-} from '@/types/blockchain/accounts';
-import type { Collection } from '@/types/collection';
+} from '@/modules/accounts/blockchain-accounts';
+import type { Collection } from '@/modules/common/collection';
 import { camelCase } from 'es-toolkit';
 import { sum } from '@/utils/balances';
 import { includes, isFilterEnabled, sortBy } from '@/utils/blockchain/accounts/common';

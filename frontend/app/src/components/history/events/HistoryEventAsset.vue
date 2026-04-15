@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { HistoryEventEntry } from '@/types/history/events/schemas';
+import type { HistoryEventEntry } from '@/modules/history/events/schemas';
 import { type AssetInfoWithId, Zero } from '@rotki/common';
 import { useTemplateRef } from 'vue';
 import AssetDetails from '@/components/helper/AssetDetails.vue';

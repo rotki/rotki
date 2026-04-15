@@ -6,7 +6,7 @@ import AssetDatabaseCategory from '@/components/settings/database/AssetDatabaseC
 import DatabaseInformationCategory from '@/components/settings/database/DatabaseInformationCategory.vue';
 import ImportExportCategory from '@/components/settings/database/ImportExportCategory.vue';
 import { SettingsCategoryIds } from '@/composables/settings/types';
-import { NoteLocation } from '@/types/notes';
+import { NoteLocation } from '@/modules/common/notes';
 
 definePage({
   meta: {

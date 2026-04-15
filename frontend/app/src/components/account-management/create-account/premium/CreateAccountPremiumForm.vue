@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { PremiumSetup } from '@/types/login';
+import type { PremiumSetup } from '@/modules/account/login';
 import useVuelidate from '@vuelidate/core';
 import { helpers, requiredIf } from '@vuelidate/validators';
 import { useRefPropVModel } from '@/utils/model';

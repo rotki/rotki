@@ -1,19 +1,19 @@
 import type { Ref } from 'vue';
+import type { Eth2Validator } from '@/modules/balances/types/balances';
+import type { ActionStatus } from '@/modules/common/action';
 import type { TaskMeta } from '@/modules/tasks/types';
-import type { ActionStatus } from '@/types/action';
-import type { Eth2Validator } from '@/types/balances';
 import { type BigNumber, Blockchain, type EthValidatorFilter } from '@rotki/common';
 import { useBlockchainAccountsApi } from '@/composables/api/blockchain/accounts';
 import { usePremium } from '@/composables/premium';
 import { useStatusUpdater } from '@/composables/status';
 import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
+import { ApiValidationError, type ValidationErrors } from '@/modules/api/types/errors';
+import { Section } from '@/modules/common/status';
 import { getErrorMessage, useNotifications } from '@/modules/notifications/use-notifications';
 import { useEthValidatorFetching } from '@/modules/staking/eth/composables/use-eth-validator-fetching';
 import { TaskType } from '@/modules/tasks/task-type';
 import { isActionableFailure, useTaskHandler } from '@/modules/tasks/use-task-handler';
 import { useBlockchainValidatorsStore } from '@/store/blockchain/validators';
-import { ApiValidationError, type ValidationErrors } from '@/types/api/errors';
-import { Section } from '@/types/status';
 import { logger } from '@/utils/logging';
 
 interface UseEthStakingReturn {

@@ -1,4 +1,4 @@
-import type { EvmTokensRecord } from '@/types/balances';
+import type { EvmTokensRecord } from '@/modules/balances/types/balances';
 
 type Tokens = Record<string, EvmTokensRecord>;
 

@@ -1,8 +1,8 @@
 import type { SupportedAsset } from '@rotki/common';
 import type { MaybeRef } from 'vue';
 import type * as Vue from 'vue';
-import type { AssetRequestPayload } from '@/types/asset';
-import type { Collection } from '@/types/collection';
+import type { AssetRequestPayload } from '@/modules/assets/types';
+import type { Collection } from '@/modules/common/collection';
 import { startPromise } from '@shared/utils';
 import flushPromises from 'flush-promises';
 import { afterEach, assertType, beforeAll, beforeEach, describe, expect, expectTypeOf, it, vi } from 'vitest';

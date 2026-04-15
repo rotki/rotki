@@ -3,8 +3,8 @@ import type { ComputedRef, Ref, WritableComputedRef } from 'vue';
 import type {
   EthereumValidator,
   EthereumValidatorRequestPayload,
-} from '@/types/blockchain/accounts';
-import type { Collection } from '@/types/collection';
+} from '@/modules/accounts/blockchain-accounts';
+import type { Collection } from '@/modules/common/collection';
 import { type Filters, type Matcher, useEthValidatorAccountFilter } from '@/composables/filters/eth-validator';
 import { usePaginationFilters } from '@/composables/use-pagination-filter';
 import { TableId, useRememberTableSorting } from '@/modules/table/use-remember-table-sorting';

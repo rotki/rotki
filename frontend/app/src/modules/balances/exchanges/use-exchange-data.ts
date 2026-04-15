@@ -1,6 +1,6 @@
 import type { ComputedRef, MaybeRefOrGetter } from 'vue';
-import type { AssetProtocolBalances } from '@/types/blockchain/balances';
-import type { Exchange, ExchangeInfo } from '@/types/exchanges';
+import type { AssetProtocolBalances } from '@/modules/balances/types/blockchain-balances';
+import type { Exchange, ExchangeInfo } from '@/modules/balances/types/exchanges';
 import { useAssetsStore } from '@/modules/assets/use-assets-store';
 import { useBalancesStore } from '@/modules/balances/use-balances-store';
 import { useGeneralSettingsStore } from '@/store/settings/general';

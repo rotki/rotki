@@ -1,10 +1,10 @@
 import type { ComputedRef, MaybeRef, MaybeRefOrGetter } from 'vue';
-import type { Collection } from '@/types/collection';
 import type {
   ManualBalanceRequestPayload,
   ManualBalanceWithPrice,
   ManualBalanceWithValue,
-} from '@/types/manual-balances';
+} from '@/modules/balances/types/manual-balances';
+import type { Collection } from '@/modules/common/collection';
 import { useManualBalancePagination } from '@/modules/balances/manual/use-manual-balance-pagination';
 import { useBalancesStore } from '@/modules/balances/use-balances-store';
 import { uniqueStrings } from '@/utils/data';

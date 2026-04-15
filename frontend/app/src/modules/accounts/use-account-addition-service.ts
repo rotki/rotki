@@ -1,6 +1,6 @@
+import type { AccountPayload, AddAccountsPayload, XpubAccountPayload } from '@/modules/accounts/blockchain-accounts';
 import type { RefreshAccountsParams } from '@/modules/accounts/use-account-operations';
-import type { AccountPayload, AddAccountsPayload, XpubAccountPayload } from '@/types/blockchain/accounts';
-import type { Module } from '@/types/modules';
+import type { Module } from '@/modules/common/modules';
 import { type Account, assert, Blockchain } from '@rotki/common';
 import { startPromise } from '@shared/utils';
 import { useSupportedChains } from '@/composables/info/chains';
@@ -9,9 +9,9 @@ import { useBlockchainAccounts } from '@/modules/accounts/use-blockchain-account
 import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
 import { useAccountAddresses } from '@/modules/balances/blockchain/use-account-addresses';
 import { useTokenDetectionOrchestrator } from '@/modules/balances/blockchain/use-token-detection-orchestrator';
+import { isBlockchain } from '@/modules/onchain/chains';
 import { useTagOperations } from '@/modules/session/use-tag-operations';
 import { useSettingsOperations } from '@/modules/settings/use-settings-operations';
-import { isBlockchain } from '@/types/blockchain/chains';
 import { awaitParallelExecution } from '@/utils/await-parallel-execution';
 import { getErrorMessage } from '@/utils/error-handling';
 import { logger } from '@/utils/logging';

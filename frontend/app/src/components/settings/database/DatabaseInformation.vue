@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { DatabaseInfo } from '@/types/backup';
+import type { DatabaseInfo } from '@/modules/session/backup';
 import CopyButton from '@/components/helper/CopyButton.vue';
 import SettingsItem from '@/components/settings/controls/SettingsItem.vue';
 import { useBackupApi } from '@/composables/api/backup';

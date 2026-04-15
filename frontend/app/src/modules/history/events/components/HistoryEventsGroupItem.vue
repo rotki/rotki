@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import type { LocationAndTxRef, PullEventPayload } from '@/types/history/events';
-import type { HistoryEventEntry, StandaloneEditableEvents } from '@/types/history/events/schemas';
+import type { LocationAndTxRef, PullEventPayload } from '@/modules/history/events/event-payloads';
+import type { HistoryEventEntry, StandaloneEditableEvents } from '@/modules/history/events/schemas';
 import DateDisplay from '@/components/display/DateDisplay.vue';
 import HistoryEventAccount from '@/components/history/events/HistoryEventAccount.vue';
 import HistoryEventsAction from '@/components/history/events/HistoryEventsAction.vue';

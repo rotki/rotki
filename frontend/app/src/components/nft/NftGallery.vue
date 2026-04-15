@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { Module } from '@/types/modules';
+import type { Module } from '@/modules/common/modules';
 import NoDataScreen from '@/components/common/NoDataScreen.vue';
 import ProgressScreen from '@/components/helper/ProgressScreen.vue';
 import TablePageLayout from '@/components/layout/TablePageLayout.vue';

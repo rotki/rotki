@@ -1,10 +1,10 @@
-import type { PeriodChangedEvent } from '@/types/reports';
+import type { PeriodChangedEvent } from '@/modules/reports/report-types';
 import { type ComponentMountingOptions, mount, type VueWrapper } from '@vue/test-utils';
 import dayjs from 'dayjs';
 import { createPinia, type Pinia, setActivePinia } from 'pinia';
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import ReportPeriodSelector from '@/components/profitloss/ReportPeriodSelector.vue';
-import { Quarter } from '@/types/settings/frontend-settings';
+import { Quarter } from '@/modules/settings/types/frontend-settings';
 import { setupDayjs } from '@/utils/date';
 
 describe('components/profitloss/ReportPeriodSelector.vue', () => {

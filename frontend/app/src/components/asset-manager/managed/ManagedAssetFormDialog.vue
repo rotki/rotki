@@ -4,9 +4,9 @@ import { omit } from 'es-toolkit';
 import { useTemplateRef } from 'vue';
 import ManagedAssetForm from '@/components/asset-manager/managed/ManagedAssetForm.vue';
 import BigDialog from '@/components/dialogs/BigDialog.vue';
+import { ApiValidationError, type ValidationErrors } from '@/modules/api/types/errors';
 import { useAssetInfoCache } from '@/modules/assets/use-asset-info-cache';
 import { useMessageStore } from '@/store/message';
-import { ApiValidationError, type ValidationErrors } from '@/types/api/errors';
 import { getErrorMessage } from '@/utils/error-handling';
 
 const modelValue = defineModel<SupportedAsset | undefined>({ required: true });

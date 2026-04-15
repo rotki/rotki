@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import type { ValidationErrors } from '@/types/api/errors';
-import type { Eth2Validator } from '@/types/balances';
+import type { ValidationErrors } from '@/modules/api/types/errors';
+import type { Eth2Validator } from '@/modules/balances/types/balances';
 import { consistOfNumbers } from '@rotki/common';
 import useVuelidate from '@vuelidate/core';
 import { helpers, requiredUnless } from '@vuelidate/validators';

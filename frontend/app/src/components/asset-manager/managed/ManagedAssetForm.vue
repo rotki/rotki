@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import type { ValidationErrors } from '@/types/api/errors';
-import type { SelectOption } from '@/types/common';
+import type { ValidationErrors } from '@/modules/api/types/errors';
+import type { SelectOption } from '@/modules/common/common-types';
 import {
   EvmTokenKind,
   isValidEthAddress,
@@ -22,8 +22,8 @@ import DateTimePicker from '@/components/inputs/DateTimePicker.vue';
 import { useAssetManagementApi } from '@/composables/api/assets/management';
 import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
 import { useSupportedChains } from '@/composables/info/chains';
-import { CUSTOM_ASSET, EVM_TOKEN, SOLANA_TOKEN } from '@/types/asset';
-import { evmTokenKindsData, solanaTokenKindsData } from '@/types/blockchain/chains';
+import { CUSTOM_ASSET, EVM_TOKEN, SOLANA_TOKEN } from '@/modules/assets/types';
+import { evmTokenKindsData, solanaTokenKindsData } from '@/modules/onchain/chains';
 import { refOptional, useRefPropVModel } from '@/utils/model';
 
 const modelValue = defineModel<SupportedAsset>({ required: true });

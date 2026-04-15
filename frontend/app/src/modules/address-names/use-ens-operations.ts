@@ -1,5 +1,5 @@
+import type { AddressBookSimplePayload, EthNames } from '@/modules/address-names/eth-names';
 import type { TaskMeta } from '@/modules/tasks/types';
-import type { AddressBookSimplePayload, EthNames } from '@/types/eth-names';
 import { isValidEthAddress } from '@rotki/common';
 import { useAddressesNamesApi } from '@/composables/api/blockchain/addresses-names';
 import { useAddressNameResolution } from '@/modules/address-names/use-address-name-resolution';
