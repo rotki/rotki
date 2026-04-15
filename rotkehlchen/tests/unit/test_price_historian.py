@@ -253,6 +253,39 @@ def test_cached_price_returns_without_oracle_calls(globaldb, fake_price_historia
         )
 
 
+def test_disabled_historical_oracle_cache_is_ignored(
+        globaldb,
+        fake_price_historian,
+        inquirer,  # pylint: disable=unused-argument
+):
+    """Cached values from disabled historical oracles should not be used."""
+    price_historian = fake_price_historian
+    query_timestamp = Timestamp(1611595466)
+    globaldb.add_single_historical_price(
+        HistoricalPrice(
+            from_asset=A_BTC,
+            to_asset=A_USD,
+            price=Price(FVal('30000')),
+            timestamp=query_timestamp,
+            source=HistoricalPriceOracle.CRYPTOCOMPARE,
+        ),
+    )
+
+    # In runtime the oracle order is synced from settings via set_oracles_order.
+    # Simulate that by switching active historical oracles to COINGECKO only.
+    price_historian.set_oracles_order([HistoricalPriceOracle.COINGECKO])
+
+    for oracle_instance in price_historian._oracle_instances:
+        oracle_instance.can_query_history.return_value = False
+
+    with pytest.raises(NoPriceForGivenTimestamp):
+        price_historian.query_historical_price(
+            from_asset=A_BTC,
+            to_asset=A_USD,
+            timestamp=query_timestamp,
+        )
+
+
 def test_get_historical_prices(globaldb: 'GlobalDBHandler') -> None:
     ts1 = Timestamp(1611595470)
     price1, price2, price3, price4 = Price(FVal(30000)), Price(FVal(35000)), Price(FVal(45000)), Price(FVal(77000))  # noqa: E501
@@ -340,6 +373,23 @@ def test_get_historical_prices(globaldb: 'GlobalDBHandler') -> None:
     assert single_price.price == batch_result[0].price == FVal(3)
     assert batch_result[0].source == HistoricalPriceOracle.MANUAL
 
+    # check that source filtering in batch lookup returns only the requested source
+    source_filtered_result = globaldb.get_historical_prices(
+        query_data=[(A_AAVE, A_USD, Timestamp(ts1))],
+        max_seconds_distance=DAY_IN_SECONDS,
+        source=HistoricalPriceOracle.COINGECKO,
+    )
+    assert source_filtered_result[0] is not None
+    assert source_filtered_result[0].price == ONE
+    assert source_filtered_result[0].source == HistoricalPriceOracle.COINGECKO
+
+    missing_source_result = globaldb.get_historical_prices(
+        query_data=[(A_AAVE, A_USD, Timestamp(ts1))],
+        max_seconds_distance=DAY_IN_SECONDS,
+        source=HistoricalPriceOracle.CRYPTOCOMPARE,
+    )
+    assert missing_source_result == [None]
+
 
 @pytest.mark.parametrize('should_mock_price_queries', [False])
 def test_oracle_instance_caches_price(price_historian):
@@ -369,8 +419,98 @@ def test_oracle_instance_caches_price(price_historian):
 
 def test_price_priority_order():
     """Test to ensure that we detect changes on the constant value returned"""
-    _, priority_value = _prioritize_manual_balances_query()
-    assert priority_value == HistoricalPriceOracle.MANUAL.serialize_for_db()
+    order_clause, order_bindings = _prioritize_manual_balances_query()
+    assert order_clause.startswith(' ORDER BY ABS(timestamp - ?),')
+    assert order_bindings == [HistoricalPriceOracle.MANUAL.serialize_for_db()]
+
+    # With explicit sources, closeness is still first and source order is tie-breaker
+    sources = (
+        HistoricalPriceOracle.CRYPTOCOMPARE,
+        HistoricalPriceOracle.COINGECKO,
+        HistoricalPriceOracle.DEFILLAMA,
+    )
+    order_clause, order_bindings = _prioritize_manual_balances_query(sources=sources)
+    assert order_clause.startswith(' ORDER BY ABS(timestamp - ?),')
+    assert order_bindings[0] == HistoricalPriceOracle.MANUAL.serialize_for_db()
+    assert HistoricalPriceOracle.CRYPTOCOMPARE.serialize_for_db() in order_bindings
+    assert HistoricalPriceOracle.COINGECKO.serialize_for_db() in order_bindings
+    assert HistoricalPriceOracle.DEFILLAMA.serialize_for_db() in order_bindings
+
+
+def test_price_priority_distance_then_source(globaldb: 'GlobalDBHandler') -> None:
+    """Prefer closest timestamp across oracles (cryptocompare over manual/defillama),
+    then use source priority as tie-breaker (manual over cryptocompare)."""
+    query_timestamp = Timestamp(100)
+    max_seconds_distance = 20
+    sources = (
+        HistoricalPriceOracle.MANUAL,
+        HistoricalPriceOracle.CRYPTOCOMPARE,
+        HistoricalPriceOracle.DEFILLAMA,
+    )
+
+    # Closest timestamp wins even if another source has higher source priority.
+    # Here cryptocompare is preferred over manual and defillama because it is closer.
+    globaldb.add_historical_prices([
+        HistoricalPrice(
+            from_asset=A_LINK,
+            to_asset=A_GBP,
+            source=HistoricalPriceOracle.MANUAL,
+            timestamp=Timestamp(90),
+            price=Price(ONE),
+        ),
+        HistoricalPrice(
+            from_asset=A_LINK,
+            to_asset=A_GBP,
+            source=HistoricalPriceOracle.CRYPTOCOMPARE,
+            timestamp=Timestamp(99),
+            price=Price(FVal('2')),
+        ),
+        HistoricalPrice(
+            from_asset=A_LINK,
+            to_asset=A_GBP,
+            source=HistoricalPriceOracle.DEFILLAMA,
+            timestamp=Timestamp(110),
+            price=Price(FVal('5')),
+        ),
+    ])
+    result = globaldb.get_historical_price(
+        from_asset=A_LINK,
+        to_asset=A_GBP,
+        timestamp=query_timestamp,
+        max_seconds_distance=max_seconds_distance,
+        sources=sources,
+    )
+    assert result is not None
+    assert result.source == HistoricalPriceOracle.CRYPTOCOMPARE
+    assert result.timestamp == Timestamp(99)
+
+    # If distance is tied, source priority picks manual first.
+    globaldb.add_historical_prices([
+        HistoricalPrice(
+            from_asset=A_AAVE,
+            to_asset=A_GBP,
+            source=HistoricalPriceOracle.MANUAL,
+            timestamp=Timestamp(101),
+            price=Price(FVal('3')),
+        ),
+        HistoricalPrice(
+            from_asset=A_AAVE,
+            to_asset=A_GBP,
+            source=HistoricalPriceOracle.CRYPTOCOMPARE,
+            timestamp=Timestamp(99),
+            price=Price(FVal('4')),
+        ),
+    ])
+    result = globaldb.get_historical_price(
+        from_asset=A_AAVE,
+        to_asset=A_GBP,
+        timestamp=query_timestamp,
+        max_seconds_distance=max_seconds_distance,
+        sources=sources,
+    )
+    assert result is not None
+    assert result.source == HistoricalPriceOracle.MANUAL
+    assert result.timestamp == Timestamp(101)
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey', 'api_key'])

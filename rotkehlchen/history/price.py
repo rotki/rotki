@@ -293,30 +293,31 @@ class PriceHistorian:
             if price is not None:
                 return price
 
-        # try to get the price from the cache
+        instance = PriceHistorian()
+        oracles, oracle_instances = instance._oracles, instance._oracle_instances
+        assert oracles is not None and oracle_instances is not None, 'PriceHistorian should never be called before setting the oracles'  # noqa: E501
+        # try to get the price from the cache using only enabled historical sources
         if (cached_price_entry := GlobalDBHandler.get_historical_price(
             from_asset=from_asset,
             to_asset=to_asset,
             timestamp=timestamp,
             max_seconds_distance=HOUR_IN_SECONDS,
+            sources=(
+                HistoricalPriceOracle.MANUAL,
+                HistoricalPriceOracle.XRATESCOM,
+                *oracles,
+            ),
         )) is not None:
             return cached_price_entry.price
 
         # else cryptocompare also has historical fiat to fiat data
-        instance = PriceHistorian()
-        oracles = instance._oracles
-        oracle_instances = instance._oracle_instances
-        assert oracles is not None and oracle_instances is not None, (
-            'PriceHistorian should never be called before setting the oracles'
-        )
         rate_limited = False
         for oracle, oracle_instance in zip(oracles, oracle_instances, strict=True):
-            can_query_history = oracle_instance.can_query_history(
+            if not oracle_instance.can_query_history(
                 from_asset=from_asset,
                 to_asset=to_asset,
                 timestamp=timestamp,
-            )
-            if can_query_history is False:
+            ):
                 continue
 
             try:
@@ -334,10 +335,7 @@ class PriceHistorian:
                 continue
             except RemoteError as e:
                 # Raise the flag if any of the services was rate limited
-                rate_limited = (
-                    rate_limited is True or
-                    e.error_code == HTTPStatus.TOO_MANY_REQUESTS
-                )
+                rate_limited = rate_limited or e.error_code == HTTPStatus.TOO_MANY_REQUESTS
                 continue
 
             log.debug(

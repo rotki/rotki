@@ -212,7 +212,7 @@ def test_cryptocompare_historical_data_price(
         to_asset=to_asset.resolve(),
         timestamp=timestamp,
         max_seconds_distance=3600,
-        source=HistoricalPriceOracle.CRYPTOCOMPARE,
+        sources=(HistoricalPriceOracle.CRYPTOCOMPARE,),
     )
     assert price_cache_entry.price == price
 

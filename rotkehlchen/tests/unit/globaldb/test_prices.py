@@ -77,7 +77,7 @@ def test_get_historical_price(globaldb, historical_price_test_data):  # pylint: 
         to_asset=A_EUR,
         timestamp=1511627623,
         max_seconds_distance=3600,
-        source=HistoricalPriceOracle.CRYPTOCOMPARE,
+        sources=(HistoricalPriceOracle.CRYPTOCOMPARE,),
     )
     assert expected_entry == price_entry
     price_entry = globaldb.get_historical_price(
@@ -85,9 +85,18 @@ def test_get_historical_price(globaldb, historical_price_test_data):  # pylint: 
         to_asset=A_EUR,
         timestamp=1511627623,
         max_seconds_distance=3600,
-        source=HistoricalPriceOracle.MANUAL,
+        sources=(HistoricalPriceOracle.MANUAL,),
     )
     assert price_entry is None
+
+    price_entry = globaldb.get_historical_price(
+        from_asset=A_ETH,
+        to_asset=A_EUR,
+        timestamp=1511627623,
+        max_seconds_distance=3600,
+        sources=(HistoricalPriceOracle.CRYPTOCOMPARE, HistoricalPriceOracle.MANUAL),
+    )
+    assert expected_entry == price_entry
 
     # nothing in a small distance
     price_entry = globaldb.get_historical_price(
