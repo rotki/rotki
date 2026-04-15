@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { BaseMessage } from '@/types/messages';
+import type { BaseMessage } from '@/modules/messaging/base-message';
 
 defineProps<{
   status: BaseMessage | null;

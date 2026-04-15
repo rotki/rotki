@@ -1,5 +1,5 @@
 import type { TransactionStatus } from '@/composables/api/history/events';
-import type { LocationLabel } from '@/types/location';
+import type { LocationLabel } from '@/modules/common/location';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useHistoryStore } from '@/store/history';
 import '@test/i18n';

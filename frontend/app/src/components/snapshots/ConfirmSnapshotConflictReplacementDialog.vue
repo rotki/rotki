@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { BalanceSnapshot } from '@/types/snapshots';
+import type { BalanceSnapshot } from '@/modules/dashboard/snapshots';
 import ConfirmDialog from '@/components/dialogs/ConfirmDialog.vue';
 import BalanceDisplay from '@/components/display/BalanceDisplay.vue';
 import AssetDetails from '@/components/helper/AssetDetails.vue';

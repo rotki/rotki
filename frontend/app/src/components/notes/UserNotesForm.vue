@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { UserNote } from '@/types/notes';
+import type { UserNote } from '@/modules/common/notes';
 import useVuelidate from '@vuelidate/core';
 import { helpers, required } from '@vuelidate/validators';
 import { useFormStateWatcher } from '@/composables/form';

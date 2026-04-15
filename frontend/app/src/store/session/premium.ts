@@ -1,4 +1,4 @@
-import type { PremiumCapabilities } from '@/types/session';
+import type { PremiumCapabilities } from '@/modules/session/types';
 
 export const usePremiumStore = defineStore('session/premium', () => {
   const premium = ref<boolean>(false);

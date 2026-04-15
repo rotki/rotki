@@ -1,22 +1,22 @@
+import type { ActionStatus } from '@/modules/common/action';
 import type { TaskMeta } from '@/modules/tasks/types';
-import type { ActionStatus } from '@/types/action';
 import { useManualBalancesApi } from '@/composables/api/balances/manual';
 import { useStatusUpdater } from '@/composables/status';
 import { useValueThreshold } from '@/composables/usd-value-threshold';
-import { useBalancesStore } from '@/modules/balances/use-balances-store';
-import { useNotifications } from '@/modules/notifications/use-notifications';
-import { TaskType } from '@/modules/tasks/task-type';
-import { isActionableFailure, useTaskHandler } from '@/modules/tasks/use-task-handler';
-import { ApiValidationError, type ValidationErrors } from '@/types/api/errors';
-import { BalanceType } from '@/types/balances';
+import { ApiValidationError, type ValidationErrors } from '@/modules/api/types/errors';
+import { BalanceType } from '@/modules/balances/types/balances';
 import {
   type ManualBalance,
   ManualBalances,
   type ManualBalanceWithValue,
   type RawManualBalance,
-} from '@/types/manual-balances';
-import { BalanceSource } from '@/types/settings/frontend-settings';
-import { Section, Status } from '@/types/status';
+} from '@/modules/balances/types/manual-balances';
+import { useBalancesStore } from '@/modules/balances/use-balances-store';
+import { Section, Status } from '@/modules/common/status';
+import { useNotifications } from '@/modules/notifications/use-notifications';
+import { BalanceSource } from '@/modules/settings/types/frontend-settings';
+import { TaskType } from '@/modules/tasks/task-type';
+import { isActionableFailure, useTaskHandler } from '@/modules/tasks/use-task-handler';
 import { getErrorMessage } from '@/utils/error-handling';
 import { logger } from '@/utils/logging';
 

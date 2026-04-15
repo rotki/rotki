@@ -12,9 +12,9 @@ import { useSupportedChains } from '@/composables/info/chains';
 import { useCacheClear } from '@/composables/session/cache-clear';
 import { useSessionPurge } from '@/composables/session/purge';
 import { SettingsHighlightIds } from '@/composables/settings/types';
+import { DECENTRALIZED_EXCHANGES, Module, PurgeableOnlyModule } from '@/modules/common/modules';
+import { Purgeable } from '@/modules/session/purge';
 import { useLocationStore } from '@/store/locations';
-import { DECENTRALIZED_EXCHANGES, Module, PurgeableOnlyModule } from '@/types/modules';
-import { Purgeable } from '@/types/session/purge';
 
 const purgeableOnlyModules = Object.values(PurgeableOnlyModule);
 const purgeableModules = [...Object.values(Module), ...purgeableOnlyModules];

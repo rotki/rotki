@@ -5,13 +5,13 @@ import LiquityStakingDetails from '@/components/staking/liquity/LiquityStakingDe
 import LiquityStakingPagePlaceholder from '@/components/staking/liquity/LiquityStakingPagePlaceholder.vue';
 import { usePremium } from '@/composables/premium';
 import { Module, useModuleEnabled } from '@/composables/session/modules';
+import { Section } from '@/modules/common/status';
 import { useLiquityDataFetching } from '@/modules/defi/liquity/use-liquity-data-fetching';
 import { usePriceTaskManager } from '@/modules/prices/use-price-task-manager';
 import { useLiquityStore } from '@/store/defi/liquity';
 import { useHistoricCachePriceStore } from '@/store/prices/historic';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { useStatusStore } from '@/store/status';
-import { Section } from '@/types/status';
 
 const modules = [Module.LIQUITY];
 const { enabled: moduleEnabled } = useModuleEnabled(modules[0]);

@@ -12,7 +12,7 @@ import { useDashboardTableConfig } from '@/composables/dashboard/use-dashboard-t
 import { AssetValueDisplay, FiatDisplay, ValueDisplay } from '@/modules/amount-display/components';
 import BalanceTopProtocols from '@/modules/balances/protocols/BalanceTopProtocols.vue';
 import AssetRowDetails from '@/modules/balances/protocols/components/AssetRowDetails.vue';
-import { DashboardTableType } from '@/types/settings/frontend-settings';
+import { DashboardTableType } from '@/modules/settings/types/frontend-settings';
 
 const { balances, loading = false, tableType, title } = defineProps<{
   title: string;

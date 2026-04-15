@@ -1,18 +1,18 @@
 <script setup lang="ts">
-import type { PullEventPayload } from '@/types/history/events';
+import type { PullEventPayload } from '@/modules/history/events/event-payloads';
 import { HistoryEventEntryType } from '@rotki/common';
 import PrioritizedList from '@/components/helper/PrioritizedList.vue';
 import SettingsItem from '@/components/settings/controls/SettingsItem.vue';
 import { useSupportedChains } from '@/composables/info/chains';
-import { useGeneralSettingsStore } from '@/store/settings/general';
-import { EvmIndexer } from '@/types/settings/evm-indexer';
-import { PrioritizedListData } from '@/types/settings/prioritized-list-data';
+import { EvmIndexer } from '@/modules/settings/types/evm-indexer';
+import { PrioritizedListData } from '@/modules/settings/types/prioritized-list-data';
 import {
   BLOCKSCOUT_PRIO_LIST_ITEM,
   ETHERSCAN_PRIO_LIST_ITEM,
   type PrioritizedListId,
   ROUTESCAN_PRIO_LIST_ITEM,
-} from '@/types/settings/prioritized-list-id';
+} from '@/modules/settings/types/prioritized-list-id';
+import { useGeneralSettingsStore } from '@/store/settings/general';
 
 const show = defineModel<boolean>('show', { required: true });
 

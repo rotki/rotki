@@ -12,7 +12,7 @@ import {
   type Nullable,
 } from '@rotki/common';
 import { useSupportedChains } from '@/composables/info/chains';
-import { type AssetsWithId, EVM_TOKEN, SOLANA_CHAIN, SOLANA_TOKEN } from '@/types/asset';
+import { type AssetsWithId, EVM_TOKEN, SOLANA_CHAIN, SOLANA_TOKEN } from '@/modules/assets/types';
 
 interface ParsedAssetKeyword {
   value: string;

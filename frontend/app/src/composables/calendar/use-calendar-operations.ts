@@ -1,6 +1,6 @@
 import type { Dayjs } from 'dayjs';
 import type { Ref } from 'vue';
-import type { CalendarEvent } from '@/types/history/calendar';
+import type { CalendarEvent } from '@/modules/history/calendar/types';
 import { omit } from 'es-toolkit';
 import { useCalendarApi } from '@/composables/history/calendar';
 import { getErrorMessage, useNotifications } from '@/modules/notifications/use-notifications';

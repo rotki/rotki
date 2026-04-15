@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import type { ValidationErrors } from '@/types/api/errors';
-import type { CustomAsset } from '@/types/asset';
+import type { ValidationErrors } from '@/modules/api/types/errors';
+import type { CustomAsset } from '@/modules/assets/types';
 import useVuelidate from '@vuelidate/core';
 import { helpers, required } from '@vuelidate/validators';
 import AssetIconForm from '@/components/asset-manager/AssetIconForm.vue';

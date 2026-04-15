@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import type { ValidationErrors } from '@/types/api/errors';
-import type { XpubPayload } from '@/types/blockchain/accounts';
-import type { BtcChains } from '@/types/blockchain/chains';
+import type { XpubPayload } from '@/modules/accounts/blockchain-accounts';
+import type { ValidationErrors } from '@/modules/api/types/errors';
+import type { BtcChains } from '@/modules/onchain/chains';
 import { Blockchain } from '@rotki/common';
 import useVuelidate from '@vuelidate/core';
 import { helpers, required } from '@vuelidate/validators';

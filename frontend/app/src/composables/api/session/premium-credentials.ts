@@ -1,6 +1,6 @@
 import { api } from '@/modules/api/rotki-api';
 import { VALID_WITH_PARAMS_SESSION_AND_EXTERNAL_SERVICE } from '@/modules/api/utils';
-import { type PremiumCapabilities, PremiumCapabilities as PremiumCapabilitiesSchema } from '@/types/session';
+import { type PremiumCapabilities, PremiumCapabilities as PremiumCapabilitiesSchema } from '@/modules/session/types';
 import { logger } from '@/utils/logging';
 
 interface UsePremiumCredentialsApiReturn {

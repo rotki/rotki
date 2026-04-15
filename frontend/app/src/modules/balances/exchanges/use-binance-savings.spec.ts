@@ -1,8 +1,8 @@
 import type { AssetBalance } from '@rotki/common';
 import type { MaybeRef } from 'vue';
 import type * as Vue from 'vue';
-import type { Collection } from '@/types/collection';
-import type { ExchangeSavingsCollection, ExchangeSavingsEvent, ExchangeSavingsRequestPayload } from '@/types/exchanges';
+import type { ExchangeSavingsCollection, ExchangeSavingsEvent, ExchangeSavingsRequestPayload } from '@/modules/balances/types/exchanges';
+import type { Collection } from '@/modules/common/collection';
 import { startPromise } from '@shared/utils';
 import flushPromises from 'flush-promises';
 import { afterEach, assertType, beforeAll, beforeEach, describe, expect, expectTypeOf, it, vi } from 'vitest';

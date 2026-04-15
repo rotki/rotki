@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { CexMapping } from '@/types/asset';
+import type { CexMapping } from '@/modules/assets/types';
 import { useTemplateRef } from 'vue';
 import ManageCexMappingForm from '@/components/asset-manager/cex-mapping/ManageCexMappingForm.vue';
 import BigDialog from '@/components/dialogs/BigDialog.vue';

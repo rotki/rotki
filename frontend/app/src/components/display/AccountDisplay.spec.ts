@@ -3,8 +3,8 @@ import { mount, type VueWrapper } from '@vue/test-utils';
 import { createPinia, type Pinia, setActivePinia } from 'pinia';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import AccountDisplay from '@/components/display/AccountDisplay.vue';
+import { PrivacyMode } from '@/modules/session/types';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
-import { PrivacyMode } from '@/types/session';
 
 vi.mock('@/composables/api/assets/icon', (): Record<string, unknown> => ({
   useAssetIconApi: (): { assetImageUrl: ReturnType<typeof vi.fn> } => ({

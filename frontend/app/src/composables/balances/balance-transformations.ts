@@ -1,10 +1,10 @@
-import type { Balances } from '@/types/blockchain/accounts';
+import type { Balances } from '@/modules/accounts/blockchain-accounts';
 import type {
   AssetProtocolBalances,
   BlockchainAssetBalances,
   EthBalance,
-} from '@/types/blockchain/balances';
-import type { ManualBalanceWithValue } from '@/types/manual-balances';
+} from '@/modules/balances/types/blockchain-balances';
+import type { ManualBalanceWithValue } from '@/modules/balances/types/manual-balances';
 import {
   type AssetBalanceWithPriceAndChains,
   type Balance,
@@ -14,7 +14,7 @@ import {
   Zero,
 } from '@rotki/common';
 import { omit } from 'es-toolkit';
-import { isEvmNativeToken } from '@/types/asset';
+import { isEvmNativeToken } from '@/modules/assets/types';
 import { sortDesc, zeroBalance } from '@/utils/bignumbers';
 import { balanceSum, perProtocolBalanceSum } from '@/utils/calculation';
 

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { UserNote } from '@/types/notes';
+import type { UserNote } from '@/modules/common/notes';
 import { useTemplateRef } from 'vue';
 import BigDialog from '@/components/dialogs/BigDialog.vue';
 import UserNotesForm from '@/components/notes/UserNotesForm.vue';

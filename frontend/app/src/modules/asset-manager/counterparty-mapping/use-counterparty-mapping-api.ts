@@ -1,5 +1,5 @@
 import type { MaybeRef } from 'vue';
-import type { Collection } from '@/types/collection';
+import type { Collection } from '@/modules/common/collection';
 import { omit } from 'es-toolkit';
 import { api } from '@/modules/api/rotki-api';
 import {

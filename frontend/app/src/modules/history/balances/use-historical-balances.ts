@@ -1,6 +1,6 @@
 import type { ComputedRef, Ref } from 'vue';
+import type { AddressData, BlockchainAccount } from '@/modules/accounts/blockchain-accounts';
 import type { TaskMeta } from '@/modules/tasks/types';
-import type { AddressData, BlockchainAccount } from '@/types/blockchain/accounts';
 import {
   type AssetBalanceWithPrice,
   type BigNumber,
@@ -11,6 +11,7 @@ import { useHistoricalBalancesApi } from '@/composables/api/balances/historical-
 import { summarizeAssetProtocols } from '@/composables/balances/asset-summary';
 import { useSupportedChains } from '@/composables/info/chains';
 import { displayDateFormatter } from '@/data/date-formatter';
+import { ApiValidationError, type ValidationErrors } from '@/modules/api/types/errors';
 import { useAssetsStore } from '@/modules/assets/use-assets-store';
 import { useCollectionInfo } from '@/modules/assets/use-collection-info';
 import { useHistoricalBalancesStore } from '@/modules/history/balances/store';
@@ -24,7 +25,6 @@ import { useHistoricPriceCache } from '@/modules/prices/use-historic-price-cache
 import { TaskType } from '@/modules/tasks/task-type';
 import { isActionableFailure, useTaskHandler } from '@/modules/tasks/use-task-handler';
 import { useGeneralSettingsStore } from '@/store/settings/general';
-import { ApiValidationError, type ValidationErrors } from '@/types/api/errors';
 import { getErrorMessage } from '@/utils/error-handling';
 
 interface UseHistoricalBalancesReturn {

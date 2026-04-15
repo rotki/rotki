@@ -1,3 +1,3 @@
-import type { AddEvmSwapEventPayload } from '@/types/history/events/schemas';
+import type { AddEvmSwapEventPayload } from '@/modules/history/events/schemas';
 
 export type EvmSwapFormData = Required<AddEvmSwapEventPayload>;

@@ -1,14 +1,14 @@
 import type { ActionResult } from '@rotki/common';
 import { isEmpty } from 'es-toolkit/compat';
 import { ofetch } from 'ofetch';
+import { IncompleteUpgradeError, SyncConflictError, SyncConflictPayload } from '@/modules/account/login';
 import { DEFAULT_TIMEOUT, TASKS_TIMEOUT } from '@/modules/api/constants';
 import { api } from '@/modules/api/rotki-api';
 import { camelCaseTransformer } from '@/modules/api/transformers';
+import { ApiValidationError } from '@/modules/api/types/errors';
+import { HTTPStatus } from '@/modules/api/types/http';
 import { VALID_TASK_STATUS } from '@/modules/api/utils';
 import { type PendingTask, PendingTaskSchema, TaskNotFoundError, type TaskResultResponse, type TaskStatus } from '@/modules/tasks/types';
-import { ApiValidationError } from '@/types/api/errors';
-import { HTTPStatus } from '@/types/api/http';
-import { IncompleteUpgradeError, SyncConflictError, SyncConflictPayload } from '@/types/login';
 
 export type TriggerTaskType = 'historical_balance_processing' | 'asset_movement_matching';
 

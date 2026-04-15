@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { ImportSourceType } from '@/types/upload-types';
+import type { ImportSourceType } from '@/modules/common/upload-types';
 import FadeTransition from '@/components/helper/FadeTransition.vue';
 import { size } from '@/utils/data';
 

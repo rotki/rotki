@@ -3,7 +3,7 @@ import ModuleSelector from '@/components/defi/wizard/ModuleSelector.vue';
 import SettingsPage from '@/components/settings/controls/SettingsPage.vue';
 import SettingCategory from '@/components/settings/SettingCategory.vue';
 import { SettingsHighlightIds } from '@/composables/settings/types';
-import { NoteLocation } from '@/types/notes';
+import { NoteLocation } from '@/modules/common/notes';
 
 definePage({
   meta: {

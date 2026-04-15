@@ -4,10 +4,10 @@ import { updateGeneralSettings } from '@test/utils/general-settings';
 import flushPromises from 'flush-promises';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { TRADE_LOCATION_BANKS } from '@/data/defaults';
+import { useCurrencies } from '@/modules/amount-display/currencies';
 import { useBalancesStore } from '@/modules/balances/use-balances-store';
 import { useBalancePricesStore } from '@/store/balances/prices';
 import { useSessionSettingsStore } from '@/store/settings/session';
-import { useCurrencies } from '@/types/currencies';
 import '@test/i18n';
 
 // Mock functions

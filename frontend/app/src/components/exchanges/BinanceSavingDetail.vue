@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { AssetBalance } from '@rotki/common';
 import type { DataTableColumn, DataTableSortData } from '@rotki/ui-library';
-import type { ExchangeSavingsEvent, ExchangeSavingsRequestPayload } from '@/types/exchanges';
+import type { ExchangeSavingsEvent, ExchangeSavingsRequestPayload } from '@/modules/balances/types/exchanges';
 import DateDisplay from '@/components/display/DateDisplay.vue';
 import AssetDetails from '@/components/helper/AssetDetails.vue';
 import RowAppend from '@/components/helper/RowAppend.vue';
@@ -9,9 +9,9 @@ import { useSectionStatus } from '@/composables/status';
 import { usePaginationFilters } from '@/composables/use-pagination-filter';
 import { AssetValueDisplay, FiatDisplay, ValueDisplay } from '@/modules/amount-display';
 import { useBinanceSavings } from '@/modules/balances/exchanges/use-binance-savings';
+import { Section } from '@/modules/common/status';
 import { TableId, useRememberTableSorting } from '@/modules/table/use-remember-table-sorting';
 import { useGeneralSettingsStore } from '@/store/settings/general';
-import { Section } from '@/types/status';
 
 const { exchange } = defineProps<{
   exchange: 'binance' | 'binanceus';

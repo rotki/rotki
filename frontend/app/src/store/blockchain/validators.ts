@@ -2,14 +2,14 @@ import type { MaybeRef } from 'vue';
 import type {
   EthereumValidator,
   EthereumValidatorRequestPayload,
-} from '@/types/blockchain/accounts';
-import type { BlockchainAssetBalances } from '@/types/blockchain/balances';
-import type { Collection } from '@/types/collection';
+} from '@/modules/accounts/blockchain-accounts';
+import type { BlockchainAssetBalances } from '@/modules/balances/types/blockchain-balances';
+import type { Collection } from '@/modules/common/collection';
 import { type Balance, type BigNumber, bigNumberify, Blockchain, Zero } from '@rotki/common';
 import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
 import { useBalancesStore } from '@/modules/balances/use-balances-store';
+import { Module } from '@/modules/common/modules';
 import { useGeneralSettingsStore } from '@/store/settings/general';
-import { Module } from '@/types/modules';
 import { isValidatorAccount } from '@/utils/blockchain/accounts/utils';
 import { sortAndFilterValidators } from '@/utils/blockchain/accounts/validator';
 

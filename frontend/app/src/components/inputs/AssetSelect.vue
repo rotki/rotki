@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { NftAsset } from '@/types/nfts';
+import type { NftAsset } from '@/modules/assets/nfts';
 import {
   assert,
   type AssetInfoWithId,

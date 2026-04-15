@@ -1,17 +1,17 @@
 <script lang="ts" setup>
+import type { AddSolanaSwapEventPayload, SolanaEvent, SolanaSwapEvent } from '@/modules/history/events/schemas';
 import type { GroupEventData, StandaloneEventData } from '@/modules/history/management/forms/form-types';
 import type { SolanaSwapFormData } from '@/modules/history/management/forms/solana-swap-event-form';
-import type { AddSolanaSwapEventPayload, SolanaEvent, SolanaSwapEvent } from '@/types/history/events/schemas';
 import { assert, HistoryEventEntryType } from '@rotki/common';
 import dayjs from 'dayjs';
 import AmountInput from '@/components/inputs/AmountInput.vue';
 import CounterpartyInput from '@/components/inputs/CounterpartyInput.vue';
+import { SOLANA_CHAIN } from '@/modules/assets/types';
 import EventDateLocation from '@/modules/history/management/forms/common/EventDateLocation.vue';
 import { toMessages, useEventFormBase } from '@/modules/history/management/forms/composables/use-event-form-base';
 import { useSwapEventForm } from '@/modules/history/management/forms/composables/use-swap-event-form';
 import SwapSubEventList from '@/modules/history/management/forms/swap/SwapSubEventList.vue';
 import { toSubEvent } from '@/modules/history/management/forms/utils';
-import { SOLANA_CHAIN } from '@/types/asset';
 import { useRefPropVModel } from '@/utils/model';
 
 const stateUpdated = defineModel<boolean>('stateUpdated', { default: false, required: false });

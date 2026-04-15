@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { RoundingMode } from '@/types/settings/frontend-settings';
+import type { RoundingMode } from '@/modules/settings/types/frontend-settings';
 import { BigNumber } from '@rotki/common';
 import ListItem from '@/components/common/ListItem.vue';
 

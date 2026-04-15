@@ -1,5 +1,5 @@
 import type { ContextColorsType, RuiIcons } from '@rotki/ui-library';
-import { HistoryEventState } from '@/types/history/events/schemas';
+import { HistoryEventState } from '@/modules/history/events/schemas';
 
 export interface EventStateConfig {
   icon: RuiIcons;

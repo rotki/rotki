@@ -1,6 +1,6 @@
 <script setup lang="ts">
+import type { ValidationErrors } from '@/modules/api/types/errors';
 import type { PremiumDevice } from '@/modules/premium/devices/composables/premium';
-import type { ValidationErrors } from '@/types/api/errors';
 import useVuelidate from '@vuelidate/core';
 import { helpers, not, required, sameAs } from '@vuelidate/validators';
 import DateDisplay from '@/components/display/DateDisplay.vue';

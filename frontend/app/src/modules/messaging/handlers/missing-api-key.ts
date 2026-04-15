@@ -4,11 +4,11 @@ import { type NotificationAction, NotificationCategory, Priority, Severity, toHu
 import { externalLinks } from '@shared/external-links';
 import { useInterop } from '@/composables/electron-interop';
 import { createNotificationHandler } from '@/modules/messaging/utils';
+import { SUPPRESSIBLE_SERVICES, SuppressibleMissingKeyService } from '@/modules/settings/types/user-settings';
 import { useSettingsOperations } from '@/modules/settings/use-settings-operations';
 import { Routes } from '@/router/routes';
 import { useConfirmStore } from '@/store/confirm';
 import { useGeneralSettingsStore } from '@/store/settings/general';
-import { SUPPRESSIBLE_SERVICES, SuppressibleMissingKeyService } from '@/types/user';
 import { getServiceRegisterUrl } from '@/utils/url';
 
 function isSuppressibleService(service: string): service is SuppressibleMissingKeyService {

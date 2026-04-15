@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { ValidationErrors } from '@/types/api/errors';
+import type { ValidationErrors } from '@/modules/api/types/errors';
 import useVuelidate from '@vuelidate/core';
 import { helpers, requiredIf } from '@vuelidate/validators';
 import { isEmpty } from 'es-toolkit/compat';

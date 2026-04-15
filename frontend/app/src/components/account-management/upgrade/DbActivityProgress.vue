@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { CurrentDbUpgradeProgress } from '@/types/login';
+import type { CurrentDbUpgradeProgress } from '@/modules/account/login';
 
 const {
   dataMigration = false,

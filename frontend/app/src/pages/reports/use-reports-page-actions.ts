@@ -1,6 +1,6 @@
 import type { DeepReadonly, Ref } from 'vue';
+import type { ProfitLossReportDebugPayload, ProfitLossReportPeriod } from '@/modules/reports/report-types';
 import type { TaskMeta } from '@/modules/tasks/types';
-import type { ProfitLossReportDebugPayload, ProfitLossReportPeriod } from '@/types/reports';
 import { Priority, Severity } from '@rotki/common';
 import { useReportsApi } from '@/composables/api/reports';
 import { useInterop } from '@/composables/electron-interop';
@@ -8,11 +8,11 @@ import { displayDateFormatter } from '@/data/date-formatter';
 import { getErrorMessage, useNotifications } from '@/modules/notifications/use-notifications';
 import { useReportGeneration } from '@/modules/reports/use-report-generation';
 import { useReportOperations } from '@/modules/reports/use-report-operations';
+import { PinnedNames } from '@/modules/session/types';
 import { TaskType } from '@/modules/tasks/task-type';
 import { useTaskHandler } from '@/modules/tasks/use-task-handler';
 import { useAreaVisibilityStore } from '@/store/session/visibility';
 import { useGeneralSettingsStore } from '@/store/settings/general';
-import { PinnedNames } from '@/types/session';
 import { downloadFileByTextContent } from '@/utils/download';
 
 interface UseReportsPageActionsOptions {

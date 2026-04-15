@@ -1,4 +1,4 @@
-import type { NonFungibleBalancesRequestPayload } from '@/types/nfbalances';
+import type { NonFungibleBalancesRequestPayload } from '@/modules/balances/types/nfbalances';
 import { server } from '@test/setup-files/server';
 import { http, HttpResponse } from 'msw';
 import { beforeEach, describe, expect, it, vi } from 'vitest';

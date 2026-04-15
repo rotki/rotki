@@ -2,7 +2,7 @@ import type { ActionResult } from '@rotki/common';
 import type { PremiumDevicesResponse } from '@/modules/premium/devices/composables/premium';
 import process from 'node:process';
 import { http, HttpResponse } from 'msw';
-import { type PremiumCapabilities, PremiumFeature } from '@/types/session';
+import { type PremiumCapabilities, PremiumFeature } from '@/modules/session/types';
 
 const backendUrl = process.env.VITE_BACKEND_URL;
 

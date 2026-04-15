@@ -1,8 +1,8 @@
 import type { ComputedRef, MaybeRefOrGetter, Ref } from 'vue';
+import type { Collection } from '@/modules/common/collection';
 import type { HistoryEventRequestPayload } from '@/modules/history/events/request-types';
+import type { HistoryEventEntry, HistoryEventRow } from '@/modules/history/events/schemas';
 import type { HistoryEventsTableEmitFn } from '@/modules/history/events/types';
-import type { Collection } from '@/types/collection';
-import type { HistoryEventEntry, HistoryEventRow } from '@/types/history/events/schemas';
 import { HistoryEventEntryType } from '@rotki/common';
 import { startPromise } from '@shared/utils';
 import { flatten } from 'es-toolkit';

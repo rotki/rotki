@@ -1,6 +1,6 @@
 <script setup lang="ts">
+import type { EthDepositEvent, NewEthDepositEventPayload } from '@/modules/history/events/schemas';
 import type { StandaloneEventData } from '@/modules/history/management/forms/form-types';
-import type { EthDepositEvent, NewEthDepositEventPayload } from '@/types/history/events/schemas';
 import { Blockchain, HistoryEventEntryType, Zero } from '@rotki/common';
 import useVuelidate from '@vuelidate/core';
 import dayjs from 'dayjs';

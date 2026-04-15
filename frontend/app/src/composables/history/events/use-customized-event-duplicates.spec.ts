@@ -1,6 +1,6 @@
 import type { CustomizedEventDuplicates, CustomizedEventDuplicatesFixResult } from '@/composables/api/history/events/customized-event-duplicates';
-import type { CollectionResponse } from '@/types/collection';
-import type { HistoryEventCollectionRow, HistoryEventEntryWithMeta } from '@/types/history/events/schemas';
+import type { CollectionResponse } from '@/modules/common/collection';
+import type { HistoryEventCollectionRow, HistoryEventEntryWithMeta } from '@/modules/history/events/schemas';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useCustomizedEventDuplicates } from '@/composables/history/events/use-customized-event-duplicates';
 

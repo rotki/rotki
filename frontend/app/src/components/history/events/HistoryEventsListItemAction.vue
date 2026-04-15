@@ -1,11 +1,11 @@
 <script setup lang="ts">
-import type { HistoryEventDeletePayload } from '@/modules/history/events/types';
-import type { HistoryEventEditData } from '@/modules/history/management/forms/form-types';
 import type {
   GroupEditableHistoryEvents,
   HistoryEvent,
   HistoryEventEntry,
-} from '@/types/history/events/schemas';
+} from '@/modules/history/events/schemas';
+import type { HistoryEventDeletePayload } from '@/modules/history/events/types';
+import type { HistoryEventEditData } from '@/modules/history/management/forms/form-types';
 import RowActions from '@/components/helper/RowActions.vue';
 import HistoryEventAction from '@/components/history/events/HistoryEventAction.vue';
 import {

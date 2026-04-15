@@ -6,7 +6,7 @@ import EvmChainsToIgnoreSettings from '@/components/settings/general/EvmChainsTo
 import TreatEthAsEth2Setting from '@/components/settings/general/TreatEthAsEth2Setting.vue';
 import SettingCategory from '@/components/settings/SettingCategory.vue';
 import { SettingsCategoryIds, SettingsHighlightIds } from '@/composables/settings/types';
-import { NoteLocation } from '@/types/notes';
+import { NoteLocation } from '@/modules/common/notes';
 
 definePage({
   meta: {

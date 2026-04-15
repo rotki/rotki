@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { LoginCredentials, SyncApproval } from '@/types/login';
+import type { LoginCredentials, SyncApproval } from '@/modules/account/login';
 import { isValidUrl } from '@rotki/common';
 import { externalLinks } from '@shared/external-links';
 import useVuelidate from '@vuelidate/core';

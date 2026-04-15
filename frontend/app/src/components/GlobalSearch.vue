@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import type { RuiIcons } from '@rotki/ui-library';
 import type { RouteLocationRaw } from 'vue-router';
-import type { Exchange } from '@/types/exchanges';
-import type { TradeLocationData } from '@/types/history/trade/location';
+import type { Exchange } from '@/modules/balances/types/exchanges';
+import type { TradeLocationData } from '@/modules/history/trade/location';
 import { type BigNumber, getTextToken } from '@rotki/common';
 import { startPromise } from '@shared/utils';
 import AppImage from '@/components/common/AppImage.vue';

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { SearchMatcher } from '@/types/filtering';
+import type { SearchMatcher } from '@/modules/table/filtering';
 
 defineProps<{
   matcher: SearchMatcher<any>;

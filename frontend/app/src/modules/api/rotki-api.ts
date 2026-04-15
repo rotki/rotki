@@ -7,10 +7,10 @@ import { type QueueState, RequestPriority, RequestQueue } from '@/modules/api/re
 import { transformRequestBody, transformRequestQuery } from '@/modules/api/request-transformers';
 import { createResponseParser, createStatusError, tryParseJson } from '@/modules/api/response-handlers';
 import { queryTransformer } from '@/modules/api/transformers';
+import { ApiValidationError } from '@/modules/api/types/errors';
+import { HTTPStatus } from '@/modules/api/types/http';
 import { VALID_STATUS_CODES } from '@/modules/api/utils';
 import { withRetry } from '@/modules/api/with-retry';
-import { ApiValidationError } from '@/types/api/errors';
-import { HTTPStatus } from '@/types/api/http';
 
 export class RotkiApi {
   private _serverUrl: string;

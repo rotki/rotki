@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { ProfitLossReportPeriod } from '@/types/reports';
+import type { ProfitLossReportPeriod } from '@/modules/reports/report-types';
 import RangeSelector from '@/components/helper/date/RangeSelector.vue';
 import CardTitle from '@/components/typography/CardTitle.vue';
 import { useExchangeApi } from '@/composables/api/balances/exchanges';

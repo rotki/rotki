@@ -1,13 +1,13 @@
 import type { RepullingTransactionResult } from '@/composables/history/events/tx';
+import type { Exchange } from '@/modules/balances/types/exchanges';
+import type { AddTransactionHashPayload, LocationAndTxRef } from '@/modules/history/events/event-payloads';
+import type { HistoryEventState } from '@/modules/history/events/schemas';
 import type {
   GroupEventData,
   HistoryEventEditData,
   StandaloneEventData,
 } from '@/modules/history/management/forms/form-types';
-import type { Exchange } from '@/types/exchanges';
-import type { AddTransactionHashPayload, LocationAndTxRef } from '@/types/history/events';
-import type { HistoryEventState } from '@/types/history/events/schemas';
-import type { AccountingRuleIdentifier } from '@/types/settings/accounting';
+import type { AccountingRuleIdentifier } from '@/modules/settings/types/accounting';
 
 export const DIALOG_TYPES = {
   ADD_MISSING_RULE: 'addMissingRule',

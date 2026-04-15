@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { ComponentExposed } from 'vue-component-type-helpers';
-import type { Tag } from '@/types/tags';
+import type { Tag } from '@/modules/tags/tags';
 import BigDialog from '@/components/dialogs/BigDialog.vue';
 import TagForm from '@/components/tags/TagForm.vue';
 import { useTagOperations } from '@/modules/session/use-tag-operations';

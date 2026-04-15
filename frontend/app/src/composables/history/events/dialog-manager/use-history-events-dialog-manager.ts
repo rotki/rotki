@@ -2,8 +2,8 @@ import type { Ref } from 'vue';
 import type { DialogState } from './types';
 import { set } from '@vueuse/core';
 import { DIALOG_TYPES, type DialogShowOptions } from '@/components/history/events/dialog-types';
+import { PinnedNames } from '@/modules/session/types';
 import { useAreaVisibilityStore } from '@/store/session/visibility';
-import { PinnedNames } from '@/types/session';
 
 interface UseHistoryEventsDialogManager {
   show: (options: DialogShowOptions) => Promise<void>;

@@ -1,7 +1,7 @@
 import type { ComputedRef, Ref } from 'vue';
 import type { UseHistoryEventsSelectionModeReturn } from './use-selection-mode';
-import type { HistoryEventEntry, HistoryEventRow } from '@/types/history/events/schemas';
-import type { AccountingRuleEntry } from '@/types/settings/accounting';
+import type { HistoryEventEntry, HistoryEventRow } from '@/modules/history/events/schemas';
+import type { AccountingRuleEntry } from '@/modules/settings/types/accounting';
 import { get, set } from '@vueuse/shared';
 import { useIgnore } from '@/composables/history';
 import { useConfirmStore } from '@/store/confirm';

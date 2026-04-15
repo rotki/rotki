@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { AddressData, BlockchainAccount } from '@/types/blockchain/accounts';
+import type { AddressData, BlockchainAccount } from '@/modules/accounts/blockchain-accounts';
 import dayjs from 'dayjs';
 import CalendarDateNavigator from '@/components/calendar/CalendarDateNavigator.vue';
 import CalendarFormDialog from '@/components/calendar/CalendarFormDialog.vue';

@@ -1,5 +1,5 @@
 import type { useAssetIconApi } from '@/composables/api/assets/icon';
-import type { Suggestion } from '@/types/filtering';
+import type { Suggestion } from '@/modules/table/filtering';
 import { toSentenceCase } from '@rotki/common';
 import { createCustomPinia } from '@test/utils/create-pinia';
 import { mount, type VueWrapper } from '@vue/test-utils';

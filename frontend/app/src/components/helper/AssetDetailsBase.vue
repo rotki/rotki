@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { NftAsset } from '@/types/nfts';
+import type { NftAsset } from '@/modules/assets/nfts';
 import { omit } from 'es-toolkit';
 import { useTemplateRef } from 'vue';
 import AppImage from '@/components/common/AppImage.vue';

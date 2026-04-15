@@ -2,7 +2,7 @@
 import type { BigNumber } from '@rotki/common';
 import type { DataTableColumn, DataTableSortColumn } from '@rotki/ui-library';
 import type { RouteLocationRaw } from 'vue-router';
-import type { Report } from '@/types/reports';
+import type { Report } from '@/modules/reports/report-types';
 import DateDisplay from '@/components/display/DateDisplay.vue';
 import UpgradeRow from '@/components/history/UpgradeRow.vue';
 import ProfitLossOverview from '@/components/profitloss/ProfitLossOverview.vue';

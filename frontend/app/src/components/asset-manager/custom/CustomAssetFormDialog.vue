@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { CustomAsset } from '@/types/asset';
+import type { CustomAsset } from '@/modules/assets/types';
 import { omit } from 'es-toolkit';
 import { useTemplateRef } from 'vue';
 import CustomAssetForm from '@/components/asset-manager/custom/CustomAssetForm.vue';

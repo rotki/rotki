@@ -1,4 +1,4 @@
-import type { HistoryEventEntry } from '@/types/history/events/schemas';
+import type { HistoryEventEntry } from '@/modules/history/events/schemas';
 import {
   isGroupEditableHistoryEvent,
   isSwapTypeEvent,

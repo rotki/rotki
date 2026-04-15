@@ -1,7 +1,7 @@
 import type { SupportedAsset } from '@rotki/common';
 import type { ComputedRef, DeepReadonly, Ref } from 'vue';
-import type { ActionStatus } from '@/types/action';
-import type { IgnoredAssetsHandlingType } from '@/types/asset';
+import type { IgnoredAssetsHandlingType } from '@/modules/assets/types';
+import type { ActionStatus } from '@/modules/common/action';
 import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
 import { useSpamAsset } from '@/composables/assets/spam';
 import { useAssetsStore } from '@/modules/assets/use-assets-store';

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { DashboardMessage } from '@/types/dynamic-messages';
+import type { DashboardMessage } from '@/modules/messaging/dynamic-messages';
 import ExternalLink from '@/components/helper/ExternalLink.vue';
 import FadeTransition from '@/components/helper/FadeTransition.vue';
 import { useRandomStepper } from '@/composables/random-stepper';

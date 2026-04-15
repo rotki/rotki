@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { Tag } from '@/types/tags';
+import type { Tag } from '@/modules/tags/tags';
 
 defineOptions({
   inheritAttrs: false,

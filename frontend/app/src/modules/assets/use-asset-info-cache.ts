@@ -1,5 +1,5 @@
 import type { ShallowRef } from 'vue';
-import type { AssetMap } from '@/types/asset';
+import type { AssetMap } from '@/modules/assets/types';
 import { type AssetCollection, type AssetInfo, transformCase } from '@rotki/common';
 import { useAssetInfoApi } from '@/composables/api/assets/info';
 import { createItemCache } from '@/composables/item-cache';

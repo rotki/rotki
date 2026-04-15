@@ -1,4 +1,4 @@
-import type { SearchMatcher } from '@/types/filtering';
+import type { SearchMatcher } from '@/modules/table/filtering';
 import { mount, type VueWrapper } from '@vue/test-utils';
 import { afterEach, describe, expect, it } from 'vitest';
 import FilterEntry from '@/components/table-filter/FilterEntry.vue';

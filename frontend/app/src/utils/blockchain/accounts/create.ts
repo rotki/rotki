@@ -7,7 +7,7 @@ import type {
   BlockchainAccount,
   ValidatorData,
   XpubData,
-} from '@/types/blockchain/accounts';
+} from '@/modules/accounts/blockchain-accounts';
 
 export function createXpubAccount(data: BitcoinXpubAccount, extra: AccountExtraParams): BlockchainAccount<XpubData> {
   return {

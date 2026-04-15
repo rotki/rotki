@@ -1,12 +1,12 @@
 <script setup lang="ts">
-import type { ValidationErrors } from '@/types/api/errors';
+import type { ValidationErrors } from '@/modules/api/types/errors';
 import { isValidSolanaAddress } from '@rotki/common';
 import useVuelidate from '@vuelidate/core';
 import { required } from '@vuelidate/validators';
 import AmountInput from '@/components/inputs/AmountInput.vue';
 import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
 import { useFormStateWatcher } from '@/composables/form';
-import { solanaTokenKindsData } from '@/types/blockchain/chains';
+import { solanaTokenKindsData } from '@/modules/onchain/chains';
 import { useRefPropVModel } from '@/utils/model';
 import { toMessages } from '@/utils/validation';
 

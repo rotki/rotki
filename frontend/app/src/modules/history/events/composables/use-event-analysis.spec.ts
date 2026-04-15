@@ -1,6 +1,6 @@
 import { bigNumberify, HistoryEventEntryType } from '@rotki/common';
 import { beforeEach, describe, expect, it } from 'vitest';
-import { HistoryEventAccountingRuleStatus, type HistoryEventEntry, type HistoryEventRow } from '@/types/history/events/schemas';
+import { HistoryEventAccountingRuleStatus, type HistoryEventEntry, type HistoryEventRow } from '@/modules/history/events/schemas';
 import { analyzeSelectedEvents } from './use-event-analysis';
 
 describe('use-event-analysis', () => {

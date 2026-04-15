@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { HistoricalPriceFormPayload } from '@/types/prices';
+import type { HistoricalPriceFormPayload } from '@/modules/prices/price-types';
 import { useTemplateRef } from 'vue';
 import BigDialog from '@/components/dialogs/BigDialog.vue';
 import HistoricPriceForm from '@/components/price-manager/historic/HistoricPriceForm.vue';

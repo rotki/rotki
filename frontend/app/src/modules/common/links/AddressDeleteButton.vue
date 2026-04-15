@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import type { AddressBookEntry, AddressBookLocation } from '@/types/eth-names';
+import type { AddressBookEntry, AddressBookLocation } from '@/modules/address-names/eth-names';
 import { useAddressBookDeletion } from '@/composables/address-book/use-address-book-deletion';
-import { AddressNamePriority } from '@/types/settings/address-name-priorities';
+import { AddressNamePriority } from '@/modules/settings/types/address-name-priorities';
 
 interface AddressDeleteButtonProps {
   text: string;

@@ -1,6 +1,6 @@
 <script setup lang="ts">
+import type { AssetMovementEvent, NewAssetMovementEventPayload } from '@/modules/history/events/schemas';
 import type { GroupEventData } from '@/modules/history/management/forms/form-types';
-import type { AssetMovementEvent, NewAssetMovementEventPayload } from '@/types/history/events/schemas';
 import { HistoryEventEntryType, Zero } from '@rotki/common';
 import { generateUUID } from '@shared/utils';
 import { requiredIf } from '@vuelidate/validators';

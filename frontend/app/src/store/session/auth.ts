@@ -1,5 +1,5 @@
+import type { IncompleteUpgradeConflict, SyncConflict } from '@/modules/account/login';
 import type { DataMigrationStatusData, DbUpgradeStatusData } from '@/modules/messaging/types';
-import type { IncompleteUpgradeConflict, SyncConflict } from '@/types/login';
 
 export const useSessionAuthStore = defineStore('session/auth', () => {
   const logged = ref<boolean>(false);

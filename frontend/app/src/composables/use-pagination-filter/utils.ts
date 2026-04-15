@@ -1,7 +1,7 @@
 import type { DataTableSortData, TablePaginationData } from '@rotki/ui-library';
 import type { SingleColumnSorting, Sorting, TableRowKey } from '@/composables/use-pagination-filter/types';
 import { transformCase } from '@rotki/common';
-import { HistoryPaginationSchema, HistorySortOrderSchema, type LocationQuery } from '@/types/route';
+import { HistoryPaginationSchema, HistorySortOrderSchema, type LocationQuery } from '@/modules/table/route';
 
 interface ApiSorting {
   orderByAttributes: string[];

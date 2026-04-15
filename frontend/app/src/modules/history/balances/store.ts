@@ -1,6 +1,6 @@
+import type { AddressData, BlockchainAccount } from '@/modules/accounts/blockchain-accounts';
 import type { HistoricalBalanceSource } from '@/modules/history/balances/types';
 import type { HistoricalBalanceProcessingData, NegativeBalanceDetectedData } from '@/modules/messaging/types/status-types';
-import type { AddressData, BlockchainAccount } from '@/types/blockchain/accounts';
 
 export interface SavedHistoricalBalancesFilters {
   timestamp: number;

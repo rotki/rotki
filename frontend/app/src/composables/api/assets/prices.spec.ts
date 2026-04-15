@@ -1,4 +1,4 @@
-import type { HistoricalPriceDeletePayload, HistoricalPriceFormPayload, ManualPriceFormPayload, ManualPricePayload } from '@/types/prices';
+import type { HistoricalPriceDeletePayload, HistoricalPriceFormPayload, ManualPriceFormPayload, ManualPricePayload } from '@/modules/prices/price-types';
 import { BigNumber } from '@rotki/common';
 import { server } from '@test/setup-files/server';
 import { type DefaultBodyType, http, HttpResponse } from 'msw';

@@ -12,9 +12,9 @@ import BlockchainBalanceStalenessIndicator from '@/components/helper/BlockchainB
 import TablePageLayout from '@/components/layout/TablePageLayout.vue';
 import { useAccountCategoryHelper } from '@/composables/accounts/use-account-category-helper';
 import { Module, useModuleEnabled } from '@/composables/session/modules';
+import { NoteLocation } from '@/modules/common/notes';
 import { useEthStakingAccess } from '@/modules/staking/eth/composables/use-eth-staking-access';
 import { useAccountImportProgressStore } from '@/store/use-account-import-progress-store';
-import { NoteLocation } from '@/types/notes';
 
 definePage({
   meta: {

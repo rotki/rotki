@@ -1,6 +1,6 @@
 <script setup lang="ts">
+import { isSpammableAssetType } from '@/modules/assets/types';
 import { useAssetsStore } from '@/modules/assets/use-assets-store';
-import { isSpammableAssetType } from '@/types/asset';
 
 interface AssetForIgnoreSwitch {
   identifier: string;

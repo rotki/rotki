@@ -1,5 +1,5 @@
 import type { MaybeRef } from 'vue';
-import type { AddressBookEntry, AddressBookLocation } from '@/types/eth-names';
+import type { AddressBookEntry, AddressBookLocation } from '@/modules/address-names/eth-names';
 import { useAddressBookOperations } from '@/modules/address-names/use-address-book-operations';
 import { useNotifications } from '@/modules/notifications/use-notifications';
 import { useConfirmStore } from '@/store/confirm';

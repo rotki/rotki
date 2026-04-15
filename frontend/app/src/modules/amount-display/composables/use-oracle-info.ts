@@ -1,7 +1,7 @@
 import type { ComputedRef, MaybeRefOrGetter } from 'vue';
 import { usePriceUtils } from '@/modules/prices/use-price-utils';
+import { PriceOracle } from '@/modules/settings/types/price-oracle';
 import { useGeneralSettingsStore } from '@/store/settings/general';
-import { PriceOracle } from '@/types/settings/price-oracle';
 
 export interface OracleInfoOptions {
   priceAsset: MaybeRefOrGetter<string>;

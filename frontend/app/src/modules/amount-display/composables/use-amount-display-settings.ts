@@ -1,6 +1,6 @@
 import type { ComputedRef, Ref } from 'vue';
-import type { Currency } from '@/types/currencies';
-import type { RoundingMode } from '@/types/settings/frontend-settings';
+import type { Currency } from '@/modules/amount-display/currencies';
+import type { RoundingMode } from '@/modules/settings/types/frontend-settings';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 

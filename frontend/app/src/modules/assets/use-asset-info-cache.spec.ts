@@ -1,4 +1,4 @@
-import type { AssetMap } from '@/types/asset';
+import type { AssetMap } from '@/modules/assets/types';
 import flushPromises from 'flush-promises';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useAssetInfoApi } from '@/composables/api/assets/info';

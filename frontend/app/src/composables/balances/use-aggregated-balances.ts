@@ -1,5 +1,5 @@
-import type { AssetProtocolBalances, EthBalance } from '@/types/blockchain/balances';
-import type { AssetPriceInfo } from '@/types/prices';
+import type { AssetProtocolBalances, EthBalance } from '@/modules/balances/types/blockchain-balances';
+import type { AssetPriceInfo } from '@/modules/prices/price-types';
 import { type AssetBalanceWithPrice, type AssetBalanceWithPriceAndChains, type BigNumber, type ExclusionSource, NoPrice, Zero } from '@rotki/common';
 import { storeToRefs } from 'pinia';
 import { computed, type ComputedRef, type MaybeRefOrGetter } from 'vue';
@@ -13,8 +13,8 @@ import { useCollectionInfo } from '@/modules/assets/use-collection-info';
 import { useExchangeData } from '@/modules/balances/exchanges/use-exchange-data';
 import { useManualBalanceData } from '@/modules/balances/manual/use-manual-balance-data';
 import { useBalancesStore } from '@/modules/balances/use-balances-store';
+import { samePriceAssets } from '@/modules/onchain/blockchain-types';
 import { usePriceUtils } from '@/modules/prices/use-price-utils';
-import { samePriceAssets } from '@/types/blockchain';
 import { bigNumberSum } from '@/utils/calculation';
 
 interface UseAggregatedBalancesReturn {

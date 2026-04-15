@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { BlockchainTotal } from '@/types/blockchain';
+import type { BlockchainTotal } from '@/modules/onchain/blockchain-types';
 import { Blockchain, toSentenceCase } from '@rotki/common';
 import Eth2ValidatorLimitTooltip from '@/components/accounts/blockchain/eth2/Eth2ValidatorLimitTooltip.vue';
 import ListItem from '@/components/common/ListItem.vue';

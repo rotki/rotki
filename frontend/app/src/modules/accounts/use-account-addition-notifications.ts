@@ -1,5 +1,5 @@
-import type { EvmAccountsResult } from '@/types/api/accounts';
-import type { AccountPayload } from '@/types/blockchain/accounts';
+import type { AccountPayload } from '@/modules/accounts/blockchain-accounts';
+import type { EvmAccountsResult } from '@/modules/api/types/accounts';
 import { useSupportedChains } from '@/composables/info/chains';
 import { useNotifications } from '@/modules/notifications/use-notifications';
 

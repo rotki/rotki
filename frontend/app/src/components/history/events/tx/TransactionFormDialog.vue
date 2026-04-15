@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import type { AddTransactionHashPayload, LocationAndTxRef } from '@/types/history/events';
+import type { AddTransactionHashPayload, LocationAndTxRef } from '@/modules/history/events/event-payloads';
 import { useTemplateRef } from 'vue';
 import BigDialog from '@/components/dialogs/BigDialog.vue';
 import TransactionForm from '@/components/history/events/tx/TransactionForm.vue';

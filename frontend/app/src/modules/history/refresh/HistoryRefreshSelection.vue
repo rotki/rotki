@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import type { ComponentExposed } from 'vue-component-type-helpers';
+import type { Exchange } from '@/modules/balances/types/exchanges';
+import type { ChainAddress } from '@/modules/history/events/event-payloads';
+import type { OnlineHistoryEventsQueryType } from '@/modules/history/events/schemas';
 import type { HistoryRefreshEventData } from '@/modules/history/refresh/types';
-import type { Exchange } from '@/types/exchanges';
-import type { ChainAddress } from '@/types/history/events';
-import type { OnlineHistoryEventsQueryType } from '@/types/history/events/schemas';
 import HistoryRefreshChains from '@/modules/history/refresh/HistoryRefreshChains.vue';
 import HistoryRefreshExchanges from '@/modules/history/refresh/HistoryRefreshExchanges.vue';
 import HistoryRefreshProtocolEvents from '@/modules/history/refresh/HistoryRefreshProtocolEvents.vue';

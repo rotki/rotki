@@ -1,6 +1,6 @@
-import type { AssetMap } from '@/types/asset';
-import type { AssetMovementEvent } from '@/types/history/events/schemas';
-import type { TradeLocationData } from '@/types/history/trade/location';
+import type { AssetMap } from '@/modules/assets/types';
+import type { AssetMovementEvent } from '@/modules/history/events/schemas';
+import type { TradeLocationData } from '@/modules/history/trade/location';
 import { bigNumberify, HistoryEventEntryType, One } from '@rotki/common';
 import { type ComponentMountingOptions, mount, type VueWrapper } from '@vue/test-utils';
 import dayjs from 'dayjs';

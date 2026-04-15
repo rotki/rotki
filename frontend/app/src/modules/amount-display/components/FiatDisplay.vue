@@ -26,7 +26,7 @@ import type { BigNumber } from '@rotki/common';
 import type { SymbolDisplay, Timestamp } from '@/modules/amount-display/types';
 import { createReusableTemplate } from '@vueuse/core';
 import { useAmountDisplaySettings, useFiatConversion, useOracleInfo, useScrambledValue } from '@/modules/amount-display';
-import { type Currency, useCurrencies } from '@/types/currencies';
+import { type Currency, useCurrencies } from '@/modules/amount-display/currencies';
 import AmountDisplayBase from './AmountDisplayBase.vue';
 import ManualPriceIndicator from './ManualPriceIndicator.vue';
 import OracleBadge from './OracleBadge.vue';

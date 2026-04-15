@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { LocationDataSnapshotPayload } from '@/types/snapshots';
+import type { LocationDataSnapshotPayload } from '@/modules/dashboard/snapshots';
 import useVuelidate from '@vuelidate/core';
 import { helpers, required } from '@vuelidate/validators';
 import LocationSelector from '@/components/helper/LocationSelector.vue';

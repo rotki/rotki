@@ -1,5 +1,5 @@
-import type { BlockchainAccount, BlockchainAccountWithBalance } from '@/types/blockchain/accounts';
-import type { BlockchainAssetBalances } from '@/types/blockchain/balances';
+import type { BlockchainAccount, BlockchainAccountWithBalance } from '@/modules/accounts/blockchain-accounts';
+import type { BlockchainAssetBalances } from '@/modules/balances/types/blockchain-balances';
 import { getAccountBalance } from '@/utils/blockchain/accounts/index';
 import { getAccountAddress } from '@/utils/blockchain/accounts/utils';
 import { deduplicateTags } from '@/utils/tags';

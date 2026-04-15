@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { AddressData, BlockchainAccount } from '@/types/blockchain/accounts';
+import type { AddressData, BlockchainAccount } from '@/modules/accounts/blockchain-accounts';
 import { Blockchain, type Eth2ValidatorEntry, type EthStakingFilter } from '@rotki/common';
 import BlockchainAccountSelector from '@/components/helper/BlockchainAccountSelector.vue';
 import ValidatorFilterInput from '@/components/helper/filter/ValidatorFilterInput.vue';

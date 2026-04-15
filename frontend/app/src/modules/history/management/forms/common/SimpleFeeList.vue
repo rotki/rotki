@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { FeeEntry } from '@/types/history/events/schemas';
+import type { FeeEntry } from '@/modules/history/events/schemas';
 import SimpleFeeEntry from '@/modules/history/management/forms/common/SimpleFeeEntry.vue';
 
 const modelValue = defineModel<FeeEntry[]>({ required: true });

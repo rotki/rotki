@@ -1,8 +1,8 @@
 import type { ComposerTranslation } from 'vue-i18n';
-import type { FrontendSettings } from '@/types/settings/frontend-settings';
-import type { GeneralSettings } from '@/types/user';
+import type { FrontendSettings } from '@/modules/settings/types/frontend-settings';
+import type { GeneralSettings } from '@/modules/settings/types/user-settings';
 import { Blockchain } from '@rotki/common';
-import { PriceOracle } from '@/types/settings/price-oracle';
+import { PriceOracle } from '@/modules/settings/types/price-oracle';
 
 interface BaseSuggestion {
   description: string;

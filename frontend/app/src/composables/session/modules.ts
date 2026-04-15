@@ -1,6 +1,6 @@
 import type { MaybeRefOrGetter, Ref } from 'vue';
+import { Module } from '@/modules/common/modules';
 import { useGeneralSettingsStore } from '@/store/settings/general';
-import { Module } from '@/types/modules';
 
 export { Module };
 

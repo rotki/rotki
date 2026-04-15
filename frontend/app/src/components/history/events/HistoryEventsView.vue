@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { Account, Blockchain, HistoryEventEntryType } from '@rotki/common';
-import type { PullLocationTransactionPayload } from '@/types/history/events';
-import type { HistoryEventEntry, HistoryEventRow } from '@/types/history/events/schemas';
+import type { PullLocationTransactionPayload } from '@/modules/history/events/event-payloads';
+import type { HistoryEventEntry, HistoryEventRow } from '@/modules/history/events/schemas';
 import RefreshButton from '@/components/helper/RefreshButton.vue';
 import { DIALOG_TYPES, type DialogShowOptions, type HistoryEventsToggles } from '@/components/history/events/dialog-types';
 import HistoryEventsAlerts from '@/components/history/events/HistoryEventsAlerts.vue';

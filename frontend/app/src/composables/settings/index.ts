@@ -1,9 +1,9 @@
 import type { Ref } from 'vue';
-import type { ActionStatus } from '@/types/action';
-import type { BaseMessage } from '@/types/messages';
-import type { SessionSettings } from '@/types/session';
-import type { FrontendSettingsPayload } from '@/types/settings/frontend-settings';
-import type { SettingsUpdate } from '@/types/user';
+import type { ActionStatus } from '@/modules/common/action';
+import type { BaseMessage } from '@/modules/messaging/base-message';
+import type { SessionSettings } from '@/modules/session/types';
+import type { FrontendSettingsPayload } from '@/modules/settings/types/frontend-settings';
+import type { SettingsUpdate } from '@/modules/settings/types/user-settings';
 import { promiseTimeout } from '@vueuse/core';
 import { useSettingsOperations } from '@/modules/settings/use-settings-operations';
 import { useSessionSettingsStore } from '@/store/settings/session';

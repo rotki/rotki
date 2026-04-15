@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { Filters, Matcher } from '@/composables/filters/events';
 import type { HistoryEventRequestPayload } from '@/modules/history/events/request-types';
-import type { HistoryEventRow } from '@/types/history/events/schemas';
+import type { HistoryEventRow } from '@/modules/history/events/schemas';
 import { useHistoryEvents } from '@/composables/history/events';
 import { usePaginationFilters } from '@/composables/use-pagination-filter';
 import HistoryEventsVirtualTable from '@/modules/history/events/components/HistoryEventsVirtualTable.vue';

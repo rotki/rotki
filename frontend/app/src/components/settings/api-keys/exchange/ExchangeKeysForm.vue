@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { ValidationErrors } from '@/types/api/errors';
+import type { ValidationErrors } from '@/modules/api/types/errors';
 import { toSentenceCase } from '@rotki/common';
 import { RuiRevealableTextField, RuiTextField } from '@rotki/ui-library';
 import useVuelidate from '@vuelidate/core';
@@ -10,9 +10,9 @@ import ExchangeKeysFormStructure from '@/components/settings/api-keys/exchange/E
 import OkxRegionSelectorItem from '@/components/settings/api-keys/exchange/OkxRegionSelectorItem.vue';
 import { useFormStateWatcher } from '@/composables/form';
 import { useLocations } from '@/composables/locations';
+import { type ExchangeFormData, KrakenAccountType, OkxLocation } from '@/modules/balances/types/exchanges';
 import { useLocationStore } from '@/store/locations';
 import { useSessionSettingsStore } from '@/store/settings/session';
-import { type ExchangeFormData, KrakenAccountType, OkxLocation } from '@/types/exchanges';
 import { refOptional, useRefPropVModel } from '@/utils/model';
 import { toMessages } from '@/utils/validation';
 

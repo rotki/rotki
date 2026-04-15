@@ -1,5 +1,5 @@
 import type { Ref } from 'vue';
-import type { HistoricalPrice, HistoricalPriceFormPayload, ManualPricePayload } from '@/types/prices';
+import type { HistoricalPrice, HistoricalPriceFormPayload, ManualPricePayload } from '@/modules/prices/price-types';
 import { startPromise } from '@shared/utils';
 import { useAssetPricesApi } from '@/composables/api/assets/prices';
 import { useNotifications } from '@/modules/notifications/use-notifications';

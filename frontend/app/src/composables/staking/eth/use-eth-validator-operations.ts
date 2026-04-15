@@ -1,14 +1,14 @@
 import type { ComputedRef } from 'vue';
 import type { StakingValidatorManage } from '@/composables/accounts/blockchain/use-account-manage';
-import type { EthereumValidator } from '@/types/blockchain/accounts';
+import type { EthereumValidator } from '@/modules/accounts/blockchain-accounts';
 import { Blockchain } from '@rotki/common';
 import { useAccountDelete } from '@/composables/accounts/blockchain/use-account-delete';
 import { useSectionStatus } from '@/composables/status';
 import { useEthStaking } from '@/modules/accounts/use-eth-staking';
 import { useBlockchainBalances } from '@/modules/balances/use-blockchain-balances';
+import { Section } from '@/modules/common/status';
 import { TaskType } from '@/modules/tasks/task-type';
 import { useTaskStore } from '@/modules/tasks/use-task-store';
-import { Section } from '@/types/status';
 
 interface UseEthValidatorOperationsReturn {
   accountOperation: ComputedRef<boolean>;

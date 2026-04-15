@@ -1,5 +1,5 @@
-import type { EvmChainInfo } from '@/types/api/chains';
-import type { ExternalServiceKeys } from '@/types/user';
+import type { EvmChainInfo } from '@/modules/api/types/chains';
+import type { ExternalServiceKeys } from '@/modules/external-services/types';
 import { Blockchain } from '@rotki/common';
 import { createCustomPinia } from '@test/utils/create-pinia';
 import { mount, type VueWrapper } from '@vue/test-utils';

@@ -8,14 +8,14 @@ import {
 import { useLiquityApi } from '@/composables/api/defi/liquity';
 import { usePremium } from '@/composables/premium';
 import { useStatusUpdater } from '@/composables/status';
+import { Module } from '@/modules/common/modules';
+import { Section, Status } from '@/modules/common/status';
 import { useNotifications } from '@/modules/notifications/use-notifications';
 import { TaskType } from '@/modules/tasks/task-type';
 import { isActionableFailure, useTaskHandler } from '@/modules/tasks/use-task-handler';
 import { useTaskStore } from '@/modules/tasks/use-task-store';
 import { useLiquityStore } from '@/store/defi/liquity';
 import { useGeneralSettingsStore } from '@/store/settings/general';
-import { Module } from '@/types/modules';
-import { Section, Status } from '@/types/status';
 import { logger } from '@/utils/logging';
 
 interface UseLiquityDataFetchingReturn {

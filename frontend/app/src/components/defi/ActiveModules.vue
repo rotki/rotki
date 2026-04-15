@@ -2,11 +2,11 @@
 import { assert, type Nullable } from '@rotki/common';
 import AppImage from '@/components/common/AppImage.vue';
 import QueriedAddressDialog from '@/components/defi/QueriedAddressDialog.vue';
+import { type Module, SUPPORTED_MODULES } from '@/modules/common/modules';
 import { useQueriedAddressOperations } from '@/modules/session/use-queried-address-operations';
 import { useSettingsOperations } from '@/modules/settings/use-settings-operations';
 import { useConfirmStore } from '@/store/confirm';
 import { useGeneralSettingsStore } from '@/store/settings/general';
-import { type Module, SUPPORTED_MODULES } from '@/types/modules';
 
 interface ModuleWithStatus {
   readonly identifier: Module;

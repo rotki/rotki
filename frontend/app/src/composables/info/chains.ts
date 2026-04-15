@@ -1,8 +1,6 @@
 import type { ComputedRef, MaybeRefOrGetter, Ref } from 'vue';
 import { Blockchain, getTextToken, toHumanReadable, toSnakeCase } from '@rotki/common';
 import { useSupportedChainsApi } from '@/composables/api/info/chains';
-import { Routes } from '@/router/routes';
-import { useMainStore } from '@/store/main';
 import {
   type ChainInfo,
   ChainType,
@@ -10,8 +8,10 @@ import {
   type EvmChainInfo,
   type EvmLikeChainInfo,
   type SupportedChains,
-} from '@/types/api/chains';
-import { isBlockchain } from '@/types/blockchain/chains';
+} from '@/modules/api/types/chains';
+import { isBlockchain } from '@/modules/onchain/chains';
+import { Routes } from '@/router/routes';
+import { useMainStore } from '@/store/main';
 import { getPublicProtocolImagePath } from '@/utils/file';
 
 function isEvmChain(info: ChainInfo): info is EvmChainInfo {

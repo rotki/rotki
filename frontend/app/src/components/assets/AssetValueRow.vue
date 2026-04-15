@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { ManualPriceFormPayload } from '@/types/prices';
+import type { ManualPriceFormPayload } from '@/modules/prices/price-types';
 import RowActions from '@/components/helper/RowActions.vue';
 import LatestPriceFormDialog from '@/components/price-manager/latest/LatestPriceFormDialog.vue';
 import CardTitle from '@/components/typography/CardTitle.vue';
@@ -8,11 +8,11 @@ import { useAggregatedBalances } from '@/composables/balances/use-aggregated-bal
 import { useLatestPrices } from '@/composables/price-manager/latest';
 import { useSectionStatus } from '@/composables/status';
 import { AssetAmountDisplay, AssetValueDisplay, FiatDisplay } from '@/modules/amount-display/components';
+import { Section } from '@/modules/common/status';
 import { usePriceRefresh } from '@/modules/prices/use-price-refresh';
 import { usePriceUtils } from '@/modules/prices/use-price-utils';
 import { useConfirmStore } from '@/store/confirm';
 import { useGeneralSettingsStore } from '@/store/settings/general';
-import { Section } from '@/types/status';
 
 const { identifier, isCollectionParent = false } = defineProps<{
   identifier: string;

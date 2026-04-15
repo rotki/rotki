@@ -7,12 +7,12 @@ import TimeframeSelector from '@/components/helper/TimeframeSelector.vue';
 import { usePremium } from '@/composables/premium';
 import { useSectionStatus } from '@/composables/status';
 import { FiatDisplay } from '@/modules/amount-display/components';
+import { Section } from '@/modules/common/status';
 import NetWorthChart from '@/modules/dashboard/graph/NetWorthChart.vue';
 import { useSettingsOperations } from '@/modules/settings/use-settings-operations';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { useSessionSettingsStore } from '@/store/settings/session';
 import { useStatisticsStore } from '@/store/statistics';
-import { Section } from '@/types/status';
 import { isPeriodAllowed } from '@/utils/settings';
 
 const { t } = useI18n({ useScope: 'global' });

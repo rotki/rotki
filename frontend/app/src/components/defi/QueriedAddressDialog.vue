@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import type { AddressData, BlockchainAccount } from '@/types/blockchain/accounts';
-import type { CamelCase } from '@/types/common';
+import type { AddressData, BlockchainAccount } from '@/modules/accounts/blockchain-accounts';
+import type { CamelCase } from '@/modules/common/common-types';
 import { assert, Blockchain, transformCase } from '@rotki/common';
 import AppImage from '@/components/common/AppImage.vue';
 import LabeledAddressDisplay from '@/components/display/LabeledAddressDisplay.vue';
@@ -8,9 +8,9 @@ import BlockchainAccountSelector from '@/components/helper/BlockchainAccountSele
 import TagDisplay from '@/components/tags/TagDisplay.vue';
 import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
 import { useAccountAddresses } from '@/modules/balances/blockchain/use-account-addresses';
+import { type Module, SUPPORTED_MODULES } from '@/modules/common/modules';
 import { useQueriedAddressOperations } from '@/modules/session/use-queried-address-operations';
 import { useSessionMetadataStore } from '@/store/session/metadata';
-import { type Module, SUPPORTED_MODULES } from '@/types/modules';
 import { getAccountAddress } from '@/utils/blockchain/accounts/utils';
 
 const { module } = defineProps<{ module: Module }>();

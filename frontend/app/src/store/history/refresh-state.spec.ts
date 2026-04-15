@@ -1,5 +1,5 @@
-import type { Exchange } from '@/types/exchanges';
-import type { ChainAddress } from '@/types/history/events';
+import type { Exchange } from '@/modules/balances/types/exchanges';
+import type { ChainAddress } from '@/modules/history/events/event-payloads';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { useHistoryRefreshStateStore } from './refresh-state';
 

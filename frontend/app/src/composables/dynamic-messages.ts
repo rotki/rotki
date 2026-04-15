@@ -2,7 +2,7 @@ import { checkIfDevelopment } from '@shared/utils';
 import { FetchError, ofetch } from 'ofetch';
 import { usePremium } from '@/composables/premium';
 import { camelCaseTransformer } from '@/modules/api/transformers';
-import { DashboardSchema, type VisibilityPeriod, WelcomeSchema } from '@/types/dynamic-messages';
+import { DashboardSchema, type VisibilityPeriod, WelcomeSchema } from '@/modules/messaging/dynamic-messages';
 import { logger } from '@/utils/logging';
 
 export const serializer = {

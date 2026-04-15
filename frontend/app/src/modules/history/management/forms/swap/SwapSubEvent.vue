@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import type { ActionStatus } from '@/types/action';
-import type { ValidationErrors } from '@/types/api/errors';
-import type { SwapSubEventModel } from '@/types/history/events/schemas';
+import type { ValidationErrors } from '@/modules/api/types/errors';
+import type { ActionStatus } from '@/modules/common/action';
+import type { SwapSubEventModel } from '@/modules/history/events/schemas';
 import useVuelidate from '@vuelidate/core';
 import { isEqual, pick } from 'es-toolkit';
 import EventLocationLabel from '@/modules/history/management/forms/common/EventLocationLabel.vue';

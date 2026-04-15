@@ -1,7 +1,6 @@
-import type { CollectionResponse } from '@/types/collection';
+import type { CollectionResponse } from '@/modules/common/collection';
 import { omit } from 'es-toolkit';
 import { api } from '@/modules/api/rotki-api';
-import { type PendingTask, PendingTaskSchema } from '@/modules/tasks/types';
 import {
   type AccountingRule,
   type AccountingRuleConflict,
@@ -13,7 +12,8 @@ import {
   type AccountingRuleLinkedMapping,
   AccountingRuleLinkedMappingSchema,
   type AccountingRuleRequestPayload,
-} from '@/types/settings/accounting';
+} from '@/modules/settings/types/accounting';
+import { type PendingTask, PendingTaskSchema } from '@/modules/tasks/types';
 
 interface UseAccountingApiReturn {
   fetchAccountingRule: (payload: AccountingRuleRequestPayload, counterparty: string | null) => Promise<AccountingRuleEntry | null>;

@@ -1,6 +1,6 @@
+import type { QueryExchangeEventsPayload } from '@/modules/balances/types/exchanges';
+import type { CollectionResponse } from '@/modules/common/collection';
 import type { HistoryEventExportPayload, HistoryEventRequestPayload } from '@/modules/history/events/request-types';
-import type { CollectionResponse } from '@/types/collection';
-import type { QueryExchangeEventsPayload } from '@/types/exchanges';
 import { omit } from 'es-toolkit';
 import { z } from 'zod/v4';
 import { api } from '@/modules/api/rotki-api';
@@ -9,8 +9,7 @@ import {
   VALID_WITH_PARAMS_SESSION_AND_EXTERNAL_SERVICE,
   VALID_WITH_SESSION_AND_EXTERNAL_SERVICE,
 } from '@/modules/api/utils';
-import { type PendingTask, PendingTaskSchema } from '@/modules/tasks/types';
-import { type ActionDataEntry, ActionDataEntryArraySchema, type ActionStatus } from '@/types/action';
+import { type ActionDataEntry, ActionDataEntryArraySchema, type ActionStatus } from '@/modules/common/action';
 import {
   type AddTransactionHashPayload,
   HistoryEventDetail,
@@ -20,15 +19,16 @@ import {
   type RepullingExchangeEventsPayload,
   type RepullingTransactionPayload,
   type TransactionRequestPayload,
-} from '@/types/history/events';
-import { HistoryEventTypeData } from '@/types/history/events/event-type';
+} from '@/modules/history/events/event-payloads';
+import { HistoryEventTypeData } from '@/modules/history/events/event-type';
 import {
   type AddHistoryEventPayload,
   type HistoryEventCollectionRow,
   HistoryEventsCollectionResponse,
   type ModifyHistoryEventPayload,
   type OnlineHistoryEventsRequestPayload,
-} from '@/types/history/events/schemas';
+} from '@/modules/history/events/schemas';
+import { type PendingTask, PendingTaskSchema } from '@/modules/tasks/types';
 import { downloadFileByUrl } from '@/utils/download';
 import { getErrorMessage } from '@/utils/error-handling';
 import { getFilename } from '@/utils/file';

@@ -1,6 +1,6 @@
 import type { LogLevel } from '@shared/log-level';
-import type { Version } from '@/types/action';
-import type { DefaultBackendArguments } from '@/types/backend';
+import type { DefaultBackendArguments } from '@/modules/app/backend';
+import type { Version } from '@/modules/common/action';
 import { checkIfDevelopment } from '@shared/utils';
 import { getDefaultLogLevel } from '@/utils/logging';
 

@@ -1,13 +1,13 @@
-import type { BlockchainMetadata } from '@/modules/tasks/types';
-import type { EvmAccountsResult } from '@/types/api/accounts';
 import type {
   AccountPayload,
   BlockchainAccount,
   DeleteBlockchainAccountParams,
   DeleteXpubParams,
   XpubAccountPayload,
-} from '@/types/blockchain/accounts';
-import type { BlockchainBalances } from '@/types/blockchain/balances';
+} from '@/modules/accounts/blockchain-accounts';
+import type { EvmAccountsResult } from '@/modules/api/types/accounts';
+import type { BlockchainBalances } from '@/modules/balances/types/blockchain-balances';
+import type { BlockchainMetadata } from '@/modules/tasks/types';
 import { Blockchain } from '@rotki/common';
 import { useBlockchainAccountsApi } from '@/composables/api/blockchain/accounts';
 import { useSupportedChains } from '@/composables/info/chains';
@@ -15,9 +15,9 @@ import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-ac
 import { useEthStaking } from '@/modules/accounts/use-eth-staking';
 import { useAddressNameResolution } from '@/modules/address-names/use-address-name-resolution';
 import { getErrorMessage, useNotifications } from '@/modules/notifications/use-notifications';
+import { type BtcChains, isBtcChain } from '@/modules/onchain/chains';
 import { TaskType } from '@/modules/tasks/task-type';
 import { isActionableFailure, useTaskHandler } from '@/modules/tasks/use-task-handler';
-import { type BtcChains, isBtcChain } from '@/types/blockchain/chains';
 import { convertBtcAccounts } from '@/utils/blockchain/accounts';
 import { createAccount } from '@/utils/blockchain/accounts/create';
 import { logger } from '@/utils/logging';

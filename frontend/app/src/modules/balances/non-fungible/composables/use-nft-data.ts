@@ -1,19 +1,19 @@
 import type { BigNumber } from '@rotki/common';
 import type { DataTableColumn, DataTableSortData, TablePaginationData } from '@rotki/ui-library';
 import type { ComputedRef, Ref } from 'vue';
-import type { IgnoredAssetsHandlingType } from '@/types/asset';
-import type { Collection } from '@/types/collection';
-import type { NonFungibleBalance, NonFungibleBalancesRequestPayload } from '@/types/nfbalances';
+import type { IgnoredAssetsHandlingType } from '@/modules/assets/types';
+import type { NonFungibleBalance, NonFungibleBalancesRequestPayload } from '@/modules/balances/types/nfbalances';
+import type { Collection } from '@/modules/common/collection';
 import { useSectionStatus } from '@/composables/status';
 import { usePaginationFilters } from '@/composables/use-pagination-filter';
 import { useNftBalances } from '@/modules/balances/nft/use-nft-balances';
+import { Section } from '@/modules/common/status';
+import { DashboardTableType } from '@/modules/settings/types/frontend-settings';
+import { TableColumn } from '@/modules/table/table-column';
 import { TableId, useRememberTableSorting } from '@/modules/table/use-remember-table-sorting';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { useStatisticsStore } from '@/store/statistics';
-import { DashboardTableType } from '@/types/settings/frontend-settings';
-import { Section } from '@/types/status';
-import { TableColumn } from '@/types/table-column';
 import { calculatePercentage } from '@/utils/calculation';
 import { getCollectionData } from '@/utils/collection';
 

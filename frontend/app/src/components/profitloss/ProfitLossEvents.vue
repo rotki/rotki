@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { DataTableColumn } from '@rotki/ui-library';
-import type { Collection } from '@/types/collection';
-import type { ProfitLossEvent, ProfitLossEvents, ProfitLossEventsPayload, Report } from '@/types/reports';
+import type { Collection } from '@/modules/common/collection';
+import type { ProfitLossEvent, ProfitLossEvents, ProfitLossEventsPayload, Report } from '@/modules/reports/report-types';
 import { some } from 'es-toolkit/compat';
 import DateDisplay from '@/components/display/DateDisplay.vue';
 import AssetDetails from '@/components/helper/AssetDetails.vue';

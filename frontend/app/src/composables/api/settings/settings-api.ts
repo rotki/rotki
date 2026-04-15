@@ -1,7 +1,7 @@
 import { api } from '@/modules/api/rotki-api';
 import { VALID_WITH_SESSION_STATUS } from '@/modules/api/utils';
-import { BackendConfiguration } from '@/types/backend';
-import { type SettingsUpdate, UserSettingsModel } from '@/types/user';
+import { BackendConfiguration } from '@/modules/app/backend';
+import { type SettingsUpdate, UserSettingsModel } from '@/modules/settings/types/user-settings';
 
 interface UseSettingApiReturn {
   setSettings: (settings: SettingsUpdate) => Promise<UserSettingsModel>;

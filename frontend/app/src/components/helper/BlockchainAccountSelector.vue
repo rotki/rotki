@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { AddressData, BlockchainAccount } from '@/types/blockchain/accounts';
+import type { AddressData, BlockchainAccount } from '@/modules/accounts/blockchain-accounts';
 import { type Account, Blockchain, getTextToken } from '@rotki/common';
 import { omit, uniqBy } from 'es-toolkit';
 import AccountDisplay from '@/components/display/AccountDisplay.vue';

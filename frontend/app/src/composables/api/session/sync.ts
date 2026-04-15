@@ -1,4 +1,4 @@
-import type { SyncAction } from '@/types/session/sync';
+import type { SyncAction } from '@/modules/session/sync';
 import { api } from '@/modules/api/rotki-api';
 import { VALID_WITH_PARAMS_SESSION_AND_EXTERNAL_SERVICE } from '@/modules/api/utils';
 import { type PendingTask, PendingTaskSchema } from '@/modules/tasks/types';

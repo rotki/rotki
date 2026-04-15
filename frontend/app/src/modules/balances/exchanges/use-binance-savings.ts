@@ -1,18 +1,18 @@
 import type { MaybeRef } from 'vue';
-import type { TaskMeta } from '@/modules/tasks/types';
 import type {
   ExchangeSavingsCollection,
   ExchangeSavingsCollectionResponse,
   ExchangeSavingsRequestPayload,
-} from '@/types/exchanges';
+} from '@/modules/balances/types/exchanges';
+import type { TaskMeta } from '@/modules/tasks/types';
 import { useExchangeApi } from '@/composables/api/balances/exchanges';
 import { useStatusUpdater } from '@/composables/status';
+import { Section, Status } from '@/modules/common/status';
 import { useNotifications } from '@/modules/notifications/use-notifications';
 import { TaskType } from '@/modules/tasks/task-type';
 import { isActionableFailure, useTaskHandler } from '@/modules/tasks/use-task-handler';
 import { useTaskStore } from '@/modules/tasks/use-task-store';
 import { useSessionSettingsStore } from '@/store/settings/session';
-import { Section, Status } from '@/types/status';
 import { mapCollectionResponse } from '@/utils/collection';
 import { uniqueStrings } from '@/utils/data';
 import { logger } from '@/utils/logging';

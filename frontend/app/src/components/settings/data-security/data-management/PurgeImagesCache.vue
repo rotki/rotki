@@ -8,7 +8,7 @@ import { useCacheClear } from '@/composables/session/cache-clear';
 import { SettingsHighlightIds } from '@/composables/settings/types';
 import { useAddressNameResolution } from '@/modules/address-names/use-address-name-resolution';
 import { useAssetsStore } from '@/modules/assets/use-assets-store';
-import { PurgeableImageCache } from '@/types/session/purge';
+import { PurgeableImageCache } from '@/modules/session/purge';
 
 const { t } = useI18n({ useScope: 'global' });
 

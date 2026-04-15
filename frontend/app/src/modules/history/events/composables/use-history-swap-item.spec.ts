@@ -5,7 +5,7 @@ import {
   type EvmHistoryEvent,
   HistoryEventAccountingRuleStatus,
   type HistoryEventEntry,
-} from '@/types/history/events/schemas';
+} from '@/modules/history/events/schemas';
 import { useHistorySwapItem } from './use-history-swap-item';
 
 const mockIsAssetIgnored = vi.fn<(asset: string) => boolean>().mockReturnValue(false);

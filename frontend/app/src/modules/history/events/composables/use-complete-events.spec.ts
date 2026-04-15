@@ -1,6 +1,6 @@
 import { bigNumberify, HistoryEventEntryType } from '@rotki/common';
 import { describe, expect, it } from 'vitest';
-import { HistoryEventAccountingRuleStatus, type HistoryEventEntry, type HistoryEventRow } from '@/types/history/events/schemas';
+import { HistoryEventAccountingRuleStatus, type HistoryEventEntry, type HistoryEventRow } from '@/modules/history/events/schemas';
 import { useCompleteEvents } from './use-complete-events';
 
 function createMockEvent(overrides: Omit<Partial<HistoryEventEntry>, 'entryType'> = {}): HistoryEventEntry {

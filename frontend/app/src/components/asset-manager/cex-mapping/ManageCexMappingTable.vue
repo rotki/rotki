@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { DataTableColumn, TablePaginationData } from '@rotki/ui-library';
-import type { CexMapping } from '@/types/asset';
-import type { Collection } from '@/types/collection';
+import type { CexMapping } from '@/modules/assets/types';
+import type { Collection } from '@/modules/common/collection';
 import ExchangeMappingFilter from '@/components/asset-manager/cex-mapping/ExchangeMappingFilter.vue';
 import AssetDetails from '@/components/helper/AssetDetails.vue';
 import RowActions from '@/components/helper/RowActions.vue';

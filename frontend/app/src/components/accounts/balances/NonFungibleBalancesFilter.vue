@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import IgnoreButtons from '@/components/history/IgnoreButtons.vue';
-import { IgnoredAssetHandlingType, type IgnoredAssetsHandlingType } from '@/types/asset';
+import { IgnoredAssetHandlingType, type IgnoredAssetsHandlingType } from '@/modules/assets/types';
 
 const selected = defineModel<string[]>('selected', { required: true });
 const ignoredAssetsHandling = defineModel<IgnoredAssetsHandlingType>('ignoredAssetsHandling', { required: true });

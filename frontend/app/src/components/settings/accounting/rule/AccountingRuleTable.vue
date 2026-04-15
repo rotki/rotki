@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { DataTableColumn, TablePaginationData } from '@rotki/ui-library';
-import type { Collection } from '@/types/collection';
-import type { AccountingRuleEntry } from '@/types/settings/accounting';
+import type { Collection } from '@/modules/common/collection';
+import type { AccountingRuleEntry } from '@/modules/settings/types/accounting';
 import RowActions from '@/components/helper/RowActions.vue';
 import BadgeDisplay from '@/components/history/BadgeDisplay.vue';
 import CounterpartyDisplay from '@/components/history/CounterpartyDisplay.vue';

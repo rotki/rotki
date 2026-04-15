@@ -1,12 +1,12 @@
-import type { SupportedCurrency } from '@/types/currencies';
-import type { PriceOracle } from '@/types/settings/price-oracle';
+import type { SupportedCurrency } from '@/modules/amount-display/currencies';
+import type { PriceOracle } from '@/modules/settings/types/price-oracle';
 import { api } from '@/modules/api/rotki-api';
 import {
   VALID_WITH_SESSION_AND_EXTERNAL_SERVICE,
   VALID_WITHOUT_SESSION_STATUS,
 } from '@/modules/api/utils';
+import { AssetPriceResponse, HistoricPrices, type HistoricPricesPayload, type OracleCacheMeta } from '@/modules/prices/price-types';
 import { type PendingTask, PendingTaskSchema } from '@/modules/tasks/types';
-import { AssetPriceResponse, HistoricPrices, type HistoricPricesPayload, type OracleCacheMeta } from '@/types/prices';
 
 interface UsePriceApiReturn {
   queryPrices: (assets: string[], targetAsset: string, ignoreCache: boolean) => Promise<PendingTask>;

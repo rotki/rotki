@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { RuiIcons } from '@rotki/ui-library';
-import type { HistoryEventCategoryDetailWithId } from '@/types/history/events/event-type';
+import type { HistoryEventCategoryDetailWithId } from '@/modules/history/events/event-type';
 
 const { type, showInfo, showLabel, icon, highlight } = defineProps<{
   type: HistoryEventCategoryDetailWithId;

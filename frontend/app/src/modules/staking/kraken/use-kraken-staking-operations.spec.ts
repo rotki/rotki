@@ -1,8 +1,8 @@
-import type { KrakenStakingEvents } from '@/types/staking';
+import type { KrakenStakingEvents } from '@/modules/staking/staking-types';
 import { Zero } from '@rotki/common';
 import { createPinia, setActivePinia } from 'pinia';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { Section, Status } from '@/types/status';
+import { Section, Status } from '@/modules/common/status';
 import { useKrakenStakingOperations } from './use-kraken-staking-operations';
 import '@test/i18n';
 

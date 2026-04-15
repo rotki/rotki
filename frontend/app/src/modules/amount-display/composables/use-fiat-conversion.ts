@@ -1,10 +1,10 @@
 import type { ComputedRef, MaybeRefOrGetter } from 'vue';
 import { type BigNumber, One, Zero } from '@rotki/common';
 import { useAmountDisplaySettings } from '@/modules/amount-display/composables/use-amount-display-settings';
+import { CURRENCY_USD } from '@/modules/amount-display/currencies';
 import { normalizeTimestamp, type Timestamp } from '@/modules/amount-display/types';
 import { useHistoricPriceCache } from '@/modules/prices/use-historic-price-cache';
 import { usePriceUtils } from '@/modules/prices/use-price-utils';
-import { CURRENCY_USD } from '@/types/currencies';
 
 export interface UseFiatConversionOptions {
   /** The value to convert */

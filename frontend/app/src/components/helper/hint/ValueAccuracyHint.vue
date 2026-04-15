@@ -1,6 +1,6 @@
 <script setup lang="ts">
+import { CURRENCY_USD } from '@/modules/amount-display/currencies';
 import { useGeneralSettingsStore } from '@/store/settings/general';
-import { CURRENCY_USD } from '@/types/currencies';
 
 const { t } = useI18n({ useScope: 'global' });
 const { currencySymbol } = storeToRefs(useGeneralSettingsStore());

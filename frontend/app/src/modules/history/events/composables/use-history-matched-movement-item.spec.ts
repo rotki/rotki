@@ -7,7 +7,7 @@ import {
   type EvmHistoryEvent,
   HistoryEventAccountingRuleStatus,
   type HistoryEventEntry,
-} from '@/types/history/events/schemas';
+} from '@/modules/history/events/schemas';
 import { useHistoryMatchedMovementItem } from './use-history-matched-movement-item';
 
 vi.mock('@/composables/info/chains', () => ({

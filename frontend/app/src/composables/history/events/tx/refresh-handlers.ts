@@ -3,14 +3,14 @@ import { groupBy, omit } from 'es-toolkit';
 import { useHistoryEventsApi } from '@/composables/api/history/events';
 import { Module, useModuleEnabled } from '@/composables/session/modules';
 import { useExternalApiKeys } from '@/composables/settings/api-keys/external';
+import { type Exchange, QueryExchangeEventsPayload } from '@/modules/balances/types/exchanges';
 import { useMoneriumOAuth } from '@/modules/external-services/monerium/use-monerium-auth';
+import { OnlineHistoryEventsQueryType } from '@/modules/history/events/schemas';
 import { useNotifications } from '@/modules/notifications/use-notifications';
 import { PremiumFeature, useFeatureAccess } from '@/modules/premium/use-feature-access';
 import { TaskType } from '@/modules/tasks/task-type';
 import { isActionableFailure, useTaskHandler } from '@/modules/tasks/use-task-handler';
 import { useEventsQueryStatusStore } from '@/store/history/query-status/events-query-status';
-import { type Exchange, QueryExchangeEventsPayload } from '@/types/exchanges';
-import { OnlineHistoryEventsQueryType } from '@/types/history/events/schemas';
 import { awaitParallelExecution } from '@/utils/await-parallel-execution';
 import { logger } from '@/utils/logging';
 

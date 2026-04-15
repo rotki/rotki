@@ -1,4 +1,4 @@
-import type { QueriedAddressPayload } from '@/types/session';
+import type { QueriedAddressPayload } from '@/modules/session/types';
 import { useQueriedAddressApi } from '@/composables/api/session/queried-addresses';
 import { getErrorMessage, useNotifications } from '@/modules/notifications/use-notifications';
 import { useSessionMetadataStore } from '@/store/session/metadata';

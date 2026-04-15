@@ -1,5 +1,5 @@
-import type { ActionStatus } from '@/types/action';
-import type { ConflictResolution } from '@/types/asset';
+import type { ConflictResolution } from '@/modules/assets/types';
+import type { ActionStatus } from '@/modules/common/action';
 import { api } from '@/modules/api/rotki-api';
 import { VALID_FILE_OPERATION_STATUS, VALID_WITHOUT_SESSION_STATUS } from '@/modules/api/utils';
 import { type PendingTask, PendingTaskSchema } from '@/modules/tasks/types';

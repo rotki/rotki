@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import type { EvmChainInfo } from '@/types/api/chains';
+import type { EvmChainInfo } from '@/modules/api/types/chains';
 import LocationIcon from '@/components/history/LocationIcon.vue';
 import { TaskType } from '@/modules/tasks/task-type';
 import { useTaskStore } from '@/modules/tasks/use-task-store';

@@ -1,7 +1,7 @@
 <script setup lang="ts">
+import type { LocationAndTxRef } from '@/modules/history/events/event-payloads';
 import type { HistoryEventEditData } from '@/modules/history/management/forms/form-types';
-import type { LocationAndTxRef } from '@/types/history/events';
-import type { AccountingRuleIdentifier } from '@/types/settings/accounting';
+import type { AccountingRuleIdentifier } from '@/modules/settings/types/accounting';
 import { isEventDecodable } from '@/modules/history/management/forms/form-guards';
 import { toLocationAndTxRef } from '@/utils/history/events';
 

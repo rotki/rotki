@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import type { SavedFilterLocation, SearchMatcher, Suggestion } from '@/types/filtering';
+import type { SavedFilterLocation, SearchMatcher, Suggestion } from '@/modules/table/filtering';
 import { isEqual } from 'es-toolkit';
 import SuggestedItem from '@/components/table-filter/SuggestedItem.vue';
 import { useSavedFilter } from '@/composables/filters/saved';

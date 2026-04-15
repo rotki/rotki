@@ -1,5 +1,5 @@
 import type { ComputedRef, Ref } from 'vue';
-import type { HistoryEventEntry, HistoryEventRow } from '@/types/history/events/schemas';
+import type { HistoryEventEntry, HistoryEventRow } from '@/modules/history/events/schemas';
 import { HistoryEventEntryType } from '@rotki/common';
 
 export const ROW_HEIGHTS = {

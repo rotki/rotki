@@ -5,10 +5,10 @@ import { useTemplateRef } from 'vue';
 import BigDialog from '@/components/dialogs/BigDialog.vue';
 import ExternalLink from '@/components/helper/ExternalLink.vue';
 import HintMenuIcon from '@/components/HintMenuIcon.vue';
+import { ApiValidationError, type ValidationErrors } from '@/modules/api/types/errors';
 import { useSolanaTokenMigrationApi } from '@/modules/asset-manager/solana-token-migration/solana-token-migration';
 import { useSolanaTokenMigrationStore } from '@/modules/asset-manager/solana-token-migration/solana-token-migration-store';
 import { useMessageStore } from '@/store/message';
-import { ApiValidationError, type ValidationErrors } from '@/types/api/errors';
 import { getErrorMessage } from '@/utils/error-handling';
 import SolanaTokenMigrationForm from './SolanaTokenMigrationForm.vue';
 

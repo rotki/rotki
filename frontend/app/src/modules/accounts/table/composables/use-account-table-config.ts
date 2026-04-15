@@ -1,8 +1,8 @@
 import type { DataTableColumn, DataTableSortData } from '@rotki/ui-library';
 import type { ComputedRef, Ref } from 'vue';
 import type { AccountDataRow } from '../types';
-import type { BlockchainAccountBalance } from '@/types/blockchain/accounts';
-import type { SupportedCurrency } from '@/types/currencies';
+import type { BlockchainAccountBalance } from '@/modules/accounts/blockchain-accounts';
+import type { SupportedCurrency } from '@/modules/amount-display/currencies';
 import { TableId, useRememberTableSorting } from '@/modules/table/use-remember-table-sorting';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 

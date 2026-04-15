@@ -9,7 +9,7 @@ import HistoryTableActions from '@/components/history/HistoryTableActions.vue';
 import LocationLabelSelector from '@/components/history/LocationLabelSelector.vue';
 import TableFilter from '@/components/table-filter/TableFilter.vue';
 import HistoryRedecodeButton from '@/modules/history/redecode/HistoryRedecodeButton.vue';
-import { type MatchedKeywordWithBehaviour, SavedFilterLocation, type SearchMatcher } from '@/types/filtering';
+import { type MatchedKeywordWithBehaviour, SavedFilterLocation, type SearchMatcher } from '@/modules/table/filtering';
 
 const filters = defineModel<MatchedKeywordWithBehaviour<any>>('filters', { required: true });
 

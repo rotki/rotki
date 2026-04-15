@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { StakingValidatorManage } from '@/composables/accounts/blockchain/use-account-manage';
-import type { EthereumValidator } from '@/types/blockchain/accounts';
+import type { EthereumValidator } from '@/modules/accounts/blockchain-accounts';
 import Eth2ValidatorLimitRow from '@/components/accounts/blockchain/eth2/Eth2ValidatorLimitRow.vue';
 import ValidatorStatus from '@/components/accounts/staking/eth/ValidatorStatus.vue';
 import PercentageDisplay from '@/components/display/PercentageDisplay.vue';
@@ -12,7 +12,7 @@ import { useEthValidatorOperations } from '@/composables/staking/eth/use-eth-val
 import { useEthValidatorUtils } from '@/composables/staking/eth/use-eth-validator-utils';
 import { AssetAmountDisplay, FiatDisplay } from '@/modules/amount-display/components';
 import HashLink from '@/modules/common/links/HashLink.vue';
-import { SavedFilterLocation } from '@/types/filtering';
+import { SavedFilterLocation } from '@/modules/table/filtering';
 
 const emit = defineEmits<{
   edit: [value: StakingValidatorManage];

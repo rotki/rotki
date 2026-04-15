@@ -1,11 +1,11 @@
 <script setup lang="ts">
-import type { BaseMessage } from '@/types/messages';
-import type { PrioritizedListData, PrioritizedListItemData } from '@/types/settings/prioritized-list-data';
+import type { BaseMessage } from '@/modules/messaging/base-message';
+import type { PrioritizedListData, PrioritizedListItemData } from '@/modules/settings/types/prioritized-list-data';
 import { assert, type Nullable, pluralize } from '@rotki/common';
 import SimpleTable from '@/components/common/SimpleTable.vue';
 import ActionStatusIndicator from '@/components/error/ActionStatusIndicator.vue';
 import PrioritizedListEntry from '@/components/helper/PrioritizedListEntry.vue';
-import { EmptyListId, type PrioritizedListId } from '@/types/settings/prioritized-list-id';
+import { EmptyListId, type PrioritizedListId } from '@/modules/settings/types/prioritized-list-id';
 
 const modelValue = defineModel<PrioritizedListId[]>({ required: true });
 

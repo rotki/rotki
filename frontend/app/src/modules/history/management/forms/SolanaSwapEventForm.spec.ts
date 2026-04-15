@@ -1,6 +1,6 @@
+import type { AddSolanaSwapEventPayload, EditSolanaSwapEventPayload, SolanaSwapEvent } from '@/modules/history/events/schemas';
 import type { GroupAddEventData, GroupEventData } from '@/modules/history/management/forms/form-types';
-import type { AddSolanaSwapEventPayload, EditSolanaSwapEventPayload, SolanaSwapEvent } from '@/types/history/events/schemas';
-import type { TradeLocationData } from '@/types/history/trade/location';
+import type { TradeLocationData } from '@/modules/history/trade/location';
 import { bigNumberify, HistoryEventEntryType } from '@rotki/common';
 import { type ComponentMountingOptions, mount, type VueWrapper } from '@vue/test-utils';
 import { createPinia, type Pinia, setActivePinia } from 'pinia';
@@ -10,8 +10,8 @@ import { useAssetInfoApi } from '@/composables/api/assets/info';
 import { useAddressesNamesApi } from '@/composables/api/blockchain/addresses-names';
 import { useHistoryEvents } from '@/composables/history/events';
 import { useLocations } from '@/composables/locations';
+import { SOLANA_CHAIN } from '@/modules/assets/types';
 import SolanaSwapEventForm from '@/modules/history/management/forms/SolanaSwapEventForm.vue';
-import { SOLANA_CHAIN } from '@/types/asset';
 import { setupDayjs } from '@/utils/date';
 
 vi.mock('@/composables/history/events', () => ({

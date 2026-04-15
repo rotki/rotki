@@ -4,20 +4,20 @@ import { useHistoryEventsApi } from '@/composables/api/history/events';
 import { useSupportedChains } from '@/composables/info/chains';
 import { useStatusUpdater } from '@/composables/status';
 import { snakeCaseTransformer } from '@/modules/api/transformers';
-import { useDecodingStatusStore } from '@/modules/history/use-decoding-status-store';
-import { EvmUndecodedTransactionResponse } from '@/modules/messaging/types';
-import { useNotifications } from '@/modules/notifications/use-notifications';
-import { TaskType } from '@/modules/tasks/task-type';
-import { isActionableFailure, useTaskHandler } from '@/modules/tasks/use-task-handler';
-import { useTaskStore } from '@/modules/tasks/use-task-store';
+import { Section } from '@/modules/common/status';
 import {
   type PullEthBlockEventPayload,
   type PullLocationTransactionPayload,
   type PullTransactionPayload,
   TransactionChainType,
   TransactionChainTypeNeedDecoding,
-} from '@/types/history/events';
-import { Section } from '@/types/status';
+} from '@/modules/history/events/event-payloads';
+import { useDecodingStatusStore } from '@/modules/history/use-decoding-status-store';
+import { EvmUndecodedTransactionResponse } from '@/modules/messaging/types';
+import { useNotifications } from '@/modules/notifications/use-notifications';
+import { TaskType } from '@/modules/tasks/task-type';
+import { isActionableFailure, useTaskHandler } from '@/modules/tasks/use-task-handler';
+import { useTaskStore } from '@/modules/tasks/use-task-store';
 import { awaitParallelExecution } from '@/utils/await-parallel-execution';
 import { logger } from '@/utils/logging';
 

@@ -10,7 +10,7 @@ import {
   LidoCsmNodeOperatorListSchema,
   type LidoCsmNodeOperatorPayload,
   LidoCsmNodeOperatorPayloadSchema,
-} from '@/types/staking';
+} from '@/modules/staking/staking-types';
 
 interface LidoCsmApiResult {
   entries: LidoCsmNodeOperator[];

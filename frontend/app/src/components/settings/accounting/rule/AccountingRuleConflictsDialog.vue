@@ -1,13 +1,13 @@
 <script lang="ts" setup>
 import type { DataTableColumn } from '@rotki/ui-library';
-import type { ConflictResolution } from '@/types/asset';
-import type { ConflictResolutionStrategy } from '@/types/common';
+import type { ConflictResolution } from '@/modules/assets/types';
+import type { ConflictResolutionStrategy } from '@/modules/common/common-types';
 import type {
   AccountingRuleConflict,
   AccountingRuleConflictRequestPayload,
   AccountingRuleConflictResolution,
   AccountingTreatment,
-} from '@/types/settings/accounting';
+} from '@/modules/settings/types/accounting';
 import BigDialog from '@/components/dialogs/BigDialog.vue';
 import BadgeDisplay from '@/components/history/BadgeDisplay.vue';
 import CounterpartyDisplay from '@/components/history/CounterpartyDisplay.vue';

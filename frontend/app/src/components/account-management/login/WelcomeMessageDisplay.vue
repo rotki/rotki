@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { WelcomeMessage } from '@/types/dynamic-messages';
+import type { WelcomeMessage } from '@/modules/messaging/dynamic-messages';
 import { checkIfDevelopment } from '@shared/utils';
 import { ofetch } from 'ofetch';
 import ExternalLink from '@/components/helper/ExternalLink.vue';

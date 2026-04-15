@@ -4,7 +4,7 @@ import ChangePassword from '@/components/settings/data-security/ChangePassword.v
 import PasswordConfirmationSetting from '@/components/settings/data-security/PasswordConfirmationSetting.vue';
 import SettingCategory from '@/components/settings/SettingCategory.vue';
 import { SettingsCategoryIds, SettingsHighlightIds } from '@/composables/settings/types';
-import { NoteLocation } from '@/types/notes';
+import { NoteLocation } from '@/modules/common/notes';
 
 definePage({
   meta: {

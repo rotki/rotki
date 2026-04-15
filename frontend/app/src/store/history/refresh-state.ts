@@ -1,5 +1,5 @@
-import type { Exchange } from '@/types/exchanges';
-import type { ChainAddress } from '@/types/history/events';
+import type { Exchange } from '@/modules/balances/types/exchanges';
+import type { ChainAddress } from '@/modules/history/events/event-payloads';
 import { get, set } from '@vueuse/core';
 import { logger } from '@/utils/logging';
 

@@ -2,8 +2,8 @@
 import type { InternalTxConflict } from './types';
 import InternalTxConflictRepullSettings from '@/components/settings/general/InternalTxConflictRepullSettings.vue';
 import CardTitle from '@/components/typography/CardTitle.vue';
+import { PinnedNames } from '@/modules/session/types';
 import { useAreaVisibilityStore } from '@/store/session/visibility';
-import { PinnedNames } from '@/types/session';
 import InternalTxConflictsContent from './InternalTxConflictsContent.vue';
 
 const modelValue = defineModel<boolean>({ default: false });

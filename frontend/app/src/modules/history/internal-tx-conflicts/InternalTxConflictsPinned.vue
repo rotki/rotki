@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { Nullable } from '@rotki/common';
 import type { InternalTxConflict } from './types';
-import type { Pinned } from '@/types/session';
+import type { Pinned } from '@/modules/session/types';
 import { startPromise } from '@shared/utils';
 import InternalTxConflictRepullSettings from '@/components/settings/general/InternalTxConflictRepullSettings.vue';
 import { HighlightTargetTypes, useHistoryEventNavigation } from '@/composables/history/events/use-history-event-navigation';

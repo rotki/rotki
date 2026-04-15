@@ -1,18 +1,18 @@
 <script setup lang="ts">
 import type { BigNumber } from '@rotki/common';
-import type { HistoricalPriceFormPayload } from '@/types/prices';
+import type { HistoricalPriceFormPayload } from '@/modules/prices/price-types';
 import useVuelidate from '@vuelidate/core';
 import { helpers, required } from '@vuelidate/validators';
 import AmountInput from '@/components/inputs/AmountInput.vue';
 import AssetSelect from '@/components/inputs/AssetSelect.vue';
 import TwoFieldsAmountInput from '@/components/inputs/TwoFieldsAmountInput.vue';
 import { useAssetPricesApi } from '@/composables/api/assets/prices';
+import { CURRENCY_USD } from '@/modules/amount-display/currencies';
 import { useHistoricPriceCache } from '@/modules/prices/use-historic-price-cache';
 import { usePriceTaskManager } from '@/modules/prices/use-price-task-manager';
 import { TaskType } from '@/modules/tasks/task-type';
 import { useTaskStore } from '@/modules/tasks/use-task-store';
 import { useGeneralSettingsStore } from '@/store/settings/general';
-import { CURRENCY_USD } from '@/types/currencies';
 import { bigNumberifyFromRef } from '@/utils/bignumbers';
 import { toMessages } from '@/utils/validation';
 

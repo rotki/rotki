@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { AddressData, BlockchainAccount } from '@/types/blockchain/accounts';
+import type { AddressData, BlockchainAccount } from '@/modules/accounts/blockchain-accounts';
 import {
   type AssetBalance,
   type Balance,
@@ -19,9 +19,9 @@ import LiquityStake from '@/components/staking/liquity/LiquityStake.vue';
 import LiquityStatistics from '@/components/staking/liquity/LiquityStatistics.vue';
 import { useSectionStatus } from '@/composables/status';
 import HashLink from '@/modules/common/links/HashLink.vue';
+import { Section } from '@/modules/common/status';
 import { useLiquityStore } from '@/store/defi/liquity';
 import { useHistoricCachePriceStore } from '@/store/prices/historic';
-import { Section } from '@/types/status';
 import { zeroBalance } from '@/utils/bignumbers';
 import { getAccountAddress } from '@/utils/blockchain/accounts/utils';
 import { balanceSum } from '@/utils/calculation';

@@ -1,5 +1,4 @@
 import { api } from '@/modules/api/rotki-api';
-import { type AddCalendarEventResponse, AddCalendarEventResponseSchema } from '@/types/history/calendar';
 import {
   type CalendarReminderAddResponse,
   CalendarReminderAddResponseSchema,
@@ -7,7 +6,8 @@ import {
   type CalendarReminderEntry,
   type CalendarReminderRequestPayload,
   type CalenderReminderPayload,
-} from '@/types/history/calendar/reminder';
+} from '@/modules/history/calendar/reminder';
+import { type AddCalendarEventResponse, AddCalendarEventResponseSchema } from '@/modules/history/calendar/types';
 
 interface UseCalendarReminderApi {
   fetchCalendarReminders: (filter: CalendarReminderRequestPayload) => Promise<CalendarReminderEntry[]>;

@@ -4,7 +4,7 @@ import { startPromise } from '@shared/utils';
 import AppImage from '@/components/common/AppImage.vue';
 import FullSizeContent from '@/components/common/FullSizeContent.vue';
 import InternalLink from '@/components/helper/InternalLink.vue';
-import { NoteLocation } from '@/types/notes';
+import { NoteLocation } from '@/modules/common/notes';
 import { getPublicProtocolImagePath } from '@/utils/file';
 
 type NavType = 'eth2' | 'liquity' | 'kraken' | 'lido-csm';

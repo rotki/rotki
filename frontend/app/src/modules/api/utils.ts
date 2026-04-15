@@ -1,4 +1,4 @@
-import { HTTPStatus } from '@/types/api/http';
+import { HTTPStatus } from '@/modules/api/types/http';
 
 export function serialize(params: Record<string, unknown>): string {
   const list: string[] = [];

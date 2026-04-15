@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { AssetBalanceWithPrice } from '@rotki/common';
-import { isEvmNativeToken } from '@/types/asset';
+import { isEvmNativeToken } from '@/modules/assets/types';
 
 const { row } = defineProps<{
   row: AssetBalanceWithPrice;

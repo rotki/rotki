@@ -4,7 +4,7 @@ import TablePageLayout from '@/components/layout/TablePageLayout.vue';
 import LocationAssets from '@/components/locations/LocationAssets.vue';
 import LocationValueRow from '@/components/locations/LocationValueRow.vue';
 import { useLocations } from '@/composables/locations';
-import { NoteLocation } from '@/types/notes';
+import { NoteLocation } from '@/modules/common/notes';
 
 definePage({
   meta: {

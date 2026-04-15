@@ -1,10 +1,10 @@
-import type { ManualPrice } from '@/types/prices';
+import type { ManualPrice } from '@/modules/prices/price-types';
 import { bigNumberify } from '@rotki/common';
 import { updateGeneralSettings } from '@test/utils/general-settings';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useLatestPrices } from '@/composables/price-manager/latest';
+import { useCurrencies } from '@/modules/amount-display/currencies';
 import { useBalancePricesStore } from '@/store/balances/prices';
-import { useCurrencies } from '@/types/currencies';
 
 vi.mock('@/composables/api/assets/prices', () => ({
   useAssetPricesApi: vi.fn().mockReturnValue({

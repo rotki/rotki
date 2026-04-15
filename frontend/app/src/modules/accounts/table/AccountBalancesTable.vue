@@ -1,8 +1,8 @@
 <script setup lang="ts" generic="T extends BlockchainAccountBalance">
 import type { DataTableSortData, TablePaginationData } from '@rotki/ui-library';
 import type { AccountManageState } from '@/composables/accounts/blockchain/use-account-manage';
-import type { BlockchainAccountBalance } from '@/types/blockchain/accounts';
-import type { Collection } from '@/types/collection';
+import type { BlockchainAccountBalance } from '@/modules/accounts/blockchain-accounts';
+import type { Collection } from '@/modules/common/collection';
 import AccountChains from '@/components/accounts/AccountChains.vue';
 import AccountTopTokens from '@/components/accounts/AccountTopTokens.vue';
 import LabeledAddressDisplay from '@/components/display/LabeledAddressDisplay.vue';

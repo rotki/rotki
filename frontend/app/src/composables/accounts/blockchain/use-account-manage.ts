@@ -1,20 +1,20 @@
 import type { Ref } from 'vue';
-import type { Eth2Validator } from '@/types/balances';
 import type {
   AccountPayload,
   BlockchainAccountBalance,
   XpubAccountPayload,
-} from '@/types/blockchain/accounts';
-import type { Module } from '@/types/modules';
+} from '@/modules/accounts/blockchain-accounts';
+import type { Eth2Validator } from '@/modules/balances/types/balances';
+import type { Module } from '@/modules/common/modules';
 import { assert, bigNumberify, Blockchain } from '@rotki/common';
 import { startPromise } from '@shared/utils';
 import { useBlockchainAccountManagement } from '@/modules/accounts/use-blockchain-account-management';
 import { useBlockchainAccounts } from '@/modules/accounts/use-blockchain-accounts-api';
 import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
 import { useEthStaking } from '@/modules/accounts/use-eth-staking';
+import { ApiValidationError, type ValidationErrors } from '@/modules/api/types/errors';
 import { getErrorMessage, useNotifications } from '@/modules/notifications/use-notifications';
-import { ApiValidationError, type ValidationErrors } from '@/types/api/errors';
-import { isBtcChain } from '@/types/blockchain/chains';
+import { isBtcChain } from '@/modules/onchain/chains';
 import { getAccountAddress, getChain } from '@/utils/blockchain/accounts/utils';
 import { logger } from '@/utils/logging';
 import { getKeyType, guessPrefix } from '@/utils/xpub';

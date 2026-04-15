@@ -1,9 +1,10 @@
-import type { Exchange } from '@/types/exchanges';
-import type { UserSettingsModel } from '@/types/user';
+import type { Exchange } from '@/modules/balances/types/exchanges';
+import type { UserSettingsModel } from '@/modules/settings/types/user-settings';
 import { BigNumber, TimeFramePersist } from '@rotki/common';
 import { useThemeMigration } from '@/composables/settings/theme';
 import { getBnFormat } from '@/data/amount-formatter';
 import { usePremiumWatchers } from '@/modules/premium/use-premium-watchers';
+import { PrivacyMode } from '@/modules/session/types';
 import { useSettingsSuggestions } from '@/modules/settings/suggestions/use-settings-suggestions';
 import { useSettingsOperations } from '@/modules/settings/use-settings-operations';
 import { usePremiumStore } from '@/store/session/premium';
@@ -11,7 +12,6 @@ import { useAccountingSettingsStore } from '@/store/settings/accounting';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { useSessionSettingsStore } from '@/store/settings/session';
-import { PrivacyMode } from '@/types/session';
 
 interface UseSessionSettingsReturn {
   initialize: (model: UserSettingsModel, exchanges: Exchange[]) => Promise<void>;

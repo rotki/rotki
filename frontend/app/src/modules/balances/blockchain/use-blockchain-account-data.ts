@@ -6,9 +6,9 @@ import type {
   BlockchainAccountGroupWithBalance,
   BlockchainAccountRequestPayload,
   BlockchainAccountWithBalance,
-} from '@/types/blockchain/accounts';
-import type { ProtocolBalances } from '@/types/blockchain/balances';
-import type { Collection } from '@/types/collection';
+} from '@/modules/accounts/blockchain-accounts';
+import type { ProtocolBalances } from '@/modules/balances/types/blockchain-balances';
+import type { Collection } from '@/modules/common/collection';
 import { type AssetBalance, type Balance, Blockchain, Zero } from '@rotki/common';
 import { omit } from 'es-toolkit';
 import { isEmpty } from 'es-toolkit/compat';

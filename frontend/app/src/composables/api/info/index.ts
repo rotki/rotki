@@ -1,5 +1,5 @@
 import { api } from '@/modules/api/rotki-api';
-import { BackendInfo } from '@/types/backend';
+import { BackendInfo } from '@/modules/app/backend';
 
 interface UseInfoApiReturn {
   info: (checkForUpdates?: boolean) => Promise<BackendInfo>;

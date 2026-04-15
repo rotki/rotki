@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { Dayjs } from 'dayjs';
-import type { CalendarEvent } from '@/types/history/calendar';
+import type { CalendarEvent } from '@/modules/history/calendar/types';
 import CalendarUpcomingEventList from '@/components/calendar/CalendarUpcomingEventList.vue';
 
 const selectedDate = defineModel<Dayjs>('selectedDate', { required: true });

@@ -1,10 +1,10 @@
 import type { DIALOG_TYPES } from '@/components/history/events/dialog-types';
+import type { AddTransactionHashPayload } from '@/modules/history/events/event-payloads';
 import type {
   GroupEventData,
   HistoryEventEditData,
   StandaloneEventData,
 } from '@/modules/history/management/forms/form-types';
-import type { AddTransactionHashPayload } from '@/types/history/events';
 
 export type DialogState =
   | { type: typeof DIALOG_TYPES.CUSTOMIZED_EVENT_DUPLICATES; data: undefined }

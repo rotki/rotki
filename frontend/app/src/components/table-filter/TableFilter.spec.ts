@@ -1,4 +1,4 @@
-import type { StringSuggestionMatcher } from '@/types/filtering';
+import type { StringSuggestionMatcher } from '@/modules/table/filtering';
 import { createCustomPinia } from '@test/utils/create-pinia';
 import { type ComponentMountingOptions, mount, type VueWrapper } from '@vue/test-utils';
 import { setActivePinia } from 'pinia';

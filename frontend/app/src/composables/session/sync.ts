@@ -4,10 +4,10 @@ import { useSyncApi } from '@/composables/api/session/sync';
 import { serializer } from '@/composables/dynamic-messages';
 import { api } from '@/modules/api/rotki-api';
 import { useNotifications } from '@/modules/notifications/use-notifications';
+import { SYNC_DOWNLOAD, SYNC_UPLOAD, type SyncAction } from '@/modules/session/sync';
 import { TaskType } from '@/modules/tasks/task-type';
 import { isActionableFailure, useTaskHandler } from '@/modules/tasks/use-task-handler';
 import { useTaskStore } from '@/modules/tasks/use-task-store';
-import { SYNC_DOWNLOAD, SYNC_UPLOAD, type SyncAction } from '@/types/session/sync';
 
 export const useSync = createSharedComposable(() => {
   const { runTask } = useTaskHandler();

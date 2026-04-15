@@ -1,4 +1,4 @@
-import type { IgnorePayload } from '@/types/history/ignored';
+import type { IgnorePayload } from '@/modules/history/ignored';
 import { api } from '@/modules/api/rotki-api';
 
 interface UseHistoryIgnoringApiReturn {

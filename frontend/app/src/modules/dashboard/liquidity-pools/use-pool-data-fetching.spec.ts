@@ -1,8 +1,8 @@
 import { createPinia, setActivePinia } from 'pinia';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { Module } from '@/modules/common/modules';
+import { Section, Status } from '@/modules/common/status';
 import { TaskType } from '@/modules/tasks/task-type';
-import { Module } from '@/types/modules';
-import { Section, Status } from '@/types/status';
 import { usePoolDataFetching } from './use-pool-data-fetching';
 import '@test/i18n';
 

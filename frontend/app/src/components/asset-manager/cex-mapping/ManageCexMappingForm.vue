@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import type { ValidationErrors } from '@/types/api/errors';
-import type { CexMapping } from '@/types/asset';
+import type { ValidationErrors } from '@/modules/api/types/errors';
+import type { CexMapping } from '@/modules/assets/types';
 import useVuelidate from '@vuelidate/core';
 import { helpers, required, requiredIf } from '@vuelidate/validators';
 import LocationDisplay from '@/components/history/LocationDisplay.vue';

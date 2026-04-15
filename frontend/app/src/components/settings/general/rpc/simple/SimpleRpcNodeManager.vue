@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { ValidationErrors } from '@/types/api/errors';
+import type { ValidationErrors } from '@/modules/api/types/errors';
 import SimpleTable from '@/components/common/SimpleTable.vue';
 import BigDialog from '@/components/dialogs/BigDialog.vue';
 import RowActions from '@/components/helper/RowActions.vue';

@@ -1,4 +1,4 @@
-import type { Suggestion } from '@/types/filtering';
+import type { Suggestion } from '@/modules/table/filtering';
 import { get } from '@vueuse/shared';
 import { describe, expect, it, vi } from 'vitest';
 import { ref } from 'vue';

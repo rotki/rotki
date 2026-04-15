@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { Exchange } from '@/types/exchanges';
+import type { Exchange } from '@/modules/balances/types/exchanges';
 import { getTextToken } from '@rotki/common';
 import { isEqual, sortBy } from 'es-toolkit';
 import LocationDisplay from '@/components/history/LocationDisplay.vue';

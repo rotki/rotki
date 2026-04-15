@@ -1,9 +1,9 @@
 import type { MaybeRef } from 'vue';
 import type { FilterSchema } from '@/composables/use-pagination-filter/types';
-import type { MatchedKeyword, SearchMatcher } from '@/types/filtering';
+import type { MatchedKeyword, SearchMatcher } from '@/modules/table/filtering';
 import z from 'zod/v4';
 import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
-import { CommaSeparatedStringSchema } from '@/types/route';
+import { CommaSeparatedStringSchema } from '@/modules/table/route';
 import { assetSuggestions } from '@/utils/assets';
 
 enum ManualBalanceFilterKeys {

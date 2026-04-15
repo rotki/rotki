@@ -3,15 +3,15 @@ import type {
   AddressBookEntry,
   AddressBookSimplePayload,
   AddressNameRequestPayload,
-} from '@/types/eth-names';
+} from '@/modules/address-names/eth-names';
 import { Blockchain, isValidBchAddress, isValidBtcAddress, isValidEthAddress, isValidSolanaAddress } from '@rotki/common';
 import { useAddressesNamesApi } from '@/composables/api/blockchain/addresses-names';
 import { useSupportedChains } from '@/composables/info/chains';
 import { createItemCache } from '@/composables/item-cache';
 import { useAddressNamesStore } from '@/modules/address-names/use-address-names-store';
 import { useNotifications } from '@/modules/notifications/use-notifications';
+import { isBlockchain } from '@/modules/onchain/chains';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
-import { isBlockchain } from '@/types/blockchain/chains';
 import { uniqueStrings } from '@/utils/data';
 import { getErrorMessage } from '@/utils/error-handling';
 import { logger } from '@/utils/logging';

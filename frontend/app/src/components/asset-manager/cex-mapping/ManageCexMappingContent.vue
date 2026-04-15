@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { CexMapping, CexMappingRequestPayload } from '@/types/asset';
+import type { CexMapping, CexMappingRequestPayload } from '@/modules/assets/types';
 import { omit } from 'es-toolkit';
 import ManageCexMappingFormDialog from '@/components/asset-manager/cex-mapping/ManageCexMappingFormDialog.vue';
 import ManageCexMappingTable from '@/components/asset-manager/cex-mapping/ManageCexMappingTable.vue';

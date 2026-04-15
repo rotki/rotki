@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { DataTableColumn, DataTableSortData, TablePaginationData } from '@rotki/ui-library';
+import type { AddressData, BlockchainAccount } from '@/modules/accounts/blockchain-accounts';
 import type { TaskMeta } from '@/modules/tasks/types';
-import type { AddressData, BlockchainAccount } from '@/types/blockchain/accounts';
 import { type BigNumber, Blockchain, Zero } from '@rotki/common';
 import AirdropDisplay from '@/components/defi/airdrops/AirdropDisplay.vue';
 import PoapDeliveryAirdrops from '@/components/defi/airdrops/PoapDeliveryAirdrops.vue';
@@ -11,17 +11,17 @@ import TablePageLayout from '@/components/layout/TablePageLayout.vue';
 import { useDefiApi } from '@/composables/api/defi';
 import { AssetAmountDisplay, ValueDisplay } from '@/modules/amount-display/components';
 import HashLink from '@/modules/common/links/HashLink.vue';
-import { useNotifications } from '@/modules/notifications/use-notifications';
-import { TableId, useRememberTableSorting } from '@/modules/table/use-remember-table-sorting';
-import { TaskType } from '@/modules/tasks/task-type';
-import { isActionableFailure, useTaskHandler } from '@/modules/tasks/use-task-handler';
 import {
   type Airdrop,
   AIRDROP_POAP,
   Airdrops,
   type PoapDelivery,
   type PoapDeliveryDetails,
-} from '@/types/defi/airdrops';
+} from '@/modules/defi/airdrops';
+import { useNotifications } from '@/modules/notifications/use-notifications';
+import { TableId, useRememberTableSorting } from '@/modules/table/use-remember-table-sorting';
+import { TaskType } from '@/modules/tasks/task-type';
+import { isActionableFailure, useTaskHandler } from '@/modules/tasks/use-task-handler';
 import { getAccountAddress } from '@/utils/blockchain/accounts/utils';
 import { logger } from '@/utils/logging';
 

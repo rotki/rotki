@@ -1,6 +1,6 @@
 import { defaultApiUrls } from '@/modules/api/api-urls';
 import { api } from '@/modules/api/rotki-api';
-import { HTTPStatus } from '@/types/api/http';
+import { HTTPStatus } from '@/modules/api/types/http';
 
 interface CheckAssetOptions {
   abortController?: AbortController;

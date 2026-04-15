@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { DataTableColumn, TablePaginationData } from '@rotki/ui-library';
 import type { CounterpartyMapping } from '@/modules/asset-manager/counterparty-mapping/schema';
-import type { Collection } from '@/types/collection';
+import type { Collection } from '@/modules/common/collection';
 import AssetDetails from '@/components/helper/AssetDetails.vue';
 import RowActions from '@/components/helper/RowActions.vue';
 import HintMenuIcon from '@/components/HintMenuIcon.vue';

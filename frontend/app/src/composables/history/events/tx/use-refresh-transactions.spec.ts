@@ -1,10 +1,10 @@
 import type { RefreshTransactionsParams } from './types';
-import type { Exchange } from '@/types/exchanges';
-import type { ChainAddress } from '@/types/history/events';
+import type { Exchange } from '@/modules/balances/types/exchanges';
+import type { ChainAddress } from '@/modules/history/events/event-payloads';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { Status } from '@/modules/common/status';
+import { OnlineHistoryEventsQueryType } from '@/modules/history/events/schemas';
 import { useHistoryRefreshStateStore } from '@/store/history/refresh-state';
-import { OnlineHistoryEventsQueryType } from '@/types/history/events/schemas';
-import { Status } from '@/types/status';
 import { useRefreshTransactions } from './use-refresh-transactions';
 
 const mockOnHistoryStarted = vi.fn();

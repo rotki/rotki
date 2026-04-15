@@ -1,5 +1,5 @@
-import type { AccountPayload, XpubAccountPayload } from '@/types/blockchain/accounts';
-import type { Tag } from '@/types/tags';
+import type { AccountPayload, XpubAccountPayload } from '@/modules/accounts/blockchain-accounts';
+import type { Tag } from '@/modules/tags/tags';
 import { Blockchain } from '@rotki/common';
 import { createMockCSV } from '@test/mocks/file';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';

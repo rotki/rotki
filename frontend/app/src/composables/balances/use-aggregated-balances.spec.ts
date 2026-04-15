@@ -1,4 +1,4 @@
-import type { ExchangeData } from '@/types/exchanges';
+import type { ExchangeData } from '@/modules/balances/types/exchanges';
 import { type AssetBalanceWithPrice, bigNumberify, Blockchain, Zero } from '@rotki/common';
 import {
   createProtocolTestBalance,
@@ -20,10 +20,10 @@ import { TRADE_LOCATION_BANKS } from '@/data/defaults';
 import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
 import { useAssetInfoCache } from '@/modules/assets/use-asset-info-cache';
 import { useAssetsStore } from '@/modules/assets/use-assets-store';
+import { BalanceType } from '@/modules/balances/types/balances';
 import { useBalancesStore } from '@/modules/balances/use-balances-store';
 import { useBalancePricesStore } from '@/store/balances/prices';
 import { useSessionSettingsStore } from '@/store/settings/session';
-import { BalanceType } from '@/types/balances';
 import { useAggregatedBalances } from './use-aggregated-balances';
 import '@test/i18n';
 

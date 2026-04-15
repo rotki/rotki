@@ -10,12 +10,12 @@ import RowAppend from '@/components/helper/RowAppend.vue';
 import { FiatDisplay } from '@/modules/amount-display/components';
 import PoolDetails from '@/modules/dashboard/liquidity-pools/PoolDetails.vue';
 import PoolIcon from '@/modules/dashboard/liquidity-pools/PoolIcon.vue';
+import { DashboardTableType } from '@/modules/settings/types/frontend-settings';
+import { TableColumn } from '@/modules/table/table-column';
 import { TableId, useRememberTableSorting } from '@/modules/table/use-remember-table-sorting';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { useStatisticsStore } from '@/store/statistics';
-import { DashboardTableType } from '@/types/settings/frontend-settings';
-import { TableColumn } from '@/types/table-column';
 import { calculatePercentage } from '@/utils/calculation';
 import { usePoolBalances } from './use-pool-balances';
 

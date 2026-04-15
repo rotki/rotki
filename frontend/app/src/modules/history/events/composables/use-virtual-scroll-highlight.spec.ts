@@ -4,7 +4,7 @@ import type { VirtualRow } from './use-virtual-rows';
 import type { HighlightType } from '@/composables/history/events/types';
 import { bigNumberify, HistoryEventEntryType } from '@rotki/common';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { HistoryEventAccountingRuleStatus, type HistoryEventEntry } from '@/types/history/events/schemas';
+import { HistoryEventAccountingRuleStatus, type HistoryEventEntry } from '@/modules/history/events/schemas';
 import { useVirtualScrollHighlight } from './use-virtual-scroll-highlight';
 
 const { scrollToSpy } = vi.hoisted(() => ({

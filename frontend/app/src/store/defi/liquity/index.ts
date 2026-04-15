@@ -6,7 +6,7 @@ import type {
   LiquityStatistics,
 } from '@rotki/common';
 import { useStatusUpdater } from '@/composables/status';
-import { Section } from '@/types/status';
+import { Section } from '@/modules/common/status';
 
 const defaultBalances = (): LiquityBalancesWithCollateralInfo => ({ balances: {}, totalCollateralRatio: null });
 

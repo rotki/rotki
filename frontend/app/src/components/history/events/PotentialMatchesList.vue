@@ -4,7 +4,7 @@ import type {
   PotentialMatchRow,
   UnmatchedAssetMovement,
 } from '@/composables/history/events/use-unmatched-asset-movements';
-import type { HistoryEventEntry } from '@/types/history/events/schemas';
+import type { HistoryEventEntry } from '@/modules/history/events/schemas';
 import SimpleTable from '@/components/common/SimpleTable.vue';
 import DateDisplay from '@/components/display/DateDisplay.vue';
 import BadgeDisplay from '@/components/history/BadgeDisplay.vue';

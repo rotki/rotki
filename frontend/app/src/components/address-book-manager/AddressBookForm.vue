@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import type { ValidationErrors } from '@/types/api/errors';
-import type { SelectOptions } from '@/types/common';
-import type { AddressBookLocation, AddressBookPayload } from '@/types/eth-names';
+import type { AddressBookLocation, AddressBookPayload } from '@/modules/address-names/eth-names';
+import type { ValidationErrors } from '@/modules/api/types/errors';
+import type { SelectOptions } from '@/modules/common/common-types';
 import { Blockchain } from '@rotki/common';
 import useVuelidate from '@vuelidate/core';
 import { helpers, required } from '@vuelidate/validators';

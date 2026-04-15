@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { DataTableColumn } from '@rotki/ui-library';
-import type { LidoCsmNodeOperator } from '@/types/staking';
+import type { LidoCsmNodeOperator } from '@/modules/staking/staking-types';
 import BalanceDisplay from '@/components/display/BalanceDisplay.vue';
 import RowActions from '@/components/helper/RowActions.vue';
 import { useLidoCsmApi } from '@/composables/api/staking/lido-csm';

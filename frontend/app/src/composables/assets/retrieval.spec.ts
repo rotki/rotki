@@ -1,10 +1,10 @@
-import type { ERC20Token } from '@/types/blockchain/accounts';
+import type { ERC20Token } from '@/modules/accounts/blockchain-accounts';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useAssetInfoApi } from '@/composables/api/assets/info';
 import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
+import { CUSTOM_ASSET } from '@/modules/assets/types';
 import { useAssetInfoCache } from '@/modules/assets/use-asset-info-cache';
 import { useNotificationDispatcher } from '@/modules/notifications/use-notification-dispatcher';
-import { CUSTOM_ASSET } from '@/types/asset';
 
 const runTaskMock = vi.fn();
 

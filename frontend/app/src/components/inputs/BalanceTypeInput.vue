@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { BalanceType } from '@/types/balances';
+import { BalanceType } from '@/modules/balances/types/balances';
 
 defineOptions({
   inheritAttrs: false,

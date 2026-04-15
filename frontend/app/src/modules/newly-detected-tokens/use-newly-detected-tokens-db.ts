@@ -1,6 +1,6 @@
 import type { MaybeRef, Ref } from 'vue';
+import type { Collection } from '@/modules/common/collection';
 import type { ItemFilter } from '@/modules/data/pagination';
-import type { Collection } from '@/types/collection';
 import { transformCase } from '@rotki/common';
 import { SECONDS_PER_DAY } from '@/data/constraints';
 import { useDatabase } from '@/modules/data/use-database';

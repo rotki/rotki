@@ -1,11 +1,11 @@
 <script setup lang="ts">
-import type { PrioritizedListItemData } from '@/types/settings/prioritized-list-data';
-import type { PrioritizedListId } from '@/types/settings/prioritized-list-id';
+import type { PrioritizedListItemData } from '@/modules/settings/types/prioritized-list-data';
+import type { PrioritizedListId } from '@/modules/settings/types/prioritized-list-id';
 import { toSentenceCase } from '@rotki/common';
 import AppImage from '@/components/common/AppImage.vue';
-import { AddressNamePriority } from '@/types/settings/address-name-priorities';
-import { EvmIndexer } from '@/types/settings/evm-indexer';
-import { PriceOracle } from '@/types/settings/price-oracle';
+import { AddressNamePriority } from '@/modules/settings/types/address-name-priorities';
+import { EvmIndexer } from '@/modules/settings/types/evm-indexer';
+import { PriceOracle } from '@/modules/settings/types/price-oracle';
 
 const { data, size = '32px' } = defineProps<{
   data: PrioritizedListItemData<PrioritizedListId>;

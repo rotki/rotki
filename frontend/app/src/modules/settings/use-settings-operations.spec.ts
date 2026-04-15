@@ -1,12 +1,12 @@
-import type { UserSettingsModel } from '@/types/user';
+import type { UserSettingsModel } from '@/modules/settings/types/user-settings';
 import { assert } from '@rotki/common';
 import { createPinia, setActivePinia } from 'pinia';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { defaultAccountingSettings, defaultGeneralSettings } from '@/data/factories';
+import { Currency, CURRENCY_USD } from '@/modules/amount-display/currencies';
+import { Module } from '@/modules/common/modules';
+import { getDefaultFrontendSettings } from '@/modules/settings/types/frontend-settings';
 import { useGeneralSettingsStore } from '@/store/settings/general';
-import { Currency, CURRENCY_USD } from '@/types/currencies';
-import { Module } from '@/types/modules';
-import { getDefaultFrontendSettings } from '@/types/settings/frontend-settings';
 import '@test/i18n';
 
 const mockSetSettings = vi.fn();

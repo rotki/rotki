@@ -3,7 +3,7 @@ import type {
   AccountingRuleAction,
   AccountingRuleEntry,
   AccountingRuleRequestPayload,
-} from '@/types/settings/accounting';
+} from '@/modules/settings/types/accounting';
 import { z } from 'zod/v4';
 import AccountingRuleActionDialog, { type ActionDialogContext } from '@/components/settings/accounting/rule/AccountingRuleActionDialog.vue';
 import AccountingRuleConflictsDialog from '@/components/settings/accounting/rule/AccountingRuleConflictsDialog.vue';

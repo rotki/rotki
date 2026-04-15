@@ -1,7 +1,7 @@
 import type { MaybeRefOrGetter } from 'vue';
-import type { StatusPayload } from '@/types/action';
+import type { StatusPayload } from '@/modules/common/action';
 import { isEmpty } from 'es-toolkit/compat';
-import { Section, Status } from '@/types/status';
+import { Section, Status } from '@/modules/common/status';
 
 type SectionStatus = Record<string, Status>;
 

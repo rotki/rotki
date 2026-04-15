@@ -4,7 +4,7 @@ import { VALID_WITH_PARAMS_SESSION_AND_EXTERNAL_SERVICE } from '@/modules/api/ut
 import {
   NonFungibleBalancesCollectionResponse,
   type NonFungibleBalancesRequestPayload,
-} from '@/types/nfbalances';
+} from '@/modules/balances/types/nfbalances';
 
 interface UseNftBalancesApiReturn {
   fetchNfBalancesTask: (payload: NonFungibleBalancesRequestPayload) => Promise<PendingTask>;

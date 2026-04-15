@@ -1,6 +1,6 @@
 <script lang="ts" setup>
-import type { ValidationErrors } from '@/types/api/errors';
-import type { RepullingEthStakingPayload, RepullingTransactionPayload } from '@/types/history/events';
+import type { ValidationErrors } from '@/modules/api/types/errors';
+import type { RepullingEthStakingPayload, RepullingTransactionPayload } from '@/modules/history/events/event-payloads';
 import { useTemplateRef } from 'vue';
 import RepullingBlockchainForm from '@/components/history/events/tx/RepullingBlockchainForm.vue';
 import RepullingEthStakingForm from '@/components/history/events/tx/RepullingEthStakingForm.vue';

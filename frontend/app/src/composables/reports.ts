@@ -1,6 +1,6 @@
 import type { ComputedRef } from 'vue';
-import type { ActionDataEntry } from '@/types/action';
-import { CostBasisMethod } from '@/types/user';
+import type { ActionDataEntry } from '@/modules/common/action';
+import { CostBasisMethod } from '@/modules/settings/types/user-settings';
 
 type CostBasicRef = ComputedRef<ActionDataEntry<CostBasisMethod>[]>;
 

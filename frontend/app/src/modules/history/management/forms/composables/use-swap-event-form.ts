@@ -1,7 +1,7 @@
 import type { ShallowRef } from 'vue';
+import type { ValidationErrors } from '@/modules/api/types/errors';
+import type { SwapSubEventModel } from '@/modules/history/events/schemas';
 import type SwapSubEventList from '@/modules/history/management/forms/swap/SwapSubEventList.vue';
-import type { ValidationErrors } from '@/types/api/errors';
-import type { SwapSubEventModel } from '@/types/history/events/schemas';
 import { useHistoryEvents } from '@/composables/history/events';
 import { useNotifications } from '@/modules/notifications/use-notifications';
 

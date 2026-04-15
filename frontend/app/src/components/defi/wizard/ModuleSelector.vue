@@ -1,19 +1,19 @@
 <script setup lang="ts">
 import type { DataTableColumn, DataTableSortColumn } from '@rotki/ui-library';
-import type { CamelCase } from '@/types/common';
+import type { CamelCase } from '@/modules/common/common-types';
 import { transformCase, Zero } from '@rotki/common';
 import AppImage from '@/components/common/AppImage.vue';
 import QueriedAddressDialog from '@/components/defi/QueriedAddressDialog.vue';
 import RowActions from '@/components/helper/RowActions.vue';
 import { useStatusUpdater } from '@/composables/status';
 import { useBalancesStore } from '@/modules/balances/use-balances-store';
+import { Module, SUPPORTED_MODULES, type SupportedModule } from '@/modules/common/modules';
+import { Section } from '@/modules/common/status';
 import { useQueriedAddressOperations } from '@/modules/session/use-queried-address-operations';
 import { useSettingsOperations } from '@/modules/settings/use-settings-operations';
 import { TableId, useRememberTableSorting } from '@/modules/table/use-remember-table-sorting';
 import { useSessionMetadataStore } from '@/store/session/metadata';
 import { useGeneralSettingsStore } from '@/store/settings/general';
-import { Module, SUPPORTED_MODULES, type SupportedModule } from '@/types/modules';
-import { Section } from '@/types/status';
 
 type ModuleEntry = SupportedModule & { enabled: boolean };
 

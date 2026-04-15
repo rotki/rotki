@@ -1,4 +1,4 @@
-import type { ProfitLossEvent, ProfitLossOverviewItem, Report } from '@/types/reports';
+import type { ProfitLossEvent, ProfitLossOverviewItem, Report } from '@/modules/reports/report-types';
 import { Zero } from '@rotki/common';
 
 export function calculateTotalProfitLoss(item: Report): ProfitLossOverviewItem {

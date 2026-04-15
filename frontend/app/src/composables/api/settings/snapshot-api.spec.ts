@@ -1,9 +1,9 @@
-import type { SnapshotPayload } from '@/types/snapshots';
+import type { SnapshotPayload } from '@/modules/dashboard/snapshots';
 import { BigNumber } from '@rotki/common';
 import { server } from '@test/setup-files/server';
 import { type DefaultBodyType, http, HttpResponse } from 'msw';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { BalanceType } from '@/types/balances';
+import { BalanceType } from '@/modules/balances/types/balances';
 import { useSnapshotApi } from './snapshot-api';
 
 const backendUrl = process.env.VITE_BACKEND_URL;

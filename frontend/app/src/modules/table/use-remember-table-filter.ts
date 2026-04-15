@@ -1,6 +1,6 @@
 import type { Ref } from 'vue';
+import type { LocationQuery } from '@/modules/table/route';
 import type { TableId } from '@/modules/table/use-remember-table-sorting';
-import type { LocationQuery } from '@/types/route';
 import { objectOmit } from '@vueuse/shared';
 import { isEmpty } from 'es-toolkit/compat';
 import { useLoggedUserIdentifier } from '@/composables/user/use-logged-user-identifier';

@@ -2,10 +2,10 @@ import { bigNumberify } from '@rotki/common';
 import { updateGeneralSettings } from '@test/utils/general-settings';
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { usePriceApi } from '@/composables/api/balances/price';
+import { useCurrencies } from '@/modules/amount-display/currencies';
 import { usePriceTaskManager } from '@/modules/prices/use-price-task-manager';
+import { PriceOracle } from '@/modules/settings/types/price-oracle';
 import { useBalancePricesStore } from '@/store/balances/prices';
-import { useCurrencies } from '@/types/currencies';
-import { PriceOracle } from '@/types/settings/price-oracle';
 
 const runTaskMock = vi.fn();
 

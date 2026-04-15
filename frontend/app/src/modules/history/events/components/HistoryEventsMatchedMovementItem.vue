@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import type { UseHistoryEventsSelectionModeReturn } from '@/modules/history/events/composables/use-selection-mode';
+import type { HistoryEventEntry } from '@/modules/history/events/schemas';
 import type { HistoryEventDeletePayload, HistoryEventUnlinkPayload } from '@/modules/history/events/types';
 import type { HistoryEventEditData } from '@/modules/history/management/forms/form-types';
-import type { HistoryEventEntry } from '@/types/history/events/schemas';
 import HistoryEventAsset from '@/components/history/events/HistoryEventAsset.vue';
 import HistoryEventNote from '@/components/history/events/HistoryEventNote.vue';
 import HistoryEventsListItemAction from '@/components/history/events/HistoryEventsListItemAction.vue';

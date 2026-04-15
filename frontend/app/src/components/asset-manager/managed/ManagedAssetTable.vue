@@ -2,7 +2,7 @@
 import type { SupportedAsset } from '@rotki/common';
 import type { DataTableSortData, TablePaginationData } from '@rotki/ui-library';
 import type { Filters, Matcher } from '@/composables/filters/assets';
-import type { Collection } from '@/types/collection';
+import type { Collection } from '@/modules/common/collection';
 import AssetUnderlyingTokens from '@/components/asset-manager/AssetUnderlyingTokens.vue';
 import ManagedAssetActions from '@/components/asset-manager/managed/ManagedAssetActions.vue';
 import ManagedAssetIgnoreSwitch from '@/components/asset-manager/managed/ManagedAssetIgnoreSwitch.vue';
@@ -13,9 +13,9 @@ import RowActions from '@/components/helper/RowActions.vue';
 import { useAssetDisplayHelpers } from '@/composables/asset-manager/use-asset-display-helpers';
 import { useManagedAssetOperations } from '@/composables/asset-manager/use-managed-asset-operations';
 import { useManagedAssetTable } from '@/composables/asset-manager/use-managed-asset-table';
+import { EVM_TOKEN, type IgnoredAssetsHandlingType, isSpammableAssetType, SOLANA_CHAIN, SOLANA_TOKEN } from '@/modules/assets/types';
 import { useIgnoredAssetOperations } from '@/modules/assets/use-ignored-asset-operations';
 import HashLink from '@/modules/common/links/HashLink.vue';
-import { EVM_TOKEN, type IgnoredAssetsHandlingType, isSpammableAssetType, SOLANA_CHAIN, SOLANA_TOKEN } from '@/types/asset';
 
 interface IgnoredFilter {
   onlyShowOwned: boolean;

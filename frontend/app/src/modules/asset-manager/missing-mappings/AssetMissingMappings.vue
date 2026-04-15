@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { DataTableColumn } from '@rotki/ui-library';
+import type { CexMapping } from '@/modules/assets/types';
 import type { MissingMapping } from '@/modules/data/schemas';
-import type { CexMapping } from '@/types/asset';
 import z from 'zod/v4';
 import ExchangeMappingFilter from '@/components/asset-manager/cex-mapping/ExchangeMappingFilter.vue';
 import ManageCexMappingFormDialog from '@/components/asset-manager/cex-mapping/ManageCexMappingFormDialog.vue';

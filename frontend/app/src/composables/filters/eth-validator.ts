@@ -1,5 +1,5 @@
 import type { FilterSchema } from '@/composables/use-pagination-filter/types';
-import type { MatchedKeywordWithBehaviour, SearchMatcher } from '@/types/filtering';
+import type { MatchedKeywordWithBehaviour, SearchMatcher } from '@/modules/table/filtering';
 import { z } from 'zod/v4';
 import { arrayify } from '@/utils/array';
 

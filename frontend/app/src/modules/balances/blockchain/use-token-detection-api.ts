@@ -1,5 +1,5 @@
+import type { EvmTokensRecord } from '@/modules/balances/types/balances';
 import type { TaskMeta } from '@/modules/tasks/types';
-import type { EvmTokensRecord } from '@/types/balances';
 import { useBlockchainBalancesApi } from '@/composables/api/balances/blockchain';
 import { useSupportedChains } from '@/composables/info/chains';
 import { useTokenDetectionStore } from '@/modules/balances/blockchain/use-token-detection-store';

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { Report } from '@/types/reports';
+import type { Report } from '@/modules/reports/report-types';
 import ProgressScreen from '@/components/helper/ProgressScreen.vue';
 import AccountingSettingsDisplay from '@/components/profitloss/AccountingSettingsDisplay.vue';
 import ExportReportCsv from '@/components/profitloss/ExportReportCsv.vue';
@@ -7,9 +7,9 @@ import ProfitLossEvents from '@/components/profitloss/ProfitLossEvents.vue';
 import ProfitLossOverview from '@/components/profitloss/ProfitLossOverview.vue';
 import ReportActionable from '@/components/profitloss/ReportActionable.vue';
 import ReportHeader from '@/components/profitloss/ReportHeader.vue';
+import { NoteLocation } from '@/modules/common/notes';
 import { useReportOperations } from '@/modules/reports/use-report-operations';
 import { defaultReportEvents, useReportsStore } from '@/store/reports';
-import { NoteLocation } from '@/types/notes';
 
 definePage({
   meta: {

@@ -2,9 +2,9 @@ import type { ComputedRef, Ref } from 'vue';
 import { get, set } from '@vueuse/shared';
 import { useHistoryEvents } from '@/composables/history/events';
 import { useStatusUpdater } from '@/composables/status';
+import { Section } from '@/modules/common/status';
 import { TaskType } from '@/modules/tasks/task-type';
 import { useTaskStore } from '@/modules/tasks/use-task-store';
-import { Section } from '@/types/status';
 
 interface UseWrappedHistoryEventsReturn {
   historyEventsReady: ComputedRef<boolean>;

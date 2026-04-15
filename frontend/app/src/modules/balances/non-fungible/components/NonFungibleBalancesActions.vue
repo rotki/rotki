@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { Module } from '@/types/modules';
+import type { Module } from '@/modules/common/modules';
 import ActiveModules from '@/components/defi/ActiveModules.vue';
 import NftImageRenderingSettingMenu from '@/components/settings/general/nft/NftImageRenderingSettingMenu.vue';
 

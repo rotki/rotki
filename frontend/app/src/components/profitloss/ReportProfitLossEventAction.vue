@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import type { HistoricalPriceFormPayload } from '@/types/prices';
-import type { ProfitLossEvent } from '@/types/reports';
+import type { HistoricalPriceFormPayload } from '@/modules/prices/price-types';
+import type { ProfitLossEvent } from '@/modules/reports/report-types';
 import useVuelidate from '@vuelidate/core';
 import { helpers, required } from '@vuelidate/validators';
 import AmountInput from '@/components/inputs/AmountInput.vue';

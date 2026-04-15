@@ -1,4 +1,4 @@
-import type { AccountingSettings } from '@/types/user';
+import type { AccountingSettings } from '@/modules/settings/types/user-settings';
 import { useComputedRef } from '@/composables/utils/useComputedRef';
 import { defaultAccountingSettings } from '@/data/factories';
 

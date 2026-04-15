@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { Nullable } from '@rotki/common';
-import type { Pinned } from '@/types/session';
+import type { Pinned } from '@/modules/session/types';
 import { startPromise } from '@shared/utils';
 import MatchAssetMovementsContent from '@/components/history/events/MatchAssetMovementsContent.vue';
 import PotentialMatchesContent from '@/components/history/events/PotentialMatchesContent.vue';

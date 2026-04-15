@@ -1,12 +1,12 @@
 import type { TaskMeta } from '@/modules/tasks/types';
 import { useSessionApi } from '@/composables/api/session';
+import { Section } from '@/modules/common/status';
 import { useProtocolCacheStatusStore } from '@/modules/history/use-protocol-cache-status-store';
 import { useNotifications } from '@/modules/notifications/use-notifications';
+import { Purgeable } from '@/modules/session/purge';
 import { TaskType } from '@/modules/tasks/task-type';
 import { useTaskHandler } from '@/modules/tasks/use-task-handler';
 import { useStatusStore } from '@/store/status';
-import { Purgeable } from '@/types/session/purge';
-import { Section } from '@/types/status';
 
 interface UseSessionPurge {
   purgeCache: (purgeable: Purgeable, value: string) => void;

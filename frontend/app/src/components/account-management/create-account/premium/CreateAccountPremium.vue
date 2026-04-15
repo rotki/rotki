@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import type { PremiumSetup } from '@/types/login';
+import type { PremiumSetup } from '@/modules/account/login';
 import CreateAccountPremiumForm
   from '@/components/account-management/create-account/premium/CreateAccountPremiumForm.vue';
 import ExternalLink from '@/components/helper/ExternalLink.vue';

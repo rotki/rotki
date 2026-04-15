@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import type { HistoryEventAction } from '@/composables/history/events/types';
 import type { UnmatchedAssetMovement } from '@/composables/history/events/use-unmatched-asset-movements';
-import type { AddTransactionHashPayload } from '@/types/history/events';
-import type { AccountingRuleEntry } from '@/types/settings/accounting';
+import type { AddTransactionHashPayload } from '@/modules/history/events/event-payloads';
+import type { AccountingRuleEntry } from '@/modules/settings/types/accounting';
 import { get } from '@vueuse/core';
 import { useHistoryEventsDialogManager } from '@/composables/history/events/dialog-manager/use-history-events-dialog-manager';
 import { DIALOG_TYPES, type DialogEventHandlers } from './dialog-types';

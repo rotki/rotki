@@ -1,4 +1,4 @@
-import type { PaginationRequestPayload } from '@/types/common';
+import type { PaginationRequestPayload } from '@/modules/common/common-types';
 
 export const InternalTxConflictActions = {
   FIX_REDECODE: 'fix_redecode',

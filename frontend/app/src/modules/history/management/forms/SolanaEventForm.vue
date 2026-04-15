@@ -1,6 +1,6 @@
 <script setup lang="ts">
+import type { NewSolanaEventPayload, SolanaEvent } from '@/modules/history/events/schemas';
 import type { StandaloneEventData } from '@/modules/history/management/forms/form-types';
-import type { NewSolanaEventPayload, SolanaEvent } from '@/types/history/events/schemas';
 import { HistoryEventEntryType, Zero } from '@rotki/common';
 import useVuelidate from '@vuelidate/core';
 import dayjs from 'dayjs';
@@ -12,11 +12,11 @@ import { useFormStateWatcher } from '@/composables/form';
 import { useEditModeStateTracker } from '@/composables/history/events/edit-mode-state';
 import { useHistoryEventsForm } from '@/composables/history/events/form';
 import { useHistoryEventCounterpartyMappings } from '@/composables/history/events/mapping/counterparty';
+import { SOLANA_CHAIN } from '@/modules/assets/types';
 import EventDateLocation from '@/modules/history/management/forms/common/EventDateLocation.vue';
 import HistoryEventAssetPriceForm from '@/modules/history/management/forms/HistoryEventAssetPriceForm.vue';
 import HistoryEventTypeForm from '@/modules/history/management/forms/HistoryEventTypeForm.vue';
 import { useEventFormValidation } from '@/modules/history/management/forms/use-event-form-validation';
-import { SOLANA_CHAIN } from '@/types/asset';
 import { bigNumberifyFromRef } from '@/utils/bignumbers';
 import { toMessages } from '@/utils/validation';
 

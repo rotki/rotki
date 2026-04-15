@@ -1,6 +1,6 @@
 <script setup lang="ts">
+import type { ImportSourceType } from '@/modules/common/upload-types';
 import type { TaskMeta } from '@/modules/tasks/types';
-import type { ImportSourceType } from '@/types/upload-types';
 import useVuelidate from '@vuelidate/core';
 import { helpers, requiredIf } from '@vuelidate/validators';
 import FileUpload from '@/components/import/FileUpload.vue';
@@ -9,10 +9,10 @@ import { useImportDataApi } from '@/composables/api/import';
 import { useInterop } from '@/composables/electron-interop';
 import { refIsTruthy } from '@/composables/ref';
 import { displayDateFormatter } from '@/data/date-formatter';
+import { DateFormat } from '@/modules/common/date-format';
 import { TaskType } from '@/modules/tasks/task-type';
 import { isActionableFailure, useTaskHandler } from '@/modules/tasks/use-task-handler';
 import { useTaskStore } from '@/modules/tasks/use-task-store';
-import { DateFormat } from '@/types/date-format';
 import { toMessages } from '@/utils/validation';
 
 interface ImportTaskMeta extends TaskMeta {

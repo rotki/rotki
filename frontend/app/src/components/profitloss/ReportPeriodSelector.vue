@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import type { PeriodChangedEvent, SelectionChangedEvent } from '@/types/reports';
+import type { PeriodChangedEvent, SelectionChangedEvent } from '@/modules/reports/report-types';
 import dayjs from 'dayjs';
-import { Quarter } from '@/types/settings/frontend-settings';
+import { Quarter } from '@/modules/settings/types/frontend-settings';
 import { convertToTimestamp } from '@/utils/date';
 
 const { year, quarter } = defineProps<{

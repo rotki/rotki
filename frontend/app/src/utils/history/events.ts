@@ -1,5 +1,5 @@
 import type { ComputedRef, MaybeRefOrGetter } from 'vue';
-import type { LocationAndTxRef } from '@/types/history/events';
+import type { LocationAndTxRef } from '@/modules/history/events/event-payloads';
 import { HistoryEventEntryType } from '@rotki/common';
 import { snakeCase } from 'es-toolkit';
 import {
@@ -17,7 +17,7 @@ import {
   type OnlineHistoryEvent,
   type SolanaEvent,
   type SolanaSwapEvent,
-} from '@/types/history/events/schemas';
+} from '@/modules/history/events/schemas';
 
 export function isOfEventType<T extends HistoryEvent>(e: HistoryEvent, type: HistoryEventEntryType): e is T {
   return type === e?.entryType;

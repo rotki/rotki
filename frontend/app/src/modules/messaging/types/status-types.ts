@@ -1,6 +1,6 @@
 import { CommonQueryStatusData, NumericString } from '@rotki/common';
 import { z } from 'zod/v4';
-import { EvmChainLikeAddress } from '@/types/history/events';
+import { EvmChainLikeAddress } from '@/modules/history/events/event-payloads';
 import { SocketMessageProgressUpdateSubType } from './base';
 
 export const DataMigrationStatusData = z.object({

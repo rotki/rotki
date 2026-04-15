@@ -2,7 +2,7 @@ import { type BigNumber, bigNumberify } from '@rotki/common';
 import { updateGeneralSettings } from '@test/utils/general-settings';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useAssetValue } from '@/modules/amount-display/composables/use-asset-value';
-import { useCurrencies } from '@/types/currencies';
+import { useCurrencies } from '@/modules/amount-display/currencies';
 
 vi.mock('@/modules/prices/use-price-utils', () => ({
   usePriceUtils: (): {

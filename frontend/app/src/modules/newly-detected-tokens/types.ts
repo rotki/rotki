@@ -1,4 +1,4 @@
-import type { PaginationRequestPayload } from '@/types/common';
+import type { PaginationRequestPayload } from '@/modules/common/common-types';
 import { z } from 'zod/v4';
 
 export enum NewDetectedTokenKind {

@@ -1,8 +1,8 @@
 import type { DialogEventHandlers } from '@/components/history/events/dialog-types';
 import type { RepullingTransactionResult } from '@/composables/history/events/tx';
 import type { RefreshTransactionsParams } from '@/composables/history/events/tx/types';
-import type { Exchange } from '@/types/exchanges';
-import type { LocationAndTxRef, PullLocationTransactionPayload } from '@/types/history/events';
+import type { Exchange } from '@/modules/balances/types/exchanges';
+import type { LocationAndTxRef, PullLocationTransactionPayload } from '@/modules/history/events/event-payloads';
 import { type NotificationAction, Severity } from '@rotki/common';
 import { useDecodingStatusStore } from '@/modules/history/use-decoding-status-store';
 import { useNotifications } from '@/modules/notifications/use-notifications';

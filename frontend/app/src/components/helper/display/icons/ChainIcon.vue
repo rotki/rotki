@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import AppImage from '@/components/common/AppImage.vue';
 import { useSupportedChains } from '@/composables/info/chains';
-import { LOOPRING_CHAIN } from '@/types/blockchain';
+import { LOOPRING_CHAIN } from '@/modules/onchain/blockchain-types';
 
 interface Props {
   size?: string;

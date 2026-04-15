@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { DataTableColumn, DataTableSortData } from '@rotki/ui-library';
-import type { BalanceSnapshot, BalanceSnapshotPayload, Snapshot } from '@/types/snapshots';
+import type { BalanceSnapshot, BalanceSnapshotPayload, Snapshot } from '@/modules/dashboard/snapshots';
 import { assert, type BigNumber, bigNumberify, One, toSentenceCase, Zero } from '@rotki/common';
 import EditBalancesSnapshotForm from '@/components/dashboard/edit-snapshot/EditBalancesSnapshotForm.vue';
 import EditBalancesSnapshotLocationSelector
@@ -14,11 +14,11 @@ import AssetSelect from '@/components/inputs/AssetSelect.vue';
 import ConfirmSnapshotConflictReplacementDialog
   from '@/components/snapshots/ConfirmSnapshotConflictReplacementDialog.vue';
 import { AssetValueDisplay, ValueDisplay } from '@/modules/amount-display/components';
+import { CURRENCY_USD } from '@/modules/amount-display/currencies';
+import { BalanceType } from '@/modules/balances/types/balances';
 import { usePriceUtils } from '@/modules/prices/use-price-utils';
 import { TableId, useRememberTableSorting } from '@/modules/table/use-remember-table-sorting';
 import { useGeneralSettingsStore } from '@/store/settings/general';
-import { BalanceType } from '@/types/balances';
-import { CURRENCY_USD } from '@/types/currencies';
 import { bigNumberSum } from '@/utils/calculation';
 import { isNft } from '@/utils/nft';
 

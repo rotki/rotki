@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { CurrentDbUpgradeProgress } from '@/types/login';
+import type { CurrentDbUpgradeProgress } from '@/modules/account/login';
 import DbActivityProgress from '@/components/account-management/upgrade/DbActivityProgress.vue';
 import { useNewlyDetectedTokens } from '@/modules/newly-detected-tokens';
 import { useSessionAuthStore } from '@/store/session/auth';

@@ -1,7 +1,7 @@
 import type { ComputedRef, Ref } from 'vue';
 import type { UseHistoryEventsSelectionModeReturn } from '@/modules/history/events/composables/use-selection-mode';
 import type { HistoryEventRequestPayload } from '@/modules/history/events/request-types';
-import type { HistoryEventEntry, HistoryEventRow } from '@/types/history/events/schemas';
+import type { HistoryEventEntry, HistoryEventRow } from '@/modules/history/events/schemas';
 import { get, objectOmit, set } from '@vueuse/shared';
 import { useHistoryEventsApi } from '@/composables/api/history/events';
 import { useIgnore } from '@/composables/history';

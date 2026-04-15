@@ -1,9 +1,9 @@
 import { server } from '@test/setup-files/server';
 import { http, HttpResponse } from 'msw';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { IncompleteUpgradeError, SyncConflictError } from '@/modules/account/login';
+import { ApiValidationError } from '@/modules/api/types/errors';
 import { TaskNotFoundError } from '@/modules/tasks/types';
-import { ApiValidationError } from '@/types/api/errors';
-import { IncompleteUpgradeError, SyncConflictError } from '@/types/login';
 import { useTaskApi } from './task';
 
 const backendUrl = process.env.VITE_BACKEND_URL;

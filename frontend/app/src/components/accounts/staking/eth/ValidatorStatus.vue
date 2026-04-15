@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { EthereumValidator } from '@/types/blockchain/accounts';
+import type { EthereumValidator } from '@/modules/accounts/blockchain-accounts';
 import { useEthValidatorUtils } from '@/composables/staking/eth/use-eth-validator-utils';
 import HashLink from '@/modules/common/links/HashLink.vue';
 

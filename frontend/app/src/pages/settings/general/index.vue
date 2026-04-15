@@ -7,7 +7,7 @@ import GeneralSettingsCategory from '@/components/settings/GeneralSettingsCatego
 import HistoryEventSettingsCategory from '@/components/settings/HistoryEventSettingsCategory.vue';
 import NftSettingsCategory from '@/components/settings/NftSettingsCategory.vue';
 import { SettingsCategoryIds } from '@/composables/settings/types';
-import { NoteLocation } from '@/types/notes';
+import { NoteLocation } from '@/modules/common/notes';
 
 definePage({
   meta: {

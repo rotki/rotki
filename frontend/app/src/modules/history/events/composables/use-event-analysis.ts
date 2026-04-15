@@ -1,4 +1,4 @@
-import type { HistoryEventEntry, HistoryEventRow } from '@/types/history/events/schemas';
+import type { HistoryEventEntry, HistoryEventRow } from '@/modules/history/events/schemas';
 import { HistoryEventEntryType } from '@rotki/common';
 import { isSwapTypeEvent } from '@/modules/history/management/forms/form-guards';
 

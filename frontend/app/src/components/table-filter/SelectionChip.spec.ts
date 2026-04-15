@@ -1,5 +1,5 @@
 import type { useAssetIconApi } from '@/composables/api/assets/icon';
-import type { Suggestion } from '@/types/filtering';
+import type { Suggestion } from '@/modules/table/filtering';
 import { createCustomPinia } from '@test/utils/create-pinia';
 import { type ComponentMountingOptions, mount, type VueWrapper } from '@vue/test-utils';
 import { setActivePinia } from 'pinia';

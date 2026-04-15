@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { useStatusUpdater } from '@/composables/status';
+import { Section } from '@/modules/common/status';
 import { Routes } from '@/router/routes';
-import { Section } from '@/types/status';
 
 const { t } = useI18n({ useScope: 'global' });
 const { isFirstLoad } = useStatusUpdater(Section.HISTORY);

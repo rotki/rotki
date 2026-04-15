@@ -1,8 +1,8 @@
 import type { ComputedRef, DeepReadonly, MaybeRefOrGetter, Ref } from 'vue';
-import type { TradeLocationData } from '@/types/history/trade/location';
+import type { TradeLocationData } from '@/modules/history/trade/location';
 import { useSupportedChains } from '@/composables/info/chains';
+import { isBlockchain } from '@/modules/onchain/chains';
 import { useLocationStore } from '@/store/locations';
-import { isBlockchain } from '@/types/blockchain/chains';
 
 interface UseLocationsReturn {
   getExchangeName: (location: string) => string;

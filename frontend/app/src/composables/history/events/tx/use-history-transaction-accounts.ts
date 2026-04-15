@@ -1,7 +1,7 @@
 import { get } from '@vueuse/core';
 import { useSupportedChains } from '@/composables/info/chains';
 import { useAccountAddresses } from '@/modules/balances/blockchain/use-account-addresses';
-import { type ChainAddress, TransactionChainType } from '@/types/history/events';
+import { type ChainAddress, TransactionChainType } from '@/modules/history/events/event-payloads';
 
 interface UseHistoryTransactionAccountsReturn {
   getAllAccounts: (chains?: string[]) => ChainAddress[];

@@ -1,6 +1,6 @@
 <script setup lang="ts">
+import { NoteLocation } from '@/modules/common/notes';
 import Dashboard from '@/modules/dashboard/Dashboard.vue';
-import { NoteLocation } from '@/types/notes';
 
 definePage({
   meta: {

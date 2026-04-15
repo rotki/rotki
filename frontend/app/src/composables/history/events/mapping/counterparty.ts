@@ -1,5 +1,5 @@
 import type { MaybeRefOrGetter } from 'vue';
-import type { ActionDataEntry } from '@/types/action';
+import type { ActionDataEntry } from '@/modules/common/action';
 import { isValidEthAddress, toHumanReadable } from '@rotki/common';
 import { startPromise } from '@shared/utils';
 import { useHistoryEventsApi } from '@/composables/api/history/events';

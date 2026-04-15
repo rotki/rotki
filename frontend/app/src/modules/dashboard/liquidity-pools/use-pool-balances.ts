@@ -2,7 +2,7 @@ import type { ComputedRef } from 'vue';
 import { type BigNumber, createEvmIdentifierFromAddress, type Writeable } from '@rotki/common';
 import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
 import { useSectionStatus } from '@/composables/status';
-import { Section } from '@/types/status';
+import { Section } from '@/modules/common/status';
 import { sortDesc } from '@/utils/bignumbers';
 import { balanceSum, bigNumberSum } from '@/utils/calculation';
 import { type PoolBalance, type PoolBalances, type PoolLiquidityBalance, PoolType } from './types';

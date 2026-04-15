@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import StatisticPlaceholder from '@/components/graphs/StatisticPlaceholder.vue';
+import { NoteLocation } from '@/modules/common/notes';
 import { PremiumFeature, useFeatureAccess } from '@/modules/premium/use-feature-access';
 import { PremiumStatistics } from '@/premium/premium';
-import { NoteLocation } from '@/types/notes';
 
 definePage({
   meta: {

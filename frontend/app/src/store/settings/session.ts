@@ -1,6 +1,6 @@
-import type { ActionStatus } from '@/types/action';
-import type { Exchange } from '@/types/exchanges';
-import type { SessionSettings } from '@/types/session';
+import type { Exchange } from '@/modules/balances/types/exchanges';
+import type { ActionStatus } from '@/modules/common/action';
+import type { SessionSettings } from '@/modules/session/types';
 import { TimeFramePeriod } from '@rotki/common';
 import { useComputedRef } from '@/composables/utils/useComputedRef';
 

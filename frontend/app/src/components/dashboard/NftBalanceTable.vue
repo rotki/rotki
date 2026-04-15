@@ -7,8 +7,8 @@ import RefreshButton from '@/components/helper/RefreshButton.vue';
 import RowAppend from '@/components/helper/RowAppend.vue';
 import { AssetAmountDisplay, FiatDisplay } from '@/modules/amount-display/components';
 import { useNftData } from '@/modules/balances/non-fungible/composables/use-nft-data';
+import { DashboardTableType } from '@/modules/settings/types/frontend-settings';
 import { Routes } from '@/router/routes';
-import { DashboardTableType } from '@/types/settings/frontend-settings';
 
 const nonFungibleRoute = Routes.BALANCES_NON_FUNGIBLE;
 const group = DashboardTableType.NFT;

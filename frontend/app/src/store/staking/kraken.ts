@@ -1,7 +1,7 @@
 import type {
   KrakenStakingEvents,
   KrakenStakingPagination,
-} from '@/types/staking';
+} from '@/modules/staking/staking-types';
 import { type AssetBalance, Zero } from '@rotki/common';
 import { useResolveAssetIdentifier } from '@/composables/assets/common';
 import { balanceSum } from '@/utils/calculation';

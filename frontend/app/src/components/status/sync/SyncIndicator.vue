@@ -9,12 +9,12 @@ import { useLinks } from '@/composables/links';
 import { useSync } from '@/composables/session/sync';
 import { useLogout } from '@/modules/account/use-logout';
 import { PremiumFeature, useFeatureAccess } from '@/modules/premium/use-feature-access';
+import { SYNC_DOWNLOAD, SYNC_UPLOAD, type SyncAction } from '@/modules/session/sync';
 import { TaskType } from '@/modules/tasks/task-type';
 import { useTaskHandler } from '@/modules/tasks/use-task-handler';
 import { useTaskStore } from '@/modules/tasks/use-task-store';
 import { useSessionMetadataStore } from '@/store/session/metadata';
 import { usePremiumStore } from '@/store/session/premium';
-import { SYNC_DOWNLOAD, SYNC_UPLOAD, type SyncAction } from '@/types/session/sync';
 
 const syncSettingMenuOpen = ref<boolean>(false);
 const pending = ref<boolean>(false);

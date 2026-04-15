@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import type { ComponentExposed } from 'vue-component-type-helpers';
 import type { AccountManageState } from '@/composables/accounts/blockchain/use-account-manage';
-import type { BlockchainAccountGroupWithBalance } from '@/types/blockchain/accounts';
-import type { LocationQuery } from '@/types/route';
+import type { BlockchainAccountGroupWithBalance } from '@/modules/accounts/blockchain-accounts';
+import type { LocationQuery } from '@/modules/table/route';
 import AccountBalanceAggregatedAssets from '@/components/accounts/AccountBalanceAggregatedAssets.vue';
 import AccountGroupDetails from '@/components/accounts/AccountGroupDetails.vue';
 import AccountGroupDetailsTable from '@/components/accounts/AccountGroupDetailsTable.vue';

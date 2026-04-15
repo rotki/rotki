@@ -1,9 +1,9 @@
 import type { DataTableSortData, TablePaginationData } from '@rotki/ui-library';
 import type { ComputedRef, MaybeRef, MaybeRefOrGetter, Ref } from 'vue';
 import type { HistoryEventsToggles } from '@/components/history/events/dialog-types';
+import type { Collection } from '@/modules/common/collection';
 import type { HistoryEventRequestPayload } from '@/modules/history/events/request-types';
-import type { Collection } from '@/types/collection';
-import type { HistoryEventRow } from '@/types/history/events/schemas';
+import type { HistoryEventRow } from '@/modules/history/events/schemas';
 import { type Account, type HistoryEventEntryType, toSnakeCase, type Writeable } from '@rotki/common';
 import { objectOmit } from '@vueuse/shared';
 import { isEqual } from 'es-toolkit';
@@ -14,8 +14,8 @@ import { DuplicateHandlingStatus, type HighlightType } from '@/composables/histo
 import { HIGHLIGHT_FETCH_DEBOUNCE, useHistoryEventNavigation } from '@/composables/history/events/use-history-event-navigation';
 import { useRefWithDebounce } from '@/composables/ref';
 import { usePaginationFilters } from '@/composables/use-pagination-filter';
+import { RouterLocationLabelsSchema } from '@/modules/table/route';
 import { TableId } from '@/modules/table/use-remember-table-sorting';
-import { RouterLocationLabelsSchema } from '@/types/route';
 import {
   isEvmEventType,
   isOnlineHistoryEventType,

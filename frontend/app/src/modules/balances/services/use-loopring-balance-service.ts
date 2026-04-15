@@ -1,20 +1,20 @@
+import type { BlockchainAccount } from '@/modules/accounts/blockchain-accounts';
+import type { AssetProtocolBalances } from '@/modules/balances/types/blockchain-balances';
 import type { TaskMeta } from '@/modules/tasks/types';
-import type { BlockchainAccount } from '@/types/blockchain/accounts';
-import type { AssetProtocolBalances } from '@/types/blockchain/balances';
 import { Blockchain } from '@rotki/common';
 import { useBlockchainBalancesApi } from '@/composables/api/balances/blockchain';
 import { useResolveAssetIdentifier } from '@/composables/assets/common';
 import { useStatusUpdater } from '@/composables/status';
 import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
+import { AccountAssetBalances } from '@/modules/balances/types/balances';
 import { useBalancesStore } from '@/modules/balances/use-balances-store';
+import { Module } from '@/modules/common/modules';
+import { Section, Status } from '@/modules/common/status';
 import { useNotifications } from '@/modules/notifications/use-notifications';
+import { LOOPRING_CHAIN } from '@/modules/onchain/blockchain-types';
 import { TaskType } from '@/modules/tasks/task-type';
 import { isActionableFailure, useTaskHandler } from '@/modules/tasks/use-task-handler';
 import { useGeneralSettingsStore } from '@/store/settings/general';
-import { AccountAssetBalances } from '@/types/balances';
-import { LOOPRING_CHAIN } from '@/types/blockchain';
-import { Module } from '@/types/modules';
-import { Section, Status } from '@/types/status';
 import { balanceSum } from '@/utils/calculation';
 
 interface UseLoopringBalanceServiceReturn {

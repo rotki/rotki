@@ -1,12 +1,12 @@
 <script setup lang="ts">
-import type { NftAsset } from '@/types/nfts';
+import type { NftAsset } from '@/modules/assets/nfts';
 import { useAssetPageNavigation } from '@/composables/assets/navigation';
 import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
 import { useSpamAsset } from '@/composables/assets/spam';
+import { isSpammableAssetType } from '@/modules/assets/types';
 import { useAssetsStore } from '@/modules/assets/use-assets-store';
 import { useIgnoredAssetOperations } from '@/modules/assets/use-ignored-asset-operations';
 import HashLink from '@/modules/common/links/HashLink.vue';
-import { isSpammableAssetType } from '@/types/asset';
 
 type ConfirmType = 'ignore' | 'mark_as_spam' | 'unignore' | 'unmark_spam';
 

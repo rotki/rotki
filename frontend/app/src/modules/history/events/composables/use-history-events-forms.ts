@@ -1,8 +1,8 @@
-import type { HistoryEventsTableEmitFn } from '@/modules/history/events/types';
 import type {
   HistoryEventEntry,
   StandaloneEditableEvents,
-} from '@/types/history/events/schemas';
+} from '@/modules/history/events/schemas';
+import type { HistoryEventsTableEmitFn } from '@/modules/history/events/types';
 import { DIALOG_TYPES } from '@/components/history/events/dialog-types';
 
 interface UseHistoryEventsFormsReturn {

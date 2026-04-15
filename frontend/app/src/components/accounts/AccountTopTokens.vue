@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import type { BlockchainAccountBalance } from '@/types/blockchain/accounts';
+import type { BlockchainAccountBalance } from '@/modules/accounts/blockchain-accounts';
 import { type AssetBalance, Zero } from '@rotki/common';
 import { pick } from 'es-toolkit';
 import IconTokenDisplay from '@/components/accounts/IconTokenDisplay.vue';

@@ -1,7 +1,7 @@
 <script lang="ts" setup>
-import type { ValidationErrors } from '@/types/api/errors';
-import type { BlockchainAccount, ValidatorData } from '@/types/blockchain/accounts';
-import type { RepullingEthStakingPayload } from '@/types/history/events';
+import type { BlockchainAccount, ValidatorData } from '@/modules/accounts/blockchain-accounts';
+import type { ValidationErrors } from '@/modules/api/types/errors';
+import type { RepullingEthStakingPayload } from '@/modules/history/events/event-payloads';
 import { Blockchain, type Eth2ValidatorEntry, toHumanReadable } from '@rotki/common';
 import useVuelidate from '@vuelidate/core';
 import { required } from '@vuelidate/validators';
@@ -10,8 +10,8 @@ import ValidatorFilterInput from '@/components/helper/filter/ValidatorFilterInpu
 import DateTimeRangePicker from '@/components/inputs/DateTimeRangePicker.vue';
 import { useFormStateWatcher } from '@/composables/form';
 import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
+import { OnlineHistoryEventsQueryType } from '@/modules/history/events/schemas';
 import { useBlockchainValidatorsStore } from '@/store/blockchain/validators';
-import { OnlineHistoryEventsQueryType } from '@/types/history/events/schemas';
 import { isValidatorAccount } from '@/utils/blockchain/accounts/utils';
 import { toMessages } from '@/utils/validation';
 

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { LidoCsmNodeOperator } from '@/types/staking';
+import type { LidoCsmNodeOperator } from '@/modules/staking/staking-types';
 import TablePageLayout from '@/components/layout/TablePageLayout.vue';
 import { useLidoCsmApi } from '@/composables/api/staking/lido-csm';
 import { usePriceTaskManager } from '@/modules/prices/use-price-task-manager';

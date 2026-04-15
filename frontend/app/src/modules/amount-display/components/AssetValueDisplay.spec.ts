@@ -5,9 +5,9 @@ import { updateGeneralSettings } from '@test/utils/general-settings';
 import { mount, type VueWrapper } from '@vue/test-utils';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import AssetValueDisplay from '@/modules/amount-display/components/AssetValueDisplay.vue';
+import { useCurrencies } from '@/modules/amount-display/currencies';
 import { useBalancePricesStore } from '@/store/balances/prices';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
-import { useCurrencies } from '@/types/currencies';
 
 describe('modules/amount-display/components/AssetValueDisplay', () => {
   let wrapper: VueWrapper<InstanceType<typeof AssetValueDisplay>>;

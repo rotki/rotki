@@ -6,8 +6,8 @@ import { useUserNotesApi } from '@/composables/api/session/user-notes';
 import { useNotesCount } from '@/composables/notes/use-notes-count';
 import { usePremium } from '@/composables/premium';
 import { usePaginationFilters } from '@/composables/use-pagination-filter';
+import { NoteLocation, type UserNote, type UserNotesRequestPayload } from '@/modules/common/notes';
 import { useSessionAuthStore } from '@/store/session/auth';
-import { NoteLocation, type UserNote, type UserNotesRequestPayload } from '@/types/notes';
 import { getCollectionData, setupEntryLimit } from '@/utils/collection';
 
 const open = defineModel<boolean>('open', { required: true });

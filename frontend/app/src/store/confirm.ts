@@ -1,4 +1,4 @@
-import type { DialogType } from '@/types/dialogs';
+import type { DialogType } from '@/modules/common/dialogs';
 
 interface ConfirmationMessage {
   title: string;

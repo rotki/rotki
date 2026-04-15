@@ -3,7 +3,7 @@ import type { AccountManageState } from '@/composables/accounts/blockchain/use-a
 import type {
   BlockchainAccountGroupRequestPayload,
   BlockchainAccountWithBalance,
-} from '@/types/blockchain/accounts';
+} from '@/modules/accounts/blockchain-accounts';
 import AccountBalanceDetails from '@/components/accounts/balances/AccountBalanceDetails.vue';
 import { usePaginationFilters } from '@/composables/use-pagination-filter';
 import { AccountBalancesTable } from '@/modules/accounts/table';
@@ -11,7 +11,7 @@ import { useBlockchainAccountLoading } from '@/modules/accounts/use-account-load
 import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
 import { useBlockchainAccountData } from '@/modules/balances/blockchain/use-blockchain-account-data';
 import { useBalancesStore } from '@/modules/balances/use-balances-store';
-import { type LocationQuery, RouterExpandedIdsSchema } from '@/types/route';
+import { type LocationQuery, RouterExpandedIdsSchema } from '@/modules/table/route';
 import { getAccountAddress } from '@/utils/blockchain/accounts/utils';
 
 const query = defineModel<LocationQuery>('query', { default: () => ({}), required: false });

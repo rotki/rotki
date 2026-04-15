@@ -5,7 +5,7 @@ import {
   PurgeableOnlyModule,
   SUPPORTED_MODULES,
   type SupportedModule,
-} from '@/types/modules';
+} from '@/modules/common/modules';
 import { getPublicProtocolImagePath } from '@/utils/file';
 
 type PurgeableModuleEntry = Omit<SupportedModule, 'identifier'> & { identifier: PurgeableModule };

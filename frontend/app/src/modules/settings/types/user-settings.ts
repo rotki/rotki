@@ -1,0 +1,245 @@
+import { NumericString } from '@rotki/common';
+import { z } from 'zod/v4';
+import { Constraints } from '@/data/constraints';
+import { Defaults } from '@/data/defaults';
+import { useCurrencies } from '@/modules/amount-display/currencies';
+import { Exchange, KrakenAccountType } from '@/modules/balances/types/exchanges';
+import { ModuleEnum } from '@/modules/common/modules';
+import { AddressNamePriorityEnum } from '@/modules/settings/types/address-name-priorities';
+import { EvmIndexerEnum } from '@/modules/settings/types/evm-indexer';
+import { parseFrontendSettings } from '@/modules/settings/types/frontend-settings';
+import { PriceOracleEnum } from '@/modules/settings/types/price-oracle';
+
+export const OtherSettings = z.object({
+  frontendSettings: z.string().transform(parseFrontendSettings),
+  havePremium: z.boolean(),
+  krakenAccountType: KrakenAccountType.optional(),
+  premiumShouldSync: z.boolean(),
+});
+
+export type OtherSettings = z.infer<typeof OtherSettings>;
+
+export const SuppressibleMissingKeyService = {
+  BEACONCHAIN: 'beaconchain',
+  ETHERSCAN: 'etherscan',
+  HELIUS: 'helius',
+  THEGRAPH: 'thegraph',
+} as const;
+
+export const SuppressibleMissingKeyServiceEnum = z.enum([
+  SuppressibleMissingKeyService.BEACONCHAIN,
+  SuppressibleMissingKeyService.ETHERSCAN,
+  SuppressibleMissingKeyService.HELIUS,
+  SuppressibleMissingKeyService.THEGRAPH,
+]);
+
+export type SuppressibleMissingKeyService = z.infer<typeof SuppressibleMissingKeyServiceEnum>;
+
+export const SUPPRESSIBLE_SERVICES: SuppressibleMissingKeyService[] = Object.values(SuppressibleMissingKeyService);
+
+const GeneralSettings = z.object({
+  activeModules: z.array(ModuleEnum),
+  addressNamePriority: z.array(AddressNamePriorityEnum),
+  askUserUponSizeDiscrepancy: z.boolean(),
+  assetMovementAmountTolerance: z.string().default(Defaults.ASSET_MOVEMENT_AMOUNT_TOLERANCE),
+  assetMovementTimeRange: z.number().int().min(1).default(Defaults.ASSET_MOVEMENT_TIME_RANGE),
+  autoCreateCalendarReminders: z.boolean(),
+  autoCreateProfitEvents: z.boolean(),
+  autoDeleteCalendarEntries: z.boolean(),
+  autoDetectTokens: z.boolean(),
+  balanceSaveFrequency: z.preprocess(
+    balanceSaveFrequency => Math.min(Number.parseInt(balanceSaveFrequency as string), Constraints.MAX_HOURS_DELAY),
+    z.number().int().max(Constraints.MAX_HOURS_DELAY),
+  ),
+  beaconRpcEndpoint: z.string(),
+  btcDerivationGapLimit: z.number(),
+  btcMempoolApi: z.string(),
+  connectTimeout: z.number().min(1),
+  csvExportDelimiter: z.string().max(1),
+  currentPriceOracles: z.array(PriceOracleEnum),
+  dateDisplayFormat: z.string(),
+  defaultEvmIndexerOrder: z.array(EvmIndexerEnum),
+  displayDateInLocaltime: z.boolean(),
+  dotRpcEndpoint: z.string(),
+  evmchainsToSkipDetection: z.array(z.string()),
+  evmIndexersOrder: z.record(z.string(), z.array(EvmIndexerEnum)),
+  historicalPriceOracles: z.array(PriceOracleEnum),
+  inferZeroTimedBalances: z.boolean(),
+  internalTxConflictRepullFrequency: z.number().int().min(30).default(Defaults.DEFAULT_INTERNAL_TX_CONFLICT_REPULL_FREQUENCY),
+  internalTxsToRepull: z.number().int().min(1).default(Defaults.DEFAULT_INTERNAL_TXS_TO_REPULL),
+  ksmRpcEndpoint: z.string(),
+  mainCurrency: z.string().transform((currency) => {
+    const { findCurrency } = useCurrencies();
+    return findCurrency(currency);
+  }),
+  nonSyncingExchanges: z.array(Exchange),
+  oraclePenaltyDuration: z.number().min(1),
+  oraclePenaltyThresholdCount: z.number().min(1),
+  queryRetryLimit: z.number().min(1),
+  readTimeout: z.number().min(1),
+  ssfGraphMultiplier: z.number().default(0),
+  submitUsageAnalytics: z.boolean(),
+  suppressMissingKeyMsgServices: z.array(SuppressibleMissingKeyServiceEnum),
+  treatEth2AsEth: z.boolean(),
+  uiFloatingPrecision: z.number(),
+});
+
+export type GeneralSettings = z.infer<typeof GeneralSettings>;
+
+export enum CostBasisMethod {
+  FIFO = 'fifo',
+  LIFO = 'lifo',
+  HIFO = 'hifo',
+  ACB = 'acb',
+}
+
+const CostBasisMethodEnum = z.enum(CostBasisMethod);
+
+export const BaseAccountingSettings = z.object({
+  calculatePastCostBasis: z.boolean(),
+  costBasisMethod: CostBasisMethodEnum.nullish(),
+  ethStakingTaxableAfterWithdrawalEnabled: z.boolean().nullish(),
+  includeCrypto2crypto: z.boolean(),
+  includeFeesInCostBasis: z.boolean().nullish(),
+  useAssetCollectionsInCostBasis: z.boolean().nullish(),
+  includeGasCosts: z.boolean(),
+  profitCurrency: z.string().nullish(),
+  taxfreeAfterPeriod: z.number().nullish(),
+});
+
+export type BaseAccountingSettings = z.infer<typeof BaseAccountingSettings>;
+
+const AccountingSettings = z.object({
+  ...BaseAccountingSettings.shape,
+  costBasisMethod: CostBasisMethodEnum.default(CostBasisMethod.FIFO),
+  pnlCsvHaveSummary: z.boolean(),
+  pnlCsvWithFormulas: z.boolean(),
+});
+
+export type AccountingSettings = z.infer<typeof AccountingSettings>;
+
+const Settings = z.object({
+  ...GeneralSettings.shape,
+  ...AccountingSettings.shape,
+  ...OtherSettings.shape,
+});
+
+const SettingsUpdate = z.object({
+  ...Settings.shape,
+  frontendSettings: z.string(),
+  mainCurrency: z.string(),
+});
+
+export type SettingsUpdate = Partial<z.infer<typeof SettingsUpdate>>;
+
+const BaseData = z.object({
+  lastBalanceSave: z.number(),
+  lastDataUploadTs: z.number(),
+  lastWriteTs: z.number(),
+  version: z.number(),
+});
+
+type BaseData = z.infer<typeof BaseData>;
+
+const UserSettings = z.object({
+  ...BaseData.shape,
+  ...Settings.shape,
+});
+
+type UserSettings = z.infer<typeof UserSettings>;
+
+function getAccountingSettings(settings: UserSettings): AccountingSettings {
+  return {
+    calculatePastCostBasis: settings.calculatePastCostBasis,
+    costBasisMethod: settings.costBasisMethod,
+    ethStakingTaxableAfterWithdrawalEnabled: settings.ethStakingTaxableAfterWithdrawalEnabled,
+    includeCrypto2crypto: settings.includeCrypto2crypto,
+    includeFeesInCostBasis: settings.includeFeesInCostBasis,
+    includeGasCosts: settings.includeGasCosts,
+    pnlCsvHaveSummary: settings.pnlCsvHaveSummary,
+    pnlCsvWithFormulas: settings.pnlCsvWithFormulas,
+    taxfreeAfterPeriod: settings.taxfreeAfterPeriod,
+    useAssetCollectionsInCostBasis: settings.useAssetCollectionsInCostBasis,
+  };
+}
+
+function getGeneralSettings(settings: UserSettings): GeneralSettings {
+  return {
+    activeModules: settings.activeModules,
+    addressNamePriority: settings.addressNamePriority,
+    askUserUponSizeDiscrepancy: settings.askUserUponSizeDiscrepancy,
+    assetMovementAmountTolerance: settings.assetMovementAmountTolerance,
+    assetMovementTimeRange: settings.assetMovementTimeRange,
+    autoCreateCalendarReminders: settings.autoCreateCalendarReminders,
+    autoCreateProfitEvents: settings.autoCreateProfitEvents,
+    autoDeleteCalendarEntries: settings.autoDeleteCalendarEntries,
+    autoDetectTokens: settings.autoDetectTokens,
+    balanceSaveFrequency: settings.balanceSaveFrequency,
+    beaconRpcEndpoint: settings.beaconRpcEndpoint,
+    btcDerivationGapLimit: settings.btcDerivationGapLimit,
+    btcMempoolApi: settings.btcMempoolApi,
+    connectTimeout: settings.connectTimeout,
+    csvExportDelimiter: settings.csvExportDelimiter,
+    currentPriceOracles: settings.currentPriceOracles,
+    dateDisplayFormat: settings.dateDisplayFormat,
+    defaultEvmIndexerOrder: settings.defaultEvmIndexerOrder,
+    displayDateInLocaltime: settings.displayDateInLocaltime,
+    dotRpcEndpoint: settings.dotRpcEndpoint,
+    evmchainsToSkipDetection: settings.evmchainsToSkipDetection,
+    evmIndexersOrder: settings.evmIndexersOrder,
+    historicalPriceOracles: settings.historicalPriceOracles,
+    inferZeroTimedBalances: settings.inferZeroTimedBalances,
+    internalTxConflictRepullFrequency: settings.internalTxConflictRepullFrequency,
+    internalTxsToRepull: settings.internalTxsToRepull,
+    ksmRpcEndpoint: settings.ksmRpcEndpoint,
+    mainCurrency: settings.mainCurrency,
+    nonSyncingExchanges: settings.nonSyncingExchanges,
+    oraclePenaltyDuration: settings.oraclePenaltyDuration,
+    oraclePenaltyThresholdCount: settings.oraclePenaltyThresholdCount,
+    queryRetryLimit: settings.queryRetryLimit,
+    readTimeout: settings.readTimeout,
+    ssfGraphMultiplier: settings.ssfGraphMultiplier,
+    submitUsageAnalytics: settings.submitUsageAnalytics,
+    suppressMissingKeyMsgServices: settings.suppressMissingKeyMsgServices,
+    treatEth2AsEth: settings.treatEth2AsEth,
+    uiFloatingPrecision: settings.uiFloatingPrecision,
+  };
+}
+
+function getOtherSettings(settings: UserSettings): OtherSettings {
+  return {
+    frontendSettings: settings.frontendSettings,
+    havePremium: settings.havePremium,
+    krakenAccountType: settings.krakenAccountType,
+    premiumShouldSync: settings.premiumShouldSync,
+  };
+}
+
+function getData(settings: UserSettings): BaseData {
+  return {
+    lastBalanceSave: settings.lastBalanceSave,
+    lastDataUploadTs: settings.lastDataUploadTs,
+    lastWriteTs: settings.lastWriteTs,
+    version: settings.version,
+  };
+}
+
+export const UserSettingsModel = UserSettings.transform(settings => ({
+  accounting: getAccountingSettings(settings),
+  data: getData(settings),
+  general: getGeneralSettings(settings),
+  other: getOtherSettings(settings),
+}));
+
+export type UserSettingsModel = z.infer<typeof UserSettingsModel>;
+
+export const UserAccount = z.object({
+  exchanges: z.array(Exchange),
+  settings: UserSettingsModel,
+});
+
+export type UserAccount = z.infer<typeof UserAccount>;
+
+export const ExchangeRates = z.record(z.string(), NumericString);
+
+export type ExchangeRates = z.infer<typeof ExchangeRates>;

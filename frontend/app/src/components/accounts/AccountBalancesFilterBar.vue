@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import TagFilter from '@/components/inputs/TagFilter.vue';
 import TableFilter from '@/components/table-filter/TableFilter.vue';
-import { type MatchedKeywordWithBehaviour, SavedFilterLocation, type SearchMatcher } from '@/types/filtering';
+import { type MatchedKeywordWithBehaviour, SavedFilterLocation, type SearchMatcher } from '@/modules/table/filtering';
 
 const visibleTags = defineModel<string[]>('visibleTags', { required: true });
 const filters = defineModel<MatchedKeywordWithBehaviour<any>>('filters', { required: true });

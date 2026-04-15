@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { NoteLocation } from '@/types/notes';
+import { NoteLocation } from '@/modules/common/notes';
 
 definePage({
   meta: {

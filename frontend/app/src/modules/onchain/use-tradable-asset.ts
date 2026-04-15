@@ -1,6 +1,6 @@
 import type { ComputedRef, InjectionKey, MaybeRefOrGetter } from 'vue';
+import type { BlockchainAssetBalances, EthBalance } from '@/modules/balances/types/blockchain-balances';
 import type { TradableAsset, TradableAssetWithoutValue } from '@/modules/onchain/types';
-import type { BlockchainAssetBalances, EthBalance } from '@/types/blockchain/balances';
 import { Zero } from '@rotki/common';
 import { useSupportedChains } from '@/composables/info/chains';
 import { useBalancesStore } from '@/modules/balances/use-balances-store';

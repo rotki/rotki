@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { DataTableColumn, DataTableSortData } from '@rotki/ui-library';
-import type { AssetBreakdown } from '@/types/blockchain/accounts';
+import type { AssetBreakdown } from '@/modules/accounts/blockchain-accounts';
 import { type AssetBalance, type BigNumber, Blockchain } from '@rotki/common';
 import Eth2ValidatorLimitTooltip from '@/components/accounts/blockchain/eth2/Eth2ValidatorLimitTooltip.vue';
 import IconTokenDisplay from '@/components/accounts/IconTokenDisplay.vue';
@@ -8,10 +8,10 @@ import PercentageDisplay from '@/components/display/PercentageDisplay.vue';
 import LocationDisplay from '@/components/history/LocationDisplay.vue';
 import { useSupportedChains } from '@/composables/info/chains';
 import { FiatDisplay, ValueDisplay } from '@/modules/amount-display/components';
+import { CURRENCY_USD } from '@/modules/amount-display/currencies';
 import { useAssetBalancesBreakdown } from '@/modules/balances/use-asset-balances-breakdown';
 import { TableId, useRememberTableSorting } from '@/modules/table/use-remember-table-sorting';
 import { useGeneralSettingsStore } from '@/store/settings/general';
-import { CURRENCY_USD } from '@/types/currencies';
 import { groupAssetBreakdown } from '@/utils/balances';
 import { calculatePercentage } from '@/utils/calculation';
 

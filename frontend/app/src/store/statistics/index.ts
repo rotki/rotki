@@ -4,12 +4,12 @@ import { type AssetBalanceWithPriceAndChains, type BigNumber, type NetValue, One
 import dayjs from 'dayjs';
 import { useAggregatedBalances } from '@/composables/balances/use-aggregated-balances';
 import { useNumberScrambler } from '@/composables/utils/useNumberScrambler';
+import { CURRENCY_USD, type SupportedCurrency } from '@/modules/amount-display/currencies';
 import { useBalancesStore } from '@/modules/balances/use-balances-store';
 import { usePriceUtils } from '@/modules/prices/use-price-utils';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { useSessionSettingsStore } from '@/store/settings/session';
-import { CURRENCY_USD, type SupportedCurrency } from '@/types/currencies';
 import { millisecondsToSeconds } from '@/utils/date';
 
 function defaultNetValue(): NetValue {

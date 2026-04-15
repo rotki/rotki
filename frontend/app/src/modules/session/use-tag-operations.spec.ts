@@ -1,5 +1,5 @@
-import type { ActionStatus } from '@/types/action';
-import type { Tag, Tags } from '@/types/tags';
+import type { ActionStatus } from '@/modules/common/action';
+import type { Tag, Tags } from '@/modules/tags/tags';
 import { createPinia, setActivePinia } from 'pinia';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useSessionMetadataStore } from '@/store/session/metadata';

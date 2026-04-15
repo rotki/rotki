@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { DataTableColumn, DataTableSortData } from '@rotki/ui-library';
-import type { ManualPriceFormPayload, ManualPriceWithUsd } from '@/types/prices';
+import type { ManualPriceFormPayload, ManualPriceWithUsd } from '@/modules/prices/price-types';
 import { omit } from 'es-toolkit';
 import AssetDetails from '@/components/helper/AssetDetails.vue';
 import NftDetails from '@/components/helper/NftDetails.vue';

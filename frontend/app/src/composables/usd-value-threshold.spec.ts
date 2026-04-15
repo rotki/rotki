@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ref, type ToRefs } from 'vue';
+import { BalanceSource } from '@/modules/settings/types/frontend-settings';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
-import { BalanceSource } from '@/types/settings/frontend-settings';
 import { useValueThreshold } from './usd-value-threshold';
 
 type MockedStore<T extends (...args: any[]) => any> = ToRefs<Partial<ReturnType<T>>>;

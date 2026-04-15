@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { FeeEntry } from '@/types/history/events/schemas';
+import type { FeeEntry } from '@/modules/history/events/schemas';
 import useVuelidate from '@vuelidate/core';
 import { isEqual } from 'es-toolkit';
 import AmountInput from '@/components/inputs/AmountInput.vue';

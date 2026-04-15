@@ -1,5 +1,5 @@
 import type { AssetBalanceWithPriceAndChains, BigNumber } from '@rotki/common';
-import type { AssetProtocolBalances } from '@/types/blockchain/balances';
+import type { AssetProtocolBalances } from '@/modules/balances/types/blockchain-balances';
 import {
   aggregateSourceBalances,
   createAssetBalanceFromAggregated,

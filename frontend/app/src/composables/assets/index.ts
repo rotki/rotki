@@ -1,5 +1,3 @@
-import type { TaskMeta } from '@/modules/tasks/types';
-import type { ActionStatus } from '@/types/action';
 import type {
   ApplyUpdateResult,
   AssetDBVersion,
@@ -7,13 +5,15 @@ import type {
   AssetUpdateCheckResult,
   AssetUpdatePayload,
   AssetUpdateResult,
-} from '@/types/asset';
+} from '@/modules/assets/types';
+import type { ActionStatus } from '@/modules/common/action';
+import type { TaskMeta } from '@/modules/tasks/types';
 import { useAssetsApi } from '@/composables/api/assets';
 import { useInterop } from '@/composables/electron-interop';
+import { ApiValidationError, type ValidationErrors } from '@/modules/api/types/errors';
 import { getErrorMessage, useNotifications } from '@/modules/notifications/use-notifications';
 import { TaskType } from '@/modules/tasks/task-type';
 import { isActionableFailure, useTaskHandler } from '@/modules/tasks/use-task-handler';
-import { ApiValidationError, type ValidationErrors } from '@/types/api/errors';
 import { logger } from '@/utils/logging';
 
 interface ExportCustomAssetsResult {

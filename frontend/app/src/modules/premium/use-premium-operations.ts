@@ -1,8 +1,8 @@
-import type { ActionStatus } from '@/types/action';
-import type { PremiumCredentialsPayload } from '@/types/session';
+import type { ActionStatus } from '@/modules/common/action';
+import type { PremiumCredentialsPayload } from '@/modules/session/types';
 import { usePremiumCredentialsApi } from '@/composables/api/session/premium-credentials';
+import { ApiValidationError, type ValidationErrors } from '@/modules/api/types/errors';
 import { usePremiumStore } from '@/store/session/premium';
-import { ApiValidationError, type ValidationErrors } from '@/types/api/errors';
 import { getErrorMessage } from '@/utils/error-handling';
 
 interface UsePremiumOperationsReturn {

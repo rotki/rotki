@@ -2,9 +2,9 @@
 import type { AssetBalanceWithPrice } from '@rotki/common';
 import AssetBalances from '@/components/AssetBalances.vue';
 import EvmNativeTokenBreakdown from '@/components/EvmNativeTokenBreakdown.vue';
+import { isEvmNativeToken } from '@/modules/assets/types';
 import AssetDetailsLayout from '@/modules/balances/protocols/components/AssetDetailsLayout.vue';
 import AssetProtocolBreakdown from '@/modules/balances/protocols/components/AssetProtocolBreakdown.vue';
-import { isEvmNativeToken } from '@/types/asset';
 
 defineProps<{
   isLiability: boolean;

@@ -1,15 +1,15 @@
 <script setup lang="ts">
 import type { BigNumber, FailedHistoricalAssetPriceResponse } from '@rotki/common';
 import type { DataTableColumn, DataTableSortData } from '@rotki/ui-library';
-import type { HistoricalPrice, HistoricalPriceDeletePayload, HistoricalPriceFormPayload } from '@/types/prices';
-import type { EditableMissingPrice } from '@/types/reports';
+import type { HistoricalPrice, HistoricalPriceDeletePayload, HistoricalPriceFormPayload } from '@/modules/prices/price-types';
+import type { EditableMissingPrice } from '@/modules/reports/report-types';
 import DateDisplay from '@/components/display/DateDisplay.vue';
 import AmountInput from '@/components/inputs/AmountInput.vue';
 import { useAssetPricesApi } from '@/composables/api/assets/prices';
 import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
+import { ApiValidationError } from '@/modules/api/types/errors';
 import { useHistoricPriceCache } from '@/modules/prices/use-historic-price-cache';
 import { useGeneralSettingsStore } from '@/store/settings/general';
-import { ApiValidationError } from '@/types/api/errors';
 import { getErrorMessage } from '@/utils/error-handling';
 
 const { asset } = defineProps<{

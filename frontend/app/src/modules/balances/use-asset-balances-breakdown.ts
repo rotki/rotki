@@ -1,7 +1,7 @@
 import type { ComputedRef } from 'vue';
-import type { Accounts, AssetBreakdown, Balances } from '@/types/blockchain/accounts';
-import type { ExchangeData } from '@/types/exchanges';
-import type { ManualBalanceWithValue } from '@/types/manual-balances';
+import type { Accounts, AssetBreakdown, Balances } from '@/modules/accounts/blockchain-accounts';
+import type { ExchangeData } from '@/modules/balances/types/exchanges';
+import type { ManualBalanceWithValue } from '@/modules/balances/types/manual-balances';
 import { Zero } from '@rotki/common';
 import { useResolveAssetIdentifier } from '@/composables/assets/common';
 import { useSupportedChains } from '@/composables/info/chains';

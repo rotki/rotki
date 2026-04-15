@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { Suggestion } from '@/types/filtering';
+import type { Suggestion } from '@/modules/table/filtering';
 import { isValidAddress, isValidTxHashOrSignature } from '@rotki/common';
 import { useTemplateRef } from 'vue';
 import AssetIcon from '@/components/helper/display/icons/AssetIcon.vue';

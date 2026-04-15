@@ -1,5 +1,5 @@
 import type { ComputedRef, Ref } from 'vue';
-import type { CalendarEvent } from '@/types/history/calendar';
+import type { CalendarEvent } from '@/modules/history/calendar/types';
 import dayjs, { type Dayjs } from 'dayjs';
 
 interface UseCalendarDateManagementReturn {

@@ -1,7 +1,7 @@
 <script lang="ts" setup>
+import type { AddEvmSwapEventPayload, EvmHistoryEvent, EvmSwapEvent } from '@/modules/history/events/schemas';
 import type { EvmSwapFormData } from '@/modules/history/management/forms/evm-swap-event-form';
 import type { GroupEventData, StandaloneEventData } from '@/modules/history/management/forms/form-types';
-import type { AddEvmSwapEventPayload, EvmHistoryEvent, EvmSwapEvent } from '@/types/history/events/schemas';
 import { assert, HistoryEventEntryType } from '@rotki/common';
 import dayjs from 'dayjs';
 import AmountInput from '@/components/inputs/AmountInput.vue';

@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import type { AddressData, BlockchainAccount } from '@/types/blockchain/accounts';
-import type { LocationLabel } from '@/types/location';
+import type { AddressData, BlockchainAccount } from '@/modules/accounts/blockchain-accounts';
+import type { LocationLabel } from '@/modules/common/location';
 import { getTextToken } from '@rotki/common';
 import AccountDisplay from '@/components/display/AccountDisplay.vue';
 import LocationIcon from '@/components/history/LocationIcon.vue';

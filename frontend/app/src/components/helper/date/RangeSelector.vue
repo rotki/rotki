@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import type { PeriodChangedEvent, SelectionChangedEvent } from '@/types/reports';
-import type { Quarter } from '@/types/settings/frontend-settings';
+import type { PeriodChangedEvent, SelectionChangedEvent } from '@/modules/reports/report-types';
+import type { Quarter } from '@/modules/settings/types/frontend-settings';
 import useVuelidate from '@vuelidate/core';
 import { helpers, requiredIf } from '@vuelidate/validators';
 import dayjs from 'dayjs';

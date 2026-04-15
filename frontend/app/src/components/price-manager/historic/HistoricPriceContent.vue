@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { DataTableColumn, DataTableSortData } from '@rotki/ui-library';
-import type { HistoricalPrice, HistoricalPriceFormPayload } from '@/types/prices';
+import type { HistoricalPrice, HistoricalPriceFormPayload } from '@/modules/prices/price-types';
 import dayjs from 'dayjs';
 import DateDisplay from '@/components/display/DateDisplay.vue';
 import AssetDetails from '@/components/helper/AssetDetails.vue';

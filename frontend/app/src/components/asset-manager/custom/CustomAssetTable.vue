@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { DataTableColumn, DataTableSortData, TablePaginationData } from '@rotki/ui-library';
 import type { Filters, Matcher } from '@/composables/filters/custom-assets';
-import type { CustomAsset } from '@/types/asset';
+import type { CustomAsset } from '@/modules/assets/types';
 import { some } from 'es-toolkit/compat';
 import AssetDetailsBase from '@/components/helper/AssetDetailsBase.vue';
 import CopyButton from '@/components/helper/CopyButton.vue';

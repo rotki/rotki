@@ -2,7 +2,7 @@
 import type {
   BlockchainAccount,
   BlockchainAccountBalance,
-} from '@/types/blockchain/accounts';
+} from '@/modules/accounts/blockchain-accounts';
 import { consistOfNumbers } from '@rotki/common';
 import EnsAvatar from '@/components/display/EnsAvatar.vue';
 import { useScramble } from '@/composables/scramble';
