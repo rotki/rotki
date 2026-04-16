@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import SettingsOption from '@/components/settings/controls/SettingsOption.vue';
-import { Defaults } from '@/data/defaults';
+import { Defaults } from '@/modules/common/defaults';
 import SettingResetConfirmButton from '@/modules/settings/SettingResetConfirmButton.vue';
 import { useGeneralSettingsStore } from '@/modules/settings/use-general-settings-store';
 

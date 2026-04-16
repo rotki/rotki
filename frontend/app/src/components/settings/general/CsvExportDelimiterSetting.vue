@@ -3,7 +3,7 @@ import useVuelidate from '@vuelidate/core';
 import { helpers, maxLength, required } from '@vuelidate/validators';
 import SettingsOption from '@/components/settings/controls/SettingsOption.vue';
 import { useValidation } from '@/composables/validation';
-import { Defaults } from '@/data/defaults';
+import { Defaults } from '@/modules/common/defaults';
 import { toMessages } from '@/modules/common/validation/validation';
 import SettingResetConfirmButton from '@/modules/settings/SettingResetConfirmButton.vue';
 import { useGeneralSettingsStore } from '@/modules/settings/use-general-settings-store';

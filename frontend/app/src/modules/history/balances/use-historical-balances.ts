@@ -10,10 +10,10 @@ import dayjs from 'dayjs';
 import { useHistoricalBalancesApi } from '@/composables/api/balances/historical-balances-api';
 import { summarizeAssetProtocols } from '@/composables/balances/asset-summary';
 import { useSupportedChains } from '@/composables/info/chains';
-import { displayDateFormatter } from '@/data/date-formatter';
 import { ApiValidationError, type ValidationErrors } from '@/modules/api/types/errors';
 import { useAssetsStore } from '@/modules/assets/use-assets-store';
 import { useCollectionInfo } from '@/modules/assets/use-collection-info';
+import { displayDateFormatter } from '@/modules/common/date-formatter';
 import { getErrorMessage } from '@/modules/common/logging/error-handling';
 import { useHistoricalBalancesStore } from '@/modules/history/balances/store';
 import {

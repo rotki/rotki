@@ -1,7 +1,7 @@
 import dayjs from 'dayjs';
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { Constraints } from '@/data/constraints';
 import { usePasswordConfirmation } from '@/modules/account/use-password-confirmation';
+import { Constraints } from '@/modules/common/constraints';
 import { useSessionAuthStore } from '@/modules/session/use-session-auth-store';
 import { useFrontendSettingsStore } from '@/modules/settings/use-frontend-settings-store';
 

@@ -3,8 +3,8 @@ import { type AssetBalanceWithPriceAndChains, BigNumber } from '@rotki/common';
 import { get } from '@vueuse/core';
 import { createPinia, setActivePinia } from 'pinia';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { defaultGeneralSettings } from '@/data/factories';
 import { useCurrencies } from '@/modules/amount-display/currencies';
+import { defaultGeneralSettings } from '@/modules/settings/factories';
 import { useGeneralSettingsStore } from '@/modules/settings/use-general-settings-store';
 import { useStatisticsStore } from './use-statistics-store';
 

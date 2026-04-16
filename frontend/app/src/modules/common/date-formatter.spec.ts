@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { DateFormatter } from '@/data/date-formatter';
+import { DateFormatter } from '@/modules/common/date-formatter';
 
 describe('date-formatter', () => {
   const converter = new DateFormatter();

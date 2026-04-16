@@ -1,6 +1,6 @@
 import { BigNumber, bigNumberify } from '@rotki/common';
 import { describe, expect, it } from 'vitest';
-import { AmountFormatter } from '@/data/amount-formatter';
+import { AmountFormatter } from '@/modules/amount-display/amount-formatter';
 
 describe('amount-formatter', () => {
   const converter = new AmountFormatter();

@@ -3,13 +3,13 @@ import type { AssetPrices } from '@/modules/prices/price-types';
 import { bigNumberify } from '@rotki/common';
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useManualBalancesApi } from '@/composables/api/balances/manual';
-import { TRADE_LOCATION_BANKS, TRADE_LOCATION_BLOCKCHAIN } from '@/data/defaults';
 import { Currency, CURRENCY_USD } from '@/modules/amount-display/currencies';
 import { useManualBalanceData } from '@/modules/balances/manual/use-manual-balance-data';
 import { useManualBalances } from '@/modules/balances/manual/use-manual-balances';
 import { BalanceType } from '@/modules/balances/types/balances';
 import { useBalancePricesStore } from '@/modules/balances/use-balance-prices-store';
 import { useBalancesStore } from '@/modules/balances/use-balances-store';
+import { TRADE_LOCATION_BANKS, TRADE_LOCATION_BLOCKCHAIN } from '@/modules/common/defaults';
 import { useGeneralSettingsStore } from '@/modules/settings/use-general-settings-store';
 
 const runTaskMock = vi.fn();

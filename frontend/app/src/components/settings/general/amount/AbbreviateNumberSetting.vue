@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import SettingsOption from '@/components/settings/controls/SettingsOption.vue';
-import { abbreviationList } from '@/data/amount-formatter';
-import { MINIMUM_DIGIT_TO_BE_ABBREVIATED } from '@/data/constraints';
+import { abbreviationList } from '@/modules/amount-display/amount-formatter';
+import { MINIMUM_DIGIT_TO_BE_ABBREVIATED } from '@/modules/common/constraints';
 import { useFrontendSettingsStore } from '@/modules/settings/use-frontend-settings-store';
 
 const { t } = useI18n({ useScope: 'global' });

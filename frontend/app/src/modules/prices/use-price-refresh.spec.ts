@@ -3,10 +3,10 @@ import { createTestBalance, createTestManualBalance, createTestPriceInfo } from 
 import { updateGeneralSettings } from '@test/utils/general-settings';
 import flushPromises from 'flush-promises';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { TRADE_LOCATION_BANKS } from '@/data/defaults';
 import { useCurrencies } from '@/modules/amount-display/currencies';
 import { useBalancePricesStore } from '@/modules/balances/use-balance-prices-store';
 import { useBalancesStore } from '@/modules/balances/use-balances-store';
+import { TRADE_LOCATION_BANKS } from '@/modules/common/defaults';
 import { useSessionSettingsStore } from '@/modules/settings/use-session-settings-store';
 import '@test/i18n';
 

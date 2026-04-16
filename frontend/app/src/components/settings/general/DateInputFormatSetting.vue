@@ -4,7 +4,7 @@ import { helpers, required } from '@vuelidate/validators';
 import SettingsOption from '@/components/settings/controls/SettingsOption.vue';
 import DateInputFormatSelector from '@/components/settings/general/DateInputFormatSelector.vue';
 import { useValidation } from '@/composables/validation';
-import { displayDateFormatter } from '@/data/date-formatter';
+import { displayDateFormatter } from '@/modules/common/date-formatter';
 import { toMessages } from '@/modules/common/validation/validation';
 import { useFrontendSettingsStore } from '@/modules/settings/use-frontend-settings-store';
 

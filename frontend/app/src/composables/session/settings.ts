@@ -2,7 +2,7 @@ import type { Exchange } from '@/modules/balances/types/exchanges';
 import type { UserSettingsModel } from '@/modules/settings/types/user-settings';
 import { BigNumber, TimeFramePersist } from '@rotki/common';
 import { useThemeMigration } from '@/composables/settings/theme';
-import { getBnFormat } from '@/data/amount-formatter';
+import { getBnFormat } from '@/modules/amount-display/amount-formatter';
 import { usePremiumStore } from '@/modules/premium/use-premium-store';
 import { usePremiumWatchers } from '@/modules/premium/use-premium-watchers';
 import { PrivacyMode } from '@/modules/session/types';

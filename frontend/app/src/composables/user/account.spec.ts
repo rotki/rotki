@@ -1,8 +1,8 @@
 import dayjs from 'dayjs';
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useAccountManagement, useAutoLogin } from '@/composables/user/account';
-import { Constraints } from '@/data/constraints';
 import { useLogin } from '@/modules/account/use-login';
+import { Constraints } from '@/modules/common/constraints';
 import { useSessionAuthStore } from '@/modules/session/use-session-auth-store';
 import { useFrontendSettingsStore } from '@/modules/settings/use-frontend-settings-store';
 

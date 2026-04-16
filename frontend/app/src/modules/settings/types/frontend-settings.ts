@@ -10,11 +10,11 @@ import {
 } from '@rotki/common';
 import { isEmpty } from 'es-toolkit/compat';
 import { z } from 'zod/v4';
-import { Constraints, MINIMUM_DIGIT_TO_BE_ABBREVIATED } from '@/data/constraints';
-import { Defaults } from '@/data/defaults';
 import { CurrencyLocationEnum } from '@/modules/amount-display/currency-location';
 import { camelCaseTransformer } from '@/modules/api/transformers';
+import { Constraints, MINIMUM_DIGIT_TO_BE_ABBREVIATED } from '@/modules/common/constraints';
 import { DateFormatEnum } from '@/modules/common/date-format';
+import { Defaults } from '@/modules/common/defaults';
 import { logger } from '@/modules/common/logging/logging';
 import { generateRandomScrambleMultiplier } from '@/modules/session/session-utils';
 import { PrivacyMode } from '@/modules/session/types';

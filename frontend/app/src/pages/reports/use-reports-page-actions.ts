@@ -4,7 +4,7 @@ import type { TaskMeta } from '@/modules/tasks/types';
 import { Priority, Severity } from '@rotki/common';
 import { useReportsApi } from '@/composables/api/reports';
 import { useInterop } from '@/composables/electron-interop';
-import { displayDateFormatter } from '@/data/date-formatter';
+import { displayDateFormatter } from '@/modules/common/date-formatter';
 import { downloadFileByTextContent } from '@/modules/common/file/download';
 import { useAreaVisibilityStore } from '@/modules/common/use-area-visibility-store';
 import { getErrorMessage, useNotifications } from '@/modules/notifications/use-notifications';

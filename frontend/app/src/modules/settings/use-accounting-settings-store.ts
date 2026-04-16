@@ -1,6 +1,6 @@
 import type { AccountingSettings } from '@/modules/settings/types/user-settings';
 import { useComputedRef } from '@/composables/utils/useComputedRef';
-import { defaultAccountingSettings } from '@/data/factories';
+import { defaultAccountingSettings } from '@/modules/settings/factories';
 
 export const useAccountingSettingsStore = defineStore('settings/accounting', () => {
   const settings = ref(defaultAccountingSettings());
