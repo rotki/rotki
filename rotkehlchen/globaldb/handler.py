@@ -1826,13 +1826,14 @@ class GlobalDBHandler:
         return True
 
     @staticmethod
-    def delete_manual_price(
+    def delete_historical_price(
             from_asset: 'Asset',
             to_asset: 'Asset',
             timestamp: Timestamp,
+            source_type: HistoricalPriceOracle,
     ) -> bool:
         """
-        Deletes a manually inserted historical price given by its primary key.
+        Deletes a historical price entry given by its primary key.
         Returns True if one row was deleted and False otherwise
         """
         querystr = (
@@ -1843,14 +1844,14 @@ class GlobalDBHandler:
             from_asset.identifier,
             to_asset.identifier,
             timestamp,
-            HistoricalPriceOracle.MANUAL.serialize_for_db(),  # pylint: disable=no-member
+            source_type.serialize_for_db(),
         )
         with GlobalDBHandler().conn.write_ctx() as write_cursor:
             write_cursor.execute(querystr, bindings)
             if write_cursor.rowcount != 1:
                 log.error(
                     f'Failed to delete historical price from {from_asset} to {to_asset} '
-                    f'and timestamp: {timestamp!s}.',
+                    f'and timestamp: {timestamp!s} for source: {source_type!s}.',
                 )
                 return False
 

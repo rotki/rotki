@@ -92,7 +92,7 @@ def test_historical_assets_price_future_ts_error(
     """Test error when setting or querying historical asset price with an invalid timestamp."""
     url = api_url_for(rotkehlchen_api_server, 'historicalassetspriceresource')
     for request_fnc, json in (
-        (requests.put, {'from_asset': 'ETH', 'to_asset': 'USD', 'price': '1234', 'timestamp': 10000000000}),  # noqa: E501
+        (requests.put, {'from_asset': 'ETH', 'to_asset': 'USD', 'price': '1234', 'timestamp': 10000000000, 'source_type': str(HistoricalPriceOracle.MANUAL)}),  # noqa: E501
         (requests.post, {'assets_timestamp': [['BTC', 10000000000]], 'target_asset': 'USD'}),
     ):
         assert_error_response(
@@ -147,6 +147,7 @@ def test_manual_historical_price(
             'to_asset': 'USD',
             'timestamp': 1611166335,
             'price': '1.2',
+            'source_type': str(HistoricalPriceOracle.MANUAL),
         },
     )
     assert_simple_ok_response(response)
@@ -171,6 +172,7 @@ def test_manual_historical_price(
             'to_asset': 'USD',
             'timestamp': 1631166335,
             'price': '0',
+            'source_type': str(HistoricalPriceOracle.MANUAL),
         },
     )
     assert_simple_ok_response(response)
@@ -196,6 +198,7 @@ def test_manual_historical_price(
             'to_asset': 'USD',
             'timestamp': 1611166335,
             'price': '-1.20',
+            'source_type': str(HistoricalPriceOracle.MANUAL),
         },
     )
     assert_error_response(
@@ -214,6 +217,7 @@ def test_manual_historical_price(
             'to_asset': 'USD',
             'timestamp': 1611166335,
             'price': '1.20',
+            'source_type': str(HistoricalPriceOracle.MANUAL),
         },
     )
     assert_error_response(
@@ -232,6 +236,7 @@ def test_manual_historical_price(
             'to_asset': 'USD',
             'timestamp': 1611166340,
             'price': '1.30',
+            'source_type': str(HistoricalPriceOracle.MANUAL),
         },
     )
     # Try to edit entry
@@ -245,6 +250,7 @@ def test_manual_historical_price(
             'to_asset': 'USD',
             'timestamp': 1611166340,
             'price': '1.50',
+            'source_type': str(HistoricalPriceOracle.MANUAL),
         },
     )
     # Try to retrieve the assets price
@@ -270,6 +276,7 @@ def test_manual_historical_price(
             'to_asset': 'USD',
             'timestamp': 1611166340,
             'price': '1.4',
+            'source_type': str(HistoricalPriceOracle.MANUAL),
         },
     )
     response = requests.get(
@@ -313,6 +320,7 @@ def test_manual_historical_price(
             'from_asset': A_CRV.identifier,
             'to_asset': 'USD',
             'timestamp': 1611166335,
+            'source_type': str(HistoricalPriceOracle.MANUAL),
         },
     )
     # If we query again we should only see two results
@@ -337,11 +345,12 @@ def test_manual_historical_price(
             'from_asset': A_CRV.identifier,
             'to_asset': 'USD',
             'timestamp': 1611166338,
+            'source_type': str(HistoricalPriceOracle.MANUAL),
         },
     )
     assert_error_response(
         response=response,
-        contained_in_msg='Failed to delete manual price',
+        contained_in_msg='Failed to delete historical price',
         status_code=HTTPStatus.CONFLICT,
         result_exists=True,
     )
@@ -356,14 +365,144 @@ def test_manual_historical_price(
             'to_asset': 'USD',
             'timestamp': 1611166344,
             'price': '1.4',
+            'source_type': str(HistoricalPriceOracle.MANUAL),
         },
     )
     assert_error_response(
         response=response,
-        contained_in_msg='Failed to edit manual price',
+        contained_in_msg='Failed to edit historical price',
         status_code=HTTPStatus.CONFLICT,
         result_exists=True,
     )
+
+
+def test_historical_price_write_requires_source_type(
+        rotkehlchen_api_server: APIServer,
+) -> None:
+    url = api_url_for(rotkehlchen_api_server, 'historicalassetspriceresource')
+
+    for request_fnc, payload in (
+        (requests.put, {
+            'from_asset': A_CRV.identifier,
+            'to_asset': 'USD',
+            'timestamp': 1611167000,
+            'price': '1.20',
+        }),
+        (requests.patch, {
+            'from_asset': A_CRV.identifier,
+            'to_asset': 'USD',
+            'timestamp': 1611167000,
+            'price': '1.20',
+        }),
+        (requests.delete, {
+            'from_asset': A_CRV.identifier,
+            'to_asset': 'USD',
+            'timestamp': 1611167000,
+        }),
+    ):
+        assert_error_response(
+            response=request_fnc(url=url, json=payload),
+            contained_in_msg='source_type',
+            status_code=HTTPStatus.BAD_REQUEST,
+        )
+
+
+def test_oracle_historical_price_write_operations(
+        rotkehlchen_api_server: APIServer,
+        globaldb: GlobalDBHandler,
+) -> None:
+    url = api_url_for(rotkehlchen_api_server, 'historicalassetspriceresource')
+
+    response = requests.put(
+        url,
+        json={
+            'from_asset': A_CRV.identifier,
+            'to_asset': 'USD',
+            'timestamp': 1611167000,
+            'price': '1.20',
+            'source_type': str(HistoricalPriceOracle.MANUAL),
+        },
+    )
+    assert_simple_ok_response(response)
+
+    response = requests.put(
+        url,
+        json={
+            'from_asset': A_CRV.identifier,
+            'to_asset': 'USD',
+            'timestamp': 1611167000,
+            'price': '2.20',
+            'source_type': str(HistoricalPriceOracle.COINGECKO),
+        },
+    )
+    assert_simple_ok_response(response)
+
+    manual_price = globaldb.get_historical_price(
+        from_asset=A_CRV,
+        to_asset=A_USD,
+        timestamp=Timestamp(1611167000),
+        max_seconds_distance=10,
+        sources=(HistoricalPriceOracle.MANUAL,),
+    )
+    coingecko_price = globaldb.get_historical_price(
+        from_asset=A_CRV,
+        to_asset=A_USD,
+        timestamp=Timestamp(1611167000),
+        max_seconds_distance=10,
+        sources=(HistoricalPriceOracle.COINGECKO,),
+    )
+    assert manual_price is not None
+    assert coingecko_price is not None
+    assert manual_price.price == FVal('1.2')
+    assert coingecko_price.price == FVal('2.2')
+
+    response = requests.patch(
+        url,
+        json={
+            'from_asset': A_CRV.identifier,
+            'to_asset': 'USD',
+            'timestamp': 1611167000,
+            'price': '2.40',
+            'source_type': str(HistoricalPriceOracle.COINGECKO),
+        },
+    )
+    assert_simple_ok_response(response)
+
+    coingecko_price = globaldb.get_historical_price(
+        from_asset=A_CRV,
+        to_asset=A_USD,
+        timestamp=Timestamp(1611167000),
+        max_seconds_distance=10,
+        sources=(HistoricalPriceOracle.COINGECKO,),
+    )
+    assert coingecko_price is not None
+    assert coingecko_price.price == FVal('2.4')
+
+    response = requests.delete(
+        url,
+        json={
+            'from_asset': A_CRV.identifier,
+            'to_asset': 'USD',
+            'timestamp': 1611167000,
+            'source_type': str(HistoricalPriceOracle.COINGECKO),
+        },
+    )
+    assert_simple_ok_response(response)
+
+    assert globaldb.get_historical_price(
+        from_asset=A_CRV,
+        to_asset=A_USD,
+        timestamp=Timestamp(1611167000),
+        max_seconds_distance=10,
+        sources=(HistoricalPriceOracle.COINGECKO,),
+    ) is None
+    assert globaldb.get_historical_price(
+        from_asset=A_CRV,
+        to_asset=A_USD,
+        timestamp=Timestamp(1611167000),
+        max_seconds_distance=10,
+        sources=(HistoricalPriceOracle.MANUAL,),
+    ) is not None
 
 
 def test_historical_price_cache_only(

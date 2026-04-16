@@ -4,6 +4,7 @@ pub mod database;
 pub mod globaldb_endpoints;
 pub mod health;
 pub mod icons;
+pub mod prices;
 mod schemas;
 mod utils;
 
