@@ -1,5 +1,5 @@
 import { createPinia } from 'pinia';
-import { StoreResetPlugin } from '@/modules/app/store-plugins';
+import { StoreResetPlugin } from '@/modules/shell/app/store-plugins';
 
 export function createCustomPinia() {
   const pinia = createPinia();

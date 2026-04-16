@@ -1,12 +1,12 @@
 <script setup lang="ts">
-import SettingsItem from '@/components/settings/controls/SettingsItem.vue';
-import SettingsPage from '@/components/settings/controls/SettingsPage.vue';
-import IndexerOrderSetting from '@/components/settings/evm/IndexerOrderSetting.vue';
-import EvmChainsToIgnoreSettings from '@/components/settings/general/EvmChainsToIgnoreSettings.vue';
-import TreatEthAsEth2Setting from '@/components/settings/general/TreatEthAsEth2Setting.vue';
-import SettingCategory from '@/components/settings/SettingCategory.vue';
-import { SettingsCategoryIds, SettingsHighlightIds } from '@/composables/settings/types';
-import { NoteLocation } from '@/modules/common/notes';
+import { NoteLocation } from '@/modules/core/common/notes';
+import SettingsItem from '@/modules/settings/controls/SettingsItem.vue';
+import SettingsPage from '@/modules/settings/controls/SettingsPage.vue';
+import IndexerOrderSetting from '@/modules/settings/evm/IndexerOrderSetting.vue';
+import EvmChainsToIgnoreSettings from '@/modules/settings/general/EvmChainsToIgnoreSettings.vue';
+import TreatEthAsEth2Setting from '@/modules/settings/general/TreatEthAsEth2Setting.vue';
+import { SettingsCategoryIds, SettingsHighlightIds } from '@/modules/settings/setting-highlight-ids';
+import SettingCategory from '@/modules/settings/SettingCategory.vue';
 
 definePage({
   meta: {

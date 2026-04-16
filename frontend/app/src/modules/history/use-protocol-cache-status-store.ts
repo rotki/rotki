@@ -1,4 +1,4 @@
-import type { ProtocolCacheUpdatesData } from '@/modules/messaging/types';
+import type { ProtocolCacheUpdatesData } from '@/modules/core/messaging/types';
 
 export interface ProtocolCacheStatusEntry extends ProtocolCacheUpdatesData {
   cancelled?: boolean;

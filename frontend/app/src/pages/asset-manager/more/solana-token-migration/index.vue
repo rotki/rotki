@@ -1,12 +1,12 @@
 <script setup lang="ts">
 import type { DataTableColumn } from '@rotki/ui-library';
 import { SolanaTokenKind } from '@rotki/common';
-import MergeDialog from '@/components/asset-manager/MergeDialog.vue';
-import AssetDetails from '@/components/helper/AssetDetails.vue';
-import TablePageLayout from '@/components/layout/TablePageLayout.vue';
-import { useSolanaTokenMigrationStore } from '@/modules/asset-manager/solana-token-migration/solana-token-migration-store';
-import SolanaTokenMigrationDialog from '@/modules/asset-manager/solana-token-migration/SolanaTokenMigrationDialog.vue';
-import { useConfirmStore } from '@/modules/common/use-confirm-store';
+import MergeDialog from '@/modules/assets/admin/MergeDialog.vue';
+import SolanaTokenMigrationDialog from '@/modules/assets/admin/solana-token-migration/SolanaTokenMigrationDialog.vue';
+import { useSolanaTokenMigrationStore } from '@/modules/assets/admin/solana-token-migration/use-solana-token-migration-store';
+import AssetDetails from '@/modules/assets/AssetDetails.vue';
+import { useConfirmStore } from '@/modules/core/common/use-confirm-store';
+import TablePageLayout from '@/modules/shell/layout/TablePageLayout.vue';
 
 definePage({
   name: 'asset-manager-solana-token-migration',

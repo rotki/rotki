@@ -1,14 +1,14 @@
 <script setup lang="ts">
 import { startPromise } from '@shared/utils';
-import DateDisplay from '@/components/display/DateDisplay.vue';
-import InternalLink from '@/components/helper/InternalLink.vue';
-import HistoryEventsAlert from '@/components/history/HistoryEventsAlert.vue';
-import { useSupportedChains } from '@/composables/info/chains';
+import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
 import HistoricalBalancesFilter from '@/modules/history/balances/HistoricalBalancesFilter.vue';
 import HistoricalBalancesTable from '@/modules/history/balances/HistoricalBalancesTable.vue';
 import { HistoricalBalanceSource } from '@/modules/history/balances/types';
 import { useArchiveNodes } from '@/modules/history/balances/use-archive-nodes';
 import { useHistoricalBalances } from '@/modules/history/balances/use-historical-balances';
+import HistoryEventsAlert from '@/modules/history/HistoryEventsAlert.vue';
+import DateDisplay from '@/modules/shell/components/display/DateDisplay.vue';
+import InternalLink from '@/modules/shell/components/InternalLink.vue';
 import { Routes } from '@/router/routes';
 
 const { t } = useI18n({ useScope: 'global' });

@@ -1,24 +1,24 @@
 <script setup lang="ts">
 import type { Validation } from '@vuelidate/core';
-import type { ActionStatus } from '@/modules/common/action';
+import type { HistoricalPriceFormPayload } from '@/modules/assets/prices/price-types';
+import type { ActionStatus } from '@/modules/core/common/action';
 import type { NewHistoryEventPayload } from '@/modules/history/events/schemas';
-import type { HistoricalPriceFormPayload } from '@/modules/prices/price-types';
 import { assert, type BigNumber, toSentenceCase } from '@rotki/common';
-import AmountInput from '@/components/inputs/AmountInput.vue';
-import AssetSelect from '@/components/inputs/AssetSelect.vue';
-import TwoFieldsAmountInput from '@/components/inputs/TwoFieldsAmountInput.vue';
-import { useAssetPricesApi } from '@/composables/api/assets/prices';
-import { ApiValidationError, type ValidationErrors } from '@/modules/api/types/errors';
-import { bigNumberifyFromRef } from '@/modules/common/data/bignumbers';
-import { millisecondsToSeconds } from '@/modules/common/data/date';
-import { getErrorMessage } from '@/modules/common/logging/error-handling';
-import { toMessages } from '@/modules/common/validation/validation';
+import { useAssetPricesApi } from '@/modules/assets/api/use-asset-prices-api';
+import { useHistoricPriceCache } from '@/modules/assets/prices/use-historic-price-cache';
+import { usePriceTaskManager } from '@/modules/assets/prices/use-price-task-manager';
+import { ApiValidationError, type ValidationErrors } from '@/modules/core/api/types/errors';
+import { bigNumberifyFromRef } from '@/modules/core/common/data/bignumbers';
+import { millisecondsToSeconds } from '@/modules/core/common/data/date';
+import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
+import { toMessages } from '@/modules/core/common/validation/validation';
+import { TaskType } from '@/modules/core/tasks/task-type';
+import { useTaskStore } from '@/modules/core/tasks/use-task-store';
 import ToggleLocationLink from '@/modules/history/management/forms/common/ToggleLocationLink.vue';
-import { useHistoricPriceCache } from '@/modules/prices/use-historic-price-cache';
-import { usePriceTaskManager } from '@/modules/prices/use-price-task-manager';
 import { useGeneralSettingsStore } from '@/modules/settings/use-general-settings-store';
-import { TaskType } from '@/modules/tasks/task-type';
-import { useTaskStore } from '@/modules/tasks/use-task-store';
+import AmountInput from '@/modules/shell/components/inputs/AmountInput.vue';
+import AssetSelect from '@/modules/shell/components/inputs/AssetSelect.vue';
+import TwoFieldsAmountInput from '@/modules/shell/components/inputs/TwoFieldsAmountInput.vue';
 
 interface HistoryEventAssetPriceFormProps {
   timestamp: number;

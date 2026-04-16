@@ -1,17 +1,17 @@
 import { NotificationGroup } from '@rotki/common';
 import { startPromise } from '@shared/utils';
 import { isEqual } from 'es-toolkit';
-import { useUnmatchedAssetMovements } from '@/composables/history/events/use-unmatched-asset-movements';
-import { useRefWithDebounce } from '@/composables/ref';
+import { useRefWithDebounce } from '@/modules/core/common/use-ref-debounce';
+import { useNotifications } from '@/modules/core/notifications/use-notifications';
+import { TaskType } from '@/modules/core/tasks/task-type';
+import { useTaskStore } from '@/modules/core/tasks/use-task-store';
 import { useHistoricalBalances } from '@/modules/history/balances/use-historical-balances';
 import { useHistoryEventsStatus } from '@/modules/history/events/use-history-events-status';
+import { useUnmatchedAssetMovements } from '@/modules/history/events/use-unmatched-asset-movements';
 import { useHistoryDataFetching } from '@/modules/history/use-history-data-fetching';
 import { useHistoryStore } from '@/modules/history/use-history-store';
 import { useProtocolCacheStatusStore } from '@/modules/history/use-protocol-cache-status-store';
-import { useNotifications } from '@/modules/notifications/use-notifications';
 import { useSessionSettingsStore } from '@/modules/settings/use-session-settings-store';
-import { TaskType } from '@/modules/tasks/task-type';
-import { useTaskStore } from '@/modules/tasks/use-task-store';
 import { Routes } from '@/router/routes';
 
 const HISTORY_EVENTS_MODIFIED_DEBOUNCE_MS = 15_000;

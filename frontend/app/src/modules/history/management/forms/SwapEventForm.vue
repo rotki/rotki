@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { ValidationErrors } from '@/modules/api/types/errors';
+import type { ValidationErrors } from '@/modules/core/api/types/errors';
 import type { AddSwapEventPayload, FeeEntry, SwapEvent, SwapEventUserNotes } from '@/modules/history/events/schemas';
 import type { GroupEventData } from '@/modules/history/management/forms/form-types';
 import { assert, HistoryEventEntryType } from '@rotki/common';
@@ -8,12 +8,12 @@ import useVuelidate from '@vuelidate/core';
 import dayjs from 'dayjs';
 import { omit } from 'es-toolkit';
 import { isEmpty } from 'es-toolkit/compat';
-import { useFormStateWatcher } from '@/composables/form';
-import { useHistoryEvents } from '@/composables/history/events';
-import { useEditModeStateTracker } from '@/composables/history/events/edit-mode-state';
-import { useMessageStore } from '@/modules/common/use-message-store';
-import { useRefPropVModel } from '@/modules/common/validation/model';
-import { toMessages } from '@/modules/common/validation/validation';
+import { useFormStateWatcher } from '@/modules/core/common/use-form';
+import { useMessageStore } from '@/modules/core/common/use-message-store';
+import { useRefPropVModel } from '@/modules/core/common/validation/model';
+import { toMessages } from '@/modules/core/common/validation/validation';
+import { useEditModeStateTracker } from '@/modules/history/events/use-edit-mode-state-tracker';
+import { useHistoryEvents } from '@/modules/history/events/use-history-events';
 import EventDateLocation from '@/modules/history/management/forms/common/EventDateLocation.vue';
 import SimpleFeeList from '@/modules/history/management/forms/common/SimpleFeeList.vue';
 import HistoryEventAssetPriceForm from '@/modules/history/management/forms/HistoryEventAssetPriceForm.vue';

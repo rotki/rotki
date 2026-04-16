@@ -1,0 +1,128 @@
+<script setup lang="ts">
+import type { ValidationErrors } from '@/modules/core/api/types/errors';
+import { toSentenceCase } from '@rotki/common';
+import useVuelidate from '@vuelidate/core';
+import { required } from '@vuelidate/validators';
+import { useFormStateWatcher } from '@/modules/core/common/use-form';
+import { refOptional, useRefPropVModel } from '@/modules/core/common/validation/model';
+import { toMessages } from '@/modules/core/common/validation/validation';
+import CounterpartyInput from '@/modules/history/events/mapping/CounterpartyInput.vue';
+import HistoryEventTypeForm from '@/modules/history/management/forms/HistoryEventTypeForm.vue';
+import AccountingRuleWithLinkedSetting from '@/modules/settings/accounting/rule/AccountingRuleWithLinkedSetting.vue';
+import { type AccountingRuleEntry, AccountingTreatment } from '@/modules/settings/types/accounting';
+
+const modelValue = defineModel<AccountingRuleEntry>({ required: true });
+const errors = defineModel<ValidationErrors>('errorMessages', { required: true });
+const stateUpdated = defineModel<boolean>('stateUpdated', { default: false, required: false });
+
+const { eventIds } = defineProps<{
+  eventIds?: number[];
+}>();
+
+const { t } = useI18n({ useScope: 'global' });
+
+const isEventSpecificRule = computed<boolean>(() => !!eventIds && eventIds.length > 0);
+
+const counterparty = refOptional(useRefPropVModel(modelValue, 'counterparty'), '');
+const accountingTreatment = useRefPropVModel(modelValue, 'accountingTreatment');
+const eventType = useRefPropVModel(modelValue, 'eventType');
+const eventSubtype = useRefPropVModel(modelValue, 'eventSubtype');
+const taxable = useRefPropVModel(modelValue, 'taxable');
+const countEntireAmountSpend = useRefPropVModel(modelValue, 'countEntireAmountSpend');
+const countCostBasisPnl = useRefPropVModel(modelValue, 'countCostBasisPnl');
+
+const externalServerValidation = () => true;
+
+const rules = {
+  accountingTreatment: { externalServerValidation },
+  counterparty: { externalServerValidation },
+  eventSubtype: { required },
+  eventType: { required },
+};
+
+const states = {
+  accountingTreatment,
+  counterparty,
+  eventSubtype,
+  eventType,
+};
+
+const v$ = useVuelidate(
+  rules,
+  states,
+  {
+    $autoDirty: true,
+    $externalResults: errors,
+  },
+);
+
+useFormStateWatcher(states, stateUpdated);
+
+const accountingTreatments = Object.values(AccountingTreatment).map(identifier => ({
+  identifier,
+  label: toSentenceCase(identifier),
+}));
+
+defineExpose({
+  validate: () => get(v$).$validate(),
+});
+</script>
+
+<template>
+  <HistoryEventTypeForm
+    v-model:event-type="eventType"
+    v-model:event-subtype="eventSubtype"
+    :counterparty="counterparty"
+    :v$="v$"
+    :disabled="isEventSpecificRule"
+    disable-warning
+  />
+
+  <CounterpartyInput
+    v-model="counterparty"
+    class="md:w-1/2"
+    :label="t('common.counterparty')"
+    :disabled="isEventSpecificRule"
+    :error-messages="toMessages(v$.counterparty)"
+    @blur="v$.counterparty.$touch()"
+  />
+
+  <AccountingRuleWithLinkedSetting
+    v-model="taxable"
+    class="border-t border-default"
+    identifier="taxable"
+    :label="t('accounting_settings.rule.labels.taxable')"
+    :hint="t('accounting_settings.rule.labels.taxable_subtitle')"
+  />
+
+  <AccountingRuleWithLinkedSetting
+    v-model="countEntireAmountSpend"
+    class="border-t border-default"
+    identifier="countEntireAmountSpend"
+    :label="t('accounting_settings.rule.labels.count_entire_amount_spend')"
+    :hint="t('accounting_settings.rule.labels.count_entire_amount_spend_subtitle')"
+  />
+
+  <AccountingRuleWithLinkedSetting
+    v-model="countCostBasisPnl"
+    class="border-t border-default"
+    identifier="countCostBasisPnl"
+    :label="t('accounting_settings.rule.labels.count_cost_basis_pnl')"
+    :hint="t('accounting_settings.rule.labels.count_cost_basis_pnl_subtitle')"
+  />
+
+  <RuiDivider class="mb-6" />
+
+  <RuiAutoComplete
+    v-model="accountingTreatment"
+    class="md:w-1/2"
+    variant="outlined"
+    :options="accountingTreatments"
+    key-attr="identifier"
+    text-attr="label"
+    clearable
+    :label="t('accounting_settings.rule.labels.accounting_treatment')"
+    :error-messages="toMessages(v$.accountingTreatment)"
+    @blur="v$.accountingTreatment.$touch()"
+  />
+</template>

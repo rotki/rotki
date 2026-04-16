@@ -2,12 +2,12 @@
 import type { AssetBalanceWithPrice } from '@rotki/common';
 import type { DataTableColumn, DataTableSortData } from '@rotki/ui-library';
 import { some } from 'es-toolkit/compat';
-import AssetDetails from '@/components/helper/AssetDetails.vue';
-import { useAssetSelectInfo } from '@/composables/assets/asset-select-info';
-import { FiatDisplay, ValueDisplay } from '@/modules/amount-display';
-import { sortAssetBalances } from '@/modules/common/display/balances';
+import { FiatDisplay, ValueDisplay } from '@/modules/assets/amount-display';
+import AssetDetails from '@/modules/assets/AssetDetails.vue';
+import { useHistoricPriceCache } from '@/modules/assets/prices/use-historic-price-cache';
+import { useAssetSelectInfo } from '@/modules/assets/use-asset-select-info';
+import { sortAssetBalances } from '@/modules/core/common/display/balances';
 import HistoricalAssetRowDetails from '@/modules/history/balances/HistoricalAssetRowDetails.vue';
-import { useHistoricPriceCache } from '@/modules/prices/use-historic-price-cache';
 import { useGeneralSettingsStore } from '@/modules/settings/use-general-settings-store';
 
 const { balances, loading, timestamp } = defineProps<{

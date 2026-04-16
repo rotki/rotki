@@ -5,7 +5,7 @@ const mockGetWhitelistedAssets = vi.fn();
 const mockAddAssetToWhitelist = vi.fn();
 const mockRemoveAssetFromWhitelist = vi.fn();
 
-vi.mock('@/composables/api/assets/whitelist', () => ({
+vi.mock('@/modules/assets/api/use-asset-whitelist-api', () => ({
   useAssetWhitelistApi: vi.fn(() => ({
     addAssetToWhitelist: mockAddAssetToWhitelist,
     getWhitelistedAssets: mockGetWhitelistedAssets,
@@ -23,7 +23,7 @@ vi.mock('@/modules/assets/use-ignored-asset-operations', () => ({
 
 const mockNotifyError = vi.fn();
 
-vi.mock('@/modules/notifications/use-notifications', () => ({
+vi.mock('@/modules/core/notifications/use-notifications', () => ({
   useNotifications: vi.fn(() => ({
     notifyError: mockNotifyError,
   })),

@@ -11,21 +11,21 @@ vi.mock('@/modules/balances/blockchain/use-token-detection-store', () => ({
 
 const mockFetchDetectedTokens = vi.fn();
 const mockFetchDetectedTokensTask = vi.fn();
-vi.mock('@/composables/api/balances/blockchain', () => ({
+vi.mock('@/modules/balances/api/use-blockchain-balances-api', () => ({
   useBlockchainBalancesApi: vi.fn().mockReturnValue({
     fetchDetectedTokens: mockFetchDetectedTokens,
     fetchDetectedTokensTask: mockFetchDetectedTokensTask,
   }),
 }));
 
-vi.mock('@/composables/info/chains', () => ({
+vi.mock('@/modules/core/common/use-supported-chains', () => ({
   useSupportedChains: vi.fn().mockReturnValue({
     getChainName: (chain: string): string => chain.toUpperCase(),
   }),
 }));
 
 const mockRunTask = vi.fn();
-vi.mock('@/modules/tasks/use-task-handler', () => ({
+vi.mock('@/modules/core/tasks/use-task-handler', () => ({
   useTaskHandler: vi.fn().mockReturnValue({
     runTask: mockRunTask,
   }),
@@ -34,7 +34,7 @@ vi.mock('@/modules/tasks/use-task-handler', () => ({
 }));
 
 const mockNotifyError = vi.fn();
-vi.mock('@/modules/notifications/use-notifications', () => ({
+vi.mock('@/modules/core/notifications/use-notifications', () => ({
   useNotifications: vi.fn().mockReturnValue({
     notifyError: mockNotifyError,
   }),

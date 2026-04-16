@@ -1,17 +1,17 @@
 <script setup lang="ts">
-import AccountFormApiKeyAlert from '@/components/accounts/management/AccountFormApiKeyAlert.vue';
-import ModuleNotActive from '@/components/defi/ModuleNotActive.vue';
-import TablePageLayout from '@/components/layout/TablePageLayout.vue';
-import { useExternalApiKeys } from '@/composables/settings/api-keys/external';
+import AccountFormApiKeyAlert from '@/modules/accounts/management/AccountFormApiKeyAlert.vue';
+import { EthStaking } from '@/modules/premium/premium';
+import { useExternalApiKeys } from '@/modules/settings/api-keys/external/use-external-api-keys';
+import ModuleNotActive from '@/modules/settings/modules/ModuleNotActive.vue';
 import { useGeneralSettingsStore } from '@/modules/settings/use-general-settings-store';
-import { EthStaking } from '@/premium/premium';
+import TablePageLayout from '@/modules/shell/layout/TablePageLayout.vue';
 import EthStakingHeaderActions from './components/EthStakingHeaderActions.vue';
 import EthStakingPagePlaceholder from './components/EthStakingPagePlaceholder.vue';
 import EthValidatorFilter from './components/EthValidatorFilter.vue';
-import { useEthStakingAccess } from './composables/use-eth-staking-access';
-import { useEthStakingPerformance } from './composables/use-eth-staking-performance';
-import { useEthStakingRefresh } from './composables/use-eth-staking-refresh';
-import { useEthValidatorManagement } from './composables/use-eth-validator-management';
+import { useEthStakingAccess } from './use-eth-staking-access';
+import { useEthStakingPerformance } from './use-eth-staking-performance';
+import { useEthStakingRefresh } from './use-eth-staking-refresh';
+import { useEthValidatorManagement } from './use-eth-validator-management';
 
 const { t } = useI18n({ useScope: 'global' });
 

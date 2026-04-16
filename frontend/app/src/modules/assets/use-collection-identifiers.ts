@@ -1,6 +1,6 @@
-import { apiUrls } from '@/modules/api/api-urls';
-import { api } from '@/modules/api/rotki-api';
-import { HTTPStatus } from '@/modules/api/types/http';
+import { apiUrls } from '@/modules/core/api/api-urls';
+import { api } from '@/modules/core/api/rotki-api';
+import { HTTPStatus } from '@/modules/core/api/types/http';
 
 interface UseCollectionIdentifiersReturn { getCollectionAssets: (collectionId: string) => Promise<string[]> }
 

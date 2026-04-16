@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import ActiveModules from '@/components/defi/ActiveModules.vue';
-import { Module } from '@/modules/common/modules';
+import { Module } from '@/modules/core/common/modules';
+import ActiveModules from '@/modules/settings/modules/ActiveModules.vue';
 
 interface Props {
   refreshing: boolean;

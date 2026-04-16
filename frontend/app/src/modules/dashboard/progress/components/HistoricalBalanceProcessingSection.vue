@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { HistoricalBalanceProcessingData } from '@/modules/messaging/types/status-types';
+import type { HistoricalBalanceProcessingData } from '@/modules/core/messaging/types/status-types';
 
 defineProps<{
   progress: HistoricalBalanceProcessingData;

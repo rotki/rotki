@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import CustomAssetContent from '@/components/asset-manager/custom/CustomAssetContent.vue';
+import CustomAssetContent from '@/modules/assets/admin/custom/CustomAssetContent.vue';
 
 definePage({
   name: 'asset-manager-custom',

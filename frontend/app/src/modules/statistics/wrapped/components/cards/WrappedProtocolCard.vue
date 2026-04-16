@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import type { BigNumber } from '@rotki/common';
-import CounterpartyDisplay from '@/components/history/CounterpartyDisplay.vue';
-import { ValueDisplay } from '@/modules/amount-display/components';
-import { sortDesc } from '@/modules/common/data/bignumbers';
+import { ValueDisplay } from '@/modules/assets/amount-display/components';
+import { sortDesc } from '@/modules/core/common/data/bignumbers';
+import CounterpartyDisplay from '@/modules/shell/components/display/CounterpartyDisplay.vue';
 import WrappedCard from '../WrappedCard.vue';
 
 interface ProtocolActivity {

@@ -1,20 +1,20 @@
 import type { Ref } from 'vue';
 import type { Eth2Validator } from '@/modules/balances/types/balances';
-import type { ActionStatus } from '@/modules/common/action';
-import type { TaskMeta } from '@/modules/tasks/types';
+import type { ActionStatus } from '@/modules/core/common/action';
+import type { TaskMeta } from '@/modules/core/tasks/types';
 import { type BigNumber, Blockchain, type EthValidatorFilter } from '@rotki/common';
-import { useBlockchainAccountsApi } from '@/composables/api/blockchain/accounts';
-import { usePremium } from '@/composables/premium';
-import { useStatusUpdater } from '@/composables/status';
+import { useBlockchainAccountsApi } from '@/modules/accounts/api/use-blockchain-accounts-api';
 import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
-import { ApiValidationError, type ValidationErrors } from '@/modules/api/types/errors';
-import { logger } from '@/modules/common/logging/logging';
-import { Section } from '@/modules/common/status';
-import { getErrorMessage, useNotifications } from '@/modules/notifications/use-notifications';
-import { useEthValidatorFetching } from '@/modules/staking/eth/composables/use-eth-validator-fetching';
+import { ApiValidationError, type ValidationErrors } from '@/modules/core/api/types/errors';
+import { logger } from '@/modules/core/common/logging/logging';
+import { Section } from '@/modules/core/common/status';
+import { getErrorMessage, useNotifications } from '@/modules/core/notifications/use-notifications';
+import { TaskType } from '@/modules/core/tasks/task-type';
+import { isActionableFailure, useTaskHandler } from '@/modules/core/tasks/use-task-handler';
+import { usePremium } from '@/modules/premium/use-premium';
+import { useStatusUpdater } from '@/modules/shell/sync-progress/use-status-updater';
+import { useEthValidatorFetching } from '@/modules/staking/eth/use-eth-validator-fetching';
 import { useBlockchainValidatorsStore } from '@/modules/staking/use-blockchain-validators-store';
-import { TaskType } from '@/modules/tasks/task-type';
-import { isActionableFailure, useTaskHandler } from '@/modules/tasks/use-task-handler';
 
 interface UseEthStakingReturn {
   validatorsLimitInfo: Readonly<Ref<{ showWarning: boolean; limit: number; total: number }>>;

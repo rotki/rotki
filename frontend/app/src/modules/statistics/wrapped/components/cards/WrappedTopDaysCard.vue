@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import type { BigNumber } from '@rotki/common';
-import { ValueDisplay } from '@/modules/amount-display/components';
-import { sortDesc } from '@/modules/common/data/bignumbers';
-import { useWrappedFormatters } from '../../composables/use-wrapped-formatters';
+import { ValueDisplay } from '@/modules/assets/amount-display/components';
+import { sortDesc } from '@/modules/core/common/data/bignumbers';
+import { useWrappedFormatters } from '../../use-wrapped-formatters';
 import WrappedCard from '../WrappedCard.vue';
 
 interface TopDay {

@@ -1,8 +1,8 @@
 import type { Exchange } from '@/modules/balances/types/exchanges';
-import type { ActionStatus } from '@/modules/common/action';
+import type { ActionStatus } from '@/modules/core/common/action';
 import type { SessionSettings } from '@/modules/session/types';
 import { TimeFramePeriod } from '@rotki/common';
-import { useComputedRef } from '@/composables/utils/useComputedRef';
+import { useComputedRef } from '@/modules/core/common/use-computed-ref';
 
 const useSharedLocalStorage = createSharedComposable(useLocalStorage);
 const isAnimationEnabledSetting = useSharedLocalStorage('rotki.animations_enabled', true);

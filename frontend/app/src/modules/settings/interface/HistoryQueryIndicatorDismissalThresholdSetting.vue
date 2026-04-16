@@ -1,11 +1,11 @@
 <script setup lang="ts">
 import useVuelidate from '@vuelidate/core';
 import { between, helpers, required } from '@vuelidate/validators';
-import SettingsItem from '@/components/settings/controls/SettingsItem.vue';
-import SettingsOption from '@/components/settings/controls/SettingsOption.vue';
-import { useValidation } from '@/composables/validation';
-import { Constraints } from '@/modules/common/constraints';
-import { toMessages } from '@/modules/common/validation/validation';
+import { Constraints } from '@/modules/core/common/constraints';
+import { useValidation } from '@/modules/core/common/use-validation';
+import { toMessages } from '@/modules/core/common/validation/validation';
+import SettingsItem from '@/modules/settings/controls/SettingsItem.vue';
+import SettingsOption from '@/modules/settings/controls/SettingsOption.vue';
 import { useFrontendSettingsStore } from '@/modules/settings/use-frontend-settings-store';
 
 const evmQueryIndicatorDismissalThreshold = ref<string>('');

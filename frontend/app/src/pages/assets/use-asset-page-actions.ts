@@ -1,8 +1,8 @@
 import type { ComputedRef, DeepReadonly, Ref } from 'vue';
-import { useSpamAsset } from '@/composables/assets/spam';
 import { useAssetsStore } from '@/modules/assets/use-assets-store';
 import { useIgnoredAssetConfirmation } from '@/modules/assets/use-ignored-asset-confirmation';
 import { useIgnoredAssetOperations } from '@/modules/assets/use-ignored-asset-operations';
+import { useSpamAsset } from '@/modules/assets/use-spam-asset';
 import { useWhitelistedAssetOperations } from '@/modules/assets/use-whitelisted-asset-operations';
 
 interface AssetWithSpamStatus {

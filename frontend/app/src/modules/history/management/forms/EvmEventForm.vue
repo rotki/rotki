@@ -3,19 +3,19 @@ import type { EvmHistoryEvent, NewEvmHistoryEventPayload } from '@/modules/histo
 import type { StandaloneEventData } from '@/modules/history/management/forms/form-types';
 import { HistoryEventEntryType, Zero } from '@rotki/common';
 import dayjs from 'dayjs';
-import AmountInput from '@/components/inputs/AmountInput.vue';
-import CounterpartyInput from '@/components/inputs/CounterpartyInput.vue';
-import JsonInput from '@/components/inputs/JsonInput.vue';
-import { useHistoryEventsForm } from '@/composables/history/events/form';
-import { useHistoryEventCounterpartyMappings } from '@/composables/history/events/mapping/counterparty';
-import { useSupportedChains } from '@/composables/info/chains';
-import { bigNumberifyFromRef } from '@/modules/common/data/bignumbers';
-import { TRADE_LOCATION_EXTERNAL } from '@/modules/common/defaults';
+import { bigNumberifyFromRef } from '@/modules/core/common/data/bignumbers';
+import { TRADE_LOCATION_EXTERNAL } from '@/modules/core/common/defaults';
+import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
+import CounterpartyInput from '@/modules/history/events/mapping/CounterpartyInput.vue';
+import { useHistoryEventCounterpartyMappings } from '@/modules/history/events/mapping/use-history-event-counterparty-mappings';
+import { useHistoryEventsForm } from '@/modules/history/events/use-history-events-form';
 import EventDateLocation from '@/modules/history/management/forms/common/EventDateLocation.vue';
 import EvmLocation from '@/modules/history/management/forms/common/EvmLocation.vue';
-import { toMessages, useEventFormBase } from '@/modules/history/management/forms/composables/use-event-form-base';
 import HistoryEventAssetPriceForm from '@/modules/history/management/forms/HistoryEventAssetPriceForm.vue';
 import HistoryEventTypeForm from '@/modules/history/management/forms/HistoryEventTypeForm.vue';
+import { toMessages, useEventFormBase } from '@/modules/history/management/forms/use-event-form-base';
+import AmountInput from '@/modules/shell/components/inputs/AmountInput.vue';
+import JsonInput from '@/modules/shell/components/inputs/JsonInput.vue';
 
 interface HistoryEventFormProps {
   data: StandaloneEventData<EvmHistoryEvent>;

@@ -6,26 +6,26 @@ import dayjs from 'dayjs';
 import { createPinia, type Pinia, setActivePinia } from 'pinia';
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { nextTick } from 'vue';
-import { useAssetInfoApi } from '@/composables/api/assets/info';
-import { useAssetPricesApi } from '@/composables/api/assets/prices';
-import { useHistoryEvents } from '@/composables/history/events';
+import { useAssetInfoApi } from '@/modules/assets/api/use-asset-info-api';
+import { useAssetPricesApi } from '@/modules/assets/api/use-asset-prices-api';
 import { useBalancePricesStore } from '@/modules/balances/use-balance-prices-store';
-import { setupDayjs } from '@/modules/common/data/date';
+import { setupDayjs } from '@/modules/core/common/data/date';
+import { useHistoryEvents } from '@/modules/history/events/use-history-events';
 import EthWithdrawalEventForm from '@/modules/history/management/forms/EthWithdrawalEventForm.vue';
 
 vi.mock('@/modules/balances/use-balance-prices-store', () => ({
   useBalancePricesStore: vi.fn(),
 }));
 
-vi.mock('@/composables/api/assets/info', () => ({
+vi.mock('@/modules/assets/api/use-asset-info-api', () => ({
   useAssetInfoApi: vi.fn(),
 }));
 
-vi.mock('@/composables/history/events', () => ({
+vi.mock('@/modules/history/events/use-history-events', () => ({
   useHistoryEvents: vi.fn(),
 }));
 
-vi.mock('@/composables/api/assets/prices', () => ({
+vi.mock('@/modules/assets/api/use-asset-prices-api', () => ({
   useAssetPricesApi: vi.fn().mockReturnValue({
     addHistoricalPrice: vi.fn(),
   }),

@@ -4,7 +4,7 @@ import type {
   ManualBalanceWithPrice,
   ManualBalanceWithValue,
 } from '@/modules/balances/types/manual-balances';
-import type { Collection } from '@/modules/common/collection';
+import type { Collection } from '@/modules/core/common/collection';
 import { type BigNumber, Zero } from '@rotki/common';
 import { camelCase } from 'es-toolkit';
 import { includes } from '@/modules/accounts/account-common';

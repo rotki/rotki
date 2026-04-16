@@ -1,11 +1,11 @@
+import type { TaskMeta } from '@/modules/core/tasks/types';
 import type { ProfitLossReportDebugPayload, ProfitLossReportPeriod } from '@/modules/reports/report-types';
-import type { TaskMeta } from '@/modules/tasks/types';
-import { useHistoryApi } from '@/composables/api/history';
-import { useReportsApi } from '@/composables/api/reports';
+import { TaskType } from '@/modules/core/tasks/task-type';
+import { isActionableFailure, useTaskHandler } from '@/modules/core/tasks/use-task-handler';
+import { useHistoryApi } from '@/modules/history/api/use-history-api';
 import { useReportOperations } from '@/modules/reports/use-report-operations';
+import { useReportsApi } from '@/modules/reports/use-reports-api';
 import { useReportsStore } from '@/modules/reports/use-reports-store';
-import { TaskType } from '@/modules/tasks/task-type';
-import { isActionableFailure, useTaskHandler } from '@/modules/tasks/use-task-handler';
 
 interface UseReportGenerationReturn {
   exportReportData: (payload: ProfitLossReportDebugPayload) => Promise<boolean | object>;

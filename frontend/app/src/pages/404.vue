@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import AppImage from '@/components/common/AppImage.vue';
-import NoDataScreen from '@/components/common/NoDataScreen.vue';
-import InternalLink from '@/components/helper/InternalLink.vue';
+import AppImage from '@/modules/shell/components/AppImage.vue';
+import InternalLink from '@/modules/shell/components/InternalLink.vue';
+import NoDataScreen from '@/modules/shell/components/NoDataScreen.vue';
 import { Routes } from '@/router/routes';
 
 const { t } = useI18n({ useScope: 'global' });

@@ -1,6 +1,6 @@
 import { backoff } from '@shared/utils';
-import { useSessionApi } from '@/composables/api/session';
-import { getErrorMessage, useNotifications } from '@/modules/notifications/use-notifications';
+import { getErrorMessage, useNotifications } from '@/modules/core/notifications/use-notifications';
+import { useSessionApi } from '@/modules/session/api/use-session-api';
 import { useSessionMetadataStore } from '@/modules/session/use-session-metadata-store';
 
 interface UsePeriodicDataFetcherReturn {

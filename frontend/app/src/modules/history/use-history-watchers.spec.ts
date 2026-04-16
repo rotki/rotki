@@ -49,7 +49,7 @@ vi.mock('@/modules/history/use-history-store', () => ({
 
 const mockTriggerAssetMovementAutoMatching = vi.fn().mockResolvedValue(undefined);
 
-vi.mock('@/composables/history/events/use-unmatched-asset-movements', () => ({
+vi.mock('@/modules/history/events/use-unmatched-asset-movements', () => ({
   useUnmatchedAssetMovements: vi.fn((): { triggerAssetMovementAutoMatching: () => Promise<void> } => ({
     triggerAssetMovementAutoMatching: mockTriggerAssetMovementAutoMatching,
   })),
@@ -65,7 +65,7 @@ vi.mock('@/modules/history/balances/use-historical-balances', () => ({
 
 const mockRemoveMatching = vi.fn();
 
-vi.mock('@/modules/notifications/use-notifications', () => ({
+vi.mock('@/modules/core/notifications/use-notifications', () => ({
   useNotifications: vi.fn((): { removeMatching: (predicate: (n: unknown) => boolean) => void } => ({
     removeMatching: mockRemoveMatching,
   })),
@@ -85,7 +85,7 @@ vi.mock('@/modules/settings/use-session-settings-store', () => ({
 
 const mockIsTaskRunning = ref<boolean>(false);
 
-vi.mock('@/modules/tasks/use-task-store', () => ({
+vi.mock('@/modules/core/tasks/use-task-store', () => ({
   useTaskStore: vi.fn((): { useIsTaskRunning: () => Ref<boolean> } => ({
     useIsTaskRunning: vi.fn((): Ref<boolean> => mockIsTaskRunning),
   })),
@@ -99,7 +99,7 @@ vi.mock('vue-router', () => ({
   })),
 }));
 
-vi.mock('@/composables/ref', () => ({
+vi.mock('@/modules/core/common/use-ref-debounce', () => ({
   useRefWithDebounce: vi.fn((source: Ref<boolean>, _delay?: number): Ref<boolean> => source),
 }));
 

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import LocationIcon from '@/components/history/LocationIcon.vue';
+import LocationIcon from '@/modules/shell/components/display/LocationIcon.vue';
 
 const modelValue = defineModel<boolean>({ required: true });
 

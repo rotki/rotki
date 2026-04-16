@@ -3,7 +3,7 @@ import { Blockchain } from '@rotki/common';
 import { useTokenDetectionOrchestrator } from '@/modules/balances/blockchain/use-token-detection-orchestrator';
 import { useExchanges } from '@/modules/balances/exchanges/use-exchanges';
 import { useBlockchainBalances } from '@/modules/balances/use-blockchain-balances';
-import { arrayify } from '@/modules/common/data/array';
+import { arrayify } from '@/modules/core/common/data/array';
 import { BlockchainRefreshButtonBehaviour } from '@/modules/settings/types/frontend-settings';
 import { useFrontendSettingsStore } from '@/modules/settings/use-frontend-settings-store';
 

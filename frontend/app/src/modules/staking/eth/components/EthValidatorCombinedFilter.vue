@@ -3,11 +3,11 @@ import type {
   MatchedKeyword,
   SearchMatcher,
 
-} from '@/modules/table/filtering';
+} from '@/modules/core/table/filtering';
 import { assert, type EthStakingCombinedFilter } from '@rotki/common';
-import TableFilter from '@/components/table-filter/TableFilter.vue';
-import { isValidStatus, validStatuses } from '@/composables/filters/eth-validator';
-import { dateDeserializer, dateRangeValidator, dateSerializer, getDateInputISOFormat } from '@/modules/common/data/date';
+import { dateDeserializer, dateRangeValidator, dateSerializer, getDateInputISOFormat } from '@/modules/core/common/data/date';
+import { isValidStatus, validStatuses } from '@/modules/core/table/filters/use-eth-validator-filter';
+import TableFilter from '@/modules/core/table/TableFilter.vue';
 import { useFrontendSettingsStore } from '@/modules/settings/use-frontend-settings-store';
 
 const filter = defineModel<EthStakingCombinedFilter | undefined>('filter', { required: true });

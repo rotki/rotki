@@ -1,5 +1,5 @@
 import type { AssetBreakdown } from '@/modules/accounts/blockchain-accounts';
-import type { EvmChainInfo } from '@/modules/api/types/chains';
+import type { EvmChainInfo } from '@/modules/core/api/types/chains';
 import { bigNumberify, type Blockchain } from '@rotki/common';
 import { createTestManualBalance } from '@test/utils/create-data';
 import { updateGeneralSettings } from '@test/utils/general-settings';
@@ -9,10 +9,10 @@ import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-ac
 import { BalanceType } from '@/modules/balances/types/balances';
 import { useAssetBalancesBreakdown } from '@/modules/balances/use-asset-balances-breakdown';
 import { useBalancesStore } from '@/modules/balances/use-balances-store';
-import { TRADE_LOCATION_BANKS, TRADE_LOCATION_BLOCKCHAIN, TRADE_LOCATION_EXTERNAL } from '@/modules/common/defaults';
+import { TRADE_LOCATION_BANKS, TRADE_LOCATION_BLOCKCHAIN, TRADE_LOCATION_EXTERNAL } from '@/modules/core/common/defaults';
 import { useSessionSettingsStore } from '@/modules/settings/use-session-settings-store';
 
-vi.mock('@/composables/info/chains', async () => {
+vi.mock('@/modules/core/common/use-supported-chains', async () => {
   const { computed } = await import('vue');
   const { Blockchain } = await import('@rotki/common');
   return {

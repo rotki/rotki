@@ -1,0 +1,58 @@
+<script setup lang="ts">
+import { getPublicProtocolImagePath } from '@/modules/core/common/file/file';
+import {
+  type PurgeableModule,
+  PurgeableOnlyModule,
+  SUPPORTED_MODULES,
+  type SupportedModule,
+} from '@/modules/core/common/modules';
+import DefiIcon from '@/modules/settings/modules/DefiIcon.vue';
+
+type PurgeableModuleEntry = Omit<SupportedModule, 'identifier'> & { identifier: PurgeableModule };
+
+defineOptions({
+  inheritAttrs: false,
+});
+
+const model = defineModel<string | undefined>({ required: true });
+
+const { items = [] } = defineProps<{
+  items?: PurgeableModule[];
+}>();
+
+const modules = computed<PurgeableModuleEntry[]>(() => {
+  const modules: PurgeableModuleEntry[] = [...SUPPORTED_MODULES, {
+    icon: getPublicProtocolImagePath('cowswap.jpg'),
+    identifier: PurgeableOnlyModule.COWSWAP,
+    name: 'Cowswap',
+  }, {
+    icon: getPublicProtocolImagePath('gnosis_pay.png'),
+    identifier: PurgeableOnlyModule.GNOSIS_PAY,
+    name: 'Gnosis Pay',
+  }];
+
+  return modules.filter(item => (items && items.length > 0 ? items.includes(item.identifier) : true));
+});
+</script>
+
+<template>
+  <RuiAutoComplete
+    v-bind="$attrs"
+    v-model="model"
+    data-cy="defi-input"
+    :options="modules"
+    key-attr="identifier"
+    text-attr="name"
+    auto-select-first
+    clearable
+    variant="outlined"
+    :item-height="52"
+  >
+    <template #selection="{ item }">
+      <DefiIcon :item="item" />
+    </template>
+    <template #item="{ item }">
+      <DefiIcon :item="item" />
+    </template>
+  </RuiAutoComplete>
+</template>

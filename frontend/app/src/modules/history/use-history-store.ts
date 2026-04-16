@@ -1,5 +1,5 @@
-import type { TransactionStatus } from '@/composables/api/history/events';
-import type { LocationLabel } from '@/modules/common/location';
+import type { LocationLabel } from '@/modules/core/common/location';
+import type { TransactionStatus } from '@/modules/history/api/events/use-history-events-api';
 
 export const useHistoryStore = defineStore('history', () => {
   const associatedLocations = shallowRef<string[]>([]);

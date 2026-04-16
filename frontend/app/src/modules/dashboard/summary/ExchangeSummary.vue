@@ -1,10 +1,10 @@
 <script lang="ts" setup>
 import { useExchangeData } from '@/modules/balances/exchanges/use-exchange-data';
 import { useBalanceRefresh } from '@/modules/balances/use-balance-refresh';
+import { TaskType } from '@/modules/core/tasks/task-type';
+import { useTaskStore } from '@/modules/core/tasks/use-task-store';
 import SummaryCard from '@/modules/dashboard/summary/SummaryCard.vue';
 import SummaryCardCreateButton from '@/modules/dashboard/summary/SummaryCardCreateButton.vue';
-import { TaskType } from '@/modules/tasks/task-type';
-import { useTaskStore } from '@/modules/tasks/use-task-store';
 import { Routes } from '@/router/routes';
 import ExchangeBox from './ExchangeBox.vue';
 

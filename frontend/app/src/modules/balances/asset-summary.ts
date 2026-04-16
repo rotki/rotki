@@ -1,0 +1,108 @@
+import type { AssetBalanceWithPriceAndChains, BigNumber } from '@rotki/common';
+import type { AssetProtocolBalances } from '@/modules/balances/types/blockchain-balances';
+import {
+  aggregateSourceBalances,
+  createAssetBalanceFromAggregated,
+  processCollectionGrouping,
+} from '@/modules/balances/balance-transformations';
+import { sortDesc } from '@/modules/core/common/data/bignumbers';
+
+/**
+ * Configuration for asset sources and identifier resolution
+ */
+interface AssetSourceConfig {
+  /** Asset protocol balances from different sources */
+  sources: Record<string, AssetProtocolBalances>;
+  /** Resolves an asset identifier to its canonical form */
+  resolveIdentifier: (id: string) => string;
+}
+
+/**
+ * Configuration for asset filtering
+ */
+interface AssetFilterConfig {
+  /** Function to check if an asset is ignored */
+  isAssetIgnored: (identifier: string) => boolean;
+  /** Whether to hide ignored assets */
+  hideIgnored: boolean;
+}
+
+/**
+ * Configuration for not grouping collections
+ */
+interface NoGroupCollectionConfig {
+  /** Whether to group collections */
+  groupCollections: false;
+}
+
+/**
+ * Configuration for collection grouping
+ */
+interface GroupCollectionConfig {
+  /** Whether to group collections */
+  groupCollections: true;
+  getCollectionId: (asset: string) => string | undefined;
+  getCollectionMainAsset: (collectionId: string) => string | undefined;
+}
+
+/**
+ * Represents a configuration for a collection, which can either be a configuration
+ * without groups or a configuration with groups.
+ *
+ * The `CollectionConfig` type is a union type that allows specifying one of the following:
+ *   - `NoGroupCollectionConfig`: Represents a collection that is not grouped.
+ *   - `GroupCollectionConfig`: Represents a collection that is grouped by certain criteria.
+ *
+ * Use this type to define the input configuration for operations requiring collection setups,
+ * and to ensure proper validation and alignment with collection-related functionalities.
+ */
+type CollectionConfig = NoGroupCollectionConfig | GroupCollectionConfig;
+
+/**
+ * Configuration for asset pricing
+ */
+interface PricingConfig {
+  /** Function to get price for an asset */
+  getAssetPrice: (asset: string, defaultValue: BigNumber) => BigNumber;
+  /** Default value for no price */
+  noPrice: BigNumber;
+}
+
+/**
+ * Summarizes asset protocols from different sources
+ */
+export function summarizeAssetProtocols(
+  sourceConfig: AssetSourceConfig,
+  filterConfig: AssetFilterConfig,
+  pricingConfig: PricingConfig,
+  collectionConfig: CollectionConfig,
+): AssetBalanceWithPriceAndChains[] {
+  const aggregatedBalances = aggregateSourceBalances(
+    sourceConfig.sources,
+    sourceConfig.resolveIdentifier,
+    filterConfig.isAssetIgnored,
+    filterConfig.hideIgnored,
+  );
+
+  const { groupCollections } = collectionConfig;
+  const getAssetPrice = pricingConfig.getAssetPrice;
+  const noPrice = pricingConfig.noPrice;
+
+  if (!groupCollections) {
+    return Object.entries(aggregatedBalances)
+      .map(([asset, protocolBalances]) =>
+        createAssetBalanceFromAggregated(asset, protocolBalances, asset => getAssetPrice(asset, noPrice)),
+      )
+      .sort((a, b) => sortDesc(a.value, b.value));
+  }
+
+  const { getCollectionId, getCollectionMainAsset } = collectionConfig;
+
+  return processCollectionGrouping(
+    aggregatedBalances,
+    getCollectionId,
+    getCollectionMainAsset,
+    getAssetPrice,
+    noPrice,
+  );
+}

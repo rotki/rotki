@@ -1,6 +1,6 @@
 import type { PrioritizedListItemData } from '@/modules/settings/types/prioritized-list-data';
-import { getPublicProtocolImagePath, getPublicServiceImagePath } from '@/modules/common/file/file';
-import { AddressNamePriority } from '@/modules/settings/types/address-name-priorities';
+import { AddressNamePriority } from '@/modules/accounts/address-book/types/address-name-priorities';
+import { getPublicProtocolImagePath, getPublicServiceImagePath } from '@/modules/core/common/file/file';
 import { EvmIndexer } from '@/modules/settings/types/evm-indexer';
 import { PriceOracle } from '@/modules/settings/types/price-oracle';
 

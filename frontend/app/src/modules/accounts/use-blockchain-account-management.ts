@@ -1,13 +1,13 @@
 import type { AddAccountsPayload, XpubAccountPayload } from '@/modules/accounts/blockchain-accounts';
 import type { ChainAddress } from '@/modules/history/events/event-payloads';
 import { startPromise } from '@shared/utils';
-import { useSupportedChains } from '@/composables/info/chains';
 import { useAccountAdditionService } from '@/modules/accounts/use-account-addition-service';
 import { type RefreshAccountsParams, useAccountOperations } from '@/modules/accounts/use-account-operations';
-import { logger } from '@/modules/common/logging/logging';
-import { useNotifications } from '@/modules/notifications/use-notifications';
-import { TaskType } from '@/modules/tasks/task-type';
-import { useTaskStore } from '@/modules/tasks/use-task-store';
+import { logger } from '@/modules/core/common/logging/logging';
+import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
+import { useNotifications } from '@/modules/core/notifications/use-notifications';
+import { TaskType } from '@/modules/core/tasks/task-type';
+import { useTaskStore } from '@/modules/core/tasks/use-task-store';
 
 interface AddAccountsOption {
   wait: boolean;

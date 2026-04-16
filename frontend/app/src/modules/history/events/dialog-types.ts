@@ -1,0 +1,57 @@
+import type { Exchange } from '@/modules/balances/types/exchanges';
+import type { AddTransactionHashPayload, LocationAndTxRef } from '@/modules/history/events/event-payloads';
+import type { HistoryEventState } from '@/modules/history/events/schemas';
+import type { RepullingTransactionResult } from '@/modules/history/events/tx/use-history-transactions';
+import type {
+  GroupEventData,
+  HistoryEventEditData,
+  StandaloneEventData,
+} from '@/modules/history/management/forms/form-types';
+import type { AccountingRuleIdentifier } from '@/modules/settings/types/accounting';
+
+export const DIALOG_TYPES = {
+  ADD_MISSING_RULE: 'addMissingRule',
+  ADD_TRANSACTION: 'addTransaction',
+  CUSTOMIZED_EVENT_DUPLICATES: 'customizedEventDuplicates',
+  DECODING_STATUS: 'decodingStatus',
+  EVENT_FORM: 'eventForm',
+  INTERNAL_TX_CONFLICTS: 'internalTxConflicts',
+  MATCH_ASSET_MOVEMENTS: 'matchAssetMovements',
+  MISSING_RULES: 'missingRules',
+  PROTOCOL_CACHE: 'protocolCache',
+  REPULLING_TRANSACTION: 'repullingTransaction',
+  TRANSACTION_FORM: 'transactionForm',
+} as const;
+
+export type DialogType = typeof DIALOG_TYPES[keyof typeof DIALOG_TYPES];
+
+export type DialogShowOptions =
+  | { type: typeof DIALOG_TYPES.ADD_MISSING_RULE; data: AccountingRuleIdentifier }
+  | { type: typeof DIALOG_TYPES.ADD_TRANSACTION }
+  | { type: typeof DIALOG_TYPES.CUSTOMIZED_EVENT_DUPLICATES }
+  | { type: typeof DIALOG_TYPES.DECODING_STATUS; persistent?: boolean }
+  | { type: typeof DIALOG_TYPES.EVENT_FORM; data: GroupEventData | StandaloneEventData }
+  | { type: typeof DIALOG_TYPES.INTERNAL_TX_CONFLICTS }
+  | { type: typeof DIALOG_TYPES.MATCH_ASSET_MOVEMENTS }
+  | { type: typeof DIALOG_TYPES.MISSING_RULES; data: HistoryEventEditData }
+  | { type: typeof DIALOG_TYPES.PROTOCOL_CACHE }
+  | { type: typeof DIALOG_TYPES.REPULLING_TRANSACTION }
+  | { type: typeof DIALOG_TYPES.TRANSACTION_FORM; data?: AddTransactionHashPayload };
+
+// Type-safe event handlers based on dialog types
+// Common toggle options for history events filtering
+export interface HistoryEventsToggles {
+  matchExactEvents: boolean;
+  showIgnoredAssets: boolean;
+  stateMarkers: HistoryEventState[];
+}
+
+export interface DialogEventHandlers {
+  onHistoryEventSaved?: () => void | Promise<void>;
+  onTransactionAdded?: (payload: LocationAndTxRef) => void | Promise<void>;
+  onRepullTransactions?: (result: RepullingTransactionResult) => void | Promise<void>;
+  onRepullExchangeEvents?: (exchanges: Exchange[]) => Promise<void>;
+  onRedecodeTransaction?: (payload: LocationAndTxRef) => void | Promise<void>;
+  onRedecodeAllEvents?: () => void | Promise<void>;
+  onResetUndecodedTransactions?: () => void | Promise<void>;
+}

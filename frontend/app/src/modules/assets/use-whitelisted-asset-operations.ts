@@ -1,9 +1,9 @@
-import type { ActionStatus } from '@/modules/common/action';
-import { useAssetWhitelistApi } from '@/composables/api/assets/whitelist';
+import type { ActionStatus } from '@/modules/core/common/action';
+import { useAssetWhitelistApi } from '@/modules/assets/api/use-asset-whitelist-api';
 import { useAssetsStore } from '@/modules/assets/use-assets-store';
 import { useIgnoredAssetOperations } from '@/modules/assets/use-ignored-asset-operations';
-import { getErrorMessage } from '@/modules/common/logging/error-handling';
-import { useNotifications } from '@/modules/notifications/use-notifications';
+import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
+import { useNotifications } from '@/modules/core/notifications/use-notifications';
 
 interface UseWhitelistedAssetOperationsReturn {
   fetchWhitelistedAssets: () => Promise<void>;

@@ -1,17 +1,17 @@
 <script setup lang="ts">
-import type { Module } from '@/modules/common/modules';
-import NonFungibleBalancesFilter from '@/components/accounts/balances/NonFungibleBalancesFilter.vue';
-import SuccessDisplay from '@/components/display/SuccessDisplay.vue';
-import NftDetails from '@/components/helper/NftDetails.vue';
-import RowActions from '@/components/helper/RowActions.vue';
-import RowAppend from '@/components/helper/RowAppend.vue';
-import TablePageLayout from '@/components/layout/TablePageLayout.vue';
-import LatestPriceFormDialog from '@/components/price-manager/latest/LatestPriceFormDialog.vue';
-import { AssetAmountDisplay, FiatDisplay } from '@/modules/amount-display/components';
+import type { Module } from '@/modules/core/common/modules';
+import NonFungibleBalancesFilter from '@/modules/accounts/balances/NonFungibleBalancesFilter.vue';
+import { AssetAmountDisplay, FiatDisplay } from '@/modules/assets/amount-display/components';
+import LatestPriceFormDialog from '@/modules/assets/prices/latest/LatestPriceFormDialog.vue';
 import { useAssetsStore } from '@/modules/assets/use-assets-store';
-import { useNftAssetIgnoring } from '../composables/use-nft-asset-ignoring';
-import { useNftData } from '../composables/use-nft-data';
-import { useNftPriceManagement } from '../composables/use-nft-price-management';
+import NftDetails from '@/modules/balances/nft/NftDetails.vue';
+import SuccessDisplay from '@/modules/shell/components/display/SuccessDisplay.vue';
+import RowActions from '@/modules/shell/components/RowActions.vue';
+import RowAppend from '@/modules/shell/components/RowAppend.vue';
+import TablePageLayout from '@/modules/shell/layout/TablePageLayout.vue';
+import { useNftAssetIgnoring } from '../use-nft-asset-ignoring';
+import { useNftData } from '../use-nft-data';
+import { useNftPriceManagement } from '../use-nft-price-management';
 import NonFungibleBalancesActions from './NonFungibleBalancesActions.vue';
 
 defineProps<{ modules: Module[] }>();

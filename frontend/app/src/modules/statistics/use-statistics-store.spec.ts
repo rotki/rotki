@@ -1,9 +1,9 @@
-import type { usePriceUtils } from '@/modules/prices/use-price-utils';
+import type { usePriceUtils } from '@/modules/assets/prices/use-price-utils';
 import { type AssetBalanceWithPriceAndChains, BigNumber } from '@rotki/common';
 import { get } from '@vueuse/core';
 import { createPinia, setActivePinia } from 'pinia';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { useCurrencies } from '@/modules/amount-display/currencies';
+import { useCurrencies } from '@/modules/assets/amount-display/currencies';
 import { defaultGeneralSettings } from '@/modules/settings/factories';
 import { useGeneralSettingsStore } from '@/modules/settings/use-general-settings-store';
 import { useStatisticsStore } from './use-statistics-store';
@@ -41,7 +41,7 @@ function createBalanceWithPrice(
   };
 }
 
-vi.mock('@/composables/balances/use-aggregated-balances', () => ({
+vi.mock('@/modules/balances/use-aggregated-balances', () => ({
   useAggregatedBalances: vi.fn(() => ({
     getBalances: (): AssetBalanceWithPriceAndChains[] => [
       createBalanceWithPrice('10000', 'JPY', '0.01'),
@@ -54,11 +54,11 @@ vi.mock('@/composables/balances/use-aggregated-balances', () => ({
   })),
 }));
 
-vi.mock('@/composables/utils/useNumberScrambler', () => ({
+vi.mock('@/modules/assets/amount-display/use-number-scrambler', () => ({
   useNumberScrambler: vi.fn(({ value }) => value),
 }));
 
-vi.mock('@/modules/prices/use-price-utils', () => ({
+vi.mock('@/modules/assets/prices/use-price-utils', () => ({
   usePriceUtils: (): Pick<ReturnType<typeof usePriceUtils>, 'getExchangeRate'> => ({
     getExchangeRate: (currency: string): BigNumber => getExchangeRate(currency),
   }),
@@ -146,7 +146,7 @@ describe('useStatisticsStore', () => {
 
     it('should correctly handle when main currency appears in liabilities', async () => {
       // Update the mock for this specific test
-      const module = await import('@/composables/balances/use-aggregated-balances');
+      const module = await import('@/modules/balances/use-aggregated-balances');
       // @ts-expect-error partial mock - only getBalances and getLiabilities are used by the store
       vi.mocked(module.useAggregatedBalances).mockImplementationOnce(() => ({
         getBalances: (): AssetBalanceWithPriceAndChains[] => [

@@ -1,7 +1,7 @@
-import type { FilterSchema } from '@/composables/use-pagination-filter/types';
-import type { MatchedKeywordWithBehaviour, SearchMatcher } from '@/modules/table/filtering';
-import { useSupportedChains } from '@/composables/info/chains';
-import { dateDeserializer, dateRangeValidator, dateSerializer, getDateInputISOFormat } from '@/modules/common/data/date';
+import type { MatchedKeywordWithBehaviour, SearchMatcher } from '@/modules/core/table/filtering';
+import type { FilterSchema } from '@/modules/core/table/pagination-filter-types';
+import { dateDeserializer, dateRangeValidator, dateSerializer, getDateInputISOFormat } from '@/modules/core/common/data/date';
+import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
 import { useFrontendSettingsStore } from '@/modules/settings/use-frontend-settings-store';
 
 const InternalTxConflictFilterKeys = {

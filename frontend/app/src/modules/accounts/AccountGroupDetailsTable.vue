@@ -1,0 +1,95 @@
+<script setup lang="ts">
+import type {
+  BlockchainAccountGroupRequestPayload,
+  BlockchainAccountWithBalance,
+} from '@/modules/accounts/blockchain-accounts';
+import type { AccountManageState } from '@/modules/accounts/blockchain/use-account-manage';
+import { getAccountAddress } from '@/modules/accounts/account-utils';
+import AccountBalanceDetails from '@/modules/accounts/balances/AccountBalanceDetails.vue';
+import { AccountBalancesTable } from '@/modules/accounts/table';
+import { useBlockchainAccountLoading } from '@/modules/accounts/use-blockchain-account-loading';
+import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
+import { useBlockchainAccountData } from '@/modules/balances/blockchain/use-blockchain-account-data';
+import { useBalancesStore } from '@/modules/balances/use-balances-store';
+import { type LocationQuery, RouterExpandedIdsSchema } from '@/modules/core/table/route';
+import { usePaginationFilters } from '@/modules/core/table/use-pagination-filter';
+
+const query = defineModel<LocationQuery>('query', { default: () => ({}), required: false });
+const selected = defineModel<string[] | undefined>('selected', { required: true });
+
+const { groupId, chains, tags, category, selectionMode } = defineProps<{
+  groupId: string;
+  chains: string[];
+  tags?: string[];
+  category: string;
+  selectionMode?: boolean;
+}>();
+
+const emit = defineEmits<{
+  edit: [account: AccountManageState];
+}>();
+
+const expanded = ref<string[]>([]);
+
+const { fetchGroupAccounts } = useBlockchainAccountData();
+
+const { balances } = storeToRefs(useBalancesStore());
+const { accounts: accountsState } = storeToRefs(useBlockchainAccountsStore());
+
+const {
+  fetchData,
+  pagination,
+  sort,
+  state: accounts,
+} = usePaginationFilters<BlockchainAccountWithBalance, BlockchainAccountGroupRequestPayload>(fetchGroupAccounts, {
+  defaultSortBy: {
+    column: 'value',
+    direction: 'desc',
+  },
+  extraParams: computed(() => ({
+    expanded: get(expanded).join(','),
+  })),
+  history: 'external',
+  onUpdateFilters(query) {
+    const { expanded: expandedIds } = RouterExpandedIdsSchema.parse(query);
+    set(expanded, expandedIds);
+  },
+  query,
+  requestParams: computed(() => ({
+    chain: chains,
+    groupId,
+    tags,
+  })),
+});
+useBlockchainAccountLoading(() => category);
+
+watchImmediate([accountsState, balances], () => {
+  fetchData();
+});
+
+defineExpose({
+  refresh: fetchData,
+});
+</script>
+
+<template>
+  <AccountBalancesTable
+    v-model:pagination="pagination"
+    v-model:sort="sort"
+    v-model:expanded-ids="expanded"
+    class="bg-white dark:bg-dark-elevated"
+    :accounts="accounts"
+    :category="category"
+    @edit="emit('edit', $event)"
+    @refresh="fetchData()"
+  >
+    <template #details="{ row }">
+      <AccountBalanceDetails
+        v-model:selected="selected"
+        :address="getAccountAddress(row)"
+        :chain="row.chain"
+        :selection-mode="selectionMode"
+      />
+    </template>
+  </AccountBalancesTable>
+</template>

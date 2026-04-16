@@ -1,12 +1,12 @@
 import type { EvmTokensRecord } from '@/modules/balances/types/balances';
-import type { TaskMeta } from '@/modules/tasks/types';
-import { useBlockchainBalancesApi } from '@/composables/api/balances/blockchain';
-import { useSupportedChains } from '@/composables/info/chains';
+import type { TaskMeta } from '@/modules/core/tasks/types';
+import { useBlockchainBalancesApi } from '@/modules/balances/api/use-blockchain-balances-api';
 import { useTokenDetectionStore } from '@/modules/balances/blockchain/use-token-detection-store';
-import { logger } from '@/modules/common/logging/logging';
-import { getErrorMessage, useNotifications } from '@/modules/notifications/use-notifications';
-import { TaskType } from '@/modules/tasks/task-type';
-import { isActionableFailure, useTaskHandler } from '@/modules/tasks/use-task-handler';
+import { logger } from '@/modules/core/common/logging/logging';
+import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
+import { getErrorMessage, useNotifications } from '@/modules/core/notifications/use-notifications';
+import { TaskType } from '@/modules/core/tasks/task-type';
+import { isActionableFailure, useTaskHandler } from '@/modules/core/tasks/use-task-handler';
 
 interface UseTokenDetectionApiReturn {
   fetchDetectedTokens: (chain: string, address?: string | null) => Promise<void>;

@@ -1,22 +1,22 @@
 import type { MaybeRef } from 'vue';
-import type { AddressBookSimplePayload } from '@/modules/address-names/eth-names';
-import type { TaskMeta } from '@/modules/tasks/types';
+import type { AddressBookSimplePayload } from '@/modules/accounts/address-book/eth-names';
+import type { TaskMeta } from '@/modules/core/tasks/types';
 import { Blockchain } from '@rotki/common';
 import { startPromise } from '@shared/utils';
-import { useBlockchainAccountsApi } from '@/composables/api/blockchain/accounts';
-import { useSupportedChains } from '@/composables/info/chains';
-import { useStatusUpdater } from '@/composables/status';
-import { useBlockchainAccounts } from '@/modules/accounts/use-blockchain-accounts-api';
-import { useEnsOperations } from '@/modules/address-names/use-ens-operations';
+import { useEnsOperations } from '@/modules/accounts/address-book/use-ens-operations';
+import { useBlockchainAccountsApi } from '@/modules/accounts/api/use-blockchain-accounts-api';
+import { useBlockchainAccounts } from '@/modules/accounts/use-blockchain-accounts';
 import { useAccountAddresses } from '@/modules/balances/blockchain/use-account-addresses';
 import { useBlockchainBalances } from '@/modules/balances/use-blockchain-balances';
-import { awaitParallelExecution } from '@/modules/common/async/await-parallel-execution';
-import { uniqueStrings } from '@/modules/common/data/data';
-import { logger } from '@/modules/common/logging/logging';
-import { Section } from '@/modules/common/status';
-import { useNotifications } from '@/modules/notifications/use-notifications';
-import { TaskType } from '@/modules/tasks/task-type';
-import { isActionableFailure, useTaskHandler } from '@/modules/tasks/use-task-handler';
+import { awaitParallelExecution } from '@/modules/core/common/async/await-parallel-execution';
+import { uniqueStrings } from '@/modules/core/common/data/data';
+import { logger } from '@/modules/core/common/logging/logging';
+import { Section } from '@/modules/core/common/status';
+import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
+import { useNotifications } from '@/modules/core/notifications/use-notifications';
+import { TaskType } from '@/modules/core/tasks/task-type';
+import { isActionableFailure, useTaskHandler } from '@/modules/core/tasks/use-task-handler';
+import { useStatusUpdater } from '@/modules/shell/sync-progress/use-status-updater';
 
 export interface RefreshAccountsParams {
   blockchain?: MaybeRef<string>;

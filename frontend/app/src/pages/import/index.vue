@@ -1,10 +1,10 @@
 <script setup lang="ts">
 import { externalLinks } from '@shared/external-links';
-import ExternalLink from '@/components/helper/ExternalLink.vue';
-import HintMenuIcon from '@/components/HintMenuIcon.vue';
-import GroupedImport from '@/components/import/GroupedImport.vue';
-import TablePageLayout from '@/components/layout/TablePageLayout.vue';
-import { NoteLocation } from '@/modules/common/notes';
+import { NoteLocation } from '@/modules/core/common/notes';
+import ExternalLink from '@/modules/shell/components/ExternalLink.vue';
+import HintMenuIcon from '@/modules/shell/components/HintMenuIcon.vue';
+import TablePageLayout from '@/modules/shell/layout/TablePageLayout.vue';
+import GroupedImport from '@/modules/user-data/GroupedImport.vue';
 
 definePage({
   meta: {

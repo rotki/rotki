@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import AccountingCsvExportSetting from '@/components/settings/accounting/AccountingCsvExportSetting.vue';
-import AccountingTradeSettings from '@/components/settings/accounting/AccountingTradeSettings.vue';
-import AccountingRuleSetting from '@/components/settings/accounting/rule/AccountingRuleSetting.vue';
-import SettingsPage from '@/components/settings/controls/SettingsPage.vue';
-import { NoteLocation } from '@/modules/common/notes';
+import { NoteLocation } from '@/modules/core/common/notes';
+import AccountingCsvExportSetting from '@/modules/settings/accounting/AccountingCsvExportSetting.vue';
+import AccountingTradeSettings from '@/modules/settings/accounting/AccountingTradeSettings.vue';
+import AccountingRuleSetting from '@/modules/settings/accounting/rule/AccountingRuleSetting.vue';
+import SettingsPage from '@/modules/settings/controls/SettingsPage.vue';
 
 definePage({
   meta: {

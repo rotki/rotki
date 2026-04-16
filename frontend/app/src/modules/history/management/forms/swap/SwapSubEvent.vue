@@ -1,10 +1,10 @@
 <script setup lang="ts">
-import type { ValidationErrors } from '@/modules/api/types/errors';
-import type { ActionStatus } from '@/modules/common/action';
+import type { ValidationErrors } from '@/modules/core/api/types/errors';
+import type { ActionStatus } from '@/modules/core/common/action';
 import type { SwapSubEventModel } from '@/modules/history/events/schemas';
 import useVuelidate from '@vuelidate/core';
 import { isEqual, pick } from 'es-toolkit';
-import { toMessages } from '@/modules/common/validation/validation';
+import { toMessages } from '@/modules/core/common/validation/validation';
 import EventLocationLabel from '@/modules/history/management/forms/common/EventLocationLabel.vue';
 import HistoryEventAssetPriceForm from '@/modules/history/management/forms/HistoryEventAssetPriceForm.vue';
 import { useEventFormValidation } from '@/modules/history/management/forms/use-event-form-validation';

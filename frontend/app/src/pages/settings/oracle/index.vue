@@ -1,10 +1,10 @@
 <script setup lang="ts">
-import SettingsPage from '@/components/settings/controls/SettingsPage.vue';
-import OracleCacheManagement from '@/components/settings/data-security/oracle/OracleCacheManagement.vue';
-import OraclePenaltySettings from '@/components/settings/data-security/oracle/OraclePenaltySettings.vue';
-import PriceOracleSettings from '@/components/settings/PriceOracleSettings.vue';
-import { SettingsCategoryIds } from '@/composables/settings/types';
-import { NoteLocation } from '@/modules/common/notes';
+import { NoteLocation } from '@/modules/core/common/notes';
+import SettingsPage from '@/modules/settings/controls/SettingsPage.vue';
+import OracleCacheManagement from '@/modules/settings/data-security/oracle/OracleCacheManagement.vue';
+import OraclePenaltySettings from '@/modules/settings/data-security/oracle/OraclePenaltySettings.vue';
+import PriceOracleSettings from '@/modules/settings/PriceOracleSettings.vue';
+import { SettingsCategoryIds } from '@/modules/settings/setting-highlight-ids';
 
 definePage({
   meta: {

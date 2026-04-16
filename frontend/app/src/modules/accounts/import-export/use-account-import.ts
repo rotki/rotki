@@ -1,22 +1,22 @@
 import type { AddAccountsPayload, XpubAccountPayload } from '@/modules/accounts/blockchain-accounts';
 import { Blockchain } from '@rotki/common';
-import { type StakingValidatorManage, useAccountManage } from '@/composables/accounts/blockchain/use-account-manage';
-import { CSVMissingHeadersError, useCsvImportExport } from '@/composables/common/use-csv-import-export';
-import { useSupportedChains } from '@/composables/info/chains';
-import { useSectionStatus } from '@/composables/status';
 import { getAccountAddress, getXpubId } from '@/modules/accounts/account-utils';
+import { type StakingValidatorManage, useAccountManage } from '@/modules/accounts/blockchain/use-account-manage';
 import { createValidatorAction, type CSVRow, CSVSchema, csvToAccount, doesAccountExist, getChainType } from '@/modules/accounts/import-export/account-csv-schema';
 import { useAccountImportProgressStore } from '@/modules/accounts/use-account-import-progress-store';
 import { useBlockchainAccountManagement } from '@/modules/accounts/use-blockchain-account-management';
 import { getKeyType, guessPrefix, isPrefixed } from '@/modules/accounts/xpub';
 import { useBlockchainAccountData } from '@/modules/balances/blockchain/use-blockchain-account-data';
-import { awaitParallelExecution } from '@/modules/common/async/await-parallel-execution';
-import { logger } from '@/modules/common/logging/logging';
-import { Section } from '@/modules/common/status';
-import { useNotifications } from '@/modules/notifications/use-notifications';
+import { awaitParallelExecution } from '@/modules/core/common/async/await-parallel-execution';
+import { logger } from '@/modules/core/common/logging/logging';
+import { Section } from '@/modules/core/common/status';
+import { CSVMissingHeadersError, useCsvImportExport } from '@/modules/core/common/use-csv-import-export';
+import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
+import { useNotifications } from '@/modules/core/notifications/use-notifications';
 import { useSessionMetadataStore } from '@/modules/session/use-session-metadata-store';
-import { useTagOperations } from '@/modules/session/use-tag-operations';
+import { useSectionStatus } from '@/modules/shell/sync-progress/use-section-status';
 import { useBlockchainValidatorsStore } from '@/modules/staking/use-blockchain-validators-store';
+import { useTagOperations } from '@/modules/tags/use-tag-operations';
 
 interface UseAccountImportReturn {
   importAccounts: (file: File) => Promise<void>;

@@ -1,5 +1,5 @@
 import { isEmpty } from 'es-toolkit/compat';
-import { logger } from '@/modules/common/logging/logging';
+import { logger } from '@/modules/core/common/logging/logging';
 import {
   type BalanceSource,
   BalanceValueThreshold,

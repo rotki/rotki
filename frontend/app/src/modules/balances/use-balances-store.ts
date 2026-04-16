@@ -1,12 +1,12 @@
 import type { MaybeRef } from 'vue';
 import type { Balances } from '@/modules/accounts/blockchain-accounts';
+import type { AssetPrices } from '@/modules/assets/prices/price-types';
 import type { BlockchainAssetBalances, BlockchainBalances } from '@/modules/balances/types/blockchain-balances';
 import type { ExchangeData } from '@/modules/balances/types/exchanges';
 import type { ManualBalanceWithValue } from '@/modules/balances/types/manual-balances';
-import type { AssetPrices } from '@/modules/prices/price-types';
 import { type BigNumber, Zero } from '@rotki/common';
 import { camelCase } from 'es-toolkit';
-import { updateBlockchainAssetBalances, updateExchangeBalancesPrices, updateManualBalancePrices } from '@/modules/prices/price-utils';
+import { updateBlockchainAssetBalances, updateExchangeBalancesPrices, updateManualBalancePrices } from '@/modules/assets/prices/price-utils';
 
 export const useBalancesStore = defineStore('balances', () => {
   const manualBalances = shallowRef<ManualBalanceWithValue[]>([]);

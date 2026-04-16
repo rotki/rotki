@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import TagManager from '@/components/tags/TagManager.vue';
-import { NoteLocation } from '@/modules/common/notes';
+import { NoteLocation } from '@/modules/core/common/notes';
+import TagManager from '@/modules/tags/TagManager.vue';
 
 definePage({
   meta: {

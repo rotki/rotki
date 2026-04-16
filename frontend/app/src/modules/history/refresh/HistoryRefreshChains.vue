@@ -2,8 +2,8 @@
 import type { ChainData } from '@/modules/history/refresh/types';
 import { getTextToken } from '@rotki/common';
 import { cloneDeep, isEqual } from 'es-toolkit';
-import { useSupportedChains } from '@/composables/info/chains';
 import { useAccountAddresses } from '@/modules/balances/blockchain/use-account-addresses';
+import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
 import {
   type ChainAddress,
   TransactionChainType,

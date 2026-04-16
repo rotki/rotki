@@ -1,0 +1,65 @@
+<script setup lang="ts">
+import { toHumanReadable } from '@rotki/common';
+import { getPublicProtocolImagePath } from '@/modules/core/common/file/file';
+import { useHistoryEventCounterpartyMappings } from '@/modules/history/events/mapping/use-history-event-counterparty-mappings';
+import AppImage from '@/modules/shell/components/AppImage.vue';
+
+const { counterparty, icon, size = '20px' } = defineProps<{
+  counterparty: string;
+  icon?: boolean;
+  size?: string;
+}>();
+
+const { getCounterpartyData } = useHistoryEventCounterpartyMappings();
+
+const { isDark } = useRotkiTheme();
+
+const data = getCounterpartyData(() => counterparty);
+
+const useDarkModeImage = computed(() => get(isDark) && get(data).darkmodeImage);
+
+const counterpartyImageSrc = computed<string | undefined>(() => {
+  const counterpartyVal = get(data);
+
+  if (!counterpartyVal)
+    return undefined;
+
+  if (get(useDarkModeImage)) {
+    return getPublicProtocolImagePath(counterpartyVal.darkmodeImage!);
+  }
+
+  if (counterpartyVal.image) {
+    return getPublicProtocolImagePath(counterpartyVal.image);
+  }
+
+  return undefined;
+});
+</script>
+
+<template>
+  <div class="flex items-center gap-2 text-rui-text text-sm">
+    <div
+      :class="useDarkModeImage ? 'p-0.5 bg-black rounded-md' : 'icon-bg'"
+    >
+      <RuiIcon
+        v-if="data.icon"
+        :name="data.icon"
+        :color="data.color || 'secondary'"
+        :size="size"
+      />
+
+      <AppImage
+        v-else-if="counterpartyImageSrc"
+        :src="counterpartyImageSrc"
+        contain
+        :size="size"
+      />
+    </div>
+    <div
+      v-if="!icon"
+      class="uppercase"
+    >
+      {{ toHumanReadable(data.label, 'sentence') }}
+    </div>
+  </div>
+</template>

@@ -1,10 +1,10 @@
 import { Blockchain } from '@rotki/common';
-import { useCsvImportExport } from '@/composables/common/use-csv-import-export';
-import { useSupportedChains } from '@/composables/info/chains';
 import { getAccountAddress, isXpubAccount } from '@/modules/accounts/account-utils';
 import { type CSVRow, getChainType, serializeRecordToString } from '@/modules/accounts/import-export/account-csv-schema';
 import { useBlockchainAccountData } from '@/modules/balances/blockchain/use-blockchain-account-data';
-import { downloadFileByTextContent } from '@/modules/common/file/download';
+import { downloadFileByTextContent } from '@/modules/core/common/file/download';
+import { useCsvImportExport } from '@/modules/core/common/use-csv-import-export';
+import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
 import { useBlockchainValidatorsStore } from '@/modules/staking/use-blockchain-validators-store';
 
 interface UseAccountExportReturn {

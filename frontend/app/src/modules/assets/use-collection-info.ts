@@ -1,10 +1,10 @@
 import type { ComputedRef, MaybeRef } from 'vue';
 import type { AssetMap } from '@/modules/assets/types';
-import { useAssetInfoApi } from '@/composables/api/assets/info';
-import { useResolveAssetIdentifier } from '@/composables/assets/common';
+import { useAssetInfoApi } from '@/modules/assets/api/use-asset-info-api';
 import { useCollectionMappingStore } from '@/modules/assets/use-collection-mapping-store';
-import { chunkArray } from '@/modules/common/data/data';
-import { logger } from '@/modules/common/logging/logging';
+import { useResolveAssetIdentifier } from '@/modules/assets/use-resolve-asset-identifier';
+import { chunkArray } from '@/modules/core/common/data/data';
+import { logger } from '@/modules/core/common/logging/logging';
 
 interface CollectionInfo {
   assetToCollection: Record<string, string | null>;

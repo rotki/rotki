@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { getTextToken } from '@rotki/common';
-import TablePageLayout from '@/components/layout/TablePageLayout.vue';
-import { useExternalApiKeys } from '@/composables/settings/api-keys/external';
+import { useExternalApiKeys } from '@/modules/settings/api-keys/external/use-external-api-keys';
+import TablePageLayout from '@/modules/shell/layout/TablePageLayout.vue';
 
 const { t } = useI18n({ useScope: 'global' });
 
@@ -10,55 +10,55 @@ const { load } = useExternalApiKeys();
 
 const services = [
   {
-    component: defineAsyncComponent(() => import('@/components/settings/api-keys/external/EtherscanApiKey.vue')),
+    component: defineAsyncComponent(() => import('@/modules/settings/api-keys/external/EtherscanApiKey.vue')),
     name: 'etherscan',
   },
   {
-    component: defineAsyncComponent(() => import('@/components/settings/api-keys/external/BlockscoutApiKey.vue')),
+    component: defineAsyncComponent(() => import('@/modules/settings/api-keys/external/BlockscoutApiKey.vue')),
     name: 'blockscout',
   },
   {
-    component: defineAsyncComponent(() => import('@/components/settings/api-keys/external/HeliusApiKey.vue')),
+    component: defineAsyncComponent(() => import('@/modules/settings/api-keys/external/HeliusApiKey.vue')),
     name: 'helius',
   },
   {
-    component: defineAsyncComponent(() => import('@/components/settings/api-keys/external/CryptoCompareApiKey.vue')),
+    component: defineAsyncComponent(() => import('@/modules/settings/api-keys/external/CryptoCompareApiKey.vue')),
     name: 'cryptocompare',
   },
   {
-    component: defineAsyncComponent(() => import('@/components/settings/api-keys/external/BeaconchainApiKey.vue')),
+    component: defineAsyncComponent(() => import('@/modules/settings/api-keys/external/BeaconchainApiKey.vue')),
     name: 'beaconchain',
   },
   {
-    component: defineAsyncComponent(() => import('@/components/settings/api-keys/external/LoopringApiKey.vue')),
+    component: defineAsyncComponent(() => import('@/modules/settings/api-keys/external/LoopringApiKey.vue')),
     name: 'loopring',
   },
   {
-    component: defineAsyncComponent(() => import('@/components/settings/api-keys/external/OpenSeaApiKey.vue')),
+    component: defineAsyncComponent(() => import('@/modules/settings/api-keys/external/OpenSeaApiKey.vue')),
     name: 'opensea',
   },
   {
-    component: defineAsyncComponent(() => import('@/modules/external-services/monerium/MoneriumAuth.vue')),
+    component: defineAsyncComponent(() => import('@/modules/integrations/monerium/MoneriumAuth.vue')),
     name: 'monerium',
   },
   {
-    component: defineAsyncComponent(() => import('@/components/settings/api-keys/external/TheGraphApiKey.vue')),
+    component: defineAsyncComponent(() => import('@/modules/settings/api-keys/external/TheGraphApiKey.vue')),
     name: 'thegraph',
   },
   {
-    component: defineAsyncComponent(() => import('@/modules/external-services/gnosis-pay/components/GnosisPayAuth.vue')),
+    component: defineAsyncComponent(() => import('@/modules/integrations/gnosis-pay/components/GnosisPayAuth.vue')),
     name: 'gnosispay',
   },
   {
-    component: defineAsyncComponent(() => import('@/components/settings/api-keys/external/DefiLlamaApiKey.vue')),
+    component: defineAsyncComponent(() => import('@/modules/settings/api-keys/external/DefiLlamaApiKey.vue')),
     name: 'defillama',
   },
   {
-    component: defineAsyncComponent(() => import('@/components/settings/api-keys/external/CoinGeckoApiKey.vue')),
+    component: defineAsyncComponent(() => import('@/modules/settings/api-keys/external/CoinGeckoApiKey.vue')),
     name: 'coingecko',
   },
   {
-    component: defineAsyncComponent(() => import('@/components/settings/api-keys/external/AlchemyApiKey.vue')),
+    component: defineAsyncComponent(() => import('@/modules/settings/api-keys/external/AlchemyApiKey.vue')),
     name: 'alchemy',
   },
 ];

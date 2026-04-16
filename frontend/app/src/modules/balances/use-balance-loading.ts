@@ -1,6 +1,6 @@
 import type { ComputedRef } from 'vue';
-import { TaskType } from '@/modules/tasks/task-type';
-import { useTaskStore } from '@/modules/tasks/use-task-store';
+import { TaskType } from '@/modules/core/tasks/task-type';
+import { useTaskStore } from '@/modules/core/tasks/use-task-store';
 
 interface UseBalancesLoadingReturn {
   loadingBalances: ComputedRef<boolean>;

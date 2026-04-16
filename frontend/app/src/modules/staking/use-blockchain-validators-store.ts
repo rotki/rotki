@@ -4,13 +4,13 @@ import type {
   EthereumValidatorRequestPayload,
 } from '@/modules/accounts/blockchain-accounts';
 import type { BlockchainAssetBalances } from '@/modules/balances/types/blockchain-balances';
-import type { Collection } from '@/modules/common/collection';
+import type { Collection } from '@/modules/core/common/collection';
 import { type Balance, type BigNumber, bigNumberify, Blockchain, Zero } from '@rotki/common';
 import { isValidatorAccount } from '@/modules/accounts/account-utils';
 import { sortAndFilterValidators } from '@/modules/accounts/account-validator';
 import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
 import { useBalancesStore } from '@/modules/balances/use-balances-store';
-import { Module } from '@/modules/common/modules';
+import { Module } from '@/modules/core/common/modules';
 import { useGeneralSettingsStore } from '@/modules/settings/use-general-settings-store';
 
 export const useBlockchainValidatorsStore = defineStore('blockchain/validators', () => {

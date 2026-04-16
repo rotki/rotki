@@ -1,7 +1,7 @@
 import { wait } from '@shared/utils';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { BalanceQueueService, type QueueItem, type QueueItemMetadata } from '@/modules/balances/services/balance-queue';
-import { TaskType } from '@/modules/tasks/task-type';
+import { TaskType } from '@/modules/core/tasks/task-type';
 
 interface TestMetadata extends QueueItemMetadata {
   chain: string;

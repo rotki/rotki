@@ -2,12 +2,12 @@ import type { AssetBalance } from '@rotki/common';
 import type { MaybeRef } from 'vue';
 import type * as Vue from 'vue';
 import type { ExchangeSavingsCollection, ExchangeSavingsEvent, ExchangeSavingsRequestPayload } from '@/modules/balances/types/exchanges';
-import type { Collection } from '@/modules/common/collection';
+import type { Collection } from '@/modules/core/common/collection';
 import { startPromise } from '@shared/utils';
 import flushPromises from 'flush-promises';
 import { afterEach, assertType, beforeAll, beforeEach, describe, expect, expectTypeOf, it, vi } from 'vitest';
-import { usePaginationFilters } from '@/composables/use-pagination-filter';
 import { useBinanceSavings } from '@/modules/balances/exchanges/use-binance-savings';
+import { usePaginationFilters } from '@/modules/core/table/use-pagination-filter';
 
 vi.mock('vue', async (): Promise<Record<string, unknown>> => {
   const mod = await vi.importActual<typeof Vue>('vue');

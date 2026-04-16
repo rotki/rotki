@@ -1,5 +1,5 @@
 import type { ActionResult } from '@rotki/common';
-import type { PremiumDevicesResponse } from '@/modules/premium/devices/composables/premium';
+import type { PremiumDevicesResponse } from '@/modules/premium/devices/premium';
 import process from 'node:process';
 import { http, HttpResponse } from 'msw';
 import { type PremiumCapabilities, PremiumFeature } from '@/modules/session/types';

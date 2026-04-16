@@ -1,31 +1,31 @@
 import type { ComputedRef, Ref } from 'vue';
 import type { AddressData, BlockchainAccount } from '@/modules/accounts/blockchain-accounts';
-import type { TaskMeta } from '@/modules/tasks/types';
+import type { TaskMeta } from '@/modules/core/tasks/types';
 import {
   type AssetBalanceWithPrice,
   type BigNumber,
   Zero,
 } from '@rotki/common';
 import dayjs from 'dayjs';
-import { useHistoricalBalancesApi } from '@/composables/api/balances/historical-balances-api';
-import { summarizeAssetProtocols } from '@/composables/balances/asset-summary';
-import { useSupportedChains } from '@/composables/info/chains';
-import { ApiValidationError, type ValidationErrors } from '@/modules/api/types/errors';
+import { useHistoricPriceCache } from '@/modules/assets/prices/use-historic-price-cache';
 import { useAssetsStore } from '@/modules/assets/use-assets-store';
 import { useCollectionInfo } from '@/modules/assets/use-collection-info';
-import { displayDateFormatter } from '@/modules/common/date-formatter';
-import { getErrorMessage } from '@/modules/common/logging/error-handling';
-import { useHistoricalBalancesStore } from '@/modules/history/balances/store';
+import { useHistoricalBalancesApi } from '@/modules/balances/api/use-historical-balances-api';
+import { summarizeAssetProtocols } from '@/modules/balances/asset-summary';
+import { ApiValidationError, type ValidationErrors } from '@/modules/core/api/types/errors';
+import { displayDateFormatter } from '@/modules/core/common/date-formatter';
+import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
+import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
+import { TaskType } from '@/modules/core/tasks/task-type';
+import { isActionableFailure, useTaskHandler } from '@/modules/core/tasks/use-task-handler';
 import {
   type HistoricalBalanceSource,
   HistoricalBalancesResponse,
   OnchainHistoricalBalanceResponse,
   HistoricalBalanceSource as Source,
 } from '@/modules/history/balances/types';
-import { useHistoricPriceCache } from '@/modules/prices/use-historic-price-cache';
+import { useHistoricalBalancesStore } from '@/modules/history/balances/use-historical-balances-store';
 import { useGeneralSettingsStore } from '@/modules/settings/use-general-settings-store';
-import { TaskType } from '@/modules/tasks/task-type';
-import { isActionableFailure, useTaskHandler } from '@/modules/tasks/use-task-handler';
 
 interface UseHistoricalBalancesReturn {
   balances: ComputedRef<AssetBalanceWithPrice[]>;

@@ -1,4 +1,4 @@
-import type { Collection } from '@/modules/common/collection';
+import type { Collection } from '@/modules/core/common/collection';
 import type {
   ProfitLossEvent,
   ReportActionableItem,

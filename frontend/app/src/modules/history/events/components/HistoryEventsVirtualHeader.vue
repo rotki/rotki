@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { HistoryEventEntry } from '@/modules/history/events/schemas';
 import { type DataTableSortData, type TablePaginationData, useBreakpoint } from '@rotki/ui-library';
-import { useItemsPerPage } from '@/composables/session/use-items-per-page';
+import { useItemsPerPage } from '@/modules/session/use-items-per-page';
 
 const sort = defineModel<DataTableSortData<HistoryEventEntry>>('sort', { required: true });
 const pagination = defineModel<TablePaginationData>('pagination', { required: true });

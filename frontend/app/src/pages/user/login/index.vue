@@ -1,21 +1,21 @@
 <script setup lang="ts">
-import type { LoginCredentials } from '@/modules/account/login';
-import AccountManagementAside from '@/components/account-management/AccountManagementAside.vue';
-import AccountManagementFooterText from '@/components/account-management/AccountManagementFooterText.vue';
-import AdaptiveFooterButton from '@/components/account-management/AdaptiveFooterButton.vue';
-import LoginForm from '@/components/account-management/login/LoginForm.vue';
-import NewReleaseChangelog from '@/components/account-management/login/NewReleaseChangelog.vue';
-import WelcomeMessageDisplay from '@/components/account-management/login/WelcomeMessageDisplay.vue';
-import UpgradeProgressDisplay from '@/components/account-management/upgrade/UpgradeProgressDisplay.vue';
-import UserHost from '@/components/account-management/UserHost.vue';
-import RotkiLogo from '@/components/common/RotkiLogo.vue';
-import AssetUpdate from '@/components/status/update/AssetUpdate.vue';
-import { useBackendManagement } from '@/composables/backend';
-import { useDynamicMessages } from '@/composables/dynamic-messages';
-import { useAppNavigation } from '@/composables/navigation';
-import { useUpdateMessage } from '@/composables/update-message';
-import { useAccountManagement } from '@/composables/user/account';
-import { useSessionAuthStore } from '@/modules/session/use-session-auth-store';
+import type { LoginCredentials } from '@/modules/auth/login';
+import AccountManagementAside from '@/modules/auth/AccountManagementAside.vue';
+import AccountManagementFooterText from '@/modules/auth/AccountManagementFooterText.vue';
+import AdaptiveFooterButton from '@/modules/auth/AdaptiveFooterButton.vue';
+import LoginForm from '@/modules/auth/login/LoginForm.vue';
+import NewReleaseChangelog from '@/modules/auth/login/NewReleaseChangelog.vue';
+import WelcomeMessageDisplay from '@/modules/auth/login/WelcomeMessageDisplay.vue';
+import UpgradeProgressDisplay from '@/modules/auth/upgrade/UpgradeProgressDisplay.vue';
+import { useAccountManagement } from '@/modules/auth/use-account-management';
+import { useSessionAuthStore } from '@/modules/auth/use-session-auth-store';
+import UserHost from '@/modules/auth/UserHost.vue';
+import { useDynamicMessages } from '@/modules/core/messaging/use-dynamic-messages';
+import { useUpdateMessage } from '@/modules/core/messaging/use-update-message';
+import AssetUpdate from '@/modules/shell/app/AssetUpdate.vue';
+import { useBackendManagement } from '@/modules/shell/app/use-backend-management';
+import RotkiLogo from '@/modules/shell/components/RotkiLogo.vue';
+import { useAppNavigation } from '@/modules/shell/layout/use-navigation';
 import { useLoginInitialChecks } from '@/pages/user/login/use-login-initial-checks';
 
 definePage({

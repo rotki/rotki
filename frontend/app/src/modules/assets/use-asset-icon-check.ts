@@ -1,7 +1,7 @@
 import { wait } from '@shared/utils';
-import { useAssetIconApi } from '@/composables/api/assets/icon';
+import { useAssetIconApi } from '@/modules/assets/api/use-asset-icon-api';
 import { useAssetsStore } from '@/modules/assets/use-assets-store';
-import { logger } from '@/modules/common/logging/logging';
+import { logger } from '@/modules/core/common/logging/logging';
 
 export interface AssetCheckOptions {
   abortController?: AbortController;

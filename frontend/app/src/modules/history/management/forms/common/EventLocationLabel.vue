@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import AutoCompleteWithSearchSync from '@/components/inputs/AutoCompleteWithSearchSync.vue';
-import { useSupportedChains } from '@/composables/info/chains';
 import { useAccountAddresses } from '@/modules/balances/blockchain/use-account-addresses';
+import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
+import AutoCompleteWithSearchSync from '@/modules/shell/components/inputs/AutoCompleteWithSearchSync.vue';
 
 const modelValue = defineModel<string>({ required: true });
 

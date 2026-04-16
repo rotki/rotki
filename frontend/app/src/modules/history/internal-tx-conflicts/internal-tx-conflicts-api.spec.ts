@@ -1,7 +1,7 @@
 import { server } from '@test/setup-files/server';
 import { http, HttpResponse } from 'msw';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { HTTPStatus } from '@/modules/api/types/http';
+import { HTTPStatus } from '@/modules/core/api/types/http';
 import { useInternalTxConflictsApi } from './internal-tx-conflicts-api';
 
 const backendUrl = process.env.VITE_BACKEND_URL;

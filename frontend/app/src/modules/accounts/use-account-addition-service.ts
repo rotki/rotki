@@ -1,20 +1,20 @@
 import type { AccountPayload, AddAccountsPayload, XpubAccountPayload } from '@/modules/accounts/blockchain-accounts';
 import type { RefreshAccountsParams } from '@/modules/accounts/use-account-operations';
-import type { Module } from '@/modules/common/modules';
+import type { Module } from '@/modules/core/common/modules';
 import { type Account, assert, Blockchain } from '@rotki/common';
 import { startPromise } from '@shared/utils';
-import { useSupportedChains } from '@/composables/info/chains';
 import { useAccountAdditionNotifications } from '@/modules/accounts/use-account-addition-notifications';
-import { useBlockchainAccounts } from '@/modules/accounts/use-blockchain-accounts-api';
+import { useBlockchainAccounts } from '@/modules/accounts/use-blockchain-accounts';
 import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
 import { useAccountAddresses } from '@/modules/balances/blockchain/use-account-addresses';
 import { useTokenDetectionOrchestrator } from '@/modules/balances/blockchain/use-token-detection-orchestrator';
-import { awaitParallelExecution } from '@/modules/common/async/await-parallel-execution';
-import { getErrorMessage } from '@/modules/common/logging/error-handling';
-import { logger } from '@/modules/common/logging/logging';
-import { isBlockchain } from '@/modules/onchain/chains';
-import { useTagOperations } from '@/modules/session/use-tag-operations';
+import { awaitParallelExecution } from '@/modules/core/common/async/await-parallel-execution';
+import { isBlockchain } from '@/modules/core/common/chains';
+import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
+import { logger } from '@/modules/core/common/logging/logging';
+import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
 import { useSettingsOperations } from '@/modules/settings/use-settings-operations';
+import { useTagOperations } from '@/modules/tags/use-tag-operations';
 
 interface EvmAccountAdditionSuccess {
   type: 'success';

@@ -1,5 +1,5 @@
 import type { TimeFramePeriod } from '@rotki/common';
-import type { Module } from '@/modules/common/modules';
+import type { Module } from '@/modules/core/common/modules';
 import { z } from 'zod/v4';
 
 export const PeriodicClientQueryResultSchema = z.object({

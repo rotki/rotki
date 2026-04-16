@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import { Blockchain, toSentenceCase } from '@rotki/common';
-import AppImage from '@/components/common/AppImage.vue';
 import { useProtocolData } from '@/modules/balances/protocols/use-protocol-data';
 import { useProxyProtocol } from '@/modules/balances/protocols/use-proxy-protocol';
-import HashLink from '@/modules/common/links/HashLink.vue';
+import AppImage from '@/modules/shell/components/AppImage.vue';
+import HashLink from '@/modules/shell/components/HashLink.vue';
 
 const { protocol, size = 20, hideTooltip } = defineProps<{
   protocol: string;

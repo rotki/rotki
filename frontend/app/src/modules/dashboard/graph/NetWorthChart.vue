@@ -2,12 +2,12 @@
 import type { NetValueChartData } from '@/modules/dashboard/graph/types';
 import { type BigNumber, Zero } from '@rotki/common';
 import VChart from 'vue-echarts';
-import ExportSnapshotDialog from '@/components/dashboard/ExportSnapshotDialog.vue';
-import DateDisplay from '@/components/display/DateDisplay.vue';
-import NewGraphTooltipWrapper from '@/components/graphs/NewGraphTooltipWrapper.vue';
-import { FiatDisplay } from '@/modules/amount-display/components';
+import { FiatDisplay } from '@/modules/assets/amount-display/components';
+import ExportSnapshotDialog from '@/modules/dashboard/ExportSnapshotDialog.vue';
 import { useNetValueChartConfig } from '@/modules/dashboard/graph/use-net-value-chart-config';
 import { useNetValueEventHandlers } from '@/modules/dashboard/graph/use-net-value-event-handlers';
+import DateDisplay from '@/modules/shell/components/display/DateDisplay.vue';
+import NewGraphTooltipWrapper from '@/modules/statistics/NewGraphTooltipWrapper.vue';
 
 const { chartData } = defineProps<{
   chartData: NetValueChartData;

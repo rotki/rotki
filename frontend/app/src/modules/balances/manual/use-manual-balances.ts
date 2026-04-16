@@ -1,9 +1,7 @@
-import type { ActionStatus } from '@/modules/common/action';
-import type { TaskMeta } from '@/modules/tasks/types';
-import { useManualBalancesApi } from '@/composables/api/balances/manual';
-import { useStatusUpdater } from '@/composables/status';
-import { useValueThreshold } from '@/composables/usd-value-threshold';
-import { ApiValidationError, type ValidationErrors } from '@/modules/api/types/errors';
+import type { ActionStatus } from '@/modules/core/common/action';
+import type { TaskMeta } from '@/modules/core/tasks/types';
+import { useValueThreshold } from '@/modules/assets/amount-display/use-usd-value-threshold';
+import { useManualBalancesApi } from '@/modules/balances/api/use-manual-balances-api';
 import { BalanceType } from '@/modules/balances/types/balances';
 import {
   type ManualBalance,
@@ -12,13 +10,15 @@ import {
   type RawManualBalance,
 } from '@/modules/balances/types/manual-balances';
 import { useBalancesStore } from '@/modules/balances/use-balances-store';
-import { getErrorMessage } from '@/modules/common/logging/error-handling';
-import { logger } from '@/modules/common/logging/logging';
-import { Section, Status } from '@/modules/common/status';
-import { useNotifications } from '@/modules/notifications/use-notifications';
+import { ApiValidationError, type ValidationErrors } from '@/modules/core/api/types/errors';
+import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
+import { logger } from '@/modules/core/common/logging/logging';
+import { Section, Status } from '@/modules/core/common/status';
+import { useNotifications } from '@/modules/core/notifications/use-notifications';
+import { TaskType } from '@/modules/core/tasks/task-type';
+import { isActionableFailure, useTaskHandler } from '@/modules/core/tasks/use-task-handler';
 import { BalanceSource } from '@/modules/settings/types/frontend-settings';
-import { TaskType } from '@/modules/tasks/task-type';
-import { isActionableFailure, useTaskHandler } from '@/modules/tasks/use-task-handler';
+import { useStatusUpdater } from '@/modules/shell/sync-progress/use-status-updater';
 
 interface UseManualBalancesReturn {
   addManualBalance: (balance: RawManualBalance) => Promise<ActionStatus<ValidationErrors | string>>;

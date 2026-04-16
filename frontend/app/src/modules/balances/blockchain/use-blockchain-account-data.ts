@@ -8,21 +8,21 @@ import type {
   BlockchainAccountWithBalance,
 } from '@/modules/accounts/blockchain-accounts';
 import type { ProtocolBalances } from '@/modules/balances/types/blockchain-balances';
-import type { Collection } from '@/modules/common/collection';
+import type { Collection } from '@/modules/core/common/collection';
 import { type AssetBalance, type Balance, Blockchain, Zero } from '@rotki/common';
 import { omit } from 'es-toolkit';
 import { isEmpty } from 'es-toolkit/compat';
-import { useResolveAssetIdentifier } from '@/composables/assets/common';
-import { useSupportedChains } from '@/composables/info/chains';
 import { getAccountBalance, hasTokens, sortAndFilterAccounts } from '@/modules/accounts/account-helpers';
 import { getAccountAddress, getAccountLabel, isXpubAccount } from '@/modules/accounts/account-utils';
+import { useAddressNameResolution } from '@/modules/accounts/address-book/use-address-name-resolution';
 import { createAccountWithBalance } from '@/modules/accounts/create-account-with-balance';
 import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
-import { useAddressNameResolution } from '@/modules/address-names/use-address-name-resolution';
 import { useAssetsStore } from '@/modules/assets/use-assets-store';
+import { useResolveAssetIdentifier } from '@/modules/assets/use-resolve-asset-identifier';
 import { useBalancesStore } from '@/modules/balances/use-balances-store';
-import { assetSum, balanceSum } from '@/modules/common/data/calculation';
-import { uniqueStrings } from '@/modules/common/data/data';
+import { assetSum, balanceSum } from '@/modules/core/common/data/calculation';
+import { uniqueStrings } from '@/modules/core/common/data/data';
+import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
 import { deduplicateTags } from '@/modules/tags/tag-utils';
 
 interface AccountBalances {

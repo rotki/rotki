@@ -1,13 +1,13 @@
 <script setup lang="ts">
 import type { LocationAndTxRef, PullEventPayload } from '@/modules/history/events/event-payloads';
 import type { HistoryEventEntry, StandaloneEditableEvents } from '@/modules/history/events/schemas';
-import DateDisplay from '@/components/display/DateDisplay.vue';
-import HistoryEventAccount from '@/components/history/events/HistoryEventAccount.vue';
-import HistoryEventsAction from '@/components/history/events/HistoryEventsAction.vue';
-import HistoryEventsIdentifier from '@/components/history/events/HistoryEventsIdentifier.vue';
-import IgnoredInAccountingIcon from '@/components/history/IgnoredInAccountingIcon.vue';
-import LocationIcon from '@/components/history/LocationIcon.vue';
-import { type DuplicateHandlingStatus, getHighlightClass, type HighlightType } from '@/composables/history/events/types';
+import { type DuplicateHandlingStatus, getHighlightClass, type HighlightType } from '@/modules/history/events/action-types';
+import HistoryEventAccount from '@/modules/history/events/HistoryEventAccount.vue';
+import HistoryEventsAction from '@/modules/history/events/HistoryEventsAction.vue';
+import HistoryEventsIdentifier from '@/modules/history/events/HistoryEventsIdentifier.vue';
+import IgnoredInAccountingIcon from '@/modules/history/IgnoredInAccountingIcon.vue';
+import DateDisplay from '@/modules/shell/components/display/DateDisplay.vue';
+import LocationIcon from '@/modules/shell/components/display/LocationIcon.vue';
 
 const {
   group,

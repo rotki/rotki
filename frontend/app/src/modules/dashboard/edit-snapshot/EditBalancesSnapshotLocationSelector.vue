@@ -1,0 +1,81 @@
+<script setup lang="ts">
+import type { BigNumber } from '@rotki/common';
+import { FiatDisplay } from '@/modules/assets/amount-display/components';
+import LocationSelector from '@/modules/balances/LocationSelector.vue';
+
+const model = defineModel<string>({ default: '', required: true });
+
+const { locations = [], optionalShowExisting = false, previewLocationBalance = null } = defineProps<{
+  locations?: string[];
+  previewLocationBalance?: Record<string, BigNumber> | null;
+  optionalShowExisting?: boolean;
+}>();
+
+const { t } = useI18n({ useScope: 'global' });
+
+const showOnlyExisting = ref<boolean>(true);
+</script>
+
+<template>
+  <RuiCard
+    variant="outlined"
+    class="[&>div]:!overflow-visible"
+    rounded="sm"
+  >
+    <div class="text-subtitle-2 mb-3">
+      {{ t('common.optional') }}
+    </div>
+    <RuiSwitch
+      v-if="optionalShowExisting"
+      v-model="showOnlyExisting"
+      color="primary"
+      size="sm"
+      hide-details
+      class="[&_span]:text-sm [&_span]:mt-0.5 mb-4"
+    >
+      {{ t('dashboard.snapshot.edit.dialog.balances.only_show_existing') }}
+    </RuiSwitch>
+    <LocationSelector
+      v-model="model"
+      :items="showOnlyExisting ? locations : []"
+      class="edit-balances-snapshot__location"
+      clearable
+      :menu-options="{ menuClass: 'z-[10001]' }"
+      :persistent-hint="!modelValue"
+      :hide-details="!!modelValue"
+      :hint="t('dashboard.snapshot.edit.dialog.balances.hints.location')"
+      :label="t('common.location')"
+    />
+    <div
+      v-if="previewLocationBalance"
+      class="mt-4"
+    >
+      <div class="text-subtitle-2">
+        {{ t('dashboard.snapshot.edit.dialog.balances.preview.title') }}
+      </div>
+      <div class="flex items-center mt-2">
+        <div>
+          <div class="text-overline text-rui-text-secondary -mb-2">
+            {{ t('dashboard.snapshot.edit.dialog.balances.preview.from') }}
+          </div>
+          <FiatDisplay
+            :value="previewLocationBalance.before"
+            from="USD"
+          />
+        </div>
+        <div class="px-8 text-rui-text-secondary">
+          <RuiIcon name="lu-arrow-right" />
+        </div>
+        <div>
+          <div class="text-overline text-rui-text-secondary -mb-2">
+            {{ t('dashboard.snapshot.edit.dialog.balances.preview.to') }}
+          </div>
+          <FiatDisplay
+            :value="previewLocationBalance.after"
+            from="USD"
+          />
+        </div>
+      </div>
+    </div>
+  </RuiCard>
+</template>

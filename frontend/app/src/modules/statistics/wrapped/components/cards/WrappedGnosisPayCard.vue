@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import type { BigNumber } from '@rotki/common';
-import AppImage from '@/components/common/AppImage.vue';
-import { FiatDisplay } from '@/modules/amount-display/components';
-import { getPublicServiceImagePath } from '@/modules/common/file/file';
-import { useWrappedFormatters } from '../../composables/use-wrapped-formatters';
+import { FiatDisplay } from '@/modules/assets/amount-display/components';
+import { getPublicServiceImagePath } from '@/modules/core/common/file/file';
+import AppImage from '@/modules/shell/components/AppImage.vue';
+import { useWrappedFormatters } from '../../use-wrapped-formatters';
 import WrappedCard from '../WrappedCard.vue';
 
 interface GnosisPayResult {

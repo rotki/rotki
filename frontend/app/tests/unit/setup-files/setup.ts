@@ -9,13 +9,13 @@ import { afterAll, afterEach, beforeAll, vi } from 'vitest';
 import { server } from './server';
 import 'fake-indexeddb/auto';
 
-vi.mock('@/composables/api/assets/info', () => ({
+vi.mock('@/modules/assets/api/use-asset-info-api', () => ({
   useAssetInfoApi: vi.fn().mockReturnValue({
     assetMapping: vi.fn().mockResolvedValue({ assets: {}, assetCollections: {} }),
   }),
 }));
 
-vi.mock('@/composables/api/balances/price', () => ({
+vi.mock('@/modules/balances/api/use-price-api', () => ({
   usePriceApi: vi.fn().mockReturnValue({
     getPriceCache: vi.fn().mockResolvedValue([]),
     createPriceCache: vi.fn().mockResolvedValue({ taskId: 1 }),
@@ -28,11 +28,11 @@ vi.mock('@/composables/api/balances/price', () => ({
   }),
 }));
 
-vi.mock('@/composables/api/session/queried-addresses', () => ({
+vi.mock('@/modules/session/api/use-queried-address-api', () => ({
   useQueriedAddressApi: vi.fn().mockReturnValue({}),
 }));
 
-vi.mock('@/composables/api/backup', () => ({
+vi.mock('@/modules/session/api/use-backup-api', () => ({
   useBackupApi: vi.fn().mockReturnValue({
     info: vi.fn().mockReturnValue({
       userdb: {
@@ -101,7 +101,7 @@ vi.mock('vue-router', () => {
   };
 });
 
-vi.mock('@/modules/app/use-websocket-connection', () => ({
+vi.mock('@/modules/shell/app/use-websocket-connection', () => ({
   useWebsocketConnection: () => ({
     connected: ref(false),
     connect: vi.fn(),
@@ -110,7 +110,7 @@ vi.mock('@/modules/app/use-websocket-connection', () => ({
   }),
 }));
 
-vi.mock('@/modules/app/use-monitor-service', () => ({
+vi.mock('@/modules/shell/app/use-monitor-service', () => ({
   useMonitorService: () => ({
     restart: vi.fn(),
     start: vi.fn(),
@@ -119,7 +119,7 @@ vi.mock('@/modules/app/use-monitor-service', () => ({
   }),
 }));
 
-vi.mock('@/modules/app/use-backend-messages', () => ({
+vi.mock('@/modules/shell/app/use-backend-messages', () => ({
   useBackendMessages: () => ({
     isMacOsVersionUnsupported: ref(false),
     isWinVersionUnsupported: ref(false),

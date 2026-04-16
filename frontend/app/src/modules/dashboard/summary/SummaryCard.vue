@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { RouteLocationRaw } from 'vue-router';
-import NavigatorLink from '@/components/helper/NavigatorLink.vue';
-import CardTitle from '@/components/typography/CardTitle.vue';
+import CardTitle from '@/modules/shell/components/CardTitle.vue';
+import NavigatorLink from '@/modules/shell/components/NavigatorLink.vue';
 import SummaryCardRefreshMenu from './SummaryCardRefreshMenu.vue';
 
 interface SummaryCardProps {

@@ -1,11 +1,11 @@
 <script setup lang="ts">
-import { useMainStore } from '@/modules/common/use-main-store';
-import ConnectionLogs from '@/modules/onchain/wallet-bridge/ConnectionLogs.vue';
-import ElectronConnectionStatus from '@/modules/onchain/wallet-bridge/ElectronConnectionStatus.vue';
-import ProviderSelectionNotification from '@/modules/onchain/wallet-bridge/ProviderSelectionNotification.vue';
-import { useBridgeLogging } from '@/modules/onchain/wallet-bridge/use-bridge-logging';
-import { useWalletProxyClient } from '@/modules/onchain/wallet-bridge/use-wallet-proxy-client';
-import WalletAddressIndicator from '@/modules/onchain/wallet-bridge/WalletAddressIndicator.vue';
+import { useMainStore } from '@/modules/core/common/use-main-store';
+import ConnectionLogs from '@/modules/wallet/bridge/ConnectionLogs.vue';
+import ElectronConnectionStatus from '@/modules/wallet/bridge/ElectronConnectionStatus.vue';
+import ProviderSelectionNotification from '@/modules/wallet/bridge/ProviderSelectionNotification.vue';
+import { useBridgeLogging } from '@/modules/wallet/bridge/use-bridge-logging';
+import { useWalletProxyClient } from '@/modules/wallet/bridge/use-wallet-proxy-client';
+import WalletAddressIndicator from '@/modules/wallet/bridge/WalletAddressIndicator.vue';
 
 definePage({
   meta: {

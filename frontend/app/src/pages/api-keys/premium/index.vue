@@ -2,20 +2,20 @@
 import { externalLinks } from '@shared/external-links';
 import useVuelidate from '@vuelidate/core';
 import { required } from '@vuelidate/validators';
-import ExternalLink from '@/components/helper/ExternalLink.vue';
-import HintMenuIcon from '@/components/HintMenuIcon.vue';
-import TablePageLayout from '@/components/layout/TablePageLayout.vue';
-import AutomaticSyncSetting from '@/components/status/sync/AutomaticSyncSetting.vue';
-import { useInterop } from '@/composables/electron-interop';
-import { usePremiumHelper } from '@/composables/premium';
-import { useConfirmStore } from '@/modules/common/use-confirm-store';
-import { useMessageStore } from '@/modules/common/use-message-store';
-import { toMessages } from '@/modules/common/validation/validation';
+import { useSessionAuthStore } from '@/modules/auth/use-session-auth-store';
+import { useConfirmStore } from '@/modules/core/common/use-confirm-store';
+import { useMessageStore } from '@/modules/core/common/use-message-store';
+import { toMessages } from '@/modules/core/common/validation/validation';
 import PremiumDeviceList from '@/modules/premium/devices/components/PremiumDeviceList.vue';
 import { PremiumFeature, useFeatureAccess } from '@/modules/premium/use-feature-access';
+import { usePremiumHelper } from '@/modules/premium/use-premium-helper';
 import { usePremiumOperations } from '@/modules/premium/use-premium-operations';
 import { usePremiumStore } from '@/modules/premium/use-premium-store';
-import { useSessionAuthStore } from '@/modules/session/use-session-auth-store';
+import { useInterop } from '@/modules/shell/app/use-electron-interop';
+import ExternalLink from '@/modules/shell/components/ExternalLink.vue';
+import HintMenuIcon from '@/modules/shell/components/HintMenuIcon.vue';
+import TablePageLayout from '@/modules/shell/layout/TablePageLayout.vue';
+import AutomaticSyncSetting from '@/modules/shell/sync-progress/AutomaticSyncSetting.vue';
 
 defineOptions({
   name: 'PremiumApiKeys',

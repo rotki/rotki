@@ -5,17 +5,17 @@ import { Blockchain, HistoryEventEntryType, Zero } from '@rotki/common';
 import useVuelidate from '@vuelidate/core';
 import dayjs from 'dayjs';
 import { isEmpty } from 'es-toolkit/compat';
-import AmountInput from '@/components/inputs/AmountInput.vue';
-import AutoCompleteWithSearchSync from '@/components/inputs/AutoCompleteWithSearchSync.vue';
-import DateTimePicker from '@/components/inputs/DateTimePicker.vue';
-import { useFormStateWatcher } from '@/composables/form';
-import { useEditModeStateTracker } from '@/composables/history/events/edit-mode-state';
-import { useHistoryEventsForm } from '@/composables/history/events/form';
 import { useAccountAddresses } from '@/modules/balances/blockchain/use-account-addresses';
-import { bigNumberifyFromRef } from '@/modules/common/data/bignumbers';
-import { toMessages } from '@/modules/common/validation/validation';
+import { bigNumberifyFromRef } from '@/modules/core/common/data/bignumbers';
+import { useFormStateWatcher } from '@/modules/core/common/use-form';
+import { toMessages } from '@/modules/core/common/validation/validation';
+import { useEditModeStateTracker } from '@/modules/history/events/use-edit-mode-state-tracker';
+import { useHistoryEventsForm } from '@/modules/history/events/use-history-events-form';
 import HistoryEventAssetPriceForm from '@/modules/history/management/forms/HistoryEventAssetPriceForm.vue';
 import { useEventFormValidation } from '@/modules/history/management/forms/use-event-form-validation';
+import AmountInput from '@/modules/shell/components/inputs/AmountInput.vue';
+import AutoCompleteWithSearchSync from '@/modules/shell/components/inputs/AutoCompleteWithSearchSync.vue';
+import DateTimePicker from '@/modules/shell/components/inputs/DateTimePicker.vue';
 
 interface EthWithdrawalEventFormProps {
   data: StandaloneEventData<EthWithdrawalEvent>;

@@ -1,11 +1,11 @@
-import type { TaskResult } from '@/modules/tasks/use-task-handler';
+import type { TaskResult } from '@/modules/core/tasks/use-task-handler';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useReportGeneration } from '@/modules/reports/use-report-generation';
 
 const mockGenerateReportCaller = vi.fn();
 const mockExportReportDataCaller = vi.fn();
 
-vi.mock('@/composables/api/reports', () => ({
+vi.mock('@/modules/reports/use-reports-api', () => ({
   useReportsApi: vi.fn(() => ({
     exportReportData: mockExportReportDataCaller,
     generateReport: mockGenerateReportCaller,
@@ -14,7 +14,7 @@ vi.mock('@/composables/api/reports', () => ({
 
 const mockGetProgress = vi.fn();
 
-vi.mock('@/composables/api/history', () => ({
+vi.mock('@/modules/history/api/use-history-api', () => ({
   useHistoryApi: vi.fn(() => ({
     getProgress: mockGetProgress,
   })),
@@ -30,7 +30,7 @@ vi.mock('@/modules/reports/use-report-operations', () => ({
 
 const mockRunTask = vi.fn();
 
-vi.mock('@/modules/tasks/use-task-handler', () => ({
+vi.mock('@/modules/core/tasks/use-task-handler', () => ({
   isActionableFailure: vi.fn((outcome: TaskResult<unknown>): boolean =>
     !outcome.success && !('cancelled' in outcome && outcome.cancelled) && !('skipped' in outcome && outcome.skipped),
   ),

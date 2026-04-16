@@ -1,14 +1,14 @@
 <script setup lang="ts">
-import DashboardAssetTable from '@/components/dashboard/DashboardAssetTable.vue';
-import DynamicMessageDisplay from '@/components/dashboard/DynamicMessageDisplay.vue';
-import NftBalanceTable from '@/components/dashboard/NftBalanceTable.vue';
-import OverallBalances from '@/components/dashboard/OverallBalances.vue';
-import PriceRefresh from '@/components/helper/PriceRefresh.vue';
-import { useAggregatedBalances } from '@/composables/balances/use-aggregated-balances';
-import { useDynamicMessages } from '@/composables/dynamic-messages';
-import { Module, useModuleEnabled } from '@/composables/session/modules';
+import PriceRefresh from '@/modules/assets/prices/PriceRefresh.vue';
+import { useAggregatedBalances } from '@/modules/balances/use-aggregated-balances';
 import { useBalancesLoading } from '@/modules/balances/use-balance-loading';
+import { useDynamicMessages } from '@/modules/core/messaging/use-dynamic-messages';
+import DashboardAssetTable from '@/modules/dashboard/DashboardAssetTable.vue';
+import DynamicMessageDisplay from '@/modules/dashboard/DynamicMessageDisplay.vue';
+import NftBalanceTable from '@/modules/dashboard/NftBalanceTable.vue';
+import OverallBalances from '@/modules/dashboard/OverallBalances.vue';
 import DashboardProgressIndicator from '@/modules/dashboard/progress/DashboardProgressIndicator.vue';
+import { Module, useModuleEnabled } from '@/modules/session/use-module-enabled';
 import { DashboardTableType } from '@/modules/settings/types/frontend-settings';
 import PoolTable from './liquidity-pools/PoolTable.vue';
 import Summary from './summary/Summary.vue';

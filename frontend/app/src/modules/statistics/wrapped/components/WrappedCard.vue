@@ -1,5 +1,5 @@
 <script setup lang="ts" generic="T extends object">
-import WrappedItem from '@/components/wrapped/WrappedItem.vue';
+import WrappedItem from '@/modules/statistics/WrappedItem.vue';
 
 const { items } = defineProps<{
   items: T[];

@@ -1,0 +1,203 @@
+<script setup lang="ts">
+import type { DataTableColumn, DataTableSortData } from '@rotki/ui-library';
+import type { ManualPriceFormPayload, ManualPriceWithUsd } from '@/modules/assets/prices/price-types';
+import { omit } from 'es-toolkit';
+import { FiatDisplay, ValueDisplay } from '@/modules/assets/amount-display/components';
+import AssetDetails from '@/modules/assets/AssetDetails.vue';
+import { isNft } from '@/modules/assets/nft-utils';
+import LatestPriceFormDialog from '@/modules/assets/prices/latest/LatestPriceFormDialog.vue';
+import { useLatestPrices } from '@/modules/assets/prices/use-latest-price-manager';
+import NftDetails from '@/modules/balances/nft/NftDetails.vue';
+import { useConfirmStore } from '@/modules/core/common/use-confirm-store';
+import { useCommonTableProps } from '@/modules/core/table/use-common-table-props';
+import { TableId, useRememberTableSorting } from '@/modules/core/table/use-remember-table-sorting';
+import { useGeneralSettingsStore } from '@/modules/settings/use-general-settings-store';
+import AssetSelect from '@/modules/shell/components/inputs/AssetSelect.vue';
+import RowActions from '@/modules/shell/components/RowActions.vue';
+import TablePageLayout from '@/modules/shell/layout/TablePageLayout.vue';
+
+const { t } = useI18n({ useScope: 'global' });
+
+const filter = ref<string>();
+const { editableItem, openDialog } = useCommonTableProps<ManualPriceFormPayload>();
+
+const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
+
+const sort = ref<DataTableSortData<ManualPriceWithUsd>>([]);
+
+const headers = computed<DataTableColumn<ManualPriceWithUsd>[]>(() => [
+  {
+    key: 'fromAsset',
+    label: t('price_table.headers.from_asset'),
+    sortable: true,
+  },
+  {
+    cellClass: '!text-xs !text-rui-text-secondary',
+    key: 'isWorth',
+    label: '',
+  },
+  {
+    align: 'end',
+    key: 'price',
+    label: t('common.price'),
+    sortable: true,
+  },
+  {
+    key: 'toAsset',
+    label: t('price_table.headers.to_asset'),
+    sortable: true,
+  },
+  {
+    align: 'end',
+    key: 'usdPrice',
+    label: t('common.price_in_symbol', { symbol: get(currencySymbol) }),
+    sortable: true,
+  },
+  {
+    align: 'end',
+    class: 'w-[3rem]',
+    key: 'actions',
+    label: '',
+  },
+]);
+
+useRememberTableSorting<ManualPriceWithUsd>(TableId.LATEST_PRICES, sort, headers);
+
+const router = useRouter();
+const route = useRoute();
+const { deletePrice, items, loading, refreshCurrentPrices, refreshing } = useLatestPrices(t, filter);
+
+const { show } = useConfirmStore();
+
+function showDeleteConfirmation(item: ManualPriceWithUsd) {
+  show(
+    {
+      message: t('price_table.delete.dialog.message'),
+      title: t('price_table.delete.dialog.title'),
+    },
+    () => deletePrice(item),
+  );
+}
+
+function add() {
+  set(editableItem, null);
+  set(openDialog, true);
+}
+
+function edit(item: ManualPriceWithUsd) {
+  set(editableItem, omit({
+    ...item,
+    price: item.price.toFixed() ?? '',
+  }, ['id', 'usdPrice']));
+  set(openDialog, true);
+}
+
+onMounted(async () => {
+  await refreshCurrentPrices();
+  const query = get(route).query;
+
+  if (query.add) {
+    add();
+    await router.replace({ query: {} });
+  }
+});
+</script>
+
+<template>
+  <TablePageLayout :title="[t('navigation_menu.manage_prices'), t('navigation_menu.manage_prices_sub.latest_prices')]">
+    <template #buttons>
+      <RuiTooltip :open-delay="400">
+        <template #activator>
+          <RuiButton
+            color="primary"
+            variant="outlined"
+            :loading="loading || refreshing"
+            @click="refreshCurrentPrices()"
+          >
+            <template #prepend>
+              <RuiIcon name="lu-refresh-ccw" />
+            </template>
+            {{ t('common.refresh') }}
+          </RuiButton>
+        </template>
+        {{ t('price_table.refresh_tooltip') }}
+      </RuiTooltip>
+
+      <RuiButton
+        color="primary"
+        @click="add()"
+      >
+        <template #prepend>
+          <RuiIcon name="lu-plus" />
+        </template>
+        {{ t('price_management.dialog.add_title') }}
+      </RuiButton>
+    </template>
+
+    <RuiCard>
+      <div class="mb-4 flex flex-row-reverse">
+        <AssetSelect
+          v-model="filter"
+          class="max-w-[360px]"
+          outlined
+          include-nfts
+          :label="t('price_management.from_asset')"
+          clearable
+          hide-details
+        />
+      </div>
+      <RuiDataTable
+        v-model:sort="sort"
+        outlined
+        dense
+        :cols="headers"
+        :loading="loading || refreshing"
+        :rows="items"
+        row-attr="id"
+      >
+        <template #item.fromAsset="{ row }">
+          <NftDetails
+            v-if="isNft(row.fromAsset)"
+            :identifier="row.fromAsset"
+          />
+          <AssetDetails
+            v-else
+            class="[&_.avatar]:ml-1.5 [&_.avatar]:mr-2"
+            :asset="row.fromAsset"
+          />
+        </template>
+        <template #item.toAsset="{ row }">
+          <AssetDetails :asset="row.toAsset" />
+        </template>
+        <template #item.price="{ row }">
+          <ValueDisplay :value="row.price" />
+        </template>
+        <template #item.isWorth>
+          {{ t('price_table.is_worth') }}
+        </template>
+        <template #item.usdPrice="{ row }">
+          <FiatDisplay
+            :value="row.usdPrice"
+            :loading="!row.usdPrice || row.usdPrice.lt(0)"
+            :price-asset="row.fromAsset"
+          />
+        </template>
+        <template #item.actions="{ row }">
+          <RowActions
+            :disabled="loading"
+            :delete-tooltip="t('price_table.actions.delete.tooltip')"
+            :edit-tooltip="t('price_table.actions.edit.tooltip')"
+            @delete-click="showDeleteConfirmation(row)"
+            @edit-click="edit(row)"
+          />
+        </template>
+      </RuiDataTable>
+    </RuiCard>
+
+    <LatestPriceFormDialog
+      v-model:open="openDialog"
+      :editable-item="editableItem"
+      @refresh="refreshCurrentPrices()"
+    />
+  </TablePageLayout>
+</template>

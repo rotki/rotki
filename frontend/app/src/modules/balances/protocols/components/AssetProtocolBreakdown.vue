@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { DataTableColumn, DataTableSortData } from '@rotki/ui-library';
 import { type ProtocolBalanceWithChains, transformCase } from '@rotki/common';
-import { AssetAmountDisplay, FiatDisplay, ValueDisplay } from '@/modules/amount-display/components';
+import { AssetAmountDisplay, FiatDisplay, ValueDisplay } from '@/modules/assets/amount-display/components';
 import ChainBalances from '@/modules/balances/protocols/components/ChainBalances.vue';
 import ProtocolIcon from '@/modules/balances/protocols/ProtocolIcon.vue';
 import { useGeneralSettingsStore } from '@/modules/settings/use-general-settings-store';

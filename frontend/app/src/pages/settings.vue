@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import type { TabContent } from '@/modules/common/tabs';
-import TabNavigation from '@/components/helper/TabNavigation.vue';
-import SettingsSearch from '@/components/settings/SettingsSearch.vue';
+import type { TabContent } from '@/modules/core/common/tabs';
+import SettingsSearch from '@/modules/settings/SettingsSearch.vue';
+import TabNavigation from '@/modules/shell/components/TabNavigation.vue';
 import { Routes, useAppRoutes } from '@/router/routes';
 
 definePage({

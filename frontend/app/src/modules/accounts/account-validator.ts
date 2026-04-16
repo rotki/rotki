@@ -2,11 +2,11 @@ import type {
   EthereumValidator,
   EthereumValidatorRequestPayload,
 } from '@/modules/accounts/blockchain-accounts';
-import type { Collection } from '@/modules/common/collection';
+import type { Collection } from '@/modules/core/common/collection';
 import { camelCase } from 'es-toolkit';
 import { includes, isFilterEnabled, sortBy } from '@/modules/accounts/account-common';
-import { bigNumberSum } from '@/modules/common/data/calculation';
-import { sum } from '@/modules/common/display/balances';
+import { bigNumberSum } from '@/modules/core/common/data/calculation';
+import { sum } from '@/modules/core/common/display/balances';
 
 function filterValidator(
   validator: EthereumValidator,

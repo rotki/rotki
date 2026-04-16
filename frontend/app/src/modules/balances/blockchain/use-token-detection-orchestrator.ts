@@ -1,15 +1,15 @@
 import type { ComputedRef, MaybeRefOrGetter } from 'vue';
 import { assert } from '@rotki/common';
 import { isEqual } from 'es-toolkit';
-import { useSupportedChains } from '@/composables/info/chains';
 import { useAccountAddresses } from '@/modules/balances/blockchain/use-account-addresses';
 import { useTokenDetectionApi } from '@/modules/balances/blockchain/use-token-detection-api';
 import { useTokenDetectionStore } from '@/modules/balances/blockchain/use-token-detection-store';
 import { useBalanceQueue } from '@/modules/balances/use-balance-queue';
 import { useBlockchainBalances } from '@/modules/balances/use-blockchain-balances';
-import { arrayify } from '@/modules/common/data/array';
-import { TaskType } from '@/modules/tasks/task-type';
-import { useTaskStore } from '@/modules/tasks/use-task-store';
+import { arrayify } from '@/modules/core/common/data/array';
+import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
+import { TaskType } from '@/modules/core/tasks/task-type';
+import { useTaskStore } from '@/modules/core/tasks/use-task-store';
 
 interface DetectOptions {
   refreshBalancesAfter?: boolean;

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import RotkiLogo from '@/components/common/RotkiLogo.vue';
+import RotkiLogo from '@/modules/shell/components/RotkiLogo.vue';
 
 defineProps<{
   highlightedYear?: number;

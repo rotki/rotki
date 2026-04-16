@@ -1,5 +1,5 @@
 import type { Ref } from 'vue';
-import type { Collection } from '@/modules/common/collection';
+import type { Collection } from '@/modules/core/common/collection';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { type InternalTxConflict, type InternalTxConflictsCountResponse, InternalTxConflictStatuses } from './types';
 import { useInternalTxConflicts } from './use-internal-tx-conflicts';
@@ -18,20 +18,20 @@ vi.mock('./internal-tx-conflicts-api', () => ({
   }),
 }));
 
-vi.mock('@/modules/common/use-message-store', () => ({
+vi.mock('@/modules/core/common/use-message-store', () => ({
   useMessageStore: (): object => ({
     setMessage: vi.fn(),
   }),
 }));
 
-vi.mock('@/composables/info/chains', () => ({
+vi.mock('@/modules/core/common/use-supported-chains', () => ({
   useSupportedChains: (): object => ({
     evmChainsData: ref([]),
     getEvmChainName: (chain: string): string => chain,
   }),
 }));
 
-vi.mock('@/modules/notifications/use-notifications-store', () => ({
+vi.mock('@/modules/core/notifications/use-notifications-store', () => ({
   useNotificationsStore: (): object => ({
     notify: vi.fn(),
   }),
@@ -43,14 +43,14 @@ vi.mock('@/modules/settings/use-frontend-settings-store', () => ({
   }),
 }));
 
-vi.mock('@/modules/common/data/date', () => ({
+vi.mock('@/modules/core/common/data/date', () => ({
   dateDeserializer: (): ((v: string) => string) => (v: string): string => v,
   dateRangeValidator: (): ((v: string) => boolean) => (): boolean => true,
   dateSerializer: (): ((v: string) => string) => (v: string): string => v,
   getDateInputISOFormat: (): string => 'DD/MM/YYYY HH:mm',
 }));
 
-vi.mock('@/composables/session/use-items-per-page', () => ({
+vi.mock('@/modules/session/use-items-per-page', () => ({
   useItemsPerPage: (): Ref<number> => ref(10),
 }));
 

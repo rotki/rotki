@@ -1,0 +1,66 @@
+<script setup lang="ts">
+import LoginActionAlert from '@/modules/auth/login/LoginActionAlert.vue';
+import { useSessionAuthStore } from '@/modules/auth/use-session-auth-store';
+import DateDisplay from '@/modules/shell/components/display/DateDisplay.vue';
+
+const emit = defineEmits<{ proceed: [approval: 'yes' | 'no'] }>();
+
+const { t } = useI18n({ useScope: 'global' });
+
+const { syncConflict } = storeToRefs(useSessionAuthStore());
+
+const lastModified = computed(() => {
+  const conflict = get(syncConflict);
+  if (!conflict || !conflict.payload)
+    return null;
+
+  const { localLastModified, remoteLastModified } = conflict.payload;
+  return {
+    local: localLastModified,
+    remote: remoteLastModified,
+  };
+});
+</script>
+
+<template>
+  <Transition name="bounce">
+    <LoginActionAlert
+      v-if="syncConflict"
+      icon="lu-cloud-download-fill"
+      @cancel="emit('proceed', 'no')"
+      @confirm="emit('proceed', 'yes')"
+    >
+      <template #title>
+        {{ t('login.sync_error.title') }}
+      </template>
+
+      <div>{{ syncConflict.message }}</div>
+      <ul
+        v-if="lastModified"
+        class="mt-2 list-disc"
+      >
+        <li>
+          <i18n-t
+            scope="global"
+            keypath="login.sync_error.local_modified"
+            class="font-medium"
+          >
+            <DateDisplay :timestamp="lastModified.local" />
+          </i18n-t>
+        </li>
+        <li class="mt-2">
+          <i18n-t
+            scope="global"
+            keypath="login.sync_error.remote_modified"
+            class="font-medium"
+          >
+            <DateDisplay :timestamp="lastModified.remote" />
+          </i18n-t>
+        </li>
+      </ul>
+      <div class="mt-2">
+        {{ t('login.sync_error.question') }}
+      </div>
+    </LoginActionAlert>
+  </Transition>
+</template>

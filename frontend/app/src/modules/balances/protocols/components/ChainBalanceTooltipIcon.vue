@@ -1,9 +1,9 @@
 <script lang="ts" setup>
 import type { Balance } from '@rotki/common';
-import ChainIcon from '@/components/helper/display/icons/ChainIcon.vue';
-import { useSupportedChains } from '@/composables/info/chains';
-import { AssetAmountDisplay, FiatDisplay, ValueDisplay } from '@/modules/amount-display/components';
+import { AssetAmountDisplay, FiatDisplay, ValueDisplay } from '@/modules/assets/amount-display/components';
+import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
 import { useFrontendSettingsStore } from '@/modules/settings/use-frontend-settings-store';
+import ChainIcon from '@/modules/shell/components/ChainIcon.vue';
 
 const { chainId } = defineProps<{
   chainId: string;

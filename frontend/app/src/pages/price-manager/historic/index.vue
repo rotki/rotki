@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import HistoricPriceContent from '@/components/price-manager/historic/HistoricPriceContent.vue';
+import HistoricPriceContent from '@/modules/assets/prices/historic/HistoricPriceContent.vue';
 
 definePage({
   name: 'price-manager-historic',

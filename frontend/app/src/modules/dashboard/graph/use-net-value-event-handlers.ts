@@ -3,7 +3,7 @@ import type { MaybeRefOrGetter, Ref, ShallowRef } from 'vue';
 import type VChart from 'vue-echarts';
 import type { NetValueChartData } from '@/modules/dashboard/graph/types';
 import { assert, type BigNumber } from '@rotki/common';
-import { type TooltipData, useGraphTooltip } from '@/composables/graphs';
+import { type TooltipData, useGraphTooltip } from '@/modules/statistics/use-graph-tooltip';
 
 interface UseNetValueEventHandlersParams {
   chartInstance: Readonly<ShallowRef<InstanceType<typeof VChart> | null>>;

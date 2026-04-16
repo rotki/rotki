@@ -1,15 +1,15 @@
 <script setup lang="ts">
 import type { Report } from '@/modules/reports/report-types';
-import ProgressScreen from '@/components/helper/ProgressScreen.vue';
-import AccountingSettingsDisplay from '@/components/profitloss/AccountingSettingsDisplay.vue';
-import ExportReportCsv from '@/components/profitloss/ExportReportCsv.vue';
-import ProfitLossEvents from '@/components/profitloss/ProfitLossEvents.vue';
-import ProfitLossOverview from '@/components/profitloss/ProfitLossOverview.vue';
-import ReportActionable from '@/components/profitloss/ReportActionable.vue';
-import ReportHeader from '@/components/profitloss/ReportHeader.vue';
-import { NoteLocation } from '@/modules/common/notes';
+import { NoteLocation } from '@/modules/core/common/notes';
+import AccountingSettingsDisplay from '@/modules/reports/AccountingSettingsDisplay.vue';
+import ExportReportCsv from '@/modules/reports/ExportReportCsv.vue';
+import ProfitLossEvents from '@/modules/reports/ProfitLossEvents.vue';
+import ProfitLossOverview from '@/modules/reports/ProfitLossOverview.vue';
+import ReportActionable from '@/modules/reports/ReportActionable.vue';
+import ReportHeader from '@/modules/reports/ReportHeader.vue';
 import { useReportOperations } from '@/modules/reports/use-report-operations';
 import { defaultReportEvents, useReportsStore } from '@/modules/reports/use-reports-store';
+import ProgressScreen from '@/modules/shell/components/ProgressScreen.vue';
 
 definePage({
   meta: {

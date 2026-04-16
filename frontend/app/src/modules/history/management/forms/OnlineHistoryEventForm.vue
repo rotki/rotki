@@ -4,17 +4,17 @@ import type { StandaloneEventData } from '@/modules/history/management/forms/for
 import { HistoryEventEntryType, Zero } from '@rotki/common';
 import { generateUUID } from '@shared/utils';
 import dayjs from 'dayjs';
-import LocationSelector from '@/components/helper/LocationSelector.vue';
-import AmountInput from '@/components/inputs/AmountInput.vue';
-import AutoCompleteWithSearchSync from '@/components/inputs/AutoCompleteWithSearchSync.vue';
-import DateTimePicker from '@/components/inputs/DateTimePicker.vue';
-import { useHistoryEventsForm } from '@/composables/history/events/form';
-import { bigNumberifyFromRef } from '@/modules/common/data/bignumbers';
-import { TRADE_LOCATION_EXTERNAL } from '@/modules/common/defaults';
-import { toMessages, useEventFormBase } from '@/modules/history/management/forms/composables/use-event-form-base';
+import LocationSelector from '@/modules/balances/LocationSelector.vue';
+import { bigNumberifyFromRef } from '@/modules/core/common/data/bignumbers';
+import { TRADE_LOCATION_EXTERNAL } from '@/modules/core/common/defaults';
+import { useHistoryEventsForm } from '@/modules/history/events/use-history-events-form';
 import HistoryEventAssetPriceForm from '@/modules/history/management/forms/HistoryEventAssetPriceForm.vue';
 import HistoryEventTypeForm from '@/modules/history/management/forms/HistoryEventTypeForm.vue';
+import { toMessages, useEventFormBase } from '@/modules/history/management/forms/use-event-form-base';
 import { useSessionSettingsStore } from '@/modules/settings/use-session-settings-store';
+import AmountInput from '@/modules/shell/components/inputs/AmountInput.vue';
+import AutoCompleteWithSearchSync from '@/modules/shell/components/inputs/AutoCompleteWithSearchSync.vue';
+import DateTimePicker from '@/modules/shell/components/inputs/DateTimePicker.vue';
 
 const stateUpdated = defineModel<boolean>('stateUpdated', { default: false, required: false });
 

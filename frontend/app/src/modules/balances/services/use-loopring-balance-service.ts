@@ -1,21 +1,21 @@
 import type { BlockchainAccount } from '@/modules/accounts/blockchain-accounts';
 import type { AssetProtocolBalances } from '@/modules/balances/types/blockchain-balances';
-import type { TaskMeta } from '@/modules/tasks/types';
+import type { TaskMeta } from '@/modules/core/tasks/types';
 import { Blockchain } from '@rotki/common';
-import { useBlockchainBalancesApi } from '@/composables/api/balances/blockchain';
-import { useResolveAssetIdentifier } from '@/composables/assets/common';
-import { useStatusUpdater } from '@/composables/status';
 import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
+import { useResolveAssetIdentifier } from '@/modules/assets/use-resolve-asset-identifier';
+import { useBlockchainBalancesApi } from '@/modules/balances/api/use-blockchain-balances-api';
+import { LOOPRING_CHAIN } from '@/modules/balances/blockchain-types';
 import { AccountAssetBalances } from '@/modules/balances/types/balances';
 import { useBalancesStore } from '@/modules/balances/use-balances-store';
-import { balanceSum } from '@/modules/common/data/calculation';
-import { Module } from '@/modules/common/modules';
-import { Section, Status } from '@/modules/common/status';
-import { useNotifications } from '@/modules/notifications/use-notifications';
-import { LOOPRING_CHAIN } from '@/modules/onchain/blockchain-types';
+import { balanceSum } from '@/modules/core/common/data/calculation';
+import { Module } from '@/modules/core/common/modules';
+import { Section, Status } from '@/modules/core/common/status';
+import { useNotifications } from '@/modules/core/notifications/use-notifications';
+import { TaskType } from '@/modules/core/tasks/task-type';
+import { isActionableFailure, useTaskHandler } from '@/modules/core/tasks/use-task-handler';
 import { useGeneralSettingsStore } from '@/modules/settings/use-general-settings-store';
-import { TaskType } from '@/modules/tasks/task-type';
-import { isActionableFailure, useTaskHandler } from '@/modules/tasks/use-task-handler';
+import { useStatusUpdater } from '@/modules/shell/sync-progress/use-status-updater';
 
 interface UseLoopringBalanceServiceReturn {
   fetchLoopringBalances: (refresh: boolean) => Promise<void>;

@@ -1,0 +1,27 @@
+<script setup lang="ts">
+import { CURRENCY_USD } from '@/modules/assets/amount-display/currencies';
+import { useGeneralSettingsStore } from '@/modules/settings/use-general-settings-store';
+
+const { t } = useI18n({ useScope: 'global' });
+const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
+
+const notUsd = computed(() => get(currencySymbol) !== CURRENCY_USD);
+</script>
+
+<template>
+  <RuiTooltip
+    v-if="notUsd"
+    class="mx-2 text-rui-text-secondary"
+    :popper="{ placement: 'top' }"
+    :open-delay="400"
+    tooltip-class="max-w-[10rem]"
+  >
+    <template #activator>
+      <RuiIcon
+        size="20"
+        name="lu-info"
+      />
+    </template>
+    <span>{{ t('price_accuracy_hint.tooltip') }}</span>
+  </RuiTooltip>
+</template>

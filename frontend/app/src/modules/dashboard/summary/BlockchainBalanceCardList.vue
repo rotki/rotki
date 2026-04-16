@@ -1,11 +1,11 @@
 <script setup lang="ts">
-import type { BlockchainTotal } from '@/modules/onchain/blockchain-types';
+import type { BlockchainTotal } from '@/modules/balances/blockchain-types';
 import { Blockchain, toSentenceCase } from '@rotki/common';
-import Eth2ValidatorLimitTooltip from '@/components/accounts/blockchain/eth2/Eth2ValidatorLimitTooltip.vue';
-import ListItem from '@/components/common/ListItem.vue';
-import ChainIcon from '@/components/helper/display/icons/ChainIcon.vue';
-import { useSupportedChains } from '@/composables/info/chains';
-import { FiatDisplay } from '@/modules/amount-display/components';
+import Eth2ValidatorLimitTooltip from '@/modules/accounts/blockchain/eth2/Eth2ValidatorLimitTooltip.vue';
+import { FiatDisplay } from '@/modules/assets/amount-display/components';
+import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
+import ChainIcon from '@/modules/shell/components/ChainIcon.vue';
+import ListItem from '@/modules/shell/components/ListItem.vue';
 
 interface BlockChainBalanceCardListProps {
   total: BlockchainTotal;

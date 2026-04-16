@@ -1,10 +1,10 @@
 <script setup lang="ts">
 import type { RouteLocationRaw } from 'vue-router';
 import { type BigNumber, toCapitalCase } from '@rotki/common';
-import ListItem from '@/components/common/ListItem.vue';
-import LocationDisplay from '@/components/history/LocationDisplay.vue';
-import { useLocations } from '@/composables/locations';
-import { FiatDisplay } from '@/modules/amount-display/components';
+import { FiatDisplay } from '@/modules/assets/amount-display/components';
+import { useLocations } from '@/modules/core/common/use-locations';
+import LocationDisplay from '@/modules/history/LocationDisplay.vue';
+import ListItem from '@/modules/shell/components/ListItem.vue';
 import { Routes } from '@/router/routes';
 
 const { name, amount } = defineProps<{

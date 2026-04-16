@@ -1,0 +1,92 @@
+<script setup lang="ts">
+import useVuelidate from '@vuelidate/core';
+import { between, helpers, required } from '@vuelidate/validators';
+import { Constraints } from '@/modules/core/common/constraints';
+import { Defaults } from '@/modules/core/common/defaults';
+import { useValidation } from '@/modules/core/common/use-validation';
+import { toMessages } from '@/modules/core/common/validation/validation';
+import SettingsOption from '@/modules/settings/controls/SettingsOption.vue';
+import SettingResetConfirmButton from '@/modules/settings/SettingResetConfirmButton.vue';
+import { useGeneralSettingsStore } from '@/modules/settings/use-general-settings-store';
+
+const DEFAULT_FREQUENCY = Defaults.BALANCE_SAVE_FREQUENCY;
+
+const balanceSaveFrequency = ref<string>(DEFAULT_FREQUENCY.toString());
+
+const { balanceSaveFrequency: frequency } = storeToRefs(useGeneralSettingsStore());
+
+const { t } = useI18n({ useScope: 'global' });
+
+const maxBalanceSaveFrequency = Constraints.MAX_HOURS_DELAY;
+const rules = {
+  balanceSaveFrequency: {
+    between: helpers.withMessage(
+      t('general_settings.balance_frequency.validation.invalid_frequency', {
+        end: maxBalanceSaveFrequency,
+        start: 1,
+      }),
+      between(1, maxBalanceSaveFrequency),
+    ),
+    required: helpers.withMessage(t('general_settings.balance_frequency.validation.non_empty'), required),
+  },
+};
+const v$ = useVuelidate(rules, { balanceSaveFrequency }, { $autoDirty: true });
+const { callIfValid } = useValidation(v$);
+
+function resetBalanceSaveFrequency() {
+  set(balanceSaveFrequency, get(frequency).toString());
+}
+
+function transform(value?: string) {
+  return value ? Number.parseInt(value) : value;
+}
+
+function successMessage(frequency: string) {
+  return t('general_settings.balance_frequency.validation.success', {
+    frequency,
+  });
+}
+
+function reset(update: (value: number) => void): void {
+  update(DEFAULT_FREQUENCY);
+  set(balanceSaveFrequency, DEFAULT_FREQUENCY.toString());
+}
+
+onMounted(() => {
+  resetBalanceSaveFrequency();
+});
+</script>
+
+<template>
+  <SettingsOption
+    setting="balanceSaveFrequency"
+    :transform="transform"
+    :error-message="t('general_settings.balance_frequency.validation.error')"
+    :success-message="successMessage"
+    @finished="resetBalanceSaveFrequency()"
+  >
+    <template #title>
+      {{ t('general_settings.balance_frequency.title') }}
+    </template>
+    <template #default="{ error, success, update, updateImmediate }">
+      <div class="flex items-start w-full">
+        <RuiTextField
+          v-model="balanceSaveFrequency"
+          variant="outlined"
+          color="primary"
+          min="1"
+          :max="maxBalanceSaveFrequency"
+          data-cy="balance-save-frequency-input"
+          class="w-full"
+          :label="t('general_settings.balance_frequency.label')"
+          type="number"
+          :success-messages="success"
+          :error-messages="error || toMessages(v$.balanceSaveFrequency)"
+          @update:model-value="callIfValid($event, update)"
+        />
+
+        <SettingResetConfirmButton @confirm="reset(updateImmediate)" />
+      </div>
+    </template>
+  </SettingsOption>
+</template>

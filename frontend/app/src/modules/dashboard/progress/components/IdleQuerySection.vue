@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import DateDisplay from '@/components/display/DateDisplay.vue';
+import DateDisplay from '@/modules/shell/components/display/DateDisplay.vue';
 
 interface Props {
   justUpdated: boolean;

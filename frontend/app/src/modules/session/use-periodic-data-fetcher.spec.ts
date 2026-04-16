@@ -7,13 +7,13 @@ import '@test/i18n';
 const mockFetchPeriodicData = vi.fn();
 const mockNotifyError = vi.fn();
 
-vi.mock('@/composables/api/session', () => ({
+vi.mock('@/modules/session/api/use-session-api', () => ({
   useSessionApi: vi.fn(() => ({
     fetchPeriodicData: mockFetchPeriodicData,
   })),
 }));
 
-vi.mock('@/modules/notifications/use-notifications', () => ({
+vi.mock('@/modules/core/notifications/use-notifications', () => ({
   getErrorMessage: vi.fn((e: unknown): string => (e instanceof Error ? e.message : String(e))),
   useNotifications: vi.fn(() => ({
     notifyError: mockNotifyError,

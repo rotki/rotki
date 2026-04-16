@@ -1,0 +1,54 @@
+import { TimeFramePeriod } from '@rotki/common';
+import { CurrencyLocation } from '@/modules/assets/amount-display/currency-location';
+import { SECONDS_PER_DAY } from '@/modules/core/common/constraints';
+import { DateFormat } from '@/modules/core/common/date-format';
+import { TableColumn } from '@/modules/core/table/table-column';
+
+export const Defaults = {
+  ANONYMOUS_USAGE_ANALYTICS: true,
+  DEFAULT_NEWLY_DETECTED_TOKENS_MAX_COUNT: 500,
+  DEFAULT_NEWLY_DETECTED_TOKENS_TTL_DAYS: 30,
+  ASSET_MOVEMENT_AMOUNT_TOLERANCE: '0.000001',
+  ASSET_MOVEMENT_TIME_RANGE: 3600,
+  BALANCE_SAVE_FREQUENCY: 24,
+  BEACON_RPC_ENDPOINT: '', // same as Kusama, must be set by user
+  BTC_DERIVATION_GAP_LIMIT: 20,
+  BTC_MEMPOOL_API: '',
+  DEFAULT_CONNECT_TIMEOUT: 30,
+  DEFAULT_CSV_EXPORT_DELIMITER: ',',
+  DEFAULT_CURRENCY_LOCATION: CurrencyLocation.AFTER,
+  DEFAULT_DASHBOARD_TABLE_VISIBLE_COLUMNS: [TableColumn.PERCENTAGE_OF_TOTAL_NET_VALUE] satisfies TableColumn[],
+  DEFAULT_DATE_DISPLAY_FORMAT: DateFormat.DateMonthYearHourMinuteSecondTimezone,
+  DEFAULT_DATE_INPUT_FORMAT: DateFormat.DateMonthYearHourMinuteSecond,
+  DEFAULT_DECIMAL_SEPARATOR: '.',
+  DEFAULT_EVM_QUERY_INDICATOR_DISMISSAL_THRESHOLD: 6,
+  DEFAULT_EVM_QUERY_INDICATOR_MIN_OUT_OF_SYNC_PERIOD: 12,
+  DEFAULT_ORACLE_PENALTY_DURATION: 1800,
+  DEFAULT_ORACLE_PENALTY_THRESHOLD_COUNT: 5,
+  DEFAULT_PASSWORD_CONFIRMATION_INTERVAL: SECONDS_PER_DAY * 7,
+  DEFAULT_QUERY_PERIOD: 15,
+  DEFAULT_QUERY_RETRY_LIMIT: 5,
+  DEFAULT_READ_TIMEOUT: 30,
+  DEFAULT_THOUSAND_SEPARATOR: ',',
+  DEFAULT_VERSION_UPDATE_CHECK_FREQUENCY: 24,
+  DEFAULT_VISIBLE_TIMEFRAMES: [
+    TimeFramePeriod.ALL,
+    TimeFramePeriod.YEAR,
+    TimeFramePeriod.THREE_MONTHS,
+    TimeFramePeriod.MONTH,
+    TimeFramePeriod.TWO_WEEKS,
+    TimeFramePeriod.WEEK,
+  ] satisfies TimeFramePeriod[],
+  DISPLAY_DATE_IN_LOCALTIME: true,
+  DOT_RPC_ENDPOINT: '', // same as Kusama, must be set by user
+  FLOATING_PRECISION: 2,
+  DEFAULT_INTERNAL_TX_CONFLICT_REPULL_FREQUENCY: 3600,
+  DEFAULT_INTERNAL_TXS_TO_REPULL: 20,
+  KSM_RPC_ENDPOINT: 'http://localhost:9933',
+} as const;
+
+export const TRADE_LOCATION_EXTERNAL = 'external';
+
+export const TRADE_LOCATION_BANKS = 'banks';
+
+export const TRADE_LOCATION_BLOCKCHAIN = 'blockchain';

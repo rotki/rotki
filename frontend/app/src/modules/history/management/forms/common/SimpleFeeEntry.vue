@@ -2,10 +2,10 @@
 import type { FeeEntry } from '@/modules/history/events/schemas';
 import useVuelidate from '@vuelidate/core';
 import { isEqual } from 'es-toolkit';
-import AmountInput from '@/components/inputs/AmountInput.vue';
-import AssetSelect from '@/components/inputs/AssetSelect.vue';
-import { toMessages } from '@/modules/common/validation/validation';
+import { toMessages } from '@/modules/core/common/validation/validation';
 import { useEventFormValidation } from '@/modules/history/management/forms/use-event-form-validation';
+import AmountInput from '@/modules/shell/components/inputs/AmountInput.vue';
+import AssetSelect from '@/modules/shell/components/inputs/AssetSelect.vue';
 
 const modelValue = defineModel<FeeEntry>({ required: true });
 

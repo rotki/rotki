@@ -5,13 +5,13 @@ import '@test/i18n';
 const mockQueryNetValueData = vi.fn();
 const mockNotifyError = vi.fn();
 
-vi.mock('@/composables/api/statistics/statistics-api', () => ({
+vi.mock('@/modules/statistics/api/use-statistics-api', () => ({
   useStatisticsApi: vi.fn(() => ({
     queryNetValueData: mockQueryNetValueData,
   })),
 }));
 
-vi.mock('@/modules/notifications/use-notifications', () => ({
+vi.mock('@/modules/core/notifications/use-notifications', () => ({
   getErrorMessage: (error: unknown): string => (error instanceof Error ? error.message : String(error)),
   useNotifications: vi.fn(() => ({
     notifyError: mockNotifyError,

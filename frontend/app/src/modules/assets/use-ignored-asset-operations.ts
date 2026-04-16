@@ -1,12 +1,12 @@
-import type { ActionStatus } from '@/modules/common/action';
-import { useAssetIgnoreApi } from '@/composables/api/assets/ignore';
-import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
+import type { ActionStatus } from '@/modules/core/common/action';
+import { useAssetIgnoreApi } from '@/modules/assets/api/use-asset-ignore-api';
+import { useAssetInfoRetrieval } from '@/modules/assets/use-asset-info-retrieval';
 import { useAssetsStore } from '@/modules/assets/use-assets-store';
 import { useManualBalanceData } from '@/modules/balances/manual/use-manual-balance-data';
-import { arrayify } from '@/modules/common/data/array';
-import { uniqueStrings } from '@/modules/common/data/data';
-import { getErrorMessage } from '@/modules/common/logging/error-handling';
-import { useNotifications } from '@/modules/notifications/use-notifications';
+import { arrayify } from '@/modules/core/common/data/array';
+import { uniqueStrings } from '@/modules/core/common/data/data';
+import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
+import { useNotifications } from '@/modules/core/notifications/use-notifications';
 
 interface UseIgnoredAssetOperationsReturn {
   fetchIgnoredAssets: () => Promise<void>;

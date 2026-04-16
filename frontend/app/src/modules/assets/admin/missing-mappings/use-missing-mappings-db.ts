@@ -1,0 +1,97 @@
+import type { MaybeRef } from 'vue';
+import type { Collection } from '@/modules/core/common/collection';
+import type { PaginationRequestPayload } from '@/modules/core/common/common-types';
+import type { MissingMapping } from '@/modules/user-data/schemas';
+import { logger } from '@/modules/core/common/logging/logging';
+import { getPage, type ItemFilter } from '@/modules/user-data/pagination';
+import { useDatabase } from '@/modules/user-data/use-database';
+
+interface MissingMappingsFilterParams {
+  identifier?: string;
+  location?: string;
+}
+
+export interface MissingMappingsRequestPayload extends PaginationRequestPayload<MissingMapping>,
+  MissingMappingsFilterParams {}
+
+export type AddMissingMapping = Omit<MissingMapping, 'id'>;
+
+type DeleteMissingMapping = Pick<MissingMapping, 'location' | 'identifier'>;
+
+interface UseMappingDBReturn {
+  put: (mapping: AddMissingMapping) => Promise<number>;
+  remove: (mapping: DeleteMissingMapping) => Promise<void>;
+  count: () => Promise<number>;
+  getData: (payload: MaybeRef<PaginationRequestPayload<MissingMapping>>) => Promise<Collection<MissingMapping>>;
+}
+
+export function useMissingMappingsDB(): UseMappingDBReturn {
+  // This should not be destructured to avoid accessing it during the composable creation
+  const { db } = useDatabase();
+
+  async function put(mapping: AddMissingMapping): Promise<number> {
+    return db().missingMappings.put(mapping);
+  }
+
+  async function remove(mapping: DeleteMissingMapping): Promise<void> {
+    const matchingMapping = await db()
+      .missingMappings
+      .where(`[identifier+location]`)
+      .equals([mapping.identifier, mapping.location])
+      .first();
+    if (!matchingMapping) {
+      logger.error(`Could not find mapping to remove: ${JSON.stringify(mapping)}`);
+      return;
+    }
+
+    await db().missingMappings.delete(matchingMapping.id);
+  }
+
+  async function count(): Promise<number> {
+    return db().missingMappings.count();
+  }
+
+  async function getData(payload: MaybeRef<MissingMappingsRequestPayload>): Promise<Collection<MissingMapping>> {
+    const {
+      ascending = [],
+      identifier,
+      limit,
+      location,
+      offset,
+      orderByAttributes = [],
+    } = get(payload);
+
+    let filter: ItemFilter<MissingMapping> | undefined;
+    if (identifier || location) {
+      filter = (m): boolean => {
+        if (identifier && !m.identifier.toLowerCase().startsWith(identifier.toLowerCase()))
+          return false;
+        if (location && m.location !== location)
+          return false;
+        return true;
+      };
+    }
+
+    const table = db().missingMappings;
+    const { data, total } = await getPage<MissingMapping, 'id'>(table, {
+      limit,
+      offset,
+      order: ascending.length > 0 && !ascending[0] ? 'desc' : 'asc',
+      orderBy: orderByAttributes.length > 0 ? orderByAttributes[0] : 'location',
+    }, filter);
+
+    return {
+      data,
+      found: total,
+      limit: -1,
+      total,
+    };
+  }
+
+  return {
+    count,
+    getData,
+    put,
+    remove,
+  };
+}

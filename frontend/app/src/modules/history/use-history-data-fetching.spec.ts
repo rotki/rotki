@@ -1,5 +1,5 @@
-import type { TransactionStatus } from '@/composables/api/history/events';
-import type { LocationLabel } from '@/modules/common/location';
+import type { LocationLabel } from '@/modules/core/common/location';
+import type { TransactionStatus } from '@/modules/history/api/events/use-history-events-api';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useHistoryStore } from '@/modules/history/use-history-store';
 import '@test/i18n';
@@ -11,32 +11,32 @@ const mockNotifyError = vi.fn();
 const mockLoggerError = vi.fn();
 const mockGetErrorMessage = vi.fn((e: unknown): string => (e instanceof Error ? e.message : String(e)));
 
-vi.mock('@/composables/api/history', () => ({
+vi.mock('@/modules/history/api/use-history-api', () => ({
   useHistoryApi: vi.fn((): { fetchAssociatedLocations: typeof mockFetchAssociatedLocationsApi; fetchLocationLabels: typeof mockFetchLocationLabelsApi } => ({
     fetchAssociatedLocations: mockFetchAssociatedLocationsApi,
     fetchLocationLabels: mockFetchLocationLabelsApi,
   })),
 }));
 
-vi.mock('@/composables/api/history/events', () => ({
+vi.mock('@/modules/history/api/events/use-history-events-api', () => ({
   useHistoryEventsApi: vi.fn((): { getTransactionStatusSummary: typeof mockGetTransactionStatusSummary } => ({
     getTransactionStatusSummary: mockGetTransactionStatusSummary,
   })),
 }));
 
-vi.mock('@/modules/notifications/use-notifications', () => ({
+vi.mock('@/modules/core/notifications/use-notifications', () => ({
   useNotifications: vi.fn((): { notifyError: typeof mockNotifyError } => ({
     notifyError: mockNotifyError,
   })),
 }));
 
-vi.mock('@/modules/common/logging/logging', () => ({
+vi.mock('@/modules/core/common/logging/logging', () => ({
   logger: {
     error: (...args: unknown[]): void => { mockLoggerError(...args); },
   },
 }));
 
-vi.mock('@/modules/common/logging/error-handling', () => ({
+vi.mock('@/modules/core/common/logging/error-handling', () => ({
   getErrorMessage: (e: unknown): string => mockGetErrorMessage(e),
 }));
 

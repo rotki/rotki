@@ -1,12 +1,12 @@
 <script setup lang="ts">
-import type { PremiumDevice } from '@/modules/premium/devices/composables/premium';
+import type { PremiumDevice } from '@/modules/premium/devices/premium';
 import { useTemplateRef } from 'vue';
-import BigDialog from '@/components/dialogs/BigDialog.vue';
-import { ApiValidationError, type ValidationErrors } from '@/modules/api/types/errors';
-import { getErrorMessage } from '@/modules/common/logging/error-handling';
-import { useMessageStore } from '@/modules/common/use-message-store';
+import { ApiValidationError, type ValidationErrors } from '@/modules/core/api/types/errors';
+import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
+import { useMessageStore } from '@/modules/core/common/use-message-store';
 import PremiumDeviceForm from '@/modules/premium/devices/components/PremiumDeviceForm.vue';
-import { usePremiumDevicesApi } from '@/modules/premium/devices/composables/devices';
+import { usePremiumDevicesApi } from '@/modules/premium/devices/devices';
+import BigDialog from '@/modules/shell/components/dialogs/BigDialog.vue';
 
 const modelValue = defineModel<PremiumDevice | undefined>({ required: true });
 

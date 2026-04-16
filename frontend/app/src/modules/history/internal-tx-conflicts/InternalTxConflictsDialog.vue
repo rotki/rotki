@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import type { InternalTxConflict } from './types';
-import InternalTxConflictRepullSettings from '@/components/settings/general/InternalTxConflictRepullSettings.vue';
-import CardTitle from '@/components/typography/CardTitle.vue';
-import { useAreaVisibilityStore } from '@/modules/common/use-area-visibility-store';
+import { useAreaVisibilityStore } from '@/modules/core/common/use-area-visibility-store';
 import { PinnedNames } from '@/modules/session/types';
+import InternalTxConflictRepullSettings from '@/modules/settings/general/InternalTxConflictRepullSettings.vue';
+import CardTitle from '@/modules/shell/components/CardTitle.vue';
 import InternalTxConflictsContent from './InternalTxConflictsContent.vue';
 
 const modelValue = defineModel<boolean>({ default: false });

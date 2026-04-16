@@ -1,7 +1,7 @@
 import type { AccountPayload } from '@/modules/accounts/blockchain-accounts';
-import type { EvmAccountsResult } from '@/modules/api/types/accounts';
-import { useSupportedChains } from '@/composables/info/chains';
-import { useNotifications } from '@/modules/notifications/use-notifications';
+import type { EvmAccountsResult } from '@/modules/core/api/types/accounts';
+import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
+import { useNotifications } from '@/modules/core/notifications/use-notifications';
 
 interface NotificationParams { account: AccountPayload; isAll: boolean; chains: string[] }
 

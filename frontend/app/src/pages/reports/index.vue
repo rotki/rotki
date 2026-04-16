@@ -1,14 +1,14 @@
 <script setup lang="ts">
-import ErrorScreen from '@/components/error/ErrorScreen.vue';
-import ProgressScreen from '@/components/helper/ProgressScreen.vue';
-import FileUpload from '@/components/import/FileUpload.vue';
-import ReportGenerator from '@/components/profitloss/ReportGenerator.vue';
-import ReportsTable from '@/components/profitloss/ReportsTable.vue';
-import { useInterop } from '@/composables/electron-interop';
-import { NoteLocation } from '@/modules/common/notes';
+import { NoteLocation } from '@/modules/core/common/notes';
+import { TaskType } from '@/modules/core/tasks/task-type';
+import { useTaskStore } from '@/modules/core/tasks/use-task-store';
+import ReportGenerator from '@/modules/reports/ReportGenerator.vue';
+import ReportsTable from '@/modules/reports/ReportsTable.vue';
 import { useReportsStore } from '@/modules/reports/use-reports-store';
-import { TaskType } from '@/modules/tasks/task-type';
-import { useTaskStore } from '@/modules/tasks/use-task-store';
+import { useInterop } from '@/modules/shell/app/use-electron-interop';
+import ErrorScreen from '@/modules/shell/components/error/ErrorScreen.vue';
+import ProgressScreen from '@/modules/shell/components/ProgressScreen.vue';
+import FileUpload from '@/modules/user-data/FileUpload.vue';
 import { useReportsPageActions } from '@/pages/reports/use-reports-page-actions';
 import { Routes } from '@/router/routes';
 

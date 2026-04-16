@@ -1,21 +1,21 @@
 <script setup lang="ts">
 import type { AddressData, BlockchainAccount } from '@/modules/accounts/blockchain-accounts';
-import type { ValidationErrors } from '@/modules/api/types/errors';
-import type { LocationLabel } from '@/modules/common/location';
-import BlockchainAccountSelector from '@/components/helper/BlockchainAccountSelector.vue';
-import LocationSelector from '@/components/helper/LocationSelector.vue';
-import LocationLabelSelector from '@/components/history/LocationLabelSelector.vue';
-import AssetSelect from '@/components/inputs/AssetSelect.vue';
-import CounterpartyInput from '@/components/inputs/CounterpartyInput.vue';
-import DateTimePicker from '@/components/inputs/DateTimePicker.vue';
-import { useSupportedChains } from '@/composables/info/chains';
-import { arrayify } from '@/modules/common/data/array';
+import type { ValidationErrors } from '@/modules/core/api/types/errors';
+import type { LocationLabel } from '@/modules/core/common/location';
+import BlockchainAccountSelector from '@/modules/accounts/BlockchainAccountSelector.vue';
+import LocationSelector from '@/modules/balances/LocationSelector.vue';
+import { arrayify } from '@/modules/core/common/data/array';
+import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
 import {
   type HistoricalBalanceSource,
   HistoricalBalanceSource as Source,
 } from '@/modules/history/balances/types';
+import CounterpartyInput from '@/modules/history/events/mapping/CounterpartyInput.vue';
+import LocationLabelSelector from '@/modules/history/LocationLabelSelector.vue';
 import { useHistoryDataFetching } from '@/modules/history/use-history-data-fetching';
 import { useHistoryStore } from '@/modules/history/use-history-store';
+import AssetSelect from '@/modules/shell/components/inputs/AssetSelect.vue';
+import DateTimePicker from '@/modules/shell/components/inputs/DateTimePicker.vue';
 
 const timestamp = defineModel<number>('timestamp', { required: true });
 const selectedAsset = defineModel<string>('selectedAsset');

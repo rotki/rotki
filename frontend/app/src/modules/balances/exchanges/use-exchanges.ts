@@ -1,20 +1,20 @@
 import type { ExchangeBalancePayload } from '@/modules/accounts/blockchain-accounts';
-import type { ExchangeMeta } from '@/modules/tasks/types';
+import type { ExchangeMeta } from '@/modules/core/tasks/types';
 import { assert, toSentenceCase } from '@rotki/common';
 import { startPromise } from '@shared/utils';
-import { useExchangeApi } from '@/composables/api/balances/exchanges';
-import { useStatusUpdater } from '@/composables/status';
-import { useValueThreshold } from '@/composables/usd-value-threshold';
+import { useValueThreshold } from '@/modules/assets/amount-display/use-usd-value-threshold';
+import { useExchangeApi } from '@/modules/balances/api/use-exchange-api';
 import { AssetBalances } from '@/modules/balances/types/balances';
 import { type EditExchange, Exchange, type ExchangeFormData } from '@/modules/balances/types/exchanges';
 import { useBalancesStore } from '@/modules/balances/use-balances-store';
-import { getErrorMessage } from '@/modules/common/logging/error-handling';
-import { Section, Status } from '@/modules/common/status';
-import { useNotifications } from '@/modules/notifications/use-notifications';
+import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
+import { Section, Status } from '@/modules/core/common/status';
+import { useNotifications } from '@/modules/core/notifications/use-notifications';
+import { TaskType } from '@/modules/core/tasks/task-type';
+import { isActionableFailure, useTaskHandler } from '@/modules/core/tasks/use-task-handler';
 import { BalanceSource } from '@/modules/settings/types/frontend-settings';
 import { useSessionSettingsStore } from '@/modules/settings/use-session-settings-store';
-import { TaskType } from '@/modules/tasks/task-type';
-import { isActionableFailure, useTaskHandler } from '@/modules/tasks/use-task-handler';
+import { useStatusUpdater } from '@/modules/shell/sync-progress/use-status-updater';
 
 interface UseExchangesReturn {
   fetchConnectedExchangeBalances: (refresh?: boolean) => Promise<void>;

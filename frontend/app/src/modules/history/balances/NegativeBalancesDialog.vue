@@ -1,10 +1,10 @@
 <script setup lang="ts">
 import type { DataTableColumn } from '@rotki/ui-library';
-import type { NegativeBalanceDetectedData } from '@/modules/messaging/types/status-types';
-import DateDisplay from '@/components/display/DateDisplay.vue';
-import AssetDetails from '@/components/helper/AssetDetails.vue';
-import CardTitle from '@/components/typography/CardTitle.vue';
-import { AssetAmountDisplay } from '@/modules/amount-display/components';
+import type { NegativeBalanceDetectedData } from '@/modules/core/messaging/types/status-types';
+import { AssetAmountDisplay } from '@/modules/assets/amount-display/components';
+import AssetDetails from '@/modules/assets/AssetDetails.vue';
+import CardTitle from '@/modules/shell/components/CardTitle.vue';
+import DateDisplay from '@/modules/shell/components/display/DateDisplay.vue';
 import { Routes } from '@/router/routes';
 
 const modelValue = defineModel<boolean>({ required: true });

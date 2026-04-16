@@ -1,0 +1,81 @@
+<script setup lang="ts">
+import { DIALOG_TYPES, type DialogShowOptions } from '@/modules/history/events/dialog-types';
+import { useCustomizedEventDuplicates } from '@/modules/history/events/use-customized-event-duplicates';
+import { useUnmatchedAssetMovements } from '@/modules/history/events/use-unmatched-asset-movements';
+import { useInternalTxConflicts } from '@/modules/history/internal-tx-conflicts/use-internal-tx-conflicts';
+
+const showAlerts = defineModel<boolean>('showAlerts', { default: false });
+
+const emit = defineEmits<{
+  'show:dialog': [options: DialogShowOptions];
+}>();
+
+const { t } = useI18n({ useScope: 'global' });
+
+const { autoMatchLoading, unmatchedCount } = useUnmatchedAssetMovements();
+const { actionableCount: duplicatesCount } = useCustomizedEventDuplicates();
+const { issueCount: internalConflictsCount } = useInternalTxConflicts();
+
+const totalIssuesCount = computed<number>(() => get(unmatchedCount) + get(duplicatesCount) + get(internalConflictsCount));
+const hasIssues = computed<boolean>(() => !get(autoMatchLoading) && get(totalIssuesCount) > 0);
+
+const singleIssueDialog = computed<DialogShowOptions | undefined>(() => {
+  const issueTypes: DialogShowOptions[] = [];
+  if (get(unmatchedCount) > 0)
+    issueTypes.push({ type: DIALOG_TYPES.MATCH_ASSET_MOVEMENTS });
+  if (get(duplicatesCount) > 0)
+    issueTypes.push({ type: DIALOG_TYPES.CUSTOMIZED_EVENT_DUPLICATES });
+  if (get(internalConflictsCount) > 0)
+    issueTypes.push({ type: DIALOG_TYPES.INTERNAL_TX_CONFLICTS });
+  return issueTypes.length === 1 ? issueTypes[0] : undefined;
+});
+
+function toggleAlerts(): void {
+  const single = get(singleIssueDialog);
+  if (single) {
+    emit('show:dialog', single);
+  }
+  else {
+    set(showAlerts, !get(showAlerts));
+  }
+}
+
+watch(hasIssues, (value) => {
+  if (!value)
+    set(showAlerts, false);
+});
+</script>
+
+<template>
+  <RuiBadge
+    v-if="hasIssues"
+    :text="totalIssuesCount.toString()"
+    color="warning"
+    placement="top"
+    offset-y="4"
+    offset-x="-4"
+  >
+    <RuiButton
+      variant="outlined"
+      color="warning"
+      class="h-9 [&>span]:!hidden lg:[&>span]:!inline"
+      @click="toggleAlerts()"
+    >
+      <template #prepend>
+        <RuiIcon
+          name="lu-triangle-alert"
+          size="18"
+        />
+      </template>
+      {{ t('transactions.alerts.button') }}
+      <template #append>
+        <RuiIcon
+          name="lu-chevron-down"
+          size="16"
+          class="transition-transform duration-200"
+          :class="{ 'rotate-180': showAlerts }"
+        />
+      </template>
+    </RuiButton>
+  </RuiBadge>
+</template>

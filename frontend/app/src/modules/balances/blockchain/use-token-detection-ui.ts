@@ -1,12 +1,12 @@
 import type { ComputedRef, MaybeRefOrGetter } from 'vue';
 import type { EthDetectedTokensInfo, EvmTokensRecord } from '@/modules/balances/types/balances';
 import type { BlockchainAssetBalances } from '@/modules/balances/types/blockchain-balances';
-import { useSupportedChains } from '@/composables/info/chains';
 import { useAssetsStore } from '@/modules/assets/use-assets-store';
 import { useTokenDetectionOrchestrator } from '@/modules/balances/blockchain/use-token-detection-orchestrator';
 import { useTokenDetectionStore } from '@/modules/balances/blockchain/use-token-detection-store';
 import { useBalancesStore } from '@/modules/balances/use-balances-store';
-import { arrayify } from '@/modules/common/data/array';
+import { arrayify } from '@/modules/core/common/data/array';
+import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
 
 function noTokens(): EthDetectedTokensInfo {
   return {

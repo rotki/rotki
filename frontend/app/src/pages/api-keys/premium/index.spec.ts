@@ -2,13 +2,13 @@ import { libraryDefaults } from '@test/utils/provide-defaults';
 import { mount, type VueWrapper } from '@vue/test-utils';
 import flushPromises from 'flush-promises/index';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { usePremiumCredentialsApi } from '@/composables/api/session/premium-credentials';
-import { useInterop } from '@/composables/electron-interop';
-import { usePremium } from '@/composables/premium';
-import { useConfirmStore } from '@/modules/common/use-confirm-store';
+import { useConfirmStore } from '@/modules/core/common/use-confirm-store';
+import { usePremium } from '@/modules/premium/use-premium';
+import { usePremiumCredentialsApi } from '@/modules/premium/use-premium-credentials-api';
+import { useInterop } from '@/modules/shell/app/use-electron-interop';
 import PremiumSettings from '@/pages/api-keys/premium/index.vue';
 
-vi.mock('@/composables/electron-interop', (): Record<string, unknown> => {
+vi.mock('@/modules/shell/app/use-electron-interop', (): Record<string, unknown> => {
   const mockInterop = {
     premiumUserLoggedIn: vi.fn(),
   };
@@ -18,7 +18,7 @@ vi.mock('@/composables/electron-interop', (): Record<string, unknown> => {
   };
 });
 
-vi.mock('@/composables/api/session/premium-credentials', (): Record<string, unknown> => ({
+vi.mock('@/modules/premium/use-premium-credentials-api', (): Record<string, unknown> => ({
   usePremiumCredentialsApi: vi.fn().mockReturnValue({
     deletePremiumCredentials: vi.fn(),
     getPremiumCapabilities: vi.fn().mockResolvedValue({}),

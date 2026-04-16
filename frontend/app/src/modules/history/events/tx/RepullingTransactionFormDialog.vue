@@ -1,0 +1,199 @@
+<script lang="ts" setup>
+import type { Exchange } from '@/modules/balances/types/exchanges';
+import type { RepullingEthStakingPayload, RepullingExchangeEventsPayload, RepullingTransactionPayload } from '@/modules/history/events/event-payloads';
+import dayjs from 'dayjs';
+import { useTemplateRef } from 'vue';
+import { ApiValidationError } from '@/modules/core/api/types/errors';
+import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
+import { logger } from '@/modules/core/common/logging/logging';
+import { useConfirmStore } from '@/modules/core/common/use-confirm-store';
+import { useMessageStore } from '@/modules/core/common/use-message-store';
+import { TaskType } from '@/modules/core/tasks/task-type';
+import { useTaskStore } from '@/modules/core/tasks/use-task-store';
+import { HISTORY_EVENT_ACTIONS, type HistoryEventAction } from '@/modules/history/events/action-types';
+import { OnlineHistoryEventsQueryType } from '@/modules/history/events/schemas';
+import RepullingTransactionForm, { type AccountType } from '@/modules/history/events/tx/RepullingTransactionForm.vue';
+import { type RepullingTransactionResult, useHistoryTransactions } from '@/modules/history/events/tx/use-history-transactions';
+import { useRepullingTransactionForm } from '@/modules/history/events/tx/use-repulling-transaction-form';
+import { useDecodingStatusStore } from '@/modules/history/use-decoding-status-store';
+import BigDialog from '@/modules/shell/components/dialogs/BigDialog.vue';
+
+const modelValue = defineModel<boolean>({ required: true });
+const currentAction = defineModel<HistoryEventAction>('currentAction', { required: true });
+
+const { repullExchangeEvents, repullTransactions } = defineProps<{
+  loading?: boolean;
+  repullTransactions?: (result: RepullingTransactionResult) => void;
+  repullExchangeEvents?: (exchanges: Exchange[]) => void;
+}>();
+
+const { t } = useI18n({ useScope: 'global' });
+
+const accountType = ref<AccountType>('blockchain');
+
+const submitting = ref<boolean>(false);
+const errorMessages = ref<Record<string, string[]>>({});
+const form = useTemplateRef<InstanceType<typeof RepullingTransactionForm>>('form');
+const stateUpdated = ref<boolean>(false);
+
+const { setMessage } = useMessageStore();
+const { show } = useConfirmStore();
+const { repullingEthStakingEvents, repullingExchangeEvents, repullingTransactions } = useHistoryTransactions();
+const { useIsTaskRunning } = useTaskStore();
+const { createDefaultFormData, shouldShowConfirmation } = useRepullingTransactionForm();
+const { resetUndecodedTransactionsStatus } = useDecodingStatusStore();
+
+const taskRunning = useIsTaskRunning(TaskType.REPULLING_TXS);
+
+const formData = ref(createDefaultFormData());
+
+function createDefaultEthStakingData(): RepullingEthStakingPayload {
+  return {
+    entryType: OnlineHistoryEventsQueryType.ETH_WITHDRAWALS,
+    fromTimestamp: dayjs().subtract(1, 'year').unix(),
+    toTimestamp: dayjs().unix(),
+  };
+}
+
+const ethStakingData = ref<RepullingEthStakingPayload>(createDefaultEthStakingData());
+
+function resetForm(): void {
+  set(formData, createDefaultFormData());
+  set(ethStakingData, createDefaultEthStakingData());
+  set(accountType, 'blockchain');
+}
+
+async function handleSubmissionError(
+  error: unknown,
+  data: RepullingTransactionPayload,
+  formRef: InstanceType<typeof RepullingTransactionForm> | null,
+): Promise<void> {
+  let message: string | Record<string, string[] | string> = getErrorMessage(error);
+
+  if (error instanceof ApiValidationError)
+    message = error.getValidationErrors(data);
+
+  if (typeof message === 'string') {
+    setMessage({
+      description: message,
+    });
+  }
+  else {
+    set(errorMessages, message);
+    await formRef?.validate();
+  }
+}
+
+async function handleExchangeSubmission(
+  data: RepullingTransactionPayload,
+  formRef: InstanceType<typeof RepullingTransactionForm> | null,
+): Promise<void> {
+  const exchange = formRef?.getExchangeData();
+  const exchangePayload: RepullingExchangeEventsPayload = {
+    fromTimestamp: data.fromTimestamp,
+    location: exchange?.location || '',
+    name: exchange?.name || '',
+    toTimestamp: data.toTimestamp,
+  };
+
+  set(currentAction, HISTORY_EVENT_ACTIONS.REPULLING);
+  const newEventsDetected = await repullingExchangeEvents(exchangePayload);
+  if (newEventsDetected && exchange) {
+    repullExchangeEvents?.([exchange]);
+    logger.debug('New exchange events detected');
+  }
+}
+
+async function handleBlockchainSubmission(data: RepullingTransactionPayload): Promise<void> {
+  const chain = data.chain === 'all' ? undefined : data.chain;
+  const blockchainPayload: RepullingTransactionPayload = {
+    address: data.address,
+    chain,
+    fromTimestamp: data.fromTimestamp,
+    toTimestamp: data.toTimestamp,
+  };
+
+  set(currentAction, HISTORY_EVENT_ACTIONS.REPULLING);
+  resetUndecodedTransactionsStatus();
+  const result = await repullingTransactions(blockchainPayload);
+  if (result) {
+    repullTransactions?.(result);
+    logger.debug(`New transactions detected${chain ? ` for chain ${chain}` : ' for all chains'}`);
+  }
+}
+
+async function handleEthStakingSubmission(): Promise<void> {
+  set(currentAction, HISTORY_EVENT_ACTIONS.REPULLING);
+  await repullingEthStakingEvents(get(ethStakingData));
+}
+
+async function performSubmission(): Promise<void> {
+  const formRef = get(form);
+  const data = get(formData);
+  const type = get(accountType);
+
+  try {
+    set(submitting, true);
+    set(modelValue, false);
+
+    if (type === 'exchange')
+      await handleExchangeSubmission(data, formRef);
+    else if (type === 'eth_staking')
+      await handleEthStakingSubmission();
+    else
+      await handleBlockchainSubmission(data);
+
+    resetForm();
+  }
+  catch (error: unknown) {
+    await handleSubmissionError(error, data, formRef);
+  }
+  finally {
+    set(submitting, false);
+  }
+}
+
+async function submit(): Promise<void> {
+  const formRef = get(form);
+  const valid = await formRef?.validate();
+  if (!valid)
+    return;
+
+  const data = get(formData);
+  const type = get(accountType);
+
+  if (type === 'blockchain' && shouldShowConfirmation(data)) {
+    show({
+      message: t('transactions.repulling.confirmation.message'),
+      title: t('transactions.repulling.confirmation.title'),
+      type: 'info',
+    }, performSubmission);
+  }
+  else {
+    await performSubmission();
+  }
+}
+</script>
+
+<template>
+  <BigDialog
+    :display="modelValue"
+    :title="t('transactions.repulling.action')"
+    :primary-action="t('transactions.repulling.action')"
+    :action-disabled="loading || taskRunning"
+    :action-tooltip="loading ? t('transactions.repulling.loading_tooltip') : ''"
+    :loading="submitting || taskRunning"
+    :prompt-on-close="stateUpdated"
+    @confirm="submit()"
+    @cancel="modelValue = false"
+  >
+    <RepullingTransactionForm
+      ref="form"
+      v-model="formData"
+      v-model:account-type="accountType"
+      v-model:error-messages="errorMessages"
+      v-model:state-updated="stateUpdated"
+      v-model:eth-staking-data="ethStakingData"
+    />
+  </BigDialog>
+</template>

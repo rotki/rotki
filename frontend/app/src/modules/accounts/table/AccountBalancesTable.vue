@@ -1,21 +1,21 @@
 <script setup lang="ts" generic="T extends BlockchainAccountBalance">
 import type { DataTableSortData, TablePaginationData } from '@rotki/ui-library';
-import type { AccountManageState } from '@/composables/accounts/blockchain/use-account-manage';
 import type { BlockchainAccountBalance } from '@/modules/accounts/blockchain-accounts';
-import type { Collection } from '@/modules/common/collection';
-import AccountChains from '@/components/accounts/AccountChains.vue';
-import AccountTopTokens from '@/components/accounts/AccountTopTokens.vue';
-import LabeledAddressDisplay from '@/components/display/LabeledAddressDisplay.vue';
-import RowAppend from '@/components/helper/RowAppend.vue';
-import TagDisplay from '@/components/tags/TagDisplay.vue';
-import { FiatDisplay } from '@/modules/amount-display/components';
+import type { AccountManageState } from '@/modules/accounts/blockchain/use-account-manage';
+import type { Collection } from '@/modules/core/common/collection';
+import AccountChains from '@/modules/accounts/AccountChains.vue';
+import AccountTopTokens from '@/modules/accounts/AccountTopTokens.vue';
+import { FiatDisplay } from '@/modules/assets/amount-display/components';
+import LabeledAddressDisplay from '@/modules/shell/components/display/LabeledAddressDisplay.vue';
+import RowAppend from '@/modules/shell/components/RowAppend.vue';
+import TagDisplay from '@/modules/tags/TagDisplay.vue';
 import AccountTableGroupHeader from './components/AccountTableGroupHeader.vue';
 import AccountActions from './components/table/AccountActions.vue';
 import AccountBalanceValue from './components/table/AccountBalanceValue.vue';
-import { useAccountLoadingStates } from './composables/use-account-loading-states';
-import { useAccountOperations } from './composables/use-account-operations';
-import { useAccountTableConfig } from './composables/use-account-table-config';
-import { useAccountTableData } from './composables/use-account-table-data';
+import { useAccountLoadingStates } from './use-account-loading-states';
+import { useAccountOperations } from './use-account-operations';
+import { useAccountTableConfig } from './use-account-table-config';
+import { useAccountTableData } from './use-account-table-data';
 
 defineOptions({
   inheritAttrs: false,

@@ -1,58 +1,38 @@
-import type { ComputedRef, MaybeRefOrGetter } from 'vue';
-import { useAccountCategoryHelper } from '@/composables/accounts/use-account-category-helper';
-import { useTokenDetectionStore } from '@/modules/balances/blockchain/use-token-detection-store';
-import { Section } from '@/modules/common/status';
-import { useStatusStore } from '@/modules/common/use-status-store';
-import { TaskType } from '@/modules/tasks/task-type';
-import { useTaskStore } from '@/modules/tasks/use-task-store';
+import type { ComputedRef, Ref } from 'vue';
+import { TaskType } from '@/modules/core/tasks/task-type';
+import { useTaskStore } from '@/modules/core/tasks/use-task-store';
 
-interface UseBlockchainAccountLoadingReturn {
-  isDetectingTokens: ComputedRef<boolean>;
-  refreshDisabled: ComputedRef<boolean>;
-  deleteDisabled: ComputedRef<boolean>;
-  isSectionLoading: ComputedRef<boolean>;
-  operationRunning: ComputedRef<boolean>;
-  isLoadingActive: ComputedRef<boolean>;
+interface UseAccountLoadingReturn {
+  pending: Ref<boolean>;
+  loading: ComputedRef<boolean>;
+  isQueryingBlockchain: ComputedRef<boolean>;
+  isBlockchainLoading: ComputedRef<boolean>;
+  isAccountOperationRunning: (blockchain?: string) => ComputedRef<boolean>;
 }
 
-export function useBlockchainAccountLoading(category: MaybeRefOrGetter<string> = ''): UseBlockchainAccountLoadingReturn {
-  const { isTaskRunning, useIsTaskRunning } = useTaskStore();
-  const { massDetecting } = storeToRefs(useTokenDetectionStore());
-  const { getIsLoading } = useStatusStore();
+export const useAccountLoading = createSharedComposable((): UseAccountLoadingReturn => {
+  const pending = ref<boolean>(false);
 
-  const { chainIds, isEvm } = useAccountCategoryHelper(category);
+  const { useIsTaskRunning } = useTaskStore();
 
-  const isAnyBalancesFetching = computed<boolean>(() => {
-    if (!toValue(category)) {
-      return isTaskRunning(TaskType.QUERY_BLOCKCHAIN_BALANCES)
-        || isTaskRunning(TaskType.L2_LOOPRING);
-    }
+  const isQueryingBlockchain = useIsTaskRunning(TaskType.QUERY_BLOCKCHAIN_BALANCES);
+  const isLoopringLoading = useIsTaskRunning(TaskType.L2_LOOPRING);
 
-    if (get(chainIds).some(chain => isTaskRunning(TaskType.QUERY_BLOCKCHAIN_BALANCES, { blockchain: chain })))
-      return true;
+  const isBlockchainLoading = computed<boolean>(() => get(isQueryingBlockchain) || get(isLoopringLoading));
 
-    return get(isEvm) && isTaskRunning(TaskType.L2_LOOPRING);
-  });
+  const isAccountOperationRunning = (blockchain?: string): ComputedRef<boolean> =>
+    logicOr(
+      useIsTaskRunning(TaskType.ADD_ACCOUNT, blockchain ? { blockchain } : {}),
+      useIsTaskRunning(TaskType.REMOVE_ACCOUNT, blockchain ? { blockchain } : {}),
+    );
 
-  const isSectionLoading = computed<boolean>(() => {
-    if (!toValue(category))
-      return getIsLoading(Section.BLOCKCHAIN);
-
-    return get(chainIds).some(chain => getIsLoading(Section.BLOCKCHAIN, chain));
-  });
-
-  const isDetectingTokens = computed<boolean>(() => get(isEvm) && isDefined(massDetecting));
-  const operationRunning = logicOr(useIsTaskRunning(TaskType.ADD_ACCOUNT), useIsTaskRunning(TaskType.REMOVE_ACCOUNT));
-  const refreshDisabled = logicOr(isSectionLoading, isDetectingTokens);
-  const deleteDisabled = logicOr(isAnyBalancesFetching, operationRunning);
-  const isLoadingActive = logicOr(isDetectingTokens, isSectionLoading, operationRunning);
+  const loading: ComputedRef<boolean> = logicOr(isAccountOperationRunning(), pending, isQueryingBlockchain);
 
   return {
-    deleteDisabled,
-    isDetectingTokens,
-    isSectionLoading,
-    operationRunning,
-    refreshDisabled,
-    isLoadingActive,
+    isAccountOperationRunning,
+    isBlockchainLoading,
+    isQueryingBlockchain,
+    loading,
+    pending,
   };
-}
+});

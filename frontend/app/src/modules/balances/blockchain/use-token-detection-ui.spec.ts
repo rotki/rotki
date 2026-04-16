@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useTokenDetectionStore } from './use-token-detection-store';
 
-vi.mock('@/composables/info/chains', () => ({
+vi.mock('@/modules/core/common/use-supported-chains', () => ({
   useSupportedChains: vi.fn().mockReturnValue({
     supportsTransactions: (chain: string): boolean => chain === 'eth' || chain === 'optimism',
   }),

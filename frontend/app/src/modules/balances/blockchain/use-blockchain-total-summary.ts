@@ -1,9 +1,9 @@
 import type { BigNumber } from '@rotki/common';
 import type { ComputedRef } from 'vue';
-import type { BlockchainTotal } from '@/modules/onchain/blockchain-types';
+import type { BlockchainTotal } from '@/modules/balances/blockchain-types';
 import { isEmpty } from 'es-toolkit/compat';
 import { useBalancesStore } from '@/modules/balances/use-balances-store';
-import { sortDesc } from '@/modules/common/data/bignumbers';
+import { sortDesc } from '@/modules/core/common/data/bignumbers';
 
 interface UseBlockchainTotalsSummaryReturn { blockchainTotals: ComputedRef<BlockchainTotal[]> }
 

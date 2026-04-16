@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import type { Module } from '@/modules/common/modules';
-import ActiveModules from '@/components/defi/ActiveModules.vue';
-import NftImageRenderingSettingMenu from '@/components/settings/general/nft/NftImageRenderingSettingMenu.vue';
+import type { Module } from '@/modules/core/common/modules';
+import NftImageRenderingSettingMenu from '@/modules/settings/general/nft/NftImageRenderingSettingMenu.vue';
+import ActiveModules from '@/modules/settings/modules/ActiveModules.vue';
 
 defineProps<{
   modules: Module[];

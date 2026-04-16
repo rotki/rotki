@@ -21,7 +21,7 @@ vi.mock('@/modules/balances/blockchain/use-account-addresses', () => ({
   }),
 }));
 
-vi.mock('@/composables/info/chains', () => ({
+vi.mock('@/modules/core/common/use-supported-chains', () => ({
   useSupportedChains: vi.fn().mockReturnValue({
     supportsTransactions: (chain: string): boolean => chain !== 'btc',
     txEvmChains: computed(() => [
@@ -51,7 +51,7 @@ vi.mock('@/modules/balances/use-balance-queue', () => ({
 }));
 
 const mockIsTaskRunning = vi.fn().mockReturnValue(false);
-vi.mock('@/modules/tasks/use-task-store', () => ({
+vi.mock('@/modules/core/tasks/use-task-store', () => ({
   useTaskStore: vi.fn().mockReturnValue({
     isTaskRunning: mockIsTaskRunning,
   }),

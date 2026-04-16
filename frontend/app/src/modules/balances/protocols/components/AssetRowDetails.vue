@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import type { AssetBalanceWithPrice } from '@rotki/common';
-import AssetBalances from '@/components/AssetBalances.vue';
-import EvmNativeTokenBreakdown from '@/components/EvmNativeTokenBreakdown.vue';
 import { isEvmNativeToken } from '@/modules/assets/types';
+import AssetBalances from '@/modules/balances/AssetBalances.vue';
+import EvmNativeTokenBreakdown from '@/modules/balances/EvmNativeTokenBreakdown.vue';
 import AssetDetailsLayout from '@/modules/balances/protocols/components/AssetDetailsLayout.vue';
 import AssetProtocolBreakdown from '@/modules/balances/protocols/components/AssetProtocolBreakdown.vue';
 

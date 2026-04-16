@@ -1,0 +1,77 @@
+<script setup lang="ts">
+import type { Report } from '@/modules/reports/report-types';
+import ReportActionableCard from '@/modules/reports/ReportActionableCard.vue';
+import { useReportsStore } from '@/modules/reports/use-reports-store';
+
+const {
+  initialOpen = false,
+  report,
+} = defineProps<{
+  report: Report;
+  initialOpen?: boolean;
+}>();
+
+const emit = defineEmits<{
+  regenerate: [];
+}>();
+
+function regenerateReport() {
+  emit('regenerate');
+}
+
+const mainDialogOpen = ref<boolean>(initialOpen);
+
+const reportsStore = useReportsStore();
+const { actionableItems } = storeToRefs(reportsStore);
+
+const actionableItemsLength = computed(() => {
+  let total = 0;
+
+  const items = get(actionableItems);
+
+  if (items)
+    total = items.missingAcquisitions.length + items.missingPrices.length;
+
+  return total;
+});
+
+const { t } = useI18n({ useScope: 'global' });
+</script>
+
+<template>
+  <div
+    v-if="actionableItemsLength"
+    class="flex"
+  >
+    <RuiDialog
+      v-model="mainDialogOpen"
+      max-width="1000"
+    >
+      <template #activator="{ attrs }">
+        <RuiButton
+          color="error"
+          v-bind="attrs"
+        >
+          <span class="pr-2">
+            {{ t('profit_loss_report.actionable.show_issues') }}
+          </span>
+          <template #append>
+            <RuiChip
+              size="sm"
+              color="error"
+              class="!p-0 !bg-rui-error-darker"
+            >
+              {{ actionableItemsLength.toString() }}
+            </RuiChip>
+          </template>
+        </RuiButton>
+      </template>
+      <ReportActionableCard
+        v-if="mainDialogOpen"
+        :report="report"
+        @set-dialog="mainDialogOpen = $event"
+        @regenerate="regenerateReport()"
+      />
+    </RuiDialog>
+  </div>
+</template>

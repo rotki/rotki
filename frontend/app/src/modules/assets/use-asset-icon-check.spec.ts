@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mockCheckAsset = vi.fn();
 
-vi.mock('@/composables/api/assets/icon', () => ({
+vi.mock('@/modules/assets/api/use-asset-icon-api', () => ({
   useAssetIconApi: vi.fn((): { checkAsset: typeof mockCheckAsset } => ({
     checkAsset: mockCheckAsset,
   })),
@@ -12,7 +12,7 @@ vi.mock('@shared/utils', () => ({
   wait: vi.fn(async (): Promise<void> => Promise.resolve()),
 }));
 
-vi.mock('@/modules/common/logging/logging', () => ({
+vi.mock('@/modules/core/common/logging/logging', () => ({
   logger: {
     debug: vi.fn(),
     error: vi.fn(),

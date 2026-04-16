@@ -6,18 +6,18 @@ import { generateUUID } from '@shared/utils';
 import { requiredIf } from '@vuelidate/validators';
 import dayjs from 'dayjs';
 import { isEqual } from 'es-toolkit';
-import ChainSelect from '@/components/accounts/blockchain/ChainSelect.vue';
-import LocationSelector from '@/components/helper/LocationSelector.vue';
-import AutoCompleteWithSearchSync from '@/components/inputs/AutoCompleteWithSearchSync.vue';
-import DateTimePicker from '@/components/inputs/DateTimePicker.vue';
-import { useHistoryEventsForm } from '@/composables/history/events/form';
-import { refIsTruthy } from '@/composables/ref';
-import { bigNumberifyFromRef } from '@/modules/common/data/bignumbers';
-import { TRADE_LOCATION_EXTERNAL } from '@/modules/common/defaults';
+import ChainSelect from '@/modules/accounts/blockchain/ChainSelect.vue';
+import LocationSelector from '@/modules/balances/LocationSelector.vue';
+import { bigNumberifyFromRef } from '@/modules/core/common/data/bignumbers';
+import { TRADE_LOCATION_EXTERNAL } from '@/modules/core/common/defaults';
+import { refIsTruthy } from '@/modules/core/common/use-ref-truthy';
+import { useHistoryEventsForm } from '@/modules/history/events/use-history-events-form';
 import AssetMovementFeeEntry from '@/modules/history/management/forms/common/AssetMovementFeeEntry.vue';
-import { toMessages, useEventFormBase } from '@/modules/history/management/forms/composables/use-event-form-base';
 import HistoryEventAssetPriceForm from '@/modules/history/management/forms/HistoryEventAssetPriceForm.vue';
+import { toMessages, useEventFormBase } from '@/modules/history/management/forms/use-event-form-base';
 import { useSessionSettingsStore } from '@/modules/settings/use-session-settings-store';
+import AutoCompleteWithSearchSync from '@/modules/shell/components/inputs/AutoCompleteWithSearchSync.vue';
+import DateTimePicker from '@/modules/shell/components/inputs/DateTimePicker.vue';
 
 interface AssetMovementEventFormProps {
   data: GroupEventData<AssetMovementEvent>;

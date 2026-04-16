@@ -1,16 +1,16 @@
 <script setup lang="ts">
-import GetPremiumPlaceholder from '@/components/common/GetPremiumPlaceholder.vue';
-import TablePageLayout from '@/components/layout/TablePageLayout.vue';
-import CardTitle from '@/components/typography/CardTitle.vue';
-import { usePremium } from '@/composables/premium';
-import { useRefWithDebounce } from '@/composables/ref';
-import { NoteLocation } from '@/modules/common/notes';
+import { NoteLocation } from '@/modules/core/common/notes';
+import { useRefWithDebounce } from '@/modules/core/common/use-ref-debounce';
+import { TaskType } from '@/modules/core/tasks/task-type';
+import { useTaskStore } from '@/modules/core/tasks/use-task-store';
 import HistoricalBalancesContent from '@/modules/history/balances/HistoricalBalancesContent.vue';
 import NegativeBalancesDialog from '@/modules/history/balances/NegativeBalancesDialog.vue';
-import { useHistoricalBalancesStore } from '@/modules/history/balances/store';
 import { useHistoricalBalances } from '@/modules/history/balances/use-historical-balances';
-import { TaskType } from '@/modules/tasks/task-type';
-import { useTaskStore } from '@/modules/tasks/use-task-store';
+import { useHistoricalBalancesStore } from '@/modules/history/balances/use-historical-balances-store';
+import { usePremium } from '@/modules/premium/use-premium';
+import CardTitle from '@/modules/shell/components/CardTitle.vue';
+import GetPremiumPlaceholder from '@/modules/shell/components/GetPremiumPlaceholder.vue';
+import TablePageLayout from '@/modules/shell/layout/TablePageLayout.vue';
 
 definePage({
   meta: {

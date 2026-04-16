@@ -1,4 +1,4 @@
-import type { ProtocolCacheUpdatesData } from '@/modules/messaging/types';
+import type { ProtocolCacheUpdatesData } from '@/modules/core/messaging/types';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { useProtocolCacheStatusStore } from './use-protocol-cache-status-store';
 

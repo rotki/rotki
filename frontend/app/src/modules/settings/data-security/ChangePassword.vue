@@ -1,0 +1,116 @@
+<script setup lang="ts">
+import useVuelidate from '@vuelidate/core';
+import { helpers, required, sameAs } from '@vuelidate/validators';
+import { useChangePassword } from '@/modules/auth/use-change-password';
+import { toMessages } from '@/modules/core/common/validation/validation';
+import { usePremiumStore } from '@/modules/premium/use-premium-store';
+import SettingsItem from '@/modules/settings/controls/SettingsItem.vue';
+import { SettingsHighlightIds } from '@/modules/settings/setting-highlight-ids';
+
+const currentPassword = ref<string>('');
+const newPassword = ref<string>('');
+const newPasswordConfirm = ref<string>('');
+const loading = ref<boolean>(false);
+
+const { t } = useI18n({ useScope: 'global' });
+
+const rules = {
+  currentPassword: {
+    required: helpers.withMessage(t('change_password.validation.empty_password'), required),
+  },
+  newPassword: {
+    required: helpers.withMessage(t('change_password.validation.empty_password'), required),
+  },
+  newPasswordConfirm: {
+    required: helpers.withMessage(t('change_password.validation.empty_confirmation'), required),
+    same: helpers.withMessage(t('change_password.validation.password_mismatch'), sameAs(newPassword)),
+  },
+};
+
+const v$ = useVuelidate(rules, { currentPassword, newPassword, newPasswordConfirm }, { $autoDirty: true });
+
+const { premiumSync } = storeToRefs(usePremiumStore());
+const { changePassword } = useChangePassword();
+
+function reset(): void {
+  set(currentPassword, '');
+  set(newPassword, '');
+  set(newPasswordConfirm, '');
+  get(v$).$reset();
+}
+
+async function change(): Promise<void> {
+  set(loading, true);
+  const result = await changePassword({
+    currentPassword: get(currentPassword),
+    newPassword: get(newPassword),
+  });
+  set(loading, false);
+
+  if (result.success)
+    reset();
+}
+</script>
+
+<template>
+  <RuiAlert
+    v-if="premiumSync"
+    class="mt-6"
+    data-cy="premium-warning"
+    type="warning"
+  >
+    {{ t('change_password.sync_warning') }}
+  </RuiAlert>
+  <SettingsItem :id="SettingsHighlightIds.CHANGE_PASSWORD">
+    <template #title>
+      {{ t('change_password.title') }}
+    </template>
+
+    <template #subtitle>
+      {{ t('change_password.subtitle') }}
+    </template>
+
+    <form
+      novalidate
+      @submit.stop.prevent="change()"
+    >
+      <RuiRevealableTextField
+        v-model="currentPassword"
+        color="primary"
+        data-cy="current-password"
+        :label="t('change_password.labels.password')"
+        :error-messages="toMessages(v$.currentPassword)"
+        variant="outlined"
+      />
+      <RuiRevealableTextField
+        v-model="newPassword"
+        color="primary"
+        data-cy="new-password"
+        :label="t('change_password.labels.new_password')"
+        prepend-icon="lu-lock-keyhole"
+        :error-messages="toMessages(v$.newPassword)"
+        variant="outlined"
+      />
+      <RuiRevealableTextField
+        v-model="newPasswordConfirm"
+        color="primary"
+        data-cy="confirm-password"
+        :label="t('change_password.labels.confirm_password')"
+        prepend-icon="lu-repeat"
+        :error-messages="toMessages(v$.newPasswordConfirm)"
+        variant="outlined"
+      />
+      <div class="flex justify-end">
+        <RuiButton
+          data-cy="change-password-button"
+          color="primary"
+          :loading="loading"
+          type="submit"
+          :disabled="v$.$invalid || loading"
+        >
+          {{ t('change_password.button') }}
+        </RuiButton>
+      </div>
+    </form>
+  </SettingsItem>
+</template>

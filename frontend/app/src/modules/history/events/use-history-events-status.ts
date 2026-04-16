@@ -1,10 +1,10 @@
 import type { ComputedRef } from 'vue';
-import { useSectionStatus } from '@/composables/status';
-import { Section } from '@/modules/common/status';
+import { Section } from '@/modules/core/common/status';
+import { TaskType } from '@/modules/core/tasks/task-type';
+import { useTaskStore } from '@/modules/core/tasks/use-task-store';
 import { useEventsQueryStatusStore } from '@/modules/history/use-events-query-status-store';
 import { useTxQueryStatusStore } from '@/modules/history/use-tx-query-status-store';
-import { TaskType } from '@/modules/tasks/task-type';
-import { useTaskStore } from '@/modules/tasks/use-task-store';
+import { useSectionStatus } from '@/modules/shell/sync-progress/use-section-status';
 
 interface UseHistoryEventStatusReturn {
   ethBlockEventsDecoding: ComputedRef<boolean>;
