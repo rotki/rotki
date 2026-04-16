@@ -1,5 +1,5 @@
 import type { Ref } from 'vue';
-import { useFrontendSettingsStore } from '@/store/settings/frontend';
+import { useFrontendSettingsStore } from '@/modules/settings/use-frontend-settings-store';
 
 interface UseHistoryQueryIndicatorThreshold {
   dismissalThresholdMs: Readonly<Ref<number, number>>;

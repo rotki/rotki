@@ -61,13 +61,13 @@ vi.mock('@/composables/api/history', () => ({
   })),
 }));
 
-vi.mock('@/store/locations', () => ({
+vi.mock('@/modules/common/use-location-store', () => ({
   useLocationStore: vi.fn(() => ({
     allLocations: ref({}),
   })),
 }));
 
-vi.mock('@/store/session/auth', () => ({
+vi.mock('@/modules/session/use-session-auth-store', () => ({
   useSessionAuthStore: vi.fn(() => ({
     shouldFetchData: mockShouldFetchData,
   })),

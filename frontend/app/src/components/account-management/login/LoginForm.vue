@@ -16,7 +16,7 @@ import { deleteBackendUrl, getBackendUrl, saveBackendUrl } from '@/modules/accou
 import { useLogout } from '@/modules/account/use-logout';
 import { compareTextByKeyword } from '@/modules/common/display/assets';
 import { toMessages } from '@/modules/common/validation/validation';
-import { useSessionAuthStore } from '@/store/session/auth';
+import { useSessionAuthStore } from '@/modules/session/use-session-auth-store';
 
 const {
   errors = [] as string[],

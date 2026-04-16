@@ -13,7 +13,7 @@ import { useBackendMessages } from '@/modules/app/use-backend-messages';
 import { getErrorMessage } from '@/modules/common/logging/error-handling';
 import { logger } from '@/modules/common/logging/logging';
 import { useNotificationDispatcher } from '@/modules/notifications/use-notification-dispatcher';
-import { useGeneralSettingsStore } from '@/store/settings/general';
+import { useGeneralSettingsStore } from '@/modules/settings/use-general-settings-store';
 
 const { t } = useI18n({ useScope: 'global' });
 

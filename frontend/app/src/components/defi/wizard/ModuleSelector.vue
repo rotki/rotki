@@ -10,10 +10,10 @@ import { useBalancesStore } from '@/modules/balances/use-balances-store';
 import { Module, SUPPORTED_MODULES, type SupportedModule } from '@/modules/common/modules';
 import { Section } from '@/modules/common/status';
 import { useQueriedAddressOperations } from '@/modules/session/use-queried-address-operations';
+import { useSessionMetadataStore } from '@/modules/session/use-session-metadata-store';
+import { useGeneralSettingsStore } from '@/modules/settings/use-general-settings-store';
 import { useSettingsOperations } from '@/modules/settings/use-settings-operations';
 import { TableId, useRememberTableSorting } from '@/modules/table/use-remember-table-sorting';
-import { useSessionMetadataStore } from '@/store/session/metadata';
-import { useGeneralSettingsStore } from '@/store/settings/general';
 
 type ModuleEntry = SupportedModule & { enabled: boolean };
 

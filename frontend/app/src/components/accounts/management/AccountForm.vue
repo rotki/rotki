@@ -23,7 +23,7 @@ import { logger } from '@/modules/common/logging/logging';
 import { useRefPropVModel } from '@/modules/common/validation/model';
 import { isBtcChain } from '@/modules/onchain/chains';
 import { EvmIndexer } from '@/modules/settings/types/evm-indexer';
-import { useGeneralSettingsStore } from '@/store/settings/general';
+import { useGeneralSettingsStore } from '@/modules/settings/use-general-settings-store';
 
 const modelValue = defineModel<AccountManageState>({ required: true });
 

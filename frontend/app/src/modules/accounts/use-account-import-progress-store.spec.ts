@@ -3,7 +3,7 @@ import {
   TotalCannotBeNegativeError,
   TotalNotInitializedError,
   useAccountImportProgressStore,
-} from '@/store/use-account-import-progress-store';
+} from '@/modules/accounts/use-account-import-progress-store';
 
 describe('useAccountImportProgress', () => {
   let store: ReturnType<typeof useAccountImportProgressStore>;

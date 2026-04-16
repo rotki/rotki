@@ -14,7 +14,7 @@ import { bigNumberifyFromRef } from '@/modules/common/data/bignumbers';
 import { toMessages, useEventFormBase } from '@/modules/history/management/forms/composables/use-event-form-base';
 import HistoryEventAssetPriceForm from '@/modules/history/management/forms/HistoryEventAssetPriceForm.vue';
 import HistoryEventTypeForm from '@/modules/history/management/forms/HistoryEventTypeForm.vue';
-import { useSessionSettingsStore } from '@/store/settings/session';
+import { useSessionSettingsStore } from '@/modules/settings/use-session-settings-store';
 
 const stateUpdated = defineModel<boolean>('stateUpdated', { default: false, required: false });
 

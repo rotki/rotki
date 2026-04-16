@@ -3,8 +3,8 @@ import AccountFormApiKeyAlert from '@/components/accounts/management/AccountForm
 import ModuleNotActive from '@/components/defi/ModuleNotActive.vue';
 import TablePageLayout from '@/components/layout/TablePageLayout.vue';
 import { useExternalApiKeys } from '@/composables/settings/api-keys/external';
+import { useGeneralSettingsStore } from '@/modules/settings/use-general-settings-store';
 import { EthStaking } from '@/premium/premium';
-import { useGeneralSettingsStore } from '@/store/settings/general';
 import EthStakingHeaderActions from './components/EthStakingHeaderActions.vue';
 import EthStakingPagePlaceholder from './components/EthStakingPagePlaceholder.vue';
 import EthValidatorFilter from './components/EthValidatorFilter.vue';

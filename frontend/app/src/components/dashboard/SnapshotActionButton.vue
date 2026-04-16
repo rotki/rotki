@@ -12,10 +12,10 @@ import { usePremium } from '@/composables/premium';
 import { useLogout } from '@/modules/account/use-logout';
 import { useBalanceFetching } from '@/modules/balances/use-balance-fetching';
 import { getErrorMessage } from '@/modules/common/logging/error-handling';
+import { useMessageStore } from '@/modules/common/use-message-store';
+import { useSessionMetadataStore } from '@/modules/session/use-session-metadata-store';
+import { useFrontendSettingsStore } from '@/modules/settings/use-frontend-settings-store';
 import { useStatisticsDataFetching } from '@/modules/statistics/use-statistics-data-fetching';
-import { useMessageStore } from '@/store/message';
-import { useSessionMetadataStore } from '@/store/session/metadata';
-import { useFrontendSettingsStore } from '@/store/settings/frontend';
 
 const ignoreErrors = ref<boolean>(false);
 const visible = ref<boolean>(false);

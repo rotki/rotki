@@ -7,9 +7,9 @@ import { useBackupApi } from '@/composables/api/backup';
 import { displayDateFormatter } from '@/data/date-formatter';
 import { size } from '@/modules/common/data/data';
 import { getFilepath } from '@/modules/common/file/file';
+import { useConfirmStore } from '@/modules/common/use-confirm-store';
+import { useGeneralSettingsStore } from '@/modules/settings/use-general-settings-store';
 import { TableId, useRememberTableSorting } from '@/modules/table/use-remember-table-sorting';
-import { useConfirmStore } from '@/store/confirm';
-import { useGeneralSettingsStore } from '@/store/settings/general';
 
 const selected = defineModel<UserDbBackupWithId[]>('selected', { required: true });
 

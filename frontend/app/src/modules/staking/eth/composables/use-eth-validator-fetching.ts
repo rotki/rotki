@@ -5,9 +5,9 @@ import { createValidatorAccount } from '@/modules/accounts/create-account';
 import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
 import { logger } from '@/modules/common/logging/logging';
 import { useNotifications } from '@/modules/notifications/use-notifications';
+import { useBlockchainValidatorsStore } from '@/modules/staking/use-blockchain-validators-store';
 import { TaskType } from '@/modules/tasks/task-type';
 import { isActionableFailure, useTaskHandler } from '@/modules/tasks/use-task-handler';
-import { useBlockchainValidatorsStore } from '@/store/blockchain/validators';
 
 interface UseEthValidatorFetchingReturn {
   fetchEthStakingValidators: (payload?: EthValidatorFilter) => Promise<void>;

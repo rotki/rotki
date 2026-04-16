@@ -2,10 +2,10 @@ import type { AssetBalanceWithPrice, BigNumber } from '@rotki/common';
 import type { DataTableColumn, DataTableSortData, TablePaginationData } from '@rotki/ui-library';
 import type { ComputedRef, MaybeRefOrGetter, Ref } from 'vue';
 import type { DashboardTableType } from '@/modules/settings/types/frontend-settings';
+import { useFrontendSettingsStore } from '@/modules/settings/use-frontend-settings-store';
+import { useGeneralSettingsStore } from '@/modules/settings/use-general-settings-store';
 import { TableColumn } from '@/modules/table/table-column';
 import { TableId, useRememberTableSorting } from '@/modules/table/use-remember-table-sorting';
-import { useFrontendSettingsStore } from '@/store/settings/frontend';
-import { useGeneralSettingsStore } from '@/store/settings/general';
 
 interface UseDashboardTableConfigReturn {
   pagination: Ref<{ itemsPerPage: number; page: number }>;

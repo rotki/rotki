@@ -3,8 +3,8 @@ import RotkiLogo from '@/components/common/RotkiLogo.vue';
 import GlobalSearch from '@/components/GlobalSearch.vue';
 import NavigationMenu from '@/components/NavigationMenu.vue';
 import SponsorshipView from '@/components/sponsorship/SponsorshipView.vue';
+import { useAreaVisibilityStore } from '@/modules/common/use-area-visibility-store';
 import { Routes } from '@/router/routes';
-import { useAreaVisibilityStore } from '@/store/session/visibility';
 
 const { isMini, showDrawer } = storeToRefs(useAreaVisibilityStore());
 const { isXlAndDown } = useBreakpoint();

@@ -5,7 +5,7 @@ import BigDialog from '@/components/dialogs/BigDialog.vue';
 import ManageCounterpartyMappingForm from '@/modules/asset-manager/counterparty-mapping/ManageCounterpartyMappingForm.vue';
 import { useCounterpartyMappingApi } from '@/modules/asset-manager/counterparty-mapping/use-counterparty-mapping-api';
 import { getErrorMessage } from '@/modules/common/logging/error-handling';
-import { useMessageStore } from '@/store/message';
+import { useMessageStore } from '@/modules/common/use-message-store';
 
 const modelValue = defineModel<CounterpartyMapping | undefined>({ required: true });
 

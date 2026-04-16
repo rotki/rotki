@@ -13,7 +13,7 @@ import { isValidatorAccount } from '@/modules/accounts/account-utils';
 import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
 import { toMessages } from '@/modules/common/validation/validation';
 import { OnlineHistoryEventsQueryType } from '@/modules/history/events/schemas';
-import { useBlockchainValidatorsStore } from '@/store/blockchain/validators';
+import { useBlockchainValidatorsStore } from '@/modules/staking/use-blockchain-validators-store';
 
 type FilterMode = 'addresses' | 'validator_indices';
 

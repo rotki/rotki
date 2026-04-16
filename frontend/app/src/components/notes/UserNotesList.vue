@@ -8,7 +8,7 @@ import { usePremium } from '@/composables/premium';
 import { usePaginationFilters } from '@/composables/use-pagination-filter';
 import { getCollectionData, setupEntryLimit } from '@/modules/common/data/collection-utils';
 import { NoteLocation, type UserNote, type UserNotesRequestPayload } from '@/modules/common/notes';
-import { useSessionAuthStore } from '@/store/session/auth';
+import { useSessionAuthStore } from '@/modules/session/use-session-auth-store';
 
 const open = defineModel<boolean>('open', { required: true });
 

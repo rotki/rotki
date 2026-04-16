@@ -1,7 +1,7 @@
 import type { ComputedRef } from 'vue';
 import { findAddressKnownPrefix } from '@/modules/common/display/truncate';
 import { generateRandomScrambleMultiplier } from '@/modules/session/session-utils';
-import { useFrontendSettingsStore } from '@/store/settings/frontend';
+import { useFrontendSettingsStore } from '@/modules/settings/use-frontend-settings-store';
 
 interface UseScrambleReturn {
   scrambleData: ComputedRef<boolean>;

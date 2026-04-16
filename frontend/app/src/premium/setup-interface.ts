@@ -12,10 +12,10 @@ import dayjs from 'dayjs';
 import { useGraph } from '@/composables/graphs';
 import { convertToTimestamp } from '@/modules/common/data/date';
 import { logger } from '@/modules/common/logging/logging';
+import { useFrontendSettingsStore } from '@/modules/settings/use-frontend-settings-store';
 import { useSettingsOperations } from '@/modules/settings/use-settings-operations';
 import { DARK_COLORS, LIGHT_COLORS } from '@/plugins/theme';
 import { assetsApi, balancesApi, statisticsApi, userSettings, utilsApi } from '@/premium/premium-apis';
-import { useFrontendSettingsStore } from '@/store/settings/frontend';
 
 /**
  * Creates the PremiumApi instance.

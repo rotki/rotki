@@ -8,9 +8,9 @@ import { useAssetManagementApi } from '@/composables/api/assets/management';
 import { type Filters, type Matcher, useCustomAssetFilter } from '@/composables/filters/custom-assets';
 import { usePaginationFilters } from '@/composables/use-pagination-filter';
 import { getErrorMessage } from '@/modules/common/logging/error-handling';
+import { useConfirmStore } from '@/modules/common/use-confirm-store';
+import { useMessageStore } from '@/modules/common/use-message-store';
 import { useCommonTableProps } from '@/modules/table/use-common-table-props';
-import { useConfirmStore } from '@/store/confirm';
-import { useMessageStore } from '@/store/message';
 
 const { identifier = null, mainPage = false } = defineProps<{
   identifier?: string | null;

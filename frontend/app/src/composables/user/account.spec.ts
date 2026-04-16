@@ -3,8 +3,8 @@ import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vite
 import { useAccountManagement, useAutoLogin } from '@/composables/user/account';
 import { Constraints } from '@/data/constraints';
 import { useLogin } from '@/modules/account/use-login';
-import { useSessionAuthStore } from '@/store/session/auth';
-import { useFrontendSettingsStore } from '@/store/settings/frontend';
+import { useSessionAuthStore } from '@/modules/session/use-session-auth-store';
+import { useFrontendSettingsStore } from '@/modules/settings/use-frontend-settings-store';
 
 vi.mock('@/modules/account/use-login', () => ({
   useLogin: vi.fn().mockReturnValue({

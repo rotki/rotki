@@ -47,7 +47,7 @@ vi.mock('@/composables/history/events/mapping', () => ({
   })),
 }));
 
-vi.mock('@/store/confirm', () => ({
+vi.mock('@/modules/common/use-confirm-store', () => ({
   useConfirmStore: vi.fn(() => ({
     show: vi.fn(),
   })),
@@ -66,7 +66,7 @@ vi.mock('@/modules/history/use-history-data-fetching', () => ({
   })),
 }));
 
-vi.mock('@/store/notifications', () => ({
+vi.mock('@/modules/notifications/use-notifications-store', () => ({
   useNotificationsStore: vi.fn(() => ({
     removeMatching: vi.fn(),
   })),

@@ -10,13 +10,13 @@ import TablePageLayout from '@/components/layout/TablePageLayout.vue';
 import ExchangeKeysFormDialog from '@/components/settings/api-keys/exchange/ExchangeKeysFormDialog.vue';
 import { useLocations } from '@/composables/locations';
 import { useExchanges } from '@/modules/balances/exchanges/use-exchanges';
+import { useConfirmStore } from '@/modules/common/use-confirm-store';
+import { useLocationStore } from '@/modules/common/use-location-store';
 import { useNotificationDispatcher } from '@/modules/notifications/use-notification-dispatcher';
+import { useGeneralSettingsStore } from '@/modules/settings/use-general-settings-store';
+import { useSessionSettingsStore } from '@/modules/settings/use-session-settings-store';
 import { useSettingsOperations } from '@/modules/settings/use-settings-operations';
 import { TableId, useRememberTableSorting } from '@/modules/table/use-remember-table-sorting';
-import { useConfirmStore } from '@/store/confirm';
-import { useLocationStore } from '@/store/locations';
-import { useGeneralSettingsStore } from '@/store/settings/general';
-import { useSessionSettingsStore } from '@/store/settings/session';
 
 const nonSyncingExchanges = ref<Exchange[]>([]);
 const exchange = ref<ExchangeFormData>();

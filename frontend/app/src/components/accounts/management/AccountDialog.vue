@@ -10,7 +10,7 @@ import { useAccountLoading } from '@/composables/accounts/loading';
 import { usePremiumHelper } from '@/composables/premium';
 import { useExternalApiKeys } from '@/composables/settings/api-keys/external';
 import { useEthStaking } from '@/modules/accounts/use-eth-staking';
-import { useGeneralSettingsStore } from '@/store/settings/general';
+import { useGeneralSettingsStore } from '@/modules/settings/use-general-settings-store';
 
 const model = defineModel<AccountManageState | undefined>({ required: true });
 

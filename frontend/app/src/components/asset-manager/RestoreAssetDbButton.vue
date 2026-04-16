@@ -6,11 +6,11 @@ import { useBackendManagement } from '@/composables/backend';
 import { useLogout } from '@/modules/account/use-logout';
 import { useBackendConnection } from '@/modules/app/use-backend-connection';
 import { DialogType } from '@/modules/common/dialogs';
+import { useConfirmStore } from '@/modules/common/use-confirm-store';
+import { useMainStore } from '@/modules/common/use-main-store';
 import { useNotificationDispatcher } from '@/modules/notifications/use-notification-dispatcher';
 import { TaskType } from '@/modules/tasks/task-type';
 import { useTaskStore } from '@/modules/tasks/use-task-store';
-import { useConfirmStore } from '@/store/confirm';
-import { useMainStore } from '@/store/main';
 
 const { dropdown = false } = defineProps<{
   dropdown?: boolean;

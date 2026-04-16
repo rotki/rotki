@@ -2,7 +2,7 @@ import { mount, type VueWrapper } from '@vue/test-utils';
 import { type Pinia, setActivePinia } from 'pinia';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import GetPremiumButton from '@/components/premium/GetPremiumButton.vue';
-import { usePremiumStore } from '@/store/session/premium';
+import { usePremiumStore } from '@/modules/premium/use-premium-store';
 
 describe('get-premium-button', () => {
   let wrapper: VueWrapper<InstanceType<typeof GetPremiumButton>>;

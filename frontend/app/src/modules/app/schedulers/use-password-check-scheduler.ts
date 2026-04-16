@@ -1,6 +1,6 @@
 import { startPromise } from '@shared/utils';
 import { usePasswordConfirmation } from '@/modules/account/use-password-confirmation';
-import { useSessionAuthStore } from '@/store/session/auth';
+import { useSessionAuthStore } from '@/modules/session/use-session-auth-store';
 import { useIntervalScheduler } from './use-interval-scheduler';
 
 const PASSWORD_CHECK_MS = 60 * 60 * 1_000;

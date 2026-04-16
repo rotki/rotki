@@ -2,7 +2,7 @@ import type { MaybeRefOrGetter } from 'vue';
 import type { AccountingRuleLinkedSettingMap } from '@/modules/settings/types/accounting';
 import { assert, toHumanReadable, transformCase } from '@rotki/common';
 import { useAccountingApi } from '@/composables/api/settings/accounting-api';
-import { useAccountingSettingsStore } from '@/store/settings/accounting';
+import { useAccountingSettingsStore } from '@/modules/settings/use-accounting-settings-store';
 
 export const useAccountingRuleMappings = createSharedComposable(() => {
   // eslint-disable-next-line @typescript-eslint/unbound-method

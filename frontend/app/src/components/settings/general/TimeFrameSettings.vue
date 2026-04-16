@@ -3,8 +3,8 @@ import { TimeFramePeriod, TimeFramePersist, type TimeFrameSetting } from '@rotki
 import PremiumLock from '@/components/premium/PremiumLock.vue';
 import { usePremium } from '@/composables/premium';
 import { isPeriodAllowed } from '@/modules/settings/settings-utils';
+import { useSessionSettingsStore } from '@/modules/settings/use-session-settings-store';
 import { useSettingsOperations } from '@/modules/settings/use-settings-operations';
-import { useSessionSettingsStore } from '@/store/settings/session';
 
 const { currentSessionTimeframe, message, value, visibleTimeframes } = defineProps<{
   message: { error: string; success: string };

@@ -8,11 +8,11 @@ import { awaitParallelExecution } from '@/modules/common/async/await-parallel-ex
 import { logger } from '@/modules/common/logging/logging';
 import { useMoneriumOAuth } from '@/modules/external-services/monerium/use-monerium-auth';
 import { OnlineHistoryEventsQueryType } from '@/modules/history/events/schemas';
+import { useEventsQueryStatusStore } from '@/modules/history/use-events-query-status-store';
 import { useNotifications } from '@/modules/notifications/use-notifications';
 import { PremiumFeature, useFeatureAccess } from '@/modules/premium/use-feature-access';
 import { TaskType } from '@/modules/tasks/task-type';
 import { isActionableFailure, useTaskHandler } from '@/modules/tasks/use-task-handler';
-import { useEventsQueryStatusStore } from '@/store/history/query-status/events-query-status';
 
 interface UseRefreshHandlersReturn {
   queryAllExchangeEvents: (exchanges: Exchange[]) => Promise<void>;

@@ -9,7 +9,7 @@ import { ApiValidationError, type ValidationErrors } from '@/modules/api/types/e
 import { useSolanaTokenMigrationApi } from '@/modules/asset-manager/solana-token-migration/solana-token-migration';
 import { useSolanaTokenMigrationStore } from '@/modules/asset-manager/solana-token-migration/solana-token-migration-store';
 import { getErrorMessage } from '@/modules/common/logging/error-handling';
-import { useMessageStore } from '@/store/message';
+import { useMessageStore } from '@/modules/common/use-message-store';
 import SolanaTokenMigrationForm from './SolanaTokenMigrationForm.vue';
 
 interface SolanaTokenMigrationData {

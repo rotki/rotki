@@ -14,10 +14,10 @@ import { LimitedParallelizationQueue } from '@/modules/common/async/limited-para
 import { logger } from '@/modules/common/logging/logging';
 import { OnlineHistoryEventsQueryType } from '@/modules/history/events/schemas';
 import { useDecodingStatusStore } from '@/modules/history/use-decoding-status-store';
+import { useEventsQueryStatusStore } from '@/modules/history/use-events-query-status-store';
+import { useHistoryRefreshStateStore } from '@/modules/history/use-history-refresh-state-store';
+import { useTxQueryStatusStore } from '@/modules/history/use-tx-query-status-store';
 import { sigilBus } from '@/modules/sigil/event-bus';
-import { useEventsQueryStatusStore } from '@/store/history/query-status/events-query-status';
-import { useTxQueryStatusStore } from '@/store/history/query-status/tx-query-status';
-import { useHistoryRefreshStateStore } from '@/store/history/refresh-state';
 
 interface NoveltyDetection {
   newAccounts: ChainAddress[];

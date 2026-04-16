@@ -26,8 +26,8 @@ import {
   isSolanaEventType,
   isWithdrawalEventType,
 } from '@/modules/history/event-utils';
-import { useHistoryStore } from '@/store/history';
-import { useFrontendSettingsStore } from '@/store/settings/frontend';
+import { useHistoryStore } from '@/modules/history/use-history-store';
+import { useFrontendSettingsStore } from '@/modules/settings/use-frontend-settings-store';
 
 enum HistoryEventFilterKeys {
   START = 'start',

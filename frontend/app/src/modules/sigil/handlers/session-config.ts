@@ -2,9 +2,9 @@ import type { SessionConfigPayload } from '@/modules/sigil/types';
 import { Theme } from '@rotki/common';
 import { useInterop } from '@/composables/electron-interop';
 import { usePremiumHelper } from '@/composables/premium';
-import { useMainStore } from '@/store/main';
-import { useFrontendSettingsStore } from '@/store/settings/frontend';
-import { useGeneralSettingsStore } from '@/store/settings/general';
+import { useMainStore } from '@/modules/common/use-main-store';
+import { useFrontendSettingsStore } from '@/modules/settings/use-frontend-settings-store';
+import { useGeneralSettingsStore } from '@/modules/settings/use-general-settings-store';
 
 export function useSessionConfigHandler(): () => SessionConfigPayload {
   const { currentTier, premium } = usePremiumHelper();

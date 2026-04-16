@@ -6,7 +6,7 @@ import { mount, type VueWrapper } from '@vue/test-utils';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import ValueDisplay from '@/modules/amount-display/components/ValueDisplay.vue';
 import { useCurrencies } from '@/modules/amount-display/currencies';
-import { useFrontendSettingsStore } from '@/store/settings/frontend';
+import { useFrontendSettingsStore } from '@/modules/settings/use-frontend-settings-store';
 
 describe('modules/amount-display/components/ValueDisplay', () => {
   let wrapper: VueWrapper<InstanceType<typeof ValueDisplay>>;

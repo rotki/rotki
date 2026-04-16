@@ -1,8 +1,8 @@
 import { libraryDefaults } from '@test/utils/provide-defaults';
 import { mount, type VueWrapper } from '@vue/test-utils';
 import { beforeEach, describe, expect, it } from 'vitest';
+import { usePremiumStore } from '@/modules/premium/use-premium-store';
 import AccountSettings from '@/pages/settings/account/index.vue';
-import { usePremiumStore } from '@/store/session/premium';
 
 describe('user-security-settings', () => {
   let wrapper: VueWrapper<InstanceType<typeof AccountSettings>>;

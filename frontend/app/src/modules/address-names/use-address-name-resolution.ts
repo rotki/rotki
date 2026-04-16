@@ -14,7 +14,7 @@ import { getErrorMessage } from '@/modules/common/logging/error-handling';
 import { logger } from '@/modules/common/logging/logging';
 import { useNotifications } from '@/modules/notifications/use-notifications';
 import { isBlockchain } from '@/modules/onchain/chains';
-import { useFrontendSettingsStore } from '@/store/settings/frontend';
+import { useFrontendSettingsStore } from '@/modules/settings/use-frontend-settings-store';
 
 interface UseAddressNameResolutionReturn {
   getAddressName: (address: string, blockchain?: string) => string | undefined;

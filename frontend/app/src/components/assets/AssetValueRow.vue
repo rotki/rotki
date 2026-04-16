@@ -9,10 +9,10 @@ import { useLatestPrices } from '@/composables/price-manager/latest';
 import { useSectionStatus } from '@/composables/status';
 import { AssetAmountDisplay, AssetValueDisplay, FiatDisplay } from '@/modules/amount-display/components';
 import { Section } from '@/modules/common/status';
+import { useConfirmStore } from '@/modules/common/use-confirm-store';
 import { usePriceRefresh } from '@/modules/prices/use-price-refresh';
 import { usePriceUtils } from '@/modules/prices/use-price-utils';
-import { useConfirmStore } from '@/store/confirm';
-import { useGeneralSettingsStore } from '@/store/settings/general';
+import { useGeneralSettingsStore } from '@/modules/settings/use-general-settings-store';
 
 const { identifier, isCollectionParent = false } = defineProps<{
   identifier: string;

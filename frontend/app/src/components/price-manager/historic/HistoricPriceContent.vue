@@ -10,9 +10,9 @@ import TablePageLayout from '@/components/layout/TablePageLayout.vue';
 import HistoricPriceFormDialog from '@/components/price-manager/historic/HistoricPriceFormDialog.vue';
 import { useHistoricPrices } from '@/composables/price-manager/historic';
 import { ValueDisplay } from '@/modules/amount-display/components';
+import { useConfirmStore } from '@/modules/common/use-confirm-store';
 import { useRefPropVModel } from '@/modules/common/validation/model';
 import { TableId, useRememberTableSorting } from '@/modules/table/use-remember-table-sorting';
-import { useConfirmStore } from '@/store/confirm';
 
 const { t } = useI18n({ useScope: 'global' });
 

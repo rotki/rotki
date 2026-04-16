@@ -8,8 +8,8 @@ import DateTimeRangePicker from '@/components/inputs/DateTimeRangePicker.vue';
 import ReportPeriodSelector from '@/components/profitloss/ReportPeriodSelector.vue';
 import { useRefPropVModel } from '@/modules/common/validation/model';
 import { toMessages } from '@/modules/common/validation/validation';
+import { useFrontendSettingsStore } from '@/modules/settings/use-frontend-settings-store';
 import { useSettingsOperations } from '@/modules/settings/use-settings-operations';
-import { useFrontendSettingsStore } from '@/store/settings/frontend';
 
 const modelValue = defineModel<{ start: number | undefined; end: number }>({ required: true });
 

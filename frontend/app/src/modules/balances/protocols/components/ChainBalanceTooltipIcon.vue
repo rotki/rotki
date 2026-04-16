@@ -3,7 +3,7 @@ import type { Balance } from '@rotki/common';
 import ChainIcon from '@/components/helper/display/icons/ChainIcon.vue';
 import { useSupportedChains } from '@/composables/info/chains';
 import { AssetAmountDisplay, FiatDisplay, ValueDisplay } from '@/modules/amount-display/components';
-import { useFrontendSettingsStore } from '@/store/settings/frontend';
+import { useFrontendSettingsStore } from '@/modules/settings/use-frontend-settings-store';
 
 const { chainId } = defineProps<{
   chainId: string;

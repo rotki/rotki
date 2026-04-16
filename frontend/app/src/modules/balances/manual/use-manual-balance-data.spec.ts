@@ -8,9 +8,9 @@ import { Currency, CURRENCY_USD } from '@/modules/amount-display/currencies';
 import { useManualBalanceData } from '@/modules/balances/manual/use-manual-balance-data';
 import { useManualBalances } from '@/modules/balances/manual/use-manual-balances';
 import { BalanceType } from '@/modules/balances/types/balances';
+import { useBalancePricesStore } from '@/modules/balances/use-balance-prices-store';
 import { useBalancesStore } from '@/modules/balances/use-balances-store';
-import { useBalancePricesStore } from '@/store/balances/prices';
-import { useGeneralSettingsStore } from '@/store/settings/general';
+import { useGeneralSettingsStore } from '@/modules/settings/use-general-settings-store';
 
 const runTaskMock = vi.fn();
 

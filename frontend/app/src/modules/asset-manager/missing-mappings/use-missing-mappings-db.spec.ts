@@ -1,8 +1,8 @@
 import type { EffectScope } from 'vue';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { useLoggedUserIdentifier } from '@/composables/user/use-logged-user-identifier';
+import { useMainStore } from '@/modules/common/use-main-store';
 import { useDatabase } from '@/modules/data/use-database';
-import { useMainStore } from '@/store/main';
 import {
   type AddMissingMapping,
   type MissingMappingsRequestPayload,

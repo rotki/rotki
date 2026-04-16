@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { Section, Status } from '@/modules/common/status';
-import { useStatusStore } from '@/store/status';
+import { useStatusStore } from '@/modules/common/use-status-store';
 import { waitUntilIdle } from './status';
 
 describe('waitUntilIdle', () => {

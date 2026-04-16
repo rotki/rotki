@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { HistoryRefreshEventData } from '@/modules/history/refresh/types';
+import { useConfirmStore } from '@/modules/common/use-confirm-store';
 import HistoryRefreshSelection from '@/modules/history/refresh/HistoryRefreshSelection.vue';
-import { useConfirmStore } from '@/store/confirm';
 
 defineProps<{
   processing: boolean;

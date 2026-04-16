@@ -5,8 +5,8 @@ import { createPinia, setActivePinia } from 'pinia';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { defaultGeneralSettings } from '@/data/factories';
 import { useCurrencies } from '@/modules/amount-display/currencies';
-import { useGeneralSettingsStore } from '@/store/settings/general';
-import { useStatisticsStore } from './index';
+import { useGeneralSettingsStore } from '@/modules/settings/use-general-settings-store';
+import { useStatisticsStore } from './use-statistics-store';
 
 // Store reference for accessing currency in mocks
 let generalSettingsStore: ReturnType<typeof useGeneralSettingsStore> | null = null;

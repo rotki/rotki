@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import SettingsOption from '@/components/settings/controls/SettingsOption.vue';
-import { useSessionSettingsStore } from '@/store/settings/session';
+import { useSessionSettingsStore } from '@/modules/settings/use-session-settings-store';
 
 const animationsEnabled = ref<boolean>(true);
 const { t } = useI18n({ useScope: 'global' });

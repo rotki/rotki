@@ -14,7 +14,7 @@ import {
   UNISWAP2_PRIO_LIST_ITEM,
   UNISWAP3_PRIO_LIST_ITEM,
 } from '@/modules/settings/types/prioritized-list-id';
-import { useGeneralSettingsStore } from '@/store/settings/general';
+import { useGeneralSettingsStore } from '@/modules/settings/use-general-settings-store';
 
 const currentOracles = ref<PrioritizedListId[]>([]);
 const historicOracles = ref<PrioritizedListId[]>([]);

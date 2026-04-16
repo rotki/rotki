@@ -7,7 +7,7 @@ import AmountInput from '@/components/inputs/AmountInput.vue';
 import { useFormStateWatcher } from '@/composables/form';
 import { useRefPropVModel } from '@/modules/common/validation/model';
 import { toMessages } from '@/modules/common/validation/validation';
-import { useGeneralSettingsStore } from '@/store/settings/general';
+import { useGeneralSettingsStore } from '@/modules/settings/use-general-settings-store';
 
 const stateUpdated = defineModel<boolean>('stateUpdated', { default: false, required: false });
 const model = defineModel<LocationDataSnapshotPayload>({ required: true });

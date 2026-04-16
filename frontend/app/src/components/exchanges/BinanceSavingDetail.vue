@@ -10,8 +10,8 @@ import { usePaginationFilters } from '@/composables/use-pagination-filter';
 import { AssetValueDisplay, FiatDisplay, ValueDisplay } from '@/modules/amount-display';
 import { useBinanceSavings } from '@/modules/balances/exchanges/use-binance-savings';
 import { Section } from '@/modules/common/status';
+import { useGeneralSettingsStore } from '@/modules/settings/use-general-settings-store';
 import { TableId, useRememberTableSorting } from '@/modules/table/use-remember-table-sorting';
-import { useGeneralSettingsStore } from '@/store/settings/general';
 
 const { exchange } = defineProps<{
   exchange: 'binance' | 'binanceus';

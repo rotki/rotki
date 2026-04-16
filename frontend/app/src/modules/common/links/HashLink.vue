@@ -11,7 +11,7 @@ import { type ExplorerUrls, explorerUrls, isChains } from '@/modules/assets/asse
 import { useBlockchainAccountData } from '@/modules/balances/blockchain/use-blockchain-account-data';
 import { truncateAddress } from '@/modules/common/display/truncate';
 import { isBlockchain } from '@/modules/onchain/chains';
-import { useFrontendSettingsStore } from '@/store/settings/frontend';
+import { useFrontendSettingsStore } from '@/modules/settings/use-frontend-settings-store';
 import AddressDeleteButton from './AddressDeleteButton.vue';
 import AddressEditButton from './AddressEditButton.vue';
 import CopyButton from './CopyButton.vue';

@@ -6,6 +6,7 @@ import { useSupportedChains } from '@/composables/info/chains';
 import { useSectionStatus } from '@/composables/status';
 import { getAccountAddress, getXpubId } from '@/modules/accounts/account-utils';
 import { createValidatorAction, type CSVRow, CSVSchema, csvToAccount, doesAccountExist, getChainType } from '@/modules/accounts/import-export/account-csv-schema';
+import { useAccountImportProgressStore } from '@/modules/accounts/use-account-import-progress-store';
 import { useBlockchainAccountManagement } from '@/modules/accounts/use-blockchain-account-management';
 import { getKeyType, guessPrefix, isPrefixed } from '@/modules/accounts/xpub';
 import { useBlockchainAccountData } from '@/modules/balances/blockchain/use-blockchain-account-data';
@@ -13,10 +14,9 @@ import { awaitParallelExecution } from '@/modules/common/async/await-parallel-ex
 import { logger } from '@/modules/common/logging/logging';
 import { Section } from '@/modules/common/status';
 import { useNotifications } from '@/modules/notifications/use-notifications';
+import { useSessionMetadataStore } from '@/modules/session/use-session-metadata-store';
 import { useTagOperations } from '@/modules/session/use-tag-operations';
-import { useBlockchainValidatorsStore } from '@/store/blockchain/validators';
-import { useSessionMetadataStore } from '@/store/session/metadata';
-import { useAccountImportProgressStore } from '@/store/use-account-import-progress-store';
+import { useBlockchainValidatorsStore } from '@/modules/staking/use-blockchain-validators-store';
 
 interface UseAccountImportReturn {
   importAccounts: (file: File) => Promise<void>;

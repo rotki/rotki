@@ -6,8 +6,8 @@ import SettingsItem from '@/components/settings/controls/SettingsItem.vue';
 import ExplorerInput from '@/components/settings/explorers/ExplorerInput.vue';
 import { useValueOrDefault } from '@/composables/utils/useValueOrDefault';
 import { type ExplorerUrls, explorerUrls } from '@/modules/assets/asset-urls';
+import { useFrontendSettingsStore } from '@/modules/settings/use-frontend-settings-store';
 import { useSettingsOperations } from '@/modules/settings/use-settings-operations';
-import { useFrontendSettingsStore } from '@/store/settings/frontend';
 
 const extraExplorers = ['ETC'] as const;
 

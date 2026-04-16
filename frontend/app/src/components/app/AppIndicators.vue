@@ -11,8 +11,8 @@ import AppUpdateIndicator from '@/components/status/AppUpdateIndicator.vue';
 import NotificationIndicator from '@/components/status/NotificationIndicator.vue';
 import SyncIndicator from '@/components/status/sync/SyncIndicator.vue';
 import UserDropdown from '@/components/UserDropdown.vue';
+import { useAreaVisibilityStore } from '@/modules/common/use-area-visibility-store';
 import ThemeControl from '@/modules/theme/ThemeControl.vue';
-import { useAreaVisibilityStore } from '@/store/session/visibility';
 
 const isDevelopment = checkIfDevelopment();
 const isDemoMode = import.meta.env.VITE_DEMO_MODE !== undefined;

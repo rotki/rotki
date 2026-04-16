@@ -2,7 +2,7 @@ import { Blockchain } from '@rotki/common';
 import { usePremium } from '@/composables/premium';
 import { useBlockchainBalances } from '@/modules/balances/use-blockchain-balances';
 import { useEthValidatorFetching } from '@/modules/staking/eth/composables/use-eth-validator-fetching';
-import { useBlockchainValidatorsStore } from '@/store/blockchain/validators';
+import { useBlockchainValidatorsStore } from '@/modules/staking/use-blockchain-validators-store';
 
 export function useEthValidatorWatchers(): void {
   const { isEth2Enabled } = useBlockchainValidatorsStore();

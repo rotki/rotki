@@ -1,5 +1,5 @@
 import type { ComputedRef, Ref } from 'vue';
-import type { TxQueryStatusData } from '@/store/history/query-status/tx-query-status';
+import type { TxQueryStatusData } from '@/modules/history/use-tx-query-status-store';
 import { TransactionsQueryStatus } from '@/modules/messaging/types';
 import { type AddressProgress, AddressStatus, AddressStep, type ChainProgress } from '../types';
 

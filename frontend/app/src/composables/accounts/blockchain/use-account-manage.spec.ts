@@ -28,7 +28,7 @@ vi.mock('@/modules/accounts/use-blockchain-accounts-store', () => ({
   })),
 }));
 
-vi.mock('@/store/message', () => ({
+vi.mock('@/modules/common/use-message-store', () => ({
   useMessageStore: vi.fn(() => ({
     setMessage: vi.fn(),
   })),

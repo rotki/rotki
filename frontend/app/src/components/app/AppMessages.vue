@@ -11,8 +11,8 @@ import { useAddressBookForm } from '@/composables/address-book/form';
 import { useReportIssue } from '@/composables/report-issue';
 import { useAutoLogin } from '@/composables/user/account';
 import { useBackendMessages } from '@/modules/app/use-backend-messages';
-import { useConfirmStore } from '@/store/confirm';
-import { useMessageStore } from '@/store/message';
+import { useConfirmStore } from '@/modules/common/use-confirm-store';
+import { useMessageStore } from '@/modules/common/use-message-store';
 
 defineSlots<{
   default: () => any;

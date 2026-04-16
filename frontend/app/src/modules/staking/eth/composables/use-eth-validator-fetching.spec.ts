@@ -46,7 +46,7 @@ vi.mock('@/modules/tasks/use-task-handler', () => ({
 const mockIsEth2Enabled = vi.fn((): boolean => false);
 const mockStakingValidatorsLimits = ref<{ limit: number; total: number }>();
 
-vi.mock('@/store/blockchain/validators', () => ({
+vi.mock('@/modules/staking/use-blockchain-validators-store', () => ({
   useBlockchainValidatorsStore: vi.fn(() => {
     const store = reactive({
       isEth2Enabled: mockIsEth2Enabled,

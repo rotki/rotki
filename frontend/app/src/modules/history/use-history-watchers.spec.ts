@@ -36,7 +36,7 @@ const mockAcknowledgeModifications = vi.fn();
 const mockEventsVersion = ref<number>(0);
 const mockHasUnprocessedModifications = ref<boolean>(false);
 
-vi.mock('@/store/history', () => ({
+vi.mock('@/modules/history/use-history-store', () => ({
   useHistoryStore: vi.fn(() => {
     const store = reactive({
       acknowledgeModifications: mockAcknowledgeModifications,
@@ -73,7 +73,7 @@ vi.mock('@/modules/notifications/use-notifications', () => ({
 
 const mockConnectedExchanges = ref<string[]>([]);
 
-vi.mock('@/store/settings/session', () => ({
+vi.mock('@/modules/settings/use-session-settings-store', () => ({
   useSessionSettingsStore: vi.fn((): {
     connectedExchanges: Ref<string[]>;
     $id: string;

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { externalLinks } from '@shared/external-links';
 import ExternalLink from '@/components/helper/ExternalLink.vue';
-import { useMainStore } from '@/store/main';
+import { useMainStore } from '@/modules/common/use-main-store';
 
 const { dockerRiskAccepted } = storeToRefs(useMainStore());
 const { t } = useI18n({ useScope: 'global' });

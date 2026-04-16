@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { useSidebarResize } from '@/composables/use-sidebar-resize';
+import { useAreaVisibilityStore } from '@/modules/common/use-area-visibility-store';
 import { PinnedNames } from '@/modules/session/types';
-import { useAreaVisibilityStore } from '@/store/session/visibility';
 
 const ReportActionableCard = defineAsyncComponent(() => import('@/components/profitloss/ReportActionableCard.vue'));
 const MatchAssetMovementsPinned = defineAsyncComponent(() => import('@/components/history/events/MatchAssetMovementsPinned.vue'));

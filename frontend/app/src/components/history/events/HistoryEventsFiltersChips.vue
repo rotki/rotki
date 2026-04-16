@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { DuplicateHandlingStatus } from '@/composables/history/events/types';
 import { useCustomizedEventDuplicates } from '@/composables/history/events/use-customized-event-duplicates';
-import { useConfirmStore } from '@/store/confirm';
+import { useConfirmStore } from '@/modules/common/use-confirm-store';
 
 const { groupIdentifiers, duplicateHandlingStatus } = defineProps<{
   groupIdentifiers?: string[];

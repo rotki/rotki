@@ -14,7 +14,7 @@ import { useAssetsStore } from '@/modules/assets/use-assets-store';
 import { getCollectionData, setupEntryLimit } from '@/modules/common/data/collection-utils';
 import { logger } from '@/modules/common/logging/logging';
 import { useHistoryEventsStatus } from '@/modules/history/events/use-history-events-status';
-import { useFrontendSettingsStore } from '@/store/settings/frontend';
+import { useFrontendSettingsStore } from '@/modules/settings/use-frontend-settings-store';
 import { useCompleteEvents } from './use-complete-events';
 
 interface UseHistoryEventsDataOptions {

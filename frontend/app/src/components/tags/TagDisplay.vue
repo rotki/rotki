@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import TagIcon from '@/components/tags/TagIcon.vue';
-import { useSessionMetadataStore } from '@/store/session/metadata';
+import { useSessionMetadataStore } from '@/modules/session/use-session-metadata-store';
 
 const { tags = [], small = false, wrapperClass = '' } = defineProps<{
   tags?: string[];

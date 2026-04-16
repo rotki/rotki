@@ -50,21 +50,21 @@ const mockLogged = ref<boolean>(false);
 const mockSubmitUsageAnalytics = ref<boolean>(false);
 const mockIsDevelop = ref<boolean>(false);
 
-vi.mock('@/store/session/auth', () => ({
+vi.mock('@/modules/session/use-session-auth-store', () => ({
   useSessionAuthStore: vi.fn(() => ({
     $id: 'session/auth',
     logged: mockLogged,
   })),
 }));
 
-vi.mock('@/store/settings/general', () => ({
+vi.mock('@/modules/settings/use-general-settings-store', () => ({
   useGeneralSettingsStore: vi.fn(() => ({
     $id: 'settings/general',
     submitUsageAnalytics: mockSubmitUsageAnalytics,
   })),
 }));
 
-vi.mock('@/store/main', () => ({
+vi.mock('@/modules/common/use-main-store', () => ({
   useMainStore: vi.fn(() => ({
     $id: 'main',
     isDevelop: mockIsDevelop,
@@ -73,7 +73,7 @@ vi.mock('@/store/main', () => ({
 
 const mockCapabilities = ref<Record<string, unknown> | undefined>({ currentTier: 'Free' });
 
-vi.mock('@/store/session/premium', () => ({
+vi.mock('@/modules/premium/use-premium-store', () => ({
   usePremiumStore: vi.fn(() => ({
     $id: 'session/premium',
     capabilities: mockCapabilities,

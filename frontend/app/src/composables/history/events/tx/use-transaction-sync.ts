@@ -8,10 +8,10 @@ import { awaitParallelExecution } from '@/modules/common/async/await-parallel-ex
 import { LimitedParallelizationQueue } from '@/modules/common/async/limited-parallelization-queue';
 import { logger } from '@/modules/common/logging/logging';
 import { type BlockchainAddress, type ChainAddress, TransactionChainType, TransactionChainTypeNeedDecoding, type TransactionRequestPayload } from '@/modules/history/events/event-payloads';
+import { useTxQueryStatusStore } from '@/modules/history/use-tx-query-status-store';
 import { useNotifications } from '@/modules/notifications/use-notifications';
 import { TaskType } from '@/modules/tasks/task-type';
 import { useTaskHandler } from '@/modules/tasks/use-task-handler';
-import { useTxQueryStatusStore } from '@/store/history/query-status/tx-query-status';
 
 interface TransactionSyncParams {
   accounts: ChainAddress[];

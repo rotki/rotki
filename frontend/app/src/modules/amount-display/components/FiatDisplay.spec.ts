@@ -7,9 +7,9 @@ import flushPromises from 'flush-promises';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import FiatDisplay from '@/modules/amount-display/components/FiatDisplay.vue';
 import { useCurrencies } from '@/modules/amount-display/currencies';
+import { useBalancePricesStore } from '@/modules/balances/use-balance-prices-store';
 import { useHistoricPriceCache } from '@/modules/prices/use-historic-price-cache';
-import { useBalancePricesStore } from '@/store/balances/prices';
-import { useFrontendSettingsStore } from '@/store/settings/frontend';
+import { useFrontendSettingsStore } from '@/modules/settings/use-frontend-settings-store';
 
 describe('modules/amount-display/components/FiatDisplay', () => {
   let wrapper: VueWrapper<InstanceType<typeof FiatDisplay>>;

@@ -18,12 +18,12 @@ import { api } from '@/modules/api/rotki-api';
 import { useMonitorService } from '@/modules/app/use-monitor-service';
 import { getErrorMessage } from '@/modules/common/logging/error-handling';
 import { logger } from '@/modules/common/logging/logging';
+import { useSessionAuthStore } from '@/modules/session/use-session-auth-store';
 import { migrateSettingsIfNeeded } from '@/modules/settings/types/frontend-settings-migrations';
 import { type SettingsUpdate, UserAccount, UserSettingsModel } from '@/modules/settings/types/user-settings';
 import { sigilBus } from '@/modules/sigil/event-bus';
 import { TaskType } from '@/modules/tasks/task-type';
 import { isActionableFailure, useTaskHandler } from '@/modules/tasks/use-task-handler';
-import { useSessionAuthStore } from '@/store/session/auth';
 
 interface UseLoginReturn {
   login: (credentials: LoginCredentials) => Promise<ActionStatus>;

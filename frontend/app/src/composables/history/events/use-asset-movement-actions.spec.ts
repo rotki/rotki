@@ -29,7 +29,7 @@ vi.mock('@/composables/history/events/use-unmatched-asset-movements', () => ({
   }),
 }));
 
-vi.mock('@/store/confirm', () => ({
+vi.mock('@/modules/common/use-confirm-store', () => ({
   useConfirmStore: (): object => ({
     show: spies.showConfirm,
   }),

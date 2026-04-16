@@ -24,8 +24,8 @@ import { balanceSum } from '@/modules/common/data/calculation';
 import { uniqueStrings } from '@/modules/common/data/data';
 import HashLink from '@/modules/common/links/HashLink.vue';
 import { Section } from '@/modules/common/status';
-import { useLiquityStore } from '@/store/defi/liquity';
-import { useHistoricCachePriceStore } from '@/store/prices/historic';
+import { useLiquityStore } from '@/modules/defi/use-liquity-store';
+import { useHistoricCachePriceStore } from '@/modules/prices/use-historic-cache-price-store';
 
 const emit = defineEmits<{
   refresh: [refresh: boolean];

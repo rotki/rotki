@@ -3,8 +3,8 @@ import ListItem from '@/components/common/ListItem.vue';
 import MenuTooltipButton from '@/components/helper/MenuTooltipButton.vue';
 import { useCurrencyUpdate } from '@/composables/use-currency-update';
 import { type Currency, useCurrencies } from '@/modules/amount-display/currencies';
+import { useGeneralSettingsStore } from '@/modules/settings/use-general-settings-store';
 import { useSettingsOperations } from '@/modules/settings/use-settings-operations';
-import { useGeneralSettingsStore } from '@/store/settings/general';
 
 const { update } = useSettingsOperations();
 const { currency } = storeToRefs(useGeneralSettingsStore());

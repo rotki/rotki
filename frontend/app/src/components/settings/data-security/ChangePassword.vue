@@ -5,7 +5,7 @@ import SettingsItem from '@/components/settings/controls/SettingsItem.vue';
 import { SettingsHighlightIds } from '@/composables/settings/types';
 import { useChangePassword } from '@/modules/account/use-change-password';
 import { toMessages } from '@/modules/common/validation/validation';
-import { usePremiumStore } from '@/store/session/premium';
+import { usePremiumStore } from '@/modules/premium/use-premium-store';
 
 const currentPassword = ref<string>('');
 const newPassword = ref<string>('');

@@ -4,11 +4,11 @@ import RowActions from '@/components/helper/RowActions.vue';
 import TablePageLayout from '@/components/layout/TablePageLayout.vue';
 import TagFormDialog from '@/components/tags/TagFormDialog.vue';
 import TagIcon from '@/components/tags/TagIcon.vue';
+import { useConfirmStore } from '@/modules/common/use-confirm-store';
+import { useSessionMetadataStore } from '@/modules/session/use-session-metadata-store';
 import { useTagOperations } from '@/modules/session/use-tag-operations';
 import { TableId, useRememberTableSorting } from '@/modules/table/use-remember-table-sorting';
 import { defaultTag, isReservedTag, type Tag } from '@/modules/tags/tags';
-import { useConfirmStore } from '@/store/confirm';
-import { useSessionMetadataStore } from '@/store/session/metadata';
 
 const { t } = useI18n({ useScope: 'global' });
 

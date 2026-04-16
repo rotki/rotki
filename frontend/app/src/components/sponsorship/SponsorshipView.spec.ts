@@ -2,7 +2,7 @@ import { mount, type VueWrapper } from '@vue/test-utils';
 import { createPinia, type Pinia, setActivePinia } from 'pinia';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import SponsorshipView from '@/components/sponsorship/SponsorshipView.vue';
-import { useMainStore } from '@/store/main';
+import { useMainStore } from '@/modules/common/use-main-store';
 
 vi.mock('@/composables/electron-interop', (): Record<string, unknown> => ({
   useInterop: (): { isPackaged: boolean; openUrl: ReturnType<typeof vi.fn> } => ({

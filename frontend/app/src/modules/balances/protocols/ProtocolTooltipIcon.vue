@@ -5,7 +5,7 @@ import ProtocolIcon from '@/modules/balances/protocols/ProtocolIcon.vue';
 import { useProtocolData } from '@/modules/balances/protocols/use-protocol-data';
 import { useProxyProtocol } from '@/modules/balances/protocols/use-proxy-protocol';
 import HashLink from '@/modules/common/links/HashLink.vue';
-import { useFrontendSettingsStore } from '@/store/settings/frontend';
+import { useFrontendSettingsStore } from '@/modules/settings/use-frontend-settings-store';
 
 const { protocolBalance, asset, loading } = defineProps<{
   protocolBalance: ProtocolBalance;

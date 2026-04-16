@@ -1,7 +1,7 @@
 import type { Exchange } from '@/modules/balances/types/exchanges';
 import type { ChainAddress } from '@/modules/history/events/event-payloads';
 import { beforeEach, describe, expect, it } from 'vitest';
-import { useHistoryRefreshStateStore } from './refresh-state';
+import { useHistoryRefreshStateStore } from './use-history-refresh-state-store';
 
 describe('useHistoryRefreshStateStore', () => {
   let store: ReturnType<typeof useHistoryRefreshStateStore>;

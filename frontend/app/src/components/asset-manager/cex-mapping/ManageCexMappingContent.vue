@@ -7,8 +7,8 @@ import TablePageLayout from '@/components/layout/TablePageLayout.vue';
 import { useAssetCexMappingApi } from '@/composables/api/assets/cex-mapping';
 import { usePaginationFilters } from '@/composables/use-pagination-filter';
 import { getErrorMessage } from '@/modules/common/logging/error-handling';
-import { useConfirmStore } from '@/store/confirm';
-import { useMessageStore } from '@/store/message';
+import { useConfirmStore } from '@/modules/common/use-confirm-store';
+import { useMessageStore } from '@/modules/common/use-message-store';
 
 const { t } = useI18n({ useScope: 'global' });
 const router = useRouter();

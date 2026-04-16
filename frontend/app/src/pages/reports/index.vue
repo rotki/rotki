@@ -6,11 +6,11 @@ import ReportGenerator from '@/components/profitloss/ReportGenerator.vue';
 import ReportsTable from '@/components/profitloss/ReportsTable.vue';
 import { useInterop } from '@/composables/electron-interop';
 import { NoteLocation } from '@/modules/common/notes';
+import { useReportsStore } from '@/modules/reports/use-reports-store';
 import { TaskType } from '@/modules/tasks/task-type';
 import { useTaskStore } from '@/modules/tasks/use-task-store';
 import { useReportsPageActions } from '@/pages/reports/use-reports-page-actions';
 import { Routes } from '@/router/routes';
-import { useReportsStore } from '@/store/reports';
 
 definePage({
   meta: {

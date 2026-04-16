@@ -12,8 +12,8 @@ import { useEthStaking } from '@/modules/accounts/use-eth-staking';
 import { useBalancesStore } from '@/modules/balances/use-balances-store';
 import { awaitParallelExecution } from '@/modules/common/async/await-parallel-execution';
 import { uniqueStrings } from '@/modules/common/data/data';
+import { useConfirmStore } from '@/modules/common/use-confirm-store';
 import { isBlockchain } from '@/modules/onchain/chains';
-import { useConfirmStore } from '@/store/confirm';
 
 export type ShowConfirmationParams = {
   type: 'account';

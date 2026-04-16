@@ -10,10 +10,10 @@ import { FiatDisplay } from '@/modules/amount-display/components';
 import { Section } from '@/modules/common/status';
 import NetWorthChart from '@/modules/dashboard/graph/NetWorthChart.vue';
 import { isPeriodAllowed } from '@/modules/settings/settings-utils';
+import { useFrontendSettingsStore } from '@/modules/settings/use-frontend-settings-store';
+import { useSessionSettingsStore } from '@/modules/settings/use-session-settings-store';
 import { useSettingsOperations } from '@/modules/settings/use-settings-operations';
-import { useFrontendSettingsStore } from '@/store/settings/frontend';
-import { useSessionSettingsStore } from '@/store/settings/session';
-import { useStatisticsStore } from '@/store/statistics';
+import { useStatisticsStore } from '@/modules/statistics/use-statistics-store';
 
 const { t } = useI18n({ useScope: 'global' });
 const sessionStore = useSessionSettingsStore();

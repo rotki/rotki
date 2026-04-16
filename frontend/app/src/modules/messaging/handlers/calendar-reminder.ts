@@ -7,7 +7,7 @@ import { useCalendarReminderApi } from '@/composables/history/calendar/reminder'
 import { useSupportedChains } from '@/composables/info/chains';
 import { useAddressNameResolution } from '@/modules/address-names/use-address-name-resolution';
 import { createNotificationHandler } from '@/modules/messaging/utils';
-import { useNotificationsStore } from '@/store/notifications';
+import { useNotificationsStore } from '@/modules/notifications/use-notifications-store';
 
 export function createCalendarReminderHandler(t: ReturnType<typeof useI18n>['t'], router: ReturnType<typeof useRouter>): NotificationHandler<CalendarEventWithReminder> {
   // Capture all functions and stores at handler creation time (in setup context)

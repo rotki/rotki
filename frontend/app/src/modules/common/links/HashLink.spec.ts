@@ -7,7 +7,7 @@ import { mount, type VueWrapper } from '@vue/test-utils';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { computed } from 'vue';
 import HashLink from '@/modules/common/links/HashLink.vue';
-import { useFrontendSettingsStore } from '@/store/settings/frontend';
+import { useFrontendSettingsStore } from '@/modules/settings/use-frontend-settings-store';
 
 vi.mock('@/composables/info/chains', (): Record<string, unknown> => ({
   useSupportedChains: vi.fn().mockReturnValue({

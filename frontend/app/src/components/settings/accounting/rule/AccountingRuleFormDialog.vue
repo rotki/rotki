@@ -7,7 +7,7 @@ import AccountingRuleForm from '@/components/settings/accounting/rule/Accounting
 import { useAccountingApi } from '@/composables/api/settings/accounting-api';
 import { ApiValidationError, type ValidationErrors } from '@/modules/api/types/errors';
 import { getErrorMessage } from '@/modules/common/logging/error-handling';
-import { useMessageStore } from '@/store/message';
+import { useMessageStore } from '@/modules/common/use-message-store';
 
 const modelValue = defineModel<AccountingRuleEntry | undefined>({ required: true });
 

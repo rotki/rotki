@@ -11,10 +11,10 @@ import LatestPriceFormDialog from '@/components/price-manager/latest/LatestPrice
 import { useLatestPrices } from '@/composables/price-manager/latest';
 import { FiatDisplay, ValueDisplay } from '@/modules/amount-display/components';
 import { isNft } from '@/modules/assets/nft-utils';
+import { useConfirmStore } from '@/modules/common/use-confirm-store';
+import { useGeneralSettingsStore } from '@/modules/settings/use-general-settings-store';
 import { useCommonTableProps } from '@/modules/table/use-common-table-props';
 import { TableId, useRememberTableSorting } from '@/modules/table/use-remember-table-sorting';
-import { useConfirmStore } from '@/store/confirm';
-import { useGeneralSettingsStore } from '@/store/settings/general';
 
 const { t } = useI18n({ useScope: 'global' });
 

@@ -6,7 +6,7 @@ import SettingsOption from '@/components/settings/controls/SettingsOption.vue';
 import { useValidation } from '@/composables/validation';
 import { Constraints } from '@/data/constraints';
 import { toMessages } from '@/modules/common/validation/validation';
-import { useFrontendSettingsStore } from '@/store/settings/frontend';
+import { useFrontendSettingsStore } from '@/modules/settings/use-frontend-settings-store';
 
 const evmQueryIndicatorDismissalThreshold = ref<string>('');
 

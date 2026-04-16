@@ -2,7 +2,7 @@
 import CostBasisMethodSettings from '@/components/settings/accounting/CostBasisMethodSettings.vue';
 import SettingsOption from '@/components/settings/controls/SettingsOption.vue';
 import { CostBasisMethod } from '@/modules/settings/types/user-settings';
-import { useAccountingSettingsStore } from '@/store/settings/accounting';
+import { useAccountingSettingsStore } from '@/modules/settings/use-accounting-settings-store';
 
 const costBasisMethod = ref<CostBasisMethod>(CostBasisMethod.FIFO);
 const { costBasisMethod: method } = storeToRefs(useAccountingSettingsStore());

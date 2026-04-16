@@ -3,9 +3,9 @@ import type { Task, TaskMeta } from '@/modules/tasks/types';
 import CollapsedPendingTasks from '@/components/status/notifications/CollapsedPendingTasks.vue';
 import NoTasksRunning from '@/components/status/notifications/NoTasksRunning.vue';
 import PendingTask from '@/components/status/notifications/PendingTask.vue';
+import { useConfirmStore } from '@/modules/common/use-confirm-store';
 import { useTaskHandler } from '@/modules/tasks/use-task-handler';
 import { useTaskStore } from '@/modules/tasks/use-task-store';
-import { useConfirmStore } from '@/store/confirm';
 
 const expanded = defineModel<boolean>({ required: true });
 

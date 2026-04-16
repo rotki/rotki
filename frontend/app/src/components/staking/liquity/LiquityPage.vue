@@ -6,12 +6,12 @@ import LiquityStakingPagePlaceholder from '@/components/staking/liquity/LiquityS
 import { usePremium } from '@/composables/premium';
 import { Module, useModuleEnabled } from '@/composables/session/modules';
 import { Section } from '@/modules/common/status';
+import { useStatusStore } from '@/modules/common/use-status-store';
 import { useLiquityDataFetching } from '@/modules/defi/liquity/use-liquity-data-fetching';
+import { useLiquityStore } from '@/modules/defi/use-liquity-store';
+import { useHistoricCachePriceStore } from '@/modules/prices/use-historic-cache-price-store';
 import { usePriceTaskManager } from '@/modules/prices/use-price-task-manager';
-import { useLiquityStore } from '@/store/defi/liquity';
-import { useHistoricCachePriceStore } from '@/store/prices/historic';
-import { useGeneralSettingsStore } from '@/store/settings/general';
-import { useStatusStore } from '@/store/status';
+import { useGeneralSettingsStore } from '@/modules/settings/use-general-settings-store';
 
 const modules = [Module.LIQUITY];
 const { enabled: moduleEnabled } = useModuleEnabled(modules[0]);

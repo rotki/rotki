@@ -12,9 +12,9 @@ import SettingResetButton from '@/components/settings/SettingResetButton.vue';
 import { useSettingsApi } from '@/composables/api/settings/settings-api';
 import { useBackendManagement } from '@/composables/backend';
 import { useInterop } from '@/composables/electron-interop';
+import { useConfirmStore } from '@/modules/common/use-confirm-store';
+import { useMainStore } from '@/modules/common/use-main-store';
 import { toMessages } from '@/modules/common/validation/validation';
-import { useConfirmStore } from '@/store/confirm';
-import { useMainStore } from '@/store/main';
 
 const emit = defineEmits<{
   dismiss: [];

@@ -4,7 +4,7 @@ import { updateGeneralSettings } from '@test/utils/general-settings';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useLatestPrices } from '@/composables/price-manager/latest';
 import { useCurrencies } from '@/modules/amount-display/currencies';
-import { useBalancePricesStore } from '@/store/balances/prices';
+import { useBalancePricesStore } from '@/modules/balances/use-balance-prices-store';
 
 vi.mock('@/composables/api/assets/prices', () => ({
   useAssetPricesApi: vi.fn().mockReturnValue({

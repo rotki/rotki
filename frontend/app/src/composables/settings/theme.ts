@@ -1,8 +1,8 @@
 import { ThemeColors } from '@rotki/common';
 import { startPromise } from '@shared/utils';
+import { useFrontendSettingsStore } from '@/modules/settings/use-frontend-settings-store';
 import { useSettingsOperations } from '@/modules/settings/use-settings-operations';
 import { CURRENT_DEFAULT_THEME_VERSION, DARK_COLORS, DEFAULT_THEME_HISTORIES, LIGHT_COLORS } from '@/plugins/theme';
-import { useFrontendSettingsStore } from '@/store/settings/frontend';
 
 interface UseThemeMigrationReturn { checkDefaultThemeVersion: () => void }
 

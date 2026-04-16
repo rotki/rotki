@@ -17,7 +17,7 @@ import { bigNumberifyFromRef } from '@/modules/common/data/bignumbers';
 import AssetMovementFeeEntry from '@/modules/history/management/forms/common/AssetMovementFeeEntry.vue';
 import { toMessages, useEventFormBase } from '@/modules/history/management/forms/composables/use-event-form-base';
 import HistoryEventAssetPriceForm from '@/modules/history/management/forms/HistoryEventAssetPriceForm.vue';
-import { useSessionSettingsStore } from '@/store/settings/session';
+import { useSessionSettingsStore } from '@/modules/settings/use-session-settings-store';
 
 interface AssetMovementEventFormProps {
   data: GroupEventData<AssetMovementEvent>;

@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import { useAccountImportProgressStore } from '@/store/use-account-import-progress-store';
+import { useAccountImportProgressStore } from '@/modules/accounts/use-account-import-progress-store';
 
 const { progress, progressPercentage } = storeToRefs(useAccountImportProgressStore());
 const { t } = useI18n({ useScope: 'global' });

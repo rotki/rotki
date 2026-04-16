@@ -1,7 +1,7 @@
 import { backoff } from '@shared/utils';
 import { useSessionApi } from '@/composables/api/session';
 import { getErrorMessage, useNotifications } from '@/modules/notifications/use-notifications';
-import { useSessionMetadataStore } from '@/store/session/metadata';
+import { useSessionMetadataStore } from '@/modules/session/use-session-metadata-store';
 
 interface UsePeriodicDataFetcherReturn {
   check: () => Promise<void>;

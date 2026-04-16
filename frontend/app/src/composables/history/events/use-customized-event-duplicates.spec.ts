@@ -32,7 +32,7 @@ vi.mock('@/composables/api/history/events', () => ({
   }),
 }));
 
-vi.mock('@/store/confirm', () => ({
+vi.mock('@/modules/common/use-confirm-store', () => ({
   useConfirmStore: (): object => ({
     show: spies.showConfirm,
   }),

@@ -10,9 +10,9 @@ import { afterEach, assertType, beforeAll, beforeEach, describe, expect, expectT
 import { type Filters, type Matcher, useHistoryEventFilter } from '@/composables/filters/events';
 import { useHistoryEvents } from '@/composables/history/events';
 import { usePaginationFilters } from '@/composables/use-pagination-filter';
+import { useMainStore } from '@/modules/common/use-main-store';
 import { FilterBehaviour } from '@/modules/table/filtering';
 import { type LocationQuery, RouterAccountsSchema } from '@/modules/table/route';
-import { useMainStore } from '@/store/main';
 
 vi.mock('vue', async (): Promise<Record<string, unknown>> => {
   const mod = await vi.importActual<typeof Vue>('vue');

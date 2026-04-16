@@ -8,14 +8,14 @@ import TablePageLayout from '@/components/layout/TablePageLayout.vue';
 import AutomaticSyncSetting from '@/components/status/sync/AutomaticSyncSetting.vue';
 import { useInterop } from '@/composables/electron-interop';
 import { usePremiumHelper } from '@/composables/premium';
+import { useConfirmStore } from '@/modules/common/use-confirm-store';
+import { useMessageStore } from '@/modules/common/use-message-store';
 import { toMessages } from '@/modules/common/validation/validation';
 import PremiumDeviceList from '@/modules/premium/devices/components/PremiumDeviceList.vue';
 import { PremiumFeature, useFeatureAccess } from '@/modules/premium/use-feature-access';
 import { usePremiumOperations } from '@/modules/premium/use-premium-operations';
-import { useConfirmStore } from '@/store/confirm';
-import { useMessageStore } from '@/store/message';
-import { useSessionAuthStore } from '@/store/session/auth';
-import { usePremiumStore } from '@/store/session/premium';
+import { usePremiumStore } from '@/modules/premium/use-premium-store';
+import { useSessionAuthStore } from '@/modules/session/use-session-auth-store';
 
 defineOptions({
   name: 'PremiumApiKeys',

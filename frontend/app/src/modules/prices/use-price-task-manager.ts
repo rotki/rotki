@@ -5,6 +5,7 @@ import type { TaskMeta } from '@/modules/tasks/types';
 import { type BigNumber, One } from '@rotki/common';
 import { usePriceApi } from '@/composables/api/balances/price';
 import { useStatusUpdater } from '@/composables/status';
+import { useBalancePricesStore } from '@/modules/balances/use-balance-prices-store';
 import { chunkArray } from '@/modules/common/data/data';
 import { convertFromTimestamp } from '@/modules/common/data/date';
 import { logger } from '@/modules/common/logging/logging';
@@ -12,11 +13,10 @@ import { Section, Status } from '@/modules/common/status';
 import { getErrorMessage, useNotifications } from '@/modules/notifications/use-notifications';
 import { AssetPriceResponse, type HistoricPricePayload, HistoricPrices, type OracleCachePayload } from '@/modules/prices/price-types';
 import { ExchangeRates } from '@/modules/settings/types/user-settings';
+import { useGeneralSettingsStore } from '@/modules/settings/use-general-settings-store';
 import { TaskType } from '@/modules/tasks/task-type';
 import { isActionableFailure, useTaskHandler } from '@/modules/tasks/use-task-handler';
 import { useTaskStore } from '@/modules/tasks/use-task-store';
-import { useBalancePricesStore } from '@/store/balances/prices';
-import { useGeneralSettingsStore } from '@/store/settings/general';
 
 interface UsePriceTaskManagerReturn {
   createOracleCache: (payload: OracleCachePayload) => Promise<ActionStatus>;

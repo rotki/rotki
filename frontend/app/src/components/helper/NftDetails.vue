@@ -7,9 +7,9 @@ import { useAssetInfoCache } from '@/modules/assets/use-asset-info-cache';
 import { uniqueStrings } from '@/modules/common/data/data';
 import { getDomain } from '@/modules/common/helpers/url';
 import HashLink from '@/modules/common/links/HashLink.vue';
+import { useConfirmStore } from '@/modules/common/use-confirm-store';
+import { useFrontendSettingsStore } from '@/modules/settings/use-frontend-settings-store';
 import { useSettingsOperations } from '@/modules/settings/use-settings-operations';
-import { useConfirmStore } from '@/store/confirm';
-import { useFrontendSettingsStore } from '@/store/settings/frontend';
 
 const { identifier, size = '50px', styled } = defineProps<{
   identifier: string;

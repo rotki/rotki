@@ -1,7 +1,7 @@
 import { startPromise } from '@shared/utils';
 import { useBalanceFetching } from '@/modules/balances/use-balance-fetching';
-import { useSessionAuthStore } from '@/store/session/auth';
-import { useFrontendSettingsStore } from '@/store/settings/frontend';
+import { useSessionAuthStore } from '@/modules/session/use-session-auth-store';
+import { useFrontendSettingsStore } from '@/modules/settings/use-frontend-settings-store';
 import { useIntervalScheduler } from './use-interval-scheduler';
 
 const MINUTES_TO_MS = 60 * 1_000;

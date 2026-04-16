@@ -5,9 +5,9 @@ import { omit } from 'es-toolkit';
 import { isEmpty } from 'es-toolkit/compat';
 import { useBlockchainAccountsApi } from '@/composables/api/blockchain/accounts';
 import { nonEmptyProperties } from '@/modules/common/data/data';
+import { useBlockchainValidatorsStore } from '@/modules/staking/use-blockchain-validators-store';
 import { TaskType } from '@/modules/tasks/task-type';
 import { useTaskHandler } from '@/modules/tasks/use-task-handler';
-import { useBlockchainValidatorsStore } from '@/store/blockchain/validators';
 
 interface UseEthValidatorManagementReturn {
   fetchValidatorsWithFilter: () => Promise<void>;

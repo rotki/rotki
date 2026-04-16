@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import OnboardingSettings from '@/components/settings/OnboardingSettings.vue';
-import { useMainStore } from '@/store/main';
+import { useMainStore } from '@/modules/common/use-main-store';
 
 const { t } = useI18n({ useScope: 'global' });
 const visible = ref<boolean>(false);

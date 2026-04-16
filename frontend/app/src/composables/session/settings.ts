@@ -3,15 +3,15 @@ import type { UserSettingsModel } from '@/modules/settings/types/user-settings';
 import { BigNumber, TimeFramePersist } from '@rotki/common';
 import { useThemeMigration } from '@/composables/settings/theme';
 import { getBnFormat } from '@/data/amount-formatter';
+import { usePremiumStore } from '@/modules/premium/use-premium-store';
 import { usePremiumWatchers } from '@/modules/premium/use-premium-watchers';
 import { PrivacyMode } from '@/modules/session/types';
 import { useSettingsSuggestions } from '@/modules/settings/suggestions/use-settings-suggestions';
+import { useAccountingSettingsStore } from '@/modules/settings/use-accounting-settings-store';
+import { useFrontendSettingsStore } from '@/modules/settings/use-frontend-settings-store';
+import { useGeneralSettingsStore } from '@/modules/settings/use-general-settings-store';
+import { useSessionSettingsStore } from '@/modules/settings/use-session-settings-store';
 import { useSettingsOperations } from '@/modules/settings/use-settings-operations';
-import { usePremiumStore } from '@/store/session/premium';
-import { useAccountingSettingsStore } from '@/store/settings/accounting';
-import { useFrontendSettingsStore } from '@/store/settings/frontend';
-import { useGeneralSettingsStore } from '@/store/settings/general';
-import { useSessionSettingsStore } from '@/store/settings/session';
 
 interface UseSessionSettingsReturn {
   initialize: (model: UserSettingsModel, exchanges: Exchange[]) => Promise<void>;

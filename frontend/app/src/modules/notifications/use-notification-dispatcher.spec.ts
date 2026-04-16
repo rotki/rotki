@@ -1,6 +1,6 @@
 import { NotificationCategory, NotificationGroup, type NotificationPayload, Priority, Severity } from '@rotki/common';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { useNotificationsStore } from '@/store/notifications';
+import { useNotificationsStore } from '@/modules/notifications/use-notifications-store';
 import { useNotificationDispatcher } from './use-notification-dispatcher';
 
 /** Matches NOTIFICATION_COOLDOWN_MS in use-notification-cooldown.ts */

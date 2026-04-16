@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import SettingsItem from '@/components/settings/controls/SettingsItem.vue';
 import SettingsOption from '@/components/settings/controls/SettingsOption.vue';
-import { useFrontendSettingsStore } from '@/store/settings/frontend';
+import { useFrontendSettingsStore } from '@/modules/settings/use-frontend-settings-store';
 
 const { persistPrivacySettings } = storeToRefs(useFrontendSettingsStore());
 

@@ -1,7 +1,7 @@
 import type { BigNumber } from '@rotki/common';
 import type { ComputedRef, MaybeRefOrGetter } from 'vue';
+import { useBalancePricesStore } from '@/modules/balances/use-balance-prices-store';
 import { PriceOracle } from '@/modules/settings/types/price-oracle';
-import { useBalancePricesStore } from '@/store/balances/prices';
 
 interface UsePriceUtilsReturn {
   useAssetPrice: (asset: MaybeRefOrGetter<string>) => ComputedRef<BigNumber | undefined>;

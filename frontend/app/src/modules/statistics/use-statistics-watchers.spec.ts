@@ -13,7 +13,7 @@ vi.mock('@/composables/premium', () => ({
   usePremium: vi.fn(() => mockPremium),
 }));
 
-vi.mock('@/store/session/auth', () => ({
+vi.mock('@/modules/session/use-session-auth-store', () => ({
   useSessionAuthStore: vi.fn(() => ({
     logged: mockLogged,
   })),

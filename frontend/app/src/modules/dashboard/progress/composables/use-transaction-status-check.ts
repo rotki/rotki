@@ -3,8 +3,8 @@ import { get } from '@vueuse/shared';
 import { useRefWithDebounce } from '@/composables/ref';
 import { useHistoryQueryIndicatorSettings } from '@/modules/dashboard/progress/composables/use-history-query-indicator-settings';
 import { useHistoryEventsStatus } from '@/modules/history/events/use-history-events-status';
+import { useHistoryStore } from '@/modules/history/use-history-store';
 import { Routes } from '@/router/routes';
-import { useHistoryStore } from '@/store/history';
 
 interface UseTransactionStatusCheckReturn {
   /**

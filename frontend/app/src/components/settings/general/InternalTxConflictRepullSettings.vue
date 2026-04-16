@@ -2,7 +2,7 @@
 import SettingsOption from '@/components/settings/controls/SettingsOption.vue';
 import { Defaults } from '@/data/defaults';
 import SettingResetConfirmButton from '@/modules/settings/SettingResetConfirmButton.vue';
-import { useGeneralSettingsStore } from '@/store/settings/general';
+import { useGeneralSettingsStore } from '@/modules/settings/use-general-settings-store';
 
 const { compact = false } = defineProps<{
   compact?: boolean;

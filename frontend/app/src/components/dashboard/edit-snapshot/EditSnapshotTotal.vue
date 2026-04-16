@@ -10,7 +10,7 @@ import { isNft } from '@/modules/assets/nft-utils';
 import { bigNumberSum } from '@/modules/common/data/calculation';
 import { toMessages } from '@/modules/common/validation/validation';
 import { useHistoricPriceCache } from '@/modules/prices/use-historic-price-cache';
-import { useGeneralSettingsStore } from '@/store/settings/general';
+import { useGeneralSettingsStore } from '@/modules/settings/use-general-settings-store';
 
 const modelValue = defineModel<LocationDataSnapshot[]>({ required: true });
 

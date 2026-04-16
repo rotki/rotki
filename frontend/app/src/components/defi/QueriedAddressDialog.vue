@@ -11,7 +11,7 @@ import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-ac
 import { useAccountAddresses } from '@/modules/balances/blockchain/use-account-addresses';
 import { type Module, SUPPORTED_MODULES } from '@/modules/common/modules';
 import { useQueriedAddressOperations } from '@/modules/session/use-queried-address-operations';
-import { useSessionMetadataStore } from '@/store/session/metadata';
+import { useSessionMetadataStore } from '@/modules/session/use-session-metadata-store';
 
 const { module } = defineProps<{ module: Module }>();
 

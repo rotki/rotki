@@ -2,7 +2,7 @@ import type { ActionStatus } from '@/modules/common/action';
 import type { Tag, Tags } from '@/modules/tags/tags';
 import { createPinia, setActivePinia } from 'pinia';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { useSessionMetadataStore } from '@/store/session/metadata';
+import { useSessionMetadataStore } from '@/modules/session/use-session-metadata-store';
 import '@test/i18n';
 
 const mockQueryTags = vi.fn();

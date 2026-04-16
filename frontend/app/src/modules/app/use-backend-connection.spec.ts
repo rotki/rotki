@@ -1,6 +1,6 @@
 import { createPinia, setActivePinia } from 'pinia';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { useMainStore } from '@/store/main';
+import { useMainStore } from '@/modules/common/use-main-store';
 import '@test/i18n';
 
 const mockInfo = vi.fn();

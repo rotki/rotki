@@ -7,7 +7,7 @@ import BigDialog from '@/components/dialogs/BigDialog.vue';
 import { useAddressBookOperations } from '@/modules/address-names/use-address-book-operations';
 import { ApiValidationError, type ValidationErrors } from '@/modules/api/types/errors';
 import { getErrorMessage } from '@/modules/common/logging/error-handling';
-import { useMessageStore } from '@/store/message';
+import { useMessageStore } from '@/modules/common/use-message-store';
 
 const open = defineModel<boolean>('open', { required: true });
 

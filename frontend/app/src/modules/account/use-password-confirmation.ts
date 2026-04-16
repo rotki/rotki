@@ -2,9 +2,9 @@ import type { Ref } from 'vue';
 import dayjs from 'dayjs';
 import { useInterop } from '@/composables/electron-interop';
 import { useRememberSettings } from '@/composables/user/use-remember-settings';
+import { useSessionAuthStore } from '@/modules/session/use-session-auth-store';
+import { useFrontendSettingsStore } from '@/modules/settings/use-frontend-settings-store';
 import { useSettingsOperations } from '@/modules/settings/use-settings-operations';
-import { useSessionAuthStore } from '@/store/session/auth';
-import { useFrontendSettingsStore } from '@/store/settings/frontend';
 
 interface UsePasswordConfirmationReturn {
   checkIfPasswordConfirmationNeeded: (usernameToCheck: string) => Promise<void>;

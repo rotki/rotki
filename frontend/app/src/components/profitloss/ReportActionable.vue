@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { Report } from '@/modules/reports/report-types';
 import ReportActionableCard from '@/components/profitloss/ReportActionableCard.vue';
-import { useReportsStore } from '@/store/reports';
+import { useReportsStore } from '@/modules/reports/use-reports-store';
 
 const {
   initialOpen = false,

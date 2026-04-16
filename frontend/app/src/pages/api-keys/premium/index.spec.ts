@@ -5,8 +5,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { usePremiumCredentialsApi } from '@/composables/api/session/premium-credentials';
 import { useInterop } from '@/composables/electron-interop';
 import { usePremium } from '@/composables/premium';
+import { useConfirmStore } from '@/modules/common/use-confirm-store';
 import PremiumSettings from '@/pages/api-keys/premium/index.vue';
-import { useConfirmStore } from '@/store/confirm';
 
 vi.mock('@/composables/electron-interop', (): Record<string, unknown> => {
   const mockInterop = {

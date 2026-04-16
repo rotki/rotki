@@ -8,7 +8,7 @@ import { FiatDisplay, ValueDisplay } from '@/modules/amount-display';
 import { sortAssetBalances } from '@/modules/common/display/balances';
 import HistoricalAssetRowDetails from '@/modules/history/balances/HistoricalAssetRowDetails.vue';
 import { useHistoricPriceCache } from '@/modules/prices/use-historic-price-cache';
-import { useGeneralSettingsStore } from '@/store/settings/general';
+import { useGeneralSettingsStore } from '@/modules/settings/use-general-settings-store';
 
 const { balances, loading, timestamp } = defineProps<{
   balances: AssetBalanceWithPrice[];

@@ -3,8 +3,8 @@ import type { Nullable } from '@rotki/common';
 import type { UnmatchedAssetMovement } from '@/composables/history/events/use-unmatched-asset-movements';
 import MatchAssetMovementsContent from '@/components/history/events/MatchAssetMovementsContent.vue';
 import CardTitle from '@/components/typography/CardTitle.vue';
+import { useAreaVisibilityStore } from '@/modules/common/use-area-visibility-store';
 import { type Pinned, PinnedNames } from '@/modules/session/types';
-import { useAreaVisibilityStore } from '@/store/session/visibility';
 
 const modelValue = defineModel<boolean>({ default: false });
 

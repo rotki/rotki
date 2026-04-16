@@ -45,13 +45,13 @@ vi.mock('@/composables/electron-interop', () => ({
   })),
 }));
 
-vi.mock('@/store/message', () => ({
+vi.mock('@/modules/common/use-message-store', () => ({
   useMessageStore: vi.fn(() => ({
     setMessage: mockSetMessage,
   })),
 }));
 
-vi.mock('@/store/session/auth', () => ({
+vi.mock('@/modules/session/use-session-auth-store', () => ({
   useSessionAuthStore: vi.fn(() => ({
     logged: mockLogged,
     username: mockUsername,

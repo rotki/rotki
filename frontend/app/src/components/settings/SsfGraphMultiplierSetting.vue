@@ -4,7 +4,7 @@ import { helpers, minValue } from '@vuelidate/validators';
 import SettingsOption from '@/components/settings/controls/SettingsOption.vue';
 import { useValidation } from '@/composables/validation';
 import { toMessages } from '@/modules/common/validation/validation';
-import { useGeneralSettingsStore } from '@/store/settings/general';
+import { useGeneralSettingsStore } from '@/modules/settings/use-general-settings-store';
 
 const emit = defineEmits<{
   updated: [];

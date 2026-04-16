@@ -2,8 +2,8 @@
 import type { EIP1193Provider } from '@/types';
 import ChainIcon from '@/components/helper/display/icons/ChainIcon.vue';
 import HashLink from '@/modules/common/links/HashLink.vue';
+import { useMainStore } from '@/modules/common/use-main-store';
 import { useWalletHelper } from '@/modules/onchain/use-wallet-helper';
-import { useMainStore } from '@/store/main';
 import { useUnifiedProviders } from '../wallet-providers/use-unified-providers';
 import ProviderIcon from './ProviderIcon.vue';
 import StatusDot from './StatusDot.vue';

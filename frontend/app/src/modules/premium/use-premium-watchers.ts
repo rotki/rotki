@@ -1,7 +1,7 @@
 import { usePremiumCredentialsApi } from '@/composables/api/session/premium-credentials';
 import { logger } from '@/modules/common/logging/logging';
-import { useSessionAuthStore } from '@/store/session/auth';
-import { usePremiumStore } from '@/store/session/premium';
+import { usePremiumStore } from '@/modules/premium/use-premium-store';
+import { useSessionAuthStore } from '@/modules/session/use-session-auth-store';
 
 interface UsePremiumWatchersReturn {
   fetchCapabilities: () => Promise<void>;

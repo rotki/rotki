@@ -1,6 +1,6 @@
 import type { ComputedRef, Ref } from 'vue';
 import { PINNED_DEFAULT_WIDTH, PINNED_MAX_VIEWPORT_RATIO, PINNED_MAX_WIDTH } from '@/composables/use-sidebar-resize-constants';
-import { useAreaVisibilityStore } from '@/store/session/visibility';
+import { useAreaVisibilityStore } from '@/modules/common/use-area-visibility-store';
 
 export function useSidebarResize(): {
   dragging: Ref<boolean>;

@@ -25,7 +25,7 @@ vi.mock('@/composables/premium', () => ({
 
 const mockIsEth2Enabled = vi.fn((): boolean => false);
 
-vi.mock('@/store/blockchain/validators', () => ({
+vi.mock('@/modules/staking/use-blockchain-validators-store', () => ({
   useBlockchainValidatorsStore: vi.fn(() => ({
     isEth2Enabled: mockIsEth2Enabled,
   })),

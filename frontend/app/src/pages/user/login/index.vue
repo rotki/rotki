@@ -15,8 +15,8 @@ import { useDynamicMessages } from '@/composables/dynamic-messages';
 import { useAppNavigation } from '@/composables/navigation';
 import { useUpdateMessage } from '@/composables/update-message';
 import { useAccountManagement } from '@/composables/user/account';
+import { useSessionAuthStore } from '@/modules/session/use-session-auth-store';
 import { useLoginInitialChecks } from '@/pages/user/login/use-login-initial-checks';
-import { useSessionAuthStore } from '@/store/session/auth';
 
 definePage({
   meta: {

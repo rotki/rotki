@@ -7,9 +7,9 @@ import { getAccountAddress } from '@/modules/accounts/account-utils';
 import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
 import { useAddressNameResolution } from '@/modules/address-names/use-address-name-resolution';
 import { useAssetBalancesBreakdown } from '@/modules/balances/use-asset-balances-breakdown';
+import { useStatusStore } from '@/modules/common/use-status-store';
 import { isBlockchain } from '@/modules/onchain/chains';
-import { useGeneralSettingsStore } from '@/store/settings/general';
-import { useStatusStore } from '@/store/status';
+import { useGeneralSettingsStore } from '@/modules/settings/use-general-settings-store';
 
 export interface AssetLocation extends AssetBreakdown {
   readonly account?: BlockchainAccount;

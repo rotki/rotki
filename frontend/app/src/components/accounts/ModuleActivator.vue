@@ -5,8 +5,8 @@ import AppImage from '@/components/common/AppImage.vue';
 import { useAccountLoading } from '@/composables/accounts/loading';
 import { type Module, SUPPORTED_MODULES } from '@/modules/common/modules';
 import { useQueriedAddressOperations } from '@/modules/session/use-queried-address-operations';
-import { useSessionMetadataStore } from '@/store/session/metadata';
-import { useGeneralSettingsStore } from '@/store/settings/general';
+import { useSessionMetadataStore } from '@/modules/session/use-session-metadata-store';
+import { useGeneralSettingsStore } from '@/modules/settings/use-general-settings-store';
 
 const emit = defineEmits<{
   'update:selection': [modules: Module[]];

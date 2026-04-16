@@ -3,7 +3,7 @@ import { type ComponentMountingOptions, mount, type VueWrapper } from '@vue/test
 import { type Pinia, setActivePinia } from 'pinia';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import AmountInput from '@/components/inputs/AmountInput.vue';
-import { useFrontendSettingsStore } from '@/store/settings/frontend';
+import { useFrontendSettingsStore } from '@/modules/settings/use-frontend-settings-store';
 
 vi.mock('@/composables/api/settings/settings-api', (): Record<string, unknown> => ({
   useSettingsApi: vi.fn().mockReturnValue({

@@ -7,8 +7,8 @@ import { useBackupApi } from '@/composables/api/backup';
 import { getFilepath } from '@/modules/common/file/file';
 import { getErrorMessage } from '@/modules/common/logging/error-handling';
 import { logger } from '@/modules/common/logging/logging';
+import { useConfirmStore } from '@/modules/common/use-confirm-store';
 import { useNotificationDispatcher } from '@/modules/notifications/use-notification-dispatcher';
-import { useConfirmStore } from '@/store/confirm';
 
 const { t } = useI18n({ useScope: 'global' });
 

@@ -1,6 +1,6 @@
 import { startPromise } from '@shared/utils';
 import { useHistoryDataFetching } from '@/modules/history/use-history-data-fetching';
-import { useSessionAuthStore } from '@/store/session/auth';
+import { useSessionAuthStore } from '@/modules/session/use-session-auth-store';
 import { useIntervalScheduler } from './use-interval-scheduler';
 
 const EVM_STATUS_POLLING_MS = 10 * 60 * 1_000;

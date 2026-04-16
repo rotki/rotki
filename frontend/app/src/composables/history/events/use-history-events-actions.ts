@@ -16,6 +16,7 @@ import { useHistoryTransactionDecoding } from '@/composables/history/events/tx/d
 import { HISTORY_EVENT_ACTIONS, type HistoryEventAction } from '@/composables/history/events/types';
 import { useCustomizedEventDuplicates } from '@/composables/history/events/use-customized-event-duplicates';
 import { useHistoryEventsDialogHandlers } from '@/composables/history/events/use-history-events-dialog-handlers';
+import { useConfirmStore } from '@/modules/common/use-confirm-store';
 import {
   isEthBlockEvent,
   isEvmEvent,
@@ -25,8 +26,7 @@ import {
 } from '@/modules/history/event-utils';
 import { useHistoryEventsAutoFetch } from '@/modules/history/events/use-history-events-auto-fetch';
 import { useHistoryDataFetching } from '@/modules/history/use-history-data-fetching';
-import { useConfirmStore } from '@/store/confirm';
-import { useHistoryStore } from '@/store/history';
+import { useHistoryStore } from '@/modules/history/use-history-store';
 
 interface UseHistoryEventsActionsOptions {
   /** Blockchain chains to restrict event queries to. */

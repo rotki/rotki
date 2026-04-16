@@ -5,7 +5,7 @@ import { transformCase } from '@rotki/common';
 import { SECONDS_PER_DAY } from '@/data/constraints';
 import { logger } from '@/modules/common/logging/logging';
 import { useDatabase } from '@/modules/data/use-database';
-import { useFrontendSettingsStore } from '@/store/settings/frontend';
+import { useFrontendSettingsStore } from '@/modules/settings/use-frontend-settings-store';
 import {
   type NewDetectedToken,
   type NewDetectedTokenInput,

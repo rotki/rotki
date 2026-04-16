@@ -2,7 +2,7 @@ import type { MaybeRef, Ref } from 'vue';
 import type { NewDetectedToken, NewDetectedTokenInput, NewDetectedTokenKind, NewDetectedTokensRequestPayload } from './types';
 import type { Collection } from '@/modules/common/collection';
 import { useAssetsStore } from '@/modules/assets/use-assets-store';
-import { useFrontendSettingsStore } from '@/store/settings/frontend';
+import { useFrontendSettingsStore } from '@/modules/settings/use-frontend-settings-store';
 import { useNewlyDetectedTokensDb } from './use-newly-detected-tokens-db';
 
 interface UseNewlyDetectedTokensReturn {

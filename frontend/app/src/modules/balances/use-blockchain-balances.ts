@@ -5,8 +5,8 @@ import { useValueThreshold } from '@/composables/usd-value-threshold';
 import { useBalanceQueue } from '@/modules/balances/use-balance-queue';
 import { arrayify } from '@/modules/common/data/array';
 import { Section } from '@/modules/common/status';
+import { useStatusStore } from '@/modules/common/use-status-store';
 import { BalanceSource } from '@/modules/settings/types/frontend-settings';
-import { useStatusStore } from '@/store/status';
 import { useBalanceProcessingService } from './services/use-balance-processing-service';
 import { useLoopringBalanceService } from './services/use-loopring-balance-service';
 

@@ -9,11 +9,11 @@ import { nextTick } from 'vue';
 import { useAssetInfoApi } from '@/composables/api/assets/info';
 import { useAssetPricesApi } from '@/composables/api/assets/prices';
 import { useHistoryEvents } from '@/composables/history/events';
+import { useBalancePricesStore } from '@/modules/balances/use-balance-prices-store';
 import { setupDayjs } from '@/modules/common/data/date';
 import EthWithdrawalEventForm from '@/modules/history/management/forms/EthWithdrawalEventForm.vue';
-import { useBalancePricesStore } from '@/store/balances/prices';
 
-vi.mock('@/store/balances/prices', () => ({
+vi.mock('@/modules/balances/use-balance-prices-store', () => ({
   useBalancePricesStore: vi.fn(),
 }));
 

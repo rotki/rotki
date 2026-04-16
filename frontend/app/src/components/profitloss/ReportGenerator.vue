@@ -4,8 +4,8 @@ import RangeSelector from '@/components/helper/date/RangeSelector.vue';
 import CardTitle from '@/components/typography/CardTitle.vue';
 import { useExchangeApi } from '@/composables/api/balances/exchanges';
 import { useTransactionStatusCheck } from '@/modules/dashboard/progress/composables/use-transaction-status-check';
+import { useSessionSettingsStore } from '@/modules/settings/use-session-settings-store';
 import { Routes } from '@/router/routes';
-import { useSessionSettingsStore } from '@/store/settings/session';
 
 const emit = defineEmits<{
   'generate': [data: ProfitLossReportPeriod];

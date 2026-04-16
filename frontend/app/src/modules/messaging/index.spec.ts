@@ -5,9 +5,9 @@ import { beforeAll, describe, expect, it, vi } from 'vitest';
 import { useMessageHandling } from '@/modules/messaging';
 import { SocketMessageType } from '@/modules/messaging/types';
 import { useNotificationDispatcher } from '@/modules/notifications/use-notification-dispatcher';
-import { useSessionAuthStore } from '@/store/session/auth';
+import { useSessionAuthStore } from '@/modules/session/use-session-auth-store';
 
-vi.mock('@/store/notifications', async () => {
+vi.mock('@/modules/notifications/use-notifications-store', async () => {
   const { shallowRef } = await import('vue');
   return {
     useNotificationsStore: vi.fn().mockReturnValue({

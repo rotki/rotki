@@ -4,7 +4,7 @@ import { getTextToken } from '@rotki/common';
 import { isEqual, sortBy } from 'es-toolkit';
 import LocationDisplay from '@/components/history/LocationDisplay.vue';
 import { useExchangeData } from '@/modules/balances/exchanges/use-exchange-data';
-import { useGeneralSettingsStore } from '@/store/settings/general';
+import { useGeneralSettingsStore } from '@/modules/settings/use-general-settings-store';
 
 const modelValue = defineModel<Exchange[]>({ required: true });
 const search = defineModel<string>('search', { required: true });

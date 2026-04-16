@@ -1,7 +1,7 @@
 import type { QueriedAddressPayload } from '@/modules/session/types';
 import { useQueriedAddressApi } from '@/composables/api/session/queried-addresses';
 import { getErrorMessage, useNotifications } from '@/modules/notifications/use-notifications';
-import { useSessionMetadataStore } from '@/store/session/metadata';
+import { useSessionMetadataStore } from '@/modules/session/use-session-metadata-store';
 
 interface UseQueriedAddressOperationsReturn {
   addQueriedAddress: (payload: QueriedAddressPayload) => Promise<void>;

@@ -6,7 +6,7 @@ import { useAddressesNamesApi } from '@/composables/api/blockchain/addresses-nam
 import { useAddressNameResolution } from '@/modules/address-names/use-address-name-resolution';
 import { useAddressNamesStore } from '@/modules/address-names/use-address-names-store';
 import { getDefaultFrontendSettings } from '@/modules/settings/types/frontend-settings';
-import { useFrontendSettingsStore } from '@/store/settings/frontend';
+import { useFrontendSettingsStore } from '@/modules/settings/use-frontend-settings-store';
 
 vi.mock('@/composables/api/blockchain/addresses-names', () => ({
   useAddressesNamesApi: vi.fn().mockReturnValue({

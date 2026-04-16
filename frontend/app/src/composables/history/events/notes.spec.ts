@@ -1,7 +1,7 @@
 import { bigNumberify, Blockchain, isEvmIdentifier } from '@rotki/common';
 import { describe, expect, it, vi } from 'vitest';
 import { type NoteFormat, NoteType, useHistoryEventNote } from '@/composables/history/events/notes';
-import { useFrontendSettingsStore } from '@/store/settings/frontend';
+import { useFrontendSettingsStore } from '@/modules/settings/use-frontend-settings-store';
 
 vi.mock('@/composables/assets/retrieval', () => ({
   useAssetInfoRetrieval: vi.fn().mockReturnValue({

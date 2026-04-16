@@ -1,8 +1,8 @@
 import type { ComputedRef, Ref } from 'vue';
 import { startPromise } from '@shared/utils';
 import { generateRandomScrambleMultiplier } from '@/modules/session/session-utils';
+import { useFrontendSettingsStore } from '@/modules/settings/use-frontend-settings-store';
 import { useSettingsOperations } from '@/modules/settings/use-settings-operations';
-import { useFrontendSettingsStore } from '@/store/settings/frontend';
 
 interface UseScrambleSettingReturn {
   scrambleData: Ref<boolean>;

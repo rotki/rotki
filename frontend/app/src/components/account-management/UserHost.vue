@@ -3,7 +3,7 @@ import ConnectionFailureMessage from '@/components/account-management/Connection
 import ConnectionLoading from '@/components/account-management/ConnectionLoading.vue';
 import DockerWarning from '@/components/account-management/DockerWarning.vue';
 import { useAutoLogin, useRestartingStatus } from '@/composables/user/account';
-import { useMainStore } from '@/store/main';
+import { useMainStore } from '@/modules/common/use-main-store';
 
 defineSlots<{
   default: () => any;

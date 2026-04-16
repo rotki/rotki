@@ -3,7 +3,7 @@ import type { AssetBalance } from '@rotki/common';
 import type { AssetResolutionOptions } from '@/composables/assets/retrieval';
 import AssetIcon from '@/components/helper/display/icons/AssetIcon.vue';
 import { AssetAmountDisplay } from '@/modules/amount-display/components';
-import { useFrontendSettingsStore } from '@/store/settings/frontend';
+import { useFrontendSettingsStore } from '@/modules/settings/use-frontend-settings-store';
 
 const { assets, visible = 3 } = defineProps<{
   assets: AssetBalance[];

@@ -12,10 +12,10 @@ import { uniqueStrings } from '@/modules/common/data/data';
 import { logger } from '@/modules/common/logging/logging';
 import { Section, Status } from '@/modules/common/status';
 import { useNotifications } from '@/modules/notifications/use-notifications';
+import { useSessionSettingsStore } from '@/modules/settings/use-session-settings-store';
 import { TaskType } from '@/modules/tasks/task-type';
 import { isActionableFailure, useTaskHandler } from '@/modules/tasks/use-task-handler';
 import { useTaskStore } from '@/modules/tasks/use-task-store';
-import { useSessionSettingsStore } from '@/store/settings/session';
 
 interface UseBinanceSavingsReturn {
   fetchExchangeSavings: (payload: MaybeRef<ExchangeSavingsRequestPayload>) => Promise<ExchangeSavingsCollection>;

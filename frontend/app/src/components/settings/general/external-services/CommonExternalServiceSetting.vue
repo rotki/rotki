@@ -6,7 +6,7 @@ import { useValidation } from '@/composables/validation';
 import { useMonitorService } from '@/modules/app/use-monitor-service';
 import { toMessages } from '@/modules/common/validation/validation';
 import SettingResetConfirmButton from '@/modules/settings/SettingResetConfirmButton.vue';
-import { useGeneralSettingsStore } from '@/store/settings/general';
+import { useGeneralSettingsStore } from '@/modules/settings/use-general-settings-store';
 
 const {
   defaultValue,

@@ -7,7 +7,7 @@ import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vite
 import { clearUserOptions, saveUserOptions, useBackendManagement } from '@/composables/backend';
 import { useInterop } from '@/composables/electron-interop';
 import { getBackendUrl } from '@/modules/account/account-management';
-import { useMainStore } from '@/store/main';
+import { useMainStore } from '@/modules/common/use-main-store';
 
 const mockConnect = vi.fn();
 

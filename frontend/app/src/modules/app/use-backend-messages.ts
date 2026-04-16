@@ -5,9 +5,9 @@ import { useBackendManagement } from '@/composables/backend';
 import { useInterop } from '@/composables/electron-interop';
 import { useBackendConnection } from '@/modules/app/use-backend-connection';
 import { logger } from '@/modules/common/logging/logging';
-import { useMainStore } from '@/store/main';
-import { useSessionAuthStore } from '@/store/session/auth';
-import { useAreaVisibilityStore } from '@/store/session/visibility';
+import { useAreaVisibilityStore } from '@/modules/common/use-area-visibility-store';
+import { useMainStore } from '@/modules/common/use-main-store';
+import { useSessionAuthStore } from '@/modules/session/use-session-auth-store';
 import { useMonitorService } from './use-monitor-service';
 import { useWebsocketConnection } from './use-websocket-connection';
 

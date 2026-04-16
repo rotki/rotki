@@ -15,7 +15,7 @@ import {
   HistoricalBalanceSource as Source,
 } from '@/modules/history/balances/types';
 import { useHistoryDataFetching } from '@/modules/history/use-history-data-fetching';
-import { useHistoryStore } from '@/store/history';
+import { useHistoryStore } from '@/modules/history/use-history-store';
 
 const timestamp = defineModel<number>('timestamp', { required: true });
 const selectedAsset = defineModel<string>('selectedAsset');

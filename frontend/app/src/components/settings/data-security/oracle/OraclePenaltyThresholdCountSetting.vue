@@ -5,7 +5,7 @@ import SettingsOption from '@/components/settings/controls/SettingsOption.vue';
 import { SettingsHighlightIds } from '@/composables/settings/types';
 import { useValidation } from '@/composables/validation';
 import { toMessages } from '@/modules/common/validation/validation';
-import { useGeneralSettingsStore } from '@/store/settings/general';
+import { useGeneralSettingsStore } from '@/modules/settings/use-general-settings-store';
 
 const oraclePenaltyThresholdCount = ref<string>('0');
 

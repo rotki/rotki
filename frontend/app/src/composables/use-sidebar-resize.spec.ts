@@ -2,7 +2,7 @@ import { createTestingPinia } from '@pinia/testing';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useSidebarResize } from '@/composables/use-sidebar-resize';
 import { PINNED_DEFAULT_WIDTH } from '@/composables/use-sidebar-resize-constants';
-import { useAreaVisibilityStore } from '@/store/session/visibility';
+import { useAreaVisibilityStore } from '@/modules/common/use-area-visibility-store';
 
 interface MockTarget {
   setPointerCapture: ReturnType<typeof vi.fn>;

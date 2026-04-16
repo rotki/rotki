@@ -1,6 +1,6 @@
 <script lang="ts" setup>
 import ExchangeDisplay from '@/components/display/ExchangeDisplay.vue';
-import { useLocationStore } from '@/store/locations';
+import { useLocationStore } from '@/modules/common/use-location-store';
 
 defineOptions({
   inheritAttrs: false,

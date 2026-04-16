@@ -7,9 +7,9 @@ import type {
 import type { Collection } from '@/modules/common/collection';
 import { type Filters, type Matcher, useEthValidatorAccountFilter } from '@/composables/filters/eth-validator';
 import { usePaginationFilters } from '@/composables/use-pagination-filter';
+import { useGeneralSettingsStore } from '@/modules/settings/use-general-settings-store';
+import { useBlockchainValidatorsStore } from '@/modules/staking/use-blockchain-validators-store';
 import { TableId, useRememberTableSorting } from '@/modules/table/use-remember-table-sorting';
-import { useBlockchainValidatorsStore } from '@/store/blockchain/validators';
-import { useGeneralSettingsStore } from '@/store/settings/general';
 
 interface UseEthValidatorDataReturn {
   cols: ComputedRef<DataTableColumn<EthereumValidator>[]>;

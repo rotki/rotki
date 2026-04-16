@@ -1,7 +1,7 @@
 import type { TransactionStatus } from '@/composables/api/history/events';
 import type { LocationLabel } from '@/modules/common/location';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { useHistoryStore } from '@/store/history';
+import { useHistoryStore } from '@/modules/history/use-history-store';
 import '@test/i18n';
 
 const mockFetchAssociatedLocationsApi = vi.fn();

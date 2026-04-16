@@ -5,7 +5,7 @@ import { camelCase } from 'es-toolkit';
 import { useDefiApi } from '@/composables/api/defi';
 import { useValueOrDefault } from '@/composables/utils/useValueOrDefault';
 import { getPublicProtocolImagePath } from '@/modules/common/file/file';
-import { useMainStore } from '@/store/main';
+import { useMainStore } from '@/modules/common/use-main-store';
 
 export const useAirdropsMetadata = createSharedComposable(() => {
   const { fetchAirdropsMetadata } = useDefiApi();

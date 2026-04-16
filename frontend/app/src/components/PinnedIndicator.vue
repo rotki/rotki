@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import MenuTooltipButton from '@/components/helper/MenuTooltipButton.vue';
-import { useAreaVisibilityStore } from '@/store/session/visibility';
+import { useAreaVisibilityStore } from '@/modules/common/use-area-visibility-store';
 
 const visible = defineModel<boolean>('visible', { required: true });
 

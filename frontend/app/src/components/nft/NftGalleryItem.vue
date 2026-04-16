@@ -8,9 +8,9 @@ import { useNftImage } from '@/composables/nft-image';
 import { AssetAmountDisplay, FiatDisplay } from '@/modules/amount-display/components';
 import { uniqueStrings } from '@/modules/common/data/data';
 import { getDomain } from '@/modules/common/helpers/url';
+import { useConfirmStore } from '@/modules/common/use-confirm-store';
+import { useFrontendSettingsStore } from '@/modules/settings/use-frontend-settings-store';
 import { useSettingsOperations } from '@/modules/settings/use-settings-operations';
-import { useConfirmStore } from '@/store/confirm';
-import { useFrontendSettingsStore } from '@/store/settings/frontend';
 
 const { item } = defineProps<{
   item: GalleryNft;

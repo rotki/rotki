@@ -7,8 +7,8 @@ import { useExternalServicesApi } from '@/composables/api/settings/external-serv
 import { DialogType } from '@/modules/common/dialogs';
 import { getErrorMessage } from '@/modules/common/logging/error-handling';
 import { logger } from '@/modules/common/logging/logging';
-import { useConfirmStore } from '@/store/confirm';
-import { useSessionAuthStore } from '@/store/session/auth';
+import { useConfirmStore } from '@/modules/common/use-confirm-store';
+import { useSessionAuthStore } from '@/modules/session/use-session-auth-store';
 
 function getName(name: ExternalServiceName, _chain?: string): string {
   return name;

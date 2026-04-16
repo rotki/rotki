@@ -13,9 +13,9 @@ import { Module } from '@/modules/common/modules';
 import { Section, Status } from '@/modules/common/status';
 import { useNotifications } from '@/modules/notifications/use-notifications';
 import { LOOPRING_CHAIN } from '@/modules/onchain/blockchain-types';
+import { useGeneralSettingsStore } from '@/modules/settings/use-general-settings-store';
 import { TaskType } from '@/modules/tasks/task-type';
 import { isActionableFailure, useTaskHandler } from '@/modules/tasks/use-task-handler';
-import { useGeneralSettingsStore } from '@/store/settings/general';
 
 interface UseLoopringBalanceServiceReturn {
   fetchLoopringBalances: (refresh: boolean) => Promise<void>;

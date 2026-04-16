@@ -16,7 +16,7 @@ describe('useExchangesSummaryHandler', () => {
   });
 
   it('should count exchanges by location', async () => {
-    const { useSessionSettingsStore } = await import('@/store/settings/session');
+    const { useSessionSettingsStore } = await import('@/modules/settings/use-session-settings-store');
     const store = useSessionSettingsStore();
     const { connectedExchanges } = storeToRefs(store);
 
