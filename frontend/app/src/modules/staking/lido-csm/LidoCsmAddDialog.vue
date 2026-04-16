@@ -3,11 +3,11 @@ import type { AddressData, BlockchainAccount } from '@/modules/accounts/blockcha
 import { Blockchain } from '@rotki/common';
 import useVuelidate from '@vuelidate/core';
 import { helpers, required } from '@vuelidate/validators';
-import BlockchainAccountSelector from '@/components/helper/BlockchainAccountSelector.vue';
-import { useLidoCsmApi } from '@/composables/api/staking/lido-csm';
 import { getAccountAddress } from '@/modules/accounts/account-utils';
-import { useMessageStore } from '@/modules/common/use-message-store';
-import { toMessages } from '@/modules/common/validation/validation';
+import BlockchainAccountSelector from '@/modules/accounts/BlockchainAccountSelector.vue';
+import { useMessageStore } from '@/modules/core/common/use-message-store';
+import { toMessages } from '@/modules/core/common/validation/validation';
+import { useLidoCsmApi } from '@/modules/staking/api/use-lido-csm-api';
 
 defineOptions({
   name: 'LidoCsmAddDialog',

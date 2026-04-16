@@ -15,7 +15,7 @@ vi.mock('./use-pool-data-fetching', () => ({
   })),
 }));
 
-vi.mock('@/composables/assets/retrieval', () => ({
+vi.mock('@/modules/assets/use-asset-info-retrieval', () => ({
   useAssetInfoRetrieval: vi.fn((): Record<string, unknown> => ({
     getAssetField: mockGetAssetField,
   })),

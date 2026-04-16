@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import AddressBookManagement from '@/components/address-book-manager/AddressBookManagement.vue';
-import { NoteLocation } from '@/modules/common/notes';
+import AddressBookManagement from '@/modules/accounts/address-book/AddressBookManagement.vue';
+import { NoteLocation } from '@/modules/core/common/notes';
 
 definePage({
   meta: {

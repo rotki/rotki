@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { EthStakingCombinedFilter, EthStakingFilter, EthStakingFilterType } from '@rotki/common';
-import Eth2ValidatorFilter from '@/components/helper/filter/Eth2ValidatorFilter.vue';
+import Eth2ValidatorFilter from '@/modules/staking/eth2/Eth2ValidatorFilter.vue';
 import EthValidatorCombinedFilter from './EthValidatorCombinedFilter.vue';
 
 const filterModel = defineModel<EthStakingCombinedFilter | undefined>('filter', { required: true });

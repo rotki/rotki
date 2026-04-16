@@ -1,16 +1,16 @@
 <script setup lang="ts">
 import type { DataTableColumn } from '@rotki/ui-library';
-import type { PremiumDevice } from '@/modules/premium/devices/composables/premium';
-import DateDisplay from '@/components/display/DateDisplay.vue';
-import RefreshButton from '@/components/helper/RefreshButton.vue';
-import RowActions from '@/components/helper/RowActions.vue';
-import CardTitle from '@/components/typography/CardTitle.vue';
-import { getErrorMessage } from '@/modules/common/logging/error-handling';
-import { useConfirmStore } from '@/modules/common/use-confirm-store';
-import { useMessageStore } from '@/modules/common/use-message-store';
+import type { PremiumDevice } from '@/modules/premium/devices/premium';
+import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
+import { useConfirmStore } from '@/modules/core/common/use-confirm-store';
+import { useMessageStore } from '@/modules/core/common/use-message-store';
 import PremiumDeviceFormDialog from '@/modules/premium/devices/components/PremiumDeviceFormDialog.vue';
-import { usePremiumDevicesApi } from '@/modules/premium/devices/composables/devices';
+import { usePremiumDevicesApi } from '@/modules/premium/devices/devices';
 import { usePremiumStore } from '@/modules/premium/use-premium-store';
+import CardTitle from '@/modules/shell/components/CardTitle.vue';
+import DateDisplay from '@/modules/shell/components/display/DateDisplay.vue';
+import RefreshButton from '@/modules/shell/components/RefreshButton.vue';
+import RowActions from '@/modules/shell/components/RowActions.vue';
 
 const { t } = useI18n({ useScope: 'global' });
 

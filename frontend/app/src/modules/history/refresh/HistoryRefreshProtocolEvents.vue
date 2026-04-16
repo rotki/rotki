@@ -2,10 +2,10 @@
 import { getTextToken, toHumanReadable } from '@rotki/common';
 import { get, set } from '@vueuse/core';
 import { isEqual } from 'es-toolkit';
-import { useExternalApiKeys } from '@/composables/settings/api-keys/external';
-import { useMoneriumOAuth } from '@/modules/external-services/monerium/use-monerium-auth';
 import { OnlineHistoryEventsQueryType } from '@/modules/history/events/schemas';
+import { useMoneriumOAuth } from '@/modules/integrations/monerium/use-monerium-auth';
 import { PremiumFeature, useFeatureAccess } from '@/modules/premium/use-feature-access';
+import { useExternalApiKeys } from '@/modules/settings/api-keys/external/use-external-api-keys';
 
 const modelValue = defineModel<OnlineHistoryEventsQueryType[]>({ required: true });
 const search = defineModel<string>('search', { required: true });

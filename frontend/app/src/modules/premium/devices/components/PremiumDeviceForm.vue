@@ -1,11 +1,11 @@
 <script setup lang="ts">
-import type { ValidationErrors } from '@/modules/api/types/errors';
-import type { PremiumDevice } from '@/modules/premium/devices/composables/premium';
+import type { ValidationErrors } from '@/modules/core/api/types/errors';
+import type { PremiumDevice } from '@/modules/premium/devices/premium';
 import useVuelidate from '@vuelidate/core';
 import { helpers, not, required, sameAs } from '@vuelidate/validators';
-import DateDisplay from '@/components/display/DateDisplay.vue';
-import { useFormStateWatcher } from '@/composables/form';
-import { toMessages } from '@/modules/common/validation/validation';
+import { useFormStateWatcher } from '@/modules/core/common/use-form';
+import { toMessages } from '@/modules/core/common/validation/validation';
+import DateDisplay from '@/modules/shell/components/display/DateDisplay.vue';
 
 const modelValue = defineModel<string>({ required: true });
 

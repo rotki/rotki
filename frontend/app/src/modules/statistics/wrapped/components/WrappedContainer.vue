@@ -1,10 +1,10 @@
 <script setup lang="ts">
 import { get } from '@vueuse/shared';
-import { usePremium } from '@/composables/premium';
-import { useWrappedDateRange } from '../composables/use-wrapped-date-range';
-import { useWrappedGnosisPay } from '../composables/use-wrapped-gnosis-pay';
-import { useWrappedHistoryEvents } from '../composables/use-wrapped-history-events';
-import { useWrappedStatistics } from '../composables/use-wrapped-statistics';
+import { usePremium } from '@/modules/premium/use-premium';
+import { useWrappedDateRange } from '../use-wrapped-date-range';
+import { useWrappedGnosisPay } from '../use-wrapped-gnosis-pay';
+import { useWrappedHistoryEvents } from '../use-wrapped-history-events';
+import { useWrappedStatistics } from '../use-wrapped-statistics';
 import WrappedExchangeCard from './cards/WrappedExchangeCard.vue';
 import WrappedGasCard from './cards/WrappedGasCard.vue';
 import WrappedGnosisPayCard from './cards/WrappedGnosisPayCard.vue';

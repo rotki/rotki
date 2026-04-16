@@ -1,0 +1,88 @@
+<script setup lang="ts">
+import type { DataTableColumn, DataTableSortData, TablePaginationData } from '@rotki/ui-library';
+import type { AddressBookEntry, AddressBookLocation } from '@/modules/accounts/address-book/eth-names';
+import type { Collection } from '@/modules/core/common/collection';
+import { useAddressBookDeletion } from '@/modules/accounts/address-book/use-address-book-deletion';
+import { TableId, useRememberTableSorting } from '@/modules/core/table/use-remember-table-sorting';
+import AccountDisplay from '@/modules/shell/components/display/AccountDisplay.vue';
+import RowActions from '@/modules/shell/components/RowActions.vue';
+
+const paginationModel = defineModel<TablePaginationData>('pagination', { required: true });
+
+const sortModel = defineModel<DataTableSortData<AddressBookEntry>>('sort', { required: true });
+
+const { collection, location, loading } = defineProps<{
+  collection: Collection<AddressBookEntry>;
+  location: AddressBookLocation;
+  loading: boolean;
+}>();
+
+const emit = defineEmits<{
+  edit: [item: AddressBookEntry];
+  refresh: [];
+}>();
+
+const { t } = useI18n({ useScope: 'global' });
+
+const cols = computed<DataTableColumn<AddressBookEntry>[]>(() => [
+  {
+    key: 'address',
+    label: t('common.address'),
+    sortable: true,
+  },
+  {
+    key: 'name',
+    label: t('common.name'),
+    sortable: true,
+  },
+  {
+    key: 'actions',
+    label: '',
+  },
+]);
+
+useRememberTableSorting<AddressBookEntry>(TableId.ADDRESS_BOOK, sortModel, cols);
+
+function refresh() {
+  emit('refresh');
+}
+
+function edit(item: AddressBookEntry) {
+  emit('edit', item);
+}
+
+const { showDeleteConfirmation } = useAddressBookDeletion(location, refresh);
+</script>
+
+<template>
+  <RuiDataTable
+    v-model:pagination.external="paginationModel"
+    v-model:sort.external="sortModel"
+    :rows="collection.data"
+    :cols="cols"
+    :loading="loading"
+    row-attr="address"
+    outlined
+    dense
+  >
+    <template #item.address="{ row }">
+      <AccountDisplay
+        :account="{
+          address: row.address,
+          chain: row.blockchain ?? 'ALL',
+        }"
+        :use-alias-name="false"
+        no-truncate
+      />
+    </template>
+    <template #item.actions="{ row }">
+      <RowActions
+        :disabled="loading"
+        :delete-tooltip="t('address_book.actions.delete.tooltip')"
+        :edit-tooltip="t('address_book.actions.edit.tooltip')"
+        @delete-click="showDeleteConfirmation(row)"
+        @edit-click="edit(row)"
+      />
+    </template>
+  </RuiDataTable>
+</template>

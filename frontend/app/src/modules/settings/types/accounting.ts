@@ -1,6 +1,6 @@
-import type { ConflictResolutionStrategy, PaginationRequestPayload } from '@/modules/common/common-types';
+import type { ConflictResolutionStrategy, PaginationRequestPayload } from '@/modules/core/common/common-types';
 import { z } from 'zod/v4';
-import { CollectionCommonFields } from '@/modules/common/collection';
+import { CollectionCommonFields } from '@/modules/core/common/collection';
 
 export enum AccountingTreatment {
   SWAP = 'swap',

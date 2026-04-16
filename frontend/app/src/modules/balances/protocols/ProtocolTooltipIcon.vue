@@ -1,11 +1,11 @@
 <script lang="ts" setup>
 import { Blockchain, type ProtocolBalance, toSentenceCase, transformCase } from '@rotki/common';
-import { AssetAmountDisplay, FiatDisplay, ValueDisplay } from '@/modules/amount-display/components';
+import { AssetAmountDisplay, FiatDisplay, ValueDisplay } from '@/modules/assets/amount-display/components';
 import ProtocolIcon from '@/modules/balances/protocols/ProtocolIcon.vue';
 import { useProtocolData } from '@/modules/balances/protocols/use-protocol-data';
 import { useProxyProtocol } from '@/modules/balances/protocols/use-proxy-protocol';
-import HashLink from '@/modules/common/links/HashLink.vue';
 import { useFrontendSettingsStore } from '@/modules/settings/use-frontend-settings-store';
+import HashLink from '@/modules/shell/components/HashLink.vue';
 
 const { protocolBalance, asset, loading } = defineProps<{
   protocolBalance: ProtocolBalance;

@@ -1,0 +1,245 @@
+<script setup lang="ts">
+import type { HistoryEventAction } from '@/modules/history/events/action-types';
+import type { AddTransactionHashPayload } from '@/modules/history/events/event-payloads';
+import type { UnmatchedAssetMovement } from '@/modules/history/events/use-unmatched-asset-movements';
+import type { AccountingRuleEntry } from '@/modules/settings/types/accounting';
+import { get } from '@vueuse/core';
+import { useHistoryEventsDialogManager } from '@/modules/history/events/dialog-manager/use-history-events-dialog-manager';
+import { DIALOG_TYPES, type DialogEventHandlers } from './dialog-types';
+
+const accountingRuleToEdit = defineModel<AccountingRuleEntry | undefined>('accountingRuleToEdit', { required: true });
+const currentAction = defineModel<HistoryEventAction>('currentAction', { required: true });
+
+const { eventHandlers, selectedEventIds } = defineProps<{
+  eventHandlers: DialogEventHandlers;
+  loading?: boolean;
+  refreshing?: boolean;
+  sectionLoading?: boolean;
+  selectedEventIds: number[];
+}>();
+
+const emit = defineEmits<{
+  'accounting-rule-refresh': [];
+  'movement-matched': [];
+}>();
+
+// Shared loading component for lazy-loaded dialogs
+function DialogLoadingComponent() {
+  return h('div', { class: 'flex items-center justify-center p-4' }, h('RuiProgress', { circular: true, size: 40, variant: 'indeterminate' }));
+}
+
+// Lazy load heavy dialog components
+const MissingRulesDialog = defineAsyncComponent({
+  delay: 200,
+  loader: () => import('@/modules/history/management/MissingRulesDialog.vue'),
+  loadingComponent: DialogLoadingComponent,
+});
+
+const HistoryEventFormDialog = defineAsyncComponent({
+  delay: 200,
+  loader: () => import('@/modules/history/events/HistoryEventFormDialog.vue'),
+  loadingComponent: DialogLoadingComponent,
+});
+
+const HistoryEventsDecodingStatusDialog = defineAsyncComponent(() => import('@/modules/history/events/HistoryEventsDecodingStatusDialog.vue'));
+
+const HistoryEventsProtocolCacheStatusDialog = defineAsyncComponent(
+  () => import('@/modules/history/events/HistoryEventsProtocolCacheStatusDialog.vue'),
+);
+
+const RepullingTransactionFormDialog = defineAsyncComponent({
+  delay: 200,
+  loader: () => import('@/modules/history/events/tx/RepullingTransactionFormDialog.vue'),
+  loadingComponent: DialogLoadingComponent,
+});
+
+const TransactionFormDialog = defineAsyncComponent({
+  delay: 200,
+  loader: () => import('@/modules/history/events/tx/TransactionFormDialog.vue'),
+  loadingComponent: DialogLoadingComponent,
+});
+
+const AccountingRuleFormDialog = defineAsyncComponent({
+  delay: 200,
+  loader: () => import('@/modules/settings/accounting/rule/AccountingRuleFormDialog.vue'),
+  loadingComponent: DialogLoadingComponent,
+});
+
+const CustomizedEventDuplicatesDialog = defineAsyncComponent({
+  delay: 200,
+  loader: () => import('@/modules/history/events/CustomizedEventDuplicatesDialog.vue'),
+  loadingComponent: DialogLoadingComponent,
+});
+
+const InternalTxConflictsDialog = defineAsyncComponent({
+  delay: 200,
+  loader: () => import('@/modules/history/internal-tx-conflicts/InternalTxConflictsDialog.vue'),
+  loadingComponent: DialogLoadingComponent,
+});
+
+const MatchAssetMovementsDialog = defineAsyncComponent({
+  delay: 200,
+  loader: () => import('@/modules/history/events/MatchAssetMovementsDialog.vue'),
+  loadingComponent: DialogLoadingComponent,
+});
+
+const PotentialMatchesDialog = defineAsyncComponent({
+  delay: 200,
+  loader: () => import('@/modules/history/events/PotentialMatchesDialog.vue'),
+  loadingComponent: DialogLoadingComponent,
+});
+
+const {
+  closeDialog,
+  currentDialog,
+  show: managerShow,
+} = useHistoryEventsDialogManager();
+
+// Type-specific computed properties for each dialog
+// Since dialogs only render when they match the type (v-if), we can safely use type assertions
+const formData = computed({
+  get: () => {
+    const dialog = get(currentDialog);
+    return dialog.type === DIALOG_TYPES.EVENT_FORM ? dialog.data : undefined;
+  },
+  set: () => closeDialog(), // Dialog components handle their own closing
+});
+
+const missingRuleData = computed({
+  get: () => {
+    const dialog = get(currentDialog);
+    return dialog.type === DIALOG_TYPES.MISSING_RULES ? dialog.data : undefined;
+  },
+  set: () => closeDialog(),
+});
+
+// Unified computed for dialogs that are always "open" when rendered
+const dialogIsOpen = computed({
+  get: () => true, // Always true when dialog is rendered (due to v-if)
+  set: () => closeDialog(),
+});
+
+const decodingStatusDialogPersistent = computed(() => {
+  const dialog = get(currentDialog);
+  return dialog.type === DIALOG_TYPES.DECODING_STATUS ? (dialog.data?.persistent || false) : false;
+});
+
+const addTransactionModelValue = computed({
+  get: () => {
+    const dialog = get(currentDialog);
+    return dialog.type === DIALOG_TYPES.TRANSACTION_FORM ? dialog.data : undefined;
+  },
+  set: (value: AddTransactionHashPayload | undefined) => {
+    if (value) {
+      managerShow({ data: value, type: DIALOG_TYPES.TRANSACTION_FORM });
+    }
+    else {
+      closeDialog();
+    }
+  },
+});
+
+const potentialMatchMovement = ref<UnmatchedAssetMovement>();
+const showPotentialMatchesDialog = ref<boolean>(false);
+
+function showPotentialMatches(movement: UnmatchedAssetMovement): void {
+  set(potentialMatchMovement, movement);
+  set(showPotentialMatchesDialog, true);
+}
+
+function onPotentialMatchMatched(): void {
+  set(potentialMatchMovement, undefined);
+  emit('movement-matched');
+}
+
+function onPotentialMatchPinned(): void {
+  set(potentialMatchMovement, undefined);
+  closeDialog();
+}
+defineExpose({
+  show: managerShow,
+  showPotentialMatches,
+});
+</script>
+
+<template>
+  <div class="history-events-dialog-container">
+    <HistoryEventFormDialog
+      v-if="currentDialog.type === DIALOG_TYPES.EVENT_FORM"
+      v-model="formData"
+      :loading="loading"
+      @refresh="eventHandlers.onHistoryEventSaved?.()"
+    />
+
+    <TransactionFormDialog
+      v-if="currentDialog.type === DIALOG_TYPES.TRANSACTION_FORM"
+      v-model="addTransactionModelValue"
+      :loading="sectionLoading"
+      @reload="eventHandlers.onTransactionAdded?.($event)"
+    />
+
+    <RepullingTransactionFormDialog
+      v-if="currentDialog.type === DIALOG_TYPES.REPULLING_TRANSACTION"
+      v-model="dialogIsOpen"
+      v-model:current-action="currentAction"
+      :loading="sectionLoading"
+      :repull-transactions="eventHandlers.onRepullTransactions"
+      :repull-exchange-events="eventHandlers.onRepullExchangeEvents"
+    />
+
+    <MissingRulesDialog
+      v-if="currentDialog.type === DIALOG_TYPES.MISSING_RULES"
+      v-model="missingRuleData"
+      @edit-event="managerShow({ data: $event, type: DIALOG_TYPES.EVENT_FORM })"
+      @redecode="eventHandlers.onRedecodeTransaction?.($event)"
+      @add="managerShow({ data: $event, type: DIALOG_TYPES.ADD_MISSING_RULE })"
+      @dismiss="closeDialog()"
+    />
+
+    <HistoryEventsDecodingStatusDialog
+      v-if="currentDialog.type === DIALOG_TYPES.DECODING_STATUS"
+      v-model="dialogIsOpen"
+      :refreshing="refreshing"
+      :persistent="decodingStatusDialogPersistent"
+      @redecode-all-events="eventHandlers.onRedecodeAllEvents?.()"
+      @reset-undecoded-transactions="eventHandlers.onResetUndecodedTransactions?.()"
+    />
+
+    <HistoryEventsProtocolCacheStatusDialog
+      v-if="currentDialog.type === DIALOG_TYPES.PROTOCOL_CACHE"
+      v-model="dialogIsOpen"
+      :refreshing="refreshing"
+    />
+
+    <AccountingRuleFormDialog
+      v-model="accountingRuleToEdit"
+      :event-ids="selectedEventIds"
+      @refresh="emit('accounting-rule-refresh')"
+    />
+
+    <CustomizedEventDuplicatesDialog
+      v-if="currentDialog.type === DIALOG_TYPES.CUSTOMIZED_EVENT_DUPLICATES"
+      v-model="dialogIsOpen"
+    />
+
+    <InternalTxConflictsDialog
+      v-if="currentDialog.type === DIALOG_TYPES.INTERNAL_TX_CONFLICTS"
+      v-model="dialogIsOpen"
+    />
+
+    <MatchAssetMovementsDialog
+      v-if="currentDialog.type === DIALOG_TYPES.MATCH_ASSET_MOVEMENTS"
+      v-model="dialogIsOpen"
+      @refresh="eventHandlers.onHistoryEventSaved?.()"
+      @find-match="showPotentialMatches($event)"
+    />
+
+    <PotentialMatchesDialog
+      v-if="potentialMatchMovement && showPotentialMatchesDialog"
+      v-model="showPotentialMatchesDialog"
+      :movement="potentialMatchMovement"
+      @matched="onPotentialMatchMatched()"
+      @pinned="onPotentialMatchPinned()"
+    />
+  </div>
+</template>

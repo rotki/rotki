@@ -1,6 +1,6 @@
 import type { AssetMap } from '@/modules/assets/types';
+import type { TradeLocationData } from '@/modules/core/common/location';
 import type { AssetMovementEvent } from '@/modules/history/events/schemas';
-import type { TradeLocationData } from '@/modules/history/trade/location';
 import { bigNumberify, HistoryEventEntryType, One } from '@rotki/common';
 import { type ComponentMountingOptions, mount, type VueWrapper } from '@vue/test-utils';
 import dayjs from 'dayjs';
@@ -8,29 +8,29 @@ import flushPromises from 'flush-promises';
 import { createPinia, type Pinia, setActivePinia } from 'pinia';
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { nextTick } from 'vue';
-import { useAssetInfoApi } from '@/composables/api/assets/info';
-import { useAssetPricesApi } from '@/composables/api/assets/prices';
-import { useHistoryEvents } from '@/composables/history/events';
-import { useLocations } from '@/composables/locations';
-import { setupDayjs } from '@/modules/common/data/date';
+import { useAssetInfoApi } from '@/modules/assets/api/use-asset-info-api';
+import { useAssetPricesApi } from '@/modules/assets/api/use-asset-prices-api';
+import { usePriceTaskManager } from '@/modules/assets/prices/use-price-task-manager';
+import { setupDayjs } from '@/modules/core/common/data/date';
+import { useLocations } from '@/modules/core/common/use-locations';
+import { useHistoryEvents } from '@/modules/history/events/use-history-events';
 import AssetMovementEventForm from '@/modules/history/management/forms/AssetMovementEventForm.vue';
-import { usePriceTaskManager } from '@/modules/prices/use-price-task-manager';
 
-vi.mock('@/modules/prices/use-price-task-manager', () => ({
+vi.mock('@/modules/assets/prices/use-price-task-manager', () => ({
   usePriceTaskManager: vi.fn().mockReturnValue({
     getHistoricPrice: vi.fn(),
   }),
 }));
 
-vi.mock('@/composables/history/events', () => ({
+vi.mock('@/modules/history/events/use-history-events', () => ({
   useHistoryEvents: vi.fn(),
 }));
 
-vi.mock('@/composables/locations', () => ({
+vi.mock('@/modules/core/common/use-locations', () => ({
   useLocations: vi.fn(),
 }));
 
-vi.mock('@/composables/api/assets/prices', () => ({
+vi.mock('@/modules/assets/api/use-asset-prices-api', () => ({
   useAssetPricesApi: vi.fn().mockReturnValue({
     addHistoricalPrice: vi.fn(),
   }),

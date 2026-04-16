@@ -3,8 +3,8 @@ import type {
   KrakenStakingPagination,
 } from '@/modules/staking/staking-types';
 import { type AssetBalance, Zero } from '@rotki/common';
-import { useResolveAssetIdentifier } from '@/composables/assets/common';
-import { balanceSum } from '@/modules/common/data/calculation';
+import { useResolveAssetIdentifier } from '@/modules/assets/use-resolve-asset-identifier';
+import { balanceSum } from '@/modules/core/common/data/calculation';
 
 function defaultPagination(): KrakenStakingPagination {
   return {

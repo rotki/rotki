@@ -1,8 +1,9 @@
 import { BigNumber, Blockchain, Theme, TimeFramePeriod } from '@rotki/common';
 import { createPinia, type Pinia } from 'pinia';
 import { beforeEach, describe, expect, it } from 'vitest';
-import { CurrencyLocation } from '@/modules/amount-display/currency-location';
-import { DateFormat } from '@/modules/common/date-format';
+import { CurrencyLocation } from '@/modules/assets/amount-display/currency-location';
+import { DateFormat } from '@/modules/core/common/date-format';
+import { TableColumn } from '@/modules/core/table/table-column';
 import { PrivacyMode } from '@/modules/session/types';
 import {
   BalanceSource,
@@ -13,7 +14,6 @@ import {
   SupportedLanguage,
 } from '@/modules/settings/types/frontend-settings';
 import { useFrontendSettingsStore } from '@/modules/settings/use-frontend-settings-store';
-import { TableColumn } from '@/modules/table/table-column';
 
 describe('useFrontendSettingsStore', () => {
   let pinia: Pinia;

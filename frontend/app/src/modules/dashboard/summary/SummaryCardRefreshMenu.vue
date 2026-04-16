@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import RefreshButton from '@/components/helper/RefreshButton.vue';
+import RefreshButton from '@/modules/shell/components/RefreshButton.vue';
 
 interface SummaryCardRefreshMenuProps {
   tooltip: string;

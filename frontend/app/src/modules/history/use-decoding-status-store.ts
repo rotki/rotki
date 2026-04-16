@@ -1,4 +1,4 @@
-import type { EvmUnDecodedTransactionsData } from '@/modules/messaging/types';
+import type { EvmUnDecodedTransactionsData } from '@/modules/core/messaging/types';
 
 export interface DecodingStatusEntry extends EvmUnDecodedTransactionsData {
   cancelled?: boolean;

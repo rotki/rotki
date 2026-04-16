@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import AccountDisplay from '@/components/display/AccountDisplay.vue';
+import AccountDisplay from '@/modules/shell/components/display/AccountDisplay.vue';
 
 const modelValue = defineModel<string[]>({ required: true });
 

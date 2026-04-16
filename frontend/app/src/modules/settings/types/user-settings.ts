@@ -1,11 +1,11 @@
 import { NumericString } from '@rotki/common';
 import { z } from 'zod/v4';
-import { useCurrencies } from '@/modules/amount-display/currencies';
+import { AddressNamePriorityEnum } from '@/modules/accounts/address-book/types/address-name-priorities';
+import { useCurrencies } from '@/modules/assets/amount-display/currencies';
 import { Exchange, KrakenAccountType } from '@/modules/balances/types/exchanges';
-import { Constraints } from '@/modules/common/constraints';
-import { Defaults } from '@/modules/common/defaults';
-import { ModuleEnum } from '@/modules/common/modules';
-import { AddressNamePriorityEnum } from '@/modules/settings/types/address-name-priorities';
+import { Constraints } from '@/modules/core/common/constraints';
+import { Defaults } from '@/modules/core/common/defaults';
+import { ModuleEnum } from '@/modules/core/common/modules';
 import { EvmIndexerEnum } from '@/modules/settings/types/evm-indexer';
 import { parseFrontendSettings } from '@/modules/settings/types/frontend-settings';
 import { PriceOracleEnum } from '@/modules/settings/types/price-oracle';

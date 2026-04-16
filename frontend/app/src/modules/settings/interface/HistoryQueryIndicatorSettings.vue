@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import SettingsItem from '@/components/settings/controls/SettingsItem.vue';
-import SettingCategory from '@/components/settings/SettingCategory.vue';
-import { SettingsHighlightIds } from '@/composables/settings/types';
-import { useUnifiedProgress } from '@/modules/dashboard/progress/composables/use-unified-progress';
+import { useUnifiedProgress } from '@/modules/dashboard/progress/use-unified-progress';
+import SettingsItem from '@/modules/settings/controls/SettingsItem.vue';
+import { SettingsHighlightIds } from '@/modules/settings/setting-highlight-ids';
+import SettingCategory from '@/modules/settings/SettingCategory.vue';
 import HistoryQueryIndicatorDismissalThresholdSetting from './HistoryQueryIndicatorDismissalThresholdSetting.vue';
 import HistoryQueryIndicatorMinOutOfSyncPeriodSetting from './HistoryQueryIndicatorMinOutOfSyncPeriodSetting.vue';
 

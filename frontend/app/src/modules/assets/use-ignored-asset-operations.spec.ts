@@ -5,7 +5,7 @@ const mockGetIgnoredAssets = vi.fn();
 const mockAddIgnoredAssets = vi.fn();
 const mockRemoveIgnoredAssets = vi.fn();
 
-vi.mock('@/composables/api/assets/ignore', () => ({
+vi.mock('@/modules/assets/api/use-asset-ignore-api', () => ({
   useAssetIgnoreApi: vi.fn(() => ({
     addIgnoredAssets: mockAddIgnoredAssets,
     getIgnoredAssets: mockGetIgnoredAssets,
@@ -13,7 +13,7 @@ vi.mock('@/composables/api/assets/ignore', () => ({
   })),
 }));
 
-vi.mock('@/composables/assets/retrieval', () => ({
+vi.mock('@/modules/assets/use-asset-info-retrieval', () => ({
   useAssetInfoRetrieval: vi.fn(() => ({
     getAssetField: vi.fn((id: string, _field: string): string => id),
   })),
@@ -28,7 +28,7 @@ vi.mock('@/modules/balances/manual/use-manual-balance-data', () => ({
 const mockNotifyError = vi.fn();
 const mockShowErrorMessage = vi.fn();
 
-vi.mock('@/modules/notifications/use-notifications', () => ({
+vi.mock('@/modules/core/notifications/use-notifications', () => ({
   useNotifications: vi.fn(() => ({
     notifyError: mockNotifyError,
     showErrorMessage: mockShowErrorMessage,

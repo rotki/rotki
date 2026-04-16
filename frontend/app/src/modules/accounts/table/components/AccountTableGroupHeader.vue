@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { type BigNumber, toSentenceCase } from '@rotki/common';
-import { FiatDisplay } from '@/modules/amount-display/components';
+import { FiatDisplay } from '@/modules/assets/amount-display/components';
 
 interface Props {
   category: string;

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import DateTimeRangePicker from '@/components/inputs/DateTimeRangePicker.vue';
+import DateTimeRangePicker from '@/modules/shell/components/inputs/DateTimeRangePicker.vue';
 
 const start = defineModel<number | undefined>('start', {
   get(value: number | undefined) {

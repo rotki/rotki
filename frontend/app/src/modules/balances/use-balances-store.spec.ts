@@ -1,4 +1,4 @@
-import type { AssetPrices } from '@/modules/prices/price-types';
+import type { AssetPrices } from '@/modules/assets/prices/price-types';
 import { bigNumberify, Blockchain } from '@rotki/common';
 import { cloneDeep } from 'es-toolkit';
 import { beforeEach, describe, expect, it } from 'vitest';

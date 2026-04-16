@@ -4,15 +4,15 @@ import type { EvmSwapFormData } from '@/modules/history/management/forms/evm-swa
 import type { GroupEventData, StandaloneEventData } from '@/modules/history/management/forms/form-types';
 import { assert, HistoryEventEntryType } from '@rotki/common';
 import dayjs from 'dayjs';
-import AmountInput from '@/components/inputs/AmountInput.vue';
-import CounterpartyInput from '@/components/inputs/CounterpartyInput.vue';
-import { useSupportedChains } from '@/composables/info/chains';
-import { useRefPropVModel } from '@/modules/common/validation/model';
+import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
+import { useRefPropVModel } from '@/modules/core/common/validation/model';
+import CounterpartyInput from '@/modules/history/events/mapping/CounterpartyInput.vue';
 import EventDateLocation from '@/modules/history/management/forms/common/EventDateLocation.vue';
-import { toMessages, useEventFormBase } from '@/modules/history/management/forms/composables/use-event-form-base';
-import { useSwapEventForm } from '@/modules/history/management/forms/composables/use-swap-event-form';
 import SwapSubEventList from '@/modules/history/management/forms/swap/SwapSubEventList.vue';
+import { toMessages, useEventFormBase } from '@/modules/history/management/forms/use-event-form-base';
+import { useSwapEventForm } from '@/modules/history/management/forms/use-swap-event-form';
 import { toSubEvent } from '@/modules/history/management/forms/utils';
+import AmountInput from '@/modules/shell/components/inputs/AmountInput.vue';
 
 const stateUpdated = defineModel<boolean>('stateUpdated', { default: false, required: false });
 

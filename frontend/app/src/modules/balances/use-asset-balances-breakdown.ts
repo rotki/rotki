@@ -3,13 +3,13 @@ import type { Accounts, AssetBreakdown, Balances } from '@/modules/accounts/bloc
 import type { ExchangeData } from '@/modules/balances/types/exchanges';
 import type { ManualBalanceWithValue } from '@/modules/balances/types/manual-balances';
 import { Zero } from '@rotki/common';
-import { useResolveAssetIdentifier } from '@/composables/assets/common';
-import { useSupportedChains } from '@/composables/info/chains';
 import { getAccountAddress } from '@/modules/accounts/account-utils';
 import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
+import { useResolveAssetIdentifier } from '@/modules/assets/use-resolve-asset-identifier';
 import { useBalancesStore } from '@/modules/balances/use-balances-store';
-import { perProtocolBalanceSum } from '@/modules/common/data/calculation';
-import { groupAssetBreakdown } from '@/modules/common/display/balances';
+import { perProtocolBalanceSum } from '@/modules/core/common/data/calculation';
+import { groupAssetBreakdown } from '@/modules/core/common/display/balances';
+import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
 
 interface BreakdownFilters {
   chains?: string[];

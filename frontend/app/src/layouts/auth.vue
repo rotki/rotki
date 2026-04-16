@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import About from '@/components/About.vue';
-import AppHost from '@/components/app/AppHost.vue';
-import AppMessages from '@/components/app/AppMessages.vue';
-import AppUpdatePopup from '@/components/status/update/AppUpdatePopup.vue';
-import { useAreaVisibilityStore } from '@/modules/common/use-area-visibility-store';
+import { useAreaVisibilityStore } from '@/modules/core/common/use-area-visibility-store';
+import AppHost from '@/modules/shell/app/AppHost.vue';
+import AppMessages from '@/modules/shell/app/AppMessages.vue';
+import AppUpdatePopup from '@/modules/shell/app/AppUpdatePopup.vue';
+import About from '@/modules/shell/components/About.vue';
 
 const { showAbout } = storeToRefs(useAreaVisibilityStore());
 </script>

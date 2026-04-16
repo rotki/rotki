@@ -4,18 +4,18 @@ import type {
   ExchangeSavingsCollectionResponse,
   ExchangeSavingsRequestPayload,
 } from '@/modules/balances/types/exchanges';
-import type { TaskMeta } from '@/modules/tasks/types';
-import { useExchangeApi } from '@/composables/api/balances/exchanges';
-import { useStatusUpdater } from '@/composables/status';
-import { mapCollectionResponse } from '@/modules/common/data/collection-utils';
-import { uniqueStrings } from '@/modules/common/data/data';
-import { logger } from '@/modules/common/logging/logging';
-import { Section, Status } from '@/modules/common/status';
-import { useNotifications } from '@/modules/notifications/use-notifications';
+import type { TaskMeta } from '@/modules/core/tasks/types';
+import { useExchangeApi } from '@/modules/balances/api/use-exchange-api';
+import { mapCollectionResponse } from '@/modules/core/common/data/collection-utils';
+import { uniqueStrings } from '@/modules/core/common/data/data';
+import { logger } from '@/modules/core/common/logging/logging';
+import { Section, Status } from '@/modules/core/common/status';
+import { useNotifications } from '@/modules/core/notifications/use-notifications';
+import { TaskType } from '@/modules/core/tasks/task-type';
+import { isActionableFailure, useTaskHandler } from '@/modules/core/tasks/use-task-handler';
+import { useTaskStore } from '@/modules/core/tasks/use-task-store';
 import { useSessionSettingsStore } from '@/modules/settings/use-session-settings-store';
-import { TaskType } from '@/modules/tasks/task-type';
-import { isActionableFailure, useTaskHandler } from '@/modules/tasks/use-task-handler';
-import { useTaskStore } from '@/modules/tasks/use-task-store';
+import { useStatusUpdater } from '@/modules/shell/sync-progress/use-status-updater';
 
 interface UseBinanceSavingsReturn {
   fetchExchangeSavings: (payload: MaybeRef<ExchangeSavingsRequestPayload>) => Promise<ExchangeSavingsCollection>;

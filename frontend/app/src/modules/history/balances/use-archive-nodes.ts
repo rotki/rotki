@@ -1,6 +1,6 @@
 import type { ComputedRef, MaybeRef, Ref } from 'vue';
-import { useEvmNodesApi } from '@/composables/api/settings/evm-nodes-api';
-import { useSupportedChains } from '@/composables/info/chains';
+import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
+import { useEvmNodesApi } from '@/modules/settings/api/use-evm-nodes-api';
 
 interface UseArchiveNodesReturn {
   chainsWithArchiveNodes: Ref<string[]>;

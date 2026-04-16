@@ -1,4 +1,4 @@
-import type { TaskType } from '@/modules/tasks/task-type';
+import type { TaskType } from '@/modules/core/tasks/task-type';
 
 export type BalanceQueryProgressType = TaskType.FETCH_DETECTED_TOKENS | TaskType.QUERY_BLOCKCHAIN_BALANCES;
 

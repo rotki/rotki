@@ -1,0 +1,179 @@
+<script lang="ts" setup>
+import type { AddressData, BlockchainAccount } from '@/modules/accounts/blockchain-accounts';
+import type { ValidationErrors } from '@/modules/core/api/types/errors';
+import type { AddTransactionHashPayload } from '@/modules/history/events/event-payloads';
+import { Blockchain, isValidTxHashOrSignature } from '@rotki/common';
+import useVuelidate from '@vuelidate/core';
+import { helpers, required } from '@vuelidate/validators';
+import { hasAccountAddress } from '@/modules/accounts/account-helpers';
+import { getAccountAddress } from '@/modules/accounts/account-utils';
+import ChainSelect from '@/modules/accounts/blockchain/ChainSelect.vue';
+import BlockchainAccountSelector from '@/modules/accounts/BlockchainAccountSelector.vue';
+import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
+import { useFormStateWatcher } from '@/modules/core/common/use-form';
+import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
+import { useRefPropVModel } from '@/modules/core/common/validation/model';
+import { toMessages } from '@/modules/core/common/validation/validation';
+
+const modelValue = defineModel<AddTransactionHashPayload>({ required: true });
+const errors = defineModel<ValidationErrors>('errorMessages', { required: true });
+const stateUpdated = defineModel<boolean>('stateUpdated', { default: false, required: false });
+
+const { t } = useI18n({ useScope: 'global' });
+
+const lastChain = useLocalStorage<string>('rotki.history_event.add_by_tx_hash.chain', Blockchain.ETH);
+const txRef = useRefPropVModel(modelValue, 'txRef');
+const blockchain = useRefPropVModel(modelValue, 'blockchain');
+const associatedAddress = useRefPropVModel(modelValue, 'associatedAddress');
+
+const { accounts: accountsPerChain } = storeToRefs(useBlockchainAccountsStore());
+const { evmAndEvmLikeTxChainsInfo, getChain, solanaChainsData } = useSupportedChains();
+const txChains = useArrayMap(evmAndEvmLikeTxChainsInfo, x => x.id);
+const solanaChains = useArrayMap(solanaChainsData, x => x.id);
+
+const chainOptions = computed(() => {
+  const accountChains = Object.entries(get(accountsPerChain))
+    .filter(([_, accounts]) => accounts.length > 0)
+    .map(([chain]) => chain);
+
+  return [...get(txChains), ...get(solanaChains)].filter(chain => accountChains.includes(chain));
+});
+
+const usableChains = computed<string[]>(() => {
+  const blockchainVal = get(blockchain);
+  if (!blockchainVal) {
+    return get(chainOptions);
+  }
+
+  return [getChain(blockchainVal)];
+});
+
+watch(blockchain, (chain) => {
+  if (chain) {
+    set(lastChain, chain);
+  }
+});
+
+onMounted(() => {
+  const last = get<string>(lastChain);
+  const options = get(chainOptions);
+  if (!options.includes(last) && options.length > 0) {
+    set(lastChain, options[0]);
+  }
+  set(blockchain, get<string>(lastChain));
+});
+
+const accounts = computed<BlockchainAccount<AddressData>[]>({
+  get: () => {
+    const model = get(modelValue);
+    const accountFound = Object.values(get(accountsPerChain))
+      .flatMap(x => x)
+      .filter(hasAccountAddress)
+      .find(
+        item =>
+          getAccountAddress(item) === model.associatedAddress
+          && (!model.blockchain || model.blockchain === item.chain),
+      );
+
+    if (accountFound) {
+      return [accountFound];
+    }
+
+    return [];
+  },
+  set: (value: BlockchainAccount<AddressData>[]) => {
+    const account = value[0];
+    const associatedAddress = account
+      ? getAccountAddress(account)
+      : '';
+
+    set(modelValue, {
+      ...get(modelValue),
+      associatedAddress,
+    });
+  },
+});
+
+const rules = {
+  associatedAddress: {
+    required: helpers.withMessage(
+      t('transactions.form.account.validation.non_empty'),
+      (accounts: BlockchainAccount<AddressData>[]) => accounts.length > 0,
+    ),
+  },
+  blockchain: { required },
+  txRef: {
+    isValidTxHashOrSignature: helpers.withMessage(t('transactions.form.tx_hash.validation.valid'), isValidTxHashOrSignature),
+    required: helpers.withMessage(t('transactions.form.tx_hash.validation.non_empty'), required),
+  },
+};
+
+const states = {
+  associatedAddress,
+  blockchain,
+  txRef,
+};
+
+const v$ = useVuelidate(
+  rules,
+  states,
+  {
+    $autoDirty: true,
+    $externalResults: errors,
+  },
+);
+
+useFormStateWatcher(states, stateUpdated);
+
+onBeforeUnmount(() => {
+  set(errors, {});
+});
+
+defineExpose({
+  validate: () => get(v$).$validate(),
+});
+</script>
+
+<template>
+  <div
+    v-if="chainOptions.length === 0"
+    class="text-rui-text-secondary"
+  >
+    {{ t('transactions.form.no_accounts') }}
+  </div>
+  <div
+    v-else
+    class="flex flex-col gap-4"
+  >
+    <div class="flex gap-2">
+      <ChainSelect
+        v-model="blockchain"
+        class="max-w-[20rem]"
+        :items="chainOptions"
+        :error-messages="toMessages(v$.blockchain)"
+      />
+      <BlockchainAccountSelector
+        v-model="accounts"
+        class="flex-1"
+        :chains="usableChains"
+        hide-chain-icon
+        outlined
+        show-details
+        multichain
+        required
+        unique
+        :label="t('common.address')"
+        :error-messages="toMessages(v$.associatedAddress)"
+        :no-data-text="t('transactions.form.account.no_address_found')"
+      />
+    </div>
+
+    <RuiTextField
+      v-model="txRef"
+      :label="`${t('common.tx_hash')} / ${t('common.signature')}`"
+      variant="outlined"
+      color="primary"
+      :error-messages="toMessages(v$.txRef)"
+    />
+  </div>
+</template>

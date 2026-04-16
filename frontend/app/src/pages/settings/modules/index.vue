@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import ModuleSelector from '@/components/defi/wizard/ModuleSelector.vue';
-import SettingsPage from '@/components/settings/controls/SettingsPage.vue';
-import SettingCategory from '@/components/settings/SettingCategory.vue';
-import { SettingsHighlightIds } from '@/composables/settings/types';
-import { NoteLocation } from '@/modules/common/notes';
+import { NoteLocation } from '@/modules/core/common/notes';
+import SettingsPage from '@/modules/settings/controls/SettingsPage.vue';
+import ModuleSelector from '@/modules/settings/modules/ModuleSelector.vue';
+import { SettingsHighlightIds } from '@/modules/settings/setting-highlight-ids';
+import SettingCategory from '@/modules/settings/SettingCategory.vue';
 
 definePage({
   meta: {

@@ -1,4 +1,4 @@
-import type { DialogShowOptions } from '@/components/history/events/dialog-types';
+import type { DialogShowOptions } from '@/modules/history/events/dialog-types';
 import type {
   PullEthBlockEventPayload,
   PullLocationTransactionPayload,

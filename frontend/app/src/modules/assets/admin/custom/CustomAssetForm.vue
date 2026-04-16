@@ -1,0 +1,103 @@
+<script setup lang="ts">
+import type { CustomAsset } from '@/modules/assets/types';
+import type { ValidationErrors } from '@/modules/core/api/types/errors';
+import useVuelidate from '@vuelidate/core';
+import { helpers, required } from '@vuelidate/validators';
+import AssetIconForm from '@/modules/assets/admin/AssetIconForm.vue';
+import { useFormStateWatcher } from '@/modules/core/common/use-form';
+import { refOptional, useRefPropVModel } from '@/modules/core/common/validation/model';
+import { toMessages } from '@/modules/core/common/validation/validation';
+import AutoCompleteWithSearchSync from '@/modules/shell/components/inputs/AutoCompleteWithSearchSync.vue';
+
+const modelValue = defineModel<CustomAsset>({ required: true });
+const errors = defineModel<ValidationErrors>('errorMessages', { required: true });
+const stateUpdated = defineModel<boolean>('stateUpdated', { default: false, required: false });
+
+const { types } = defineProps<{
+  types: string[];
+}>();
+
+const customAssetType = useRefPropVModel(modelValue, 'customAssetType');
+const name = useRefPropVModel(modelValue, 'name');
+const notes = refOptional(useRefPropVModel(modelValue, 'notes'), '');
+
+const assetIconFormRef = useTemplateRef<InstanceType<typeof AssetIconForm>>('assetIconFormRef');
+
+const { t } = useI18n({ useScope: 'global' });
+
+const rules = {
+  name: {
+    required: helpers.withMessage(t('asset_form.name_non_empty'), required),
+  },
+  notes: { externalServerValidation: () => true },
+  type: {
+    required: helpers.withMessage(t('asset_form.type_non_empty'), required),
+  },
+};
+
+const states = {
+  name,
+  notes,
+  type: customAssetType,
+};
+
+const v$ = useVuelidate(
+  rules,
+  states,
+  { $autoDirty: true, $externalResults: errors },
+);
+
+useFormStateWatcher(states, stateUpdated);
+
+function saveIcon(identifier: string) {
+  get(assetIconFormRef)?.saveIcon(identifier);
+}
+
+defineExpose({
+  saveIcon,
+  validate: () => get(v$).$validate(),
+});
+</script>
+
+<template>
+  <div class="flex flex-col gap-2">
+    <div class="grid md:grid-cols-2 gap-x-4 gap-y-2">
+      <RuiTextField
+        v-model="name"
+        data-cy="name"
+        variant="outlined"
+        color="primary"
+        clearable
+        :label="t('common.name')"
+        :error-messages="toMessages(v$.name)"
+        @blur="v$.name.$touch()"
+      />
+      <AutoCompleteWithSearchSync
+        v-model="customAssetType"
+        data-cy="type"
+        :items="types"
+        clearable
+        :label="t('common.type')"
+        :error-messages="toMessages(v$.type)"
+        @blur="v$.type.$touch()"
+      />
+    </div>
+    <RuiTextArea
+      v-model="notes"
+      data-cy="notes"
+      variant="outlined"
+      color="primary"
+      max-rows="5"
+      min-rows="3"
+      auto-grow
+      clearable
+      :label="t('common.notes')"
+      @blur="v$.notes.$touch()"
+    />
+
+    <AssetIconForm
+      ref="assetIconFormRef"
+      :identifier="modelValue.identifier"
+    />
+  </div>
+</template>

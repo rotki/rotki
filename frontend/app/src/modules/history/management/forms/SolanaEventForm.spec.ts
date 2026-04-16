@@ -1,38 +1,38 @@
 import type { AssetMap } from '@/modules/assets/types';
+import type { TradeLocationData } from '@/modules/core/common/location';
 import type { SolanaEvent } from '@/modules/history/events/schemas';
-import type { TradeLocationData } from '@/modules/history/trade/location';
 import { bigNumberify, HistoryEventEntryType } from '@rotki/common';
 import { type ComponentMountingOptions, mount, type VueWrapper } from '@vue/test-utils';
 import dayjs from 'dayjs';
 import { createPinia, type Pinia, setActivePinia } from 'pinia';
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { nextTick } from 'vue';
-import { useAssetInfoApi } from '@/composables/api/assets/info';
-import { useAssetPricesApi } from '@/composables/api/assets/prices';
-import { useHistoryEvents } from '@/composables/history/events';
-import { useHistoryEventMappings } from '@/composables/history/events/mapping';
-import { useHistoryEventCounterpartyMappings } from '@/composables/history/events/mapping/counterparty';
-import { useLocations } from '@/composables/locations';
-import { setupDayjs } from '@/modules/common/data/date';
+import { useAssetInfoApi } from '@/modules/assets/api/use-asset-info-api';
+import { useAssetPricesApi } from '@/modules/assets/api/use-asset-prices-api';
+import { setupDayjs } from '@/modules/core/common/data/date';
+import { useLocations } from '@/modules/core/common/use-locations';
+import { useHistoryEventCounterpartyMappings } from '@/modules/history/events/mapping/use-history-event-counterparty-mappings';
+import { useHistoryEventMappings } from '@/modules/history/events/mapping/use-history-event-mappings';
+import { useHistoryEvents } from '@/modules/history/events/use-history-events';
 import SolanaEventForm from '@/modules/history/management/forms/SolanaEventForm.vue';
 
 vi.mock('json-editor-vue', () => ({
   template: '<input />',
 }));
 
-vi.mock('@/composables/history/events', () => ({
+vi.mock('@/modules/history/events/use-history-events', () => ({
   useHistoryEvents: vi.fn(),
 }));
 
-vi.mock('@/composables/locations', () => ({
+vi.mock('@/modules/core/common/use-locations', () => ({
   useLocations: vi.fn(),
 }));
 
-vi.mock('@/composables/api/assets/prices', () => ({
+vi.mock('@/modules/assets/api/use-asset-prices-api', () => ({
   useAssetPricesApi: vi.fn(),
 }));
 
-vi.mock('@/composables/history/events/mapping/counterparty', () => ({
+vi.mock('@/modules/history/events/mapping/use-history-event-counterparty-mappings', () => ({
   useHistoryEventCounterpartyMappings: vi.fn(),
 }));
 

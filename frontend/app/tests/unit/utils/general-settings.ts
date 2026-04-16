@@ -1,6 +1,6 @@
-import type { Module } from '@/modules/common/modules';
+import type { Module } from '@/modules/core/common/modules';
 import type { GeneralSettings } from '@/modules/settings/types/user-settings';
-import { useCurrencies } from '@/modules/amount-display/currencies';
+import { useCurrencies } from '@/modules/assets/amount-display/currencies';
 import { defaultGeneralSettings } from '@/modules/settings/factories';
 import { useGeneralSettingsStore } from '@/modules/settings/use-general-settings-store';
 

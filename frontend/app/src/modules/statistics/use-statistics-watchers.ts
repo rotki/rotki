@@ -1,5 +1,5 @@
-import { usePremium } from '@/composables/premium';
-import { useSessionAuthStore } from '@/modules/session/use-session-auth-store';
+import { useSessionAuthStore } from '@/modules/auth/use-session-auth-store';
+import { usePremium } from '@/modules/premium/use-premium';
 import { useStatisticsDataFetching } from '@/modules/statistics/use-statistics-data-fetching';
 
 export function useStatisticsWatchers(): void {

@@ -1,13 +1,13 @@
 import type { MaybeRef } from 'vue';
 import type * as Vue from 'vue';
 import type { NonFungibleBalance, NonFungibleBalancesRequestPayload } from '@/modules/balances/types/nfbalances';
-import type { Collection } from '@/modules/common/collection';
-import type { LocationQuery } from '@/modules/table/route';
+import type { Collection } from '@/modules/core/common/collection';
+import type { LocationQuery } from '@/modules/core/table/route';
 import { startPromise } from '@shared/utils';
 import flushPromises from 'flush-promises';
 import { afterEach, assertType, beforeAll, beforeEach, describe, expect, expectTypeOf, it, vi } from 'vitest';
-import { usePaginationFilters } from '@/composables/use-pagination-filter';
 import { useNftBalances } from '@/modules/balances/nft/use-nft-balances';
+import { usePaginationFilters } from '@/modules/core/table/use-pagination-filter';
 
 vi.mock('vue', async (): Promise<Record<string, unknown>> => {
   const mod = await vi.importActual<typeof Vue>('vue');

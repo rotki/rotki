@@ -3,9 +3,9 @@ import type { Nullable } from '@rotki/common';
 import type { InternalTxConflict } from './types';
 import type { Pinned } from '@/modules/session/types';
 import { startPromise } from '@shared/utils';
-import InternalTxConflictRepullSettings from '@/components/settings/general/InternalTxConflictRepullSettings.vue';
-import { HighlightTargetTypes, useHistoryEventNavigation } from '@/composables/history/events/use-history-event-navigation';
-import { useAreaVisibilityStore } from '@/modules/common/use-area-visibility-store';
+import { useAreaVisibilityStore } from '@/modules/core/common/use-area-visibility-store';
+import { HighlightTargetTypes, useHistoryEventNavigation } from '@/modules/history/events/use-history-event-navigation';
+import InternalTxConflictRepullSettings from '@/modules/settings/general/InternalTxConflictRepullSettings.vue';
 import InternalTxConflictsContent from './InternalTxConflictsContent.vue';
 import { useInternalTxConflictResolution } from './use-internal-tx-conflict-resolution';
 

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import TradeSendCard from '@/modules/onchain/send/TradeSendCard.vue';
+import TradeSendCard from '@/modules/wallet/send/TradeSendCard.vue';
 
 defineOptions({
   name: 'OnChainSend',

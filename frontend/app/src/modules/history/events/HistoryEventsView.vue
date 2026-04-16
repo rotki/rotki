@@ -1,0 +1,341 @@
+<script setup lang="ts">
+import type { Account, Blockchain, HistoryEventEntryType } from '@rotki/common';
+import type { PullLocationTransactionPayload } from '@/modules/history/events/event-payloads';
+import type { HistoryEventEntry, HistoryEventRow } from '@/modules/history/events/schemas';
+import { HISTORY_EVENT_ACTIONS, type HistoryEventAction } from '@/modules/history/events/action-types';
+import HistoryEventsVirtualTable from '@/modules/history/events/components/HistoryEventsVirtualTable.vue';
+import { DIALOG_TYPES, type DialogShowOptions, type HistoryEventsToggles } from '@/modules/history/events/dialog-types';
+import HistoryEventsAlerts from '@/modules/history/events/HistoryEventsAlerts.vue';
+import HistoryEventsDialogContainer from '@/modules/history/events/HistoryEventsDialogContainer.vue';
+import HistoryEventsFiltersChips from '@/modules/history/events/HistoryEventsFiltersChips.vue';
+import HistoryEventsTableActions from '@/modules/history/events/HistoryEventsTableActions.vue';
+import HistoryEventsViewButtons from '@/modules/history/events/HistoryEventsViewButtons.vue';
+import { useHistoryEventsActions } from '@/modules/history/events/use-history-events-actions';
+import { useHistoryEventsDeletion } from '@/modules/history/events/use-history-events-deletion';
+import { getDefaultToggles, useHistoryEventNavigationConsumer, useHistoryEventsFilters } from '@/modules/history/events/use-history-events-filters';
+import { useHistoryEventsSelectionActions } from '@/modules/history/events/use-history-events-selection-actions';
+import { useHistoryEventsStatus } from '@/modules/history/events/use-history-events-status';
+import { useHistoryEventsSelectionMode } from '@/modules/history/events/use-selection-mode';
+import { useUnmatchedAssetMovements } from '@/modules/history/events/use-unmatched-asset-movements';
+import RefreshButton from '@/modules/shell/components/RefreshButton.vue';
+import TablePageLayout from '@/modules/shell/layout/TablePageLayout.vue';
+
+type Period = { fromTimestamp?: string; toTimestamp?: string } | { fromTimestamp?: number; toTimestamp?: number };
+
+defineOptions({ inheritAttrs: false });
+
+const {
+  entryTypes,
+  eventSubTypes = [],
+  eventTypes = [],
+  externalAccountFilter = [],
+  location,
+  mainPage,
+  onlyChains = [],
+  period,
+  protocols = [],
+  sectionTitle = '',
+  useExternalAccountFilter,
+  validators,
+} = defineProps<{
+  location?: string;
+  protocols?: string[];
+  eventTypes?: string[];
+  eventSubTypes?: string[];
+  entryTypes?: HistoryEventEntryType[];
+  period?: Period;
+  validators?: number[];
+  externalAccountFilter?: Account[];
+  useExternalAccountFilter?: boolean;
+  sectionTitle?: string;
+  mainPage?: boolean;
+  onlyChains?: Blockchain[];
+}>();
+
+const SyncProgressPanel = defineAsyncComponent(() => import('@/modules/shell/sync-progress/components/SyncProgressPanel.vue'));
+
+const { t } = useI18n({ useScope: 'global' });
+const router = useRouter();
+const route = useRoute();
+
+const toggles = ref<HistoryEventsToggles>(getDefaultToggles());
+
+const showAlerts = ref<boolean>(false);
+const currentAction = ref<HistoryEventAction>(HISTORY_EVENT_ACTIONS.QUERY);
+
+const dialogContainer = useTemplateRef<InstanceType<typeof HistoryEventsDialogContainer>>('dialogContainer');
+const syncProgressPanelEl = useTemplateRef<ComponentPublicInstance>('syncProgressPanel');
+const tableActionsEl = useTemplateRef<ComponentPublicInstance>('tableActions');
+const filtersChipsEl = useTemplateRef<ComponentPublicInstance>('filtersChips');
+
+const { height: syncProgressHeight } = useElementSize(syncProgressPanelEl);
+const { height: tableActionsHeight } = useElementSize(tableActionsEl);
+const { height: filtersChipsHeight } = useElementSize(filtersChipsEl);
+
+const BASE_TABLE_HEIGHT_OFFSET = 252;
+
+const tableHeightOffset = computed<number>(() => get(syncProgressHeight) + get(tableActionsHeight) + get(filtersChipsHeight) + BASE_TABLE_HEIGHT_OFFSET);
+
+const {
+  anyEventsDecoding,
+  processing,
+  refreshing,
+  sectionLoading,
+  shouldFetchEventsRegularly,
+} = useHistoryEventsStatus();
+
+const usedTitle = computed<string>(() => sectionTitle || t('transactions.title'));
+
+const {
+  clearFilters,
+  duplicateHandlingStatus,
+  fetchData,
+  filters,
+  groupIdentifiers,
+  groupLoading,
+  groups,
+  hasActiveFilters,
+  highlightedGroupIdentifier,
+  highlightedIdentifiers,
+  highlightTypes,
+  identifiers,
+  includes,
+  locationLabels,
+  matchers,
+  onLocationLabelsChanged,
+  pageParams,
+  pagination,
+  setPage,
+  sort,
+} = useHistoryEventsFilters(
+  {
+    entryTypes: () => entryTypes,
+    eventSubTypes: () => eventSubTypes,
+    eventTypes: () => eventTypes,
+    externalAccountFilter: () => externalAccountFilter,
+    location: () => location,
+    mainPage: () => mainPage,
+    period: () => period,
+    protocols: () => protocols,
+    useExternalAccountFilter: () => useExternalAccountFilter,
+    validators: () => validators,
+  },
+  toggles,
+);
+
+const actions = useHistoryEventsActions({
+  currentAction,
+  entryTypes: () => entryTypes,
+  fetchData,
+  groups,
+  mainPage: () => mainPage,
+  onlyChains: () => onlyChains,
+  shouldFetchEventsRegularly,
+});
+
+const selectionMode = useHistoryEventsSelectionMode();
+
+// Store grouped events for checking complete EVM transactions
+const groupedEventsByTxRef = ref<Record<string, HistoryEventRow[]>>({});
+// Store original groups data to preserve swap groups
+const originalGroups = ref<HistoryEventRow[]>([]);
+
+const deletion = useHistoryEventsDeletion(
+  selectionMode,
+  groupedEventsByTxRef,
+  originalGroups,
+  () => actions.fetch.dataAndLocations(),
+  pageParams,
+);
+
+const {
+  accountingRuleToEdit,
+  handleAccountingRuleRefresh,
+  handleSelectionAction,
+  ignoreStatus,
+  selectedEventIds,
+} = useHistoryEventsSelectionActions({
+  deletion,
+  originalGroups,
+  refreshCallback: () => actions.fetch.dataAndLocations(),
+  selectionMode,
+});
+
+const debouncedProcessing = refDebounced(processing, 200);
+const { autoMatchLoading, autoMatchMovement, refreshUnmatchedAssetMovements } = useUnmatchedAssetMovements();
+useHistoryEventNavigationConsumer(pagination, pageParams, groupLoading);
+const backgroundLoading = logicOr(debouncedProcessing, autoMatchLoading);
+
+// Handle updating available event IDs from the table
+function handleUpdateEventIds({ eventIds, groupedEvents, rawEvents }: { eventIds: number[]; groupedEvents: Record<string, HistoryEventRow[]>; rawEvents?: HistoryEventRow[] }): void {
+  // Create mock event entries with just the identifiers
+  const events: HistoryEventEntry[] = eventIds.map(id => ({ identifier: id } as HistoryEventEntry));
+  selectionMode.setAvailableIds(events);
+
+  // Store the grouped events for checking complete transactions
+  set(groupedEventsByTxRef, groupedEvents);
+  // Store the original groups data - prefer rawEvents if available, otherwise use groups.data
+  set(originalGroups, rawEvents || get(groups).data);
+}
+
+async function handleRedecode(event?: PullLocationTransactionPayload): Promise<void> {
+  await actions.fetch.dataAndRedecode(event);
+  if (event?.linkedMovement) {
+    const matched = await autoMatchMovement(event.linkedMovement);
+    if (matched)
+      await actions.fetch.dataAndLocations();
+  }
+}
+
+async function handleMovementChanged(): Promise<void> {
+  await refreshUnmatchedAssetMovements();
+  await actions.fetch.dataAndLocations();
+}
+
+// Set total matching count from groups
+watchImmediate(groups, (newGroups) => {
+  selectionMode.setTotalMatchingCount(newGroups.found);
+});
+
+const queryToDialogMap: Record<string, DialogShowOptions> = {
+  openDecodingStatusDialog: { type: DIALOG_TYPES.DECODING_STATUS },
+  openMatchAssetMovementsDialog: { type: DIALOG_TYPES.MATCH_ASSET_MOVEMENTS },
+};
+
+watchImmediate(route, async ({ query }) => {
+  const dialogOptions = Object.keys(queryToDialogMap).find(key => query[key]);
+  if (!dialogOptions)
+    return;
+
+  await nextTick();
+  get(dialogContainer)?.show(queryToDialogMap[dialogOptions]);
+  await router.replace({ query: {} });
+});
+
+watch(backgroundLoading, async (isLoading, wasLoading) => {
+  if (!isLoading && wasLoading)
+    await actions.fetch.dataAndLocations();
+});
+
+// Wait until the route doesn't change anymore to give time for the persisted filter to be set.
+watchDebounced(route, async () => {
+  if (import.meta.env.VITE_NO_AUTO_FETCH === 'true')
+    await actions.fetch.dataAndLocations();
+  else
+    await actions.refresh.all();
+}, { debounce: 500, immediate: true, once: true });
+</script>
+
+<template>
+  <div>
+    <SyncProgressPanel
+      v-if="mainPage"
+      ref="syncProgressPanel"
+      class="-mt-4 mb-4"
+    />
+    <TablePageLayout
+      :hide-header="!mainPage"
+      :child="!mainPage"
+      :title="[t('navigation_menu.history'), usedTitle]"
+      v-bind="$attrs"
+    >
+      <template #buttons>
+        <HistoryEventsViewButtons
+          v-model:show-alerts="showAlerts"
+          :processing="processing"
+          :loading="anyEventsDecoding"
+          :include-evm-events="includes.evmEvents"
+          @refresh="actions.refresh.all(true, $event)"
+          @show:dialog="dialogContainer?.show($event)"
+        />
+      </template>
+
+      <div>
+        <HistoryEventsAlerts
+          v-model:show="showAlerts"
+          :processing="processing"
+          :main-page="mainPage"
+          @open:match-asset-movements="dialogContainer?.show({ type: DIALOG_TYPES.MATCH_ASSET_MOVEMENTS })"
+          @open:internal-tx-conflicts="dialogContainer?.show({ type: DIALOG_TYPES.INTERNAL_TX_CONFLICTS })"
+        />
+
+        <RuiCard>
+          <template
+            v-if="!mainPage"
+            #header
+          >
+            <div class="flex items-center gap-x-1">
+              <RefreshButton
+                :disabled="refreshing"
+                :tooltip="t('transactions.refresh_tooltip')"
+                @refresh="actions.refresh.all(true)"
+              />
+              {{ usedTitle }}
+            </div>
+          </template>
+
+          <HistoryEventsTableActions
+            ref="tableActions"
+            v-model:filters="filters"
+            v-model:toggles="toggles"
+            :location-labels="locationLabels"
+            :processing="processing"
+            :matchers="matchers"
+            :export-params="pageParams"
+            :hide-redecode-buttons="!mainPage"
+            :hide-account-selector="useExternalAccountFilter"
+            :selection="selectionMode.state.value"
+            :ignore-status="ignoreStatus"
+            @update:location-labels="onLocationLabelsChanged($event)"
+            @redecode="actions.redecode.by($event)"
+            @selection:action="handleSelectionAction($event)"
+          />
+
+          <HistoryEventsFiltersChips
+            ref="filtersChips"
+            :group-identifiers="groupIdentifiers"
+            :duplicate-handling-status="duplicateHandlingStatus"
+            @refresh="actions.fetch.dataAndLocations()"
+          />
+
+          <HistoryEventsVirtualTable
+            v-model:sort="sort"
+            v-model:pagination="pagination"
+            :table-height-offset="tableHeightOffset"
+            :group-loading="groupLoading"
+            :groups="groups"
+            :page-params="toggles.matchExactEvents ? pageParams : undefined"
+            :exclude-ignored="!toggles.showIgnoredAssets"
+            :has-active-filters="hasActiveFilters"
+            :identifiers="identifiers"
+            :highlighted-group-identifier="highlightedGroupIdentifier"
+            :highlighted-identifiers="highlightedIdentifiers"
+            :highlight-types="highlightTypes"
+            :selection="selectionMode"
+            :match-exact-events="toggles.matchExactEvents"
+            :duplicate-handling-status="duplicateHandlingStatus"
+            @clear-filters="clearFilters()"
+            @show:dialog="dialogContainer?.show($event)"
+            @refresh="handleRedecode($event)"
+            @refresh:block-event="actions.redecode.blocks($event)"
+            @set-page="setPage($event)"
+            @update-event-ids="handleUpdateEventIds($event)"
+          />
+        </RuiCard>
+
+        <HistoryEventsDialogContainer
+          ref="dialogContainer"
+          v-model:accounting-rule-to-edit="accountingRuleToEdit"
+          v-model:current-action="currentAction"
+          :loading="processing"
+          :refreshing="refreshing"
+          :section-loading="sectionLoading"
+          :event-handlers="actions.dialogHandlers"
+          :selected-event-ids="selectedEventIds"
+          @accounting-rule-refresh="handleAccountingRuleRefresh()"
+          @movement-matched="handleMovementChanged()"
+        />
+      </div>
+    </TablePageLayout>
+  </div>
+</template>

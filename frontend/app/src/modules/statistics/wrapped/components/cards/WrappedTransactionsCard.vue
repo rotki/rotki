@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import type { BigNumber } from '@rotki/common';
-import ChainDisplay from '@/components/accounts/blockchain/ChainDisplay.vue';
-import { useSupportedChains } from '@/composables/info/chains';
-import { ValueDisplay } from '@/modules/amount-display/components';
-import { sortDesc } from '@/modules/common/data/bignumbers';
+import ChainDisplay from '@/modules/accounts/blockchain/ChainDisplay.vue';
+import { ValueDisplay } from '@/modules/assets/amount-display/components';
+import { sortDesc } from '@/modules/core/common/data/bignumbers';
+import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
 import WrappedCard from '../WrappedCard.vue';
 
 const { transactionsPerChain } = defineProps<{

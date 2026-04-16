@@ -1,5 +1,5 @@
+import type { AssetPrice } from '@/modules/assets/prices/price-types';
 import type { ManualBalanceWithPrice } from '@/modules/balances/types/manual-balances';
-import type { AssetPrice } from '@/modules/prices/price-types';
 import { type Balance, bigNumberify, type ProtocolBalance } from '@rotki/common';
 import { BalanceType } from '@/modules/balances/types/balances';
 

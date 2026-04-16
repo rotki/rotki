@@ -1,10 +1,10 @@
 <script setup lang="ts" generic="T extends BlockchainAccountBalance">
 import type { AccountDataRow } from '../../types';
 import type { BlockchainAccountBalance } from '@/modules/accounts/blockchain-accounts';
-import TokenDetection from '@/components/accounts/blockchain/TokenDetection.vue';
-import RowActions from '@/components/helper/RowActions.vue';
-import { useSupportedChains } from '@/composables/info/chains';
 import { getAccountAddress } from '@/modules/accounts/account-utils';
+import TokenDetection from '@/modules/accounts/blockchain/TokenDetection.vue';
+import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
+import RowActions from '@/modules/shell/components/RowActions.vue';
 
 export interface Props<T extends BlockchainAccountBalance> {
   accountOperation: boolean;

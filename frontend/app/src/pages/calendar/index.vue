@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import CalendarView from '@/components/calendar/CalendarView.vue';
-import { NoteLocation } from '@/modules/common/notes';
+import CalendarView from '@/modules/calendar/CalendarView.vue';
+import { NoteLocation } from '@/modules/core/common/notes';
 
 definePage({
   meta: {

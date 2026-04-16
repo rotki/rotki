@@ -1,6 +1,6 @@
-import { api } from '@/modules/api/rotki-api';
-import { VALID_WITH_SESSION_AND_EXTERNAL_SERVICE } from '@/modules/api/utils';
-import { type PendingTask, PendingTaskSchema } from '@/modules/tasks/types';
+import { api } from '@/modules/core/api/rotki-api';
+import { VALID_WITH_SESSION_AND_EXTERNAL_SERVICE } from '@/modules/core/api/utils';
+import { type PendingTask, PendingTaskSchema } from '@/modules/core/tasks/types';
 
 interface UsePoolApiReturn {
   getSushiswapBalances: () => Promise<PendingTask>;

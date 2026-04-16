@@ -1,29 +1,29 @@
 <script setup lang="ts">
 import type { DataTableColumn, DataTableSortData, TablePaginationData } from '@rotki/ui-library';
 import type { AddressData, BlockchainAccount } from '@/modules/accounts/blockchain-accounts';
-import type { TaskMeta } from '@/modules/tasks/types';
+import type { TaskMeta } from '@/modules/core/tasks/types';
 import { type BigNumber, Blockchain, Zero } from '@rotki/common';
-import AirdropDisplay from '@/components/defi/airdrops/AirdropDisplay.vue';
-import PoapDeliveryAirdrops from '@/components/defi/airdrops/PoapDeliveryAirdrops.vue';
-import BlockchainAccountSelector from '@/components/helper/BlockchainAccountSelector.vue';
-import ExternalLink from '@/components/helper/ExternalLink.vue';
-import TablePageLayout from '@/components/layout/TablePageLayout.vue';
-import { useDefiApi } from '@/composables/api/defi';
 import { getAccountAddress } from '@/modules/accounts/account-utils';
-import { AssetAmountDisplay, ValueDisplay } from '@/modules/amount-display/components';
-import HashLink from '@/modules/common/links/HashLink.vue';
-import { logger } from '@/modules/common/logging/logging';
+import BlockchainAccountSelector from '@/modules/accounts/BlockchainAccountSelector.vue';
+import AirdropDisplay from '@/modules/airdrops/AirdropDisplay.vue';
 import {
   type Airdrop,
   AIRDROP_POAP,
   Airdrops,
   type PoapDelivery,
   type PoapDeliveryDetails,
-} from '@/modules/defi/airdrops';
-import { useNotifications } from '@/modules/notifications/use-notifications';
-import { TableId, useRememberTableSorting } from '@/modules/table/use-remember-table-sorting';
-import { TaskType } from '@/modules/tasks/task-type';
-import { isActionableFailure, useTaskHandler } from '@/modules/tasks/use-task-handler';
+} from '@/modules/airdrops/airdrops';
+import PoapDeliveryAirdrops from '@/modules/airdrops/PoapDeliveryAirdrops.vue';
+import { useDefiApi } from '@/modules/airdrops/use-defi-api';
+import { AssetAmountDisplay, ValueDisplay } from '@/modules/assets/amount-display/components';
+import { logger } from '@/modules/core/common/logging/logging';
+import { useNotifications } from '@/modules/core/notifications/use-notifications';
+import { TableId, useRememberTableSorting } from '@/modules/core/table/use-remember-table-sorting';
+import { TaskType } from '@/modules/core/tasks/task-type';
+import { isActionableFailure, useTaskHandler } from '@/modules/core/tasks/use-task-handler';
+import ExternalLink from '@/modules/shell/components/ExternalLink.vue';
+import HashLink from '@/modules/shell/components/HashLink.vue';
+import TablePageLayout from '@/modules/shell/layout/TablePageLayout.vue';
 
 type AirdropWithIndex = Omit<Airdrop, 'amount'> & { index: number; amount: BigNumber };
 

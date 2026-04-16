@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import type { BigNumber } from '@rotki/common';
-import LocationDisplay from '@/components/history/LocationDisplay.vue';
-import { ValueDisplay } from '@/modules/amount-display/components';
-import { sortDesc } from '@/modules/common/data/bignumbers';
+import { ValueDisplay } from '@/modules/assets/amount-display/components';
+import { sortDesc } from '@/modules/core/common/data/bignumbers';
+import LocationDisplay from '@/modules/history/LocationDisplay.vue';
 import WrappedCard from '../WrappedCard.vue';
 
 const { tradesByExchange } = defineProps<{

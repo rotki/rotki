@@ -1,4 +1,4 @@
-import type { EvmUnDecodedTransactionsData } from '@/modules/messaging/types';
+import type { EvmUnDecodedTransactionsData } from '@/modules/core/messaging/types';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { useDecodingStatusStore } from './use-decoding-status-store';
 

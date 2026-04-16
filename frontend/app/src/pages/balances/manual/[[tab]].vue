@@ -2,19 +2,19 @@
 import type { ManualBalance, RawManualBalance } from '@/modules/balances/types/manual-balances';
 import { Zero } from '@rotki/common';
 import { startPromise } from '@shared/utils';
-import ManualBalancesDialog from '@/components/accounts/manual-balances/ManualBalancesDialog.vue';
-import ManualBalanceTable from '@/components/accounts/manual-balances/ManualBalanceTable.vue';
-import PriceRefresh from '@/components/helper/PriceRefresh.vue';
-import TablePageLayout from '@/components/layout/TablePageLayout.vue';
-import HideSmallBalances from '@/components/settings/HideSmallBalances.vue';
-import { useSectionStatus } from '@/composables/status';
+import ManualBalancesDialog from '@/modules/accounts/manual-balances/ManualBalancesDialog.vue';
+import ManualBalanceTable from '@/modules/accounts/manual-balances/ManualBalanceTable.vue';
+import PriceRefresh from '@/modules/assets/prices/PriceRefresh.vue';
 import { useManualBalances } from '@/modules/balances/manual/use-manual-balances';
 import { BalanceType } from '@/modules/balances/types/balances';
-import { TRADE_LOCATION_EXTERNAL } from '@/modules/common/defaults';
-import { NoteLocation } from '@/modules/common/notes';
-import { Section } from '@/modules/common/status';
+import { TRADE_LOCATION_EXTERNAL } from '@/modules/core/common/defaults';
+import { NoteLocation } from '@/modules/core/common/notes';
+import { Section } from '@/modules/core/common/status';
 import { useHistoryDataFetching } from '@/modules/history/use-history-data-fetching';
+import HideSmallBalances from '@/modules/settings/HideSmallBalances.vue';
 import { BalanceSource } from '@/modules/settings/types/frontend-settings';
+import TablePageLayout from '@/modules/shell/layout/TablePageLayout.vue';
+import { useSectionStatus } from '@/modules/shell/sync-progress/use-section-status';
 
 definePage({
   meta: {

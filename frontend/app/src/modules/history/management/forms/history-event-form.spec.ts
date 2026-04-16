@@ -3,8 +3,8 @@ import { bigNumberify, HistoryEventEntryType } from '@rotki/common';
 import { type ComponentMountingOptions, mount, type VueWrapper } from '@vue/test-utils';
 import { createPinia, setActivePinia } from 'pinia';
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
-import HistoryEventForm from '@/components/history/events/HistoryEventForm.vue';
-import { setupDayjs } from '@/modules/common/data/date';
+import { setupDayjs } from '@/modules/core/common/data/date';
+import HistoryEventForm from '@/modules/history/events/HistoryEventForm.vue';
 import { isEvmTypeEvent } from '@/modules/history/management/forms/form-guards';
 
 vi.mock('json-editor-vue', () => ({

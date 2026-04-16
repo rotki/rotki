@@ -1,0 +1,158 @@
+<script setup lang="ts">
+import type { AddressBookPayload } from '@/modules/accounts/address-book/eth-names';
+import type LatestPriceForm from '@/modules/assets/prices/latest/LatestPriceForm.vue';
+import { useTemplateRef } from 'vue';
+import AddressBookForm from '@/modules/accounts/address-book/AddressBookForm.vue';
+import { useAddressBookOperations } from '@/modules/accounts/address-book/use-address-book-operations';
+import { ApiValidationError, type ValidationErrors } from '@/modules/core/api/types/errors';
+import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
+import { useMessageStore } from '@/modules/core/common/use-message-store';
+import BigDialog from '@/modules/shell/components/dialogs/BigDialog.vue';
+
+const open = defineModel<boolean>('open', { required: true });
+
+const {
+  editableItem = null,
+  editMode,
+  location,
+  root = false,
+  selectedChain,
+} = defineProps<{
+  editableItem?: AddressBookPayload | null;
+  editMode?: boolean;
+  selectedChain?: string;
+  location?: 'global' | 'private';
+  root?: boolean;
+}>();
+
+const emit = defineEmits<{
+  'update:tab': [tab: number];
+  'refresh': [];
+}>();
+
+const { t } = useI18n({ useScope: 'global' });
+
+const modelValue = ref<AddressBookPayload>();
+const loading = ref(false);
+const errorMessages = ref<Record<string, string[]>>({});
+const form = useTemplateRef<InstanceType<typeof LatestPriceForm>>('form');
+const stateUpdated = ref(false);
+
+const emptyForm: () => AddressBookPayload = () => ({
+  address: '',
+  blockchain: selectedChain ?? 'all',
+  location: location || 'private',
+  name: '',
+});
+
+const { addAddressBook, updateAddressBook } = useAddressBookOperations();
+const { setMessage } = useMessageStore();
+
+function handleSaveError(error: unknown, isEdit: boolean, payload: AddressBookPayload): void {
+  const message = getErrorMessage(error);
+  let errors: string | ValidationErrors = message;
+
+  if (error instanceof ApiValidationError)
+    errors = error.getValidationErrors(payload);
+
+  if (typeof errors === 'string') {
+    const key = isEdit ? 'edit' : 'add';
+    setMessage({
+      description: t(`address_book.actions.${key}.error.description`, { message }),
+      success: false,
+      title: t(`address_book.actions.${key}.error.title`),
+    });
+  }
+  else {
+    set(errorMessages, errors);
+  }
+}
+
+async function save(): Promise<boolean> {
+  if (!isDefined(modelValue))
+    return false;
+
+  const formRef = get(form);
+  const valid = await formRef?.validate();
+  if (!valid)
+    return false;
+
+  const formValue = get(modelValue);
+  const { address, blockchain, location, name } = formValue;
+  const isEdit = editMode ?? !!editableItem;
+  const payload = {
+    address: address.trim(),
+    blockchain: blockchain === 'all' ? null : blockchain,
+    name: name.trim(),
+  };
+
+  set(loading, true);
+  let success;
+  try {
+    success = isEdit
+      ? await updateAddressBook(location, [payload])
+      : await addAddressBook(location, [payload], root);
+  }
+  catch (error: unknown) {
+    success = false;
+    handleSaveError(error, isEdit, formValue);
+  }
+
+  set(loading, false);
+  if (success) {
+    set(modelValue, undefined);
+    emit('update:tab', location === 'global' ? 0 : 1);
+    emit('refresh');
+  }
+  return success;
+}
+
+const dialogTitle = computed<string>(() =>
+  editableItem
+    ? t('address_book.dialog.edit_title')
+    : t('address_book.dialog.add_title'),
+);
+
+watch(modelValue, (oldValue, currValue) => {
+  if (currValue?.blockchain !== oldValue?.blockchain)
+    set(errorMessages, {});
+});
+
+watchImmediate([open, () => editableItem], ([open, editableItem]) => {
+  if (!open) {
+    set(modelValue, undefined);
+  }
+  else {
+    if (editableItem) {
+      set(modelValue, {
+        ...editableItem,
+        blockchain: editableItem.blockchain || 'all',
+      });
+    }
+    else {
+      set(modelValue, emptyForm());
+    }
+  }
+});
+</script>
+
+<template>
+  <BigDialog
+    :display="!!modelValue"
+    :title="dialogTitle"
+    :primary-action="t('common.actions.save')"
+    :loading="loading"
+    :prompt-on-close="stateUpdated"
+    @confirm="save()"
+    @cancel="open = false"
+  >
+    <AddressBookForm
+      v-if="modelValue"
+      ref="form"
+      v-model="modelValue"
+      v-model:error-messages="errorMessages"
+      v-model:state-updated="stateUpdated"
+      :edit-mode="editMode ?? !!editableItem"
+    />
+  </BigDialog>
+</template>

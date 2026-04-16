@@ -1,0 +1,80 @@
+<script lang="ts" setup>
+import type { MatchedKeyword, SearchMatcher } from '@/modules/core/table/filtering';
+import type { KrakenStakingDateFilter } from '@/modules/staking/staking-types';
+import { assert } from '@rotki/common';
+import { dateDeserializer, dateRangeValidator, dateSerializer, getDateInputISOFormat } from '@/modules/core/common/data/date';
+import TableFilter from '@/modules/core/table/TableFilter.vue';
+import { useFrontendSettingsStore } from '@/modules/settings/use-frontend-settings-store';
+
+const modelValue = defineModel<KrakenStakingDateFilter>({ required: true });
+
+const { t } = useI18n({ useScope: 'global' });
+const { dateInputFormat } = storeToRefs(useFrontendSettingsStore());
+
+enum KrakenStakingFilterKeys {
+  START = 'start',
+  END = 'end',
+}
+
+enum KrakenStakingFilterValueKeys {
+  START = 'fromTimestamp',
+  END = 'toTimestamp',
+}
+
+type KrakenStakingMatcher = SearchMatcher<KrakenStakingFilterKeys, KrakenStakingFilterValueKeys>;
+
+type KrakenStakingFilters = MatchedKeyword<KrakenStakingFilterValueKeys>;
+
+const matches = computed<KrakenStakingFilters>({
+  get() {
+    const model = get(modelValue);
+    return {
+      ...(model.fromTimestamp ? { fromTimestamp: model.fromTimestamp.toString() } : {}),
+      ...(model.toTimestamp ? { toTimestamp: model.toTimestamp.toString() } : {}),
+    };
+  },
+  set(value) {
+    const { fromTimestamp, toTimestamp } = value;
+    assert(typeof fromTimestamp === 'string' || fromTimestamp === undefined);
+    assert(typeof toTimestamp === 'string' || toTimestamp === undefined);
+
+    set(modelValue, {
+      fromTimestamp: fromTimestamp ? Number(fromTimestamp) : undefined,
+      toTimestamp: toTimestamp ? Number(toTimestamp) : undefined,
+    });
+  },
+});
+
+const matchers = computed<KrakenStakingMatcher[]>(() => [{
+  description: t('common.filter.start_date'),
+  deserializer: dateDeserializer(dateInputFormat),
+  hint: t('common.filter.date_hint', {
+    format: getDateInputISOFormat(get(dateInputFormat)),
+  }),
+  key: KrakenStakingFilterKeys.START,
+  keyValue: KrakenStakingFilterValueKeys.START,
+  serializer: dateSerializer(dateInputFormat),
+  string: true,
+  suggestions: () => [],
+  validate: dateRangeValidator(dateInputFormat, () => get(matches)?.toTimestamp?.toString(), 'start'),
+}, {
+  description: t('common.filter.end_date'),
+  deserializer: dateDeserializer(dateInputFormat),
+  hint: t('common.filter.date_hint', {
+    format: getDateInputISOFormat(get(dateInputFormat)),
+  }),
+  key: KrakenStakingFilterKeys.END,
+  keyValue: KrakenStakingFilterValueKeys.END,
+  serializer: dateSerializer(dateInputFormat),
+  string: true,
+  suggestions: () => [],
+  validate: dateRangeValidator(dateInputFormat, () => get(matches)?.fromTimestamp?.toString(), 'end'),
+}]);
+</script>
+
+<template>
+  <TableFilter
+    v-model:matches="matches"
+    :matchers="matchers"
+  />
+</template>

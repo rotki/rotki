@@ -1,7 +1,7 @@
 import { startPromise } from '@shared/utils';
 import { createRouter, createWebHashHistory, type RouteLocationRaw } from 'vue-router';
 import { handleHotUpdate, routes } from 'vue-router/auto-routes';
-import { useSessionAuthStore } from '@/modules/session/use-session-auth-store';
+import { useSessionAuthStore } from '@/modules/auth/use-session-auth-store';
 import NotFound from '@/pages/404.vue';
 
 const base = import.meta.env.VITE_PUBLIC_PATH ? window.location.pathname : '/';

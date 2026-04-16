@@ -1,10 +1,10 @@
 import type { ComputedRef } from 'vue';
 import { type BigNumber, createEvmIdentifierFromAddress, type Writeable } from '@rotki/common';
-import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
-import { useSectionStatus } from '@/composables/status';
-import { sortDesc } from '@/modules/common/data/bignumbers';
-import { balanceSum, bigNumberSum } from '@/modules/common/data/calculation';
-import { Section } from '@/modules/common/status';
+import { useAssetInfoRetrieval } from '@/modules/assets/use-asset-info-retrieval';
+import { sortDesc } from '@/modules/core/common/data/bignumbers';
+import { balanceSum, bigNumberSum } from '@/modules/core/common/data/calculation';
+import { Section } from '@/modules/core/common/status';
+import { useSectionStatus } from '@/modules/shell/sync-progress/use-section-status';
 import { type PoolBalance, type PoolBalances, type PoolLiquidityBalance, PoolType } from './types';
 import { usePoolBalancesStore } from './use-pool-balances-store';
 import { usePoolDataFetching } from './use-pool-data-fetching';

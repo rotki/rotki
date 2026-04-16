@@ -17,16 +17,16 @@ import type {
   BtcBalances,
   EthBalance,
 } from '@/modules/balances/types/blockchain-balances';
-import type { Collection } from '@/modules/common/collection';
+import type { Collection } from '@/modules/core/common/collection';
 import { type Balance, Zero } from '@rotki/common';
 import { camelCase, omit } from 'es-toolkit';
 import { isEmpty } from 'es-toolkit/compat';
 import { includes, isFilterEnabled, sortBy } from '@/modules/accounts/account-common';
 import { getAccountAddress, getChain, getGroupId } from '@/modules/accounts/account-utils';
 import { createAccount, createXpubAccount } from '@/modules/accounts/create-account';
-import { assetSum, balanceSum } from '@/modules/common/data/calculation';
-import { uniqueStrings } from '@/modules/common/data/data';
-import { sum } from '@/modules/common/display/balances';
+import { assetSum, balanceSum } from '@/modules/core/common/data/calculation';
+import { uniqueStrings } from '@/modules/core/common/data/data';
+import { sum } from '@/modules/core/common/display/balances';
 
 interface AccountBalance {
   balance: Balance;

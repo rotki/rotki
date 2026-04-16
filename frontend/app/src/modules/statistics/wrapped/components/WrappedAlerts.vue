@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import ExternalLink from '@/components/helper/ExternalLink.vue';
-import HistoryEventsAlert from '@/components/history/HistoryEventsAlert.vue';
+import HistoryEventsAlert from '@/modules/history/HistoryEventsAlert.vue';
+import ExternalLink from '@/modules/shell/components/ExternalLink.vue';
 
 defineProps<{
   refreshing: boolean;

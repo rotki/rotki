@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import WrappedContainerPlaceholder from '@/components/wrapped/WrappedContainerPlaceholder.vue';
-import { NoteLocation } from '@/modules/common/notes';
+import { NoteLocation } from '@/modules/core/common/notes';
 import { PremiumFeature, useFeatureAccess } from '@/modules/premium/use-feature-access';
 import WrappedContainer from '@/modules/statistics/wrapped/components/WrappedContainer.vue';
+import WrappedContainerPlaceholder from '@/modules/statistics/WrappedContainerPlaceholder.vue';
 
 definePage({
   meta: {

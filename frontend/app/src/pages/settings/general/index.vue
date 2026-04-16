@@ -1,13 +1,13 @@
 <script setup lang="ts">
-import AmountSettingsCategory from '@/components/settings/AmountSettingsCategory.vue';
-import BackendServiceSettingsCategory from '@/components/settings/BackendServiceSettingsCategory.vue';
-import SettingsPage from '@/components/settings/controls/SettingsPage.vue';
-import ExternalServiceSettingsCategory from '@/components/settings/ExternalServiceSettingsCategory.vue';
-import GeneralSettingsCategory from '@/components/settings/GeneralSettingsCategory.vue';
-import HistoryEventSettingsCategory from '@/components/settings/HistoryEventSettingsCategory.vue';
-import NftSettingsCategory from '@/components/settings/NftSettingsCategory.vue';
-import { SettingsCategoryIds } from '@/composables/settings/types';
-import { NoteLocation } from '@/modules/common/notes';
+import { NoteLocation } from '@/modules/core/common/notes';
+import AmountSettingsCategory from '@/modules/settings/AmountSettingsCategory.vue';
+import BackendServiceSettingsCategory from '@/modules/settings/BackendServiceSettingsCategory.vue';
+import SettingsPage from '@/modules/settings/controls/SettingsPage.vue';
+import ExternalServiceSettingsCategory from '@/modules/settings/ExternalServiceSettingsCategory.vue';
+import GeneralSettingsCategory from '@/modules/settings/GeneralSettingsCategory.vue';
+import HistoryEventSettingsCategory from '@/modules/settings/HistoryEventSettingsCategory.vue';
+import NftSettingsCategory from '@/modules/settings/NftSettingsCategory.vue';
+import { SettingsCategoryIds } from '@/modules/settings/setting-highlight-ids';
 
 definePage({
   meta: {

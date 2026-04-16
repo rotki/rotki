@@ -1,12 +1,12 @@
 <script setup lang="ts">
-import SettingsPage from '@/components/settings/controls/SettingsPage.vue';
-import BackupManager from '@/components/settings/data-security/backups/BackupManager.vue';
-import DataManagement from '@/components/settings/data-security/data-management/DataManagement.vue';
-import AssetDatabaseCategory from '@/components/settings/database/AssetDatabaseCategory.vue';
-import DatabaseInformationCategory from '@/components/settings/database/DatabaseInformationCategory.vue';
-import ImportExportCategory from '@/components/settings/database/ImportExportCategory.vue';
-import { SettingsCategoryIds } from '@/composables/settings/types';
-import { NoteLocation } from '@/modules/common/notes';
+import { NoteLocation } from '@/modules/core/common/notes';
+import SettingsPage from '@/modules/settings/controls/SettingsPage.vue';
+import BackupManager from '@/modules/settings/data-security/backups/BackupManager.vue';
+import DataManagement from '@/modules/settings/data-security/data-management/DataManagement.vue';
+import AssetDatabaseCategory from '@/modules/settings/database/AssetDatabaseCategory.vue';
+import DatabaseInformationCategory from '@/modules/settings/database/DatabaseInformationCategory.vue';
+import ImportExportCategory from '@/modules/settings/database/ImportExportCategory.vue';
+import { SettingsCategoryIds } from '@/modules/settings/setting-highlight-ids';
 
 definePage({
   meta: {

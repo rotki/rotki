@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import AmountInput from '@/components/inputs/AmountInput.vue';
-import AssetSelect from '@/components/inputs/AssetSelect.vue';
+import AmountInput from '@/modules/shell/components/inputs/AmountInput.vue';
+import AssetSelect from '@/modules/shell/components/inputs/AssetSelect.vue';
 
 const hasFee = defineModel<boolean>('hasFee', { required: true });
 const fee = defineModel<string>('fee', { required: true });

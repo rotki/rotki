@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import LocationSelector from '@/components/helper/LocationSelector.vue';
-import DateTimePicker from '@/components/inputs/DateTimePicker.vue';
+import LocationSelector from '@/modules/balances/LocationSelector.vue';
+import DateTimePicker from '@/modules/shell/components/inputs/DateTimePicker.vue';
 
 const timestamp = defineModel<number>('timestamp', { required: true });
 const location = defineModel<string>('location', { required: true });

@@ -1,8 +1,9 @@
 import { BigNumber, Blockchain, Theme, TimeFramePeriod } from '@rotki/common';
 import { describe, expect, it } from 'vitest';
-import { CurrencyLocation } from '@/modules/amount-display/currency-location';
-import { snakeCaseTransformer } from '@/modules/api/transformers';
-import { DateFormat } from '@/modules/common/date-format';
+import { CurrencyLocation } from '@/modules/assets/amount-display/currency-location';
+import { snakeCaseTransformer } from '@/modules/core/api/transformers';
+import { DateFormat } from '@/modules/core/common/date-format';
+import { TableColumn } from '@/modules/core/table/table-column';
 import { PrivacyMode } from '@/modules/session/types';
 import {
   BlockchainRefreshButtonBehaviour,
@@ -12,7 +13,6 @@ import {
   SupportedLanguage,
 } from '@/modules/settings/types/frontend-settings';
 import { OtherSettings } from '@/modules/settings/types/user-settings';
-import { TableColumn } from '@/modules/table/table-column';
 
 describe('user-types', () => {
   it('should parse otherSettings correctly', () => {

@@ -1,8 +1,8 @@
 import { createPinia, setActivePinia } from 'pinia';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { Module } from '@/modules/common/modules';
-import { Section, Status } from '@/modules/common/status';
-import { TaskType } from '@/modules/tasks/task-type';
+import { Module } from '@/modules/core/common/modules';
+import { Section, Status } from '@/modules/core/common/status';
+import { TaskType } from '@/modules/core/tasks/task-type';
 import { usePoolDataFetching } from './use-pool-data-fetching';
 import '@test/i18n';
 
@@ -11,14 +11,14 @@ const mockIsTaskRunning = vi.fn();
 const mockGetUniswapV2Balances = vi.fn();
 const mockGetSushiswapBalances = vi.fn();
 
-vi.mock('@/modules/tasks/use-task-handler', async importOriginal => ({
+vi.mock('@/modules/core/tasks/use-task-handler', async importOriginal => ({
   ...(await importOriginal<Record<string, unknown>>()),
   useTaskHandler: vi.fn((): Record<string, unknown> => ({
     runTask: mockRunTask,
   })),
 }));
 
-vi.mock('@/modules/tasks/use-task-store', () => ({
+vi.mock('@/modules/core/tasks/use-task-store', () => ({
   useTaskStore: vi.fn((): Record<string, unknown> => ({
     isTaskRunning: mockIsTaskRunning,
   })),
@@ -32,7 +32,7 @@ vi.mock('./use-pool-api', () => ({
 }));
 
 const mockIsPremium = vi.fn((): Ref<boolean> => ref<boolean>(true));
-vi.mock('@/composables/premium', () => ({
+vi.mock('@/modules/premium/use-premium', () => ({
   usePremium: (): Ref<boolean> => mockIsPremium(),
 }));
 
@@ -111,7 +111,7 @@ describe('usePoolDataFetching', () => {
     });
 
     it('should skip when already loaded and not refreshing', async () => {
-      const { useStatusStore } = await import('@/modules/common/use-status-store');
+      const { useStatusStore } = await import('@/modules/core/common/use-status-store');
       const statusStore = useStatusStore();
       statusStore.setStatus({ status: Status.LOADED, section: Section.POOLS_UNISWAP_V2 });
       statusStore.setStatus({ status: Status.LOADED, section: Section.POOLS_SUSHISWAP });
@@ -123,7 +123,7 @@ describe('usePoolDataFetching', () => {
     });
 
     it('should fetch when refreshing even if already loaded', async () => {
-      const { useStatusStore } = await import('@/modules/common/use-status-store');
+      const { useStatusStore } = await import('@/modules/core/common/use-status-store');
       const statusStore = useStatusStore();
       statusStore.setStatus({ status: Status.LOADED, section: Section.POOLS_UNISWAP_V2 });
       statusStore.setStatus({ status: Status.LOADED, section: Section.POOLS_SUSHISWAP });

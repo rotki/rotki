@@ -1,0 +1,144 @@
+import type { ManualPrice } from '@/modules/assets/prices/price-types';
+import { bigNumberify } from '@rotki/common';
+import { updateGeneralSettings } from '@test/utils/general-settings';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { useCurrencies } from '@/modules/assets/amount-display/currencies';
+import { useLatestPrices } from '@/modules/assets/prices/use-latest-price-manager';
+import { useBalancePricesStore } from '@/modules/balances/use-balance-prices-store';
+
+vi.mock('@/modules/assets/api/use-asset-prices-api', () => ({
+  useAssetPricesApi: vi.fn().mockReturnValue({
+    addLatestPrice: vi.fn().mockResolvedValue(true),
+    deleteLatestPrice: vi.fn().mockResolvedValue(true),
+    fetchLatestPrices: vi.fn().mockResolvedValue([]),
+  }),
+}));
+
+vi.mock('@/modules/assets/prices/use-price-refresh', () => ({
+  usePriceRefresh: vi.fn().mockReturnValue({
+    refreshPrices: vi.fn().mockResolvedValue(undefined),
+  }),
+}));
+
+vi.mock('@/modules/shell/sync-progress/use-status-updater', () => ({
+  useStatusUpdater: vi.fn().mockReturnValue({
+    resetStatus: vi.fn(),
+  }),
+}));
+
+function t(key: string): string {
+  return key;
+}
+
+describe('useLatestPrices', () => {
+  beforeEach(() => {
+    setActivePinia(createPinia());
+  });
+
+  function setupPrices(currency: string, exchangeRates: Record<string, number>, assetPrices: Record<string, number>): void {
+    const { findCurrency } = useCurrencies();
+    updateGeneralSettings({ mainCurrency: findCurrency(currency) });
+
+    const store = useBalancePricesStore();
+    const { exchangeRates: rates, prices } = storeToRefs(store);
+
+    const priceEntries: Record<string, { isManualPrice: boolean; oracle: string; value: ReturnType<typeof bigNumberify> }> = {};
+    for (const [asset, value] of Object.entries(assetPrices)) {
+      priceEntries[asset] = {
+        isManualPrice: false,
+        oracle: 'coingecko',
+        value: bigNumberify(value),
+      };
+    }
+    set(prices, priceEntries);
+
+    const rateEntries: Record<string, ReturnType<typeof bigNumberify>> = {};
+    for (const [curr, rate] of Object.entries(exchangeRates)) {
+      rateEntries[curr] = bigNumberify(rate);
+    }
+    set(rates, rateEntries);
+  }
+
+  describe('items', () => {
+    it('should compute usdPrice in current currency without double conversion', async () => {
+      // Prices are now fetched directly in the selected currency (EUR),
+      // so the stored price is already in EUR
+      setupPrices('EUR', { EUR: 0.85 }, { ETH: 1700 });
+
+      const { useAssetPricesApi } = await import('@/modules/assets/api/use-asset-prices-api');
+      const { fetchLatestPrices } = useAssetPricesApi();
+
+      const manualPrices: ManualPrice[] = [
+        { fromAsset: 'ETH', price: bigNumberify(123), toAsset: 'EUR' },
+      ];
+      vi.mocked(fetchLatestPrices).mockResolvedValue(manualPrices);
+
+      const { items, getLatestPrices } = useLatestPrices(t);
+      await getLatestPrices();
+
+      const result = get(items);
+      expect(result).toHaveLength(1);
+      // ETH price is already stored in EUR (1700), no conversion needed
+      expect(result[0].usdPrice.toNumber()).toBe(1700);
+    });
+
+    it('should compute usdPrice correctly when main currency is USD', async () => {
+      setupPrices('USD', {}, { ETH: 2000 });
+
+      const { useAssetPricesApi } = await import('@/modules/assets/api/use-asset-prices-api');
+      const { fetchLatestPrices } = useAssetPricesApi();
+
+      const manualPrices: ManualPrice[] = [
+        { fromAsset: 'ETH', price: bigNumberify(2000), toAsset: 'USD' },
+      ];
+      vi.mocked(fetchLatestPrices).mockResolvedValue(manualPrices);
+
+      const { items, getLatestPrices } = useLatestPrices(t);
+      await getLatestPrices();
+
+      const result = get(items);
+      expect(result).toHaveLength(1);
+      // USD is the main currency, ETH price is 2000, no conversion needed
+      expect(result[0].usdPrice.toNumber()).toBe(2000);
+    });
+
+    it('should filter items when filter is provided', async () => {
+      setupPrices('USD', {}, { ETH: 2000, BTC: 50000 });
+
+      const { useAssetPricesApi } = await import('@/modules/assets/api/use-asset-prices-api');
+      const { fetchLatestPrices } = useAssetPricesApi();
+
+      const manualPrices: ManualPrice[] = [
+        { fromAsset: 'ETH', price: bigNumberify(2000), toAsset: 'USD' },
+        { fromAsset: 'BTC', price: bigNumberify(50000), toAsset: 'USD' },
+      ];
+      vi.mocked(fetchLatestPrices).mockResolvedValue(manualPrices);
+
+      const filter = ref<string | undefined>('ETH');
+      const { items, getLatestPrices } = useLatestPrices(t, filter);
+      await getLatestPrices();
+
+      const result = get(items);
+      expect(result).toHaveLength(1);
+      expect(result[0].fromAsset).toBe('ETH');
+    });
+
+    it('should return all items when filter is undefined', async () => {
+      setupPrices('USD', {}, { ETH: 2000, BTC: 50000 });
+
+      const { useAssetPricesApi } = await import('@/modules/assets/api/use-asset-prices-api');
+      const { fetchLatestPrices } = useAssetPricesApi();
+
+      const manualPrices: ManualPrice[] = [
+        { fromAsset: 'ETH', price: bigNumberify(2000), toAsset: 'USD' },
+        { fromAsset: 'BTC', price: bigNumberify(50000), toAsset: 'USD' },
+      ];
+      vi.mocked(fetchLatestPrices).mockResolvedValue(manualPrices);
+
+      const { items, getLatestPrices } = useLatestPrices(t);
+      await getLatestPrices();
+
+      expect(get(items)).toHaveLength(2);
+    });
+  });
+});

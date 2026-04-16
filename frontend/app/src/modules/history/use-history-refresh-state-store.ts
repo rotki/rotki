@@ -1,7 +1,7 @@
 import type { Exchange } from '@/modules/balances/types/exchanges';
 import type { ChainAddress } from '@/modules/history/events/event-payloads';
 import { get, set } from '@vueuse/core';
-import { logger } from '@/modules/common/logging/logging';
+import { logger } from '@/modules/core/common/logging/logging';
 
 export const useHistoryRefreshStateStore = defineStore('history/refresh-state', () => {
   const isRefreshing = ref<boolean>(false);

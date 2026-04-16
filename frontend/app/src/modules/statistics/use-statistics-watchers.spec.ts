@@ -9,11 +9,11 @@ const mockFetchNetValue = vi.fn();
 const mockPremium = ref<boolean>(false);
 const mockLogged = ref<boolean>(true);
 
-vi.mock('@/composables/premium', () => ({
+vi.mock('@/modules/premium/use-premium', () => ({
   usePremium: vi.fn(() => mockPremium),
 }));
 
-vi.mock('@/modules/session/use-session-auth-store', () => ({
+vi.mock('@/modules/auth/use-session-auth-store', () => ({
   useSessionAuthStore: vi.fn(() => ({
     logged: mockLogged,
   })),

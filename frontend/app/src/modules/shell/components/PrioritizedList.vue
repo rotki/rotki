@@ -1,0 +1,264 @@
+<script setup lang="ts">
+import type { BaseMessage } from '@/modules/core/messaging/base-message';
+import type { PrioritizedListData, PrioritizedListItemData } from '@/modules/settings/types/prioritized-list-data';
+import { assert, type Nullable, pluralize } from '@rotki/common';
+import { EmptyListId, type PrioritizedListId } from '@/modules/settings/types/prioritized-list-id';
+import ActionStatusIndicator from '@/modules/shell/components/error/ActionStatusIndicator.vue';
+import PrioritizedListEntry from '@/modules/shell/components/PrioritizedListEntry.vue';
+import SimpleTable from '@/modules/shell/components/SimpleTable.vue';
+
+const modelValue = defineModel<PrioritizedListId[]>({ required: true });
+
+const {
+  allItems,
+  dense,
+  disableAdd,
+  disableDelete,
+  itemDataName = '',
+  status,
+  variant = 'outlined',
+} = defineProps<{
+  allItems: PrioritizedListData<PrioritizedListId>;
+  itemDataName?: string;
+  disableAdd?: boolean;
+  disableDelete?: boolean;
+  dense?: boolean;
+  status?: BaseMessage;
+  variant?: 'flat' | 'outlined';
+}>();
+
+defineSlots<{
+  default: () => any;
+  title: () => any;
+}>();
+
+const selection = ref<Nullable<PrioritizedListId>>(null);
+
+const input = (items: PrioritizedListId[]): void => set(modelValue, items);
+
+const itemNameTr = computed(() => ({
+  name: itemDataName,
+  namePluralized: pluralize(itemDataName, 2),
+}));
+
+const missing = computed<PrioritizedListId[]>(() => allItems.itemIdsNotIn(get(modelValue)));
+
+const noResults = computed<boolean>(() => get(modelValue).length === 0);
+
+const isFirst = (item: string): boolean => get(modelValue)[0] === item;
+
+function isLast(item: string): boolean {
+  const items = get(modelValue);
+  return items.at(-1) === item;
+}
+
+function itemData(identifier: PrioritizedListId): PrioritizedListItemData<PrioritizedListId> {
+  return allItems.itemDataForId(identifier) ?? { identifier: EmptyListId };
+}
+
+function addItem(): void {
+  assert(get(selection));
+  const items = [...get(modelValue)];
+  items.push(get(selection)!);
+  input(items);
+  set(selection, null);
+}
+
+function move(item: PrioritizedListId, down: boolean): void {
+  const items = [...get(modelValue)];
+  const itemIndex = items.indexOf(item);
+  const nextIndex = itemIndex + (down ? 1 : -1);
+  const nextItem = items[nextIndex];
+  items[nextIndex] = item;
+  items[itemIndex] = nextItem;
+  input(items);
+}
+
+function remove(item: PrioritizedListId): void {
+  const items = [...get(modelValue)];
+  const itemIndex = items.indexOf(item);
+  items.splice(itemIndex, 1);
+  input(items);
+}
+
+const { t } = useI18n({ useScope: 'global' });
+
+const autoCompleteHint = computed<string>(() => {
+  const num = get(missing).length;
+  if (num) {
+    return t('prioritized_list.disabled_items', {
+      namePluralized: get(itemNameTr).namePluralized,
+      num,
+    });
+  }
+  return t('prioritized_list.all_added', get(itemNameTr));
+});
+</script>
+
+<template>
+  <div class="flex flex-col gap-2 pb-1">
+    <RuiCard
+      rounded="md"
+      no-padding
+      :variant="variant"
+      class="overflow-hidden [&>div:first-child]:px-6 [&>div:first-child]:pb-2"
+    >
+      <template
+        v-if="$slots.title"
+        #header
+      >
+        <slot name="title" />
+      </template>
+
+      <div
+        v-if="!disableAdd"
+        class="flex pb-2 gap-2 items-start border-b border-default overflow-hidden"
+        :class="variant === 'outlined' ? 'px-6' : 'px-[1px]'"
+      >
+        <RuiAutoComplete
+          v-model="selection"
+          dense
+          variant="outlined"
+          class="overflow-hidden py-1.5"
+          :label="t('common.actions.search')"
+          :no-data-text="t('prioritized_list.all_added', itemNameTr)"
+          :options="missing"
+          :item-height="36"
+          :hint="autoCompleteHint"
+        >
+          <template #selection="{ item }">
+            <PrioritizedListEntry
+              :data="itemData(item)"
+              size="24px"
+            />
+          </template>
+          <template #item="{ item }">
+            <PrioritizedListEntry
+              :data="itemData(item)"
+              size="24px"
+            />
+          </template>
+        </RuiAutoComplete>
+        <RuiButton
+          id="add-item-btn"
+          color="primary"
+          variant="outlined"
+          :disabled="!selection"
+          class="h-10 my-1.5"
+          @click="addItem()"
+        >
+          <div class="flex items-center gap-2">
+            <RuiIcon name="lu-plus" />
+            {{ t('common.actions.add') }}
+          </div>
+        </RuiButton>
+      </div>
+      <SimpleTable variant="default">
+        <thead>
+          <tr>
+            <th class="!px-0 w-8" />
+            <th class="w-8 !px-0 text-center">
+              {{ t('common.priority') }}
+            </th>
+            <th class="ps-6">
+              {{ t('common.name') }}
+            </th>
+            <th class="!pl-0" />
+          </tr>
+        </thead>
+        <tbody v-if="noResults">
+          <tr>
+            <td colspan="4">
+              <div class="flex justify-center p-3 text-h6">
+                {{ t('prioritized_list.item.empty', itemNameTr) }}
+              </div>
+            </td>
+          </tr>
+        </tbody>
+        <TransitionGroup
+          v-else
+          move-class="transition-all"
+          tag="tbody"
+        >
+          <tr
+            v-for="(identifier, index) in modelValue"
+            :key="identifier"
+            class="odd:bg-rui-grey-50 odd:dark:bg-rui-grey-900 group"
+          >
+            <td class="!pr-0 !pl-2">
+              <div class="flex flex-col gap-1 transition-all opacity-0 invisible group-hover:opacity-100 group-hover:visible">
+                <RuiButton
+                  :id="`move-up-${identifier}`"
+                  size="sm"
+                  class="!px-1"
+                  :class="{ '!py-0.5': dense }"
+                  :disabled="isFirst(identifier)"
+                  @click="move(identifier, false)"
+                >
+                  <RuiIcon
+                    name="lu-arrow-up"
+                    size="16"
+                  />
+                </RuiButton>
+                <RuiButton
+                  :id="`move-down-${identifier}`"
+                  size="sm"
+                  class="!px-1"
+                  :class="{ '!py-0.5': dense }"
+                  :disabled="isLast(identifier)"
+                  @click="move(identifier, true)"
+                >
+                  <RuiIcon
+                    name="lu-arrow-down"
+                    size="16"
+                  />
+                </RuiButton>
+              </div>
+            </td>
+            <td class="text-center px-0">
+              {{ index + 1 }}
+            </td>
+            <td>
+              <PrioritizedListEntry
+                :data="itemData(identifier)"
+                size="28px"
+              />
+            </td>
+            <td class="text-end !pl-0">
+              <RuiTooltip
+                v-if="!disableDelete"
+                :popper="{ placement: 'top' }"
+                :open-delay="400"
+              >
+                <template #activator>
+                  <RuiButton
+                    :id="`delete-${identifier}`"
+                    class="transition-all opacity-0 invisible group-hover:opacity-100 group-hover:visible"
+                    icon
+                    :class="{ '!p-2': dense }"
+                    variant="text"
+                    @click="remove(identifier)"
+                  >
+                    <RuiIcon
+                      name="lu-x"
+                      :size="dense ? 16 : 20"
+                    />
+                  </RuiButton>
+                </template>
+                <span>
+                  {{ t('prioritized_list.item.delete', itemNameTr) }}
+                </span>
+              </RuiTooltip>
+            </td>
+          </tr>
+        </TransitionGroup>
+      </SimpleTable>
+    </RuiCard>
+    <ActionStatusIndicator
+      v-if="status && (status.success || status.error)"
+      class="mx-[1px]"
+      :status="status"
+    />
+    <div v-else />
+  </div>
+</template>

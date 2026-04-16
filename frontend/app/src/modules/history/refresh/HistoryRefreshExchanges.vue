@@ -2,8 +2,8 @@
 import type { Exchange } from '@/modules/balances/types/exchanges';
 import { getTextToken } from '@rotki/common';
 import { isEqual, sortBy } from 'es-toolkit';
-import LocationDisplay from '@/components/history/LocationDisplay.vue';
 import { useExchangeData } from '@/modules/balances/exchanges/use-exchange-data';
+import LocationDisplay from '@/modules/history/LocationDisplay.vue';
 import { useGeneralSettingsStore } from '@/modules/settings/use-general-settings-store';
 
 const modelValue = defineModel<Exchange[]>({ required: true });

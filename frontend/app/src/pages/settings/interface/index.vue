@@ -1,12 +1,12 @@
 <script setup lang="ts">
-import SettingsPage from '@/components/settings/controls/SettingsPage.vue';
-import AliasSettingsCategory from '@/components/settings/frontend/AliasSettingsCategory.vue';
-import GraphSettingsCategory from '@/components/settings/frontend/GraphSettingsCategory.vue';
-import InterfaceOnlyCategory from '@/components/settings/frontend/InterfaceOnlyCategory.vue';
-import ThemeSettingsCategory from '@/components/settings/frontend/ThemeSettingsCategory.vue';
-import { SettingsCategoryIds } from '@/composables/settings/types';
-import { NoteLocation } from '@/modules/common/notes';
-import NewlyDetectedTokensSettingsCategory from '@/modules/newly-detected-tokens/settings/NewlyDetectedTokensSettingsCategory.vue';
+import NewlyDetectedTokensSettingsCategory from '@/modules/assets/detection/settings/NewlyDetectedTokensSettingsCategory.vue';
+import { NoteLocation } from '@/modules/core/common/notes';
+import SettingsPage from '@/modules/settings/controls/SettingsPage.vue';
+import AliasSettingsCategory from '@/modules/settings/frontend/AliasSettingsCategory.vue';
+import GraphSettingsCategory from '@/modules/settings/frontend/GraphSettingsCategory.vue';
+import InterfaceOnlyCategory from '@/modules/settings/frontend/InterfaceOnlyCategory.vue';
+import ThemeSettingsCategory from '@/modules/settings/frontend/ThemeSettingsCategory.vue';
+import { SettingsCategoryIds } from '@/modules/settings/setting-highlight-ids';
 
 definePage({
   meta: {

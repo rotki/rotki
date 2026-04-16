@@ -1,12 +1,12 @@
 <script setup lang="ts">
 import type { DataTableColumn } from '@rotki/ui-library';
 import type { LidoCsmNodeOperator } from '@/modules/staking/staking-types';
-import BalanceDisplay from '@/components/display/BalanceDisplay.vue';
-import RowActions from '@/components/helper/RowActions.vue';
-import { useLidoCsmApi } from '@/composables/api/staking/lido-csm';
-import HashLink from '@/modules/common/links/HashLink.vue';
-import { useConfirmStore } from '@/modules/common/use-confirm-store';
-import { useMessageStore } from '@/modules/common/use-message-store';
+import { useConfirmStore } from '@/modules/core/common/use-confirm-store';
+import { useMessageStore } from '@/modules/core/common/use-message-store';
+import BalanceDisplay from '@/modules/shell/components/display/BalanceDisplay.vue';
+import HashLink from '@/modules/shell/components/HashLink.vue';
+import RowActions from '@/modules/shell/components/RowActions.vue';
+import { useLidoCsmApi } from '@/modules/staking/api/use-lido-csm-api';
 import { STETH_IDENTIFIER } from '@/modules/staking/lido-csm/constants';
 
 defineOptions({

@@ -1,9 +1,7 @@
-import type { BlockchainMetadata } from '@/modules/tasks/types';
-import { useBlockchainBalancesApi } from '@/composables/api/balances/blockchain';
-import { useSupportedChains } from '@/composables/info/chains';
-import { useStatusUpdater } from '@/composables/status';
+import type { BlockchainMetadata } from '@/modules/core/tasks/types';
 import { convertBtcBalances } from '@/modules/accounts/account-helpers';
 import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
+import { useBlockchainBalancesApi } from '@/modules/balances/api/use-blockchain-balances-api';
 import {
   BlockchainBalances,
   type BtcBalances,
@@ -11,11 +9,13 @@ import {
 } from '@/modules/balances/types/blockchain-balances';
 import { useBalancesStore } from '@/modules/balances/use-balances-store';
 import { useBlockchainRefreshTimestampsStore } from '@/modules/balances/use-blockchain-refresh-timestamps-store';
-import { logger } from '@/modules/common/logging/logging';
-import { Section, Status } from '@/modules/common/status';
-import { useNotifications } from '@/modules/notifications/use-notifications';
-import { TaskType } from '@/modules/tasks/task-type';
-import { isActionableFailure, useTaskHandler } from '@/modules/tasks/use-task-handler';
+import { logger } from '@/modules/core/common/logging/logging';
+import { Section, Status } from '@/modules/core/common/status';
+import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
+import { useNotifications } from '@/modules/core/notifications/use-notifications';
+import { TaskType } from '@/modules/core/tasks/task-type';
+import { isActionableFailure, useTaskHandler } from '@/modules/core/tasks/use-task-handler';
+import { useStatusUpdater } from '@/modules/shell/sync-progress/use-status-updater';
 
 function isBtcBalances(data?: BtcBalances | any): data is BtcBalances {
   return !!data && (!!data.standalone || !!data.xpubs);

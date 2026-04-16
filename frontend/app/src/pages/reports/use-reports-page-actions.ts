@@ -1,19 +1,19 @@
 import type { DeepReadonly, Ref } from 'vue';
+import type { TaskMeta } from '@/modules/core/tasks/types';
 import type { ProfitLossReportDebugPayload, ProfitLossReportPeriod } from '@/modules/reports/report-types';
-import type { TaskMeta } from '@/modules/tasks/types';
 import { Priority, Severity } from '@rotki/common';
-import { useReportsApi } from '@/composables/api/reports';
-import { useInterop } from '@/composables/electron-interop';
-import { displayDateFormatter } from '@/modules/common/date-formatter';
-import { downloadFileByTextContent } from '@/modules/common/file/download';
-import { useAreaVisibilityStore } from '@/modules/common/use-area-visibility-store';
-import { getErrorMessage, useNotifications } from '@/modules/notifications/use-notifications';
+import { displayDateFormatter } from '@/modules/core/common/date-formatter';
+import { downloadFileByTextContent } from '@/modules/core/common/file/download';
+import { useAreaVisibilityStore } from '@/modules/core/common/use-area-visibility-store';
+import { getErrorMessage, useNotifications } from '@/modules/core/notifications/use-notifications';
+import { TaskType } from '@/modules/core/tasks/task-type';
+import { useTaskHandler } from '@/modules/core/tasks/use-task-handler';
 import { useReportGeneration } from '@/modules/reports/use-report-generation';
 import { useReportOperations } from '@/modules/reports/use-report-operations';
+import { useReportsApi } from '@/modules/reports/use-reports-api';
 import { PinnedNames } from '@/modules/session/types';
 import { useGeneralSettingsStore } from '@/modules/settings/use-general-settings-store';
-import { TaskType } from '@/modules/tasks/task-type';
-import { useTaskHandler } from '@/modules/tasks/use-task-handler';
+import { useInterop } from '@/modules/shell/app/use-electron-interop';
 
 interface UseReportsPageActionsOptions {
   /** Resolves a local file path from a File object (Electron only) */

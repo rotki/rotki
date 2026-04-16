@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import AppImage from '@/components/common/AppImage.vue';
-import GetPremiumPlaceholder from '@/components/common/GetPremiumPlaceholder.vue';
-import { getPublicPlaceholderImagePath as getFullPath } from '@/modules/common/file/file';
+import { getPublicPlaceholderImagePath as getFullPath } from '@/modules/core/common/file/file';
 import { PremiumFeature, useFeatureAccess } from '@/modules/premium/use-feature-access';
+import AppImage from '@/modules/shell/components/AppImage.vue';
+import GetPremiumPlaceholder from '@/modules/shell/components/GetPremiumPlaceholder.vue';
 
 const { t } = useI18n({ useScope: 'global' });
 const { isMdAndDown } = useBreakpoint();

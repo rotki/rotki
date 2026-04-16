@@ -2,7 +2,7 @@ import type { KrakenStakingEvents } from '@/modules/staking/staking-types';
 import { Zero } from '@rotki/common';
 import { createPinia, setActivePinia } from 'pinia';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { Section, Status } from '@/modules/common/status';
+import { Section, Status } from '@/modules/core/common/status';
 import { useKrakenStakingOperations } from './use-kraken-staking-operations';
 import '@test/i18n';
 
@@ -11,30 +11,30 @@ const mockRefreshKrakenStaking = vi.fn();
 const mockNotify = vi.fn();
 const mockIsTaskRunning = vi.fn().mockReturnValue(false);
 
-vi.mock('@/composables/api/staking/kraken', () => ({
+vi.mock('@/modules/staking/api/use-kraken-api', () => ({
   useKrakenApi: vi.fn(() => ({
     fetchKrakenStakingEvents: mockFetchKrakenStakingEvents,
     refreshKrakenStaking: mockRefreshKrakenStaking,
   })),
 }));
 
-vi.mock('@/composables/assets/common', () => ({
+vi.mock('@/modules/assets/use-resolve-asset-identifier', () => ({
   useResolveAssetIdentifier: vi.fn(() => (asset: string): string => asset),
 }));
 
-vi.mock('@/modules/notifications/use-notification-dispatcher', () => ({
+vi.mock('@/modules/core/notifications/use-notification-dispatcher', () => ({
   useNotificationDispatcher: vi.fn(() => ({
     notify: mockNotify,
   })),
 }));
 
-vi.mock('@/modules/notifications/use-notifications-store', () => ({
+vi.mock('@/modules/core/notifications/use-notifications-store', () => ({
   useNotificationsStore: vi.fn().mockReturnValue({
     removeMatching: vi.fn(),
   }),
 }));
 
-vi.mock('@/modules/tasks/use-task-handler', async importOriginal => ({
+vi.mock('@/modules/core/tasks/use-task-handler', async importOriginal => ({
   ...(await importOriginal<Record<string, unknown>>()),
   useTaskHandler: vi.fn(() => ({
     runTask: vi.fn().mockImplementation(async (taskFn: () => Promise<unknown>): Promise<unknown> => {
@@ -44,7 +44,7 @@ vi.mock('@/modules/tasks/use-task-handler', async importOriginal => ({
   })),
 }));
 
-vi.mock('@/modules/tasks/use-task-store', () => ({
+vi.mock('@/modules/core/tasks/use-task-store', () => ({
   useTaskStore: vi.fn(() => ({
     isTaskRunning: mockIsTaskRunning,
   })),
@@ -82,7 +82,7 @@ describe('useKrakenStakingOperations', () => {
 
   describe('fetchEvents', () => {
     it('should set status to LOADED on first load error', async () => {
-      const { useStatusStore } = await import('@/modules/common/use-status-store');
+      const { useStatusStore } = await import('@/modules/core/common/use-status-store');
 
       mockFetchKrakenStakingEvents.mockRejectedValueOnce(new Error('Request timeout'));
 
@@ -97,7 +97,7 @@ describe('useKrakenStakingOperations', () => {
     });
 
     it('should load events successfully on first load', async () => {
-      const { useStatusStore } = await import('@/modules/common/use-status-store');
+      const { useStatusStore } = await import('@/modules/core/common/use-status-store');
 
       const eventsData = {
         ...defaultEvents(),
@@ -119,7 +119,7 @@ describe('useKrakenStakingOperations', () => {
     });
 
     it('should set status to LOADED when refresh task fails', async () => {
-      const { useStatusStore } = await import('@/modules/common/use-status-store');
+      const { useStatusStore } = await import('@/modules/core/common/use-status-store');
 
       mockFetchKrakenStakingEvents.mockResolvedValueOnce(defaultEvents());
       mockRefreshKrakenStaking.mockRejectedValueOnce(new Error('Backend unresponsive'));
@@ -157,7 +157,7 @@ describe('useKrakenStakingOperations', () => {
     });
 
     it('should call refreshEvents on explicit refresh', async () => {
-      const { useStatusStore } = await import('@/modules/common/use-status-store');
+      const { useStatusStore } = await import('@/modules/core/common/use-status-store');
       const statusStore = useStatusStore();
 
       // Pre-set status to LOADED so isFirstLoad() returns false

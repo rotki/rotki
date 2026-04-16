@@ -2,11 +2,11 @@ import type { Ref } from 'vue';
 import type { InternalTxConflict } from './types';
 import { NotificationGroup, Severity } from '@rotki/common';
 import { startPromise } from '@shared/utils';
-import { useHistoryTransactionDecoding } from '@/composables/history/events/tx/decoding';
-import { useSupportedChains } from '@/composables/info/chains';
-import { logger } from '@/modules/common/logging/logging';
-import { createPersistentSharedComposable } from '@/modules/common/use-persistent-shared-composable';
-import { useNotifications } from '@/modules/notifications/use-notifications';
+import { logger } from '@/modules/core/common/logging/logging';
+import { createPersistentSharedComposable } from '@/modules/core/common/use-persistent-shared-composable';
+import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
+import { useNotifications } from '@/modules/core/notifications/use-notifications';
+import { useHistoryTransactionDecoding } from '@/modules/history/events/tx/use-history-transaction-decoding';
 import { useInternalTxConflictSelection } from './use-internal-tx-conflict-selection';
 import { getConflictKey } from './use-internal-tx-conflicts';
 

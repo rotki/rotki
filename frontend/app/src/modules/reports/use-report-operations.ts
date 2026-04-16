@@ -1,17 +1,17 @@
 import type { MaybeRef } from 'vue';
-import type { AddressBookSimplePayload } from '@/modules/address-names/eth-names';
-import type { Collection, CollectionResponse } from '@/modules/common/collection';
+import type { AddressBookSimplePayload } from '@/modules/accounts/address-book/eth-names';
+import type { Collection, CollectionResponse } from '@/modules/core/common/collection';
 import type { ProfitLossEvent, ProfitLossEventsPayload } from '@/modules/reports/report-types';
 import { Blockchain } from '@rotki/common';
 import { startPromise } from '@shared/utils';
-import { useReportsApi } from '@/composables/api/reports';
-import { useEnsOperations } from '@/modules/address-names/use-ens-operations';
-import { mapCollectionResponse } from '@/modules/common/data/collection-utils';
-import { logger } from '@/modules/common/logging/logging';
+import { useEnsOperations } from '@/modules/accounts/address-book/use-ens-operations';
+import { isBlockchain } from '@/modules/core/common/chains';
+import { mapCollectionResponse } from '@/modules/core/common/data/collection-utils';
+import { logger } from '@/modules/core/common/logging/logging';
+import { getErrorMessage, useNotifications } from '@/modules/core/notifications/use-notifications';
 import { getEthAddressesFromText } from '@/modules/history/history-utils';
-import { getErrorMessage, useNotifications } from '@/modules/notifications/use-notifications';
-import { isBlockchain } from '@/modules/onchain/chains';
 import { isTransactionEvent } from '@/modules/reports/report-utils';
+import { useReportsApi } from '@/modules/reports/use-reports-api';
 import { defaultReportEvents, useReportsStore } from '@/modules/reports/use-reports-store';
 
 interface UseReportOperationsReturn {

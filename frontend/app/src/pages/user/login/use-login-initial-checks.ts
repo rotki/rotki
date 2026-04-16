@@ -1,9 +1,9 @@
 import type { ComputedRef, MaybeRefOrGetter, Ref } from 'vue';
-import { useInterop } from '@/composables/electron-interop';
-import { useMonitorService } from '@/modules/app/use-monitor-service';
-import { useWebsocketConnection } from '@/modules/app/use-websocket-connection';
-import { useSessionAuthStore } from '@/modules/session/use-session-auth-store';
+import { useSessionAuthStore } from '@/modules/auth/use-session-auth-store';
 import { useUpdateChecker } from '@/modules/session/use-update-checker';
+import { useInterop } from '@/modules/shell/app/use-electron-interop';
+import { useMonitorService } from '@/modules/shell/app/use-monitor-service';
+import { useWebsocketConnection } from '@/modules/shell/app/use-websocket-connection';
 
 interface UseLoginInitialChecksReturn {
   checkForAssetUpdate: Ref<boolean>;

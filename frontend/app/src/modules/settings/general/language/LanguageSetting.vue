@@ -1,0 +1,122 @@
+<script setup lang="ts">
+import { externalLinks } from '@shared/external-links';
+import { supportedLanguages } from '@/modules/core/common/supported-language';
+import { useLocale } from '@/modules/session/use-locale';
+import SettingsOption from '@/modules/settings/controls/SettingsOption.vue';
+import LanguageSelectorItem from '@/modules/settings/general/language/LanguageSelectorItem.vue';
+import { SettingsHighlightIds } from '@/modules/settings/setting-highlight-ids';
+import { SupportedLanguage } from '@/modules/settings/types/frontend-settings';
+import ExternalLink from '@/modules/shell/components/ExternalLink.vue';
+
+defineOptions({
+  inheritAttrs: false,
+});
+
+const { useLocalSetting = false } = defineProps<{
+  dense?: boolean;
+  showLabel?: boolean;
+  useLocalSetting?: boolean;
+}>();
+
+const language = ref<SupportedLanguage>(SupportedLanguage.EN);
+
+const { adaptiveLanguage, forceUpdateMachineLanguage, lastLanguage } = useLocale();
+
+async function updateSetting(value: string, update: (newValue: any) => Promise<void>) {
+  if (useLocalSetting)
+    set(lastLanguage, value);
+  else
+    await update(value);
+}
+
+function updateForceUpdateMachineLanguage(event: boolean | null) {
+  set(forceUpdateMachineLanguage, event ? 'true' : 'false');
+}
+
+onMounted(() => {
+  set(language, get(adaptiveLanguage));
+});
+
+const { t } = useI18n({ useScope: 'global' });
+</script>
+
+<template>
+  <SettingsOption
+    :id="SettingsHighlightIds.LANGUAGE"
+    class="w-full"
+    setting="language"
+    frontend-setting
+    :error-message="t('general_settings.language.validation.error')"
+  >
+    <template #title>
+      {{ t('general_settings.language.title') }}
+    </template>
+    <template #subtitle>
+      {{ t('general_settings.language.subtitle') }}
+    </template>
+    <template #default="{ error, success, updateImmediate }">
+      <RuiMenuSelect
+        v-model="language"
+        :options="supportedLanguages"
+        :label="t('general_settings.language.label')"
+        :success-messages="success"
+        :error-messages="error"
+        hide-details
+        key-attr="identifier"
+        variant="outlined"
+        v-bind="$attrs"
+        @update:model-value="updateSetting($event as SupportedLanguage, updateImmediate)"
+      >
+        <template #selection="{ item }">
+          <LanguageSelectorItem
+            :countries="item.countries ?? [item.identifier]"
+            :label="item.label"
+          />
+        </template>
+        <template #item="{ item }">
+          <LanguageSelectorItem
+            :countries="item.countries ?? [item.identifier]"
+            :label="item.label"
+          />
+        </template>
+      </RuiMenuSelect>
+
+      <RuiCheckbox
+        v-if="!useLocalSetting"
+        hide-details
+        color="primary"
+        class="mt-2"
+        :model-value="forceUpdateMachineLanguage === 'true'"
+        @update:model-value="updateForceUpdateMachineLanguage($event)"
+      >
+        {{ t('general_settings.language.force_saved_language_setting_in_machine_hint') }}
+      </RuiCheckbox>
+
+      <RuiAlert
+        type="warning"
+        class="mt-4"
+      >
+        {{ t('general_settings.language.contribution') }}
+        <ExternalLink
+          :url="externalLinks.contributeSection.language"
+          custom
+        >
+          <RuiButton
+            variant="text"
+            color="primary"
+            size="sm"
+            class="-ml-1.5 mt-3"
+          >
+            {{ t('general_settings.language.click_here') }}
+            <template #append>
+              <RuiIcon
+                name="lu-external-link"
+                size="16"
+              />
+            </template>
+          </RuiButton>
+        </ExternalLink>
+      </RuiAlert>
+    </template>
+  </SettingsOption>
+</template>

@@ -3,12 +3,12 @@ import type { Tag } from '@/modules/tags/tags';
 import { Blockchain } from '@rotki/common';
 import { createMockCSV } from '@test/mocks/file';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { useAccountManage } from '@/composables/accounts/blockchain/use-account-manage';
-import { useTagsApi } from '@/composables/api/tags';
+import { useAccountManage } from '@/modules/accounts/blockchain/use-account-manage';
 import { createValidatorAccount } from '@/modules/accounts/create-account';
 import { useAccountImport } from '@/modules/accounts/import-export/use-account-import';
-import { useBlockchainAccounts } from '@/modules/accounts/use-blockchain-accounts-api';
+import { useBlockchainAccounts } from '@/modules/accounts/use-blockchain-accounts';
 import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
+import { useTagsApi } from '@/modules/tags/use-tags-api';
 
 const VALIDATOR_1 = '0xa685b19738ac8d7ee301f434f77fdbca50f7a2b8d287f4ab6f75cae251aa821576262b79ae9d58d9b458ba748968dfda';
 const VALIDATOR_2 = '0x8e31e6d9771094182a70b75882f7d186986d726f7b4da95f542d18a1cb7fa38cd31b450a9fc62867d81dfc9ad9cbd641';
@@ -16,7 +16,7 @@ const VALIDATOR_2 = '0x8e31e6d9771094182a70b75882f7d186986d726f7b4da95f542d18a1c
 const XPUB = 'xpub6BgBgsespWvERF3LHQu6CnqdvfEvtMcQjYrcRzx53QJjSxarj2afYWcLteoGVky7D3UKDP9QyrLprQ3VCECoY49yfdDEHGCtMMj92pReUsQ';
 const DERIVATION_PATH = 'm/86/0/0';
 
-vi.mock('@/composables/api/tags', async () => {
+vi.mock('@/modules/tags/use-tags-api', async () => {
   const { ref } = await import('vue');
   const { get, set } = await import('@vueuse/core');
 
@@ -51,7 +51,7 @@ function mockAddAccount(failOnAddress?: string[]): (_chain: string, payload: Acc
   };
 }
 
-vi.mock('@/modules/accounts/use-blockchain-accounts-api', () => {
+vi.mock('@/modules/accounts/use-blockchain-accounts', () => {
   const mock = {
     addAccount: vi.fn().mockImplementation(mockAddAccount()),
     addEvmAccount: vi.fn().mockImplementation(async (address: string) => Promise.resolve({
@@ -66,7 +66,7 @@ vi.mock('@/modules/accounts/use-blockchain-accounts-api', () => {
   };
 });
 
-vi.mock('@/composables/accounts/blockchain/use-account-manage', () => {
+vi.mock('@/modules/accounts/blockchain/use-account-manage', () => {
   const mock = {
     save: vi.fn().mockResolvedValue(true),
   };
@@ -86,15 +86,15 @@ vi.mock('@/modules/accounts/use-account-addition-notifications', () => ({
 const mockNotifyError = vi.fn();
 const mockNotifyInfo = vi.fn();
 
-vi.mock('@/modules/notifications/use-notifications', () => ({
+vi.mock('@/modules/core/notifications/use-notifications', () => ({
   useNotifications: vi.fn((): { notifyError: typeof mockNotifyError; notifyInfo: typeof mockNotifyInfo } => ({
     notifyError: mockNotifyError,
     notifyInfo: mockNotifyInfo,
   })),
 }));
 
-vi.mock('@/composables/info/chains', async () => {
-  const { useSupportedChains } = await import('@/composables/info/chains');
+vi.mock('@/modules/core/common/use-supported-chains', async () => {
+  const { useSupportedChains } = await import('@/modules/core/common/use-supported-chains');
 
   const evmCompatibleChains = new Set(['eth', 'optimism']);
 

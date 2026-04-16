@@ -1,20 +1,20 @@
 <script setup lang="ts">
 import type { RouteLocationRaw } from 'vue-router';
-import type { AccountManageState } from '@/composables/accounts/blockchain/use-account-manage';
+import type { AccountManageState } from '@/modules/accounts/blockchain/use-account-manage';
 import { Blockchain } from '@rotki/common';
 import { useTemplateRef } from 'vue';
-import AccountBalances from '@/components/accounts/AccountBalances.vue';
-import AccountImportProgress from '@/components/accounts/AccountImportProgress.vue';
-import EthStakingValidators from '@/components/accounts/EthStakingValidators.vue';
-import EvmAccountPageButtons from '@/components/accounts/EvmAccountPageButtons.vue';
-import AccountDialog from '@/components/accounts/management/AccountDialog.vue';
-import BlockchainBalanceStalenessIndicator from '@/components/helper/BlockchainBalanceStalenessIndicator.vue';
-import TablePageLayout from '@/components/layout/TablePageLayout.vue';
-import { useAccountCategoryHelper } from '@/composables/accounts/use-account-category-helper';
-import { Module, useModuleEnabled } from '@/composables/session/modules';
+import AccountBalances from '@/modules/accounts/AccountBalances.vue';
+import AccountImportProgress from '@/modules/accounts/AccountImportProgress.vue';
+import EthStakingValidators from '@/modules/accounts/EthStakingValidators.vue';
+import EvmAccountPageButtons from '@/modules/accounts/EvmAccountPageButtons.vue';
+import AccountDialog from '@/modules/accounts/management/AccountDialog.vue';
+import { useAccountCategoryHelper } from '@/modules/accounts/use-account-category-helper';
 import { useAccountImportProgressStore } from '@/modules/accounts/use-account-import-progress-store';
-import { NoteLocation } from '@/modules/common/notes';
-import { useEthStakingAccess } from '@/modules/staking/eth/composables/use-eth-staking-access';
+import BlockchainBalanceStalenessIndicator from '@/modules/balances/BlockchainBalanceStalenessIndicator.vue';
+import { NoteLocation } from '@/modules/core/common/notes';
+import { Module, useModuleEnabled } from '@/modules/session/use-module-enabled';
+import TablePageLayout from '@/modules/shell/layout/TablePageLayout.vue';
+import { useEthStakingAccess } from '@/modules/staking/eth/use-eth-staking-access';
 
 definePage({
   meta: {

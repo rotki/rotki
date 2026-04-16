@@ -1,0 +1,126 @@
+<script setup lang="ts">
+import type { CalendarEvent } from '@/modules/calendar/types';
+import { omit } from 'es-toolkit';
+import { useTemplateRef } from 'vue';
+import CalendarForm from '@/modules/calendar/CalendarForm.vue';
+import { useCalendarApi } from '@/modules/calendar/use-calendar-api';
+import { ApiValidationError, type ValidationErrors } from '@/modules/core/api/types/errors';
+import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
+import { useMessageStore } from '@/modules/core/common/use-message-store';
+import BigDialog from '@/modules/shell/components/dialogs/BigDialog.vue';
+
+const modelValue = defineModel<CalendarEvent | undefined>({ required: true });
+
+const { editMode } = defineProps<{
+  editMode: boolean;
+  loading: boolean;
+}>();
+
+const emit = defineEmits<{
+  delete: [];
+  refresh: [];
+}>();
+
+const { t } = useI18n({ useScope: 'global' });
+
+const submitting = ref(false);
+const errorMessages = ref<Record<string, string[]>>({});
+const form = useTemplateRef<InstanceType<typeof CalendarForm>>('form');
+const stateUpdated = ref(false);
+
+const { setMessage } = useMessageStore();
+const { addCalendarEvent, editCalendarEvent } = useCalendarApi();
+
+async function save() {
+  if (!isDefined(modelValue))
+    return false;
+
+  const formRef = get(form);
+  const valid = await formRef?.validate();
+  if (!valid)
+    return false;
+
+  const data = get(modelValue);
+  const payload = {
+    ...data,
+  };
+
+  set(submitting, true);
+  let success;
+  try {
+    const result = !editMode
+      ? await addCalendarEvent(omit(payload, ['identifier']))
+      : await editCalendarEvent(payload);
+
+    const eventId = result.entryId;
+    if (isDefined(eventId)) {
+      formRef?.reset();
+      await formRef?.saveTemporaryReminder(eventId);
+    }
+
+    success = true;
+  }
+  catch (error: unknown) {
+    success = false;
+    const errorTitle = editMode ? t('calendar.edit_error') : t('calendar.add_error');
+
+    let errors: string | ValidationErrors = getErrorMessage(error);
+    if (error instanceof ApiValidationError)
+      errors = error.getValidationErrors(payload);
+
+    if (typeof errors === 'string') {
+      setMessage({
+        description: errors,
+        success: false,
+        title: errorTitle,
+      });
+    }
+    else {
+      set(errorMessages, errors);
+    }
+  }
+
+  set(submitting, false);
+  if (success) {
+    set(modelValue, undefined);
+    emit('refresh');
+  }
+  return success;
+}
+
+const dialogTitle = computed<string>(() =>
+  editMode ? t('calendar.dialog.edit.title') : t('calendar.dialog.add.title'),
+);
+</script>
+
+<template>
+  <BigDialog
+    :display="!!modelValue"
+    :title="dialogTitle"
+    :primary-action="t('common.actions.save')"
+    :action-disabled="loading"
+    :loading="submitting"
+    :prompt-on-close="stateUpdated"
+    @confirm="save()"
+    @cancel="modelValue = undefined"
+  >
+    <CalendarForm
+      v-if="modelValue"
+      ref="form"
+      v-model="modelValue"
+      v-model:error-messages="errorMessages"
+      v-model:state-updated="stateUpdated"
+      :edit-mode="editMode"
+    />
+
+    <template #left-buttons>
+      <RuiButton
+        v-if="editMode"
+        color="error"
+        @click="emit('delete')"
+      >
+        {{ t('calendar.delete_event') }}
+      </RuiButton>
+    </template>
+  </BigDialog>
+</template>

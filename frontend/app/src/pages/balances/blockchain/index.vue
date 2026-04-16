@@ -1,27 +1,26 @@
 <script setup lang="ts">
 import { startPromise } from '@shared/utils';
-import ChainSelect from '@/components/accounts/blockchain/ChainSelect.vue';
-import AssetBalances from '@/components/AssetBalances.vue';
-import BlockchainBalanceRefreshBehaviourMenu
-  from '@/components/dashboard/blockchain-balance/BlockchainBalanceRefreshBehaviourMenu.vue';
-import VisibleColumnsSelector from '@/components/dashboard/VisibleColumnsSelector.vue';
-import BlockchainBalanceStalenessIndicator from '@/components/helper/BlockchainBalanceStalenessIndicator.vue';
-import PriceRefresh from '@/components/helper/PriceRefresh.vue';
-import TablePageLayout from '@/components/layout/TablePageLayout.vue';
-import HideSmallBalances from '@/components/settings/HideSmallBalances.vue';
-import CardTitle from '@/components/typography/CardTitle.vue';
+import ChainSelect from '@/modules/accounts/blockchain/ChainSelect.vue';
 import {
   type AccountManageState,
   createNewBlockchainAccount,
-} from '@/composables/accounts/blockchain/use-account-manage';
-import { useAccountLoading } from '@/composables/accounts/loading';
-import { useAggregatedBalances } from '@/composables/balances/use-aggregated-balances';
-import { useBlockchainAccountLoading } from '@/modules/accounts/use-account-loading';
+} from '@/modules/accounts/blockchain/use-account-manage';
+import { useAccountLoading } from '@/modules/accounts/use-account-loading';
+import { useBlockchainAccountLoading } from '@/modules/accounts/use-blockchain-account-loading';
+import PriceRefresh from '@/modules/assets/prices/PriceRefresh.vue';
+import AssetBalances from '@/modules/balances/AssetBalances.vue';
+import BlockchainBalanceRefreshBehaviourMenu from '@/modules/balances/BlockchainBalanceRefreshBehaviourMenu.vue';
+import BlockchainBalanceStalenessIndicator from '@/modules/balances/BlockchainBalanceStalenessIndicator.vue';
+import { useAggregatedBalances } from '@/modules/balances/use-aggregated-balances';
 import { useBalanceRefresh } from '@/modules/balances/use-balance-refresh';
-import { NoteLocation } from '@/modules/common/notes';
+import { NoteLocation } from '@/modules/core/common/notes';
 import SummaryCardRefreshMenu from '@/modules/dashboard/summary/SummaryCardRefreshMenu.vue';
+import VisibleColumnsSelector from '@/modules/dashboard/VisibleColumnsSelector.vue';
+import HideSmallBalances from '@/modules/settings/HideSmallBalances.vue';
 import { BalanceSource, DashboardTableType } from '@/modules/settings/types/frontend-settings';
 import { useFrontendSettingsStore } from '@/modules/settings/use-frontend-settings-store';
+import CardTitle from '@/modules/shell/components/CardTitle.vue';
+import TablePageLayout from '@/modules/shell/layout/TablePageLayout.vue';
 
 definePage({
   meta: {

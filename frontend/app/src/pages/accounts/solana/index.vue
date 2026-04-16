@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import AccountBalancesDefaultPage from '@/components/accounts/AccountBalancesDefaultPage.vue';
+import AccountBalancesDefaultPage from '@/modules/accounts/AccountBalancesDefaultPage.vue';
 
 definePage({
   name: 'accounts-solana',

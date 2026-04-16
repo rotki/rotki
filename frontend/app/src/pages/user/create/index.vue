@@ -1,14 +1,14 @@
 <script setup lang="ts">
-import AccountManagementAside from '@/components/account-management/AccountManagementAside.vue';
-import AccountManagementFooterText from '@/components/account-management/AccountManagementFooterText.vue';
-import AdaptiveFooterButton from '@/components/account-management/AdaptiveFooterButton.vue';
-import CreateAccountWizard from '@/components/account-management/create-account/CreateAccountWizard.vue';
-import UpgradeProgressDisplay from '@/components/account-management/upgrade/UpgradeProgressDisplay.vue';
-import UserHost from '@/components/account-management/UserHost.vue';
-import RotkiLogo from '@/components/common/RotkiLogo.vue';
-import { useAppNavigation } from '@/composables/navigation';
-import { useAccountManagement } from '@/composables/user/account';
-import { useSessionAuthStore } from '@/modules/session/use-session-auth-store';
+import AccountManagementAside from '@/modules/auth/AccountManagementAside.vue';
+import AccountManagementFooterText from '@/modules/auth/AccountManagementFooterText.vue';
+import AdaptiveFooterButton from '@/modules/auth/AdaptiveFooterButton.vue';
+import CreateAccountWizard from '@/modules/auth/create-account/CreateAccountWizard.vue';
+import UpgradeProgressDisplay from '@/modules/auth/upgrade/UpgradeProgressDisplay.vue';
+import { useAccountManagement } from '@/modules/auth/use-account-management';
+import { useSessionAuthStore } from '@/modules/auth/use-session-auth-store';
+import UserHost from '@/modules/auth/UserHost.vue';
+import RotkiLogo from '@/modules/shell/components/RotkiLogo.vue';
+import { useAppNavigation } from '@/modules/shell/layout/use-navigation';
 
 definePage({
   meta: {

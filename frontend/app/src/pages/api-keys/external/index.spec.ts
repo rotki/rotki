@@ -1,5 +1,5 @@
-import type { EvmChainInfo } from '@/modules/api/types/chains';
-import type { ExternalServiceKeys } from '@/modules/external-services/types';
+import type { EvmChainInfo } from '@/modules/core/api/types/chains';
+import type { ExternalServiceKeys } from '@/modules/integrations/types';
 import { Blockchain } from '@rotki/common';
 import { createCustomPinia } from '@test/utils/create-pinia';
 import { mount, type VueWrapper } from '@vue/test-utils';
@@ -7,14 +7,14 @@ import flushPromises from 'flush-promises';
 import { type Pinia, setActivePinia } from 'pinia';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { computed } from 'vue';
-import ChainIcon from '@/components/helper/display/icons/ChainIcon.vue';
-import ServiceKey from '@/components/settings/api-keys/ServiceKey.vue';
-import ServiceKeyCard from '@/components/settings/api-keys/ServiceKeyCard.vue';
-import { useExternalServicesApi } from '@/composables/api/settings/external-services-api';
-import { useConfirmStore } from '@/modules/common/use-confirm-store';
+import { useConfirmStore } from '@/modules/core/common/use-confirm-store';
+import ServiceKey from '@/modules/settings/api-keys/ServiceKey.vue';
+import ServiceKeyCard from '@/modules/settings/api-keys/ServiceKeyCard.vue';
+import { useExternalServicesApi } from '@/modules/settings/api/use-external-services-api';
+import ChainIcon from '@/modules/shell/components/ChainIcon.vue';
 import ExternalServices from '@/pages/api-keys/external/index.vue';
 
-vi.mock('@/composables/info/chains', () => ({
+vi.mock('@/modules/core/common/use-supported-chains', () => ({
   useSupportedChains: vi.fn().mockReturnValue({
     txEvmChains: computed(() => [
       {
@@ -33,7 +33,7 @@ vi.mock('@/composables/info/chains', () => ({
   }),
 }));
 
-vi.mock('@/composables/api/settings/external-services-api', () => ({
+vi.mock('@/modules/settings/api/use-external-services-api', () => ({
   useExternalServicesApi: vi.fn().mockReturnValue({
     queryExternalServices: vi.fn(),
     setExternalServices: vi.fn(),

@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useBalanceFetching } from './use-balance-fetching';
 import '@test/i18n';
 
-vi.mock('@/modules/tasks/use-task-handler', async importOriginal => ({
+vi.mock('@/modules/core/tasks/use-task-handler', async importOriginal => ({
   ...(await importOriginal<Record<string, unknown>>()),
   useTaskHandler: vi.fn().mockReturnValue({
     runTask: vi.fn().mockImplementation(async (taskFn: () => Promise<unknown>): Promise<unknown> => {
@@ -12,13 +12,13 @@ vi.mock('@/modules/tasks/use-task-handler', async importOriginal => ({
   }),
 }));
 
-vi.mock('@/composables/api/balances', () => ({
+vi.mock('@/modules/balances/api/use-balances-api', () => ({
   useBalancesApi: vi.fn().mockReturnValue({
     queryBalancesAsync: vi.fn().mockResolvedValue({ taskId: 1 }),
   }),
 }));
 
-vi.mock('@/modules/prices/use-price-task-manager', () => ({
+vi.mock('@/modules/assets/prices/use-price-task-manager', () => ({
   usePriceTaskManager: vi.fn().mockReturnValue({
     fetchExchangeRates: vi.fn().mockResolvedValue({}),
   }),
@@ -48,7 +48,7 @@ vi.mock('@/modules/statistics/use-statistics-data-fetching', () => ({
   }),
 }));
 
-vi.mock('@/modules/prices/use-price-refresh', () => ({
+vi.mock('@/modules/assets/prices/use-price-refresh', () => ({
   usePriceRefresh: vi.fn().mockReturnValue({
     refreshPrices: vi.fn().mockResolvedValue({}),
   }),

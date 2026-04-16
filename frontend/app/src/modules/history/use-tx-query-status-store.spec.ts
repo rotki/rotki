@@ -1,11 +1,11 @@
 import { createPinia, setActivePinia } from 'pinia';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { TransactionsQueryStatus } from '@/modules/messaging/types';
+import { TransactionsQueryStatus } from '@/modules/core/messaging/types';
 import { type TxQueryStatusData, useTxQueryStatusStore } from './use-tx-query-status-store';
 
 const mockMillisecondsToSeconds = vi.hoisted(() => vi.fn().mockReturnValue(1000));
 
-vi.mock('@/modules/common/data/date', () => ({
+vi.mock('@/modules/core/common/data/date', () => ({
   millisecondsToSeconds: mockMillisecondsToSeconds,
 }));
 

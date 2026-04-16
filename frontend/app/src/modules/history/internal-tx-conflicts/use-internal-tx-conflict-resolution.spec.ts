@@ -11,7 +11,7 @@ const { spies } = vi.hoisted(() => ({
   },
 }));
 
-vi.mock('@/composables/info/chains', () => ({
+vi.mock('@/modules/core/common/use-supported-chains', () => ({
   useSupportedChains: (): object => ({
     getChain: (location: string): string => {
       const map: Record<string, string> = { ethereum: 'eth', optimism: 'opt' };
@@ -20,7 +20,7 @@ vi.mock('@/composables/info/chains', () => ({
   }),
 }));
 
-vi.mock('@/composables/history/events/tx/decoding', () => ({
+vi.mock('@/modules/history/events/tx/use-history-transaction-decoding', () => ({
   useHistoryTransactionDecoding: (): object => ({
     cancelDecoding: spies.cancelDecoding,
     pullAndDecodeTransactionsRaw: spies.pullAndDecodeTransactionsRaw,
@@ -33,7 +33,7 @@ vi.mock('./use-internal-tx-conflict-selection', () => ({
   }),
 }));
 
-vi.mock('@/modules/notifications/use-notifications', () => ({
+vi.mock('@/modules/core/notifications/use-notifications', () => ({
   useNotifications: (): object => ({
     notify: vi.fn(),
     removeMatching: vi.fn(),

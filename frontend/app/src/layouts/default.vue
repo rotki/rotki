@@ -1,11 +1,11 @@
 <script setup lang="ts">
-import About from '@/components/About.vue';
-import AppCore from '@/components/app/AppCore.vue';
-import AppHost from '@/components/app/AppHost.vue';
-import AppMessages from '@/components/app/AppMessages.vue';
-import AppUpdatePopup from '@/components/status/update/AppUpdatePopup.vue';
-import { useDataLoader } from '@/composables/session/load';
-import { useAreaVisibilityStore } from '@/modules/common/use-area-visibility-store';
+import { useDataLoader } from '@/modules/auth/use-session-load';
+import { useAreaVisibilityStore } from '@/modules/core/common/use-area-visibility-store';
+import AppCore from '@/modules/shell/app/AppCore.vue';
+import AppHost from '@/modules/shell/app/AppHost.vue';
+import AppMessages from '@/modules/shell/app/AppMessages.vue';
+import AppUpdatePopup from '@/modules/shell/app/AppUpdatePopup.vue';
+import About from '@/modules/shell/components/About.vue';
 
 const { showAbout } = storeToRefs(useAreaVisibilityStore());
 const { load } = useDataLoader();

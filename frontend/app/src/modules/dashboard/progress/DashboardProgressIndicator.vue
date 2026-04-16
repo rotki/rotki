@@ -1,12 +1,12 @@
 <script setup lang="ts">
-import { useRefWithDebounce } from '@/composables/ref';
-import { useMainStore } from '@/modules/common/use-main-store';
+import { useMainStore } from '@/modules/core/common/use-main-store';
+import { useRefWithDebounce } from '@/modules/core/common/use-ref-debounce';
 import BalanceQuerySection from '@/modules/dashboard/progress/components/BalanceQuerySection.vue';
 import HistoricalBalanceProcessingSection from '@/modules/dashboard/progress/components/HistoricalBalanceProcessingSection.vue';
 import HistoryQuerySection from '@/modules/dashboard/progress/components/HistoryQuerySection.vue';
 import IdleQuerySection from '@/modules/dashboard/progress/components/IdleQuerySection.vue';
-import { useUnifiedProgress } from '@/modules/dashboard/progress/composables/use-unified-progress';
-import { useHistoricalBalancesStore } from '@/modules/history/balances/store';
+import { useUnifiedProgress } from '@/modules/dashboard/progress/use-unified-progress';
+import { useHistoricalBalancesStore } from '@/modules/history/balances/use-historical-balances-store';
 import { isMajorOrMinorUpdate } from './is-major-or-minor-update';
 
 const { t } = useI18n({ useScope: 'global' });

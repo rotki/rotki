@@ -7,7 +7,7 @@ const mockExportReportCSV = vi.fn();
 const mockFetchActionableItems = vi.fn();
 const mockFetchReportEventsCaller = vi.fn();
 
-vi.mock('@/composables/api/reports', () => ({
+vi.mock('@/modules/reports/use-reports-api', () => ({
   useReportsApi: vi.fn(() => ({
     deleteReport: mockDeleteReportCaller,
     exportReportCSV: mockExportReportCSV,
@@ -21,7 +21,7 @@ const mockNotifyError = vi.fn();
 const mockShowErrorMessage = vi.fn();
 const mockShowSuccessMessage = vi.fn();
 
-vi.mock('@/modules/notifications/use-notifications', () => ({
+vi.mock('@/modules/core/notifications/use-notifications', () => ({
   getErrorMessage: vi.fn((e: unknown): string => (e instanceof Error ? e.message : String(e))),
   useNotifications: vi.fn(() => ({
     notifyError: mockNotifyError,
@@ -30,7 +30,7 @@ vi.mock('@/modules/notifications/use-notifications', () => ({
   })),
 }));
 
-vi.mock('@/modules/address-names/use-ens-operations', () => ({
+vi.mock('@/modules/accounts/address-book/use-ens-operations', () => ({
   useEnsOperations: vi.fn(() => ({
     fetchEnsNames: vi.fn(),
   })),

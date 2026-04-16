@@ -1,10 +1,10 @@
 <script setup lang="ts">
-import LocationIcon from '@/components/history/LocationIcon.vue';
-import TablePageLayout from '@/components/layout/TablePageLayout.vue';
-import LocationAssets from '@/components/locations/LocationAssets.vue';
-import LocationValueRow from '@/components/locations/LocationValueRow.vue';
-import { useLocations } from '@/composables/locations';
-import { NoteLocation } from '@/modules/common/notes';
+import LocationAssets from '@/modules/balances/LocationAssets.vue';
+import LocationValueRow from '@/modules/balances/LocationValueRow.vue';
+import { NoteLocation } from '@/modules/core/common/notes';
+import { useLocations } from '@/modules/core/common/use-locations';
+import LocationIcon from '@/modules/shell/components/display/LocationIcon.vue';
+import TablePageLayout from '@/modules/shell/layout/TablePageLayout.vue';
 
 definePage({
   meta: {

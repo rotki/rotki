@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import HistoryEventsView from '@/components/history/events/HistoryEventsView.vue';
-import { NoteLocation } from '@/modules/common/notes';
+import { NoteLocation } from '@/modules/core/common/notes';
+import HistoryEventsView from '@/modules/history/events/HistoryEventsView.vue';
 
 definePage({
   meta: {

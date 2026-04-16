@@ -1,7 +1,7 @@
 import type { PendingSuggestion } from '@/modules/settings/suggestions/settings-suggestions';
-import { useItemsPerPage } from '@/composables/session/use-items-per-page';
-import { useComputedRef } from '@/composables/utils/useComputedRef';
+import { useComputedRef } from '@/modules/core/common/use-computed-ref';
 import { PrivacyMode } from '@/modules/session/types';
+import { useItemsPerPage } from '@/modules/session/use-items-per-page';
 import {
   type FrontendSettings,
   getDefaultFrontendSettings,

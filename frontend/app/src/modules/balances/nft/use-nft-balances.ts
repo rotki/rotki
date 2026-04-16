@@ -4,19 +4,19 @@ import type {
   NonFungibleBalancesCollectionResponse,
   NonFungibleBalancesRequestPayload,
 } from '@/modules/balances/types/nfbalances';
-import type { Collection } from '@/modules/common/collection';
-import type { TaskMeta } from '@/modules/tasks/types';
-import { useNftBalancesApi } from '@/composables/api/balances/nft';
-import { useStatusUpdater } from '@/composables/status';
+import type { Collection } from '@/modules/core/common/collection';
+import type { TaskMeta } from '@/modules/core/tasks/types';
+import { useNftBalancesApi } from '@/modules/balances/api/use-nft-balances-api';
 import { useBalancesStore } from '@/modules/balances/use-balances-store';
-import { mapCollectionResponse } from '@/modules/common/data/collection-utils';
-import { logger } from '@/modules/common/logging/logging';
-import { Module } from '@/modules/common/modules';
-import { Section, Status } from '@/modules/common/status';
-import { useNotifications } from '@/modules/notifications/use-notifications';
+import { mapCollectionResponse } from '@/modules/core/common/data/collection-utils';
+import { logger } from '@/modules/core/common/logging/logging';
+import { Module } from '@/modules/core/common/modules';
+import { Section, Status } from '@/modules/core/common/status';
+import { useNotifications } from '@/modules/core/notifications/use-notifications';
+import { TaskType } from '@/modules/core/tasks/task-type';
+import { isActionableFailure, useTaskHandler } from '@/modules/core/tasks/use-task-handler';
 import { useGeneralSettingsStore } from '@/modules/settings/use-general-settings-store';
-import { TaskType } from '@/modules/tasks/task-type';
-import { isActionableFailure, useTaskHandler } from '@/modules/tasks/use-task-handler';
+import { useStatusUpdater } from '@/modules/shell/sync-progress/use-status-updater';
 
 interface NftBalancesReturn {
   fetchNonFungibleBalances: (payload: MaybeRef<NonFungibleBalancesRequestPayload>) => Promise<Collection<NonFungibleBalance>>;

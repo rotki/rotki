@@ -1,11 +1,11 @@
 <script setup lang="ts">
 import type { RouteLocationRaw } from 'vue-router';
 import { startPromise } from '@shared/utils';
-import AppImage from '@/components/common/AppImage.vue';
-import FullSizeContent from '@/components/common/FullSizeContent.vue';
-import InternalLink from '@/components/helper/InternalLink.vue';
-import { getPublicProtocolImagePath } from '@/modules/common/file/file';
-import { NoteLocation } from '@/modules/common/notes';
+import { getPublicProtocolImagePath } from '@/modules/core/common/file/file';
+import { NoteLocation } from '@/modules/core/common/notes';
+import AppImage from '@/modules/shell/components/AppImage.vue';
+import FullSizeContent from '@/modules/shell/components/FullSizeContent.vue';
+import InternalLink from '@/modules/shell/components/InternalLink.vue';
 
 type NavType = 'eth2' | 'liquity' | 'kraken' | 'lido-csm';
 
@@ -30,9 +30,9 @@ const imageSize = '64px';
 
 const pages = {
   'eth2': defineAsyncComponent(() => import('@/modules/staking/eth/EthStakingPage.vue')),
-  'kraken': defineAsyncComponent(() => import('@/components/staking/kraken/KrakenPage.vue')),
+  'kraken': defineAsyncComponent(() => import('@/modules/staking/kraken/KrakenPage.vue')),
   'lido-csm': defineAsyncComponent(() => import('@/modules/staking/lido-csm/LidoCsmPage.vue')),
-  'liquity': defineAsyncComponent(() => import('@/components/staking/liquity/LiquityPage.vue')),
+  'liquity': defineAsyncComponent(() => import('@/modules/staking/liquity/LiquityPage.vue')),
 };
 
 const { t } = useI18n({ useScope: 'global' });

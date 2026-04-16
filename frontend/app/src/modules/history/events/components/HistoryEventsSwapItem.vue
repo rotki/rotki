@@ -1,14 +1,14 @@
 <script setup lang="ts">
-import type { UseHistoryEventsSelectionModeReturn } from '@/modules/history/events/composables/use-selection-mode';
 import type { HistoryEventEntry } from '@/modules/history/events/schemas';
 import type { HistoryEventDeletePayload } from '@/modules/history/events/types';
+import type { UseHistoryEventsSelectionModeReturn } from '@/modules/history/events/use-selection-mode';
 import type { HistoryEventEditData } from '@/modules/history/management/forms/form-types';
-import HistoryEventAsset from '@/components/history/events/HistoryEventAsset.vue';
-import HistoryEventNote from '@/components/history/events/HistoryEventNote.vue';
-import HistoryEventsListItemAction from '@/components/history/events/HistoryEventsListItemAction.vue';
-import HistoryEventType from '@/components/history/events/HistoryEventType.vue';
-import { getHighlightClass, type HighlightType } from '@/composables/history/events/types';
-import { useHistorySwapItem } from '../composables/use-history-swap-item';
+import { getHighlightClass, type HighlightType } from '@/modules/history/events/action-types';
+import HistoryEventAsset from '@/modules/history/events/HistoryEventAsset.vue';
+import HistoryEventNote from '@/modules/history/events/HistoryEventNote.vue';
+import HistoryEventsListItemAction from '@/modules/history/events/HistoryEventsListItemAction.vue';
+import HistoryEventType from '@/modules/history/events/HistoryEventType.vue';
+import { useHistorySwapItem } from '../use-history-swap-item';
 
 const { events: eventsProp, selection, variant = 'row' } = defineProps<{
   events: HistoryEventEntry[];

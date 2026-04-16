@@ -1,5 +1,5 @@
-import type { SupportedCurrency } from '@/modules/amount-display/currencies';
-import type { AssetPrices } from '@/modules/prices/price-types';
+import type { SupportedCurrency } from '@/modules/assets/amount-display/currencies';
+import type { AssetPrices } from '@/modules/assets/prices/price-types';
 import type { ExchangeRates } from '@/modules/settings/types/user-settings';
 
 export const useBalancePricesStore = defineStore('balances/prices', () => {

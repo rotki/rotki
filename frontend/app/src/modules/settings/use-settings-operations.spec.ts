@@ -2,8 +2,8 @@ import type { UserSettingsModel } from '@/modules/settings/types/user-settings';
 import { assert } from '@rotki/common';
 import { createPinia, setActivePinia } from 'pinia';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { Currency, CURRENCY_USD } from '@/modules/amount-display/currencies';
-import { Module } from '@/modules/common/modules';
+import { Currency, CURRENCY_USD } from '@/modules/assets/amount-display/currencies';
+import { Module } from '@/modules/core/common/modules';
 import { defaultAccountingSettings, defaultGeneralSettings } from '@/modules/settings/factories';
 import { getDefaultFrontendSettings } from '@/modules/settings/types/frontend-settings';
 import { useGeneralSettingsStore } from '@/modules/settings/use-general-settings-store';
@@ -14,13 +14,13 @@ const mockShowErrorMessage = vi.fn();
 const mockShowSuccessMessage = vi.fn();
 const mockAddQueriedAddress = vi.fn();
 
-vi.mock('@/composables/api/settings/settings-api', () => ({
+vi.mock('@/modules/settings/api/use-settings-api', () => ({
   useSettingsApi: vi.fn(() => ({
     setSettings: mockSetSettings,
   })),
 }));
 
-vi.mock('@/modules/notifications/use-notifications', () => ({
+vi.mock('@/modules/core/notifications/use-notifications', () => ({
   getErrorMessage: vi.fn((e: unknown): string => (e instanceof Error ? e.message : String(e))),
   useNotifications: vi.fn(() => ({
     showErrorMessage: mockShowErrorMessage,
@@ -28,17 +28,17 @@ vi.mock('@/modules/notifications/use-notifications', () => ({
   })),
 }));
 
-vi.mock('@/modules/session/use-queried-address-operations', () => ({
+vi.mock('@/modules/accounts/use-queried-address-operations', () => ({
   useQueriedAddressOperations: vi.fn(() => ({
     addQueriedAddress: mockAddQueriedAddress,
   })),
 }));
 
-vi.mock('@/composables/session/use-items-per-page', () => ({
+vi.mock('@/modules/session/use-items-per-page', () => ({
   useItemsPerPage: vi.fn(() => ref<number>(10)),
 }));
 
-vi.mock('@/modules/common/logging/logging', () => ({
+vi.mock('@/modules/core/common/logging/logging', () => ({
   logger: {
     debug: vi.fn(),
     error: vi.fn(),

@@ -1,22 +1,22 @@
 <script setup lang="ts">
 import { type AssetBalanceWithPrice, type BigNumber, toHumanReadable, toSentenceCase, Zero } from '@rotki/common';
-import ExchangeAmountRow from '@/components/accounts/exchanges/ExchangeAmountRow.vue';
-import AssetBalances from '@/components/AssetBalances.vue';
-import BinanceSavingDetail from '@/components/exchanges/BinanceSavingDetail.vue';
-import InternalLink from '@/components/helper/InternalLink.vue';
-import LocationDisplay from '@/components/history/LocationDisplay.vue';
-import TablePageLayout from '@/components/layout/TablePageLayout.vue';
-import HideSmallBalances from '@/components/settings/HideSmallBalances.vue';
-import { useAggregatedBalances } from '@/composables/balances/use-aggregated-balances';
-import { FiatDisplay } from '@/modules/amount-display/components';
+import ExchangeAmountRow from '@/modules/accounts/exchanges/ExchangeAmountRow.vue';
+import { FiatDisplay } from '@/modules/assets/amount-display/components';
+import AssetBalances from '@/modules/balances/AssetBalances.vue';
+import BinanceSavingDetail from '@/modules/balances/exchanges/BinanceSavingDetail.vue';
 import { useBinanceSavings } from '@/modules/balances/exchanges/use-binance-savings';
+import { useAggregatedBalances } from '@/modules/balances/use-aggregated-balances';
 import { useBalanceRefresh } from '@/modules/balances/use-balance-refresh';
-import { uniqueStrings } from '@/modules/common/data/data';
-import { NoteLocation } from '@/modules/common/notes';
+import { uniqueStrings } from '@/modules/core/common/data/data';
+import { NoteLocation } from '@/modules/core/common/notes';
+import { TaskType } from '@/modules/core/tasks/task-type';
+import { useTaskStore } from '@/modules/core/tasks/use-task-store';
+import LocationDisplay from '@/modules/history/LocationDisplay.vue';
+import HideSmallBalances from '@/modules/settings/HideSmallBalances.vue';
 import { BalanceSource } from '@/modules/settings/types/frontend-settings';
 import { useSessionSettingsStore } from '@/modules/settings/use-session-settings-store';
-import { TaskType } from '@/modules/tasks/task-type';
-import { useTaskStore } from '@/modules/tasks/use-task-store';
+import InternalLink from '@/modules/shell/components/InternalLink.vue';
+import TablePageLayout from '@/modules/shell/layout/TablePageLayout.vue';
 import { Routes } from '@/router/routes';
 
 definePage({

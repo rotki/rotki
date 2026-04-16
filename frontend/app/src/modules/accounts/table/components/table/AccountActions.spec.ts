@@ -8,7 +8,7 @@ import AccountActions from '@/modules/accounts/table/components/table/AccountAct
 
 const supportsTransactionsMock = vi.fn();
 
-vi.mock('@/composables/info/chains', () => ({
+vi.mock('@/modules/core/common/use-supported-chains', () => ({
   useSupportedChains: vi.fn(() => ({
     supportsTransactions: supportsTransactionsMock,
   })),

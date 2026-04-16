@@ -1,10 +1,10 @@
 <script setup lang="ts">
-import SettingsPage from '@/components/settings/controls/SettingsPage.vue';
-import ChangePassword from '@/components/settings/data-security/ChangePassword.vue';
-import PasswordConfirmationSetting from '@/components/settings/data-security/PasswordConfirmationSetting.vue';
-import SettingCategory from '@/components/settings/SettingCategory.vue';
-import { SettingsCategoryIds, SettingsHighlightIds } from '@/composables/settings/types';
-import { NoteLocation } from '@/modules/common/notes';
+import { NoteLocation } from '@/modules/core/common/notes';
+import SettingsPage from '@/modules/settings/controls/SettingsPage.vue';
+import ChangePassword from '@/modules/settings/data-security/ChangePassword.vue';
+import PasswordConfirmationSetting from '@/modules/settings/data-security/PasswordConfirmationSetting.vue';
+import { SettingsCategoryIds, SettingsHighlightIds } from '@/modules/settings/setting-highlight-ids';
+import SettingCategory from '@/modules/settings/SettingCategory.vue';
 
 definePage({
   meta: {

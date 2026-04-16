@@ -1,5 +1,5 @@
 import { useIgnoredAssetOperations } from '@/modules/assets/use-ignored-asset-operations';
-import { useConfirmStore } from '@/modules/common/use-confirm-store';
+import { useConfirmStore } from '@/modules/core/common/use-confirm-store';
 
 interface UseIgnoredAssetConfirmationReturn {
   ignoreAssetWithConfirmation: (assets: string[] | string, assetName?: string | null, onSuccess?: () => any) => Promise<void>;

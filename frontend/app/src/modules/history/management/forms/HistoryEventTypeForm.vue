@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import type { Validation } from '@vuelidate/core';
-import type { ActionDataEntry } from '@/modules/common/action';
-import HistoryEventTypeCombination from '@/components/history/events/HistoryEventTypeCombination.vue';
-import { useHistoryEventMappings } from '@/composables/history/events/mapping';
-import { toMessages } from '@/modules/common/validation/validation';
+import type { ActionDataEntry } from '@/modules/core/common/action';
+import { toMessages } from '@/modules/core/common/validation/validation';
+import HistoryEventTypeCombination from '@/modules/history/events/HistoryEventTypeCombination.vue';
+import { useHistoryEventMappings } from '@/modules/history/events/mapping/use-history-event-mappings';
 
 interface HistoryEventTypeFormProps {
   counterparty?: string | null;

@@ -1,20 +1,20 @@
-import type { EvmChainInfo, SupportedChains } from '@/modules/api/types/chains';
+import type { EvmChainInfo, SupportedChains } from '@/modules/core/api/types/chains';
 import { Blockchain } from '@rotki/common';
 import { startPromise } from '@shared/utils';
 import { createTestBalance, createTestBalanceResponse } from '@test/utils/create-data';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { useBlockchainBalancesApi } from '@/composables/api/balances/blockchain';
 import { createAccount } from '@/modules/accounts/create-account';
 import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
+import { useBlockchainBalancesApi } from '@/modules/balances/api/use-blockchain-balances-api';
 import { useBalancesStore } from '@/modules/balances/use-balances-store';
 import { useBlockchainBalances } from '@/modules/balances/use-blockchain-balances';
-import { Section } from '@/modules/common/status';
-import { useStatusStore } from '@/modules/common/use-status-store';
+import { Section } from '@/modules/core/common/status';
+import { useStatusStore } from '@/modules/core/common/use-status-store';
 import { useGeneralSettingsStore } from '@/modules/settings/use-general-settings-store';
 
 vi.mock('@/modules/settings/use-general-settings-store', async () => {
   const { ref } = await import('vue');
-  const { Module } = await import('@/modules/common/modules');
+  const { Module } = await import('@/modules/core/common/modules');
   return ({
     useGeneralSettingsStore: vi.fn().mockReturnValue({
       activeModules: ref([Module.LOOPRING]),
@@ -22,7 +22,7 @@ vi.mock('@/modules/settings/use-general-settings-store', async () => {
   });
 });
 
-vi.mock('@/modules/notifications/use-notifications-store', () => ({
+vi.mock('@/modules/core/notifications/use-notifications-store', () => ({
   useNotificationsStore: vi.fn().mockReturnValue({}),
 }));
 
@@ -32,11 +32,11 @@ vi.mock('@/modules/balances/use-balances-store', () => ({
   }),
 }));
 
-vi.mock('@/composables/assets/common', () => ({
+vi.mock('@/modules/assets/use-resolve-asset-identifier', () => ({
   useResolveAssetIdentifier: vi.fn(() => (asset: string): string => asset),
 }));
 
-vi.mock('@/composables/api/balances/blockchain', () => ({
+vi.mock('@/modules/balances/api/use-blockchain-balances-api', () => ({
   useBlockchainBalancesApi: vi.fn().mockReturnValue({
     queryBlockchainBalances: vi.fn().mockResolvedValue({ taskId: 1 }),
     refreshBlockchainBalances: vi.fn().mockResolvedValue({ taskId: 4 }),
@@ -45,12 +45,12 @@ vi.mock('@/composables/api/balances/blockchain', () => ({
   }),
 }));
 
-vi.mock('@/modules/tasks/use-task-handler', async importOriginal => ({
+vi.mock('@/modules/core/tasks/use-task-handler', async importOriginal => ({
   ...(await importOriginal<Record<string, unknown>>()),
   useTaskHandler: vi.fn().mockReturnValue({
     runTask: vi.fn().mockImplementation(async (taskFn: () => Promise<unknown>, options: { type: number }) => {
       await taskFn();
-      const { TaskType } = await import('@/modules/tasks/task-type');
+      const { TaskType } = await import('@/modules/core/tasks/task-type');
       if (options.type === TaskType.L2_LOOPRING) {
         return {
           success: true,
@@ -76,7 +76,7 @@ vi.mock('@/modules/tasks/use-task-handler', async importOriginal => ({
   }),
 }));
 
-vi.mock('@/composables/info/chains', async () => {
+vi.mock('@/modules/core/common/use-supported-chains', async () => {
   const { computed } = await import('vue');
   const { Blockchain } = await import('@rotki/common');
   return ({

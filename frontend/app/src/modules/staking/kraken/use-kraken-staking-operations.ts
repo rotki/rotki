@@ -1,19 +1,19 @@
+import type { TaskMeta } from '@/modules/core/tasks/types';
 import type {
   KrakenStakingDateFilter,
   KrakenStakingPagination,
 } from '@/modules/staking/staking-types';
-import type { TaskMeta } from '@/modules/tasks/types';
 import { omit } from 'es-toolkit';
-import { useKrakenApi } from '@/composables/api/staking/kraken';
-import { useStatusUpdater } from '@/composables/status';
-import { logger } from '@/modules/common/logging/logging';
-import { Section, Status } from '@/modules/common/status';
-import { getErrorMessage, useNotifications } from '@/modules/notifications/use-notifications';
+import { logger } from '@/modules/core/common/logging/logging';
+import { Section, Status } from '@/modules/core/common/status';
+import { getErrorMessage, useNotifications } from '@/modules/core/notifications/use-notifications';
+import { TaskType } from '@/modules/core/tasks/task-type';
+import { useTaskHandler } from '@/modules/core/tasks/use-task-handler';
+import { useTaskStore } from '@/modules/core/tasks/use-task-store';
 import { useFrontendSettingsStore } from '@/modules/settings/use-frontend-settings-store';
+import { useStatusUpdater } from '@/modules/shell/sync-progress/use-status-updater';
+import { useKrakenApi } from '@/modules/staking/api/use-kraken-api';
 import { useKrakenStakingStore } from '@/modules/staking/use-kraken-staking-store';
-import { TaskType } from '@/modules/tasks/task-type';
-import { useTaskHandler } from '@/modules/tasks/use-task-handler';
-import { useTaskStore } from '@/modules/tasks/use-task-store';
 
 interface UseKrakenStakingOperationsReturn {
   fetchEvents: (refresh?: boolean, dateFilter?: KrakenStakingDateFilter) => Promise<void>;

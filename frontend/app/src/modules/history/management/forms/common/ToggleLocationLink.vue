@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { useSupportedChains } from '@/composables/info/chains';
+import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
 
 const modelValue = defineModel<string | undefined>({ required: true });
 

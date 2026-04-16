@@ -1,7 +1,7 @@
 import type { AssetMap } from '@/modules/assets/types';
 import flushPromises from 'flush-promises';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { useAssetInfoApi } from '@/composables/api/assets/info';
+import { useAssetInfoApi } from '@/modules/assets/api/use-asset-info-api';
 
 describe('modules/assets/use-asset-info-cache', () => {
   beforeEach(() => {

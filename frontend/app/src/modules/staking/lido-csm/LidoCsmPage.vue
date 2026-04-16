@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import type { LidoCsmNodeOperator } from '@/modules/staking/staking-types';
-import TablePageLayout from '@/components/layout/TablePageLayout.vue';
-import { useLidoCsmApi } from '@/composables/api/staking/lido-csm';
-import { useMessageStore } from '@/modules/common/use-message-store';
-import { usePriceTaskManager } from '@/modules/prices/use-price-task-manager';
+import { usePriceTaskManager } from '@/modules/assets/prices/use-price-task-manager';
+import { useMessageStore } from '@/modules/core/common/use-message-store';
+import TablePageLayout from '@/modules/shell/layout/TablePageLayout.vue';
+import { useLidoCsmApi } from '@/modules/staking/api/use-lido-csm-api';
 import { STETH_IDENTIFIER } from '@/modules/staking/lido-csm/constants';
 import LidoCsmAddDialog from '@/modules/staking/lido-csm/LidoCsmAddDialog.vue';
 import LidoCsmTable from '@/modules/staking/lido-csm/LidoCsmTable.vue';

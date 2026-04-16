@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import type { EvmChainInfo } from '@/modules/api/types/chains';
+import type { EvmChainInfo } from '@/modules/core/api/types/chains';
 import { getTextToken } from '@rotki/common';
-import { useSupportedChains } from '@/composables/info/chains';
+import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
 import HistoryRedecodeChainItem from '@/modules/history/redecode/HistoryRedecodeChainItem.vue';
 
 const {

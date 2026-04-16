@@ -1,6 +1,6 @@
-import { useStatisticsApi } from '@/composables/api/statistics/statistics-api';
-import { getErrorMessage, useNotifications } from '@/modules/notifications/use-notifications';
+import { getErrorMessage, useNotifications } from '@/modules/core/notifications/use-notifications';
 import { useFrontendSettingsStore } from '@/modules/settings/use-frontend-settings-store';
+import { useStatisticsApi } from '@/modules/statistics/api/use-statistics-api';
 import { useStatisticsStore } from '@/modules/statistics/use-statistics-store';
 
 interface UseStatisticsDataFetchingReturn {

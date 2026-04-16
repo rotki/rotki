@@ -1,20 +1,20 @@
+import type { AssetPrices } from '@/modules/assets/prices/price-types';
 import type { ManualBalanceWithValue } from '@/modules/balances/types/manual-balances';
-import type { AssetPrices } from '@/modules/prices/price-types';
 import { bigNumberify } from '@rotki/common';
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { useManualBalancesApi } from '@/composables/api/balances/manual';
-import { Currency, CURRENCY_USD } from '@/modules/amount-display/currencies';
+import { Currency, CURRENCY_USD } from '@/modules/assets/amount-display/currencies';
+import { useManualBalancesApi } from '@/modules/balances/api/use-manual-balances-api';
 import { useManualBalanceData } from '@/modules/balances/manual/use-manual-balance-data';
 import { useManualBalances } from '@/modules/balances/manual/use-manual-balances';
 import { BalanceType } from '@/modules/balances/types/balances';
 import { useBalancePricesStore } from '@/modules/balances/use-balance-prices-store';
 import { useBalancesStore } from '@/modules/balances/use-balances-store';
-import { TRADE_LOCATION_BANKS, TRADE_LOCATION_BLOCKCHAIN } from '@/modules/common/defaults';
+import { TRADE_LOCATION_BANKS, TRADE_LOCATION_BLOCKCHAIN } from '@/modules/core/common/defaults';
 import { useGeneralSettingsStore } from '@/modules/settings/use-general-settings-store';
 
 const runTaskMock = vi.fn();
 
-vi.mock('@/composables/api/balances/manual', () => ({
+vi.mock('@/modules/balances/api/use-manual-balances-api', () => ({
   useManualBalancesApi: vi.fn().mockReturnValue({
     addManualBalances: vi.fn().mockResolvedValue(1),
     deleteManualBalances: vi.fn().mockResolvedValue({}),
@@ -23,7 +23,7 @@ vi.mock('@/composables/api/balances/manual', () => ({
   }),
 }));
 
-vi.mock('@/modules/tasks/use-task-handler', async importOriginal => ({
+vi.mock('@/modules/core/tasks/use-task-handler', async importOriginal => ({
   ...(await importOriginal<Record<string, unknown>>()),
   useTaskHandler: vi.fn().mockReturnValue({
     runTask: async (taskFn: () => Promise<unknown>, ...rest: unknown[]): Promise<unknown> => {

@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import type { CommonQueryProgressData, HistoryQueryProgressType } from '@/modules/dashboard/progress/types';
-import ChainIcon from '@/components/helper/display/icons/ChainIcon.vue';
-import LocationIcon from '@/components/history/LocationIcon.vue';
-import HashLink from '@/modules/common/links/HashLink.vue';
+import ChainIcon from '@/modules/shell/components/ChainIcon.vue';
+import LocationIcon from '@/modules/shell/components/display/LocationIcon.vue';
+import HashLink from '@/modules/shell/components/HashLink.vue';
 
 interface HistoryQueryProgressOperationData {
   type?: HistoryQueryProgressType;

@@ -1,11 +1,11 @@
 <script setup lang="ts">
 import type { DataTableColumn } from '@rotki/ui-library';
 import { startPromise } from '@shared/utils';
-import DateDisplay from '@/components/display/DateDisplay.vue';
-import CopyButton from '@/components/helper/CopyButton.vue';
-import LocationIcon from '@/components/history/LocationIcon.vue';
-import TableFilter from '@/components/table-filter/TableFilter.vue';
-import HashLink from '@/modules/common/links/HashLink.vue';
+import TableFilter from '@/modules/core/table/TableFilter.vue';
+import CopyButton from '@/modules/shell/components/CopyButton.vue';
+import DateDisplay from '@/modules/shell/components/display/DateDisplay.vue';
+import LocationIcon from '@/modules/shell/components/display/LocationIcon.vue';
+import HashLink from '@/modules/shell/components/HashLink.vue';
 import {
   type InternalTxConflict,
   type InternalTxConflictAction,

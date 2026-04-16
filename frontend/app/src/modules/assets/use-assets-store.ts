@@ -1,6 +1,6 @@
 import type { MaybeRefOrGetter } from 'vue';
-import { useAssetIconApi } from '@/composables/api/assets/icon';
-import { isBlockchain } from '@/modules/onchain/chains';
+import { useAssetIconApi } from '@/modules/assets/api/use-asset-icon-api';
+import { isBlockchain } from '@/modules/core/common/chains';
 
 interface CachedAssetResult {
   exists: boolean;

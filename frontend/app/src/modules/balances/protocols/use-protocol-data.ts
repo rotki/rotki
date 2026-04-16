@@ -1,8 +1,8 @@
 import type { MaybeRefOrGetter, Ref } from 'vue';
 import { toSentenceCase } from '@rotki/common';
-import { useDefiMetadata } from '@/composables/defi/metadata';
-import { useHistoryEventCounterpartyMappings } from '@/composables/history/events/mapping/counterparty';
-import { useLocations } from '@/composables/locations';
+import { useProtocolMetadata } from '@/modules/balances/protocols/use-protocol-metadata';
+import { useLocations } from '@/modules/core/common/use-locations';
+import { useHistoryEventCounterpartyMappings } from '@/modules/history/events/mapping/use-history-event-counterparty-mappings';
 
 interface ImageProtocol { image: string; type: 'image'; name: string }
 
@@ -16,11 +16,11 @@ interface UseProtocolDataReturn {
 
 export function useProtocolData(protocol: MaybeRefOrGetter<string>, isDark: MaybeRefOrGetter<boolean> = false): UseProtocolDataReturn {
   const { useLocationData } = useLocations();
-  const { getDefiData, getDefiImageUrl } = useDefiMetadata();
+  const { getProtocolData, getProtocolImageUrl } = useProtocolMetadata();
   const { getBaseCounterpartyData } = useHistoryEventCounterpartyMappings();
 
   const locationData = useLocationData(protocol);
-  const defiData = getDefiData(protocol);
+  const defiData = getProtocolData(protocol);
 
   const protocolData = computed<ProtocolData>(() => {
     const protocolName = toValue(protocol);
@@ -46,7 +46,7 @@ export function useProtocolData(protocol: MaybeRefOrGetter<string>, isDark: Mayb
 
     const defi = get(defiData);
     if (defi)
-      return { image: getDefiImageUrl(protocolName, defi.icon), name: defi.name, type: 'image' };
+      return { image: getProtocolImageUrl(protocolName, defi.icon), name: defi.name, type: 'image' };
 
     return undefined;
   });

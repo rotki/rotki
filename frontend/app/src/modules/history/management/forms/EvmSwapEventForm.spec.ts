@@ -1,31 +1,31 @@
 import type { Pinia } from 'pinia';
+import type { TradeLocationData } from '@/modules/core/common/location';
 import type { AddEvmSwapEventPayload, EditEvmSwapEventPayload, EvmSwapEvent } from '@/modules/history/events/schemas';
 import type { GroupAddEventData, GroupEventData } from '@/modules/history/management/forms/form-types';
-import type { TradeLocationData } from '@/modules/history/trade/location';
 import { bigNumberify, HistoryEventEntryType } from '@rotki/common';
 import { type ComponentMountingOptions, mount, type VueWrapper } from '@vue/test-utils';
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { nextTick } from 'vue';
-import { useAssetInfoApi } from '@/composables/api/assets/info';
-import { useAddressesNamesApi } from '@/composables/api/blockchain/addresses-names';
-import { useHistoryEvents } from '@/composables/history/events';
-import { useLocations } from '@/composables/locations';
-import { setupDayjs } from '@/modules/common/data/date';
+import { useAddressesNamesApi } from '@/modules/accounts/address-book/use-addresses-names-api';
+import { useAssetInfoApi } from '@/modules/assets/api/use-asset-info-api';
+import { setupDayjs } from '@/modules/core/common/data/date';
+import { useLocations } from '@/modules/core/common/use-locations';
+import { useHistoryEvents } from '@/modules/history/events/use-history-events';
 import EvmSwapEventForm from '@/modules/history/management/forms/EvmSwapEventForm.vue';
 
-vi.mock('@/composables/history/events', () => ({
+vi.mock('@/modules/history/events/use-history-events', () => ({
   useHistoryEvents: vi.fn(),
 }));
 
-vi.mock('@/composables/locations', () => ({
+vi.mock('@/modules/core/common/use-locations', () => ({
   useLocations: vi.fn(),
 }));
 
-vi.mock('@/composables/api/assets/info', () => ({
+vi.mock('@/modules/assets/api/use-asset-info-api', () => ({
   useAssetInfoApi: vi.fn(),
 }));
 
-vi.mock('@/composables/api/blockchain/addresses-names', () => ({
+vi.mock('@/modules/accounts/address-book/use-addresses-names-api', () => ({
   useAddressesNamesApi: vi.fn(),
 }));
 

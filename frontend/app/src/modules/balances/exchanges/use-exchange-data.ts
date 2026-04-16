@@ -3,8 +3,8 @@ import type { AssetProtocolBalances } from '@/modules/balances/types/blockchain-
 import type { Exchange, ExchangeInfo } from '@/modules/balances/types/exchanges';
 import { useAssetsStore } from '@/modules/assets/use-assets-store';
 import { useBalancesStore } from '@/modules/balances/use-balances-store';
-import { sortDesc } from '@/modules/common/data/bignumbers';
-import { balanceSum, exchangeAssetSum } from '@/modules/common/data/calculation';
+import { sortDesc } from '@/modules/core/common/data/bignumbers';
+import { balanceSum, exchangeAssetSum } from '@/modules/core/common/data/calculation';
 import { useGeneralSettingsStore } from '@/modules/settings/use-general-settings-store';
 import { useSessionSettingsStore } from '@/modules/settings/use-session-settings-store';
 

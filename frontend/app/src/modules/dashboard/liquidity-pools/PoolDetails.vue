@@ -2,15 +2,15 @@
 import type { DataTableColumn, DataTableSortData } from '@rotki/ui-library';
 import type { PoolAsset } from './types';
 import { type AssetBalanceWithPrice, Zero } from '@rotki/common';
-import AssetDetails from '@/components/helper/AssetDetails.vue';
-import PremiumLock from '@/components/premium/PremiumLock.vue';
-import { useAssetSelectInfo } from '@/composables/assets/asset-select-info';
-import { usePremium } from '@/composables/premium';
-import { AssetValueDisplay, FiatDisplay, ValueDisplay } from '@/modules/amount-display/components';
-import { sortAssetBalances } from '@/modules/common/display/balances';
-import { usePriceUtils } from '@/modules/prices/use-price-utils';
+import { AssetValueDisplay, FiatDisplay, ValueDisplay } from '@/modules/assets/amount-display/components';
+import AssetDetails from '@/modules/assets/AssetDetails.vue';
+import { usePriceUtils } from '@/modules/assets/prices/use-price-utils';
+import { useAssetSelectInfo } from '@/modules/assets/use-asset-select-info';
+import { sortAssetBalances } from '@/modules/core/common/display/balances';
+import { TableId, useRememberTableSorting } from '@/modules/core/table/use-remember-table-sorting';
+import PremiumLock from '@/modules/premium/PremiumLock.vue';
+import { usePremium } from '@/modules/premium/use-premium';
 import { useGeneralSettingsStore } from '@/modules/settings/use-general-settings-store';
-import { TableId, useRememberTableSorting } from '@/modules/table/use-remember-table-sorting';
 
 interface PoolDetailsProps {
   assets: PoolAsset[];

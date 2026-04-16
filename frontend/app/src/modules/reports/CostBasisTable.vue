@@ -1,0 +1,151 @@
+<script setup lang="ts">
+import type { DataTableColumn, DataTableSortData } from '@rotki/ui-library';
+import type { CostBasis, MatchedAcquisitions, MatchedAcquisitionsEvent } from '@/modules/reports/report-types';
+import { FiatDisplay, ValueDisplay } from '@/modules/assets/amount-display/components';
+import { TableId, useRememberTableSorting } from '@/modules/core/table/use-remember-table-sorting';
+import DateDisplay from '@/modules/shell/components/display/DateDisplay.vue';
+import SuccessDisplay from '@/modules/shell/components/display/SuccessDisplay.vue';
+
+type Acquisition = Omit<MatchedAcquisitions, 'event'> & MatchedAcquisitionsEvent;
+
+const {
+  costBasis,
+  currency = null,
+  showGroupLine = false,
+} = defineProps<{
+  costBasis: CostBasis;
+  currency?: string | null;
+  showGroupLine?: boolean;
+}>();
+
+const { t } = useI18n({ useScope: 'global' });
+
+const sort = ref<DataTableSortData<Acquisition>>({
+  column: 'timestamp',
+  direction: 'asc',
+});
+
+const cols = computed<DataTableColumn<Acquisition>[]>(() => [
+  {
+    align: 'end',
+    key: 'amount',
+    label: t('cost_basis_table.headers.amount'),
+    sortable: true,
+  },
+  {
+    align: 'end',
+    key: 'fullAmount',
+    label: t('cost_basis_table.headers.full_amount'),
+    sortable: true,
+  },
+  {
+    align: 'end',
+    key: 'remainingAmount',
+    label: t('cost_basis_table.headers.remaining_amount'),
+    sortable: true,
+  },
+  {
+    align: 'end',
+    key: 'rate',
+    label: t('cost_basis_table.headers.rate', {
+      currency,
+    }),
+    sortable: true,
+  },
+  {
+    align: 'end',
+    key: 'timestamp',
+    label: t('common.datetime'),
+    sortable: true,
+  },
+  {
+    key: 'taxable',
+    label: t('cost_basis_table.headers.taxable'),
+    sortable: true,
+  },
+]);
+
+useRememberTableSorting<Acquisition>(TableId.COST_BASIS, sort, cols);
+
+const matchedAcquisitions = computed<Acquisition[]>(() => {
+  const acquisitions = costBasis.matchedAcquisitions;
+  if (!acquisitions)
+    return [];
+
+  return acquisitions.map((acquisition) => {
+    const { event, ...rest } = acquisition;
+
+    return {
+      ...rest,
+      ...event,
+    };
+  });
+});
+</script>
+
+<template>
+  <div class="relative">
+    <div
+      v-if="showGroupLine"
+      class="absolute w-0.5 -top-4 -bottom-4 left-[0.8125rem]"
+    >
+      <div class="border-l-2 border-dashed border-rui-primary h-full transform -translate-x-1/2" />
+    </div>
+
+    <div
+      :class="{ 'pl-[2.125rem]': showGroupLine }"
+      class="grow"
+    >
+      <div class="flex pb-4 items-center gap-4">
+        <p class="text-body-1 mb-0">
+          {{ t('cost_basis_table.cost_basis') }}
+        </p>
+        <RuiChip
+          v-if="costBasis.isComplete"
+          size="sm"
+          color="success"
+        >
+          {{ t('cost_basis_table.complete') }}
+        </RuiChip>
+        <RuiChip
+          v-else
+          size="sm"
+          color="error"
+        >
+          {{ t('cost_basis_table.incomplete') }}
+        </RuiChip>
+      </div>
+      <RuiCard
+        variant="flat"
+        no-padding
+      >
+        <RuiDataTable
+          v-model:sort="sort"
+          :rows="matchedAcquisitions"
+          :cols="cols"
+          row-attr="amount"
+          outlined
+        >
+          <template #item.amount="{ row }">
+            <ValueDisplay :value="row.amount" />
+          </template>
+          <template #item.fullAmount="{ row }">
+            <ValueDisplay :value="row.fullAmount" />
+          </template>
+          <template #item.remainingAmount="{ row }">
+            <ValueDisplay :value="row.fullAmount.minus(row.amount)" />
+          </template>
+          <template #item.rate="{ row }">
+            <FiatDisplay :value="row.rate" />
+          </template>
+          <template #item.timestamp="{ row }">
+            <DateDisplay :timestamp="row.timestamp" />
+          </template>
+          <template #item.taxable="{ row }">
+            <SuccessDisplay :success="row.taxable" />
+          </template>
+        </RuiDataTable>
+      </RuiCard>
+    </div>
+  </div>
+</template>

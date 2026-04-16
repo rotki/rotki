@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import ModuleNotActive from '@/components/defi/ModuleNotActive.vue';
-import NftGallery from '@/components/nft/NftGallery.vue';
-import { Module, useModuleEnabled } from '@/composables/session/modules';
-import { NoteLocation } from '@/modules/common/notes';
+import NftGallery from '@/modules/balances/nft/NftGallery.vue';
+import { NoteLocation } from '@/modules/core/common/notes';
+import { Module, useModuleEnabled } from '@/modules/session/use-module-enabled';
+import ModuleNotActive from '@/modules/settings/modules/ModuleNotActive.vue';
 
 definePage({
   meta: {

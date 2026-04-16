@@ -1,9 +1,8 @@
 <script setup lang="ts">
 import type { PullEventPayload } from '@/modules/history/events/event-payloads';
 import { HistoryEventEntryType } from '@rotki/common';
-import PrioritizedList from '@/components/helper/PrioritizedList.vue';
-import SettingsItem from '@/components/settings/controls/SettingsItem.vue';
-import { useSupportedChains } from '@/composables/info/chains';
+import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
+import SettingsItem from '@/modules/settings/controls/SettingsItem.vue';
 import { EvmIndexer } from '@/modules/settings/types/evm-indexer';
 import { PrioritizedListData } from '@/modules/settings/types/prioritized-list-data';
 import {
@@ -13,6 +12,7 @@ import {
   ROUTESCAN_PRIO_LIST_ITEM,
 } from '@/modules/settings/types/prioritized-list-id';
 import { useGeneralSettingsStore } from '@/modules/settings/use-general-settings-store';
+import PrioritizedList from '@/modules/shell/components/PrioritizedList.vue';
 
 const show = defineModel<boolean>('show', { required: true });
 

@@ -1,23 +1,23 @@
 <script setup lang="ts">
 import type { AssetBalanceWithPrice } from '@rotki/common';
 import { externalLinks } from '@shared/external-links';
-import ManagedAssetIgnoreSwitch from '@/components/asset-manager/managed/ManagedAssetIgnoreSwitch.vue';
-import AssetBalances from '@/components/AssetBalances.vue';
-import AssetLocations from '@/components/assets/AssetLocations.vue';
-import AssetValueRow from '@/components/assets/AssetValueRow.vue';
-import AppImage from '@/components/common/AppImage.vue';
-import AssetAmountAndValuePlaceholder from '@/components/graphs/AssetAmountAndValuePlaceholder.vue';
-import AssetIcon from '@/components/helper/display/icons/AssetIcon.vue';
-import ExternalLink from '@/components/helper/ExternalLink.vue';
-import TablePageLayout from '@/components/layout/TablePageLayout.vue';
-import { type AssetResolutionOptions, useAssetInfoRetrieval } from '@/composables/assets/retrieval';
-import { useAggregatedBalances } from '@/composables/balances/use-aggregated-balances';
-import { usePremium } from '@/composables/premium';
-import { getPublicServiceImagePath } from '@/modules/common/file/file';
-import HashLink from '@/modules/common/links/HashLink.vue';
-import { NoteLocation } from '@/modules/common/notes';
+import ManagedAssetIgnoreSwitch from '@/modules/assets/admin/managed/ManagedAssetIgnoreSwitch.vue';
+import AssetLocations from '@/modules/assets/AssetLocations.vue';
+import AssetValueRow from '@/modules/assets/AssetValueRow.vue';
+import { type AssetResolutionOptions, useAssetInfoRetrieval } from '@/modules/assets/use-asset-info-retrieval';
+import AssetBalances from '@/modules/balances/AssetBalances.vue';
+import { useAggregatedBalances } from '@/modules/balances/use-aggregated-balances';
+import { getPublicServiceImagePath } from '@/modules/core/common/file/file';
+import { NoteLocation } from '@/modules/core/common/notes';
+import { AssetAmountAndValueOverTime } from '@/modules/premium/premium';
+import { usePremium } from '@/modules/premium/use-premium';
+import AppImage from '@/modules/shell/components/AppImage.vue';
+import AssetIcon from '@/modules/shell/components/AssetIcon.vue';
+import ExternalLink from '@/modules/shell/components/ExternalLink.vue';
+import HashLink from '@/modules/shell/components/HashLink.vue';
+import TablePageLayout from '@/modules/shell/layout/TablePageLayout.vue';
+import AssetAmountAndValuePlaceholder from '@/modules/statistics/AssetAmountAndValuePlaceholder.vue';
 import { useAssetPageActions } from '@/pages/assets/use-asset-page-actions';
-import { AssetAmountAndValueOverTime } from '@/premium/premium';
 
 definePage({
   meta: {

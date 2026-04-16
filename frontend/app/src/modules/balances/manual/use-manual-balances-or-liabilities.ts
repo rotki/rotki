@@ -4,10 +4,10 @@ import type {
   ManualBalanceWithPrice,
   ManualBalanceWithValue,
 } from '@/modules/balances/types/manual-balances';
-import type { Collection } from '@/modules/common/collection';
+import type { Collection } from '@/modules/core/common/collection';
 import { useManualBalancePagination } from '@/modules/balances/manual/use-manual-balance-pagination';
 import { useBalancesStore } from '@/modules/balances/use-balances-store';
-import { uniqueStrings } from '@/modules/common/data/data';
+import { uniqueStrings } from '@/modules/core/common/data/data';
 
 interface UseManualBalancesOrLiabilitiesReturn {
   dataSource: ComputedRef<ManualBalanceWithValue[]>;

@@ -1,4 +1,4 @@
-import type { PaginationRequestPayload } from '@/modules/common/common-types';
+import type { PaginationRequestPayload } from '@/modules/core/common/common-types';
 import { NumericString } from '@rotki/common';
 import { z } from 'zod/v4';
 import { BalanceType } from '@/modules/balances/types/balances';
