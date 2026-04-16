@@ -1083,7 +1083,13 @@ def test_blockchain_balances_refresh(
             A_DAI.identifier: {DEFAULT_BALANCE_LABEL: {'amount': '3', 'value': '33'}},
             A_USDT.identifier: {'makerdao vault': {'amount': '3', 'value': '54'}},
         }
-        assert one_time_query_result == query_blockchain_balance(4)
+
+        repeated_query_result = query_blockchain_balance(4)
+        assert 'last_refresh_ts' in one_time_query_result
+        assert 'last_refresh_ts' in repeated_query_result
+        one_time_query_result.pop('last_refresh_ts', None)
+        repeated_query_result.pop('last_refresh_ts', None)
+        assert one_time_query_result == repeated_query_result
 
 
 @pytest.mark.parametrize('number_of_eth_accounts', [2])
