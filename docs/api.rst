@@ -87,15 +87,20 @@ Query oracle prices
       Content-Type: application/json
 
       {
-          "result": [
-              {
-                  "from_asset": "ETH",
-                  "to_asset": "USD",
-                  "source_type": "defillama",
-                  "timestamp": 1700000100,
-                  "price": "2012.42"
-              }
-          ],
+          "result": {
+              "entries": [
+                  {
+                      "from_asset": "ETH",
+                      "to_asset": "USD",
+                      "source_type": "defillama",
+                      "timestamp": 1700000100,
+                      "price": "2012.42"
+                  }
+              ],
+              "entries_found": 1,
+              "entries_total": 3,
+              "entries_limit": -1
+          },
           "message": ""
       }
 
@@ -107,12 +112,15 @@ Query oracle prices
    :query integer[optional] limit: Number of rows to return. Defaults to ``100``.
    :query integer[optional] offset: Pagination offset. Defaults to ``0``.
 
-   :resjson list result: A list of matching ``price_history`` rows.
+   :resjson list result.entries: A list of matching ``price_history`` rows.
    :resjson string from_asset: The source asset identifier.
    :resjson string to_asset: The quote asset identifier.
    :resjson string source_type: Oracle source name (``manual``, ``coingecko``, ``cryptocompare``, ``fiat``, ``manualcurrent``, ``defillama``, ``uniswapv2``, ``uniswapv3``, ``alchemy``).
    :resjson integer timestamp: UNIX timestamp in seconds.
    :resjson string price: Price stored as string.
+   :resjson int result.entries_found: The number of entries matching the requested supplied filters.
+   :resjson int result.entries_total: The total number of entries in the database, ignoring any filters or pagination.
+   :resjson int result.entries_limit: The limit of entries that can be returned. Since this is a free endpoint this is always ``-1``.
 
    :statuscode 200: Query was successful.
    :statuscode 400: Invalid ``source_type`` value.

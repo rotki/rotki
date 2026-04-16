@@ -1,6 +1,6 @@
 use crate::api::schemas::prices::OraclePricesQuery;
 use crate::api::{utils::ApiResponse, AppState};
-use crate::globaldb::OraclePricesQueryFilters;
+use crate::globaldb::{OraclePricesQueryFilters, OraclePricesQueryResult};
 use crate::types::{PriceOracle, SerializableDBEnum};
 use axum::{
     extract::{Query, State},
@@ -27,7 +27,7 @@ pub async fn get_oracle_prices(
         Err(message) => {
             return (
                 StatusCode::BAD_REQUEST,
-                Json(ApiResponse::<Vec<crate::globaldb::OraclePriceEntry>> {
+                Json(ApiResponse::<OraclePricesQueryResult> {
                     result: None,
                     message,
                 }),
@@ -50,7 +50,7 @@ pub async fn get_oracle_prices(
     {
         Ok(entries) => (
             StatusCode::OK,
-            Json(ApiResponse::<Vec<crate::globaldb::OraclePriceEntry>> {
+            Json(ApiResponse::<OraclePricesQueryResult> {
                 result: Some(entries),
                 message: "".to_string(),
             }),
@@ -59,7 +59,7 @@ pub async fn get_oracle_prices(
             log::error!("Failed to query oracle prices due to {}", error);
             (
                 StatusCode::INTERNAL_SERVER_ERROR,
-                Json(ApiResponse::<Vec<crate::globaldb::OraclePriceEntry>> {
+                Json(ApiResponse::<OraclePricesQueryResult> {
                     result: None,
                     message: "Failed to query oracle prices".to_string(),
                 }),
@@ -149,21 +149,38 @@ mod tests {
         .await;
 
         assert_eq!(status, StatusCode::OK);
-        let result = body
-            .get("result")
+        let result = body.get("result").unwrap();
+        assert_eq!(
+            result.get("entries_found").and_then(|value| value.as_i64()),
+            Some(2)
+        );
+        assert!(
+            result
+                .get("entries_total")
+                .and_then(|value| value.as_i64())
+                .unwrap()
+                >= 3
+        );
+        assert_eq!(
+            result.get("entries_limit").and_then(|value| value.as_i64()),
+            Some(-1)
+        );
+
+        let entries = result
+            .get("entries")
             .and_then(|value| value.as_array())
             .unwrap();
-        assert_eq!(result.len(), 1);
+        assert_eq!(entries.len(), 1);
         assert_eq!(
-            result[0].get("timestamp").and_then(|value| value.as_i64()),
+            entries[0].get("timestamp").and_then(|value| value.as_i64()),
             Some(4102445800_i64)
         );
         assert_eq!(
-            result[0].get("price").and_then(|value| value.as_str()),
+            entries[0].get("price").and_then(|value| value.as_str()),
             Some("1111.1")
         );
         assert_eq!(
-            result[0]
+            entries[0]
                 .get("source_type")
                 .and_then(|value| value.as_str()),
             Some("coingecko")
@@ -197,13 +214,22 @@ mod tests {
         .await;
 
         assert_eq!(status, StatusCode::OK);
-        let result = body
-            .get("result")
+        let result = body.get("result").unwrap();
+        assert_eq!(
+            result.get("entries_found").and_then(|value| value.as_i64()),
+            Some(1)
+        );
+        assert_eq!(
+            result.get("entries_limit").and_then(|value| value.as_i64()),
+            Some(-1)
+        );
+        let entries = result
+            .get("entries")
             .and_then(|value| value.as_array())
             .unwrap();
-        assert_eq!(result.len(), 1);
+        assert_eq!(entries.len(), 1);
         assert_eq!(
-            result[0]
+            entries[0]
                 .get("source_type")
                 .and_then(|value| value.as_str()),
             Some("defillama")

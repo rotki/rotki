@@ -20,6 +20,14 @@ pub struct OraclePriceEntry {
     pub price: String,
 }
 
+#[derive(Clone, Debug, Serialize)]
+pub struct OraclePricesQueryResult {
+    pub entries: Vec<OraclePriceEntry>,
+    pub entries_found: i64,
+    pub entries_total: i64,
+    pub entries_limit: i64,
+}
+
 #[derive(Clone, Debug, Default)]
 pub struct OraclePricesQueryFilters {
     pub from_asset: Option<String>,
@@ -162,7 +170,7 @@ impl GlobalDB {
     pub async fn query_oracle_prices(
         &self,
         filters: OraclePricesQueryFilters,
-    ) -> Result<Vec<OraclePriceEntry>> {
+    ) -> Result<OraclePricesQueryResult> {
         let conn = self.conn.lock().await;
         let mut conditions: Vec<String> = Vec::new();
         let mut params: Vec<Value> = Vec::new();
@@ -203,8 +211,18 @@ impl GlobalDB {
             format!("WHERE {}", conditions.join(" AND "))
         };
 
-        params.push(Value::Integer(i64::from(limit.unwrap_or(100))));
-        params.push(Value::Integer(i64::from(offset.unwrap_or(0))));
+        let total_found_query = format!("SELECT COUNT(*) FROM price_history {where_clause}");
+        let entries_found: i64 = conn.query_row(
+            &total_found_query,
+            rusqlite::params_from_iter(params.iter()),
+            |row| row.get(0),
+        )?;
+        let entries_total: i64 =
+            conn.query_row("SELECT COUNT(*) FROM price_history", [], |row| row.get(0))?;
+
+        let mut paginated_params = params.clone();
+        paginated_params.push(Value::Integer(i64::from(limit.unwrap_or(100))));
+        paginated_params.push(Value::Integer(i64::from(offset.unwrap_or(0))));
 
         let query = format!(
             "SELECT from_asset, to_asset, source_type, timestamp, price
@@ -215,7 +233,7 @@ impl GlobalDB {
         );
 
         let mut stmt = conn.prepare(&query)?;
-        let mut rows = stmt.query(rusqlite::params_from_iter(params.iter()))?;
+        let mut rows = stmt.query(rusqlite::params_from_iter(paginated_params.iter()))?;
         let mut prices: Vec<OraclePriceEntry> = Vec::new();
         while let Some(row) = rows.next()? {
             let db_source_type: String = row.get(2)?;
@@ -238,7 +256,12 @@ impl GlobalDB {
             });
         }
 
-        Ok(prices)
+        Ok(OraclePricesQueryResult {
+            entries: prices,
+            entries_found,
+            entries_total,
+            entries_limit: -1,
+        })
     }
 }
 
@@ -361,11 +384,14 @@ mod test {
             .await
             .unwrap();
 
-        assert_eq!(filtered.len(), 2);
-        assert_eq!(filtered[0].timestamp, 4102444802_i64);
-        assert_eq!(filtered[1].timestamp, 4102444800_i64);
-        assert_eq!(filtered[0].source_type, "coingecko");
-        assert_eq!(filtered[1].source_type, "coingecko");
+        assert_eq!(filtered.entries_found, 2);
+        assert!(filtered.entries_total >= 3);
+        assert_eq!(filtered.entries_limit, -1);
+        assert_eq!(filtered.entries.len(), 2);
+        assert_eq!(filtered.entries[0].timestamp, 4102444802_i64);
+        assert_eq!(filtered.entries[1].timestamp, 4102444800_i64);
+        assert_eq!(filtered.entries[0].source_type, "coingecko");
+        assert_eq!(filtered.entries[1].source_type, "coingecko");
 
         let paginated = globaldb
             .query_oracle_prices(super::OraclePricesQueryFilters {
@@ -380,8 +406,11 @@ mod test {
             .await
             .unwrap();
 
-        assert_eq!(paginated.len(), 1);
-        assert_eq!(paginated[0].timestamp, 4102444800_i64);
-        assert_eq!(paginated[0].price, "1234.5");
+        assert_eq!(paginated.entries_found, 2);
+        assert!(paginated.entries_total >= 3);
+        assert_eq!(paginated.entries_limit, -1);
+        assert_eq!(paginated.entries.len(), 1);
+        assert_eq!(paginated.entries[0].timestamp, 4102444800_i64);
+        assert_eq!(paginated.entries[0].price, "1234.5");
     }
 }

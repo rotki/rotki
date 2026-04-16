@@ -3,4 +3,4 @@ mod errors;
 mod handler;
 
 pub use assets::{AssetMappings, CollectionInfo};
-pub use handler::{GlobalDB, OraclePriceEntry, OraclePricesQueryFilters};
+pub use handler::{GlobalDB, OraclePricesQueryFilters, OraclePricesQueryResult};
