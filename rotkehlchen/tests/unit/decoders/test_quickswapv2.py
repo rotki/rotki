@@ -22,6 +22,67 @@ if TYPE_CHECKING:
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('polygon_pos_accounts', [['0x52C9bdc011DF28F500027258920CaEA518df2733']])
+def test_swap_to_native(
+        polygon_pos_inquirer: 'PolygonPOSInquirer',
+        polygon_pos_accounts: list['ChecksumEvmAddress'],
+) -> None:
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=polygon_pos_inquirer,
+        tx_hash=(tx_hash := deserialize_evm_tx_hash('0x30e6eca4848fdb1ac7ca848ef8733dde120a3ea5eda3708ea0bfb57a5eb0636a')),  # noqa: E501
+    )
+    assert events == [EvmEvent(
+        tx_ref=tx_hash,
+        timestamp=(timestamp := TimestampMS(1622501116000)),
+        location=Location.POLYGON_POS,
+        sequence_index=0,
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.FEE,
+        asset=A_POL,
+        amount=FVal(gas_amount := '0.000180113'),
+        location_label=(user_address := polygon_pos_accounts[0]),
+        notes=f'Burn {gas_amount} POL for gas',
+        counterparty=CPT_GAS,
+    ), EvmEvent(
+        tx_ref=tx_hash,
+        timestamp=timestamp,
+        location=Location.POLYGON_POS,
+        sequence_index=2,
+        event_type=HistoryEventType.INFORMATIONAL,
+        event_subtype=HistoryEventSubType.APPROVE,
+        asset=Asset('eip155:137/erc20:0x7ceB23fD6bC0adD59E62ac25578270cFf1b9f619'),
+        amount=FVal(approve_amount := '115792089237316195423570985008687907853269984665640564039457.569007913129639935'),  # noqa: E501
+        location_label=user_address,
+        notes=f'Set WETH spending approval of {user_address} by {(router_address := string_to_evm_address("0xa5E0829CaCEd8fFDD4De3c43696c57F7D7A678ff"))} to {approve_amount}',  # noqa: E501
+        address=router_address,
+    ), EvmSwapEvent(
+        tx_ref=tx_hash,
+        timestamp=timestamp,
+        location=Location.POLYGON_POS,
+        sequence_index=3,
+        event_subtype=HistoryEventSubType.SPEND,
+        asset=Asset('eip155:137/erc20:0x7ceB23fD6bC0adD59E62ac25578270cFf1b9f619'),
+        amount=FVal(spend_amount := '0.01'),
+        location_label=user_address,
+        notes=f'Swap {spend_amount} WETH in Quickswap V2',
+        counterparty=CPT_QUICKSWAP_V2,
+        address=(pool_address := string_to_evm_address('0x1Bd06B96dd42AdA85fDd0795f3B4A79DB914ADD5')),  # noqa: E501
+    ), EvmSwapEvent(
+        tx_ref=tx_hash,
+        timestamp=timestamp,
+        location=Location.POLYGON_POS,
+        sequence_index=4,
+        event_subtype=HistoryEventSubType.RECEIVE,
+        asset=A_POL,
+        amount=FVal(receive_amount := '14.091323574413688751'),
+        location_label=user_address,
+        notes=f'Receive {receive_amount} POL as the result of a swap in Quickswap V2',
+        counterparty=CPT_QUICKSWAP_V2,
+        address=pool_address,
+    )]
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('polygon_pos_accounts', [['0xE7C3e5D4D38bd0e767f9913cfc5Cd8CF25280cAD']])
 def test_swap(
         polygon_pos_inquirer: 'PolygonPOSInquirer',
