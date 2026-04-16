@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { displayDateFormatter } from '@/data/date-formatter';
+import { displayDateFormatter } from '@/modules/common/date-formatter';
 
 const model = defineModel<boolean>({ required: true });
 

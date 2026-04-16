@@ -1,6 +1,6 @@
 import { TimeFramePeriod } from '@rotki/common';
-import { SECONDS_PER_DAY } from '@/data/constraints';
 import { CurrencyLocation } from '@/modules/amount-display/currency-location';
+import { SECONDS_PER_DAY } from '@/modules/common/constraints';
 import { DateFormat } from '@/modules/common/date-format';
 import { TableColumn } from '@/modules/table/table-column';
 

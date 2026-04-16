@@ -16,13 +16,13 @@ import {
 } from '@test/utils/test-data';
 import { sortBy } from 'es-toolkit';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { TRADE_LOCATION_BANKS } from '@/data/defaults';
 import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
 import { useAssetInfoCache } from '@/modules/assets/use-asset-info-cache';
 import { useAssetsStore } from '@/modules/assets/use-assets-store';
 import { BalanceType } from '@/modules/balances/types/balances';
 import { useBalancePricesStore } from '@/modules/balances/use-balance-prices-store';
 import { useBalancesStore } from '@/modules/balances/use-balances-store';
+import { TRADE_LOCATION_BANKS } from '@/modules/common/defaults';
 import { useSessionSettingsStore } from '@/modules/settings/use-session-settings-store';
 import { useAggregatedBalances } from './use-aggregated-balances';
 import '@test/i18n';

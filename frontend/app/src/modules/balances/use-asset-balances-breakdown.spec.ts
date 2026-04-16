@@ -5,11 +5,11 @@ import { createTestManualBalance } from '@test/utils/create-data';
 import { updateGeneralSettings } from '@test/utils/general-settings';
 import { testAccounts, testEthereumBalances, testExchangeBalances, testManualBalances } from '@test/utils/test-data';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { TRADE_LOCATION_BANKS, TRADE_LOCATION_BLOCKCHAIN, TRADE_LOCATION_EXTERNAL } from '@/data/defaults';
 import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
 import { BalanceType } from '@/modules/balances/types/balances';
 import { useAssetBalancesBreakdown } from '@/modules/balances/use-asset-balances-breakdown';
 import { useBalancesStore } from '@/modules/balances/use-balances-store';
+import { TRADE_LOCATION_BANKS, TRADE_LOCATION_BLOCKCHAIN, TRADE_LOCATION_EXTERNAL } from '@/modules/common/defaults';
 import { useSessionSettingsStore } from '@/modules/settings/use-session-settings-store';
 
 vi.mock('@/composables/info/chains', async () => {

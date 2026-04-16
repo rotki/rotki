@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import CopyTooltip from '@/components/helper/CopyTooltip.vue';
 import { useScramble } from '@/composables/scramble';
-import { displayDateFormatter } from '@/data/date-formatter';
+import { displayDateFormatter } from '@/modules/common/date-formatter';
 import { useGeneralSettingsStore } from '@/modules/settings/use-general-settings-store';
 
 const { hideTooltip = false, milliseconds = false, noTime = false, showTimezone = false, timestamp } = defineProps<{

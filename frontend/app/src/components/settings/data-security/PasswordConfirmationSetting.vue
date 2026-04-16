@@ -3,7 +3,7 @@ import useVuelidate from '@vuelidate/core';
 import { between, helpers, required } from '@vuelidate/validators';
 import ConfirmDialog from '@/components/dialogs/ConfirmDialog.vue';
 import SettingsItem from '@/components/settings/controls/SettingsItem.vue';
-import { Constraints } from '@/data/constraints';
+import { Constraints } from '@/modules/common/constraints';
 import { toMessages } from '@/modules/common/validation/validation';
 import { useFrontendSettingsStore } from '@/modules/settings/use-frontend-settings-store';
 import { useSettingsOperations } from '@/modules/settings/use-settings-operations';

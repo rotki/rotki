@@ -1,7 +1,7 @@
 import type { GeneralSettings } from '@/modules/settings/types/user-settings';
 import { describe, expect, it } from 'vitest';
-import { defaultGeneralSettings } from '@/data/factories';
 import { Currency } from '@/modules/amount-display/currencies';
+import { defaultGeneralSettings } from '@/modules/settings/factories';
 import {
   type FrontendSettings,
   getDefaultFrontendSettings,

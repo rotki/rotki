@@ -7,8 +7,8 @@ import type { ManualBalanceWithValue } from '@/modules/balances/types/manual-bal
 import { computed, type ComputedRef, type MaybeRefOrGetter } from 'vue';
 import { summarizeAssetProtocols } from '@/composables/balances/asset-summary';
 import { blockchainToAssetProtocolBalances, manualToAssetProtocolBalances } from '@/composables/balances/balance-transformations';
-import { TRADE_LOCATION_BLOCKCHAIN } from '@/data/defaults';
 import { aggregateTotals } from '@/modules/accounts/account-helpers';
+import { TRADE_LOCATION_BLOCKCHAIN } from '@/modules/common/defaults';
 
 /**
  * Gets blockchain location breakdown

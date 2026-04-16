@@ -7,13 +7,13 @@ import { useResolveAssetIdentifier } from '@/composables/assets/common';
 import { summarizeAssetProtocols } from '@/composables/balances/asset-summary';
 import { type AssetProtocolBalancesWithChains, blockchainToAssetProtocolBalances, manualToAssetProtocolBalances } from '@/composables/balances/balance-transformations';
 import { getBlockchainLocationBreakdown, getExchangeByLocationBalances, useLocationBreakdown } from '@/composables/balances/location-breakdown';
-import { TRADE_LOCATION_BLOCKCHAIN } from '@/data/defaults';
 import { useAssetsStore } from '@/modules/assets/use-assets-store';
 import { useCollectionInfo } from '@/modules/assets/use-collection-info';
 import { useExchangeData } from '@/modules/balances/exchanges/use-exchange-data';
 import { useManualBalanceData } from '@/modules/balances/manual/use-manual-balance-data';
 import { useBalancesStore } from '@/modules/balances/use-balances-store';
 import { bigNumberSum } from '@/modules/common/data/calculation';
+import { TRADE_LOCATION_BLOCKCHAIN } from '@/modules/common/defaults';
 import { samePriceAssets } from '@/modules/onchain/blockchain-types';
 import { usePriceUtils } from '@/modules/prices/use-price-utils';
 

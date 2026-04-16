@@ -6,7 +6,7 @@ import type { SettingsUpdate } from '@/modules/settings/types/user-settings';
 import { assert, BigNumber } from '@rotki/common';
 import { useSettingsApi } from '@/composables/api/settings/settings-api';
 import { useItemsPerPage } from '@/composables/session/use-items-per-page';
-import { getBnFormat } from '@/data/amount-formatter';
+import { getBnFormat } from '@/modules/amount-display/amount-formatter';
 import { snakeCaseTransformer } from '@/modules/api/transformers';
 import { ApiValidationError } from '@/modules/api/types/errors';
 import { uniqueStrings } from '@/modules/common/data/data';

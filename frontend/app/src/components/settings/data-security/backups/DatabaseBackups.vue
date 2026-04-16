@@ -4,8 +4,8 @@ import type { UserDbBackup, UserDbBackupWithId } from '@/modules/session/backup'
 import DateDisplay from '@/components/display/DateDisplay.vue';
 import RowAppend from '@/components/helper/RowAppend.vue';
 import { useBackupApi } from '@/composables/api/backup';
-import { displayDateFormatter } from '@/data/date-formatter';
 import { size } from '@/modules/common/data/data';
+import { displayDateFormatter } from '@/modules/common/date-formatter';
 import { getFilepath } from '@/modules/common/file/file';
 import { useConfirmStore } from '@/modules/common/use-confirm-store';
 import { useGeneralSettingsStore } from '@/modules/settings/use-general-settings-store';

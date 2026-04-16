@@ -5,7 +5,7 @@ import SettingsOption from '@/components/settings/controls/SettingsOption.vue';
 import LanguageSelectorItem from '@/components/settings/general/language/LanguageSelectorItem.vue';
 import { useLocale } from '@/composables/session/use-locale';
 import { SettingsHighlightIds } from '@/composables/settings/types';
-import { supportedLanguages } from '@/data/supported-language';
+import { supportedLanguages } from '@/modules/common/supported-language';
 import { SupportedLanguage } from '@/modules/settings/types/frontend-settings';
 
 defineOptions({

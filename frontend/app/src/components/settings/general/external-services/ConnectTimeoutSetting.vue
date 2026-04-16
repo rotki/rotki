@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import CommonExternalServiceSetting
   from '@/components/settings/general/external-services/CommonExternalServiceSetting.vue';
-import { Defaults } from '@/data/defaults';
+import { Defaults } from '@/modules/common/defaults';
 
 const { t } = useI18n({ useScope: 'global' });
 

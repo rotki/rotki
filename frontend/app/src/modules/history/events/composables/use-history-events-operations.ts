@@ -16,7 +16,7 @@ import { useIgnore } from '@/composables/history';
 import { useHistoryEvents } from '@/composables/history/events';
 import { useUnmatchedAssetMovements } from '@/composables/history/events/use-unmatched-asset-movements';
 import { useSupportedChains } from '@/composables/info/chains';
-import { Defaults } from '@/data/defaults';
+import { Defaults } from '@/modules/common/defaults';
 import { getErrorMessage } from '@/modules/common/logging/error-handling';
 import { useConfirmStore } from '@/modules/common/use-confirm-store';
 import { isAssetMovementEvent, isCustomizedEvent } from '@/modules/history/event-utils';

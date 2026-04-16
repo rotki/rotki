@@ -12,8 +12,8 @@ import AutoCompleteWithSearchSync from '@/components/inputs/AutoCompleteWithSear
 import DateTimePicker from '@/components/inputs/DateTimePicker.vue';
 import { useHistoryEventsForm } from '@/composables/history/events/form';
 import { refIsTruthy } from '@/composables/ref';
-import { TRADE_LOCATION_EXTERNAL } from '@/data/defaults';
 import { bigNumberifyFromRef } from '@/modules/common/data/bignumbers';
+import { TRADE_LOCATION_EXTERNAL } from '@/modules/common/defaults';
 import AssetMovementFeeEntry from '@/modules/history/management/forms/common/AssetMovementFeeEntry.vue';
 import { toMessages, useEventFormBase } from '@/modules/history/management/forms/composables/use-event-form-base';
 import HistoryEventAssetPriceForm from '@/modules/history/management/forms/HistoryEventAssetPriceForm.vue';

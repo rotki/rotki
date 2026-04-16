@@ -2,7 +2,7 @@ import type { MaybeRef, Ref } from 'vue';
 import type { Collection } from '@/modules/common/collection';
 import type { ItemFilter } from '@/modules/data/pagination';
 import { transformCase } from '@rotki/common';
-import { SECONDS_PER_DAY } from '@/data/constraints';
+import { SECONDS_PER_DAY } from '@/modules/common/constraints';
 import { logger } from '@/modules/common/logging/logging';
 import { useDatabase } from '@/modules/data/use-database';
 import { useFrontendSettingsStore } from '@/modules/settings/use-frontend-settings-store';

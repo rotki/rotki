@@ -1,7 +1,7 @@
 import type { ComputedRef, MaybeRefOrGetter } from 'vue';
 import type { RoundingType } from '@/modules/amount-display/types';
 import { BigNumber, bigNumberify } from '@rotki/common';
-import { displayAmountFormatter } from '@/data/amount-formatter';
+import { displayAmountFormatter } from '@/modules/amount-display/amount-formatter';
 import { useAmountDisplaySettings } from './use-amount-display-settings';
 
 export interface NumberParts {

@@ -1,5 +1,5 @@
 import type { Currency } from '@/modules/amount-display/currencies';
-import { Defaults } from '@/data/defaults';
+import { Defaults } from '@/modules/common/defaults';
 import { type AccountingSettings, CostBasisMethod, type GeneralSettings } from '@/modules/settings/types/user-settings';
 
 export function defaultGeneralSettings(mainCurrency: Currency): GeneralSettings {
