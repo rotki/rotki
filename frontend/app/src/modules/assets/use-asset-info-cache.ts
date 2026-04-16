@@ -3,9 +3,9 @@ import type { AssetMap } from '@/modules/assets/types';
 import { type AssetCollection, type AssetInfo, transformCase } from '@rotki/common';
 import { useAssetInfoApi } from '@/composables/api/assets/info';
 import { createItemCache } from '@/composables/item-cache';
+import { getErrorMessage } from '@/modules/common/logging/error-handling';
+import { logger } from '@/modules/common/logging/logging';
 import { useNotifications } from '@/modules/notifications/use-notifications';
-import { getErrorMessage } from '@/utils/error-handling';
-import { logger } from '@/utils/logging';
 
 interface UseAssetInfoCacheReturn {
   cache: ReturnType<typeof createItemCache<AssetInfo>>['cache'];

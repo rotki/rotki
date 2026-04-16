@@ -6,7 +6,7 @@ import { useAssetsStore } from '@/modules/assets/use-assets-store';
 import { useTokenDetectionOrchestrator } from '@/modules/balances/blockchain/use-token-detection-orchestrator';
 import { useTokenDetectionStore } from '@/modules/balances/blockchain/use-token-detection-store';
 import { useBalancesStore } from '@/modules/balances/use-balances-store';
-import { arrayify } from '@/utils/array';
+import { arrayify } from '@/modules/common/data/array';
 
 function noTokens(): EthDetectedTokensInfo {
   return {

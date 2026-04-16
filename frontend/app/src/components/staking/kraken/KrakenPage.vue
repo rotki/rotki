@@ -10,6 +10,7 @@ import KrakenStaking from '@/components/staking/kraken/KrakenStaking.vue';
 import KrakenStakingPagePlaceholder from '@/components/staking/kraken/KrakenStakingPagePlaceholder.vue';
 import { usePremium } from '@/composables/premium';
 import { useSectionStatus } from '@/composables/status';
+import { getPublicProtocolImagePath } from '@/modules/common/file/file';
 import { Section } from '@/modules/common/status';
 import { usePriceRefresh } from '@/modules/prices/use-price-refresh';
 import { useKrakenStakingOperations } from '@/modules/staking/kraken/use-kraken-staking-operations';
@@ -17,7 +18,6 @@ import { Routes } from '@/router/routes';
 import { useHistoricCachePriceStore } from '@/store/prices/historic';
 import { useSessionSettingsStore } from '@/store/settings/session';
 import { useKrakenStakingStore } from '@/store/staking/kraken';
-import { getPublicProtocolImagePath } from '@/utils/file';
 
 const filters = ref<KrakenStakingDateFilter>({});
 

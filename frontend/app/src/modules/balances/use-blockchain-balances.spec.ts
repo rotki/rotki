@@ -4,13 +4,13 @@ import { startPromise } from '@shared/utils';
 import { createTestBalance, createTestBalanceResponse } from '@test/utils/create-data';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useBlockchainBalancesApi } from '@/composables/api/balances/blockchain';
+import { createAccount } from '@/modules/accounts/create-account';
 import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
 import { useBalancesStore } from '@/modules/balances/use-balances-store';
 import { useBlockchainBalances } from '@/modules/balances/use-blockchain-balances';
 import { Section } from '@/modules/common/status';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { useStatusStore } from '@/store/status';
-import { createAccount } from '@/utils/blockchain/accounts/create';
 
 vi.mock('@/store/settings/general', async () => {
   const { ref } = await import('vue');

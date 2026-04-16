@@ -13,8 +13,8 @@ import { useMatcherUtils } from '@/components/table-filter/composables/use-match
 import FilterDropdown from '@/components/table-filter/FilterDropdown.vue';
 import SavedFilterManagement from '@/components/table-filter/SavedFilterManagement.vue';
 import SelectionChip from '@/components/table-filter/SelectionChip.vue';
-import { logger } from '@/utils/logging';
-import { splitSearch } from '@/utils/search';
+import { splitSearch } from '@/modules/common/data/search';
+import { logger } from '@/modules/common/logging/logging';
 
 defineOptions({
   inheritAttrs: false,

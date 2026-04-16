@@ -4,10 +4,10 @@ import CopyButton from '@/components/helper/CopyButton.vue';
 import SettingsItem from '@/components/settings/controls/SettingsItem.vue';
 import { useBackupApi } from '@/composables/api/backup';
 import { SettingsHighlightIds } from '@/composables/settings/types';
+import { size } from '@/modules/common/data/data';
+import { getErrorMessage } from '@/modules/common/logging/error-handling';
+import { logger } from '@/modules/common/logging/logging';
 import { useNotificationDispatcher } from '@/modules/notifications/use-notification-dispatcher';
-import { size } from '@/utils/data';
-import { getErrorMessage } from '@/utils/error-handling';
-import { logger } from '@/utils/logging';
 
 interface UserDbInfo {
   version: string;

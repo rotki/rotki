@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { useLinks } from '@/composables/links';
-import { truncateAddress } from '@/utils/truncate';
+import { truncateAddress } from '@/modules/common/display/truncate';
 
 const { base, text, isToken } = defineProps<{
   base: string;

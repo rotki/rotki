@@ -4,8 +4,8 @@ import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
 import { useIgnoredAssetOperations } from '@/modules/assets/use-ignored-asset-operations';
 import { useWhitelistedAssetOperations } from '@/modules/assets/use-whitelisted-asset-operations';
 import { useManualBalanceData } from '@/modules/balances/manual/use-manual-balance-data';
+import { getErrorMessage } from '@/modules/common/logging/error-handling';
 import { useNotifications } from '@/modules/notifications/use-notifications';
-import { getErrorMessage } from '@/utils/error-handling';
 
 interface UseSpamAssetReturn {
   markAssetsAsSpam: (tokens: string[]) => Promise<ActionStatus>;

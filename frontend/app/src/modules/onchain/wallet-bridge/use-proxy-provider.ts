@@ -1,5 +1,5 @@
 import type { EIP1193EventName, EIP1193Provider, EIP1193ProviderEvents, RpcRequest } from '@/types';
-import { logger } from '@/utils/logging';
+import { logger } from '@/modules/common/logging/logging';
 
 /**
  * Creates a proxy provider using the walletBridge API from preload

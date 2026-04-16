@@ -1,7 +1,7 @@
 import type { BaseFetchOptions, EnqueueOptions, QueuedRequest, QueueOptions, QueueState } from './types';
 import { FetchError } from 'ofetch';
 import { reactive } from 'vue';
-import { logger } from '@/utils/logging';
+import { logger } from '@/modules/common/logging/logging';
 import { QueueOverflowError, QueueTimeoutError, RequestCancelledError } from './errors';
 import { RequestPriority } from './request-priority';
 

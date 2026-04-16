@@ -4,7 +4,7 @@ import type {
 } from '@/modules/staking/staking-types';
 import { type AssetBalance, Zero } from '@rotki/common';
 import { useResolveAssetIdentifier } from '@/composables/assets/common';
-import { balanceSum } from '@/utils/calculation';
+import { balanceSum } from '@/modules/common/data/calculation';
 
 function defaultPagination(): KrakenStakingPagination {
   return {

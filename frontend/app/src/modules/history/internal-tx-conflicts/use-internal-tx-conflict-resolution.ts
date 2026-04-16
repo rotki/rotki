@@ -4,9 +4,9 @@ import { NotificationGroup, Severity } from '@rotki/common';
 import { startPromise } from '@shared/utils';
 import { useHistoryTransactionDecoding } from '@/composables/history/events/tx/decoding';
 import { useSupportedChains } from '@/composables/info/chains';
+import { logger } from '@/modules/common/logging/logging';
 import { createPersistentSharedComposable } from '@/modules/common/use-persistent-shared-composable';
 import { useNotifications } from '@/modules/notifications/use-notifications';
-import { logger } from '@/utils/logging';
 import { useInternalTxConflictSelection } from './use-internal-tx-conflict-selection';
 import { getConflictKey } from './use-internal-tx-conflicts';
 

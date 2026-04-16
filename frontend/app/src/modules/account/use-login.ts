@@ -6,6 +6,7 @@ import { useExchangeApi } from '@/composables/api/balances/exchanges';
 import { useUsersApi } from '@/composables/api/session/users';
 import { useSettingsApi } from '@/composables/api/settings/settings-api';
 import { useSessionSettings } from '@/composables/session/settings';
+import { lastLogin } from '@/modules/account/account-management';
 import {
   type CreateAccountPayload,
   IncompleteUpgradeError,
@@ -15,15 +16,14 @@ import {
 } from '@/modules/account/login';
 import { api } from '@/modules/api/rotki-api';
 import { useMonitorService } from '@/modules/app/use-monitor-service';
+import { getErrorMessage } from '@/modules/common/logging/error-handling';
+import { logger } from '@/modules/common/logging/logging';
 import { migrateSettingsIfNeeded } from '@/modules/settings/types/frontend-settings-migrations';
 import { type SettingsUpdate, UserAccount, UserSettingsModel } from '@/modules/settings/types/user-settings';
 import { sigilBus } from '@/modules/sigil/event-bus';
 import { TaskType } from '@/modules/tasks/task-type';
 import { isActionableFailure, useTaskHandler } from '@/modules/tasks/use-task-handler';
 import { useSessionAuthStore } from '@/store/session/auth';
-import { lastLogin } from '@/utils/account-management';
-import { getErrorMessage } from '@/utils/error-handling';
-import { logger } from '@/utils/logging';
 
 interface UseLoginReturn {
   login: (credentials: LoginCredentials) => Promise<ActionStatus>;

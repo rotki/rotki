@@ -4,8 +4,8 @@ import { between, helpers, required } from '@vuelidate/validators';
 import SettingsOption from '@/components/settings/controls/SettingsOption.vue';
 import { useValidation } from '@/composables/validation';
 import { useMonitorService } from '@/modules/app/use-monitor-service';
+import { toMessages } from '@/modules/common/validation/validation';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
-import { toMessages } from '@/utils/validation';
 
 const queryPeriod = ref<string>('5');
 const minQueryPeriod = 5;

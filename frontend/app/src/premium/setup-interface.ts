@@ -10,12 +10,12 @@ import type { DateFormat } from '@/modules/common/date-format';
 import type { FrontendSettingsPayload } from '@/modules/settings/types/frontend-settings';
 import dayjs from 'dayjs';
 import { useGraph } from '@/composables/graphs';
+import { convertToTimestamp } from '@/modules/common/data/date';
+import { logger } from '@/modules/common/logging/logging';
 import { useSettingsOperations } from '@/modules/settings/use-settings-operations';
 import { DARK_COLORS, LIGHT_COLORS } from '@/plugins/theme';
 import { assetsApi, balancesApi, statisticsApi, userSettings, utilsApi } from '@/premium/premium-apis';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
-import { convertToTimestamp } from '@/utils/date';
-import { logger } from '@/utils/logging';
 
 /**
  * Creates the PremiumApi instance.

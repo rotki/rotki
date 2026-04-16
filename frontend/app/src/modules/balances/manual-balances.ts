@@ -7,7 +7,7 @@ import type {
 import type { Collection } from '@/modules/common/collection';
 import { type BigNumber, Zero } from '@rotki/common';
 import { camelCase } from 'es-toolkit';
-import { includes } from '@/utils/blockchain/accounts/common';
+import { includes } from '@/modules/accounts/account-common';
 
 interface Filters {
   readonly tags?: string[];

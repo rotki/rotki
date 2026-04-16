@@ -1,6 +1,6 @@
 import type { AccountPayload, Accounts, BlockchainAccount } from '@/modules/accounts/blockchain-accounts';
-import { getAccountAddress } from '@/utils/blockchain/accounts/utils';
-import { removeTags, renameTags } from '@/utils/tags';
+import { getAccountAddress } from '@/modules/accounts/account-utils';
+import { removeTags, renameTags } from '@/modules/tags/tag-utils';
 
 export const useBlockchainAccountsStore = defineStore('blockchain/accounts', () => {
   const accounts = ref<Accounts>({});

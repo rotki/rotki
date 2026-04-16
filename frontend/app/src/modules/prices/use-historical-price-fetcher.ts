@@ -2,11 +2,11 @@ import type { TaskMeta } from '@/modules/tasks/types';
 import { type HistoricalAssetPricePayload, HistoricalAssetPriceResponse } from '@rotki/common';
 import { useStatisticsApi } from '@/composables/api/statistics/statistics-api';
 import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
+import { logger } from '@/modules/common/logging/logging';
 import { useNotifications } from '@/modules/notifications/use-notifications';
 import { useHistoricPriceCache } from '@/modules/prices/use-historic-price-cache';
 import { TaskType } from '@/modules/tasks/task-type';
 import { isActionableFailure, useTaskHandler } from '@/modules/tasks/use-task-handler';
-import { logger } from '@/utils/logging';
 
 interface UseHistoricalPriceFetcherReturn {
   fetchHistoricalAssetPrice: (payload: HistoricalAssetPricePayload) => Promise<HistoricalAssetPriceResponse>;

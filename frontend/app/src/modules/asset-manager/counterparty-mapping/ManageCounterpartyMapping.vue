@@ -7,9 +7,9 @@ import ManageCounterpartyMappingFormDialog
   from '@/modules/asset-manager/counterparty-mapping/ManageCounterpartyMappingFormDialog.vue';
 import ManageCounterpartyMappingTable from '@/modules/asset-manager/counterparty-mapping/ManageCounterpartyMappingTable.vue';
 import { useCounterpartyMappingApi } from '@/modules/asset-manager/counterparty-mapping/use-counterparty-mapping-api';
+import { getErrorMessage } from '@/modules/common/logging/error-handling';
 import { useConfirmStore } from '@/store/confirm';
 import { useMessageStore } from '@/store/message';
-import { getErrorMessage } from '@/utils/error-handling';
 
 const { t } = useI18n({ useScope: 'global' });
 const router = useRouter();

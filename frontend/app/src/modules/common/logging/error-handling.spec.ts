@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { getErrorMessage } from '@/utils/error-handling';
+import { getErrorMessage } from '@/modules/common/logging/error-handling';
 
 describe('getErrorMessage', () => {
   it('should return the message from an Error instance', () => {

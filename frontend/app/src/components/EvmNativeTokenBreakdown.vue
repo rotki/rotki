@@ -10,10 +10,10 @@ import { useSupportedChains } from '@/composables/info/chains';
 import { FiatDisplay, ValueDisplay } from '@/modules/amount-display/components';
 import { CURRENCY_USD } from '@/modules/amount-display/currencies';
 import { useAssetBalancesBreakdown } from '@/modules/balances/use-asset-balances-breakdown';
+import { calculatePercentage } from '@/modules/common/data/calculation';
+import { groupAssetBreakdown } from '@/modules/common/display/balances';
 import { TableId, useRememberTableSorting } from '@/modules/table/use-remember-table-sorting';
 import { useGeneralSettingsStore } from '@/store/settings/general';
-import { groupAssetBreakdown } from '@/utils/balances';
-import { calculatePercentage } from '@/utils/calculation';
 
 const {
   assets,

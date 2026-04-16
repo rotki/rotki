@@ -3,10 +3,10 @@ import type { PremiumDevice } from '@/modules/premium/devices/composables/premiu
 import { useTemplateRef } from 'vue';
 import BigDialog from '@/components/dialogs/BigDialog.vue';
 import { ApiValidationError, type ValidationErrors } from '@/modules/api/types/errors';
+import { getErrorMessage } from '@/modules/common/logging/error-handling';
 import PremiumDeviceForm from '@/modules/premium/devices/components/PremiumDeviceForm.vue';
 import { usePremiumDevicesApi } from '@/modules/premium/devices/composables/devices';
 import { useMessageStore } from '@/store/message';
-import { getErrorMessage } from '@/utils/error-handling';
 
 const modelValue = defineModel<PremiumDevice | undefined>({ required: true });
 

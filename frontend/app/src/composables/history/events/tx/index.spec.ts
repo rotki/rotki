@@ -10,7 +10,7 @@ import { useHistoryEventsApi } from '@/composables/api/history/events';
 import { useHistoryEvents } from '@/composables/history/events';
 import { useHistoryTransactions } from '@/composables/history/events/tx';
 import { useHistoryTransactionDecoding } from '@/composables/history/events/tx/decoding';
-import { isOfEventType } from '@/utils/history/events';
+import { isOfEventType } from '@/modules/history/event-utils';
 
 vi.mock('@/modules/tasks/use-task-handler', async importOriginal => ({
   ...(await importOriginal<Record<string, unknown>>()),

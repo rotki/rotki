@@ -6,10 +6,10 @@ import { required } from '@vuelidate/validators';
 import CounterpartyInput from '@/components/inputs/CounterpartyInput.vue';
 import AccountingRuleWithLinkedSetting from '@/components/settings/accounting/rule/AccountingRuleWithLinkedSetting.vue';
 import { useFormStateWatcher } from '@/composables/form';
+import { refOptional, useRefPropVModel } from '@/modules/common/validation/model';
+import { toMessages } from '@/modules/common/validation/validation';
 import HistoryEventTypeForm from '@/modules/history/management/forms/HistoryEventTypeForm.vue';
 import { type AccountingRuleEntry, AccountingTreatment } from '@/modules/settings/types/accounting';
-import { refOptional, useRefPropVModel } from '@/utils/model';
-import { toMessages } from '@/utils/validation';
 
 const modelValue = defineModel<AccountingRuleEntry>({ required: true });
 const errors = defineModel<ValidationErrors>('errorMessages', { required: true });

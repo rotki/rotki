@@ -3,8 +3,8 @@ import { startPromise } from '@shared/utils';
 import { useInfoApi } from '@/composables/api/info';
 import { apiUrls, defaultApiUrls } from '@/modules/api/api-urls';
 import { api } from '@/modules/api/rotki-api';
+import { logger, setLevel } from '@/modules/common/logging/logging';
 import { useMainStore } from '@/store/main';
-import { logger, setLevel } from '@/utils/logging';
 
 interface UseBackendConnectionReturn {
   cancelConnectionAttempts: () => void;

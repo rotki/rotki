@@ -8,8 +8,8 @@ import LocationDisplay from '@/components/history/LocationDisplay.vue';
 import SettingCategoryHeader from '@/components/settings/SettingCategoryHeader.vue';
 import { useSupportedChains } from '@/composables/info/chains';
 import { SettingsHighlightIds } from '@/composables/settings/types';
-import { isOfEnum } from '@/utils';
-import { getPublicProtocolImagePath, getPublicServiceImagePath } from '@/utils/file';
+import { getPublicProtocolImagePath, getPublicServiceImagePath } from '@/modules/common/file/file';
+import { isOfEnum } from '@/modules/common/helpers/is-of-enum';
 
 const { t } = useI18n({ useScope: 'global' });
 

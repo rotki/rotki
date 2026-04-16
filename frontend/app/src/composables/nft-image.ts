@@ -1,7 +1,7 @@
 import type { ComputedRef, Ref } from 'vue';
 import { ofetch } from 'ofetch';
 import { useNfts } from '@/composables/assets/nft';
-import { getPublicPlaceholderImagePath } from '@/utils/file';
+import { getPublicPlaceholderImagePath } from '@/modules/common/file/file';
 
 interface UseNftImageReturnType {
   shouldRender: ComputedRef<boolean>;

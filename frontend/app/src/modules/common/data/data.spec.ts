@@ -1,6 +1,6 @@
 import { bigNumberify } from '@rotki/common';
 import { describe, expect, it } from 'vitest';
-import { nonEmptyProperties, toRem } from '@/utils/data';
+import { nonEmptyProperties, toRem } from '@/modules/common/data/data';
 
 describe('data-utils', () => {
   it('should return a partial object without the null properties', () => {

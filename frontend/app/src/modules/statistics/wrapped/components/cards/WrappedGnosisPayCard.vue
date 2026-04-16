@@ -2,7 +2,7 @@
 import type { BigNumber } from '@rotki/common';
 import AppImage from '@/components/common/AppImage.vue';
 import { FiatDisplay } from '@/modules/amount-display/components';
-import { getPublicServiceImagePath } from '@/utils/file';
+import { getPublicServiceImagePath } from '@/modules/common/file/file';
 import { useWrappedFormatters } from '../../composables/use-wrapped-formatters';
 import WrappedCard from '../WrappedCard.vue';
 

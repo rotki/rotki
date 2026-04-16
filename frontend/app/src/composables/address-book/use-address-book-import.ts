@@ -2,8 +2,8 @@ import { groupBy, omit } from 'es-toolkit';
 import { z } from 'zod/v4';
 import { CSVMissingHeadersError, useCsvImportExport } from '@/composables/common/use-csv-import-export';
 import { useAddressBookOperations } from '@/modules/address-names/use-address-book-operations';
+import { logger } from '@/modules/common/logging/logging';
 import { useNotifications } from '@/modules/notifications/use-notifications';
-import { logger } from '@/utils/logging';
 
 const CSVRow = z.object({
   address: z.string().min(1),

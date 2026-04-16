@@ -4,8 +4,8 @@ import { helpers, required, sameAs } from '@vuelidate/validators';
 import SettingsItem from '@/components/settings/controls/SettingsItem.vue';
 import { SettingsHighlightIds } from '@/composables/settings/types';
 import { useChangePassword } from '@/modules/account/use-change-password';
+import { toMessages } from '@/modules/common/validation/validation';
 import { usePremiumStore } from '@/store/session/premium';
-import { toMessages } from '@/utils/validation';
 
 const currentPassword = ref<string>('');
 const newPassword = ref<string>('');

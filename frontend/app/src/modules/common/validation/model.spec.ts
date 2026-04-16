@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { useRefPropVModel } from '@/utils/model';
+import { useRefPropVModel } from '@/modules/common/validation/model';
 
 describe('model-utils', () => {
   it('should properly map computed property to parent ref', () => {

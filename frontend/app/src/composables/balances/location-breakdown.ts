@@ -8,7 +8,7 @@ import { computed, type ComputedRef, type MaybeRefOrGetter } from 'vue';
 import { summarizeAssetProtocols } from '@/composables/balances/asset-summary';
 import { blockchainToAssetProtocolBalances, manualToAssetProtocolBalances } from '@/composables/balances/balance-transformations';
 import { TRADE_LOCATION_BLOCKCHAIN } from '@/data/defaults';
-import { aggregateTotals } from '@/utils/blockchain/accounts';
+import { aggregateTotals } from '@/modules/accounts/account-helpers';
 
 /**
  * Gets blockchain location breakdown

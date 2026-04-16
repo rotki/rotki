@@ -6,11 +6,11 @@ import AccountDisplay from '@/components/display/AccountDisplay.vue';
 import LocationIcon from '@/components/history/LocationIcon.vue';
 import TagDisplay from '@/components/tags/TagDisplay.vue';
 import { useSupportedChains } from '@/composables/info/chains';
+import { hasAccountAddress } from '@/modules/accounts/account-helpers';
+import { getAccountAddress } from '@/modules/accounts/account-utils';
 import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
 import { useAddressNameResolution } from '@/modules/address-names/use-address-name-resolution';
 import { useHistoryStore } from '@/store/history';
-import { hasAccountAddress } from '@/utils/blockchain/accounts';
-import { getAccountAddress } from '@/utils/blockchain/accounts/utils';
 
 defineOptions({
   name: 'LocationLabelSelector',

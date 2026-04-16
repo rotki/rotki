@@ -4,7 +4,7 @@ import ConfirmDialog from '@/components/dialogs/ConfirmDialog.vue';
 import BalanceDisplay from '@/components/display/BalanceDisplay.vue';
 import AssetDetails from '@/components/helper/AssetDetails.vue';
 import NftDetails from '@/components/helper/NftDetails.vue';
-import { isNft } from '@/utils/nft';
+import { isNft } from '@/modules/assets/nft-utils';
 
 const { snapshot } = defineProps<{
   snapshot: BalanceSnapshot | null;

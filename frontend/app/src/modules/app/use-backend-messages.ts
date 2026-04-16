@@ -4,10 +4,10 @@ import { checkIfDevelopment, startPromise } from '@shared/utils';
 import { useBackendManagement } from '@/composables/backend';
 import { useInterop } from '@/composables/electron-interop';
 import { useBackendConnection } from '@/modules/app/use-backend-connection';
+import { logger } from '@/modules/common/logging/logging';
 import { useMainStore } from '@/store/main';
 import { useSessionAuthStore } from '@/store/session/auth';
 import { useAreaVisibilityStore } from '@/store/session/visibility';
-import { logger } from '@/utils/logging';
 import { useMonitorService } from './use-monitor-service';
 import { useWebsocketConnection } from './use-websocket-connection';
 

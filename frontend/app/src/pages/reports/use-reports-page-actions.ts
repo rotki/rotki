@@ -5,6 +5,7 @@ import { Priority, Severity } from '@rotki/common';
 import { useReportsApi } from '@/composables/api/reports';
 import { useInterop } from '@/composables/electron-interop';
 import { displayDateFormatter } from '@/data/date-formatter';
+import { downloadFileByTextContent } from '@/modules/common/file/download';
 import { getErrorMessage, useNotifications } from '@/modules/notifications/use-notifications';
 import { useReportGeneration } from '@/modules/reports/use-report-generation';
 import { useReportOperations } from '@/modules/reports/use-report-operations';
@@ -13,7 +14,6 @@ import { TaskType } from '@/modules/tasks/task-type';
 import { useTaskHandler } from '@/modules/tasks/use-task-handler';
 import { useAreaVisibilityStore } from '@/store/session/visibility';
 import { useGeneralSettingsStore } from '@/store/settings/general';
-import { downloadFileByTextContent } from '@/utils/download';
 
 interface UseReportsPageActionsOptions {
   /** Resolves a local file path from a File object (Electron only) */

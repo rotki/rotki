@@ -1,12 +1,12 @@
 import dayjs from 'dayjs';
 import { describe, expect, it } from 'vitest';
-import { DateFormat } from '@/modules/common/date-format';
 import {
   convertFromTimestamp,
   convertToTimestamp,
   getDayNames,
   setupDayjs,
-} from '@/utils/date';
+} from '@/modules/common/data/date';
+import { DateFormat } from '@/modules/common/date-format';
 
 describe('date-utils', () => {
   setupDayjs();

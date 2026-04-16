@@ -4,9 +4,9 @@ import AppImage from '@/components/common/AppImage.vue';
 import SettingsItem from '@/components/settings/controls/SettingsItem.vue';
 import SettingsOption from '@/components/settings/controls/SettingsOption.vue';
 import { SettingsHighlightIds } from '@/composables/settings/types';
+import { getPublicServiceImagePath } from '@/modules/common/file/file';
 import { SUPPRESSIBLE_SERVICES, SuppressibleMissingKeyService } from '@/modules/settings/types/user-settings';
 import { useGeneralSettingsStore } from '@/store/settings/general';
-import { getPublicServiceImagePath } from '@/utils/file';
 
 const { t } = useI18n({ useScope: 'global' });
 const { suppressMissingKeyMsgServices } = storeToRefs(useGeneralSettingsStore());

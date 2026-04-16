@@ -8,13 +8,13 @@ import AssetSelect from '@/components/inputs/AssetSelect.vue';
 import TwoFieldsAmountInput from '@/components/inputs/TwoFieldsAmountInput.vue';
 import { useAssetPricesApi } from '@/composables/api/assets/prices';
 import { CURRENCY_USD } from '@/modules/amount-display/currencies';
+import { bigNumberifyFromRef } from '@/modules/common/data/bignumbers';
+import { toMessages } from '@/modules/common/validation/validation';
 import { useHistoricPriceCache } from '@/modules/prices/use-historic-price-cache';
 import { usePriceTaskManager } from '@/modules/prices/use-price-task-manager';
 import { TaskType } from '@/modules/tasks/task-type';
 import { useTaskStore } from '@/modules/tasks/use-task-store';
 import { useGeneralSettingsStore } from '@/store/settings/general';
-import { bigNumberifyFromRef } from '@/utils/bignumbers';
-import { toMessages } from '@/utils/validation';
 
 const amount = defineModel<string>('amount', { required: true });
 

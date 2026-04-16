@@ -5,7 +5,7 @@ import { useHistoryEventCounterpartyMappings } from '@/composables/history/event
 import { useSupportedChains } from '@/composables/info/chains';
 import { useScramble } from '@/composables/scramble';
 import { useAddressNameResolution } from '@/modules/address-names/use-address-name-resolution';
-import { getPublicProtocolImagePath } from '@/utils/file';
+import { getPublicProtocolImagePath } from '@/modules/common/file/file';
 
 const { counterparty, location, address } = defineProps<{
   counterparty?: string;

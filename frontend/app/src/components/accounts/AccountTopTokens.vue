@@ -5,9 +5,9 @@ import { pick } from 'es-toolkit';
 import IconTokenDisplay from '@/components/accounts/IconTokenDisplay.vue';
 import AssetIcon from '@/components/helper/display/icons/AssetIcon.vue';
 import { useAggregatedBalances } from '@/composables/balances/use-aggregated-balances';
+import { getAccountAddress, isXpubAccount } from '@/modules/accounts/account-utils';
 import { ValueDisplay } from '@/modules/amount-display/components';
-import { sortDesc } from '@/utils/bignumbers';
-import { getAccountAddress, isXpubAccount } from '@/utils/blockchain/accounts/utils';
+import { sortDesc } from '@/modules/common/data/bignumbers';
 
 const { chains, row, loading } = defineProps<{
   chains: string[];

@@ -5,11 +5,11 @@ import DateDisplay from '@/components/display/DateDisplay.vue';
 import RowAppend from '@/components/helper/RowAppend.vue';
 import { useBackupApi } from '@/composables/api/backup';
 import { displayDateFormatter } from '@/data/date-formatter';
+import { size } from '@/modules/common/data/data';
+import { getFilepath } from '@/modules/common/file/file';
 import { TableId, useRememberTableSorting } from '@/modules/table/use-remember-table-sorting';
 import { useConfirmStore } from '@/store/confirm';
 import { useGeneralSettingsStore } from '@/store/settings/general';
-import { size } from '@/utils/data';
-import { getFilepath } from '@/utils/file';
 
 const selected = defineModel<UserDbBackupWithId[]>('selected', { required: true });
 

@@ -2,9 +2,9 @@ import type { WalletBridgeRequest, WalletBridgeResponse } from '@shared/wallet-b
 import type { EIP1193Provider, EIP1193ProviderEvents } from '@/types';
 import { BRIDGE_ERROR_CODES, BRIDGE_NOTIFICATION_TYPES, ROTKI_RPC_METHODS, ROTKI_RPC_RESPONSES, WALLET_EVENT_TYPES } from '@shared/proxy/constants';
 import { get, promiseTimeout } from '@vueuse/core';
+import { logger } from '@/modules/common/logging/logging';
 import { useBridgeLogging } from '@/modules/onchain/wallet-bridge/use-bridge-logging';
 import { useWalletConnectionState } from '@/modules/onchain/wallet-bridge/use-wallet-connection-state';
-import { logger } from '@/utils/logging';
 import { useUnifiedProviders } from '../wallet-providers/use-unified-providers';
 
 interface BridgeMessageHandlersComposable {

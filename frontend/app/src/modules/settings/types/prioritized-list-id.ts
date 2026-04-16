@@ -1,8 +1,8 @@
 import type { PrioritizedListItemData } from '@/modules/settings/types/prioritized-list-data';
+import { getPublicProtocolImagePath, getPublicServiceImagePath } from '@/modules/common/file/file';
 import { AddressNamePriority } from '@/modules/settings/types/address-name-priorities';
 import { EvmIndexer } from '@/modules/settings/types/evm-indexer';
 import { PriceOracle } from '@/modules/settings/types/price-oracle';
-import { getPublicProtocolImagePath, getPublicServiceImagePath } from '@/utils/file';
 
 export const EmptyListId = 'empty_list_id';
 

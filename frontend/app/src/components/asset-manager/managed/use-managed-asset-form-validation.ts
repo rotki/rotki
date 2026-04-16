@@ -4,7 +4,7 @@ import { isValidEthAddress, isValidSolanaAddress } from '@rotki/common';
 import useVuelidate from '@vuelidate/core';
 import { helpers, required, requiredIf } from '@vuelidate/validators';
 import { useFormStateWatcher } from '@/composables/form';
-import { toMessages } from '@/utils/validation';
+import { toMessages } from '@/modules/common/validation/validation';
 
 interface AssetFormStates {
   address: Ref<string>;

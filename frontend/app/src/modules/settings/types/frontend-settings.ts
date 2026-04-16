@@ -15,12 +15,12 @@ import { Defaults } from '@/data/defaults';
 import { CurrencyLocationEnum } from '@/modules/amount-display/currency-location';
 import { camelCaseTransformer } from '@/modules/api/transformers';
 import { DateFormatEnum } from '@/modules/common/date-format';
+import { logger } from '@/modules/common/logging/logging';
+import { generateRandomScrambleMultiplier } from '@/modules/session/session-utils';
 import { PrivacyMode } from '@/modules/session/types';
 import { BaseSuggestion, SavedFilterLocation } from '@/modules/table/filtering';
 import { TableColumnEnum } from '@/modules/table/table-column';
 import { DARK_COLORS, LIGHT_COLORS } from '@/plugins/theme';
-import { logger } from '@/utils/logging';
-import { generateRandomScrambleMultiplier } from '@/utils/session';
 
 export const FRONTEND_SETTINGS_SCHEMA_VERSION = 2;
 

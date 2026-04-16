@@ -6,8 +6,8 @@ import BigDialog from '@/components/dialogs/BigDialog.vue';
 import ExchangeKeysForm from '@/components/settings/api-keys/exchange/ExchangeKeysForm.vue';
 import { ApiValidationError, type ValidationErrors } from '@/modules/api/types/errors';
 import { useExchanges } from '@/modules/balances/exchanges/use-exchanges';
+import { getErrorMessage } from '@/modules/common/logging/error-handling';
 import { useMessageStore } from '@/store/message';
-import { getErrorMessage } from '@/utils/error-handling';
 
 const modelValue = defineModel<ExchangeFormData | undefined>({ required: true });
 

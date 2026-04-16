@@ -3,11 +3,11 @@ import type { TaskMeta } from '@/modules/tasks/types';
 import { isValidEthAddress } from '@rotki/common';
 import { useAddressesNamesApi } from '@/composables/api/blockchain/addresses-names';
 import { useAddressNameResolution } from '@/modules/address-names/use-address-name-resolution';
+import { uniqueStrings } from '@/modules/common/data/data';
+import { logger } from '@/modules/common/logging/logging';
 import { useNotifications } from '@/modules/notifications/use-notifications';
 import { TaskType } from '@/modules/tasks/task-type';
 import { isActionableFailure, useTaskHandler } from '@/modules/tasks/use-task-handler';
-import { uniqueStrings } from '@/utils/data';
-import { logger } from '@/utils/logging';
 
 interface UseEnsOperationsReturn {
   fetchEnsNames: (payload: AddressBookSimplePayload[], forceUpdate?: boolean) => Promise<void>;

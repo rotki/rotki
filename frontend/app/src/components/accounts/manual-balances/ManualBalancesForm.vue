@@ -14,9 +14,9 @@ import { useAssetManagementApi } from '@/composables/api/assets/management';
 import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
 import { useFormStateWatcher } from '@/composables/form';
 import { useManualBalanceData } from '@/modules/balances/manual/use-manual-balance-data';
+import { useBigNumberModel, useRefPropVModel } from '@/modules/common/validation/model';
+import { toMessages } from '@/modules/common/validation/validation';
 import { useLocationStore } from '@/store/locations';
-import { useBigNumberModel, useRefPropVModel } from '@/utils/model';
-import { toMessages } from '@/utils/validation';
 
 const errors = defineModel<ValidationErrors>('errorMessages', { required: true });
 const stateUpdated = defineModel<boolean>('stateUpdated', { default: false, required: false });

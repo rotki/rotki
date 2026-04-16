@@ -4,8 +4,8 @@ import dayjs from 'dayjs';
 import { createPinia, type Pinia, setActivePinia } from 'pinia';
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import ReportPeriodSelector from '@/components/profitloss/ReportPeriodSelector.vue';
+import { setupDayjs } from '@/modules/common/data/date';
 import { Quarter } from '@/modules/settings/types/frontend-settings';
-import { setupDayjs } from '@/utils/date';
 
 describe('components/profitloss/ReportPeriodSelector.vue', () => {
   let wrapper: VueWrapper<InstanceType<typeof ReportPeriodSelector>>;

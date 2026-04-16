@@ -5,8 +5,8 @@ import { useTemplateRef } from 'vue';
 import AssetIcon from '@/components/helper/display/icons/AssetIcon.vue';
 import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
 import { useSupportedChains } from '@/composables/info/chains';
-import { truncateAddress } from '@/utils/truncate';
-import { isPrefixed } from '@/utils/xpub';
+import { isPrefixed } from '@/modules/accounts/xpub';
+import { truncateAddress } from '@/modules/common/display/truncate';
 
 const { suggestion, chip, editMode } = defineProps<{
   suggestion: Suggestion;

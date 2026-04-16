@@ -7,11 +7,11 @@ import AmountInput from '@/components/inputs/AmountInput.vue';
 import AssetSelect from '@/components/inputs/AssetSelect.vue';
 import DateTimePicker from '@/components/inputs/DateTimePicker.vue';
 import { useAssetPricesApi } from '@/composables/api/assets/prices';
+import { getErrorMessage } from '@/modules/common/logging/error-handling';
+import { toMessages } from '@/modules/common/validation/validation';
 import { useHistoricPriceCache } from '@/modules/prices/use-historic-price-cache';
 import { usePriceTaskManager } from '@/modules/prices/use-price-task-manager';
 import { useMessageStore } from '@/store/message';
-import { getErrorMessage } from '@/utils/error-handling';
-import { toMessages } from '@/utils/validation';
 
 const { event, currency } = defineProps<{
   event: ProfitLossEvent;

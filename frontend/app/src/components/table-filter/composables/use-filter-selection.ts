@@ -6,7 +6,7 @@ import type {
   Suggestion,
 } from '@/modules/table/filtering';
 import { assert } from '@rotki/common';
-import { arrayify } from '@/utils/array';
+import { arrayify } from '@/modules/common/data/array';
 
 interface SuggestionText {
   text: string;

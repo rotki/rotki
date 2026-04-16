@@ -6,8 +6,8 @@ import { startPromise } from '@shared/utils';
 import { useAssetsStore } from '@/modules/assets/use-assets-store';
 import { useIgnoredAssetConfirmation } from '@/modules/assets/use-ignored-asset-confirmation';
 import { useIgnoredAssetOperations } from '@/modules/assets/use-ignored-asset-operations';
+import { uniqueStrings } from '@/modules/common/data/data';
 import { useNotifications } from '@/modules/notifications/use-notifications';
-import { uniqueStrings } from '@/utils/data';
 
 interface UseNftAssetIgnoringReturn {
   selected: Ref<string[]>;

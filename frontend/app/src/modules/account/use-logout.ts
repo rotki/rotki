@@ -5,10 +5,10 @@ import { useInterop } from '@/composables/electron-interop';
 import { useAppNavigation } from '@/composables/navigation';
 import { useSchedulerState } from '@/composables/session/use-scheduler-state';
 import { api } from '@/modules/api';
+import { logger } from '@/modules/common/logging/logging';
 import { getErrorMessage, useNotifications } from '@/modules/notifications/use-notifications';
 import { useWalletStore } from '@/modules/onchain/use-wallet-store';
 import { useSessionAuthStore } from '@/store/session/auth';
-import { logger } from '@/utils/logging';
 
 interface UseLogoutReturn {
   logout: (navigate?: boolean) => Promise<void>;

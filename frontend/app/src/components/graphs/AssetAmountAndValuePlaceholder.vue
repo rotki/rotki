@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import AppImage from '@/components/common/AppImage.vue';
 import GetPremiumPlaceholder from '@/components/common/GetPremiumPlaceholder.vue';
+import { getPublicPlaceholderImagePath } from '@/modules/common/file/file';
 import { PremiumFeature, useFeatureAccess } from '@/modules/premium/use-feature-access';
-import { getPublicPlaceholderImagePath } from '@/utils/file';
 
 const { t } = useI18n({ useScope: 'global' });
 

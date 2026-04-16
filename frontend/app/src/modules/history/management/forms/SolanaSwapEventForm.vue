@@ -7,12 +7,12 @@ import dayjs from 'dayjs';
 import AmountInput from '@/components/inputs/AmountInput.vue';
 import CounterpartyInput from '@/components/inputs/CounterpartyInput.vue';
 import { SOLANA_CHAIN } from '@/modules/assets/types';
+import { useRefPropVModel } from '@/modules/common/validation/model';
 import EventDateLocation from '@/modules/history/management/forms/common/EventDateLocation.vue';
 import { toMessages, useEventFormBase } from '@/modules/history/management/forms/composables/use-event-form-base';
 import { useSwapEventForm } from '@/modules/history/management/forms/composables/use-swap-event-form';
 import SwapSubEventList from '@/modules/history/management/forms/swap/SwapSubEventList.vue';
 import { toSubEvent } from '@/modules/history/management/forms/utils';
-import { useRefPropVModel } from '@/utils/model';
 
 const stateUpdated = defineModel<boolean>('stateUpdated', { default: false, required: false });
 

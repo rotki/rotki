@@ -1,9 +1,9 @@
 import type { ComputedRef, Ref } from 'vue';
 import type { EnhancedProviderDetail } from '@/modules/onchain/wallet-providers/provider-detection';
+import { getErrorMessage } from '@/modules/common/logging/error-handling';
+import { logger } from '@/modules/common/logging/logging';
 import { useWalletStore } from '@/modules/onchain/use-wallet-store';
 import { useProviderSelection } from '@/modules/onchain/wallet-providers/use-provider-selection';
-import { getErrorMessage } from '@/utils/error-handling';
-import { logger } from '@/utils/logging';
 import { type GnosisPayAdminsMapping, GnosisPayError, type GnosisPayErrorContext } from './types';
 import { useGnosisPaySiweApi } from './use-gnosis-pay-api';
 

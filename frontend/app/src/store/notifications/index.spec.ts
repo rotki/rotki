@@ -1,7 +1,7 @@
 import { NotificationCategory, type NotificationData, type NotificationPayload, Priority, Severity } from '@rotki/common';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { createNotification } from '@/modules/notifications/notification-utils';
 import { useNotificationsStore } from '@/store/notifications';
-import { createNotification } from '@/utils/notifications';
 
 function testPayload(overrides: Partial<NotificationPayload> & { message: string; title: string }): NotificationPayload {
   return {

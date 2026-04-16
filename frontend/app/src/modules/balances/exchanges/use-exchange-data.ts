@@ -3,10 +3,10 @@ import type { AssetProtocolBalances } from '@/modules/balances/types/blockchain-
 import type { Exchange, ExchangeInfo } from '@/modules/balances/types/exchanges';
 import { useAssetsStore } from '@/modules/assets/use-assets-store';
 import { useBalancesStore } from '@/modules/balances/use-balances-store';
+import { sortDesc } from '@/modules/common/data/bignumbers';
+import { balanceSum, exchangeAssetSum } from '@/modules/common/data/calculation';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { useSessionSettingsStore } from '@/store/settings/session';
-import { sortDesc } from '@/utils/bignumbers';
-import { balanceSum, exchangeAssetSum } from '@/utils/calculation';
 
 interface UseExchangeDataReturn {
   getBaseExchangeBalances: (exchange?: string) => AssetProtocolBalances;

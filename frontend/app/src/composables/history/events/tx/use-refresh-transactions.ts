@@ -10,14 +10,14 @@ import { useSupportedChains } from '@/composables/info/chains';
 import { useSchedulerState } from '@/composables/session/use-scheduler-state';
 import { Section, Status, useStatusUpdater } from '@/composables/status';
 import { useExchangeData } from '@/modules/balances/exchanges/use-exchange-data';
+import { LimitedParallelizationQueue } from '@/modules/common/async/limited-parallelization-queue';
+import { logger } from '@/modules/common/logging/logging';
 import { OnlineHistoryEventsQueryType } from '@/modules/history/events/schemas';
 import { useDecodingStatusStore } from '@/modules/history/use-decoding-status-store';
 import { sigilBus } from '@/modules/sigil/event-bus';
 import { useEventsQueryStatusStore } from '@/store/history/query-status/events-query-status';
 import { useTxQueryStatusStore } from '@/store/history/query-status/tx-query-status';
 import { useHistoryRefreshStateStore } from '@/store/history/refresh-state';
-import { LimitedParallelizationQueue } from '@/utils/limited-parallelization-queue';
-import { logger } from '@/utils/logging';
 
 interface NoveltyDetection {
   newAccounts: ChainAddress[];

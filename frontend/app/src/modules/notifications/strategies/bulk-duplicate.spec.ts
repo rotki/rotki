@@ -1,6 +1,6 @@
 import { Priority, Severity } from '@rotki/common';
 import { describe, expect, it } from 'vitest';
-import { createNotification } from '@/utils/notifications';
+import { createNotification } from '@/modules/notifications/notification-utils';
 import { bulkDuplicateStrategy } from './bulk-duplicate';
 
 describe('bulkDuplicateStrategy', () => {

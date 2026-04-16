@@ -6,8 +6,8 @@ import { between, required, requiredIf } from '@vuelidate/validators';
 import { isEmpty } from 'es-toolkit/compat';
 import AmountInput from '@/components/inputs/AmountInput.vue';
 import { useFormStateWatcher } from '@/composables/form';
-import { useRefPropVModel } from '@/utils/model';
-import { toMessages } from '@/utils/validation';
+import { useRefPropVModel } from '@/modules/common/validation/model';
+import { toMessages } from '@/modules/common/validation/validation';
 
 const errors = defineModel<ValidationErrors>('errorMessages', { required: true });
 const stateUpdated = defineModel<boolean>('stateUpdated', { default: false, required: false });

@@ -6,8 +6,8 @@ import { helpers, required } from '@vuelidate/validators';
 import AssetIconForm from '@/components/asset-manager/AssetIconForm.vue';
 import AutoCompleteWithSearchSync from '@/components/inputs/AutoCompleteWithSearchSync.vue';
 import { useFormStateWatcher } from '@/composables/form';
-import { refOptional, useRefPropVModel } from '@/utils/model';
-import { toMessages } from '@/utils/validation';
+import { refOptional, useRefPropVModel } from '@/modules/common/validation/model';
+import { toMessages } from '@/modules/common/validation/validation';
 
 const modelValue = defineModel<CustomAsset>({ required: true });
 const errors = defineModel<ValidationErrors>('errorMessages', { required: true });

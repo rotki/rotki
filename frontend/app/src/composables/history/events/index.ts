@@ -16,14 +16,14 @@ import { useSupportedChains } from '@/composables/info/chains';
 import { useEnsOperations } from '@/modules/address-names/use-ens-operations';
 import { RequestCancelledError } from '@/modules/api/request-queue/errors';
 import { ApiValidationError, type ValidationErrors } from '@/modules/api/types/errors';
+import { arrayify } from '@/modules/common/data/array';
+import { defaultCollectionState, mapCollectionResponse } from '@/modules/common/data/collection-utils';
+import { millisecondsToSeconds } from '@/modules/common/data/date';
+import { getErrorMessage } from '@/modules/common/logging/error-handling';
+import { logger } from '@/modules/common/logging/logging';
+import { getEthAddressesFromText } from '@/modules/history/history-utils';
 import { useNotifications } from '@/modules/notifications/use-notifications';
 import { useHistoryStore } from '@/store/history';
-import { arrayify } from '@/utils/array';
-import { defaultCollectionState, mapCollectionResponse } from '@/utils/collection';
-import { millisecondsToSeconds } from '@/utils/date';
-import { getErrorMessage } from '@/utils/error-handling';
-import { getEthAddressesFromText } from '@/utils/history';
-import { logger } from '@/utils/logging';
 
 interface UseHistoryEventsReturn {
   fetchHistoryEvents: (payload: MaybeRef<HistoryEventRequestPayload>, options?: { tags?: string[] }) => Promise<Collection<HistoryEventRow>>;

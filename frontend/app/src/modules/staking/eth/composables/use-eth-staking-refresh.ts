@@ -4,13 +4,13 @@ import dayjs from 'dayjs';
 import { useSectionStatus, useStatusUpdater } from '@/composables/status';
 import { useEthStaking } from '@/modules/accounts/use-eth-staking';
 import { useBlockchainBalances } from '@/modules/balances/use-blockchain-balances';
+import { logger } from '@/modules/common/logging/logging';
 import { Section } from '@/modules/common/status';
 import { OnlineHistoryEventsQueryType } from '@/modules/history/events/schemas';
 import { TaskType } from '@/modules/tasks/task-type';
 import { useTaskStore } from '@/modules/tasks/use-task-store';
 import { useBlockchainValidatorsStore } from '@/store/blockchain/validators';
 import { useSessionAuthStore } from '@/store/session/auth';
-import { logger } from '@/utils/logging';
 
 interface RefreshCallbacks {
   getPerformance: () => { entriesTotal: number };

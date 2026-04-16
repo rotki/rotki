@@ -4,11 +4,11 @@ import { Severity } from '@rotki/common';
 import ServiceKeyCard, { type FeatureGate } from '@/components/settings/api-keys/ServiceKeyCard.vue';
 import { useInterop } from '@/composables/electron-interop';
 import { useBackendMessages } from '@/modules/app/use-backend-messages';
+import { getPublicServiceImagePath } from '@/modules/common/file/file';
+import { getErrorMessage } from '@/modules/common/logging/error-handling';
+import { logger } from '@/modules/common/logging/logging';
 import { useNotificationDispatcher } from '@/modules/notifications/use-notification-dispatcher';
 import { PremiumFeature, useFeatureAccess } from '@/modules/premium/use-feature-access';
-import { getErrorMessage } from '@/utils/error-handling';
-import { getPublicServiceImagePath } from '@/utils/file';
-import { logger } from '@/utils/logging';
 import { useMoneriumOAuth } from './use-monerium-auth';
 
 const { t } = useI18n({ useScope: 'global' });

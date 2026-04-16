@@ -9,9 +9,9 @@ import { HistoryEventEntryType, toCapitalCase, toSentenceCase, toSnakeCase } fro
 import { startPromise } from '@shared/utils';
 import { cloneDeep } from 'es-toolkit';
 import { useHistoryEventsApi } from '@/composables/api/history/events';
+import { uniqueStrings } from '@/modules/common/data/data';
 import { getErrorMessage, useNotifications } from '@/modules/notifications/use-notifications';
 import { useLocationStore } from '@/store/locations';
-import { uniqueStrings } from '@/utils/data';
 
 type Event = MaybeRefOrGetter<{
   eventType: string;

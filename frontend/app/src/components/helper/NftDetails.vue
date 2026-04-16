@@ -4,12 +4,12 @@ import AppImage from '@/components/common/AppImage.vue';
 import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
 import { useNftImage } from '@/composables/nft-image';
 import { useAssetInfoCache } from '@/modules/assets/use-asset-info-cache';
+import { uniqueStrings } from '@/modules/common/data/data';
+import { getDomain } from '@/modules/common/helpers/url';
 import HashLink from '@/modules/common/links/HashLink.vue';
 import { useSettingsOperations } from '@/modules/settings/use-settings-operations';
 import { useConfirmStore } from '@/store/confirm';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
-import { uniqueStrings } from '@/utils/data';
-import { getDomain } from '@/utils/url';
 
 const { identifier, size = '50px', styled } = defineProps<{
   identifier: string;

@@ -6,9 +6,9 @@ import ManageCexMappingTable from '@/components/asset-manager/cex-mapping/Manage
 import TablePageLayout from '@/components/layout/TablePageLayout.vue';
 import { useAssetCexMappingApi } from '@/composables/api/assets/cex-mapping';
 import { usePaginationFilters } from '@/composables/use-pagination-filter';
+import { getErrorMessage } from '@/modules/common/logging/error-handling';
 import { useConfirmStore } from '@/store/confirm';
 import { useMessageStore } from '@/store/message';
-import { getErrorMessage } from '@/utils/error-handling';
 
 const { t } = useI18n({ useScope: 'global' });
 const router = useRouter();

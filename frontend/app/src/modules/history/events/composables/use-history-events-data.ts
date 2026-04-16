@@ -11,10 +11,10 @@ import { useRefWithDebounce } from '@/composables/ref';
 import { RequestCancelledError } from '@/modules/api/request-queue/errors';
 import { api } from '@/modules/api/rotki-api';
 import { useAssetsStore } from '@/modules/assets/use-assets-store';
+import { getCollectionData, setupEntryLimit } from '@/modules/common/data/collection-utils';
+import { logger } from '@/modules/common/logging/logging';
 import { useHistoryEventsStatus } from '@/modules/history/events/use-history-events-status';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
-import { getCollectionData, setupEntryLimit } from '@/utils/collection';
-import { logger } from '@/utils/logging';
 import { useCompleteEvents } from './use-complete-events';
 
 interface UseHistoryEventsDataOptions {

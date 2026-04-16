@@ -1,6 +1,6 @@
 import type { NonEmptyPropertiesOptions } from '@/modules/api/types';
 import { queryTransformer, snakeCaseTransformer } from '@/modules/api/transformers';
-import { nonEmptyProperties } from '@/utils/data';
+import { nonEmptyProperties } from '@/modules/common/data/data';
 
 export interface TransformOptions {
   skipSnakeCase?: boolean | string[];

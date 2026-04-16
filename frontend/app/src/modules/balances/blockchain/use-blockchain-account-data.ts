@@ -14,16 +14,16 @@ import { omit } from 'es-toolkit';
 import { isEmpty } from 'es-toolkit/compat';
 import { useResolveAssetIdentifier } from '@/composables/assets/common';
 import { useSupportedChains } from '@/composables/info/chains';
+import { getAccountBalance, hasTokens, sortAndFilterAccounts } from '@/modules/accounts/account-helpers';
+import { getAccountAddress, getAccountLabel, isXpubAccount } from '@/modules/accounts/account-utils';
+import { createAccountWithBalance } from '@/modules/accounts/create-account-with-balance';
 import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
 import { useAddressNameResolution } from '@/modules/address-names/use-address-name-resolution';
 import { useAssetsStore } from '@/modules/assets/use-assets-store';
 import { useBalancesStore } from '@/modules/balances/use-balances-store';
-import { getAccountBalance, hasTokens, sortAndFilterAccounts } from '@/utils/blockchain/accounts';
-import { createAccountWithBalance } from '@/utils/blockchain/accounts/create-account-with-balance';
-import { getAccountAddress, getAccountLabel, isXpubAccount } from '@/utils/blockchain/accounts/utils';
-import { assetSum, balanceSum } from '@/utils/calculation';
-import { uniqueStrings } from '@/utils/data';
-import { deduplicateTags } from '@/utils/tags';
+import { assetSum, balanceSum } from '@/modules/common/data/calculation';
+import { uniqueStrings } from '@/modules/common/data/data';
+import { deduplicateTags } from '@/modules/tags/tag-utils';
 
 interface AccountBalances {
   assets: AssetBalance[];

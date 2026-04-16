@@ -2,9 +2,9 @@ import type { Ref } from 'vue';
 import type { HistoricalPrice, HistoricalPriceFormPayload, ManualPricePayload } from '@/modules/prices/price-types';
 import { startPromise } from '@shared/utils';
 import { useAssetPricesApi } from '@/composables/api/assets/prices';
+import { getErrorMessage } from '@/modules/common/logging/error-handling';
 import { useNotifications } from '@/modules/notifications/use-notifications';
 import { useHistoricPriceCache } from '@/modules/prices/use-historic-price-cache';
-import { getErrorMessage } from '@/utils/error-handling';
 
 interface UseHistoricPricesReturn {
   items: Ref<HistoricalPrice[]>;

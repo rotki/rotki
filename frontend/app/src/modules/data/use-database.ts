@@ -3,10 +3,10 @@ import type { MissingMapping } from '@/modules/data/schemas';
 import { assert } from '@rotki/common';
 import Dexie, { type EntityTable } from 'dexie';
 import { useLoggedUserIdentifier } from '@/composables/user/use-logged-user-identifier';
+import { logger } from '@/modules/common/logging/logging';
 import { createDatabaseIdentifier } from '@/modules/data/utils/hash';
 import { type NewDetectedTokenRecord, NewDetectedTokens } from '@/modules/newly-detected-tokens/types';
 import { useMainStore } from '@/store/main';
-import { logger } from '@/utils/logging';
 
 const NEWLY_DETECTED_TOKENS_MIGRATION_KEY_PREFIX = 'rotki.newly_detected_tokens.';
 

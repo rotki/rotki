@@ -13,10 +13,10 @@ import { useFormStateWatcher } from '@/composables/form';
 import { useEditModeStateTracker } from '@/composables/history/events/edit-mode-state';
 import { useHistoryEventsForm } from '@/composables/history/events/form';
 import { useAccountAddresses } from '@/modules/balances/blockchain/use-account-addresses';
+import { bigNumberifyFromRef } from '@/modules/common/data/bignumbers';
+import { toMessages } from '@/modules/common/validation/validation';
 import HistoryEventAssetPriceForm from '@/modules/history/management/forms/HistoryEventAssetPriceForm.vue';
 import { useEventFormValidation } from '@/modules/history/management/forms/use-event-form-validation';
-import { bigNumberifyFromRef } from '@/utils/bignumbers';
-import { toMessages } from '@/utils/validation';
 
 interface EthDepositEventFormProps {
   data: StandaloneEventData<EthDepositEvent>;

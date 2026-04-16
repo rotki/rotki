@@ -2,8 +2,8 @@ import type { Task, TaskMap, TaskMeta } from '@/modules/tasks/types';
 import { assert } from '@rotki/common';
 import dayjs from 'dayjs';
 import { toArray } from 'es-toolkit/compat';
+import { removeKey } from '@/modules/common/data/data';
 import { TaskType } from '@/modules/tasks/task-type';
-import { removeKey } from '@/utils/data';
 
 export const useTaskStore = defineStore('tasks', () => {
   const tasks = shallowRef<TaskMap<TaskMeta>>({});

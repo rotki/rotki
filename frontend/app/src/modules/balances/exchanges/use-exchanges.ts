@@ -8,13 +8,13 @@ import { useValueThreshold } from '@/composables/usd-value-threshold';
 import { AssetBalances } from '@/modules/balances/types/balances';
 import { type EditExchange, Exchange, type ExchangeFormData } from '@/modules/balances/types/exchanges';
 import { useBalancesStore } from '@/modules/balances/use-balances-store';
+import { getErrorMessage } from '@/modules/common/logging/error-handling';
 import { Section, Status } from '@/modules/common/status';
 import { useNotifications } from '@/modules/notifications/use-notifications';
 import { BalanceSource } from '@/modules/settings/types/frontend-settings';
 import { TaskType } from '@/modules/tasks/task-type';
 import { isActionableFailure, useTaskHandler } from '@/modules/tasks/use-task-handler';
 import { useSessionSettingsStore } from '@/store/settings/session';
-import { getErrorMessage } from '@/utils/error-handling';
 
 interface UseExchangesReturn {
   fetchConnectedExchangeBalances: (refresh?: boolean) => Promise<void>;

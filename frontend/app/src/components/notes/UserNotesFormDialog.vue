@@ -4,7 +4,7 @@ import { useTemplateRef } from 'vue';
 import BigDialog from '@/components/dialogs/BigDialog.vue';
 import UserNotesForm from '@/components/notes/UserNotesForm.vue';
 import { useUserNotesApi } from '@/composables/api/session/user-notes';
-import { logger } from '@/utils/logging';
+import { logger } from '@/modules/common/logging/logging';
 
 const open = defineModel<boolean>('open', { required: true });
 const model = defineModel<Partial<UserNote>>({ required: true });

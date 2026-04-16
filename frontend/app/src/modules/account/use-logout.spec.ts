@@ -65,7 +65,7 @@ vi.mock('@/modules/api', () => ({
   },
 }));
 
-vi.mock('@/utils/logging', () => ({
+vi.mock('@/modules/common/logging/logging', () => ({
   logger: {
     error: vi.fn(),
   },

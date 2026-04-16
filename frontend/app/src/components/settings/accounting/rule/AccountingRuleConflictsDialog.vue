@@ -17,8 +17,8 @@ import AccountingRuleWithLinkedSettingDisplay
 import { useHistoryEventMappings } from '@/composables/history/events/mapping';
 import { useAccountingSettings } from '@/composables/settings/accounting';
 import { usePaginationFilters } from '@/composables/use-pagination-filter';
+import { getCollectionData } from '@/modules/common/data/collection-utils';
 import { useMessageStore } from '@/store/message';
-import { getCollectionData } from '@/utils/collection';
 
 const emit = defineEmits<{
   close: [];

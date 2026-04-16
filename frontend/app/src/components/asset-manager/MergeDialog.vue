@@ -4,7 +4,7 @@ import useVuelidate from '@vuelidate/core';
 import { helpers, required } from '@vuelidate/validators';
 import AssetSelect from '@/components/inputs/AssetSelect.vue';
 import { useAssets } from '@/composables/assets';
-import { toMessages } from '@/utils/validation';
+import { toMessages } from '@/modules/common/validation/validation';
 
 type Errors = Partial<Record<'targetIdentifier' | 'sourceIdentifier', string[]>>;
 

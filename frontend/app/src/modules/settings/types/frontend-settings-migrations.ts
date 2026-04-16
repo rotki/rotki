@@ -1,4 +1,5 @@
 import { isEmpty } from 'es-toolkit/compat';
+import { logger } from '@/modules/common/logging/logging';
 import {
   type BalanceSource,
   BalanceValueThreshold,
@@ -7,7 +8,6 @@ import {
   FRONTEND_SETTINGS_SCHEMA_VERSION,
   type FrontendSettings,
 } from '@/modules/settings/types/frontend-settings';
-import { logger } from '@/utils/logging';
 
 export function migrateSettingsIfNeeded(settings?: string): string | undefined {
   if (settings === undefined || settings === '') {

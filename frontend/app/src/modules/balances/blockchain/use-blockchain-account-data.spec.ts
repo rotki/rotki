@@ -2,10 +2,10 @@ import type { BitcoinAccounts, BlockchainAccount, BlockchainAccountGroupWithBala
 import type { BlockchainTotals, BtcBalances } from '@/modules/balances/types/blockchain-balances';
 import { type Balance, bigNumberify, Blockchain, Zero } from '@rotki/common';
 import { beforeEach, describe, expect, it } from 'vitest';
+import { convertBtcAccounts, convertBtcBalances } from '@/modules/accounts/account-helpers';
+import { getAccountAddress } from '@/modules/accounts/account-utils';
 import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
 import { useBalancesStore } from '@/modules/balances/use-balances-store';
-import { convertBtcAccounts, convertBtcBalances } from '@/utils/blockchain/accounts';
-import { getAccountAddress } from '@/utils/blockchain/accounts/utils';
 import { useBlockchainAccountData } from './use-blockchain-account-data';
 import '@test/i18n';
 

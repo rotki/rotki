@@ -9,9 +9,9 @@ import { nextTick } from 'vue';
 import { useAssetInfoApi } from '@/composables/api/assets/info';
 import { useAssetPricesApi } from '@/composables/api/assets/prices';
 import { useHistoryEvents } from '@/composables/history/events';
+import { setupDayjs } from '@/modules/common/data/date';
 import EthWithdrawalEventForm from '@/modules/history/management/forms/EthWithdrawalEventForm.vue';
 import { useBalancePricesStore } from '@/store/balances/prices';
-import { setupDayjs } from '@/utils/date';
 
 vi.mock('@/store/balances/prices', () => ({
   useBalancePricesStore: vi.fn(),

@@ -9,11 +9,11 @@ import { useSectionStatus } from '@/composables/status';
 import { FiatDisplay } from '@/modules/amount-display/components';
 import { Section } from '@/modules/common/status';
 import NetWorthChart from '@/modules/dashboard/graph/NetWorthChart.vue';
+import { isPeriodAllowed } from '@/modules/settings/settings-utils';
 import { useSettingsOperations } from '@/modules/settings/use-settings-operations';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { useSessionSettingsStore } from '@/store/settings/session';
 import { useStatisticsStore } from '@/store/statistics';
-import { isPeriodAllowed } from '@/utils/settings';
 
 const { t } = useI18n({ useScope: 'global' });
 const sessionStore = useSessionSettingsStore();

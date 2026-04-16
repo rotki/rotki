@@ -9,6 +9,11 @@ import type { HistoryEventEditData } from '@/modules/history/management/forms/fo
 import RowActions from '@/components/helper/RowActions.vue';
 import HistoryEventAction from '@/components/history/events/HistoryEventAction.vue';
 import {
+  isAssetMovementEvent,
+  isEventMissingAccountingRule,
+  isEvmEvent,
+} from '@/modules/history/event-utils';
+import {
   hideDeleteAction,
   hideEditAction,
   shouldDeleteGroup,
@@ -17,11 +22,6 @@ import {
   isGroupEditableHistoryEvent,
   isSwapTypeEvent,
 } from '@/modules/history/management/forms/form-guards';
-import {
-  isAssetMovementEvent,
-  isEventMissingAccountingRule,
-  isEvmEvent,
-} from '@/utils/history/events';
 
 const { item, index, completeGroupEvents, canUnlink, collapsed, collapseAction } = defineProps<{
   item: HistoryEventEntry;

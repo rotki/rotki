@@ -5,7 +5,7 @@ import type { HistoryEventEntry } from '@/modules/history/events/schemas';
 import { NO_COLLECTION_RESOLVE, useAssetInfoRetrieval } from '@/composables/assets/retrieval';
 import { useSupportedChains } from '@/composables/info/chains';
 import { useAssetsStore } from '@/modules/assets/use-assets-store';
-import { isEventMissingAccountingRule } from '@/utils/history/events';
+import { isEventMissingAccountingRule } from '@/modules/history/event-utils';
 
 export interface UseHistorySwapItemProps {
   events: Ref<HistoryEventEntry[]> | ComputedRef<HistoryEventEntry[]>;

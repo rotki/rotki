@@ -5,10 +5,10 @@ import { some } from 'es-toolkit/compat';
 import AssetDetails from '@/components/helper/AssetDetails.vue';
 import { useAssetSelectInfo } from '@/composables/assets/asset-select-info';
 import { FiatDisplay, ValueDisplay } from '@/modules/amount-display';
+import { sortAssetBalances } from '@/modules/common/display/balances';
 import HistoricalAssetRowDetails from '@/modules/history/balances/HistoricalAssetRowDetails.vue';
 import { useHistoricPriceCache } from '@/modules/prices/use-historic-price-cache';
 import { useGeneralSettingsStore } from '@/store/settings/general';
-import { sortAssetBalances } from '@/utils/balances';
 
 const { balances, loading, timestamp } = defineProps<{
   balances: AssetBalanceWithPrice[];

@@ -3,7 +3,7 @@ import type { App, Component } from 'vue';
 import { checkIfDevelopment } from '@shared/utils';
 import { useStatisticsApi } from '@/composables/api/statistics/statistics-api';
 import { app } from '@/main';
-import { logger } from '@/utils/logging';
+import { logger } from '@/modules/common/logging/logging';
 
 const PREMIUM_COMPONENTS_VERSION = 28;
 

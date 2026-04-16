@@ -8,13 +8,13 @@ import { usePremium } from '@/composables/premium';
 import { useStatusUpdater } from '@/composables/status';
 import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
 import { ApiValidationError, type ValidationErrors } from '@/modules/api/types/errors';
+import { logger } from '@/modules/common/logging/logging';
 import { Section } from '@/modules/common/status';
 import { getErrorMessage, useNotifications } from '@/modules/notifications/use-notifications';
 import { useEthValidatorFetching } from '@/modules/staking/eth/composables/use-eth-validator-fetching';
 import { TaskType } from '@/modules/tasks/task-type';
 import { isActionableFailure, useTaskHandler } from '@/modules/tasks/use-task-handler';
 import { useBlockchainValidatorsStore } from '@/store/blockchain/validators';
-import { logger } from '@/utils/logging';
 
 interface UseEthStakingReturn {
   validatorsLimitInfo: Readonly<Ref<{ showWarning: boolean; limit: number; total: number }>>;

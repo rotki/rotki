@@ -19,12 +19,12 @@ import {
   parseQueryPagination,
 } from '@/composables/use-pagination-filter/utils';
 import { api, RequestCancelledError } from '@/modules/api';
+import { defaultCollectionState } from '@/modules/common/data/collection-utils';
+import { nonEmptyProperties } from '@/modules/common/data/data';
+import { logger } from '@/modules/common/logging/logging';
 import { useNotifications } from '@/modules/notifications/use-notifications';
 import { FilterBehaviour, type MatchedKeywordWithBehaviour, type SearchMatcher } from '@/modules/table/filtering';
 import { useRememberTableFilter } from '@/modules/table/use-remember-table-filter';
-import { defaultCollectionState } from '@/utils/collection';
-import { nonEmptyProperties } from '@/utils/data';
-import { logger } from '@/utils/logging';
 
 type Params<
   TItem extends NonNullable<unknown>,

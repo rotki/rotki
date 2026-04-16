@@ -2,7 +2,7 @@
 import { TimeFramePersist, type TimeFrameSetting } from '@rotki/common';
 import PremiumLock from '@/components/premium/PremiumLock.vue';
 import { usePremium } from '@/composables/premium';
-import { isPeriodAllowed } from '@/utils/settings';
+import { isPeriodAllowed } from '@/modules/settings/settings-utils';
 
 const modelValue = defineModel<TimeFrameSetting>({ required: true });
 

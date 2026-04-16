@@ -9,12 +9,12 @@ import { useBlockchainAccounts } from '@/modules/accounts/use-blockchain-account
 import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
 import { useAccountAddresses } from '@/modules/balances/blockchain/use-account-addresses';
 import { useTokenDetectionOrchestrator } from '@/modules/balances/blockchain/use-token-detection-orchestrator';
+import { awaitParallelExecution } from '@/modules/common/async/await-parallel-execution';
+import { getErrorMessage } from '@/modules/common/logging/error-handling';
+import { logger } from '@/modules/common/logging/logging';
 import { isBlockchain } from '@/modules/onchain/chains';
 import { useTagOperations } from '@/modules/session/use-tag-operations';
 import { useSettingsOperations } from '@/modules/settings/use-settings-operations';
-import { awaitParallelExecution } from '@/utils/await-parallel-execution';
-import { getErrorMessage } from '@/utils/error-handling';
-import { logger } from '@/utils/logging';
 
 interface EvmAccountAdditionSuccess {
   type: 'success';

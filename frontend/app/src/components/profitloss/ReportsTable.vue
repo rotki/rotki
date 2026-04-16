@@ -8,10 +8,10 @@ import UpgradeRow from '@/components/history/UpgradeRow.vue';
 import ProfitLossOverview from '@/components/profitloss/ProfitLossOverview.vue';
 import ReportsTableMoreAction from '@/components/profitloss/ReportsTableMoreAction.vue';
 import { FiatDisplay } from '@/modules/amount-display/components';
+import { calculateTotalProfitLoss } from '@/modules/reports/report-utils';
 import { useReportOperations } from '@/modules/reports/use-report-operations';
 import { TableId, useRememberTableSorting } from '@/modules/table/use-remember-table-sorting';
 import { useReportsStore } from '@/store/reports';
-import { calculateTotalProfitLoss } from '@/utils/report';
 
 interface ReportData extends Report {
   free: BigNumber;

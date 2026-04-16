@@ -4,10 +4,10 @@ import type { Collection } from '@/modules/common/collection';
 import type { HistoryEventCollectionRow, HistoryEventEntry, HistoryEventEntryWithMeta } from '@/modules/history/events/schemas';
 import { useHistoryEventsApi } from '@/composables/api/history/events';
 import { type CustomizedEventDuplicates, useCustomizedEventDuplicatesApi } from '@/composables/api/history/events/customized-event-duplicates';
+import { arrayify } from '@/modules/common/data/array';
+import { logger } from '@/modules/common/logging/logging';
 import { getErrorMessage, useNotifications } from '@/modules/notifications/use-notifications';
 import { useConfirmStore } from '@/store/confirm';
-import { arrayify } from '@/utils/array';
-import { logger } from '@/utils/logging';
 
 export interface DuplicateRow {
   entry: HistoryEventEntry;

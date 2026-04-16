@@ -5,7 +5,7 @@ import { ofetch } from 'ofetch';
 import ExternalLink from '@/components/helper/ExternalLink.vue';
 import FadeTransition from '@/components/helper/FadeTransition.vue';
 import { useRandomStepper } from '@/composables/random-stepper';
-import { logger } from '@/utils/logging';
+import { logger } from '@/modules/common/logging/logging';
 
 const { messages } = defineProps<{
   messages: WelcomeMessage[];

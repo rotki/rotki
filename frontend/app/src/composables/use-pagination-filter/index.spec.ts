@@ -7,8 +7,8 @@ import flushPromises from 'flush-promises';
 import { afterEach, beforeAll, beforeEach, describe, expect, it, type Mock, vi } from 'vitest';
 import { z } from 'zod/v4';
 import { usePaginationFilters } from '@/composables/use-pagination-filter';
+import { arrayify } from '@/modules/common/data/array';
 import { TableId } from '@/modules/table/use-remember-table-sorting';
-import { arrayify } from '@/utils/array';
 
 const { cancelByTagSpy, restorePersistedFilterSpy, savePersistedFilterSpy, useRouteMock, useRouterMock } = vi.hoisted(() => ({
   cancelByTagSpy: vi.fn<(tag: string) => void>(),

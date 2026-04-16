@@ -6,10 +6,10 @@ import type {
 import { consistOfNumbers } from '@rotki/common';
 import EnsAvatar from '@/components/display/EnsAvatar.vue';
 import { useScramble } from '@/composables/scramble';
+import { getAccountAddress, getAccountLabel, getChain, isXpubAccount } from '@/modules/accounts/account-utils';
 import { useAddressNameResolution } from '@/modules/address-names/use-address-name-resolution';
+import { findAddressKnownPrefix, truncateAddress } from '@/modules/common/display/truncate';
 import HashLink from '@/modules/common/links/HashLink.vue';
-import { getAccountAddress, getAccountLabel, getChain, isXpubAccount } from '@/utils/blockchain/accounts/utils';
-import { findAddressKnownPrefix, truncateAddress } from '@/utils/truncate';
 
 const { account } = defineProps<{
   account: BlockchainAccount | BlockchainAccountBalance;

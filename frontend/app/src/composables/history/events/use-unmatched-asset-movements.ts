@@ -6,14 +6,14 @@ import type { TaskMeta } from '@/modules/tasks/types';
 import { useHistoryEventsApi } from '@/composables/api/history/events';
 import { useAssetMovementMatchingApi } from '@/composables/api/history/events/asset-movement-matching';
 import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
+import { arrayify } from '@/modules/common/data/array';
+import { logger } from '@/modules/common/logging/logging';
 import { getErrorMessage, useNotifications } from '@/modules/notifications/use-notifications';
 import { PremiumFeature, useFeatureAccess } from '@/modules/premium/use-feature-access';
 import { TaskType } from '@/modules/tasks/task-type';
 import { isActionableFailure, useTaskHandler } from '@/modules/tasks/use-task-handler';
 import { useTaskStore } from '@/modules/tasks/use-task-store';
 import { useHistoryStore } from '@/store/history';
-import { arrayify } from '@/utils/array';
-import { logger } from '@/utils/logging';
 
 interface RawUnmatchedAssetMovement {
   groupIdentifier: string;

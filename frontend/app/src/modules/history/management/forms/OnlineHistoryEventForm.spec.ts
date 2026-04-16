@@ -12,9 +12,9 @@ import { useAssetPricesApi } from '@/composables/api/assets/prices';
 import { useHistoryEvents } from '@/composables/history/events';
 import { useHistoryEventMappings } from '@/composables/history/events/mapping';
 import { useLocations } from '@/composables/locations';
+import { setupDayjs } from '@/modules/common/data/date';
 import OnlineHistoryEventForm from '@/modules/history/management/forms/OnlineHistoryEventForm.vue';
 import { usePriceTaskManager } from '@/modules/prices/use-price-task-manager';
-import { setupDayjs } from '@/utils/date';
 
 vi.mock('@/modules/prices/use-price-task-manager', () => ({
   usePriceTaskManager: vi.fn().mockReturnValue({

@@ -8,16 +8,16 @@ import type { Eth2Validator } from '@/modules/balances/types/balances';
 import type { Module } from '@/modules/common/modules';
 import { assert, bigNumberify, Blockchain } from '@rotki/common';
 import { startPromise } from '@shared/utils';
+import { getAccountAddress, getChain } from '@/modules/accounts/account-utils';
 import { useBlockchainAccountManagement } from '@/modules/accounts/use-blockchain-account-management';
 import { useBlockchainAccounts } from '@/modules/accounts/use-blockchain-accounts-api';
 import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
 import { useEthStaking } from '@/modules/accounts/use-eth-staking';
+import { getKeyType, guessPrefix } from '@/modules/accounts/xpub';
 import { ApiValidationError, type ValidationErrors } from '@/modules/api/types/errors';
+import { logger } from '@/modules/common/logging/logging';
 import { getErrorMessage, useNotifications } from '@/modules/notifications/use-notifications';
 import { isBtcChain } from '@/modules/onchain/chains';
-import { getAccountAddress, getChain } from '@/utils/blockchain/accounts/utils';
-import { logger } from '@/utils/logging';
-import { getKeyType, guessPrefix } from '@/utils/xpub';
 
 interface AccountManageMode {
   readonly mode: 'edit' | 'add';

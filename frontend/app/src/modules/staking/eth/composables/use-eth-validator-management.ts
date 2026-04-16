@@ -4,10 +4,10 @@ import { type BigNumber, type Eth2ValidatorEntry, Eth2Validators, type EthStakin
 import { omit } from 'es-toolkit';
 import { isEmpty } from 'es-toolkit/compat';
 import { useBlockchainAccountsApi } from '@/composables/api/blockchain/accounts';
+import { nonEmptyProperties } from '@/modules/common/data/data';
 import { TaskType } from '@/modules/tasks/task-type';
 import { useTaskHandler } from '@/modules/tasks/use-task-handler';
 import { useBlockchainValidatorsStore } from '@/store/blockchain/validators';
-import { nonEmptyProperties } from '@/utils/data';
 
 interface UseEthValidatorManagementReturn {
   fetchValidatorsWithFilter: () => Promise<void>;

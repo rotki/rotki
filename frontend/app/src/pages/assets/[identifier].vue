@@ -13,11 +13,11 @@ import TablePageLayout from '@/components/layout/TablePageLayout.vue';
 import { type AssetResolutionOptions, useAssetInfoRetrieval } from '@/composables/assets/retrieval';
 import { useAggregatedBalances } from '@/composables/balances/use-aggregated-balances';
 import { usePremium } from '@/composables/premium';
+import { getPublicServiceImagePath } from '@/modules/common/file/file';
 import HashLink from '@/modules/common/links/HashLink.vue';
 import { NoteLocation } from '@/modules/common/notes';
 import { useAssetPageActions } from '@/pages/assets/use-asset-page-actions';
 import { AssetAmountAndValueOverTime } from '@/premium/premium';
-import { getPublicServiceImagePath } from '@/utils/file';
 
 definePage({
   meta: {

@@ -7,9 +7,9 @@ import type {
 import type { DataTableSortData } from '@rotki/ui-library';
 import type { PlainAssetInfoReturn } from '@/composables/assets/retrieval';
 import type { AssetBreakdown } from '@/modules/accounts/blockchain-accounts';
-import { getSortItems } from '@/utils/assets';
-import { sortDesc, zeroBalance } from '@/utils/bignumbers';
-import { balanceSum, bigNumberSum } from '@/utils/calculation';
+import { sortDesc, zeroBalance } from '@/modules/common/data/bignumbers';
+import { balanceSum, bigNumberSum } from '@/modules/common/data/calculation';
+import { getSortItems } from '@/modules/common/display/assets';
 
 export function groupAssetBreakdown(
   breakdowns: AssetBreakdown[],

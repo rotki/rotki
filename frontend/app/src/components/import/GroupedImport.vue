@@ -2,7 +2,7 @@
 import type { RuiIcons } from '@rotki/ui-library';
 import type { ImportSource } from '@/modules/common/upload-types';
 import AppImage from '@/components/common/AppImage.vue';
-import { getPublicProtocolImagePath } from '@/utils/file';
+import { getPublicProtocolImagePath } from '@/modules/common/file/file';
 
 const { t } = useI18n({ useScope: 'global' });
 

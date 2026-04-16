@@ -6,13 +6,13 @@ import { assert, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import { ref } from 'vue';
 import { useHistoryEventFilter } from '@/composables/filters/events';
 import { useSupportedChains } from '@/composables/info/chains';
+import { convertToTimestamp, setupDayjs } from '@/modules/common/data/date';
+import { assetSuggestions } from '@/modules/common/display/assets';
 import { useMainStore } from '@/store/main';
-import { assetSuggestions } from '@/utils/assets';
-import { convertToTimestamp, setupDayjs } from '@/utils/date';
 
-vi.mock('@/utils/assets', async () => {
-  const mod = await vi.importActual<typeof import('@/utils/assets')>(
-    '@/utils/assets',
+vi.mock('@/modules/common/display/assets', async () => {
+  const mod = await vi.importActual<typeof import('@/modules/common/display/assets')>(
+    '@/modules/common/display/assets',
   );
   return {
     ...mod,

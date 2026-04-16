@@ -2,8 +2,8 @@
 import { assert } from '@rotki/common';
 import { RuiTextField } from '@rotki/ui-library';
 import IMask, { type InputMask } from 'imask';
+import { logger } from '@/modules/common/logging/logging';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
-import { logger } from '@/utils/logging';
 
 interface AmountInputProps {
   integer?: boolean;

@@ -9,14 +9,14 @@ import type { TaskMeta } from '@/modules/tasks/types';
 import { useNftBalancesApi } from '@/composables/api/balances/nft';
 import { useStatusUpdater } from '@/composables/status';
 import { useBalancesStore } from '@/modules/balances/use-balances-store';
+import { mapCollectionResponse } from '@/modules/common/data/collection-utils';
+import { logger } from '@/modules/common/logging/logging';
 import { Module } from '@/modules/common/modules';
 import { Section, Status } from '@/modules/common/status';
 import { useNotifications } from '@/modules/notifications/use-notifications';
 import { TaskType } from '@/modules/tasks/task-type';
 import { isActionableFailure, useTaskHandler } from '@/modules/tasks/use-task-handler';
 import { useGeneralSettingsStore } from '@/store/settings/general';
-import { mapCollectionResponse } from '@/utils/collection';
-import { logger } from '@/utils/logging';
 
 interface NftBalancesReturn {
   fetchNonFungibleBalances: (payload: MaybeRef<NonFungibleBalancesRequestPayload>) => Promise<Collection<NonFungibleBalance>>;

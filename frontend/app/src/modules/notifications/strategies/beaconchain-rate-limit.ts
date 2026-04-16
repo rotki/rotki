@@ -1,6 +1,6 @@
 import type { NotificationStrategy } from './types';
 import { assert, NotificationGroup } from '@rotki/common';
-import { createNotification } from '@/utils/notifications';
+import { createNotification } from '@/modules/notifications/notification-utils';
 
 const BEACONCHAIN_RATE_LIMITED_PREFIX = 'Beaconcha.in is rate limited';
 

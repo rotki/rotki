@@ -6,12 +6,12 @@ import AppImage from '@/components/common/AppImage.vue';
 import LabeledAddressDisplay from '@/components/display/LabeledAddressDisplay.vue';
 import BlockchainAccountSelector from '@/components/helper/BlockchainAccountSelector.vue';
 import TagDisplay from '@/components/tags/TagDisplay.vue';
+import { getAccountAddress } from '@/modules/accounts/account-utils';
 import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
 import { useAccountAddresses } from '@/modules/balances/blockchain/use-account-addresses';
 import { type Module, SUPPORTED_MODULES } from '@/modules/common/modules';
 import { useQueriedAddressOperations } from '@/modules/session/use-queried-address-operations';
 import { useSessionMetadataStore } from '@/store/session/metadata';
-import { getAccountAddress } from '@/utils/blockchain/accounts/utils';
 
 const { module } = defineProps<{ module: Module }>();
 

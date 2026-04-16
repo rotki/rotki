@@ -8,8 +8,8 @@ import type {
 import { assert } from '@rotki/common';
 import { useInterop } from '@/composables/electron-interop';
 import { useSupportedChains } from '@/composables/info/chains';
+import { logger } from '@/modules/common/logging/logging';
 import { useWalletHelper } from '@/modules/onchain/use-wallet-helper';
-import { logger } from '@/utils/logging';
 import { useTradeApi } from './send/use-trade-api';
 import {
   handleTransactionError,

@@ -2,8 +2,8 @@ import { startPromise } from '@shared/utils';
 import { get, isDefined, set } from '@vueuse/core';
 import { computed, onBeforeUnmount, ref } from 'vue';
 import { useWalletBridge } from '@/composables/wallet-bridge';
-import { waitForCondition } from '@/utils/async-utilities';
-import { logger } from '@/utils/logging';
+import { waitForCondition } from '@/modules/common/async/async-utilities';
+import { logger } from '@/modules/common/logging/logging';
 import { PROXY_CONFIG } from './bridge-config';
 import { createResourceManager } from './resource-management';
 

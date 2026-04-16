@@ -5,8 +5,8 @@ import { useTemplateRef } from 'vue';
 import CustomAssetForm from '@/components/asset-manager/custom/CustomAssetForm.vue';
 import BigDialog from '@/components/dialogs/BigDialog.vue';
 import { useAssetManagementApi } from '@/composables/api/assets/management';
+import { getErrorMessage } from '@/modules/common/logging/error-handling';
 import { useMessageStore } from '@/store/message';
-import { getErrorMessage } from '@/utils/error-handling';
 
 const open = defineModel<boolean>('open', { required: true });
 const savedAssetId = defineModel<string>('savedAssetId', { required: false });

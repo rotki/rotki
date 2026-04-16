@@ -5,10 +5,10 @@ import type { ConfirmationMessage } from '@/modules/history/events/composables/u
 import { toCapitalCase } from '@rotki/common';
 import { useExternalServicesApi } from '@/composables/api/settings/external-services-api';
 import { DialogType } from '@/modules/common/dialogs';
+import { getErrorMessage } from '@/modules/common/logging/error-handling';
+import { logger } from '@/modules/common/logging/logging';
 import { useConfirmStore } from '@/store/confirm';
 import { useSessionAuthStore } from '@/store/session/auth';
-import { getErrorMessage } from '@/utils/error-handling';
-import { logger } from '@/utils/logging';
 
 function getName(name: ExternalServiceName, _chain?: string): string {
   return name;

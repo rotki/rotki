@@ -23,7 +23,7 @@ vi.mock('@/composables/assets/retrieval', () => ({
   })),
 }));
 
-vi.mock('@/utils/history/events', () => ({
+vi.mock('@/modules/history/event-utils', () => ({
   isEventMissingAccountingRule: vi.fn((event: HistoryEventEntry) =>
     event.eventAccountingRuleStatus === HistoryEventAccountingRuleStatus.NOT_PROCESSED),
 }));

@@ -10,6 +10,9 @@ import {
   VALID_WITH_SESSION_AND_EXTERNAL_SERVICE,
 } from '@/modules/api/utils';
 import { type ActionDataEntry, ActionDataEntryArraySchema, type ActionStatus } from '@/modules/common/action';
+import { downloadFileByUrl } from '@/modules/common/file/download';
+import { getFilename } from '@/modules/common/file/file';
+import { getErrorMessage } from '@/modules/common/logging/error-handling';
 import {
   type AddTransactionHashPayload,
   HistoryEventDetail,
@@ -29,9 +32,6 @@ import {
   type OnlineHistoryEventsRequestPayload,
 } from '@/modules/history/events/schemas';
 import { type PendingTask, PendingTaskSchema } from '@/modules/tasks/types';
-import { downloadFileByUrl } from '@/utils/download';
-import { getErrorMessage } from '@/utils/error-handling';
-import { getFilename } from '@/utils/file';
 
 const TransactionStatusSchema = z.object({
   evmLastQueriedTs: z.number(),

@@ -5,12 +5,12 @@ import { type NotificationPayload, type SemiPartial, Severity } from '@rotki/com
 import { omit } from 'es-toolkit';
 import { useHistoryEventsApi } from '@/composables/api/history/events';
 import { useInterop } from '@/composables/electron-interop';
+import { getErrorMessage } from '@/modules/common/logging/error-handling';
 import { useNotificationDispatcher } from '@/modules/notifications/use-notification-dispatcher';
 import { TaskType } from '@/modules/tasks/task-type';
 import { isActionableFailure, useTaskHandler } from '@/modules/tasks/use-task-handler';
 import { useTaskStore } from '@/modules/tasks/use-task-store';
 import { useConfirmStore } from '@/store/confirm';
-import { getErrorMessage } from '@/utils/error-handling';
 
 const { filters, matchExactEvents } = defineProps<{
   matchExactEvents: boolean;

@@ -5,7 +5,7 @@ import {
   createTestPriceInfo,
 } from '@test/utils/create-data';
 import { describe, expect, it } from 'vitest';
-import { updateBalancesPrices, updateBlockchainAssetBalances, updateExchangeBalancesPrices } from '@/utils/prices';
+import { updateBalancesPrices, updateBlockchainAssetBalances, updateExchangeBalancesPrices } from '@/modules/prices/price-utils';
 
 describe('utils/prices', () => {
   const mockPrices = {

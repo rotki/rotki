@@ -1,6 +1,6 @@
 <script lang="ts" setup>
 import AmountInput from '@/components/inputs/AmountInput.vue';
-import { arrayify } from '@/utils/array';
+import { arrayify } from '@/modules/common/data/array';
 
 defineOptions({
   inheritAttrs: false,

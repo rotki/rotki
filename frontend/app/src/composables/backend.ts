@@ -3,10 +3,10 @@ import type { LogLevel } from '@shared/log-level';
 import type { ComputedRef, Ref } from 'vue';
 import { BackendOptions } from '@shared/ipc';
 import { useInterop } from '@/composables/electron-interop';
+import { deleteBackendUrl, getBackendUrl } from '@/modules/account/account-management';
 import { useBackendConnection } from '@/modules/app/use-backend-connection';
+import { getDefaultLogLevel, logger, setLevel } from '@/modules/common/logging/logging';
 import { useMainStore } from '@/store/main';
-import { deleteBackendUrl, getBackendUrl } from '@/utils/account-management';
-import { getDefaultLogLevel, logger, setLevel } from '@/utils/logging';
 
 const BACKEND_OPTIONS = 'BACKEND_OPTIONS';
 

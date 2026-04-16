@@ -7,8 +7,8 @@ import type {
 import { assert, type EthStakingCombinedFilter } from '@rotki/common';
 import TableFilter from '@/components/table-filter/TableFilter.vue';
 import { isValidStatus, validStatuses } from '@/composables/filters/eth-validator';
+import { dateDeserializer, dateRangeValidator, dateSerializer, getDateInputISOFormat } from '@/modules/common/data/date';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
-import { dateDeserializer, dateRangeValidator, dateSerializer, getDateInputISOFormat } from '@/utils/date';
 
 const filter = defineModel<EthStakingCombinedFilter | undefined>('filter', { required: true });
 

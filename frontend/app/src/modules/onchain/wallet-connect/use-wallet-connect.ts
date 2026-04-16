@@ -3,7 +3,7 @@ import { EthersAdapter } from '@reown/appkit-adapter-ethers';
 import { type AppKitNetwork, arbitrum, base, bsc, gnosis, mainnet, optimism, polygon, scroll } from '@reown/appkit/networks';
 import { type AppKit, createAppKit } from '@reown/appkit/vue';
 import { BrowserProvider, getAddress } from 'ethers';
-import { logger } from '@/utils/logging';
+import { logger } from '@/modules/common/logging/logging';
 import { EIP155 } from '../wallet-constants';
 
 const ROTKI_DAPP_METADATA = {

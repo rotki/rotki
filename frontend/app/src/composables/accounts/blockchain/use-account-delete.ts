@@ -5,15 +5,15 @@ import type {
 } from '@/modules/accounts/blockchain-accounts';
 import { Blockchain } from '@rotki/common';
 import { useSupportedChains } from '@/composables/info/chains';
+import { getAccountAddress, isXpubAccount } from '@/modules/accounts/account-utils';
 import { useBlockchainAccounts } from '@/modules/accounts/use-blockchain-accounts-api';
 import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
 import { useEthStaking } from '@/modules/accounts/use-eth-staking';
 import { useBalancesStore } from '@/modules/balances/use-balances-store';
+import { awaitParallelExecution } from '@/modules/common/async/await-parallel-execution';
+import { uniqueStrings } from '@/modules/common/data/data';
 import { isBlockchain } from '@/modules/onchain/chains';
 import { useConfirmStore } from '@/store/confirm';
-import { awaitParallelExecution } from '@/utils/await-parallel-execution';
-import { getAccountAddress, isXpubAccount } from '@/utils/blockchain/accounts/utils';
-import { uniqueStrings } from '@/utils/data';
 
 export type ShowConfirmationParams = {
   type: 'account';

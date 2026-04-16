@@ -16,8 +16,8 @@ import AmountInput from '@/components/inputs/AmountInput.vue';
 import { useHistoryEventMappings } from '@/composables/history/events/mapping';
 import { type ColumnClassConfig, usePinnedAssetColumnClass, usePinnedColumnClass, usePinnedSimpleTableClass } from '@/composables/history/events/use-pinned-column-class';
 import HashLink from '@/modules/common/links/HashLink.vue';
+import { getEventEntryFromCollection } from '@/modules/history/event-utils';
 import { getAssetMovementsType } from '@/modules/history/management/forms/utils';
-import { getEventEntryFromCollection } from '@/utils/history/events';
 
 const selectedMatchIds = defineModel<number[]>('selectedMatchIds', { required: true });
 

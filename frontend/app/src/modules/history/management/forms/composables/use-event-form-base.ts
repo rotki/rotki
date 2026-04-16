@@ -3,8 +3,8 @@ import useVuelidate, { type ValidationArgs } from '@vuelidate/core';
 import { isEmpty } from 'es-toolkit/compat';
 import { useFormStateWatcher } from '@/composables/form';
 import { useEditModeStateTracker } from '@/composables/history/events/edit-mode-state';
+import { toMessages } from '@/modules/common/validation/validation';
 import { useEventFormValidation } from '@/modules/history/management/forms/use-event-form-validation';
-import { toMessages } from '@/utils/validation';
 
 export { toMessages };
 

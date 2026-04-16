@@ -13,8 +13,8 @@ import {
 } from '@/modules/address-names/eth-names';
 import { api } from '@/modules/api/rotki-api';
 import { VALID_TASK_STATUS, VALID_WITH_SESSION_AND_EXTERNAL_SERVICE } from '@/modules/api/utils';
+import { mapCollectionResponse } from '@/modules/common/data/collection-utils';
 import { type PendingTask, PendingTaskSchema } from '@/modules/tasks/types';
-import { mapCollectionResponse } from '@/utils/collection';
 
 interface UseAddressesNamesApiReturn {
   getEnsNamesTask: (ethAddresses: string[]) => Promise<PendingTask>;

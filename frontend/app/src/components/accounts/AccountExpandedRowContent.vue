@@ -7,7 +7,7 @@ import AccountBalanceAggregatedAssets from '@/components/accounts/AccountBalance
 import AccountGroupDetails from '@/components/accounts/AccountGroupDetails.vue';
 import AccountGroupDetailsTable from '@/components/accounts/AccountGroupDetailsTable.vue';
 import AccountBalanceDetails from '@/components/accounts/balances/AccountBalanceDetails.vue';
-import { getAccountAddress, getGroupId, isXpubAccount } from '@/utils/blockchain/accounts/utils';
+import { getAccountAddress, getGroupId, isXpubAccount } from '@/modules/accounts/account-utils';
 
 const tab = defineModel<number>('tab', { required: true });
 const query = defineModel<LocationQuery>('query', { required: true });

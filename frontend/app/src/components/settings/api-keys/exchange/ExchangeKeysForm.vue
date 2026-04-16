@@ -11,10 +11,10 @@ import OkxRegionSelectorItem from '@/components/settings/api-keys/exchange/OkxRe
 import { useFormStateWatcher } from '@/composables/form';
 import { useLocations } from '@/composables/locations';
 import { type ExchangeFormData, KrakenAccountType, OkxLocation } from '@/modules/balances/types/exchanges';
+import { refOptional, useRefPropVModel } from '@/modules/common/validation/model';
+import { toMessages } from '@/modules/common/validation/validation';
 import { useLocationStore } from '@/store/locations';
 import { useSessionSettingsStore } from '@/store/settings/session';
-import { refOptional, useRefPropVModel } from '@/utils/model';
-import { toMessages } from '@/utils/validation';
 
 const modelValue = defineModel<ExchangeFormData>({ required: true });
 

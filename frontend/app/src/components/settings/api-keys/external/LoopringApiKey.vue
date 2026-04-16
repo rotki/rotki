@@ -3,10 +3,10 @@ import ServiceKey from '@/components/settings/api-keys/ServiceKey.vue';
 import ServiceKeyCard from '@/components/settings/api-keys/ServiceKeyCard.vue';
 import { useExternalApiKeys, useServiceKeyHandler } from '@/composables/settings/api-keys/external';
 import { useBlockchainBalances } from '@/modules/balances/use-blockchain-balances';
+import { getPublicProtocolImagePath } from '@/modules/common/file/file';
 import { Module } from '@/modules/common/modules';
 import { Routes } from '@/router/routes';
 import { useGeneralSettingsStore } from '@/store/settings/general';
-import { getPublicProtocolImagePath } from '@/utils/file';
 
 const name = 'loopring';
 

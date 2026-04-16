@@ -2,10 +2,10 @@ import type { ConflictResolution } from '@/modules/assets/types';
 import type { ActionStatus } from '@/modules/common/action';
 import { api } from '@/modules/api/rotki-api';
 import { VALID_FILE_OPERATION_STATUS, VALID_WITHOUT_SESSION_STATUS } from '@/modules/api/utils';
+import { downloadFileByUrl } from '@/modules/common/file/download';
+import { getFilename } from '@/modules/common/file/file';
+import { getErrorMessage } from '@/modules/common/logging/error-handling';
 import { type PendingTask, PendingTaskSchema } from '@/modules/tasks/types';
-import { downloadFileByUrl } from '@/utils/download';
-import { getErrorMessage } from '@/utils/error-handling';
-import { getFilename } from '@/utils/file';
 
 interface UseAssetApiReturn {
   checkForAssetUpdate: () => Promise<PendingTask>;

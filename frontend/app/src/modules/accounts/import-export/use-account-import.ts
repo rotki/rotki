@@ -4,19 +4,19 @@ import { type StakingValidatorManage, useAccountManage } from '@/composables/acc
 import { CSVMissingHeadersError, useCsvImportExport } from '@/composables/common/use-csv-import-export';
 import { useSupportedChains } from '@/composables/info/chains';
 import { useSectionStatus } from '@/composables/status';
+import { getAccountAddress, getXpubId } from '@/modules/accounts/account-utils';
 import { createValidatorAction, type CSVRow, CSVSchema, csvToAccount, doesAccountExist, getChainType } from '@/modules/accounts/import-export/account-csv-schema';
 import { useBlockchainAccountManagement } from '@/modules/accounts/use-blockchain-account-management';
+import { getKeyType, guessPrefix, isPrefixed } from '@/modules/accounts/xpub';
 import { useBlockchainAccountData } from '@/modules/balances/blockchain/use-blockchain-account-data';
+import { awaitParallelExecution } from '@/modules/common/async/await-parallel-execution';
+import { logger } from '@/modules/common/logging/logging';
 import { Section } from '@/modules/common/status';
 import { useNotifications } from '@/modules/notifications/use-notifications';
 import { useTagOperations } from '@/modules/session/use-tag-operations';
 import { useBlockchainValidatorsStore } from '@/store/blockchain/validators';
 import { useSessionMetadataStore } from '@/store/session/metadata';
 import { useAccountImportProgressStore } from '@/store/use-account-import-progress-store';
-import { awaitParallelExecution } from '@/utils/await-parallel-execution';
-import { getAccountAddress, getXpubId } from '@/utils/blockchain/accounts/utils';
-import { logger } from '@/utils/logging';
-import { getKeyType, guessPrefix, isPrefixed } from '@/utils/xpub';
 
 interface UseAccountImportReturn {
   importAccounts: (file: File) => Promise<void>;

@@ -7,6 +7,8 @@ import type { Collection } from '@/modules/common/collection';
 import { useSectionStatus } from '@/composables/status';
 import { usePaginationFilters } from '@/composables/use-pagination-filter';
 import { useNftBalances } from '@/modules/balances/nft/use-nft-balances';
+import { calculatePercentage } from '@/modules/common/data/calculation';
+import { getCollectionData } from '@/modules/common/data/collection-utils';
 import { Section } from '@/modules/common/status';
 import { DashboardTableType } from '@/modules/settings/types/frontend-settings';
 import { TableColumn } from '@/modules/table/table-column';
@@ -14,8 +16,6 @@ import { TableId, useRememberTableSorting } from '@/modules/table/use-remember-t
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { useStatisticsStore } from '@/store/statistics';
-import { calculatePercentage } from '@/utils/calculation';
-import { getCollectionData } from '@/utils/collection';
 
 interface UseNftDataOptions {
   dashboard?: boolean;

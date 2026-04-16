@@ -3,9 +3,9 @@ import { Blockchain } from '@rotki/common';
 import { useTokenDetectionOrchestrator } from '@/modules/balances/blockchain/use-token-detection-orchestrator';
 import { useExchanges } from '@/modules/balances/exchanges/use-exchanges';
 import { useBlockchainBalances } from '@/modules/balances/use-blockchain-balances';
+import { arrayify } from '@/modules/common/data/array';
 import { BlockchainRefreshButtonBehaviour } from '@/modules/settings/types/frontend-settings';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
-import { arrayify } from '@/utils/array';
 
 export const useBalanceRefresh = createSharedComposable(() => {
   const { fetchLoopringBalances, refreshBlockchainBalances } = useBlockchainBalances();

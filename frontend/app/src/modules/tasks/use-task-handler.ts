@@ -1,11 +1,11 @@
 import type { ActionResult } from '@rotki/common';
 import { checkIfDevelopment } from '@shared/utils';
 import { useTaskApi } from '@/composables/api/task';
+import { arrayify } from '@/modules/common/data/array';
+import { logger } from '@/modules/common/logging/logging';
 import { TaskType } from '@/modules/tasks/task-type';
 import { type Task, type TaskMeta, TaskNotFoundError } from '@/modules/tasks/types';
 import { useTaskStore } from '@/modules/tasks/use-task-store';
-import { arrayify } from '@/utils/array';
-import { logger } from '@/utils/logging';
 
 const USER_CANCELLED_TASK = 'task_cancelled_by_user';
 

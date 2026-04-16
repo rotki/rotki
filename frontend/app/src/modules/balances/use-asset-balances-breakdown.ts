@@ -5,11 +5,11 @@ import type { ManualBalanceWithValue } from '@/modules/balances/types/manual-bal
 import { Zero } from '@rotki/common';
 import { useResolveAssetIdentifier } from '@/composables/assets/common';
 import { useSupportedChains } from '@/composables/info/chains';
+import { getAccountAddress } from '@/modules/accounts/account-utils';
 import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
 import { useBalancesStore } from '@/modules/balances/use-balances-store';
-import { groupAssetBreakdown } from '@/utils/balances';
-import { getAccountAddress } from '@/utils/blockchain/accounts/utils';
-import { perProtocolBalanceSum } from '@/utils/calculation';
+import { perProtocolBalanceSum } from '@/modules/common/data/calculation';
+import { groupAssetBreakdown } from '@/modules/common/display/balances';
 
 interface BreakdownFilters {
   chains?: string[];

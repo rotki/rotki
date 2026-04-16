@@ -11,16 +11,16 @@ import type { BlockchainMetadata } from '@/modules/tasks/types';
 import { Blockchain } from '@rotki/common';
 import { useBlockchainAccountsApi } from '@/composables/api/blockchain/accounts';
 import { useSupportedChains } from '@/composables/info/chains';
+import { convertBtcAccounts } from '@/modules/accounts/account-helpers';
+import { createAccount } from '@/modules/accounts/create-account';
 import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
 import { useEthStaking } from '@/modules/accounts/use-eth-staking';
 import { useAddressNameResolution } from '@/modules/address-names/use-address-name-resolution';
+import { logger } from '@/modules/common/logging/logging';
 import { getErrorMessage, useNotifications } from '@/modules/notifications/use-notifications';
 import { type BtcChains, isBtcChain } from '@/modules/onchain/chains';
 import { TaskType } from '@/modules/tasks/task-type';
 import { isActionableFailure, useTaskHandler } from '@/modules/tasks/use-task-handler';
-import { convertBtcAccounts } from '@/utils/blockchain/accounts';
-import { createAccount } from '@/utils/blockchain/accounts/create';
-import { logger } from '@/utils/logging';
 
 interface UseBlockchainAccountsReturn {
   addAccount: (chain: string, payload: AccountPayload[] | XpubAccountPayload) => Promise<string>;

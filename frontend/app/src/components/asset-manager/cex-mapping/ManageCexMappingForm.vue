@@ -7,8 +7,8 @@ import LocationDisplay from '@/components/history/LocationDisplay.vue';
 import AssetSelect from '@/components/inputs/AssetSelect.vue';
 import ExchangeInput from '@/components/inputs/ExchangeInput.vue';
 import { useFormStateWatcher } from '@/composables/form';
-import { nullDefined, useRefPropVModel } from '@/utils/model';
-import { toMessages } from '@/utils/validation';
+import { nullDefined, useRefPropVModel } from '@/modules/common/validation/model';
+import { toMessages } from '@/modules/common/validation/validation';
 
 const modelValue = defineModel<CexMapping>({ required: true });
 const forAllExchanges = defineModel<boolean>('forAllExchanges', { required: true });

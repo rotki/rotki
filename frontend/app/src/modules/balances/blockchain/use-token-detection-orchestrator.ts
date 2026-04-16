@@ -7,9 +7,9 @@ import { useTokenDetectionApi } from '@/modules/balances/blockchain/use-token-de
 import { useTokenDetectionStore } from '@/modules/balances/blockchain/use-token-detection-store';
 import { useBalanceQueue } from '@/modules/balances/use-balance-queue';
 import { useBlockchainBalances } from '@/modules/balances/use-blockchain-balances';
+import { arrayify } from '@/modules/common/data/array';
 import { TaskType } from '@/modules/tasks/task-type';
 import { useTaskStore } from '@/modules/tasks/use-task-store';
-import { arrayify } from '@/utils/array';
 
 interface DetectOptions {
   refreshBalancesAfter?: boolean;

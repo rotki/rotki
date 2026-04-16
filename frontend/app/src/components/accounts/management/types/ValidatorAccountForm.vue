@@ -4,9 +4,9 @@ import type { StakingValidatorManage } from '@/composables/accounts/blockchain/u
 import type { ValidationErrors } from '@/modules/api/types/errors';
 import { assert } from '@rotki/common';
 import Eth2Input from '@/components/accounts/blockchain/Eth2Input.vue';
+import { useRefPropVModel } from '@/modules/common/validation/model';
 import { TaskType } from '@/modules/tasks/task-type';
 import { useTaskStore } from '@/modules/tasks/use-task-store';
-import { useRefPropVModel } from '@/utils/model';
 
 const modelValue = defineModel<StakingValidatorManage>({ required: true });
 

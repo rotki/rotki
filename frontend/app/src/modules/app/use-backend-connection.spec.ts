@@ -24,7 +24,7 @@ vi.mock('@/modules/api/api-urls', () => ({
   defaultApiUrls: { coreApiUrl: 'http://localhost:4242', colibriApiUrl: 'http://localhost:4343' },
 }));
 
-vi.mock('@/utils/logging', () => ({
+vi.mock('@/modules/common/logging/logging', () => ({
   getDefaultLogLevel: vi.fn((): string => 'WARNING'),
   logger: {
     debug: vi.fn(),

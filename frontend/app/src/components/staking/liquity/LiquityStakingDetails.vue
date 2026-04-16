@@ -18,14 +18,14 @@ import LiquityPools from '@/components/staking/liquity/LiquityPools.vue';
 import LiquityStake from '@/components/staking/liquity/LiquityStake.vue';
 import LiquityStatistics from '@/components/staking/liquity/LiquityStatistics.vue';
 import { useSectionStatus } from '@/composables/status';
+import { getAccountAddress } from '@/modules/accounts/account-utils';
+import { zeroBalance } from '@/modules/common/data/bignumbers';
+import { balanceSum } from '@/modules/common/data/calculation';
+import { uniqueStrings } from '@/modules/common/data/data';
 import HashLink from '@/modules/common/links/HashLink.vue';
 import { Section } from '@/modules/common/status';
 import { useLiquityStore } from '@/store/defi/liquity';
 import { useHistoricCachePriceStore } from '@/store/prices/historic';
-import { zeroBalance } from '@/utils/bignumbers';
-import { getAccountAddress } from '@/utils/blockchain/accounts/utils';
-import { balanceSum } from '@/utils/calculation';
-import { uniqueStrings } from '@/utils/data';
 
 const emit = defineEmits<{
   refresh: [refresh: boolean];

@@ -1,7 +1,7 @@
 import { wait } from '@shared/utils';
 import { FetchError } from 'ofetch';
 import { DEFAULT_MAX_RETRIES, DEFAULT_RETRY_DELAY } from '@/modules/api/constants';
-import { isAbortError } from '@/utils';
+import { isAbortError } from '@/modules/common/helpers/is-of-enum';
 
 export interface RetryOptions {
   /**

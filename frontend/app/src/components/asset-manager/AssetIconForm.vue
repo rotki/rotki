@@ -5,8 +5,8 @@ import FileUpload from '@/components/import/FileUpload.vue';
 import { useAssetIconApi } from '@/composables/api/assets/icon';
 import { useInterop } from '@/composables/electron-interop';
 import { useAssetsStore } from '@/modules/assets/use-assets-store';
+import { getErrorMessage } from '@/modules/common/logging/error-handling';
 import { useNotifications } from '@/modules/notifications/use-notifications';
-import { getErrorMessage } from '@/utils/error-handling';
 
 const { identifier, refreshable = false } = defineProps<{
   identifier: string;

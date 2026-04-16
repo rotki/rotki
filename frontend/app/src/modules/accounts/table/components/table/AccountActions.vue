@@ -4,7 +4,7 @@ import type { BlockchainAccountBalance } from '@/modules/accounts/blockchain-acc
 import TokenDetection from '@/components/accounts/blockchain/TokenDetection.vue';
 import RowActions from '@/components/helper/RowActions.vue';
 import { useSupportedChains } from '@/composables/info/chains';
-import { getAccountAddress } from '@/utils/blockchain/accounts/utils';
+import { getAccountAddress } from '@/modules/accounts/account-utils';
 
 export interface Props<T extends BlockchainAccountBalance> {
   accountOperation: boolean;

@@ -2,9 +2,9 @@ import type { ActionStatus } from '@/modules/common/action';
 import type { ChangePasswordPayload } from '@/modules/session/types';
 import { useUsersApi } from '@/composables/api/session/users';
 import { useInterop } from '@/composables/electron-interop';
+import { logger } from '@/modules/common/logging/logging';
 import { getErrorMessage, useNotifications } from '@/modules/notifications/use-notifications';
 import { useSessionAuthStore } from '@/store/session/auth';
-import { logger } from '@/utils/logging';
 
 interface UseChangePasswordReturn {
   changePassword: (payload: ChangePasswordPayload) => Promise<ActionStatus>;

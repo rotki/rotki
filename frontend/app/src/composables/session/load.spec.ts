@@ -79,7 +79,7 @@ vi.mock('@/composables/status', () => ({
   })),
 }));
 
-vi.mock('@/utils/logging', () => ({
+vi.mock('@/modules/common/logging/logging', () => ({
   logger: {
     info: vi.fn(),
   },

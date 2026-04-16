@@ -3,9 +3,9 @@ import type { BaseSuggestion, MatchedKeywordWithBehaviour, SearchMatcher, Sugges
 import { getTextToken } from '@rotki/common';
 import FilterEntry from '@/components/table-filter/FilterEntry.vue';
 import SuggestedItem from '@/components/table-filter/SuggestedItem.vue';
-import { compareTextByKeyword } from '@/utils/assets';
-import { logger } from '@/utils/logging';
-import { splitSearch } from '@/utils/search';
+import { splitSearch } from '@/modules/common/data/search';
+import { compareTextByKeyword } from '@/modules/common/display/assets';
+import { logger } from '@/modules/common/logging/logging';
 
 const { keyword, matchers, selectedMatcher, selectedSuggestion } = defineProps<{
   matches: MatchedKeywordWithBehaviour<any>;

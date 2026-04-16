@@ -14,11 +14,11 @@ import { useHistoryEventsApi } from '@/composables/api/history/events';
 import { useRefreshTransactions } from '@/composables/history/events/tx/use-refresh-transactions';
 import { displayDateFormatter } from '@/data/date-formatter';
 import { ApiValidationError, type ValidationErrors } from '@/modules/api/types/errors';
+import { logger } from '@/modules/common/logging/logging';
 import { getErrorMessage, useNotifications } from '@/modules/notifications/use-notifications';
 import { TaskType } from '@/modules/tasks/task-type';
 import { isActionableFailure, useTaskHandler } from '@/modules/tasks/use-task-handler';
 import { useGeneralSettingsStore } from '@/store/settings/general';
-import { logger } from '@/utils/logging';
 
 export interface RepullingTransactionResult {
   newTransactionsCount: number;

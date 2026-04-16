@@ -8,6 +8,7 @@ import { useStatusUpdater } from '@/composables/status';
 import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
 import { AccountAssetBalances } from '@/modules/balances/types/balances';
 import { useBalancesStore } from '@/modules/balances/use-balances-store';
+import { balanceSum } from '@/modules/common/data/calculation';
 import { Module } from '@/modules/common/modules';
 import { Section, Status } from '@/modules/common/status';
 import { useNotifications } from '@/modules/notifications/use-notifications';
@@ -15,7 +16,6 @@ import { LOOPRING_CHAIN } from '@/modules/onchain/blockchain-types';
 import { TaskType } from '@/modules/tasks/task-type';
 import { isActionableFailure, useTaskHandler } from '@/modules/tasks/use-task-handler';
 import { useGeneralSettingsStore } from '@/store/settings/general';
-import { balanceSum } from '@/utils/calculation';
 
 interface UseLoopringBalanceServiceReturn {
   fetchLoopringBalances: (refresh: boolean) => Promise<void>;

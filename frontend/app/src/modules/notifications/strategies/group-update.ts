@@ -1,6 +1,6 @@
 import type { UseNotificationCooldownReturn } from '../use-notification-cooldown';
 import type { NotificationStrategy } from './types';
-import { createNotification } from '@/utils/notifications';
+import { createNotification } from '@/modules/notifications/notification-utils';
 
 export function createGroupUpdateStrategy(cooldown: UseNotificationCooldownReturn): NotificationStrategy {
   return {

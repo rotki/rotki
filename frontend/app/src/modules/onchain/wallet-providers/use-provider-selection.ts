@@ -1,9 +1,9 @@
 import type { EnhancedProviderDetail } from '@/modules/onchain/wallet-providers/provider-detection';
+import { getErrorMessage } from '@/modules/common/logging/error-handling';
+import { logger } from '@/modules/common/logging/logging';
 import { useInjectedWallet } from '@/modules/onchain/wallet-bridge/use-injected-wallet';
 import { isUserRejectedError } from '@/modules/onchain/wallet-constants';
 import { useUnifiedProviders } from '@/modules/onchain/wallet-providers/use-unified-providers';
-import { getErrorMessage } from '@/utils/error-handling';
-import { logger } from '@/utils/logging';
 
 interface UseProviderSelectionReturn {
   handleProviderSelection: (provider: EnhancedProviderDetail, onError: (message: string) => void) => Promise<void>;

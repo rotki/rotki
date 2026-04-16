@@ -4,8 +4,8 @@ import { transformCase } from '@rotki/common';
 import { camelCase } from 'es-toolkit';
 import { useDefiApi } from '@/composables/api/defi';
 import { useValueOrDefault } from '@/composables/utils/useValueOrDefault';
+import { getPublicProtocolImagePath } from '@/modules/common/file/file';
 import { useMainStore } from '@/store/main';
-import { getPublicProtocolImagePath } from '@/utils/file';
 
 export const useAirdropsMetadata = createSharedComposable(() => {
   const { fetchAirdropsMetadata } = useDefiApi();

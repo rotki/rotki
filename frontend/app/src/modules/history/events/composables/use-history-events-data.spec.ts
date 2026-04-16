@@ -48,7 +48,7 @@ vi.mock('@/store/settings/frontend', () => ({
   })),
 }));
 
-vi.mock('@/utils/collection', () => ({
+vi.mock('@/modules/common/data/collection-utils', () => ({
   getCollectionData: vi.fn((groups: Ref<Collection<HistoryEventRow>>) => ({
     data: computed<HistoryEventRow[]>(() => get(groups).data),
     entriesFoundTotal: computed<number | undefined>(() => undefined),

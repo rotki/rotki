@@ -2,7 +2,7 @@ import type { LogLevel } from '@shared/log-level';
 import type { DefaultBackendArguments } from '@/modules/app/backend';
 import type { Version } from '@/modules/common/action';
 import { checkIfDevelopment } from '@shared/utils';
-import { getDefaultLogLevel } from '@/utils/logging';
+import { getDefaultLogLevel } from '@/modules/common/logging/logging';
 
 export const useMainStore = defineStore('main', () => {
   const version = ref<Version>(defaultVersion());

@@ -3,7 +3,7 @@ import { externalLinks } from '@shared/external-links';
 import ConfirmDialog from '@/components/dialogs/ConfirmDialog.vue';
 import { useInterop } from '@/composables/electron-interop';
 import { useLinks } from '@/composables/links';
-import { truncateAddress } from '@/utils/truncate';
+import { truncateAddress } from '@/modules/common/display/truncate';
 
 defineOptions({
   inheritAttrs: false,

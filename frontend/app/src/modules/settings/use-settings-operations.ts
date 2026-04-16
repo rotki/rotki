@@ -9,14 +9,14 @@ import { useItemsPerPage } from '@/composables/session/use-items-per-page';
 import { getBnFormat } from '@/data/amount-formatter';
 import { snakeCaseTransformer } from '@/modules/api/transformers';
 import { ApiValidationError } from '@/modules/api/types/errors';
+import { uniqueStrings } from '@/modules/common/data/data';
+import { logger } from '@/modules/common/logging/logging';
 import { getErrorMessage, useNotifications } from '@/modules/notifications/use-notifications';
 import { useQueriedAddressOperations } from '@/modules/session/use-queried-address-operations';
 import { usePremiumStore } from '@/store/session/premium';
 import { useAccountingSettingsStore } from '@/store/settings/accounting';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { useGeneralSettingsStore } from '@/store/settings/general';
-import { uniqueStrings } from '@/utils/data';
-import { logger } from '@/utils/logging';
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);

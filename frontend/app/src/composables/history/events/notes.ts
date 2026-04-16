@@ -2,8 +2,8 @@ import type { BigNumber } from '@rotki/common';
 import type { ComputedRef, MaybeRefOrGetter } from 'vue';
 import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
 import { useScramble } from '@/composables/scramble';
-import { arrayify } from '@/utils/array';
-import { uniqueStrings } from '@/utils/data';
+import { arrayify } from '@/modules/common/data/array';
+import { uniqueStrings } from '@/modules/common/data/data';
 import { WORD_PROCESSORS, type WordProcessorContext, type WordProcessorResult } from './note-processors';
 
 export const NoteType = {

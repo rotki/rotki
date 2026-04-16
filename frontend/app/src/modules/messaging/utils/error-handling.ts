@@ -1,5 +1,5 @@
-import { getErrorMessage } from '@/utils/error-handling';
-import { logger } from '@/utils/logging';
+import { getErrorMessage } from '@/modules/common/logging/error-handling';
+import { logger } from '@/modules/common/logging/logging';
 
 /**
  * Standardized error handling utility for message handlers

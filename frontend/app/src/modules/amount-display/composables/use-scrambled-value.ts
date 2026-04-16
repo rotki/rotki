@@ -1,7 +1,7 @@
 import type { BigNumber } from '@rotki/common';
 import type { ComputedRef, MaybeRefOrGetter } from 'vue';
 import { useNumberScrambler } from '@/composables/utils/useNumberScrambler';
-import { generateRandomScrambleMultiplier } from '@/utils/session';
+import { generateRandomScrambleMultiplier } from '@/modules/session/session-utils';
 import { useAmountDisplaySettings } from './use-amount-display-settings';
 
 export interface UseScrambledValueOptions {

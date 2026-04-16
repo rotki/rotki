@@ -8,9 +8,9 @@ import AmountInput from '@/components/inputs/AmountInput.vue';
 import { useAssetPricesApi } from '@/composables/api/assets/prices';
 import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
 import { ApiValidationError } from '@/modules/api/types/errors';
+import { getErrorMessage } from '@/modules/common/logging/error-handling';
 import { useHistoricPriceCache } from '@/modules/prices/use-historic-price-cache';
 import { useGeneralSettingsStore } from '@/store/settings/general';
-import { getErrorMessage } from '@/utils/error-handling';
 
 const { asset } = defineProps<{
   asset: string;

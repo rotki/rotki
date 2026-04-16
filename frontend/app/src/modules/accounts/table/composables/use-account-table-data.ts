@@ -4,9 +4,9 @@ import type { AccountDataRow } from '../types';
 import type { BlockchainAccountBalance } from '@/modules/accounts/blockchain-accounts';
 import type { Collection } from '@/modules/common/collection';
 import { isEmpty } from 'es-toolkit/compat';
+import { getAccountId, getGroupId } from '@/modules/accounts/account-utils';
+import { sum } from '@/modules/common/display/balances';
 import { LOOPRING_CHAIN } from '@/modules/onchain/blockchain-types';
-import { sum } from '@/utils/balances';
-import { getAccountId, getGroupId } from '@/utils/blockchain/accounts/utils';
 
 interface UseAccountTableDataReturn<T extends BlockchainAccountBalance> {
   anyExpansion: ComputedRef<boolean>;

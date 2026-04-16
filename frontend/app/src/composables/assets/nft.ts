@@ -2,10 +2,10 @@ import type { ActionResult } from '@rotki/common';
 import type { TaskMeta } from '@/modules/tasks/types';
 import { useAssetsApi } from '@/composables/api/assets';
 import { NftResponse } from '@/modules/assets/nfts';
+import { getDomain } from '@/modules/common/helpers/url';
 import { TaskType } from '@/modules/tasks/task-type';
 import { isActionableFailure, useTaskHandler } from '@/modules/tasks/use-task-handler';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
-import { getDomain } from '@/utils/url';
 
 interface UseNftsReturn {
   fetchNfts: (ignoreCache: boolean) => Promise<ActionResult<NftResponse | null>>;

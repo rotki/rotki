@@ -8,6 +8,7 @@ import PercentageDisplay from '@/components/display/PercentageDisplay.vue';
 import RefreshButton from '@/components/helper/RefreshButton.vue';
 import RowAppend from '@/components/helper/RowAppend.vue';
 import { FiatDisplay } from '@/modules/amount-display/components';
+import { calculatePercentage } from '@/modules/common/data/calculation';
 import PoolDetails from '@/modules/dashboard/liquidity-pools/PoolDetails.vue';
 import PoolIcon from '@/modules/dashboard/liquidity-pools/PoolIcon.vue';
 import { DashboardTableType } from '@/modules/settings/types/frontend-settings';
@@ -16,7 +17,6 @@ import { TableId, useRememberTableSorting } from '@/modules/table/use-remember-t
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { useStatisticsStore } from '@/store/statistics';
-import { calculatePercentage } from '@/utils/calculation';
 import { usePoolBalances } from './use-pool-balances';
 
 const LIQUIDITY_POSITION = DashboardTableType.LIQUIDITY_POSITION;

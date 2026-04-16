@@ -3,7 +3,7 @@ import type { LogLevel } from '@shared/log-level';
 import type { WebVersion } from '@/types';
 import { assert, type Theme } from '@rotki/common';
 import { externalLinks } from '@shared/external-links';
-import { getBackendUrl } from '@/utils/account-management';
+import { getBackendUrl } from '@/modules/account/account-management';
 
 interface UseInteropReturn {
   readonly isPackaged: boolean;

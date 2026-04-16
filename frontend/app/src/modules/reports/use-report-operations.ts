@@ -6,13 +6,13 @@ import { Blockchain } from '@rotki/common';
 import { startPromise } from '@shared/utils';
 import { useReportsApi } from '@/composables/api/reports';
 import { useEnsOperations } from '@/modules/address-names/use-ens-operations';
+import { mapCollectionResponse } from '@/modules/common/data/collection-utils';
+import { logger } from '@/modules/common/logging/logging';
+import { getEthAddressesFromText } from '@/modules/history/history-utils';
 import { getErrorMessage, useNotifications } from '@/modules/notifications/use-notifications';
 import { isBlockchain } from '@/modules/onchain/chains';
+import { isTransactionEvent } from '@/modules/reports/report-utils';
 import { defaultReportEvents, useReportsStore } from '@/store/reports';
-import { mapCollectionResponse } from '@/utils/collection';
-import { getEthAddressesFromText } from '@/utils/history';
-import { logger } from '@/utils/logging';
-import { isTransactionEvent } from '@/utils/report';
 
 interface UseReportOperationsReturn {
   createCsv: (reportId: number, path: string) => Promise<void>;

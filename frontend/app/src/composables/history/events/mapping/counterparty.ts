@@ -3,8 +3,8 @@ import type { ActionDataEntry } from '@/modules/common/action';
 import { isValidEthAddress, toHumanReadable } from '@rotki/common';
 import { startPromise } from '@shared/utils';
 import { useHistoryEventsApi } from '@/composables/api/history/events';
+import { getPublicProtocolImagePath } from '@/modules/common/file/file';
 import { getErrorMessage, useNotifications } from '@/modules/notifications/use-notifications';
-import { getPublicProtocolImagePath } from '@/utils/file';
 
 interface Counterparty {
   image: string;

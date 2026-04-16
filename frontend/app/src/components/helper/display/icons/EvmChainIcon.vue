@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { toCapitalCase } from '@rotki/common';
 import AppImage from '@/components/common/AppImage.vue';
-import { getPublicProtocolImagePath } from '@/utils/file';
+import { getPublicProtocolImagePath } from '@/modules/common/file/file';
 
 interface Props {
   size?: string;

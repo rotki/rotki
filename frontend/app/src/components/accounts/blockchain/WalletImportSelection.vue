@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import type { EIP1193Provider, EIP6963ProviderDetail } from '@/types';
 import { useClearableMessages } from '@/composables/settings';
+import { getErrorMessage } from '@/modules/common/logging/error-handling';
 import { getAddressesFromWallet, getAllBrowserWalletProviders } from '@/modules/onchain/wallet-providers/provider-detection';
-import { getErrorMessage } from '@/utils/error-handling';
 
 const emit = defineEmits<{
   'import-addresses': [addresses: string[]];

@@ -5,13 +5,13 @@ import { omit } from 'es-toolkit';
 import { useEth2Api } from '@/composables/api/staking/eth2';
 import { usePremium } from '@/composables/premium';
 import { useStatusUpdater } from '@/composables/status';
+import { isAccountWithBalanceValidator } from '@/modules/accounts/account-helpers';
 import { useBlockchainAccountData } from '@/modules/balances/blockchain/use-blockchain-account-data';
+import { logger } from '@/modules/common/logging/logging';
 import { Section, Status } from '@/modules/common/status';
 import { useNotifications } from '@/modules/notifications/use-notifications';
 import { TaskType } from '@/modules/tasks/task-type';
 import { isActionableFailure, useTaskHandler } from '@/modules/tasks/use-task-handler';
-import { isAccountWithBalanceValidator } from '@/utils/blockchain/accounts';
-import { logger } from '@/utils/logging';
 
 interface UseEthStakingReturn {
   performance: ComputedRef<EthStakingPerformance>;

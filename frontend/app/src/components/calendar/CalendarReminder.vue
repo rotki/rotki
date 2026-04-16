@@ -3,9 +3,9 @@ import type { CalendarReminderTemporaryPayload, CalenderReminderPayload } from '
 import type { CalendarEvent } from '@/modules/history/calendar/types';
 import CalendarReminderEntry from '@/components/calendar/CalendarReminderEntry.vue';
 import { useCalendarReminderApi } from '@/composables/history/calendar/reminder';
+import { getErrorMessage } from '@/modules/common/logging/error-handling';
+import { logger } from '@/modules/common/logging/logging';
 import { useNotificationDispatcher } from '@/modules/notifications/use-notification-dispatcher';
-import { getErrorMessage } from '@/utils/error-handling';
-import { logger } from '@/utils/logging';
 
 const modelValue = defineModel<CalendarEvent>({ required: true });
 

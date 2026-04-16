@@ -2,6 +2,7 @@ import type { MaybePromise } from '@rotki/common';
 import type { BrowserProvider } from 'ethers';
 import type { Ref } from 'vue';
 import type { TaskMeta } from '@/modules/tasks/types';
+import { logger } from '@/modules/common/logging/logging';
 import { useNotifications } from '@/modules/notifications/use-notifications';
 import { useWalletStore } from '@/modules/onchain/use-wallet-store';
 import { useInjectedWallet } from '@/modules/onchain/wallet-bridge/use-injected-wallet';
@@ -9,7 +10,6 @@ import { useWalletConnect } from '@/modules/onchain/wallet-connect/use-wallet-co
 import { isUserRejectedError, WALLET_MODES } from '@/modules/onchain/wallet-constants';
 import { TaskType } from '@/modules/tasks/task-type';
 import { isActionableFailure, useTaskHandler } from '@/modules/tasks/use-task-handler';
-import { logger } from '@/utils/logging';
 import { GnosisPayError, type GnosisPayErrorContext } from './types';
 import { useGnosisPaySiweApi } from './use-gnosis-pay-api';
 

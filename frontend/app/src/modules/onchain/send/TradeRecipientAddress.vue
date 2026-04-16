@@ -6,9 +6,9 @@ import { useRefWithDebounce } from '@/composables/ref';
 import { useAddressBookOperations } from '@/modules/address-names/use-address-book-operations';
 import { useEnsOperations } from '@/modules/address-names/use-ens-operations';
 import { useAccountAddresses } from '@/modules/balances/blockchain/use-account-addresses';
+import { uniqueObjects } from '@/modules/common/data/data';
 import TradeAddressDisplay from '@/modules/onchain/send/TradeAddressDisplay.vue';
 import { useWalletStore } from '@/modules/onchain/use-wallet-store';
-import { uniqueObjects } from '@/utils/data';
 
 const model = defineModel<string>({ required: true });
 

@@ -1,7 +1,7 @@
 import type { Ref } from 'vue';
 import { get, set } from '@vueuse/shared';
 import { useWrapStatisticsApi, type WrapStatisticsResult } from '@/composables/api/statistics/wrap';
-import { logger } from '@/utils/logging';
+import { logger } from '@/modules/common/logging/logging';
 
 interface UseWrappedStatisticsReturn {
   fetchData: () => Promise<void>;

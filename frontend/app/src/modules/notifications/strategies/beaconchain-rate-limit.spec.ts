@@ -1,6 +1,6 @@
 import { NotificationGroup, Severity } from '@rotki/common';
 import { describe, expect, it, vi } from 'vitest';
-import { createNotification } from '@/utils/notifications';
+import { createNotification } from '@/modules/notifications/notification-utils';
 import { createBeaconchainRateLimitStrategy } from './beaconchain-rate-limit';
 
 function mockT(key: string, params?: Record<string, unknown>): string {

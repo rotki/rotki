@@ -6,8 +6,8 @@ import ManagedAssetForm from '@/components/asset-manager/managed/ManagedAssetFor
 import BigDialog from '@/components/dialogs/BigDialog.vue';
 import { ApiValidationError, type ValidationErrors } from '@/modules/api/types/errors';
 import { useAssetInfoCache } from '@/modules/assets/use-asset-info-cache';
+import { getErrorMessage } from '@/modules/common/logging/error-handling';
 import { useMessageStore } from '@/store/message';
-import { getErrorMessage } from '@/utils/error-handling';
 
 const modelValue = defineModel<SupportedAsset | undefined>({ required: true });
 

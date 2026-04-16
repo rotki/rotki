@@ -6,8 +6,8 @@ import AddressBookForm from '@/components/address-book-manager/AddressBookForm.v
 import BigDialog from '@/components/dialogs/BigDialog.vue';
 import { useAddressBookOperations } from '@/modules/address-names/use-address-book-operations';
 import { ApiValidationError, type ValidationErrors } from '@/modules/api/types/errors';
+import { getErrorMessage } from '@/modules/common/logging/error-handling';
 import { useMessageStore } from '@/store/message';
-import { getErrorMessage } from '@/utils/error-handling';
 
 const open = defineModel<boolean>('open', { required: true });
 

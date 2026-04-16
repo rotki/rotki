@@ -10,12 +10,12 @@ import { useHistoryEventsForm } from '@/composables/history/events/form';
 import { useHistoryEventCounterpartyMappings } from '@/composables/history/events/mapping/counterparty';
 import { useSupportedChains } from '@/composables/info/chains';
 import { TRADE_LOCATION_EXTERNAL } from '@/data/defaults';
+import { bigNumberifyFromRef } from '@/modules/common/data/bignumbers';
 import EventDateLocation from '@/modules/history/management/forms/common/EventDateLocation.vue';
 import EvmLocation from '@/modules/history/management/forms/common/EvmLocation.vue';
 import { toMessages, useEventFormBase } from '@/modules/history/management/forms/composables/use-event-form-base';
 import HistoryEventAssetPriceForm from '@/modules/history/management/forms/HistoryEventAssetPriceForm.vue';
 import HistoryEventTypeForm from '@/modules/history/management/forms/HistoryEventTypeForm.vue';
-import { bigNumberifyFromRef } from '@/utils/bignumbers';
 
 interface HistoryEventFormProps {
   data: StandaloneEventData<EvmHistoryEvent>;

@@ -5,9 +5,9 @@ import { helpers, required } from '@vuelidate/validators';
 import LocationSelector from '@/components/helper/LocationSelector.vue';
 import AmountInput from '@/components/inputs/AmountInput.vue';
 import { useFormStateWatcher } from '@/composables/form';
+import { useRefPropVModel } from '@/modules/common/validation/model';
+import { toMessages } from '@/modules/common/validation/validation';
 import { useGeneralSettingsStore } from '@/store/settings/general';
-import { useRefPropVModel } from '@/utils/model';
-import { toMessages } from '@/utils/validation';
 
 const stateUpdated = defineModel<boolean>('stateUpdated', { default: false, required: false });
 const model = defineModel<LocationDataSnapshotPayload>({ required: true });

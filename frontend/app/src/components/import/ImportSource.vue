@@ -10,10 +10,10 @@ import { useInterop } from '@/composables/electron-interop';
 import { refIsTruthy } from '@/composables/ref';
 import { displayDateFormatter } from '@/data/date-formatter';
 import { DateFormat } from '@/modules/common/date-format';
+import { toMessages } from '@/modules/common/validation/validation';
 import { TaskType } from '@/modules/tasks/task-type';
 import { isActionableFailure, useTaskHandler } from '@/modules/tasks/use-task-handler';
 import { useTaskStore } from '@/modules/tasks/use-task-store';
-import { toMessages } from '@/utils/validation';
 
 interface ImportTaskMeta extends TaskMeta {
   readonly source: ImportSourceType;

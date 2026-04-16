@@ -1,8 +1,8 @@
 import type { ActionStatus } from '@/modules/common/action';
 import { api } from '@/modules/api/rotki-api';
+import { downloadFileByUrl } from '@/modules/common/file/download';
+import { getErrorMessage } from '@/modules/common/logging/error-handling';
 import { ProcessSkippedHistoryEventsResponse, SkippedHistoryEventsSummary } from '@/modules/history/events/event-payloads';
-import { downloadFileByUrl } from '@/utils/download';
-import { getErrorMessage } from '@/utils/error-handling';
 
 interface UseSkippedHistoryEventsApiReturn {
   getSkippedEventsSummary: () => Promise<SkippedHistoryEventsSummary>;

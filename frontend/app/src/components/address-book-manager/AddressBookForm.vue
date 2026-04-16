@@ -14,8 +14,8 @@ import { useFormStateWatcher } from '@/composables/form';
 import { useSupportedChains } from '@/composables/info/chains';
 import { useAddressNameResolution } from '@/modules/address-names/use-address-name-resolution';
 import { useAccountAddresses } from '@/modules/balances/blockchain/use-account-addresses';
-import { nullDefined, useRefPropVModel } from '@/utils/model';
-import { toMessages } from '@/utils/validation';
+import { nullDefined, useRefPropVModel } from '@/modules/common/validation/model';
+import { toMessages } from '@/modules/common/validation/validation';
 
 const modelValue = defineModel<AddressBookPayload>({ required: true });
 const errors = defineModel<ValidationErrors>('errorMessages', { required: true });

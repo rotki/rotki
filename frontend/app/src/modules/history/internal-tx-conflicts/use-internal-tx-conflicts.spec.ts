@@ -43,7 +43,7 @@ vi.mock('@/store/settings/frontend', () => ({
   }),
 }));
 
-vi.mock('@/utils/date', () => ({
+vi.mock('@/modules/common/data/date', () => ({
   dateDeserializer: (): ((v: string) => string) => (v: string): string => v,
   dateRangeValidator: (): ((v: string) => boolean) => (): boolean => true,
   dateSerializer: (): ((v: string) => string) => (v: string): string => v,

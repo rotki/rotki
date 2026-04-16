@@ -3,13 +3,13 @@ import type { AddressData, AssetBreakdown, BlockchainAccount } from '@/modules/a
 import { type BigNumber, type Blockchain, toSentenceCase } from '@rotki/common';
 import { useAggregatedBalances } from '@/composables/balances/use-aggregated-balances';
 import { useSupportedChains } from '@/composables/info/chains';
+import { getAccountAddress } from '@/modules/accounts/account-utils';
 import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
 import { useAddressNameResolution } from '@/modules/address-names/use-address-name-resolution';
 import { useAssetBalancesBreakdown } from '@/modules/balances/use-asset-balances-breakdown';
 import { isBlockchain } from '@/modules/onchain/chains';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { useStatusStore } from '@/store/status';
-import { getAccountAddress } from '@/utils/blockchain/accounts/utils';
 
 export interface AssetLocation extends AssetBreakdown {
   readonly account?: BlockchainAccount;

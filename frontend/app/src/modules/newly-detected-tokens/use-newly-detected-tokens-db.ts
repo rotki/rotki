@@ -3,9 +3,9 @@ import type { Collection } from '@/modules/common/collection';
 import type { ItemFilter } from '@/modules/data/pagination';
 import { transformCase } from '@rotki/common';
 import { SECONDS_PER_DAY } from '@/data/constraints';
+import { logger } from '@/modules/common/logging/logging';
 import { useDatabase } from '@/modules/data/use-database';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
-import { logger } from '@/utils/logging';
 import {
   type NewDetectedToken,
   type NewDetectedTokenInput,

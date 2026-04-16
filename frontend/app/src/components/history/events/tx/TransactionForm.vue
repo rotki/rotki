@@ -9,11 +9,11 @@ import ChainSelect from '@/components/accounts/blockchain/ChainSelect.vue';
 import BlockchainAccountSelector from '@/components/helper/BlockchainAccountSelector.vue';
 import { useFormStateWatcher } from '@/composables/form';
 import { useSupportedChains } from '@/composables/info/chains';
+import { hasAccountAddress } from '@/modules/accounts/account-helpers';
+import { getAccountAddress } from '@/modules/accounts/account-utils';
 import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
-import { hasAccountAddress } from '@/utils/blockchain/accounts';
-import { getAccountAddress } from '@/utils/blockchain/accounts/utils';
-import { useRefPropVModel } from '@/utils/model';
-import { toMessages } from '@/utils/validation';
+import { useRefPropVModel } from '@/modules/common/validation/model';
+import { toMessages } from '@/modules/common/validation/validation';
 
 const modelValue = defineModel<AddTransactionHashPayload>({ required: true });
 const errors = defineModel<ValidationErrors>('errorMessages', { required: true });

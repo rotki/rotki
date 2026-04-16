@@ -15,7 +15,7 @@ import {
 } from '@/composables/filters/blockchain-account';
 import { usePaginationFilters } from '@/composables/use-pagination-filter';
 import { useBlockchainAccountData } from '@/modules/balances/blockchain/use-blockchain-account-data';
-import { fromUriEncoded, toUriEncoded } from '@/utils/route-uri';
+import { fromUriEncoded, toUriEncoded } from '@/modules/common/helpers/route-uri';
 
 interface UseAccountBalancesPaginationOptions {
   category: MaybeRefOrGetter<string>;

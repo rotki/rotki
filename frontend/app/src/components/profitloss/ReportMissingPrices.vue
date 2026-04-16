@@ -8,10 +8,10 @@ import AssetDetails from '@/components/helper/AssetDetails.vue';
 import AmountInput from '@/components/inputs/AmountInput.vue';
 import { useAssetPricesApi } from '@/composables/api/assets/prices';
 import { ApiValidationError } from '@/modules/api/types/errors';
+import { getErrorMessage } from '@/modules/common/logging/error-handling';
 import { useHistoricPriceCache } from '@/modules/prices/use-historic-price-cache';
 import { usePriceTaskManager } from '@/modules/prices/use-price-task-manager';
 import { TableId, useRememberTableSorting } from '@/modules/table/use-remember-table-sorting';
-import { getErrorMessage } from '@/utils/error-handling';
 
 const { items, isPinned } = defineProps<{
   items: MissingPrice[];

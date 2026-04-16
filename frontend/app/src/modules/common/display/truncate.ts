@@ -1,4 +1,4 @@
-import { XpubPrefix } from '@/utils/xpub';
+import { XpubPrefix } from '@/modules/accounts/xpub';
 
 export function findAddressKnownPrefix(address: string): string {
   const truncatePrefixExceptions = ['0x', ...Object.values(XpubPrefix)];

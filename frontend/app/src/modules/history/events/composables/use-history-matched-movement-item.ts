@@ -5,7 +5,7 @@ import { type Blockchain, HistoryEventEntryType } from '@rotki/common';
 import { NO_COLLECTION_RESOLVE, useAssetInfoRetrieval } from '@/composables/assets/retrieval';
 import { useSupportedChains } from '@/composables/info/chains';
 import { useLocations } from '@/composables/locations';
-import { isEventMissingAccountingRule } from '@/utils/history/events';
+import { isEventMissingAccountingRule } from '@/modules/history/event-utils';
 
 export interface UseHistoryMatchedMovementItemProps {
   events: Ref<HistoryEventEntry[]> | ComputedRef<HistoryEventEntry[]>;
