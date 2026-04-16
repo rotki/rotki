@@ -2,7 +2,7 @@
 import useVuelidate from '@vuelidate/core';
 import { helpers, required } from '@vuelidate/validators';
 import { useInterop } from '@/composables/electron-interop';
-import { toMessages } from '@/utils/validation';
+import { toMessages } from '@/modules/common/validation/validation';
 
 const display = defineModel<boolean>({ required: true });
 

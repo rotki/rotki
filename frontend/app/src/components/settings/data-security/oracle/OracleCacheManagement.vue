@@ -10,6 +10,7 @@ import AssetSelect from '@/components/inputs/AssetSelect.vue';
 import SettingCategoryHeader from '@/components/settings/SettingCategoryHeader.vue';
 import { usePriceApi } from '@/composables/api/balances/price';
 import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
+import { getErrorMessage } from '@/modules/common/logging/error-handling';
 import { useNotificationDispatcher } from '@/modules/notifications/use-notification-dispatcher';
 import { usePriceTaskManager } from '@/modules/prices/use-price-task-manager';
 import { PriceOracle } from '@/modules/settings/types/price-oracle';
@@ -18,7 +19,6 @@ import { TableId, useRememberTableSorting } from '@/modules/table/use-remember-t
 import { TaskType } from '@/modules/tasks/task-type';
 import { useTaskStore } from '@/modules/tasks/use-task-store';
 import { useConfirmStore } from '@/store/confirm';
-import { getErrorMessage } from '@/utils/error-handling';
 
 type OracleCacheEntry = OracleCacheMeta & { id: number };
 

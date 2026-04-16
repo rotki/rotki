@@ -4,9 +4,9 @@ import ListItem from '@/components/common/ListItem.vue';
 import TagFormDialog from '@/components/tags/TagFormDialog.vue';
 import TagIcon from '@/components/tags/TagIcon.vue';
 import { useTagOperations } from '@/modules/session/use-tag-operations';
+import { renameTagInList } from '@/modules/tags/tag-utils';
 import { defaultTag, type Tag } from '@/modules/tags/tags';
 import { useSessionMetadataStore } from '@/store/session/metadata';
-import { renameTagInList } from '@/utils/tags';
 
 const modelValue = defineModel<string[]>({ required: true });
 

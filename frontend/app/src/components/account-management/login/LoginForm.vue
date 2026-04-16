@@ -12,11 +12,11 @@ import { useUsersApi } from '@/composables/api/session/users';
 import { useDynamicMessages } from '@/composables/dynamic-messages';
 import { useInterop } from '@/composables/electron-interop';
 import { useRememberSettings } from '@/composables/user/use-remember-settings';
+import { deleteBackendUrl, getBackendUrl, saveBackendUrl } from '@/modules/account/account-management';
 import { useLogout } from '@/modules/account/use-logout';
+import { compareTextByKeyword } from '@/modules/common/display/assets';
+import { toMessages } from '@/modules/common/validation/validation';
 import { useSessionAuthStore } from '@/store/session/auth';
-import { deleteBackendUrl, getBackendUrl, saveBackendUrl } from '@/utils/account-management';
-import { compareTextByKeyword } from '@/utils/assets';
-import { toMessages } from '@/utils/validation';
 
 const {
   errors = [] as string[],

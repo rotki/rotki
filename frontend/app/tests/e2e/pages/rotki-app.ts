@@ -75,6 +75,7 @@ export class RotkiApp {
     await this.page.locator('[data-cy=account-management-forms]').waitFor({ state: 'detached' });
     await apiUpdateAssets(this.request);
     await this.loadEnv();
+    await this.dismissSettingsSuggestionsIfVisible();
   }
 
   async clear(): Promise<void> {
@@ -98,6 +99,18 @@ export class RotkiApp {
     await this.loadEnv();
     await this.visit();
     await this.login(username, password);
+  }
+
+  async dismissSettingsSuggestionsIfVisible(): Promise<void> {
+    const keepCurrentButton = this.page.getByRole('button', { name: 'Keep current' });
+    try {
+      await keepCurrentButton.waitFor({ state: 'visible', timeout: 3000 });
+      await keepCurrentButton.click();
+      await keepCurrentButton.waitFor({ state: 'detached', timeout: TIMEOUT_SHORT });
+    }
+    catch {
+      // Dialog didn't appear — nothing to dismiss
+    }
   }
 
   async checkGetPremiumButton(): Promise<void> {
@@ -168,6 +181,8 @@ export class RotkiApp {
         await premiumButton.waitFor({ state: 'visible', timeout: TIMEOUT_LONG });
       }
     }
+
+    await this.dismissSettingsSuggestionsIfVisible();
   }
 
   async logout(): Promise<void> {

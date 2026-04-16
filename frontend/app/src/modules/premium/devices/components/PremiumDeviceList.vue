@@ -5,12 +5,12 @@ import DateDisplay from '@/components/display/DateDisplay.vue';
 import RefreshButton from '@/components/helper/RefreshButton.vue';
 import RowActions from '@/components/helper/RowActions.vue';
 import CardTitle from '@/components/typography/CardTitle.vue';
+import { getErrorMessage } from '@/modules/common/logging/error-handling';
 import PremiumDeviceFormDialog from '@/modules/premium/devices/components/PremiumDeviceFormDialog.vue';
 import { usePremiumDevicesApi } from '@/modules/premium/devices/composables/devices';
 import { useConfirmStore } from '@/store/confirm';
 import { useMessageStore } from '@/store/message';
 import { usePremiumStore } from '@/store/session/premium';
-import { getErrorMessage } from '@/utils/error-handling';
 
 const { t } = useI18n({ useScope: 'global' });
 

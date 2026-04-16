@@ -2,9 +2,9 @@ import type { MaybeRef } from 'vue';
 import type { Collection } from '@/modules/common/collection';
 import type { PaginationRequestPayload } from '@/modules/common/common-types';
 import type { MissingMapping } from '@/modules/data/schemas';
+import { logger } from '@/modules/common/logging/logging';
 import { getPage, type ItemFilter } from '@/modules/data/pagination';
 import { useDatabase } from '@/modules/data/use-database';
-import { logger } from '@/utils/logging';
 
 interface MissingMappingsFilterParams {
   identifier?: string;

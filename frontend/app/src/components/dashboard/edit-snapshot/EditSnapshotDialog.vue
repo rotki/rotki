@@ -5,9 +5,9 @@ import EditLocationDataSnapshotTable from '@/components/dashboard/edit-snapshot/
 import EditSnapshotTotal from '@/components/dashboard/edit-snapshot/EditSnapshotTotal.vue';
 import DateDisplay from '@/components/display/DateDisplay.vue';
 import { useSnapshotApi } from '@/composables/api/settings/snapshot-api';
+import { sortDesc } from '@/modules/common/data/bignumbers';
 import { useNotifications } from '@/modules/notifications/use-notifications';
 import { useStatisticsDataFetching } from '@/modules/statistics/use-statistics-data-fetching';
-import { sortDesc } from '@/utils/bignumbers';
 
 const { timestamp } = defineProps<{
   timestamp: number;

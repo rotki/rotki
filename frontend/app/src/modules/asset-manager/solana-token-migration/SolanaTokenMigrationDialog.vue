@@ -8,8 +8,8 @@ import HintMenuIcon from '@/components/HintMenuIcon.vue';
 import { ApiValidationError, type ValidationErrors } from '@/modules/api/types/errors';
 import { useSolanaTokenMigrationApi } from '@/modules/asset-manager/solana-token-migration/solana-token-migration';
 import { useSolanaTokenMigrationStore } from '@/modules/asset-manager/solana-token-migration/solana-token-migration-store';
+import { getErrorMessage } from '@/modules/common/logging/error-handling';
 import { useMessageStore } from '@/store/message';
-import { getErrorMessage } from '@/utils/error-handling';
 import SolanaTokenMigrationForm from './SolanaTokenMigrationForm.vue';
 
 interface SolanaTokenMigrationData {

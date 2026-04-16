@@ -4,14 +4,14 @@ import { useHistoryEventsApi } from '@/composables/api/history/events';
 import { useHistoryTransactionDecoding } from '@/composables/history/events/tx/decoding';
 import { useHistoryTransactionAccounts } from '@/composables/history/events/tx/use-history-transaction-accounts';
 import { useSupportedChains } from '@/composables/info/chains';
+import { awaitParallelExecution } from '@/modules/common/async/await-parallel-execution';
+import { LimitedParallelizationQueue } from '@/modules/common/async/limited-parallelization-queue';
+import { logger } from '@/modules/common/logging/logging';
 import { type BlockchainAddress, type ChainAddress, TransactionChainType, TransactionChainTypeNeedDecoding, type TransactionRequestPayload } from '@/modules/history/events/event-payloads';
 import { useNotifications } from '@/modules/notifications/use-notifications';
 import { TaskType } from '@/modules/tasks/task-type';
 import { useTaskHandler } from '@/modules/tasks/use-task-handler';
 import { useTxQueryStatusStore } from '@/store/history/query-status/tx-query-status';
-import { awaitParallelExecution } from '@/utils/await-parallel-execution';
-import { LimitedParallelizationQueue } from '@/utils/limited-parallelization-queue';
-import { logger } from '@/utils/logging';
 
 interface TransactionSyncParams {
   accounts: ChainAddress[];

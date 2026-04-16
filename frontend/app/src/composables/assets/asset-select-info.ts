@@ -5,8 +5,8 @@ import type { AssetMap } from '@/modules/assets/types';
 import { startPromise } from '@shared/utils';
 import { useAssetInfoApi } from '@/composables/api/assets/info';
 import { processAssetInfo, useResolveAssetIdentifier } from '@/composables/assets/common';
-import { chunkArray } from '@/utils/data';
-import { logger } from '@/utils/logging';
+import { chunkArray } from '@/modules/common/data/data';
+import { logger } from '@/modules/common/logging/logging';
 
 interface AssetWithResolutionStatus extends AssetInfo {
   resolved: boolean;

@@ -6,7 +6,7 @@ import {
   isAssetMovementEventRef,
   isEthBlockEventRef,
   isWithdrawalEventRef,
-} from '@/utils/history/events';
+} from '@/modules/history/event-utils';
 
 const { event, groupEvents } = defineProps<{
   event: HistoryEventEntry;

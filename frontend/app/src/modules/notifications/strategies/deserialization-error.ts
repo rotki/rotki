@@ -1,6 +1,6 @@
 import type { NotificationStrategy } from './types';
 import { assert, NotificationGroup, Priority } from '@rotki/common';
-import { createNotification } from '@/utils/notifications';
+import { createNotification } from '@/modules/notifications/notification-utils';
 
 const DESERIALIZATION_ERROR_PREFIX = 'Could not deserialize';
 

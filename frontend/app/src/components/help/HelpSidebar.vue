@@ -3,9 +3,9 @@ import type { RuiIcons } from '@rotki/ui-library';
 import { externalLinks, TWITTER_URL } from '@shared/external-links';
 import { useInterop } from '@/composables/electron-interop';
 import { useReportIssue } from '@/composables/report-issue';
+import { downloadFileByTextContent } from '@/modules/common/file/download';
+import { IndexedDb } from '@/modules/common/helpers/indexed-db';
 import { useNotificationDispatcher } from '@/modules/notifications/use-notification-dispatcher';
-import { downloadFileByTextContent } from '@/utils/download';
-import { IndexedDb } from '@/utils/indexed-db';
 
 const display = defineModel<boolean>({ required: true });
 

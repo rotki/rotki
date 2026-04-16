@@ -3,8 +3,8 @@ import useVuelidate from '@vuelidate/core';
 import { helpers, required } from '@vuelidate/validators';
 import SettingsOption from '@/components/settings/controls/SettingsOption.vue';
 import { useValidation } from '@/composables/validation';
+import { toMessages } from '@/modules/common/validation/validation';
 import { useGeneralSettingsStore } from '@/store/settings/general';
-import { toMessages } from '@/utils/validation';
 
 const floatingPrecision = ref<string>('0');
 const maxFloatingPrecision = 8;

@@ -5,8 +5,8 @@ import type {
 } from '@/modules/history/ignored';
 import type { EntryMeta } from '@/modules/history/meta';
 import { useHistoryIgnoringApi } from '@/composables/api/history/ignore';
+import { uniqueStrings } from '@/modules/common/data/data';
 import { getErrorMessage, useNotifications } from '@/modules/notifications/use-notifications';
-import { uniqueStrings } from '@/utils/data';
 
 interface CommonIgnoreAction<T extends EntryMeta> {
   toData: (t: T) => string;

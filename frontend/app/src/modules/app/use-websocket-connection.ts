@@ -1,9 +1,9 @@
 import type { Ref } from 'vue';
 import { startPromise } from '@shared/utils';
 import { api } from '@/modules/api/rotki-api';
+import { delay } from '@/modules/common/async/async-utilities';
+import { logger } from '@/modules/common/logging/logging';
 import { useMessageHandling } from '@/modules/messaging';
-import { delay } from '@/utils/async-utilities';
-import { logger } from '@/utils/logging';
 
 /** Delay in milliseconds before attempting to reconnect to websocket */
 const RECONNECT_DELAY_MS = 2000;

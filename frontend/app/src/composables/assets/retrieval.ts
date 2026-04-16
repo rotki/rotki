@@ -18,10 +18,10 @@ import { processAssetInfo, useResolveAssetIdentifier } from '@/composables/asset
 import { useSupportedChains } from '@/composables/info/chains';
 import { type AssetsWithId, EVM_TOKEN, SOLANA_CHAIN, SOLANA_TOKEN } from '@/modules/assets/types';
 import { useAssetInfoCache } from '@/modules/assets/use-asset-info-cache';
+import { isAbortError } from '@/modules/common/helpers/is-of-enum';
 import { getErrorMessage, useNotifications } from '@/modules/notifications/use-notifications';
 import { TaskType } from '@/modules/tasks/task-type';
 import { isActionableFailure, useTaskHandler } from '@/modules/tasks/use-task-handler';
-import { isAbortError } from '@/utils';
 
 export interface AssetResolutionOptions {
   associate?: boolean;

@@ -1,13 +1,13 @@
 import { Blockchain, Eth2Validators, type EthValidatorFilter } from '@rotki/common';
 import { useBlockchainAccountsApi } from '@/composables/api/blockchain/accounts';
 import { useSupportedChains } from '@/composables/info/chains';
+import { createValidatorAccount } from '@/modules/accounts/create-account';
 import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
+import { logger } from '@/modules/common/logging/logging';
 import { useNotifications } from '@/modules/notifications/use-notifications';
 import { TaskType } from '@/modules/tasks/task-type';
 import { isActionableFailure, useTaskHandler } from '@/modules/tasks/use-task-handler';
 import { useBlockchainValidatorsStore } from '@/store/blockchain/validators';
-import { createValidatorAccount } from '@/utils/blockchain/accounts/create';
-import { logger } from '@/utils/logging';
 
 interface UseEthValidatorFetchingReturn {
   fetchEthStakingValidators: (payload?: EthValidatorFilter) => Promise<void>;

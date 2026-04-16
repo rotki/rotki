@@ -8,7 +8,7 @@ import {
   type CexMappingDeletePayload,
   type CexMappingRequestPayload,
 } from '@/modules/assets/types';
-import { mapCollectionResponse } from '@/utils/collection';
+import { mapCollectionResponse } from '@/modules/common/data/collection-utils';
 
 interface UseAssetCexMappingApiReturn {
   fetchAllCexMapping: (payload: MaybeRef<CexMappingRequestPayload>) => Promise<Collection<CexMapping>>;

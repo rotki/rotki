@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import type { BigNumber } from '@rotki/common';
 import { AssetAmountDisplay } from '@/modules/amount-display/components';
+import { sortDesc } from '@/modules/common/data/bignumbers';
 import HashLink from '@/modules/common/links/HashLink.vue';
-import { sortDesc } from '@/utils/bignumbers';
 import WrappedCard from '../WrappedCard.vue';
 
 const { ethOnGasPerAddress } = defineProps<{

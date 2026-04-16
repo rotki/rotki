@@ -4,8 +4,8 @@ import { type ComponentMountingOptions, mount, type VueWrapper } from '@vue/test
 import { createPinia, setActivePinia } from 'pinia';
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import HistoryEventForm from '@/components/history/events/HistoryEventForm.vue';
+import { setupDayjs } from '@/modules/common/data/date';
 import { isEvmTypeEvent } from '@/modules/history/management/forms/form-guards';
-import { setupDayjs } from '@/utils/date';
 
 vi.mock('json-editor-vue', () => ({
   template: '<input />',

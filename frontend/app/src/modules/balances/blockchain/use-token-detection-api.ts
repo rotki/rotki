@@ -3,10 +3,10 @@ import type { TaskMeta } from '@/modules/tasks/types';
 import { useBlockchainBalancesApi } from '@/composables/api/balances/blockchain';
 import { useSupportedChains } from '@/composables/info/chains';
 import { useTokenDetectionStore } from '@/modules/balances/blockchain/use-token-detection-store';
+import { logger } from '@/modules/common/logging/logging';
 import { getErrorMessage, useNotifications } from '@/modules/notifications/use-notifications';
 import { TaskType } from '@/modules/tasks/task-type';
 import { isActionableFailure, useTaskHandler } from '@/modules/tasks/use-task-handler';
-import { logger } from '@/utils/logging';
 
 interface UseTokenDetectionApiReturn {
   fetchDetectedTokens: (chain: string, address?: string | null) => Promise<void>;

@@ -4,9 +4,9 @@ import type { ComputedRef, MaybeRefOrGetter, Ref } from 'vue';
 import { useAssetSelectInfo } from '@/composables/assets/asset-select-info';
 import { useDashboardStores } from '@/composables/dashboard/use-dashboard-stores';
 import { useManualBalanceData } from '@/modules/balances/manual/use-manual-balance-data';
-import { assetFilterByKeyword } from '@/utils/assets';
-import { sortAssetBalances } from '@/utils/balances';
-import { bigNumberSum, calculatePercentage } from '@/utils/calculation';
+import { bigNumberSum, calculatePercentage } from '@/modules/common/data/calculation';
+import { assetFilterByKeyword } from '@/modules/common/display/assets';
+import { sortAssetBalances } from '@/modules/common/display/balances';
 
 interface UseDashboardAssetDataReturn {
   isAssetMissing: (item: AssetBalanceWithPrice) => boolean;

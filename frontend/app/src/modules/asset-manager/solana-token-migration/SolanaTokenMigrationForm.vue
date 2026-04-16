@@ -6,9 +6,9 @@ import { required } from '@vuelidate/validators';
 import AmountInput from '@/components/inputs/AmountInput.vue';
 import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
 import { useFormStateWatcher } from '@/composables/form';
+import { useRefPropVModel } from '@/modules/common/validation/model';
+import { toMessages } from '@/modules/common/validation/validation';
 import { solanaTokenKindsData } from '@/modules/onchain/chains';
-import { useRefPropVModel } from '@/utils/model';
-import { toMessages } from '@/utils/validation';
 
 interface SolanaTokenMigrationData {
   address: string;

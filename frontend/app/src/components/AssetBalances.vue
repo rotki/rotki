@@ -10,13 +10,13 @@ import { AssetValueDisplay, FiatDisplay, ValueDisplay } from '@/modules/amount-d
 import { isEvmNativeToken } from '@/modules/assets/types';
 import BalanceTopProtocols from '@/modules/balances/protocols/BalanceTopProtocols.vue';
 import AssetRowDetails from '@/modules/balances/protocols/components/AssetRowDetails.vue';
+import { bigNumberSum, calculatePercentage } from '@/modules/common/data/calculation';
+import { assetFilterByKeyword } from '@/modules/common/display/assets';
+import { sortAssetBalances } from '@/modules/common/display/balances';
 import { TableColumn } from '@/modules/table/table-column';
 import { TableId, useRememberTableSorting } from '@/modules/table/use-remember-table-sorting';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { useStatisticsStore } from '@/store/statistics';
-import { assetFilterByKeyword } from '@/utils/assets';
-import { sortAssetBalances } from '@/utils/balances';
-import { bigNumberSum, calculatePercentage } from '@/utils/calculation';
 
 defineOptions({
   name: 'AssetBalances',

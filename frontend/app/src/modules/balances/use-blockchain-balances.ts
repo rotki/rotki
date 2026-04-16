@@ -3,10 +3,10 @@ import { useSupportedChains } from '@/composables/info/chains';
 import { waitUntilIdle } from '@/composables/status';
 import { useValueThreshold } from '@/composables/usd-value-threshold';
 import { useBalanceQueue } from '@/modules/balances/use-balance-queue';
+import { arrayify } from '@/modules/common/data/array';
 import { Section } from '@/modules/common/status';
 import { BalanceSource } from '@/modules/settings/types/frontend-settings';
 import { useStatusStore } from '@/store/status';
-import { arrayify } from '@/utils/array';
 import { useBalanceProcessingService } from './services/use-balance-processing-service';
 import { useLoopringBalanceService } from './services/use-loopring-balance-service';
 

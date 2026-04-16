@@ -2,7 +2,7 @@
 import { toHumanReadable } from '@rotki/common';
 import AppImage from '@/components/common/AppImage.vue';
 import { useHistoryEventCounterpartyMappings } from '@/composables/history/events/mapping/counterparty';
-import { getPublicProtocolImagePath } from '@/utils/file';
+import { getPublicProtocolImagePath } from '@/modules/common/file/file';
 
 const { counterparty, icon, size = '20px' } = defineProps<{
   counterparty: string;

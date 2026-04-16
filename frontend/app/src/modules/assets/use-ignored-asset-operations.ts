@@ -3,10 +3,10 @@ import { useAssetIgnoreApi } from '@/composables/api/assets/ignore';
 import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
 import { useAssetsStore } from '@/modules/assets/use-assets-store';
 import { useManualBalanceData } from '@/modules/balances/manual/use-manual-balance-data';
+import { arrayify } from '@/modules/common/data/array';
+import { uniqueStrings } from '@/modules/common/data/data';
+import { getErrorMessage } from '@/modules/common/logging/error-handling';
 import { useNotifications } from '@/modules/notifications/use-notifications';
-import { arrayify } from '@/utils/array';
-import { uniqueStrings } from '@/utils/data';
-import { getErrorMessage } from '@/utils/error-handling';
 
 interface UseIgnoredAssetOperationsReturn {
   fetchIgnoredAssets: () => Promise<void>;

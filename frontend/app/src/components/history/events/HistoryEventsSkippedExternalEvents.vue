@@ -6,9 +6,9 @@ import LocationDisplay from '@/components/history/LocationDisplay.vue';
 import SettingsItem from '@/components/settings/controls/SettingsItem.vue';
 import { useSkippedHistoryEventsApi } from '@/composables/api/history/events/skipped';
 import { useInterop } from '@/composables/electron-interop';
+import { getErrorMessage } from '@/modules/common/logging/error-handling';
+import { logger } from '@/modules/common/logging/logging';
 import { useMessageStore } from '@/store/message';
-import { getErrorMessage } from '@/utils/error-handling';
-import { logger } from '@/utils/logging';
 
 interface Location {
   location: string;

@@ -7,9 +7,9 @@ import EditBalancesSnapshotAssetPriceForm from '@/components/dashboard/edit-snap
 import EditBalancesSnapshotLocationSelector from '@/components/dashboard/edit-snapshot/EditBalancesSnapshotLocationSelector.vue';
 import BalanceTypeInput from '@/components/inputs/BalanceTypeInput.vue';
 import { useFormStateWatcher } from '@/composables/form';
-import { useRefPropVModel } from '@/utils/model';
-import { isNft } from '@/utils/nft';
-import { toMessages } from '@/utils/validation';
+import { isNft } from '@/modules/assets/nft-utils';
+import { useRefPropVModel } from '@/modules/common/validation/model';
+import { toMessages } from '@/modules/common/validation/validation';
 
 const stateUpdated = defineModel<boolean>('stateUpdated', { default: false, required: false });
 const model = defineModel<BalanceSnapshotPayloadAndLocation>({ required: true });

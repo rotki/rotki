@@ -14,12 +14,12 @@ import { DuplicateHandlingStatus, type HighlightType } from '@/composables/histo
 import { HIGHLIGHT_FETCH_DEBOUNCE, useHistoryEventNavigation } from '@/composables/history/events/use-history-event-navigation';
 import { useRefWithDebounce } from '@/composables/ref';
 import { usePaginationFilters } from '@/composables/use-pagination-filter';
-import { RouterLocationLabelsSchema } from '@/modules/table/route';
-import { TableId } from '@/modules/table/use-remember-table-sorting';
 import {
   isEvmEventType,
   isOnlineHistoryEventType,
-} from '@/utils/history/events';
+} from '@/modules/history/event-utils';
+import { RouterLocationLabelsSchema } from '@/modules/table/route';
+import { TableId } from '@/modules/table/use-remember-table-sorting';
 
 export { useHistoryEventNavigationConsumer } from '@/composables/history/events/use-history-event-navigation-consumer';
 

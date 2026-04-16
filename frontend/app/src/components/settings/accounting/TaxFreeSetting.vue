@@ -2,8 +2,8 @@
 import useVuelidate from '@vuelidate/core';
 import { helpers, minValue, requiredIf } from '@vuelidate/validators';
 import SettingsOption from '@/components/settings/controls/SettingsOption.vue';
+import { toMessages } from '@/modules/common/validation/validation';
 import { useAccountingSettingsStore } from '@/store/settings/accounting';
-import { toMessages } from '@/utils/validation';
 
 const taxFreeAfterPeriod = ref<string>('');
 const taxFreePeriod = ref(false);

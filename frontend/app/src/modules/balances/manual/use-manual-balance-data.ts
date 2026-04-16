@@ -1,8 +1,8 @@
 import type { ComputedRef } from 'vue';
 import type { BalanceByLocation, LocationBalance } from '@/modules/balances/types/balances';
 import { useBalancesStore } from '@/modules/balances/use-balances-store';
-import { sortDesc } from '@/utils/bignumbers';
-import { uniqueStrings } from '@/utils/data';
+import { sortDesc } from '@/modules/common/data/bignumbers';
+import { uniqueStrings } from '@/modules/common/data/data';
 
 interface UseManualBalanceDataReturn {
   manualBalanceByLocation: ComputedRef<LocationBalance[]>;

@@ -5,9 +5,9 @@ import useVuelidate from '@vuelidate/core';
 import { helpers, required } from '@vuelidate/validators';
 import BlockchainAccountSelector from '@/components/helper/BlockchainAccountSelector.vue';
 import { useLidoCsmApi } from '@/composables/api/staking/lido-csm';
+import { getAccountAddress } from '@/modules/accounts/account-utils';
+import { toMessages } from '@/modules/common/validation/validation';
 import { useMessageStore } from '@/store/message';
-import { getAccountAddress } from '@/utils/blockchain/accounts/utils';
-import { toMessages } from '@/utils/validation';
 
 defineOptions({
   name: 'LidoCsmAddDialog',

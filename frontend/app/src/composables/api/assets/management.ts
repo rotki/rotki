@@ -16,7 +16,7 @@ import {
   SOLANA_TOKEN,
   SupportedAssets,
 } from '@/modules/assets/types';
-import { mapCollectionResponse } from '@/utils/collection';
+import { mapCollectionResponse } from '@/modules/common/data/collection-utils';
 
 interface UseAssetManagementApiReturn {
   queryAllAssets: (payload: MaybeRef<AssetRequestPayload>) => Promise<Collection<SupportedAsset>>;

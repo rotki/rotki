@@ -6,11 +6,11 @@ import { helpers, required } from '@vuelidate/validators';
 import AmountInput from '@/components/inputs/AmountInput.vue';
 import { FiatDisplay } from '@/modules/amount-display/components';
 import { CURRENCY_USD } from '@/modules/amount-display/currencies';
+import { isNft } from '@/modules/assets/nft-utils';
+import { bigNumberSum } from '@/modules/common/data/calculation';
+import { toMessages } from '@/modules/common/validation/validation';
 import { useHistoricPriceCache } from '@/modules/prices/use-historic-price-cache';
 import { useGeneralSettingsStore } from '@/store/settings/general';
-import { bigNumberSum } from '@/utils/calculation';
-import { isNft } from '@/utils/nft';
-import { toMessages } from '@/utils/validation';
 
 const modelValue = defineModel<LocationDataSnapshot[]>({ required: true });
 

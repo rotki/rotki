@@ -1,5 +1,5 @@
 import { startPromise } from '@shared/utils';
-import { logger } from '@/utils/logging';
+import { logger } from '@/modules/common/logging/logging';
 
 interface WaitForConditionOptions {
   timeout?: number;

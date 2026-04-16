@@ -1,6 +1,6 @@
+import { millisecondsToSeconds } from '@/modules/common/data/date';
 import { type HistoryEventsQueryData, HistoryEventsQueryStatus } from '@/modules/messaging/types';
 import { createQueryStatusState } from '@/store/history/query-status/index';
-import { millisecondsToSeconds } from '@/utils/date';
 
 export const useEventsQueryStatusStore = defineStore('history/events-query-status', () => {
   const createKey = ({ location, name }: Pick<HistoryEventsQueryData, 'location' | 'name'>): string => location + name;

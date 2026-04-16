@@ -2,9 +2,9 @@ import type { BigNumber } from '@rotki/common';
 import type { MaybeRef } from 'vue';
 import type { ManualBalanceRequestPayload, ManualBalanceWithPrice } from '@/modules/balances/types/manual-balances';
 import type { Collection } from '@/modules/common/collection';
+import { sortAndFilterManualBalance } from '@/modules/balances/manual-balances';
 import { useBalancesStore } from '@/modules/balances/use-balances-store';
 import { usePriceUtils } from '@/modules/prices/use-price-utils';
-import { sortAndFilterManualBalance } from '@/utils/balances/manual/manual-balances';
 
 interface UseManualBalancePaginationReturn {
   fetchBalances: (payload: MaybeRef<ManualBalanceRequestPayload>) => Promise<Collection<ManualBalanceWithPrice>>;

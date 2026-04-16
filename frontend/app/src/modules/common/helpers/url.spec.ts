@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { getDomain } from '@/utils/url';
+import { getDomain } from '@/modules/common/helpers/url';
 
 describe('url-utils', () => {
   it('should handle default case', () => {

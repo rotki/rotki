@@ -8,10 +8,10 @@ import type {
 import type { Collection } from '@/modules/common/collection';
 import { useAddressesNamesApi } from '@/composables/api/blockchain/addresses-names';
 import { useAddressNameResolution } from '@/modules/address-names/use-address-name-resolution';
+import { defaultCollectionState } from '@/modules/common/data/collection-utils';
+import { getErrorMessage } from '@/modules/common/logging/error-handling';
+import { logger } from '@/modules/common/logging/logging';
 import { useNotifications } from '@/modules/notifications/use-notifications';
-import { defaultCollectionState } from '@/utils/collection';
-import { getErrorMessage } from '@/utils/error-handling';
-import { logger } from '@/utils/logging';
 
 interface UseAddressBookOperationsReturn {
   addAddressBook: (location: AddressBookLocation, entries: AddressBookEntries, updateExisting?: boolean) => Promise<boolean>;

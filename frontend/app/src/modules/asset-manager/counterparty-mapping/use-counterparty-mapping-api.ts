@@ -8,7 +8,7 @@ import {
   type CounterpartyMappingDeletePayload,
   type CounterpartyMappingRequestPayload,
 } from '@/modules/asset-manager/counterparty-mapping/schema';
-import { mapCollectionResponse } from '@/utils/collection';
+import { mapCollectionResponse } from '@/modules/common/data/collection-utils';
 
 interface UseCounterpartyMappingApiReturn {
   fetchAllCounterpartyMapping: (payload: MaybeRef<CounterpartyMappingRequestPayload>) => Promise<Collection<CounterpartyMapping>>;

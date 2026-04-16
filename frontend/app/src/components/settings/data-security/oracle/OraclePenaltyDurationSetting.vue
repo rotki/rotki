@@ -4,8 +4,8 @@ import { helpers, minValue, required } from '@vuelidate/validators';
 import SettingsOption from '@/components/settings/controls/SettingsOption.vue';
 import { SettingsHighlightIds } from '@/composables/settings/types';
 import { useValidation } from '@/composables/validation';
+import { toMessages } from '@/modules/common/validation/validation';
 import { useGeneralSettingsStore } from '@/store/settings/general';
-import { toMessages } from '@/utils/validation';
 
 const oraclePenaltyDuration = ref<string>('0');
 

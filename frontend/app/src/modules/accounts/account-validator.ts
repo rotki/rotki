@@ -4,9 +4,9 @@ import type {
 } from '@/modules/accounts/blockchain-accounts';
 import type { Collection } from '@/modules/common/collection';
 import { camelCase } from 'es-toolkit';
-import { sum } from '@/utils/balances';
-import { includes, isFilterEnabled, sortBy } from '@/utils/blockchain/accounts/common';
-import { bigNumberSum } from '@/utils/calculation';
+import { includes, isFilterEnabled, sortBy } from '@/modules/accounts/account-common';
+import { bigNumberSum } from '@/modules/common/data/calculation';
+import { sum } from '@/modules/common/display/balances';
 
 function filterValidator(
   validator: EthereumValidator,

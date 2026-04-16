@@ -9,13 +9,13 @@ import AssetSelect from '@/components/inputs/AssetSelect.vue';
 import CounterpartyInput from '@/components/inputs/CounterpartyInput.vue';
 import DateTimePicker from '@/components/inputs/DateTimePicker.vue';
 import { useSupportedChains } from '@/composables/info/chains';
+import { arrayify } from '@/modules/common/data/array';
 import {
   type HistoricalBalanceSource,
   HistoricalBalanceSource as Source,
 } from '@/modules/history/balances/types';
 import { useHistoryDataFetching } from '@/modules/history/use-history-data-fetching';
 import { useHistoryStore } from '@/store/history';
-import { arrayify } from '@/utils/array';
 
 const timestamp = defineModel<number>('timestamp', { required: true });
 const selectedAsset = defineModel<string>('selectedAsset');

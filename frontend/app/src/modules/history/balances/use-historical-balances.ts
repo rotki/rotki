@@ -14,6 +14,7 @@ import { displayDateFormatter } from '@/data/date-formatter';
 import { ApiValidationError, type ValidationErrors } from '@/modules/api/types/errors';
 import { useAssetsStore } from '@/modules/assets/use-assets-store';
 import { useCollectionInfo } from '@/modules/assets/use-collection-info';
+import { getErrorMessage } from '@/modules/common/logging/error-handling';
 import { useHistoricalBalancesStore } from '@/modules/history/balances/store';
 import {
   type HistoricalBalanceSource,
@@ -25,7 +26,6 @@ import { useHistoricPriceCache } from '@/modules/prices/use-historic-price-cache
 import { TaskType } from '@/modules/tasks/task-type';
 import { isActionableFailure, useTaskHandler } from '@/modules/tasks/use-task-handler';
 import { useGeneralSettingsStore } from '@/store/settings/general';
-import { getErrorMessage } from '@/utils/error-handling';
 
 interface UseHistoricalBalancesReturn {
   balances: ComputedRef<AssetBalanceWithPrice[]>;

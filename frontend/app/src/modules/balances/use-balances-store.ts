@@ -6,7 +6,7 @@ import type { ManualBalanceWithValue } from '@/modules/balances/types/manual-bal
 import type { AssetPrices } from '@/modules/prices/price-types';
 import { type BigNumber, Zero } from '@rotki/common';
 import { camelCase } from 'es-toolkit';
-import { updateBlockchainAssetBalances, updateExchangeBalancesPrices, updateManualBalancePrices } from '@/utils/prices';
+import { updateBlockchainAssetBalances, updateExchangeBalancesPrices, updateManualBalancePrices } from '@/modules/prices/price-utils';
 
 export const useBalancesStore = defineStore('balances', () => {
   const manualBalances = shallowRef<ManualBalanceWithValue[]>([]);

@@ -9,9 +9,9 @@ import DateTimePicker from '@/components/inputs/DateTimePicker.vue';
 import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
 import { useFormStateWatcher } from '@/composables/form';
 import { ValueDisplay } from '@/modules/amount-display/components';
-import { bigNumberifyFromRef } from '@/utils/bignumbers';
-import { useRefPropVModel } from '@/utils/model';
-import { toMessages } from '@/utils/validation';
+import { bigNumberifyFromRef } from '@/modules/common/data/bignumbers';
+import { useRefPropVModel } from '@/modules/common/validation/model';
+import { toMessages } from '@/modules/common/validation/validation';
 
 const modelValue = defineModel<HistoricalPriceFormPayload>({ required: true });
 const errors = defineModel<ValidationErrors>('errorMessages', { required: true });

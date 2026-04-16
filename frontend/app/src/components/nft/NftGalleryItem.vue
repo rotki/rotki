@@ -6,11 +6,11 @@ import AppImage from '@/components/common/AppImage.vue';
 import ExternalLink from '@/components/helper/ExternalLink.vue';
 import { useNftImage } from '@/composables/nft-image';
 import { AssetAmountDisplay, FiatDisplay } from '@/modules/amount-display/components';
+import { uniqueStrings } from '@/modules/common/data/data';
+import { getDomain } from '@/modules/common/helpers/url';
 import { useSettingsOperations } from '@/modules/settings/use-settings-operations';
 import { useConfirmStore } from '@/store/confirm';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
-import { uniqueStrings } from '@/utils/data';
-import { getDomain } from '@/utils/url';
 
 const { item } = defineProps<{
   item: GalleryNft;

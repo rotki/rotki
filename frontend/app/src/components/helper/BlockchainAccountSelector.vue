@@ -4,12 +4,12 @@ import { type Account, Blockchain, getTextToken } from '@rotki/common';
 import { omit, uniqBy } from 'es-toolkit';
 import AccountDisplay from '@/components/display/AccountDisplay.vue';
 import TagDisplay from '@/components/tags/TagDisplay.vue';
+import { hasAccountAddress } from '@/modules/accounts/account-helpers';
+import { getAccountAddress, getAccountId } from '@/modules/accounts/account-utils';
+import { createAccount } from '@/modules/accounts/create-account';
 import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
 import { useAddressNameResolution } from '@/modules/address-names/use-address-name-resolution';
-import { getNonRootAttrs, getRootAttrs } from '@/utils/attrs';
-import { hasAccountAddress } from '@/utils/blockchain/accounts';
-import { createAccount } from '@/utils/blockchain/accounts/create';
-import { getAccountAddress, getAccountId } from '@/utils/blockchain/accounts/utils';
+import { getNonRootAttrs, getRootAttrs } from '@/modules/common/helpers/attrs';
 
 type AccountWithAddressData = BlockchainAccount<AddressData>;
 

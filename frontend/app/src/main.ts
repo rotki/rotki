@@ -4,14 +4,14 @@ import { createPinia } from 'pinia';
 import App from '@/App.vue';
 import { useItemsPerPage } from '@/composables/session/use-items-per-page';
 import { i18n } from '@/i18n';
+import { setupFormatter } from '@/modules/amount-display/setup-formatter';
+import { setupDayjs } from '@/modules/common/data/date';
+import { attemptPolyfillResizeObserver } from '@/modules/common/helpers/e2e';
 import { registerDevtools } from '@/plugins/devtools';
 import { createRuiPlugin } from '@/plugins/rui';
 import { router } from '@/router';
 import { StoreStatePersistsPlugin } from '@/store/debug';
 import { StoreResetPlugin, StoreTrackPlugin } from '@/store/plugins';
-import { setupDayjs } from '@/utils/date';
-import { attemptPolyfillResizeObserver } from '@/utils/e2e';
-import { setupFormatter } from '@/utils/setup-formatter';
 
 import './main.css';
 import 'roboto-fontface/css/roboto/roboto-fontface.css';

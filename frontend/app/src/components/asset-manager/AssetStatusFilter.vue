@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import TableStatusFilter from '@/components/helper/TableStatusFilter.vue';
 import { IgnoredAssetHandlingType, type IgnoredAssetsHandlingType } from '@/modules/assets/types';
-import { useRefPropVModel } from '@/utils/model';
+import { useRefPropVModel } from '@/modules/common/validation/model';
 
 interface Model {
   onlyShowOwned: boolean;

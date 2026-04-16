@@ -5,8 +5,8 @@ import { consistOfNumbers } from '@rotki/common';
 import useVuelidate from '@vuelidate/core';
 import { helpers, requiredUnless } from '@vuelidate/validators';
 import { isEmpty } from 'es-toolkit/compat';
-import { refOptional, useRefPropVModel } from '@/utils/model';
-import { toMessages } from '@/utils/validation';
+import { refOptional, useRefPropVModel } from '@/modules/common/validation/model';
+import { toMessages } from '@/modules/common/validation/validation';
 
 const modelValue = defineModel<Eth2Validator>('validator', { required: true });
 

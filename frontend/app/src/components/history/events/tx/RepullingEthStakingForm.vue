@@ -9,11 +9,11 @@ import AccountDisplay from '@/components/display/AccountDisplay.vue';
 import ValidatorFilterInput from '@/components/helper/filter/ValidatorFilterInput.vue';
 import DateTimeRangePicker from '@/components/inputs/DateTimeRangePicker.vue';
 import { useFormStateWatcher } from '@/composables/form';
+import { isValidatorAccount } from '@/modules/accounts/account-utils';
 import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
+import { toMessages } from '@/modules/common/validation/validation';
 import { OnlineHistoryEventsQueryType } from '@/modules/history/events/schemas';
 import { useBlockchainValidatorsStore } from '@/store/blockchain/validators';
-import { isValidatorAccount } from '@/utils/blockchain/accounts/utils';
-import { toMessages } from '@/utils/validation';
 
 type FilterMode = 'addresses' | 'validator_indices';
 

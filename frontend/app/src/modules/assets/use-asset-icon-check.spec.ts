@@ -12,7 +12,7 @@ vi.mock('@shared/utils', () => ({
   wait: vi.fn(async (): Promise<void> => Promise.resolve()),
 }));
 
-vi.mock('@/utils/logging', () => ({
+vi.mock('@/modules/common/logging/logging', () => ({
   logger: {
     debug: vi.fn(),
     error: vi.fn(),

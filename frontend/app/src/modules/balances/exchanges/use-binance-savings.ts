@@ -7,15 +7,15 @@ import type {
 import type { TaskMeta } from '@/modules/tasks/types';
 import { useExchangeApi } from '@/composables/api/balances/exchanges';
 import { useStatusUpdater } from '@/composables/status';
+import { mapCollectionResponse } from '@/modules/common/data/collection-utils';
+import { uniqueStrings } from '@/modules/common/data/data';
+import { logger } from '@/modules/common/logging/logging';
 import { Section, Status } from '@/modules/common/status';
 import { useNotifications } from '@/modules/notifications/use-notifications';
 import { TaskType } from '@/modules/tasks/task-type';
 import { isActionableFailure, useTaskHandler } from '@/modules/tasks/use-task-handler';
 import { useTaskStore } from '@/modules/tasks/use-task-store';
 import { useSessionSettingsStore } from '@/store/settings/session';
-import { mapCollectionResponse } from '@/utils/collection';
-import { uniqueStrings } from '@/utils/data';
-import { logger } from '@/utils/logging';
 
 interface UseBinanceSavingsReturn {
   fetchExchangeSavings: (payload: MaybeRef<ExchangeSavingsRequestPayload>) => Promise<ExchangeSavingsCollection>;

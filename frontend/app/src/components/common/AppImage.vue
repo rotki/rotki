@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { toRem } from '@/utils/data';
-import { getPublicPlaceholderImagePath } from '@/utils/file';
+import { toRem } from '@/modules/common/data/data';
+import { getPublicPlaceholderImagePath } from '@/modules/common/file/file';
 
 const {
   alt,

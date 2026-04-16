@@ -2,8 +2,8 @@ import type { ActionStatus } from '@/modules/common/action';
 import type { PremiumCredentialsPayload } from '@/modules/session/types';
 import { usePremiumCredentialsApi } from '@/composables/api/session/premium-credentials';
 import { ApiValidationError, type ValidationErrors } from '@/modules/api/types/errors';
+import { getErrorMessage } from '@/modules/common/logging/error-handling';
 import { usePremiumStore } from '@/store/session/premium';
-import { getErrorMessage } from '@/utils/error-handling';
 
 interface UsePremiumOperationsReturn {
   deletePremium: () => Promise<ActionStatus>;

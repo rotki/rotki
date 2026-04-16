@@ -6,11 +6,11 @@ import DateDisplay from '@/components/display/DateDisplay.vue';
 import { useSnapshotApi } from '@/composables/api/settings/snapshot-api';
 import { useInterop } from '@/composables/electron-interop';
 import { FiatDisplay } from '@/modules/amount-display/components';
+import { downloadFileByBlob } from '@/modules/common/file/download';
+import { getErrorMessage } from '@/modules/common/logging/error-handling';
 import { useStatisticsDataFetching } from '@/modules/statistics/use-statistics-data-fetching';
 import { useConfirmStore } from '@/store/confirm';
 import { useMessageStore } from '@/store/message';
-import { downloadFileByBlob } from '@/utils/download';
-import { getErrorMessage } from '@/utils/error-handling';
 
 const display = defineModel<boolean>({ default: false, required: true });
 

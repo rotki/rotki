@@ -2,8 +2,8 @@ import type { MaybeRef } from 'vue';
 import type { InternalTxConflict, InternalTxConflictsCountResponse, InternalTxConflictsRequestPayload } from './types';
 import type { Collection, CollectionResponse } from '@/modules/common/collection';
 import { api } from '@/modules/api/rotki-api';
-import { mapCollectionResponse } from '@/utils/collection';
-import { nonEmptyProperties } from '@/utils/data';
+import { mapCollectionResponse } from '@/modules/common/data/collection-utils';
+import { nonEmptyProperties } from '@/modules/common/data/data';
 
 interface UseInternalTxConflictsApiReturn {
   fetchInternalTxConflicts: (payload: MaybeRef<InternalTxConflictsRequestPayload>) => Promise<Collection<InternalTxConflict>>;

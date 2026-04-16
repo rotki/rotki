@@ -1,7 +1,7 @@
 import type { Collection } from '@/modules/common/collection';
 import type { EntryMeta, EntryWithMeta } from '@/modules/history/meta';
 import { isValidEthAddress } from '@rotki/common';
-import { uniqueStrings } from '@/utils/data';
+import { uniqueStrings } from '@/modules/common/data/data';
 
 export function mapCollectionEntriesWithMeta<T>(collection: Collection<EntryWithMeta<T>>): Collection<T & EntryMeta> {
   const entries = collection.data.map(data => transformEntryWithMeta<T>(data));

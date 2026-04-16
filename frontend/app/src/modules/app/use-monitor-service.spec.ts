@@ -64,7 +64,7 @@ vi.mock('@/modules/app/use-websocket-connection', () => ({
   })),
 }));
 
-vi.mock('@/utils/logging', () => ({
+vi.mock('@/modules/common/logging/logging', () => ({
   logger: {
     debug: vi.fn(),
     error: vi.fn(),

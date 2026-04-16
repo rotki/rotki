@@ -1,5 +1,5 @@
 import { reactive } from 'vue';
-import { logger } from '@/utils/logging';
+import { logger } from '@/modules/common/logging/logging';
 
 interface ResourceState {
   isSetupInProgress: boolean;

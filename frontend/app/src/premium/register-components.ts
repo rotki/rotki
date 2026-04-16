@@ -53,7 +53,7 @@ import {
   ValueDisplay,
 } from '@/modules/amount-display/components';
 import HashLink from '@/modules/common/links/HashLink.vue';
-import { logger } from '@/utils/logging';
+import { logger } from '@/modules/common/logging/logging';
 
 function ruiRegister(app: App): void {
   app.component('RuiAlert', RuiAlert);

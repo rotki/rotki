@@ -2,11 +2,11 @@ import { type ActionResult, assert } from '@rotki/common';
 import dayjs from 'dayjs';
 import { useTaskApi } from '@/composables/api/task';
 import { isTimeoutError } from '@/modules/api/with-retry';
+import { logger } from '@/modules/common/logging/logging';
 import { TaskType } from '@/modules/tasks/task-type';
 import { type Task, type TaskMeta, TaskNotFoundError } from '@/modules/tasks/types';
 import { useTaskHandler } from '@/modules/tasks/use-task-handler';
 import { useTaskStore } from '@/modules/tasks/use-task-store';
-import { logger } from '@/utils/logging';
 
 const UNKNOWN_TASK_THRESHOLD_SECONDS = 30;
 const INITIAL_BACKOFF_MS = 1000;

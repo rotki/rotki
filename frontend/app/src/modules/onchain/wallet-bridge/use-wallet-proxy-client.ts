@@ -9,8 +9,8 @@ import {
 } from '@shared/wallet-bridge-types';
 import { get, isDefined, set } from '@vueuse/core';
 import { ref, type Ref } from 'vue';
+import { logger } from '@/modules/common/logging/logging';
 import { useBridgeMessageHandlers } from '@/modules/onchain/wallet-bridge/use-bridge-message-handlers';
-import { logger } from '@/utils/logging';
 import { CLIENT_CONFIG } from './bridge-config';
 
 interface WalletProxyClientComposable {

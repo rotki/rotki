@@ -5,8 +5,8 @@ import useVuelidate from '@vuelidate/core';
 import { helpers, required } from '@vuelidate/validators';
 import TagIcon from '@/components/tags/TagIcon.vue';
 import { useFormStateWatcher } from '@/composables/form';
-import { useRefPropVModel } from '@/utils/model';
-import { toMessages } from '@/utils/validation';
+import { useRefPropVModel } from '@/modules/common/validation/model';
+import { toMessages } from '@/modules/common/validation/validation';
 
 const modelValue = defineModel<Tag>({ required: true });
 

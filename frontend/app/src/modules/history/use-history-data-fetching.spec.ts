@@ -30,13 +30,13 @@ vi.mock('@/modules/notifications/use-notifications', () => ({
   })),
 }));
 
-vi.mock('@/utils/logging', () => ({
+vi.mock('@/modules/common/logging/logging', () => ({
   logger: {
     error: (...args: unknown[]): void => { mockLoggerError(...args); },
   },
 }));
 
-vi.mock('@/utils/error-handling', () => ({
+vi.mock('@/modules/common/logging/error-handling', () => ({
   getErrorMessage: (e: unknown): string => mockGetErrorMessage(e),
 }));
 

@@ -8,6 +8,7 @@ import {
 import { useLiquityApi } from '@/composables/api/defi/liquity';
 import { usePremium } from '@/composables/premium';
 import { useStatusUpdater } from '@/composables/status';
+import { logger } from '@/modules/common/logging/logging';
 import { Module } from '@/modules/common/modules';
 import { Section, Status } from '@/modules/common/status';
 import { useNotifications } from '@/modules/notifications/use-notifications';
@@ -16,7 +17,6 @@ import { isActionableFailure, useTaskHandler } from '@/modules/tasks/use-task-ha
 import { useTaskStore } from '@/modules/tasks/use-task-store';
 import { useLiquityStore } from '@/store/defi/liquity';
 import { useGeneralSettingsStore } from '@/store/settings/general';
-import { logger } from '@/utils/logging';
 
 interface UseLiquityDataFetchingReturn {
   fetchBalances: (refresh?: boolean) => Promise<void>;

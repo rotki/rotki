@@ -3,8 +3,8 @@ import type { AddressData, BlockchainAccount } from '@/modules/accounts/blockcha
 import { Blockchain, type Eth2ValidatorEntry, type EthStakingFilter } from '@rotki/common';
 import BlockchainAccountSelector from '@/components/helper/BlockchainAccountSelector.vue';
 import ValidatorFilterInput from '@/components/helper/filter/ValidatorFilterInput.vue';
+import { getAccountAddress } from '@/modules/accounts/account-utils';
 import { useBlockchainValidatorsStore } from '@/store/blockchain/validators';
-import { getAccountAddress } from '@/utils/blockchain/accounts/utils';
 
 const modelValue = defineModel<EthStakingFilter>({ required: true });
 

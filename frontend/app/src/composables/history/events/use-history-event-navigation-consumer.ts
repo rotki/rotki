@@ -3,9 +3,9 @@ import type { ComputedRef, Ref } from 'vue';
 import type { HistoryEventRequestPayload } from '@/modules/history/events/request-types';
 import { useHistoryEventsApi } from '@/composables/api/history/events';
 import { HIGHLIGHT_LOADING_START_TIMEOUT, HighlightTargetTypes, type HistoryEventNavigationRequest, useHistoryEventNavigation } from '@/composables/history/events/use-history-event-navigation';
+import { getErrorMessage } from '@/modules/common/logging/error-handling';
 import { useNotifications } from '@/modules/notifications/use-notifications';
 import { Routes } from '@/router/routes';
-import { getErrorMessage } from '@/utils/error-handling';
 
 const historyEventsPath = Routes.HISTORY_EVENTS.toString();
 

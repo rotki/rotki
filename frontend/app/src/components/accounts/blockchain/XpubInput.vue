@@ -7,9 +7,9 @@ import useVuelidate from '@vuelidate/core';
 import { helpers, required } from '@vuelidate/validators';
 import { createReusableTemplate } from '@vueuse/core';
 import { isEmpty } from 'es-toolkit/compat';
-import { trimOnPaste } from '@/utils/event';
-import { toMessages } from '@/utils/validation';
-import { type DetectionResult, detectXpubType, getKeyType, getPrefix, keyType, XpubPrefix, type XpubType } from '@/utils/xpub';
+import { type DetectionResult, detectXpubType, getKeyType, getPrefix, keyType, XpubPrefix, type XpubType } from '@/modules/accounts/xpub';
+import { trimOnPaste } from '@/modules/common/helpers/event';
+import { toMessages } from '@/modules/common/validation/validation';
 
 const errors = defineModel<ValidationErrors>('errorMessages', { required: true });
 

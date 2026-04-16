@@ -1,10 +1,10 @@
 import { backoff } from '@shared/utils';
 import { useSessionApi } from '@/composables/api/session';
 import { camelCaseTransformer } from '@/modules/api/transformers';
+import { uniqueStrings } from '@/modules/common/data/data';
+import { logger } from '@/modules/common/logging/logging';
 import { useNotificationDispatcher } from '@/modules/notifications/use-notification-dispatcher';
 import { useNotificationsStore } from '@/store/notifications';
-import { uniqueStrings } from '@/utils/data';
-import { logger } from '@/utils/logging';
 import { createHandlerRegistry } from './handler-registry';
 import { WebsocketMessage } from './messages';
 import { MESSAGE_WARNING, SocketMessageType } from './types/base';

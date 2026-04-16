@@ -1,8 +1,8 @@
 import type { MaybeRef } from 'vue';
 import type { Collection } from '@/modules/common/collection';
 import { api } from '@/modules/api/rotki-api';
+import { mapCollectionResponse } from '@/modules/common/data/collection-utils';
 import { type UserNote, UserNoteCollectionResponse, type UserNotesRequestPayload } from '@/modules/common/notes';
-import { mapCollectionResponse } from '@/utils/collection';
 
 interface UseUserNotesApiReturn {
   fetchUserNotes: (filter: MaybeRef<UserNotesRequestPayload>) => Promise<Collection<UserNote>>;

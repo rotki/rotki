@@ -11,11 +11,11 @@ import { useInterop } from '@/composables/electron-interop';
 import { usePremium } from '@/composables/premium';
 import { useLogout } from '@/modules/account/use-logout';
 import { useBalanceFetching } from '@/modules/balances/use-balance-fetching';
+import { getErrorMessage } from '@/modules/common/logging/error-handling';
 import { useStatisticsDataFetching } from '@/modules/statistics/use-statistics-data-fetching';
 import { useMessageStore } from '@/store/message';
 import { useSessionMetadataStore } from '@/store/session/metadata';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
-import { getErrorMessage } from '@/utils/error-handling';
 
 const ignoreErrors = ref<boolean>(false);
 const visible = ref<boolean>(false);

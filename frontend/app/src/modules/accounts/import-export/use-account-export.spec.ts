@@ -1,9 +1,9 @@
 import { Blockchain } from '@rotki/common';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { createAccount, createValidatorAccount } from '@/modules/accounts/create-account';
 import { useAccountExport } from '@/modules/accounts/import-export/use-account-export';
 import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
-import { createAccount, createValidatorAccount } from '@/utils/blockchain/accounts/create';
-import { downloadFileByTextContent } from '@/utils/download';
+import { downloadFileByTextContent } from '@/modules/common/file/download';
 
 const VALIDATOR_1 = '0xa685b19738ac8d7ee301f434f77fdbca50f7a2b8d287f4ab6f75cae251aa821576262b79ae9d58d9b458ba748968dfda';
 const VALIDATOR_2 = '0x8e31e6d9771094182a70b75882f7d186986d726f7b4da95f542d18a1cb7fa38cd31b450a9fc62867d81dfc9ad9cbd641';
@@ -11,7 +11,7 @@ const VALIDATOR_2 = '0x8e31e6d9771094182a70b75882f7d186986d726f7b4da95f542d18a1c
 const INDEX_1 = 507258;
 const INDEX_2 = 512123;
 
-vi.mock('@/utils/download', () => ({
+vi.mock('@/modules/common/file/download', () => ({
   downloadFileByTextContent: vi.fn(),
 }));
 

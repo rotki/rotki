@@ -2,8 +2,8 @@ import type { Ref } from 'vue';
 import type { EIP1193Provider } from '@/types';
 import { set } from '@vueuse/shared';
 import { getAddress } from 'ethers';
-import { getErrorMessage } from '@/utils/error-handling';
-import { logger } from '@/utils/logging';
+import { getErrorMessage } from '@/modules/common/logging/error-handling';
+import { logger } from '@/modules/common/logging/logging';
 
 interface UseWalletConnectionReturn {
   cleanupProviderListeners: () => void;

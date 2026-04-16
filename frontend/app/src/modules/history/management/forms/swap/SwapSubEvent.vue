@@ -4,10 +4,10 @@ import type { ActionStatus } from '@/modules/common/action';
 import type { SwapSubEventModel } from '@/modules/history/events/schemas';
 import useVuelidate from '@vuelidate/core';
 import { isEqual, pick } from 'es-toolkit';
+import { toMessages } from '@/modules/common/validation/validation';
 import EventLocationLabel from '@/modules/history/management/forms/common/EventLocationLabel.vue';
 import HistoryEventAssetPriceForm from '@/modules/history/management/forms/HistoryEventAssetPriceForm.vue';
 import { useEventFormValidation } from '@/modules/history/management/forms/use-event-form-validation';
-import { toMessages } from '@/utils/validation';
 
 const modelValue = defineModel<SwapSubEventModel>({ required: true });
 

@@ -4,8 +4,8 @@ import { assert } from '@rotki/common';
 import { createSharedComposable } from '@vueuse/core';
 import { BrowserProvider, getAddress } from 'ethers';
 import { useInterop } from '@/composables/electron-interop';
-import { getErrorMessage } from '@/utils/error-handling';
-import { logger } from '@/utils/logging';
+import { getErrorMessage } from '@/modules/common/logging/error-handling';
+import { logger } from '@/modules/common/logging/logging';
 import { useUnifiedProviders } from '../wallet-providers/use-unified-providers';
 import { useWalletProxy } from './use-wallet-proxy';
 

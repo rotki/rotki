@@ -9,10 +9,10 @@ import dayjs, { type Dayjs } from 'dayjs';
 import { isEqual } from 'es-toolkit';
 import { useCalendarApi } from '@/composables/history/calendar';
 import { usePaginationFilters } from '@/composables/use-pagination-filter';
+import { getAccountAddress } from '@/modules/accounts/account-utils';
 import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
 import { isBlockchain } from '@/modules/onchain/chains';
 import { RouterAccountsSchema } from '@/modules/table/route';
-import { getAccountAddress } from '@/utils/blockchain/accounts/utils';
 
 interface UseCalendarDataReturn {
   dateFormat: string;

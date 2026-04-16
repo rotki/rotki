@@ -11,12 +11,12 @@ import BlockchainAccountSelector from '@/components/helper/BlockchainAccountSele
 import CounterpartyInput from '@/components/inputs/CounterpartyInput.vue';
 import DateTimePicker from '@/components/inputs/DateTimePicker.vue';
 import { useFormStateWatcher } from '@/composables/form';
+import { hasAccountAddress } from '@/modules/accounts/account-helpers';
+import { getAccountAddress } from '@/modules/accounts/account-utils';
 import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
+import { refOptional, useRefPropVModel } from '@/modules/common/validation/model';
+import { toMessages } from '@/modules/common/validation/validation';
 import { isBlockchain } from '@/modules/onchain/chains';
-import { hasAccountAddress } from '@/utils/blockchain/accounts';
-import { getAccountAddress } from '@/utils/blockchain/accounts/utils';
-import { refOptional, useRefPropVModel } from '@/utils/model';
-import { toMessages } from '@/utils/validation';
 
 const modelValue = defineModel<CalendarEvent>({ required: true });
 const errors = defineModel<ValidationErrors>('errorMessages', { required: true });

@@ -1,12 +1,12 @@
 <script setup lang="ts">
 import DefiIcon from '@/components/defi/DefiIcon.vue';
+import { getPublicProtocolImagePath } from '@/modules/common/file/file';
 import {
   type PurgeableModule,
   PurgeableOnlyModule,
   SUPPORTED_MODULES,
   type SupportedModule,
 } from '@/modules/common/modules';
-import { getPublicProtocolImagePath } from '@/utils/file';
 
 type PurgeableModuleEntry = Omit<SupportedModule, 'identifier'> & { identifier: PurgeableModule };
 

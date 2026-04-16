@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useAddressesNamesApi } from '@/composables/api/blockchain/addresses-names';
 import { useAddressBookOperations } from '@/modules/address-names/use-address-book-operations';
 import { useAddressNameResolution } from '@/modules/address-names/use-address-name-resolution';
-import { defaultCollectionState } from '@/utils/collection';
+import { defaultCollectionState } from '@/modules/common/data/collection-utils';
 
 vi.mock('@/composables/api/blockchain/addresses-names', () => ({
   useAddressesNamesApi: vi.fn().mockReturnValue({

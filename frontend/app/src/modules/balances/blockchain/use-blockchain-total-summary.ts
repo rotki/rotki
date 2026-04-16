@@ -3,7 +3,7 @@ import type { ComputedRef } from 'vue';
 import type { BlockchainTotal } from '@/modules/onchain/blockchain-types';
 import { isEmpty } from 'es-toolkit/compat';
 import { useBalancesStore } from '@/modules/balances/use-balances-store';
-import { sortDesc } from '@/utils/bignumbers';
+import { sortDesc } from '@/modules/common/data/bignumbers';
 
 interface UseBlockchainTotalsSummaryReturn { blockchainTotals: ComputedRef<BlockchainTotal[]> }
 

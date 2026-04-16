@@ -3,8 +3,8 @@ import type { KrakenStakingDateFilter } from '@/modules/staking/staking-types';
 import type { MatchedKeyword, SearchMatcher } from '@/modules/table/filtering';
 import { assert } from '@rotki/common';
 import TableFilter from '@/components/table-filter/TableFilter.vue';
+import { dateDeserializer, dateRangeValidator, dateSerializer, getDateInputISOFormat } from '@/modules/common/data/date';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
-import { dateDeserializer, dateRangeValidator, dateSerializer, getDateInputISOFormat } from '@/utils/date';
 
 const modelValue = defineModel<KrakenStakingDateFilter>({ required: true });
 

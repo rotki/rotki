@@ -13,8 +13,8 @@ import { useHistoryEvents } from '@/composables/history/events';
 import { useHistoryEventMappings } from '@/composables/history/events/mapping';
 import { useHistoryEventCounterpartyMappings } from '@/composables/history/events/mapping/counterparty';
 import { useLocations } from '@/composables/locations';
+import { setupDayjs } from '@/modules/common/data/date';
 import EvmEventForm from '@/modules/history/management/forms/EvmEventForm.vue';
-import { setupDayjs } from '@/utils/date';
 
 vi.mock('json-editor-vue', () => ({
   template: '<input />',

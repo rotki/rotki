@@ -5,7 +5,7 @@ import { type TxQueryStatusData, useTxQueryStatusStore } from './tx-query-status
 
 const mockMillisecondsToSeconds = vi.hoisted(() => vi.fn().mockReturnValue(1000));
 
-vi.mock('@/utils/date', () => ({
+vi.mock('@/modules/common/data/date', () => ({
   millisecondsToSeconds: mockMillisecondsToSeconds,
 }));
 

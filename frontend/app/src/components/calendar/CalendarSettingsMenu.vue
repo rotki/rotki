@@ -10,10 +10,10 @@ import CardTitle from '@/components/typography/CardTitle.vue';
 import { useGoogleCalendarApi } from '@/composables/api/settings/google-calendar';
 import { useInterop } from '@/composables/electron-interop';
 import { useBackendMessages } from '@/modules/app/use-backend-messages';
+import { getErrorMessage } from '@/modules/common/logging/error-handling';
+import { logger } from '@/modules/common/logging/logging';
 import { useNotificationDispatcher } from '@/modules/notifications/use-notification-dispatcher';
 import { useGeneralSettingsStore } from '@/store/settings/general';
-import { getErrorMessage } from '@/utils/error-handling';
-import { logger } from '@/utils/logging';
 
 const { t } = useI18n({ useScope: 'global' });
 

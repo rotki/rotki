@@ -2,8 +2,8 @@ import type { EIP1193Provider, EIP6963ProviderInfo } from '@/types';
 import { wait } from '@shared/utils';
 import { createSharedComposable, get, set, useLocalStorage } from '@vueuse/core';
 import { computed, type ComputedRef, readonly, ref, type Ref } from 'vue';
-import { getErrorMessage } from '@/utils/error-handling';
-import { logger } from '@/utils/logging';
+import { getErrorMessage } from '@/modules/common/logging/error-handling';
+import { logger } from '@/modules/common/logging/logging';
 import { type EnhancedProviderDetail, getAllWalletProviders, type ProviderDetectionOptions } from './provider-detection';
 
 // Simplified provider preferences (removed manual source selection)

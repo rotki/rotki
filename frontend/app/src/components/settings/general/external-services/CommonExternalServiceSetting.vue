@@ -4,9 +4,9 @@ import { helpers, minValue, required } from '@vuelidate/validators';
 import SettingsOption from '@/components/settings/controls/SettingsOption.vue';
 import { useValidation } from '@/composables/validation';
 import { useMonitorService } from '@/modules/app/use-monitor-service';
+import { toMessages } from '@/modules/common/validation/validation';
 import SettingResetConfirmButton from '@/modules/settings/SettingResetConfirmButton.vue';
 import { useGeneralSettingsStore } from '@/store/settings/general';
-import { toMessages } from '@/utils/validation';
 
 const {
   defaultValue,

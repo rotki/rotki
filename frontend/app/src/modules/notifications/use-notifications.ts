@@ -3,7 +3,7 @@ import { useMessageStore } from '@/store/message';
 import { useNotificationsStore } from '@/store/notifications';
 import { useNotificationDispatcher } from './use-notification-dispatcher';
 
-export { getErrorMessage } from '@/utils/error-handling';
+export { getErrorMessage } from '@/modules/common/logging/error-handling';
 
 interface ToastOptions {
   readonly display?: boolean;

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { splitSearch } from '@/utils/search';
+import { splitSearch } from '@/modules/common/data/search';
 
 describe('search-utils', () => {
   it('should return correct result from splitSearch', () => {

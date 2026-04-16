@@ -2,10 +2,10 @@
 import type { Task, TaskMeta } from '@/modules/tasks/types';
 import { bigNumberify } from '@rotki/common';
 import dayjs from 'dayjs';
+import { calculatePercentage } from '@/modules/common/data/calculation';
 import { TaskType } from '@/modules/tasks/task-type';
 import { useHistoricCachePriceStore } from '@/store/prices/historic';
 import { useReportsStore } from '@/store/reports';
-import { calculatePercentage } from '@/utils/calculation';
 
 const { task } = defineProps<{ task: Task<TaskMeta> }>();
 const emit = defineEmits<{

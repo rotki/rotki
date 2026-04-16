@@ -7,9 +7,9 @@ import BlockchainRpcNodeForm from '@/components/settings/general/rpc/BlockchainR
 import { useEvmNodesApi } from '@/composables/api/settings/evm-nodes-api';
 import { useSupportedChains } from '@/composables/info/chains';
 import { ApiValidationError, type ValidationErrors } from '@/modules/api/types/errors';
+import { getErrorMessage } from '@/modules/common/logging/error-handling';
 import { isBlockchain } from '@/modules/onchain/chains';
 import { useMessageStore } from '@/store/message';
-import { getErrorMessage } from '@/utils/error-handling';
 
 const model = defineModel<BlockchainRpcNodeManageState | undefined>({ required: true });
 

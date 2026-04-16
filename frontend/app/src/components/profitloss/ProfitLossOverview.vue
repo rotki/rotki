@@ -2,7 +2,7 @@
 import type { ProfitLossOverviewItem, Report } from '@/modules/reports/report-types';
 import { pluralizeLastWord, toCapitalCase } from '@rotki/common';
 import { FiatDisplay } from '@/modules/amount-display/components';
-import { calculateTotalProfitLoss } from '@/utils/report';
+import { calculateTotalProfitLoss } from '@/modules/reports/report-utils';
 
 const {
   loading = false,

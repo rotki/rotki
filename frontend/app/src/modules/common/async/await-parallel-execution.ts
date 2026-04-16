@@ -7,7 +7,7 @@
  * @param fn Takes an item <T> and returns a void {@link Promise}. The function represents queued work.
  * @param parallelization The number of operations to run in parallel
  */
-import { LimitedParallelizationQueue } from '@/utils/limited-parallelization-queue';
+import { LimitedParallelizationQueue } from '@/modules/common/async/limited-parallelization-queue';
 
 export async function awaitParallelExecution<T>(
   items: T[],

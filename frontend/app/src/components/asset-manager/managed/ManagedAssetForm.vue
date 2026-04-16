@@ -23,8 +23,8 @@ import { useAssetManagementApi } from '@/composables/api/assets/management';
 import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
 import { useSupportedChains } from '@/composables/info/chains';
 import { CUSTOM_ASSET, EVM_TOKEN, SOLANA_TOKEN } from '@/modules/assets/types';
+import { refOptional, useRefPropVModel } from '@/modules/common/validation/model';
 import { evmTokenKindsData, solanaTokenKindsData } from '@/modules/onchain/chains';
-import { refOptional, useRefPropVModel } from '@/utils/model';
 
 const modelValue = defineModel<SupportedAsset>({ required: true });
 const errors = defineModel<ValidationErrors>('errorMessages', { required: true });

@@ -6,8 +6,8 @@ import { storeToRefs } from 'pinia';
 import AmountInput from '@/components/inputs/AmountInput.vue';
 import SettingsOption from '@/components/settings/controls/SettingsOption.vue';
 import { useValidation } from '@/composables/validation';
+import { toMessages } from '@/modules/common/validation/validation';
 import { useGeneralSettingsStore } from '@/store/settings/general';
-import { toMessages } from '@/utils/validation';
 
 defineProps<{
   disabled: boolean;

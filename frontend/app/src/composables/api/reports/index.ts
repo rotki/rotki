@@ -2,6 +2,8 @@ import type { ActionStatus } from '@/modules/common/action';
 import type { CollectionResponse } from '@/modules/common/collection';
 import { omit } from 'es-toolkit';
 import { api } from '@/modules/api/rotki-api';
+import { downloadFileByUrl } from '@/modules/common/file/download';
+import { getErrorMessage } from '@/modules/common/logging/error-handling';
 import {
   type ProfitLossEvent,
   ProfitLossEventsCollectionResponse,
@@ -14,8 +16,6 @@ import {
   Reports,
 } from '@/modules/reports/report-types';
 import { type PendingTask, PendingTaskSchema } from '@/modules/tasks/types';
-import { downloadFileByUrl } from '@/utils/download';
-import { getErrorMessage } from '@/utils/error-handling';
 
 interface UseReportsApi {
   generateReport: ({ end, start }: ProfitLossReportPeriod) => Promise<PendingTask>;

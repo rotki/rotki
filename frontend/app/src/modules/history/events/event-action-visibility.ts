@@ -1,9 +1,9 @@
 import type { HistoryEventEntry } from '@/modules/history/events/schemas';
+import { isAssetMovementEvent } from '@/modules/history/event-utils';
 import {
   isGroupEditableHistoryEvent,
   isSwapTypeEvent,
 } from '@/modules/history/management/forms/form-guards';
-import { isAssetMovementEvent } from '@/utils/history/events';
 
 export function hideEditAction(item: HistoryEventEntry, index: number): boolean {
   const isSwapSubEvent = isSwapTypeEvent(item.entryType) && index !== 0;

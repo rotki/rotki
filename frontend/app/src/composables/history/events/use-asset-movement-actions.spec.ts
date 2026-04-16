@@ -35,7 +35,7 @@ vi.mock('@/store/confirm', () => ({
   }),
 }));
 
-vi.mock('@/utils/history/events', () => ({
+vi.mock('@/modules/history/event-utils', () => ({
   getEventEntryFromCollection: <T>(events: T): T => events,
 }));
 

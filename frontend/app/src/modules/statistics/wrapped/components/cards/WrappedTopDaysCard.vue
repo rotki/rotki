@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { BigNumber } from '@rotki/common';
 import { ValueDisplay } from '@/modules/amount-display/components';
-import { sortDesc } from '@/utils/bignumbers';
+import { sortDesc } from '@/modules/common/data/bignumbers';
 import { useWrappedFormatters } from '../../composables/use-wrapped-formatters';
 import WrappedCard from '../WrappedCard.vue';
 

@@ -21,12 +21,12 @@ import type { Collection } from '@/modules/common/collection';
 import { type Balance, Zero } from '@rotki/common';
 import { camelCase, omit } from 'es-toolkit';
 import { isEmpty } from 'es-toolkit/compat';
-import { sum } from '@/utils/balances';
-import { includes, isFilterEnabled, sortBy } from '@/utils/blockchain/accounts/common';
-import { createAccount, createXpubAccount } from '@/utils/blockchain/accounts/create';
-import { getAccountAddress, getChain, getGroupId } from '@/utils/blockchain/accounts/utils';
-import { assetSum, balanceSum } from '@/utils/calculation';
-import { uniqueStrings } from '@/utils/data';
+import { includes, isFilterEnabled, sortBy } from '@/modules/accounts/account-common';
+import { getAccountAddress, getChain, getGroupId } from '@/modules/accounts/account-utils';
+import { createAccount, createXpubAccount } from '@/modules/accounts/create-account';
+import { assetSum, balanceSum } from '@/modules/common/data/calculation';
+import { uniqueStrings } from '@/modules/common/data/data';
+import { sum } from '@/modules/common/display/balances';
 
 interface AccountBalance {
   balance: Balance;

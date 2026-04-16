@@ -6,9 +6,9 @@ import SettingsOption from '@/components/settings/controls/SettingsOption.vue';
 import { useValidation } from '@/composables/validation';
 import { displayDateFormatter } from '@/data/date-formatter';
 import { Defaults } from '@/data/defaults';
+import { toMessages } from '@/modules/common/validation/validation';
 import SettingResetConfirmButton from '@/modules/settings/SettingResetConfirmButton.vue';
 import { useGeneralSettingsStore } from '@/store/settings/general';
-import { toMessages } from '@/utils/validation';
 
 const dateDisplayFormat = ref<string>('');
 const formatHelp = ref<boolean>(false);

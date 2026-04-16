@@ -2,7 +2,7 @@
 import type { AssetBalance, BigNumber } from '@rotki/common';
 import ValueAccuracyHint from '@/components/helper/hint/ValueAccuracyHint.vue';
 import { FiatDisplay } from '@/modules/amount-display/components';
-import { sum } from '@/utils/balances';
+import { sum } from '@/modules/common/display/balances';
 
 const { earned } = defineProps<{
   loading: boolean;

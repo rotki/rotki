@@ -12,10 +12,10 @@ import { usePaginationFilters } from '@/composables/use-pagination-filter';
 import { type AssetRequestPayload, EVM_TOKEN, type IgnoredAssetsHandlingType } from '@/modules/assets/types';
 import { useAssetInfoCache } from '@/modules/assets/use-asset-info-cache';
 import { useAssetsStore } from '@/modules/assets/use-assets-store';
+import { getErrorMessage } from '@/modules/common/logging/error-handling';
 import { useCommonTableProps } from '@/modules/table/use-common-table-props';
 import { useConfirmStore } from '@/store/confirm';
 import { useMessageStore } from '@/store/message';
-import { getErrorMessage } from '@/utils/error-handling';
 
 const { identifier = null, mainPage = false } = defineProps<{
   identifier?: string | null;

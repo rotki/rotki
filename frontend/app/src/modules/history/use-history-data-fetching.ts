@@ -1,9 +1,9 @@
 import { useHistoryApi } from '@/composables/api/history';
 import { type TransactionStatus, useHistoryEventsApi } from '@/composables/api/history/events';
+import { getErrorMessage } from '@/modules/common/logging/error-handling';
+import { logger } from '@/modules/common/logging/logging';
 import { useNotifications } from '@/modules/notifications/use-notifications';
 import { useHistoryStore } from '@/store/history';
-import { getErrorMessage } from '@/utils/error-handling';
-import { logger } from '@/utils/logging';
 
 interface UseHistoryDataFetchingReturn {
   fetchAssociatedLocations: () => Promise<void>;

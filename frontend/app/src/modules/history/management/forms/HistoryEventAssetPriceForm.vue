@@ -9,16 +9,16 @@ import AssetSelect from '@/components/inputs/AssetSelect.vue';
 import TwoFieldsAmountInput from '@/components/inputs/TwoFieldsAmountInput.vue';
 import { useAssetPricesApi } from '@/composables/api/assets/prices';
 import { ApiValidationError, type ValidationErrors } from '@/modules/api/types/errors';
+import { bigNumberifyFromRef } from '@/modules/common/data/bignumbers';
+import { millisecondsToSeconds } from '@/modules/common/data/date';
+import { getErrorMessage } from '@/modules/common/logging/error-handling';
+import { toMessages } from '@/modules/common/validation/validation';
 import ToggleLocationLink from '@/modules/history/management/forms/common/ToggleLocationLink.vue';
 import { useHistoricPriceCache } from '@/modules/prices/use-historic-price-cache';
 import { usePriceTaskManager } from '@/modules/prices/use-price-task-manager';
 import { TaskType } from '@/modules/tasks/task-type';
 import { useTaskStore } from '@/modules/tasks/use-task-store';
 import { useGeneralSettingsStore } from '@/store/settings/general';
-import { bigNumberifyFromRef } from '@/utils/bignumbers';
-import { millisecondsToSeconds } from '@/utils/date';
-import { getErrorMessage } from '@/utils/error-handling';
-import { toMessages } from '@/utils/validation';
 
 interface HistoryEventAssetPriceFormProps {
   timestamp: number;

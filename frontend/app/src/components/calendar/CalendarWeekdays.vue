@@ -1,6 +1,6 @@
 <script setup lang="ts">
+import { getDayNames } from '@/modules/common/data/date';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
-import { getDayNames } from '@/utils/date';
 
 const { language } = storeToRefs(useFrontendSettingsStore());
 

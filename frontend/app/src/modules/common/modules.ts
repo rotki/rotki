@@ -1,5 +1,5 @@
 import { z } from 'zod/v4';
-import { getPublicProtocolImagePath } from '@/utils/file';
+import { getPublicProtocolImagePath } from '@/modules/common/file/file';
 
 export enum Module {
   MAKERDAO_VAULTS = 'makerdao_vaults',

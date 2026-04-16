@@ -6,6 +6,7 @@ import { useBackendManagement } from '@/composables/backend';
 import { useAppNavigation } from '@/composables/navigation';
 import { usePremiumHelper } from '@/composables/premium';
 import { useLoggedUserIdentifier } from '@/composables/user/use-logged-user-identifier';
+import { lastLogin } from '@/modules/account/account-management';
 import { useLogin } from '@/modules/account/use-login';
 import { usePasswordConfirmation } from '@/modules/account/use-password-confirmation';
 import { useWebsocketConnection } from '@/modules/app/use-websocket-connection';
@@ -14,7 +15,6 @@ import { useWalletStore } from '@/modules/onchain/use-wallet-store';
 import { useSettingsOperations } from '@/modules/settings/use-settings-operations';
 import { useMainStore } from '@/store/main';
 import { useSessionAuthStore } from '@/store/session/auth';
-import { lastLogin } from '@/utils/account-management';
 
 interface UseAccountManagementReturn {
   loading: Readonly<Ref<boolean>>;

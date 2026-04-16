@@ -1,7 +1,7 @@
 import type { HistorySyncPayload } from '@/modules/sigil/types';
 import { useHistoryEventsApi } from '@/composables/api/history/events';
 import { usePremiumHelper } from '@/composables/premium';
-import { logger } from '@/utils/logging';
+import { logger } from '@/modules/common/logging/logging';
 
 export function useHistorySyncHandler(): () => Promise<HistorySyncPayload | undefined> {
   const { currentTier, premium } = usePremiumHelper();

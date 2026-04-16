@@ -3,7 +3,7 @@ import type { CalendarReminderTemporaryPayload } from '@/modules/history/calenda
 import useVuelidate from '@vuelidate/core';
 import { helpers, maxValue, minValue, required } from '@vuelidate/validators';
 import AmountInput from '@/components/inputs/AmountInput.vue';
-import { toMessages } from '@/utils/validation';
+import { toMessages } from '@/modules/common/validation/validation';
 
 const modelValue = defineModel<CalendarReminderTemporaryPayload>({ required: true });
 

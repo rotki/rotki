@@ -15,8 +15,8 @@ import {
 } from '@rotki/common';
 import { omit } from 'es-toolkit';
 import { isEvmNativeToken } from '@/modules/assets/types';
-import { sortDesc, zeroBalance } from '@/utils/bignumbers';
-import { balanceSum, perProtocolBalanceSum } from '@/utils/calculation';
+import { sortDesc, zeroBalance } from '@/modules/common/data/bignumbers';
+import { balanceSum, perProtocolBalanceSum } from '@/modules/common/data/calculation';
 
 type BalanceWithChains = Balance & { chains?: Record<string, Balance> };
 

@@ -14,12 +14,10 @@ import { z } from 'zod/v4';
 import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
 import { useHistoryEventMappings } from '@/composables/history/events/mapping';
 import { useHistoryEventCounterpartyMappings } from '@/composables/history/events/mapping/counterparty';
-import { useHistoryStore } from '@/store/history';
-import { useFrontendSettingsStore } from '@/store/settings/frontend';
-import { arrayify } from '@/utils/array';
-import { assetSuggestions } from '@/utils/assets';
-import { uniqueStrings } from '@/utils/data';
-import { dateDeserializer, dateRangeValidator, dateSerializer, getDateInputISOFormat } from '@/utils/date';
+import { arrayify } from '@/modules/common/data/array';
+import { uniqueStrings } from '@/modules/common/data/data';
+import { dateDeserializer, dateRangeValidator, dateSerializer, getDateInputISOFormat } from '@/modules/common/data/date';
+import { assetSuggestions } from '@/modules/common/display/assets';
 import {
   isEthBlockEventType,
   isEthDepositEventType,
@@ -27,7 +25,9 @@ import {
   isOnlineHistoryEventType,
   isSolanaEventType,
   isWithdrawalEventType,
-} from '@/utils/history/events';
+} from '@/modules/history/event-utils';
+import { useHistoryStore } from '@/store/history';
+import { useFrontendSettingsStore } from '@/store/settings/frontend';
 
 enum HistoryEventFilterKeys {
   START = 'start',

@@ -3,8 +3,8 @@ import useVuelidate from '@vuelidate/core';
 import { helpers, not, numeric, sameAs } from '@vuelidate/validators';
 import SettingsOption from '@/components/settings/controls/SettingsOption.vue';
 import { useValidation } from '@/composables/validation';
+import { isSingleVisualCharacter, toMessages } from '@/modules/common/validation/validation';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
-import { isSingleVisualCharacter, toMessages } from '@/utils/validation';
 
 const thousandSeparator = ref<string>('');
 const decimalSeparator = ref<string>('');

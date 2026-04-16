@@ -4,11 +4,11 @@ import { Severity } from '@rotki/common';
 import DatabaseBackups from '@/components/settings/data-security/backups/DatabaseBackups.vue';
 import SettingCategoryHeader from '@/components/settings/SettingCategoryHeader.vue';
 import { useBackupApi } from '@/composables/api/backup';
+import { getFilepath } from '@/modules/common/file/file';
+import { getErrorMessage } from '@/modules/common/logging/error-handling';
+import { logger } from '@/modules/common/logging/logging';
 import { useNotificationDispatcher } from '@/modules/notifications/use-notification-dispatcher';
 import { useConfirmStore } from '@/store/confirm';
-import { getErrorMessage } from '@/utils/error-handling';
-import { getFilepath } from '@/utils/file';
-import { logger } from '@/utils/logging';
 
 const { t } = useI18n({ useScope: 'global' });
 

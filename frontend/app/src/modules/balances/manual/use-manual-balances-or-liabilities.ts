@@ -7,7 +7,7 @@ import type {
 import type { Collection } from '@/modules/common/collection';
 import { useManualBalancePagination } from '@/modules/balances/manual/use-manual-balance-pagination';
 import { useBalancesStore } from '@/modules/balances/use-balances-store';
-import { uniqueStrings } from '@/utils/data';
+import { uniqueStrings } from '@/modules/common/data/data';
 
 interface UseManualBalancesOrLiabilitiesReturn {
   dataSource: ComputedRef<ManualBalanceWithValue[]>;

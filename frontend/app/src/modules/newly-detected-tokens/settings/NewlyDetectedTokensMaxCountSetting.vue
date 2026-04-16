@@ -4,8 +4,8 @@ import { between, helpers, required } from '@vuelidate/validators';
 import SettingsOption from '@/components/settings/controls/SettingsOption.vue';
 import { useValidation } from '@/composables/validation';
 import { Constraints } from '@/data/constraints';
+import { toMessages } from '@/modules/common/validation/validation';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
-import { toMessages } from '@/utils/validation';
 
 const maxCount = ref<string>('500');
 

@@ -6,12 +6,12 @@ import type {
 import type { BlockchainAssetBalances } from '@/modules/balances/types/blockchain-balances';
 import type { Collection } from '@/modules/common/collection';
 import { type Balance, type BigNumber, bigNumberify, Blockchain, Zero } from '@rotki/common';
+import { isValidatorAccount } from '@/modules/accounts/account-utils';
+import { sortAndFilterValidators } from '@/modules/accounts/account-validator';
 import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
 import { useBalancesStore } from '@/modules/balances/use-balances-store';
 import { Module } from '@/modules/common/modules';
 import { useGeneralSettingsStore } from '@/store/settings/general';
-import { isValidatorAccount } from '@/utils/blockchain/accounts/utils';
-import { sortAndFilterValidators } from '@/utils/blockchain/accounts/validator';
 
 export const useBlockchainValidatorsStore = defineStore('blockchain/validators', () => {
   const blockchainAccountsStore = useBlockchainAccountsStore();

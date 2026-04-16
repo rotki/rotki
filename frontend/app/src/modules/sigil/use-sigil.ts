@@ -1,5 +1,6 @@
 import type { SigilEvent, SigilEventMap } from '@/modules/sigil/types';
 import { startPromise } from '@shared/utils';
+import { logger } from '@/modules/common/logging/logging';
 import { createPersistentSharedComposable } from '@/modules/common/use-persistent-shared-composable';
 import { sigilBus } from '@/modules/sigil/event-bus';
 import { useBalancesSummaryHandler } from '@/modules/sigil/handlers/balances-summary';
@@ -11,7 +12,6 @@ import { router } from '@/router';
 import { useMainStore } from '@/store/main';
 import { useSessionAuthStore } from '@/store/session/auth';
 import { useGeneralSettingsStore } from '@/store/settings/general';
-import { logger } from '@/utils/logging';
 
 /**
  * Route params that are safe to include in analytics URLs.

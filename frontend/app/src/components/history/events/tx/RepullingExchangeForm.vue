@@ -9,9 +9,9 @@ import DateTimeRangePicker from '@/components/inputs/DateTimeRangePicker.vue';
 import { useFormStateWatcher } from '@/composables/form';
 import { shouldShowDateRangePicker } from '@/composables/history/events/tx/use-repulling-transaction-form';
 import { useExchangeData } from '@/modules/balances/exchanges/use-exchange-data';
+import { useRefPropVModel } from '@/modules/common/validation/model';
+import { toMessages } from '@/modules/common/validation/validation';
 import { Routes } from '@/router/routes';
-import { useRefPropVModel } from '@/utils/model';
-import { toMessages } from '@/utils/validation';
 
 const modelValue = defineModel<RepullingTransactionPayload>({ required: true });
 const errors = defineModel<ValidationErrors>('errorMessages', { required: true });

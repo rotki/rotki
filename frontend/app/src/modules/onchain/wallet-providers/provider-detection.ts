@@ -1,7 +1,7 @@
 import type { EIP1193Provider, EIP6963AnnounceProviderEvent, EIP6963ProviderDetail } from '@/types';
 import { assert } from '@rotki/common';
-import { uniqueObjects } from '@/utils/data';
-import { logger } from '@/utils/logging';
+import { uniqueObjects } from '@/modules/common/data/data';
+import { logger } from '@/modules/common/logging/logging';
 import { useProxyProvider } from '../wallet-bridge/use-proxy-provider';
 
 export interface ProviderDetectionOptions {

@@ -2,7 +2,7 @@
 import type { AccountingRuleWithLinkedProperty } from '@/modules/settings/types/accounting';
 import SuccessDisplay from '@/components/display/SuccessDisplay.vue';
 import { useAccountingRuleMappings } from '@/composables/settings/accounting/rule-mapping';
-import { useRefPropVModel } from '@/utils/model';
+import { useRefPropVModel } from '@/modules/common/validation/model';
 
 const modelValue = defineModel<AccountingRuleWithLinkedProperty>({ required: true });
 

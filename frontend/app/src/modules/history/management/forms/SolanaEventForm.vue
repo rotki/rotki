@@ -13,12 +13,12 @@ import { useEditModeStateTracker } from '@/composables/history/events/edit-mode-
 import { useHistoryEventsForm } from '@/composables/history/events/form';
 import { useHistoryEventCounterpartyMappings } from '@/composables/history/events/mapping/counterparty';
 import { SOLANA_CHAIN } from '@/modules/assets/types';
+import { bigNumberifyFromRef } from '@/modules/common/data/bignumbers';
+import { toMessages } from '@/modules/common/validation/validation';
 import EventDateLocation from '@/modules/history/management/forms/common/EventDateLocation.vue';
 import HistoryEventAssetPriceForm from '@/modules/history/management/forms/HistoryEventAssetPriceForm.vue';
 import HistoryEventTypeForm from '@/modules/history/management/forms/HistoryEventTypeForm.vue';
 import { useEventFormValidation } from '@/modules/history/management/forms/use-event-form-validation';
-import { bigNumberifyFromRef } from '@/utils/bignumbers';
-import { toMessages } from '@/utils/validation';
 
 interface HistoryEventFormProps {
   data: StandaloneEventData<SolanaEvent>;

@@ -11,8 +11,8 @@ import { useAddressesNamesApi } from '@/composables/api/blockchain/addresses-nam
 import { useHistoryEvents } from '@/composables/history/events';
 import { useLocations } from '@/composables/locations';
 import { SOLANA_CHAIN } from '@/modules/assets/types';
+import { setupDayjs } from '@/modules/common/data/date';
 import SolanaSwapEventForm from '@/modules/history/management/forms/SolanaSwapEventForm.vue';
-import { setupDayjs } from '@/utils/date';
 
 vi.mock('@/composables/history/events', () => ({
   useHistoryEvents: vi.fn(),

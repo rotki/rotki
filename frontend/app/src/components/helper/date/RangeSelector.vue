@@ -6,10 +6,10 @@ import { helpers, requiredIf } from '@vuelidate/validators';
 import dayjs from 'dayjs';
 import DateTimeRangePicker from '@/components/inputs/DateTimeRangePicker.vue';
 import ReportPeriodSelector from '@/components/profitloss/ReportPeriodSelector.vue';
+import { useRefPropVModel } from '@/modules/common/validation/model';
+import { toMessages } from '@/modules/common/validation/validation';
 import { useSettingsOperations } from '@/modules/settings/use-settings-operations';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
-import { useRefPropVModel } from '@/utils/model';
-import { toMessages } from '@/utils/validation';
 
 const modelValue = defineModel<{ start: number | undefined; end: number }>({ required: true });
 

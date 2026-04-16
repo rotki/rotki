@@ -14,10 +14,10 @@ import ReportProfitLossEventAction from '@/components/profitloss/ReportProfitLos
 import { useSupportedChains } from '@/composables/info/chains';
 import { usePaginationFilters } from '@/composables/use-pagination-filter';
 import { AssetAmountDisplay, FiatDisplay } from '@/modules/amount-display/components';
+import { getCollectionData, setupEntryLimit } from '@/modules/common/data/collection-utils';
+import { isTransactionEvent } from '@/modules/reports/report-utils';
 import { useReportOperations } from '@/modules/reports/use-report-operations';
 import { TableId, useRememberTableSorting } from '@/modules/table/use-remember-table-sorting';
-import { getCollectionData, setupEntryLimit } from '@/utils/collection';
-import { isTransactionEvent } from '@/utils/report';
 
 interface GroupLine {
   top: boolean;

@@ -12,13 +12,13 @@ import {
   type RawManualBalance,
 } from '@/modules/balances/types/manual-balances';
 import { useBalancesStore } from '@/modules/balances/use-balances-store';
+import { getErrorMessage } from '@/modules/common/logging/error-handling';
+import { logger } from '@/modules/common/logging/logging';
 import { Section, Status } from '@/modules/common/status';
 import { useNotifications } from '@/modules/notifications/use-notifications';
 import { BalanceSource } from '@/modules/settings/types/frontend-settings';
 import { TaskType } from '@/modules/tasks/task-type';
 import { isActionableFailure, useTaskHandler } from '@/modules/tasks/use-task-handler';
-import { getErrorMessage } from '@/utils/error-handling';
-import { logger } from '@/utils/logging';
 
 interface UseManualBalancesReturn {
   addManualBalance: (balance: RawManualBalance) => Promise<ActionStatus<ValidationErrors | string>>;

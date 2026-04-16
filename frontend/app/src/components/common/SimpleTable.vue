@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { StyleValue } from 'vue';
-import { toRem } from '@/utils/data';
+import { toRem } from '@/modules/common/data/data';
 
 defineOptions({
   inheritAttrs: false,

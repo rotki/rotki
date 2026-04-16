@@ -18,7 +18,9 @@ import { usePriceApi } from '@/composables/api/balances/price';
 import { useStatisticsApi } from '@/composables/api/statistics/statistics-api';
 import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
 import { useAggregatedBalances } from '@/composables/balances/use-aggregated-balances';
+import { isNft } from '@/modules/assets/nft-utils';
 import { useAssetsStore } from '@/modules/assets/use-assets-store';
+import { truncateAddress } from '@/modules/common/display/truncate';
 import { useHistoricPriceCache } from '@/modules/prices/use-historic-price-cache';
 import { useHistoricalPriceFetcher } from '@/modules/prices/use-historical-price-fetcher';
 import { usePriceUtils } from '@/modules/prices/use-price-utils';
@@ -29,8 +31,6 @@ import { useTaskStore } from '@/modules/tasks/use-task-store';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { useStatisticsStore } from '@/store/statistics';
-import { isNft } from '@/utils/nft';
-import { truncateAddress } from '@/utils/truncate';
 
 export function assetsApi(): AssetsApi {
   const { getAssetInfo, useAssetInfo, useTokenAddress } = useAssetInfoRetrieval();

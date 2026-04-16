@@ -5,6 +5,7 @@ import { type BigNumber, bigNumberify, Blockchain, isValidEthAddress } from '@ro
 import ProviderSelectionDialog from '@/components/wallets/ProviderSelectionDialog.vue';
 import WalletConnectionButton from '@/components/wallets/WalletConnectionButton.vue';
 import { useSupportedChains } from '@/composables/info/chains';
+import { logger } from '@/modules/common/logging/logging';
 import TradeAmountInput from '@/modules/onchain/send/TradeAmountInput.vue';
 import TradeAssetSelector from '@/modules/onchain/send/TradeAssetSelector.vue';
 import TradeConnectedAddressBadge from '@/modules/onchain/send/TradeConnectedAddressBadge.vue';
@@ -17,7 +18,6 @@ import { useWalletStore } from '@/modules/onchain/use-wallet-store';
 import { isUserRejectedError, WALLET_MODES } from '@/modules/onchain/wallet-constants';
 import { useProviderSelection } from '@/modules/onchain/wallet-providers/use-provider-selection';
 import { useUnifiedProviders } from '@/modules/onchain/wallet-providers/use-unified-providers';
-import { logger } from '@/utils/logging';
 import { useTradeApi } from './use-trade-api';
 
 function getErrorMessage(error: unknown): string {

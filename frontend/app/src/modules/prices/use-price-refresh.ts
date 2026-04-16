@@ -6,11 +6,11 @@ import { useStatusUpdater } from '@/composables/status';
 import { useCollectionMappingStore } from '@/modules/assets/use-collection-mapping-store';
 import { useManualBalanceData } from '@/modules/balances/manual/use-manual-balance-data';
 import { useBalancesStore } from '@/modules/balances/use-balances-store';
+import { uniqueStrings } from '@/modules/common/data/data';
 import { Section, Status } from '@/modules/common/status';
 import { usePriceTaskManager } from '@/modules/prices/use-price-task-manager';
 import { usePriceUtils } from '@/modules/prices/use-price-utils';
 import { useBalancePricesStore } from '@/store/balances/prices';
-import { uniqueStrings } from '@/utils/data';
 
 interface PriceRefreshTask {
   ignoreCache: boolean;

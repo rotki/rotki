@@ -16,11 +16,6 @@ import type {
 import { DuplicateHandlingStatus } from '@/composables/history/events/types';
 import { useCustomizedEventDuplicates } from '@/composables/history/events/use-customized-event-duplicates';
 import { useReportIssue } from '@/composables/report-issue';
-import { useHistoryEventsStatus } from '@/modules/history/events/use-history-events-status';
-import {
-  type DecodableEventType,
-  isGroupEditableHistoryEvent,
-} from '@/modules/history/management/forms/form-guards';
 import {
   isEthBlockEvent,
   isEthBlockEventRef,
@@ -30,7 +25,12 @@ import {
   isSolanaEvent,
   isSolanaSwapEvent,
   toLocationAndTxRef,
-} from '@/utils/history/events';
+} from '@/modules/history/event-utils';
+import { useHistoryEventsStatus } from '@/modules/history/events/use-history-events-status';
+import {
+  type DecodableEventType,
+  isGroupEditableHistoryEvent,
+} from '@/modules/history/management/forms/form-guards';
 
 const { event, loading, duplicateHandlingStatus, groupEvents } = defineProps<{
   event: HistoryEventEntry;

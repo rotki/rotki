@@ -11,11 +11,11 @@ import { usePaginationFilters } from '@/composables/use-pagination-filter';
 import { FiatDisplay } from '@/modules/amount-display/components';
 import { useAssetInfoCache } from '@/modules/assets/use-asset-info-cache';
 import { useAccountAddresses } from '@/modules/balances/blockchain/use-account-addresses';
+import { arrayify } from '@/modules/common/data/array';
+import { uniqueStrings } from '@/modules/common/data/data';
 import HashLink from '@/modules/common/links/HashLink.vue';
 import { usePriceUtils } from '@/modules/prices/use-price-utils';
 import { TableId, useRememberTableSorting } from '@/modules/table/use-remember-table-sorting';
-import { arrayify } from '@/utils/array';
-import { uniqueStrings } from '@/utils/data';
 import { type NewDetectedToken, NewDetectedTokenKind } from '../types';
 import { useNewlyDetectedTokens } from '../use-newly-detected-tokens';
 

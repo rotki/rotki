@@ -3,7 +3,7 @@ import type { MatchedKeywordWithBehaviour, SearchMatcher } from '@/modules/table
 import { z } from 'zod/v4';
 import { useHistoryEventMappings } from '@/composables/history/events/mapping';
 import { useHistoryEventCounterpartyMappings } from '@/composables/history/events/mapping/counterparty';
-import { arrayify } from '@/utils/array';
+import { arrayify } from '@/modules/common/data/array';
 
 enum AccountingRuleFilterKeys {
   EVENT_TYPE = 'event_type',

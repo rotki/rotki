@@ -6,7 +6,7 @@ import { mount, type VueWrapper } from '@vue/test-utils';
 import { setActivePinia } from 'pinia';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import SuggestedItem from '@/components/table-filter/SuggestedItem.vue';
-import { truncateAddress } from '@/utils/truncate';
+import { truncateAddress } from '@/modules/common/display/truncate';
 
 vi.mock('@/composables/assets/retrieval', (): Record<string, unknown> => ({
   useAssetInfoRetrieval: vi.fn().mockReturnValue({

@@ -8,6 +8,7 @@ import BadgeDisplay from '@/components/history/BadgeDisplay.vue';
 import BlockchainRpcNodeFormDialog from '@/components/settings/general/rpc/BlockchainRpcNodeFormDialog.vue';
 import { useEvmNodesApi } from '@/composables/api/settings/evm-nodes-api';
 import { useSupportedChains } from '@/composables/info/chains';
+import { getErrorMessage } from '@/modules/common/logging/error-handling';
 import { useNotificationDispatcher } from '@/modules/notifications/use-notification-dispatcher';
 import {
   type BlockchainRpcNode,
@@ -18,7 +19,6 @@ import {
 import { useConfirmStore } from '@/store/confirm';
 import { useMessageStore } from '@/store/message';
 import { useSessionMetadataStore } from '@/store/session/metadata';
-import { getErrorMessage } from '@/utils/error-handling';
 
 const { chain } = defineProps<{
   chain: Blockchain;

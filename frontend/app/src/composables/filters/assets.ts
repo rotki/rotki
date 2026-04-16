@@ -4,7 +4,7 @@ import type { MatchedKeyword, SearchMatcher } from '@/modules/table/filtering';
 import { z } from 'zod/v4';
 import { useSupportedChains } from '@/composables/info/chains';
 import { SOLANA_CHAIN } from '@/modules/assets/types';
-import { arrayify } from '@/utils/array';
+import { arrayify } from '@/modules/common/data/array';
 
 enum AssetFilterKeys {
   IDENTIFIER = 'identifier',

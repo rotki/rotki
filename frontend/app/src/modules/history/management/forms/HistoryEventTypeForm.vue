@@ -3,7 +3,7 @@ import type { Validation } from '@vuelidate/core';
 import type { ActionDataEntry } from '@/modules/common/action';
 import HistoryEventTypeCombination from '@/components/history/events/HistoryEventTypeCombination.vue';
 import { useHistoryEventMappings } from '@/composables/history/events/mapping';
-import { toMessages } from '@/utils/validation';
+import { toMessages } from '@/modules/common/validation/validation';
 
 interface HistoryEventTypeFormProps {
   counterparty?: string | null;

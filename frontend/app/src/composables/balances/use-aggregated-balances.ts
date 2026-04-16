@@ -13,9 +13,9 @@ import { useCollectionInfo } from '@/modules/assets/use-collection-info';
 import { useExchangeData } from '@/modules/balances/exchanges/use-exchange-data';
 import { useManualBalanceData } from '@/modules/balances/manual/use-manual-balance-data';
 import { useBalancesStore } from '@/modules/balances/use-balances-store';
+import { bigNumberSum } from '@/modules/common/data/calculation';
 import { samePriceAssets } from '@/modules/onchain/blockchain-types';
 import { usePriceUtils } from '@/modules/prices/use-price-utils';
-import { bigNumberSum } from '@/utils/calculation';
 
 interface UseAggregatedBalancesReturn {
   useBalances: (hideIgnored?: boolean, groupMultiChain?: boolean, exclude?: ExclusionSource[]) => ComputedRef<AssetBalanceWithPriceAndChains[]>;

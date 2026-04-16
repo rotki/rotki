@@ -19,7 +19,7 @@ import {
   transformCase,
 } from '@rotki/common';
 import { describe, expect, it } from 'vitest';
-import { groupConsecutiveNumbers } from './text';
+import { groupConsecutiveNumbers } from './text-utils';
 
 describe('text-utils', () => {
   it('should return correct human readable value', () => {

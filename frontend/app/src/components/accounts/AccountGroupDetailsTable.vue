@@ -6,13 +6,13 @@ import type {
 } from '@/modules/accounts/blockchain-accounts';
 import AccountBalanceDetails from '@/components/accounts/balances/AccountBalanceDetails.vue';
 import { usePaginationFilters } from '@/composables/use-pagination-filter';
+import { getAccountAddress } from '@/modules/accounts/account-utils';
 import { AccountBalancesTable } from '@/modules/accounts/table';
 import { useBlockchainAccountLoading } from '@/modules/accounts/use-account-loading';
 import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
 import { useBlockchainAccountData } from '@/modules/balances/blockchain/use-blockchain-account-data';
 import { useBalancesStore } from '@/modules/balances/use-balances-store';
 import { type LocationQuery, RouterExpandedIdsSchema } from '@/modules/table/route';
-import { getAccountAddress } from '@/utils/blockchain/accounts/utils';
 
 const query = defineModel<LocationQuery>('query', { default: () => ({}), required: false });
 const selected = defineModel<string[] | undefined>('selected', { required: true });

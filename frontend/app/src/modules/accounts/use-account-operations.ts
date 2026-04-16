@@ -10,13 +10,13 @@ import { useBlockchainAccounts } from '@/modules/accounts/use-blockchain-account
 import { useEnsOperations } from '@/modules/address-names/use-ens-operations';
 import { useAccountAddresses } from '@/modules/balances/blockchain/use-account-addresses';
 import { useBlockchainBalances } from '@/modules/balances/use-blockchain-balances';
+import { awaitParallelExecution } from '@/modules/common/async/await-parallel-execution';
+import { uniqueStrings } from '@/modules/common/data/data';
+import { logger } from '@/modules/common/logging/logging';
 import { Section } from '@/modules/common/status';
 import { useNotifications } from '@/modules/notifications/use-notifications';
 import { TaskType } from '@/modules/tasks/task-type';
 import { isActionableFailure, useTaskHandler } from '@/modules/tasks/use-task-handler';
-import { awaitParallelExecution } from '@/utils/await-parallel-execution';
-import { uniqueStrings } from '@/utils/data';
-import { logger } from '@/utils/logging';
 
 export interface RefreshAccountsParams {
   blockchain?: MaybeRef<string>;

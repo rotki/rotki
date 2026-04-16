@@ -11,10 +11,10 @@ import type { TaskMeta } from '@/modules/tasks/types';
 import { useAssetsApi } from '@/composables/api/assets';
 import { useInterop } from '@/composables/electron-interop';
 import { ApiValidationError, type ValidationErrors } from '@/modules/api/types/errors';
+import { logger } from '@/modules/common/logging/logging';
 import { getErrorMessage, useNotifications } from '@/modules/notifications/use-notifications';
 import { TaskType } from '@/modules/tasks/task-type';
 import { isActionableFailure, useTaskHandler } from '@/modules/tasks/use-task-handler';
-import { logger } from '@/utils/logging';
 
 interface ExportCustomAssetsResult {
   directory?: string;

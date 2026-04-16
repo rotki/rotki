@@ -2,8 +2,8 @@
 import type { LoginCredentials } from '@/modules/account/login';
 import useVuelidate from '@vuelidate/core';
 import { helpers, required, sameAs } from '@vuelidate/validators';
-import { useRefPropVModel } from '@/utils/model';
-import { toMessages } from '@/utils/validation';
+import { useRefPropVModel } from '@/modules/common/validation/model';
+import { toMessages } from '@/modules/common/validation/validation';
 
 const form = defineModel<LoginCredentials>('form', { required: true });
 const valid = defineModel<boolean>('valid', { required: true });

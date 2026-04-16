@@ -7,7 +7,7 @@ import type {
   SolanaSwapEvent,
 } from '@/modules/history/events/schemas';
 import { HistoryEventEntryType } from '@rotki/common';
-import { isEvmEvent, isEvmSwapEvent, isSolanaEvent, isSolanaSwapEvent } from '@/utils/history/events';
+import { isEvmEvent, isEvmSwapEvent, isSolanaEvent, isSolanaSwapEvent } from '@/modules/history/event-utils';
 
 export function isGroupEditableHistoryEvent(event: HistoryEvent): event is GroupEditableHistoryEvents {
   return event.entryType === HistoryEventEntryType.ASSET_MOVEMENT_EVENT

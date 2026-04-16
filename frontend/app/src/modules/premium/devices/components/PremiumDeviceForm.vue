@@ -5,7 +5,7 @@ import useVuelidate from '@vuelidate/core';
 import { helpers, not, required, sameAs } from '@vuelidate/validators';
 import DateDisplay from '@/components/display/DateDisplay.vue';
 import { useFormStateWatcher } from '@/composables/form';
-import { toMessages } from '@/utils/validation';
+import { toMessages } from '@/modules/common/validation/validation';
 
 const modelValue = defineModel<string>({ required: true });
 

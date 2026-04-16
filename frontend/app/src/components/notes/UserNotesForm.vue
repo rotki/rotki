@@ -3,8 +3,8 @@ import type { UserNote } from '@/modules/common/notes';
 import useVuelidate from '@vuelidate/core';
 import { helpers, required } from '@vuelidate/validators';
 import { useFormStateWatcher } from '@/composables/form';
-import { refOptional, useRefPropVModel } from '@/utils/model';
-import { toMessages } from '@/utils/validation';
+import { refOptional, useRefPropVModel } from '@/modules/common/validation/model';
+import { toMessages } from '@/modules/common/validation/validation';
 
 const modelValue = defineModel<Partial<UserNote>>({ required: true });
 const stateUpdated = defineModel<boolean>('stateUpdated', { default: false, required: false });

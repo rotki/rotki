@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import AppImage from '@/components/common/AppImage.vue';
 import AssetIcon from '@/components/helper/display/icons/AssetIcon.vue';
-import { getPublicProtocolImagePath } from '@/utils/file';
+import { getPublicProtocolImagePath } from '@/modules/common/file/file';
 import { PoolType } from './types';
 
 const { assets, type } = defineProps<{

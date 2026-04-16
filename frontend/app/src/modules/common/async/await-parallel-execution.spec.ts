@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { awaitParallelExecution } from '@/utils/await-parallel-execution';
+import { awaitParallelExecution } from '@/modules/common/async/await-parallel-execution';
 
 describe('await-parallel-execution', () => {
   it('should resolve instantly if no items exist', async () => {

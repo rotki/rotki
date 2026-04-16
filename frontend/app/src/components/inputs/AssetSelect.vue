@@ -11,9 +11,9 @@ import NftDetails from '@/components/helper/NftDetails.vue';
 import { useAssetInfoApi } from '@/composables/api/assets/info';
 import { useSupportedChains } from '@/composables/info/chains';
 import { useAssetsStore } from '@/modules/assets/use-assets-store';
-import { isAbortError } from '@/utils';
-import { getAssetSearchTypeParams, getSanitizedChain, parseAssetSearchKeyword } from '@/utils/assets';
-import { uniqueObjects } from '@/utils/data';
+import { uniqueObjects } from '@/modules/common/data/data';
+import { getAssetSearchTypeParams, getSanitizedChain, parseAssetSearchKeyword } from '@/modules/common/display/assets';
+import { isAbortError } from '@/modules/common/helpers/is-of-enum';
 
 defineOptions({
   inheritAttrs: false,

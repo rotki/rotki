@@ -5,7 +5,7 @@ import type { AssetUpdateConflictResult, ConflictResolution } from '@/modules/as
 import type { ConflictResolutionStrategy } from '@/modules/common/common-types';
 import BigDialog from '@/components/dialogs/BigDialog.vue';
 import AssetConflictRow from '@/components/status/update/AssetConflictRow.vue';
-import { uniqueObjects, uniqueStrings } from '@/utils/data';
+import { uniqueObjects, uniqueStrings } from '@/modules/common/data/data';
 
 const { conflicts } = defineProps<{
   conflicts: AssetUpdateConflictResult[];

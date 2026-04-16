@@ -4,8 +4,8 @@ import useVuelidate from '@vuelidate/core';
 import { isEqual } from 'es-toolkit';
 import AmountInput from '@/components/inputs/AmountInput.vue';
 import AssetSelect from '@/components/inputs/AssetSelect.vue';
+import { toMessages } from '@/modules/common/validation/validation';
 import { useEventFormValidation } from '@/modules/history/management/forms/use-event-form-validation';
-import { toMessages } from '@/utils/validation';
 
 const modelValue = defineModel<FeeEntry>({ required: true });
 

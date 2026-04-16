@@ -11,12 +11,12 @@ import AccountTokenDetectionControls from '@/components/accounts/AccountTokenDet
 import { useAccountAssetSelection } from '@/composables/accounts/use-account-asset-selection';
 import { useAccountBalancesPagination } from '@/composables/accounts/use-account-balances-pagination';
 import { useAccountCategoryHelper } from '@/composables/accounts/use-account-category-helper';
+import { getGroupId } from '@/modules/accounts/account-utils';
 import { AccountBalancesTable } from '@/modules/accounts/table';
 import { useAccountBalancesRefresh } from '@/modules/accounts/use-account-balances-refresh';
 import { useBlockchainAccountLoading } from '@/modules/accounts/use-account-loading';
 import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
 import { useBalancesStore } from '@/modules/balances/use-balances-store';
-import { getGroupId } from '@/utils/blockchain/accounts/utils';
 
 const { category } = defineProps<{
   category: string;

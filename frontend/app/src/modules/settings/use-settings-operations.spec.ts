@@ -38,7 +38,7 @@ vi.mock('@/composables/session/use-items-per-page', () => ({
   useItemsPerPage: vi.fn(() => ref<number>(10)),
 }));
 
-vi.mock('@/utils/logging', () => ({
+vi.mock('@/modules/common/logging/logging', () => ({
   logger: {
     debug: vi.fn(),
     error: vi.fn(),

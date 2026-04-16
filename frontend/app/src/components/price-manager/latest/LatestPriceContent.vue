@@ -10,11 +10,11 @@ import TablePageLayout from '@/components/layout/TablePageLayout.vue';
 import LatestPriceFormDialog from '@/components/price-manager/latest/LatestPriceFormDialog.vue';
 import { useLatestPrices } from '@/composables/price-manager/latest';
 import { FiatDisplay, ValueDisplay } from '@/modules/amount-display/components';
+import { isNft } from '@/modules/assets/nft-utils';
 import { useCommonTableProps } from '@/modules/table/use-common-table-props';
 import { TableId, useRememberTableSorting } from '@/modules/table/use-remember-table-sorting';
 import { useConfirmStore } from '@/store/confirm';
 import { useGeneralSettingsStore } from '@/store/settings/general';
-import { isNft } from '@/utils/nft';
 
 const { t } = useI18n({ useScope: 'global' });
 

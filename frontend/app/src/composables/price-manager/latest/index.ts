@@ -4,12 +4,12 @@ import { Zero } from '@rotki/common';
 import { useAssetPricesApi } from '@/composables/api/assets/prices';
 import { useStatusUpdater } from '@/composables/status';
 import { CURRENCY_USD } from '@/modules/amount-display/currencies';
+import { isNft } from '@/modules/assets/nft-utils';
+import { getErrorMessage } from '@/modules/common/logging/error-handling';
 import { Section } from '@/modules/common/status';
 import { useNotifications } from '@/modules/notifications/use-notifications';
 import { usePriceRefresh } from '@/modules/prices/use-price-refresh';
 import { usePriceUtils } from '@/modules/prices/use-price-utils';
-import { getErrorMessage } from '@/utils/error-handling';
-import { isNft } from '@/utils/nft';
 
 interface UseLatestPricesReturn {
   items: ComputedRef<ManualPriceWithUsd[]>;

@@ -2,9 +2,9 @@
 import { Severity } from '@rotki/common';
 import { backoff } from '@shared/utils';
 import { useExchangeApi } from '@/composables/api/balances/exchanges';
+import { trimOnPaste } from '@/modules/common/helpers/event';
+import { getErrorMessage } from '@/modules/common/logging/error-handling';
 import { useNotificationDispatcher } from '@/modules/notifications/use-notification-dispatcher';
-import { getErrorMessage } from '@/utils/error-handling';
-import { trimOnPaste } from '@/utils/event';
 
 defineOptions({
   inheritAttrs: false,

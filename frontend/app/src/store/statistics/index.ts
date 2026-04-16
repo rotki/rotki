@@ -6,11 +6,11 @@ import { useAggregatedBalances } from '@/composables/balances/use-aggregated-bal
 import { useNumberScrambler } from '@/composables/utils/useNumberScrambler';
 import { CURRENCY_USD, type SupportedCurrency } from '@/modules/amount-display/currencies';
 import { useBalancesStore } from '@/modules/balances/use-balances-store';
+import { millisecondsToSeconds } from '@/modules/common/data/date';
 import { usePriceUtils } from '@/modules/prices/use-price-utils';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { useSessionSettingsStore } from '@/store/settings/session';
-import { millisecondsToSeconds } from '@/utils/date';
 
 function defaultNetValue(): NetValue {
   return {

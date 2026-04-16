@@ -4,8 +4,8 @@ import { useTemplateRef } from 'vue';
 import ManageCexMappingForm from '@/components/asset-manager/cex-mapping/ManageCexMappingForm.vue';
 import BigDialog from '@/components/dialogs/BigDialog.vue';
 import { useAssetCexMappingApi } from '@/composables/api/assets/cex-mapping';
+import { getErrorMessage } from '@/modules/common/logging/error-handling';
 import { useMessageStore } from '@/store/message';
-import { getErrorMessage } from '@/utils/error-handling';
 
 const modelValue = defineModel<CexMapping | undefined>({ required: true });
 

@@ -9,8 +9,10 @@ import BlockchainAccountSelector from '@/components/helper/BlockchainAccountSele
 import ExternalLink from '@/components/helper/ExternalLink.vue';
 import TablePageLayout from '@/components/layout/TablePageLayout.vue';
 import { useDefiApi } from '@/composables/api/defi';
+import { getAccountAddress } from '@/modules/accounts/account-utils';
 import { AssetAmountDisplay, ValueDisplay } from '@/modules/amount-display/components';
 import HashLink from '@/modules/common/links/HashLink.vue';
+import { logger } from '@/modules/common/logging/logging';
 import {
   type Airdrop,
   AIRDROP_POAP,
@@ -22,8 +24,6 @@ import { useNotifications } from '@/modules/notifications/use-notifications';
 import { TableId, useRememberTableSorting } from '@/modules/table/use-remember-table-sorting';
 import { TaskType } from '@/modules/tasks/task-type';
 import { isActionableFailure, useTaskHandler } from '@/modules/tasks/use-task-handler';
-import { getAccountAddress } from '@/utils/blockchain/accounts/utils';
-import { logger } from '@/utils/logging';
 
 type AirdropWithIndex = Omit<Airdrop, 'amount'> & { index: number; amount: BigNumber };
 

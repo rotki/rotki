@@ -1,6 +1,6 @@
 import { createSharedComposable, set } from '@vueuse/core';
 import { ref, type Ref } from 'vue';
-import { logger } from '@/utils/logging';
+import { logger } from '@/modules/common/logging/logging';
 
 interface WalletConnectionStateComposable {
   isRequestingAccounts: Readonly<Ref<boolean>>;

@@ -4,10 +4,10 @@ import { startPromise } from '@shared/utils';
 import { useSupportedChains } from '@/composables/info/chains';
 import { useAccountAdditionService } from '@/modules/accounts/use-account-addition-service';
 import { type RefreshAccountsParams, useAccountOperations } from '@/modules/accounts/use-account-operations';
+import { logger } from '@/modules/common/logging/logging';
 import { useNotifications } from '@/modules/notifications/use-notifications';
 import { TaskType } from '@/modules/tasks/task-type';
 import { useTaskStore } from '@/modules/tasks/use-task-store';
-import { logger } from '@/utils/logging';
 
 interface AddAccountsOption {
   wait: boolean;

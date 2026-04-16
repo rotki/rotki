@@ -1,7 +1,7 @@
 import type { EffectScope } from 'vue';
 import flushPromises from 'flush-promises';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { logger } from '@/utils/logging';
+import { logger } from '@/modules/common/logging/logging';
 
 const mockSetSchedulerState = vi.fn();
 
@@ -11,7 +11,7 @@ vi.mock('@/composables/api/task', () => ({
   })),
 }));
 
-vi.mock('@/utils/logging', () => ({
+vi.mock('@/modules/common/logging/logging', () => ({
   logger: {
     info: vi.fn(),
     error: vi.fn(),

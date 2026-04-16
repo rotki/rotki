@@ -3,8 +3,8 @@ import type { AssetMap } from '@/modules/assets/types';
 import { useAssetInfoApi } from '@/composables/api/assets/info';
 import { useResolveAssetIdentifier } from '@/composables/assets/common';
 import { useCollectionMappingStore } from '@/modules/assets/use-collection-mapping-store';
-import { chunkArray } from '@/utils/data';
-import { logger } from '@/utils/logging';
+import { chunkArray } from '@/modules/common/data/data';
+import { logger } from '@/modules/common/logging/logging';
 
 interface CollectionInfo {
   assetToCollection: Record<string, string | null>;

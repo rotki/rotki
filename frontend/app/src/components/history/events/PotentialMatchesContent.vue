@@ -9,9 +9,9 @@ import {
   type UnmatchedAssetMovement,
   useUnmatchedAssetMovements,
 } from '@/composables/history/events/use-unmatched-asset-movements';
+import { logger } from '@/modules/common/logging/logging';
+import { getEventEntryFromCollection } from '@/modules/history/event-utils';
 import { useGeneralSettingsStore } from '@/store/settings/general';
-import { getEventEntryFromCollection } from '@/utils/history/events';
-import { logger } from '@/utils/logging';
 
 const { isPinned, movement } = defineProps<{
   movement: UnmatchedAssetMovement;

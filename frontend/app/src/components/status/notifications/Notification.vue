@@ -3,7 +3,7 @@ import { type NotificationAction, type NotificationData, Severity } from '@rotki
 import { isRuiIcon, type RuiIcons } from '@rotki/ui-library';
 import dayjs from 'dayjs';
 import MissingKeyNotification from '@/components/status/notifications/MissingKeyNotification.vue';
-import { arrayify } from '@/utils/array';
+import { arrayify } from '@/modules/common/data/array';
 
 const { notification, popup = false } = defineProps<{
   notification: NotificationData;

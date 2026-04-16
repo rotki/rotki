@@ -4,7 +4,7 @@ import ExternalLink from '@/components/helper/ExternalLink.vue';
 import ServiceKey from '@/components/settings/api-keys/ServiceKey.vue';
 import ServiceKeyCard from '@/components/settings/api-keys/ServiceKeyCard.vue';
 import { useExternalApiKeys, useServiceKeyHandler } from '@/composables/settings/api-keys/external';
-import { getPublicServiceImagePath } from '@/utils/file';
+import { getPublicServiceImagePath } from '@/modules/common/file/file';
 
 const { t } = useI18n({ useScope: 'global' });
 

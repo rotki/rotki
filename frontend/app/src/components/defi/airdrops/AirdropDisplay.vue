@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import AppImage from '@/components/common/AppImage.vue';
 import { useAirdropsMetadata } from '@/composables/defi/airdrops/metadata';
-import { getPublicProtocolImagePath } from '@/utils/file';
+import { getPublicProtocolImagePath } from '@/modules/common/file/file';
 
 const { source, iconUrl, icon } = defineProps<{
   source: string;

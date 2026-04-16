@@ -7,10 +7,10 @@ import PremiumLock from '@/components/premium/PremiumLock.vue';
 import { useAssetSelectInfo } from '@/composables/assets/asset-select-info';
 import { usePremium } from '@/composables/premium';
 import { AssetValueDisplay, FiatDisplay, ValueDisplay } from '@/modules/amount-display/components';
+import { sortAssetBalances } from '@/modules/common/display/balances';
 import { usePriceUtils } from '@/modules/prices/use-price-utils';
 import { TableId, useRememberTableSorting } from '@/modules/table/use-remember-table-sorting';
 import { useGeneralSettingsStore } from '@/store/settings/general';
-import { sortAssetBalances } from '@/utils/balances';
 
 interface PoolDetailsProps {
   assets: PoolAsset[];

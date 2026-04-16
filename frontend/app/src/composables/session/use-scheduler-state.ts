@@ -1,6 +1,6 @@
 import { startPromise } from '@shared/utils';
 import { useTaskApi } from '@/composables/api/task';
-import { logger } from '@/utils/logging';
+import { logger } from '@/modules/common/logging/logging';
 
 /**
  * Fallback timeout to enable scheduler if user hasn't visited history page.

@@ -6,8 +6,8 @@ import { helpers, required } from '@vuelidate/validators';
 import AssetSelect from '@/components/inputs/AssetSelect.vue';
 import CounterpartyInput from '@/components/inputs/CounterpartyInput.vue';
 import { useFormStateWatcher } from '@/composables/form';
-import { nullDefined, useRefPropVModel } from '@/utils/model';
-import { toMessages } from '@/utils/validation';
+import { nullDefined, useRefPropVModel } from '@/modules/common/validation/model';
+import { toMessages } from '@/modules/common/validation/validation';
 
 const modelValue = defineModel<CounterpartyMapping>({ required: true });
 const errors = defineModel<ValidationErrors>('errorMessages', { required: true });

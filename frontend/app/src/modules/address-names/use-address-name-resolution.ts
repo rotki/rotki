@@ -9,12 +9,12 @@ import { useAddressesNamesApi } from '@/composables/api/blockchain/addresses-nam
 import { useSupportedChains } from '@/composables/info/chains';
 import { createItemCache } from '@/composables/item-cache';
 import { useAddressNamesStore } from '@/modules/address-names/use-address-names-store';
+import { uniqueStrings } from '@/modules/common/data/data';
+import { getErrorMessage } from '@/modules/common/logging/error-handling';
+import { logger } from '@/modules/common/logging/logging';
 import { useNotifications } from '@/modules/notifications/use-notifications';
 import { isBlockchain } from '@/modules/onchain/chains';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
-import { uniqueStrings } from '@/utils/data';
-import { getErrorMessage } from '@/utils/error-handling';
-import { logger } from '@/utils/logging';
 
 interface UseAddressNameResolutionReturn {
   getAddressName: (address: string, blockchain?: string) => string | undefined;

@@ -4,7 +4,7 @@ import { type ShowConfirmationParams, useAccountDelete } from '@/composables/acc
 import { type AccountManageState, editBlockchainAccount } from '@/composables/accounts/blockchain/use-account-manage';
 import { useAddressBookForm } from '@/composables/address-book/form';
 import { useAddressesNamesApi } from '@/composables/api/blockchain/addresses-names';
-import { getAccountAddress, getChain } from '@/utils/blockchain/accounts/utils';
+import { getAccountAddress, getChain } from '@/modules/accounts/account-utils';
 
 interface AccountOperationCallbacks {
   onEdit: (account: AccountManageState) => void;

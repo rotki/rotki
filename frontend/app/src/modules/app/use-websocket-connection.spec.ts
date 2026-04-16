@@ -19,11 +19,11 @@ vi.mock('@/modules/messaging', () => ({
   })),
 }));
 
-vi.mock('@/utils/async-utilities', () => ({
+vi.mock('@/modules/common/async/async-utilities', () => ({
   delay: async (...args: unknown[]): Promise<void> => mockDelay(...args),
 }));
 
-vi.mock('@/utils/logging', () => ({
+vi.mock('@/modules/common/logging/logging', () => ({
   logger: {
     debug: (...args: unknown[]): void => mockLoggerDebug(...args),
     error: (...args: unknown[]): void => mockLoggerError(...args),

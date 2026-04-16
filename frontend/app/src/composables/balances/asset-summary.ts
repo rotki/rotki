@@ -5,7 +5,7 @@ import {
   createAssetBalanceFromAggregated,
   processCollectionGrouping,
 } from '@/composables/balances/balance-transformations';
-import { sortDesc } from '@/utils/bignumbers';
+import { sortDesc } from '@/modules/common/data/bignumbers';
 
 /**
  * Configuration for asset sources and identifier resolution

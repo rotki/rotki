@@ -6,6 +6,7 @@ import type { TaskMeta } from '@/modules/tasks/types';
 import { omit } from 'es-toolkit';
 import { useKrakenApi } from '@/composables/api/staking/kraken';
 import { useStatusUpdater } from '@/composables/status';
+import { logger } from '@/modules/common/logging/logging';
 import { Section, Status } from '@/modules/common/status';
 import { getErrorMessage, useNotifications } from '@/modules/notifications/use-notifications';
 import { TaskType } from '@/modules/tasks/task-type';
@@ -13,7 +14,6 @@ import { useTaskHandler } from '@/modules/tasks/use-task-handler';
 import { useTaskStore } from '@/modules/tasks/use-task-store';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { useKrakenStakingStore } from '@/store/staking/kraken';
-import { logger } from '@/utils/logging';
 
 interface UseKrakenStakingOperationsReturn {
   fetchEvents: (refresh?: boolean, dateFilter?: KrakenStakingDateFilter) => Promise<void>;

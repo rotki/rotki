@@ -4,7 +4,7 @@ import { createPinia, type Pinia, setActivePinia } from 'pinia';
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { defineComponent, h, type VNode } from 'vue';
 import DateTimePicker from '@/components/inputs/DateTimePicker.vue';
-import { setupDayjs } from '@/utils/date';
+import { setupDayjs } from '@/modules/common/data/date';
 
 function getEmittedValue(wrapper: VueWrapper, event: string, callIndex: number): number {
   const emitted = wrapper.emitted(event);

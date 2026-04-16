@@ -4,7 +4,7 @@ import type { ValidationErrors } from '@/modules/api/types/errors';
 import useVuelidate from '@vuelidate/core';
 import { required } from '@vuelidate/validators';
 import { useFormStateWatcher } from '@/composables/form';
-import { toMessages } from '@/utils/validation';
+import { toMessages } from '@/modules/common/validation/validation';
 
 const errors = defineModel<ValidationErrors>('errorMessages', { required: true });
 const stateUpdated = defineModel<boolean>('stateUpdated', { default: false, required: false });

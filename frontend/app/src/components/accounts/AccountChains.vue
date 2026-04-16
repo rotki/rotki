@@ -1,7 +1,7 @@
 <script lang="ts" setup>
 import ChainIcon from '@/components/helper/display/icons/ChainIcon.vue';
 import { useSupportedChains } from '@/composables/info/chains';
-import { uniqueStrings } from '@/utils/data';
+import { uniqueStrings } from '@/modules/common/data/data';
 
 type Row = ({ chain: string } | { chains: string[] }) & { id: string };
 

@@ -6,8 +6,8 @@ import flushPromises from 'flush-promises';
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { clearUserOptions, saveUserOptions, useBackendManagement } from '@/composables/backend';
 import { useInterop } from '@/composables/electron-interop';
+import { getBackendUrl } from '@/modules/account/account-management';
 import { useMainStore } from '@/store/main';
-import { getBackendUrl } from '@/utils/account-management';
 
 const mockConnect = vi.fn();
 
@@ -27,7 +27,7 @@ vi.mock('@/composables/electron-interop', () => ({
   }),
 }));
 
-vi.mock('@/utils/account-management', () => ({
+vi.mock('@/modules/account/account-management', () => ({
   getBackendUrl: vi.fn().mockReturnValue({
     sessionOnly: true,
     url: '',

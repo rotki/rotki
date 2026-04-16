@@ -8,9 +8,9 @@ import BadgeDisplay from '@/components/history/BadgeDisplay.vue';
 import HistoryEventAsset from '@/components/history/events/HistoryEventAsset.vue';
 import LocationDisplay from '@/components/history/LocationDisplay.vue';
 import { type ColumnClassConfig, usePinnedAssetColumnClass, usePinnedColumnClass } from '@/composables/history/events/use-pinned-column-class';
+import { getEventEntryFromCollection } from '@/modules/history/event-utils';
 import { getAssetMovementsType } from '@/modules/history/management/forms/utils';
 import { PremiumFeature, useFeatureAccess } from '@/modules/premium/use-feature-access';
-import { getEventEntryFromCollection } from '@/utils/history/events';
 
 interface UnmatchedMovementRow {
   groupIdentifier: string;

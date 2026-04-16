@@ -1,7 +1,7 @@
 import { startPromise } from '@shared/utils';
 import { useMonitorWatchers } from '@/composables/monitor/use-monitor-watchers';
 import { useTokenDetectionOrchestrator } from '@/modules/balances/blockchain/use-token-detection-orchestrator';
-import { logger } from '@/utils/logging';
+import { logger } from '@/modules/common/logging/logging';
 import { useBalanceRefreshScheduler } from './schedulers/use-balance-refresh-scheduler';
 import { useEvmStatusScheduler } from './schedulers/use-evm-status-scheduler';
 import { usePasswordCheckScheduler } from './schedulers/use-password-check-scheduler';

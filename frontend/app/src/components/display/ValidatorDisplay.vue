@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { Eth2ValidatorEntry } from '@rotki/common';
 import { useScramble } from '@/composables/scramble';
-import { truncateAddress } from '@/utils/truncate';
+import { truncateAddress } from '@/modules/common/display/truncate';
 
 const { horizontal = false, validator } = defineProps<{
   validator: Eth2ValidatorEntry;

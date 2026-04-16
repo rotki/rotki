@@ -9,8 +9,8 @@ import { nextTick } from 'vue';
 import { useAssetInfoApi } from '@/composables/api/assets/info';
 import { useAssetPricesApi } from '@/composables/api/assets/prices';
 import { useHistoryEvents } from '@/composables/history/events';
+import { setupDayjs } from '@/modules/common/data/date';
 import EthBlockEventForm from '@/modules/history/management/forms/EthBlockEventForm.vue';
-import { setupDayjs } from '@/utils/date';
 
 vi.mock('@/composables/history/events', () => ({
   useHistoryEvents: vi.fn(),

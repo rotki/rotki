@@ -3,9 +3,9 @@ import type { Tag } from '@/modules/tags/tags';
 import { invertColor, randomColor } from '@rotki/common';
 import { useTagsApi } from '@/composables/api/tags';
 import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
+import { logger } from '@/modules/common/logging/logging';
 import { getErrorMessage, useNotifications } from '@/modules/notifications/use-notifications';
 import { useSessionMetadataStore } from '@/store/session/metadata';
-import { logger } from '@/utils/logging';
 
 interface UseTagOperationsReturn {
   addTag: (tag: Tag) => Promise<ActionStatus>;

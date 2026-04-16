@@ -10,8 +10,8 @@ import { useAssetInfoApi } from '@/composables/api/assets/info';
 import { useAddressesNamesApi } from '@/composables/api/blockchain/addresses-names';
 import { useHistoryEvents } from '@/composables/history/events';
 import { useLocations } from '@/composables/locations';
+import { setupDayjs } from '@/modules/common/data/date';
 import EvmSwapEventForm from '@/modules/history/management/forms/EvmSwapEventForm.vue';
-import { setupDayjs } from '@/utils/date';
 
 vi.mock('@/composables/history/events', () => ({
   useHistoryEvents: vi.fn(),

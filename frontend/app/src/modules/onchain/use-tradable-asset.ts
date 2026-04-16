@@ -4,8 +4,8 @@ import type { TradableAsset, TradableAssetWithoutValue } from '@/modules/onchain
 import { Zero } from '@rotki/common';
 import { useSupportedChains } from '@/composables/info/chains';
 import { useBalancesStore } from '@/modules/balances/use-balances-store';
+import { sortDesc } from '@/modules/common/data/bignumbers';
 import { usePriceUtils } from '@/modules/prices/use-price-utils';
-import { sortDesc } from '@/utils/bignumbers';
 import { useWalletStore } from './use-wallet-store';
 
 interface UseInjectedTradableAssetReturn {

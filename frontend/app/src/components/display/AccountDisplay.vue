@@ -4,7 +4,7 @@ import EnsAvatar from '@/components/display/EnsAvatar.vue';
 import ChainIcon from '@/components/helper/display/icons/ChainIcon.vue';
 import { useScramble } from '@/composables/scramble';
 import { useAddressNameResolution } from '@/modules/address-names/use-address-name-resolution';
-import { truncateAddress } from '@/utils/truncate';
+import { truncateAddress } from '@/modules/common/display/truncate';
 
 const { account, hideChainIcon = false, noTruncate = false, size = '24px', useAliasName = true } = defineProps<{
   account: Account;
