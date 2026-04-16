@@ -1,13 +1,13 @@
 import type { ComputedRef } from 'vue';
 import type { CommonQueryProgressData, HistoryQueryProgressType } from '@/modules/dashboard/progress/types';
 import { get } from '@vueuse/shared';
+import { useEventsQueryStatusStore } from '@/modules/history/use-events-query-status-store';
+import { type TxQueryStatusData, useTxQueryStatusStore } from '@/modules/history/use-tx-query-status-store';
 import {
   type HistoryEventsQueryData,
   HistoryEventsQueryStatus,
   TransactionsQueryStatus,
 } from '@/modules/messaging/types';
-import { useEventsQueryStatusStore } from '@/store/history/query-status/events-query-status';
-import { type TxQueryStatusData, useTxQueryStatusStore } from '@/store/history/query-status/tx-query-status';
 
 interface HistoryQueryProgressOperationData {
   type: HistoryQueryProgressType;

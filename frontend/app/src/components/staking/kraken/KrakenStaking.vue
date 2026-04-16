@@ -5,9 +5,9 @@ import HistoryEventsView from '@/components/history/events/HistoryEventsView.vue
 import KrakenDateFilter from '@/components/staking/kraken/KrakenDateFilter.vue';
 import KrakenStakingOverview from '@/components/staking/kraken/KrakenStakingOverview.vue';
 import KrakenStakingReceived from '@/components/staking/kraken/KrakenStakingReceived.vue';
+import { useHistoricCachePriceStore } from '@/modules/prices/use-historic-cache-price-store';
 import { usePriceUtils } from '@/modules/prices/use-price-utils';
-import { useHistoricCachePriceStore } from '@/store/prices/historic';
-import { useKrakenStakingStore } from '@/store/staking/kraken';
+import { useKrakenStakingStore } from '@/modules/staking/use-kraken-staking-store';
 
 const modelValue = defineModel<KrakenStakingDateFilter>({ required: true });
 

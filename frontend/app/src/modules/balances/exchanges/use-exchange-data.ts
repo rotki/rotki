@@ -5,8 +5,8 @@ import { useAssetsStore } from '@/modules/assets/use-assets-store';
 import { useBalancesStore } from '@/modules/balances/use-balances-store';
 import { sortDesc } from '@/modules/common/data/bignumbers';
 import { balanceSum, exchangeAssetSum } from '@/modules/common/data/calculation';
-import { useGeneralSettingsStore } from '@/store/settings/general';
-import { useSessionSettingsStore } from '@/store/settings/session';
+import { useGeneralSettingsStore } from '@/modules/settings/use-general-settings-store';
+import { useSessionSettingsStore } from '@/modules/settings/use-session-settings-store';
 
 interface UseExchangeDataReturn {
   getBaseExchangeBalances: (exchange?: string) => AssetProtocolBalances;

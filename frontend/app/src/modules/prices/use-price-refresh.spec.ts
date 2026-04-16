@@ -5,9 +5,9 @@ import flushPromises from 'flush-promises';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { TRADE_LOCATION_BANKS } from '@/data/defaults';
 import { useCurrencies } from '@/modules/amount-display/currencies';
+import { useBalancePricesStore } from '@/modules/balances/use-balance-prices-store';
 import { useBalancesStore } from '@/modules/balances/use-balances-store';
-import { useBalancePricesStore } from '@/store/balances/prices';
-import { useSessionSettingsStore } from '@/store/settings/session';
+import { useSessionSettingsStore } from '@/modules/settings/use-session-settings-store';
 import '@test/i18n';
 
 // Mock functions

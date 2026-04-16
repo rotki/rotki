@@ -18,7 +18,7 @@ import { useHistoryEventMappings } from '@/composables/history/events/mapping';
 import { useAccountingSettings } from '@/composables/settings/accounting';
 import { usePaginationFilters } from '@/composables/use-pagination-filter';
 import { getCollectionData } from '@/modules/common/data/collection-utils';
-import { useMessageStore } from '@/store/message';
+import { useMessageStore } from '@/modules/common/use-message-store';
 
 const emit = defineEmits<{
   close: [];

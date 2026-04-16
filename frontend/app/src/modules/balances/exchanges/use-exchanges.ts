@@ -12,9 +12,9 @@ import { getErrorMessage } from '@/modules/common/logging/error-handling';
 import { Section, Status } from '@/modules/common/status';
 import { useNotifications } from '@/modules/notifications/use-notifications';
 import { BalanceSource } from '@/modules/settings/types/frontend-settings';
+import { useSessionSettingsStore } from '@/modules/settings/use-session-settings-store';
 import { TaskType } from '@/modules/tasks/task-type';
 import { isActionableFailure, useTaskHandler } from '@/modules/tasks/use-task-handler';
-import { useSessionSettingsStore } from '@/store/settings/session';
 
 interface UseExchangesReturn {
   fetchConnectedExchangeBalances: (refresh?: boolean) => Promise<void>;

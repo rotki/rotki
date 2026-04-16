@@ -3,10 +3,10 @@ import type { Component } from 'vue';
 import type { DialogType } from '@/modules/common/dialogs';
 import type { EditableMissingPrice, MissingAcquisition, MissingPrice, Report } from '@/modules/reports/report-types';
 import { type Nullable, toSentenceCase } from '@rotki/common';
+import { useAreaVisibilityStore } from '@/modules/common/use-area-visibility-store';
+import { useConfirmStore } from '@/modules/common/use-confirm-store';
+import { useReportsStore } from '@/modules/reports/use-reports-store';
 import { type Pinned, PinnedNames } from '@/modules/session/types';
-import { useConfirmStore } from '@/store/confirm';
-import { useReportsStore } from '@/store/reports';
-import { useAreaVisibilityStore } from '@/store/session/visibility';
 
 const {
   isPinned = false,

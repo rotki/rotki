@@ -5,7 +5,7 @@ import type { Pinned } from '@/modules/session/types';
 import { startPromise } from '@shared/utils';
 import InternalTxConflictRepullSettings from '@/components/settings/general/InternalTxConflictRepullSettings.vue';
 import { HighlightTargetTypes, useHistoryEventNavigation } from '@/composables/history/events/use-history-event-navigation';
-import { useAreaVisibilityStore } from '@/store/session/visibility';
+import { useAreaVisibilityStore } from '@/modules/common/use-area-visibility-store';
 import InternalTxConflictsContent from './InternalTxConflictsContent.vue';
 import { useInternalTxConflictResolution } from './use-internal-tx-conflict-resolution';
 

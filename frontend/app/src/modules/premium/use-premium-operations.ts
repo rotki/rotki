@@ -3,7 +3,7 @@ import type { PremiumCredentialsPayload } from '@/modules/session/types';
 import { usePremiumCredentialsApi } from '@/composables/api/session/premium-credentials';
 import { ApiValidationError, type ValidationErrors } from '@/modules/api/types/errors';
 import { getErrorMessage } from '@/modules/common/logging/error-handling';
-import { usePremiumStore } from '@/store/session/premium';
+import { usePremiumStore } from '@/modules/premium/use-premium-store';
 
 interface UsePremiumOperationsReturn {
   deletePremium: () => Promise<ActionStatus>;

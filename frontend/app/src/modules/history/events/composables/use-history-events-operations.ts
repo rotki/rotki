@@ -18,10 +18,10 @@ import { useUnmatchedAssetMovements } from '@/composables/history/events/use-unm
 import { useSupportedChains } from '@/composables/info/chains';
 import { Defaults } from '@/data/defaults';
 import { getErrorMessage } from '@/modules/common/logging/error-handling';
+import { useConfirmStore } from '@/modules/common/use-confirm-store';
 import { isAssetMovementEvent, isCustomizedEvent } from '@/modules/history/event-utils';
 import { useCompleteEvents } from '@/modules/history/events/composables/use-complete-events';
 import { useNotifications } from '@/modules/notifications/use-notifications';
-import { useConfirmStore } from '@/store/confirm';
 
 interface UseHistoryEventsOperationsOptions {
   completeEventsMapped: ComputedRef<Record<string, HistoryEventRow[]>>;

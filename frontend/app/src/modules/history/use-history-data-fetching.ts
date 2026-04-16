@@ -2,8 +2,8 @@ import { useHistoryApi } from '@/composables/api/history';
 import { type TransactionStatus, useHistoryEventsApi } from '@/composables/api/history/events';
 import { getErrorMessage } from '@/modules/common/logging/error-handling';
 import { logger } from '@/modules/common/logging/logging';
+import { useHistoryStore } from '@/modules/history/use-history-store';
 import { useNotifications } from '@/modules/notifications/use-notifications';
-import { useHistoryStore } from '@/store/history';
 
 interface UseHistoryDataFetchingReturn {
   fetchAssociatedLocations: () => Promise<void>;

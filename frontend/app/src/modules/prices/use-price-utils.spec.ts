@@ -1,7 +1,7 @@
 import { bigNumberify } from '@rotki/common';
 import { beforeAll, describe, expect, it } from 'vitest';
+import { useBalancePricesStore } from '@/modules/balances/use-balance-prices-store';
 import { usePriceUtils } from '@/modules/prices/use-price-utils';
-import { useBalancePricesStore } from '@/store/balances/prices';
 
 describe('usePriceUtils', () => {
   let store: ReturnType<typeof useBalancePricesStore>;

@@ -11,12 +11,12 @@ import { useStatusUpdater } from '@/composables/status';
 import { logger } from '@/modules/common/logging/logging';
 import { Module } from '@/modules/common/modules';
 import { Section, Status } from '@/modules/common/status';
+import { useLiquityStore } from '@/modules/defi/use-liquity-store';
 import { useNotifications } from '@/modules/notifications/use-notifications';
+import { useGeneralSettingsStore } from '@/modules/settings/use-general-settings-store';
 import { TaskType } from '@/modules/tasks/task-type';
 import { isActionableFailure, useTaskHandler } from '@/modules/tasks/use-task-handler';
 import { useTaskStore } from '@/modules/tasks/use-task-store';
-import { useLiquityStore } from '@/store/defi/liquity';
-import { useGeneralSettingsStore } from '@/store/settings/general';
 
 interface UseLiquityDataFetchingReturn {
   fetchBalances: (refresh?: boolean) => Promise<void>;

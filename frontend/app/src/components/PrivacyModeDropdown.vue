@@ -4,8 +4,8 @@ import AmountInput from '@/components/inputs/AmountInput.vue';
 import SettingsOption from '@/components/settings/controls/SettingsOption.vue';
 import { usePrivacyMode } from '@/composables/privacy';
 import { useScrambleSetting } from '@/composables/scramble-settings';
-import { useAreaVisibilityStore } from '@/store/session/visibility';
-import { useFrontendSettingsStore } from '@/store/settings/frontend';
+import { useAreaVisibilityStore } from '@/modules/common/use-area-visibility-store';
+import { useFrontendSettingsStore } from '@/modules/settings/use-frontend-settings-store';
 
 const { t } = useI18n({ useScope: 'global' });
 

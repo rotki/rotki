@@ -8,7 +8,7 @@ import { useLoggedUserIdentifier } from '@/composables/user/use-logged-user-iden
 import { useBlockchainAccountManagement } from '@/modules/accounts/use-blockchain-account-management';
 import { useTokenDetectionOrchestrator } from '@/modules/balances/blockchain/use-token-detection-orchestrator';
 import { useNotifications } from '@/modules/notifications/use-notifications';
-import { useSessionAuthStore } from '@/store/session/auth';
+import { useSessionAuthStore } from '@/modules/session/use-session-auth-store';
 
 function setupMigrationSessionCache(identifier: string): Ref<MigratedAddresses> {
   return useSessionStorage(`rotki.migrated_addresses.${identifier}`, []);

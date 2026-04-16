@@ -4,7 +4,7 @@ import { omit } from 'es-toolkit';
 import { useSectionStatus } from '@/composables/status';
 import { useManualBalances } from '@/modules/balances/manual/use-manual-balances';
 import { Section } from '@/modules/common/status';
-import { useConfirmStore } from '@/store/confirm';
+import { useConfirmStore } from '@/modules/common/use-confirm-store';
 
 interface UseManualBalanceTableActionsReturn {
   prepareForEdit: (balance: ManualBalanceWithPrice) => ManualBalance;

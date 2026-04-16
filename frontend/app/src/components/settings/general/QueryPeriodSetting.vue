@@ -5,7 +5,7 @@ import SettingsOption from '@/components/settings/controls/SettingsOption.vue';
 import { useValidation } from '@/composables/validation';
 import { useMonitorService } from '@/modules/app/use-monitor-service';
 import { toMessages } from '@/modules/common/validation/validation';
-import { useFrontendSettingsStore } from '@/store/settings/frontend';
+import { useFrontendSettingsStore } from '@/modules/settings/use-frontend-settings-store';
 
 const queryPeriod = ref<string>('5');
 const minQueryPeriod = 5;

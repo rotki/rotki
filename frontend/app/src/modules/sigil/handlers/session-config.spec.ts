@@ -7,9 +7,9 @@ describe('useSessionConfigHandler', () => {
   });
 
   it('should collect session config from stores', async () => {
-    const { usePremiumStore } = await import('@/store/session/premium');
-    const { useGeneralSettingsStore } = await import('@/store/settings/general');
-    const { useFrontendSettingsStore } = await import('@/store/settings/frontend');
+    const { usePremiumStore } = await import('@/modules/premium/use-premium-store');
+    const { useGeneralSettingsStore } = await import('@/modules/settings/use-general-settings-store');
+    const { useFrontendSettingsStore } = await import('@/modules/settings/use-frontend-settings-store');
 
     const { premium } = storeToRefs(usePremiumStore());
     set(premium, true);

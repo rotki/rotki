@@ -6,7 +6,7 @@ import { defaultAccountingSettings, defaultGeneralSettings } from '@/data/factor
 import { Currency, CURRENCY_USD } from '@/modules/amount-display/currencies';
 import { Module } from '@/modules/common/modules';
 import { getDefaultFrontendSettings } from '@/modules/settings/types/frontend-settings';
-import { useGeneralSettingsStore } from '@/store/settings/general';
+import { useGeneralSettingsStore } from '@/modules/settings/use-general-settings-store';
 import '@test/i18n';
 
 const mockSetSettings = vi.fn();

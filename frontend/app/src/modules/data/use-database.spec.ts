@@ -42,7 +42,7 @@ describe('useDatabase', () => {
       useLoggedUserIdentifier: vi.fn(() => mockUserIdentifier),
     }));
 
-    vi.doMock('@/store/main', () => ({
+    vi.doMock('@/modules/common/use-main-store', () => ({
       useMainStore: vi.fn(() => ({
         dataDirectory: mockDataDirectory,
       })),

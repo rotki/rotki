@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { useFrontendSettingsStore } from '@/store/settings/frontend';
+import { useFrontendSettingsStore } from '@/modules/settings/use-frontend-settings-store';
 
 const { assetPadding = 0, justify = 'end', value } = defineProps<{
   value?: string;

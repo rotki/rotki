@@ -32,7 +32,7 @@ vi.mock('@/modules/notifications/use-notification-dispatcher', () => ({
   }),
 }));
 
-vi.mock('@/store/notifications/index', () => ({
+vi.mock('@/modules/notifications/use-notifications-store/index', () => ({
   useNotificationsStore: vi.fn().mockReturnValue({
     removeMatching: vi.fn(),
   }),

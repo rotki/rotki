@@ -3,9 +3,9 @@ import type { Ref } from 'vue';
 import type { CalendarEvent } from '@/modules/history/calendar/types';
 import { omit } from 'es-toolkit';
 import { useCalendarApi } from '@/composables/history/calendar';
+import { useConfirmStore } from '@/modules/common/use-confirm-store';
 import { getErrorMessage, useNotifications } from '@/modules/notifications/use-notifications';
-import { useConfirmStore } from '@/store/confirm';
-import { useGeneralSettingsStore } from '@/store/settings/general';
+import { useGeneralSettingsStore } from '@/modules/settings/use-general-settings-store';
 
 interface UseCalendarOperationsReturn {
   add: (selectedDate?: Dayjs) => void;

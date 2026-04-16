@@ -2,9 +2,9 @@ import type { FrontendSettings, FrontendSettingsPayload } from '@/modules/settin
 import type { GeneralSettings, SettingsUpdate } from '@/modules/settings/types/user-settings';
 import { startPromise } from '@shared/utils';
 import { isEqual } from 'es-toolkit';
+import { useMainStore } from '@/modules/common/use-main-store';
+import { useFrontendSettingsStore } from '@/modules/settings/use-frontend-settings-store';
 import { useSettingsOperations } from '@/modules/settings/use-settings-operations';
-import { useMainStore } from '@/store/main';
-import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { compareVersions } from './compare-versions';
 import {
   createSettingsSuggestions,

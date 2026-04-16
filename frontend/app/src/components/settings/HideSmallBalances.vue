@@ -5,11 +5,11 @@ import { omit } from 'es-toolkit';
 import HintMenuIcon from '@/components/HintMenuIcon.vue';
 import { toMessages } from '@/modules/common/validation/validation';
 import { BalanceSource, type BalanceValueThreshold } from '@/modules/settings/types/frontend-settings';
+import { useFrontendSettingsStore } from '@/modules/settings/use-frontend-settings-store';
+import { useGeneralSettingsStore } from '@/modules/settings/use-general-settings-store';
 import { useSettingsOperations } from '@/modules/settings/use-settings-operations';
 import { TaskType } from '@/modules/tasks/task-type';
 import { useTaskStore } from '@/modules/tasks/use-task-store';
-import { useFrontendSettingsStore } from '@/store/settings/frontend';
-import { useGeneralSettingsStore } from '@/store/settings/general';
 
 const { source } = defineProps<{
   source: BalanceSource;

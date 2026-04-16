@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { Tag } from '@/modules/tags/tags';
 import TagIcon from '@/components/tags/TagIcon.vue';
-import { useSessionMetadataStore } from '@/store/session/metadata';
+import { useSessionMetadataStore } from '@/modules/session/use-session-metadata-store';
 
 const model = defineModel<string[]>({ required: true });
 

@@ -2,8 +2,8 @@
 import { useReportsApi } from '@/composables/api/reports';
 import { useInterop } from '@/composables/electron-interop';
 import { getErrorMessage } from '@/modules/common/logging/error-handling';
+import { useMessageStore } from '@/modules/common/use-message-store';
 import { useReportOperations } from '@/modules/reports/use-report-operations';
-import { useMessageStore } from '@/store/message';
 
 const { list = false, reportId } = defineProps<{
   list?: boolean;

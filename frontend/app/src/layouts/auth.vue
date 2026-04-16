@@ -3,7 +3,7 @@ import About from '@/components/About.vue';
 import AppHost from '@/components/app/AppHost.vue';
 import AppMessages from '@/components/app/AppMessages.vue';
 import AppUpdatePopup from '@/components/status/update/AppUpdatePopup.vue';
-import { useAreaVisibilityStore } from '@/store/session/visibility';
+import { useAreaVisibilityStore } from '@/modules/common/use-area-visibility-store';
 
 const { showAbout } = storeToRefs(useAreaVisibilityStore());
 </script>

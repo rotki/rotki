@@ -8,10 +8,10 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import AccountBalances from '@/components/accounts/AccountBalances.vue';
 import { useSupportedChains } from '@/composables/info/chains';
 import { Section, Status } from '@/modules/common/status';
+import { useMainStore } from '@/modules/common/use-main-store';
+import { useStatusStore } from '@/modules/common/use-status-store';
 import { TaskType } from '@/modules/tasks/task-type';
 import { useTaskStore } from '@/modules/tasks/use-task-store';
-import { useMainStore } from '@/store/main';
-import { useStatusStore } from '@/store/status';
 
 vi.mock('vue-router', () => ({
   useRoute: vi.fn().mockImplementation(() =>

@@ -39,7 +39,7 @@ vi.mock('@/composables/premium', () => ({
   usePremium: vi.fn((): Ref<boolean> => ref<boolean>(true)),
 }));
 
-vi.mock('@/store/settings/general', () => ({
+vi.mock('@/modules/settings/use-general-settings-store', () => ({
   useGeneralSettingsStore: vi.fn((): Record<string, unknown> => ({
     activeModules: ref<string[]>([Module.LIQUITY]),
   })),
@@ -72,7 +72,7 @@ describe('useLiquityDataFetching', () => {
     it('should pass refresh flag', async () => {
       mockFetchLiquityBalances.mockResolvedValue({ taskId: 1 });
 
-      const { useStatusStore } = await import('@/store/status');
+      const { useStatusStore } = await import('@/modules/common/use-status-store');
       const statusStore = useStatusStore();
       statusStore.setStatus({ status: Status.LOADED, section: Section.DEFI_LIQUITY_BALANCES });
 
@@ -124,7 +124,7 @@ describe('useLiquityDataFetching', () => {
 
   describe('module guard', () => {
     it('should skip fetch when module is not active', async () => {
-      const { useGeneralSettingsStore } = await import('@/store/settings/general');
+      const { useGeneralSettingsStore } = await import('@/modules/settings/use-general-settings-store');
       // @ts-expect-error partial mock
       vi.mocked(useGeneralSettingsStore).mockReturnValue({ activeModules: ref<string[]>([]) });
 

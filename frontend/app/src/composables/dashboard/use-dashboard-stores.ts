@@ -1,7 +1,7 @@
 import type { BigNumber } from '@rotki/common';
 import type { ComputedRef } from 'vue';
-import { useGeneralSettingsStore } from '@/store/settings/general';
-import { useStatisticsStore } from '@/store/statistics';
+import { useGeneralSettingsStore } from '@/modules/settings/use-general-settings-store';
+import { useStatisticsStore } from '@/modules/statistics/use-statistics-store';
 
 interface UseDashboardStoresReturn {
   currencySymbol: ComputedRef<string>;

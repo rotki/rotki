@@ -6,7 +6,7 @@ import SettingsOption from '@/components/settings/controls/SettingsOption.vue';
 import { SettingsHighlightIds } from '@/composables/settings/types';
 import { getPublicServiceImagePath } from '@/modules/common/file/file';
 import { SUPPRESSIBLE_SERVICES, SuppressibleMissingKeyService } from '@/modules/settings/types/user-settings';
-import { useGeneralSettingsStore } from '@/store/settings/general';
+import { useGeneralSettingsStore } from '@/modules/settings/use-general-settings-store';
 
 const { t } = useI18n({ useScope: 'global' });
 const { suppressMissingKeyMsgServices } = storeToRefs(useGeneralSettingsStore());

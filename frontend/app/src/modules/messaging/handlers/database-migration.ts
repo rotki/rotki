@@ -1,6 +1,6 @@
 import type { StateHandler } from '../interfaces';
 import { createStateHandler } from '@/modules/messaging/utils';
-import { useSessionAuthStore } from '@/store/session/auth';
+import { useSessionAuthStore } from '@/modules/session/use-session-auth-store';
 
 export function createDbUpgradeHandler(): StateHandler {
   // Capture store methods at handler creation time (in setup context)

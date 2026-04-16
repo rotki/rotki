@@ -10,11 +10,11 @@ import { lastLogin } from '@/modules/account/account-management';
 import { useLogin } from '@/modules/account/use-login';
 import { usePasswordConfirmation } from '@/modules/account/use-password-confirmation';
 import { useWebsocketConnection } from '@/modules/app/use-websocket-connection';
+import { useMainStore } from '@/modules/common/use-main-store';
 import { useHistoryDataFetching } from '@/modules/history/use-history-data-fetching';
 import { useWalletStore } from '@/modules/onchain/use-wallet-store';
+import { useSessionAuthStore } from '@/modules/session/use-session-auth-store';
 import { useSettingsOperations } from '@/modules/settings/use-settings-operations';
-import { useMainStore } from '@/store/main';
-import { useSessionAuthStore } from '@/store/session/auth';
 
 interface UseAccountManagementReturn {
   loading: Readonly<Ref<boolean>>;

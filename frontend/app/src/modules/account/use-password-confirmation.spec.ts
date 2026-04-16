@@ -2,8 +2,8 @@ import dayjs from 'dayjs';
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { Constraints } from '@/data/constraints';
 import { usePasswordConfirmation } from '@/modules/account/use-password-confirmation';
-import { useSessionAuthStore } from '@/store/session/auth';
-import { useFrontendSettingsStore } from '@/store/settings/frontend';
+import { useSessionAuthStore } from '@/modules/session/use-session-auth-store';
+import { useFrontendSettingsStore } from '@/modules/settings/use-frontend-settings-store';
 
 const mockInterop = vi.hoisted(() => ({
   getPassword: vi.fn(),

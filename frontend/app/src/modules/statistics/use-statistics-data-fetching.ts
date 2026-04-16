@@ -1,7 +1,7 @@
 import { useStatisticsApi } from '@/composables/api/statistics/statistics-api';
 import { getErrorMessage, useNotifications } from '@/modules/notifications/use-notifications';
-import { useFrontendSettingsStore } from '@/store/settings/frontend';
-import { useStatisticsStore } from '@/store/statistics';
+import { useFrontendSettingsStore } from '@/modules/settings/use-frontend-settings-store';
+import { useStatisticsStore } from '@/modules/statistics/use-statistics-store';
 
 interface UseStatisticsDataFetchingReturn {
   fetchNetValue: () => Promise<void>;

@@ -1,4 +1,4 @@
-import type { TxQueryStatusData } from '@/store/history/query-status/tx-query-status';
+import type { TxQueryStatusData } from '@/modules/history/use-tx-query-status-store';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { TransactionsQueryStatus } from '@/modules/messaging/types';
 import { AddressStatus, AddressStep } from '../types';

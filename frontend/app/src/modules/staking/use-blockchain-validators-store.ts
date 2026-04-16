@@ -11,7 +11,7 @@ import { sortAndFilterValidators } from '@/modules/accounts/account-validator';
 import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
 import { useBalancesStore } from '@/modules/balances/use-balances-store';
 import { Module } from '@/modules/common/modules';
-import { useGeneralSettingsStore } from '@/store/settings/general';
+import { useGeneralSettingsStore } from '@/modules/settings/use-general-settings-store';
 
 export const useBlockchainValidatorsStore = defineStore('blockchain/validators', () => {
   const blockchainAccountsStore = useBlockchainAccountsStore();

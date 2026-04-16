@@ -18,7 +18,7 @@ vi.mock('./internal-tx-conflicts-api', () => ({
   }),
 }));
 
-vi.mock('@/store/message', () => ({
+vi.mock('@/modules/common/use-message-store', () => ({
   useMessageStore: (): object => ({
     setMessage: vi.fn(),
   }),
@@ -31,13 +31,13 @@ vi.mock('@/composables/info/chains', () => ({
   }),
 }));
 
-vi.mock('@/store/notifications', () => ({
+vi.mock('@/modules/notifications/use-notifications-store', () => ({
   useNotificationsStore: (): object => ({
     notify: vi.fn(),
   }),
 }));
 
-vi.mock('@/store/settings/frontend', () => ({
+vi.mock('@/modules/settings/use-frontend-settings-store', () => ({
   useFrontendSettingsStore: (): object => ({
     dateInputFormat: ref('%d/%m/%Y %H:%M'),
   }),

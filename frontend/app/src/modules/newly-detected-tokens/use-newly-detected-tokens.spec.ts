@@ -15,7 +15,7 @@ vi.mock('@/modules/assets/use-assets-store', () => ({
 
 const mockNotifyNewNfts = ref<boolean>(true);
 
-vi.mock('@/store/settings/frontend', () => ({
+vi.mock('@/modules/settings/use-frontend-settings-store', () => ({
   useFrontendSettingsStore: vi.fn(() => ({
     notifyNewNfts: mockNotifyNewNfts,
   })),

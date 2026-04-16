@@ -4,7 +4,7 @@ import { useInterop } from '@/composables/electron-interop';
 import { usePrivacyMode } from '@/composables/privacy';
 import { useReportIssue } from '@/composables/report-issue';
 import { useScrambleSetting } from '@/composables/scramble-settings';
-import { useAreaVisibilityStore } from '@/store/session/visibility';
+import { useAreaVisibilityStore } from '@/modules/common/use-area-visibility-store';
 
 const { close, initialDescription: storeDescription, initialTitle: storeTitle, visible } = useReportIssue();
 

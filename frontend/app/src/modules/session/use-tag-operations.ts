@@ -5,7 +5,7 @@ import { useTagsApi } from '@/composables/api/tags';
 import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
 import { logger } from '@/modules/common/logging/logging';
 import { getErrorMessage, useNotifications } from '@/modules/notifications/use-notifications';
-import { useSessionMetadataStore } from '@/store/session/metadata';
+import { useSessionMetadataStore } from '@/modules/session/use-session-metadata-store';
 
 interface UseTagOperationsReturn {
   addTag: (tag: Tag) => Promise<ActionStatus>;

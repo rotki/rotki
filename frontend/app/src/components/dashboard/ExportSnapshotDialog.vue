@@ -8,9 +8,9 @@ import { useInterop } from '@/composables/electron-interop';
 import { FiatDisplay } from '@/modules/amount-display/components';
 import { downloadFileByBlob } from '@/modules/common/file/download';
 import { getErrorMessage } from '@/modules/common/logging/error-handling';
+import { useConfirmStore } from '@/modules/common/use-confirm-store';
+import { useMessageStore } from '@/modules/common/use-message-store';
 import { useStatisticsDataFetching } from '@/modules/statistics/use-statistics-data-fetching';
-import { useConfirmStore } from '@/store/confirm';
-import { useMessageStore } from '@/store/message';
 
 const display = defineModel<boolean>({ default: false, required: true });
 

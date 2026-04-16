@@ -1,7 +1,7 @@
 import { createPinia, setActivePinia } from 'pinia';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { TransactionsQueryStatus } from '@/modules/messaging/types';
-import { type TxQueryStatusData, useTxQueryStatusStore } from './tx-query-status';
+import { type TxQueryStatusData, useTxQueryStatusStore } from './use-tx-query-status-store';
 
 const mockMillisecondsToSeconds = vi.hoisted(() => vi.fn().mockReturnValue(1000));
 

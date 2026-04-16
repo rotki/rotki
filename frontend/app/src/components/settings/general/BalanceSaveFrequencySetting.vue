@@ -7,7 +7,7 @@ import { Constraints } from '@/data/constraints';
 import { Defaults } from '@/data/defaults';
 import { toMessages } from '@/modules/common/validation/validation';
 import SettingResetConfirmButton from '@/modules/settings/SettingResetConfirmButton.vue';
-import { useGeneralSettingsStore } from '@/store/settings/general';
+import { useGeneralSettingsStore } from '@/modules/settings/use-general-settings-store';
 
 const DEFAULT_FREQUENCY = Defaults.BALANCE_SAVE_FREQUENCY;
 

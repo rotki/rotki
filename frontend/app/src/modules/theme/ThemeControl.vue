@@ -2,8 +2,8 @@
 import { Theme } from '@rotki/common';
 import MenuTooltipButton from '@/components/helper/MenuTooltipButton.vue';
 import { useInterop } from '@/composables/electron-interop';
+import { useFrontendSettingsStore } from '@/modules/settings/use-frontend-settings-store';
 import { useSettingsOperations } from '@/modules/settings/use-settings-operations';
-import { useFrontendSettingsStore } from '@/store/settings/frontend';
 
 const { darkModeEnabled, menu = false } = defineProps<{
   darkModeEnabled: boolean;

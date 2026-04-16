@@ -8,9 +8,9 @@ import { CURRENCY_USD, type SupportedCurrency } from '@/modules/amount-display/c
 import { useBalancesStore } from '@/modules/balances/use-balances-store';
 import { millisecondsToSeconds } from '@/modules/common/data/date';
 import { usePriceUtils } from '@/modules/prices/use-price-utils';
-import { useFrontendSettingsStore } from '@/store/settings/frontend';
-import { useGeneralSettingsStore } from '@/store/settings/general';
-import { useSessionSettingsStore } from '@/store/settings/session';
+import { useFrontendSettingsStore } from '@/modules/settings/use-frontend-settings-store';
+import { useGeneralSettingsStore } from '@/modules/settings/use-general-settings-store';
+import { useSessionSettingsStore } from '@/modules/settings/use-session-settings-store';
 
 function defaultNetValue(): NetValue {
   return {

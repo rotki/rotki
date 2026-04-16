@@ -3,7 +3,7 @@ import { type Balance, Blockchain, Zero } from '@rotki/common';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
 import { useBalancesStore } from '@/modules/balances/use-balances-store';
-import { useBlockchainValidatorsStore } from './validators';
+import { useBlockchainValidatorsStore } from './use-blockchain-validators-store';
 
 describe('useBlockchainValidatorsStore', () => {
   let store: ReturnType<typeof useBlockchainValidatorsStore>;

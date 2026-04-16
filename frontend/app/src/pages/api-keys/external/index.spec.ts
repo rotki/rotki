@@ -11,8 +11,8 @@ import ChainIcon from '@/components/helper/display/icons/ChainIcon.vue';
 import ServiceKey from '@/components/settings/api-keys/ServiceKey.vue';
 import ServiceKeyCard from '@/components/settings/api-keys/ServiceKeyCard.vue';
 import { useExternalServicesApi } from '@/composables/api/settings/external-services-api';
+import { useConfirmStore } from '@/modules/common/use-confirm-store';
 import ExternalServices from '@/pages/api-keys/external/index.vue';
-import { useConfirmStore } from '@/store/confirm';
 
 vi.mock('@/composables/info/chains', () => ({
   useSupportedChains: vi.fn().mockReturnValue({

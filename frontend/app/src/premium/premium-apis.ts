@@ -24,13 +24,13 @@ import { truncateAddress } from '@/modules/common/display/truncate';
 import { useHistoricPriceCache } from '@/modules/prices/use-historic-price-cache';
 import { useHistoricalPriceFetcher } from '@/modules/prices/use-historical-price-fetcher';
 import { usePriceUtils } from '@/modules/prices/use-price-utils';
+import { useFrontendSettingsStore } from '@/modules/settings/use-frontend-settings-store';
+import { useGeneralSettingsStore } from '@/modules/settings/use-general-settings-store';
 import { useStatisticsDataFetching } from '@/modules/statistics/use-statistics-data-fetching';
+import { useStatisticsStore } from '@/modules/statistics/use-statistics-store';
 import { TaskType } from '@/modules/tasks/task-type';
 import { useTaskHandler } from '@/modules/tasks/use-task-handler';
 import { useTaskStore } from '@/modules/tasks/use-task-store';
-import { useFrontendSettingsStore } from '@/store/settings/frontend';
-import { useGeneralSettingsStore } from '@/store/settings/general';
-import { useStatisticsStore } from '@/store/statistics';
 
 export function assetsApi(): AssetsApi {
   const { getAssetInfo, useAssetInfo, useTokenAddress } = useAssetInfoRetrieval();

@@ -2,7 +2,7 @@
 import DetectEvmAccounts from '@/components/accounts/balances/DetectEvmAccounts.vue';
 import DetectTokenChainsSelection from '@/components/accounts/balances/DetectTokenChainsSelection.vue';
 import { useBalanceRefresh } from '@/modules/balances/use-balance-refresh';
-import { useConfirmStore } from '@/store/confirm';
+import { useConfirmStore } from '@/modules/common/use-confirm-store';
 
 defineProps<{
   isDetectingTokens: boolean;

@@ -14,10 +14,10 @@ import { useBalanceRefresh } from '@/modules/balances/use-balance-refresh';
 import { uniqueStrings } from '@/modules/common/data/data';
 import { NoteLocation } from '@/modules/common/notes';
 import { BalanceSource } from '@/modules/settings/types/frontend-settings';
+import { useSessionSettingsStore } from '@/modules/settings/use-session-settings-store';
 import { TaskType } from '@/modules/tasks/task-type';
 import { useTaskStore } from '@/modules/tasks/use-task-store';
 import { Routes } from '@/router/routes';
-import { useSessionSettingsStore } from '@/store/settings/session';
 
 definePage({
   meta: {

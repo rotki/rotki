@@ -2,7 +2,7 @@ import { omit } from 'es-toolkit';
 import { computed, type ComputedRef, type MaybeRefOrGetter, type Ref, type WritableComputedRef } from 'vue';
 import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
 import { logger } from '@/modules/common/logging/logging';
-import { useFrontendSettingsStore } from '@/store/settings/frontend';
+import { useFrontendSettingsStore } from '@/modules/settings/use-frontend-settings-store';
 
 const Source = {
   EVENTS: 'events',

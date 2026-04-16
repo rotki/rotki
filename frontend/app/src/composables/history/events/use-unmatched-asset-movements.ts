@@ -8,12 +8,12 @@ import { useAssetMovementMatchingApi } from '@/composables/api/history/events/as
 import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
 import { arrayify } from '@/modules/common/data/array';
 import { logger } from '@/modules/common/logging/logging';
+import { useHistoryStore } from '@/modules/history/use-history-store';
 import { getErrorMessage, useNotifications } from '@/modules/notifications/use-notifications';
 import { PremiumFeature, useFeatureAccess } from '@/modules/premium/use-feature-access';
 import { TaskType } from '@/modules/tasks/task-type';
 import { isActionableFailure, useTaskHandler } from '@/modules/tasks/use-task-handler';
 import { useTaskStore } from '@/modules/tasks/use-task-store';
-import { useHistoryStore } from '@/store/history';
 
 interface RawUnmatchedAssetMovement {
   groupIdentifier: string;

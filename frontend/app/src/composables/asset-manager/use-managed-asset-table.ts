@@ -3,8 +3,8 @@ import type { DataTableColumn, DataTableSortData, TablePaginationData } from '@r
 import type { ComputedRef, MaybeRefOrGetter, Ref } from 'vue';
 import type { Collection } from '@/modules/common/collection';
 import { some } from 'es-toolkit/compat';
+import { useFrontendSettingsStore } from '@/modules/settings/use-frontend-settings-store';
 import { TableId, useRememberTableSorting } from '@/modules/table/use-remember-table-sorting';
-import { useFrontendSettingsStore } from '@/store/settings/frontend';
 
 interface UseManagedAssetTableReturn {
   cols: ComputedRef<DataTableColumn<SupportedAsset>[]>;

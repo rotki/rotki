@@ -2,7 +2,7 @@ import type { DataTableColumn, DataTableSortData } from '@rotki/ui-library';
 import type { ComputedRef, Ref, WritableComputedRef } from 'vue';
 import { objectOmit } from '@vueuse/shared';
 import { arrayify } from '@/modules/common/data/array';
-import { useFrontendSettingsStore } from '@/store/settings/frontend';
+import { useFrontendSettingsStore } from '@/modules/settings/use-frontend-settings-store';
 
 export enum TableId {
   ACCOUNT_ASSET_BALANCES = 'ACCOUNT_ASSET_BALANCES',

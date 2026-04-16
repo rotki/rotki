@@ -7,9 +7,9 @@ import { usePremiumHelper } from '@/composables/premium';
 import { usePrivacyMode } from '@/composables/privacy';
 import { useRememberSettings } from '@/composables/user/use-remember-settings';
 import { useLogout } from '@/modules/account/use-logout';
+import { useConfirmStore } from '@/modules/common/use-confirm-store';
+import { useSessionAuthStore } from '@/modules/session/use-session-auth-store';
 import ThemeControl from '@/modules/theme/ThemeControl.vue';
-import { useConfirmStore } from '@/store/confirm';
-import { useSessionAuthStore } from '@/store/session/auth';
 
 const { t } = useI18n({ useScope: 'global' });
 

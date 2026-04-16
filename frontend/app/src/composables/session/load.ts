@@ -8,12 +8,12 @@ import { useWhitelistedAssetOperations } from '@/modules/assets/use-whitelisted-
 import { useBalanceFetching } from '@/modules/balances/use-balance-fetching';
 import { logger } from '@/modules/common/logging/logging';
 import { Section, Status } from '@/modules/common/status';
+import { useLocationStore } from '@/modules/common/use-location-store';
 import { usePriceRefresh } from '@/modules/prices/use-price-refresh';
+import { useSessionAuthStore } from '@/modules/session/use-session-auth-store';
 import { useTagOperations } from '@/modules/session/use-tag-operations';
 import { sigilBus } from '@/modules/sigil/event-bus';
 import { useStatisticsDataFetching } from '@/modules/statistics/use-statistics-data-fetching';
-import { useLocationStore } from '@/store/locations';
-import { useSessionAuthStore } from '@/store/session/auth';
 
 const isAutoFetchDisabled = import.meta.env.VITE_NO_AUTO_FETCH === 'true';
 

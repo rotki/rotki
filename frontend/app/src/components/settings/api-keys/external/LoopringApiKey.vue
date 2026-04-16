@@ -5,8 +5,8 @@ import { useExternalApiKeys, useServiceKeyHandler } from '@/composables/settings
 import { useBlockchainBalances } from '@/modules/balances/use-blockchain-balances';
 import { getPublicProtocolImagePath } from '@/modules/common/file/file';
 import { Module } from '@/modules/common/modules';
+import { useGeneralSettingsStore } from '@/modules/settings/use-general-settings-store';
 import { Routes } from '@/router/routes';
-import { useGeneralSettingsStore } from '@/store/settings/general';
 
 const name = 'loopring';
 

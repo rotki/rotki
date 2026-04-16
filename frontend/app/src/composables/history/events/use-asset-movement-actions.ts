@@ -1,8 +1,8 @@
 import type { ComputedRef, Ref } from 'vue';
 import { useAssetMovementMatchingApi } from '@/composables/api/history/events/asset-movement-matching';
 import { type UnmatchedAssetMovement, useUnmatchedAssetMovements } from '@/composables/history/events/use-unmatched-asset-movements';
+import { useConfirmStore } from '@/modules/common/use-confirm-store';
 import { getEventEntryFromCollection } from '@/modules/history/event-utils';
-import { useConfirmStore } from '@/store/confirm';
 
 interface UseAssetMovementActionsOptions {
   onActionComplete?: () => Promise<void>;

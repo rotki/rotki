@@ -10,7 +10,7 @@ import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
 import { ApiValidationError } from '@/modules/api/types/errors';
 import { getErrorMessage } from '@/modules/common/logging/error-handling';
 import { useHistoricPriceCache } from '@/modules/prices/use-historic-price-cache';
-import { useGeneralSettingsStore } from '@/store/settings/general';
+import { useGeneralSettingsStore } from '@/modules/settings/use-general-settings-store';
 
 const { asset } = defineProps<{
   asset: string;

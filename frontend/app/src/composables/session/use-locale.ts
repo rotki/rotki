@@ -1,8 +1,8 @@
 import type { MaybeRef } from 'vue';
 import { loadLocaleMessages } from '@/i18n';
+import { useSessionAuthStore } from '@/modules/session/use-session-auth-store';
 import { SupportedLanguage } from '@/modules/settings/types/frontend-settings';
-import { useSessionAuthStore } from '@/store/session/auth';
-import { useFrontendSettingsStore } from '@/store/settings/frontend';
+import { useFrontendSettingsStore } from '@/modules/settings/use-frontend-settings-store';
 
 export const useLocale = createSharedComposable(() => {
   const { logged } = storeToRefs(useSessionAuthStore());

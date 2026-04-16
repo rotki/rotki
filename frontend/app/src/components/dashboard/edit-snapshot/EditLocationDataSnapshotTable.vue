@@ -8,10 +8,10 @@ import RowActions from '@/components/helper/RowActions.vue';
 import LocationDisplay from '@/components/history/LocationDisplay.vue';
 import { AssetValueDisplay, FiatDisplay } from '@/modules/amount-display/components';
 import { CURRENCY_USD } from '@/modules/amount-display/currencies';
+import { useConfirmStore } from '@/modules/common/use-confirm-store';
 import { usePriceUtils } from '@/modules/prices/use-price-utils';
+import { useGeneralSettingsStore } from '@/modules/settings/use-general-settings-store';
 import { TableId, useRememberTableSorting } from '@/modules/table/use-remember-table-sorting';
-import { useConfirmStore } from '@/store/confirm';
-import { useGeneralSettingsStore } from '@/store/settings/general';
 
 const modelValue = defineModel<LocationDataSnapshot[]>({ required: true });
 

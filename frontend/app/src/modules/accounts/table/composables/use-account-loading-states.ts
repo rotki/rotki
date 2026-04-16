@@ -3,9 +3,9 @@ import type { AccountDataRow } from '../types';
 import type { BlockchainAccountBalance } from '@/modules/accounts/blockchain-accounts';
 import { useBlockchainAccountLoading } from '@/modules/accounts/use-account-loading';
 import { Section } from '@/modules/common/status';
+import { useStatusStore } from '@/modules/common/use-status-store';
 import { TaskType } from '@/modules/tasks/task-type';
 import { useTaskStore } from '@/modules/tasks/use-task-store';
-import { useStatusStore } from '@/store/status';
 
 interface UseAccountLoadingStates<T extends BlockchainAccountBalance> {
   accountOperation: ComputedRef<boolean>;

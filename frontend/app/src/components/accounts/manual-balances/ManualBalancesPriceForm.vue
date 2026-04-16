@@ -6,7 +6,7 @@ import { useAssetPricesApi } from '@/composables/api/assets/prices';
 import { FiatDisplay } from '@/modules/amount-display/components';
 import { usePriceTaskManager } from '@/modules/prices/use-price-task-manager';
 import { usePriceUtils } from '@/modules/prices/use-price-utils';
-import { useGeneralSettingsStore } from '@/store/settings/general';
+import { useGeneralSettingsStore } from '@/modules/settings/use-general-settings-store';
 
 const { asset = '', pending } = defineProps<{
   pending: boolean;

@@ -6,7 +6,7 @@ import { http, HttpResponse } from 'msw';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { serializer, useDynamicMessages } from '@/composables/dynamic-messages';
 import { camelCaseTransformer } from '@/modules/api/transformers';
-import { usePremiumStore } from '@/store/session/premium';
+import { usePremiumStore } from '@/modules/premium/use-premium-store';
 
 const period = {
   start: dayjs('2023/10/11').unix(),

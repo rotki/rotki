@@ -13,8 +13,8 @@ import { useAggregatedBalances } from '@/composables/balances/use-aggregated-bal
 import { useInterop } from '@/composables/electron-interop';
 import { useLocations } from '@/composables/locations';
 import { FiatDisplay } from '@/modules/amount-display/components';
+import { useSessionSettingsStore } from '@/modules/settings/use-session-settings-store';
 import { useAppRoutes } from '@/router/routes';
-import { useSessionSettingsStore } from '@/store/settings/session';
 
 const { isMini = false } = defineProps<{
   isMini?: boolean;

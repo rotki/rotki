@@ -12,11 +12,11 @@ import { calculatePercentage } from '@/modules/common/data/calculation';
 import PoolDetails from '@/modules/dashboard/liquidity-pools/PoolDetails.vue';
 import PoolIcon from '@/modules/dashboard/liquidity-pools/PoolIcon.vue';
 import { DashboardTableType } from '@/modules/settings/types/frontend-settings';
+import { useFrontendSettingsStore } from '@/modules/settings/use-frontend-settings-store';
+import { useGeneralSettingsStore } from '@/modules/settings/use-general-settings-store';
+import { useStatisticsStore } from '@/modules/statistics/use-statistics-store';
 import { TableColumn } from '@/modules/table/table-column';
 import { TableId, useRememberTableSorting } from '@/modules/table/use-remember-table-sorting';
-import { useFrontendSettingsStore } from '@/store/settings/frontend';
-import { useGeneralSettingsStore } from '@/store/settings/general';
-import { useStatisticsStore } from '@/store/statistics';
 import { usePoolBalances } from './use-pool-balances';
 
 const LIQUIDITY_POSITION = DashboardTableType.LIQUIDITY_POSITION;

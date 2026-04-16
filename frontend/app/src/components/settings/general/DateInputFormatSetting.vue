@@ -6,7 +6,7 @@ import DateInputFormatSelector from '@/components/settings/general/DateInputForm
 import { useValidation } from '@/composables/validation';
 import { displayDateFormatter } from '@/data/date-formatter';
 import { toMessages } from '@/modules/common/validation/validation';
-import { useFrontendSettingsStore } from '@/store/settings/frontend';
+import { useFrontendSettingsStore } from '@/modules/settings/use-frontend-settings-store';
 
 const dateInputFormat = ref<string>('');
 const { dateInputFormat: inputFormat } = storeToRefs(useFrontendSettingsStore());

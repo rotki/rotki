@@ -8,8 +8,8 @@ import AccountDialog from '@/components/accounts/management/AccountDialog.vue';
 import BlockchainBalanceStalenessIndicator from '@/components/helper/BlockchainBalanceStalenessIndicator.vue';
 import TablePageLayout from '@/components/layout/TablePageLayout.vue';
 import { useAccountCategoryHelper } from '@/composables/accounts/use-account-category-helper';
+import { useAccountImportProgressStore } from '@/modules/accounts/use-account-import-progress-store';
 import { useBlockchainAccountLoading } from '@/modules/accounts/use-account-loading';
-import { useAccountImportProgressStore } from '@/store/use-account-import-progress-store';
 
 const { category, title } = defineProps<{
   category: string;

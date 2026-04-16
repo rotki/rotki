@@ -1,8 +1,8 @@
 import type { ComputedRef, MaybeRefOrGetter } from 'vue';
 import type { ActionStatus } from '@/modules/common/action';
 import type { BaseSuggestion, SavedFilterLocation, Suggestion } from '@/modules/table/filtering';
+import { useFrontendSettingsStore } from '@/modules/settings/use-frontend-settings-store';
 import { useSettingsOperations } from '@/modules/settings/use-settings-operations';
-import { useFrontendSettingsStore } from '@/store/settings/frontend';
 
 const LIMIT_PER_LOCATION = 10;
 

@@ -7,7 +7,7 @@ import { useHistoryQueryIndicatorSettings } from '@/modules/dashboard/progress/c
 import { type HistoryQueryProgress, useHistoryQueryProgress } from '@/modules/dashboard/progress/composables/use-history-query-progress';
 import { useTransactionStatusCheck } from '@/modules/dashboard/progress/composables/use-transaction-status-check';
 import { useHistoryEventsStatus } from '@/modules/history/events/use-history-events-status';
-import { useHistoryStore } from '@/store/history';
+import { useHistoryStore } from '@/modules/history/use-history-store';
 
 const HUNDRED_EIGHTY_DAYS = 15_552_000_000;
 

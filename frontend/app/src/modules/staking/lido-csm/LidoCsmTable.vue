@@ -5,9 +5,9 @@ import BalanceDisplay from '@/components/display/BalanceDisplay.vue';
 import RowActions from '@/components/helper/RowActions.vue';
 import { useLidoCsmApi } from '@/composables/api/staking/lido-csm';
 import HashLink from '@/modules/common/links/HashLink.vue';
+import { useConfirmStore } from '@/modules/common/use-confirm-store';
+import { useMessageStore } from '@/modules/common/use-message-store';
 import { STETH_IDENTIFIER } from '@/modules/staking/lido-csm/constants';
-import { useConfirmStore } from '@/store/confirm';
-import { useMessageStore } from '@/store/message';
 
 defineOptions({
   name: 'LidoCsmTable',

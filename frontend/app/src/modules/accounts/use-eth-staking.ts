@@ -12,9 +12,9 @@ import { logger } from '@/modules/common/logging/logging';
 import { Section } from '@/modules/common/status';
 import { getErrorMessage, useNotifications } from '@/modules/notifications/use-notifications';
 import { useEthValidatorFetching } from '@/modules/staking/eth/composables/use-eth-validator-fetching';
+import { useBlockchainValidatorsStore } from '@/modules/staking/use-blockchain-validators-store';
 import { TaskType } from '@/modules/tasks/task-type';
 import { isActionableFailure, useTaskHandler } from '@/modules/tasks/use-task-handler';
-import { useBlockchainValidatorsStore } from '@/store/blockchain/validators';
 
 interface UseEthStakingReturn {
   validatorsLimitInfo: Readonly<Ref<{ showWarning: boolean; limit: number; total: number }>>;

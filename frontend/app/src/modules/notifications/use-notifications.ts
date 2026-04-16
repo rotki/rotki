@@ -1,6 +1,6 @@
 import { type Notification, type NotificationData, Severity } from '@rotki/common';
-import { useMessageStore } from '@/store/message';
-import { useNotificationsStore } from '@/store/notifications';
+import { useMessageStore } from '@/modules/common/use-message-store';
+import { useNotificationsStore } from '@/modules/notifications/use-notifications-store';
 import { useNotificationDispatcher } from './use-notification-dispatcher';
 
 export { getErrorMessage } from '@/modules/common/logging/error-handling';

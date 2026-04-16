@@ -9,8 +9,8 @@ import {
   type UnmatchedAssetMovement,
   useUnmatchedAssetMovements,
 } from '@/composables/history/events/use-unmatched-asset-movements';
+import { useAreaVisibilityStore } from '@/modules/common/use-area-visibility-store';
 import { getEventEntryFromCollection } from '@/modules/history/event-utils';
-import { useAreaVisibilityStore } from '@/store/session/visibility';
 
 const { highlightedGroupIdentifier, highlightedPotentialMatchIdentifier, potentialMatchGroupIdentifier } = defineProps<{
   highlightedGroupIdentifier?: string;

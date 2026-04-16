@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import MenuTooltipButton from '@/components/helper/MenuTooltipButton.vue';
+import { useNotificationsStore } from '@/modules/notifications/use-notifications-store';
 import { useTaskStore } from '@/modules/tasks/use-task-store';
-import { useNotificationsStore } from '@/store/notifications';
 
 defineProps<{
   visible: boolean;

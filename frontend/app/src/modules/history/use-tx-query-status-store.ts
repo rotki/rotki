@@ -1,10 +1,10 @@
 import type { ChainAddress } from '@/modules/history/events/event-payloads';
 import { millisecondsToSeconds } from '@/modules/common/data/date';
+import { createQueryStatusState } from '@/modules/history/create-query-status-state';
 import {
   TransactionsQueryStatus,
   type UnifiedTransactionStatusData,
 } from '@/modules/messaging/types';
-import { createQueryStatusState } from '@/store/history/query-status/index';
 
 type EvmlikeStatusStep = 'started' | 'finished';
 

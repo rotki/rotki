@@ -16,9 +16,9 @@ import { toMessages } from '@/modules/common/validation/validation';
 import ToggleLocationLink from '@/modules/history/management/forms/common/ToggleLocationLink.vue';
 import { useHistoricPriceCache } from '@/modules/prices/use-historic-price-cache';
 import { usePriceTaskManager } from '@/modules/prices/use-price-task-manager';
+import { useGeneralSettingsStore } from '@/modules/settings/use-general-settings-store';
 import { TaskType } from '@/modules/tasks/task-type';
 import { useTaskStore } from '@/modules/tasks/use-task-store';
-import { useGeneralSettingsStore } from '@/store/settings/general';
 
 interface HistoryEventAssetPriceFormProps {
   timestamp: number;

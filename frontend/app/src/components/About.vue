@@ -9,7 +9,7 @@ import AppUpdateIndicator from '@/components/status/AppUpdateIndicator.vue';
 import { useInterop } from '@/composables/electron-interop';
 import { usePremium } from '@/composables/premium';
 import { millisecondsToSeconds } from '@/modules/common/data/date';
-import { useMainStore } from '@/store/main';
+import { useMainStore } from '@/modules/common/use-main-store';
 
 const store = useMainStore();
 const { isPackaged, openPath, version: getVersion } = useInterop();

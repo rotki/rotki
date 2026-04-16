@@ -1,7 +1,7 @@
 <script lang="ts" setup>
 import CounterpartyDisplay from '@/components/history/CounterpartyDisplay.vue';
 import { useHistoryEventCounterpartyMappings } from '@/composables/history/events/mapping/counterparty';
-import { useLocationStore } from '@/store/locations';
+import { useLocationStore } from '@/modules/common/use-location-store';
 
 defineOptions({
   inheritAttrs: false,

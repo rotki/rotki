@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { useAreaVisibilityStore } from '@/store/session/visibility';
+import { useAreaVisibilityStore } from '@/modules/common/use-area-visibility-store';
 
 const { t } = useI18n({ useScope: 'global' });
 const { showAbout } = storeToRefs(useAreaVisibilityStore());

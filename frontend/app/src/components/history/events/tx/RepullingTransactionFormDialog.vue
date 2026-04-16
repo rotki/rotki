@@ -11,12 +11,12 @@ import { HISTORY_EVENT_ACTIONS, type HistoryEventAction } from '@/composables/hi
 import { ApiValidationError } from '@/modules/api/types/errors';
 import { getErrorMessage } from '@/modules/common/logging/error-handling';
 import { logger } from '@/modules/common/logging/logging';
+import { useConfirmStore } from '@/modules/common/use-confirm-store';
+import { useMessageStore } from '@/modules/common/use-message-store';
 import { OnlineHistoryEventsQueryType } from '@/modules/history/events/schemas';
 import { useDecodingStatusStore } from '@/modules/history/use-decoding-status-store';
 import { TaskType } from '@/modules/tasks/task-type';
 import { useTaskStore } from '@/modules/tasks/use-task-store';
-import { useConfirmStore } from '@/store/confirm';
-import { useMessageStore } from '@/store/message';
 
 const modelValue = defineModel<boolean>({ required: true });
 const currentAction = defineModel<HistoryEventAction>('currentAction', { required: true });

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import SettingsOption from '@/components/settings/controls/SettingsOption.vue';
+import { useFrontendSettingsStore } from '@/modules/settings/use-frontend-settings-store';
 import { useStatisticsDataFetching } from '@/modules/statistics/use-statistics-data-fetching';
-import { useFrontendSettingsStore } from '@/store/settings/frontend';
 
 const includeNfts = ref<boolean>(true);
 const { fetchNetValue } = useStatisticsDataFetching();

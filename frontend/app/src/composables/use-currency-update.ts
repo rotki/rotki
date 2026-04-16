@@ -2,11 +2,11 @@ import type { AssetPrices } from '@/modules/prices/price-types';
 import { One } from '@rotki/common';
 import { startPromise } from '@shared/utils';
 import { CURRENCY_USD } from '@/modules/amount-display/currencies';
+import { useBalancePricesStore } from '@/modules/balances/use-balance-prices-store';
 import { usePriceRefresh } from '@/modules/prices/use-price-refresh';
 import { usePriceTaskManager } from '@/modules/prices/use-price-task-manager';
+import { useGeneralSettingsStore } from '@/modules/settings/use-general-settings-store';
 import { useSettingsOperations } from '@/modules/settings/use-settings-operations';
-import { useBalancePricesStore } from '@/store/balances/prices';
-import { useGeneralSettingsStore } from '@/store/settings/general';
 
 interface UseCurrencyUpdateReturn { onCurrencyUpdate: () => Promise<void> }
 

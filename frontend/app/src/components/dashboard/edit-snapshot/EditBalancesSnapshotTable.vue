@@ -19,8 +19,8 @@ import { isNft } from '@/modules/assets/nft-utils';
 import { BalanceType } from '@/modules/balances/types/balances';
 import { bigNumberSum } from '@/modules/common/data/calculation';
 import { usePriceUtils } from '@/modules/prices/use-price-utils';
+import { useGeneralSettingsStore } from '@/modules/settings/use-general-settings-store';
 import { TableId, useRememberTableSorting } from '@/modules/table/use-remember-table-sorting';
-import { useGeneralSettingsStore } from '@/store/settings/general';
 
 const modelValue = defineModel<Snapshot>({ required: true });
 

@@ -1,5 +1,5 @@
 import { externalLinks } from '@shared/external-links';
-import { useMainStore } from '@/store/main';
+import { useMainStore } from '@/modules/common/use-main-store';
 
 export const useUpdateMessage = createSharedComposable(() => {
   const lastUsedVersion = useLocalStorage<string | null>('rotki.last_version', null);

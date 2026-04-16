@@ -5,7 +5,7 @@ import flushPromises from 'flush-promises';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import EvmChainsToIgnoreSettings from '@/components/settings/general/EvmChainsToIgnoreSettings.vue';
 import { ApiValidationError } from '@/modules/api/types/errors';
-import { useMainStore } from '@/store/main';
+import { useMainStore } from '@/modules/common/use-main-store';
 
 vi.mock('@/composables/api/settings/settings-api', async (): Promise<Record<string, unknown>> => {
   const mod = await vi.importActual<typeof import('@/composables/api/settings/settings-api')>(

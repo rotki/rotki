@@ -8,7 +8,7 @@ import { useSkippedHistoryEventsApi } from '@/composables/api/history/events/ski
 import { useInterop } from '@/composables/electron-interop';
 import { getErrorMessage } from '@/modules/common/logging/error-handling';
 import { logger } from '@/modules/common/logging/logging';
-import { useMessageStore } from '@/store/message';
+import { useMessageStore } from '@/modules/common/use-message-store';
 
 interface Location {
   location: string;

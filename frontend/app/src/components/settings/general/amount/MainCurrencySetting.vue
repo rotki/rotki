@@ -3,7 +3,7 @@ import ListItem from '@/components/common/ListItem.vue';
 import SettingsOption from '@/components/settings/controls/SettingsOption.vue';
 import { useCurrencyUpdate } from '@/composables/use-currency-update';
 import { type SupportedCurrency, useCurrencies } from '@/modules/amount-display/currencies';
-import { useGeneralSettingsStore } from '@/store/settings/general';
+import { useGeneralSettingsStore } from '@/modules/settings/use-general-settings-store';
 
 const { currencies } = useCurrencies();
 const selectedCurrency = ref<SupportedCurrency>(get(currencies)[0].tickerSymbol);

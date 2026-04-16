@@ -6,13 +6,13 @@ import { useRefWithDebounce } from '@/composables/ref';
 import { useHistoricalBalances } from '@/modules/history/balances/use-historical-balances';
 import { useHistoryEventsStatus } from '@/modules/history/events/use-history-events-status';
 import { useHistoryDataFetching } from '@/modules/history/use-history-data-fetching';
+import { useHistoryStore } from '@/modules/history/use-history-store';
 import { useProtocolCacheStatusStore } from '@/modules/history/use-protocol-cache-status-store';
 import { useNotifications } from '@/modules/notifications/use-notifications';
+import { useSessionSettingsStore } from '@/modules/settings/use-session-settings-store';
 import { TaskType } from '@/modules/tasks/task-type';
 import { useTaskStore } from '@/modules/tasks/use-task-store';
 import { Routes } from '@/router/routes';
-import { useHistoryStore } from '@/store/history';
-import { useSessionSettingsStore } from '@/store/settings/session';
 
 const HISTORY_EVENTS_MODIFIED_DEBOUNCE_MS = 15_000;
 

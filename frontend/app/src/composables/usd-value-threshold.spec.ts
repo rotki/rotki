@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ref, type ToRefs } from 'vue';
 import { BalanceSource } from '@/modules/settings/types/frontend-settings';
-import { useFrontendSettingsStore } from '@/store/settings/frontend';
+import { useFrontendSettingsStore } from '@/modules/settings/use-frontend-settings-store';
 import { useValueThreshold } from './usd-value-threshold';
 
 type MockedStore<T extends (...args: any[]) => any> = ToRefs<Partial<ReturnType<T>>>;
@@ -13,7 +13,7 @@ function createMock<T>(overrides: ToRefs<Partial<T>>): T {
   } as T;
 }
 
-vi.mock('@/store/settings/frontend', () => ({
+vi.mock('@/modules/settings/use-frontend-settings-store', () => ({
   useFrontendSettingsStore: vi.fn((): MockedStore<typeof useFrontendSettingsStore> => ({
     balanceValueThreshold: ref({ BLOCKCHAIN: '10', EXCHANGES: '10', MANUAL: '10' }),
   })),

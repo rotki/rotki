@@ -22,8 +22,8 @@ import { millisecondsToSeconds } from '@/modules/common/data/date';
 import { getErrorMessage } from '@/modules/common/logging/error-handling';
 import { logger } from '@/modules/common/logging/logging';
 import { getEthAddressesFromText } from '@/modules/history/history-utils';
+import { useHistoryStore } from '@/modules/history/use-history-store';
 import { useNotifications } from '@/modules/notifications/use-notifications';
-import { useHistoryStore } from '@/store/history';
 
 interface UseHistoryEventsReturn {
   fetchHistoryEvents: (payload: MaybeRef<HistoryEventRequestPayload>, options?: { tags?: string[] }) => Promise<Collection<HistoryEventRow>>;

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import SettingsOption from '@/components/settings/controls/SettingsOption.vue';
 import { CurrencyLocation } from '@/modules/amount-display/currency-location';
-import { useFrontendSettingsStore } from '@/store/settings/frontend';
+import { useFrontendSettingsStore } from '@/modules/settings/use-frontend-settings-store';
 
 const currencyLocation = ref<CurrencyLocation>(CurrencyLocation.AFTER);
 const { currencyLocation: location } = storeToRefs(useFrontendSettingsStore());

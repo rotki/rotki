@@ -1,8 +1,8 @@
 import { startPromise } from '@shared/utils';
 import { useMessageHandling } from '@/modules/messaging';
 import { usePeriodicDataFetcher } from '@/modules/session/use-periodic-data-fetcher';
-import { useSessionAuthStore } from '@/store/session/auth';
-import { useFrontendSettingsStore } from '@/store/settings/frontend';
+import { useSessionAuthStore } from '@/modules/session/use-session-auth-store';
+import { useFrontendSettingsStore } from '@/modules/settings/use-frontend-settings-store';
 import { useWebsocketConnection } from '../use-websocket-connection';
 import { useIntervalScheduler } from './use-interval-scheduler';
 

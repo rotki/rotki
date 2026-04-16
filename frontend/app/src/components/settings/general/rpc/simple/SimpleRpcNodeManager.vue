@@ -5,8 +5,8 @@ import BigDialog from '@/components/dialogs/BigDialog.vue';
 import RowActions from '@/components/helper/RowActions.vue';
 import SimpleRpcNodeManagerForm from '@/components/settings/general/rpc/simple/SimpleRpcNodeManagerForm.vue';
 import { SettingLocation, useSettings } from '@/composables/settings';
-import { useConfirmStore } from '@/store/confirm';
-import { useGeneralSettingsStore } from '@/store/settings/general';
+import { useConfirmStore } from '@/modules/common/use-confirm-store';
+import { useGeneralSettingsStore } from '@/modules/settings/use-general-settings-store';
 
 const { setting } = defineProps<{
   setting: 'ksmRpcEndpoint' | 'dotRpcEndpoint' | 'beaconRpcEndpoint' | 'btcMempoolApi';

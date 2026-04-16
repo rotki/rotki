@@ -8,7 +8,7 @@ import AssetAmountDisplay from '@/modules/amount-display/components/AssetAmountD
 import { useCurrencies } from '@/modules/amount-display/currencies';
 import { CurrencyLocation } from '@/modules/amount-display/currency-location';
 import { getDefaultFrontendSettings } from '@/modules/settings/types/frontend-settings';
-import { useFrontendSettingsStore } from '@/store/settings/frontend';
+import { useFrontendSettingsStore } from '@/modules/settings/use-frontend-settings-store';
 
 const mockUseAssetInfo = vi.fn().mockImplementation(() => computed(() => ({ symbol: 'ETH' })));
 

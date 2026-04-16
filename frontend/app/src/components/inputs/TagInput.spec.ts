@@ -4,8 +4,8 @@ import { setActivePinia } from 'pinia';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import TagInput from '@/components/inputs/TagInput.vue';
 import TagForm from '@/components/tags/TagForm.vue';
+import { useSessionMetadataStore } from '@/modules/session/use-session-metadata-store';
 import { useTagOperations } from '@/modules/session/use-tag-operations';
-import { useSessionMetadataStore } from '@/store/session/metadata';
 
 function createTag(name: string): { name: string; description: string; backgroundColor: string; foregroundColor: string } {
   return {

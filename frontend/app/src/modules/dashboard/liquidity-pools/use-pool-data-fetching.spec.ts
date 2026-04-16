@@ -37,7 +37,7 @@ vi.mock('@/composables/premium', () => ({
 }));
 
 const mockActiveModules = vi.fn((): Ref<string[]> => ref<string[]>([Module.UNISWAP, Module.SUSHISWAP]));
-vi.mock('@/store/settings/general', () => ({
+vi.mock('@/modules/settings/use-general-settings-store', () => ({
   useGeneralSettingsStore: vi.fn((): Record<string, unknown> => ({
     activeModules: mockActiveModules(),
   })),
@@ -111,7 +111,7 @@ describe('usePoolDataFetching', () => {
     });
 
     it('should skip when already loaded and not refreshing', async () => {
-      const { useStatusStore } = await import('@/store/status');
+      const { useStatusStore } = await import('@/modules/common/use-status-store');
       const statusStore = useStatusStore();
       statusStore.setStatus({ status: Status.LOADED, section: Section.POOLS_UNISWAP_V2 });
       statusStore.setStatus({ status: Status.LOADED, section: Section.POOLS_SUSHISWAP });
@@ -123,7 +123,7 @@ describe('usePoolDataFetching', () => {
     });
 
     it('should fetch when refreshing even if already loaded', async () => {
-      const { useStatusStore } = await import('@/store/status');
+      const { useStatusStore } = await import('@/modules/common/use-status-store');
       const statusStore = useStatusStore();
       statusStore.setStatus({ status: Status.LOADED, section: Section.POOLS_UNISWAP_V2 });
       statusStore.setStatus({ status: Status.LOADED, section: Section.POOLS_SUSHISWAP });

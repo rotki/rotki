@@ -12,12 +12,12 @@ import { usePremium } from '@/composables/premium';
 import { useSectionStatus } from '@/composables/status';
 import { getPublicProtocolImagePath } from '@/modules/common/file/file';
 import { Section } from '@/modules/common/status';
+import { useHistoricCachePriceStore } from '@/modules/prices/use-historic-cache-price-store';
 import { usePriceRefresh } from '@/modules/prices/use-price-refresh';
+import { useSessionSettingsStore } from '@/modules/settings/use-session-settings-store';
 import { useKrakenStakingOperations } from '@/modules/staking/kraken/use-kraken-staking-operations';
+import { useKrakenStakingStore } from '@/modules/staking/use-kraken-staking-store';
 import { Routes } from '@/router/routes';
-import { useHistoricCachePriceStore } from '@/store/prices/historic';
-import { useSessionSettingsStore } from '@/store/settings/session';
-import { useKrakenStakingStore } from '@/store/staking/kraken';
 
 const filters = ref<KrakenStakingDateFilter>({});
 

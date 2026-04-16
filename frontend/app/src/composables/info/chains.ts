@@ -10,9 +10,9 @@ import {
   type SupportedChains,
 } from '@/modules/api/types/chains';
 import { getPublicProtocolImagePath } from '@/modules/common/file/file';
+import { useMainStore } from '@/modules/common/use-main-store';
 import { isBlockchain } from '@/modules/onchain/chains';
 import { Routes } from '@/router/routes';
-import { useMainStore } from '@/store/main';
 
 function isEvmChain(info: ChainInfo): info is EvmChainInfo {
   return info.type === ChainType.EVM;

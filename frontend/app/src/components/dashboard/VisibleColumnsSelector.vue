@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import type { DashboardTableType, FrontendSettingsPayload } from '@/modules/settings/types/frontend-settings';
 import MenuTooltipButton from '@/components/helper/MenuTooltipButton.vue';
+import { useFrontendSettingsStore } from '@/modules/settings/use-frontend-settings-store';
 import { useSettingsOperations } from '@/modules/settings/use-settings-operations';
 import { TableColumn } from '@/modules/table/table-column';
-import { useFrontendSettingsStore } from '@/store/settings/frontend';
 
 const { group, groupLabel } = defineProps<{
   group: DashboardTableType;

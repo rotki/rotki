@@ -42,7 +42,7 @@ vi.mock('@/modules/assets/use-assets-store', () => ({
   })),
 }));
 
-vi.mock('@/store/settings/frontend', () => ({
+vi.mock('@/modules/settings/use-frontend-settings-store', () => ({
   useFrontendSettingsStore: vi.fn(() => ({
     itemsPerPage: mockItemsPerPage,
   })),

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { useFormErrorScroll } from '@/composables/form/use-form-error-scroll';
-import { useConfirmStore } from '@/store/confirm';
+import { useConfirmStore } from '@/modules/common/use-confirm-store';
 
 defineOptions({
   inheritAttrs: false,

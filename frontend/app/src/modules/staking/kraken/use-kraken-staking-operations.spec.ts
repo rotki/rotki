@@ -28,7 +28,7 @@ vi.mock('@/modules/notifications/use-notification-dispatcher', () => ({
   })),
 }));
 
-vi.mock('@/store/notifications', () => ({
+vi.mock('@/modules/notifications/use-notifications-store', () => ({
   useNotificationsStore: vi.fn().mockReturnValue({
     removeMatching: vi.fn(),
   }),
@@ -50,7 +50,7 @@ vi.mock('@/modules/tasks/use-task-store', () => ({
   })),
 }));
 
-vi.mock('@/store/settings/frontend', () => ({
+vi.mock('@/modules/settings/use-frontend-settings-store', () => ({
   useFrontendSettingsStore: vi.fn(() => reactive({ itemsPerPage: 10 })),
 }));
 
@@ -82,7 +82,7 @@ describe('useKrakenStakingOperations', () => {
 
   describe('fetchEvents', () => {
     it('should set status to LOADED on first load error', async () => {
-      const { useStatusStore } = await import('@/store/status');
+      const { useStatusStore } = await import('@/modules/common/use-status-store');
 
       mockFetchKrakenStakingEvents.mockRejectedValueOnce(new Error('Request timeout'));
 
@@ -97,7 +97,7 @@ describe('useKrakenStakingOperations', () => {
     });
 
     it('should load events successfully on first load', async () => {
-      const { useStatusStore } = await import('@/store/status');
+      const { useStatusStore } = await import('@/modules/common/use-status-store');
 
       const eventsData = {
         ...defaultEvents(),
@@ -119,7 +119,7 @@ describe('useKrakenStakingOperations', () => {
     });
 
     it('should set status to LOADED when refresh task fails', async () => {
-      const { useStatusStore } = await import('@/store/status');
+      const { useStatusStore } = await import('@/modules/common/use-status-store');
 
       mockFetchKrakenStakingEvents.mockResolvedValueOnce(defaultEvents());
       mockRefreshKrakenStaking.mockRejectedValueOnce(new Error('Backend unresponsive'));
@@ -157,7 +157,7 @@ describe('useKrakenStakingOperations', () => {
     });
 
     it('should call refreshEvents on explicit refresh', async () => {
-      const { useStatusStore } = await import('@/store/status');
+      const { useStatusStore } = await import('@/modules/common/use-status-store');
       const statusStore = useStatusStore();
 
       // Pre-set status to LOADED so isFirstLoad() returns false

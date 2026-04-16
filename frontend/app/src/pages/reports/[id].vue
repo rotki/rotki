@@ -9,7 +9,7 @@ import ReportActionable from '@/components/profitloss/ReportActionable.vue';
 import ReportHeader from '@/components/profitloss/ReportHeader.vue';
 import { NoteLocation } from '@/modules/common/notes';
 import { useReportOperations } from '@/modules/reports/use-report-operations';
-import { defaultReportEvents, useReportsStore } from '@/store/reports';
+import { defaultReportEvents, useReportsStore } from '@/modules/reports/use-reports-store';
 
 definePage({
   meta: {

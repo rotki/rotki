@@ -4,8 +4,8 @@ import ConfirmDialog from '@/components/dialogs/ConfirmDialog.vue';
 import SettingsOption from '@/components/settings/controls/SettingsOption.vue';
 import { uniqueStrings } from '@/modules/common/data/data';
 import { getDomain } from '@/modules/common/helpers/url';
-import { useConfirmStore } from '@/store/confirm';
-import { useFrontendSettingsStore } from '@/store/settings/frontend';
+import { useConfirmStore } from '@/modules/common/use-confirm-store';
+import { useFrontendSettingsStore } from '@/modules/settings/use-frontend-settings-store';
 
 type RenderOption = 'all' | 'whitelisted';
 

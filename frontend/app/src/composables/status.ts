@@ -1,6 +1,6 @@
 import type { ComputedRef, MaybeRefOrGetter } from 'vue';
 import { Section, Status } from '@/modules/common/status';
-import { useStatusStore } from '@/store/status';
+import { useStatusStore } from '@/modules/common/use-status-store';
 
 export { Section, Status };
 

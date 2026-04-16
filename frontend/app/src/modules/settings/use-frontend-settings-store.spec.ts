@@ -12,8 +12,8 @@ import {
   Quarter,
   SupportedLanguage,
 } from '@/modules/settings/types/frontend-settings';
+import { useFrontendSettingsStore } from '@/modules/settings/use-frontend-settings-store';
 import { TableColumn } from '@/modules/table/table-column';
-import { useFrontendSettingsStore } from '@/store/settings/frontend';
 
 describe('useFrontendSettingsStore', () => {
   let pinia: Pinia;

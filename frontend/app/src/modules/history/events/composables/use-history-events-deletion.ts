@@ -7,8 +7,8 @@ import { useHistoryEventsApi } from '@/composables/api/history/events';
 import { useIgnore } from '@/composables/history';
 import { useHistoryEvents } from '@/composables/history/events';
 import { useSupportedChains } from '@/composables/info/chains';
+import { useConfirmStore } from '@/modules/common/use-confirm-store';
 import { getErrorMessage, useNotifications } from '@/modules/notifications/use-notifications';
-import { useConfirmStore } from '@/store/confirm';
 import { buildDeletionConfirmationMessage, DELETION_STRATEGY_TYPE, type DeletionStrategy } from './use-deletion-strategies';
 import { analyzeSelectedEvents, type TransactionGroup } from './use-event-analysis';
 

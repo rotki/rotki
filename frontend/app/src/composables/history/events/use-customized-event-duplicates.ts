@@ -6,8 +6,8 @@ import { useHistoryEventsApi } from '@/composables/api/history/events';
 import { type CustomizedEventDuplicates, useCustomizedEventDuplicatesApi } from '@/composables/api/history/events/customized-event-duplicates';
 import { arrayify } from '@/modules/common/data/array';
 import { logger } from '@/modules/common/logging/logging';
+import { useConfirmStore } from '@/modules/common/use-confirm-store';
 import { getErrorMessage, useNotifications } from '@/modules/notifications/use-notifications';
-import { useConfirmStore } from '@/store/confirm';
 
 export interface DuplicateRow {
   entry: HistoryEventEntry;

@@ -12,9 +12,9 @@ import { bigNumberifyFromRef } from '@/modules/common/data/bignumbers';
 import { toMessages } from '@/modules/common/validation/validation';
 import { useHistoricPriceCache } from '@/modules/prices/use-historic-price-cache';
 import { usePriceTaskManager } from '@/modules/prices/use-price-task-manager';
+import { useGeneralSettingsStore } from '@/modules/settings/use-general-settings-store';
 import { TaskType } from '@/modules/tasks/task-type';
 import { useTaskStore } from '@/modules/tasks/use-task-store';
-import { useGeneralSettingsStore } from '@/store/settings/general';
 
 const amount = defineModel<string>('amount', { required: true });
 

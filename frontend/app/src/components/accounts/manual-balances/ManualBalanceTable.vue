@@ -17,8 +17,8 @@ import { type Filters, ManualBalancesFilterSchema, type Matcher, useManualBalanc
 import { usePaginationFilters } from '@/composables/use-pagination-filter';
 import { AssetValueDisplay, FiatDisplay, ValueDisplay } from '@/modules/amount-display';
 import { useManualBalancesOrLiabilities } from '@/modules/balances/manual/use-manual-balances-or-liabilities';
+import { useGeneralSettingsStore } from '@/modules/settings/use-general-settings-store';
 import { TableId, useRememberTableSorting } from '@/modules/table/use-remember-table-sorting';
-import { useGeneralSettingsStore } from '@/store/settings/general';
 
 const { title, type } = defineProps<{
   title: string;

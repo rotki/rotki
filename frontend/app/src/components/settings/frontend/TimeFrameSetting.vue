@@ -3,8 +3,8 @@ import { TimeFramePeriod, type TimeFrameSetting } from '@rotki/common';
 import SettingsItem from '@/components/settings/controls/SettingsItem.vue';
 import SettingsOption from '@/components/settings/controls/SettingsOption.vue';
 import TimeFrameSettings from '@/components/settings/general/TimeFrameSettings.vue';
-import { useFrontendSettingsStore } from '@/store/settings/frontend';
-import { useSessionSettingsStore } from '@/store/settings/session';
+import { useFrontendSettingsStore } from '@/modules/settings/use-frontend-settings-store';
+import { useSessionSettingsStore } from '@/modules/settings/use-session-settings-store';
 
 const defaultGraphTimeframe = ref<TimeFrameSetting>(TimeFramePeriod.ALL);
 const visibleTimeframes = ref<TimeFramePeriod[]>([]);

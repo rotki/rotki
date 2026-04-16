@@ -6,7 +6,7 @@ import AssetDetails from '@/components/helper/AssetDetails.vue';
 import TablePageLayout from '@/components/layout/TablePageLayout.vue';
 import { useSolanaTokenMigrationStore } from '@/modules/asset-manager/solana-token-migration/solana-token-migration-store';
 import SolanaTokenMigrationDialog from '@/modules/asset-manager/solana-token-migration/SolanaTokenMigrationDialog.vue';
-import { useConfirmStore } from '@/store/confirm';
+import { useConfirmStore } from '@/modules/common/use-confirm-store';
 
 definePage({
   name: 'asset-manager-solana-token-migration',

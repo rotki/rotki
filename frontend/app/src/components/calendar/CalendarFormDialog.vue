@@ -7,7 +7,7 @@ import BigDialog from '@/components/dialogs/BigDialog.vue';
 import { useCalendarApi } from '@/composables/history/calendar';
 import { ApiValidationError, type ValidationErrors } from '@/modules/api/types/errors';
 import { getErrorMessage } from '@/modules/common/logging/error-handling';
-import { useMessageStore } from '@/store/message';
+import { useMessageStore } from '@/modules/common/use-message-store';
 
 const modelValue = defineModel<CalendarEvent | undefined>({ required: true });
 

@@ -12,7 +12,7 @@ import { getEthAddressesFromText } from '@/modules/history/history-utils';
 import { getErrorMessage, useNotifications } from '@/modules/notifications/use-notifications';
 import { isBlockchain } from '@/modules/onchain/chains';
 import { isTransactionEvent } from '@/modules/reports/report-utils';
-import { defaultReportEvents, useReportsStore } from '@/store/reports';
+import { defaultReportEvents, useReportsStore } from '@/modules/reports/use-reports-store';
 
 interface UseReportOperationsReturn {
   createCsv: (reportId: number, path: string) => Promise<void>;

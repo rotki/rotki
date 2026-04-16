@@ -13,10 +13,10 @@ import AssetRowDetails from '@/modules/balances/protocols/components/AssetRowDet
 import { bigNumberSum, calculatePercentage } from '@/modules/common/data/calculation';
 import { assetFilterByKeyword } from '@/modules/common/display/assets';
 import { sortAssetBalances } from '@/modules/common/display/balances';
+import { useGeneralSettingsStore } from '@/modules/settings/use-general-settings-store';
+import { useStatisticsStore } from '@/modules/statistics/use-statistics-store';
 import { TableColumn } from '@/modules/table/table-column';
 import { TableId, useRememberTableSorting } from '@/modules/table/use-remember-table-sorting';
-import { useGeneralSettingsStore } from '@/store/settings/general';
-import { useStatisticsStore } from '@/store/statistics';
 
 defineOptions({
   name: 'AssetBalances',

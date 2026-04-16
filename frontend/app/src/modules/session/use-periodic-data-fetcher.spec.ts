@@ -1,7 +1,7 @@
 import type { PeriodicClientQueryResult } from '@/modules/session/types';
 import { createPinia, setActivePinia } from 'pinia';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { useSessionMetadataStore } from '@/store/session/metadata';
+import { useSessionMetadataStore } from '@/modules/session/use-session-metadata-store';
 import '@test/i18n';
 
 const mockFetchPeriodicData = vi.fn();

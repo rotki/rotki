@@ -23,9 +23,9 @@ import {
   HistoricalBalanceSource as Source,
 } from '@/modules/history/balances/types';
 import { useHistoricPriceCache } from '@/modules/prices/use-historic-price-cache';
+import { useGeneralSettingsStore } from '@/modules/settings/use-general-settings-store';
 import { TaskType } from '@/modules/tasks/task-type';
 import { isActionableFailure, useTaskHandler } from '@/modules/tasks/use-task-handler';
-import { useGeneralSettingsStore } from '@/store/settings/general';
 
 interface UseHistoricalBalancesReturn {
   balances: ComputedRef<AssetBalanceWithPrice[]>;

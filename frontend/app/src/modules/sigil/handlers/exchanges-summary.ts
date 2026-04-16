@@ -1,6 +1,6 @@
 import type { ExchangesSummaryPayload } from '@/modules/sigil/types';
 import { usePremiumHelper } from '@/composables/premium';
-import { useSessionSettingsStore } from '@/store/settings/session';
+import { useSessionSettingsStore } from '@/modules/settings/use-session-settings-store';
 
 export function useExchangesSummaryHandler(): () => ExchangesSummaryPayload {
   const { currentTier, premium } = usePremiumHelper();

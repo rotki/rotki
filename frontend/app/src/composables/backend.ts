@@ -6,7 +6,7 @@ import { useInterop } from '@/composables/electron-interop';
 import { deleteBackendUrl, getBackendUrl } from '@/modules/account/account-management';
 import { useBackendConnection } from '@/modules/app/use-backend-connection';
 import { getDefaultLogLevel, logger, setLevel } from '@/modules/common/logging/logging';
-import { useMainStore } from '@/store/main';
+import { useMainStore } from '@/modules/common/use-main-store';
 
 const BACKEND_OPTIONS = 'BACKEND_OPTIONS';
 

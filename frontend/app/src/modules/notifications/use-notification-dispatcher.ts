@@ -1,7 +1,7 @@
 import type { NotificationPayload, SemiPartial } from '@rotki/common';
 import type { NotificationStrategy, NotificationStrategyContext } from './strategies/types';
 import { createNotification } from '@/modules/notifications/notification-utils';
-import { useNotificationsStore } from '@/store/notifications';
+import { useNotificationsStore } from '@/modules/notifications/use-notifications-store';
 import { createBeaconchainRateLimitStrategy } from './strategies/beaconchain-rate-limit';
 import { bulkDuplicateStrategy } from './strategies/bulk-duplicate';
 import { createDeserializationErrorStrategy } from './strategies/deserialization-error';

@@ -2,7 +2,7 @@
 import WalletImportSelection from '@/components/accounts/blockchain/WalletImportSelection.vue';
 import { useInterop } from '@/composables/electron-interop';
 import { getErrorMessage } from '@/modules/common/logging/error-handling';
-import { useMessageStore } from '@/store/message';
+import { useMessageStore } from '@/modules/common/use-message-store';
 
 defineProps<{
   disabled: boolean;

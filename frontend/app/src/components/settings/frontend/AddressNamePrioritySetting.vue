@@ -14,7 +14,7 @@ import {
   type PrioritizedListId,
   PRIVATE_ADDRESSBOOK_PRIO_LIST_ITEM,
 } from '@/modules/settings/types/prioritized-list-id';
-import { useGeneralSettingsStore } from '@/store/settings/general';
+import { useGeneralSettingsStore } from '@/modules/settings/use-general-settings-store';
 
 const currentAddressNamePriorities = ref<PrioritizedListId[]>([]);
 const { addressNamePriority } = storeToRefs(useGeneralSettingsStore());

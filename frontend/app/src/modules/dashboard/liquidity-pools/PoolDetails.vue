@@ -9,8 +9,8 @@ import { usePremium } from '@/composables/premium';
 import { AssetValueDisplay, FiatDisplay, ValueDisplay } from '@/modules/amount-display/components';
 import { sortAssetBalances } from '@/modules/common/display/balances';
 import { usePriceUtils } from '@/modules/prices/use-price-utils';
+import { useGeneralSettingsStore } from '@/modules/settings/use-general-settings-store';
 import { TableId, useRememberTableSorting } from '@/modules/table/use-remember-table-sorting';
-import { useGeneralSettingsStore } from '@/store/settings/general';
 
 interface PoolDetailsProps {
   assets: PoolAsset[];

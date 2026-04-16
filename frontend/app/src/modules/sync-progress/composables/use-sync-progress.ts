@@ -1,9 +1,9 @@
 import type { ComputedRef } from 'vue';
 import { useDecodingStatusStore } from '@/modules/history/use-decoding-status-store';
+import { useEventsQueryStatusStore } from '@/modules/history/use-events-query-status-store';
 import { useProtocolCacheStatusStore } from '@/modules/history/use-protocol-cache-status-store';
+import { useTxQueryStatusStore } from '@/modules/history/use-tx-query-status-store';
 import { type HistoryEventsQueryData, HistoryEventsQueryStatus } from '@/modules/messaging/types';
-import { useEventsQueryStatusStore } from '@/store/history/query-status/events-query-status';
-import { useTxQueryStatusStore } from '@/store/history/query-status/tx-query-status';
 import {
   type ChainProgress,
   type DecodingProgress,

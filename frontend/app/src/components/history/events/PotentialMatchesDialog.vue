@@ -2,8 +2,8 @@
 import type { UnmatchedAssetMovement } from '@/composables/history/events/use-unmatched-asset-movements';
 import PotentialMatchesContent from '@/components/history/events/PotentialMatchesContent.vue';
 import CardTitle from '@/components/typography/CardTitle.vue';
+import { useAreaVisibilityStore } from '@/modules/common/use-area-visibility-store';
 import { type Pinned, PinnedNames } from '@/modules/session/types';
-import { useAreaVisibilityStore } from '@/store/session/visibility';
 
 const modelValue = defineModel<boolean>({ required: true });
 

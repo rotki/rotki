@@ -13,8 +13,8 @@ import { useCacheClear } from '@/composables/session/cache-clear';
 import { useSessionPurge } from '@/composables/session/purge';
 import { SettingsHighlightIds } from '@/composables/settings/types';
 import { DECENTRALIZED_EXCHANGES, Module, PurgeableOnlyModule } from '@/modules/common/modules';
+import { useLocationStore } from '@/modules/common/use-location-store';
 import { Purgeable } from '@/modules/session/purge';
-import { useLocationStore } from '@/store/locations';
 
 const purgeableOnlyModules = Object.values(PurgeableOnlyModule);
 const purgeableModules = [...Object.values(Module), ...purgeableOnlyModules];

@@ -12,13 +12,13 @@ vi.mock('@/modules/notifications/use-notification-dispatcher', () => ({
   })),
 }));
 
-vi.mock('@/store/notifications', () => ({
+vi.mock('@/modules/notifications/use-notifications-store', () => ({
   useNotificationsStore: vi.fn((): { removeMatching: typeof mockRemoveMatching } => ({
     removeMatching: mockRemoveMatching,
   })),
 }));
 
-vi.mock('@/store/message', () => ({
+vi.mock('@/modules/common/use-message-store', () => ({
   useMessageStore: vi.fn((): { setMessage: typeof mockSetMessage } => ({
     setMessage: mockSetMessage,
   })),

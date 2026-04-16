@@ -2,11 +2,11 @@
 import type { LidoCsmNodeOperator } from '@/modules/staking/staking-types';
 import TablePageLayout from '@/components/layout/TablePageLayout.vue';
 import { useLidoCsmApi } from '@/composables/api/staking/lido-csm';
+import { useMessageStore } from '@/modules/common/use-message-store';
 import { usePriceTaskManager } from '@/modules/prices/use-price-task-manager';
 import { STETH_IDENTIFIER } from '@/modules/staking/lido-csm/constants';
 import LidoCsmAddDialog from '@/modules/staking/lido-csm/LidoCsmAddDialog.vue';
 import LidoCsmTable from '@/modules/staking/lido-csm/LidoCsmTable.vue';
-import { useMessageStore } from '@/store/message';
 
 defineOptions({
   name: 'LidoCsmPage',

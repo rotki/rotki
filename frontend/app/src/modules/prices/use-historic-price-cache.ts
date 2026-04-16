@@ -10,10 +10,10 @@ import { usePriceApi } from '@/composables/api/balances/price';
 import { createItemCache } from '@/composables/item-cache';
 import { useNotifications } from '@/modules/notifications/use-notifications';
 import { HistoricPrices } from '@/modules/prices/price-types';
+import { useHistoricCachePriceStore } from '@/modules/prices/use-historic-cache-price-store';
+import { useGeneralSettingsStore } from '@/modules/settings/use-general-settings-store';
 import { TaskType } from '@/modules/tasks/task-type';
 import { isActionableFailure, useTaskHandler } from '@/modules/tasks/use-task-handler';
-import { useHistoricCachePriceStore } from '@/store/prices/historic';
-import { useGeneralSettingsStore } from '@/store/settings/general';
 
 interface UseHistoricPriceCacheReturn {
   cache: ReturnType<typeof createItemCache<BigNumber>>['cache'];

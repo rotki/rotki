@@ -17,11 +17,11 @@ import { type Filters, type Matcher, useAccountingRuleFilter } from '@/composabl
 import { useAccountingSettings } from '@/composables/settings/accounting';
 import { SettingsHighlightIds } from '@/composables/settings/types';
 import { usePaginationFilters } from '@/composables/use-pagination-filter';
+import { useConfirmStore } from '@/modules/common/use-confirm-store';
+import { useMessageStore } from '@/modules/common/use-message-store';
 import { getPlaceholderRule } from '@/modules/settings/settings-utils';
 import { TaskType } from '@/modules/tasks/task-type';
 import { useTaskStore } from '@/modules/tasks/use-task-store';
-import { useConfirmStore } from '@/store/confirm';
-import { useMessageStore } from '@/store/message';
 
 const CustomRuleHandling = {
   /** Show regular rules (exclude event-specific rules) */

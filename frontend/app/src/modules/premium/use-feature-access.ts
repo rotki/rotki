@@ -1,6 +1,6 @@
 import type { MaybeRefOrGetter, Ref } from 'vue';
+import { usePremiumStore } from '@/modules/premium/use-premium-store';
 import { PremiumFeature } from '@/modules/session/types';
-import { usePremiumStore } from '@/store/session/premium';
 
 export { PremiumFeature };
 

@@ -4,7 +4,7 @@ import { Blockchain, type Eth2ValidatorEntry, type EthStakingFilter } from '@rot
 import BlockchainAccountSelector from '@/components/helper/BlockchainAccountSelector.vue';
 import ValidatorFilterInput from '@/components/helper/filter/ValidatorFilterInput.vue';
 import { getAccountAddress } from '@/modules/accounts/account-utils';
-import { useBlockchainValidatorsStore } from '@/store/blockchain/validators';
+import { useBlockchainValidatorsStore } from '@/modules/staking/use-blockchain-validators-store';
 
 const modelValue = defineModel<EthStakingFilter>({ required: true });
 

@@ -11,6 +11,7 @@ import SettingCategoryHeader from '@/components/settings/SettingCategoryHeader.v
 import { usePriceApi } from '@/composables/api/balances/price';
 import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
 import { getErrorMessage } from '@/modules/common/logging/error-handling';
+import { useConfirmStore } from '@/modules/common/use-confirm-store';
 import { useNotificationDispatcher } from '@/modules/notifications/use-notification-dispatcher';
 import { usePriceTaskManager } from '@/modules/prices/use-price-task-manager';
 import { PriceOracle } from '@/modules/settings/types/price-oracle';
@@ -18,7 +19,6 @@ import { CRYPTOCOMPARE_PRIO_LIST_ITEM } from '@/modules/settings/types/prioritiz
 import { TableId, useRememberTableSorting } from '@/modules/table/use-remember-table-sorting';
 import { TaskType } from '@/modules/tasks/task-type';
 import { useTaskStore } from '@/modules/tasks/use-task-store';
-import { useConfirmStore } from '@/store/confirm';
 
 type OracleCacheEntry = OracleCacheMeta & { id: number };
 

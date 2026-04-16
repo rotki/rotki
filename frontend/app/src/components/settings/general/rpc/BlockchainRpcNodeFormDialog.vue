@@ -8,8 +8,8 @@ import { useEvmNodesApi } from '@/composables/api/settings/evm-nodes-api';
 import { useSupportedChains } from '@/composables/info/chains';
 import { ApiValidationError, type ValidationErrors } from '@/modules/api/types/errors';
 import { getErrorMessage } from '@/modules/common/logging/error-handling';
+import { useMessageStore } from '@/modules/common/use-message-store';
 import { isBlockchain } from '@/modules/onchain/chains';
-import { useMessageStore } from '@/store/message';
 
 const model = defineModel<BlockchainRpcNodeManageState | undefined>({ required: true });
 

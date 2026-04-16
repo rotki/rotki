@@ -3,10 +3,10 @@ import { flushPromises } from '@vue/test-utils';
 import { get, set } from '@vueuse/core';
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useLoggedUserIdentifier } from '@/composables/user/use-logged-user-identifier';
+import { useMainStore } from '@/modules/common/use-main-store';
 import { useDatabase } from '@/modules/data/use-database';
 import { useNewlyDetectedTokensDb } from '@/modules/newly-detected-tokens/use-newly-detected-tokens-db';
-import { useMainStore } from '@/store/main';
-import { useFrontendSettingsStore } from '@/store/settings/frontend';
+import { useFrontendSettingsStore } from '@/modules/settings/use-frontend-settings-store';
 import { NewDetectedTokenKind, type NewDetectedTokensRequestPayload } from './types';
 
 const TEST_USER = 'test-user-tokens';

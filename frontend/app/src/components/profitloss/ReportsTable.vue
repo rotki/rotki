@@ -10,8 +10,8 @@ import ReportsTableMoreAction from '@/components/profitloss/ReportsTableMoreActi
 import { FiatDisplay } from '@/modules/amount-display/components';
 import { calculateTotalProfitLoss } from '@/modules/reports/report-utils';
 import { useReportOperations } from '@/modules/reports/use-report-operations';
+import { useReportsStore } from '@/modules/reports/use-reports-store';
 import { TableId, useRememberTableSorting } from '@/modules/table/use-remember-table-sorting';
-import { useReportsStore } from '@/store/reports';
 
 interface ReportData extends Report {
   free: BigNumber;

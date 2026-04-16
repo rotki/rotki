@@ -11,6 +11,7 @@ import { isEmpty } from 'es-toolkit/compat';
 import { useFormStateWatcher } from '@/composables/form';
 import { useHistoryEvents } from '@/composables/history/events';
 import { useEditModeStateTracker } from '@/composables/history/events/edit-mode-state';
+import { useMessageStore } from '@/modules/common/use-message-store';
 import { useRefPropVModel } from '@/modules/common/validation/model';
 import { toMessages } from '@/modules/common/validation/validation';
 import EventDateLocation from '@/modules/history/management/forms/common/EventDateLocation.vue';
@@ -18,7 +19,6 @@ import SimpleFeeList from '@/modules/history/management/forms/common/SimpleFeeLi
 import HistoryEventAssetPriceForm from '@/modules/history/management/forms/HistoryEventAssetPriceForm.vue';
 import SwapEventNotes from '@/modules/history/management/forms/swap/SwapEventNotes.vue';
 import { useEventFormValidation } from '@/modules/history/management/forms/use-event-form-validation';
-import { useMessageStore } from '@/store/message';
 
 interface FormData {
   entryType: typeof HistoryEventEntryType.SWAP_EVENT;

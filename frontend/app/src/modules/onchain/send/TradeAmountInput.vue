@@ -5,7 +5,7 @@ import AmountInput from '@/components/inputs/AmountInput.vue';
 import { AssetAmountDisplay, FiatDisplay } from '@/modules/amount-display/components';
 import { bigNumberifyFromRef } from '@/modules/common/data/bignumbers';
 import { useInjectedTradableAsset } from '@/modules/onchain/use-tradable-asset';
-import { useGeneralSettingsStore } from '@/store/settings/general';
+import { useGeneralSettingsStore } from '@/modules/settings/use-general-settings-store';
 
 const model = defineModel<string>({ required: true });
 

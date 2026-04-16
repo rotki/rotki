@@ -6,8 +6,8 @@ import RowAppend from '@/components/helper/RowAppend.vue';
 import { FiatDisplay, ValueDisplay } from '@/modules/amount-display/components';
 import BalanceTopProtocols from '@/modules/balances/protocols/BalanceTopProtocols.vue';
 import { sum } from '@/modules/common/display/balances';
+import { useGeneralSettingsStore } from '@/modules/settings/use-general-settings-store';
 import { TableId, useRememberTableSorting } from '@/modules/table/use-remember-table-sorting';
-import { useGeneralSettingsStore } from '@/store/settings/general';
 
 interface AccountAssetBalancesProps {
   assets: AssetBalanceWithPrice[];

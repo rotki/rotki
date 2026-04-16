@@ -10,7 +10,7 @@ import { hasAccountAddress } from '@/modules/accounts/account-helpers';
 import { getAccountAddress } from '@/modules/accounts/account-utils';
 import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
 import { useAddressNameResolution } from '@/modules/address-names/use-address-name-resolution';
-import { useHistoryStore } from '@/store/history';
+import { useHistoryStore } from '@/modules/history/use-history-store';
 
 defineOptions({
   name: 'LocationLabelSelector',

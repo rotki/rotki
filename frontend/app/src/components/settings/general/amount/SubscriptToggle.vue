@@ -3,7 +3,7 @@ import { bigNumberify } from '@rotki/common';
 import { RuiIcon } from '@rotki/ui-library';
 import HintMenuIcon from '@/components/HintMenuIcon.vue';
 import { ValueDisplay } from '@/modules/amount-display';
-import { useFrontendSettingsStore } from '@/store/settings/frontend';
+import { useFrontendSettingsStore } from '@/modules/settings/use-frontend-settings-store';
 import SettingsOption from '../../controls/SettingsOption.vue';
 
 const { t } = useI18n({ useScope: 'global' });

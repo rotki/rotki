@@ -21,7 +21,7 @@ import { useBalanceRefresh } from '@/modules/balances/use-balance-refresh';
 import { NoteLocation } from '@/modules/common/notes';
 import SummaryCardRefreshMenu from '@/modules/dashboard/summary/SummaryCardRefreshMenu.vue';
 import { BalanceSource, DashboardTableType } from '@/modules/settings/types/frontend-settings';
-import { useFrontendSettingsStore } from '@/store/settings/frontend';
+import { useFrontendSettingsStore } from '@/modules/settings/use-frontend-settings-store';
 
 definePage({
   meta: {

@@ -3,9 +3,9 @@ import type { TaskMeta } from '@/modules/tasks/types';
 import { useAssetsApi } from '@/composables/api/assets';
 import { NftResponse } from '@/modules/assets/nfts';
 import { getDomain } from '@/modules/common/helpers/url';
+import { useFrontendSettingsStore } from '@/modules/settings/use-frontend-settings-store';
 import { TaskType } from '@/modules/tasks/task-type';
 import { isActionableFailure, useTaskHandler } from '@/modules/tasks/use-task-handler';
-import { useFrontendSettingsStore } from '@/store/settings/frontend';
 
 interface UseNftsReturn {
   fetchNfts: (ignoreCache: boolean) => Promise<ActionResult<NftResponse | null>>;

@@ -1,8 +1,8 @@
 import type { ComputedRef, Ref } from 'vue';
 import type { Currency } from '@/modules/amount-display/currencies';
 import type { RoundingMode } from '@/modules/settings/types/frontend-settings';
-import { useFrontendSettingsStore } from '@/store/settings/frontend';
-import { useGeneralSettingsStore } from '@/store/settings/general';
+import { useFrontendSettingsStore } from '@/modules/settings/use-frontend-settings-store';
+import { useGeneralSettingsStore } from '@/modules/settings/use-general-settings-store';
 
 export interface AmountDisplaySettings {
   // General settings

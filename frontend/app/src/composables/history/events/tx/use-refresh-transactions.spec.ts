@@ -4,7 +4,7 @@ import type { ChainAddress } from '@/modules/history/events/event-payloads';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { Status } from '@/modules/common/status';
 import { OnlineHistoryEventsQueryType } from '@/modules/history/events/schemas';
-import { useHistoryRefreshStateStore } from '@/store/history/refresh-state';
+import { useHistoryRefreshStateStore } from '@/modules/history/use-history-refresh-state-store';
 import { useRefreshTransactions } from './use-refresh-transactions';
 
 const mockOnHistoryStarted = vi.fn();
@@ -123,11 +123,11 @@ vi.mock('@/modules/balances/exchanges/use-exchange-data', () => ({
   useExchangeData: vi.fn(() => mockExchangeData),
 }));
 
-vi.mock('@/store/history/query-status/tx-query-status', () => ({
+vi.mock('@/modules/history/use-tx-query-status-store', () => ({
   useTxQueryStatusStore: vi.fn(() => mockTxQueryStatusStore),
 }));
 
-vi.mock('@/store/history/query-status/events-query-status', () => ({
+vi.mock('@/modules/history/use-events-query-status-store', () => ({
   useEventsQueryStatusStore: vi.fn(() => mockEventsQueryStatusStore),
 }));
 

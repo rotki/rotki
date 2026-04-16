@@ -2,7 +2,7 @@ import { BigNumber, bigNumberify } from '@rotki/common';
 import { updateGeneralSettings } from '@test/utils/general-settings';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { useAmountFormatter } from '@/modules/amount-display/composables/use-amount-formatter';
-import { useFrontendSettingsStore } from '@/store/settings/frontend';
+import { useFrontendSettingsStore } from '@/modules/settings/use-frontend-settings-store';
 
 describe('modules/amount-display/composables/use-amount-formatter', () => {
   beforeEach(() => {

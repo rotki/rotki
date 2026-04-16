@@ -7,10 +7,10 @@ import { useBlockchainBalances } from '@/modules/balances/use-blockchain-balance
 import { logger } from '@/modules/common/logging/logging';
 import { Section } from '@/modules/common/status';
 import { OnlineHistoryEventsQueryType } from '@/modules/history/events/schemas';
+import { useSessionAuthStore } from '@/modules/session/use-session-auth-store';
+import { useBlockchainValidatorsStore } from '@/modules/staking/use-blockchain-validators-store';
 import { TaskType } from '@/modules/tasks/task-type';
 import { useTaskStore } from '@/modules/tasks/use-task-store';
-import { useBlockchainValidatorsStore } from '@/store/blockchain/validators';
-import { useSessionAuthStore } from '@/store/session/auth';
 
 interface RefreshCallbacks {
   getPerformance: () => { entriesTotal: number };

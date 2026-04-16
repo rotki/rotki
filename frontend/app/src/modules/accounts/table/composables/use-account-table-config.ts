@@ -3,8 +3,8 @@ import type { ComputedRef, Ref } from 'vue';
 import type { AccountDataRow } from '../types';
 import type { BlockchainAccountBalance } from '@/modules/accounts/blockchain-accounts';
 import type { SupportedCurrency } from '@/modules/amount-display/currencies';
+import { useGeneralSettingsStore } from '@/modules/settings/use-general-settings-store';
 import { TableId, useRememberTableSorting } from '@/modules/table/use-remember-table-sorting';
-import { useGeneralSettingsStore } from '@/store/settings/general';
 
 interface UseAccountTableConfigReturn<T extends BlockchainAccountBalance> {
   createColumns: (group: 'evm' | 'xpub' | undefined, anyExpansion: boolean) => DataTableColumn<AccountDataRow<T>>[];

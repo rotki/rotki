@@ -4,7 +4,7 @@ import type { HistoryEventEntry, HistoryEventRow } from '@/modules/history/event
 import type { AccountingRuleEntry } from '@/modules/settings/types/accounting';
 import { get, set } from '@vueuse/shared';
 import { useIgnore } from '@/composables/history';
-import { useConfirmStore } from '@/store/confirm';
+import { useConfirmStore } from '@/modules/common/use-confirm-store';
 
 interface UseHistoryEventsSelectionActionsOptions {
   deletion: {

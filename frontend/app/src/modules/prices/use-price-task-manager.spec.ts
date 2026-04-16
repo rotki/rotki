@@ -3,9 +3,9 @@ import { updateGeneralSettings } from '@test/utils/general-settings';
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { usePriceApi } from '@/composables/api/balances/price';
 import { useCurrencies } from '@/modules/amount-display/currencies';
+import { useBalancePricesStore } from '@/modules/balances/use-balance-prices-store';
 import { usePriceTaskManager } from '@/modules/prices/use-price-task-manager';
 import { PriceOracle } from '@/modules/settings/types/price-oracle';
-import { useBalancePricesStore } from '@/store/balances/prices';
 
 const runTaskMock = vi.fn();
 

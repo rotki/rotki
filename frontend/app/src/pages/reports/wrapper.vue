@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { useReportsStore } from '@/store/reports';
+import { useReportsStore } from '@/modules/reports/use-reports-store';
 
 const reportStore = useReportsStore();
 onUnmounted(() => {

@@ -4,7 +4,7 @@ import { useInfoApi } from '@/composables/api/info';
 import { apiUrls, defaultApiUrls } from '@/modules/api/api-urls';
 import { api } from '@/modules/api/rotki-api';
 import { logger, setLevel } from '@/modules/common/logging/logging';
-import { useMainStore } from '@/store/main';
+import { useMainStore } from '@/modules/common/use-main-store';
 
 interface UseBackendConnectionReturn {
   cancelConnectionAttempts: () => void;

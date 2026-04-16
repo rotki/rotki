@@ -2,8 +2,8 @@ import type { MessageHandler } from '../interfaces';
 import { NotificationCategory, NotificationGroup, Priority, Severity } from '@rotki/common';
 import { createStateWithNotificationHandler } from '@/modules/messaging/utils';
 import { type NewDetectedToken, useNewlyDetectedTokens } from '@/modules/newly-detected-tokens';
+import { useNotificationsStore } from '@/modules/notifications/use-notifications-store';
 import { Routes } from '@/router/routes';
-import { useNotificationsStore } from '@/store/notifications';
 
 export function createNewTokenDetectedHandler(
   t: ReturnType<typeof useI18n>['t'],

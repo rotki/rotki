@@ -1,7 +1,7 @@
 import { consistOfNumbers, isValidEthAddress } from '@rotki/common';
 import { beforeAll, describe, expect, it } from 'vitest';
 import { useScramble } from '@/composables/scramble';
-import { useFrontendSettingsStore } from '@/store/settings/frontend';
+import { useFrontendSettingsStore } from '@/modules/settings/use-frontend-settings-store';
 
 describe('useScramble', () => {
   let store: ReturnType<typeof useFrontendSettingsStore>;

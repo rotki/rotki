@@ -5,7 +5,7 @@ import { getAccountAddress, isXpubAccount } from '@/modules/accounts/account-uti
 import { type CSVRow, getChainType, serializeRecordToString } from '@/modules/accounts/import-export/account-csv-schema';
 import { useBlockchainAccountData } from '@/modules/balances/blockchain/use-blockchain-account-data';
 import { downloadFileByTextContent } from '@/modules/common/file/download';
-import { useBlockchainValidatorsStore } from '@/store/blockchain/validators';
+import { useBlockchainValidatorsStore } from '@/modules/staking/use-blockchain-validators-store';
 
 interface UseAccountExportReturn {
   exportAccounts: () => void;

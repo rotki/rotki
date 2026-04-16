@@ -1,7 +1,7 @@
 import { assert } from '@rotki/common';
 import { createBlockie } from '@rotki/ui-library';
 import { logger } from '@/modules/common/logging/logging';
-import { useFrontendSettingsStore } from '@/store/settings/frontend';
+import { useFrontendSettingsStore } from '@/modules/settings/use-frontend-settings-store';
 
 const CACHE_SIZE = 100;
 

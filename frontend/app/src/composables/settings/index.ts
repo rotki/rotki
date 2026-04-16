@@ -6,8 +6,8 @@ import type { FrontendSettingsPayload } from '@/modules/settings/types/frontend-
 import type { SettingsUpdate } from '@/modules/settings/types/user-settings';
 import { promiseTimeout } from '@vueuse/core';
 import { logger } from '@/modules/common/logging/logging';
+import { useSessionSettingsStore } from '@/modules/settings/use-session-settings-store';
 import { useSettingsOperations } from '@/modules/settings/use-settings-operations';
-import { useSessionSettingsStore } from '@/store/settings/session';
 
 export enum SettingLocation {
   FRONTEND,

@@ -10,10 +10,10 @@ import { useBackendManagement } from '@/composables/backend';
 import { useRestartingStatus } from '@/composables/user/account';
 import { useLogout } from '@/modules/account/use-logout';
 import { useBackendConnection } from '@/modules/app/use-backend-connection';
-import { useConfirmStore } from '@/store/confirm';
-import { useMainStore } from '@/store/main';
-import { useMessageStore } from '@/store/message';
-import { useSessionAuthStore } from '@/store/session/auth';
+import { useConfirmStore } from '@/modules/common/use-confirm-store';
+import { useMainStore } from '@/modules/common/use-main-store';
+import { useMessageStore } from '@/modules/common/use-message-store';
+import { useSessionAuthStore } from '@/modules/session/use-session-auth-store';
 
 const { headless = false } = defineProps<{ headless?: boolean }>();
 

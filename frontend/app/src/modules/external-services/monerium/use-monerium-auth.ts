@@ -2,7 +2,7 @@ import type { ComputedRef, Ref } from 'vue';
 import type { MoneriumOAuthResult, MoneriumStatus } from './types';
 import { logger } from '@/modules/common/logging/logging';
 import { PremiumFeature, useFeatureAccess } from '@/modules/premium/use-feature-access';
-import { useSessionAuthStore } from '@/store/session/auth';
+import { useSessionAuthStore } from '@/modules/session/use-session-auth-store';
 import { useMoneriumOAuthApi } from './use-monerium-api';
 
 interface UseMoneriumOAuthReturn {

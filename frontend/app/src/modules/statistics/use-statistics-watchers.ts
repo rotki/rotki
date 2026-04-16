@@ -1,6 +1,6 @@
 import { usePremium } from '@/composables/premium';
+import { useSessionAuthStore } from '@/modules/session/use-session-auth-store';
 import { useStatisticsDataFetching } from '@/modules/statistics/use-statistics-data-fetching';
-import { useSessionAuthStore } from '@/store/session/auth';
 
 export function useStatisticsWatchers(): void {
   const premium = usePremium();

@@ -2,8 +2,8 @@ import type { Ref } from 'vue';
 import type { NonFungibleBalance } from '@/modules/balances/types/nfbalances';
 import type { ManualPriceFormPayload } from '@/modules/prices/price-types';
 import { useAssetPricesApi } from '@/composables/api/assets/prices';
+import { useConfirmStore } from '@/modules/common/use-confirm-store';
 import { useNotifications } from '@/modules/notifications/use-notifications';
-import { useConfirmStore } from '@/store/confirm';
 
 interface UseNftPriceManagementReturn {
   customPrice: Ref<ManualPriceFormPayload | null>;

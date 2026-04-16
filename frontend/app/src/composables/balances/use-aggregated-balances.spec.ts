@@ -21,9 +21,9 @@ import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-ac
 import { useAssetInfoCache } from '@/modules/assets/use-asset-info-cache';
 import { useAssetsStore } from '@/modules/assets/use-assets-store';
 import { BalanceType } from '@/modules/balances/types/balances';
+import { useBalancePricesStore } from '@/modules/balances/use-balance-prices-store';
 import { useBalancesStore } from '@/modules/balances/use-balances-store';
-import { useBalancePricesStore } from '@/store/balances/prices';
-import { useSessionSettingsStore } from '@/store/settings/session';
+import { useSessionSettingsStore } from '@/modules/settings/use-session-settings-store';
 import { useAggregatedBalances } from './use-aggregated-balances';
 import '@test/i18n';
 

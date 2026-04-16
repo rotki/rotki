@@ -10,7 +10,7 @@ import type { DataZoomComponentOption, GridComponentOption } from 'echarts/compo
 import type { ComputedRef, MaybeRefOrGetter } from 'vue';
 import type { NetValueChartData } from '@/modules/dashboard/graph/types';
 import { useGraph } from '@/composables/graphs';
-import { useFrontendSettingsStore } from '@/store/settings/frontend';
+import { useFrontendSettingsStore } from '@/modules/settings/use-frontend-settings-store';
 
 interface AxisConfig {
   xAxis: XAXisComponentOption;

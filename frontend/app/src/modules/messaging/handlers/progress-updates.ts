@@ -1,11 +1,11 @@
 import type { MessageHandler } from '../interfaces';
 import type { ProgressUpdateResultData } from '../types/status-types';
+import { useLiquityStore } from '@/modules/defi/use-liquity-store';
 import { useHistoricalBalancesStore } from '@/modules/history/balances/store';
 import { useDecodingStatusStore } from '@/modules/history/use-decoding-status-store';
 import { useProtocolCacheStatusStore } from '@/modules/history/use-protocol-cache-status-store';
 import { createConditionalHandler } from '@/modules/messaging/utils';
-import { useLiquityStore } from '@/store/defi/liquity';
-import { useHistoricCachePriceStore } from '@/store/prices/historic';
+import { useHistoricCachePriceStore } from '@/modules/prices/use-historic-cache-price-store';
 import { SocketMessageProgressUpdateSubType } from '../types/base';
 import { createCsvImportResultHandler } from './csv-import-result';
 

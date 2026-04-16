@@ -3,10 +3,10 @@ import { assert, type Nullable } from '@rotki/common';
 import AppImage from '@/components/common/AppImage.vue';
 import QueriedAddressDialog from '@/components/defi/QueriedAddressDialog.vue';
 import { type Module, SUPPORTED_MODULES } from '@/modules/common/modules';
+import { useConfirmStore } from '@/modules/common/use-confirm-store';
 import { useQueriedAddressOperations } from '@/modules/session/use-queried-address-operations';
+import { useGeneralSettingsStore } from '@/modules/settings/use-general-settings-store';
 import { useSettingsOperations } from '@/modules/settings/use-settings-operations';
-import { useConfirmStore } from '@/store/confirm';
-import { useGeneralSettingsStore } from '@/store/settings/general';
 
 interface ModuleWithStatus {
   readonly identifier: Module;

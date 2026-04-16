@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import SettingsOption from '@/components/settings/controls/SettingsOption.vue';
-import { useGeneralSettingsStore } from '@/store/settings/general';
+import { useGeneralSettingsStore } from '@/modules/settings/use-general-settings-store';
 
 const autoCreateProfitEvents = ref<boolean>(false);
 const { autoCreateProfitEvents: storedAutoCreateProfitEvents } = storeToRefs(useGeneralSettingsStore());

@@ -2,7 +2,7 @@
 import { externalLinks } from '@shared/external-links';
 import AppImage from '@/components/common/AppImage.vue';
 import ExternalLink from '@/components/helper/ExternalLink.vue';
-import { useMainStore } from '@/store/main';
+import { useMainStore } from '@/modules/common/use-main-store';
 
 const { drawer } = defineProps<{
   drawer?: boolean;

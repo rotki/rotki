@@ -8,7 +8,7 @@ import UserHost from '@/components/account-management/UserHost.vue';
 import RotkiLogo from '@/components/common/RotkiLogo.vue';
 import { useAppNavigation } from '@/composables/navigation';
 import { useAccountManagement } from '@/composables/user/account';
-import { useSessionAuthStore } from '@/store/session/auth';
+import { useSessionAuthStore } from '@/modules/session/use-session-auth-store';
 
 definePage({
   meta: {

@@ -5,8 +5,8 @@ import ConfirmDialog from '@/components/dialogs/ConfirmDialog.vue';
 import SettingsItem from '@/components/settings/controls/SettingsItem.vue';
 import { Constraints } from '@/data/constraints';
 import { toMessages } from '@/modules/common/validation/validation';
+import { useFrontendSettingsStore } from '@/modules/settings/use-frontend-settings-store';
 import { useSettingsOperations } from '@/modules/settings/use-settings-operations';
-import { useFrontendSettingsStore } from '@/store/settings/frontend';
 
 const { t } = useI18n({ useScope: 'global' });
 

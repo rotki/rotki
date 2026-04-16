@@ -9,11 +9,11 @@ import { useStatusUpdater } from '@/composables/status';
 import { logger } from '@/modules/common/logging/logging';
 import { Section, Status } from '@/modules/common/status';
 import { getErrorMessage, useNotifications } from '@/modules/notifications/use-notifications';
+import { useFrontendSettingsStore } from '@/modules/settings/use-frontend-settings-store';
+import { useKrakenStakingStore } from '@/modules/staking/use-kraken-staking-store';
 import { TaskType } from '@/modules/tasks/task-type';
 import { useTaskHandler } from '@/modules/tasks/use-task-handler';
 import { useTaskStore } from '@/modules/tasks/use-task-store';
-import { useFrontendSettingsStore } from '@/store/settings/frontend';
-import { useKrakenStakingStore } from '@/store/staking/kraken';
 
 interface UseKrakenStakingOperationsReturn {
   fetchEvents: (refresh?: boolean, dateFilter?: KrakenStakingDateFilter) => Promise<void>;

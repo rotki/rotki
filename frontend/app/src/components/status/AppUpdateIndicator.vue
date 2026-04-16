@@ -2,9 +2,9 @@
 import { startPromise } from '@shared/utils';
 import { useInterop } from '@/composables/electron-interop';
 import { useBackendConnection } from '@/modules/app/use-backend-connection';
+import { useMainStore } from '@/modules/common/use-main-store';
 import { useUpdateChecker } from '@/modules/session/use-update-checker';
-import { useMainStore } from '@/store/main';
-import { useFrontendSettingsStore } from '@/store/settings/frontend';
+import { useFrontendSettingsStore } from '@/modules/settings/use-frontend-settings-store';
 
 const mainStore = useMainStore();
 const { updateNeeded, version } = storeToRefs(mainStore);

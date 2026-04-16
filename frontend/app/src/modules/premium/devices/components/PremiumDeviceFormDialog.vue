@@ -4,9 +4,9 @@ import { useTemplateRef } from 'vue';
 import BigDialog from '@/components/dialogs/BigDialog.vue';
 import { ApiValidationError, type ValidationErrors } from '@/modules/api/types/errors';
 import { getErrorMessage } from '@/modules/common/logging/error-handling';
+import { useMessageStore } from '@/modules/common/use-message-store';
 import PremiumDeviceForm from '@/modules/premium/devices/components/PremiumDeviceForm.vue';
 import { usePremiumDevicesApi } from '@/modules/premium/devices/composables/devices';
-import { useMessageStore } from '@/store/message';
 
 const modelValue = defineModel<PremiumDevice | undefined>({ required: true });
 

@@ -3,7 +3,7 @@ import type { SavedFilterLocation, SearchMatcher, Suggestion } from '@/modules/t
 import { isEqual } from 'es-toolkit';
 import SuggestedItem from '@/components/table-filter/SuggestedItem.vue';
 import { useSavedFilter } from '@/composables/filters/saved';
-import { useMessageStore } from '@/store/message';
+import { useMessageStore } from '@/modules/common/use-message-store';
 
 const { disabled, location, matchers, selection } = defineProps<{
   matchers: SearchMatcher<any>[];
