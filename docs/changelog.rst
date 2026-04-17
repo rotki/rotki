@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :feature:`-` The address selector in EVM history event forms now shows resolved address-book and ENS names, and lets you filter by either name or address.
 * :feature:`-` The internal transaction conflicts dialog now shows the action type (re-pull or re-decode) in the resolve button's tooltip instead of a separate column.
 * :bug:`-` Quickswap v2 swaps for native token (ETH, POL etc.) will now be decoded properly.
 * :bug:`-` External swap events (manual trades) can now be deleted from the history events view.
