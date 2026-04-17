@@ -46,6 +46,16 @@ def parse_args() -> argparse.Namespace:
         help='The version until which to update',
     )
     p.add_argument(
+        '--override-assets-version',
+        type=int,
+        default=None,
+        help=(
+            'Override local assets_version before applying updates. '
+            'Useful for reapplying an already applied update version '
+            '(e.g. set to 39 and use --target-version 40 to reapply v40).'
+        ),
+    )
+    p.add_argument(
         '--assets-branch',
         type=str,
         default='develop',
