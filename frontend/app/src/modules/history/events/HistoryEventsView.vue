@@ -312,7 +312,6 @@ watchDebounced(route, async () => {
             :highlighted-identifiers="highlightedIdentifiers"
             :highlight-types="highlightTypes"
             :selection="selectionMode"
-            :match-exact-events="toggles.matchExactEvents"
             :duplicate-handling-status="duplicateHandlingStatus"
             @clear-filters="clearFilters()"
             @show:dialog="dialogContainer?.show($event)"

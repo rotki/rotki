@@ -63,7 +63,6 @@ const {
   isLoading,
   matchers,
   pagination,
-  setPage,
   state,
   updateFilter,
 } = usePaginationFilters<
@@ -448,7 +447,6 @@ const importFileDialog = ref<boolean>(false);
         :state="state"
         :is-loading="isLoading"
         :is-custom="customRuleHandling === CustomRuleHandling.ONLY"
-        @set-page="setPage($event)"
         @delete-click="showDeleteConfirmation($event)"
         @edit-click="edit($event)"
       />
