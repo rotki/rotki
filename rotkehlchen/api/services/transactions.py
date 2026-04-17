@@ -986,6 +986,22 @@ class TransactionsService:
             raise InputError(f'Tried to delete customized transaction {tx_ref} while delete custom is False')  # noqa: E501
 
         with self.rotkehlchen.data.db.user_write() as write_cursor:
+            if (
+                (internal_txs_count := len(parent_hash_internal_txs)) == 0 and
+                transaction.to_address is not None
+            ):
+                # Guard against deleting pre-existing internals due to an empty indexer payload.
+                # This check must run before deleting the parent tx row, since deleting that row
+                # cascades to evm_internal_transactions.
+                # If internals exist and should not be removed, this call raises DataIntegrityError
+                # and prevents the parent row delete from executing.
+                chain_manager.transactions._replace_internal_transactions_for_parent_hash(
+                    write_cursor=write_cursor,
+                    parent_tx_hash=tx_ref,
+                    transactions=parent_hash_internal_txs,
+                    indexer_source=indexer_source,
+                )
+
             write_cursor.execute(
                 'DELETE FROM evm_transactions WHERE tx_hash=? AND chain_id=?',
                 db_tuple,
@@ -1000,7 +1016,7 @@ class TransactionsService:
                 chain_id=chain_manager.node_inquirer.chain_id,
                 data=raw_receipt_data,
             )
-            if transaction.to_address is not None:  # internal transactions only through contracts
+            if internal_txs_count != 0:  # parent_hash_internal_txs != 0 when transaction.to_address is not None  # noqa: E501
                 chain_manager.transactions._replace_internal_transactions_for_parent_hash(
                     write_cursor=write_cursor,
                     parent_tx_hash=tx_ref,
