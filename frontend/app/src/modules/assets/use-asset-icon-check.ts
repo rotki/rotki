@@ -17,57 +17,61 @@ export function useAssetIconCheck(): UseAssetIconCheckReturn {
   const { assetExistsCache, pendingIconRequests } = storeToRefs(useAssetsStore());
   const { checkAsset } = useAssetIconApi();
 
-  const checkIfAssetExists = async (identifier: string, options: AssetCheckOptions): Promise<boolean> => {
+  const MAX_ATTEMPTS = 4;
+  const RETRY_DELAY_MS = 1500;
+
+  async function resolveExists(identifier: string, options: AssetCheckOptions): Promise<boolean> {
     const cache = get(assetExistsCache);
     const pending = get(pendingIconRequests);
-    const now = Date.now();
+
+    try {
+      for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+        if (options.abortController?.signal.aborted) {
+          logger.info('Aborted asset check');
+          return false;
+        }
+
+        const status = await checkAsset(identifier, options);
+        if (status === 200 || status === 404) {
+          const exists = status === 200;
+          cache.set(identifier, { exists, timestamp: Date.now() });
+          return exists;
+        }
+
+        if (status !== 202)
+          logger.debug(`Asset ${identifier} check failed with status ${status} (${attempt}), waiting`);
+
+        await wait(RETRY_DELAY_MS);
+      }
+
+      cache.set(identifier, { exists: false, timestamp: Date.now() });
+      return false;
+    }
+    catch (error: unknown) {
+      logger.error(error);
+      return false;
+    }
+    finally {
+      pending.delete(identifier);
+    }
+  }
+
+  async function checkIfAssetExists(identifier: string, options: AssetCheckOptions): Promise<boolean> {
+    const cache = get(assetExistsCache);
+    const pending = get(pendingIconRequests);
 
     const cached = cache.get(identifier);
-    if (cached && (now - cached.timestamp) < CACHE_TTL) {
+    if (cached && (Date.now() - cached.timestamp) < CACHE_TTL)
       return cached.exists;
-    }
 
     const existingRequest = pending.get(identifier);
-    if (existingRequest) {
+    if (existingRequest)
       return existingRequest;
-    }
 
-    const request = (async (): Promise<boolean> => {
-      let tries = 0;
-      try {
-        while (tries < 4) {
-          const status = await checkAsset(identifier, options);
-          if (status === 200 || status === 404) {
-            const exists = status === 200;
-            cache.set(identifier, { exists, timestamp: Date.now() });
-            return exists;
-          }
-
-          logger.debug(`Asset ${identifier} check failed with status ${status} (${tries + 1}), waiting`);
-          await wait(1500);
-
-          if (options.abortController?.signal.aborted) {
-            logger.info('Aborted asset check');
-            return false;
-          }
-
-          tries++;
-        }
-        cache.set(identifier, { exists: false, timestamp: Date.now() });
-        return false;
-      }
-      catch (error: unknown) {
-        logger.error(error);
-        return false;
-      }
-      finally {
-        pending.delete(identifier);
-      }
-    })();
-
+    const request = resolveExists(identifier, options);
     pending.set(identifier, request);
     return request;
-  };
+  }
 
   return {
     checkIfAssetExists,
