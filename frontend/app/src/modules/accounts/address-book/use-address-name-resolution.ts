@@ -9,11 +9,9 @@ import { useAddressNamesStore } from '@/modules/accounts/address-book/use-addres
 import { useAddressesNamesApi } from '@/modules/accounts/address-book/use-addresses-names-api';
 import { isBlockchain } from '@/modules/core/common/chains';
 import { uniqueStrings } from '@/modules/core/common/data/data';
-import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
 import { logger } from '@/modules/core/common/logging/logging';
 import { createItemCache } from '@/modules/core/common/use-item-cache';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
-import { useNotifications } from '@/modules/core/notifications/use-notifications';
 import { useFrontendSettingsStore } from '@/modules/settings/use-frontend-settings-store';
 
 interface UseAddressNameResolutionReturn {
@@ -49,8 +47,6 @@ export const useAddressNameResolution = createSharedComposable((): UseAddressNam
   const lastRefreshedAvatar = shallowRef<number>(Date.now());
   const { supportedChains } = useSupportedChains();
   const { ensAvatarUrl, getAddressesNames } = useAddressesNamesApi();
-  const { notifyError } = useNotifications();
-  const { t } = useI18n({ useScope: 'global' });
 
   // Pre-computed chain ID lists by type
   const evmChainIds = computed<string[]>(() =>
@@ -116,7 +112,6 @@ export const useAddressNameResolution = createSharedComposable((): UseAddressNam
     }
     catch (error: unknown) {
       logger.error(error);
-      notifyError(t('alias_names.error.title'), t('alias_names.error.message', { message: getErrorMessage(error) }));
       result = [];
     }
 

@@ -692,12 +692,6 @@
     "unknown_info": "Hay airdrops disponibles para estas direcciones, pero aún no podemos analizar si han sido reclamadas o no.",
     "unknown_tooltip": "La dirección es elegible para este lanzamiento aéreo, pero aún no podemos analizar si ha sido reclamada o no."
   },
-  "alias_names": {
-    "error": {
-      "message": "Failed to retrieve the alias names: {message}",
-      "title": "Querying alias names"
-    }
-  },
   "amount_display": {
     "click_to_copy": "Click to copy",
     "copied": "Copied!"
