@@ -818,12 +818,6 @@
     "unknown_info": "Ces adresses font l'objet d'un relevé aérien, mais nous ne pouvons pas encore déterminer si elles ont été revendiquées ou non.",
     "unknown_tooltip": "L'adresse est éligible pour ce largage, mais nous ne pouvons pas encore analyser si elle a été réclamée ou non."
   },
-  "alias_names": {
-    "error": {
-      "message": "Échec de la récupération des noms d'alias : {message}",
-      "title": "Requête de noms d'alias"
-    }
-  },
   "amount_display": {
     "click_to_copy": "Cliquer pour copier",
     "copied": "Copié !",

@@ -697,12 +697,6 @@
     "unknown_info": "这些地址可以进行空投，但我们还无法分析其是否已被认领。",
     "unknown_tooltip": "地址符合空投条件，但我们还无法分析它是否已被认领。"
   },
-  "alias_names": {
-    "error": {
-      "message": "获取别名失败：{message}",
-      "title": "查询别名"
-    }
-  },
   "amount_display": {
     "click_to_copy": "点击复制",
     "copied": "已复制！",

@@ -700,12 +700,6 @@
     "unknown_info": "Για αυτές τις διευθύνσεις είναι διαθέσιμες εναέριες ρίψεις, αλλά δεν μπορούμε ακόμη να αναλύσουμε αν έχουν διεκδικηθεί ή όχι.",
     "unknown_tooltip": "Η διεύθυνση είναι επιλέξιμη για αυτό το airdrop, αλλά δεν μπορούμε ακόμα να αναλύσουμε αν έχει διεκδικηθεί ή όχι."
   },
-  "alias_names": {
-    "error": {
-      "message": "Failed to retrieve the alias names: {message}",
-      "title": "Querying alias names"
-    }
-  },
   "amount_display": {
     "click_to_copy": "Click to copy",
     "copied": "Copied!",
