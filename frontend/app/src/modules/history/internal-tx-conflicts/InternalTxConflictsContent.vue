@@ -79,7 +79,6 @@ const headers = computed<DataTableColumn<InternalTxConflict>[]>(() => {
       { key: 'selection', label: '', sortable: false },
       { key: 'chain', label: '', sortable: true, cellClass: '!p-1', class: '!p-1' },
       { key: 'txHash', label: t('internal_tx_conflicts.columns.tx_hash'), sortable: true },
-      { key: 'action', label: '', sortable: true, cellClass: '!p-1', class: '!p-1' },
       { key: 'timestamp', label: t('internal_tx_conflicts.columns.timestamp'), sortable: true },
       { key: 'actions', label: '' },
     ];
@@ -89,7 +88,6 @@ const headers = computed<DataTableColumn<InternalTxConflict>[]>(() => {
     { key: 'selection', label: '', sortable: false },
     { key: 'chain', label: '', sortable: true, cellClass: '!p-1', class: '!p-1' },
     { key: 'txHash', label: t('internal_tx_conflicts.columns.tx_hash'), sortable: true },
-    { key: 'action', label: '', sortable: true, cellClass: '!p-1', class: '!p-1' },
     { key: 'timestamp', label: t('internal_tx_conflicts.columns.timestamp'), sortable: true },
     { key: 'reason', label: t('internal_tx_conflicts.columns.reason') },
     { key: 'lastRetryTs', label: t('internal_tx_conflicts.columns.last_retry'), sortable: true },
@@ -287,21 +285,6 @@ defineExpose({
             type="transaction"
           />
         </template>
-        <template #item.action="{ row }">
-          <RuiTooltip
-            :popper="{ placement: 'top' }"
-            :open-delay="400"
-          >
-            <template #activator>
-              <RuiIcon
-                :name="row.action === InternalTxConflictActions.REPULL ? 'lu-refresh-cw' : 'lu-wrench'"
-                :color="row.action === InternalTxConflictActions.REPULL ? 'primary' : 'warning'"
-                size="18"
-              />
-            </template>
-            {{ getActionLabel(row.action) }}
-          </RuiTooltip>
-        </template>
         <template #item.timestamp="{ row }">
           <div :class="compact && 'text-xs'">
             <DateDisplay
@@ -365,17 +348,18 @@ defineExpose({
                   variant="text"
                   icon
                   size="sm"
+                  :color="row.action === InternalTxConflictActions.REPULL ? 'primary' : 'warning'"
                   :loading="isResolving(row)"
                   :disabled="isRunning || isResolving(row)"
                   @click="onResolveOne(row)"
                 >
                   <RuiIcon
-                    name="lu-refresh-cw"
+                    :name="row.action === InternalTxConflictActions.REPULL ? 'lu-refresh-cw' : 'lu-wrench'"
                     size="16"
                   />
                 </RuiButton>
               </template>
-              {{ t('internal_tx_conflicts.resolution.resolve') }}
+              {{ t('internal_tx_conflicts.resolution.resolve') }} ({{ getActionLabel(row.action) }})
             </RuiTooltip>
             <RuiTooltip
               :popper="{ placement: 'top' }"

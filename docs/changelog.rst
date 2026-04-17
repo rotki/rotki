@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :feature:`-` The internal transaction conflicts dialog now shows the action type (re-pull or re-decode) in the resolve button's tooltip instead of a separate column.
 * :bug:`-` Quickswap v2 swaps for native token (ETH, POL etc.) will now be decoded properly.
 * :bug:`-` External swap events (manual trades) can now be deleted from the history events view.
 * :feature:`12028` "Ignore/Unignore in accounting" labels are now "Exclude/Include from accounting (PnL)" for clarity.
