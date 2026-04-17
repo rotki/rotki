@@ -36,6 +36,7 @@ function extractSettingsFieldError(errors: Record<string, string | string[]>, ke
 }
 
 interface UseSettingsOperationsReturn {
+  applyFrontendSettingLocal: (payload: FrontendSettingsPayload) => void;
   enableModule: (payload: { readonly enable: Module[]; readonly addresses: string[] }) => Promise<void>;
   setKrakenAccountType: (krakenAccountType: KrakenAccountType) => Promise<void>;
   update: (update: SettingsUpdate) => Promise<ActionStatus>;
@@ -119,6 +120,11 @@ export function useSettingsOperations(): UseSettingsOperationsReturn {
     }
   };
 
+  function applyFrontendSettingLocal(payload: FrontendSettingsPayload): void {
+    const currentSettings = get(frontendStore.settings);
+    frontendStore.update({ ...currentSettings, ...payload });
+  }
+
   async function updateFrontendSetting(payload: FrontendSettingsPayload): Promise<ActionStatus> {
     const props = Object.keys(payload);
     assert(props.length > 0, 'Payload must be not-empty');
@@ -163,6 +169,7 @@ export function useSettingsOperations(): UseSettingsOperationsReturn {
   }, { debounce: 800, maxWait: 1200 });
 
   return {
+    applyFrontendSettingLocal,
     enableModule,
     setKrakenAccountType,
     update,

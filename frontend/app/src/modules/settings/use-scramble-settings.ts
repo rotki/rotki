@@ -21,7 +21,7 @@ export function useScrambleSetting(): UseScrambleSettingReturn {
 
   const frontendStore = useFrontendSettingsStore();
   const { scrambleData: enabled, scrambleMultiplier: multiplier } = storeToRefs(frontendStore);
-  const { updateFrontendSetting } = useSettingsOperations();
+  const { applyFrontendSettingLocal, updateFrontendSetting } = useSettingsOperations();
 
   // Debounced backend update
   const debouncedBackendUpdate = useDebounceFn(async (value: number) => {
@@ -40,11 +40,7 @@ export function useScrambleSetting(): UseScrambleSettingReturn {
 
     const numValue = Number(value);
 
-    // Update store immediately for UI
-    frontendStore.update({
-      ...get(frontendStore.settings),
-      scrambleMultiplier: numValue,
-    });
+    applyFrontendSettingLocal({ scrambleMultiplier: numValue });
 
     // Debounce backend update
     startPromise(debouncedBackendUpdate(numValue));
