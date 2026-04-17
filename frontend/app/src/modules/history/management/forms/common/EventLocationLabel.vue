@@ -1,7 +1,9 @@
 <script setup lang="ts">
+import { isValidEthAddress } from '@rotki/common';
+import { useAddressNameResolution } from '@/modules/accounts/address-book/use-address-name-resolution';
 import { useAccountAddresses } from '@/modules/balances/blockchain/use-account-addresses';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
-import AutoCompleteWithSearchSync from '@/modules/shell/components/inputs/AutoCompleteWithSearchSync.vue';
+import AccountDisplay from '@/modules/shell/components/display/AccountDisplay.vue';
 
 const modelValue = defineModel<string>({ required: true });
 
@@ -17,24 +19,84 @@ const emit = defineEmits<{
 const { t } = useI18n({ useScope: 'global' });
 const { getAddresses } = useAccountAddresses();
 const { matchChain } = useSupportedChains();
+const { getAddressName } = useAddressNameResolution();
 
-const addressSuggestions = computed(() => {
-  const chain = matchChain(location);
-  if (!chain)
+const chain = computed<string | undefined>(() => matchChain(location));
+
+const addressSuggestions = computed<string[]>(() => {
+  const matched = get(chain);
+  if (!matched)
     return [];
-  return getAddresses(chain);
+  return getAddresses(matched);
 });
+
+function renderAsAccount(value: string | undefined): boolean {
+  return !!get(chain) && !!value && isValidEthAddress(value);
+}
+
+function filterAddress(item: string, queryText: string): boolean {
+  if (!queryText)
+    return true;
+
+  const query = queryText.toLowerCase();
+  if (item.toLowerCase().includes(query))
+    return true;
+
+  const matched = get(chain);
+  if (!matched)
+    return false;
+
+  const name = getAddressName(item, matched);
+  return !!name && name.toLowerCase().includes(query);
+}
+
+// Workaround for rotki/ui-library#493 — with custom-value enabled,
+// pressing Enter on an arrow-navigated highlight commits the typed
+// text instead of the highlighted option. Intercept Enter at capture
+// phase and click the highlighted item so rui's own handler applies it.
+function onEnterCapture(event: KeyboardEvent): void {
+  const highlighted = document.querySelector<HTMLElement>('.highlighted');
+  if (!highlighted)
+    return;
+
+  event.preventDefault();
+  event.stopPropagation();
+  highlighted.click();
+}
 </script>
 
 <template>
-  <AutoCompleteWithSearchSync
+  <RuiAutoComplete
     v-model="modelValue"
-    :items="addressSuggestions"
+    :options="addressSuggestions"
+    :filter="filterAddress"
     clearable
+    custom-value
+    variant="outlined"
     data-cy="location-label"
     :label="t('transactions.events.form.account_address.label')"
     :error-messages="errorMessages"
     auto-select-first
     @blur="emit('blur')"
-  />
+    @keydown.enter.capture="onEnterCapture($event)"
+  >
+    <template #item="{ item }">
+      <AccountDisplay
+        v-if="renderAsAccount(item) && chain"
+        class="py-1"
+        :account="{ address: item, chain }"
+        hide-chain-icon
+      />
+      <span v-else>{{ item }}</span>
+    </template>
+    <template #selection="{ item }">
+      <AccountDisplay
+        v-if="renderAsAccount(item) && chain"
+        size="16px"
+        :account="{ address: item, chain }"
+        hide-chain-icon
+      />
+      <span v-else>{{ item }}</span>
+    </template>
+  </RuiAutoComplete>
 </template>
