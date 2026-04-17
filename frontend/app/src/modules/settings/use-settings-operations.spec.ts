@@ -6,6 +6,7 @@ import { Currency, CURRENCY_USD } from '@/modules/assets/amount-display/currenci
 import { Module } from '@/modules/core/common/modules';
 import { defaultAccountingSettings, defaultGeneralSettings } from '@/modules/settings/factories';
 import { getDefaultFrontendSettings } from '@/modules/settings/types/frontend-settings';
+import { useFrontendSettingsStore } from '@/modules/settings/use-frontend-settings-store';
 import { useGeneralSettingsStore } from '@/modules/settings/use-general-settings-store';
 import '@test/i18n';
 
@@ -122,6 +123,35 @@ describe('useSettingsOperations', () => {
       await setKrakenAccountType('starter');
 
       expect(mockShowErrorMessage).toHaveBeenCalledOnce();
+    });
+  });
+
+  describe('applyFrontendSettingLocal', () => {
+    it('should patch the frontend store without calling the API', async () => {
+      const frontendStore = useFrontendSettingsStore();
+      const initial = get(frontendStore.settings).scrambleMultiplier;
+
+      const { useSettingsOperations } = await importModule();
+      const { applyFrontendSettingLocal } = useSettingsOperations();
+      applyFrontendSettingLocal({ scrambleMultiplier: 42 });
+
+      expect(get(frontendStore.settings).scrambleMultiplier).toBe(42);
+      expect(get(frontendStore.settings).scrambleMultiplier).not.toBe(initial);
+      expect(mockSetSettings).not.toHaveBeenCalled();
+    });
+
+    it('should merge with existing settings', async () => {
+      const frontendStore = useFrontendSettingsStore();
+      const before = get(frontendStore.settings);
+
+      const { useSettingsOperations } = await importModule();
+      const { applyFrontendSettingLocal } = useSettingsOperations();
+      applyFrontendSettingLocal({ scrambleMultiplier: 7 });
+
+      const after = get(frontendStore.settings);
+      expect(after.scrambleMultiplier).toBe(7);
+      expect(after.selectedTheme).toBe(before.selectedTheme);
+      expect(after.privacyMode).toBe(before.privacyMode);
     });
   });
 
