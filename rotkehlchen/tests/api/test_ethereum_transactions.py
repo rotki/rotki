@@ -1611,6 +1611,78 @@ def test_repulling_transaction_fetch_error_does_not_drop_existing_data(
 
 @pytest.mark.parametrize('have_decoders', [True])
 @pytest.mark.parametrize('ethereum_accounts', [['0xc37b40ABdB939635068d3c5f13E7faF686F03B65']])
+def test_repull_empty_internals_preserves_db(
+        rotkehlchen_api_server: 'APIServer',
+) -> None:
+    """When redecode gets an empty internal-tx payload from the indexer for a tx that already
+    has internal txs in DB, the API should reject the redecode (conflict) and keep the existing
+    internal tx rows untouched.
+    """
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+    dbevmtx, transaction = _prepare_repull_test_transaction(rotki.data.db)
+    tx_hash = transaction.tx_hash
+
+    with rotki.data.db.conn.read_ctx() as cursor:
+        parent_tx_id = cursor.execute(
+            'SELECT identifier FROM evm_transactions WHERE tx_hash=? AND chain_id=?',
+            (tx_hash, ChainID.ETHEREUM.serialize_for_db()),
+        ).fetchone()[0]
+    internal_before = dbevmtx.get_evm_internal_transactions(
+        parent_tx_hash=tx_hash,
+        blockchain=SupportedBlockchain.ETHEREUM,
+        parent_tx_id=parent_tx_id,
+    )
+    assert len(internal_before) > 0
+    fresh_transaction = make_ethereum_transaction(
+        tx_hash=tx_hash,
+        timestamp=Timestamp(transaction.timestamp + 1),
+    )
+
+    with (
+        patch.object(
+            rotki.chains_aggregator.ethereum.node_inquirer,
+            'get_transaction_by_hash',
+            return_value=(fresh_transaction, txreceipt_to_data(EvmTxReceipt(
+                tx_hash=tx_hash,
+                chain_id=ChainID.ETHEREUM,
+                contract_address=None,
+                status=True,
+                tx_type=2,
+                logs=[],
+            ))),
+        ),
+        patch.object(
+            rotki.chains_aggregator.ethereum.node_inquirer,
+            'get_transactions_with_source',
+            return_value=(iter([[]]), 'blockscout'),
+        ),
+    ):
+        response = requests.put(
+            api_url_for(rotkehlchen_api_server, 'transactionsdecodingresource'),
+            json={'async_query': False, 'chain': 'eth', 'tx_refs': [str(tx_hash)]},
+        )
+
+    assert_error_response(
+        response=response,
+        contained_in_msg='empty result',
+        status_code=HTTPStatus.CONFLICT,
+    )
+
+    with rotki.data.db.conn.read_ctx() as cursor:
+        parent_tx_id_after = cursor.execute(
+            'SELECT identifier FROM evm_transactions WHERE tx_hash=? AND chain_id=?',
+            (tx_hash, ChainID.ETHEREUM.serialize_for_db()),
+        ).fetchone()[0]
+    internal_after = dbevmtx.get_evm_internal_transactions(
+        parent_tx_hash=tx_hash,
+        blockchain=SupportedBlockchain.ETHEREUM,
+        parent_tx_id=parent_tx_id_after,
+    )
+    assert internal_after == internal_before
+
+
+@pytest.mark.parametrize('have_decoders', [True])
+@pytest.mark.parametrize('ethereum_accounts', [['0xc37b40ABdB939635068d3c5f13E7faF686F03B65']])
 def test_repulling_transaction_internal_fetch_error_restores_previous_internal_txs(
         rotkehlchen_api_server: 'APIServer',
 ) -> None:
