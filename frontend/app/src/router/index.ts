@@ -56,23 +56,22 @@ export const router = createRouter({
 
 const userRoutes: RouteLocationRaw[] = ['/user/create', '/user/login', '/user'];
 
-router.beforeEach((to, from, next) => {
+router.beforeEach((to) => {
   document.title = to.meta?.title ? to.meta.title.toString() : 'rotki';
 
   const store = useSessionAuthStore();
   const logged = store.logged;
   if (logged) {
     if (userRoutes.includes(to.path))
-      return next('/dashboard');
+      return '/dashboard';
 
-    next();
+    return true;
   }
-  else if (to.path.startsWith('/user') || to.path === '/wallet-bridge') {
-    next();
-  }
-  else {
-    next('/user/login');
-  }
+
+  if (to.path.startsWith('/user') || to.path === '/wallet-bridge')
+    return true;
+
+  return '/user/login';
 });
 
 if (import.meta.hot)
