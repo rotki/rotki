@@ -2,11 +2,13 @@ import logging
 from collections.abc import Sequence
 from typing import TYPE_CHECKING, Any, Optional
 
+from eth_utils import to_checksum_address
 from sqlcipher3 import dbapi2 as sqlcipher
 
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants import ONE, ZERO
-from rotkehlchen.constants.assets import A_USD
+from rotkehlchen.constants.assets import A_ETH, A_USD
+from rotkehlchen.constants.misc import NFT_DIRECTIVE
 from rotkehlchen.db.filtering import NFTFilterQuery
 from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.asset import UnknownAsset
@@ -28,6 +30,7 @@ from .structures import NftLpHandling, NFTResult
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
     from rotkehlchen.db.dbhandler import DBHandler
+    from rotkehlchen.externalapis.goldrush import GoldRush
     from rotkehlchen.premium.premium import Premium
 
 logger = logging.getLogger(__name__)
@@ -95,6 +98,7 @@ class Nfts(EthereumModule, CacheableMixIn, LockableQueryMixIn):
             database: 'DBHandler',
             premium: Optional['Premium'],
             msg_aggregator: MessagesAggregator,
+            **kwargs: Any,
     ) -> None:  # avoiding super() since cant't call abstract class's __init__
         CacheableMixIn.__init__(self)
         LockableQueryMixIn.__init__(self)
@@ -107,6 +111,73 @@ class Nfts(EthereumModule, CacheableMixIn, LockableQueryMixIn):
             msg_aggregator=msg_aggregator,
             ethereum_inquirer=ethereum_inquirer,
         )
+        # GoldRush is available if the EthereumInquirer has it injected
+        self.goldrush: 'GoldRush | None' = getattr(ethereum_inquirer, 'goldrush', None)
+
+    def _get_nfts_from_goldrush(self, address: ChecksumEvmAddress) -> list[NFT]:
+        """Fetch NFTs for address from GoldRush and convert to rotki NFT format.
+
+        The balances_nft endpoint returns one item per contract/collection, each
+        containing a `nft_data` array of individual token entries. We flatten
+        these into one NFT object per token.
+
+        Returns an empty list on any error or if GoldRush is not available.
+        """
+        if self.goldrush is None:
+            return []
+
+        try:
+            items = self.goldrush.get_nfts(account=address)
+        except RemoteError as e:
+            log.error(f'GoldRush NFT fetch failed for {address}: {e!s}')
+            return []
+
+        nfts: list[NFT] = []
+        for item in items:
+            try:
+                contract = item.get('contract_address', '')
+                if not contract:
+                    continue
+
+                checksummed = to_checksum_address(contract)
+                collection_name: str | None = item.get('contract_name')
+
+                for nft_entry in (item.get('nft_data') or []):
+                    try:
+                        token_id = nft_entry.get('token_id', '')
+                        if not token_id:
+                            continue
+
+                        external_data = nft_entry.get('external_data') or {}
+                        # Prefer highest-quality cached thumbnail, fall back to original
+                        image_url: str | None = (
+                            external_data.get('image_512')
+                            or external_data.get('image_256')
+                            or external_data.get('image')
+                            or nft_entry.get('token_url')
+                        )
+                        name: str | None = external_data.get('name')
+                        nfts.append(NFT(
+                            token_identifier=NFT_DIRECTIVE + f'{checksummed}_{token_id}',
+                            background_color=None,
+                            image_url=image_url or None,
+                            name=name or f'#{token_id}',
+                            external_link=nft_entry.get('token_url'),
+                            permalink=None,
+                            price_in_asset=ZERO,
+                            price_asset=A_ETH,
+                            price=ZERO,
+                            collection=collection_name,
+                        ))
+                    except (ValueError, TypeError, KeyError) as e:
+                        log.debug(f'Skipping GoldRush NFT token {token_id} for {address}: {e!s}')
+                        continue
+
+            except (ValueError, TypeError, KeyError) as e:
+                log.debug(f'Skipping GoldRush NFT item for {address}: {e!s}')
+                continue
+
+        return nfts
 
     @protect_with_lock()
     @cache_response_timewise_immutable()
@@ -120,7 +191,21 @@ class Nfts(EthereumModule, CacheableMixIn, LockableQueryMixIn):
         result = {}
         total_nfts_num = 0
         for address in addresses:
-            nfts = self.opensea.get_account_nfts(address)
+            try:
+                nfts = self.opensea.get_account_nfts(address)
+            except RemoteError as e:
+                log.warning(
+                    f'OpenSea NFT fetch failed for {address}: {e!s}. '
+                    f'Falling back to GoldRush.',
+                )
+                nfts = self._get_nfts_from_goldrush(address)
+
+            # Supplement with GoldRush if opensea returned nothing and GoldRush is available
+            if len(nfts) == 0:
+                gr_nfts = self._get_nfts_from_goldrush(address)
+                if gr_nfts:
+                    nfts = gr_nfts
+
             nfts_num = len(nfts)
             if nfts_num != 0:
                 if self.premium is None:

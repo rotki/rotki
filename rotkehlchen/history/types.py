@@ -12,8 +12,9 @@ if TYPE_CHECKING:
     from rotkehlchen.externalapis.coingecko import Coingecko
     from rotkehlchen.externalapis.cryptocompare import Cryptocompare
     from rotkehlchen.externalapis.defillama import Defillama
+    from rotkehlchen.externalapis.goldrush import GoldRush
 
-HistoricalPriceOracleInstance = Union['Coingecko', 'Cryptocompare', 'Defillama', 'Alchemy', 'UniswapV2Oracle', 'UniswapV3Oracle']  # noqa: E501
+HistoricalPriceOracleInstance = Union['Coingecko', 'Cryptocompare', 'Defillama', 'Alchemy', 'GoldRush', 'UniswapV2Oracle', 'UniswapV3Oracle']  # noqa: E501
 
 
 class HistoricalPriceOracle(DBCharEnumMixIn, OracleSource):
@@ -27,6 +28,7 @@ class HistoricalPriceOracle(DBCharEnumMixIn, OracleSource):
     UNISWAPV2 = 7
     UNISWAPV3 = 8
     ALCHEMY = 9
+    GOLDRUSH = 10
 
 
 NOT_EXPOSED_SOURCES = (
@@ -37,6 +39,7 @@ DEFAULT_HISTORICAL_PRICE_ORACLES_ORDER = (
     HistoricalPriceOracle.CRYPTOCOMPARE,
     HistoricalPriceOracle.COINGECKO,
     HistoricalPriceOracle.DEFILLAMA,
+    HistoricalPriceOracle.GOLDRUSH,
     HistoricalPriceOracle.UNISWAPV3,
     HistoricalPriceOracle.UNISWAPV2,
 )

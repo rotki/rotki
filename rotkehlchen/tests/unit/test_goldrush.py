@@ -5,18 +5,20 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 from rotkehlchen.errors.misc import ChainNotSupported, RemoteError
+from rotkehlchen.externalapis.etherscan_like import HasChainActivity
 from rotkehlchen.externalapis.goldrush import (
     CHAINID_TO_GOLDRUSH_SLUG,
     GOLDRUSH_BASE_URL,
     GoldRush,
 )
-from rotkehlchen.types import ApiKey, ChainID
+from rotkehlchen.types import ApiKey, ChainID, Timestamp
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
 
 # A chain that is NOT in CHAINID_TO_GOLDRUSH_SLUG for testing unsupported path
-UNSUPPORTED_CHAIN: Final = ChainID.CELO
+# (CRONOS is not in the mapping and not planned to be added)
+UNSUPPORTED_CHAIN: Final = ChainID.CRONOS
 
 
 def make_goldrush(database: 'DBHandler') -> GoldRush:
@@ -65,8 +67,8 @@ def test_request_no_api_key_raises(database: 'DBHandler') -> None:
             gr._request('/eth-mainnet/address/0x1234/transactions_v3/')
 
 
-def test_request_uses_basic_auth(database: 'DBHandler') -> None:
-    """_request sends HTTP Basic Auth with the API key as username."""
+def test_request_uses_bearer_auth(database: 'DBHandler') -> None:
+    """_request sends Authorization: Bearer <api_key> header."""
     gr = make_goldrush(database)
     api_key = ApiKey('test-api-key-123')
 
@@ -80,9 +82,8 @@ def test_request_uses_basic_auth(database: 'DBHandler') -> None:
 
     call_kwargs = mock_get.call_args.kwargs
     assert call_kwargs['url'] == f'{GOLDRUSH_BASE_URL}/eth-mainnet/address/0x1234/transactions_v3/'
-    auth = call_kwargs['auth']
-    assert auth.username == api_key
-    assert auth.password == ''
+    assert call_kwargs['headers']['Authorization'] == f'Bearer {api_key}'
+    assert 'auth' not in call_kwargs
 
 
 def test_request_raises_on_non_200(database: 'DBHandler') -> None:
@@ -245,11 +246,26 @@ def test_goldrush_tx_to_etherscan_fmt_contract_creation() -> None:
 
 # ─── _paginate_v3_transactions ────────────────────────────────────────────────
 
+def _make_v3_page_response(items: list, has_next: bool, page_number: int) -> dict:
+    """Build a v3-style response using links.next for continuation (not pagination.has_more)."""
+    return {
+        'data': {
+            'items': items,
+            'current_page': page_number,
+            'links': {
+                'prev': f'https://api.covalenthq.com/v1/eth-mainnet/address/0x1234/transactions_v3/page/{page_number - 1}/' if page_number > 0 else None,
+                'next': f'https://api.covalenthq.com/v1/eth-mainnet/address/0x1234/transactions_v3/page/{page_number + 1}/' if has_next else None,
+            },
+        },
+        'error': False,
+    }
+
+
 def test_paginate_v3_transactions_embeds_page_in_path(database: 'DBHandler') -> None:
     """_paginate_v3_transactions calls the API with page number in the URL path."""
     gr = make_goldrush(database)
     items = [{'tx_hash': '0xabc'}]
-    page_response = _make_page_response(items=items, has_more=False, page_number=0)
+    page_response = _make_v3_page_response(items=items, has_next=False, page_number=0)
 
     with patch.object(gr, '_request', return_value=page_response) as mock_req:
         gr._paginate_v3_transactions('/eth-mainnet/address/0x1234/transactions_v3/')
@@ -259,13 +275,13 @@ def test_paginate_v3_transactions_embeds_page_in_path(database: 'DBHandler') -> 
 
 
 def test_paginate_v3_transactions_multi_page(database: 'DBHandler') -> None:
-    """_paginate_v3_transactions iterates pages via path-based pagination."""
+    """_paginate_v3_transactions iterates pages using links.next, not pagination.has_more."""
     gr = make_goldrush(database)
     page0_items = [{'tx_hash': f'0x{i:04x}'} for i in range(100)]
     page1_items = [{'tx_hash': f'0x{i:04x}'} for i in range(100, 150)]
 
-    page0_response = _make_page_response(items=page0_items, has_more=True, page_number=0)
-    page1_response = _make_page_response(items=page1_items, has_more=False, page_number=1)
+    page0_response = _make_v3_page_response(items=page0_items, has_next=True, page_number=0)
+    page1_response = _make_v3_page_response(items=page1_items, has_next=False, page_number=1)
 
     call_count = 0
 
@@ -282,6 +298,27 @@ def test_paginate_v3_transactions_multi_page(database: 'DBHandler') -> None:
 
     assert len(result) == 150
     assert call_count == 2
+
+
+def test_paginate_v3_transactions_stops_on_null_links_next(database: 'DBHandler') -> None:
+    """_paginate_v3_transactions stops when links.next is None (not based on has_more)."""
+    gr = make_goldrush(database)
+    items = [{'tx_hash': '0xabc'}]
+    # Response with no pagination object at all — only links
+    page_response = {
+        'data': {
+            'items': items,
+            'current_page': 0,
+            'links': {'prev': None, 'next': None},
+        },
+        'error': False,
+    }
+
+    with patch.object(gr, '_request', return_value=page_response) as mock_req:
+        result = gr._paginate_v3_transactions('/eth-mainnet/address/0x1234/transactions_v3/')
+
+    assert result == items
+    assert mock_req.call_count == 1
 
 
 # ─── get_transactions: block range filtering ──────────────────────────────────
@@ -389,5 +426,250 @@ def test_get_transactions_unsupported_chain(database: 'DBHandler') -> None:
             account=address,
             action='txlist',
         ))
+
+
+# ─── Phase H: new chain slugs ─────────────────────────────────────────────────
+
+def test_new_chain_slugs_present(database: 'DBHandler') -> None:
+    """Verify Phase H chain slug additions are present and correct."""
+    gr = make_goldrush(database)
+    assert gr._get_slug(ChainID.FANTOM) == 'fantom-mainnet'
+    assert gr._get_slug(ChainID.CELO) == 'celo-mainnet'
+    assert gr._get_slug(ChainID.LINEA) == 'linea-mainnet'
+    assert gr._get_slug(ChainID.POLYGON_ZKEVM) == 'polygon-zkevm-mainnet'
+
+
+# ─── Phase B: get_blocknumber_by_time ────────────────────────────────────────
+
+def test_get_blocknumber_by_time_success(database: 'DBHandler') -> None:
+    """get_blocknumber_by_time returns the block height from GoldRush block_v2 endpoint."""
+    gr = make_goldrush(database)
+    mock_response = {
+        'data': {'items': [{'height': 17_000_000}]},
+        'error': False,
+    }
+    with patch.object(gr, '_request', return_value=mock_response):
+        result = gr.get_blocknumber_by_time(
+            chain_id=ChainID.ETHEREUM,
+            ts=Timestamp(1_680_000_000),
+        )
+
+    assert result == 17_000_000
+
+
+def test_get_blocknumber_by_time_cached(database: 'DBHandler') -> None:
+    """get_blocknumber_by_time returns cached result without making a second API call."""
+    gr = make_goldrush(database)
+    mock_response = {
+        'data': {'items': [{'height': 17_000_000}]},
+        'error': False,
+    }
+    with patch.object(gr, '_request', return_value=mock_response) as mock_req:
+        gr.get_blocknumber_by_time(chain_id=ChainID.ETHEREUM, ts=Timestamp(1_680_000_000))
+        gr.get_blocknumber_by_time(chain_id=ChainID.ETHEREUM, ts=Timestamp(1_680_000_000))
+
+    assert mock_req.call_count == 1
+
+
+def test_get_blocknumber_by_time_missing_height_raises(database: 'DBHandler') -> None:
+    """get_blocknumber_by_time raises RemoteError when height is absent from the response."""
+    gr = make_goldrush(database)
+    mock_response = {'data': {'items': [{}]}, 'error': False}
+    with patch.object(gr, '_request', return_value=mock_response):
+        with pytest.raises(RemoteError, match='could not resolve block'):
+            gr.get_blocknumber_by_time(
+                chain_id=ChainID.ETHEREUM,
+                ts=Timestamp(1_680_000_000),
+            )
+
+
+# ─── Phase A: has_activity ───────────────────────────────────────────────────
+
+def test_has_activity_with_transactions(database: 'DBHandler') -> None:
+    """has_activity returns TRANSACTIONS when total_transactions_count > 0."""
+    gr = make_goldrush(database)
+    address = '0x5A0b54D5dc17e0AadC383d2db43B0a0D3E029c4c'
+    mock_response = {
+        'data': {'items': [{'total_transactions_count': 42, 'token_balances': []}]},
+        'error': False,
+    }
+    with patch.object(gr, '_request', return_value=mock_response):
+        result = gr.has_activity(chain_id=ChainID.ETHEREUM, account=address)
+
+    assert result == HasChainActivity.TRANSACTIONS
+
+
+def test_has_activity_tokens_only(database: 'DBHandler') -> None:
+    """has_activity returns TOKENS when there are token balances but no transactions."""
+    gr = make_goldrush(database)
+    address = '0x5A0b54D5dc17e0AadC383d2db43B0a0D3E029c4c'
+    mock_response = {
+        'data': {'items': [{'total_transactions_count': 0, 'token_balances': [{'contract_address': '0xabc'}]}]},
+        'error': False,
+    }
+    with patch.object(gr, '_request', return_value=mock_response):
+        result = gr.has_activity(chain_id=ChainID.ETHEREUM, account=address)
+
+    assert result == HasChainActivity.TOKENS
+
+
+def test_has_activity_none(database: 'DBHandler') -> None:
+    """has_activity returns NONE when there is no on-chain activity."""
+    gr = make_goldrush(database)
+    address = '0x5A0b54D5dc17e0AadC383d2db43B0a0D3E029c4c'
+    mock_response = {
+        'data': {'items': [{'total_transactions_count': 0, 'token_balances': []}]},
+        'error': False,
+    }
+    with patch.object(gr, '_request', return_value=mock_response):
+        result = gr.has_activity(chain_id=ChainID.ETHEREUM, account=address)
+
+    assert result == HasChainActivity.NONE
+
+
+def test_has_activity_cached(database: 'DBHandler') -> None:
+    """has_activity returns the cached result within the 10-minute TTL window."""
+    gr = make_goldrush(database)
+    address = '0x5A0b54D5dc17e0AadC383d2db43B0a0D3E029c4c'
+    mock_response = {
+        'data': {'items': [{'total_transactions_count': 5, 'token_balances': []}]},
+        'error': False,
+    }
+    with patch.object(gr, '_request', return_value=mock_response) as mock_req:
+        gr.has_activity(chain_id=ChainID.ETHEREUM, account=address)
+        gr.has_activity(chain_id=ChainID.ETHEREUM, account=address)
+
+    assert mock_req.call_count == 1
+
+
+# ─── Phase A: get_contract_abi ───────────────────────────────────────────────
+
+def test_get_contract_abi_success(database: 'DBHandler') -> None:
+    """get_contract_abi returns the parsed ABI object from GoldRush."""
+    gr = make_goldrush(database)
+    address = '0x5A0b54D5dc17e0AadC383d2db43B0a0D3E029c4c'
+    abi_data = [{'inputs': [], 'name': 'transfer', 'type': 'function'}]
+    mock_response = {
+        'data': {'items': [{'contract_abi': abi_data}]},
+        'error': False,
+    }
+    with patch.object(gr, '_request', return_value=mock_response):
+        result = gr.get_contract_abi(chain_id=ChainID.ETHEREUM, address=address)
+
+    assert result == abi_data
+
+
+def test_get_contract_abi_missing_returns_none(database: 'DBHandler') -> None:
+    """get_contract_abi returns None when the contract has no ABI (unverified)."""
+    gr = make_goldrush(database)
+    address = '0x5A0b54D5dc17e0AadC383d2db43B0a0D3E029c4c'
+    mock_response = {
+        'data': {'items': [{'contract_abi': None}]},
+        'error': False,
+    }
+    with patch.object(gr, '_request', return_value=mock_response):
+        result = gr.get_contract_abi(chain_id=ChainID.ETHEREUM, address=address)
+
+    assert result is None
+
+
+def test_get_contract_abi_cached(database: 'DBHandler') -> None:
+    """get_contract_abi returns cached result without making a second API call."""
+    gr = make_goldrush(database)
+    address = '0x5A0b54D5dc17e0AadC383d2db43B0a0D3E029c4c'
+    abi_data = [{'type': 'function'}]
+    mock_response = {'data': {'items': [{'contract_abi': abi_data}]}, 'error': False}
+    with patch.object(gr, '_request', return_value=mock_response) as mock_req:
+        gr.get_contract_abi(chain_id=ChainID.ETHEREUM, address=address)
+        gr.get_contract_abi(chain_id=ChainID.ETHEREUM, address=address)
+
+    assert mock_req.call_count == 1
+
+
+# ─── Phase A: get_contract_creation_hash ────────────────────────────────────
+
+def test_get_contract_creation_hash_success(database: 'DBHandler') -> None:
+    """get_contract_creation_hash returns the EVMTxHash for a known contract."""
+    gr = make_goldrush(database)
+    address = '0x5A0b54D5dc17e0AadC383d2db43B0a0D3E029c4c'
+    tx_hash = '0xabcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890'
+    mock_response = {
+        'data': {'items': [{'contract_deployment_transaction_hash': tx_hash}]},
+        'error': False,
+    }
+    with patch.object(gr, '_request', return_value=mock_response):
+        result = gr.get_contract_creation_hash(chain_id=ChainID.ETHEREUM, address=address)
+
+    assert result is not None
+    assert result.hex() == tx_hash[2:]  # EVMTxHash strips the 0x prefix
+
+
+def test_get_contract_creation_hash_missing_returns_none(database: 'DBHandler') -> None:
+    """get_contract_creation_hash returns None when no deployment hash exists."""
+    gr = make_goldrush(database)
+    address = '0x5A0b54D5dc17e0AadC383d2db43B0a0D3E029c4c'
+    mock_response = {
+        'data': {'items': [{'contract_deployment_transaction_hash': None}]},
+        'error': False,
+    }
+    with patch.object(gr, '_request', return_value=mock_response):
+        result = gr.get_contract_creation_hash(chain_id=ChainID.ETHEREUM, address=address)
+
+    assert result is None
+
+
+# ─── Phase A: get_logs ────────────────────────────────────────────────────────
+
+def test_get_logs_returns_converted_format(database: 'DBHandler') -> None:
+    """get_logs converts GoldRush event items to Etherscan-compatible log dicts."""
+    gr = make_goldrush(database)
+    address = '0x5A0b54D5dc17e0AadC383d2db43B0a0D3E029c4c'
+    raw_log_item = {
+        'sender_address': '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48',
+        'raw_log_data': '0x000000000000000000000000000000000000000000000000000000000001e240',
+        'raw_log_topics': [
+            {'topic_hash': '0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef'},
+        ],
+        'block_height': 17_000_000,
+        'tx_hash': '0xabcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890',
+        'log_offset': 3,
+    }
+    page_response = _make_page_response(items=[raw_log_item], has_more=False, page_number=0)
+    with patch.object(gr, '_request', return_value=page_response):
+        results = gr.get_logs(
+            chain_id=ChainID.ETHEREUM,
+            contract_address=address,
+            topics=['0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef'],
+            from_block=16_000_000,
+            to_block=17_000_000,
+        )
+
+    assert len(results) == 1
+    log_entry = results[0]
+    assert log_entry['address'] == raw_log_item['sender_address']
+    assert log_entry['data'] == raw_log_item['raw_log_data']
+    assert log_entry['blockNumber'] == 17_000_000
+    assert log_entry['transactionHash'] == raw_log_item['tx_hash']
+    assert log_entry['logIndex'] == 3
+    assert len(log_entry['topics']) == 1
+
+
+def test_get_logs_passes_topic0_param(database: 'DBHandler') -> None:
+    """get_logs sends topic0 as a query parameter when provided."""
+    gr = make_goldrush(database)
+    address = '0x5A0b54D5dc17e0AadC383d2db43B0a0D3E029c4c'
+    topic = '0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef'
+    page_response = _make_page_response(items=[], has_more=False, page_number=0)
+    with patch.object(gr, '_request', return_value=page_response) as mock_req:
+        gr.get_logs(
+            chain_id=ChainID.ETHEREUM,
+            contract_address=address,
+            topics=[topic],
+            from_block=16_000_000,
+        )
+
+    call_params = mock_req.call_args.kwargs.get('params') or {}
+    assert call_params.get('topic0') == topic
+    assert call_params.get('starting-block') == '16000000'
 
 

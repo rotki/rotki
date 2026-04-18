@@ -38,6 +38,7 @@ from .contracts import EvmContract
 if TYPE_CHECKING:
     from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirerWithProxies
     from rotkehlchen.db.dbhandler import DBHandler
+    from rotkehlchen.externalapis.goldrush import GoldRush
 
     from .node_inquirer import EvmNodeInquirer
 
@@ -329,15 +330,85 @@ class EvmTokens(ABC):  # noqa: B024
 
         return addresses_info
 
+    def _get_detected_tokens_goldrush(
+            self,
+            account: ChecksumEvmAddress,
+            goldrush: 'GoldRush',
+    ) -> list[EvmToken]:
+        """Fetch token balances via GoldRush and return known detected tokens.
+
+        Queries GoldRush's balances_v2 endpoint to discover which EVM tokens the address holds,
+        then cross-references against GlobalDB to return only known EvmToken objects.
+
+        May raise nothing — all errors are caught and logged.
+        """
+        from rotkehlchen.errors.misc import ChainNotSupported
+
+        try:
+            slug = goldrush._get_slug(self.evm_inquirer.chain_id)
+        except ChainNotSupported:
+            return []
+
+        try:
+            items = goldrush._paginate(f'/{slug}/address/{account}/balances_v2/')
+        except RemoteError as e:
+            log.error(f'GoldRush token detection failed for {account}: {e!s}')
+            return []
+
+        tokens: list[EvmToken] = []
+        seen: set[ChecksumEvmAddress] = set()
+        for item in items:
+            contract = item.get('contract_address')
+            if not contract:
+                continue
+            try:
+                address = deserialize_evm_address(contract)
+            except DeserializationError:
+                continue
+
+            if address in seen:
+                continue
+            seen.add(address)
+
+            token = GlobalDBHandler.get_evm_token(
+                address=address,
+                chain_id=self.evm_inquirer.chain_id,
+            )
+            if token is not None:
+                tokens.append(token)
+
+        return tokens
+
     def _query_new_tokens(self, addresses: Sequence[ChecksumEvmAddress]) -> None:
         erc20_tokens, erc721_tokens = GlobalDBHandler.get_token_detection_data(
             chain_id=self.evm_inquirer.chain_id,
             exceptions=self._get_token_exceptions(),
         )
+
+        # If GoldRush is available, pre-populate ERC-20 detection from balances_v2
+        goldrush_extra: dict[ChecksumEvmAddress, list[Asset]] = {}
+        if (goldrush := getattr(self.evm_inquirer, 'goldrush', None)) is not None:
+            for address in addresses:
+                gr_tokens = self._get_detected_tokens_goldrush(
+                    account=address,
+                    goldrush=goldrush,
+                )
+                if gr_tokens:
+                    goldrush_extra[address] = list(gr_tokens)
+
         detected_erc20_tokens = self._detect_tokens(
             addresses=addresses,
             tokens_to_check=erc20_tokens,
         )
+
+        # Merge GoldRush-discovered tokens into the multicall results
+        for address, gr_tokens in goldrush_extra.items():
+            existing = set(detected_erc20_tokens.get(address, []))
+            for token in gr_tokens:
+                if token not in existing:
+                    detected_erc20_tokens.setdefault(address, []).append(token)
+                    existing.add(token)
+
         all_detected_tokens = self._detect_erc721_tokens(
             addresses=addresses,
             tokens_to_check=erc721_tokens,

@@ -1688,6 +1688,21 @@ class RestAPI:
     def ping() -> Response:
         return api_response(_wrap_in_ok_result(True), status_code=HTTPStatus.OK)
 
+    def get_goldrush_x402_wallet(self) -> Response:
+        """Return the ephemeral x402 payment wallet address and its USDC funding details.
+
+        The address is generated once per process startup and lives in memory only.
+        Users must fund this address with USDC on Base to enable x402 GoldRush access.
+        """
+        from rotkehlchen.externalapis.goldrush import X402_BASE_CHAIN_ID, X402_USDC_CONTRACT
+        signer = self.rotkehlchen._x402_signer
+        result = {
+            'address': signer.address,
+            'usdc_contract': X402_USDC_CONTRACT,
+            'chain_id': X402_BASE_CHAIN_ID,
+        }
+        return api_response(_wrap_in_ok_result(result), status_code=HTTPStatus.OK)
+
     @async_api_call()
     def _import_data(
             self,

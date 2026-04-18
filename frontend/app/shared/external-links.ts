@@ -64,4 +64,5 @@ export const externalLinks = {
   goldrushApiKey: 'https://goldrush.dev/platform/auth/sign-in/',
   alchemyApiKey: 'https://docs.alchemy.com/reference/api-overview',
   beaconChainApiKey: 'https://beaconcha.in/user/settings',
+  goldrushApiKey: 'https://goldrush.dev/platform/auth/register/',
 };

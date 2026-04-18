@@ -3908,3 +3908,10 @@ class CustomizedEventDuplicatesResource(BaseMethodView):
             async_query=async_query,
             group_identifiers=group_identifiers,
         )
+
+
+class GoldRushX402WalletResource(BaseMethodView):
+
+    @require_loggedin_user()
+    def get(self) -> Response:
+        return self.rest_api.get_goldrush_x402_wallet()
