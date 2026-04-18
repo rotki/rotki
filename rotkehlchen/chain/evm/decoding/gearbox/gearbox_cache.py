@@ -25,9 +25,7 @@ from rotkehlchen.errors.misc import (
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.globaldb.cache import (
     compute_cache_key,
-    globaldb_get_general_cache_keys_and_values_like,
     globaldb_get_general_cache_values,
-    globaldb_get_unique_cache_value,
     globaldb_set_general_cache_values,
     globaldb_set_unique_cache_value,
     globaldb_update_cache_last_ts,
@@ -112,33 +110,67 @@ def read_gearbox_data_from_cache(chain_id: ChainID | None) -> tuple[dict[Checksu
     if not chain_id:
         return ({},)
 
+    str_chain_id = str(chain_id.serialize())
+    chain_len = len(str_chain_id)
+    name_prefix = compute_cache_key((CacheType.GEARBOX_POOL_NAME,))
+    name_prefix_len = len(name_prefix)
+    farming_prefix = compute_cache_key((CacheType.GEARBOX_POOL_FARMING_TOKEN,))
+    farming_prefix_len = len(farming_prefix)
+    lp_prefix = compute_cache_key((CacheType.GEARBOX_POOL_LP_TOKENS,))
+    lp_prefix_len = len(lp_prefix)
     pools: dict[ChecksumEvmAddress, Any] = {}
     with GlobalDBHandler().conn.read_ctx() as cursor:
-        str_chain_id = str(chain_id.serialize())
-        for pool_address in get_existing_pools(
+        pool_addresses = get_existing_pools(
             cursor=cursor,
             cache_type=CacheType.GEARBOX_POOL_ADDRESS,
             chain_id=chain_id,
+        )
+        if len(pool_addresses) == 0:
+            return ({},)
+
+        # Keys are "<prefix><pool_addr 42 chars><chain_id_str>" for name/farming. Filter by
+        # endswith(chain_id) AND require the address slice to match a known pool for this chain —
+        # the latter rules out cross-chain suffix collisions (e.g. chain 1 matching chain 42161).
+        pool_names: dict[str, str] = {}
+        for key, name in cursor.execute(
+            'SELECT key, value FROM unique_cache WHERE key LIKE ?',
+            (f'{name_prefix}0x%',),
         ):
-            if (pool_name := globaldb_get_unique_cache_value(
-                cursor=cursor,
-                key_parts=(CacheType.GEARBOX_POOL_NAME, pool_address, str_chain_id),
-            )) is None:
+            if not key.endswith(str_chain_id) or len(key) - name_prefix_len - chain_len != 42:
                 continue
-            farming_pool_token = globaldb_get_unique_cache_value(
-                cursor=cursor,
-                key_parts=(CacheType.GEARBOX_POOL_FARMING_TOKEN, pool_address, str_chain_id),
-            )
-            token_lp_addresses = globaldb_get_general_cache_keys_and_values_like(
-                cursor=cursor,
-                key_parts=(CacheType.GEARBOX_POOL_LP_TOKENS, pool_address, str_chain_id),
-            )
-            pools[pool_address] = GearboxPoolData(
-                pool_address=pool_address,
-                pool_name=pool_name,
-                farming_pool_token=farming_pool_token,
-                lp_tokens={addr[1] for addr in token_lp_addresses},  # just the token address
-            )
+            if (addr := key[name_prefix_len:-chain_len]) in pool_addresses:
+                pool_names[addr] = name
+
+        farming_tokens: dict[str, str] = {}
+        for key, farming_token in cursor.execute(
+            'SELECT key, value FROM unique_cache WHERE key LIKE ?',
+            (f'{farming_prefix}0x%',),
+        ):
+            if not key.endswith(str_chain_id) or len(key) - farming_prefix_len - chain_len != 42:
+                continue
+            if (addr := key[farming_prefix_len:-chain_len]) in pool_addresses:
+                farming_tokens[addr] = farming_token
+
+        # LP token keys are "<prefix><pool_addr 42 chars><chain_id_str><idx>". Filter by the known
+        # pool_addresses set (already chain-scoped) to avoid cross-chain collisions.
+        lp_tokens: dict[str, set[str]] = {}
+        for key, lp_token in cursor.execute(
+            'SELECT key, value FROM general_cache WHERE key LIKE ?',
+            (f'{lp_prefix}0x%',),
+        ):
+            if (addr := key[lp_prefix_len:lp_prefix_len + 42]) not in pool_addresses:
+                continue
+            lp_tokens.setdefault(addr, set()).add(lp_token)
+
+    for pool_address in pool_addresses:
+        if (pool_name := pool_names.get(pool_address)) is None:
+            continue
+        pools[pool_address] = GearboxPoolData(
+            pool_address=pool_address,
+            pool_name=pool_name,
+            farming_pool_token=farming_tokens.get(pool_address),
+            lp_tokens=lp_tokens.get(pool_address, set()),
+        )
 
     return (pools,)
 

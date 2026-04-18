@@ -7,8 +7,8 @@ from rotkehlchen.chain.evm.contracts import EvmContract
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.globaldb.cache import (
+    compute_cache_key,
     globaldb_get_general_cache_values,
-    globaldb_get_unique_cache_value,
     globaldb_set_general_cache_values,
     globaldb_set_unique_cache_value,
     globaldb_update_cache_last_ts,
@@ -43,17 +43,27 @@ def get_existing_pools(
 def read_convex_data_from_cache() -> tuple[dict[ChecksumEvmAddress, str]]:
     """Reads convex pools and names from global db cache tables."""
     pools: dict[ChecksumEvmAddress, str] = {}
+    name_prefix = compute_cache_key((CacheType.CONVEX_POOL_NAME,))
+    name_prefix_len = len(name_prefix)
     with GlobalDBHandler().conn.read_ctx() as cursor:
-        for pool_address in get_existing_pools(
+        pool_addresses = get_existing_pools(
             cursor=cursor,
             cache_type=CacheType.CONVEX_POOL_ADDRESS,
+        )
+        if len(pool_addresses) == 0:
+            return ({},)
+
+        names_by_address: dict[str, str] = {}
+        for key, name in cursor.execute(
+            'SELECT key, value FROM unique_cache WHERE key LIKE ?',
+            (f'{name_prefix}0x%',),
         ):
-            if (pool_name := globaldb_get_unique_cache_value(
-                cursor=cursor,
-                key_parts=(CacheType.CONVEX_POOL_NAME, pool_address),
-            )) is None:
-                continue
-            pools[pool_address] = pool_name
+            names_by_address[key[name_prefix_len:]] = name
+
+    for pool_address in pool_addresses:
+        if (pool_name := names_by_address.get(pool_address)) is None:
+            continue
+        pools[pool_address] = pool_name
 
     return (pools,)
 

@@ -29,7 +29,6 @@ from rotkehlchen.globaldb.cache import (
     globaldb_set_general_cache_values,
     globaldb_set_unique_cache_value,
     globaldb_update_cache_last_ts,
-    read_curve_pool_tokens,
 )
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -67,39 +66,54 @@ class CurvePoolData:
 
 def read_curve_pools_and_gauges(chain_id: ChainID) -> tuple[dict[ChecksumEvmAddress, list[ChecksumEvmAddress]], set[ChecksumEvmAddress]]:  # noqa: E501
     """Reads globaldb cache and returns:
-    - A set of all known curve pools addresses for the given chain.
+    - A dict mapping known curve pool addresses to their coin list for the given chain.
     - A set of all known curve gauges addresses for the given chain.
 
     Returned functions doesn't raise anything unless cache entries were inserted incorrectly.
     """
     chain_id_str = str(chain_id.serialize_for_db())
+    # Appending '0x' to each prefix disambiguates chain_ids that are prefixes of other chain_ids
+    # (e.g. chain 1 vs 10 vs 100) since all EVM addresses start with '0x'.
+    pool_addr_prefix = compute_cache_key((CacheType.CURVE_POOL_ADDRESS, chain_id_str))
+    gauge_prefix = compute_cache_key((CacheType.CURVE_GAUGE_ADDRESS, chain_id_str))
+    tokens_prefix = compute_cache_key((CacheType.CURVE_POOL_TOKENS, chain_id_str))
+    tokens_prefix_len = len(tokens_prefix)
+    known_pools: set[ChecksumEvmAddress] = set()
+    curve_gauges: set[ChecksumEvmAddress] = set()
+    pool_to_indexed_coins: dict[ChecksumEvmAddress, list[tuple[int, ChecksumEvmAddress]]] = {}
     with GlobalDBHandler().conn.read_ctx() as cursor:
-        curve_pools_lp_tokens = globaldb_get_general_cache_values(
+        # Probe via the helper so tests that patch it to return [] can short-circuit the reader
+        # (see patch_decoder_reload_data in tests/utils/decoders.py).
+        if len(globaldb_get_general_cache_values(
             cursor=cursor,
             key_parts=(CacheType.CURVE_LP_TOKENS, chain_id_str),
-        )
-        curve_pools = {}
-        curve_gauges = set()
-        for lp_token_addr in curve_pools_lp_tokens:
-            pool_address = globaldb_get_unique_cache_value(
-                cursor=cursor,
-                key_parts=(CacheType.CURVE_POOL_ADDRESS, chain_id_str, lp_token_addr),
-            )
-            if pool_address is None:
-                continue
-            gauge_address_data = globaldb_get_unique_cache_value(
-                cursor=cursor,
-                key_parts=(CacheType.CURVE_GAUGE_ADDRESS, chain_id_str, pool_address),
-            )
-            if gauge_address_data is not None:
-                curve_gauges.add(string_to_evm_address(gauge_address_data))
-            pool_address = string_to_evm_address(pool_address)
-            curve_pools[pool_address] = read_curve_pool_tokens(
-                cursor=cursor,
-                pool_address=pool_address,
-                chain_id=chain_id,
+        )) == 0:
+            return {}, set()
+
+        known_pools.update(string_to_evm_address(pool_addr) for _, pool_addr in cursor.execute(
+            'SELECT key, value FROM unique_cache WHERE key LIKE ?',
+            (f'{pool_addr_prefix}0x%',),
+        ))
+
+        curve_gauges.update(string_to_evm_address(gauge_addr) for _, gauge_addr in cursor.execute(
+            'SELECT key, value FROM unique_cache WHERE key LIKE ?',
+            (f'{gauge_prefix}0x%',),
+        ))
+
+        for key, token_addr in cursor.execute(
+            'SELECT key, value FROM general_cache WHERE key LIKE ?',
+            (f'{tokens_prefix}0x%',),
+        ):
+            pool_address = string_to_evm_address(key[tokens_prefix_len:tokens_prefix_len + 42])
+            idx = int(key[tokens_prefix_len + 42:])
+            pool_to_indexed_coins.setdefault(pool_address, []).append(
+                (idx, string_to_evm_address(token_addr)),
             )
 
+    curve_pools: dict[ChecksumEvmAddress, list[ChecksumEvmAddress]] = {}
+    for pool_address in known_pools:
+        indexed_coins = sorted(pool_to_indexed_coins.get(pool_address, []))
+        curve_pools[pool_address] = [coin for _, coin in indexed_coins]
     return curve_pools, curve_gauges
 
 
