@@ -7,12 +7,14 @@ from rotkehlchen.accounting.structures.balance import Balance, BalanceSheet
 from rotkehlchen.chain.evm.manager import EvmManager
 from rotkehlchen.constants import DEFAULT_BALANCE_LABEL
 from rotkehlchen.constants.misc import ZERO
+from rotkehlchen.db.history_events import DBHistoryEvents
+from rotkehlchen.db.ranges import DBQueryRanges
 from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.externalapis.hyperliquid import HyperliquidAPI
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import ChecksumEvmAddress, Price
+from rotkehlchen.types import ChecksumEvmAddress, Price, SupportedBlockchain, Timestamp
 
 from .accountant import HyperliquidAccountingAggregator
 from .decoding.decoder import HyperliquidTransactionDecoder
@@ -89,3 +91,88 @@ class HyperliquidManager(EvmManager):
                 )
 
         return balances
+
+    def query_proprietary_history(
+            self,
+            addresses: Sequence[ChecksumEvmAddress],
+            from_timestamp: Timestamp,
+            to_timestamp: Timestamp,
+    ) -> None:
+        """Query and persist Hyperliquid core history for the given addresses."""
+        api = HyperliquidAPI()
+        ranges = DBQueryRanges(self.node_inquirer.database)
+        history_db = DBHistoryEvents(self.node_inquirer.database)
+
+        for address in addresses:
+            with self.node_inquirer.database.conn.read_ctx() as cursor:
+                ranges_to_query = ranges.get_location_query_ranges(
+                    cursor=cursor,
+                    location_string=f'hyperliquid_{address}',
+                    start_ts=from_timestamp,
+                    end_ts=to_timestamp,
+                )
+
+            for range_start, range_end in ranges_to_query:
+                try:
+                    events = api.query_history_events(
+                        address=address,
+                        start_ts=range_start,
+                        end_ts=range_end,
+                    )
+                except RemoteError as e:
+                    log.error(
+                        f'Failed to query hyperliquid history for {address} '
+                        f'from {range_start} to {range_end} due to {e}',
+                    )
+                    self.transactions.msg_aggregator.add_error(
+                        f'Failed to query Hyperliquid history for {address}. '
+                        'Will retry in a future sync.',
+                    )
+                    continue
+
+                with self.node_inquirer.database.user_write() as write_cursor:
+                    history_db.add_history_events(write_cursor=write_cursor, history=events)
+                    ranges.update_used_query_range(
+                        write_cursor=write_cursor,
+                        location_string=f'hyperliquid_{address}',
+                        queried_ranges=[(range_start, range_end)],
+                    )
+
+    def query_proprietary_history_for_tracked_accounts(
+            self,
+            from_timestamp: Timestamp,
+            to_timestamp: Timestamp,
+    ) -> None:
+        """Query Hyperliquid core history for all tracked Hyperliquid accounts."""
+        with self.node_inquirer.database.conn.read_ctx() as cursor:
+            addresses = self.node_inquirer.database.get_single_blockchain_addresses(
+                cursor=cursor,
+                blockchain=SupportedBlockchain.HYPERLIQUID,
+            )
+
+        if len(addresses) == 0:
+            return
+
+        self.query_proprietary_history(
+            addresses=addresses,
+            from_timestamp=from_timestamp,
+            to_timestamp=to_timestamp,
+        )
+
+    def query_transactions(
+            self,
+            addresses: list[ChecksumEvmAddress],
+            from_timestamp: Timestamp,
+            to_timestamp: Timestamp,
+    ) -> None:
+        """Query EVM transactions and Hyperliquid core history for the addresses."""
+        super().query_transactions(
+            addresses=addresses,
+            from_timestamp=from_timestamp,
+            to_timestamp=to_timestamp,
+        )
+        self.query_proprietary_history(
+            addresses=addresses,
+            from_timestamp=from_timestamp,
+            to_timestamp=to_timestamp,
+        )
