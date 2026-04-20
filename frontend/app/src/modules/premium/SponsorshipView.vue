@@ -17,39 +17,10 @@ interface Sponsor {
   name: string;
 }
 
-const sponsors: Sponsor[] = [
-  {
-    image: '/assets/images/sponsorship/1.42.0_jespow.eth_1.png',
-    name: 'jespow.eth',
-  },
-  {
-    image: '/assets/images/sponsorship/1.42.0_jespow.eth_2.png',
-    name: 'jespow.eth',
-  },
-];
-
-const loginIndex = useLocalStorage<number>('rotki.sponsorship.login_index', -1);
-
-function getCurrentSponsor(): Sponsor {
-  const length = sponsors.length;
-  if (!drawer) {
-    const loginIndexVal = get<number>(loginIndex);
-    // Login screen: determine and save the flipped index
-    if (loginIndexVal === -1) {
-      set(loginIndex, Math.floor(Math.random() * length));
-    }
-    else {
-      // Flip from previous
-      set(loginIndex, (loginIndexVal + 1) % length);
-    }
-    return sponsors[get<number>(loginIndex)];
-  }
-  // Drawer: use the opposite of what's stored for login
-  const drawerIndex = (get<number>(loginIndex) + 1) % length;
-  return sponsors[drawerIndex];
-}
-
-const data = ref<Sponsor>(getCurrentSponsor());
+const data: Sponsor = {
+  image: '/assets/images/sponsorship/1.43.0_pcaversaccio.jpg',
+  name: 'pcaversaccio',
+};
 </script>
 
 <template>
