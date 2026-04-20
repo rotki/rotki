@@ -1,3 +1,4 @@
+import base64
 import binascii
 import warnings as test_warnings
 from collections import defaultdict
@@ -73,7 +74,7 @@ from rotkehlchen.tests.utils.history import prices
 from rotkehlchen.tests.utils.kraken import KRAKEN_DELISTED, MockKraken
 from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.tests.utils.pnl_report import query_api_create_and_get_report
-from rotkehlchen.types import AssetAmount, Location, Timestamp, TimestampMS
+from rotkehlchen.types import ApiKey, ApiSecret, AssetAmount, Location, Timestamp, TimestampMS
 from rotkehlchen.utils.serialization import jsonloads_dict
 
 if TYPE_CHECKING:
@@ -1473,3 +1474,136 @@ def test_parse_single_collateral_futures_margin(kraken):
         proper_kraken_futures_balances_response,
     )
     assert parsed_margin == {'bch': 10.0184941402}
+
+
+def test_kraken_futures_history(rotkehlchen_api_server_with_exchanges: 'APIServer'):
+    """Test that Kraken Futures history retrieval and processing works"""
+    rotki = rotkehlchen_api_server_with_exchanges.rest_api.rotkehlchen
+    kraken = cast('MockKraken', try_get_first_exchange(rotki.exchange_manager, Location.KRAKEN))
+    kraken.set_futures_api_key(
+        ApiKey('futures_key'), ApiSecret(base64.b64encode(b'futures_secret')),
+    )
+    start_ts = Timestamp(1771000000)
+    end_ts = Timestamp(1771800000)
+
+    with patch(
+            'rotkehlchen.db.ranges.DBQueryRanges.get_location_query_ranges',
+            return_value=[(start_ts, end_ts)],
+    ):
+        kraken.query_history_events()
+
+    with rotki.data.db.conn.read_ctx() as cursor:
+        events = DBHistoryEvents(rotki.data.db).get_history_events_internal(
+            cursor=cursor,
+            filter_query=HistoryEventFilterQuery.make(),
+            aggregate_by_group_ids=False,
+        )
+
+    assert events == [SwapEvent(
+        identifier=5,
+        group_identifier='0a5b33bbf52d3fb7e410b7629c84f8da12c05c28f6fc1c0fdfbe84c1d731a418',
+        sequence_index=0,
+        timestamp=TimestampMS(1771068124000),
+        location=Location.KRAKEN,
+        event_subtype=HistoryEventSubType.SPEND,
+        asset=A_USD,
+        amount=FVal('7.1042'),
+        location_label='mockkraken',
+        notes='Kraken Futures futures assignor: pf_xbtusd',
+    ), SwapEvent(
+        identifier=8,
+        group_identifier='33180f3ba61d7a410f30b661becfa57c2df8c8957ea002794266182e26f3a92c',
+        sequence_index=0,
+        timestamp=TimestampMS(1771068124000),
+        location=Location.KRAKEN,
+        event_subtype=HistoryEventSubType.SPEND,
+        asset=A_USD,
+        amount=FVal('197.1676'),
+        location_label='mockkraken',
+        notes='Kraken Futures futures liquidation: pf_xbtusd',
+    ), SwapEvent(
+        identifier=6,
+        group_identifier='0a5b33bbf52d3fb7e410b7629c84f8da12c05c28f6fc1c0fdfbe84c1d731a418',
+        sequence_index=1,
+        timestamp=TimestampMS(1771068124000),
+        location=Location.KRAKEN,
+        event_subtype=HistoryEventSubType.RECEIVE,
+        asset=A_BTC,
+        amount=FVal('0.0001'),
+        location_label='mockkraken',
+        notes='Kraken Futures futures assignor: pf_xbtusd',
+    ), SwapEvent(
+        identifier=9,
+        group_identifier='33180f3ba61d7a410f30b661becfa57c2df8c8957ea002794266182e26f3a92c',
+        sequence_index=1,
+        timestamp=TimestampMS(1771068124000),
+        location=Location.KRAKEN,
+        event_subtype=HistoryEventSubType.RECEIVE,
+        asset=A_BTC,
+        amount=FVal('0.0028'),
+        location_label='mockkraken',
+        notes='Kraken Futures futures liquidation: pf_xbtusd',
+    ), SwapEvent(
+        identifier=7,
+        group_identifier='0a5b33bbf52d3fb7e410b7629c84f8da12c05c28f6fc1c0fdfbe84c1d731a418',
+        sequence_index=2,
+        timestamp=TimestampMS(1771068124000),
+        location=Location.KRAKEN,
+        event_subtype=HistoryEventSubType.FEE,
+        asset=A_USD,
+        amount=FVal('0.0035521'),
+        location_label='mockkraken',
+    ), SwapEvent(
+        identifier=10,
+        group_identifier='33180f3ba61d7a410f30b661becfa57c2df8c8957ea002794266182e26f3a92c',
+        sequence_index=2,
+        timestamp=TimestampMS(1771068124000),
+        location=Location.KRAKEN,
+        event_subtype=HistoryEventSubType.FEE,
+        asset=A_USD,
+        amount=FVal('1.10838555'),
+        location_label='mockkraken',
+    ), HistoryEvent(
+        identifier=1,
+        group_identifier='realized_funding_372',
+        sequence_index=0,
+        timestamp=TimestampMS(1771304400000),
+        location=Location.KRAKEN,
+        event_type=HistoryEventType.RECEIVE,
+        event_subtype=HistoryEventSubType.REWARD,
+        asset=A_ETH,
+        amount=FVal('3.1E-10'),
+        location_label='mockkraken',
+        notes='Futures realized funding: pi_ethusd',
+    ), SwapEvent(
+        identifier=2,
+        group_identifier='c9901ac08ff04b52853d24ab432f3d33197b53dd735dab28294dcb2d8c6d4ce0',
+        sequence_index=0,
+        timestamp=TimestampMS(1771748093000),
+        location=Location.KRAKEN,
+        event_subtype=HistoryEventSubType.SPEND,
+        asset=A_ETH,
+        amount=FVal('3'),
+        location_label='mockkraken',
+    ), SwapEvent(
+        identifier=3,
+        group_identifier='c9901ac08ff04b52853d24ab432f3d33197b53dd735dab28294dcb2d8c6d4ce0',
+        sequence_index=1,
+        timestamp=TimestampMS(1771748093000),
+        location=Location.KRAKEN,
+        event_subtype=HistoryEventSubType.RECEIVE,
+        asset=A_ETH,
+        amount=FVal('0.00151798815969235439963568284167383494408743611799827961341901533168041289277944'),
+        location_label='mockkraken',
+        notes='Kraken Futures futures trade: pi_ethusd',
+    ), SwapEvent(
+        identifier=4,
+        group_identifier='c9901ac08ff04b52853d24ab432f3d33197b53dd735dab28294dcb2d8c6d4ce0',
+        sequence_index=2,
+        timestamp=TimestampMS(1771748093000),
+        location=Location.KRAKEN,
+        event_subtype=HistoryEventSubType.FEE,
+        asset=A_ETH,
+        amount=FVal('7.59E-7'),
+        location_label='mockkraken',
+    )]
