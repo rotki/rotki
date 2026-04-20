@@ -437,7 +437,7 @@ MOCKED_PRICES_WITH_WETH = {
 
 def _setup_basis_transfer_rules(
         accounting_pot: 'AccountingPot',
-        counterparty: str = CPT_WETH,
+        counterparty: str | None = CPT_WETH,
 ) -> None:
     """Insert basis_transfer rules for both wrap and unwrap, then re-reset the pot."""
     rules_db = DBAccountingRules(accounting_pot.database)
@@ -724,6 +724,59 @@ def test_basis_transfer_different_bucket(accounting_pot: 'AccountingPot'):
     )
     # Original acquisition timestamp is preserved, not the deposit timestamp
     assert adai_acquisitions[0].timestamp == TIMESTAMP_1_SECS
+
+
+@pytest.mark.parametrize('mocked_price_queries', [{
+    Asset('eip155:1/erc20:0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48').identifier: {
+        'EUR': {TIMESTAMP_2_SECS: Price(ONE)},
+    },
+    Asset('eip155:1/erc20:0xc3d688B66703497DAA19211EEdff47f25384cdc3').identifier: {
+        'EUR': {TIMESTAMP_2_SECS: Price(ONE)},
+    },
+}])
+def test_basis_transfer_missing_out_lots(accounting_pot: 'AccountingPot'):
+    """Regression: BASIS_TRANSFER consumes the in-event.
+
+    If out-asset lots are missing, the in-asset acquisition must still be recorded.
+    """
+    usdc = Asset('eip155:1/erc20:0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48')
+    c_usdc_v3 = Asset('eip155:1/erc20:0xc3d688B66703497DAA19211EEdff47f25384cdc3')
+    _setup_basis_transfer_rules(accounting_pot, counterparty=None)
+
+    deposit_out = EvmEvent(
+        tx_ref=(dep_hash := make_evm_tx_hash()),
+        sequence_index=0,
+        timestamp=TIMESTAMP_2_MS,
+        location=Location.ETHEREUM,
+        location_label=EXAMPLE_ADDRESS,
+        asset=usdc,
+        amount=FVal(25),
+        notes='Deposit 25 USDC',
+        event_type=HistoryEventType.DEPOSIT,
+        event_subtype=HistoryEventSubType.DEPOSIT_FOR_WRAPPED,
+    )
+    deposit_in = EvmEvent(
+        tx_ref=dep_hash,
+        sequence_index=1,
+        timestamp=TIMESTAMP_2_MS,
+        location=Location.ETHEREUM,
+        location_label=EXAMPLE_ADDRESS,
+        asset=c_usdc_v3,
+        amount=FVal(25),
+        notes='Receive 25 cUSDCv3',
+        event_type=HistoryEventType.RECEIVE,
+        event_subtype=HistoryEventSubType.RECEIVE_WRAPPED,
+    )
+
+    assert accounting_pot.events_accountant.process(
+        event=deposit_out,
+        events_iterator=peekable([deposit_in]),
+    ) == 2
+
+    c_usdc_events = accounting_pot.cost_basis.get_events(c_usdc_v3)
+    acquisitions = c_usdc_events.acquisitions_manager.get_acquisitions()
+    assert len(acquisitions) == 1, 'in-event acquisition should not be dropped by basis_transfer'
+    assert acquisitions[0].remaining_amount == FVal(25)
 
 
 @pytest.mark.parametrize('mocked_price_queries', [MOCKED_PRICES])

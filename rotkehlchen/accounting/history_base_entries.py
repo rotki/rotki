@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING, Any, TypeVar, cast
 from rotkehlchen.accounting.mixins.event import AccountingEventType
 from rotkehlchen.accounting.rules import AccountingRulesManager
 from rotkehlchen.chain.evm.accounting.structures import BaseEventSettings, TxAccountingTreatment
-from rotkehlchen.constants import ONE
+from rotkehlchen.constants import ONE, ZERO
 from rotkehlchen.history.events.structures.base import HistoryBaseEntry
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.solana_event import SolanaEvent
@@ -116,13 +116,30 @@ class EventsAccountant:
 
             # event_direction is OUT (first event is always the deposit/spend)
             # paired_direction is IN (second event is always the receive/withdraw)
-            self.pot.cost_basis.transfer_basis(
+            transferred_in_amount = self.pot.cost_basis.transfer_basis(
                 out_asset=event.asset,
                 in_asset=in_event.asset,
                 out_amount=event.amount,
                 in_amount=in_event.amount,
                 timestamp=timestamp,
             )
+            # Why this fallback exists:
+            # BASIS_TRANSFER consumes the paired in_event (see next(events_iterator) above),
+            # so if transfer_basis() cannot map all incoming amount from source lots
+            # (e.g. missing prior acquisitions), that remainder would be silently lost.
+            # We explicitly create an acquisition for the unmatched part to preserve
+            # balances and avoid dropping the receive-side lot.
+            if (remaining_in_amount := in_event.amount - transferred_in_amount) > ZERO:
+                self.pot.add_in_event(
+                    event_type=AccountingEventType.TRANSACTION_EVENT,
+                    notes=in_event.notes or '',
+                    location=in_event.location,
+                    timestamp=in_event.get_timestamp_in_sec(),
+                    asset=in_event.asset,
+                    amount=remaining_in_amount,
+                    taxable=event_settings.taxable,
+                    extra_data=general_extra_data,
+                )
             return 2
 
         if event_settings.accounting_treatment == TxAccountingTreatment.SWAP:
