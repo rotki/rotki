@@ -637,13 +637,20 @@ class CostBasisCalculator(CustomizableDateMixin):
             out_amount: FVal,
             in_amount: FVal,
             timestamp: Timestamp,
-    ) -> None:
+    ) -> FVal:
         """Transfer cost basis lots from out_asset to in_asset preserving original prices.
 
         Used for deposit/withdraw-wrapped events where no taxable event should occur
         and cost basis should carry over from the source to the destination asset.
-        For same-bucket assets (e.g. ETH/WETH) this is a no-op since get_events()
-        resolves both to the same CostBasisEvents object.
+
+        Returns the amount of `in_asset` that was actually created from transferred
+        source lots. Callers use this to add a fallback acquisition for any remainder.
+        This is needed because BASIS_TRANSFER consumes the paired in-event at the
+        iterator level, so if source lots are missing, the in-event would otherwise
+        never create an acquisition.
+
+        For same-bucket assets (e.g. ETH/WETH), we return the full `in_amount` so
+        callers know nothing else needs to be added.
         """
         if ZERO in (out_amount, in_amount):
             log.error(
@@ -653,13 +660,15 @@ class CostBasisCalculator(CustomizableDateMixin):
                 out_amount=out_amount,
                 in_amount=in_amount,
             )
-            return
+            return ZERO
 
         source_events = self.get_events(out_asset)
         dest_events = self.get_events(in_asset)
 
         if source_events is dest_events:
-            return  # same cost basis bucket (e.g. ETH/WETH), nothing to do
+            # Same cost-basis bucket (e.g. ETH/WETH): no lot movement needed.
+            # Returning full in_amount tells caller there is no remainder/fallback.
+            return in_amount
 
         # Scaling factors to preserve total cost when amounts differ (e.g. 100 DAI → 95 aDAI)
         # new_amount = old_amount * amount_ratio, new_rate = old_rate * rate_ratio
@@ -701,13 +710,18 @@ class CostBasisCalculator(CustomizableDateMixin):
                 ),
             )
 
+        transferred_in_amount = ZERO
         for lot_amount, lot_rate, lot_timestamp, lot_index in lots_to_transfer:
+            new_amount = lot_amount * amount_ratio
             dest_events.acquisitions_manager.add_in_event(AssetAcquisitionEvent(
-                amount=lot_amount * amount_ratio,
+                amount=new_amount,
                 timestamp=lot_timestamp,
                 rate=Price(lot_rate * rate_ratio),
                 index=lot_index,
             ))
+            transferred_in_amount += new_amount
+
+        return transferred_in_amount
 
     def reduce_asset_amount(
             self,
