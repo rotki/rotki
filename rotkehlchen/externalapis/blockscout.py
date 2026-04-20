@@ -45,9 +45,8 @@ if TYPE_CHECKING:
 # https://docs.blockscout.com/devs/apis/rpc/account#get-transactions-by-address
 BLOCKSCOUT_PAGINATION_LIMIT = 10000
 BLOCKSCOUT_PRO_API_BASE_URL = 'https://api.blockscout.com'
-BLOCKSCOUT_API_URLS: Final[dict[ChainID, str]] = {
-    chain_id: f'{BLOCKSCOUT_PRO_API_BASE_URL}/{chain_id.serialize()}/api'
-    for chain_id in BLOCKSCOUT_SUPPORTED_CHAINS
+AUTOSCOUT_INSTANCES: Final[dict[ChainID, str]] = {  # self launched instances by chains. Not in the PRO apis  # noqa: E501
+    ChainID.HYPERLIQUID: 'https://www.hyperscan.com',
 }
 
 logger = logging.getLogger(__name__)
@@ -77,27 +76,19 @@ class Blockscout(ExternalServiceWithApiKey, EtherscanLikeApi):
         )
         self.session = create_session()
         set_user_agent(self.session)
-        self.v2_api_urls: dict[ChainID, str] = {}
+        self.api_urls: dict[ChainID, str] = {}
         self.rpc_urls: dict[ChainID, str] = {}
         for chain_id in BLOCKSCOUT_SUPPORTED_CHAINS:
-            api_url = f'{BLOCKSCOUT_PRO_API_BASE_URL}/{chain_id.serialize()}/api'
-            self.v2_api_urls[chain_id] = f'{api_url}/v2'
-            self.rpc_urls[chain_id] = f'{BLOCKSCOUT_PRO_API_BASE_URL}/{chain_id.serialize()}/json-rpc'  # noqa: E501
+            if chain_id in AUTOSCOUT_INSTANCES:
+                self.api_urls[chain_id] = f'{AUTOSCOUT_INSTANCES[chain_id]}/api'
+                self.rpc_urls[chain_id] = f'{AUTOSCOUT_INSTANCES[chain_id]}/api/eth-rpc'
+            else:
+                self.api_urls[chain_id] = f'{BLOCKSCOUT_PRO_API_BASE_URL}/{chain_id.serialize()}/api'  # noqa: E501
+                self.rpc_urls[chain_id] = f'{BLOCKSCOUT_PRO_API_BASE_URL}/{chain_id.serialize()}/json-rpc'  # noqa: E501
 
-    @staticmethod
-    def _get_url(chain_id: SUPPORTED_CHAIN_IDS) -> str:
-        if (url := BLOCKSCOUT_API_URLS.get(chain_id)) is None:
-            raise ChainNotSupported(f'Blockscout does not support {chain_id.name}')
-        return url
-
-    def _get_v2_url(self, chain_id: ChainID) -> str:
-        if (url := self.v2_api_urls.get(chain_id)) is None:
-            raise ChainNotSupported(f'Blockscout does not support {chain_id.name}')
-
-        return url
-
-    def _get_rpc_url(self, chain_id: ChainID) -> str:
-        if (url := self.rpc_urls.get(chain_id)) is None:
+    def _get_url(self, chain_id: ChainID, endpoint: Literal['api', 'rpc'] = 'api') -> str:  # type: ignore[override]
+        url_map = self.api_urls if endpoint == 'api' else self.rpc_urls
+        if (url := url_map.get(chain_id)) is None:
             raise ChainNotSupported(f'Blockscout does not support {chain_id.name}')
 
         return url
@@ -247,7 +238,7 @@ class Blockscout(ExternalServiceWithApiKey, EtherscanLikeApi):
         if (api_key := self._get_api_key_for_chain(chain_id)) is not None:
             query_args['apikey'] = api_key
         response = self._query_and_process(
-            query_str=self._get_url(chain_id=chain_id),
+            query_str=self._get_url(chain_id=chain_id, endpoint='api'),
             params=query_args,
             timeout=timeout,
         )
@@ -321,7 +312,7 @@ class Blockscout(ExternalServiceWithApiKey, EtherscanLikeApi):
         - RemoteError due to problems querying blockscout
         """
         extra_args = {} if extra_args is None else extra_args
-        query_str = f'{self._get_v2_url(chain_id)}/{module}/{encoded_args}'
+        query_str = f"{self._get_url(chain_id=chain_id, endpoint='api')}/v2/{module}/{encoded_args}"  # noqa: E501
         if endpoint is not None:
             query_str += f'/{endpoint}'
         if (api_key := self._get_api_key_for_chain(chain_id)) is not None:
@@ -385,7 +376,7 @@ class Blockscout(ExternalServiceWithApiKey, EtherscanLikeApi):
             params = list(options.values())
 
         if 'result' not in (response := self._query_and_process(
-            query_str=self._get_rpc_url(chain_id=chain_id),
+            query_str=self._get_url(chain_id=chain_id, endpoint='rpc'),
             params={
                 'id': 0,
                 'jsonrpc': '2.0',

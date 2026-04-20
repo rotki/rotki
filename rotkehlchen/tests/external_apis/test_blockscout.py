@@ -187,6 +187,38 @@ def test_optimism_pre_bedrock_internal_txs_skipped(blockscout: Blockscout) -> No
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('include_blockscout_key', [True])
+def test_live_query_transactions_and_rpc(blockscout: Blockscout) -> None:
+    """Exercise real Blockscout API calls (v1 account txlist + json-rpc block number) for hyperEVM
+
+    This test intentionally does not patch network requests and validates that the
+    configured Blockscout API key flow works against production endpoints.
+    """
+    transactions = blockscout._query(
+        chain_id=ChainID.HYPERLIQUID,
+        module='account',
+        action='txlist',
+        options={
+            'address': string_to_evm_address('0xc37b40ABdB939635068d3c5f13E7faF686F03B65'),
+            'page': 1,
+            'offset': 5,
+            'sort': 'desc',
+        },
+    )
+    assert isinstance(transactions, list)
+    assert len(transactions) > 0
+    assert all('hash' in entry for entry in transactions)
+
+    block_number = blockscout._query_rpc_method(
+        chain_id=ChainID.HYPERLIQUID,
+        method='eth_blockNumber',
+    )
+    assert isinstance(block_number, str)
+    assert block_number.startswith('0x')
+    assert int(block_number, 16) > 0x1f6e0f7
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 def test_missing_data_error(blockscout: Blockscout) -> None:
     """Test that we properly handle the custom status 2 missing data error from blockscout
     when querying internal transactions. Should raise a remote error so that we fall back to
@@ -266,6 +298,47 @@ def test_pro_api_urls_for_v1_v2_and_rpc(blockscout: Blockscout) -> None:
                 url='https://api.blockscout.com/10/json-rpc',
                 timeout=ANY,
                 params={'apikey': 'proapi_optimism'},
+                json={
+                    'id': 0,
+                    'jsonrpc': '2.0',
+                    'method': 'eth_blockNumber',
+                    'params': [],
+                },
+            )
+
+        with patch.object(blockscout.session, 'request', return_value=MockResponse(
+            status_code=HTTPStatus.OK,
+            text='{"message":"OK","result":[],"status":"1"}',
+        )) as mock_request:
+            blockscout._query(
+                chain_id=ChainID.HYPERLIQUID,
+                module='account',
+                action='txlist',
+                options={'address': make_evm_address()},
+            )
+            mock_request.assert_called_once_with(
+                method='get',
+                url='https://www.hyperscan.com/api',
+                timeout=ANY,
+                params={
+                    'module': 'account',
+                    'action': 'txlist',
+                    'address': ANY,
+                },
+            )
+
+        with patch.object(blockscout.session, 'request', return_value=MockResponse(
+            status_code=HTTPStatus.OK,
+            text='{"result":"0x1"}',
+        )) as mock_request:
+            assert blockscout._query_rpc_method(
+                chain_id=ChainID.HYPERLIQUID,
+                method='eth_blockNumber',
+            ) == '0x1'
+            mock_request.assert_called_once_with(
+                method='post',
+                url='https://www.hyperscan.com/api/eth-rpc',
+                timeout=ANY,
                 json={
                     'id': 0,
                     'jsonrpc': '2.0',
