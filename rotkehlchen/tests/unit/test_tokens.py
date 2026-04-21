@@ -10,7 +10,12 @@ from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.utils import _query_or_get_given_token_info, get_or_create_evm_token
 from rotkehlchen.chain.ethereum.tokens import EthereumTokens
 from rotkehlchen.chain.evm.decoding.summer_fi.constants import CPT_SUMMER_FI
-from rotkehlchen.chain.evm.tokens import EvmTokensWithProxies, generate_multicall_chunks
+from rotkehlchen.chain.evm.tokens import (
+    ETHERSCAN_MAX_ARGUMENTS_TO_CONTRACT,
+    EvmTokensWithProxies,
+    generate_multicall_chunks,
+    get_chunk_size_call_order,
+)
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.chain.structures import EvmTokenDetectionData
 from rotkehlchen.constants import ONE, ZERO
@@ -220,6 +225,58 @@ def test_generate_chunks():
     assert generated_chunks == expected_chunks
 
 
+def test_get_chunk_size_call_order_uses_rpc_only_order_when_connected() -> None:
+    call_order = [MagicMock()]
+    evm_inquirer = MagicMock()
+    evm_inquirer.connected_to_any_node.return_value = True
+    evm_inquirer.default_call_order.return_value = call_order
+
+    chunk_size, returned_call_order = get_chunk_size_call_order(
+        evm_inquirer=evm_inquirer,
+        web3_node_chunk_size=999,
+    )
+
+    evm_inquirer.default_call_order.assert_called_once_with(skip_indexers=True)
+    assert chunk_size == 999
+    assert returned_call_order == call_order
+
+
+def test_get_chunk_size_call_order_uses_indexer_fallback_when_disconnected() -> None:
+    evm_inquirer = MagicMock()
+    evm_inquirer.connected_to_any_node.return_value = False
+    evm_inquirer.chain_id = ChainID.HYPERLIQUID
+    evm_inquirer.indexers_node = MagicMock()
+
+    chunk_size, returned_call_order = get_chunk_size_call_order(
+        evm_inquirer=evm_inquirer,
+        web3_node_chunk_size=999,
+        etherscan_chunk_size=111,
+        arbiscan_chunksize=222,
+    )
+
+    assert evm_inquirer.default_call_order.call_count == 0
+    assert chunk_size == 111
+    assert returned_call_order == [evm_inquirer.indexers_node]
+
+
+def test_get_chunk_size_call_order_uses_arbiscan_chunk_on_arbitrum_fallback() -> None:
+    evm_inquirer = MagicMock()
+    evm_inquirer.connected_to_any_node.return_value = False
+    evm_inquirer.chain_id = ChainID.ARBITRUM_ONE
+    evm_inquirer.indexers_node = MagicMock()
+
+    chunk_size, returned_call_order = get_chunk_size_call_order(
+        evm_inquirer=evm_inquirer,
+        web3_node_chunk_size=999,
+        etherscan_chunk_size=111,
+        arbiscan_chunksize=222,
+    )
+
+    assert evm_inquirer.default_call_order.call_count == 0
+    assert chunk_size == 222
+    assert returned_call_order == [evm_inquirer.indexers_node]
+
+
 def test_get_token_balances_propagates_request_too_large(tokens: EthereumTokens) -> None:
     detection_data = EvmTokenDetectionData(
         identifier='eip155:1/erc20:0x0000000000000000000000000000000000000001',
@@ -246,6 +303,7 @@ def test_query_chunks_retries_with_smaller_chunks(tokens: EthereumTokens) -> Non
         ) for i in range(1, 6)
     ]
     queried_chunk_sizes: list[int] = []
+    tokens.INDEXER_CHUNK_SIZE = 2
 
     def mocked_get_token_balances(
             address: ChecksumEvmAddress,
@@ -266,8 +324,204 @@ def test_query_chunks_retries_with_smaller_chunks(tokens: EthereumTokens) -> Non
             call_order=[],
         )
 
-    assert result == {}
+    assert result.balances == {}
+    assert result.had_failures is False
     assert queried_chunk_sizes == [4, 2, 2, 1]
+
+
+def test_query_chunks_retries_with_reduced_rpc_chunks(tokens: EthereumTokens) -> None:
+    """Ensure oversized RPC chunks are retried with smaller RPC-sized chunks first.
+
+    This test does not assert indexer-only fallback. It verifies the split sequence keeps the
+    original RPC-first call order while reducing chunk size (150 -> 110 -> 40).
+    """
+    token_data = [
+        EvmTokenDetectionData(
+            identifier=f'eip155:1/erc20:{(address := make_evm_address())}',
+            address=address,
+            decimals=18,
+        ) for _ in range(150)
+    ]
+    rpc_call_order = [MagicMock(name='rpc_node'), tokens.evm_inquirer.indexers_node]
+    queried_calls: list[tuple[int, list[Any]]] = []
+
+    def mocked_get_token_balances(
+            address: ChecksumEvmAddress,
+            tokens: list[EvmTokenDetectionData],
+            call_order: list[Any],
+    ) -> dict[Asset, FVal]:
+        queried_calls.append((len(tokens), call_order))
+        if call_order == rpc_call_order and len(tokens) > ETHERSCAN_MAX_ARGUMENTS_TO_CONTRACT:
+            raise RequestTooLargeError('chunk too big for fallback indexer')
+
+        return {}
+
+    with patch.object(tokens, 'get_token_balances', side_effect=mocked_get_token_balances):
+        result = tokens._query_chunks(
+            address=make_evm_address(),
+            tokens=token_data,
+            chunk_size=460,
+            call_order=rpc_call_order,  # type: ignore
+        )
+
+    assert result.balances == {}
+    assert result.had_failures is False
+    assert queried_calls[0] == (150, rpc_call_order)
+    assert queried_calls[1] == (110, rpc_call_order)
+    assert queried_calls[2] == (40, rpc_call_order)
+
+
+def test_query_chunks_prefers_rpc_split(tokens: EthereumTokens) -> None:
+    """Ensure RequestTooLargeError triggers RPC-path splitting before any indexer-only fallback.
+
+    The test forces an oversize failure for RPC-sized chunks and verifies follow-up retries
+    continue using the original RPC-first call order (not `[indexers_node]`).
+    """
+    token_data = [
+        EvmTokenDetectionData(
+            identifier=f'eip155:1/erc20:{(address := make_evm_address())}',
+            address=address,
+            decimals=18,
+        ) for _ in range(150)
+    ]
+    rpc_node = MagicMock(name='rpc_node')
+    call_order = [rpc_node, tokens.evm_inquirer.indexers_node]
+    queried_call_orders: list[list[Any]] = []
+
+    def mocked_get_token_balances(
+            address: ChecksumEvmAddress,
+            tokens: list[EvmTokenDetectionData],
+            call_order: list[Any],
+    ) -> dict[Asset, FVal]:
+        queried_call_orders.append(call_order)
+        if len(tokens) > ETHERSCAN_MAX_ARGUMENTS_TO_CONTRACT:
+            raise RequestTooLargeError('too large on first pass')
+
+        return {Asset(tokens[0].identifier): ONE}
+
+    with patch.object(tokens, 'get_token_balances', side_effect=mocked_get_token_balances):
+        result = tokens._query_chunks(
+            address=make_evm_address(),
+            tokens=token_data,
+            chunk_size=460,
+            call_order=call_order,  # type: ignore
+        )
+
+    assert len(result.balances) >= 1
+    assert result.had_failures is False
+    assert all(x != [tokens.evm_inquirer.indexers_node] for x in queried_call_orders)
+
+
+def test_query_chunks_uses_indexer_chunk_size_before_single_token_fallback(tokens: EthereumTokens) -> None:  # noqa: E501
+    token_data = [
+        EvmTokenDetectionData(
+            identifier=f'eip155:1/erc20:{(address := make_evm_address())}',
+            address=address,
+            decimals=18,
+        ) for _ in range(120)
+    ]
+    rpc_call_order = [MagicMock(name='rpc_node'), tokens.evm_inquirer.indexers_node]
+    queried_calls: list[tuple[int, list[Any]]] = []
+
+    def mocked_get_token_balances(
+            address: ChecksumEvmAddress,
+            tokens: list[EvmTokenDetectionData],
+            call_order: list[Any],
+    ) -> dict[Asset, FVal]:
+        queried_calls.append((len(tokens), call_order))
+        if call_order == rpc_call_order:
+            raise RequestTooLargeError('rpc too large')
+
+        return {}
+
+    with patch.object(tokens, 'get_token_balances', side_effect=mocked_get_token_balances):
+        result = tokens._query_chunks(
+            address=make_evm_address(),
+            tokens=token_data,
+            chunk_size=460,
+            call_order=rpc_call_order,  # type: ignore
+        )
+
+    assert result.balances == {}
+    assert result.had_failures is False
+    indexer_calls = [
+        size for size, used_call_order in queried_calls
+        if used_call_order == [tokens.evm_inquirer.indexers_node]
+    ]
+    assert indexer_calls == [tokens.INDEXER_CHUNK_SIZE, 120 - tokens.INDEXER_CHUNK_SIZE]
+    assert all(size <= tokens.INDEXER_CHUNK_SIZE for size in indexer_calls)
+    assert all(size > 1 for size in indexer_calls)
+
+
+def test_query_new_tokens_keeps_cache_on_failures(tokens: EthereumTokens) -> None:
+    tracked_address = make_evm_address()
+    existing_token = A_DAI
+
+    with tokens.db.user_write() as write_cursor:
+        tokens.db.save_tokens_for_address(
+            write_cursor=write_cursor,
+            address=tracked_address,
+            blockchain=tokens.evm_inquirer.blockchain,
+            tokens=[existing_token],
+        )
+
+    with (
+        patch.object(GlobalDBHandler, 'get_token_detection_data', return_value=([], [])),
+        patch.object(
+            tokens,
+            '_detect_tokens',
+            return_value=({tracked_address: []}, {tracked_address}),
+        ),
+        patch.object(tokens, 'maybe_detect_proxies_tokens', return_value=None),
+    ):
+        tokens._query_new_tokens(addresses=[tracked_address])
+
+    with tokens.db.conn.read_ctx() as cursor:
+        saved_tokens, _ = tokens.db.get_tokens_for_address(
+            cursor=cursor,
+            address=tracked_address,
+            blockchain=tokens.evm_inquirer.blockchain,
+            token_exceptions=tokens._per_chain_token_exceptions(),
+        )
+
+    assert saved_tokens is not None
+    assert saved_tokens == [existing_token]
+
+
+def test_query_new_tokens_skips_save_on_partial_failures(tokens: EthereumTokens) -> None:
+    tracked_address = make_evm_address()
+    existing_token = A_DAI
+    partial_token = A_WETH
+
+    with tokens.db.user_write() as write_cursor:
+        tokens.db.save_tokens_for_address(
+            write_cursor=write_cursor,
+            address=tracked_address,
+            blockchain=tokens.evm_inquirer.blockchain,
+            tokens=[existing_token],
+        )
+
+    with (
+        patch.object(GlobalDBHandler, 'get_token_detection_data', return_value=([], [])),
+        patch.object(
+            tokens,
+            '_detect_tokens',
+            return_value=({tracked_address: [partial_token]}, {tracked_address}),
+        ),
+        patch.object(tokens, 'maybe_detect_proxies_tokens', return_value=None),
+    ):
+        tokens._query_new_tokens(addresses=[tracked_address])
+
+    with tokens.db.conn.read_ctx() as cursor:
+        saved_tokens, _ = tokens.db.get_tokens_for_address(
+            cursor=cursor,
+            address=tracked_address,
+            blockchain=tokens.evm_inquirer.blockchain,
+            token_exceptions=tokens._per_chain_token_exceptions(),
+        )
+
+    assert saved_tokens is not None
+    assert saved_tokens == [existing_token]
 
 
 def test_last_queried_ts(tokens, freezer):
@@ -698,7 +952,10 @@ def test_erc721_token_ownership_verification(
     # regression test: dai token added here to ensure detected erc20 tokens
     # aren't removed when erc721 tokens are detected
     # see https://github.com/orgs/rotki/projects/11/views/2?pane=issue&itemId=112828923
-    with patch('rotkehlchen.chain.ethereum.tokens.EthereumTokens._detect_tokens', return_value={ethereum_accounts[0]: [A_DAI]}):  # noqa: E501
+    with patch(
+            'rotkehlchen.chain.ethereum.tokens.EthereumTokens._detect_tokens',
+            return_value=({ethereum_accounts[0]: [A_DAI]}, set()),
+    ):
         user_tokens = EthereumTokens(database, ethereum_inquirer).detect_tokens(
             only_cache=False,
             addresses=ethereum_accounts,

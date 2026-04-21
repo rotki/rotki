@@ -574,7 +574,7 @@ def test_uniswap_v3_v4_balances(
     with patch.object(  # patch the erc20 token detection
             target=rotki.chains_aggregator.arbitrum_one.tokens,
             attribute='_detect_tokens',
-            return_value={(user_address := arbitrum_one_accounts[0]): []},
+            return_value=({(user_address := arbitrum_one_accounts[0]): []}, set()),
     ):
         response = requests.post(
             api_url_for(

@@ -2,6 +2,7 @@ import logging
 from abc import ABC
 from collections import defaultdict, deque
 from collections.abc import Mapping, Sequence
+from dataclasses import dataclass
 from typing import TYPE_CHECKING, TypeVar, cast
 
 from rotkehlchen.assets.asset import Asset, EvmToken, Nft
@@ -53,6 +54,20 @@ DetectedTokensType = dict[
     ChecksumEvmAddress,
     tuple[list[EvmToken] | None, Timestamp | None],
 ]
+
+
+@dataclass
+class TokenChunkQueryResult:
+    """Result of querying token balances for one address across chunked requests.
+
+    Attributes:
+    - balances: accumulated detected balances across successful chunk queries.
+    - had_failures: True when at least one chunk could not be queried even after
+      retry/split/indexer fallback handling. In that case results are considered
+      unreliable for cache persistence.
+    """
+    balances: dict[Asset, FVal]
+    had_failures: bool
 
 # 27/11/2024
 # Etherscan has by far the fastest responding server if you use an API key
@@ -147,6 +162,8 @@ def get_chunk_size_call_order(
 
 
 class EvmTokens(ABC):  # noqa: B024
+    INDEXER_CHUNK_SIZE = ETHERSCAN_MAX_ARGUMENTS_TO_CONTRACT
+
     def __init__(
             self,
             database: 'DBHandler',
@@ -273,30 +290,50 @@ class EvmTokens(ABC):  # noqa: B024
             tokens: list[EvmTokenDetectionData],
             chunk_size: int,
             call_order: list[WeightedNode],
-    ) -> dict[Asset, FVal]:
+    ) -> TokenChunkQueryResult:
         """Processes token balance queries in batches of chunk_size to avoid hitting gas limits.
         Uses Asset objects directly instead of EvmToken to minimize database queries.
+
+        Starts with the given `call_order` and chunk size. If a chunk is too large, it retries
+        smaller chunks first using the same call order (preserving RPC-first behavior). Once a
+        chunk is at or below `INDEXER_CHUNK_SIZE`, request-size failures are retried with
+        indexer-only calls chunked by `INDEXER_CHUNK_SIZE`.
         """
         total_token_balances: dict[Asset, FVal] = defaultdict(FVal)
-        chunks_to_process = deque(get_chunks(tokens, n=chunk_size))
+        had_failures = False
+        chunks_to_process: deque[tuple[list[EvmTokenDetectionData], bool]] = deque(
+            (chunk, False) for chunk in get_chunks(tokens, n=chunk_size)
+        )
         while len(chunks_to_process) > 0:
-            chunk = chunks_to_process.popleft()
+            chunk, use_indexer_only = chunks_to_process.popleft()
             try:
                 new_token_balances = self.get_token_balances(
                     address=address,
                     tokens=chunk,
-                    call_order=call_order,
+                    call_order=[self.evm_inquirer.indexers_node] if use_indexer_only else call_order,  # noqa: E501
                 )
             except RequestTooLargeError:
-                if len(chunk) == 1:
+                if use_indexer_only is False and len(chunk) <= self.INDEXER_CHUNK_SIZE:
+                    log.warning(
+                        f'{self.evm_inquirer.chain_name} tokensBalance chunk too large '
+                        f'for address {address}. Retrying with indexer-only calls in '
+                        f'chunks of {self.INDEXER_CHUNK_SIZE}.',
+                    )
+                    indexer_chunks = list(get_chunks(chunk, n=self.INDEXER_CHUNK_SIZE))
+                    for item in reversed(indexer_chunks):
+                        chunks_to_process.appendleft((item, True))
+                    continue
+
+                if use_indexer_only is True and len(chunk) <= self.INDEXER_CHUNK_SIZE:
+                    had_failures = True
                     log.error(
                         f'{self.evm_inquirer.chain_name} tokensBalance call failed '
-                        f'for address {address}. Could not query a single token '
-                        f'{chunk[0].address} due to request size limits.',
+                        f'for address {address} even with indexer-only chunk size '
+                        f'{self.INDEXER_CHUNK_SIZE}.',
                     )
                     continue
 
-                smaller_chunk_size = max(1, len(chunk) // 2)
+                smaller_chunk_size = max(self.INDEXER_CHUNK_SIZE, len(chunk) // 2)
                 log.warning(
                     f'{self.evm_inquirer.chain_name} tokensBalance chunk too large '
                     f'for address {address}. Retrying by splitting {len(chunk)} '
@@ -304,11 +341,12 @@ class EvmTokens(ABC):  # noqa: B024
                 )
                 smaller_chunks = list(get_chunks(chunk, n=smaller_chunk_size))
                 for item in reversed(smaller_chunks):
-                    chunks_to_process.appendleft(item)
+                    chunks_to_process.appendleft((item, use_indexer_only))
                 continue
 
             total_token_balances = combine_dicts(total_token_balances, new_token_balances)
-        return total_token_balances
+
+        return TokenChunkQueryResult(balances=total_token_balances, had_failures=had_failures)
 
     def _compute_detected_tokens_info(self, addresses: Sequence[ChecksumEvmAddress]) -> DetectedTokensType:  # noqa: E501
         """
@@ -330,21 +368,43 @@ class EvmTokens(ABC):  # noqa: B024
         return addresses_info
 
     def _query_new_tokens(self, addresses: Sequence[ChecksumEvmAddress]) -> None:
+        """Run token detection and persist results for the given addresses.
+
+        Cache-safety behavior:
+        - ERC20 detection returns both detected tokens and addresses with failed detection.
+        - Any address in the failed set is considered unreliable for this run and is not
+          persisted to the token cache (even if partial tokens were detected).
+        - ERC721 detection is executed only for addresses that did not fail ERC20 detection.
+
+        This avoids destructive cache overwrites (e.g. replacing previously cached tokens with
+        an empty/partial list after a failed detection query).
+        """
         erc20_tokens, erc721_tokens = GlobalDBHandler.get_token_detection_data(
             chain_id=self.evm_inquirer.chain_id,
             exceptions=self._get_token_exceptions(),
         )
-        detected_erc20_tokens = self._detect_tokens(
+        detected_erc20_tokens, failed_detection_addresses = self._detect_tokens(
             addresses=addresses,
             tokens_to_check=erc20_tokens,
         )
         all_detected_tokens = self._detect_erc721_tokens(
-            addresses=addresses,
+            addresses=[
+                address for address in addresses
+                if address not in failed_detection_addresses
+            ],
             tokens_to_check=erc721_tokens,
             detected_tokens=detected_erc20_tokens,
         )
         with self.db.user_write() as write_cursor:
             for address, detected_tokens in all_detected_tokens.items():
+                if address in failed_detection_addresses:
+                    log.warning(
+                        f'{self.evm_inquirer.chain_name} token detection failed '
+                        f'for address {address}. '
+                        'Skipping cache update to avoid persisting incomplete token results.',
+                    )
+                    continue
+
                 self.db.save_tokens_for_address(
                     write_cursor=write_cursor,
                     address=address,
@@ -438,13 +498,36 @@ class EvmTokens(ABC):  # noqa: B024
 
         return self._compute_detected_tokens_info(addresses)
 
+    def _get_token_detection_chunk_size_call_order(self) -> tuple[int, list[WeightedNode]]:
+        """Return chunk size and call order used by token detection queries.
+
+        We always start with RPC nodes. If there is no connected node yet, we still build
+        an RPC-first order (lazy connect in `_query`) and append indexers only as a final
+        fallback.
+        """
+        rpc_call_order = self.evm_inquirer.default_call_order(skip_indexers=True)
+        if self.evm_inquirer.connected_to_any_node():
+            return OTHER_MAX_TOKEN_CHUNK_LENGTH, rpc_call_order
+
+        if len(rpc_call_order) == 0:
+            return self.INDEXER_CHUNK_SIZE, [self.evm_inquirer.indexers_node]
+
+        return OTHER_MAX_TOKEN_CHUNK_LENGTH, [*rpc_call_order, self.evm_inquirer.indexers_node]
+
     def _detect_tokens(
             self,
             addresses: Sequence[ChecksumEvmAddress],
             tokens_to_check: list[EvmTokenDetectionData],
-    ) -> dict[ChecksumEvmAddress, list[Asset]]:
-        """
-        Detect tokens for the given addresses.
+    ) -> tuple[dict[ChecksumEvmAddress, list[Asset]], set[ChecksumEvmAddress]]:
+        """Detect ERC20 tokens per address and track unreliable detection runs.
+
+        Returns:
+        - detected_tokens: address -> detected token list for successful detection runs.
+        - failed_addresses: addresses where token querying had failures (see
+          ``TokenChunkQueryResult.had_failures``).
+
+        For failed addresses, this method intentionally does not return partial token results,
+        because callers treat failures as non-cacheable and must avoid destructive overwrites.
 
         May raise:
         - RemoteError if an external service such as Etherscan is queried and
@@ -452,19 +535,27 @@ class EvmTokens(ABC):  # noqa: B024
         - BadFunctionCallOutput if a local node is used and the contract for the
           token has no code. That means the chain is not synced
         """
-        chunk_size, call_order = get_chunk_size_call_order(self.evm_inquirer)
+        chunk_size, call_order = self._get_token_detection_chunk_size_call_order()
         tokens_per_address = defaultdict(list)
+        failed_addresses: set[ChecksumEvmAddress] = set()
         for address in addresses:
-            token_balances = self._query_chunks(
+            query_result = self._query_chunks(
                 address=address,
                 tokens=tokens_to_check,
                 chunk_size=chunk_size,
                 call_order=call_order,
             )
-            detected_tokens = list(token_balances.keys())
-            tokens_per_address[address] = detected_tokens
+            if query_result.had_failures is True:
+                failed_addresses.add(address)
+                log.warning(
+                    f'{self.evm_inquirer.chain_name} token detection encountered query failures '
+                    f'for address {address}. Skipping token-cache update for this address.',
+                )
+                continue
 
-        return tokens_per_address
+            tokens_per_address[address] = list(query_result.balances.keys())
+
+        return tokens_per_address, failed_addresses
 
     def query_tokens_for_addresses(
             self,
@@ -482,7 +573,7 @@ class EvmTokens(ABC):  # noqa: B024
         addresses_to_balances: dict[ChecksumEvmAddress, dict[EvmToken, FVal]] = defaultdict(dict)
         all_tokens: set[EvmToken] = set()
         addresses_to_tokens: dict[ChecksumEvmAddress, list[EvmToken]] = {}
-        chunk_size, call_order = get_chunk_size_call_order(self.evm_inquirer)
+        chunk_size, call_order = self._get_token_detection_chunk_size_call_order()
 
         with self.db.conn.read_ctx() as cursor:
             for address in addresses:
