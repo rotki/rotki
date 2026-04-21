@@ -196,6 +196,11 @@ const navItems = computed<MenuItem[]>(() => {
           type: 'item',
           ...Routes.PRICE_MANAGER_HISTORIC,
         },
+        {
+          class: 'price-manager-oracle',
+          type: 'item',
+          ...Routes.PRICE_MANAGER_ORACLE,
+        },
       ],
     },
     {

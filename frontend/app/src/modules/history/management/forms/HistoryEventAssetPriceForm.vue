@@ -1,21 +1,14 @@
 <script setup lang="ts">
 import type { Validation } from '@vuelidate/core';
-import type { HistoricalPriceFormPayload } from '@/modules/assets/prices/price-types';
 import type { ActionStatus } from '@/modules/core/common/action';
 import type { NewHistoryEventPayload } from '@/modules/history/events/schemas';
-import { assert, type BigNumber, toSentenceCase } from '@rotki/common';
-import { useAssetPricesApi } from '@/modules/assets/api/use-asset-prices-api';
-import { useHistoricPriceCache } from '@/modules/assets/prices/use-historic-price-cache';
-import { usePriceTaskManager } from '@/modules/assets/prices/use-price-task-manager';
+import { assert, toSentenceCase } from '@rotki/common';
 import { ApiValidationError, type ValidationErrors } from '@/modules/core/api/types/errors';
-import { bigNumberifyFromRef } from '@/modules/core/common/data/bignumbers';
-import { millisecondsToSeconds } from '@/modules/core/common/data/date';
 import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
 import { toMessages } from '@/modules/core/common/validation/validation';
-import { TaskType } from '@/modules/core/tasks/task-type';
-import { useTaskStore } from '@/modules/core/tasks/use-task-store';
 import ToggleLocationLink from '@/modules/history/management/forms/common/ToggleLocationLink.vue';
-import { useGeneralSettingsStore } from '@/modules/settings/use-general-settings-store';
+import { useEventPriceConversion } from '@/modules/history/management/forms/use-event-price-conversion';
+import { useEventPriceSave } from '@/modules/history/management/forms/use-event-price-save';
 import AmountInput from '@/modules/shell/components/inputs/AmountInput.vue';
 import AssetSelect from '@/modules/shell/components/inputs/AssetSelect.vue';
 import TwoFieldsAmountInput from '@/modules/shell/components/inputs/TwoFieldsAmountInput.vue';
@@ -47,81 +40,25 @@ const {
 
 const { t } = useI18n({ useScope: 'global' });
 
-const fiatValue = ref<string>('');
-const assetToFiatPrice = ref<string>('');
-const fiatValueFocused = ref<boolean>(false);
-const fetchedAssetToFiatPrice = ref<string>('');
 const chain = ref<string>();
 const showPriceFields = ref<boolean>(!hidePriceFields && !noPriceFields);
 
-const { useIsTaskRunning } = useTaskStore();
-const { resetHistoricalPricesData } = useHistoricPriceCache();
-const { getHistoricPrice } = usePriceTaskManager();
-const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
-const { addHistoricalPrice } = useAssetPricesApi();
-
-const fetching = useIsTaskRunning(TaskType.FETCH_HISTORIC_PRICE);
-
-const numericAssetToFiatPrice = bigNumberifyFromRef(assetToFiatPrice);
-const numericFiatValue = bigNumberifyFromRef(fiatValue);
-const numericAmount = bigNumberifyFromRef(amount);
-
-async function savePrice(payload: HistoricalPriceFormPayload) {
-  await addHistoricalPrice(payload);
-  resetHistoricalPricesData([payload]);
-}
-
-function onAssetToFiatPriceChanged(forceUpdate = false) {
-  if (get(amount) && get(assetToFiatPrice) && (!get(fiatValueFocused) || forceUpdate))
-    set(fiatValue, get(numericAmount).multipliedBy(get(numericAssetToFiatPrice)).toFixed());
-}
-
-function onFiatValueChange() {
-  if (get(amount) && get(fiatValueFocused))
-    set(assetToFiatPrice, get(numericFiatValue).div(get(numericAmount)).toFixed());
-}
-
-async function fetchHistoricPrices() {
-  const time = timestamp;
-  const assetVal = get(asset);
-  if (!time || !assetVal)
-    return;
-
-  const price: BigNumber = await getHistoricPrice({
-    fromAsset: assetVal,
-    timestamp: millisecondsToSeconds(time),
-    toAsset: get(currencySymbol),
-  });
-
-  if (price.gte(0))
-    set(fetchedAssetToFiatPrice, price.toFixed());
-}
-
-watchImmediate(
-  [() => timestamp, asset, showPriceFields],
-  async ([timestamp, asset, showPriceFields], [oldTimestamp, oldAsset, oldShowPriceFields]) => {
-    if (timestamp !== oldTimestamp || asset !== oldAsset || (oldShowPriceFields && !showPriceFields))
-      await fetchHistoricPrices();
-  },
-);
-
-watch(fetchedAssetToFiatPrice, (price) => {
-  set(assetToFiatPrice, price);
-  onAssetToFiatPriceChanged(true);
+const {
+  assetToFiatPrice,
+  currencySymbol,
+  fetchedAssetToFiatPrice,
+  fetching,
+  fiatValue,
+  fiatValueFocused,
+  reset,
+} = useEventPriceConversion({
+  amount,
+  asset,
+  showPriceFields,
+  timestamp: () => timestamp,
 });
 
-watch(assetToFiatPrice, () => {
-  onAssetToFiatPriceChanged();
-});
-
-watch(fiatValue, () => {
-  onFiatValueChange();
-});
-
-watch(amount, () => {
-  onAssetToFiatPriceChanged();
-  onFiatValueChange();
-});
+const { savePrice } = useEventPriceSave();
 
 async function submitPrice(payload?: NewHistoryEventPayload): Promise<ActionStatus<ValidationErrors | string>> {
   if (noPriceFields || disabled)
@@ -132,14 +69,8 @@ async function submitPrice(payload?: NewHistoryEventPayload): Promise<ActionStat
 
   try {
     const currency = get(currencySymbol);
-    if (get(assetToFiatPrice) !== get(fetchedAssetToFiatPrice) && assetVal !== currency) {
-      await savePrice({
-        fromAsset: assetVal,
-        price: get(assetToFiatPrice),
-        timestamp: millisecondsToSeconds(timestamp),
-        toAsset: currency,
-      });
-    }
+    if (get(assetToFiatPrice) !== get(fetchedAssetToFiatPrice) && assetVal !== currency)
+      await savePrice(assetVal, currency, get(assetToFiatPrice), timestamp);
 
     return { success: true };
   }
@@ -150,12 +81,6 @@ async function submitPrice(payload?: NewHistoryEventPayload): Promise<ActionStat
 
     return { message, success: false };
   }
-}
-
-function reset() {
-  set(fetchedAssetToFiatPrice, '');
-  set(assetToFiatPrice, '');
-  set(fiatValue, '');
 }
 
 defineExpose({

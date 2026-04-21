@@ -106,6 +106,7 @@ describe('composables/api/assets/prices', () => {
         fromAsset: 'ETH',
         toAsset: 'USD',
         price: '2500',
+        sourceType: 'manual',
         timestamp: 1700000000,
       };
       const result = await addHistoricalPrice(payload);
@@ -114,6 +115,7 @@ describe('composables/api/assets/prices', () => {
         from_asset: 'ETH',
         to_asset: 'USD',
         price: '2500',
+        source_type: 'manual',
         timestamp: 1700000000,
       });
       expect(result).toBe(true);
@@ -134,6 +136,7 @@ describe('composables/api/assets/prices', () => {
         fromAsset: 'ETH',
         toAsset: 'USD',
         price: '-100',
+        sourceType: 'manual',
         timestamp: 1700000000,
       }))
         .rejects
@@ -160,6 +163,7 @@ describe('composables/api/assets/prices', () => {
         fromAsset: 'BTC',
         toAsset: 'EUR',
         price: '45000',
+        sourceType: 'manual',
         timestamp: 1700100000,
       };
       const result = await editHistoricalPrice(payload);
@@ -168,6 +172,7 @@ describe('composables/api/assets/prices', () => {
         from_asset: 'BTC',
         to_asset: 'EUR',
         price: '45000',
+        source_type: 'manual',
         timestamp: 1700100000,
       });
       expect(result).toBe(true);
@@ -192,6 +197,7 @@ describe('composables/api/assets/prices', () => {
       const payload: HistoricalPriceDeletePayload = {
         fromAsset: 'ETH',
         toAsset: 'USD',
+        sourceType: 'manual',
         timestamp: 1700000000,
       };
       const result = await deleteHistoricalPrice(payload);
@@ -199,6 +205,7 @@ describe('composables/api/assets/prices', () => {
       expect(capturedBody).toEqual({
         from_asset: 'ETH',
         to_asset: 'USD',
+        source_type: 'manual',
         timestamp: 1700000000,
       });
       expect(result).toBe(true);
@@ -218,6 +225,7 @@ describe('composables/api/assets/prices', () => {
       await expect(deleteHistoricalPrice({
         fromAsset: 'ETH',
         toAsset: 'USD',
+        sourceType: 'manual',
         timestamp: 0,
       }))
         .rejects

@@ -167,9 +167,6 @@ function getOracleTab(routes: SettingsRoutes, t: T): TabGroup {
       { texts: [t('price_oracle_settings.title'), t('price_oracle_settings.latest_prices')] },
       { texts: [t('price_oracle_settings.title'), t('price_oracle_settings.historic_prices')] },
     ] },
-    { categoryId: SettingsCategoryIds.CACHE_MANAGEMENT, children: [
-      { texts: [t('oracle_cache_management.title')], keywords: [t('oracle_cache_management.subtitle')] },
-    ] },
     { categoryId: SettingsCategoryIds.PENALTY, children: [
       { texts: [t('oracle_cache_management.penalty.title')], keywords: [t('oracle_cache_management.penalty.subtitle')] },
       { texts: [t('oracle_cache_management.penalty.title'), t('oracle_cache_management.penalty.labels.oracle_penalty_duration')], highlightId: SettingsHighlightIds.ORACLE_PENALTY_DURATION },

@@ -31,6 +31,7 @@ const labels: { [keys in PrioritizedListId]: string } = {
   [PriceOracle.CRYPTOCOMPARE]: '',
   [PriceOracle.DEFILLAMA]: '',
   [PriceOracle.FIAT]: '',
+  [PriceOracle.MANUAL]: '',
   [PriceOracle.MANUALCURRENT]: t('oracles.manual_current'),
   [PriceOracle.UNISWAP2]: t('oracles.uniswap_v2'),
   [PriceOracle.UNISWAP3]: t('oracles.uniswap_v3'),

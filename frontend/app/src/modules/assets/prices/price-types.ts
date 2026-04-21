@@ -1,7 +1,11 @@
+import type { PaginationRequestPayload } from '@/modules/core/common/common-types';
 import { AssetEntry, type Balance, type BigNumber, NumericString } from '@rotki/common';
 import { forEach } from 'es-toolkit/compat';
 import { z } from 'zod/v4';
+import { CollectionCommonFields } from '@/modules/core/common/collection';
 import { PriceOracle, PriceOracleEnum } from '@/modules/settings/types/price-oracle';
+
+export { PriceOracle };
 
 const AssetPriceInput = z.tuple([NumericString, z.number()]);
 
@@ -119,6 +123,7 @@ export type ManualPriceFormPayload = z.infer<typeof ManualPriceFormPayload>;
 
 export const HistoricalPriceFormPayload = z.object({
   ...ManualPriceFormPayload.shape,
+  sourceType: z.string(),
   timestamp: z.number(),
 });
 
@@ -126,6 +131,7 @@ export type HistoricalPriceFormPayload = z.infer<typeof HistoricalPriceFormPaylo
 
 export const HistoricalPriceDeletePayload = z.object({
   ...AssetPair.shape,
+  sourceType: z.string(),
   timestamp: z.number(),
 });
 
@@ -155,3 +161,31 @@ export type NftPrice = z.infer<typeof NftPrice>;
 export const NftPriceArray = z.array(NftPrice);
 
 export type NftPriceArray = z.infer<typeof NftPriceArray>;
+
+export const OraclePriceEntry = z.object({
+  fromAsset: z.string(),
+  price: NumericString,
+  sourceType: z.string(),
+  timestamp: z.number(),
+  toAsset: z.string(),
+});
+
+export type OraclePriceEntry = z.infer<typeof OraclePriceEntry>;
+
+export const OraclePriceEntries = z.array(OraclePriceEntry);
+
+export type OraclePriceEntries = z.infer<typeof OraclePriceEntries>;
+
+export const OraclePricesCollectionResponse = CollectionCommonFields.extend({
+  entries: OraclePriceEntries,
+});
+
+export type OraclePricesCollectionResponse = z.infer<typeof OraclePricesCollectionResponse>;
+
+export interface OraclePricesQuery extends PaginationRequestPayload<OraclePriceEntry> {
+  readonly fromAsset?: string;
+  readonly fromTimestamp?: number;
+  readonly sourceType?: string;
+  readonly toAsset?: string;
+  readonly toTimestamp?: number;
+}

@@ -9,6 +9,7 @@ import { useHistoricPrices } from '@/modules/assets/prices/use-historic-price-ma
 import { useConfirmStore } from '@/modules/core/common/use-confirm-store';
 import { useRefPropVModel } from '@/modules/core/common/validation/model';
 import { TableId, useRememberTableSorting } from '@/modules/core/table/use-remember-table-sorting';
+import { PriceOracle } from '@/modules/settings/types/price-oracle';
 import DateDisplay from '@/modules/shell/components/display/DateDisplay.vue';
 import AssetSelect from '@/modules/shell/components/inputs/AssetSelect.vue';
 import RowActions from '@/modules/shell/components/RowActions.vue';
@@ -67,6 +68,7 @@ useRememberTableSorting<HistoricalPrice>(TableId.HISTORIC_PRICES, sort, headers)
 const emptyPrice: () => HistoricalPriceFormPayload = () => ({
   fromAsset: '',
   price: '',
+  sourceType: PriceOracle.MANUAL,
   timestamp: dayjs().unix(),
   toAsset: '',
 });
@@ -96,6 +98,7 @@ function edit(item: HistoricalPrice) {
   set(modelValue, {
     ...item,
     price: item.price.toFixed() ?? '',
+    sourceType: PriceOracle.MANUAL,
   });
   set(editMode, true);
 }

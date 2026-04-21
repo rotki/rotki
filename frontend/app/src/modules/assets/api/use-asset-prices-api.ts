@@ -1,3 +1,4 @@
+import type { Collection } from '@/modules/core/common/collection';
 import {
   type HistoricalPrice,
   type HistoricalPriceDeletePayload,
@@ -8,15 +9,21 @@ import {
   type ManualPricePayload,
   ManualPrices,
   NftPriceArray,
+  type OraclePriceEntry,
+  OraclePricesCollectionResponse,
+  type OraclePricesQuery,
 } from '@/modules/assets/prices/price-types';
+import { defaultApiUrls } from '@/modules/core/api/api-urls';
 import { api } from '@/modules/core/api/rotki-api';
 import { VALID_WITHOUT_SESSION_STATUS } from '@/modules/core/api/utils';
+import { mapCollectionResponse } from '@/modules/core/common/data/collection-utils';
 
 interface UseAssetPriceApiReturn {
   fetchHistoricalPrices: (payload?: Partial<ManualPricePayload>) => Promise<HistoricalPrice[]>;
   addHistoricalPrice: (price: HistoricalPriceFormPayload) => Promise<boolean>;
   editHistoricalPrice: (price: HistoricalPriceFormPayload) => Promise<boolean>;
   deleteHistoricalPrice: (payload: HistoricalPriceDeletePayload) => Promise<boolean>;
+  fetchOraclePrices: (query?: OraclePricesQuery) => Promise<Collection<OraclePriceEntry>>;
   fetchLatestPrices: (payload?: Partial<ManualPricePayload>) => Promise<ManualPrice[]>;
   addLatestPrice: (payload: ManualPriceFormPayload) => Promise<boolean>;
   deleteLatestPrice: (asset: string) => Promise<boolean>;
@@ -54,6 +61,17 @@ export function useAssetPricesApi(): UseAssetPriceApiReturn {
     body: payload,
     validStatuses: VALID_WITHOUT_SESSION_STATUS,
   });
+
+  const fetchOraclePrices = async (query?: OraclePricesQuery): Promise<Collection<OraclePriceEntry>> => {
+    const response = await api.get<OraclePricesCollectionResponse>('/prices/oracle', {
+      baseURL: defaultApiUrls.colibriApiUrl,
+      filterEmptyProperties: { removeEmptyString: true },
+      query,
+      retry: true,
+    });
+
+    return mapCollectionResponse(OraclePricesCollectionResponse.parse(response));
+  };
 
   const fetchLatestPrices = async (payload?: Partial<ManualPricePayload>): Promise<ManualPrice[]> => {
     const response = await api.post<ManualPrice[]>(
@@ -93,5 +111,6 @@ export function useAssetPricesApi(): UseAssetPriceApiReturn {
     fetchHistoricalPrices,
     fetchLatestPrices,
     fetchNftsPrices,
+    fetchOraclePrices,
   };
 }

@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { NoteLocation } from '@/modules/core/common/notes';
 import SettingsPage from '@/modules/settings/controls/SettingsPage.vue';
-import OracleCacheManagement from '@/modules/settings/data-security/oracle/OracleCacheManagement.vue';
 import OraclePenaltySettings from '@/modules/settings/data-security/oracle/OraclePenaltySettings.vue';
 import PriceOracleSettings from '@/modules/settings/PriceOracleSettings.vue';
 import { SettingsCategoryIds } from '@/modules/settings/setting-highlight-ids';
@@ -16,7 +15,6 @@ const { t } = useI18n({ useScope: 'global' });
 
 const navigation = computed<{ id: string; label: string }[]>(() => [
   { id: SettingsCategoryIds.PRICE_ORACLE, label: t('price_oracle_settings.title') },
-  { id: SettingsCategoryIds.CACHE_MANAGEMENT, label: t('oracle_cache_management.title') },
   { id: SettingsCategoryIds.PENALTY, label: t('oracle_cache_management.penalty.title') },
 ]);
 </script>
@@ -24,7 +22,6 @@ const navigation = computed<{ id: string; label: string }[]>(() => [
 <template>
   <SettingsPage :navigation="navigation">
     <PriceOracleSettings :id="SettingsCategoryIds.PRICE_ORACLE" />
-    <OracleCacheManagement :id="SettingsCategoryIds.CACHE_MANAGEMENT" />
     <OraclePenaltySettings :id="SettingsCategoryIds.PENALTY" />
   </SettingsPage>
 </template>

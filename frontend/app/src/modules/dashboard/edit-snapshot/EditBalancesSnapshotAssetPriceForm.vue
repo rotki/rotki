@@ -11,6 +11,7 @@ import { bigNumberifyFromRef } from '@/modules/core/common/data/bignumbers';
 import { toMessages } from '@/modules/core/common/validation/validation';
 import { TaskType } from '@/modules/core/tasks/task-type';
 import { useTaskStore } from '@/modules/core/tasks/use-task-store';
+import { PriceOracle } from '@/modules/settings/types/price-oracle';
 import { useGeneralSettingsStore } from '@/modules/settings/use-general-settings-store';
 import AmountInput from '@/modules/shell/components/inputs/AmountInput.vue';
 import AssetSelect from '@/modules/shell/components/inputs/AssetSelect.vue';
@@ -163,6 +164,7 @@ async function submitPrice(): Promise<void> {
       await savePrice({
         fromAsset: assetVal,
         price: get(assetToUsdPrice),
+        sourceType: PriceOracle.MANUAL,
         timestamp,
         toAsset: CURRENCY_USD,
       });
@@ -172,6 +174,7 @@ async function submitPrice(): Promise<void> {
     await savePrice({
       fromAsset: assetVal,
       price: get(assetToFiatPrice),
+      sourceType: PriceOracle.MANUAL,
       timestamp,
       toAsset: get(currencySymbol),
     });
