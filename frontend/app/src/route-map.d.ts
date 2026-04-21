@@ -325,6 +325,13 @@ declare module 'vue-router/auto-routes' {
       Record<never, never>,
       | never
     >,
+    'price-manager-oracle': RouteRecordInfo<
+      'price-manager-oracle',
+      '/price-manager/oracle',
+      Record<never, never>,
+      Record<never, never>,
+      | never
+    >,
     '/reports/': RouteRecordInfo<
       '/reports/',
       '/reports',
@@ -754,6 +761,12 @@ declare module 'vue-router/auto-routes' {
     'src/pages/price-manager/latest/index.vue': {
       routes:
         | 'price-manager-current'
+      views:
+        | never
+    }
+    'src/pages/price-manager/oracle/index.vue': {
+      routes:
+        | 'price-manager-oracle'
       views:
         | never
     }

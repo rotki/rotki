@@ -4139,7 +4139,8 @@
     "manage_prices": "Manage Prices",
     "manage_prices_sub": {
       "historic_prices": "Historic Prices",
-      "latest_prices": "Latest Prices"
+      "latest_prices": "Latest Prices",
+      "oracle_prices": "Oracle Prices"
     },
     "nfts": "NFTs Gallery",
     "onchain": "Onchain",
@@ -4368,26 +4369,6 @@
     "view_calendar": "View Calendar"
   },
   "oracle_cache_management": {
-    "clear_error": "Clearing the cache for {fromAsset} to {toAsset} failed: {error}",
-    "create_cache": "Cache Pair prices",
-    "create_tooltip": "Fetch and cache historical prices for the specified price pair",
-    "delete_confirmation": {
-      "message": "Are you sure you want to delete all cached prices for the {fromAsset} to {toAsset} pair on {selection}?",
-      "title": "Delete all the cached prices"
-    },
-    "delete_tooltip": "Delete the prices cached for this pair and the selected price oracle",
-    "from_asset": "From Asset",
-    "headers": {
-      "from": "From Asset",
-      "from_date": "From Date",
-      "to": "To Asset",
-      "to_date": "To Date"
-    },
-    "notification": {
-      "error": "The cache creation for pair {fromAsset} to {toAsset} on failed: {error}",
-      "success": "The cache for pair {fromAsset} to {toAsset} on {source} was successfully created",
-      "title": "Price pair cache creation"
-    },
     "penalty": {
       "hints": {
         "oracle_penalty_duration": "The duration in seconds for which an oracle is penalized",
@@ -4409,11 +4390,101 @@
           "non_empty": "Please enter the number of failures"
         }
       }
+    }
+  },
+  "oracle_prices": {
+    "actions": {
+      "delete": {
+        "tooltip": "Delete this oracle price entry"
+      },
+      "edit": {
+        "tooltip": "Edit this oracle price entry"
+      }
     },
-    "select_oracle": "Select price oracle",
-    "subtitle": "Create/delete and view cached prices",
-    "title": "Oracle cache",
-    "to_asset": "To Asset"
+    "cache": {
+      "create": {
+        "title": "Create cache"
+      },
+      "delete": {
+        "error": "Clearing the cache for {fromAsset} to {toAsset} failed: {error}",
+        "message": "Are you sure you want to delete all cached prices for the {fromAsset} to {toAsset} pair on {source}?",
+        "title": "Delete cached prices",
+        "tooltip": "Delete the cached prices for this pair"
+      },
+      "dialog": {
+        "create": "Create Cache",
+        "empty": "No caches exist for the selected oracle.",
+        "existing_title": "Existing caches",
+        "source": "Price Oracle"
+      },
+      "filter": {
+        "from_asset": "Filter by From Asset",
+        "to_asset": "Filter by To Asset"
+      },
+      "headers": {
+        "from_asset": "From Asset",
+        "from_date": "From Date",
+        "to_asset": "To Asset",
+        "to_date": "To Date"
+      },
+      "notification": {
+        "error": "Cache creation for {fromAsset} to {toAsset} on {source} failed: {error}",
+        "success": "Cache for {fromAsset} to {toAsset} on {source} was successfully created",
+        "title": "Oracle cache population"
+      }
+    },
+    "delete": {
+      "dialog": {
+        "message": "Are you sure you want to delete this oracle price entry?",
+        "title": "Delete oracle price"
+      },
+      "failure": {
+        "message": "Failed to delete oracle price: {message}",
+        "title": "Oracle price deletion failed"
+      }
+    },
+    "edit": {
+      "dialog": {
+        "description": "Edit the cached price for {fromAsset} to {toAsset}",
+        "title": "Edit Oracle Price"
+      },
+      "error": {
+        "description": "Failed to edit oracle price: {message}",
+        "title": "Oracle price edit failed"
+      }
+    },
+    "fetch": {
+      "failure": {
+        "message": "Failed to fetch oracle prices: {message}",
+        "title": "Oracle prices fetch failed"
+      }
+    },
+    "filter": {
+      "from_asset": "Filter by source asset",
+      "from_date": "Filter by start date",
+      "source_type": "Filter by oracle source",
+      "to_asset": "Filter by target asset",
+      "to_date": "Filter by end date"
+    },
+    "headers": {
+      "source": "Source"
+    },
+    "refresh_tooltip": "Refresh the oracle prices list",
+    "sources": {
+      "alchemy": "Alchemy",
+      "blockchain": "Blockchain",
+      "coingecko": "CoinGecko",
+      "cryptocompare": "CryptoCompare",
+      "defillama": "DeFi Llama",
+      "fiat": "Fiat Exchange Rates",
+      "manual": "Manual",
+      "uniswapv2": "Uniswap V2",
+      "uniswapv3": "Uniswap V3"
+    },
+    "tabs": {
+      "caches": "Caches",
+      "prices": "Prices"
+    }
   },
   "oracles": {
     "manual_current": "Custom price",

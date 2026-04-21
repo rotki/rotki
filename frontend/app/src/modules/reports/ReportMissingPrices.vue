@@ -10,6 +10,7 @@ import { usePriceTaskManager } from '@/modules/assets/prices/use-price-task-mana
 import { ApiValidationError } from '@/modules/core/api/types/errors';
 import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
 import { TableId, useRememberTableSorting } from '@/modules/core/table/use-remember-table-sorting';
+import { PriceOracle } from '@/modules/settings/types/price-oracle';
 import DateDisplay from '@/modules/shell/components/display/DateDisplay.vue';
 import AmountInput from '@/modules/shell/components/inputs/AmountInput.vue';
 
@@ -71,6 +72,7 @@ async function updatePrice(item: EditableMissingPrice) {
 
   const payload: HistoricalPriceDeletePayload = {
     fromAsset: item.fromAsset,
+    sourceType: PriceOracle.MANUAL,
     timestamp: item.time,
     toAsset: item.toAsset,
   };

@@ -48,6 +48,7 @@ export const Routes = {
   PRICE_MANAGER: ensureRoute('/price-manager'),
   PRICE_MANAGER_HISTORIC: ensureRoute('/price-manager/historic'),
   PRICE_MANAGER_LATEST: ensureRoute('/price-manager/latest'),
+  PRICE_MANAGER_ORACLE: ensureRoute('/price-manager/oracle'),
   PROFIT_LOSS_REPORT: ensureRoute(`/reports/:id`),
   PROFIT_LOSS_REPORTS: ensureRoute('/reports/'),
   SETTINGS: ensureRoute('/settings'),
@@ -265,6 +266,11 @@ export const useAppRoutes = createSharedComposable(() => {
       icon: 'lu-latest-prices' as const,
       route: Routes.PRICE_MANAGER_LATEST,
       text: t('navigation_menu.manage_prices_sub.latest_prices'),
+    },
+    PRICE_MANAGER_ORACLE: {
+      icon: 'lu-database' as const,
+      route: Routes.PRICE_MANAGER_ORACLE,
+      text: t('navigation_menu.manage_prices_sub.oracle_prices'),
     },
     PROFIT_LOSS_REPORT: {
       icon: 'lu-calculator' as const,

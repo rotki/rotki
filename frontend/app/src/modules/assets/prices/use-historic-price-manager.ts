@@ -5,6 +5,7 @@ import { useAssetPricesApi } from '@/modules/assets/api/use-asset-prices-api';
 import { useHistoricPriceCache } from '@/modules/assets/prices/use-historic-price-cache';
 import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
 import { useNotifications } from '@/modules/core/notifications/use-notifications';
+import { PriceOracle } from '@/modules/settings/types/price-oracle';
 
 interface UseHistoricPricesReturn {
   items: Ref<HistoricalPrice[]>;
@@ -75,7 +76,7 @@ export function useHistoricPrices(
   const deletePrice = async (item: HistoricalPrice): Promise<void> => {
     const { price, ...payload } = item;
     try {
-      await deleteHistoricalPrice(payload);
+      await deleteHistoricalPrice({ ...payload, sourceType: PriceOracle.MANUAL });
       await refresh({
         additionalEntry: item,
         modified: true,

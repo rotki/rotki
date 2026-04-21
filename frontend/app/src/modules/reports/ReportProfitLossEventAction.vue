@@ -9,6 +9,7 @@ import { usePriceTaskManager } from '@/modules/assets/prices/use-price-task-mana
 import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
 import { useMessageStore } from '@/modules/core/common/use-message-store';
 import { toMessages } from '@/modules/core/common/validation/validation';
+import { PriceOracle } from '@/modules/settings/types/price-oracle';
 import AmountInput from '@/modules/shell/components/inputs/AmountInput.vue';
 import AssetSelect from '@/modules/shell/components/inputs/AssetSelect.vue';
 import DateTimePicker from '@/modules/shell/components/inputs/DateTimePicker.vue';
@@ -66,6 +67,7 @@ async function updatePrice() {
   const payload: HistoricalPriceFormPayload = {
     fromAsset: event.assetIdentifier,
     price: get(price),
+    sourceType: PriceOracle.MANUAL,
     timestamp: event.timestamp,
     toAsset: currency,
   };

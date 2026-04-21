@@ -93,6 +93,7 @@ describe('form/EthDepositEventForm.vue', () => {
       fetchHistoricalPrices: vi.fn<ReturnType<typeof useAssetPricesApi>['fetchHistoricalPrices']>(),
       fetchLatestPrices: vi.fn<ReturnType<typeof useAssetPricesApi>['fetchLatestPrices']>(),
       fetchNftsPrices: vi.fn<ReturnType<typeof useAssetPricesApi>['fetchNftsPrices']>(),
+      fetchOraclePrices: vi.fn<ReturnType<typeof useAssetPricesApi>['fetchOraclePrices']>(),
     });
   });
 
