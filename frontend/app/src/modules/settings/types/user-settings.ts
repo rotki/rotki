@@ -240,6 +240,7 @@ export const UserAccount = z.object({
 
 export type UserAccount = z.infer<typeof UserAccount>;
 
+
 export const ExchangeRates = z.record(z.string(), NumericString);
 
 export type ExchangeRates = z.infer<typeof ExchangeRates>;

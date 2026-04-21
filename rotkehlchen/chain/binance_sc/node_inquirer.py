@@ -26,6 +26,7 @@ if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.externalapis.blockscout import Blockscout
     from rotkehlchen.externalapis.etherscan import Etherscan
+    from rotkehlchen.externalapis.goldrush import GoldRush
     from rotkehlchen.externalapis.routescan import Routescan
 
 
@@ -38,6 +39,7 @@ class BinanceSCInquirer(EvmNodeInquirer):
             etherscan: 'Etherscan',
             blockscout: 'Blockscout',
             routescan: 'Routescan',
+            goldrush: 'GoldRush | None' = None,
             rpc_timeout: int = DEFAULT_RPC_TIMEOUT,
     ) -> None:
         super().__init__(
@@ -46,6 +48,7 @@ class BinanceSCInquirer(EvmNodeInquirer):
             etherscan=etherscan,
             blockscout=blockscout,
             routescan=routescan,
+            goldrush=goldrush,
             blockchain=SupportedBlockchain.BINANCE_SC,
             contracts=(contracts := EvmContracts[Literal[ChainID.BINANCE_SC]](chain_id=ChainID.BINANCE_SC)),  # noqa: E501
             rpc_timeout=rpc_timeout,

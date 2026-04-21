@@ -23,6 +23,7 @@ export const SettingsHighlightIds = {
   DISPLAY_DATE_IN_LOCALTIME: 'setting-display-date-in-localtime',
   EXPLORERS: 'setting-explorers',
   GLOBALDB_INFO: 'setting-globaldb-info',
+  GOLDRUSH_API_KEY: 'setting-goldrush-api-key',
   GRAPH_BASIS: 'setting-graph-basis',
   INTERNAL_TX_CONFLICT_REPULL: 'setting-internal-tx-conflict-repull',
   LANGUAGE: 'setting-language',

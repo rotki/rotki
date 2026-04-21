@@ -29,6 +29,7 @@ if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.externalapis.blockscout import Blockscout
     from rotkehlchen.externalapis.etherscan import Etherscan
+    from rotkehlchen.externalapis.goldrush import GoldRush
     from rotkehlchen.externalapis.routescan import Routescan
 
 logger = logging.getLogger(__name__)
@@ -48,6 +49,7 @@ class GnosisInquirer(EvmNodeInquirer):
             etherscan: 'Etherscan',
             blockscout: 'Blockscout',
             routescan: 'Routescan',
+            goldrush: 'GoldRush | None' = None,
             rpc_timeout: int = DEFAULT_RPC_TIMEOUT,
     ) -> None:
         contracts = EvmContracts[Literal[ChainID.GNOSIS]](chain_id=ChainID.GNOSIS)
@@ -57,6 +59,7 @@ class GnosisInquirer(EvmNodeInquirer):
             etherscan=etherscan,
             blockscout=blockscout,
             routescan=routescan,
+            goldrush=goldrush,
             blockchain=SupportedBlockchain.GNOSIS,
             contracts=contracts,
             rpc_timeout=rpc_timeout,

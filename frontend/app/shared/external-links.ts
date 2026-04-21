@@ -61,6 +61,8 @@ export const externalLinks = {
   liquityTotalCollateralRatioDoc: 'https://docs.liquity.org/liquity-v1/faq/recovery-mode#what-is-the-total-collateral-ratio',
   coingeckoApiKey: 'https://www.coingecko.com/en/api/pricing',
   defillamaApiKey: 'https://defillama.com/pro-api',
+  goldrushApiKey: 'https://goldrush.dev/platform/auth/sign-in/',
   alchemyApiKey: 'https://docs.alchemy.com/reference/api-overview',
   beaconChainApiKey: 'https://beaconcha.in/user/settings',
+  goldrushApiKey: 'https://goldrush.dev/platform/auth/register/',
 };

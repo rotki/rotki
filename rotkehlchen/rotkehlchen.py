@@ -89,6 +89,8 @@ from rotkehlchen.externalapis.coingecko import Coingecko
 from rotkehlchen.externalapis.cryptocompare import Cryptocompare
 from rotkehlchen.externalapis.defillama import Defillama
 from rotkehlchen.externalapis.etherscan import Etherscan
+from eth_account import Account as EthAccount
+from rotkehlchen.externalapis.goldrush import GoldRush, X402PaymentSigner
 from rotkehlchen.externalapis.helius import Helius
 from rotkehlchen.externalapis.routescan import Routescan
 from rotkehlchen.fval import FVal
@@ -185,6 +187,13 @@ class Rotkehlchen:
         self.rotki_notifier = RotkiNotifier()
         self.msg_aggregator.rotki_notifier = self.rotki_notifier
         self.exchange_manager = ExchangeManager(msg_aggregator=self.msg_aggregator)
+        # Ephemeral x402 payment wallet — lives in memory only, never persisted to disk.
+        # Fund this address with USDC on Base to enable x402 GoldRush access.
+        _ephemeral_account = EthAccount.create()
+        self._x402_signer: X402PaymentSigner = X402PaymentSigner(
+            private_key=_ephemeral_account.key.hex(),
+        )
+        log.info('x402 ephemeral wallet ready', address=self._x402_signer.address)
         # Initialize the GlobalDBHandler singleton. Has to be initialized BEFORE asset resolver
         globaldb = GlobalDBHandler(
             data_dir=self.data_dir,
@@ -406,6 +415,11 @@ class Rotkehlchen:
                         database=self.data.db,
                         msg_aggregator=self.msg_aggregator,
                     )),
+                    goldrush=(goldrush := GoldRush(
+                        database=self.data.db,
+                        msg_aggregator=self.msg_aggregator,
+                        signer=self._x402_signer,
+                    )),
                 )),
                 premium=self.premium,
                 beacon_chain=self.beaconchain,
@@ -417,6 +431,7 @@ class Rotkehlchen:
                     etherscan=etherscan,
                     blockscout=blockscout,
                     routescan=routescan,
+                    goldrush=goldrush,
                 ),
                 premium=self.premium,
             ),
@@ -427,6 +442,7 @@ class Rotkehlchen:
                     etherscan=etherscan,
                     blockscout=blockscout,
                     routescan=routescan,
+                    goldrush=goldrush,
                 ),
                 premium=self.premium,
             ),
@@ -437,6 +453,7 @@ class Rotkehlchen:
                     etherscan=etherscan,
                     blockscout=blockscout,
                     routescan=routescan,
+                    goldrush=goldrush,
                 ),
                 premium=self.premium,
             ),
@@ -447,6 +464,7 @@ class Rotkehlchen:
                     etherscan=etherscan,
                     blockscout=blockscout,
                     routescan=routescan,
+                    goldrush=goldrush,
                 ),
                 premium=self.premium,
             ),
@@ -467,6 +485,7 @@ class Rotkehlchen:
                     etherscan=etherscan,
                     blockscout=blockscout,
                     routescan=routescan,
+                    goldrush=goldrush,
                 ),
                 premium=self.premium,
             ),
@@ -477,6 +496,7 @@ class Rotkehlchen:
                     etherscan=etherscan,
                     blockscout=blockscout,
                     routescan=routescan,
+                    goldrush=goldrush,
                 ),
                 premium=self.premium,
             ),
@@ -487,6 +507,7 @@ class Rotkehlchen:
                     etherscan=etherscan,
                     blockscout=blockscout,
                     routescan=routescan,
+                    goldrush=goldrush,
                 ),
                 premium=self.premium,
             ),
@@ -554,6 +575,7 @@ class Rotkehlchen:
             coingecko=self.coingecko,
             defillama=self.defillama,
             alchemy=self.alchemy,
+            goldrush=goldrush,
             uniswapv2=(uniswap_v2_oracle := UniswapV2Oracle()),
             uniswapv3=(uniswap_v3_oracle := UniswapV3Oracle()),
         )

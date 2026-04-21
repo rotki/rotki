@@ -2773,6 +2773,17 @@
       "title": "Etherscan"
     },
     "get_api_key": "You can apply for an API key {link}",
+    "goldrush": {
+      "description": "rotki uses GoldRush (by Covalent) to index EVM transaction history, token balances, and NFT data across 200+ chains. Use an API key for higher rate limits, or leave empty to use the x402 keyless payment protocol.",
+      "hint": "Enter your GoldRush API key",
+      "title": "GoldRush",
+      "x402": {
+        "address_label": "x402 wallet address",
+        "chain_label": "Chain: Base (USDC)",
+        "copy_tooltip": "Copy address",
+        "warning": "This wallet address resets on restart. Only send USDC to this address during active sessions."
+      }
+    },
     "gnosispay": {
       "delete_confirmation": {
         "message": "Are you sure you want to remove authentication for Gnosis Pay?",
@@ -2809,6 +2820,11 @@
         "wrong_chain": "You are not connected to the Gnosis network. Please switch to continue."
       },
       "title": "Gnosis Pay"
+    },
+    "goldrush": {
+      "description": "GoldRush provides unified blockchain data across 100+ chains. Used for transaction history, token detection, and historical prices.",
+      "hint": "Enter your GoldRush API key",
+      "title": "GoldRush (Covalent)"
     },
     "google_calendar": {
       "access_token": "Access Token",

@@ -55,6 +55,7 @@ from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.externalapis.blockscout import Blockscout
 from rotkehlchen.externalapis.etherscan import Etherscan
 from rotkehlchen.externalapis.etherscan_like import EtherscanLikeApi, HasChainActivity
+from rotkehlchen.externalapis.goldrush import GoldRush
 from rotkehlchen.externalapis.routescan import Routescan
 from rotkehlchen.externalapis.utils import read_integer
 from rotkehlchen.fval import FVal
@@ -223,6 +224,7 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
             contract_scan: 'EvmContract',
             contract_multicall: 'EvmContract',
             native_token: CryptoAsset,
+            goldrush: GoldRush | None = None,
             rpc_timeout: int = DEFAULT_RPC_TIMEOUT,
     ) -> None:
         self.greenlet_manager = greenlet_manager
@@ -231,10 +233,12 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
         self.etherscan = etherscan
         self.routescan = routescan
         self.blockscout = blockscout
-        self.available_indexers: dict[EvmIndexer, Blockscout | Etherscan | Routescan | None] = {
+        self.goldrush = goldrush
+        self.available_indexers: dict[EvmIndexer, Blockscout | Etherscan | GoldRush | Routescan | None] = {
             EvmIndexer.ETHERSCAN: self.etherscan,
             EvmIndexer.BLOCKSCOUT: self.blockscout,
             EvmIndexer.ROUTESCAN: self.routescan,
+            EvmIndexer.GOLDRUSH: self.goldrush,
         }
         self.contracts = contracts
         self.rpc_timeout = rpc_timeout
@@ -1770,6 +1774,7 @@ class EvmNodeInquirerWithProxies(EvmNodeInquirer):
             contract_multicall: 'EvmContract',
             dsproxy_registry: 'EvmContract',
             native_token: CryptoAsset,
+            goldrush: GoldRush | None = None,
             rpc_timeout: int = DEFAULT_RPC_TIMEOUT,
     ) -> None:
         super().__init__(
@@ -1782,6 +1787,7 @@ class EvmNodeInquirerWithProxies(EvmNodeInquirer):
             contracts=contracts,
             contract_scan=contract_scan,
             contract_multicall=contract_multicall,
+            goldrush=goldrush,
             rpc_timeout=rpc_timeout,
             native_token=native_token,
         )
@@ -1809,6 +1815,7 @@ class DSProxyInquirerWithCacheData(EvmNodeInquirerWithProxies):
             contract_multicall: 'EvmContract',
             dsproxy_registry: 'EvmContract',
             native_token: CryptoAsset,
+            goldrush: GoldRush | None = None,
             rpc_timeout: int = DEFAULT_RPC_TIMEOUT,
     ) -> None:
         super().__init__(
@@ -1821,6 +1828,7 @@ class DSProxyInquirerWithCacheData(EvmNodeInquirerWithProxies):
             contracts=contracts,
             contract_scan=contract_scan,
             contract_multicall=contract_multicall,
+            goldrush=goldrush,
             rpc_timeout=rpc_timeout,
             native_token=native_token,
             dsproxy_registry=dsproxy_registry,
