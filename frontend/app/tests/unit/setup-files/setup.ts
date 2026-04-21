@@ -58,7 +58,7 @@ vi.mock('@vueuse/core', async () => {
     ...mod,
     useElementBounding: vi.fn().mockReturnValue({ left: 0, right: 0, top: 0, bottom: 0 }),
     useFocus: vi.fn().mockReturnValue({ focused: ref(false) }),
-    useResizeObserver: vi.fn(),
+    useResizeObserver: vi.fn().mockReturnValue({ stop: vi.fn() }),
     useVirtualList: vi.fn().mockImplementation((options: []) => ({
       containerProps: {
         ref: ref(),

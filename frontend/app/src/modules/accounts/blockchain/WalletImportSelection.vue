@@ -11,13 +11,9 @@ const emit = defineEmits<{
 defineSlots<{
   default: (props: {
     attrs: {
-      onMouseover: () => void;
-      onMouseleave: () => void;
-      onClick: () => void;
-    } | {
-      onMouseover?: undefined;
-      onMouseleave?: undefined;
-      onClick?: undefined;
+      onMouseover?: () => void;
+      onMouseleave?: () => void;
+      onClick?: () => void;
     };
   }) => any;
 }>();

@@ -84,7 +84,7 @@ describe('tag-input', () => {
     await wrapper.find('[data-id=activator]').trigger('click');
     await vi.advanceTimersToNextTimerAsync();
 
-    expect(wrapper.find('[role=menu-content] button').text()).toBe('tag1');
+    expect(wrapper.find('[data-id=content] button').text()).toBe('tag1');
   });
 
   it('should remove a tag', async () => {
@@ -110,7 +110,7 @@ describe('tag-input', () => {
     expect(wrapper.emitted('update:modelValue')![1]).toEqual([emitted]);
     await vi.advanceTimersToNextTimerAsync();
 
-    expect(wrapper.find('[role=menu-content]').exists()).toBe(true);
-    expect(wrapper.find('[role=menu-content] button:nth-child(2)').exists()).toBe(false);
+    expect(wrapper.find('[data-id=content]').exists()).toBe(true);
+    expect(wrapper.find('[data-id=content] button:nth-child(2)').exists()).toBe(false);
   });
 });

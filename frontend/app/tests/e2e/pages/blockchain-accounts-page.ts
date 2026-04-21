@@ -65,7 +65,7 @@ export class BlockchainAccountsPage {
   }
 
   async editAccount(position: number, label: string): Promise<void> {
-    const rows = this.page.locator('[data-cy=account-table] tbody tr[class^="_tr_"]:not(tr[class*="_group_"])');
+    const rows = this.page.locator('[data-cy=account-table] tbody tr[data-id="row"]');
     await rows.nth(position).locator('button[data-cy=row-edit]').click();
 
     const editDialog = this.page.locator('[data-cy=bottom-dialog]').filter({ has: this.page.locator('[data-cy=blockchain-balance-form]') });
@@ -89,7 +89,7 @@ export class BlockchainAccountsPage {
     const initialCount = await accountAddresses.count();
 
     // Use the row selector to find the delete button
-    const rows = this.page.locator('[data-cy=account-table] tbody tr[class^="_tr_"]:not(tr[class*="_group_"])');
+    const rows = this.page.locator('[data-cy=account-table] tbody tr[data-id="row"]');
     await rows.nth(position).locator('button[data-cy=row-delete]').click();
     await this.confirmDelete();
 
@@ -106,7 +106,7 @@ export class BlockchainAccountsPage {
     await blockchainSection.waitFor({ state: 'attached', timeout: TIMEOUT_LONG });
     await blockchainSection.locator('tbody td div[role=progressbar]').waitFor({ state: 'detached', timeout: TIMEOUT_VERY_LONG });
 
-    const rows = blockchainSection.locator('tbody tr[class^="_tr_"]:not(tr[class*="_group_"])');
+    const rows = blockchainSection.locator('tbody tr[data-id="row"]');
     const row = rows.nth(position);
 
     const addressLabel = row.locator('[data-cy=labeled-address-display]');
@@ -114,8 +114,8 @@ export class BlockchainAccountsPage {
     await addressLabel.hover();
 
     const tooltip = this.page.locator('div[role=tooltip]');
-    await expect(tooltip.locator('div[role=tooltip-content]')).toContainText(balance.label);
-    await expect(tooltip.locator('div[role=tooltip-content]')).toContainText(balance.address);
+    await expect(tooltip.locator('[data-id=content]')).toContainText(balance.label);
+    await expect(tooltip.locator('[data-id=content]')).toContainText(balance.address);
 
     for (const tag of balance.tags) {
       await expect(row.locator('[data-cy=tag]')).toContainText(tag);
@@ -132,7 +132,7 @@ export class BlockchainAccountsPage {
     for (const category of categories) {
       await this.visit(category);
 
-      const rows = this.page.locator('[data-cy=account-table] tbody tr[class^="_tr_"]:not(tr[class*="_group_"])');
+      const rows = this.page.locator('[data-cy=account-table] tbody tr[data-id="row"]');
       const count = await rows.count();
 
       for (let i = 0; i < count; i++) {
