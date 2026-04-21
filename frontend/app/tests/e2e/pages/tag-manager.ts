@@ -22,7 +22,7 @@ export class TagManager {
       // Trigger update by pressing Tab to blur
       await bgInput.press('Tab');
 
-      const bgDisplay = this.page.locator('[data-cy=tag-creator__color-picker__background] [data-cy=color-display]');
+      const bgDisplay = this.page.locator('[data-cy=tag-creator__color-picker__background] [data-id=color-display]');
       await expect(bgDisplay).toHaveCSS('background-color', `rgb(${hexToRgbPoints(background).join(', ')})`);
 
       const fgInput = this.page.locator('[data-cy=tag-creator__color-picker__foreground] input');
@@ -31,7 +31,7 @@ export class TagManager {
       // Trigger update by pressing Tab to blur
       await fgInput.press('Tab');
 
-      const fgDisplay = this.page.locator('[data-cy=tag-creator__color-picker__foreground] [data-cy=color-display]');
+      const fgDisplay = this.page.locator('[data-cy=tag-creator__color-picker__foreground] [data-id=color-display]');
       await expect(fgDisplay).toHaveCSS('background-color', `rgb(${hexToRgbPoints(foreground).join(', ')})`);
     }
 

@@ -75,6 +75,7 @@ function deselectAll(updateImmediate: (value: string[]) => void) {
           </template>
           <template #item="{ item }">
             <ChainDisplay
+              :data-value="item.id"
               dense
               :chain="item.id"
             />

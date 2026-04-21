@@ -118,7 +118,7 @@ describe('modules/amount-display/components/AssetValueDisplay', () => {
       await wrapper.find('[data-cy=display-amount]').trigger('mouseover');
       await nextTick();
 
-      expect(wrapper.find('span[class*=chip] > div:last-child').text()).toBe('lu-info coingecko');
+      expect(wrapper.find('[data-cy=display-full-value]').text()).toContain('coingecko');
     });
 
     it('should show manual price indicator', () => {

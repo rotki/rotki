@@ -58,7 +58,7 @@ describe('module-selector', () => {
       other: { havePremium: false, premiumShouldSync: false },
     });
     expect(wrapper.find<HTMLInputElement>('[data-cy=eth2-module-switch] input').element.checked).toBe(true);
-    await wrapper.find('[data-cy=eth2-module-switch] input').trigger('input', { target: false });
+    await wrapper.find<HTMLInputElement>('[data-cy=eth2-module-switch] input').setValue(false);
     await nextTick();
     await flushPromises();
     expect(wrapper.find<HTMLInputElement>('[data-cy=eth2-module-switch] input').element.checked).toBe(false);

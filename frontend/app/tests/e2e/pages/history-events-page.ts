@@ -34,10 +34,24 @@ export class HistoryEventsPage {
 
   async selectEntryType(type: string): Promise<void> {
     const entryTypeSelect = this.page.locator('[data-cy=entry-type]');
-    await entryTypeSelect.click();
+    await entryTypeSelect.locator('[data-id=activator]').click();
     const menu = this.page.locator('[role=menu]');
     await menu.waitFor({ state: 'visible' });
-    await menu.getByText(new RegExp(`^${type}$`, 'i')).click();
+    // RuiMenuSelect uses a virtual list — ensure the target option is rendered
+    // by scrolling the internal scroller to the top before clicking.
+    await menu.evaluate((el) => {
+      const scrollers = el.querySelectorAll('*');
+      for (const node of scrollers) {
+        const element = node as HTMLElement;
+        if (element.scrollHeight > element.clientHeight) {
+          element.scrollTop = 0;
+          return;
+        }
+      }
+    });
+    const option = menu.getByText(new RegExp(`^${type}$`, 'i'));
+    await option.waitFor({ state: 'visible' });
+    await option.click();
     await menu.waitFor({ state: 'hidden' });
   }
 

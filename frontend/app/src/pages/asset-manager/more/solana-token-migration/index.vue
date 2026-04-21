@@ -108,7 +108,6 @@ function handleMergeCompleted({ sourceIdentifier }: { sourceIdentifier: string; 
           page: 1,
           total: rows.length,
         }"
-        :pagination-modifiers="{ external: false }"
         row-attr="id"
         outlined
       >

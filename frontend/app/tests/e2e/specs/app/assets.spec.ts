@@ -1,4 +1,4 @@
-import { test } from '@playwright/test';
+import { expect, test } from '@playwright/test';
 import { cleanupContext, createLoggedInContext, type SharedTestContext } from '../../fixtures/test-fixtures';
 import { apiEnsureSymbolsNotIgnored } from '../../helpers/api';
 import { AssetsManagerPage } from '../../pages/assets-manager-page';
@@ -36,7 +36,7 @@ test.describe('assets', () => {
     test('add another 2 ignored assets and confirm count increased by 3', async () => {
       // Refresh to clear any pending operations from previous test
       await ctx.sharedPage.locator('button', { hasText: 'Refresh' }).first().click();
-      await ctx.sharedPage.locator('div[class*=thead__loader]').waitFor({ state: 'detached' });
+      await expect(ctx.sharedPage.locator('[data-id="thead-loader"]')).toHaveCount(0);
       await assetsPage.addIgnoredAsset('ZIX');
       await assetsPage.addIgnoredAsset('1CR');
       await assetsPage.ignoredAssetCount(ignoredAssets + 3);
@@ -45,7 +45,7 @@ test.describe('assets', () => {
     test('remove an ignored asset, and confirm count decreased by one', async () => {
       // Click refresh to get fresh state (clear any pending operations)
       await ctx.sharedPage.locator('button', { hasText: 'Refresh' }).first().click();
-      await ctx.sharedPage.locator('div[class*=thead__loader]').waitFor({ state: 'detached' });
+      await expect(ctx.sharedPage.locator('[data-id="thead-loader"]')).toHaveCount(0);
       await assetsPage.selectShowAll();
       await assetsPage.removeIgnoredAsset('1SG');
       await assetsPage.ignoredAssetCount(ignoredAssets + 2);

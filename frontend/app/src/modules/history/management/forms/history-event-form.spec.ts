@@ -71,7 +71,7 @@ describe('component/HistoryEventForm.vue', () => {
     await wrapper.find('[data-cy=entry-type] [data-id=activator]').trigger('click');
     await vi.advanceTimersToNextTimerAsync();
 
-    const options = wrapper.find('[role="menu-content"]').findAll('button');
+    const options = wrapper.find('[data-id="content"]').findAll('button');
     for (const option of options) {
       if (option.text() === value) {
         await option.trigger('click');
@@ -114,7 +114,7 @@ describe('component/HistoryEventForm.vue', () => {
     await wrapper.find('[data-cy=entry-type] [data-id=activator]').trigger('click');
     await vi.advanceTimersToNextTimerAsync();
 
-    const options = wrapper.find('[role="menu-content"]').findAll('button');
+    const options = wrapper.find('[data-id="content"]').findAll('button');
     expect(options).toHaveLength(2);
     expect(options.at(0)!.text()).toBe(HistoryEventEntryType.EVM_EVENT);
     expect(options.at(1)!.text()).toBe(HistoryEventEntryType.EVM_SWAP_EVENT);

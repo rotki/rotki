@@ -68,7 +68,7 @@ export class AssetsManagerPage {
       await expect(chip).toBeHidden({ timeout: TIMEOUT_SHORT });
 
       // Wait for table to update
-      await this.page.locator('div[class*=thead__loader]').waitFor({ state: 'detached', timeout: TIMEOUT_MEDIUM });
+      await expect(this.page.locator('[data-id="thead-loader"]')).toHaveCount(0, { timeout: TIMEOUT_MEDIUM });
     }
   }
 
@@ -77,7 +77,7 @@ export class AssetsManagerPage {
     await this.clearAllFilters();
 
     // Wait for any pending table updates after clearing filters
-    await this.page.locator('div[class*=thead__loader]').waitFor({ state: 'detached', timeout: TIMEOUT_MEDIUM });
+    await expect(this.page.locator('[data-id="thead-loader"]')).toHaveCount(0, { timeout: TIMEOUT_MEDIUM });
 
     const activator = this.page.locator('[data-cy=table-filter] [data-id=activator]');
     const arrowButton = activator.locator('> span:last-child');
@@ -97,7 +97,7 @@ export class AssetsManagerPage {
     await filterChip.waitFor({ state: 'visible', timeout: TIMEOUT_SHORT });
 
     // Wait for loader to detach (it may or may not appear)
-    await this.page.locator('div[class*=thead__loader]').waitFor({ state: 'detached', timeout: TIMEOUT_LONG });
+    await expect(this.page.locator('[data-id="thead-loader"]')).toHaveCount(0, { timeout: TIMEOUT_LONG });
 
     // Poll until the results are filtered (pagination shows small total, not thousands)
     await expect(async () => {
@@ -127,7 +127,7 @@ export class AssetsManagerPage {
     await input.fill(`address: ${address}`);
     await input.press('Enter');
     await input.press('Escape');
-    await this.page.locator('div[class*=thead__loader]').waitFor({ state: 'detached' });
+    await expect(this.page.locator('[data-id="thead-loader"]')).toHaveCount(0);
     await this.visibleEntries(1);
   }
 
@@ -232,7 +232,7 @@ export class AssetsManagerPage {
 
     // Select a chain first
     await chainInput.click();
-    const menuContent = this.page.locator('[role="menu-content"]');
+    const menuContent = this.page.locator('[role="menu"]');
     await expect(menuContent).toBeVisible({ timeout: TIMEOUT_SHORT });
     await menuContent.locator('button[type="button"]').first().click();
 
@@ -264,7 +264,7 @@ export class AssetsManagerPage {
 
     // Refresh the table to ensure the new asset appears
     await this.page.locator('button', { hasText: 'Refresh' }).first().click();
-    await this.page.locator('div[class*=thead__loader]').waitFor({ state: 'detached', timeout: TIMEOUT_LONG });
+    await expect(this.page.locator('[data-id="thead-loader"]')).toHaveCount(0, { timeout: TIMEOUT_LONG });
 
     // Search the asset
     await this.searchAssetByAddress(address);
@@ -285,7 +285,7 @@ export class AssetsManagerPage {
     await expect(typeInput).toBeVisible({ timeout: TIMEOUT_MEDIUM });
 
     await typeInput.click();
-    await this.page.locator('[role="menu-content"] button[type="button"]').filter({ hasText: 'Own chain' }).click();
+    await this.page.locator('[role="menu"] button[type="button"]').filter({ hasText: 'Own chain' }).click();
 
     await nameInput.clear();
     await nameInput.fill(`NAME ${uniqueId}`);
@@ -300,7 +300,7 @@ export class AssetsManagerPage {
 
     // Refresh the table to ensure the new asset appears
     await this.page.locator('button', { hasText: 'Refresh' }).first().click();
-    await this.page.locator('div[class*=thead__loader]').waitFor({ state: 'detached', timeout: TIMEOUT_LONG });
+    await expect(this.page.locator('[data-id="thead-loader"]')).toHaveCount(0, { timeout: TIMEOUT_LONG });
 
     // Search the asset
     await this.searchAsset(symbol);

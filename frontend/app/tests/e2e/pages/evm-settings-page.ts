@@ -59,12 +59,17 @@ export class EvmSettingsPage {
 
   // Chains to Skip Detection Settings
   async selectChainToIgnore(value: string, waitForMessageToDisappear: boolean = true): Promise<void> {
-    await this.page.locator('[data-cy=chains-to-skip-detection] [class*=icon__wrapper]').click();
-    await expect(this.page.locator('[data-cy=chains-to-skip-detection] input')).not.toBeDisabled();
-    await this.page.locator('[data-cy=chains-to-skip-detection] input').fill(value);
-    await expect(this.page.locator('[role=menu-content] button')).toHaveCount(1);
-    await this.page.locator('[data-cy=chains-to-skip-detection] input').press('Enter');
-    await this.page.locator('[data-cy=chains-to-skip-detection] [class*=icon__wrapper]').click();
+    const field = this.page.locator('[data-cy=chains-to-skip-detection]');
+    const menu = this.page.locator('[role=menu]');
+    if (!await menu.isVisible()) {
+      await field.locator('[data-id=activator]').click();
+      await menu.waitFor({ state: 'visible' });
+    }
+    // Click the menu option button that contains the target chain id
+    const menuOption = menu.locator(`button:has([data-value="${value}"])`).first();
+    await menuOption.scrollIntoViewIfNeeded();
+    await menuOption.click();
+    await expect(field.locator(`[data-value=${value}]`).first()).toBeAttached();
 
     // Always wait for the success message to appear
     await confirmInlineSuccess(

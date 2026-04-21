@@ -1,6 +1,8 @@
 allowUnusedPatches: true
 blockExoticSubdeps: true
 minimumReleaseAge: 10080
+minimumReleaseAgeExclude:
+  - '@rotki/ui-library'
 saveExact: true
 shamefullyHoist: true
 shellEmulator: true
@@ -12,6 +14,7 @@ trustPolicyExclude:
   - '@noble/curves@1.8.0'
   - '@noble/hashes@1.7.0'
   - slow-redact@0.3.2
+  - tailwind-merge@2.6.1
 packages:
   - app
   - common
@@ -34,7 +37,7 @@ catalog:
   '@reown/appkit-adapter-ethers': 1.8.19
   '@rotki/eslint-config': 5.0.1
   '@rotki/eslint-plugin': 1.3.2
-  '@rotki/ui-library': 2.12.2
+  '@rotki/ui-library': 2.16.3
   '@tsconfig/node24': 24.0.4
   '@types/body-parser': 1.19.6
   '@types/express': 5.0.6
@@ -120,6 +123,9 @@ catalog:
   vue-tsc: 3.2.6
   ws: 8.20.0
   zod: 3.25.76
+peerDependencyRules:
+  allowedVersions:
+    tailwind-variants>tailwind-merge: '>=2.0.0 <3.0.0'
 allowBuilds:
   '@parcel/watcher': true
   '@reown/appkit': false
