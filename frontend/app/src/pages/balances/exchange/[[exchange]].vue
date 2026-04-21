@@ -183,11 +183,13 @@ function isBinance(exchange?: string): exchange is 'binance' | 'binanceus' {
             </template>
           </RuiMenuSelect>
         </div>
-        <div class="hidden md:block w-1/6 border-r border-default">
+        <div class="hidden md:block w-40 shrink-0 border-r border-default">
           <RuiTabs
             v-model="selectedTab"
             vertical
+            align="end"
             color="primary"
+            class="!flex w-full"
           >
             <RuiTab
               v-for="(usedExchange, i) in sortedExchanges"
@@ -202,15 +204,17 @@ function isBinance(exchange?: string): exchange is 'binance' | 'binanceus' {
               }"
               :model-value="usedExchange"
             >
-              <LocationDisplay
-                :open-details="false"
-                :identifier="usedExchange"
-                size="36px"
-              />
-              <FiatDisplay
-                class="mt-1 text-xl"
-                :value="exchangeBalance(usedExchange)"
-              />
+              <div class="flex flex-col items-center gap-1 pr-2">
+                <LocationDisplay
+                  :open-details="false"
+                  :identifier="usedExchange"
+                  size="36px"
+                />
+                <FiatDisplay
+                  class="text-xl"
+                  :value="exchangeBalance(usedExchange)"
+                />
+              </div>
             </RuiTab>
           </RuiTabs>
         </div>
