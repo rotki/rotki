@@ -11,7 +11,7 @@ interface Props {
   connected: boolean;
 }
 
-const { connected } = defineProps<Props>();
+const { connected, color = 'primary' } = defineProps<Props>();
 
 const emit = defineEmits<{
   click: [];
