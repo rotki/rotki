@@ -5,7 +5,6 @@ import {
   type AccountManageState,
   createNewBlockchainAccount,
 } from '@/modules/accounts/blockchain/use-account-manage';
-import { useAccountLoading } from '@/modules/accounts/use-account-loading';
 import { useBlockchainAccountLoading } from '@/modules/accounts/use-blockchain-account-loading';
 import PriceRefresh from '@/modules/assets/prices/PriceRefresh.vue';
 import AssetBalances from '@/modules/balances/AssetBalances.vue';
@@ -14,6 +13,7 @@ import BlockchainBalanceStalenessIndicator from '@/modules/balances/BlockchainBa
 import { useAggregatedBalances } from '@/modules/balances/use-aggregated-balances';
 import { useBalanceRefresh } from '@/modules/balances/use-balance-refresh';
 import { NoteLocation } from '@/modules/core/common/notes';
+import { Section } from '@/modules/core/common/status';
 import SummaryCardRefreshMenu from '@/modules/dashboard/summary/SummaryCardRefreshMenu.vue';
 import VisibleColumnsSelector from '@/modules/dashboard/VisibleColumnsSelector.vue';
 import HideSmallBalances from '@/modules/settings/HideSmallBalances.vue';
@@ -21,6 +21,7 @@ import { BalanceSource, DashboardTableType } from '@/modules/settings/types/fron
 import { useFrontendSettingsStore } from '@/modules/settings/use-frontend-settings-store';
 import CardTitle from '@/modules/shell/components/CardTitle.vue';
 import TablePageLayout from '@/modules/shell/layout/TablePageLayout.vue';
+import { useSectionStatus } from '@/modules/shell/sync-progress/use-section-status';
 
 definePage({
   meta: {
@@ -42,7 +43,8 @@ const route = useRoute('balances-blockchain');
 const tableType = DashboardTableType.BLOCKCHAIN_ASSET_BALANCES;
 
 const { useBlockchainBalances } = useAggregatedBalances();
-const { isBlockchainLoading } = useAccountLoading();
+const { isInitialLoading, isLoading } = useSectionStatus(Section.BLOCKCHAIN);
+const isRefreshing = computed<boolean>(() => get(isLoading) && !get(isInitialLoading));
 const { dashboardTablesVisibleColumns } = storeToRefs(useFrontendSettingsStore());
 const { isDetectingTokens, refreshDisabled } = useBlockchainAccountLoading();
 const { handleBlockchainRefresh } = useBalanceRefresh();
@@ -81,7 +83,7 @@ onMounted(() => {
             <SummaryCardRefreshMenu
               data-cy="blockchain-balances-refresh-menu"
               :disabled="refreshDisabled"
-              :loading="isDetectingTokens"
+              :loading="isDetectingTokens || isRefreshing"
               :tooltip="t('account_balances.refresh_tooltip')"
               @refresh="handleBlockchainRefresh()"
             >
@@ -128,7 +130,7 @@ onMounted(() => {
 
         <AssetBalances
           data-cy="blockchain-asset-balances"
-          :loading="isBlockchainLoading"
+          :loading="isInitialLoading"
           :balances="aggregatedBalances"
           :search="search"
           :details="{
