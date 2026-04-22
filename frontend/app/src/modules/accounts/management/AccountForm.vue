@@ -14,8 +14,8 @@ import AccountFormApiKeyAlertContent from '@/modules/accounts/management/Account
 import AccountSelector from '@/modules/accounts/management/inputs/AccountSelector.vue';
 import AddressAccountForm from '@/modules/accounts/management/types/AddressAccountForm.vue';
 import AgnosticAddressAccountForm from '@/modules/accounts/management/types/AgnosticAddressAccountForm.vue';
+import BtcAccountForm from '@/modules/accounts/management/types/BtcAccountForm.vue';
 import ValidatorAccountForm from '@/modules/accounts/management/types/ValidatorAccountForm.vue';
-import XpubAccountForm from '@/modules/accounts/management/types/XpubAccountForm.vue';
 import { isBtcChain } from '@/modules/core/common/chains';
 import { InputMode } from '@/modules/core/common/input-mode';
 import { logger } from '@/modules/core/common/logging/logging';
@@ -39,7 +39,7 @@ const inputMode = ref<InputMode>(InputMode.MANUAL_ADD);
 const form = useTemplateRef<
   | InstanceType<typeof AddressAccountForm>
   | InstanceType<typeof ValidatorAccountForm>
-  | InstanceType<typeof XpubAccountForm>
+  | InstanceType<typeof BtcAccountForm>
 >('form');
 
 const chain = useRefPropVModel(modelValue, 'chain');
@@ -261,7 +261,7 @@ watch(inputMode, (mode) => {
         xpub: {
           derivationPath: '',
           xpub: '',
-          xpubType: XpubKeyType.XPUB,
+          xpubType: selectedChain === Blockchain.BCH ? XpubKeyType.XPUB : XpubKeyType.ZPUB,
         },
       },
       mode: 'add',
@@ -339,7 +339,7 @@ defineExpose({
       :loading="loading"
     />
 
-    <XpubAccountForm
+    <BtcAccountForm
       v-else-if="modelValue.type === 'xpub'"
       ref="form"
       v-model="modelValue"
