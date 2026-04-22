@@ -33,15 +33,12 @@ const { t } = useI18n({ useScope: 'global' });
       <template #activator>
         <RuiButton
           variant="text"
-          class="!h-10"
+          size="xl"
           :disabled="disabled"
           @click="emit('toggle-mode')"
         >
           <template #prepend>
-            <RuiIcon
-              name="lu-copy-check"
-              size="24"
-            />
+            <RuiIcon name="lu-copy-check" />
           </template>
         </RuiButton>
       </template>

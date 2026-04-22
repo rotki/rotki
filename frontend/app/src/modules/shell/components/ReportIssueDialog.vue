@@ -177,6 +177,7 @@ onMounted(() => {
               <RuiButton
                 variant="outlined"
                 color="primary"
+                size="lg"
                 class="!rounded-r-none !border-r-0"
                 :disabled="!isFormValid"
                 @click="submitViaEmail()"
@@ -194,14 +195,11 @@ onMounted(() => {
                   <RuiButton
                     variant="outlined"
                     color="primary"
-
-                    class="!rounded-l-none !px-2 h-9 -ml-[1px]"
+                    size="lg"
+                    class="!rounded-l-none !px-2 -ml-[1px]"
                     v-bind="attrs"
                   >
-                    <RuiIcon
-                      name="lu-chevron-down"
-                      size="16"
-                    />
+                    <RuiIcon name="lu-chevron-down" />
                   </RuiButton>
                 </template>
                 <div class="py-2">

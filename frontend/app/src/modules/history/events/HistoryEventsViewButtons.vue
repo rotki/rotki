@@ -95,15 +95,13 @@ function checkInternalConflicts(): void {
 
   <RuiButton
     color="primary"
-    class="h-9 [&>span]:!hidden lg:[&>span]:!inline"
+    size="lg"
+    class="[&>span]:!hidden lg:[&>span]:!inline"
     data-cy="history-events__add"
     @click="emit('show:dialog', { type: DIALOG_TYPES.EVENT_FORM, data: { type: 'add', nextSequenceId: '0' } })"
   >
     <template #prepend>
-      <RuiIcon
-        name="lu-plus"
-        size="18"
-      />
+      <RuiIcon name="lu-plus" />
     </template>
     {{ t('transactions.actions.add_event') }}
   </RuiButton>

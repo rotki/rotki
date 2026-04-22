@@ -218,15 +218,12 @@ function handleToggleSelectAllMatching(): void {
         <template #activator>
           <RuiButton
             variant="text"
-            class="!h-10"
+            size="xl"
             :disabled="!selection.hasAvailableEvents"
             @click="handleToggleMode()"
           >
             <template #prepend>
-              <RuiIcon
-                name="lu-copy-check"
-                size="24"
-              />
+              <RuiIcon name="lu-copy-check" />
             </template>
           </RuiButton>
         </template>

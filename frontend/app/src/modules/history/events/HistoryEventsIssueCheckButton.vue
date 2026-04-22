@@ -58,14 +58,12 @@ watch(hasIssues, (value) => {
     <RuiButton
       variant="outlined"
       color="warning"
-      class="h-9 [&>span]:!hidden lg:[&>span]:!inline"
+      size="lg"
+      class="[&>span]:!hidden lg:[&>span]:!inline"
       @click="toggleAlerts()"
     >
       <template #prepend>
-        <RuiIcon
-          name="lu-triangle-alert"
-          size="18"
-        />
+        <RuiIcon name="lu-triangle-alert" />
       </template>
       {{ t('transactions.alerts.button') }}
       <template #append>
