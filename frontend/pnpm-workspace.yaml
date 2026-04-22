@@ -30,7 +30,7 @@ catalog:
   '@clack/prompts': 1.2.0
   '@electron/notarize': 3.1.1
   '@intlify/eslint-plugin-vue-i18n': 4.3.0
-  '@intlify/unplugin-vue-i18n': 11.1.0
+  '@intlify/unplugin-vue-i18n': 11.1.1
   '@pinia/testing': 1.0.3
   '@playwright/test': 1.59.1
   '@reown/appkit': 1.8.19
@@ -41,12 +41,12 @@ catalog:
   '@tsconfig/node24': 24.0.4
   '@types/body-parser': 1.19.6
   '@types/express': 5.0.6
-  '@types/node': 24.12.0
+  '@types/node': 24.12.2
   '@types/semver': 7.7.1
   '@types/ws': 8.18.1
-  '@vitejs/plugin-vue': 6.0.5
-  '@vitest/coverage-v8': 4.1.3
-  '@vitest/ui': 4.1.3
+  '@vitejs/plugin-vue': 6.0.6
+  '@vitest/coverage-v8': 4.1.4
+  '@vitest/ui': 4.1.4
   '@vue/devtools-api': 8.1.1
   '@vue/test-utils': 2.4.6
   '@vue/tsconfig': 0.9.1
@@ -57,7 +57,7 @@ catalog:
   '@vueuse/shared': 14.2.1
   '@walletconnect/core': 2.23.9
   ajv: 8.18.0
-  autoprefixer: 10.4.27
+  autoprefixer: 10.5.0
   bignumber.js: 9.3.1
   body-parser: 2.2.2
   bufferutil: 4.1.0
@@ -67,11 +67,11 @@ catalog:
   dayjs: 1.11.20
   dexie: 4.4.2
   dmg-license: 1.0.11
-  dotenv: 17.4.1
+  dotenv: 17.4.2
   dotenv-cli: 11.0.0
   echarts: 6.0.0
   electron: 41.2.0
-  electron-builder: 26.8.2
+  electron-builder: 26.9.0
   electron-store: 11.0.2
   electron-updater: 6.8.3
   electron-window-state: 5.0.3
@@ -82,13 +82,13 @@ catalog:
   fake-indexeddb: 6.2.5
   flag-icons: 7.5.0
   flush-promises: 1.0.2
-  happy-dom: 20.8.9
+  happy-dom: 20.9.0
   http-proxy-middleware: 3.0.5
   husky: 9.1.7
   imask: 7.6.1
   lint-staged: 16.4.0
   mitt: 3.0.1
-  msw: 2.13.2
+  msw: 2.13.3
   npm-run-all2: 8.0.4
   ofetch: 1.5.1
   pinia: 3.0.4
@@ -99,7 +99,7 @@ catalog:
   roboto-fontface: '*'
   semver: 7.7.4
   source-map-support: 0.5.21
-  stylelint: 17.6.0
+  stylelint: 17.7.0
   stylelint-config-recommended-vue: 1.6.1
   stylelint-order: 8.1.1
   tailwindcss: 3.4.19
@@ -114,7 +114,7 @@ catalog:
   vite: 7.3.2
   vite-plugin-checker: 0.12.0
   vite-plugin-vue-devtools: 8.1.1
-  vitest: 4.1.3
+  vitest: 4.1.4
   vue: 3.5.32
   vue-component-type-helpers: 3.2.6
   vue-echarts: 8.0.1
