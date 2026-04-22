@@ -249,7 +249,7 @@ defineExpose({
         :error-messages="toMessages(v$.userAddresses)"
         :hint="t('account_form.labels.addresses_hint')"
         :placeholder="forceMultiple ? t('account_form.labels.btc.placeholder') : undefined"
-        :label="t('account_form.labels.addresses')"
+        :label="forceMultiple ? t('account_form.labels.btc.addresses') : t('account_form.labels.addresses')"
         @blur="v$.userAddresses.$touch()"
         @paste="onPasteMulti($event)"
       />
