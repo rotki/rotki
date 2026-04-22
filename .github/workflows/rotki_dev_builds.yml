@@ -52,7 +52,7 @@ jobs:
           cache-dependency-glob: "uv.lock"
 
       - name: Setup pnpm
-        uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320  # v5.0.0
+        uses: pnpm/action-setup@08c4be7e2e672a47d11bd04269e27e5f3e8529cb  # v6.0.0
         with:
           package_json_file: frontend/package.json
 
@@ -70,7 +70,7 @@ jobs:
           uv run package.py --build full
 
       - name: Upload files
-        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f  # v7.0.0
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
         with:
           name: linux-app
           path: |
@@ -122,7 +122,7 @@ jobs:
         run: rustup target add aarch64-apple-darwin
 
       - name: Cache python pkg
-        uses: actions/cache@668228422ae6a00e4ad889ee87cd7109ec5666a7  # v5.0.4
+        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae  # v5.0.5
         with:
           path: ~/python*.pkg
           key: ${{ runner.os }}-python-${{ env.PYTHON_VERSION }}-${{ env.PYTHON_MACOS }}-${{ matrix.os.arch }}
@@ -138,7 +138,7 @@ jobs:
           cache-dependency-glob: "uv.lock"
 
       - name: Setup pnpm
-        uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320  # v5.0.0
+        uses: pnpm/action-setup@08c4be7e2e672a47d11bd04269e27e5f3e8529cb  # v6.0.0
         with:
           package_json_file: frontend/package.json
 
@@ -162,7 +162,7 @@ jobs:
           APPLEIDPASS: ${{ secrets.APPLEIDPASS }}
 
       - name: Upload files (${{ matrix.os.arch }})
-        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f  # v7.0.0
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
         with:
           name: macos-app-${{ matrix.os.arch }}
           path: |
@@ -170,7 +170,7 @@ jobs:
             dist/rotki-darwin_*.dmg.sha512
 
       - name: Upload colibri files
-        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f  # v7.0.0
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
         with:
           name: macos-colibri-${{ matrix.os.arch }}
           path: |
@@ -212,7 +212,7 @@ jobs:
           cache-dependency-glob: "uv.lock"
 
       - name: Setup pnpm
-        uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320  # v5.0.0
+        uses: pnpm/action-setup@08c4be7e2e672a47d11bd04269e27e5f3e8529cb  # v6.0.0
         with:
           package_json_file: frontend/package.json
 
@@ -234,7 +234,7 @@ jobs:
         shell: powershell
 
       - name: Upload files
-        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f  # v7.0.0
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
         with:
           name: windows-app
           path: |
@@ -319,7 +319,7 @@ jobs:
           touch "${TEMP}/digests/${digest#sha256:}"
 
       - name: Upload digest
-        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f  # v7.0.0
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
         with:
           name: digests-${{ env.PLATFORM_PAIR }}
           path: ${{ runner.temp }}/digests/*
