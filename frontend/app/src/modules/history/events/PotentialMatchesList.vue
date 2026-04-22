@@ -339,17 +339,14 @@ watchDebounced(onlyExpectedAssets, () => {
         >
           <template #activator>
             <RuiButton
-              class="!h-10 ml-3"
+              class="ml-3"
               :loading="loading"
-              :size="isPinned ? 'sm' : undefined"
+              :size="isPinned ? 'sm' : 'xl'"
               :class="isPinned ? '[&>span]:!hidden !px-2.5' : '[&>span]:!inline'"
               @click="emit('search')"
             >
               <template #prepend>
-                <RuiIcon
-                  name="lu-search"
-                  size="18"
-                />
+                <RuiIcon name="lu-search" />
               </template>
               {{ t('common.actions.search') }}
             </RuiButton>

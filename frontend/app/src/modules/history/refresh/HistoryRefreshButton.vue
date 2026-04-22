@@ -27,7 +27,7 @@ function confirmRefresh() {
   <RuiButtonGroup
     variant="outlined"
     color="primary"
-    class="h-9"
+    size="lg"
     :class="{ '!outline-rui-text-disabled': processing }"
   >
     <RuiTooltip :open-delay="400">
@@ -40,10 +40,7 @@ function confirmRefresh() {
           @click="confirmRefresh()"
         >
           <template #prepend>
-            <RuiIcon
-              name="lu-refresh-ccw"
-              size="18"
-            />
+            <RuiIcon name="lu-refresh-ccw" />
           </template>
           {{ t('common.refresh') }}
         </RuiButton>
