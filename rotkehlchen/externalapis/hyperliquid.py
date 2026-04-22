@@ -628,8 +628,8 @@ class HyperliquidAPI:
             oldest_time = cursor_end
             for entry in page_entries:
                 try:
-                    entry_time_ms = deserialize_timestamp_ms_from_intms(entry.get('time'))
-                except DeserializationError as e:
+                    entry_time_ms = deserialize_timestamp_ms_from_intms(entry['time'])
+                except (DeserializationError, KeyError) as e:
                     log.error(
                         f'Skipping hyperliquid {query_type} entry {entry} for {address} '
                         f'due to unreadable time field: {e}',
