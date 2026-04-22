@@ -2,10 +2,10 @@ from collections import defaultdict
 from unittest.mock import MagicMock, patch
 
 from rotkehlchen.accounting.structures.balance import Balance, BalanceSheet
-from rotkehlchen.assets.asset import Asset
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.chain.hyperliquid.manager import HyperliquidManager
 from rotkehlchen.constants import DEFAULT_BALANCE_LABEL
+from rotkehlchen.constants.assets import A_HYPE, A_USDC
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.fval import FVal
 
@@ -17,7 +17,7 @@ def test_query_balances_merges_evm_and_core_balances() -> None:
     manager.node_inquirer = MagicMock()
 
     evm_balances: defaultdict[str, BalanceSheet] = defaultdict(BalanceSheet)
-    evm_balances[ADDR_A].assets[Asset('HYPE')][DEFAULT_BALANCE_LABEL] = Balance(
+    evm_balances[ADDR_A].assets[A_HYPE][DEFAULT_BALANCE_LABEL] = Balance(
         amount=FVal('0.075'),
         value=FVal('1.5'),
     )
@@ -31,13 +31,13 @@ def test_query_balances_merges_evm_and_core_balances() -> None:
         patch('rotkehlchen.chain.hyperliquid.manager.Inquirer') as mock_inquirer,
         patch('rotkehlchen.chain.hyperliquid.manager.CachedSettings'),
     ):
-        mock_api_cls.return_value.query_balances.return_value = {Asset('USDC'): FVal('500')}
+        mock_api_cls.return_value.query_balances.return_value = {A_USDC: FVal('500')}
         mock_inquirer.find_price.return_value = FVal('1')
 
         result = manager.query_balances(addresses=[ADDR_A])
 
-    assert result[ADDR_A].assets[Asset('HYPE')][DEFAULT_BALANCE_LABEL].amount == FVal('0.075')
-    assert result[ADDR_A].assets[Asset('USDC')][DEFAULT_BALANCE_LABEL].amount == FVal('500')
+    assert result[ADDR_A].assets[A_HYPE][DEFAULT_BALANCE_LABEL].amount == FVal('0.075')
+    assert result[ADDR_A].assets[A_USDC][DEFAULT_BALANCE_LABEL].amount == FVal('500')
 
 
 def test_query_balances_core_failure_returns_evm_only() -> None:
@@ -45,7 +45,7 @@ def test_query_balances_core_failure_returns_evm_only() -> None:
     manager.node_inquirer = MagicMock()
 
     evm_balances: defaultdict[str, BalanceSheet] = defaultdict(BalanceSheet)
-    evm_balances[ADDR_A].assets[Asset('HYPE')][DEFAULT_BALANCE_LABEL] = Balance(
+    evm_balances[ADDR_A].assets[A_HYPE][DEFAULT_BALANCE_LABEL] = Balance(
         amount=FVal('1'),
         value=FVal('20'),
     )
@@ -60,5 +60,5 @@ def test_query_balances_core_failure_returns_evm_only() -> None:
         mock_api_cls.return_value.query_balances.side_effect = RemoteError('api down')
         result = manager.query_balances(addresses=[ADDR_A])
 
-    assert result[ADDR_A].assets[Asset('HYPE')][DEFAULT_BALANCE_LABEL].amount == FVal('1')
+    assert result[ADDR_A].assets[A_HYPE][DEFAULT_BALANCE_LABEL].amount == FVal('1')
     assert len(result[ADDR_A].assets) == 1
