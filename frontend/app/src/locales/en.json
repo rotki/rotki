@@ -1462,7 +1462,8 @@
       "ignore": "Ignore Asset",
       "mark_as_spam": "Mark as spam",
       "unignore": "Unignore Asset",
-      "unmark_as_spam": "Unmark as spam"
+      "unmark_as_spam": "Unmark as spam",
+      "update_price": "Update price at this timestamp"
     },
     "amount": "Total Owned",
     "asset_symbol": "[{symbol}]",
@@ -2532,6 +2533,32 @@
   "eth2_validator_limit_row": {
     "complete": "Only showing balances for {limit} out of {total} validators. Click {button} to purchase rotki Premium and view the complete validator balances.",
     "label": "Validators"
+  },
+  "event_asset_price_update": {
+    "description": "Set the price of this asset at the event's timestamp.",
+    "fetch_error": {
+      "description": "Could not load the existing price entry: {error}",
+      "title": "Failed to load existing price"
+    },
+    "mode": {
+      "manual": {
+        "label": "Save as manual"
+      },
+      "oracle": {
+        "label": "Update {source}"
+      }
+    },
+    "price_error": "Price must be a positive number.",
+    "price_label": "Price ({symbol})",
+    "save_error": {
+      "description": "Could not save the price: {error}",
+      "title": "Failed to update price"
+    },
+    "success": {
+      "description": "The price has been updated.",
+      "title": "Price updated"
+    },
+    "title": "Update event price"
   },
   "evm_rpc_node_manager": {
     "activate_error": {

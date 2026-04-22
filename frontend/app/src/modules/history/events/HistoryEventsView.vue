@@ -4,19 +4,28 @@ import type { PullLocationTransactionPayload } from '@/modules/history/events/ev
 import type { HistoryEventEntry, HistoryEventRow } from '@/modules/history/events/schemas';
 import { HISTORY_EVENT_ACTIONS, type HistoryEventAction } from '@/modules/history/events/action-types';
 import HistoryEventsVirtualTable from '@/modules/history/events/components/HistoryEventsVirtualTable.vue';
+import {
+  getDefaultToggles,
+  useHistoryEventNavigationConsumer,
+  useHistoryEventsActions,
+  useHistoryEventsDeletion,
+  useHistoryEventsFilters,
+  useHistoryEventsSelectionActions,
+  useHistoryEventsSelectionMode,
+  useHistoryEventsStatus,
+  useUnmatchedAssetMovements,
+} from '@/modules/history/events/composables';
 import { DIALOG_TYPES, type DialogShowOptions, type HistoryEventsToggles } from '@/modules/history/events/dialog-types';
 import HistoryEventsAlerts from '@/modules/history/events/HistoryEventsAlerts.vue';
 import HistoryEventsDialogContainer from '@/modules/history/events/HistoryEventsDialogContainer.vue';
 import HistoryEventsFiltersChips from '@/modules/history/events/HistoryEventsFiltersChips.vue';
 import HistoryEventsTableActions from '@/modules/history/events/HistoryEventsTableActions.vue';
 import HistoryEventsViewButtons from '@/modules/history/events/HistoryEventsViewButtons.vue';
-import { useHistoryEventsActions } from '@/modules/history/events/use-history-events-actions';
-import { useHistoryEventsDeletion } from '@/modules/history/events/use-history-events-deletion';
-import { getDefaultToggles, useHistoryEventNavigationConsumer, useHistoryEventsFilters } from '@/modules/history/events/use-history-events-filters';
-import { useHistoryEventsSelectionActions } from '@/modules/history/events/use-history-events-selection-actions';
-import { useHistoryEventsStatus } from '@/modules/history/events/use-history-events-status';
-import { useHistoryEventsSelectionMode } from '@/modules/history/events/use-selection-mode';
-import { useUnmatchedAssetMovements } from '@/modules/history/events/use-unmatched-asset-movements';
+import {
+  EventAssetPriceUpdateDialog,
+  type EventPriceUpdatePayload,
+  provideEventPriceUpdate,
+} from '@/modules/history/events/prices/use-event-price-update-trigger';
 import RefreshButton from '@/modules/shell/components/RefreshButton.vue';
 import TablePageLayout from '@/modules/shell/layout/TablePageLayout.vue';
 
@@ -62,11 +71,12 @@ const toggles = ref<HistoryEventsToggles>(getDefaultToggles());
 
 const showAlerts = ref<boolean>(false);
 const currentAction = ref<HistoryEventAction>(HISTORY_EVENT_ACTIONS.QUERY);
+const eventPriceUpdatePayload = ref<EventPriceUpdatePayload>();
 
-const dialogContainer = useTemplateRef<InstanceType<typeof HistoryEventsDialogContainer>>('dialogContainer');
 const syncProgressPanelEl = useTemplateRef<ComponentPublicInstance>('syncProgressPanel');
 const tableActionsEl = useTemplateRef<ComponentPublicInstance>('tableActions');
 const filtersChipsEl = useTemplateRef<ComponentPublicInstance>('filtersChips');
+const dialogContainer = useTemplateRef<InstanceType<typeof HistoryEventsDialogContainer>>('dialogContainer');
 
 const { height: syncProgressHeight } = useElementSize(syncProgressPanelEl);
 const { height: tableActionsHeight } = useElementSize(tableActionsEl);
@@ -191,6 +201,12 @@ async function handleMovementChanged(): Promise<void> {
   await refreshUnmatchedAssetMovements();
   await actions.fetch.dataAndLocations();
 }
+
+provideEventPriceUpdate({
+  open: (payload) => {
+    set(eventPriceUpdatePayload, payload);
+  },
+});
 
 // Set total matching count from groups
 watchImmediate(groups, (newGroups) => {
@@ -333,6 +349,11 @@ watchDebounced(route, async () => {
           :selected-event-ids="selectedEventIds"
           @accounting-rule-refresh="handleAccountingRuleRefresh()"
           @movement-matched="handleMovementChanged()"
+        />
+
+        <EventAssetPriceUpdateDialog
+          v-if="eventPriceUpdatePayload"
+          v-model="eventPriceUpdatePayload"
         />
       </div>
     </TablePageLayout>

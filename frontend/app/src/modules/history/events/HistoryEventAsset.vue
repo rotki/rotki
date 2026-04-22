@@ -51,7 +51,11 @@ watch(menuOpened, (menuOpened) => {
     menu-class="w-[16rem] max-w-[90%] z-[100]"
     :disabled="disableOptions"
     wrapper-class="w-full"
-    :popper="{ placement: 'bottom-start', scroll: false, resize: false }"
+    :options="{
+      placement: 'bottom-start',
+      strategy: 'fixed',
+      autoUpdate: { scroll: false, resize: false },
+    }"
   >
     <template #activator="{ attrs }">
       <div
@@ -120,6 +124,7 @@ watch(menuOpened, (menuOpened) => {
     <AssetDetailsMenuContent
       ref="menuContentRef"
       :asset="currentAsset"
+      :timestamp="event.timestamp"
       icon-only
       @refresh="emit('refresh')"
     />

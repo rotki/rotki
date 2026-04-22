@@ -6,9 +6,9 @@ import { assert, toSentenceCase } from '@rotki/common';
 import { ApiValidationError, type ValidationErrors } from '@/modules/core/api/types/errors';
 import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
 import { toMessages } from '@/modules/core/common/validation/validation';
+import { useEventPriceUpdate } from '@/modules/history/events/prices/use-event-price-update';
 import ToggleLocationLink from '@/modules/history/management/forms/common/ToggleLocationLink.vue';
 import { useEventPriceConversion } from '@/modules/history/management/forms/use-event-price-conversion';
-import { useEventPriceSave } from '@/modules/history/management/forms/use-event-price-save';
 import AmountInput from '@/modules/shell/components/inputs/AmountInput.vue';
 import AssetSelect from '@/modules/shell/components/inputs/AssetSelect.vue';
 import TwoFieldsAmountInput from '@/modules/shell/components/inputs/TwoFieldsAmountInput.vue';
@@ -58,7 +58,7 @@ const {
   timestamp: () => timestamp,
 });
 
-const { savePrice } = useEventPriceSave();
+const { updatePrice } = useEventPriceUpdate();
 
 async function submitPrice(payload?: NewHistoryEventPayload): Promise<ActionStatus<ValidationErrors | string>> {
   if (noPriceFields || disabled)
@@ -69,8 +69,15 @@ async function submitPrice(payload?: NewHistoryEventPayload): Promise<ActionStat
 
   try {
     const currency = get(currencySymbol);
-    if (get(assetToFiatPrice) !== get(fetchedAssetToFiatPrice) && assetVal !== currency)
-      await savePrice(assetVal, currency, get(assetToFiatPrice), timestamp);
+    if (get(assetToFiatPrice) !== get(fetchedAssetToFiatPrice) && assetVal !== currency) {
+      await updatePrice({
+        fromAsset: assetVal,
+        mode: 'manual',
+        price: get(assetToFiatPrice),
+        timestampMs: timestamp,
+        toAsset: currency,
+      });
+    }
 
     return { success: true };
   }
