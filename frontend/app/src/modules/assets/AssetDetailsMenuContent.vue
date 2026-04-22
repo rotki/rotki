@@ -6,15 +6,17 @@ import { useAssetPageNavigation } from '@/modules/assets/use-asset-page-navigati
 import { useAssetsStore } from '@/modules/assets/use-assets-store';
 import { useIgnoredAssetOperations } from '@/modules/assets/use-ignored-asset-operations';
 import { useSpamAsset } from '@/modules/assets/use-spam-asset';
+import { injectEventPriceUpdate } from '@/modules/history/events/prices/use-event-price-update-trigger';
 import HashLink from '@/modules/shell/components/HashLink.vue';
 
 type ConfirmType = 'ignore' | 'mark_as_spam' | 'unignore' | 'unmark_spam';
 
-const { asset, hideActions, isCollectionParent, iconOnly } = defineProps<{
+const { asset, hideActions, isCollectionParent, iconOnly, timestamp } = defineProps<{
   asset: NftAsset;
   hideActions?: boolean;
   isCollectionParent?: boolean;
   iconOnly: boolean;
+  timestamp?: number;
 }>();
 
 const emit = defineEmits<{
@@ -35,6 +37,15 @@ const isIgnoredAsset = useIsAssetIgnored(() => asset.identifier);
 const { refetchAssetInfo, useAssetContractInfo } = useAssetInfoRetrieval();
 
 const contractInfo = useAssetContractInfo(() => asset.identifier);
+
+const priceUpdateTrigger = injectEventPriceUpdate();
+const canUpdatePrice = computed<boolean>(() => timestamp !== undefined && priceUpdateTrigger !== null);
+
+function openPriceUpdate(): void {
+  if (timestamp === undefined || !priceUpdateTrigger)
+    return;
+  priceUpdateTrigger.open({ asset: asset.identifier, timestamp });
+}
 
 function actionClick(action: ConfirmType): void {
   set(confirm, true);
@@ -152,6 +163,35 @@ defineExpose({
               />
             </template>
           </RuiButton>
+          <template v-if="canUpdatePrice">
+            <RuiDivider
+              vertical
+              class="h-6"
+            />
+            <RuiTooltip
+              :open-delay="200"
+              :popper="{ placement: 'top' }"
+            >
+              <template #activator>
+                <RuiButton
+                  variant="text"
+                  color="primary"
+                  class="!py-0.5"
+                  size="sm"
+                  data-cy="asset-update-price"
+                  @click="openPriceUpdate()"
+                >
+                  <template #append>
+                    <RuiIcon
+                      name="lu-dollar-sign"
+                      size="18"
+                    />
+                  </template>
+                </RuiButton>
+              </template>
+              {{ t('assets.action.update_price') }}
+            </RuiTooltip>
+          </template>
           <template v-if="!hideActions && (isIgnoredAsset || asset.isSpam)">
             <RuiDivider
               vertical
