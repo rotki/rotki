@@ -361,8 +361,12 @@ def test_curve_cache(rotkehlchen_instance, use_curve_api, globaldb):
     """Test curve pools fetching mechanism"""
     # Set initial cache data to check that it is gone after the cache update
     with GlobalDBHandler().conn.write_ctx() as write_cursor:
-        # Make sure that curve cache is clear of ethereum pools and expected addressbook entries
+        # Make sure that curve cache is clear of ethereum pools, gauges, coins and
+        # expected addressbook entries. Gauges/coins must also be cleared because the
+        # reader now queries them independently of pool addresses.
         write_cursor.execute("DELETE FROM unique_cache WHERE key LIKE 'CURVE_POOL_ADDRESS10x%'")
+        write_cursor.execute("DELETE FROM unique_cache WHERE key LIKE 'CURVE_GAUGE_ADDRESS10x%'")
+        write_cursor.execute("DELETE FROM general_cache WHERE key LIKE 'CURVE_POOL_TOKENS10x%'")
         for entry in CURVE_EXPECTED_ADDRESBOOK_ENTRIES_FROM_CHAIN:
             write_cursor.execute('DELETE FROM address_book WHERE address=?', (entry.address,))
 
