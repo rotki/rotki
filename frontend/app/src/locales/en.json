@@ -82,6 +82,7 @@
       "all_supported_chains": "All Supported Chains",
       "blockchain": "Choose blockchain | Choose blockchains",
       "btc": {
+        "addresses": "Addresses / XPUB",
         "derivation_path": "Derivation Path",
         "placeholder": "Paste BTC addresses or an xpub key",
         "xpub": "Address / XPUB"
