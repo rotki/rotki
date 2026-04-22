@@ -763,7 +763,7 @@ class HyperliquidAPI:
 
             # `side` from Hyperliquid is always "A" (ask/sell) or "B" (bid/buy)
             # per the API spec (see Side literal in the official python SDK
-            # https://github.com/hyperliquid-dex/hyperliquid-python-sdk/blob/main/hyperliquid/utils/types.py).
+            # https://github.com/hyperliquid-dex/hyperliquid-python-sdk/blob/master/hyperliquid/utils/types.py).
             # `.lower()` is a cheap defense against any future casing drift.
             is_buy = raw_side.lower() == 'b'
             base_asset = asset_from_hyperliquid(coin)
