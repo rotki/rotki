@@ -1,4 +1,5 @@
 import logging
+from collections import defaultdict
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, Literal
 
@@ -110,14 +111,9 @@ def read_gearbox_data_from_cache(chain_id: ChainID | None) -> tuple[dict[Checksu
     if not chain_id:
         return ({},)
 
-    str_chain_id = str(chain_id.serialize())
-    chain_len = len(str_chain_id)
-    name_prefix = compute_cache_key((CacheType.GEARBOX_POOL_NAME,))
-    name_prefix_len = len(name_prefix)
-    farming_prefix = compute_cache_key((CacheType.GEARBOX_POOL_FARMING_TOKEN,))
-    farming_prefix_len = len(farming_prefix)
-    lp_prefix = compute_cache_key((CacheType.GEARBOX_POOL_LP_TOKENS,))
-    lp_prefix_len = len(lp_prefix)
+    name_prefix_len = len(name_prefix := compute_cache_key((CacheType.GEARBOX_POOL_NAME,)))
+    farming_prefix_len = len(farming_prefix := compute_cache_key((CacheType.GEARBOX_POOL_FARMING_TOKEN,)))  # noqa: E501
+    lp_prefix_len = len(lp_prefix := compute_cache_key((CacheType.GEARBOX_POOL_LP_TOKENS,)))
     pools: dict[ChecksumEvmAddress, Any] = {}
     with GlobalDBHandler().conn.read_ctx() as cursor:
         pool_addresses = get_existing_pools(
@@ -128,17 +124,14 @@ def read_gearbox_data_from_cache(chain_id: ChainID | None) -> tuple[dict[Checksu
         if len(pool_addresses) == 0:
             return ({},)
 
-        # Keys are "<prefix><pool_addr 42 chars><chain_id_str>" for name/farming. Filter by
-        # endswith(chain_id) AND require the address slice to match a known pool for this chain —
-        # the latter rules out cross-chain suffix collisions (e.g. chain 1 matching chain 42161).
+        # All cache keys have the form "<prefix><pool_addr 42 chars>...". Since pool_addresses
+        # is already chain-scoped, filtering by membership rules out entries from other chains.
         pool_names: dict[str, str] = {}
         for key, name in cursor.execute(
             'SELECT key, value FROM unique_cache WHERE key LIKE ?',
             (f'{name_prefix}0x%',),
         ):
-            if not key.endswith(str_chain_id) or len(key) - name_prefix_len - chain_len != 42:
-                continue
-            if (addr := key[name_prefix_len:-chain_len]) in pool_addresses:
+            if (addr := key[name_prefix_len:name_prefix_len + 42]) in pool_addresses:
                 pool_names[addr] = name
 
         farming_tokens: dict[str, str] = {}
@@ -146,24 +139,20 @@ def read_gearbox_data_from_cache(chain_id: ChainID | None) -> tuple[dict[Checksu
             'SELECT key, value FROM unique_cache WHERE key LIKE ?',
             (f'{farming_prefix}0x%',),
         ):
-            if not key.endswith(str_chain_id) or len(key) - farming_prefix_len - chain_len != 42:
-                continue
-            if (addr := key[farming_prefix_len:-chain_len]) in pool_addresses:
+            if (addr := key[farming_prefix_len:farming_prefix_len + 42]) in pool_addresses:
                 farming_tokens[addr] = farming_token
 
-        # LP token keys are "<prefix><pool_addr 42 chars><chain_id_str><idx>". Filter by the known
-        # pool_addresses set (already chain-scoped) to avoid cross-chain collisions.
-        lp_tokens: dict[str, set[str]] = {}
+        lp_tokens: defaultdict[str, set[str]] = defaultdict(set)
         for key, lp_token in cursor.execute(
             'SELECT key, value FROM general_cache WHERE key LIKE ?',
             (f'{lp_prefix}0x%',),
         ):
-            if (addr := key[lp_prefix_len:lp_prefix_len + 42]) not in pool_addresses:
-                continue
-            lp_tokens.setdefault(addr, set()).add(lp_token)
+            if (addr := key[lp_prefix_len:lp_prefix_len + 42]) in pool_addresses:
+                lp_tokens[addr].add(lp_token)
 
     for pool_address in pool_addresses:
         if (pool_name := pool_names.get(pool_address)) is None:
+            log.error(f'Found gearbox pool {pool_address} in cache without a cached name. Skipping.')  # noqa: E501
             continue
         pools[pool_address] = GearboxPoolData(
             pool_address=pool_address,
