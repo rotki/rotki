@@ -8,7 +8,7 @@ from rotkehlchen.chain.ethereum.interfaces.balances import BalancesSheetType, Pr
 from rotkehlchen.chain.ethereum.modules.aave.constants import STK_AAVE_ADDR
 from rotkehlchen.chain.evm.constants import DEFAULT_TOKEN_DECIMALS
 from rotkehlchen.chain.evm.decoding.aave.constants import CPT_AAVE
-from rotkehlchen.chain.evm.tokens import get_chunk_size_call_order
+from rotkehlchen.chain.evm.tokens import get_rpc_first_chunk_size_call_order
 from rotkehlchen.constants.assets import A_AAVE
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.db.settings import CachedSettings
@@ -49,7 +49,7 @@ class AaveBalances(ProtocolWithBalance):
             return balances
 
         staking_contract = self.evm_inquirer.contracts.contract(address=STK_AAVE_ADDR)
-        chunk_size, call_order = get_chunk_size_call_order(self.evm_inquirer)
+        chunk_size, call_order = get_rpc_first_chunk_size_call_order(self.evm_inquirer)
         if len(staked_rewards := self.evm_inquirer.multicall(
             calls=[(
                 staking_contract.address,

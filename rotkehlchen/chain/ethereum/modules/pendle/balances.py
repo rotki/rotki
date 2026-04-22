@@ -8,7 +8,7 @@ from rotkehlchen.chain.ethereum.interfaces.balances import BalancesSheetType, Pr
 from rotkehlchen.chain.evm.constants import DEFAULT_TOKEN_DECIMALS
 from rotkehlchen.chain.evm.contracts import EvmContract
 from rotkehlchen.chain.evm.decoding.pendle.constants import CPT_PENDLE
-from rotkehlchen.chain.evm.tokens import get_chunk_size_call_order
+from rotkehlchen.chain.evm.tokens import get_rpc_first_chunk_size_call_order
 from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
@@ -51,7 +51,7 @@ class PendleBalances(ProtocolWithBalance):
         if len(addresses_with_deposits := list(self.addresses_with_deposits())) == 0:
             return balances
 
-        _, call_order = get_chunk_size_call_order(self.evm_inquirer)
+        call_order = get_rpc_first_chunk_size_call_order(self.evm_inquirer)[1]
         try:
             results = self.evm_inquirer.multicall(
                 calls=[

@@ -7,6 +7,10 @@ from .types import string_to_evm_address
 
 DEFAULT_TOKEN_DECIMALS: Final = 18
 
+# maximum 32-byte arguments in one call to tokensBalance/multicall via indexers
+ETHERSCAN_MAX_ARGUMENTS_TO_CONTRACT: Final = 110
+ARBISCAN_MAX_ARGUMENTS_TO_CONTRACT: Final = 25
+
 EIP7702_DELEGATION_PREFIX: Final = '0xef0100'
 EIP7702_DELEGATION_CODE_LENGTH: Final = 48  # 0x + prefix + delegation address
 

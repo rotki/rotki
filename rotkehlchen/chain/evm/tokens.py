@@ -24,7 +24,6 @@ from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import deserialize_evm_address
 from rotkehlchen.types import (
-    ChainID,
     ChecksumEvmAddress,
     Price,
     SupportedBlockchain,
@@ -33,7 +32,7 @@ from rotkehlchen.types import (
 )
 from rotkehlchen.utils.misc import combine_dicts, get_chunks
 
-from .constants import ZERO_ADDRESS
+from .constants import ETHERSCAN_MAX_ARGUMENTS_TO_CONTRACT, ZERO_ADDRESS
 from .contracts import EvmContract
 
 if TYPE_CHECKING:
@@ -100,10 +99,6 @@ class TokenChunkQueryResult:
 
 OTHER_MAX_TOKEN_CHUNK_LENGTH = 460
 
-# maximum 32-bytes arguments in one call to a contract (either tokensBalance or multicall)
-ETHERSCAN_MAX_ARGUMENTS_TO_CONTRACT = 110
-ARBISCAN_MAX_ARGUMENTS_TO_CONTRACT = 25
-
 # this is a number of arguments that a pure tokensBalance contract occupies when is added
 # to multicall. In total, it occupies (7 + number of tokens passed) arguments.
 PURE_TOKENS_BALANCE_ARGUMENTS = 7
@@ -139,26 +134,26 @@ def generate_multicall_chunks(
     return multicall_chunks
 
 
-def get_chunk_size_call_order(
+def get_rpc_first_chunk_size_call_order(
         evm_inquirer: 'EvmNodeInquirer',
         web3_node_chunk_size: int = OTHER_MAX_TOKEN_CHUNK_LENGTH,
-        etherscan_chunk_size: int = ETHERSCAN_MAX_ARGUMENTS_TO_CONTRACT,
-        arbiscan_chunksize: int = ARBISCAN_MAX_ARGUMENTS_TO_CONTRACT,
 ) -> tuple[int, list[WeightedNode]]:
-    """
-    Return the max number of tokens that can be queried in a single call depending on whether we
-    have a web3 node connected or we are going to use etherscan.
-    We also return the nodes call order. In the case of having web3 nodes available we
-    skip etherscan because chunk size is too big for etherscan.
-    """
-    if evm_inquirer.connected_to_any_node():
-        chunk_size = web3_node_chunk_size
-        call_order = evm_inquirer.default_call_order(skip_indexers=True)
-    else:
-        chunk_size = etherscan_chunk_size if evm_inquirer.chain_id != ChainID.ARBITRUM_ONE else arbiscan_chunksize  # noqa: E501
-        call_order = [evm_inquirer.indexers_node]
+    """Return chunk size and RPC-first call order with indexer fallback.
 
-    return chunk_size, call_order
+    Behavior:
+    - if any RPC node is connected, use RPC-only order with the web3 chunk size.
+    - if no RPC node is connected but RPC nodes are configured, keep RPC nodes first and append
+      the indexer as fallback, still using the web3 chunk size (lazy connect in `_query`).
+    - if no RPC nodes are configured, use indexer-only order and inquirer indexer chunk size.
+    """
+    rpc_call_order = evm_inquirer.default_call_order(skip_indexers=True)
+    if evm_inquirer.connected_to_any_node():
+        return web3_node_chunk_size, rpc_call_order
+
+    if len(rpc_call_order) == 0:
+        return evm_inquirer.INDEXER_CHUNK_SIZE, [evm_inquirer.indexers_node]
+
+    return web3_node_chunk_size, [*rpc_call_order, evm_inquirer.indexers_node]
 
 
 class EvmTokens(ABC):  # noqa: B024
@@ -173,6 +168,7 @@ class EvmTokens(ABC):  # noqa: B024
         self.db = database
         self.evm_inquirer = evm_inquirer
         self.token_exceptions = token_exceptions if token_exceptions is not None else set()
+        self.INDEXER_CHUNK_SIZE = evm_inquirer.INDEXER_CHUNK_SIZE
 
     def get_token_balances(
             self,
@@ -505,14 +501,10 @@ class EvmTokens(ABC):  # noqa: B024
         an RPC-first order (lazy connect in `_query`) and append indexers only as a final
         fallback.
         """
-        rpc_call_order = self.evm_inquirer.default_call_order(skip_indexers=True)
-        if self.evm_inquirer.connected_to_any_node():
-            return OTHER_MAX_TOKEN_CHUNK_LENGTH, rpc_call_order
-
-        if len(rpc_call_order) == 0:
-            return self.INDEXER_CHUNK_SIZE, [self.evm_inquirer.indexers_node]
-
-        return OTHER_MAX_TOKEN_CHUNK_LENGTH, [*rpc_call_order, self.evm_inquirer.indexers_node]
+        return get_rpc_first_chunk_size_call_order(
+            evm_inquirer=self.evm_inquirer,
+            web3_node_chunk_size=OTHER_MAX_TOKEN_CHUNK_LENGTH,
+        )
 
     def _detect_tokens(
             self,
