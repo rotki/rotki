@@ -453,7 +453,6 @@ class HyperliquidAPI:
             self,
             entry: dict[str, Any],
             entry_time: int | None = None,
-            dex_name: str | None = None,
     ) -> EntryContext | None:
         """Build normalized context for a raw hyperliquid history entry."""
         if entry_time is None:
@@ -463,8 +462,6 @@ class HyperliquidAPI:
                 return None
 
         unique_id = self._entry_unique_id(entry)
-        if dex_name is not None:
-            unique_id = f'{dex_name}:{unique_id}'
         return EntryContext(
             entry=entry,
             timestamp=TimestampMS(entry_time),
@@ -591,12 +588,18 @@ class HyperliquidAPI:
             address: ChecksumEvmAddress,
             start_ts: Timestamp,
             end_ts: Timestamp,
-            dex_name: str | None = None,
     ) -> Iterator[EntryContext]:
         """Query a user history endpoint in pages and iterate unique entries.
 
         The API caps each response, so this method paginates backwards by reducing
         `endTime` to one millisecond before the oldest item in the previous page.
+
+        A single request covers the first perp dex, all HIP-3 builder-deployed perp
+        dexs, and spot: Hyperliquid's history endpoints do not accept a `dex` param
+        and return mixed results (HIP-3 entries use `{dex}:{coin}` notation, spot
+        uses `@{index}`). See:
+        - https://hyperliquid.gitbook.io/hyperliquid-docs/for-developers/api/info-endpoint#retrieve-a-users-fills-by-time
+        - https://hyperliquid.gitbook.io/hyperliquid-docs/for-developers/api/info-endpoint/perpetuals#retrieve-a-users-funding-history-or-non-funding-ledger-updates
 
         May raise:
             - RemoteError
@@ -606,7 +609,6 @@ class HyperliquidAPI:
         cursor_end = end_ms
         page = 0
         seen: set[str] = set()
-        dedup_prefix = dex_name if dex_name is not None else 'main'
 
         while cursor_end >= start_ms and page < HYPERLIQUID_MAX_HISTORY_PAGES:
             page += 1
@@ -618,8 +620,6 @@ class HyperliquidAPI:
                 'startTime': start_ms,
                 'endTime': cursor_end,
             }
-            if dex_name is not None:
-                payload['dex'] = dex_name
 
             page_entries = self._query_list(payload=payload, query_name=query_type)
             if len(page_entries) == 0:
@@ -645,10 +645,10 @@ class HyperliquidAPI:
                 # back to a JSON hash of the entry only when the API omits both
                 # tid and hash (defensive; not expected in practice).
                 if (entry_uid := self._entry_strict_unique_id(entry)) is not None:
-                    dedup_key = f'{dedup_prefix}:{entry_time_ms}:{entry_uid}'
+                    dedup_key = f'{entry_time_ms}:{entry_uid}'
                 else:
                     dedup_key = (
-                        f'{dedup_prefix}:{entry_time_ms}:'
+                        f'{entry_time_ms}:'
                         f'{json.dumps(entry, sort_keys=True, default=str)}'
                     )
 
@@ -660,7 +660,6 @@ class HyperliquidAPI:
                     context := self._entry_context(
                         entry=entry,
                         entry_time=entry_time_ms,
-                        dex_name=dex_name,
                     )
                 ) is None:
                     continue
@@ -676,7 +675,7 @@ class HyperliquidAPI:
             log.warning(
                 f'Hyperliquid {query_type} query for {address} reached the '
                 f'{HYPERLIQUID_MAX_HISTORY_PAGES} page cap with {cursor_end - start_ms}ms '
-                f'of the requested range still uncovered (dex={dex_name or "main"}). '
+                f'of the requested range still uncovered. '
                 f'Some older history entries may be missing from this sync.',
             )
 
@@ -733,10 +732,14 @@ class HyperliquidAPI:
             if not isinstance((raw_coin := context.entry.get('coin')), str):
                 return None
 
+            dex_prefix: str | None = None
             if raw_coin.startswith('@'):
                 coin = self._resolve_fill_coin(raw_coin)
-            elif ':' in raw_coin:  # HIP-3 builder-deployed perps use {dex}:{coin}
-                coin = raw_coin.split(':', maxsplit=1)[1]
+            elif ':' in raw_coin:
+                # HIP-3 builder-deployed perps encode the dex name in the coin
+                # field as {dex}:{coin}. Extract both so we can resolve the
+                # asset and surface the originating dex in extra_data.
+                dex_prefix, coin = raw_coin.split(':', maxsplit=1)
             else:
                 coin = raw_coin
             if coin is None:
@@ -783,6 +786,8 @@ class HyperliquidAPI:
                 'side': raw_side.upper(),
                 'direction': direction,
             }
+            if dex_prefix is not None:
+                extra_data['dex'] = dex_prefix
             if 'liquidation' in context.entry:
                 extra_data['liquidation'] = bool(context.entry['liquidation'])
             if (closed_pnl := context.entry.get('closedPnl')) is not None:
@@ -814,7 +819,6 @@ class HyperliquidAPI:
             address: ChecksumEvmAddress,
             start_ts: Timestamp,
             end_ts: Timestamp,
-            dex_name: str | None = None,
     ) -> list[HistoryBaseEntry]:
         """Convert funding entries in the requested range to rotki history events."""
         events: list[HistoryBaseEntry] = []
@@ -823,7 +827,6 @@ class HyperliquidAPI:
             address=address,
             start_ts=start_ts,
             end_ts=end_ts,
-            dex_name=dex_name,
         ):
             if (parsed := self._parse_funding_entry(context)) is None:
                 continue
@@ -849,7 +852,6 @@ class HyperliquidAPI:
             address: ChecksumEvmAddress,
             start_ts: Timestamp,
             end_ts: Timestamp,
-            dex_name: str | None = None,
     ) -> list[HistoryBaseEntry]:
         """Convert ledger updates in the requested range to rotki events."""
         events: list[HistoryBaseEntry] = []
@@ -858,7 +860,6 @@ class HyperliquidAPI:
             address=address,
             start_ts=start_ts,
             end_ts=end_ts,
-            dex_name=dex_name,
         ):
             if (parsed := self._parse_ledger_entry(context)) is None:
                 continue
@@ -928,7 +929,6 @@ class HyperliquidAPI:
             address: ChecksumEvmAddress,
             start_ts: Timestamp,
             end_ts: Timestamp,
-            dex_name: str | None = None,
     ) -> list[HistoryBaseEntry]:
         """Convert fill entries in the requested range to swap or trade events."""
         events: list[HistoryBaseEntry] = []
@@ -937,13 +937,9 @@ class HyperliquidAPI:
             address=address,
             start_ts=start_ts,
             end_ts=end_ts,
-            dex_name=dex_name,
         ):
             if (parsed := self._parse_fill_entry(context)) is None:
                 continue
-
-            if dex_name is not None:
-                parsed.extra_data['dex'] = dex_name
 
             if parsed.is_spot_fill:
                 fee = None
@@ -1046,44 +1042,31 @@ class HyperliquidAPI:
             address: ChecksumEvmAddress,
             start_ts: Timestamp,
             end_ts: Timestamp,
-            include_discovered_dexs: bool = True,
     ) -> list[HistoryBaseEntry]:
         """Query Hyperliquid Core history entries and convert them to rotki events.
 
-        Includes ledger updates, funding payments, and fills for main and discovered
-        HIP-3 DEXs when requested.
+        Includes ledger updates, funding payments, and fills. A single request
+        per endpoint covers the first perp dex, all HIP-3 builder-deployed perp
+        dexs, and spot — Hyperliquid's history endpoints (`userFillsByTime`,
+        `userFunding`, `userNonFundingLedgerUpdates`) do not accept a `dex`
+        parameter and return mixed results where HIP-3 entries use
+        `{dex}:{coin}` notation and spot uses `@{index}`.
+
+        References:
+        - https://hyperliquid.gitbook.io/hyperliquid-docs/for-developers/api/info-endpoint#retrieve-a-users-fills-by-time
+        - https://hyperliquid.gitbook.io/hyperliquid-docs/for-developers/api/info-endpoint/perpetuals#retrieve-a-users-funding-history-or-non-funding-ledger-updates
         """
         self._populate_spot_market_cache()
         history: list[HistoryBaseEntry] = []
-        dex_names: list[str | None] = [None]
-        if include_discovered_dexs is True:
-            dex_names.extend(self._discover_available_dex_names())
-
-        for dex_name in dex_names:
-            history.extend(
-                self._create_ledger_events(
-                    address=address,
-                    start_ts=start_ts,
-                    end_ts=end_ts,
-                    dex_name=dex_name,
-                ),
-            )
-            history.extend(
-                self._create_funding_events(
-                    address=address,
-                    start_ts=start_ts,
-                    end_ts=end_ts,
-                    dex_name=dex_name,
-                ),
-            )
-            history.extend(
-                self._create_fill_events(
-                    address=address,
-                    start_ts=start_ts,
-                    end_ts=end_ts,
-                    dex_name=dex_name,
-                ),
-            )
+        history.extend(self._create_ledger_events(
+            address=address, start_ts=start_ts, end_ts=end_ts,
+        ))
+        history.extend(self._create_funding_events(
+            address=address, start_ts=start_ts, end_ts=end_ts,
+        ))
+        history.extend(self._create_fill_events(
+            address=address, start_ts=start_ts, end_ts=end_ts,
+        ))
         history.sort(
             key=lambda event: (event.timestamp, event.group_identifier, event.sequence_index),
         )

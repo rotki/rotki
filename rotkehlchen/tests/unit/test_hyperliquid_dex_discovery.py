@@ -61,14 +61,20 @@ def test_query_balances_merges_all_discovered_dexs() -> None:
     ]
 
 
-def test_query_history_events_queries_discovered_dexs() -> None:
+def test_query_history_events_makes_single_call_per_endpoint() -> None:
+    """History endpoints (`userFillsByTime`, `userFunding`,
+    `userNonFundingLedgerUpdates`) do not take a `dex` parameter and return a
+    mixed response covering the first perp dex, all HIP-3 dexs, and spot. We
+    must therefore call each of `_create_ledger_events`, `_create_funding_events`
+    and `_create_fill_events` exactly once — not per discovered dex.
+    """
     api = HyperliquidAPI()
     address = string_to_evm_address('0x7fC1b7863251Ac7F83c7a4E83ccd00d129Ee844c')
     start_ts = Timestamp(1)
     end_ts = Timestamp(2)
 
     with (
-        patch.object(api, '_discover_available_dex_names', return_value=['xyz']),
+        patch.object(api, '_discover_available_dex_names') as discover,
         patch.object(api, '_create_ledger_events', return_value=[]) as ledger,
         patch.object(api, '_create_funding_events', return_value=[]) as funding,
         patch.object(api, '_create_fill_events', return_value=[]) as fills,
@@ -77,21 +83,20 @@ def test_query_history_events_queries_discovered_dexs() -> None:
             address=address,
             start_ts=start_ts,
             end_ts=end_ts,
-            include_discovered_dexs=True,
         )
 
     assert history == []
+    # Dex discovery must not be invoked for the history path — this is what
+    # previously caused Nx3 redundant calls.
+    discover.assert_not_called()
     assert ledger.call_args_list == [
-        call(address=address, start_ts=start_ts, end_ts=end_ts, dex_name=None),
-        call(address=address, start_ts=start_ts, end_ts=end_ts, dex_name='xyz'),
+        call(address=address, start_ts=start_ts, end_ts=end_ts),
     ]
     assert funding.call_args_list == [
-        call(address=address, start_ts=start_ts, end_ts=end_ts, dex_name=None),
-        call(address=address, start_ts=start_ts, end_ts=end_ts, dex_name='xyz'),
+        call(address=address, start_ts=start_ts, end_ts=end_ts),
     ]
     assert fills.call_args_list == [
-        call(address=address, start_ts=start_ts, end_ts=end_ts, dex_name=None),
-        call(address=address, start_ts=start_ts, end_ts=end_ts, dex_name='xyz'),
+        call(address=address, start_ts=start_ts, end_ts=end_ts),
     ]
 
 
@@ -163,3 +168,70 @@ def test_create_fill_events_maps_negative_spot_fee_to_cashback() -> None:
     assert events[2].event_type == HistoryEventType.RECEIVE
     assert events[2].event_subtype == HistoryEventSubType.CASHBACK
     assert events[2].amount == FVal('0.1')
+
+
+def test_parse_fill_entry_extracts_hip3_dex_prefix() -> None:
+    """HIP-3 fills use `{dex}:{coin}` in the `coin` field. The parser must
+    strip the prefix to resolve the asset and surface the dex in extra_data.
+    """
+    api = HyperliquidAPI()
+    context = EntryContext(
+        entry={
+            'coin': 'xyz:BTC',
+            'px': '25000',
+            'sz': '0.01',
+            'side': 'B',
+            'time': 1700000000000,
+            'tid': 42,
+            'hash': '0xtx',
+            'fee': '0.01',
+            'feeToken': 'USDC',
+        },
+        timestamp=TimestampMS(1700000000000),
+        unique_id='42',
+        group_identifier='g1',
+    )
+
+    with patch(
+        'rotkehlchen.externalapis.hyperliquid.asset_from_hyperliquid',
+        return_value=Asset('BTC'),
+    ):
+        parsed = api._parse_fill_entry(context)
+
+    assert parsed is not None
+    assert parsed.raw_coin == 'xyz:BTC'
+    assert parsed.extra_data['dex'] == 'xyz'
+    assert parsed.extra_data['market'] == 'xyz:BTC'
+
+
+def test_parse_fill_entry_omits_dex_for_non_hip3_fills() -> None:
+    """Non-HIP-3 fills (main perp dex or spot) must not have a `dex` key in
+    extra_data, otherwise downstream consumers can't distinguish them from
+    HIP-3 fills.
+    """
+    api = HyperliquidAPI()
+    context = EntryContext(
+        entry={
+            'coin': 'BTC',
+            'px': '25000',
+            'sz': '0.01',
+            'side': 'B',
+            'time': 1700000000000,
+            'tid': 43,
+            'hash': '0xtx',
+            'fee': '0.01',
+            'feeToken': 'USDC',
+        },
+        timestamp=TimestampMS(1700000000000),
+        unique_id='43',
+        group_identifier='g2',
+    )
+
+    with patch(
+        'rotkehlchen.externalapis.hyperliquid.asset_from_hyperliquid',
+        return_value=Asset('BTC'),
+    ):
+        parsed = api._parse_fill_entry(context)
+
+    assert parsed is not None
+    assert 'dex' not in parsed.extra_data
