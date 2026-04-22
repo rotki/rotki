@@ -30,7 +30,7 @@ if TYPE_CHECKING:
 UnderlyingCursor: TypeAlias = rsqlite.Cursor | sqlcipher.Cursor  # pylint: disable=no-member
 UnderlyingConnection: TypeAlias = rsqlite.Connection | sqlcipher.Connection  # pylint: disable=no-member
 
-CONTEXT_SWITCH_WAIT = 1  # seconds to wait for a status change in a DB context switch
+CONTEXT_SWITCH_WAIT = 0.025  # seconds to wait for a status change in a DB context switch
 import logging
 
 logger: 'RotkehlchenLogger' = logging.getLogger(__name__)  # type: ignore
