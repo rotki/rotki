@@ -66,6 +66,7 @@ def asset_from_hyperliquid(symbol: str) -> Asset:
 
 
 HYPERLIQUID_MAX_HISTORY_PAGES: Final = 500
+USDC_SYMBOL: Final = 'USDC'
 
 
 class FundingDelta(TypedDict):
@@ -151,7 +152,7 @@ class HyperliquidAPI:
     def __init__(self) -> None:
         self.base_url = 'https://api.hyperliquid.xyz'
         self.session = create_session()
-        self.hyperliquid_usdc = Asset('eip155:42161/erc20:0xaf88d065e77c8cC2239327C5EDb3A432268e5831')  # noqa: E501
+        self.arb_usdc = Asset('eip155:42161/erc20:0xaf88d065e77c8cC2239327C5EDb3A432268e5831')
         self._spot_market_to_base_symbol: dict[int, str] | None = None
         self._discovered_dex_names: list[str] | None = None
 
@@ -398,7 +399,7 @@ class HyperliquidAPI:
             )
         else:
             try:
-                balances[self.hyperliquid_usdc] += deserialize_fval(
+                balances[self.arb_usdc] += deserialize_fval(
                     value=perp_data.get('crossMarginSummary', {}).get('accountValue', 0),
                     name='clearinghouseState total balances',
                     location='hyperliquid',
@@ -410,13 +411,35 @@ class HyperliquidAPI:
                 )
 
     @staticmethod
-    def _entry_unique_id(entry: dict[str, Any]) -> str:
-        """Return a stable per-entry identifier for grouping and deduplication."""
+    def _entry_strict_unique_id(entry: dict[str, Any]) -> str | None:
+        """Return the API-provided per-entry identifier, or None if missing.
+
+        Per Hyperliquid API docs:
+        - Fills include a `tid` (trade id) that is unique per fill
+        - Funding / non-funding-ledger entries always include a `hash`
+        - `oid` (order id) is shared across partial fills of the same order,
+          so it must NOT be used alone for per-fill uniqueness
+        - https://hyperliquid.gitbook.io/hyperliquid-docs/for-developers/api/info-endpoint
+
+        Returns None only when the entry has neither tid nor hash, which is
+        not expected for the endpoints we consume.
+        """
+        if isinstance((tid := entry.get('tid')), int | str):
+            return str(tid)
         if isinstance((entry_hash := entry.get('hash')), str):
             return entry_hash
-        if isinstance((order_id := entry.get('oid')), str):
-            return order_id
-        return str(entry.get('time'))
+        return None
+
+    @classmethod
+    def _entry_unique_id(cls, entry: dict[str, Any]) -> str:
+        """Return a stable per-entry identifier for grouping.
+
+        Uses `_entry_strict_unique_id` when the API provides one; otherwise
+        falls back to the entry `time` so that consumers always get a
+        non-empty string. The fallback is defensive and not expected in
+        practice for the endpoints we consume.
+        """
+        return cls._entry_strict_unique_id(entry) or str(entry.get('time'))
 
     @staticmethod
     def _entry_group_identifier(unique_id: str) -> str:
@@ -606,13 +629,23 @@ class HyperliquidAPI:
             for entry in page_entries:
                 try:
                     entry_time_ms = deserialize_timestamp_ms_from_intms(entry.get('time'))
-                except DeserializationError:
+                except DeserializationError as e:
+                    log.error(
+                        f'Skipping hyperliquid {query_type} entry {entry} for {address} '
+                        f'due to unreadable time field: {e}',
+                    )
                     continue
 
                 oldest_time = min(oldest_time, entry_time_ms)
 
-                if (unique_id := entry.get('hash') or entry.get('oid')) is not None:
-                    dedup_key = f'{dedup_prefix}:{entry_time_ms}:{unique_id}'
+                # Dedup entries across overlapping pages. Prefer the stable
+                # per-entry identifier (tid for fills, hash otherwise) so that
+                # partial fills of the same order at the same timestamp — which
+                # share `oid` but have distinct `tid`s — are not collapsed. Fall
+                # back to a JSON hash of the entry only when the API omits both
+                # tid and hash (defensive; not expected in practice).
+                if (entry_uid := self._entry_strict_unique_id(entry)) is not None:
+                    dedup_key = f'{dedup_prefix}:{entry_time_ms}:{entry_uid}'
                 else:
                     dedup_key = (
                         f'{dedup_prefix}:{entry_time_ms}:'
@@ -625,7 +658,7 @@ class HyperliquidAPI:
 
                 if (
                     context := self._entry_context(
-                        entry,
+                        entry=entry,
                         entry_time=entry_time_ms,
                         dex_name=dex_name,
                     )
@@ -636,6 +669,16 @@ class HyperliquidAPI:
             if oldest_time >= cursor_end:
                 break
             cursor_end = TimestampMS(oldest_time - 1)
+
+        if page >= HYPERLIQUID_MAX_HISTORY_PAGES and cursor_end >= start_ms:
+            # We exhausted the page budget with some range left to cover, so some
+            # older history may be missing from this sync.
+            log.warning(
+                f'Hyperliquid {query_type} query for {address} reached the '
+                f'{HYPERLIQUID_MAX_HISTORY_PAGES} page cap with {cursor_end - start_ms}ms '
+                f'of the requested range still uncovered (dex={dex_name or "main"}). '
+                f'Some older history entries may be missing from this sync.',
+            )
 
     def _parse_funding_entry(self, context: EntryContext) -> ParsedFundingEntry | None:
         """Parse a `userFunding` entry into a normalized funding payload."""
@@ -665,17 +708,16 @@ class HyperliquidAPI:
             return None
 
         try:
-            amount = self._deserialize_amount(raw_amount, f'ledger {entry_type}')
-            if amount == ZERO:
+            if (amount := self._deserialize_amount(value=raw_amount, name=f'ledger {entry_type}')) == ZERO:  # noqa: E501
                 return None
-            asset = asset_from_hyperliquid(delta.get('coin') or 'USDC')
+            asset = asset_from_hyperliquid(delta.get('coin') or USDC_SYMBOL)
         except (
             DeserializationError,
             UnknownCounterpartyMapping,
             UnknownAsset,
             WrongAssetType,
         ) as e:
-            log.error(f'Failed to parse hyperliquid ledger entry {context.entry} due to {e}')
+            log.error(f'Failed to parse hyperliquid ledger entry {context.entry} due to {e}. Skipping')  # noqa: E501
             return None
 
         return ParsedLedgerEntry(
@@ -705,21 +747,40 @@ class HyperliquidAPI:
             if size == ZERO:
                 return None
 
-            is_buy = str(context.entry.get('side', '')).lower() in {'b', 'buy'}
+            # Per Hyperliquid API, `side` is always present on fills ("A" for
+            # ask/sell, "B" for bid/buy). A missing/empty value indicates
+            # malformed data we cannot interpret, so skip the entry rather than
+            # silently defaulting to sell.
+            # https://hyperliquid.gitbook.io/hyperliquid-docs/for-developers/api/info-endpoint#retrieve-a-users-fills-by-time
+            if not isinstance((raw_side := context.entry.get('side')), str) or raw_side == '':
+                log.error(
+                    f'Skipping hyperliquid fill entry {context.entry} with missing side',
+                )
+                return None
+
+            # `side` from Hyperliquid is always "A" (ask/sell) or "B" (bid/buy)
+            # per the API spec (see Side literal in the official python SDK
+            # https://github.com/hyperliquid-dex/hyperliquid-python-sdk/blob/main/hyperliquid/utils/types.py).
+            # `.lower()` is a cheap defense against any future casing drift.
+            is_buy = raw_side.lower() == 'b'
             base_asset = asset_from_hyperliquid(coin)
-            quote_asset = self.hyperliquid_usdc
+            quote_asset = self.arb_usdc
             notional = price * size
-            spend = AssetAmount(quote_asset, notional) if is_buy else AssetAmount(base_asset, size)
-            receive = AssetAmount(base_asset, size) if is_buy else AssetAmount(quote_asset, notional)  # noqa: E501
+            if is_buy:
+                spend = AssetAmount(quote_asset, notional)
+                receive = AssetAmount(base_asset, size)
+            else:
+                spend = AssetAmount(base_asset, size)
+                receive = AssetAmount(quote_asset, notional)
             fee_amount = self._deserialize_amount(context.entry.get('fee', '0'), 'fill fee')
-            if (fee_token := context.entry.get('feeToken')) in (None, 'USDC'):
-                fee_asset = self.hyperliquid_usdc
+            if (fee_token := context.entry.get('feeToken')) in (None, USDC_SYMBOL):
+                fee_asset = self.arb_usdc
             else:
                 fee_asset = asset_from_hyperliquid(str(fee_token))
             direction = str(context.entry.get('dir') or ('Buy' if is_buy else 'Sell'))
             extra_data: dict[str, Any] = {
                 'market': raw_coin,
-                'side': str(context.entry.get('side', '')).upper(),
+                'side': raw_side.upper(),
                 'direction': direction,
             }
             if 'liquidation' in context.entry:
@@ -767,16 +828,14 @@ class HyperliquidAPI:
             if (parsed := self._parse_funding_entry(context)) is None:
                 continue
 
-            event_type = (
-                HistoryEventType.RECEIVE if parsed.amount > ZERO else HistoryEventType.SPEND
-            )
+            event_type = HistoryEventType.RECEIVE if parsed.amount > ZERO else HistoryEventType.SPEND  # noqa: E501
             events.append(
                 self._make_history_event(
                     context=parsed.context,
                     sequence_index=0,
                     event_type=event_type,
                     event_subtype=HistoryEventSubType.INTEREST if event_type == HistoryEventType.RECEIVE else HistoryEventSubType.NONE,  # noqa: E501
-                    asset=self.hyperliquid_usdc,
+                    asset=self.arb_usdc,
                     amount=abs(parsed.amount),
                     location_label=address,
                     notes='Hyperliquid funding payment',
