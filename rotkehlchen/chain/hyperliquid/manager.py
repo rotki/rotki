@@ -14,7 +14,7 @@ from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.externalapis.hyperliquid import HyperliquidAPI
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import ChecksumEvmAddress, Price, SupportedBlockchain, Timestamp
+from rotkehlchen.types import ChecksumEvmAddress, Price, Timestamp
 
 from .accountant import HyperliquidAccountingAggregator
 from .decoding.decoder import HyperliquidTransactionDecoder
@@ -137,27 +137,6 @@ class HyperliquidManager(EvmManager):
                         location_string=f'hyperliquid_{address}',
                         queried_ranges=[(range_start, range_end)],
                     )
-
-    def query_proprietary_history_for_tracked_accounts(
-            self,
-            from_timestamp: Timestamp,
-            to_timestamp: Timestamp,
-    ) -> None:
-        """Query Hyperliquid core history for all tracked Hyperliquid accounts."""
-        with self.node_inquirer.database.conn.read_ctx() as cursor:
-            addresses = self.node_inquirer.database.get_single_blockchain_addresses(
-                cursor=cursor,
-                blockchain=SupportedBlockchain.HYPERLIQUID,
-            )
-
-        if len(addresses) == 0:
-            return
-
-        self.query_proprietary_history(
-            addresses=addresses,
-            from_timestamp=from_timestamp,
-            to_timestamp=to_timestamp,
-        )
 
     def query_transactions(
             self,

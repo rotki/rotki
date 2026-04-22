@@ -11,12 +11,7 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.base import HistoryBaseEntry, HistoryEvent
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.premium.premium import UserLimitType, get_user_limit
-from rotkehlchen.types import (
-    EVM_CHAINS_WITH_TRANSACTIONS,
-    Location,
-    SupportedBlockchain,
-    Timestamp,
-)
+from rotkehlchen.types import EVM_CHAINS_WITH_TRANSACTIONS, Location, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import timestamp_to_date, ts_sec_to_ms
 
@@ -40,13 +35,12 @@ log = RotkehlchenLogsAdapter(logger)
 # base history entries
 #
 # Please, update this number each time a history query step is either added or removed
-NUM_HISTORY_QUERY_STEPS_EXCL_EXCHANGES = (
-    3 + 3 * len(EVM_CHAINS_WITH_TRANSACTIONS) + 1  # Hyperliquid core queries
-)
+NUM_HISTORY_QUERY_STEPS_EXCL_EXCHANGES = 3 + 3 * len(EVM_CHAINS_WITH_TRANSACTIONS)
 STEPS_PER_CEX = 5
 
 
 class HistoryQueryingManager:
+
     def __init__(
             self,
             user_directory: Path,
@@ -215,14 +209,6 @@ class HistoryQueryingManager:
 
             self.processing_state_name = f'Decoding {str_blockchain} raw transactions'
             evm_manager.transactions_decoder.get_and_decode_undecoded_transactions(limit=None)
-            step = self._increase_progress(step, total_steps)
-
-        if SupportedBlockchain.HYPERLIQUID in EVM_CHAINS_WITH_TRANSACTIONS:
-            self.processing_state_name = 'Querying Hyperliquid history'
-            self.chains_aggregator.hyperliquid.query_proprietary_history_for_tracked_accounts(
-                from_timestamp=Timestamp(0),
-                to_timestamp=end_ts,
-            )
             step = self._increase_progress(step, total_steps)
 
         # include eth2 staking events

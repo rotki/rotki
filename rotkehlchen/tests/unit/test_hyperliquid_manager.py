@@ -13,51 +13,6 @@ def _dummy_ctx():
     yield object()
 
 
-def test_query_proprietary_history_for_tracked_accounts_delegates() -> None:
-    manager = HyperliquidManager.__new__(HyperliquidManager)
-
-    address = string_to_evm_address('0x000000000000000000000000000000000000dEaD')
-    db = MagicMock()
-    db.conn.read_ctx.side_effect = _dummy_ctx
-    db.get_single_blockchain_addresses.return_value = [address]
-    manager.node_inquirer = MagicMock(database=db)
-
-    with patch.object(
-        HyperliquidManager,
-        'query_proprietary_history',
-    ) as query_proprietary_history:
-        manager.query_proprietary_history_for_tracked_accounts(
-            from_timestamp=Timestamp(0),
-            to_timestamp=Timestamp(100),
-        )
-
-    query_proprietary_history.assert_called_once_with(
-        addresses=[address],
-        from_timestamp=Timestamp(0),
-        to_timestamp=Timestamp(100),
-    )
-
-
-def test_query_proprietary_history_for_tracked_accounts_no_addresses_skips() -> None:
-    manager = HyperliquidManager.__new__(HyperliquidManager)
-
-    db = MagicMock()
-    db.conn.read_ctx.side_effect = _dummy_ctx
-    db.get_single_blockchain_addresses.return_value = []
-    manager.node_inquirer = MagicMock(database=db)
-
-    with patch.object(
-        HyperliquidManager,
-        'query_proprietary_history',
-    ) as query_proprietary_history:
-        manager.query_proprietary_history_for_tracked_accounts(
-            from_timestamp=Timestamp(0),
-            to_timestamp=Timestamp(100),
-        )
-
-    query_proprietary_history.assert_not_called()
-
-
 def test_query_proprietary_history_failed_query_does_not_advance_ranges() -> None:
     manager = HyperliquidManager.__new__(HyperliquidManager)
 
