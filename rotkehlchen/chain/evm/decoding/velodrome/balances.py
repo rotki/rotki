@@ -11,7 +11,7 @@ from rotkehlchen.chain.ethereum.interfaces.balances import (
 from rotkehlchen.chain.evm.constants import DEFAULT_TOKEN_DECIMALS
 from rotkehlchen.chain.evm.contracts import EvmContract
 from rotkehlchen.chain.evm.decoding.velodrome.constants import VOTING_ESCROW_ABI
-from rotkehlchen.chain.evm.tokens import get_chunk_size_call_order
+from rotkehlchen.chain.evm.tokens import get_rpc_first_chunk_size_call_order
 from rotkehlchen.constants.prices import ZERO_PRICE
 from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
@@ -75,7 +75,7 @@ class VelodromeLikeBalances(ProtocolWithGauges):
             abi=VOTING_ESCROW_ABI,
             deployed_block=0,
         )
-        chunk_size, call_order = get_chunk_size_call_order(self.evm_inquirer)
+        chunk_size, call_order = get_rpc_first_chunk_size_call_order(self.evm_inquirer)
         if (price := Inquirer.find_price(
                 from_asset=self.protocol_token,
                 to_asset=CachedSettings().main_currency,

@@ -14,7 +14,7 @@ from rotkehlchen.chain.evm.tokens import (
     ETHERSCAN_MAX_ARGUMENTS_TO_CONTRACT,
     EvmTokensWithProxies,
     generate_multicall_chunks,
-    get_chunk_size_call_order,
+    get_rpc_first_chunk_size_call_order,
 )
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.chain.structures import EvmTokenDetectionData
@@ -225,55 +225,39 @@ def test_generate_chunks():
     assert generated_chunks == expected_chunks
 
 
-def test_get_chunk_size_call_order_uses_rpc_only_order_when_connected() -> None:
-    call_order = [MagicMock()]
+def test_get_rpc_first_chunk_size_call_order_uses_rpc_order_when_disconnected() -> None:
+    rpc_node_1 = MagicMock(name='rpc_node_1')
+    rpc_node_2 = MagicMock(name='rpc_node_2')
     evm_inquirer = MagicMock()
-    evm_inquirer.connected_to_any_node.return_value = True
-    evm_inquirer.default_call_order.return_value = call_order
+    evm_inquirer.connected_to_any_node.return_value = False
+    evm_inquirer.default_call_order.return_value = [rpc_node_1, rpc_node_2]
+    evm_inquirer.indexers_node = MagicMock(name='indexer_node')
 
-    chunk_size, returned_call_order = get_chunk_size_call_order(
+    chunk_size, returned_call_order = get_rpc_first_chunk_size_call_order(
         evm_inquirer=evm_inquirer,
         web3_node_chunk_size=999,
     )
 
     evm_inquirer.default_call_order.assert_called_once_with(skip_indexers=True)
     assert chunk_size == 999
-    assert returned_call_order == call_order
+    assert returned_call_order == [rpc_node_1, rpc_node_2, evm_inquirer.indexers_node]
 
 
-def test_get_chunk_size_call_order_uses_indexer_fallback_when_disconnected() -> None:
+def test_get_rpc_first_chunk_size_call_order_uses_indexer_when_no_rpc_nodes() -> None:
     evm_inquirer = MagicMock()
     evm_inquirer.connected_to_any_node.return_value = False
+    evm_inquirer.default_call_order.return_value = []
+    evm_inquirer.INDEXER_CHUNK_SIZE = 111
     evm_inquirer.chain_id = ChainID.HYPERLIQUID
     evm_inquirer.indexers_node = MagicMock()
 
-    chunk_size, returned_call_order = get_chunk_size_call_order(
+    chunk_size, returned_call_order = get_rpc_first_chunk_size_call_order(
         evm_inquirer=evm_inquirer,
         web3_node_chunk_size=999,
-        etherscan_chunk_size=111,
-        arbiscan_chunksize=222,
     )
 
-    assert evm_inquirer.default_call_order.call_count == 0
+    evm_inquirer.default_call_order.assert_called_once_with(skip_indexers=True)
     assert chunk_size == 111
-    assert returned_call_order == [evm_inquirer.indexers_node]
-
-
-def test_get_chunk_size_call_order_uses_arbiscan_chunk_on_arbitrum_fallback() -> None:
-    evm_inquirer = MagicMock()
-    evm_inquirer.connected_to_any_node.return_value = False
-    evm_inquirer.chain_id = ChainID.ARBITRUM_ONE
-    evm_inquirer.indexers_node = MagicMock()
-
-    chunk_size, returned_call_order = get_chunk_size_call_order(
-        evm_inquirer=evm_inquirer,
-        web3_node_chunk_size=999,
-        etherscan_chunk_size=111,
-        arbiscan_chunksize=222,
-    )
-
-    assert evm_inquirer.default_call_order.call_count == 0
-    assert chunk_size == 222
     assert returned_call_order == [evm_inquirer.indexers_node]
 
 

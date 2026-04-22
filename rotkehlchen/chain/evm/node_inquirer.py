@@ -30,6 +30,7 @@ from rotkehlchen.chain.evm.constants import (
     EIP7702_DELEGATION_PREFIX,
     ERC20_PROPERTIES,
     ERC721_PROPERTIES,
+    ETHERSCAN_MAX_ARGUMENTS_TO_CONTRACT,
     FAKE_GENESIS_TX_RECEIPT,
     GENESIS_HASH,
 )
@@ -210,6 +211,7 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
         '_get_transaction_by_hash',
         '_get_logs',
     )
+    INDEXER_CHUNK_SIZE = ETHERSCAN_MAX_ARGUMENTS_TO_CONTRACT
 
     def __init__(
             self,

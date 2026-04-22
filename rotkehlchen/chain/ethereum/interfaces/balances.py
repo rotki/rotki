@@ -8,7 +8,7 @@ from rotkehlchen.accounting.structures.balance import Balance, BalanceSheet
 from rotkehlchen.api.v1.types import IncludeExcludeFilterData
 from rotkehlchen.assets.asset import Asset, EvmToken
 from rotkehlchen.assets.utils import token_normalized_value
-from rotkehlchen.chain.evm.tokens import get_chunk_size_call_order
+from rotkehlchen.chain.evm.tokens import get_rpc_first_chunk_size_call_order
 from rotkehlchen.chain.evm.types import WeightedNode, string_to_evm_address
 from rotkehlchen.db.filtering import EvmEventFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
@@ -238,7 +238,7 @@ class ProtocolWithGauges(ProtocolWithBalance):
         balances: BalancesSheetType = defaultdict(BalanceSheet)
         gauges_to_token: dict[ChecksumEvmAddress, EvmToken] = {}
         # query addresses and gauges where they interacted
-        chunk_size, call_order = get_chunk_size_call_order(self.evm_inquirer)
+        chunk_size, call_order = get_rpc_first_chunk_size_call_order(self.evm_inquirer)
         for address, events in self.addresses_with_gauge_deposits().items():
             # Create a mapping of a gauge to its token
             for event in events:

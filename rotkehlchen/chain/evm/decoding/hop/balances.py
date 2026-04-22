@@ -8,7 +8,7 @@ from rotkehlchen.assets.utils import token_normalized_value
 from rotkehlchen.chain.ethereum.interfaces.balances import BalancesSheetType, ProtocolWithBalance
 from rotkehlchen.chain.evm.contracts import EvmContract
 from rotkehlchen.chain.evm.decoding.hop.constants import CPT_HOP
-from rotkehlchen.chain.evm.tokens import get_chunk_size_call_order
+from rotkehlchen.chain.evm.tokens import get_rpc_first_chunk_size_call_order
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.constants.resolver import evm_address_to_identifier
 from rotkehlchen.errors.asset import UnknownAsset, WrongAssetType
@@ -67,7 +67,7 @@ class HopBalances(ProtocolWithBalance):
                 abi=hop_abi,
                 deployed_block=0,  # not used here since logs are not queried
             )
-            chunk_size, call_order = get_chunk_size_call_order(self.evm_inquirer)
+            chunk_size, call_order = get_rpc_first_chunk_size_call_order(self.evm_inquirer)
 
             if len(staked_lps := self.evm_inquirer.multicall(
                 calls=[(

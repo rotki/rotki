@@ -13,7 +13,7 @@ from rotkehlchen.chain.ethereum.interfaces.balances import BalancesSheetType, Pr
 from rotkehlchen.chain.evm.constants import DEFAULT_TOKEN_DECIMALS
 from rotkehlchen.chain.evm.contracts import EvmContract
 from rotkehlchen.chain.evm.decoding.thegraph.constants import CPT_THEGRAPH
-from rotkehlchen.chain.evm.tokens import get_chunk_size_call_order
+from rotkehlchen.chain.evm.tokens import get_rpc_first_chunk_size_call_order
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.assets import A_GRT_ARB
 from rotkehlchen.constants.misc import ZERO
@@ -118,7 +118,7 @@ class ThegraphBalances(ProtocolWithBalance):
         if len(delegations := self._get_delegations()) == 0:  # user had no delegation events
             return balances
 
-        chunk_size, call_order = get_chunk_size_call_order(self.evm_inquirer)
+        chunk_size, call_order = get_rpc_first_chunk_size_call_order(self.evm_inquirer)
         staking_contract = EvmContract(
             address=CONTRACT_STAKING,
             abi=HORIZON_STAKING_ABI,
