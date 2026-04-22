@@ -17,6 +17,10 @@
     {
       "allowedVersions": "<=3",
       "matchPackageNames": ["tailwindcss"]
+    },
+    {
+      "allowedVersions": "/^3\\.11\\./",
+      "matchPackageNames": ["python"]
     }
   ]
 }
