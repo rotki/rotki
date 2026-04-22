@@ -37,6 +37,8 @@ export const getPrefix: (type?: XpubKeyType) => XpubPrefix = (type) => {
     return XpubPrefix.YPUB;
   else if (type === XpubKeyType.ZPUB)
     return XpubPrefix.ZPUB;
+  else if (type === XpubKeyType.P2TR)
+    return XpubPrefix.P2TR;
 
   return XpubPrefix.XPUB;
 };

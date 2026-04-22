@@ -4,7 +4,7 @@ import type { XpubManage } from '@/modules/accounts/blockchain/use-account-manag
 import type { ValidationErrors } from '@/modules/core/api/types/errors';
 import { assert } from '@rotki/common';
 import { omit } from 'es-toolkit';
-import XpubInput from '@/modules/accounts/blockchain/XpubInput.vue';
+import BtcAddressInput from '@/modules/accounts/blockchain/BtcAddressInput.vue';
 import AccountDataInput from '@/modules/accounts/management/inputs/AccountDataInput.vue';
 
 const modelValue = defineModel<XpubManage>({ required: true });
@@ -19,7 +19,7 @@ const emit = defineEmits<{
   'detected-address': [address: string];
 }>();
 
-const input = useTemplateRef<InstanceType<typeof XpubInput>>('input');
+const input = useTemplateRef<InstanceType<typeof BtcAddressInput>>('input');
 
 const xpub = computed<XpubPayload>({
   get() {
@@ -83,7 +83,7 @@ defineExpose({
 
 <template>
   <div class="flex flex-col gap-4">
-    <XpubInput
+    <BtcAddressInput
       ref="input"
       v-model:xpub="xpub"
       v-model:error-messages="errors"

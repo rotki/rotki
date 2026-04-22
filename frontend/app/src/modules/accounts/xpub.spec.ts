@@ -96,6 +96,10 @@ describe('getPrefix', () => {
     expect(getPrefix(XpubKeyType.ZPUB)).toBe(XpubPrefix.ZPUB);
   });
 
+  it('returns P2TR for P2TR key type', () => {
+    expect(getPrefix(XpubKeyType.P2TR)).toBe(XpubPrefix.P2TR);
+  });
+
   it('returns XPUB as default', () => {
     expect(getPrefix()).toBe(XpubPrefix.XPUB);
     expect(getPrefix(XpubKeyType.XPUB)).toBe(XpubPrefix.XPUB);
