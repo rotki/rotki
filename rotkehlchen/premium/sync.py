@@ -354,9 +354,16 @@ class PremiumSyncManager(LockableQueryMixIn):
             user_data_dir,  # type: ignore
             self.data.data_directory / USERSDIR_NAME / f'auto_backup_{username}_{ts_now()}',
         )
+        if isinstance(original_exception, PremiumPermissionError):
+            error_prefix = 'Could not activate premium on this device.'
+        elif isinstance(original_exception, RemoteError):
+            error_prefix = 'Could not reach the rotki server to verify premium keys.'
+        else:
+            error_prefix = 'Could not verify keys for the new account.'
+
         raise PremiumAuthenticationError(self.maybe_add_device_limit_link(
             exception=original_exception,
-            msg=f'Could not verify keys for the new account. {original_exception!s}.',
+            msg=f'{error_prefix} {original_exception!s}.',
         )) from original_exception
 
     def try_premium_at_start(
