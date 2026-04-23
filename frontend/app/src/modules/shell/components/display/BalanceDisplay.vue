@@ -44,7 +44,8 @@ const valueInCurrency = computed<BigNumber>(() => {
   if (!calculateValue)
     return get(balanceValue);
 
-  return getAssetPrice(asset, Zero).multipliedBy(get(amount));
+  const price = getAssetPrice(asset, Zero);
+  return price.gt(0) ? price.multipliedBy(get(amount)) : Zero;
 });
 </script>
 

@@ -13,6 +13,8 @@ vi.mock('@/modules/assets/prices/use-price-utils', () => ({
         return bigNumberify(2000);
       if (asset === 'BTC')
         return bigNumberify(50000);
+      if (asset === 'NOPRICE')
+        return bigNumberify(-1);
       return fallback;
     },
   }),
@@ -67,6 +69,26 @@ describe('modules/amount-display/composables/use-asset-value', () => {
       expect(get(value).toNumber()).toBe(25000);
     });
 
+    it('should return zero when cached price is negative (NoPrice sentinel)', () => {
+      const { value } = useAssetValue({
+        amount: bigNumberify(10),
+        asset: 'NOPRICE',
+      });
+
+      // Price is -1 in cache → value must not become negative
+      expect(get(value).toNumber()).toBe(0);
+    });
+
+    it('should return zero when knownPrice is negative', () => {
+      const { value } = useAssetValue({
+        amount: bigNumberify(10),
+        asset: 'ETH',
+        knownPrice: bigNumberify(-1),
+      });
+
+      expect(get(value).toNumber()).toBe(0);
+    });
+
     it('should return zero when amount is zero', () => {
       const { value } = useAssetValue({
         amount: bigNumberify(0),
@@ -101,6 +123,15 @@ describe('modules/amount-display/composables/use-asset-value', () => {
       const { price } = useAssetValue({
         amount: bigNumberify(1),
         asset: 'UNKNOWN',
+      });
+
+      expect(get(price).toNumber()).toBe(0);
+    });
+
+    it('should return zero when cached price is negative (NoPrice sentinel)', () => {
+      const { price } = useAssetValue({
+        amount: bigNumberify(1),
+        asset: 'NOPRICE',
       });
 
       expect(get(price).toNumber()).toBe(0);

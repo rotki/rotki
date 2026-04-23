@@ -86,7 +86,7 @@ export function sortAndFilterManualBalance(
 
   const total = filtered.reduce((acc, item) => {
     const price = resolvers.resolveAssetPrice(item.asset);
-    if (price)
+    if (price && price.gt(0))
       return acc.plus(price.times(item.amount));
 
     return acc;

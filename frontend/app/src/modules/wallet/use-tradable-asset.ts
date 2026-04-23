@@ -58,9 +58,12 @@ export function useTradableAsset(address: MaybeRefOrGetter<string | undefined>):
   function enhanceWithPrices(assets: TradableAssetWithoutValue[]): TradableAsset[] {
     return assets.map((item) => {
       const price = getAssetPrice(item.asset);
+      if (!price || price.lte(0)) {
+        return { ...item, fiatValue: undefined, price: undefined };
+      }
       return {
         ...item,
-        fiatValue: price?.multipliedBy(item.amount),
+        fiatValue: price.multipliedBy(item.amount),
         price,
       };
     }).sort((a, b) => {

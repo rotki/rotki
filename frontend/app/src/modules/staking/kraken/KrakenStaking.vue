@@ -36,7 +36,7 @@ const earnedAssetsData = computed<[boolean, AssetBalance[]]>(() => {
 
   const earnedWithPrice = earned.map((item) => {
     const price = getAssetPrice(item.asset);
-    if (!price) {
+    if (!price || price.lte(0)) {
       loading = true;
 
       return item;

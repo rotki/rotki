@@ -1,6 +1,6 @@
 import type { ComputedRef, MaybeRefOrGetter, Ref } from 'vue';
 import type { ManualPrice, ManualPriceFormPayload, ManualPriceWithUsd } from '@/modules/assets/prices/price-types';
-import { Zero } from '@rotki/common';
+import { type BigNumber, Zero } from '@rotki/common';
 import { CURRENCY_USD } from '@/modules/assets/amount-display/currencies';
 import { useAssetPricesApi } from '@/modules/assets/api/use-asset-prices-api';
 import { isNft } from '@/modules/assets/nft-utils';
@@ -51,9 +51,17 @@ export function useLatestPrices(
 
     return filteredItems.map((item, index) => {
       const { fromAsset, toAsset, price } = item;
-      const priceInCurrency = isNft(fromAsset)
-        ? getAssetPrice(toAsset)?.multipliedBy(price)
-        : getAssetPrice(fromAsset);
+      let priceInCurrency: BigNumber | undefined;
+      if (isNft(fromAsset)) {
+        const toPrice = getAssetPrice(toAsset);
+        if (toPrice && toPrice.gt(0))
+          priceInCurrency = toPrice.multipliedBy(price);
+      }
+      else {
+        const fromPrice = getAssetPrice(fromAsset);
+        if (fromPrice && fromPrice.gt(0))
+          priceInCurrency = fromPrice;
+      }
 
       return {
         id: index + 1,

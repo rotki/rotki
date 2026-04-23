@@ -39,7 +39,7 @@ export function updateBalancesPrices(
       const balance = protocols[protocol];
       const newBalance: Balance = {
         amount: balance.amount,
-        value: assetPrice.value ? balance.amount.times(assetPrice.value) : balance.value,
+        value: assetPrice.value && assetPrice.value.gt(0) ? balance.amount.times(assetPrice.value) : balance.value,
       };
       protocolResult[protocol] = newBalance;
     }
@@ -70,7 +70,7 @@ export function updateExchangeBalancesPrices(
 
     result[asset] = {
       amount: assetInfo.amount,
-      value: assetPrice.value ? assetInfo.amount.times(assetPrice.value) : assetInfo.value,
+      value: assetPrice.value && assetPrice.value.gt(0) ? assetInfo.amount.times(assetPrice.value) : assetInfo.value,
     };
   }
   return result;
@@ -118,7 +118,7 @@ export function updateManualBalancePrices(data: ManualBalanceWithValue[], prices
 
     return {
       ...item,
-      value: assetPrice.value ? item.amount.times(assetPrice.value) : item.value,
+      value: assetPrice.value && assetPrice.value.gt(0) ? item.amount.times(assetPrice.value) : item.value,
     };
   });
 }
