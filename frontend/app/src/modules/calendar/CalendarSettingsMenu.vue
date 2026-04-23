@@ -269,6 +269,7 @@ onUnmounted(() => {
           <RuiButton
             variant="text"
             icon
+            color="primary"
             size="lg"
             v-bind="attrs"
           >

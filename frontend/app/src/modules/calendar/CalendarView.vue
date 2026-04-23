@@ -63,7 +63,6 @@ onMounted(async () => {
 <template>
   <TablePageLayout :title="[t('navigation_menu.calendar')]">
     <template #buttons>
-      <CalendarSettingsMenu />
       <RuiButton
         color="primary"
         size="lg"
@@ -74,6 +73,7 @@ onMounted(async () => {
         </template>
         {{ t('calendar.add_event') }}
       </RuiButton>
+      <CalendarSettingsMenu />
     </template>
 
     <div class="grid items-start grid-cols-[minmax(0,1fr)_14rem] gap-4">

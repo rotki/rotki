@@ -1,13 +1,10 @@
 <script setup lang="ts">
-import type { RuiButton } from '@rotki/ui-library';
 import dayjs, { type Dayjs } from 'dayjs';
-import { useTemplateRef } from 'vue';
-import { useRefWithDebounce } from '@/modules/core/common/use-ref-debounce';
 import DateTimePicker from '@/modules/shell/components/inputs/DateTimePicker.vue';
 
 const model = defineModel<Dayjs>({ required: true });
 
-defineProps<{
+const { visibleDate, today } = defineProps<{
   visibleDate: Dayjs;
   today: Dayjs;
 }>();
@@ -19,18 +16,14 @@ const emit = defineEmits<{
 const { t } = useI18n({ useScope: 'global' });
 
 const datetime = ref<number>(0);
-const open = ref(false);
+const open = ref<boolean>(false);
 
-const activatorRef = useTemplateRef<any>('activatorRef');
-const menuContainerRef = useTemplateRef<InstanceType<typeof HTMLDivElement>>('menuContainerRef');
+// Both the Today label and the chevron reflect the same "already on today"
+// state so the pair reads as a single control — the chevron used to stay
+// primary-outlined while Today greyed out, breaking the visual group.
+const alreadyOnToday = computed<boolean>(() => visibleDate.isSame(today, 'day'));
 
-const { focused: menuFocusedWithin } = useFocusWithin(menuContainerRef);
-const { focused: activatorFocusedWithin } = useFocusWithin(activatorRef);
-
-const anyFocused = logicOr(activatorFocusedWithin, menuFocusedWithin);
-const usedAnyFocused = useRefWithDebounce(anyFocused, 100);
-
-function goToSelectedDate() {
+function goToSelectedDate(): void {
   set(model, dayjs(get(datetime) * 1000));
   set(open, false);
 }
@@ -44,21 +37,32 @@ watch(
     immediate: true,
   },
 );
-
-watch(usedAnyFocused, (curr, prev) => {
-  if (prev && !curr) {
-    set(open, false);
-  }
-});
 </script>
 
 <template>
-  <RuiButtonGroup
-    color="primary"
-    variant="outlined"
-  >
+  <!--
+    Today + chevron are rendered as adjacent siblings in a plain flex wrapper
+    rather than inside a RuiButtonGroup. Nesting a RuiMenu as a group child
+    was causing the menu to flicker open/close on Today clicks — the group
+    intercepts each child's `update:model-value` as a button-selection event
+    and injects `active`/`color`/`size` props into the menu's VNode, which
+    destabilised its open state. Here the two buttons share a visual seam
+    via `!rounded-r-none` / `!rounded-l-none` + `-ml-px`.
+
+    The menu stays `persistent` so that interacting with the nested
+    DateTimePicker (which teleports its own time/date overlays outside this
+    component's DOM subtree) doesn't count as an outside click and dismiss
+    the Go-to-date popup. Close paths: pick a date and hit the corner-down
+    submit button, press Enter/Escape inside the popup, or click the
+    chevron again to toggle.
+  -->
+  <div class="flex">
     <RuiButton
-      :disabled="visibleDate.isSame(today, 'day')"
+      color="primary"
+      variant="outlined"
+      size="xl"
+      class="!rounded-r-none"
+      :disabled="alreadyOnToday"
       @click="emit('set-today')"
     >
       {{ t('calendar.today') }}
@@ -66,27 +70,23 @@ watch(usedAnyFocused, (curr, prev) => {
     <RuiMenu
       v-model="open"
       persistent
-      wrapper-class="h-full"
     >
       <template #activator="{ attrs }">
         <RuiButton
-          ref="activatorRef"
-          size="sm"
-          class="!p-2 !outline-none h-full"
           color="primary"
           variant="outlined"
+          icon
+          size="xl"
+          class="!rounded-l-none -ml-px !rounded"
           v-bind="attrs"
         >
-          <RuiIcon
-            size="20"
-            name="lu-chevron-down"
-          />
+          <RuiIcon name="lu-chevron-down" />
         </RuiButton>
       </template>
       <div
-        ref="menuContainerRef"
         class="p-4 flex items-start"
         tabindex="-1"
+        @keydown.esc="open = false"
       >
         <DateTimePicker
           v-model="datetime"
@@ -109,5 +109,5 @@ watch(usedAnyFocused, (curr, prev) => {
         </RuiButton>
       </div>
     </RuiMenu>
-  </RuiButtonGroup>
+  </div>
 </template>
