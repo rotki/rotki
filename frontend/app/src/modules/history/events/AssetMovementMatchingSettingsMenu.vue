@@ -88,13 +88,12 @@ onMounted(() => {
             color="primary"
             v-bind="attrs"
             :disabled="disabled"
-            class="!rounded-l-none !px-2"
-            :class="isPinned ? 'h-[30px]' : 'h-9'"
+            icon
+            :size="isPinned ? 'sm' : 'lg'"
+            class="!rounded-l-none"
+            :class="{ 'h-[30px]': isPinned }"
           >
-            <RuiIcon
-              name="lu-settings"
-              size="20"
-            />
+            <RuiIcon name="lu-settings" />
           </RuiButton>
         </template>
         <span>{{ t('asset_movement_matching.settings.tooltip') }}</span>

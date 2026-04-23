@@ -130,6 +130,7 @@ function isBinance(exchange?: string): exchange is 'binance' | 'binanceus' {
           <RuiButton
             color="primary"
             variant="outlined"
+            size="lg"
             class="exchange-balances__refresh"
             :disabled="exchangeDetailTabs !== 0"
             :loading="isExchangeLoading"
@@ -145,6 +146,7 @@ function isBinance(exchange?: string): exchange is 'binance' | 'binanceus' {
       </RuiTooltip>
       <RuiButton
         color="primary"
+        size="lg"
         @click="navigate()"
       >
         <template #prepend>

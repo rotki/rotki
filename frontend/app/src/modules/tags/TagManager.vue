@@ -93,6 +93,7 @@ onMounted(async () => {
     <template #buttons>
       <RuiButton
         color="primary"
+        size="lg"
         data-cy="add-tags"
         @click="handleCreateTagClick()"
       >

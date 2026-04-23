@@ -56,8 +56,7 @@ async function doImport() {
         <RuiButton
           variant="text"
           icon
-          size="sm"
-          class="!p-2"
+          size="lg"
           v-bind="attrs"
         >
           <RuiIcon name="lu-ellipsis-vertical" />

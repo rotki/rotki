@@ -27,6 +27,7 @@ async function refresh() {
   <RuiButton
     variant="outlined"
     color="primary"
+    size="lg"
     :loading="refreshing"
     data-cy="price-refresh"
     :disabled="disabled"

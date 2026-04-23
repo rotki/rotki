@@ -269,6 +269,7 @@ onUnmounted(() => {
           <RuiButton
             variant="text"
             icon
+            size="lg"
             v-bind="attrs"
           >
             <RuiIcon name="lu-settings" />

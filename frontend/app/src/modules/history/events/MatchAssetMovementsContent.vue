@@ -45,7 +45,7 @@ const {
   selectedUnmatched,
 } = useAssetMovementActions({ onActionComplete });
 
-const buttonSize = computed<'sm' | undefined>(() => isPinned ? 'sm' : undefined);
+const buttonSize = computed<'sm' | 'lg'>(() => isPinned ? 'sm' : 'lg');
 
 onBeforeMount(async () => {
   await refreshUnmatchedAssetMovements();
@@ -183,7 +183,7 @@ onBeforeMount(async () => {
               color="primary"
               class="!rounded-r-none"
               :size="buttonSize"
-              :class="isPinned ? 'h-[30px] !px-3' : 'h-9'"
+              :class="{ 'h-[30px] !px-3': isPinned }"
               :disabled="!isAutoMatchAllowed || unmatchedMovements.length === 0 || autoMatchLoading"
               :loading="autoMatchLoading"
               @click="triggerAssetMovementAutoMatching()"

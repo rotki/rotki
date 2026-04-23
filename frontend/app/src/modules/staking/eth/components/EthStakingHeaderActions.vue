@@ -24,6 +24,7 @@ const { t } = useI18n({ useScope: 'global' });
         <RuiButton
           variant="outlined"
           color="primary"
+          size="lg"
           :loading="refreshing"
           @click="emit('refresh')"
         >

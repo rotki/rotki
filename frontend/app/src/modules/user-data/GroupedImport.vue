@@ -115,7 +115,7 @@ const [DefineDisplay, ReuseDisplay] = createReusableTemplate<{
 </script>
 
 <template>
-  <RuiCard content-class="p-1 pt-2">
+  <RuiCard content-class="p-4">
     <DefineDisplay #default="{ logo, icon, label }">
       <div class="flex items-center gap-3">
         <AppImage

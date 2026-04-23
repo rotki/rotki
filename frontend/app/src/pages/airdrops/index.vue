@@ -198,6 +198,7 @@ watch([status, selectedAccounts], () => {
           <RuiButton
             variant="outlined"
             color="primary"
+            size="lg"
             :loading="loading"
             @click="fetchAirdrops()"
           >

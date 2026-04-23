@@ -37,9 +37,10 @@ function redetectAllClicked(): void {
       >
         <template #activator>
           <RuiButton
-            class="py-2 !outline-0 rounded-none"
+            class="!outline-0 rounded-none"
             variant="outlined"
             color="primary"
+            size="xl"
             :loading="isDetectingTokens"
             :disabled="refreshDisabled"
             @click="redetectAllClicked()"

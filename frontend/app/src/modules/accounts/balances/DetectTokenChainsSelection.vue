@@ -51,13 +51,14 @@ watch(open, (isOpen) => {
     <template #activator="{ attrs }">
       <RuiButton
         variant="outlined"
-        class="px-3 py-3 !outline-none rounded-none"
+        icon
+        size="xl"
+        class="!outline-none rounded-none"
         v-bind="attrs"
       >
         <RuiIcon
           name="lu-chevrons-up-down"
           color="primary"
-          class="size-4"
         />
       </RuiButton>
     </template>

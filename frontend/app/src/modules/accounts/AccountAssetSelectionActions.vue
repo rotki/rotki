@@ -52,7 +52,7 @@ const { t } = useI18n({ useScope: 'global' });
       >
         <template #activator>
           <RuiButton
-            class="h-10"
+            size="xl"
             variant="outlined"
             color="error"
             :disabled="selectedCount === 0"
@@ -61,7 +61,6 @@ const { t } = useI18n({ useScope: 'global' });
             <template #prepend>
               <RuiIcon
                 name="lu-eye-off"
-                size="16"
               />
             </template>
             {{ t('ignore_buttons.ignore') }}
@@ -76,16 +75,15 @@ const { t } = useI18n({ useScope: 'global' });
         >
           <template #activator>
             <RuiButton
-              class="h-10"
               variant="outlined"
               color="error"
+              size="xl"
               :disabled="selectedCount === 0"
               @click="emit('mark-spam')"
             >
               <template #prepend>
                 <RuiIcon
                   name="lu-trash-2"
-                  size="16"
                 />
               </template>
               {{ t('asset_table.mark_spam') }}

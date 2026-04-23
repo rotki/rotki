@@ -85,6 +85,7 @@ onBeforeMount(async () => {
       <PriceRefresh />
       <RuiButton
         color="primary"
+        size="lg"
         data-cy="manual-balances-add-button"
         :disabled="loading"
         @click="add()"

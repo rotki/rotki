@@ -79,14 +79,12 @@ onMounted(async () => {
     <template #buttons>
       <RuiButton
         color="primary"
+        size="lg"
         :disabled="loading"
         @click="openAddDialog()"
       >
         <template #prepend>
-          <RuiIcon
-            name="lu-plus"
-            size="18"
-          />
+          <RuiIcon name="lu-plus" />
         </template>
         {{ t('staking_page.lido_csm.form.submit') }}
       </RuiButton>
@@ -95,14 +93,12 @@ onMounted(async () => {
           <RuiButton
             color="primary"
             variant="outlined"
+            size="lg"
             :loading="loading"
             @click="refresh(true)"
           >
             <template #prepend>
-              <RuiIcon
-                name="lu-refresh-ccw"
-                size="20"
-              />
+              <RuiIcon name="lu-refresh-ccw" />
             </template>
             {{ t('common.refresh') }}
           </RuiButton>

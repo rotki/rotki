@@ -18,12 +18,15 @@ const { detectEvmAccounts } = useBlockchainAccountManagement();
   >
     <template #activator>
       <RuiButton
-        class="py-2"
         color="primary"
+        size="xl"
         :loading="isEvmAccountsDetecting"
         :disabled="isEvmAccountsDetecting"
         @click="detectEvmAccounts()"
       >
+        <template #prepend>
+          <RuiIcon name="lu-radar" />
+        </template>
         {{ t('blockchain_balances.evm_detection.title') }}
       </RuiButton>
     </template>

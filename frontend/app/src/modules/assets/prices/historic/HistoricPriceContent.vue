@@ -135,6 +135,7 @@ onMounted(async () => {
           <RuiButton
             variant="outlined"
             color="primary"
+            size="lg"
             :loading="loading"
             @click="refresh()"
           >
@@ -148,6 +149,7 @@ onMounted(async () => {
       </RuiTooltip>
       <RuiButton
         color="primary"
+        size="lg"
         @click="add()"
       >
         <template #prepend>

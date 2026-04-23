@@ -118,7 +118,9 @@ const taskRunning = useIsTaskRunning(TaskType.EXPORT_HISTORY_EVENTS);
       <RuiButton
         color="primary"
         variant="outlined"
-        class="!p-2"
+        icon
+        size="xl"
+        class="!rounded"
         :disabled="taskRunning"
         @click="showConfirmation()"
       >
