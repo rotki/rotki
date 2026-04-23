@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import PriceRefresh from '@/modules/assets/prices/PriceRefresh.vue';
 import { useAggregatedBalances } from '@/modules/balances/use-aggregated-balances';
-import { useBalancesLoading } from '@/modules/balances/use-balance-loading';
+import { useBalanceStatus } from '@/modules/balances/use-balance-status';
 import { useDynamicMessages } from '@/modules/core/messaging/use-dynamic-messages';
 import DashboardAssetTable from '@/modules/dashboard/DashboardAssetTable.vue';
 import DynamicMessageDisplay from '@/modules/dashboard/DynamicMessageDisplay.vue';
@@ -31,7 +31,7 @@ const { enabled: nftEnabled } = useModuleEnabled(Module.NFTS);
 const { width } = useElementSize(dashboardRef);
 const { height: floatingHeight } = useElementBounding(floatingRef);
 
-const { loadingBalancesAndDetection: isAnyLoading } = useBalancesLoading();
+const { isInitialLoading: isAnyLoading } = useBalanceStatus();
 const dismissedMessage = useSessionStorage('rotki.messages.dash.dismissed', false);
 
 const paddingTop = computed<number>(() => get(floatingHeight) || 0);

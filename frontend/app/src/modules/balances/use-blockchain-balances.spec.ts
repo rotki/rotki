@@ -6,10 +6,9 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createAccount } from '@/modules/accounts/create-account';
 import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
 import { useBlockchainBalancesApi } from '@/modules/balances/api/use-blockchain-balances-api';
+import { useBalanceRefreshState } from '@/modules/balances/use-balance-refresh-state';
 import { useBalancesStore } from '@/modules/balances/use-balances-store';
 import { useBlockchainBalances } from '@/modules/balances/use-blockchain-balances';
-import { Section } from '@/modules/core/common/status';
-import { useStatusStore } from '@/modules/core/common/use-status-store';
 import { useGeneralSettingsStore } from '@/modules/settings/use-general-settings-store';
 
 vi.mock('@/modules/settings/use-general-settings-store', async () => {
@@ -198,8 +197,8 @@ describe('useBlockchainBalances', () => {
         });
       };
 
-      const { useIsLoading } = useStatusStore();
-      const loading = useIsLoading(Section.BLOCKCHAIN, Blockchain.ETH);
+      const refreshState = useBalanceRefreshState();
+      const loading = refreshState.useIsRefreshing(Blockchain.ETH);
 
       startPromise(call());
       assert(1);
@@ -230,8 +229,8 @@ describe('useBlockchainBalances', () => {
         });
       };
 
-      const { useIsLoading } = useStatusStore();
-      const loading = useIsLoading(Section.BLOCKCHAIN, Blockchain.ETH);
+      const refreshState = useBalanceRefreshState();
+      const loading = refreshState.useIsRefreshing(Blockchain.ETH);
 
       startPromise(call());
       assert(1);

@@ -58,7 +58,7 @@ const {
   totalValue,
 } = useAccountTableData<T>(() => accounts, expandedIds, chainFilter);
 
-const { accountOperation, isAnyLoading, isRowLoading, isSectionLoading } = useAccountLoadingStates<T>(() => category);
+const { accountOperation, isInitialLoading, isRowLoading, isSectionLoading } = useAccountLoadingStates<T>(() => category);
 
 const { confirmDelete, edit } = useAccountOperations<T>({
   onEdit: account => emit('edit', account),
@@ -85,7 +85,7 @@ defineExpose({
     v-model:collapsed="collapsed"
     :cols="cols"
     :rows="rows"
-    :loading="group && isAnyLoading"
+    :loading="group && isInitialLoading"
     row-attr="id"
     :empty="{ description: t('data_table.no_data') }"
     :loading-text="t('account_balances.data_table.loading')"

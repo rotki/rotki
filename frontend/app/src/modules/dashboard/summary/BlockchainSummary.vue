@@ -4,6 +4,7 @@ import BlockchainBalanceRefreshBehaviourMenu
   from '@/modules/balances/BlockchainBalanceRefreshBehaviourMenu.vue';
 import BlockchainBalanceStalenessIndicator from '@/modules/balances/BlockchainBalanceStalenessIndicator.vue';
 import { useBalanceRefresh } from '@/modules/balances/use-balance-refresh';
+import { useBalanceStatus } from '@/modules/balances/use-balance-status';
 import { TaskType } from '@/modules/core/tasks/task-type';
 import { useTaskStore } from '@/modules/core/tasks/use-task-store';
 import SummaryCard from '@/modules/dashboard/summary/SummaryCard.vue';
@@ -14,13 +15,12 @@ import BlockchainSummaryCardCreateButton from './BlockchainSummaryCardCreateButt
 const { blockchainTotals } = useBlockchainTotalSummary();
 const { useIsTaskRunning } = useTaskStore();
 const { refreshBalance } = useBalanceRefresh();
+const { isRefreshing } = useBalanceStatus();
 const { t } = useI18n({ useScope: 'global' });
 
 const isTokenDetecting = useIsTaskRunning(TaskType.FETCH_DETECTED_TOKENS);
-const isQueryingBlockchain = useIsTaskRunning(TaskType.QUERY_BLOCKCHAIN_BALANCES);
 const isLoopringLoading = useIsTaskRunning(TaskType.L2_LOOPRING);
-const isBlockchainLoading = logicOr(isQueryingBlockchain, isLoopringLoading);
-const isLoading = logicOr(isBlockchainLoading, isTokenDetecting);
+const isLoading = logicOr(isRefreshing, isLoopringLoading, isTokenDetecting);
 </script>
 
 <template>
