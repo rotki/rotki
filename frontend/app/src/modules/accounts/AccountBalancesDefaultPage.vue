@@ -69,6 +69,7 @@ onMounted(async () => {
         data-cy="blockchain-account-refresh"
         variant="outlined"
         color="primary"
+        size="lg"
         :disabled="refreshDisabled"
         :loading="isSectionLoading"
         @click="table?.refreshClick()"
@@ -81,6 +82,7 @@ onMounted(async () => {
       <RuiButton
         data-cy="add-blockchain-account"
         color="primary"
+        size="lg"
         @click="createNewBlockchainAccount()"
       >
         <template #prepend>

@@ -84,6 +84,7 @@ watchImmediate(location, async () => {
     <template #buttons>
       <RuiButton
         color="primary"
+        size="lg"
         @click="add()"
       >
         <template #prepend>

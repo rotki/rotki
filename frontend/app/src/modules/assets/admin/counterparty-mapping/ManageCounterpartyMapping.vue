@@ -117,6 +117,7 @@ function showDeleteConfirmation(item: CounterpartyMapping) {
       <RuiButton
         color="primary"
         variant="outlined"
+        size="lg"
         :loading="loading"
         @click="fetchData()"
       >
@@ -129,6 +130,7 @@ function showDeleteConfirmation(item: CounterpartyMapping) {
       <RuiButton
         data-cy="managed-counterparty-mapping-add-btn"
         color="primary"
+        size="lg"
         @click="add()"
       >
         <template #prepend>

@@ -37,6 +37,7 @@ const isEth2Loading = logicOr(
     v-if="isAccountsTabSelected"
     variant="outlined"
     color="primary"
+    size="lg"
   >
     <RuiButton
       :disabled="refreshDisabled"
@@ -55,6 +56,7 @@ const isEth2Loading = logicOr(
             ...attrs,
             'data-cy': 'blockchain-account-refresh',
           }"
+          size="lg"
           color="primary"
           variant="outlined"
           class="!outline-0 px-2"
@@ -71,6 +73,7 @@ const isEth2Loading = logicOr(
     v-else
     color="primary"
     variant="outlined"
+    size="lg"
     :loading="isEth2Loading"
     @click="emit('refresh')"
   >
@@ -88,6 +91,7 @@ const isEth2Loading = logicOr(
       <RuiButton
         data-cy="add-blockchain-account"
         color="primary"
+        size="lg"
         :disabled="addDisabled"
         @click="emit('add-account')"
       >

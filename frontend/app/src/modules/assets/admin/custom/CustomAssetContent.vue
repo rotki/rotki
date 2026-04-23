@@ -128,6 +128,7 @@ watch(() => identifier, (assetId) => {
       <RuiButton
         color="primary"
         variant="outlined"
+        size="lg"
         :loading="loading"
         @click="refresh()"
       >
@@ -140,6 +141,7 @@ watch(() => identifier, (assetId) => {
       <RuiButton
         data-cy="managed-asset-add-btn"
         color="primary"
+        size="lg"
         @click="add()"
       >
         <template #prepend>

@@ -123,6 +123,7 @@ watch(hide, (hide) => {
         v-bind="attrs"
         icon
         variant="text"
+        size="lg"
       >
         <RuiIcon
           color="primary"

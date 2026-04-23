@@ -241,6 +241,7 @@ function refresh() {
             <RuiButton
               variant="outlined"
               color="primary"
+              size="lg"
               :loading="loading"
               @click="refresh()"
             >

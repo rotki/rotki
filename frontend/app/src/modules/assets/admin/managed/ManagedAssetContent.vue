@@ -217,6 +217,7 @@ onBeforeMount(async () => {
       <RuiButton
         color="primary"
         variant="outlined"
+        size="lg"
         :loading="loading"
         @click="fetchData()"
       >
@@ -229,6 +230,7 @@ onBeforeMount(async () => {
       <RuiButton
         data-cy="managed-asset-add-btn"
         color="primary"
+        size="lg"
         @click="add()"
       >
         <template #prepend>
@@ -244,8 +246,7 @@ onBeforeMount(async () => {
           <RuiButton
             variant="text"
             icon
-            size="sm"
-            class="!p-2"
+            size="lg"
             v-bind="attrs"
           >
             <RuiIcon name="lu-ellipsis-vertical" />

@@ -190,6 +190,7 @@ watch(route, async (route) => {
     <template #buttons>
       <RuiButton
         color="primary"
+        size="lg"
         data-cy="add-exchange"
         @click="addExchange()"
       >

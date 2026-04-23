@@ -116,6 +116,7 @@ function showDeleteConfirmation(item: CexMapping) {
       <RuiButton
         color="primary"
         variant="outlined"
+        size="lg"
         :loading="loading"
         @click="fetchData()"
       >
@@ -128,6 +129,7 @@ function showDeleteConfirmation(item: CexMapping) {
       <RuiButton
         data-cy="managed-cex-mapping-add-btn"
         color="primary"
+        size="lg"
         @click="add()"
       >
         <template #prepend>

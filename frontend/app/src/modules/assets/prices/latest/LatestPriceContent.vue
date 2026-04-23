@@ -111,6 +111,7 @@ onMounted(async () => {
           <RuiButton
             color="primary"
             variant="outlined"
+            size="lg"
             :loading="loading || refreshing"
             @click="refreshCurrentPrices()"
           >
@@ -125,6 +126,7 @@ onMounted(async () => {
 
       <RuiButton
         color="primary"
+        size="lg"
         @click="add()"
       >
         <template #prepend>

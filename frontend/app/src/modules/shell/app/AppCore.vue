@@ -124,6 +124,7 @@ onBeforeMount(() => {
           color="primary"
           class="fixed bottom-4 right-4 z-[6]"
           variant="fab"
+          size="lg"
           icon
           @click="scrollToTop()"
         >

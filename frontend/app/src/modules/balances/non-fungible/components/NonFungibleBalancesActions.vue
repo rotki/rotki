@@ -26,6 +26,7 @@ function onRefresh(): void {
         <RuiButton
           variant="outlined"
           color="primary"
+          size="lg"
           :loading="sectionLoading"
           @click="onRefresh()"
         >

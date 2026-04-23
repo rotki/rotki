@@ -18,7 +18,7 @@ const dialogOpen = ref(false);
       <RuiButton
         variant="text"
         icon
-        class="!p-2"
+        size="lg"
         v-bind="attrs"
       >
         <RuiIcon name="lu-file-cog" />
