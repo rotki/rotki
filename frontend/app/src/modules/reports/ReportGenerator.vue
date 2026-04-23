@@ -153,7 +153,7 @@ onMounted(async () => {
           <RuiButton
             class="w-full"
             color="primary"
-            size="lg"
+            size="xl"
             :disabled="!canGenerate"
             @click="generate()"
           >
@@ -170,8 +170,8 @@ onMounted(async () => {
           >
             <template #activator="{ attrs }">
               <RuiButton
-                class="h-[2.625rem]"
-                size="lg"
+                variant="outlined"
+                size="xl"
                 v-bind="attrs"
               >
                 <template #prepend>
