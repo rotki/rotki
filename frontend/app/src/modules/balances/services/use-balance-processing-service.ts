@@ -7,6 +7,7 @@ import {
   type BtcBalances,
   type FetchBlockchainBalancePayload,
 } from '@/modules/balances/types/blockchain-balances';
+import { useBalanceRefreshState } from '@/modules/balances/use-balance-refresh-state';
 import { useBalancesStore } from '@/modules/balances/use-balances-store';
 import { useBlockchainRefreshTimestampsStore } from '@/modules/balances/use-blockchain-refresh-timestamps-store';
 import { logger } from '@/modules/core/common/logging/logging';
@@ -35,7 +36,8 @@ export function useBalanceProcessingService(): UseBalanceProcessingServiceReturn
   const { updateTimestamps } = useBlockchainRefreshTimestampsStore();
   const { getChainName } = useSupportedChains();
   const { t } = useI18n({ useScope: 'global' });
-  const { isFirstLoad, resetStatus, setStatus } = useStatusUpdater(Section.BLOCKCHAIN);
+  const { getStatus, resetStatus, setStatus } = useStatusUpdater(Section.BLOCKCHAIN);
+  const refreshState = useBalanceRefreshState();
 
   const processBalanceResult = (blockchain: string, result: unknown): void => {
     const parsedBalances: BlockchainBalances = BlockchainBalances.parse(result);
@@ -101,17 +103,23 @@ export function useBalanceProcessingService(): UseBalanceProcessingServiceReturn
 
   const handleCachedFetch = async (payload: FetchBlockchainBalancePayload, threshold: string | undefined): Promise<void> => {
     const { blockchain } = payload;
-    setStatus(isFirstLoad() ? Status.LOADING : Status.REFRESHING, { subsection: blockchain });
+    if (getStatus({ subsection: blockchain }) !== Status.LOADED)
+      setStatus(Status.LOADING, { subsection: blockchain });
     await executeBalanceQuery(blockchain, async () => queryBlockchainBalances(payload, threshold));
   };
 
   const handleRefresh = async (payload: FetchBlockchainBalancePayload): Promise<void> => {
     const { blockchain, isXpub } = payload;
-    setStatus(Status.REFRESHING, { subsection: blockchain });
-    await executeBalanceQuery(
-      blockchain,
-      async () => !isXpub ? refreshBlockchainBalances(payload) : queryXpubBalances(payload),
-    );
+    refreshState.start(blockchain);
+    try {
+      await executeBalanceQuery(
+        blockchain,
+        async () => !isXpub ? refreshBlockchainBalances(payload) : queryXpubBalances(payload),
+      );
+    }
+    finally {
+      refreshState.stop(blockchain);
+    }
   };
 
   return {

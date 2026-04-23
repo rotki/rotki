@@ -12,8 +12,8 @@ import BlockchainBalanceRefreshBehaviourMenu from '@/modules/balances/Blockchain
 import BlockchainBalanceStalenessIndicator from '@/modules/balances/BlockchainBalanceStalenessIndicator.vue';
 import { useAggregatedBalances } from '@/modules/balances/use-aggregated-balances';
 import { useBalanceRefresh } from '@/modules/balances/use-balance-refresh';
+import { useBalanceStatus } from '@/modules/balances/use-balance-status';
 import { NoteLocation } from '@/modules/core/common/notes';
-import { Section } from '@/modules/core/common/status';
 import SummaryCardRefreshMenu from '@/modules/dashboard/summary/SummaryCardRefreshMenu.vue';
 import VisibleColumnsSelector from '@/modules/dashboard/VisibleColumnsSelector.vue';
 import HideSmallBalances from '@/modules/settings/HideSmallBalances.vue';
@@ -21,7 +21,6 @@ import { BalanceSource, DashboardTableType } from '@/modules/settings/types/fron
 import { useFrontendSettingsStore } from '@/modules/settings/use-frontend-settings-store';
 import CardTitle from '@/modules/shell/components/CardTitle.vue';
 import TablePageLayout from '@/modules/shell/layout/TablePageLayout.vue';
-import { useSectionStatus } from '@/modules/shell/sync-progress/use-section-status';
 
 definePage({
   meta: {
@@ -43,8 +42,7 @@ const route = useRoute('balances-blockchain');
 const tableType = DashboardTableType.BLOCKCHAIN_ASSET_BALANCES;
 
 const { useBlockchainBalances } = useAggregatedBalances();
-const { isInitialLoading, isLoading } = useSectionStatus(Section.BLOCKCHAIN);
-const isRefreshing = computed<boolean>(() => get(isLoading) && !get(isInitialLoading));
+const { isInitialLoading, isRefreshing } = useBalanceStatus();
 const { dashboardTablesVisibleColumns } = storeToRefs(useFrontendSettingsStore());
 const { isDetectingTokens, refreshDisabled } = useBlockchainAccountLoading();
 const { handleBlockchainRefresh } = useBalanceRefresh();

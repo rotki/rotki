@@ -1,6 +1,7 @@
 import type { ComputedRef, MaybeRefOrGetter } from 'vue';
 import { useAccountCategoryHelper } from '@/modules/accounts/use-account-category-helper';
 import { useTokenDetectionStore } from '@/modules/balances/blockchain/use-token-detection-store';
+import { useBalanceRefreshState } from '@/modules/balances/use-balance-refresh-state';
 import { Section } from '@/modules/core/common/status';
 import { useStatusStore } from '@/modules/core/common/use-status-store';
 import { TaskType } from '@/modules/core/tasks/task-type';
@@ -19,6 +20,7 @@ export function useBlockchainAccountLoading(category: MaybeRefOrGetter<string> =
   const { isTaskRunning, useIsTaskRunning } = useTaskStore();
   const { massDetecting } = storeToRefs(useTokenDetectionStore());
   const { getIsLoading } = useStatusStore();
+  const { refreshingChains } = storeToRefs(useBalanceRefreshState());
 
   const { chainIds, isEvm } = useAccountCategoryHelper(category);
 
@@ -35,10 +37,11 @@ export function useBlockchainAccountLoading(category: MaybeRefOrGetter<string> =
   });
 
   const isSectionLoading = computed<boolean>(() => {
+    const refreshing = get(refreshingChains);
     if (!toValue(category))
-      return getIsLoading(Section.BLOCKCHAIN);
+      return getIsLoading(Section.BLOCKCHAIN) || refreshing.size > 0;
 
-    return get(chainIds).some(chain => getIsLoading(Section.BLOCKCHAIN, chain));
+    return get(chainIds).some(chain => getIsLoading(Section.BLOCKCHAIN, chain) || refreshing.has(chain));
   });
 
   const isDetectingTokens = computed<boolean>(() => get(isEvm) && isDefined(massDetecting));

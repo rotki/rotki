@@ -9,6 +9,8 @@ type StatusState = Partial<Record<Section, SectionStatus>>;
 
 const defaultSection = 'default';
 
+// Balance sections no longer write REFRESHING (refresh activity lives in useBalanceRefreshState);
+// this fallthrough keeps behavior correct for history/staking/nft/liquity which still use it.
 function isInitialLoadingStatus(status: Status): boolean {
   return status !== Status.LOADED && status !== Status.PARTIALLY_LOADED && status !== Status.REFRESHING;
 }
