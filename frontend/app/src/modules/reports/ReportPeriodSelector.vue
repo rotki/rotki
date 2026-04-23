@@ -159,7 +159,7 @@ const quarterModel = computed({
 <template>
   <div class="flex flex-col gap-4">
     <div>
-      <div class="text-subtitle-1 font-bold mb-2">
+      <div class="text-subtitle-1 font-medium mb-2">
         {{ t('generate.period') }}
       </div>
       <div class="flex gap-4">
@@ -168,15 +168,15 @@ const quarterModel = computed({
             <RuiButtonGroup
               v-model="yearModel"
               required
-              class="flex-wrap justify-center"
+              variant="outlined"
               active-color="primary"
+              class="flex-wrap justify-center"
               data-cy="button-group-report-period-year"
             >
               <RuiButton
                 v-for="period in periods"
                 :key="period"
-                :color="year === period ? 'primary' : undefined"
-                class="px-4 [&:last-child]:!rounded-r-none"
+                class="[&:last-child]:!rounded-r-none"
                 :model-value="period"
               >
                 {{ period }}
@@ -184,8 +184,9 @@ const quarterModel = computed({
             </RuiButtonGroup>
             <RuiButton
               v-bind="attrs"
-              class="!rounded-l-none border-l border-rui-grey-400"
+              variant="outlined"
               :color="isOlderYearSelected ? 'primary' : undefined"
+              class="!rounded-l-none -ml-px"
               data-cy="button-older-years"
             >
               <div class="flex items-center gap-2">
@@ -214,7 +215,7 @@ const quarterModel = computed({
         </RuiMenu>
 
         <RuiButton
-          class="px-4"
+          variant="outlined"
           :color="isAllTime ? 'primary' : undefined"
           data-cy="button-all-time"
           @click="selectAllTime()"
@@ -223,7 +224,7 @@ const quarterModel = computed({
         </RuiButton>
 
         <RuiButton
-          class="px-4"
+          variant="outlined"
           :color="isCustom ? 'primary' : undefined"
           data-cy="button-custom"
           @click="yearModel = 'custom'"
@@ -232,24 +233,21 @@ const quarterModel = computed({
         </RuiButton>
       </div>
     </div>
-    <div
-      v-if="year !== 'custom' && year !== 'all-time'"
-      class="pt-3.5"
-    >
-      <div class="text-subtitle-1 font-bold mb-2">
+    <div v-if="year !== 'custom' && year !== 'all-time'">
+      <div class="text-subtitle-1 font-medium mb-2">
         {{ t('generate.sub_period_label') }}
       </div>
       <RuiButtonGroup
         v-model="quarterModel"
         required
-        class="flex-wrap justify-center"
+        variant="outlined"
         active-color="primary"
+        class="flex-wrap justify-center"
         data-cy="button-group-quarter"
       >
         <RuiButton
           v-for="subPeriod in subPeriods"
           :key="subPeriod.id"
-          :color="quarter === subPeriod.id ? 'primary' : undefined"
           :model-value="subPeriod.id"
           :disabled="isStartAfterNow(subPeriod.id)"
         >
