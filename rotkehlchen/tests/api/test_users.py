@@ -17,7 +17,7 @@ from rotkehlchen.constants.misc import USERDB_NAME, USERSDIR_NAME
 from rotkehlchen.db.cache import DBCacheStatic
 from rotkehlchen.db.drivers.gevent import DBConnection, DBConnectionType
 from rotkehlchen.db.settings import ROTKEHLCHEN_DB_VERSION, DBSettings
-from rotkehlchen.errors.api import PremiumPermissionError
+from rotkehlchen.errors.api import PremiumAuthenticationError, PremiumPermissionError
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.history.price import PriceHistorian
 from rotkehlchen.inquirer import Inquirer
@@ -299,8 +299,8 @@ def test_user_creation_with_invalid_premium_credentials(
     # Check that the directory was NOT created
     assert not Path(users_dir / username).exists(), 'The directory should not have been created'
 
-    # Create a new user with valid but not authenticable credentials, and check that both
-    # the invalid key error and device limit error are handled properly.
+    # Create a new user with valid but not authenticable credentials, and check that
+    # authentication, device-limit and network errors use different user-facing messages.
     username = 'Anja'
     data = {
         'name': username,
@@ -309,8 +309,9 @@ def test_user_creation_with_invalid_premium_credentials(
         'premium_api_secret': VALID_PREMIUM_SECRET,
     }
     for side_effect, expected_msg in (
-        (RemoteError('Invalid API-KEY'), 'Invalid API-KEY.'),
-        (PremiumPermissionError('Device limit of 4 exceeded'), 'Device limit of 4 exceeded. _DEVICE_LIMIT_LINK_'),  # noqa: E501
+        (PremiumAuthenticationError('Wrong key or secret'), 'Could not verify keys for the new account. Wrong key or secret.'),  # noqa: E501
+        (PremiumPermissionError('Device limit of 4 exceeded'), 'Could not activate premium on this device. Device limit of 4 exceeded. _DEVICE_LIMIT_LINK_'),  # noqa: E501
+        (RemoteError('Rotki server unavailable'), 'Could not reach the rotki server to verify premium keys. Rotki server unavailable.'),  # noqa: E501
     ):
         with (
             ExitStack() as stack,
@@ -321,7 +322,7 @@ def test_user_creation_with_invalid_premium_credentials(
 
         assert_error_response(
             response=response,
-            contained_in_msg=f'Could not verify keys for the new account. {expected_msg}',
+            contained_in_msg=expected_msg,
             status_code=HTTPStatus.CONFLICT,
         )
 
@@ -333,7 +334,7 @@ def test_user_creation_with_invalid_premium_credentials(
     assert not Path(users_dir / username).exists(), 'The directory should not have been created'
     # But check that a backup of the directory was made just in case
     backups = list(Path(users_dir).glob('auto_backup_*'))
-    assert len(backups) == 2
+    assert len(backups) == 3
     assert all('auto_backup_Anja_' in str(x) for x in backups), 'Automatic backups should have been made'  # noqa: E501
 
     # But then try to create a normal-non premium user and see it works
@@ -352,7 +353,7 @@ def test_user_creation_with_invalid_premium_credentials(
     response = requests.get(api_url_for(rotkehlchen_api_server, 'usersresource'))
     result = assert_proper_sync_response_with_result(response)
     assert result[username] == 'loggedin'
-    assert len(result) == 3  # also has two logged out entries for the auto backups made above.
+    assert len(result) == 4  # also has three logged out entries for the auto backups made above.
 
     # Check that the directory was created
     assert (users_dir / username / USERDB_NAME).exists()
