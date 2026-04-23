@@ -19,7 +19,7 @@ const { isOutOfSync, navigateToHistory, processing } = useTransactionStatusCheck
 const { queryBinanceUserMarkets } = useExchangeApi();
 const { connectedExchanges } = storeToRefs(useSessionSettingsStore());
 
-const range = ref<{ start: number | undefined; end: number }>({ end: 0, start: 0 });
+const range = ref<{ start: number | undefined; end: number }>({ end: 0, start: undefined });
 const valid = ref<boolean>(false);
 const binanceExchangesWithoutMarkets = ref<string[]>([]);
 

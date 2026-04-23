@@ -37,20 +37,28 @@ function updateValid(valid: boolean): void {
 }
 
 async function onChanged(event: SelectionChangedEvent): Promise<void> {
+  // Reset the range before the persisted-setting API call so quick-option
+  // clicks inside the Custom picker land on a sane `end=now, start=undefined`
+  // baseline. Doing it after `await updateFrontendSetting` opens a race where
+  // a fast click on a preset gets the old year/quarter's end as the
+  // max-date constraint — see DateTimeRangePicker.applyQuickOption.
+  if (event.year === 'custom') {
+    input({ end: dayjs().unix(), start: undefined });
+  }
+
   await updateFrontendSetting({
     profitLossReportPeriod: event,
   });
-
-  if (event.year === 'custom') {
-    await nextTick();
-    input({ end: dayjs().unix(), start: undefined });
-  }
 }
 
 function onPeriodChange(period: PeriodChangedEvent | null): void {
   const now = dayjs().unix();
   if (period === null) {
-    input({ end: now, start: 0 });
+    // Custom period — leave start undefined so the picker renders empty
+    // instead of defaulting the field to 1970-01-01 (epoch). The
+    // `requiredIf(custom)` rule in v$ catches this as a validation error
+    // until the user picks a date or hits a quick-option preset.
+    input({ end: now, start: undefined });
     return;
   }
 

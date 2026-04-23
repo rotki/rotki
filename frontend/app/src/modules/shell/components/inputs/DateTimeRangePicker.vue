@@ -60,10 +60,16 @@ const endErrorMessagesComputed = computed<string[]>(() => {
 });
 
 function applyQuickOption(option: QuickOption): void {
+  // Update `end` before `start` so the start picker's max-date constraint
+  // (bound to `end`) widens before the new start is written. Otherwise a
+  // transient state where start > end can latch a validation error in the
+  // start picker that won't clear until the user changes modelValue again —
+  // see RuiDateTimePicker's isDateValid, which only re-runs on modelValue
+  // changes, not on min/max-date prop changes.
   const now = dayjs();
-  set(start, now.subtract(option.value, option.unit).unix());
+  set(end, now.unix());
   nextTick(() => {
-    set(end, now.unix());
+    set(start, now.subtract(option.value, option.unit).unix());
   });
 }
 </script>
