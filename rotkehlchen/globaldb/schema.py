@@ -362,6 +362,7 @@ CREATE INDEX IF NOT EXISTS idx_asset_collections_main_asset ON asset_collections
 CREATE INDEX IF NOT EXISTS idx_user_owned_assets_asset_id ON user_owned_assets (asset_id);
 CREATE INDEX IF NOT EXISTS idx_common_assets_identifier ON common_asset_details (identifier);
 CREATE INDEX IF NOT EXISTS idx_price_history_identifier ON price_history (from_asset, to_asset);
+CREATE INDEX IF NOT EXISTS idx_price_history_timestamp_desc_order ON price_history (timestamp DESC, from_asset, to_asset, source_type);
 CREATE INDEX IF NOT EXISTS idx_location_mappings_identifier ON location_asset_mappings (local_id);
 CREATE INDEX IF NOT EXISTS idx_underlying_tokens_lists_identifier ON underlying_tokens_list (identifier, parent_token_entry);
 CREATE INDEX IF NOT EXISTS idx_underlying_tokens_parent_entry ON underlying_tokens_list (parent_token_entry);
