@@ -35,6 +35,7 @@ MINIMIZED_GLOBAL_DB_INDEXES = {
     "idx_user_owned_assets_asset_id": "createindexifnotexistsidx_user_owned_assets_asset_idonuser_owned_assets(asset_id)",
     "idx_common_assets_identifier": "createindexifnotexistsidx_common_assets_identifieroncommon_asset_details(identifier)",
     "idx_price_history_identifier": "createindexifnotexistsidx_price_history_identifieronprice_history(from_asset,to_asset)",
+    "idx_price_history_timestamp_desc_order": "createindexifnotexistsidx_price_history_timestamp_desc_orderonprice_history(timestampdesc,from_asset,to_asset,source_type)",
     "idx_location_mappings_identifier": "createindexifnotexistsidx_location_mappings_identifieronlocation_asset_mappings(local_id)",
     "idx_underlying_tokens_lists_identifier": "createindexifnotexistsidx_underlying_tokens_lists_identifieronunderlying_tokens_list(identifier,parent_token_entry)",
     "idx_underlying_tokens_parent_entry": "createindexifnotexistsidx_underlying_tokens_parent_entryonunderlying_tokens_list(parent_token_entry)",

@@ -1659,6 +1659,32 @@ def test_upgrade_v14_v15_post_asset_upgrade_missing_velo(
         ).fetchone() == ('VELO', 'VELO', 'velo', 'VELO', None, 1601266688, None)
 
 
+@pytest.mark.parametrize('globaldb_upgrades', [[]])
+@pytest.mark.parametrize('custom_globaldb', ['v14_global.db'])
+@pytest.mark.parametrize('target_globaldb_version', [14])
+@pytest.mark.parametrize('reload_user_assets', [False])
+@pytest.mark.parametrize('use_in_memory_globaldb', [False])
+def test_upgrade_v15_v16_creates_price_history_timestamp_order_index(
+        globaldb: GlobalDBHandler,
+        messages_aggregator: MessagesAggregator,
+) -> None:
+    """Test the global DB upgrade path that creates the price history timestamp-order index."""
+    assert globaldb.get_setting_value('version', 0) == 14
+
+    with ExitStack() as stack:
+        patch_for_globaldb_upgrade_to(stack, 16)
+        maybe_upgrade_globaldb(
+            connection=globaldb.conn,
+            global_dir=globaldb._data_directory / GLOBALDIR_NAME,  # type: ignore
+            db_filename=GLOBALDB_NAME,
+            msg_aggregator=messages_aggregator,
+        )
+
+    assert globaldb.get_setting_value('version', 0) == 16
+    with globaldb.conn.read_ctx() as cursor:
+        assert index_exists(cursor=cursor, name='idx_price_history_timestamp_desc_order') is True
+
+
 @pytest.mark.parametrize('custom_globaldb', ['v2_global.db'])
 @pytest.mark.parametrize('target_globaldb_version', [2])
 @pytest.mark.parametrize('reload_user_assets', [False])
