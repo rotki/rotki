@@ -580,4 +580,28 @@ test.describe.serial('history event filter persistence', () => {
       expect(url).toContain('eventSubtypes=none');
     }).toPass({ timeout: 10000 });
   });
+
+  // Regression test for a bug where editing an applied filter chip did not
+  // re-open the suggestions dropdown. The RuiAutoComplete menu closed on
+  // apply, which unmounted FilterDropdown, and clicking a chip had no way
+  // to reopen it. Follow-up: https://github.com/rotki/ui-library/issues/517
+  test('clicking a filter chip reopens the suggestions dropdown', async () => {
+    await page.visit();
+    await waitForNoRunningTasks(ctx.sharedPage);
+
+    await page.applyTableFilter('event_type', 'receive');
+
+    // First edit — reproduces the initial chip-edit case.
+    await page.clickFilterChipToEdit('event_type', 'receive');
+    await page.expectFilterSuggestionsVisible();
+
+    // Dismiss the dropdown by clicking elsewhere so the RuiAutoComplete
+    // menu fully closes (and FilterDropdown unmounts) before we re-edit.
+    // This is the condition under which the original bug manifested.
+    await page.dismissFilterDropdown();
+
+    // Second edit on the same chip — must still reopen suggestions.
+    await page.clickFilterChipToEdit('event_type', 'receive');
+    await page.expectFilterSuggestionsVisible();
+  });
 });

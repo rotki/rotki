@@ -149,6 +149,27 @@ export class HistoryEventsPage {
     await option.click();
   }
 
+  async clickFilterChipToEdit(key: string, value: string): Promise<void> {
+    const filter = this.page.locator('[data-cy=table-filter]');
+    const chip = filter.locator('[role=button]', { hasText: `${key}=${value}` }).first();
+    await chip.waitFor({ state: 'visible' });
+    await chip.click();
+  }
+
+  async expectFilterSuggestionsVisible(): Promise<void> {
+    const suggestions = this.page.locator('[data-cy=suggestions]');
+    await suggestions.waitFor({ state: 'visible', timeout: TIMEOUT_MEDIUM });
+    const buttons = suggestions.locator('> button');
+    expect(await buttons.count()).toBeGreaterThan(0);
+  }
+
+  async dismissFilterDropdown(): Promise<void> {
+    // Click a neutral page region to trigger onClickOutside on the chip's
+    // edit input and close the autocomplete menu.
+    await this.page.locator('body').click({ position: { x: 5, y: 5 } });
+    await this.page.locator('[data-cy=suggestions]').waitFor({ state: 'detached', timeout: TIMEOUT_MEDIUM });
+  }
+
   async getEventRows(): Promise<number> {
     const rows = this.page.locator('[data-cy=history-event-row]');
     return rows.count();
