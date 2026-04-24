@@ -65,6 +65,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let stateless_routes = Router::new().route("/health", routing::get(api::health::status));
     let app_routes = Router::new()
+        .route(
+            "/settings/configuration",
+            routing::get(api::configuration::get_configuration)
+                .put(api::configuration::set_configuration),
+        )
         .route("/assets/icon", routing::get(api::icons::get_icon))
         .route("/assets/icon", routing::head(api::icons::check_icon))
         .route(

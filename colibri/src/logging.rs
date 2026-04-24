@@ -2,10 +2,14 @@ use crate::args::Args;
 
 use std::fmt;
 use std::str::FromStr;
+use std::sync::{
+    atomic::{AtomicUsize, Ordering},
+    Mutex, OnceLock,
+};
 
 use file_rotate::{compression::Compression, suffix::AppendCount, ContentLimit, FileRotate};
-use std::sync::Mutex;
 use tracing_subscriber::filter::{EnvFilter, LevelFilter};
+use tracing_subscriber::{prelude::*, reload, Registry};
 
 #[repr(usize)]
 #[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Debug, Hash)]
@@ -78,14 +82,52 @@ impl fmt::Display for RotkiLogLevel {
     }
 }
 
+impl RotkiLogLevel {
+    fn from_usize(value: usize) -> Self {
+        match value {
+            0 => RotkiLogLevel::Off,
+            1 => RotkiLogLevel::Critical,
+            2 => RotkiLogLevel::Error,
+            3 => RotkiLogLevel::Warning,
+            4 => RotkiLogLevel::Info,
+            5 => RotkiLogLevel::Debug,
+            6 => RotkiLogLevel::Trace,
+            _ => RotkiLogLevel::Info,
+        }
+    }
+}
+
+static CURRENT_LOG_LEVEL: AtomicUsize = AtomicUsize::new(RotkiLogLevel::Info as usize);
+static LOG_FILTER_RELOAD_HANDLE: OnceLock<reload::Handle<EnvFilter, Registry>> = OnceLock::new();
+
+fn env_filter_for_level(level: RotkiLogLevel) -> EnvFilter {
+    EnvFilter::builder()
+        .with_default_directive(Into::<LevelFilter>::into(level).into())
+        .parse("")
+        .unwrap()
+}
+
+pub fn current_log_level() -> RotkiLogLevel {
+    RotkiLogLevel::from_usize(CURRENT_LOG_LEVEL.load(Ordering::Relaxed))
+}
+
+pub fn set_log_level(level: RotkiLogLevel) -> Result<(), String> {
+    if let Some(handle) = LOG_FILTER_RELOAD_HANDLE.get() {
+        handle
+            .modify(|filter| *filter = env_filter_for_level(level))
+            .map_err(|error| format!("Failed to update log level: {}", error))?;
+    }
+    CURRENT_LOG_LEVEL.store(level as usize, Ordering::Relaxed);
+    Ok(())
+}
+
 // Configure logging for the app. We allow logging to a system file
 // or to the stdout. If logs are stored in files they are rotated
 // based on size and there is a max of `max_logfiles_num` files saved.
 pub fn config_logging(args: Args) {
-    let filter = EnvFilter::builder()
-        .with_default_directive(Into::<LevelFilter>::into(args.log_level).into())
-        .parse("")
-        .unwrap();
+    let (filter, reload_handle) = reload::Layer::new(env_filter_for_level(args.log_level));
+    CURRENT_LOG_LEVEL.store(args.log_level as usize, Ordering::Relaxed);
+    let _ = LOG_FILTER_RELOAD_HANDLE.set(reload_handle);
 
     let log_to_file = FileRotate::new(
         args.logfile_path.clone(),
@@ -96,18 +138,16 @@ pub fn config_logging(args: Args) {
     );
 
     if !args.log_to_stdout {
-        tracing_subscriber::fmt()
+        let fmt_layer = tracing_subscriber::fmt::layer()
             .with_target(false)
             .with_ansi(false)
-            .with_env_filter(filter)
             .with_writer(Mutex::new(log_to_file))
-            .compact()
-            .init();
+            .compact();
+        Registry::default().with(filter).with(fmt_layer).init();
     } else {
-        tracing_subscriber::fmt()
+        let fmt_layer = tracing_subscriber::fmt::layer()
             .with_target(false)
-            .with_env_filter(filter)
-            .compact()
-            .init();
+            .compact();
+        Registry::default().with(filter).with(fmt_layer).init();
     }
 }

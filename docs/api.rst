@@ -64,6 +64,84 @@ Colibri endpoints
    Endpoints in this section are served by Colibri (Rust service), not the Python backend.
    They do not use the ``/api/(version)/`` prefix.
 
+Getting or modifying Colibri configuration
+------------------------------------------
+
+.. http:get:: /settings/configuration
+
+   Doing a ``GET`` on this Colibri endpoint returns runtime configuration values for the Rust service.
+   This endpoint does not use the ``/api/(version)/`` prefix.
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      GET /settings/configuration HTTP/1.1
+      Host: localhost:4343
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+          "result": {
+              "loglevel": {
+                  "value": "INFO",
+                  "is_default": true
+              }
+          },
+          "message": ""
+      }
+
+   :resjson object loglevel: The current logging level of Colibri.
+   :resjson string value: Value used for the configuration.
+   :resjson bool is_default: ``true`` if the setting uses Colibri's default value and ``false`` otherwise.
+
+   :statuscode 200: Querying of the Colibri configuration was successful.
+
+.. http:put:: /settings/configuration
+
+   Doing a ``PUT`` on this Colibri endpoint modifies Colibri's log level at runtime.
+   This endpoint does not use the ``/api/(version)/`` prefix.
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      PUT /settings/configuration HTTP/1.1
+      Host: localhost:4343
+      Content-Type: application/json
+
+      {
+          "loglevel": "TRACE"
+      }
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+          "result": {
+              "loglevel": {
+                  "value": "TRACE",
+                  "is_default": false
+              }
+          },
+          "message": ""
+      }
+
+   :reqjson string loglevel: The logging level to set. Must be one of: ``TRACE``, ``DEBUG``, ``INFO``, ``WARNING``, ``ERROR``, ``CRITICAL``, ``OFF``.
+
+   :statuscode 200: Colibri configuration was successfully updated.
+   :statuscode 400: Provided ``loglevel`` is not supported.
+   :statuscode 500: Internal Colibri error.
+
 Query oracle prices
 -------------------
 
