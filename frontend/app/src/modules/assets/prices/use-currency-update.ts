@@ -47,7 +47,7 @@ export function useCurrencyUpdate(): UseCurrencyUpdateReturn {
         for (const [asset, priceData] of Object.entries(currentPrices)) {
           scaledPrices[asset] = {
             ...priceData,
-            value: priceData.value.multipliedBy(ratio),
+            value: priceData.value.gt(0) ? priceData.value.multipliedBy(ratio) : priceData.value,
           };
         }
 

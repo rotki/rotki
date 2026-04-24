@@ -86,18 +86,19 @@ export function useAssetValue(options: UseAssetValueOptions): UseAssetValueRetur
 
     // If known price is provided, use it directly
     if (known !== undefined && known !== null) {
-      return known;
+      return known.gt(0) ? known : Zero;
     }
 
     // Fall back to looking up the price (already in current currency)
-    return getAssetPrice(toValue(asset), Zero);
+    const current = getAssetPrice(assetVal, Zero);
+    return current.gt(0) ? current : Zero;
   });
 
   const value = computed<BigNumber>(() => {
     const amountVal = toValue(amount);
     const priceVal = get(price);
 
-    if (amountVal.isZero() || priceVal.isZero()) {
+    if (amountVal.isZero() || priceVal.lte(0)) {
       return Zero;
     }
 

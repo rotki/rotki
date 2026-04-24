@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { type AssetBalance, type Balance, type BigNumber, type LiquityPoolDetailEntry, type LiquityStatisticDetails, One } from '@rotki/common';
+import { type AssetBalance, type Balance, type BigNumber, type LiquityPoolDetailEntry, type LiquityStatisticDetails, One, Zero } from '@rotki/common';
 import { FiatDisplay } from '@/modules/assets/amount-display/components';
 import { usePriceUtils } from '@/modules/assets/prices/use-price-utils';
 import { bigNumberSum } from '@/modules/core/common/data/calculation';
@@ -19,6 +19,16 @@ const { getAssetPrice, useAssetPrice } = usePriceUtils();
 const LUSD_ID = 'eip155:1/erc20:0x5f98805A4E8be255a32880FDeC7F6728C6568bA0';
 const lusdPrice = useAssetPrice(LUSD_ID);
 
+function priceOrOne(asset: string): BigNumber {
+  const price = getAssetPrice(asset);
+  return price && price.gt(0) ? price : One;
+}
+
+const lusdPriceOrOne = computed<BigNumber>(() => {
+  const price = get(lusdPrice);
+  return price && price.gt(0) ? price : One;
+});
+
 const { isLoading: loading } = useSectionStatus(Section.DEFI_LIQUITY_STATISTICS);
 
 const statisticWithAdjustedPrice = computed<LiquityStatisticDetails | null>(() => {
@@ -33,7 +43,7 @@ const statisticWithAdjustedPrice = computed<LiquityStatisticDetails | null>(() =
 
     return {
       ...stakingGain,
-      value: stakingGain.amount.multipliedBy(price),
+      value: price.gt(0) ? stakingGain.amount.multipliedBy(price) : Zero,
     };
   });
 
@@ -42,7 +52,7 @@ const statisticWithAdjustedPrice = computed<LiquityStatisticDetails | null>(() =
 
     return {
       ...stabilityPoolGain,
-      value: stabilityPoolGain.amount.multipliedBy(price),
+      value: price.gt(0) ? stabilityPoolGain.amount.multipliedBy(price) : Zero,
     };
   });
 
@@ -54,10 +64,10 @@ const statisticWithAdjustedPrice = computed<LiquityStatisticDetails | null>(() =
     ...statistic,
     stabilityPoolGains,
     stakingGains,
-    totalDepositedStabilityPoolValue: statistic.totalDepositedStabilityPool.multipliedBy(get(lusdPrice) ?? One),
+    totalDepositedStabilityPoolValue: statistic.totalDepositedStabilityPool.multipliedBy(get(lusdPriceOrOne)),
     totalValueGainsStabilityPool,
     totalValueGainsStaking,
-    totalWithdrawnStabilityPoolValue: statistic.totalWithdrawnStabilityPool.multipliedBy(get(lusdPrice) ?? One),
+    totalWithdrawnStabilityPoolValue: statistic.totalWithdrawnStabilityPool.multipliedBy(get(lusdPriceOrOne)),
   };
 });
 
@@ -115,9 +125,9 @@ function calculatePnl(
   return computed(() => {
     const expectedAmount = totalDepositedStabilityPool.minus(totalWithdrawnStabilityPool);
 
-    const liquidationGainsInCurrentPrice = poolGains.amount.multipliedBy(getAssetPrice(poolGains.asset, One));
+    const liquidationGainsInCurrentPrice = poolGains.amount.multipliedBy(priceOrOne(poolGains.asset));
 
-    const rewardsInCurrentPrice = poolRewards.amount.multipliedBy(getAssetPrice(poolRewards.asset, One));
+    const rewardsInCurrentPrice = poolRewards.amount.multipliedBy(priceOrOne(poolRewards.asset));
 
     const totalWithdrawals = totalValueGainsStabilityPool
       .plus(liquidationGainsInCurrentPrice)
@@ -125,7 +135,7 @@ function calculatePnl(
 
     const diffDeposited = expectedAmount.minus(poolDeposited.amount);
 
-    const diffDepositedInCurrentUsdPrice = diffDeposited.multipliedBy(get(lusdPrice) ?? One);
+    const diffDepositedInCurrentUsdPrice = diffDeposited.multipliedBy(get(lusdPriceOrOne));
 
     return totalWithdrawals.minus(diffDepositedInCurrentUsdPrice);
   });
