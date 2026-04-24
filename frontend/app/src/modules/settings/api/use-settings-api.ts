@@ -1,7 +1,8 @@
+import { apiUrls } from '@/modules/core/api/api-urls';
 import { api } from '@/modules/core/api/rotki-api';
 import { VALID_WITH_SESSION_STATUS } from '@/modules/core/api/utils';
 import { type SettingsUpdate, UserSettingsModel } from '@/modules/settings/types/user-settings';
-import { BackendConfiguration } from '@/modules/shell/app/backend';
+import { BackendConfiguration, ColibriConfiguration } from '@/modules/shell/app/backend';
 
 interface UseSettingApiReturn {
   setSettings: (settings: SettingsUpdate) => Promise<UserSettingsModel>;
@@ -9,6 +10,8 @@ interface UseSettingApiReturn {
   getRawSettings: () => Promise<SettingsUpdate>;
   backendSettings: () => Promise<BackendConfiguration>;
   updateBackendConfiguration: (loglevel: string) => Promise<BackendConfiguration>;
+  colibriSettings: () => Promise<ColibriConfiguration>;
+  updateColibriConfiguration: (loglevel: string) => Promise<ColibriConfiguration>;
 }
 
 export function useSettingsApi(): UseSettingApiReturn {
@@ -45,11 +48,30 @@ export function useSettingsApi(): UseSettingApiReturn {
     return BackendConfiguration.parse(response);
   };
 
+  const colibriSettings = async (): Promise<ColibriConfiguration> => {
+    const response = await api.get<ColibriConfiguration>(
+      '/settings/configuration',
+      { baseURL: apiUrls.colibriApiUrl },
+    );
+    return ColibriConfiguration.parse(response);
+  };
+
+  const updateColibriConfiguration = async (loglevel: string): Promise<ColibriConfiguration> => {
+    const response = await api.put<ColibriConfiguration>(
+      '/settings/configuration',
+      { loglevel: loglevel.toUpperCase() },
+      { baseURL: apiUrls.colibriApiUrl },
+    );
+    return ColibriConfiguration.parse(response);
+  };
+
   return {
     backendSettings,
+    colibriSettings,
     getRawSettings,
     getSettings,
     setSettings,
     updateBackendConfiguration,
+    updateColibriConfiguration,
   };
 }

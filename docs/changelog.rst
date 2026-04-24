@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`12079` Log level changes now take effect immediately without restarting rotki — including switching to debug on packaged builds after resetting to defaults.
 * :bug:`-` The PnL report's Custom range quick-options (Last 12 hours, Last 7 days, etc.) no longer leave a stale "Date cannot be after …" error on the Start field when switching from a past year/quarter to Custom.
 * :feature:`-` You can now update the historical price of an asset for a specific event directly from the event row's asset menu, either by patching the existing oracle entry or saving a manual override.
 * :feature:`12032` Added a dedicated oracle prices management page with paginated filtering, inline editing, and deletion of cached oracle price entries, plus CryptoCompare cache management in the same place.

@@ -9,6 +9,7 @@ interface UseInteropReturn {
   readonly isPackaged: boolean;
   readonly appSession: boolean;
   logToFile: (level: LogLevel, message?: any, ...optionalParams: any[]) => void;
+  setLogLevel: (level: LogLevel) => void;
   navigate: (url: string) => Promise<void>;
   navigateToPremium: () => Promise<void>;
   setupListeners: (listeners: Listeners) => void;
@@ -112,6 +113,10 @@ const interop: UseInteropReturn = {
 
   logToFile: (level: LogLevel, message: string): void => {
     window.interop?.logToFile(level, message);
+  },
+
+  setLogLevel: (level: LogLevel): void => {
+    window.interop?.setLogLevel(level);
   },
 
   metamaskImport: async (): Promise<string[]> => {

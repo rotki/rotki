@@ -2,13 +2,15 @@
 import type { LogLevel } from '@shared/log-level';
 import { useSettingsApi } from '@/modules/settings/api/use-settings-api';
 import LogLevelInput from '@/modules/settings/backend/LogLevelInput.vue';
+import { useLogLevelUpdate } from '@/modules/settings/backend/use-log-level-update';
 import SettingsItem from '@/modules/settings/controls/SettingsItem.vue';
 import { useClearableMessages } from '@/modules/settings/use-clearable-messages';
 import { saveUserOptions } from '@/modules/shell/app/backend-options';
 
 const { t } = useI18n({ useScope: 'global' });
 
-const { backendSettings, updateBackendConfiguration } = useSettingsApi();
+const { backendSettings } = useSettingsApi();
+const { applyLogLevelChange } = useLogLevelUpdate();
 
 const logLevel = ref<LogLevel>();
 const fileConfigDisabled = ref<boolean>(false);
@@ -29,7 +31,7 @@ async function handleUpdate(newValue: LogLevel): Promise<void> {
 
   try {
     saveUserOptions({ loglevel: newValue });
-    await updateBackendConfiguration(newValue);
+    await applyLogLevelChange(newValue);
     await wait();
     setSuccess('', true);
   }

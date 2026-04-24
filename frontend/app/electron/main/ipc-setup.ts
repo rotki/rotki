@@ -127,6 +127,9 @@ export class IpcManager {
     ipcMain.on(IpcCommands.LOG_TO_FILE, (_, level: LogLevel, message: string) => {
       this.systemHandlers.logToFile(level, message);
     });
+    ipcMain.on(IpcCommands.SET_LOG_LEVEL, (_, level: LogLevel) => {
+      this.systemHandlers.setLogLevel(level);
+    });
     ipcMain.on(IpcCommands.TRAY_UPDATE, (_event, trayUpdate: TrayUpdate) => {
       this.systemHandlers.updateTray(trayUpdate);
     });

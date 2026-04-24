@@ -74,6 +74,9 @@ contextBridge.exposeInMainWorld('interop', {
   logToFile: (level: LogLevel, message: string) => {
     ipcRenderer.send(IpcCommands.LOG_TO_FILE, level, message);
   },
+  setLogLevel: (level: LogLevel) => {
+    ipcRenderer.send(IpcCommands.SET_LOG_LEVEL, level);
+  },
   storePassword: async (credentials: Credentials) => ipcRenderer.invoke(IpcCommands.INVOKE_STORE_PASSWORD, credentials),
   getPassword: async (username: string) => ipcRenderer.invoke(IpcCommands.INVOKE_GET_PASSWORD, username),
   clearPassword: async () => ipcRenderer.invoke(IpcCommands.INVOKE_CLEAR_PASSWORD),
