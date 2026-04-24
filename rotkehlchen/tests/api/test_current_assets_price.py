@@ -502,14 +502,17 @@ def test_get_all_current_prices(rotkehlchen_api_server: 'APIServer') -> None:
     assert len(result) == 0
 
 
+@pytest.mark.vcr
 @pytest.mark.parametrize('should_mock_current_price_queries', [False])
 def test_prices_cache_invalidation_for_manual_prices(rotkehlchen_api_server: 'APIServer') -> None:
     """
     Check that the prices cache are properly invalidated upon addition
     and deletion of manual prices.
 
-    Prices are not mocked in order to get the latest prices
-    and not a constant value when adjustments are made to the amount.
+    Price queries intentionally use the real Inquirer/manual-price path instead of the
+    constant mocked price fixture, so updating ETH/BTC from 1 to 10 must affect the
+    computed ETH/USD price. External oracle responses are recorded with VCR to keep
+    the BTC/USD leg deterministic.
     """
     requests.put(
         api_url_for(
