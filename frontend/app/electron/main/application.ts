@@ -37,6 +37,7 @@ export class Application {
 
   constructor() {
     this.logger = new LogService(app);
+    this.logger.setLogLevel(resolveLogLevel(undefined, this.appConfig.isDev));
     this.settings = new SettingsManager(app);
     this.processHandler = new SubprocessHandler(this.logger, this.appConfig);
     this.window = new WindowManager(this.logger);
