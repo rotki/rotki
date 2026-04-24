@@ -523,4 +523,60 @@ describe('table-filter', () => {
       expect(wrapper.emitted('update:matches')?.at(-1)).toEqual([{ type: ['type 2', 'type 3', 'type 4'] }]);
     });
   });
+
+  describe('chip edit reopens suggestions', () => {
+    // Regression test for a bug where editing a chip (clicking an applied
+    // filter) did not re-open the RuiAutoComplete menu, so `FilterDropdown`
+    // (rendered inside `<template #no-data>`) stayed unmounted and the user
+    // saw no suggestions despite the underlying data being populated.
+    // See https://github.com/rotki/ui-library/issues/517 for the follow-up
+    // that will replace the synthetic-input workaround with a public API.
+    it('should show suggestions when clicking a chip to edit it', async () => {
+      wrapper = createWrapper({
+        props: {
+          matchers,
+          matches: { type: ['type 1'] },
+        },
+      });
+      await vi.advanceTimersToNextTimerAsync();
+
+      // The chip for `type=type 1` should be present
+      const chip = wrapper.find('[data-id="activator"] .contents:nth-child(1) > [role=button]');
+      expect(chip.exists()).toBe(true);
+
+      // Click the chip to enter edit mode
+      await chip.trigger('click');
+      await vi.advanceTimersToNextTimerAsync();
+
+      // The autocomplete's native input should reflect the chip key
+      expect(wrapper.find<HTMLInputElement>('input:not(.edit-input)').element.value).toBe('type=');
+
+      // The suggestions dropdown should be visible with all type suggestions
+      const suggestionButtons = wrapper.findAll('[data-cy=suggestions] > button');
+      expect(suggestionButtons).toHaveLength(matchers[1].suggestions().length);
+    });
+
+    it('should show filtered suggestions when typing in the chip edit input', async () => {
+      wrapper = createWrapper({
+        props: {
+          matchers,
+          matches: { type: ['type 1'] },
+        },
+      });
+      await vi.advanceTimersToNextTimerAsync();
+
+      await wrapper.find('[data-id="activator"] .contents:nth-child(1) > [role=button]').trigger('click');
+      await vi.advanceTimersToNextTimerAsync();
+
+      // Type into the chip's inline edit input — the TableFilter should
+      // propagate this to `search` and keep the autocomplete menu open.
+      const editInput = wrapper.find<HTMLInputElement>('input.edit-input');
+      await editInput.setValue('type 2');
+      await vi.advanceTimersToNextTimerAsync();
+
+      const suggestionButtons = wrapper.findAll('[data-cy=suggestions] > button');
+      expect(suggestionButtons.length).toBeGreaterThan(0);
+      expect(suggestionButtons[0].text()).toContain('type 2');
+    });
+  });
 });
