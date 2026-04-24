@@ -1,4 +1,5 @@
 pub mod assets;
+pub mod configuration;
 mod constants;
 pub mod database;
 pub mod globaldb_endpoints;
