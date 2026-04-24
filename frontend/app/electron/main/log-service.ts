@@ -2,6 +2,7 @@ import type { App } from 'electron';
 import fs from 'node:fs';
 import path from 'node:path';
 import * as util from 'node:util';
+import { isLogLevelActive } from '@electron/main/log-level-severity';
 import { LogManager } from '@electron/main/log-manager';
 import { type LogRotationConfig, RotationTiming } from '@electron/main/log-rotation-config';
 import { LogLevel } from '@shared/log-level';
@@ -91,7 +92,7 @@ export class LogService {
    * Check if a log level should be written based on the current log level
    */
   private shouldLog(level: LogLevel): boolean {
-    return level >= this.currentLogLevel;
+    return isLogLevelActive(level, this.currentLogLevel);
   }
 
   private getLogLevelString(level: LogLevel): string {

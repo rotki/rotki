@@ -126,6 +126,7 @@ export interface Interop {
   config: (defaults: boolean) => Promise<Partial<BackendOptions>>;
   updateTray: (trayUpdate: TrayUpdate) => void;
   logToFile: (level: LogLevel, message: string) => void;
+  setLogLevel: (level: LogLevel) => void;
   storePassword: (credentials: Credentials) => Promise<boolean>;
   getPassword: (username: string) => Promise<string>;
   clearPassword: () => Promise<void>;

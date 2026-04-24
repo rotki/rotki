@@ -127,4 +127,8 @@ export class SystemHandlers {
   logToFile = (level: LogLevel, message: string): void => {
     this.logger.write(level, message);
   };
+
+  setLogLevel = (level: LogLevel): void => {
+    this.logger.setLogLevel(level);
+  };
 }

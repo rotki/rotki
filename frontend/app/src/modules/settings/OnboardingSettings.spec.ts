@@ -13,10 +13,12 @@ vi.mock('@/modules/core/common/logging/logging', async (): Promise<Record<string
   };
 });
 
+const { setLogLevelMock } = vi.hoisted(() => ({ setLogLevelMock: vi.fn() }));
 vi.mock('@/modules/shell/app/use-electron-interop', (): Record<string, unknown> => ({
   useInterop: vi.fn().mockReturnValue({
     isPackaged: true,
     restartBackend: vi.fn(),
+    setLogLevel: setLogLevelMock,
     config: vi.fn().mockReturnValue({
       logDirectory: '/Users/home/rotki/logs',
     }),
@@ -118,6 +120,7 @@ describe('onboarding-settings', () => {
     localStorage.clear();
     backendConfig.loglevel = { value: 'debug', isDefault: true };
     setLevelMock.mockClear();
+    setLogLevelMock.mockClear();
     wrapper = await createWrapper();
     await nextTick();
   });
@@ -190,15 +193,18 @@ describe('onboarding-settings', () => {
 
       // Only care about calls triggered by the save action, not onMounted.
       setLevelMock.mockClear();
+      setLogLevelMock.mockClear();
 
       await wrapper.find('[data-cy=onboarding-setting__submit-button]').trigger('click');
       await flushPromises();
       await nextTick();
 
-      // Without this the dropdown change silently has no effect in production:
-      // the backend log level updates via REST, but the frontend consola logger
-      // keeps filtering at its original level so logs appear unchanged.
+      // Without these the dropdown change silently has no effect in production:
+      // the backend log level updates via REST, but both the frontend consola
+      // logger and the Electron LogService keep filtering at their original
+      // level so logs appear unchanged until a full restart.
       expect(setLevelMock).toHaveBeenCalledWith('warning');
+      expect(setLogLevelMock).toHaveBeenCalledWith('warning');
     });
   });
 
