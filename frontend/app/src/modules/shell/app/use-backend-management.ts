@@ -60,6 +60,7 @@ export function useBackendManagement(loaded: () => void = () => {}): UseBackendM
   const applyUserOptions = async (config: Partial<BackendOptions>, skipRestart = false): Promise<void> => {
     saveUserOptions(config);
     set(userOptions, config);
+    setLevel(get(options).loglevel);
     if (!skipRestart) {
       await restartBackendWithOptions(get(options));
     }

@@ -4,6 +4,15 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import OnboardingSettings from '@/modules/settings/OnboardingSettings.vue';
 import { useBackendConnection } from '@/modules/shell/app/use-backend-connection';
 
+const { setLevelMock } = vi.hoisted(() => ({ setLevelMock: vi.fn() }));
+vi.mock('@/modules/core/common/logging/logging', async (): Promise<Record<string, unknown>> => {
+  const mod = await vi.importActual<typeof import('@/modules/core/common/logging/logging')>('@/modules/core/common/logging/logging');
+  return {
+    ...mod,
+    setLevel: setLevelMock,
+  };
+});
+
 vi.mock('@/modules/shell/app/use-electron-interop', (): Record<string, unknown> => ({
   useInterop: vi.fn().mockReturnValue({
     isPackaged: true,
@@ -106,6 +115,9 @@ describe('onboarding-settings', () => {
   }
 
   beforeEach(async (): Promise<void> => {
+    localStorage.clear();
+    backendConfig.loglevel = { value: 'debug', isDefault: true };
+    setLevelMock.mockClear();
     wrapper = await createWrapper();
     await nextTick();
   });
@@ -170,6 +182,23 @@ describe('onboarding-settings', () => {
       expect(saveOptions).not.toHaveBeenCalledWith({
         loglevel: 'warning',
       });
+    });
+
+    it('should update the frontend logger level when only loglevel changes (regression #12079)', async () => {
+      await wrapper.find('.loglevel-input .input').trigger('input', { value: 'warning' });
+      await nextTick();
+
+      // Only care about calls triggered by the save action, not onMounted.
+      setLevelMock.mockClear();
+
+      await wrapper.find('[data-cy=onboarding-setting__submit-button]').trigger('click');
+      await flushPromises();
+      await nextTick();
+
+      // Without this the dropdown change silently has no effect in production:
+      // the backend log level updates via REST, but the frontend consola logger
+      // keeps filtering at its original level so logs appear unchanged.
+      expect(setLevelMock).toHaveBeenCalledWith('warning');
     });
   });
 
