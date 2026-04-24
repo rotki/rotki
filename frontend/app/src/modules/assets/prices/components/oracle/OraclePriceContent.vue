@@ -78,8 +78,34 @@ const sourceLabels: Record<string, string> = {
   [PriceOracle.UNISWAP3]: 'Uniswap V3',
 };
 
+const sourceBrandColors: Record<string, string> = {
+  [PriceOracle.ALCHEMY]: '#363ff9',
+  [PriceOracle.COINGECKO]: '#8dc63f',
+  [PriceOracle.CRYPTOCOMPARE]: '#f37021',
+  [PriceOracle.DEFILLAMA]: '#2172e5',
+  [PriceOracle.FIAT]: '#85bb65',
+  [PriceOracle.UNISWAP2]: '#ff007a',
+  [PriceOracle.UNISWAP3]: '#e50887',
+};
+
+type ChipColor = 'grey' | 'primary' | 'secondary' | 'error' | 'warning' | 'info' | 'success';
+
+const sourceContextColors: Record<string, ChipColor> = {
+  [PriceOracle.BLOCKCHAIN]: 'secondary',
+  [PriceOracle.MANUAL]: 'warning',
+  [PriceOracle.MANUALCURRENT]: 'warning',
+};
+
 function getSourceLabel(source: string): string {
   return sourceLabels[source] ?? source;
+}
+
+function getSourceBgColor(source: string): string | undefined {
+  return sourceBrandColors[source];
+}
+
+function getSourceColor(source: string): ChipColor {
+  return sourceContextColors[source] ?? 'grey';
 }
 
 const editingItem = ref<OraclePriceEntry>();
@@ -161,7 +187,10 @@ onMounted(async () => {
         <template #item.sourceType="{ row }">
           <RuiChip
             size="sm"
-            variant="outlined"
+            :bg-color="getSourceBgColor(row.sourceType)"
+            :text-color="getSourceBgColor(row.sourceType) ? '#ffffff' : undefined"
+            :variant="getSourceBgColor(row.sourceType) ? 'filled' : 'outlined'"
+            :color="getSourceColor(row.sourceType)"
           >
             {{ getSourceLabel(row.sourceType) }}
           </RuiChip>
