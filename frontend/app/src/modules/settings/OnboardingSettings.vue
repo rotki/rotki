@@ -33,7 +33,7 @@ const maxLogSize = ref<string>('0');
 const sqliteInstructions = ref<string>('0');
 const maxLogFiles = ref<string>('0');
 
-const { backendSettings, updateBackendConfiguration } = useSettingsApi();
+const { backendSettings, updateBackendConfiguration, updateColibriConfiguration } = useSettingsApi();
 
 const selecting = ref<boolean>(false);
 const confirmReset = ref<boolean>(false);
@@ -234,6 +234,7 @@ async function save() {
   // If only loglevel changed, update configuration without restarting the backend
   if (keys.length === 1 && keys[0] === 'loglevel') {
     await updateBackendConfiguration(newUserOptionsVal.loglevel!);
+    await updateColibriConfiguration(newUserOptionsVal.loglevel!);
     await applyUserOptions({ loglevel: newUserOptionsVal.loglevel }, true);
     await loadConfiguration();
   }

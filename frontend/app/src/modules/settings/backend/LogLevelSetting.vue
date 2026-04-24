@@ -10,7 +10,7 @@ import { useInterop } from '@/modules/shell/app/use-electron-interop';
 
 const { t } = useI18n({ useScope: 'global' });
 
-const { backendSettings, updateBackendConfiguration } = useSettingsApi();
+const { backendSettings, updateBackendConfiguration, updateColibriConfiguration } = useSettingsApi();
 const interop = useInterop();
 
 const logLevel = ref<LogLevel>();
@@ -33,6 +33,7 @@ async function handleUpdate(newValue: LogLevel): Promise<void> {
   try {
     saveUserOptions({ loglevel: newValue });
     await updateBackendConfiguration(newValue);
+    await updateColibriConfiguration(newValue);
     setLevel(newValue);
     if (interop.isPackaged) {
       interop.setLogLevel(newValue);

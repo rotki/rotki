@@ -71,6 +71,7 @@ const backendConfig = {
   },
 };
 
+const { updateColibriConfigurationMock } = vi.hoisted(() => ({ updateColibriConfigurationMock: vi.fn() }));
 vi.mock('@/modules/settings/api/use-settings-api', (): Record<string, unknown> => ({
   useSettingsApi: vi.fn().mockReturnValue({
     backendSettings: vi.fn().mockImplementation((): typeof backendConfig => ({ ...backendConfig })),
@@ -81,6 +82,8 @@ vi.mock('@/modules/settings/api/use-settings-api', (): Record<string, unknown> =
       };
       return { ...backendConfig };
     }),
+    colibriSettings: vi.fn().mockResolvedValue({ loglevel: { value: 'info', isDefault: true } }),
+    updateColibriConfiguration: updateColibriConfigurationMock,
   }),
 }));
 
@@ -125,6 +128,7 @@ describe('onboarding-settings', () => {
     backendConfig.loglevel = { value: 'debug', isDefault: true };
     setLevelMock.mockClear();
     setLogLevelMock.mockClear();
+    updateColibriConfigurationMock.mockClear();
     wrapper = await createWrapper();
     await nextTick();
   });
@@ -209,6 +213,7 @@ describe('onboarding-settings', () => {
       // level so logs appear unchanged until a full restart.
       expect(setLevelMock).toHaveBeenCalledWith('warning');
       expect(setLogLevelMock).toHaveBeenCalledWith('warning');
+      expect(updateColibriConfigurationMock).toHaveBeenCalledWith('warning');
     });
   });
 
@@ -226,7 +231,9 @@ describe('onboarding-settings', () => {
       const { useSettingsApi } = await import('@/modules/settings/api/use-settings-api');
       vi.mocked(useSettingsApi).mockReturnValueOnce({
         backendSettings: vi.fn().mockReturnValue(deferred),
+        colibriSettings: vi.fn().mockResolvedValue({ loglevel: { value: 'info', isDefault: true } }),
         updateBackendConfiguration: vi.fn(),
+        updateColibriConfiguration: updateColibriConfigurationMock,
         setSettings: vi.fn(),
         getSettings: vi.fn(),
         getRawSettings: vi.fn(),

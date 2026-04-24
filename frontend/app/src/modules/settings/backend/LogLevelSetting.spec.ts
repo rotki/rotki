@@ -19,13 +19,18 @@ vi.mock('@/modules/shell/app/use-electron-interop', (): Record<string, unknown> 
   }),
 }));
 
-const { updateBackendConfigurationMock } = vi.hoisted(() => ({ updateBackendConfigurationMock: vi.fn() }));
+const { updateBackendConfigurationMock, updateColibriConfigurationMock } = vi.hoisted(() => ({
+  updateBackendConfigurationMock: vi.fn(),
+  updateColibriConfigurationMock: vi.fn(),
+}));
 vi.mock('@/modules/settings/api/use-settings-api', (): Record<string, unknown> => ({
   useSettingsApi: vi.fn().mockReturnValue({
     backendSettings: vi.fn().mockResolvedValue({
       loglevel: { value: 'debug', isDefault: true },
     }),
+    colibriSettings: vi.fn().mockResolvedValue({ loglevel: { value: 'info', isDefault: true } }),
     updateBackendConfiguration: updateBackendConfigurationMock,
+    updateColibriConfiguration: updateColibriConfigurationMock,
   }),
 }));
 
@@ -63,6 +68,8 @@ describe('logLevelSetting', () => {
     updateBackendConfigurationMock.mockResolvedValue({
       loglevel: { value: 'warning', isDefault: false },
     });
+    updateColibriConfigurationMock.mockClear();
+    updateColibriConfigurationMock.mockResolvedValue(undefined);
     wrapper = await createWrapper();
     await vi.runOnlyPendingTimersAsync();
     await nextTick();
@@ -81,7 +88,9 @@ describe('logLevelSetting', () => {
       backendSettings: vi.fn().mockResolvedValue({
         loglevel: { value: 'critical', isDefault: true },
       }),
+      colibriSettings: vi.fn().mockResolvedValue({ loglevel: { value: 'info', isDefault: true } }),
       updateBackendConfiguration: updateBackendConfigurationMock,
+      updateColibriConfiguration: updateColibriConfigurationMock,
       setSettings: vi.fn(),
       getSettings: vi.fn(),
       getRawSettings: vi.fn(),
@@ -108,6 +117,7 @@ describe('logLevelSetting', () => {
     await nextTick();
 
     expect(updateBackendConfigurationMock).toHaveBeenCalledWith('warning');
+    expect(updateColibriConfigurationMock).toHaveBeenCalledWith('warning');
     expect(setLevelMock).toHaveBeenCalledWith('warning');
     expect(setLogLevelMock).toHaveBeenCalledWith('warning');
   });

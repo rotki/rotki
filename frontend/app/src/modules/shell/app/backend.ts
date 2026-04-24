@@ -41,3 +41,9 @@ export const BackendConfiguration = z.object({
 });
 
 export type BackendConfiguration = z.infer<typeof BackendConfiguration>;
+
+export const ColibriConfiguration = z.object({
+  loglevel: LogLevelBackendArgument,
+});
+
+export type ColibriConfiguration = z.infer<typeof ColibriConfiguration>;
