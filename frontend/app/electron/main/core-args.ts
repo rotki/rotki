@@ -3,6 +3,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import process from 'node:process';
 import { assert } from '@rotki/common';
+import { resolveLogLevel } from './resolve-log-level';
 
 const BACKEND_DIRECTORY = 'backend';
 
@@ -32,9 +33,12 @@ class RotkiCoreConfigBuilder {
     return this;
   }
 
-  withBackendOptions(options: Partial<BackendOptions>): this {
-    if (options.loglevel)
-      this.args.push('--loglevel', options.loglevel);
+  withBackendOptions(options: Partial<BackendOptions>, isDev: boolean): this {
+    // Always pass --loglevel so the backend matches the frontend's resolved
+    // default (CRITICAL in packaged builds, DEBUG in dev). The Python
+    // argparse default is DEBUG regardless of build type, so without this
+    // a reset on a production build would leave the backend noisy.
+    this.args.push('--loglevel', resolveLogLevel(options.loglevel, isDev));
 
     if (options.logFromOtherModules)
       this.args.push('--logfromothermodules');
@@ -146,6 +150,6 @@ export const RotkiCoreConfig = {
         .withCorsUrl('app://*');
     }
 
-    return command.withBackendOptions(options);
+    return command.withBackendOptions(options, isDev);
   },
 };

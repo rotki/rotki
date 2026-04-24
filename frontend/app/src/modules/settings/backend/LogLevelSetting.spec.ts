@@ -73,6 +73,29 @@ describe('logLevelSetting', () => {
     vi.useRealTimers();
   });
 
+  it('should display the backend-reported loglevel on mount (prod default = critical)', async () => {
+    wrapper.unmount();
+
+    const { useSettingsApi } = await import('@/modules/settings/api/use-settings-api');
+    vi.mocked(useSettingsApi).mockReturnValueOnce({
+      backendSettings: vi.fn().mockResolvedValue({
+        loglevel: { value: 'critical', isDefault: true },
+      }),
+      updateBackendConfiguration: updateBackendConfigurationMock,
+      setSettings: vi.fn(),
+      getSettings: vi.fn(),
+      getRawSettings: vi.fn(),
+    });
+
+    vi.useRealTimers();
+    wrapper = await createWrapper();
+    await nextTick();
+    await nextTick();
+
+    const logLevelInput = wrapper.find<HTMLInputElement>('.loglevel-input .input').element;
+    expect(logLevelInput.value).toBe('critical');
+  });
+
   it('should propagate loglevel changes to consola and the Electron LogService (regression #12079)', async () => {
     setLevelMock.mockClear();
     setLogLevelMock.mockClear();
