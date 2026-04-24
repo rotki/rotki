@@ -10,6 +10,7 @@ import { useMainStore } from '@/modules/core/common/use-main-store';
 import { toMessages } from '@/modules/core/common/validation/validation';
 import { useSettingsApi } from '@/modules/settings/api/use-settings-api';
 import LogLevelInput from '@/modules/settings/backend/LogLevelInput.vue';
+import { useLogLevelUpdate } from '@/modules/settings/backend/use-log-level-update';
 import LanguageSetting from '@/modules/settings/general/language/LanguageSetting.vue';
 import SettingResetButton from '@/modules/settings/SettingResetButton.vue';
 import { useBackendManagement } from '@/modules/shell/app/use-backend-management';
@@ -33,7 +34,8 @@ const maxLogSize = ref<string>('0');
 const sqliteInstructions = ref<string>('0');
 const maxLogFiles = ref<string>('0');
 
-const { backendSettings, updateBackendConfiguration, updateColibriConfiguration } = useSettingsApi();
+const { backendSettings } = useSettingsApi();
+const { applyLogLevelChange } = useLogLevelUpdate();
 
 const selecting = ref<boolean>(false);
 const confirmReset = ref<boolean>(false);
@@ -233,8 +235,7 @@ async function save() {
 
   // If only loglevel changed, update configuration without restarting the backend
   if (keys.length === 1 && keys[0] === 'loglevel') {
-    await updateBackendConfiguration(newUserOptionsVal.loglevel!);
-    await updateColibriConfiguration(newUserOptionsVal.loglevel!);
+    await applyLogLevelChange(newUserOptionsVal.loglevel!);
     await applyUserOptions({ loglevel: newUserOptionsVal.loglevel }, true);
     await loadConfiguration();
   }
