@@ -20,6 +20,7 @@ from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.chain.gnosis.modules.giveth.constants import (
     GGIV_TOKEN_ID,
     GIV_TOKEN_ID,
+    GIVETH_DONATION_CONTRACT_ADDRESS,
     GIVPOW_ADDRESS,
     GNOSIS_GIVPOWERSTAKING_WRAPPER,
 )
@@ -50,6 +51,7 @@ class GivethDecoder(GivethDecoderBase):
             msg_aggregator=msg_aggregator,
             distro_address=string_to_evm_address('0xc0dbDcA66a0636236fAbe1B3C16B1bD4C84bB1E1'),
             givpower_staking_address=GIVPOW_ADDRESS,
+            donation_contract_address=GIVETH_DONATION_CONTRACT_ADDRESS,
             giv_token_id=GIV_TOKEN_ID,
             pow_token_id='eip155:100/erc20:0xD93d3bDBa18ebcB3317a57119ea44ed2Cf41C2F2',
         )

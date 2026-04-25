@@ -5,8 +5,8 @@ from rotkehlchen.chain.evm.decoding.giveth.decoder import GivethDonationDecoderB
 from .constants import GIVETH_DONATION_CONTRACT_ADDRESS
 
 if TYPE_CHECKING:
+    from rotkehlchen.chain.arbitrum_one.node_inquirer import ArbitrumOneInquirer
     from rotkehlchen.chain.evm.decoding.base import BaseEvmDecoderTools
-    from rotkehlchen.chain.polygon_pos.node_inquirer import PolygonPOSInquirer
     from rotkehlchen.user_messages import MessagesAggregator
 
 
@@ -14,7 +14,7 @@ class GivethDecoder(GivethDonationDecoderBase):
 
     def __init__(  # pylint: disable=super-init-not-called
             self,
-            evm_inquirer: 'PolygonPOSInquirer',
+            evm_inquirer: 'ArbitrumOneInquirer',
             base_tools: 'BaseEvmDecoderTools',
             msg_aggregator: 'MessagesAggregator',
     ) -> None:
