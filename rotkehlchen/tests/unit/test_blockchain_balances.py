@@ -10,7 +10,7 @@ from rotkehlchen.chain.ethereum.modules.liquity.constants import CPT_LIQUITY
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.chain.structures import EvmTokenDetectionData
 from rotkehlchen.constants import DEFAULT_BALANCE_LABEL, ONE
-from rotkehlchen.constants.assets import A_BCH, A_BTC, A_ETH, A_LQTY, A_POL
+from rotkehlchen.constants.assets import A_BCH, A_BTC, A_DAI, A_ETH, A_LQTY, A_POL
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.factories import UNIT_BTC_ADDRESS1, make_evm_address
 from rotkehlchen.tests.utils.xpubs import setup_db_for_xpub_tests_impl
@@ -175,6 +175,33 @@ def test_protocol_balances(blockchain: 'ChainsAggregator') -> None:
         )},
     }
     assert blockchain.balances.eth[ETH_ADDRESS2].assets == {}
+
+
+def test_blockchain_balances_cache_removes_spent_token(blockchain: 'ChainsAggregator') -> None:
+    """Test that refreshing an address removes token balances no longer returned."""
+    address = make_evm_address()
+    asset_balances = blockchain.balances.eth[address].assets
+    asset_balances[A_ETH][DEFAULT_BALANCE_LABEL] = Balance(amount=ONE)
+    asset_balances[A_DAI][DEFAULT_BALANCE_LABEL] = Balance(amount=FVal('2'))
+    blockchain._update_blockchain_balances_cache(
+        blockchain=SupportedBlockchain.ETHEREUM,
+        addresses=[address],
+    )
+
+    del asset_balances[A_DAI]
+    blockchain._update_blockchain_balances_cache(
+        blockchain=SupportedBlockchain.ETHEREUM,
+        addresses=[address],
+    )
+
+    with blockchain.database.conn.read_ctx() as cursor:
+        cached_rows = cursor.execute(
+            'SELECT asset, amount FROM blockchain_balances_cache WHERE blockchain=? AND '
+            'address=? ORDER BY asset',
+            (SupportedBlockchain.ETHEREUM.serialize(), address),
+        ).fetchall()
+
+    assert cached_rows == [(A_ETH.identifier, '1')]
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
