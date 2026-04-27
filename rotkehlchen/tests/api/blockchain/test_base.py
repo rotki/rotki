@@ -510,6 +510,28 @@ def _add_blockchain_accounts_test_start(
     return all_eth_accounts, eth_balances, token_balances
 
 
+@pytest.mark.parametrize('number_of_eth_accounts', [0])
+def test_add_solana_blockchain_account_rejects_invalid_address(
+        rotkehlchen_api_server: 'APIServer',
+) -> None:
+    """Test that adding an invalid Solana account raises validation error."""
+    invalid_address = 'invalid_solana_address'
+    response = requests.put(
+        api_url_for(
+            rotkehlchen_api_server,
+            'blockchainsaccountsresource',
+            blockchain=SupportedBlockchain.SOLANA.serialize(),
+        ),
+        json={'accounts': [{'address': invalid_address}]},
+    )
+
+    assert_error_response(
+        response=response,
+        contained_in_msg=f'Given value {invalid_address} is not a valid solana address',
+        status_code=HTTPStatus.BAD_REQUEST,
+    )
+
+
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_modules', [['eth2']])
 @pytest.mark.parametrize('number_of_eth_accounts', [2])
