@@ -25,6 +25,8 @@ from rotkehlchen.chain.arbitrum_one.modules.umami.balances import UmamiBalances
 from rotkehlchen.chain.arbitrum_one.modules.umami.constants import CPT_UMAMI
 from rotkehlchen.chain.base.modules.aerodrome.balances import AerodromeBalances
 from rotkehlchen.chain.base.modules.extrafi.balances import ExtrafiBalances as ExtrafiBalancesBase
+from rotkehlchen.chain.base.modules.morpho_blue.balances import MorphoBlueBalances
+from rotkehlchen.chain.base.modules.morpho_blue.constants import CPT_MORPHO_BLUE, MORPHO_BLUE
 from rotkehlchen.chain.base.modules.runmoney.balances import RunmoneyBalances
 from rotkehlchen.chain.base.modules.runmoney.constants import CPT_RUNMONEY
 from rotkehlchen.chain.ethereum.interfaces.balances import ProtocolWithBalance
@@ -141,6 +143,7 @@ if TYPE_CHECKING:
     from rotkehlchen.chain.aggregator import ChainsAggregator
     from rotkehlchen.chain.arbitrum_one.decoding.decoder import ArbitrumOneTransactionDecoder
     from rotkehlchen.chain.arbitrum_one.node_inquirer import ArbitrumOneInquirer
+    from rotkehlchen.chain.base.decoding.decoder import BaseTransactionDecoder
     from rotkehlchen.chain.base.node_inquirer import BaseInquirer
     from rotkehlchen.chain.ethereum.decoding.decoder import EthereumTransactionDecoder
     from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
@@ -1445,6 +1448,107 @@ def test_runmoney_balances(
     assert user_balance.assets[Asset('eip155:8453/erc20:0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913')][CPT_RUNMONEY] == Balance(  # noqa: E501
         amount=FVal('102.973178'),
         value=FVal('94.6941344888'),
+    )
+
+
+@pytest.mark.parametrize('base_accounts', [['0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12']])
+def test_morpho_blue_balances(
+        base_inquirer: 'BaseInquirer',
+        base_transaction_decoder: 'BaseTransactionDecoder',
+        base_accounts: list[ChecksumEvmAddress],
+        inquirer: 'Inquirer',  # pylint: disable=unused-argument
+) -> None:
+    user_address = base_accounts[0]
+    usdc = Asset('eip155:8453/erc20:0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913')
+    events = [
+        EvmEvent(
+            tx_ref=make_evm_tx_hash(),
+            sequence_index=0,
+            timestamp=TimestampMS(0),
+            location=Location.BASE,
+            event_type=HistoryEventType.DEPOSIT,
+            event_subtype=HistoryEventSubType.DEPOSIT_TO_PROTOCOL,
+            asset=usdc,
+            amount=FVal('10'),
+            location_label=user_address,
+            counterparty=CPT_MORPHO_BLUE,
+            address=MORPHO_BLUE,
+            extra_data={'market_id': '0xmarket-1'},
+        ),
+        EvmEvent(
+            tx_ref=make_evm_tx_hash(),
+            sequence_index=1,
+            timestamp=TimestampMS(1),
+            location=Location.BASE,
+            event_type=HistoryEventType.WITHDRAWAL,
+            event_subtype=HistoryEventSubType.WITHDRAW_FROM_PROTOCOL,
+            asset=usdc,
+            amount=FVal('3'),
+            location_label=user_address,
+            counterparty=CPT_MORPHO_BLUE,
+            address=MORPHO_BLUE,
+            extra_data={'market_id': '0xmarket-1'},
+        ),
+        EvmEvent(
+            tx_ref=make_evm_tx_hash(),
+            sequence_index=2,
+            timestamp=TimestampMS(2),
+            location=Location.BASE,
+            event_type=HistoryEventType.DEPOSIT,
+            event_subtype=HistoryEventSubType.DEPOSIT_TO_PROTOCOL,
+            asset=usdc,
+            amount=FVal('2'),
+            location_label=user_address,
+            counterparty=CPT_MORPHO_BLUE,
+            address=MORPHO_BLUE,
+            extra_data={'market_id': '0xmarket-2'},
+        ),
+        EvmEvent(
+            tx_ref=make_evm_tx_hash(),
+            sequence_index=3,
+            timestamp=TimestampMS(3),
+            location=Location.BASE,
+            event_type=HistoryEventType.RECEIVE,
+            event_subtype=HistoryEventSubType.GENERATE_DEBT,
+            asset=usdc,
+            amount=FVal('4'),
+            location_label=user_address,
+            counterparty=CPT_MORPHO_BLUE,
+            address=MORPHO_BLUE,
+            extra_data={'market_id': '0xmarket-2'},
+        ),
+        EvmEvent(
+            tx_ref=make_evm_tx_hash(),
+            sequence_index=4,
+            timestamp=TimestampMS(4),
+            location=Location.BASE,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.PAYBACK_DEBT,
+            asset=usdc,
+            amount=FVal('1.5'),
+            location_label=user_address,
+            counterparty=CPT_MORPHO_BLUE,
+            address=MORPHO_BLUE,
+            extra_data={'market_id': '0xmarket-2'},
+        ),
+    ]
+    events_db = DBHistoryEvents(base_inquirer.database)
+    with base_inquirer.database.conn.write_ctx() as write_cursor:
+        for event in events:
+            events_db.add_history_event(write_cursor=write_cursor, event=event)
+
+    protocol_balances = MorphoBlueBalances(
+        evm_inquirer=base_inquirer,
+        tx_decoder=base_transaction_decoder,
+    ).query_balances()
+    user_balance = protocol_balances[user_address]
+    assert user_balance.assets[usdc][CPT_MORPHO_BLUE] == Balance(
+        amount=FVal('9'),
+        value=FVal('9') * CURRENT_PRICE_MOCK,
+    )
+    assert user_balance.liabilities[usdc][CPT_MORPHO_BLUE] == Balance(
+        amount=FVal('2.5'),
+        value=FVal('2.5') * CURRENT_PRICE_MOCK,
     )
 
 

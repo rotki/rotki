@@ -9,6 +9,7 @@ Changelog
 * :feature:`12032` Added a dedicated oracle prices management page with paginated filtering, inline editing, and deletion of cached oracle price entries, plus CryptoCompare cache management in the same place.
 * :feature:`-` The address selector in EVM history event forms now shows resolved address-book and ENS names, and lets you filter by either name or address.
 * :feature:`-` The internal transaction conflicts dialog now shows the action type (re-pull or re-decode) in the resolve button's tooltip instead of a separate column.
+* :feature:`11152` Morpho Blue deposits, liabilities, and interactions are now tracked.
 * :bug:`-` Quickswap v2 swaps for native token (ETH, POL etc.) will now be decoded properly.
 * :bug:`-` External swap events (manual trades) can now be deleted from the history events view.
 * :bug:`-` Invalid Solana addresses will now be properly rejected when adding blockchain accounts.

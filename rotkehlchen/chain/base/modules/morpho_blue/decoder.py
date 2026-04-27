@@ -164,6 +164,22 @@ class MorphoBlueDecoder(EvmDecoderInterface):
                         token=event.asset.resolve_to_evm_token(),
                     ) == event.amount
             ):
+                # Avoid transforming third-party vault deposits (for example Beefy -> Morpho).
+                # In these transactions the user first sends funds to the tx target vault, and
+                # then that vault supplies into Morpho with caller == onBehalf == vault address.
+                # Matching by amount alone would incorrectly rewrite the user's vault deposit as a
+                # Morpho deposit, so skip this candidate and let the upstream protocol decoder
+                # claim it.
+                if (
+                        context.transaction.to_address is not None and
+                        event.address == context.transaction.to_address and
+                        (supply_caller := bytes_to_address(context.tx_log.topics[2])) ==
+                        (supply_on_behalf := bytes_to_address(context.tx_log.topics[3])) and
+                        supply_caller != context.transaction.to_address and
+                        event.location_label != supply_on_behalf
+                ):
+                    continue
+
                 if (
                         not skip_bundler_check and
                         later_transfer_sender is not None and
