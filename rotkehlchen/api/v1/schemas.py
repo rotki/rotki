@@ -2334,6 +2334,21 @@ def _validate_blockchain_account_schemas(
             validate_bch_address_input(address, given_addresses)
             given_addresses.add(address)
 
+    elif chain == SupportedBlockchain.SOLANA:
+        for account_data in data['accounts']:
+            address = address_getter(account_data)
+            if not is_valid_solana_address(address):
+                raise ValidationError(
+                    f'Given value {address} is not a valid solana address',
+                    field_name='address',
+                )
+            if address in given_addresses:
+                raise ValidationError(
+                    f'Address {address} appears multiple times in the request data',
+                    field_name='address',
+                )
+            given_addresses.add(address)
+
     # Make sure substrate addresses are valid (either ss58 format or ENS domain)
     elif chain.is_substrate():
         for account_data in data['accounts']:
