@@ -54,33 +54,31 @@ function onEditRule(): void {
           />
         </RuiButton>
       </template>
-      <div class="py-2">
-        <RuiButton
-          variant="list"
-          @click="onEditRule()"
-        >
-          <template #prepend>
-            <RuiIcon
-              class="text-rui-text-secondary"
-              name="lu-pencil"
-            />
-          </template>
-          {{ t('accounting_settings.rule.edit') }}
-        </RuiButton>
-        <RuiButton
-          v-if="canUnlink"
-          variant="list"
-          @click="emit('unlink')"
-        >
-          <template #prepend>
-            <RuiIcon
-              class="text-rui-text-secondary"
-              name="lu-unlink"
-            />
-          </template>
-          {{ t('transactions.events.actions.unlink') }}
-        </RuiButton>
-      </div>
+      <RuiButton
+        variant="list"
+        @click="onEditRule()"
+      >
+        <template #prepend>
+          <RuiIcon
+            class="text-rui-text-secondary"
+            name="lu-pencil"
+          />
+        </template>
+        {{ t('accounting_settings.rule.edit') }}
+      </RuiButton>
+      <RuiButton
+        v-if="canUnlink"
+        variant="list"
+        @click="emit('unlink')"
+      >
+        <template #prepend>
+          <RuiIcon
+            class="text-rui-text-secondary"
+            name="lu-unlink"
+          />
+        </template>
+        {{ t('transactions.events.actions.unlink') }}
+      </RuiButton>
     </RuiMenu>
   </div>
 </template>

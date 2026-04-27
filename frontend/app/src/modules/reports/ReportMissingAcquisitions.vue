@@ -213,17 +213,15 @@ async function showInHistoryEvent(identifier: number) {
                 />
               </RuiButton>
             </template>
-            <div class="py-2">
-              <RuiButton
-                variant="list"
-                @click="ignoreAsset(row.asset)"
-              >
-                <template #prepend>
-                  <RuiIcon name="lu-eye-off" />
-                  {{ t('assets.action.ignore') }}
-                </template>
-              </RuiButton>
-            </div>
+            <RuiButton
+              variant="list"
+              @click="ignoreAsset(row.asset)"
+            >
+              <template #prepend>
+                <RuiIcon name="lu-eye-off" />
+                {{ t('assets.action.ignore') }}
+              </template>
+            </RuiButton>
           </RuiMenu>
 
           <RuiTooltip

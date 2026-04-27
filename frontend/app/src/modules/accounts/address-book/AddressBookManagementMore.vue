@@ -62,17 +62,15 @@ async function doImport() {
           <RuiIcon name="lu-ellipsis-vertical" />
         </RuiButton>
       </template>
-      <div class="py-2">
-        <RuiButton
-          variant="list"
-          @click="importDialogOpen = true;"
-        >
-          <template #prepend>
-            <RuiIcon name="lu-file-up" />
-          </template>
-          {{ t('address_book.import.title') }}
-        </RuiButton>
-      </div>
+      <RuiButton
+        variant="list"
+        @click="importDialogOpen = true;"
+      >
+        <template #prepend>
+          <RuiIcon name="lu-file-up" />
+        </template>
+        {{ t('address_book.import.title') }}
+      </RuiButton>
     </RuiMenu>
     <RuiDialog
       v-model="importDialogOpen"

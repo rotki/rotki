@@ -31,25 +31,23 @@ const { t } = useI18n({ useScope: 'global' });
         />
       </RuiButton>
     </template>
-    <div class="py-2">
-      <ExportReportCsv
-        :report-id="reportId"
-        list
-      />
-      <RuiButton
-        variant="list"
-        color="error"
-        @click="emit('delete')"
-      >
-        <template #prepend>
-          <RuiIcon
-            size="20"
-            name="lu-trash-2"
-          />
-        </template>
+    <ExportReportCsv
+      :report-id="reportId"
+      list
+    />
+    <RuiButton
+      variant="list"
+      color="error"
+      @click="emit('delete')"
+    >
+      <template #prepend>
+        <RuiIcon
+          size="20"
+          name="lu-trash-2"
+        />
+      </template>
 
-        {{ t('reports_table.delete') }}
-      </RuiButton>
-    </div>
+      {{ t('reports_table.delete') }}
+    </RuiButton>
   </RuiMenu>
 </template>

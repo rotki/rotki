@@ -252,28 +252,26 @@ onBeforeMount(async () => {
             <RuiIcon name="lu-ellipsis-vertical" />
           </RuiButton>
         </template>
-        <div class="py-2">
-          <RestoreAssetDbButton dropdown />
-          <RuiTooltip
-            :open-delay="400"
-            class="w-full"
-            :popper="{ placement: 'left' }"
-            tooltip-class="max-w-[200px]"
-          >
-            <template #activator>
-              <RuiButton
-                variant="list"
-                @click="mergeTool = true; openAction = false"
-              >
-                <template #prepend>
-                  <RuiIcon name="lu-combine" />
-                </template>
-                {{ t('asset_management.merge_assets') }}
-              </RuiButton>
-            </template>
-            {{ t('asset_management.merge_assets_tooltip') }}
-          </RuiTooltip>
-        </div>
+        <RestoreAssetDbButton dropdown />
+        <RuiTooltip
+          :open-delay="400"
+          class="w-full"
+          :popper="{ placement: 'left' }"
+          tooltip-class="max-w-[200px]"
+        >
+          <template #activator>
+            <RuiButton
+              variant="list"
+              @click="mergeTool = true; openAction = false"
+            >
+              <template #prepend>
+                <RuiIcon name="lu-combine" />
+              </template>
+              {{ t('asset_management.merge_assets') }}
+            </RuiButton>
+          </template>
+          {{ t('asset_management.merge_assets_tooltip') }}
+        </RuiTooltip>
       </RuiMenu>
     </template>
 

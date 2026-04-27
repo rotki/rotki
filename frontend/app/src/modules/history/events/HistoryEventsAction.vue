@@ -270,113 +270,107 @@ function confirmIgnoreDuplicate(): void {
           />
         </RuiButton>
       </template>
-      <div class="py-2">
-        <RuiButton
-          v-if="!hideAddAction(event)"
-          variant="list"
-          @click="addEvent(event)"
-        >
-          <template #prepend>
-            <RuiIcon name="lu-plus" />
-          </template>
-          {{ t('transactions.actions.add_event_here') }}
-        </RuiButton>
-        <RuiButton
-          variant="list"
-          @click="toggleIgnore(event)"
-        >
-          <template #prepend>
-            <RuiIcon :name="event.ignoredInAccounting ? 'lu-eye' : 'lu-eye-off'" />
-          </template>
-          {{ event.ignoredInAccounting ? t('transactions.unignore') : t('transactions.ignore') }}
-        </RuiButton>
-        <template v-if="blockEvent">
-          <RuiButton
-            variant="list"
-            :disabled="loading || ethBlockEventsDecoding"
-            @click="redecode(blockEvent)"
-          >
-            <template #prepend>
-              <RuiIcon name="lu-rotate-ccw" />
-            </template>
-            {{ t('transactions.actions.redecode_events') }}
-          </RuiButton>
+      <RuiButton
+        v-if="!hideAddAction(event)"
+        variant="list"
+        @click="addEvent(event)"
+      >
+        <template #prepend>
+          <RuiIcon name="lu-plus" />
         </template>
-        <template v-else-if="eventWithDecoding">
-          <RuiButton
-            variant="list"
-            :class="{ '!py-2': decodableEvmEvent }"
-            :disabled="loading || txEventsDecoding"
-            @click="redecode(eventWithDecoding)"
-          >
-            <template #prepend>
-              <RuiIcon
-                name="lu-rotate-ccw"
-                class="min-w-[1.375rem]"
-                size="20"
-              />
-            </template>
-            {{ t('transactions.actions.redecode_events') }}
-            <template #append>
-              <RuiTooltip
-                v-if="decodableEvmEvent"
-                :popper="{ placement: 'top', scroll: false, resize: false }"
-              >
-                <template #activator>
-                  <RuiButton
-                    icon
-                    variant="text"
-                    size="sm"
-                    class="!p-2"
-                    :disabled="loading || txEventsDecoding"
-                    @click.stop="redecodeWithOptions(decodableEvmEvent)"
-                  >
-                    <RuiIcon
-                      name="lu-settings-2"
-                      size="16"
-                    />
-                  </RuiButton>
-                </template>
-                {{ t('transactions.actions.redecode_with_options') }}
-              </RuiTooltip>
-            </template>
-          </RuiButton>
+        {{ t('transactions.actions.add_event_here') }}
+      </RuiButton>
+      <RuiButton
+        variant="list"
+        @click="toggleIgnore(event)"
+      >
+        <template #prepend>
+          <RuiIcon :name="event.ignoredInAccounting ? 'lu-eye' : 'lu-eye-off'" />
         </template>
-        <RuiButton
-          v-if="eventWithTxRef"
-          variant="list"
-          color="error"
-          :disabled="loading"
-          @click="deleteTxAndEvents(eventWithTxRef)"
-        >
-          <template #prepend>
-            <RuiIcon name="lu-trash-2" />
-          </template>
-          {{ t('transactions.actions.delete_transaction') }}
-        </RuiButton>
-        <RuiButton
-          v-else-if="canDeleteEvents"
-          variant="list"
-          color="error"
-          :disabled="loading"
-          @click="deleteEvents()"
-        >
-          <template #prepend>
-            <RuiIcon name="lu-trash-2" />
-          </template>
-          {{ t('transactions.actions.delete_event') }}
-        </RuiButton>
-        <RuiDivider class="my-2" />
+        {{ event.ignoredInAccounting ? t('transactions.unignore') : t('transactions.ignore') }}
+      </RuiButton>
+      <template v-if="blockEvent">
         <RuiButton
           variant="list"
-          @click="openReportDialog()"
+          :disabled="loading || ethBlockEventsDecoding"
+          @click="redecode(blockEvent)"
         >
           <template #prepend>
-            <RuiIcon name="lu-bug" />
+            <RuiIcon name="lu-rotate-ccw" />
           </template>
-          {{ t('actions.history_events.report_issue.action') }}
+          {{ t('transactions.actions.redecode_events') }}
         </RuiButton>
-      </div>
+      </template>
+      <template v-else-if="eventWithDecoding">
+        <RuiButton
+          variant="list"
+          :class="{ '!py-2': decodableEvmEvent }"
+          :disabled="loading || txEventsDecoding"
+          @click="redecode(eventWithDecoding)"
+        >
+          <template #prepend>
+            <RuiIcon name="lu-rotate-ccw" />
+          </template>
+          {{ t('transactions.actions.redecode_events') }}
+          <template #append>
+            <RuiTooltip
+              v-if="decodableEvmEvent"
+              :popper="{ placement: 'top', scroll: false, resize: false }"
+            >
+              <template #activator>
+                <RuiButton
+                  icon
+                  variant="text"
+                  size="sm"
+                  class="!p-2"
+                  :disabled="loading || txEventsDecoding"
+                  @click.stop="redecodeWithOptions(decodableEvmEvent)"
+                >
+                  <RuiIcon
+                    name="lu-settings-2"
+                    size="16"
+                  />
+                </RuiButton>
+              </template>
+              {{ t('transactions.actions.redecode_with_options') }}
+            </RuiTooltip>
+          </template>
+        </RuiButton>
+      </template>
+      <RuiButton
+        v-if="eventWithTxRef"
+        variant="list"
+        color="error"
+        :disabled="loading"
+        @click="deleteTxAndEvents(eventWithTxRef)"
+      >
+        <template #prepend>
+          <RuiIcon name="lu-trash-2" />
+        </template>
+        {{ t('transactions.actions.delete_transaction') }}
+      </RuiButton>
+      <RuiButton
+        v-else-if="canDeleteEvents"
+        variant="list"
+        color="error"
+        :disabled="loading"
+        @click="deleteEvents()"
+      >
+        <template #prepend>
+          <RuiIcon name="lu-trash-2" />
+        </template>
+        {{ t('transactions.actions.delete_event') }}
+      </RuiButton>
+      <RuiDivider class="my-2" />
+      <RuiButton
+        variant="list"
+        @click="openReportDialog()"
+      >
+        <template #prepend>
+          <RuiIcon name="lu-bug" />
+        </template>
+        {{ t('actions.history_events.report_issue.action') }}
+      </RuiButton>
     </RuiMenu>
   </div>
 </template>

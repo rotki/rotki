@@ -70,29 +70,27 @@ function update(value: TableColumn) {
         <RuiIcon name="lu-ellipsis-vertical" />
       </MenuTooltipButton>
     </template>
-    <div class="py-2">
-      <template
-        v-for="item in availableColumns"
-        :key="item.value"
+    <template
+      v-for="item in availableColumns"
+      :key="item.value"
+    >
+      <RuiButton
+        variant="list"
+        size="sm"
+        :model-value="item.value"
+        @click="update(item.value)"
       >
-        <RuiButton
-          variant="list"
-          size="sm"
-          :model-value="item.value"
-          @click="update(item.value)"
-        >
-          <template #prepend>
-            <RuiCheckbox
-              class="-mr-2"
-              color="primary"
-              hide-details
-              :model-value="active(item.value)"
-              @update:model-value="update(item.value)"
-            />
-          </template>
-          {{ item.text }}
-        </RuiButton>
-      </template>
-    </div>
+        <template #prepend>
+          <RuiCheckbox
+            class="-mr-2"
+            color="primary"
+            hide-details
+            :model-value="active(item.value)"
+            @update:model-value="update(item.value)"
+          />
+        </template>
+        {{ item.text }}
+      </RuiButton>
+    </template>
   </RuiMenu>
 </template>
