@@ -361,28 +361,26 @@ const importFileDialog = ref<boolean>(false);
               />
             </RuiButton>
           </template>
-          <div class="py-2">
-            <RuiButton
-              variant="list"
-              :loading="exportFileLoading"
-              @click="exportJSON()"
-            >
-              <template #prepend>
-                <RuiIcon name="lu-file-down" />
-              </template>
-              {{ t('accounting_settings.rule.export') }}
-            </RuiButton>
-            <RuiButton
-              variant="list"
-              :loading="importFileLoading"
-              @click="importFileDialog = true"
-            >
-              <template #prepend>
-                <RuiIcon name="lu-file-up" />
-              </template>
-              {{ t('accounting_settings.rule.import') }}
-            </RuiButton>
-          </div>
+          <RuiButton
+            variant="list"
+            :loading="exportFileLoading"
+            @click="exportJSON()"
+          >
+            <template #prepend>
+              <RuiIcon name="lu-file-down" />
+            </template>
+            {{ t('accounting_settings.rule.export') }}
+          </RuiButton>
+          <RuiButton
+            variant="list"
+            :loading="importFileLoading"
+            @click="importFileDialog = true"
+          >
+            <template #prepend>
+              <RuiIcon name="lu-file-up" />
+            </template>
+            {{ t('accounting_settings.rule.import') }}
+          </RuiButton>
         </RuiMenu>
       </div>
     </div>

@@ -201,7 +201,7 @@ const quarterModel = computed({
             </RuiButton>
           </template>
 
-          <div class="flex flex-col py-2">
+          <div class="flex flex-col">
             <RuiButton
               v-for="period in olderPeriods"
               :key="period"

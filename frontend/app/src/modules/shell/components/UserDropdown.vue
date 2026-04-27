@@ -64,10 +64,7 @@ const { isDark } = useRotkiTheme();
           <RuiIcon name="lu-circle-user" />
         </MenuTooltipButton>
       </template>
-      <div
-        data-cy="user-dropdown"
-        class="py-2"
-      >
+      <div data-cy="user-dropdown">
         <div class="py-3 flex flex-col items-center gap-1">
           <div
             data-cy="username"

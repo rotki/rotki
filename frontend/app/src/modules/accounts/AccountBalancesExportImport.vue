@@ -44,26 +44,24 @@ async function doImport() {
           <RuiIcon name="lu-ellipsis-vertical" />
         </RuiButton>
       </template>
-      <div class="py-2">
-        <RuiButton
-          variant="list"
-          @click="exportAccounts()"
-        >
-          <template #prepend>
-            <RuiIcon name="lu-file-down" />
-          </template>
-          {{ t('blockchain_balances.export_blockchain_accounts') }}
-        </RuiButton>
-        <RuiButton
-          variant="list"
-          @click="importDialogOpen = true;"
-        >
-          <template #prepend>
-            <RuiIcon name="lu-file-up" />
-          </template>
-          {{ t('blockchain_balances.import_blockchain_accounts') }}
-        </RuiButton>
-      </div>
+      <RuiButton
+        variant="list"
+        @click="exportAccounts()"
+      >
+        <template #prepend>
+          <RuiIcon name="lu-file-down" />
+        </template>
+        {{ t('blockchain_balances.export_blockchain_accounts') }}
+      </RuiButton>
+      <RuiButton
+        variant="list"
+        @click="importDialogOpen = true;"
+      >
+        <template #prepend>
+          <RuiIcon name="lu-file-up" />
+        </template>
+        {{ t('blockchain_balances.import_blockchain_accounts') }}
+      </RuiButton>
     </RuiMenu>
     <RuiDialog
       v-model="importDialogOpen"

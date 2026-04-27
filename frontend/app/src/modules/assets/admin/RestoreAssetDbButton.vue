@@ -121,18 +121,16 @@ function showDoneConfirmation() {
         </template>
       </RuiButton>
     </template>
-    <div class="py-2">
-      <ListItem
-        :title="t('asset_update.restore.soft_reset')"
-        :subtitle="t('asset_update.restore.soft_reset_hint')"
-        @click="showRestoreConfirmation('soft')"
-      />
-      <ListItem
-        :title="t('asset_update.restore.hard_reset')"
-        :subtitle="t('asset_update.restore.hard_reset_hint')"
-        @click="showRestoreConfirmation('hard')"
-      />
-    </div>
+    <ListItem
+      :title="t('asset_update.restore.soft_reset')"
+      :subtitle="t('asset_update.restore.soft_reset_hint')"
+      @click="showRestoreConfirmation('soft')"
+    />
+    <ListItem
+      :title="t('asset_update.restore.hard_reset')"
+      :subtitle="t('asset_update.restore.hard_reset_hint')"
+      @click="showRestoreConfirmation('hard')"
+    />
   </RuiMenu>
   <div
     v-else

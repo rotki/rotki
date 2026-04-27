@@ -41,19 +41,17 @@ function addBlockchainAccount(path: string) {
       </SummaryCardCreateButton>
     </template>
 
-    <div class="py-2">
-      <RuiButton
-        v-for="blockchainCategory in blockchainCategories"
-        :key="blockchainCategory.path"
-        variant="list"
-        @click="addBlockchainAccount(blockchainCategory.path)"
-      >
-        <template #prepend>
-          <RuiIcon :name="blockchainCategory.icon" />
-        </template>
+    <RuiButton
+      v-for="blockchainCategory in blockchainCategories"
+      :key="blockchainCategory.path"
+      variant="list"
+      @click="addBlockchainAccount(blockchainCategory.path)"
+    >
+      <template #prepend>
+        <RuiIcon :name="blockchainCategory.icon" />
+      </template>
 
-        {{ blockchainCategory.label }}
-      </RuiButton>
-    </div>
+      {{ blockchainCategory.label }}
+    </RuiButton>
   </RuiMenu>
 </template>

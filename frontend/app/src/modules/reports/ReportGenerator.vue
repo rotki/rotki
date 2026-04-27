@@ -180,26 +180,24 @@ onMounted(async () => {
                 {{ t('profit_loss_reports.debug.title') }}
               </RuiButton>
             </template>
-            <div class="py-2">
-              <RuiButton
-                variant="list"
-                @click="exportReportData()"
-              >
-                <template #prepend>
-                  <RuiIcon name="lu-file-down" />
-                </template>
-                {{ t('profit_loss_reports.debug.export_data') }}
-              </RuiButton>
-              <RuiButton
-                variant="list"
-                @click="importReportData()"
-              >
-                <template #prepend>
-                  <RuiIcon name="lu-file-up" />
-                </template>
-                {{ t('profit_loss_reports.debug.import_data') }}
-              </RuiButton>
-            </div>
+            <RuiButton
+              variant="list"
+              @click="exportReportData()"
+            >
+              <template #prepend>
+                <RuiIcon name="lu-file-down" />
+              </template>
+              {{ t('profit_loss_reports.debug.export_data') }}
+            </RuiButton>
+            <RuiButton
+              variant="list"
+              @click="importReportData()"
+            >
+              <template #prepend>
+                <RuiIcon name="lu-file-up" />
+              </template>
+              {{ t('profit_loss_reports.debug.import_data') }}
+            </RuiButton>
           </RuiMenu>
         </div>
       </div>

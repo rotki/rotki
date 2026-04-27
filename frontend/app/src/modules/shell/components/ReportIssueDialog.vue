@@ -202,27 +202,25 @@ onMounted(() => {
                     <RuiIcon name="lu-chevron-down" />
                   </RuiButton>
                 </template>
-                <div class="py-2">
-                  <RuiButton
-                    variant="list"
-                    @click="copyEmail()"
-                  >
-                    <template #prepend>
-                      <RuiIcon name="lu-copy" />
-                    </template>
-                    {{ t('help_sidebar.report_issue.dialog.submit_options.copy_email', { email: SUPPORT_EMAIL }) }}
-                  </RuiButton>
-                  <RuiButton
-                    variant="list"
-                    :disabled="!isFormValid"
-                    @click="openGmail()"
-                  >
-                    <template #prepend>
-                      <RuiIcon name="lu-mail" />
-                    </template>
-                    {{ t('help_sidebar.report_issue.dialog.submit_options.open_gmail') }}
-                  </RuiButton>
-                </div>
+                <RuiButton
+                  variant="list"
+                  @click="copyEmail()"
+                >
+                  <template #prepend>
+                    <RuiIcon name="lu-copy" />
+                  </template>
+                  {{ t('help_sidebar.report_issue.dialog.submit_options.copy_email', { email: SUPPORT_EMAIL }) }}
+                </RuiButton>
+                <RuiButton
+                  variant="list"
+                  :disabled="!isFormValid"
+                  @click="openGmail()"
+                >
+                  <template #prepend>
+                    <RuiIcon name="lu-mail" />
+                  </template>
+                  {{ t('help_sidebar.report_issue.dialog.submit_options.open_gmail') }}
+                </RuiButton>
               </RuiMenu>
             </div>
           </div>

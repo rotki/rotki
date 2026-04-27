@@ -132,100 +132,98 @@ function checkInternalConflicts(): void {
       </RuiBadge>
     </template>
 
-    <div class="py-2">
-      <template v-if="includeEvmEvents">
-        <RuiButton
-          variant="list"
-          @click="emit('show:dialog', { type: DIALOG_TYPES.DECODING_STATUS })"
-        >
-          <template #prepend>
-            <RuiBadge
-              :model-value="loading"
-              color="primary"
-              dot
-              placement="top"
-              offset-y="4"
-              offset-x="-4"
-            >
-              <RuiIcon name="lu-scroll-text" />
-            </RuiBadge>
-          </template>
-
-          {{ t('transactions.events_decoding.title') }}
-        </RuiButton>
-      </template>
-
+    <template v-if="includeEvmEvents">
       <RuiButton
         variant="list"
-        data-cy="history-events__add_by_tx_hash"
-        :disabled="loading"
-        @click="emit('show:dialog', { type: DIALOG_TYPES.ADD_TRANSACTION })"
-      >
-        <template #prepend>
-          <RuiIcon name="lu-plus" />
-        </template>
-        {{ t('transactions.dialog.add_tx') }}
-      </RuiButton>
-
-      <RuiButton
-        variant="list"
-        data-cy="history-events__repulling-transactions"
-        :disabled="loading"
-        @click="emit('show:dialog', { type: DIALOG_TYPES.REPULLING_TRANSACTION })"
-      >
-        <template #prepend>
-          <RuiIcon name="lu-clock-arrow-up" />
-        </template>
-        {{ t('transactions.repulling.action') }}
-      </RuiButton>
-
-      <RuiDivider class="my-1" />
-
-      <RuiButton
-        variant="list"
-        :disabled="processing || !!checkingType"
-        :loading="checkingType === 'unmatched'"
-        :color="noIssuesFeedback === 'unmatched' ? 'success' : undefined"
-        @click.stop="checkUnmatched()"
-      >
-        <template #prepend>
-          <RuiIcon :name="noIssuesFeedback === 'unmatched' ? 'lu-circle-check' : 'lu-git-compare-arrows'" />
-        </template>
-        {{ noIssuesFeedback === 'unmatched' ? t('transactions.alerts.no_issues_found') : t('transactions.alerts.check_unmatched_movements') }}
-      </RuiButton>
-
-      <RuiButton
-        variant="list"
-        :disabled="processing || !!checkingType"
-        :loading="checkingType === 'duplicates'"
-        :color="noIssuesFeedback === 'duplicates' ? 'success' : undefined"
-        @click.stop="checkDuplicates()"
-      >
-        <template #prepend>
-          <RuiIcon :name="noIssuesFeedback === 'duplicates' ? 'lu-circle-check' : 'lu-copy'" />
-        </template>
-        {{ noIssuesFeedback === 'duplicates' ? t('transactions.alerts.no_issues_found') : t('transactions.alerts.check_duplicate_events') }}
-      </RuiButton>
-
-      <RuiButton
-        variant="list"
-        :disabled="processing || !!checkingType"
-        @click.stop="checkInternalConflicts()"
+        @click="emit('show:dialog', { type: DIALOG_TYPES.DECODING_STATUS })"
       >
         <template #prepend>
           <RuiBadge
-            :model-value="internalConflictsCount > 0"
-            color="warning"
+            :model-value="loading"
+            color="primary"
             dot
             placement="top"
             offset-y="4"
             offset-x="-4"
           >
-            <RuiIcon name="lu-git-merge" />
+            <RuiIcon name="lu-scroll-text" />
           </RuiBadge>
         </template>
-        {{ t('transactions.alerts.check_internal_conflicts') }}
+
+        {{ t('transactions.events_decoding.title') }}
       </RuiButton>
-    </div>
+    </template>
+
+    <RuiButton
+      variant="list"
+      data-cy="history-events__add_by_tx_hash"
+      :disabled="loading"
+      @click="emit('show:dialog', { type: DIALOG_TYPES.ADD_TRANSACTION })"
+    >
+      <template #prepend>
+        <RuiIcon name="lu-plus" />
+      </template>
+      {{ t('transactions.dialog.add_tx') }}
+    </RuiButton>
+
+    <RuiButton
+      variant="list"
+      data-cy="history-events__repulling-transactions"
+      :disabled="loading"
+      @click="emit('show:dialog', { type: DIALOG_TYPES.REPULLING_TRANSACTION })"
+    >
+      <template #prepend>
+        <RuiIcon name="lu-clock-arrow-up" />
+      </template>
+      {{ t('transactions.repulling.action') }}
+    </RuiButton>
+
+    <RuiDivider class="my-1" />
+
+    <RuiButton
+      variant="list"
+      :disabled="processing || !!checkingType"
+      :loading="checkingType === 'unmatched'"
+      :color="noIssuesFeedback === 'unmatched' ? 'success' : undefined"
+      @click.stop="checkUnmatched()"
+    >
+      <template #prepend>
+        <RuiIcon :name="noIssuesFeedback === 'unmatched' ? 'lu-circle-check' : 'lu-git-compare-arrows'" />
+      </template>
+      {{ noIssuesFeedback === 'unmatched' ? t('transactions.alerts.no_issues_found') : t('transactions.alerts.check_unmatched_movements') }}
+    </RuiButton>
+
+    <RuiButton
+      variant="list"
+      :disabled="processing || !!checkingType"
+      :loading="checkingType === 'duplicates'"
+      :color="noIssuesFeedback === 'duplicates' ? 'success' : undefined"
+      @click.stop="checkDuplicates()"
+    >
+      <template #prepend>
+        <RuiIcon :name="noIssuesFeedback === 'duplicates' ? 'lu-circle-check' : 'lu-copy'" />
+      </template>
+      {{ noIssuesFeedback === 'duplicates' ? t('transactions.alerts.no_issues_found') : t('transactions.alerts.check_duplicate_events') }}
+    </RuiButton>
+
+    <RuiButton
+      variant="list"
+      :disabled="processing || !!checkingType"
+      @click.stop="checkInternalConflicts()"
+    >
+      <template #prepend>
+        <RuiBadge
+          :model-value="internalConflictsCount > 0"
+          color="warning"
+          dot
+          placement="top"
+          offset-y="4"
+          offset-x="-4"
+        >
+          <RuiIcon name="lu-git-merge" />
+        </RuiBadge>
+      </template>
+      {{ t('transactions.alerts.check_internal_conflicts') }}
+    </RuiButton>
   </RuiMenu>
 </template>

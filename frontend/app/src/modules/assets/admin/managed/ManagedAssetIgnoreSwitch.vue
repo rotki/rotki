@@ -91,7 +91,7 @@ const tooltipMessage = computed<string>(() =>
           </RuiButton>
         </RuiBadge>
       </template>
-      <div class="py-2 text-rui-text-secondary">
+      <div class="text-rui-text-secondary">
         <RuiButton
           variant="list"
           size="sm"
