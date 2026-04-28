@@ -250,21 +250,12 @@ watch(() => matches, (matchesData) => {
   restoreSelection(matchesData);
 });
 
-// Re-open the RuiAutoComplete menu when the user clicks an existing chip to
-// edit it. `hide-search-input` makes the native input `display:none`, so
-// neither `.focus()` nor the exposed `focus` setter opens the menu. The
-// menu's `isOpen` flag is only flipped to `true` inside `updateSearchInput`
-// (the native input's `@input` handler), so we dispatch a synthetic input
-// event — it reads the current value (already `key=`) without clobbering it.
-// Follow-up in @rotki/ui-library#517 will replace this with a public API.
 watch(suggestionBeingEdited, (value, old) => {
   if (!value || old)
     return;
 
   nextTick(() => {
-    const inputEl = get(input)?.$el?.querySelector('input[type="text"]');
-    if (inputEl instanceof HTMLInputElement)
-      inputEl.dispatchEvent(new Event('input', { bubbles: true }));
+    get(input)?.openMenu();
   });
 });
 

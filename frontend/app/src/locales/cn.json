@@ -3284,10 +3284,10 @@
       "tx_hash": "按 tx hash (es) 过滤",
       "validator_index": "按 validator_index(s) 过滤"
     },
-    "ignore": "从会计中排除 Tx",
+    "ignore": "从会计中排除",
     "refresh_tooltip": "获取最新事件",
     "title": "历史事件",
-    "unignore": "在会计中包含交易"
+    "unignore": "在会计中包含"
   },
   "underlying_token_manager": {
     "delete_tooltip": "删除底层代币",

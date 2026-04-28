@@ -5944,7 +5944,7 @@
         }
       }
     },
-    "ignore": "Exclude events from Accounting",
+    "ignore": "Exclude from Accounting",
     "protocol_cache_updates": {
       "hint": "Refreshing {protocol} cache on {chain} ({processed}/{total})",
       "no_ongoing": "No ongoing refresh happening.",
@@ -5983,7 +5983,7 @@
       "no_exchanges": "You don't have any exchanges connected. Please {link} first."
     },
     "title": "History Events",
-    "unignore": "Include events in Accounting"
+    "unignore": "Include in Accounting"
   },
   "underlying_token_manager": {
     "delete_tooltip": "Delete the underlying token",

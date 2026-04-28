@@ -49,20 +49,6 @@ function filterAddress(item: string, queryText: string): boolean {
   const name = getAddressName(item, matched);
   return !!name && name.toLowerCase().includes(query);
 }
-
-// Workaround for rotki/ui-library#493 — with custom-value enabled,
-// pressing Enter on an arrow-navigated highlight commits the typed
-// text instead of the highlighted option. Intercept Enter at capture
-// phase and click the highlighted item so rui's own handler applies it.
-function onEnterCapture(event: KeyboardEvent): void {
-  const highlighted = document.querySelector<HTMLElement>('.highlighted');
-  if (!highlighted)
-    return;
-
-  event.preventDefault();
-  event.stopPropagation();
-  highlighted.click();
-}
 </script>
 
 <template>
@@ -78,7 +64,6 @@ function onEnterCapture(event: KeyboardEvent): void {
     :error-messages="errorMessages"
     auto-select-first
     @blur="emit('blur')"
-    @keydown.enter.capture="onEnterCapture($event)"
   >
     <template #item="{ item }">
       <AccountDisplay
