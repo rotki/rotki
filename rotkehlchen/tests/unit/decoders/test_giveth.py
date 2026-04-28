@@ -1,11 +1,24 @@
+from typing import Final
+
 import pytest
 
 from rotkehlchen.assets.asset import Asset, EvmToken
+from rotkehlchen.chain.arbitrum_one.modules.giveth.constants import (
+    GIVETH_DONATION_CONTRACT_ADDRESS as ARBITRUM_GIVETH_DONATION_CONTRACT_ADDRESS,
+)
 from rotkehlchen.chain.decoding.constants import CPT_GAS
+from rotkehlchen.chain.ethereum.modules.giveth.constants import (
+    GIVETH_DONATION_CONTRACT_ADDRESS as ETHEREUM_GIVETH_DONATION_CONTRACT_ADDRESS,
+)
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
 from rotkehlchen.chain.evm.decoding.giveth.constants import CPT_GIVETH
-from rotkehlchen.chain.evm.types import string_to_evm_address
-from rotkehlchen.chain.gnosis.modules.giveth.constants import GNOSIS_GIVPOWERSTAKING_WRAPPER
+from rotkehlchen.chain.evm.types import (
+    string_to_evm_address,
+)
+from rotkehlchen.chain.gnosis.modules.giveth.constants import (
+    GIVETH_DONATION_CONTRACT_ADDRESS as GNOSIS_GIVETH_DONATION_CONTRACT_ADDRESS,
+    GNOSIS_GIVPOWERSTAKING_WRAPPER,
+)
 from rotkehlchen.chain.polygon_pos.modules.giveth.constants import GIVETH_DONATION_CONTRACT_ADDRESS
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import A_ETH, A_XDAI
@@ -15,6 +28,8 @@ from rotkehlchen.history.events.structures.types import HistoryEventSubType, His
 from rotkehlchen.tests.unit.test_types import LEGACY_TESTS_INDEXER_ORDER
 from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
 from rotkehlchen.types import Location, TimestampMS, deserialize_evm_tx_hash
+
+ROTKI_ADDRESS: Final = string_to_evm_address('0x9531C059098e3d194fF87FebB587aB07B30B1306')
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
@@ -542,4 +557,88 @@ def test_giveth_donation_sender(polygon_pos_inquirer, polygon_pos_accounts):
         notes=f'Make a giveth donation of {donation_amount} TPOL to 0xc5319dbdcC2930778c1473Ddc8E8F1606252e675',  # noqa: E501
         counterparty=CPT_GIVETH,
         address=string_to_evm_address('0xc5319dbdcC2930778c1473Ddc8E8F1606252e675'),
+    )]
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('ethereum_accounts', [[ROTKI_ADDRESS]])
+def test_giveth_donation_eth_receiver(ethereum_inquirer, ethereum_accounts):
+    tx_hash = deserialize_evm_tx_hash('0x98c47c3914f182ec1ef98d30a9f48b2724a0e7a81811b1b61cd281ed1fd93f1f')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
+    assert events == [EvmEvent(
+        tx_ref=tx_hash,
+        sequence_index=0,
+        timestamp=TimestampMS(1776983315000),
+        location=Location.ETHEREUM,
+        event_type=HistoryEventType.RECEIVE,
+        event_subtype=HistoryEventSubType.DONATE,
+        asset=A_ETH,
+        amount=(donation_amount := FVal('0.004206971')),
+        location_label=ethereum_accounts[0],
+        notes=f'Receive a giveth donation of {donation_amount} ETH from 0x4b189EE51829E2628EBA63f024fbE7015f472576',  # noqa: E501
+        counterparty=CPT_GIVETH,
+        address=ETHEREUM_GIVETH_DONATION_CONTRACT_ADDRESS,
+    )]
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('gnosis_accounts', [[ROTKI_ADDRESS]])
+def test_giveth_donation_gnosis_receiver(gnosis_inquirer, gnosis_accounts):
+    tx_hash = deserialize_evm_tx_hash('0x293273ea9d2f3a6c22b02a59a2f675eeb1f218e6b4cd8bddda26f8859706f5c6')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=gnosis_inquirer, tx_hash=tx_hash)
+    assert events == [EvmEvent(
+        tx_ref=tx_hash,
+        sequence_index=0,
+        timestamp=TimestampMS(1777013445000),
+        location=Location.GNOSIS,
+        event_type=HistoryEventType.RECEIVE,
+        event_subtype=HistoryEventSubType.DONATE,
+        asset=A_XDAI,
+        amount=(donation_amount := FVal('5')),
+        location_label=gnosis_accounts[0],
+        notes=f'Receive a giveth donation of {donation_amount} XDAI from 0x0f48669B1681D41357EAc232F516B77D0c10F0F1',  # noqa: E501
+        counterparty=CPT_GIVETH,
+        address=GNOSIS_GIVETH_DONATION_CONTRACT_ADDRESS,
+    )]
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('optimism_accounts', [[ROTKI_ADDRESS]])
+def test_giveth_donation_optimism_receiver(optimism_inquirer, optimism_accounts):
+    tx_hash = deserialize_evm_tx_hash('0xab954bb018e2f6f24ce6bc487c03919ba3f86d593723ed05958a15d6175b182a')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=optimism_inquirer, tx_hash=tx_hash)
+    assert events == [EvmEvent(
+        tx_ref=tx_hash,
+        sequence_index=0,
+        timestamp=TimestampMS(1777040611000),
+        location=Location.OPTIMISM,
+        event_type=HistoryEventType.RECEIVE,
+        event_subtype=HistoryEventSubType.DONATE,
+        asset=Asset('eip155:10/erc20:0x528CDc92eAB044E1E39FE43B9514bfdAB4412B98'),
+        amount=(donation_amount := FVal('3000')),
+        location_label=optimism_accounts[0],
+        notes=f'Receive a giveth donation of {donation_amount} GIV from 0x6eb78c56F639b3d161456e9f893c8e8aD9d754F0',  # noqa: E501
+        counterparty=CPT_GIVETH,
+        address='0x6eb78c56F639b3d161456e9f893c8e8aD9d754F0',
+    )]
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('arbitrum_one_accounts', [[ROTKI_ADDRESS]])
+def test_giveth_donation_arbitrum_receiver(arbitrum_one_inquirer, arbitrum_one_accounts):
+    tx_hash = deserialize_evm_tx_hash('0x2b741f8ecec20a8842cc37bc1b8ae358cfed091f017e9a40a0763f1b17bd9caf')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=arbitrum_one_inquirer, tx_hash=tx_hash)  # noqa: E501
+    assert events == [EvmEvent(
+        tx_ref=tx_hash,
+        sequence_index=0,
+        timestamp=TimestampMS(1777046452000),
+        location=Location.ARBITRUM_ONE,
+        event_type=HistoryEventType.RECEIVE,
+        event_subtype=HistoryEventSubType.DONATE,
+        asset=A_ETH,
+        amount=(donation_amount := FVal('0.00861')),
+        location_label=arbitrum_one_accounts[0],
+        notes=f'Receive a giveth donation of {donation_amount} ETH from 0xE38d978e500242E5E6DF46BE5dc1Bd47cb06555f',  # noqa: E501
+        counterparty=CPT_GIVETH,
+        address=ARBITRUM_GIVETH_DONATION_CONTRACT_ADDRESS,
     )]

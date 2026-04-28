@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :feature:`12102` New giveth donation events will now be properly decoded on all supported chains.
 * :bug:`-` Clicking an applied table filter chip to edit it now reliably reopens the suggestions dropdown, instead of showing nothing after the first edit.
 * :bug:`12079` Log level changes now take effect immediately without restarting rotki — including switching to debug on packaged builds after resetting to defaults.
 * :bug:`-` The PnL report's Custom range quick-options (Last 12 hours, Last 7 days, etc.) no longer leave a stale "Date cannot be after …" error on the Start field when switching from a past year/quarter to Custom.

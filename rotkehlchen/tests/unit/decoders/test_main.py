@@ -82,6 +82,7 @@ def test_decoders_initialization(ethereum_transaction_decoder: EthereumTransacti
         'Gearbox',
         'Gitcoin',
         'Gitcoinv2',
+        'Giveth',
         'Golem',
         'HarvestFinance',
         'Hedgey',
@@ -267,6 +268,7 @@ def test_decoders_initialization(ethereum_transaction_decoder: EthereumTransacti
         'superfluid',
         'woo-fi',
         'crosscurve',
+        'giveth',
     }
 
 
