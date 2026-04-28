@@ -24,6 +24,7 @@ from rotkehlchen.history.events.structures.base import HistoryBaseEntryType
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.premium.premium import Premium, UserLimitType, get_user_limit, has_premium_check
+from rotkehlchen.serialization.deserialize import deserialize_evm_address
 from rotkehlchen.types import (
     ChecksumEvmAddress,
     Eth2PubKey,
@@ -143,6 +144,9 @@ class Eth2(EthereumModule):
         - PremiumPermissionError if the limit would be exceeded
         - RemoteError if balances could not be queried
         """
+        if validator_balance == ZERO and ownership_proportion == ZERO:
+            return
+
         current_staked = self._get_total_eth_staked()
         additional_stake = validator_balance * ownership_proportion
         new_total = current_staked + additional_stake
@@ -429,8 +433,8 @@ class Eth2(EthereumModule):
             'entries_found': len(result['validators']),
         }
 
-    def _get_saved_deposit_addresses(self) -> set[ChecksumEvmAddress]:
-        """Read the decoded DB history events to find all deposit addresses
+    def _get_saved_deposit_validators(self) -> dict[ChecksumEvmAddress, set[int | Eth2PubKey]]:
+        """Read the decoded DB history events to find deposit validators by address.
 
         Handles both entry types:
         1. 'Deposit X ETH to validator with pubkey {pubkey}...'
@@ -449,19 +453,37 @@ class Eth2(EthereumModule):
                 ),
             )
 
-        addresses: set[ChecksumEvmAddress] = set()
+        validators: dict[ChecksumEvmAddress, set[int | Eth2PubKey]] = defaultdict(set)
         for event in deposit_events:
             if event.notes is None:
                 log.error(f'Could not match extraction regex for {event} due to absence of notes')  # should not really happen  # noqa: E501
                 continue
 
             # Check if it matches either type 1 (with pubkey) or type 2 (with validator index)
-            if self.deposits_re.match(event.notes):
-                addresses.add(event.location_label)  # type: ignore  # will be present.
+            if (match := self.deposits_re.match(event.notes)) is not None:
+                if (location_label := event.location_label) is None:
+                    log.error(f'Could not find depositor address for "{event.notes}"')
+                    continue
+                try:
+                    depositor = deserialize_evm_address(location_label)
+                except DeserializationError:
+                    log.error(f'Could not deserialize depositor address {location_label} for "{event.notes}"')  # noqa: E501
+                    continue
+
+                if (pubkey := match.group('pubkey')) is not None:
+                    validators[depositor].add(Eth2PubKey(pubkey))
+                elif (validator_index := getattr(event, 'validator_index', None)) is not None:
+                    validators[depositor].add(validator_index)
+                else:
+                    validators[depositor].add(int(match.group('index')))
             else:
                 log.error(f'Could not match extraction regex for "{event.notes}"')
 
-        return addresses
+        return validators
+
+    def _get_saved_deposit_addresses(self) -> set[ChecksumEvmAddress]:
+        """Read the decoded DB history events to find addresses with ETH2 deposits."""
+        return set(self._get_saved_deposit_validators())
 
     def query_services_for_validator_withdrawals(
             self,
@@ -554,19 +576,32 @@ class Eth2(EthereumModule):
         with self.database.conn.read_ctx() as cursor:  # get non finalized saved validator
             cursor.execute('SELECT validator_index, public_key FROM eth2_validators WHERE withdrawable_timestamp IS NULL')  # noqa: E501
             validators_to_refresh = {ValidatorID(index=x[0], public_key=x[1]) for x in cursor}
-            cursor.execute('SELECT public_key FROM eth2_validators WHERE withdrawable_timestamp IS NOT NULL')  # noqa: E501
-            finalized_validator_pubkeys = {x[0] for x in cursor}
 
-        # Get addresses that have ETH deposit events and filter input addresses
-        for address in [addr for addr in addresses if addr in self._get_saved_deposit_addresses()]:
-            validators = self.beacon_inquirer.get_eth1_address_validators(address)
-            for validator in validators:
-                if validator.public_key not in finalized_validator_pubkeys:
-                    validators_to_refresh.add(validator)
+        # Prefer validator identifiers parsed from decoded deposit events. Beaconcha.in V2 may
+        # reject deposit_address selectors depending on the API subscription tier.
+        known_pubkeys = {validator.public_key for validator in validators_to_refresh}
+        saved_deposit_validators = self._get_saved_deposit_validators()
+        saved_validator_indices = set()
+        for address, validator_identifiers in saved_deposit_validators.items():
+            if address not in addresses:
+                continue
+
+            for identifier in validator_identifiers:
+                if isinstance(identifier, int):
+                    saved_validator_indices.add(identifier)
+                else:
+                    if identifier in known_pubkeys:
+                        continue
+
+                    validators_to_refresh.add(ValidatorID(index=None, public_key=identifier))
+                    known_pubkeys.add(identifier)
 
         # refresh validator data. Use index if existing otherwise public key
         details = self.beacon_inquirer.get_validator_data(
-            indices_or_pubkeys=[x.index if x.index is not None else x.public_key for x in validators_to_refresh],  # noqa: E501
+            indices_or_pubkeys=[
+                *(x.index if x.index is not None else x.public_key for x in validators_to_refresh),
+                *saved_validator_indices,
+            ],
         )
         with self.database.user_write() as write_cursor:
             DBEth2(self.database).add_or_update_validators_except_ownership(

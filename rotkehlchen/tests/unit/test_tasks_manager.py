@@ -708,7 +708,7 @@ def test_maybe_query_produced_blocks(task_manager, ethereum_accounts):
             ) as get_blocks_mock,
             patch.object(
                 task_manager.chains_aggregator.beaconchain,
-                '_query_chunked_endpoint_with_pagination',
+                '_query_chunked_endpoint_with_cursor_pagination',
                 side_effect=lambda *args, **kwargs: [],
             ),
         ):

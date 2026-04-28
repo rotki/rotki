@@ -555,7 +555,7 @@ def test_block_with_mev_and_block_reward_and_multiple_mev_txs(
 
     timestamp, user_address, mevbot_address, block_number = TimestampMS(1738655099000), ethereum_accounts[0], string_to_evm_address('0xA69babEF1cA67A37Ffaf7a485DfFF3382056e78C'), 21771728  # noqa: E501
     expected_events: list[HistoryBaseEntry] = [EthBlockEvent(
-        identifier=4,
+        identifier=14,
         validator_index=vindex,
         timestamp=timestamp,
         amount=FVal('0.013925706716354256'),
@@ -564,7 +564,7 @@ def test_block_with_mev_and_block_reward_and_multiple_mev_txs(
         block_number=block_number,
         is_mev_reward=False,
     ), EthBlockEvent(
-        identifier=5,
+        identifier=15,
         validator_index=vindex,
         timestamp=timestamp,
         amount=FVal('0.022204362489834771'),

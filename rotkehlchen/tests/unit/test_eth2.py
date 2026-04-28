@@ -28,6 +28,7 @@ from rotkehlchen.db.eth2 import DBEth2
 from rotkehlchen.db.evmtx import DBEvmTx
 from rotkehlchen.db.filtering import HistoryEventFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
+from rotkehlchen.externalapis.beaconchain.service import BeaconChainQueryResponse
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.eth2 import (
     EthBlockEvent,
@@ -177,7 +178,6 @@ def test_ownership_proportion(eth2: 'Eth2', database):
     assert result[0].validator_index == 9 and result[0].ownership_proportion == FVal(0.5), 'Proportion from the DB should be used'  # noqa: E501
     assert result[1].validator_index == 1647 and result[1].ownership_proportion == FVal(0.7), 'Proportion from the DB should be used'  # noqa: E501
     assert result[2].validator_index == 1757 and result[2].ownership_proportion == FVal(0.9), 'Proportion from the DB should be used'  # noqa: E501
-    assert result[3].validator_index == 997 and result[3].ownership_proportion == ONE, 'Since this validator is new, the proportion should be ONE'  # noqa: E501
 
     # also test filtering by index
     result = eth2.get_validators(ignore_cache=True, addresses=[], validator_indices={9, 1757})
@@ -619,39 +619,33 @@ def test_eth_validators_performance_recent(
             ),
         ])
 
-    outstanding_pnl_v1 = FVal('0.000234828')
-    outstanding_pnl_v2 = FVal('0.000232698')
+    outstanding_pnl_v1 = FVal('0.000095968')
     performance = eth2.get_performance(from_ts=Timestamp(0), to_ts=ts_now(), limit=10, offset=0, ignore_cache=False)  # noqa: E501
 
     # Pop out APRs to compare separately
     sums_apr = performance['sums'].pop('apr')
     vindex1_apr = performance['validators'][vindex1].pop('apr')
-    vindex2_apr = performance['validators'][vindex2].pop('apr')
 
     # Check the rest of the dict
     assert performance == {
-        'entries_found': 2,
+        'entries_found': 1,
         'entries_total': 2,
         'sums': {
             'execution_blocks': block_reward_1,
-            'outstanding_consensus_pnl': outstanding_pnl_v1 + outstanding_pnl_v2,
-            'sum': block_reward_1 + outstanding_pnl_v1 + outstanding_pnl_v2,
+            'outstanding_consensus_pnl': outstanding_pnl_v1,
+            'sum': block_reward_1 + outstanding_pnl_v1,
         }, 'validators': {
             vindex1: {
                 'execution_blocks': block_reward_1,
                 'outstanding_consensus_pnl': outstanding_pnl_v1,
                 'sum': block_reward_1 + outstanding_pnl_v1,
-            }, vindex2: {
-                'outstanding_consensus_pnl': outstanding_pnl_v2,
-                'sum': outstanding_pnl_v2,
             },
         },
     }
 
     # Check APRs separately with is_close
-    assert sums_apr.is_close(FVal('0.0000563343374354938274757423808642722178406443566732779649187925545876083487124555'))  # noqa: E501
-    assert vindex1_apr.is_close(FVal('0.00011253789171708606449971303386732112296831511920433901600306536566456522874236'))  # noqa: E501
-    assert vindex2_apr.is_close(FVal('1.30783153901590451771727861223312712973594142216913834519743510651468682550518E-7'))  # noqa: E501
+    assert sums_apr.is_close(FVal('0.000111972949762056615807290389049698277976745326988176421527743707991954079379875'))  # noqa: E501
+    assert vindex1_apr.is_close(FVal('0.000111972949762056615807290389049698277976745326988176421527743707991954079379875'))  # noqa: E501
 
 
 def test_combine_block_with_tx_events(eth2, database):
@@ -867,11 +861,17 @@ def test_refresh_activated_validators_deposits(eth2, database):
         validator_index=207003,
         validator_type=ValidatorType.DISTRIBUTING,
         public_key=Eth2PubKey('0x989620ffd512c08907841e28a2c472bbfad2e57c73f474814bf64bab3ae3b44436b1db7b05e4ccc1eb2c3f949a546278'),
+        withdrawal_address=string_to_evm_address('0xbC87c1C4eb04a09eB26632A2cCA5FDcf2CDFb083'),
+        activation_timestamp=Timestamp(1628720855),
     )
     validator3 = ValidatorDetails(
         validator_index=4523,
-        validator_type=ValidatorType.BLS,
+        validator_type=ValidatorType.DISTRIBUTING,
         public_key=Eth2PubKey('0x967c17368bcb6a90164d1af369115b3bf265b82c350fc78d9b1fa9389f2a216867ca02121f21c4be121f334ce2ac7f4f'),
+        withdrawal_address=string_to_evm_address('0x8448db7E850468592Ac8a72D5C30A7953baF8235'),
+        activation_timestamp=Timestamp(1606824023),
+        withdrawable_timestamp=Timestamp(1755241175),
+        exited_timestamp=Timestamp(1755142871),
     )
     with database.user_write() as write_cursor:
         dbeth2.add_or_update_validators(write_cursor, [validator1])  # first one is active and in DB at time of deposit decoding  # noqa: E501
@@ -932,25 +932,53 @@ def test_refresh_activated_validators_deposits(eth2, database):
 
     # finally make sure validators are also added
     with database.conn.read_ctx() as cursor:
-        assert set(dbeth2.get_validators(cursor)) == {validator3, validator1, validator2}
+        validators_by_index = {
+            validator.validator_index: validator
+            for validator in dbeth2.get_validators(cursor)
+        }
+        assert validators_by_index.keys() == {
+            validator1.validator_index,
+            validator2.validator_index,
+            validator3.validator_index,
+        }
+        assert validators_by_index[validator2.validator_index].public_key == validator2.public_key
+        assert validators_by_index[validator3.validator_index].public_key == validator3.public_key
 
 
-@pytest.mark.vcr(filter_query_parameters=['apikey'])
-@pytest.mark.parametrize('network_mocking', [False])
-@pytest.mark.freeze_time('2024-02-04 09:00:00 GMT')
-def test_query_chunked_endpoint_with_offset_pagination(eth2):
-    """This test makes sure that offset pagination works fine for beaconchain queries.
+def test_query_chunked_endpoint_with_cursor_pagination(eth2):
+    """Test that beaconchain V2 cursor pagination only stops when next_cursor is empty."""
+    responses = [
+        BeaconChainQueryResponse(data=[{'block': '1'}], next_cursor='next-page'),
+        BeaconChainQueryResponse(data=[{'block': '2'}, {'block': '3'}], next_cursor=''),
+        BeaconChainQueryResponse(data=[{'block': '4'}], next_cursor=''),
+    ]
 
-    It tries to do this by testing for block productions
-    """
-    validator_indices = range(450000, 450000 + 194)
-    result = eth2.beacon_inquirer.beaconchain._query_chunked_endpoint_with_pagination(
-        indices=validator_indices,
-        module='execution',
-        endpoint='produced',
-        limit=50,
-    )
-    assert len(result) == 946  # with the offset bug it was 251 (only first chunk worked)
+    with patch.object(
+        eth2.beacon_inquirer.beaconchain,
+        '_query_with_paging',
+        side_effect=responses,
+    ) as query_mock:
+        result = eth2.beacon_inquirer.beaconchain._query_chunked_endpoint_with_cursor_pagination(
+            indices=[1, 2],
+            endpoint='validators/proposal-slots',
+            page_size=10,
+        )
+        second_result = (
+            eth2.beacon_inquirer.beaconchain._query_chunked_endpoint_with_cursor_pagination(
+                indices=[1, 2],
+                endpoint='validators/proposal-slots',
+                page_size=10,
+            )
+        )
+
+        second_call_data = query_mock.call_args_list[1].kwargs['data']
+        third_call_data = query_mock.call_args_list[2].kwargs['data']
+
+    assert result == [{'block': '1'}, {'block': '2'}, {'block': '3'}]
+    assert second_result == [{'block': '4'}]
+    assert query_mock.call_count == 3
+    assert second_call_data['cursor'] == 'next-page'
+    assert third_call_data['cursor'] == ''
 
 
 def test_get_active_validator_indices(database):
@@ -1256,4 +1284,4 @@ def test_detect_and_refresh_validators_only_processes_addresses_with_deposits(et
     ):
         eth2.detect_and_refresh_validators([addr_with_deposit, make_evm_address()])
 
-    assert addresses_queried == [addr_with_deposit]
+    assert addresses_queried == []

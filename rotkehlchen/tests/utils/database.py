@@ -71,7 +71,7 @@ def maybe_include_beaconchain_key(db: DBHandler, include_beaconchain_key: bool) 
             write_cursor=write_cursor,
             credentials=[ExternalServiceApiCredentials(
                 service=ExternalService.BEACONCHAIN,
-                api_key=ApiKey('MTlZNWEvN2ZXN2hnVVNNZzhHaGxP'),  # added by isaac
+                api_key=ApiKey(os.environ.get('BEACONCHAIN_API_KEY', 'MTlZNWEvN2ZXN2hnVVNNZzhHaGxP')),  # added by isaac  # noqa: E501
             )])
 
 
