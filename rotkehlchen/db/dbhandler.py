@@ -5,7 +5,7 @@ import re
 import shutil
 import tempfile
 from collections import defaultdict
-from collections.abc import Iterator, Sequence
+from collections.abc import Iterator, Mapping, Sequence
 from contextlib import contextmanager, suppress
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Literal, Optional, Unpack, cast, overload
@@ -33,7 +33,7 @@ from rotkehlchen.chain.bitcoin.xpub import (
 from rotkehlchen.chain.evm.types import NodeName, WeightedNode
 from rotkehlchen.chain.gnosis.constants import BRIDGE_QUERIED_ADDRESS_PREFIX
 from rotkehlchen.chain.substrate.types import SubstrateAddress
-from rotkehlchen.constants import ONE, ZERO
+from rotkehlchen.constants import DEFAULT_BALANCE_LABEL, ONE, ZERO
 from rotkehlchen.constants.assets import A_ETH, A_ETH2, A_USD
 from rotkehlchen.constants.limits import FREE_USER_NOTES_LIMIT
 from rotkehlchen.constants.misc import CONTRACT_TAG_NAME, NFT_DIRECTIVE, USERDB_NAME
@@ -1098,6 +1098,70 @@ class DBHandler:
                             category.serialize_for_db(),
                             str(balance.amount),
                         ))
+
+        if len(rows) == 0:
+            return
+
+        write_cursor.executemany(
+            'INSERT OR REPLACE INTO blockchain_balances_cache('
+            'blockchain, address, asset, label, category, amount'
+            ') VALUES (?, ?, ?, ?, ?, ?)',
+            rows,
+        )
+
+    def set_blockchain_detected_token_balances_cache(
+            self,
+            write_cursor: 'DBCursor',
+            blockchain: SupportedBlockchain,
+            balances_per_address: Mapping[ChecksumEvmAddress, Mapping[Asset | EvmToken, FVal]],
+            failed_detection_addresses: set[ChecksumEvmAddress],
+    ) -> None:
+        rows: list[tuple[str, str, str, str, str, str]] = []
+        asset_category = BalanceType.ASSET.serialize_for_db()
+        liability_category = BalanceType.LIABILITY.serialize_for_db()
+        chain = blockchain.serialize()
+        chain_id = blockchain.to_chain_id().serialize_for_db()
+        for address, token_balances in balances_per_address.items():
+            if address in failed_detection_addresses:
+                continue
+
+            previous_tokens = []
+            write_cursor.execute(
+                'SELECT value FROM evm_accounts_details WHERE account=? AND chain_id=? AND key=?',
+                (address, chain_id, EVM_ACCOUNTS_DETAILS_TOKENS),
+            )
+            for (token_identifier,) in write_cursor:
+                try:
+                    previous_tokens.append(EvmToken(token_identifier))
+                except (DeserializationError, UnknownAsset):
+                    continue
+
+            write_cursor.execute(
+                'DELETE FROM blockchain_balances_cache WHERE blockchain=? AND address=? '
+                'AND label=? AND category=?',
+                (chain, address, DEFAULT_BALANCE_LABEL, asset_category),
+            )
+            write_cursor.executemany(
+                'DELETE FROM blockchain_balances_cache WHERE blockchain=? AND address=? '
+                'AND asset=? AND label=? AND category=?',
+                [(
+                    chain,
+                    address,
+                    token.identifier,
+                    token.protocol or DEFAULT_BALANCE_LABEL,
+                    liability_category if token.is_liability() else asset_category,
+                ) for token in previous_tokens],
+            )
+            for asset, amount in token_balances.items():
+                token = asset if isinstance(asset, EvmToken) else EvmToken(asset.identifier)
+                rows.append((
+                    chain,
+                    address,
+                    token.identifier,
+                    token.protocol or DEFAULT_BALANCE_LABEL,
+                    liability_category if token.is_liability() else asset_category,
+                    str(amount),
+                ))
 
         if len(rows) == 0:
             return

@@ -53,6 +53,8 @@ DetectedTokensType = dict[
     ChecksumEvmAddress,
     tuple[list[EvmToken] | None, Timestamp | None],
 ]
+DetectedTokenBalanceAsset = Asset | EvmToken
+DetectedTokenBalancesType = dict[ChecksumEvmAddress, dict[DetectedTokenBalanceAsset, FVal]]
 
 
 @dataclass
@@ -65,7 +67,7 @@ class TokenChunkQueryResult:
       retry/split/indexer fallback handling. In that case results are considered
       unreliable for cache persistence.
     """
-    balances: dict[Asset, FVal]
+    balances: dict[DetectedTokenBalanceAsset, FVal]
     had_failures: bool
 
 # 27/11/2024
@@ -175,7 +177,7 @@ class EvmTokens(ABC):  # noqa: B024
             address: ChecksumEvmAddress,
             tokens: list[EvmTokenDetectionData],
             call_order: Sequence[WeightedNode] | None,
-    ) -> dict[Asset, FVal]:
+    ) -> dict[DetectedTokenBalanceAsset, FVal]:
         """Query multiple token balances for a wallet address.
         Returns Asset objects instead of EvmTokens for performance optimization since
         we avoid loading from the database extra information not used here.
@@ -191,7 +193,7 @@ class EvmTokens(ABC):  # noqa: B024
             address=address,
             tokens_num=len(tokens),
         )
-        balances: dict[Asset, FVal] = defaultdict(FVal)
+        balances: dict[DetectedTokenBalanceAsset, FVal] = defaultdict(FVal)
         try:
             result = self.evm_inquirer.contract_scan.call(
                 node_inquirer=self.evm_inquirer,
@@ -222,7 +224,7 @@ class EvmTokens(ABC):  # noqa: B024
                     f'Found {self.evm_inquirer.chain_name} {token.identifier} '
                     f'token balance for {address} and balance {normalized_balance}',
                 )
-                balances[Asset(token.identifier)] += normalized_balance
+                balances[EvmToken(token.identifier)] += normalized_balance
         except ValueError:
             log.error(
                 f'{self.evm_inquirer.chain_name} tokensBalance returned different length '
@@ -295,7 +297,7 @@ class EvmTokens(ABC):  # noqa: B024
         chunk is at or below `INDEXER_CHUNK_SIZE`, request-size failures are retried with
         indexer-only calls chunked by `INDEXER_CHUNK_SIZE`.
         """
-        total_token_balances: dict[Asset, FVal] = defaultdict(FVal)
+        total_token_balances: dict[DetectedTokenBalanceAsset, FVal] = defaultdict(FVal)
         had_failures = False
         chunks_to_process: deque[tuple[list[EvmTokenDetectionData], bool]] = deque(
             (chunk, False) for chunk in get_chunks(tokens, n=chunk_size)
@@ -379,7 +381,7 @@ class EvmTokens(ABC):  # noqa: B024
             chain_id=self.evm_inquirer.chain_id,
             exceptions=self._get_token_exceptions(),
         )
-        detected_erc20_tokens, failed_detection_addresses = self._detect_tokens(
+        detected_erc20_tokens, failed_detection_addresses, detected_erc20_balances = self._detect_tokens(  # noqa: E501
             addresses=addresses,
             tokens_to_check=erc20_tokens,
         )
@@ -392,6 +394,12 @@ class EvmTokens(ABC):  # noqa: B024
             detected_tokens=detected_erc20_tokens,
         )
         with self.db.user_write() as write_cursor:
+            self.db.set_blockchain_detected_token_balances_cache(
+                write_cursor=write_cursor,
+                blockchain=self.evm_inquirer.blockchain,
+                balances_per_address=detected_erc20_balances,
+                failed_detection_addresses=failed_detection_addresses,
+            )
             for address, detected_tokens in all_detected_tokens.items():
                 if address in failed_detection_addresses:
                     log.warning(
@@ -510,13 +518,18 @@ class EvmTokens(ABC):  # noqa: B024
             self,
             addresses: Sequence[ChecksumEvmAddress],
             tokens_to_check: list[EvmTokenDetectionData],
-    ) -> tuple[dict[ChecksumEvmAddress, list[Asset]], set[ChecksumEvmAddress]]:
+    ) -> tuple[
+        dict[ChecksumEvmAddress, list[Asset]],
+        set[ChecksumEvmAddress],
+        DetectedTokenBalancesType,
+    ]:
         """Detect ERC20 tokens per address and track unreliable detection runs.
 
         Returns:
         - detected_tokens: address -> detected token list for successful detection runs.
         - failed_addresses: addresses where token querying had failures (see
           ``TokenChunkQueryResult.had_failures``).
+        - detected_balances: address -> detected token balances for successful runs.
 
         For failed addresses, this method intentionally does not return partial token results,
         because callers treat failures as non-cacheable and must avoid destructive overwrites.
@@ -528,7 +541,8 @@ class EvmTokens(ABC):  # noqa: B024
           token has no code. That means the chain is not synced
         """
         chunk_size, call_order = self._get_token_detection_chunk_size_call_order()
-        tokens_per_address = defaultdict(list)
+        tokens_per_address: dict[ChecksumEvmAddress, list[Asset]] = defaultdict(list)
+        balances_per_address: DetectedTokenBalancesType = {}
         failed_addresses: set[ChecksumEvmAddress] = set()
         for address in addresses:
             query_result = self._query_chunks(
@@ -546,8 +560,9 @@ class EvmTokens(ABC):  # noqa: B024
                 continue
 
             tokens_per_address[address] = list(query_result.balances.keys())
+            balances_per_address[address] = query_result.balances
 
-        return tokens_per_address, failed_addresses
+        return tokens_per_address, failed_addresses, balances_per_address
 
     def query_tokens_for_addresses(
             self,

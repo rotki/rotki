@@ -6,9 +6,11 @@ from unittest.mock import MagicMock, call, patch
 import gevent
 import pytest
 
-from rotkehlchen.assets.asset import Asset
+from rotkehlchen.accounting.structures.balance import BalanceType
+from rotkehlchen.assets.asset import Asset, EvmToken
 from rotkehlchen.assets.utils import _query_or_get_given_token_info, get_or_create_evm_token
 from rotkehlchen.chain.ethereum.tokens import EthereumTokens
+from rotkehlchen.chain.evm.decoding.aave.constants import CPT_AAVE_V3
 from rotkehlchen.chain.evm.decoding.summer_fi.constants import CPT_SUMMER_FI
 from rotkehlchen.chain.evm.tokens import (
     ETHERSCAN_MAX_ARGUMENTS_TO_CONTRACT,
@@ -454,7 +456,7 @@ def test_query_new_tokens_keeps_cache_on_failures(tokens: EthereumTokens) -> Non
         patch.object(
             tokens,
             '_detect_tokens',
-            return_value=({tracked_address: []}, {tracked_address}),
+            return_value=({tracked_address: []}, {tracked_address}, {}),
         ),
         patch.object(tokens, 'maybe_detect_proxies_tokens', return_value=None),
     ):
@@ -490,7 +492,7 @@ def test_query_new_tokens_skips_save_on_partial_failures(tokens: EthereumTokens)
         patch.object(
             tokens,
             '_detect_tokens',
-            return_value=({tracked_address: [partial_token]}, {tracked_address}),
+            return_value=({tracked_address: [partial_token]}, {tracked_address}, {}),
         ),
         patch.object(tokens, 'maybe_detect_proxies_tokens', return_value=None),
     ):
@@ -551,6 +553,91 @@ def test_last_queried_ts(tokens, freezer):
             assert len(after_second_query) == 1
             assert after_second_query[0][0] == 'last_queried_timestamp'
             assert int(after_second_query[0][1]) >= continuation
+
+
+def test_query_new_tokens_caches_balances_without_duplicates(tokens: EthereumTokens) -> None:
+    tracked_address = make_evm_address()
+    detected_balance = FVal('12.34')
+    detected_token = EvmToken(A_DAI.identifier)
+    first_detected_balances = {
+        tracked_address: {
+            detected_token: detected_balance,
+        },
+    }
+    second_detected_balances: dict[ChecksumEvmAddress, dict[EvmToken, FVal]] = {
+        tracked_address: {},
+    }
+    chain = tokens.evm_inquirer.blockchain.serialize()
+    category = BalanceType.ASSET.serialize_for_db()
+
+    with tokens.db.user_write() as write_cursor:
+        write_cursor.execute(
+            'INSERT OR REPLACE INTO blockchain_balances_cache('
+            'blockchain, address, asset, label, category, amount'
+            ') VALUES (?, ?, ?, ?, ?, ?)',
+            (chain, tracked_address, A_WETH.identifier, 'protocol label', category, '1'),
+        )
+
+    with (
+        patch.object(GlobalDBHandler, 'get_token_detection_data', return_value=([], [])),
+        patch.object(
+            tokens,
+            '_detect_tokens',
+            side_effect=[
+                ({tracked_address: [detected_token]}, set(), first_detected_balances),
+                ({tracked_address: []}, set(), second_detected_balances),
+            ],
+        ),
+        patch.object(tokens, 'maybe_detect_proxies_tokens', return_value=None),
+    ):
+        tokens._query_new_tokens(addresses=[tracked_address])
+        tokens._query_new_tokens(addresses=[tracked_address])
+
+    with tokens.db.conn.read_ctx() as cursor:
+        cached_rows = cursor.execute(
+            'SELECT asset, label, amount FROM blockchain_balances_cache WHERE blockchain=? '
+            'AND address=? ORDER BY asset, label',
+            (chain, tracked_address),
+        ).fetchall()
+
+    assert len(cached_rows) == 1
+    assert cached_rows[0] == (A_WETH.identifier, 'protocol label', '1')
+
+
+def test_query_new_tokens_caches_protocol_and_liability_balances(tokens: EthereumTokens) -> None:
+    tracked_address = make_evm_address()
+    aave_token = EvmToken('eip155:1/erc20:0x98C23E9d8f34FEFb1B7BD6a91B7FF122F4e16F5c')
+    debt_token = EvmToken('eip155:1/erc20:0x72E95b8931767C79bA4EeE721354d6E99a61D004')
+    detected_balances = {
+        tracked_address: {
+            aave_token: FVal('1.2'),
+            debt_token: FVal('3.4'),
+        },
+    }
+    chain = tokens.evm_inquirer.blockchain.serialize()
+
+    with (
+        patch.object(GlobalDBHandler, 'get_token_detection_data', return_value=([], [])),
+        patch.object(
+            tokens,
+            '_detect_tokens',
+            return_value=({tracked_address: [aave_token, debt_token]}, set(), detected_balances),
+        ),
+        patch.object(tokens, 'maybe_detect_proxies_tokens', return_value=None),
+    ):
+        tokens._query_new_tokens(addresses=[tracked_address])
+
+    with tokens.db.conn.read_ctx() as cursor:
+        cached_rows = cursor.execute(
+            'SELECT asset, label, category, amount FROM blockchain_balances_cache '
+            'WHERE blockchain=? AND address=? ORDER BY asset',
+            (chain, tracked_address),
+        ).fetchall()
+
+    assert cached_rows == [
+        (debt_token.identifier, CPT_AAVE_V3, BalanceType.LIABILITY.serialize_for_db(), '3.4'),
+        (aave_token.identifier, CPT_AAVE_V3, BalanceType.ASSET.serialize_for_db(), '1.2'),
+    ]
 
 
 def test_cache_is_per_token_type(ethereum_inquirer):
@@ -938,7 +1025,7 @@ def test_erc721_token_ownership_verification(
     # see https://github.com/orgs/rotki/projects/11/views/2?pane=issue&itemId=112828923
     with patch(
             'rotkehlchen.chain.ethereum.tokens.EthereumTokens._detect_tokens',
-            return_value=({ethereum_accounts[0]: [A_DAI]}, set()),
+            return_value=({ethereum_accounts[0]: [A_DAI]}, set(), {ethereum_accounts[0]: {A_DAI: ONE}}),  # noqa: E501
     ):
         user_tokens = EthereumTokens(database, ethereum_inquirer).detect_tokens(
             only_cache=False,
