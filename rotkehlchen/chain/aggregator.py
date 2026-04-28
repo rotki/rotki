@@ -31,6 +31,7 @@ from rotkehlchen.chain.base.modules.aerodrome.balances import AerodromeBalances
 from rotkehlchen.chain.base.modules.extrafi.balances import (
     ExtrafiBalances as ExtrafiBalancesBase,
 )
+from rotkehlchen.chain.base.modules.morpho_blue.balances import MorphoBlueBalances
 from rotkehlchen.chain.base.modules.runmoney.balances import RunmoneyBalances
 from rotkehlchen.chain.bitcoin.bch.utils import force_address_to_legacy_address
 from rotkehlchen.chain.bitcoin.xpub import XpubManager
@@ -218,6 +219,7 @@ CHAIN_TO_BALANCE_PROTOCOLS = {
         AerodromeBalances,
         HopBalances,
         ExtrafiBalancesBase,
+        MorphoBlueBalances,
         RunmoneyBalances,
     ),
     ChainID.ARBITRUM_ONE: (
