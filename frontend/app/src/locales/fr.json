@@ -3675,10 +3675,10 @@
         }
       }
     },
-    "ignore": "Exclure les événements de la comptabilité",
+    "ignore": "Exclure de la comptabilité",
     "refresh_tooltip": "Récupérer les événements les plus récents",
     "title": "Historique des événements",
-    "unignore": "Inclure les événements dans la comptabilité"
+    "unignore": "Inclure dans la comptabilité"
   },
   "underlying_token_manager": {
     "delete_tooltip": "Supprimer le jeton sous-jacent",

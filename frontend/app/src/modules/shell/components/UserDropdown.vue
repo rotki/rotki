@@ -93,11 +93,9 @@ const { isDark } = useRotkiTheme();
           :to="{ path: '/settings' }"
           custom
         >
-          <!-- TODO: drop the `[&_[data-id=btn-label]]:leading-[1.125rem]` class once rotki/ui-library#515 lands — tightens the list-variant label line-box (20px) to match the md icon box (18px) so the text visually centers with the icon instead of sitting in the upper portion. -->
           <RuiButton
             variant="list"
             data-cy="settings-button"
-            class="[&_[data-id=btn-label]]:leading-[1.125rem]"
             @click="navigate()"
           >
             <template #prepend>
@@ -114,7 +112,6 @@ const { isDark } = useRotkiTheme();
           v-if="isXs"
           data-cy="privacy-mode-button"
           variant="list"
-          class="[&_[data-id=btn-label]]:leading-[1.125rem]"
           @click="togglePrivacyMode()"
         >
           <template #prepend>
@@ -137,7 +134,6 @@ const { isDark } = useRotkiTheme();
         <RuiButton
           variant="list"
           data-cy="logout-button"
-          class="[&_[data-id=btn-label]]:leading-[1.125rem]"
           @click="showConfirmation()"
         >
           <template #prepend>

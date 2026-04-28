@@ -185,10 +185,7 @@ onMounted(async () => {
           size="sm"
           @click="showBalanceProgress ? dismissBalanceProgress() : dismissHistoryProgress()"
         >
-          <RuiIcon
-            name="lu-x"
-            size="16"
-          />
+          <RuiIcon name="lu-x" />
         </RuiButton>
       </div>
     </div>
