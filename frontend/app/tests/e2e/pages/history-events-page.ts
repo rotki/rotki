@@ -70,6 +70,11 @@ export class HistoryEventsPage {
     for (const digit of digits)
       await input.press(digit);
     await input.press('Tab');
+    // The datetime input opens a calendar popover on click; Tab does not
+    // always close it. Press Escape and wait for the popover to detach so
+    // the next form click is not intercepted by the calendar overlay.
+    await input.press('Escape');
+    await this.page.locator('[role=menu] h3').waitFor({ state: 'hidden', timeout: TIMEOUT_MEDIUM });
   }
 
   private async selectAutocompleteOption(dataCy: string, value: string): Promise<void> {
@@ -81,6 +86,9 @@ export class HistoryEventsPage {
     const option = menu.getByText(value, { exact: false }).first();
     await option.waitFor({ state: 'visible' });
     await option.click();
+    // Wait for the menu to close so the next activator click is not
+    // intercepted by the still-visible menu overlay.
+    await menu.waitFor({ state: 'hidden', timeout: TIMEOUT_MEDIUM });
   }
 
   private async selectLocation(location: string): Promise<void> {
@@ -323,7 +331,11 @@ export class HistoryEventsPage {
     await container.locator('[data-id=activator]').click();
     await container.locator('input').fill(value);
     const identifier = getValidSelectorFromEvmAddress((id ?? value).toLocaleLowerCase());
-    await this.page.locator(`#asset-${identifier}`).click();
+    const option = this.page.locator(`#asset-${identifier}`);
+    await option.click();
+    // Wait for the dropdown menu to close so subsequent activator clicks
+    // are not intercepted by the still-visible menu overlay.
+    await option.waitFor({ state: 'hidden', timeout: TIMEOUT_MEDIUM });
   }
 
   private async fillSubEventList(
