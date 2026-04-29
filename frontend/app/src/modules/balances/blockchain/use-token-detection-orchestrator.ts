@@ -11,13 +11,9 @@ import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
 import { TaskType } from '@/modules/core/tasks/task-type';
 import { useTaskStore } from '@/modules/core/tasks/use-task-store';
 
-interface DetectOptions {
-  refreshBalancesAfter?: boolean;
-}
-
 interface UseTokenDetectionOrchestratorReturn {
-  detectTokens: (chain: string | string[], addresses: string[], options?: DetectOptions) => Promise<void>;
-  detectAllTokens: (chains?: string | string[], options?: DetectOptions) => Promise<void>;
+  detectTokens: (chain: string | string[], addresses: string[]) => Promise<void>;
+  detectAllTokens: (chains?: string | string[]) => Promise<void>;
   useIsDetecting: (chain: MaybeRefOrGetter<string | string[]>, address?: MaybeRefOrGetter<string | null>) => ComputedRef<boolean>;
 }
 
@@ -26,7 +22,7 @@ export const useTokenDetectionOrchestrator = createSharedComposable((): UseToken
   const { setMassDetecting } = useTokenDetectionStore();
   const { addresses } = useAccountAddresses();
   const { supportsTransactions, txEvmChains } = useSupportedChains();
-  const { refreshBlockchainBalances } = useBlockchainBalances();
+  const { fetchBlockchainBalances } = useBlockchainBalances();
   const { queueTokenDetection } = useBalanceQueue();
   const { isTaskRunning } = useTaskStore();
 
@@ -44,9 +40,9 @@ export const useTokenDetectionOrchestrator = createSharedComposable((): UseToken
       await queueTokenDetection(chain, filteredAddresses, async addr => fetchDetectedTokens(chain, addr));
   };
 
-  const refreshBalancesForChains = async (chains: string[]): Promise<void> => {
+  const reloadBalancesForChains = async (chains: string[]): Promise<void> => {
     await Promise.allSettled(chains.map(async chain =>
-      refreshBlockchainBalances({
+      fetchBlockchainBalances({
         blockchain: chain,
       }),
     ));
@@ -55,22 +51,15 @@ export const useTokenDetectionOrchestrator = createSharedComposable((): UseToken
   const detectTokens = async (
     chain: string | string[],
     addrs: string[],
-    options: DetectOptions = {},
   ): Promise<void> => {
-    const { refreshBalancesAfter = true } = options;
     const chains = arrayify(chain);
-
     await Promise.all(chains.map(async c => queueDetectionForChain(c, addrs)));
-
-    if (refreshBalancesAfter)
-      await refreshBalancesForChains(chains);
+    await reloadBalancesForChains(chains);
   };
 
   const detectAllTokens = async (
     chain?: string | string[],
-    options: DetectOptions = {},
   ): Promise<void> => {
-    const { refreshBalancesAfter = true } = options;
     const chains = chain ? arrayify(chain) : get(txEvmChains).map(c => c.id);
 
     setMassDetecting(chains.join(',') || 'all');
@@ -86,8 +75,7 @@ export const useTokenDetectionOrchestrator = createSharedComposable((): UseToken
           await queueDetectionForChain(c, tokenAddresses);
       }));
 
-      if (refreshBalancesAfter)
-        await refreshBalancesForChains(chains);
+      await reloadBalancesForChains(chains);
     }
     finally {
       setMassDetecting(undefined);
