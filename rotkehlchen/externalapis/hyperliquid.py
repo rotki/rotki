@@ -345,46 +345,12 @@ class HyperliquidAPI:
         """Query spot and perp balances for one Hyperliquid DEX context."""
         dex_display = dex_name if dex_name is not None else 'main'
         if include_spot is True:
-            try:
-                data = self._query(
-                    address=address,
-                    account_type='spotClearinghouseState',
-                    dex_name=dex_name,
-                )
-            except RemoteError as e:
-                log.error(
-                    f'Skipping spotClearinghouseState balances in hyperliquid '
-                    f'for {address} and dex={dex_display} due to {e}',
-                )
-                data = {}
-
-            for asset_entry in data.get('balances', []):
-                try:
-                    if (
-                        balance := deserialize_fval(
-                            value=asset_entry['total'],
-                            name='spotClearinghouseState total balances',
-                            location='hyperliquid',
-                        )
-                    ) == ZERO:
-                        continue
-
-                    asset = asset_from_hyperliquid(asset_entry['coin'])
-                except (
-                    DeserializationError,
-                    UnknownAsset,
-                    WrongAssetType,
-                    KeyError,
-                    UnknownCounterpartyMapping,
-                ) as e:
-                    log.error(
-                        f'Failed to read balance {asset_entry} from hyperliquid '
-                        f'for dex={dex_display} due to {e}. Skipping',
-                    )
-                    continue
-
-                if balance != ZERO:
-                    balances[asset] += balance
+            self._query_spot_balances_for_dex(
+                address=address,
+                dex_name=dex_name,
+                dex_display=dex_display,
+                balances=balances,
+            )
 
         try:
             perp_data = self._query(
@@ -409,6 +375,54 @@ class HyperliquidAPI:
                     f'Failed to read hyperliquid crossMarginSummary '
                     f'for dex={dex_display} due to {e}',
                 )
+
+    def _query_spot_balances_for_dex(
+            self,
+            address: ChecksumEvmAddress,
+            dex_name: str | None,
+            dex_display: str,
+            balances: defaultdict[Asset, FVal],
+    ) -> None:
+        """Query and aggregate spot balances for one Hyperliquid DEX context."""
+        try:
+            data = self._query(
+                address=address,
+                account_type='spotClearinghouseState',
+                dex_name=dex_name,
+            )
+        except RemoteError as e:
+            log.error(
+                f'Skipping spotClearinghouseState balances in hyperliquid '
+                f'for {address} and dex={dex_display} due to {e}',
+            )
+            return
+
+        for asset_entry in data.get('balances', []):
+            try:
+                if (
+                    balance := deserialize_fval(
+                        value=asset_entry['total'],
+                        name='spotClearinghouseState total balances',
+                        location='hyperliquid',
+                    )
+                ) == ZERO:
+                    continue
+
+                asset = asset_from_hyperliquid(asset_entry['coin'])
+            except (
+                DeserializationError,
+                UnknownAsset,
+                WrongAssetType,
+                KeyError,
+                UnknownCounterpartyMapping,
+            ) as e:
+                log.error(
+                    f'Failed to read balance {asset_entry} from hyperliquid '
+                    f'for dex={dex_display} due to {e}. Skipping',
+                )
+                continue
+
+            balances[asset] += balance
 
     @staticmethod
     def _entry_strict_unique_id(entry: dict[str, Any]) -> str | None:
@@ -525,39 +539,41 @@ class HyperliquidAPI:
         when parsing spot fills, and keeping constructor setup free of API calls avoids
         network I/O when a caller only needs balances or DEX discovery.
         """
-        if self._spot_market_to_base_symbol is None:
+        if self._spot_market_to_base_symbol is not None:
+            return
+
+        try:
+            data = self._query_dict(payload={'type': 'spotMeta'}, query_name='spotMeta')
+        except RemoteError as e:
+            log.error(f'Failed to query hyperliquid spot metadata due to {e}')
+            self._spot_market_to_base_symbol = {}
+            return
+
+        token_index_to_symbol: dict[int, str] = {}
+        for entry in data.get('tokens', []):
             try:
-                data = self._query_dict(payload={'type': 'spotMeta'}, query_name='spotMeta')
-            except RemoteError as e:
-                log.error(f'Failed to query hyperliquid spot metadata due to {e}')
-                self._spot_market_to_base_symbol = {}
-                return
+                token_index_to_symbol[int(entry['index'])] = str(entry['name'])
+            except (KeyError, ValueError, TypeError) as e:
+                log.error(f'Failed to read hyperliquid spot token entry {entry} due to {e}')
+                continue
 
-            token_index_to_symbol: dict[int, str] = {}
-            for entry in data.get('tokens', []):
-                try:
-                    token_index_to_symbol[int(entry['index'])] = str(entry['name'])
-                except (KeyError, ValueError, TypeError) as e:
-                    log.error(f'Failed to read hyperliquid spot token entry {entry} due to {e}')
-                    continue
+        market_to_base_symbol: dict[int, str] = {}
+        for entry in data.get('universe', []):
+            try:
+                market_index = int(entry['index'])
+                base_token = int(entry['tokens'][0])
+            except (KeyError, ValueError, TypeError, IndexError) as e:
+                log.error(f'Failed to read hyperliquid spot market entry {entry} due to {e}')
+                continue
 
-            market_to_base_symbol: dict[int, str] = {}
-            for entry in data.get('universe', []):
-                try:
-                    market_index = int(entry['index'])
-                    base_token = int(entry['tokens'][0])
-                except (KeyError, ValueError, TypeError, IndexError) as e:
-                    log.error(f'Failed to read hyperliquid spot market entry {entry} due to {e}')
-                    continue
+            if (base_symbol := token_index_to_symbol.get(base_token)) is not None:
+                market_to_base_symbol[market_index] = base_symbol
+                continue
 
-                if (base_symbol := token_index_to_symbol.get(base_token)) is not None:
-                    market_to_base_symbol[market_index] = base_symbol
-                    continue
+            if isinstance((market_name := entry.get('name')), str):
+                market_to_base_symbol[market_index] = market_name.split('/')[0]
 
-                if isinstance((market_name := entry.get('name')), str):
-                    market_to_base_symbol[market_index] = market_name.split('/')[0]
-
-            self._spot_market_to_base_symbol = market_to_base_symbol
+        self._spot_market_to_base_symbol = market_to_base_symbol
 
     def _get_spot_market_base_symbol(self, market: int) -> str | None:
         """Return a spot market base symbol, populating the metadata cache if needed."""
