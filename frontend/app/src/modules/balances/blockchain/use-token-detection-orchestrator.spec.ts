@@ -31,10 +31,10 @@ vi.mock('@/modules/core/common/use-supported-chains', () => ({
   }),
 }));
 
-const mockRefreshBlockchainBalances = vi.fn().mockResolvedValue(undefined);
+const mockFetchBlockchainBalances = vi.fn().mockResolvedValue(undefined);
 vi.mock('@/modules/balances/use-blockchain-balances', () => ({
   useBlockchainBalances: vi.fn().mockReturnValue({
-    refreshBlockchainBalances: mockRefreshBlockchainBalances,
+    fetchBlockchainBalances: mockFetchBlockchainBalances,
   }),
 }));
 
@@ -71,7 +71,7 @@ describe('useTokenDetectionOrchestrator', () => {
   });
 
   describe('detectTokens', () => {
-    it('should queue detection and refresh balances for a single chain', async () => {
+    it('should queue detection and reload cached balances for a single chain', async () => {
       const { useTokenDetectionOrchestrator } = await loadOrchestrator();
       const { detectTokens } = useTokenDetectionOrchestrator();
 
@@ -81,7 +81,7 @@ describe('useTokenDetectionOrchestrator', () => {
       expect(mockQueueTokenDetection).toHaveBeenCalledWith('eth', ['0xaddr1', '0xaddr2'], expect.any(Function));
       expect(mockFetchDetectedTokens).toHaveBeenCalledWith('eth', '0xaddr1');
       expect(mockFetchDetectedTokens).toHaveBeenCalledWith('eth', '0xaddr2');
-      expect(mockRefreshBlockchainBalances).toHaveBeenCalledWith({
+      expect(mockFetchBlockchainBalances).toHaveBeenCalledWith({
         blockchain: 'eth',
       });
     });
@@ -93,17 +93,7 @@ describe('useTokenDetectionOrchestrator', () => {
       await detectTokens(['eth', 'optimism'], ['0xaddr1']);
 
       expect(mockQueueTokenDetection).toHaveBeenCalledTimes(2);
-      expect(mockRefreshBlockchainBalances).toHaveBeenCalledTimes(2);
-    });
-
-    it('should skip balance refresh when option is false', async () => {
-      const { useTokenDetectionOrchestrator } = await loadOrchestrator();
-      const { detectTokens } = useTokenDetectionOrchestrator();
-
-      await detectTokens('eth', ['0xaddr1'], { refreshBalancesAfter: false });
-
-      expect(mockQueueTokenDetection).toHaveBeenCalledOnce();
-      expect(mockRefreshBlockchainBalances).not.toHaveBeenCalled();
+      expect(mockFetchBlockchainBalances).toHaveBeenCalledTimes(2);
     });
 
     it('should filter out addresses already being detected', async () => {
@@ -128,9 +118,9 @@ describe('useTokenDetectionOrchestrator', () => {
 
       await detectTokens('eth', ['0xaddr1']);
 
-      // No addresses left to queue, but balance refresh still happens
+      // No addresses left to queue, but cached balance reload still happens
       expect(mockQueueTokenDetection).not.toHaveBeenCalled();
-      expect(mockRefreshBlockchainBalances).toHaveBeenCalledOnce();
+      expect(mockFetchBlockchainBalances).toHaveBeenCalledOnce();
     });
   });
 
@@ -147,7 +137,7 @@ describe('useTokenDetectionOrchestrator', () => {
       await detectAllTokens();
 
       expect(mockQueueTokenDetection).toHaveBeenCalledTimes(2);
-      expect(mockRefreshBlockchainBalances).toHaveBeenCalledTimes(2);
+      expect(mockFetchBlockchainBalances).toHaveBeenCalledTimes(2);
     });
 
     it('should detect tokens only for specified chains', async () => {
