@@ -1,4 +1,5 @@
 import json
+import logging
 import shutil
 from contextlib import ExitStack
 from pathlib import Path
@@ -12,8 +13,12 @@ from rsqlite import IntegrityError
 
 from rotkehlchen.assets.types import AssetType
 from rotkehlchen.chain.ethereum.utils import should_update_protocol_cache
-from rotkehlchen.constants.assets import A_PAX, A_USDT
+from rotkehlchen.constants.assets import A_PAX, A_SOL, A_USD, A_USDT
 from rotkehlchen.constants.misc import GLOBALDB_NAME, GLOBALDIR_NAME
+from rotkehlchen.constants.prices import (
+    BITCOIN_GENESIS_BLOCK_TS,
+    CRYPTOCOMPARE_INVALID_PRICE_TS_CUTOFF,
+)
 from rotkehlchen.db.drivers.gevent import DBConnection, DBConnectionType
 from rotkehlchen.db.utils import table_exists
 from rotkehlchen.errors.misc import DBUpgradeError
@@ -40,6 +45,7 @@ from rotkehlchen.globaldb.upgrades.v3_v4 import (
 )
 from rotkehlchen.globaldb.upgrades.v5_v6 import V5_V6_UPGRADE_UNIQUE_CACHE_KEYS
 from rotkehlchen.globaldb.utils import GLOBAL_DB_VERSION
+from rotkehlchen.history.types import HistoricalPriceOracle
 from rotkehlchen.tests.conftest import TestEnvironment, requires_env
 from rotkehlchen.tests.fixtures.globaldb import create_globaldb
 from rotkehlchen.tests.utils.database import column_exists, index_exists
@@ -1664,12 +1670,36 @@ def test_upgrade_v14_v15_post_asset_upgrade_missing_velo(
 @pytest.mark.parametrize('target_globaldb_version', [14])
 @pytest.mark.parametrize('reload_user_assets', [False])
 @pytest.mark.parametrize('use_in_memory_globaldb', [False])
-def test_upgrade_v15_v16_creates_price_history_timestamp_order_index(
+def test_upgrade_v15_v16(
         globaldb: GlobalDBHandler,
         messages_aggregator: MessagesAggregator,
+        caplog: pytest.LogCaptureFixture,
 ) -> None:
     """Test the global DB upgrade path that creates the price history timestamp-order index."""
     assert globaldb.get_setting_value('version', 0) == 14
+    caplog.set_level(logging.INFO)
+    cryptocompare_source_type = HistoricalPriceOracle.CRYPTOCOMPARE.serialize_for_db()
+    aura_identifier = 'eip155:1/erc20:0xC0c293ce456fF0ED870ADd98a0828Dd4d2903DBF'
+    with globaldb.conn.read_ctx() as cursor:
+        assert cursor.execute(
+            'SELECT source_type, timestamp, price FROM price_history WHERE from_asset=? AND '
+            'to_asset=? AND timestamp IN (?, ?) ORDER BY source_type, timestamp',
+            (A_SOL.identifier, A_USD.identifier, 4381200, CRYPTOCOMPARE_INVALID_PRICE_TS_CUTOFF),
+        ).fetchall() == [
+            ('B', 4381200, '176.47'),
+            (cryptocompare_source_type, 4381200, '176.47'),
+            (cryptocompare_source_type, CRYPTOCOMPARE_INVALID_PRICE_TS_CUTOFF, '0.95'),
+        ]
+        assert cursor.execute(
+            'SELECT timestamp, price FROM price_history WHERE from_asset=? AND to_asset=? '
+            'AND source_type=? ORDER BY timestamp',
+            (aura_identifier, A_USD.identifier, cryptocompare_source_type),
+        ).fetchall() == [(4381200, '1.1'), (1262304000, '2.2')]
+        assert cursor.execute(
+            'SELECT timestamp, price FROM price_history WHERE from_asset=? AND to_asset=? '
+            'AND source_type=? ORDER BY timestamp',
+            ('AUD', A_USD.identifier, cryptocompare_source_type),
+        ).fetchall() == [(4381200, '0.6'), (1262304000, '0.7')]
 
     with ExitStack() as stack:
         patch_for_globaldb_upgrade_to(stack, 16)
@@ -1681,8 +1711,32 @@ def test_upgrade_v15_v16_creates_price_history_timestamp_order_index(
         )
 
     assert globaldb.get_setting_value('version', 0) == 16
+    assert 'Removed 5 invalid old Cryptocompare price entries.' in caplog.text
     with globaldb.conn.read_ctx() as cursor:
         assert index_exists(cursor=cursor, name='idx_price_history_timestamp_desc_order') is True
+        assert cursor.execute(
+            'SELECT source_type, timestamp, price FROM price_history WHERE from_asset=? AND '
+            'to_asset=? AND timestamp IN (?, ?) ORDER BY source_type, timestamp',
+            (A_SOL.identifier, A_USD.identifier, 4381200, CRYPTOCOMPARE_INVALID_PRICE_TS_CUTOFF),
+        ).fetchall() == [
+            ('B', 4381200, '176.47'),
+        ]
+        assert cursor.execute(
+            'SELECT timestamp, price FROM price_history WHERE from_asset=? AND to_asset=? '
+            'AND source_type=? ORDER BY timestamp',
+            (aura_identifier, A_USD.identifier, cryptocompare_source_type),
+        ).fetchall() == []
+        assert cursor.execute(
+            'SELECT timestamp, price FROM price_history WHERE from_asset=? AND to_asset=? '
+            'AND source_type=? AND timestamp IN (?, ?) ORDER BY timestamp',
+            (
+                'AUD',
+                A_USD.identifier,
+                cryptocompare_source_type,
+                BITCOIN_GENESIS_BLOCK_TS,
+                1262304000,
+            ),
+        ).fetchall() == [(1262304000, '0.7')]
 
 
 @pytest.mark.parametrize('custom_globaldb', ['v2_global.db'])

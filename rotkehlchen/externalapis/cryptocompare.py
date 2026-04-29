@@ -37,7 +37,7 @@ from rotkehlchen.constants.assets import (
     A_YFII,
     A_ZRX,
 )
-from rotkehlchen.constants.prices import ZERO_PRICE
+from rotkehlchen.constants.prices import CRYPTOCOMPARE_INVALID_PRICE_TS_CUTOFF, ZERO_PRICE
 from rotkehlchen.constants.resolver import strethaddress_to_identifier
 from rotkehlchen.constants.timing import HOUR_IN_SECONDS, WEEK_IN_SECONDS
 from rotkehlchen.db.settings import CachedSettings
@@ -52,6 +52,7 @@ from rotkehlchen.history.deserialization import deserialize_price
 from rotkehlchen.history.types import HistoricalPrice, HistoricalPriceOracle
 from rotkehlchen.interfaces import HistoricalPriceOracleWithCoinListInterface
 from rotkehlchen.logging import RotkehlchenLogsAdapter
+from rotkehlchen.serialization.deserialize import deserialize_timestamp
 from rotkehlchen.types import ExternalService, Price, Timestamp
 from rotkehlchen.utils.misc import set_user_agent, ts_now
 from rotkehlchen.utils.mixins.penalizable_oracle import PenalizablePriceOracleMixin
@@ -803,6 +804,13 @@ class Cryptocompare(
         prices = []
         for entry in calculated_history:
             try:
+
+                if (
+                    timestamp := deserialize_timestamp(entry['TIMESTAMP'])
+                ) < CRYPTOCOMPARE_INVALID_PRICE_TS_CUTOFF:
+                    log.warning(f'Skipping cc entry with unexpected timestamp {entry=}')
+                    continue
+
                 price = Price((deserialize_price(entry['HIGH']) + deserialize_price(entry['LOW'])) / 2)  # noqa: E501
                 if price == ZERO_PRICE:
                     continue  # don't write zero prices
@@ -810,7 +818,7 @@ class Cryptocompare(
                     from_asset=from_asset,
                     to_asset=to_asset,
                     source=HistoricalPriceOracle.CRYPTOCOMPARE,
-                    timestamp=Timestamp(entry['TIMESTAMP']),
+                    timestamp=timestamp,
                     price=price,
                 ))
             except (DeserializationError, KeyError) as e:
