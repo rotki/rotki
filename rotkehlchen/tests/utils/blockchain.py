@@ -190,8 +190,8 @@ def mock_beaconchain(
         if original_queries is not None and 'beaconchain' in original_queries:
             return original_requests_get(url, *args, **kwargs)
 
-        if 'validator' in url:  # all validators that belong to an eth1 address
-            response = '{"status":"OK","data":[]}'
+        if 'validators' in url:  # all validators that belong to an eth1 address
+            response = '{"data":[]}'
         else:
             raise AssertionError(f'Unrecognized argument url for beaconchain mock in tests: {url}')
 

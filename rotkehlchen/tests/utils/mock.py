@@ -203,19 +203,17 @@ def patch_etherscan_request(etherscan, mock_data: dict[str, Any]):
     )
 
 
-BEACONCHAIN_ETH1_CALL_RE = re.compile(r'https://beaconcha.in/api/v1/validator/eth1/([^?]*)')
-BEACONCHAIN_VALIDATOR_CALL_RE = re.compile(r'https://beaconcha.in/api/v1/validator')
-BEACONCHAIN_OTHER_CALL_RE = re.compile(r'https://beaconcha.in/api/v1/validator/(.*)/(.*)')
+BEACONCHAIN_VALIDATOR_CALL_RE = re.compile(r'https://beaconcha.in/api/v2/ethereum/validators$')
 
 
 def patch_eth2_requests(eth2, mock_data):
     """Patches all requests going to the passed Eth2 object"""
 
     def mock_beaconchain_query(url, **kwargs):  # pylint: disable=unused-argument
-        response_data = {'data': [], 'status': 'OK'}
-        eth1_match = BEACONCHAIN_ETH1_CALL_RE.search(url)
-        if eth1_match is not None:
-            eth1_address = eth1_match.group(1)
+        response_data = {'data': []}
+        request_data = kwargs['json']
+        validator_selector = request_data.get('validator', {})
+        if (eth1_address := validator_selector.get('deposit_address')) is not None:
             eth1_data = mock_data.get('eth1')
             if eth1_data is None:
                 raise AssertionError(f'No eth1 mock data for beaconchain call: {url}')
@@ -223,34 +221,45 @@ def patch_eth2_requests(eth2, mock_data):
             if validator_data is None:
                 raise AssertionError(f'No eth1 address in mock data for address: {eth1_address}')
             response_data['data'] = [{
-                'publickey': entry[0],
+                'validator': {
+                    'public_key': entry[0],
+                    'index': entry[2],
+                },
                 'valid_signature': entry[1],
-                'validatorindex': entry[2],
             } for entry in validator_data]
 
         elif BEACONCHAIN_VALIDATOR_CALL_RE.search(url) is not None:
-            arg_len = len(kwargs['json']['indicesOrPubkey'].split(','))
+            identifiers = set(validator_selector['validator_identifiers'])
             validator_data = mock_data.get('validator')
-            assert len(validator_data) == arg_len, 'Mocked beaconchain validator response does not match arguments'  # noqa: E501
-            response_data['data'] = validator_data
-
-        elif (other_match := BEACONCHAIN_OTHER_CALL_RE.search(url)) is not None:
-            endpoint = other_match.group(2)
-            encoded_args = other_match.group(1)
-            if endpoint == 'deposits':
-                deposit_data = mock_data.get('deposits')
-                if deposit_data is None:
-                    raise AssertionError(f'No mock deposit data for beacon chain call: {url}')
-                # for now let's just compare length of arguments to choose mock response
-                arg_len = len(encoded_args.split(','))
-                file_result = deposit_data.get(arg_len)
-                if file_result is None:
-                    raise AssertionError(f'Deposit data for {arg_len} addresses not found in mock data')  # noqa: E501
-                fullpath = MOCK_ROOT / 'test_eth2' / 'deposits' / file_result
-                with open(fullpath, encoding='utf8') as f:
-                    response_data = json.load(f)
-            else:
-                raise AssertionError(f'Unknown endpoint for beacon chain call: {url}')
+            validator_data = [
+                entry for entry in validator_data
+                if entry['validatorindex'] in identifiers or entry['pubkey'] in identifiers
+            ]
+            assert len(validator_data) == len(identifiers), 'Mocked beaconchain validator response does not match arguments'  # noqa: E501
+            response_data['data'] = [{
+                'validator': {
+                    'public_key': entry['pubkey'],
+                    'index': entry['validatorindex'],
+                },
+                'slashed': entry['slashed'],
+                'status': entry['status'],
+                'withdrawal_credentials': {
+                    'prefix': entry['withdrawalcredentials'][:4],
+                    'credential': entry['withdrawalcredentials'][4:],
+                },
+                'life_cycle_epochs': {
+                    'activation_eligibility': entry['activationeligibilityepoch'],
+                    'activation': entry['activationepoch'],
+                    'exit': entry['exitepoch'],
+                    'withdrawable': entry['withdrawableepoch'],
+                },
+                'balances': {
+                    'current': str(entry['balance'] * 10**9),
+                    'effective': str(entry['effectivebalance'] * 10**9),
+                },
+            } for entry in validator_data]
+        else:
+            raise AssertionError(f'Unknown endpoint for beacon chain call: {url}')
 
         return MockResponse(200, json.dumps(response_data, separators=(',', ':')))
     return patch.object(

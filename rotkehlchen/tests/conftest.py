@@ -238,11 +238,25 @@ def vcr_fixture(vcr: 'VCR') -> 'VCR':
 
     def beaconchain_matcher(r1, r2):
         """
-        Special matcher to match the path of beaconcha.in validator query
-        no matter the order of path args
+        Special matcher to match beaconcha.in validator query bodies
+        no matter the order of validator identifiers.
         """
-        if r1.uri.startswith('https://beaconcha.in/api/v1/validator/') and r2.uri.startswith('https://beaconcha.in/api/v1/validator/') and r1.uri[38:42] != 'eth1':  # noqa: E501
-            return set(r1.uri[38:].split(',')) == set(r2.uri[38:].split(','))
+        if (
+            r1.uri.startswith('https://beaconcha.in/api/v2/ethereum/') and
+            r2.uri.startswith('https://beaconcha.in/api/v2/ethereum/')
+        ):
+            body1 = json.loads(r1.body.decode())
+            body2 = json.loads(r2.body.decode())
+            validator1 = body1.get('validator', {})
+            validator2 = body2.get('validator', {})
+            if (
+                (identifiers1 := validator1.get('validator_identifiers')) is not None and
+                (identifiers2 := validator2.get('validator_identifiers')) is not None
+            ):
+                validator1['validator_identifiers'] = sorted(identifiers1)
+                validator2['validator_identifiers'] = sorted(identifiers2)
+
+            return r1.uri == r2.uri and body1 == body2
 
         return etherscan_matcher(r1, r2)  # other queries in these tests may also be etherscan
 

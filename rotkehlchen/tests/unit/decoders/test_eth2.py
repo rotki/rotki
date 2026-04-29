@@ -57,7 +57,7 @@ def test_deposit(database, ethereum_inquirer, ethereum_accounts):
     ]
 
 
-@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.vcr(filter_headers=['authorization'])
 @pytest.mark.parametrize('ethereum_accounts', [['0x3e5fd0244e13d82fC230f3Fc610bcd76b3c8217C']])
 def test_multiple_deposits(database, ethereum_inquirer, ethereum_accounts):
     tx_hash = deserialize_evm_tx_hash('0x819fe4a07894cf044f5d8c63e5c1e2294e068d05bf91d9cfc3e7ae3e60528ae5')  # noqa: E501
@@ -167,7 +167,7 @@ def test_deposit_with_anonymous_event(database, ethereum_inquirer, ethereum_acco
     ]
 
 
-@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.vcr(filter_headers=['authorization'])
 @pytest.mark.parametrize('ethereum_accounts', [['0x5907fc323d165680fb8141681958A2FdBFA0907e']])
 def test_convert_to_accumulating_request(ethereum_inquirer, ethereum_accounts):
     tx_hash = deserialize_evm_tx_hash('0xcc80041642ebd2f62a9d939321a1927f52d2bcb984355accefadcb20f9641d28')  # noqa: E501
@@ -214,7 +214,7 @@ def test_convert_to_accumulating_request(ethereum_inquirer, ethereum_accounts):
     )]
 
 
-@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.vcr(filter_headers=['authorization'])
 @pytest.mark.parametrize('ethereum_accounts', [['0xcECA24BE4585ADadC8f0D95285F65ac44533094C']])
 def test_consolidation_request(ethereum_inquirer, ethereum_accounts):
     tx_hash = deserialize_evm_tx_hash('0x812eeeb8a786650afa1826d8e9d46aa2073e28f1ed261f0c3da4ea18b7d7cd82')  # noqa: E501
@@ -261,7 +261,7 @@ def test_consolidation_request(ethereum_inquirer, ethereum_accounts):
     )]
 
 
-@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.vcr(filter_headers=['authorization'])
 @pytest.mark.parametrize('ethereum_accounts', [[
     '0x338aD53f251a7a9A1E4644f91802EDBD0683175d',
     '0x3fd8462E467708e5d1Dd4aD6BEcf4058d4ccBD8d',
@@ -318,7 +318,7 @@ def test_multi_consolidation_request(ethereum_inquirer, ethereum_accounts):
         )
 
 
-@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.vcr(filter_headers=['authorization'])
 @pytest.mark.parametrize('ethereum_accounts', [['0x86863bC22648d8c2fb02e3fcA314B8ee9ca0A4e0']])
 def test_withdraw_request(ethereum_inquirer, ethereum_accounts):
     tx_hash = deserialize_evm_tx_hash('0x5f038d3775fc27e16d8d5770aa1ba6f962e67ff8db0a194551566418542d60dc')  # noqa: E501
@@ -365,7 +365,7 @@ def test_withdraw_request(ethereum_inquirer, ethereum_accounts):
     )]
 
 
-@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.vcr(filter_headers=['authorization'])
 @pytest.mark.parametrize('ethereum_accounts', [['0x3Fb695A1b8Bc5ea18d8A4811eb514a7E17d80695']])
 def test_exit_request(ethereum_inquirer, ethereum_accounts):
     tx_hash = deserialize_evm_tx_hash('0x6224c1cde536d2488e29be74da6ed907bbeb885ecd38edc99820f35d8c0e136c')  # noqa: E501

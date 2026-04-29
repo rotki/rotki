@@ -1,3 +1,4 @@
+import os
 import warnings as test_warnings
 from http import HTTPStatus
 from typing import Any
@@ -18,7 +19,7 @@ def test_query_chunks_empty_list():
     assert calculate_query_chunks([]) == []
 
 
-@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.vcr(filter_headers=['authorization'])
 def test_get_eth1_validator_indices_single(beaconchain):
     address = '0x2bCF6fE9F95Fe5eCec37f69dFE00Bfb4668ac35D'
     validators = beaconchain.get_eth1_address_validators(address=address)
@@ -33,7 +34,7 @@ def test_get_eth1_validator_indices_single(beaconchain):
     assert validators[0].public_key == '0xadefb3de3c892823aa8d389a4b9582f56f64463db2b72b4d77c515d268cf695f9047604371eb73d2a514c8f711ae7eba'  # noqa: E501
 
 
-@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.vcr(filter_headers=['authorization'])
 def test_get_eth1_validator_indices_multiple(beaconchain):
     address = '0x3266F3546a1e5Dc6A15588f3324741A0E20a3B6c'
     validators = beaconchain.get_eth1_address_validators(address=address)
@@ -81,10 +82,8 @@ def test_rate_limit(beaconchain: BeaconChain, freezer):
         pytest.raises(RemoteError),
     ):
         beaconchain._query(
-            method='GET',
-            module='execution',
-            endpoint='produced',
-            encoded_args='130,131',
+            endpoint='validators/proposal-slots',
+            data={'validator': {'validator_identifiers': [130, 131]}},
         )
 
     assert beaconchain.ratelimited_until == Timestamp(ts_now() + 1000)
@@ -93,10 +92,8 @@ def test_rate_limit(beaconchain: BeaconChain, freezer):
         pytest.raises(RemoteError),
     ):
         beaconchain._query(
-            method='GET',
-            module='execution',
-            endpoint='produced',
-            encoded_args='130,131',
+            endpoint='validators/proposal-slots',
+            data={'validator': {'validator_identifiers': [130, 131]}},
         )
 
     assert requests_made == 1
@@ -107,11 +104,82 @@ def test_rate_limit(beaconchain: BeaconChain, freezer):
         pytest.raises(RemoteError),
     ):
         beaconchain._query(
-            method='GET',
-            module='execution',
-            endpoint='produced',
-            encoded_args='130,131',
+            endpoint='validators/proposal-slots',
+            data={'validator': {'validator_identifiers': [130, 131]}},
         )
 
     assert beaconchain.ratelimited_until == Timestamp(ts_now() + 1000)
     assert requests_made == 2
+
+
+def test_query_with_paging_missing_next_cursor(beaconchain: BeaconChain) -> None:
+    """Missing paging.next_cursor means pagination is finished."""
+
+    def mock_session_request(url: str, **kwargs: dict[str, Any]) -> MockResponse:  # pylint: disable=unused-argument
+        return MockResponse(
+            status_code=HTTPStatus.OK,
+            text='{"data": [{"block": "1"}], "paging": {}}',
+        )
+
+    with (
+        patch.object(beaconchain, '_get_api_key', return_value='api-key'),
+        patch.object(beaconchain.session, 'request', mock_session_request),
+    ):
+        response = beaconchain._query_with_paging(
+            endpoint='validators/proposal-slots',
+            data={'validator': {'validator_identifiers': [1]}},
+        )
+
+    assert response.data == [{'block': '1'}]
+    assert response.next_cursor == ''
+
+
+@pytest.mark.vcr(match_on=['beaconchain_matcher'], filter_headers=['authorization'])
+def test_query_chunked_endpoint_with_cursor_pagination_vcr(beaconchain: BeaconChain) -> None:
+    """Test real Beaconcha.in V2 cursor pagination with recorded data."""
+    if 'RECORD_CASSETTES' in os.environ:
+        assert (api_key := os.environ.get('BEACONCHAIN_API_KEY')) is not None
+        api_key_patch = patch.object(beaconchain, '_get_api_key', return_value=api_key)
+    else:
+        api_key_patch = patch.object(beaconchain, '_get_api_key', wraps=beaconchain._get_api_key)
+
+    with api_key_patch:
+        result = beaconchain._query_chunked_endpoint_with_cursor_pagination(
+            indices=[450000],
+            endpoint='validators/proposal-slots',
+            page_size=2,
+        )
+
+    assert len(result) > 2
+    assert {entry['validator']['index'] for entry in result} == {450000}
+    assert len({entry['block'] for entry in result}) == len(result)
+
+
+@pytest.mark.vcr(match_on=['beaconchain_matcher'], filter_headers=['authorization'])
+def test_query_block_production_data_vcr(beaconchain: BeaconChain) -> None:
+    """Test Beaconcha.in V2 block endpoints provide the data used for block productions."""
+    if 'RECORD_CASSETTES' in os.environ:
+        assert (api_key := os.environ.get('BEACONCHAIN_API_KEY')) is not None
+        api_key_patch = patch.object(beaconchain, '_get_api_key', return_value=api_key)
+    else:
+        api_key_patch = patch.object(beaconchain, '_get_api_key', wraps=beaconchain._get_api_key)
+
+    with api_key_patch:
+        block_data = beaconchain._query_block_data(block_number=15824493)
+        rewards_data = beaconchain._query_block_rewards(block_number=15824493)
+
+    assert block_data['timestamp'] == 1666693607
+    assert rewards_data['priority_fees'] == {
+        'amount': '126419309459217215',
+        'recipient': {
+            'address': '0x690B9A9E9aa1C9dB991C7721a92d351Db4FaC990',
+            'is_contract': False,
+        },
+    }
+    assert rewards_data['mev'] == {
+        'amount': '126458404824519798',
+        'recipient': {
+            'address': '0x0fdAe061cAE1Ad4Af83b27A96ba5496ca992139b',
+            'is_contract': False,
+        },
+    }
