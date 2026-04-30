@@ -4,7 +4,7 @@ import tempfile
 from collections import defaultdict
 from http import HTTPStatus
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Literal
+from typing import TYPE_CHECKING, Any, Final, Literal
 from zipfile import BadZipFile, ZipFile
 
 from flask import Response, make_response, send_file
@@ -87,6 +87,15 @@ from rotkehlchen.types import (
     Timestamp,
 )
 from rotkehlchen.utils.misc import ts_now
+
+CURRENT_TO_HISTORICAL_PRICE_ORACLES: Final = {
+    CurrentPriceOracle.COINGECKO: HistoricalPriceOracle.COINGECKO,
+    CurrentPriceOracle.CRYPTOCOMPARE: HistoricalPriceOracle.CRYPTOCOMPARE,
+    CurrentPriceOracle.DEFILLAMA: HistoricalPriceOracle.DEFILLAMA,
+    CurrentPriceOracle.UNISWAPV2: HistoricalPriceOracle.UNISWAPV2,
+    CurrentPriceOracle.UNISWAPV3: HistoricalPriceOracle.UNISWAPV3,
+    CurrentPriceOracle.ALCHEMY: HistoricalPriceOracle.ALCHEMY,
+}
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Sequence
@@ -523,6 +532,7 @@ class AssetsService:
                 to_asset=target_asset,
                 ignore_cache=ignore_cache,
             )
+            self._cache_current_prices(found_prices=found_prices, target_asset=target_asset)
             assets_price.update({
                 asset: [price_and_oracle[0], price_and_oracle[1].value]
                 for asset, price_and_oracle in found_prices.items()
@@ -534,6 +544,30 @@ class AssetsService:
             'oracles': {str(oracle): oracle.value for oracle in CurrentPriceOracle},
         }
         return {'result': process_result(result), 'message': '', 'status_code': HTTPStatus.OK}
+
+    @staticmethod
+    def _cache_current_prices(
+            found_prices: dict[Asset, tuple[Price, CurrentPriceOracle]],
+            target_asset: Asset,
+    ) -> None:
+        """Persist API current price query results in the price history table.
+        Fiat rates are already cached by Inquirer._query_fiat_pair() using xratescom.
+        """
+        timestamp = ts_now()
+        GlobalDBHandler.add_historical_prices(entries=[
+            HistoricalPrice(
+                from_asset=from_asset,
+                to_asset=target_asset,
+                source=historical_oracle,
+                timestamp=timestamp,
+                price=Price(price),
+            )
+            for from_asset, (price, current_oracle) in found_prices.items()
+            if (
+                price != ZERO_PRICE and
+                (historical_oracle := CURRENT_TO_HISTORICAL_PRICE_ORACLES.get(current_oracle)) is not None  # noqa: E501
+            )
+        ])
 
     def query_asset_mappings_by_type(
             self,

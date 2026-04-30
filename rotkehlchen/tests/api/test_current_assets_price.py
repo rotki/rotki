@@ -22,7 +22,7 @@ from rotkehlchen.tests.utils.api import (
     assert_proper_sync_response_with_result,
 )
 from rotkehlchen.types import ChainID, ChecksumEvmAddress, Price
-from rotkehlchen.utils.misc import timestamp_to_date
+from rotkehlchen.utils.misc import timestamp_to_date, ts_now
 
 if TYPE_CHECKING:
     from rotkehlchen.api.server import APIServer
@@ -90,6 +90,19 @@ def test_get_current_assets_price_in_btc(rotkehlchen_api_server: 'APIServer') ->
     assert result['assets']['GBP'] == ['0.00004119457641910343485018976024', CurrentPriceOracle.COINGECKO.value]  # noqa: E501
     assert result['assets']['USD'] == ['0.00003013502298398202988309419184', CurrentPriceOracle.COINGECKO.value]  # noqa: E501
     assert result['target_asset'] == 'BTC'
+
+    # confirm that prices are cached
+    assert (cached_price := GlobalDBHandler.get_historical_price(
+        from_asset=A_USD,
+        to_asset=A_BTC,
+        timestamp=ts_now(),
+        max_seconds_distance=60,
+        sources=(HistoricalPriceOracle.COINGECKO,),
+    )) is not None
+    assert cached_price.from_asset == A_USD
+    assert cached_price.to_asset == A_BTC
+    assert cached_price.source == HistoricalPriceOracle.COINGECKO
+    assert cached_price.price == Price(FVal('0.00003013502298398202988309419184'))
 
 
 @pytest.mark.vcr
