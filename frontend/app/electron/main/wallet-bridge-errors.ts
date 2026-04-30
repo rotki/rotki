@@ -2,7 +2,7 @@
  * Custom error classes for wallet bridge operations
  */
 
-export class WalletBridgeError extends Error {
+class WalletBridgeError extends Error {
   constructor(message: string, public readonly code: number = -32603) {
     super(message);
     this.name = 'WalletBridgeError';

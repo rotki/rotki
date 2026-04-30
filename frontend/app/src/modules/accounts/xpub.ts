@@ -8,17 +8,6 @@ export enum XpubPrefix {
   ZPUB = 'zpub',
 }
 
-export interface XpubType {
-  readonly humanLabel: string;
-  readonly label: string;
-  readonly value: XpubPrefix;
-}
-
-const P2TR_LABEL = 'P2TR';
-const XPUB_LABEL = 'P2PKH';
-const YPUB_LABEL = 'P2SH-P2WPKH';
-const ZPUB_LABEL = 'WPKH';
-
 export const getKeyType: (key: XpubPrefix) => XpubKeyType = (key) => {
   if (key === XpubPrefix.XPUB)
     return XpubKeyType.XPUB;
@@ -42,29 +31,6 @@ export const getPrefix: (type?: XpubKeyType) => XpubPrefix = (type) => {
 
   return XpubPrefix.XPUB;
 };
-
-export const keyType: XpubType[] = [
-  {
-    humanLabel: 'Legacy',
-    label: XPUB_LABEL,
-    value: XpubPrefix.XPUB,
-  },
-  {
-    humanLabel: 'SegWit',
-    label: YPUB_LABEL,
-    value: XpubPrefix.YPUB,
-  },
-  {
-    humanLabel: 'Native SegWit',
-    label: ZPUB_LABEL,
-    value: XpubPrefix.ZPUB,
-  },
-  {
-    humanLabel: 'Taproot',
-    label: P2TR_LABEL,
-    value: XpubPrefix.P2TR,
-  },
-];
 
 export function isPrefixed(value: string): RegExpMatchArray | null {
   return value.match(/([x-z]pub)(.*)/);

@@ -31,7 +31,7 @@ export function isEvmEvent(event: HistoryEvent): event is EvmHistoryEvent {
   return isEvmEventType(event.entryType);
 }
 
-export function isEvmSwapEventType(type: HistoryEventEntryType): boolean {
+function isEvmSwapEventType(type: HistoryEventEntryType): boolean {
   return type === HistoryEventEntryType.EVM_SWAP_EVENT;
 }
 
@@ -120,7 +120,7 @@ export function isEventMissingAccountingRule(event: HistoryEventEntry): boolean 
   return isMissingAccountingRule(event.eventAccountingRuleStatus);
 }
 
-export function hasEventState(event: HistoryEventEntry, state: HistoryEventState): boolean {
+function hasEventState(event: HistoryEventEntry, state: HistoryEventState): boolean {
   return event.states?.includes(state) ?? false;
 }
 

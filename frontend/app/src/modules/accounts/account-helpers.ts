@@ -269,7 +269,7 @@ interface GeneratorFilters {
   resolveIdentifier?: (id: string) => string;
 }
 
-export function* iterateAssets(
+function* iterateAssets(
   balances: Balances,
   key: keyof EthBalance = 'assets',
   filters: GeneratorFilters = {},

@@ -41,7 +41,7 @@ interface SolanaTxQueryStatusData extends BaseTxQueryStatusData {
 
 export type TxQueryStatusData = EvmTxQueryStatusData | EvmlikeTxQueryStatusData | BitcoinTxQueryStatusData | SolanaTxQueryStatusData;
 
-export function isBitcoinTxQueryStatusData(data: TxQueryStatusData): data is BitcoinTxQueryStatusData {
+function isBitcoinTxQueryStatusData(data: TxQueryStatusData): data is BitcoinTxQueryStatusData {
   return data.subtype === 'bitcoin';
 }
 

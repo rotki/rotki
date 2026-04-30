@@ -172,9 +172,9 @@ export const OraclePriceEntry = z.object({
 
 export type OraclePriceEntry = z.infer<typeof OraclePriceEntry>;
 
-export const OraclePriceEntries = z.array(OraclePriceEntry);
+const OraclePriceEntries = z.array(OraclePriceEntry);
 
-export type OraclePriceEntries = z.infer<typeof OraclePriceEntries>;
+type OraclePriceEntries = z.infer<typeof OraclePriceEntries>;
 
 export const OraclePricesCollectionResponse = CollectionCommonFields.extend({
   entries: OraclePriceEntries,

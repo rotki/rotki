@@ -11,7 +11,7 @@ export interface EventPriceUpdateTrigger {
   open: (payload: EventPriceUpdatePayload) => void;
 }
 
-export const EventPriceUpdateKey: InjectionKey<EventPriceUpdateTrigger> = Symbol('event-price-update');
+const EventPriceUpdateKey: InjectionKey<EventPriceUpdateTrigger> = Symbol('event-price-update');
 
 export function provideEventPriceUpdate(trigger: EventPriceUpdateTrigger): void {
   provide(EventPriceUpdateKey, trigger);

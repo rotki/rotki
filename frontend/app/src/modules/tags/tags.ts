@@ -23,7 +23,7 @@ export function defaultTag(): Tag {
 }
 
 // Reserved system tags that cannot be deleted or renamed
-export const RESERVED_TAGS: readonly string[] = ['Contract'] as const;
+const RESERVED_TAGS: readonly string[] = ['Contract'] as const;
 
 export function isReservedTag(tagName: string): boolean {
   return RESERVED_TAGS.some(reserved =>

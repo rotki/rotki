@@ -101,7 +101,7 @@ export function millisecondsToSeconds(milliseconds: number): number {
   return Math.floor(milliseconds / 1000);
 }
 
-export function dateValidator(dateInputFormat: Ref<DateFormat>): (value: string) => boolean {
+function dateValidator(dateInputFormat: Ref<DateFormat>): (value: string) => boolean {
   return (value: string) => value.length > 0 && !isNaN(convertToTimestamp(value, get(dateInputFormat)));
 }
 

@@ -173,14 +173,14 @@ export const HistoricalBalanceProcessingData = z.object({
 
 export type HistoricalBalanceProcessingData = z.infer<typeof HistoricalBalanceProcessingData>;
 
-export const NegativeBalanceBucket = z.object({
+const NegativeBalanceBucket = z.object({
   asset: z.string(),
   location: z.string(),
   locationLabel: z.string().nullable(),
   protocol: z.string().nullable(),
 });
 
-export type NegativeBalanceBucket = z.infer<typeof NegativeBalanceBucket>;
+type NegativeBalanceBucket = z.infer<typeof NegativeBalanceBucket>;
 
 export const NegativeBalanceDetectedData = z.object({
   asset: z.string(),
