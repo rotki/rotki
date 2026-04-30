@@ -41,12 +41,19 @@ export const useBalanceFetching = createSharedComposable(() => {
     }
   };
 
-  const fetch = async (): Promise<void> => {
+  const fetchCached = async (): Promise<void> => {
     await fetchExchangeRates();
     await Promise.allSettled([fetchManualBalances(), refreshAccounts(), fetchConnectedExchangeBalances()]);
+  };
 
+  const refreshFromChain = (): void => {
     startPromise(refreshBlockchainBalances());
     startPromise(fetchBalances());
+  };
+
+  const fetch = async (): Promise<void> => {
+    await fetchCached();
+    refreshFromChain();
   };
 
   const autoRefresh = async (): Promise<void> => {
@@ -64,5 +71,7 @@ export const useBalanceFetching = createSharedComposable(() => {
     autoRefresh,
     fetch,
     fetchBalances,
+    fetchCached,
+    refreshFromChain,
   };
 });

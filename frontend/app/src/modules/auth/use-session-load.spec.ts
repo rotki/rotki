@@ -3,11 +3,13 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useDataLoader } from '@/modules/auth/use-session-load';
 
 const mockOnBalancesLoaded = vi.fn();
-const mockFetch = vi.fn();
+const mockFetchCached = vi.fn();
+const mockRefreshFromChain = vi.fn();
 const mockFetchIgnoredAssets = vi.fn();
 const mockFetchWhitelistedAssets = vi.fn();
 const mockFetchNetValue = vi.fn();
 const mockRefreshPrices = vi.fn();
+const mockSeedFromHistoric = vi.fn();
 const mockFetchTags = vi.fn();
 const mockFetchAllLocations = vi.fn();
 const mockSetStatus = vi.fn();
@@ -21,7 +23,14 @@ vi.mock('@/modules/session/use-scheduler-state', () => ({
 
 vi.mock('@/modules/balances/use-balance-fetching', () => ({
   useBalanceFetching: vi.fn(() => ({
-    fetch: mockFetch,
+    fetchCached: mockFetchCached,
+    refreshFromChain: mockRefreshFromChain,
+  })),
+}));
+
+vi.mock('@/modules/assets/prices/use-price-seed', () => ({
+  usePriceSeed: vi.fn(() => ({
+    seedFromHistoric: mockSeedFromHistoric,
   })),
 }));
 
@@ -92,11 +101,13 @@ describe('composables::session::load', () => {
 
     set(mockShouldFetchData, true);
 
-    mockFetch.mockResolvedValue(undefined);
+    mockFetchCached.mockResolvedValue(undefined);
+    mockRefreshFromChain.mockReturnValue(undefined);
     mockFetchIgnoredAssets.mockResolvedValue(undefined);
     mockFetchWhitelistedAssets.mockResolvedValue(undefined);
     mockFetchNetValue.mockResolvedValue(undefined);
     mockRefreshPrices.mockResolvedValue(undefined);
+    mockSeedFromHistoric.mockResolvedValue(undefined);
     mockFetchTags.mockResolvedValue(undefined);
     mockFetchAllLocations.mockResolvedValue({ locations: {} });
   });
@@ -122,12 +133,21 @@ describe('composables::session::load', () => {
       await flushPromises();
 
       // Verify data fetching happened before onBalancesLoaded
-      expect(mockFetch).toHaveBeenCalled();
+      expect(mockFetchCached).toHaveBeenCalled();
       expect(mockFetchIgnoredAssets).toHaveBeenCalled();
       expect(mockFetchWhitelistedAssets).toHaveBeenCalled();
       expect(mockFetchNetValue).toHaveBeenCalled();
+      expect(mockSeedFromHistoric).toHaveBeenCalled();
       expect(mockRefreshPrices).toHaveBeenCalled();
+      expect(mockRefreshFromChain).toHaveBeenCalled();
       expect(mockOnBalancesLoaded).toHaveBeenCalled();
+
+      // Seed must run before live refresh and chain refetch
+      const seedOrder = mockSeedFromHistoric.mock.invocationCallOrder[0];
+      const refreshOrder = mockRefreshPrices.mock.invocationCallOrder[0];
+      const chainOrder = mockRefreshFromChain.mock.invocationCallOrder[0];
+      expect(seedOrder).toBeLessThan(refreshOrder);
+      expect(seedOrder).toBeLessThan(chainOrder);
     });
 
     it('should not call onBalancesLoaded when shouldFetchData is false', async () => {
@@ -142,7 +162,7 @@ describe('composables::session::load', () => {
     });
 
     it('should call onBalancesLoaded even if some fetches fail', async () => {
-      mockFetch.mockRejectedValue(new Error('Fetch failed'));
+      mockFetchCached.mockRejectedValue(new Error('Fetch failed'));
 
       const { load } = useDataLoader();
 
