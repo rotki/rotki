@@ -3,7 +3,6 @@ import type { ComponentExposed } from 'vue-component-type-helpers';
 import type { BlockchainAccountGroupWithBalance } from '@/modules/accounts/blockchain-accounts';
 import type { AccountManageState } from '@/modules/accounts/blockchain/use-account-manage';
 import type { LocationQuery } from '@/modules/core/table/route';
-import { toSentenceCase } from '@rotki/common';
 import { getGroupId } from '@/modules/accounts/account-utils';
 import AccountAssetSelectionActions from '@/modules/accounts/AccountAssetSelectionActions.vue';
 import AccountBalancesFilterBar from '@/modules/accounts/AccountBalancesFilterBar.vue';
@@ -106,14 +105,7 @@ defineExpose({
 </script>
 
 <template>
-  <RuiCard
-    data-cy="account-balances"
-    content-class="!pt-1"
-  >
-    <template #header>
-      {{ t('account_balances.data_table.group', { type: isEvm ? 'EVM' : toSentenceCase(category) }) }}
-    </template>
-
+  <RuiCard data-cy="account-balances">
     <div class="flex flex-col md:flex-row md:items-center gap-4 flex-wrap">
       <AccountAssetSelectionActions
         :selected-count="selectedAssets?.length"

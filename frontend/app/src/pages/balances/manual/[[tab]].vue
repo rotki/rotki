@@ -116,7 +116,6 @@ onBeforeMount(async () => {
         <RuiTabItem value="assets">
           <ManualBalanceTable
             data-cy="manual-balances"
-            :title="t('manual_balances.balances')"
             type="balances"
             @edit="balance = $event"
           />
@@ -124,7 +123,6 @@ onBeforeMount(async () => {
         <RuiTabItem value="liabilities">
           <ManualBalanceTable
             data-cy="manual-liabilities"
-            :title="t('manual_balances.liabilities')"
             type="liabilities"
             @edit="balance = $event"
           />

@@ -122,24 +122,26 @@ watchImmediate(route, (route) => {
       />
     </template>
 
-    <RuiTabs
-      color="primary"
-      class="border border-default rounded bg-white dark:bg-rui-grey-900 flex max-w-min"
-    >
-      <RuiTab
-        link
-        :to="getTabLink('accounts')"
+    <template #tabs>
+      <RuiTabs
+        color="primary"
+        class="border border-default rounded bg-white dark:bg-rui-grey-900 flex max-w-min"
       >
-        {{ t('blockchain_balances.tabs.accounts') }}
-      </RuiTab>
-      <RuiTab
-        v-if="isEth2Enabled"
-        link
-        :to="getTabLink('validators')"
-      >
-        {{ t('blockchain_balances.tabs.validators') }}
-      </RuiTab>
-    </RuiTabs>
+        <RuiTab
+          link
+          :to="getTabLink('accounts')"
+        >
+          {{ t('blockchain_balances.tabs.accounts') }}
+        </RuiTab>
+        <RuiTab
+          v-if="isEth2Enabled"
+          link
+          :to="getTabLink('validators')"
+        >
+          {{ t('blockchain_balances.tabs.validators') }}
+        </RuiTab>
+      </RuiTabs>
+    </template>
 
     <AccountImportProgress
       v-if="importingAccounts"
