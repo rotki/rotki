@@ -20,8 +20,7 @@ import RowActions from '@/modules/shell/components/RowActions.vue';
 import RowAppend from '@/modules/shell/components/RowAppend.vue';
 import TagDisplay from '@/modules/tags/TagDisplay.vue';
 
-const { title, type } = defineProps<{
-  title: string;
+const { type } = defineProps<{
   type: 'liabilities' | 'balances';
 }>();
 
@@ -148,9 +147,6 @@ watchDebounced(
             :tooltip="t('manual_balances_table.refresh.tooltip')"
             @refresh="refresh()"
           />
-          <span class="text-h6">
-            {{ title }}
-          </span>
           <div class="grow" />
           <div class="flex flex-col sm:flex-row flex-1 gap-2 min-w-full md:min-w-[40rem]">
             <TagFilter
