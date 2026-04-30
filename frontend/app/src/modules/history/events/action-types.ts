@@ -18,7 +18,7 @@ export type HistoryEventAction = typeof HISTORY_EVENT_ACTIONS[keyof typeof HISTO
 
 export type HighlightType = ContextColorsType;
 
-export const HIGHLIGHT_CLASSES: Partial<Record<HighlightType, string>> = {
+const HIGHLIGHT_CLASSES: Partial<Record<HighlightType, string>> = {
   error: '!bg-rui-error/15',
   success: '!bg-rui-success/15',
   warning: '!bg-rui-warning/15',

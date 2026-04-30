@@ -14,7 +14,7 @@ export const ROW_HEIGHTS = {
 } as const;
 
 // Card heights for mobile layout
-export const CARD_HEIGHTS = {
+const CARD_HEIGHTS = {
   'group-header': 72,
   'event-row': 140,
   'event-placeholder': 140,

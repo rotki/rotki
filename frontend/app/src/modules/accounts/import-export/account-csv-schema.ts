@@ -16,7 +16,7 @@ export const CSVSchema = z.array(CSVRow);
 
 export type CSVRow = z.infer<typeof CSVRow>;
 
-export function serializedStringToRecord(serialized: string): Record<string, string> {
+function serializedStringToRecord(serialized: string): Record<string, string> {
   const record: Record<string, string> = {};
   serialized.split('&').forEach((pair) => {
     const [key, value] = pair.split('=');

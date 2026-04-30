@@ -5,7 +5,3 @@ export const EntryMeta = z.object({
 });
 
 export type EntryMeta = z.infer<typeof EntryMeta>;
-
-export type EntryWithMeta<T> = {
-  readonly entry: T;
-} & EntryMeta;

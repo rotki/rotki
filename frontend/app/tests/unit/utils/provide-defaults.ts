@@ -1,4 +1,4 @@
-export const TableSymbol = Symbol.for('rui:table');
+const TableSymbol = Symbol.for('rui:table');
 
 export const libraryDefaults = {
   [TableSymbol.valueOf()]: {

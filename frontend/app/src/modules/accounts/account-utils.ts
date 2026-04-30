@@ -51,7 +51,7 @@ export function getAccountLabel(account: { data: BlockchainAccountData; label?: 
   return '';
 }
 
-export function isAddressAccount<T extends { data: BlockchainAccountData }>(account: T): account is T & { data: AddressData } {
+function isAddressAccount<T extends { data: BlockchainAccountData }>(account: T): account is T & { data: AddressData } {
   return account.data.type === 'address';
 }
 

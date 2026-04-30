@@ -1,9 +1,11 @@
 import type { ActionResult } from '@rotki/common';
+import type { QueueState } from '@/modules/core/api/request-queue/types';
 import type { RotkiFetchOptions } from '@/modules/core/api/types';
 import { ofetch } from 'ofetch';
 import { defaultApiUrls } from '@/modules/core/api/api-urls';
 import { DEFAULT_TIMEOUT } from '@/modules/core/api/constants';
-import { type QueueState, RequestPriority, RequestQueue } from '@/modules/core/api/request-queue';
+import { RequestQueue } from '@/modules/core/api/request-queue/queue';
+import { RequestPriority } from '@/modules/core/api/request-queue/request-priority';
 import { transformRequestBody, transformRequestQuery } from '@/modules/core/api/request-transformers';
 import { createResponseParser, createStatusError, tryParseJson } from '@/modules/core/api/response-handlers';
 import { queryTransformer } from '@/modules/core/api/transformers';
