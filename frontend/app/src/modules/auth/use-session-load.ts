@@ -1,6 +1,7 @@
 import { Blockchain } from '@rotki/common';
 import { startPromise } from '@shared/utils';
 import { usePriceRefresh } from '@/modules/assets/prices/use-price-refresh';
+import { usePriceSeed } from '@/modules/assets/prices/use-price-seed';
 import { useIgnoredAssetOperations } from '@/modules/assets/use-ignored-asset-operations';
 import { useWhitelistedAssetOperations } from '@/modules/assets/use-whitelisted-asset-operations';
 import { useSessionAuthStore } from '@/modules/auth/use-session-auth-store';
@@ -27,8 +28,9 @@ export function useDataLoader(): UseDataLoaderReturn {
   const { fetchNetValue } = useStatisticsDataFetching();
   const { allLocations } = storeToRefs(useLocationStore());
   const { fetchAllLocations } = useHistoryApi();
-  const { fetch } = useBalanceFetching();
+  const { fetchCached, refreshFromChain } = useBalanceFetching();
   const { refreshPrices } = usePriceRefresh();
+  const { seedFromHistoric } = usePriceSeed();
   const { setStatus } = useStatusUpdater(Section.BLOCKCHAIN);
 
   const { onBalancesLoaded } = useSchedulerState();
@@ -39,10 +41,12 @@ export function useDataLoader(): UseDataLoaderReturn {
     await Promise.allSettled([
       fetchIgnoredAssets(),
       fetchWhitelistedAssets(),
-      fetch(),
+      fetchCached(),
       fetchNetValue(),
     ]);
-    await refreshPrices();
+    await seedFromHistoric();
+    startPromise(refreshPrices());
+    refreshFromChain();
     onBalancesLoaded();
     sigilBus.emit('balances:loaded');
   };
