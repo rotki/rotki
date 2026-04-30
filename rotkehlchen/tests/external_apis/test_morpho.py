@@ -1,7 +1,7 @@
 import datetime
 from collections.abc import Callable, Iterable
 from http import HTTPStatus
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 from unittest.mock import patch
 
 from freezegun import freeze_time
@@ -53,9 +53,16 @@ def check_new_query_updates_timestamp(
 
 def test_morpho_vaults_api(database: 'DBHandler') -> None:
     """Test that vaults are queried correctly"""
+    vaults_response = '{"data":{"vaults":{"items":[{"address":"0xc43f5F199a055F38de4629dd14d18e69dAe9f29D","symbol":"AnzenUSDC","name":"Anzen Boosted USDC","asset":{"address":"0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913","symbol":"USDC","name":"USD Coin","decimals":6},"chain":{"id":8453}},{"address":"0xc28ca6bFA6C1dfEF94989DC0D0A862eff8d71065","symbol":"glocWETHezETH","name":"Glocusent WETH ezETH","asset":{"address":"0x4200000000000000000000000000000000000006","symbol":"WETH","name":"Wrapped Ether","decimals":18},"chain":{"id":8453}}]}}}'  # noqa: E501
+    vaults_v2_response = '{"data":{"vaultV2s":{"items":[{"address":"0x002fBabB63561D0481570ECDAC9Bbe27E9310166","symbol":"","name":"","asset":{"address":"0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913","symbol":"USDC","name":"USD Coin","decimals":6},"chain":{"id":8453}}]}}}'  # noqa: E501
+
+    def mock_morpho_post(*args: Any, **kwargs: Any) -> MockResponse:  # pylint: disable=unused-argument
+        response = vaults_v2_response if 'vaultV2s' in kwargs['json']['query'] else vaults_response
+        return MockResponse(HTTPStatus.OK, response)
+
     with (query_patch := patch(
         target='rotkehlchen.chain.evm.decoding.morpho.utils.requests.post',
-        return_value=MockResponse(HTTPStatus.OK, '{"data":{"vaults":{"items":[{"address":"0xc43f5F199a055F38de4629dd14d18e69dAe9f29D","symbol":"AnzenUSDC","name":"Anzen Boosted USDC","asset":{"address":"0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913","symbol":"USDC","name":"USD Coin","decimals":6},"chain":{"id":8453}},{"address":"0xc28ca6bFA6C1dfEF94989DC0D0A862eff8d71065","symbol":"glocWETHezETH","name":"Glocusent WETH ezETH","asset":{"address":"0x4200000000000000000000000000000000000006","symbol":"WETH","name":"Wrapped Ether","decimals":18},"chain":{"id":8453}}]}}}'),  # noqa: E501,
+        side_effect=mock_morpho_post,
     )):
         query_morpho_vaults(chain_id=ChainID.BASE, msg_aggregator=database.msg_aggregator)
 
@@ -64,6 +71,7 @@ def test_morpho_vaults_api(database: 'DBHandler') -> None:
             cursor=cursor,
             key_parts=(CacheType.MORPHO_VAULTS, str(ChainID.BASE.serialize())),
         ) == [
+            '0x002fBabB63561D0481570ECDAC9Bbe27E9310166,0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913',
             '0xc28ca6bFA6C1dfEF94989DC0D0A862eff8d71065,0x4200000000000000000000000000000000000006',
             '0xc43f5F199a055F38de4629dd14d18e69dAe9f29D,0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913',
         ]

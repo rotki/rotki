@@ -40,6 +40,7 @@ MORPHO_BLUE_API: Final = 'https://blue-api.morpho.org/graphql'
 MORPHO_REWARDS_API: Final = 'https://rewards.morpho.org/v1/programs'
 VAULT_QUERY_PAGE_SIZE: Final = 200
 VAULT_QUERY: Final = 'items {address symbol name asset {address symbol name decimals} chain {id}}'
+VAULT_QUERY_FIELDS: Final = ('vaults', 'vaultV2s')
 
 
 def _query_morpho_vaults_api(
@@ -48,32 +49,34 @@ def _query_morpho_vaults_api(
 ) -> list[dict[str, Any]] | None:
     """Query morpho vaults from the morpho blue api.
     Returns vault list or None if there was an error."""
-    all_vaults, offset, last_notified_ts = [], 0, Timestamp(0)
-    while True:
-        try:
-            response_data = requests.post(
-                url=MORPHO_BLUE_API,
-                json={'query': f'query {{ vaults(first:{VAULT_QUERY_PAGE_SIZE} skip:{offset} where:{{chainId_in:[{chain_id.value}]}}) {{ {VAULT_QUERY} }} }}'},  # noqa: E501
-                headers={'Content-Type': 'application/json'},
-                timeout=CachedSettings().get_timeout_tuple(),
-            )
-            vault_list = response_data.json()['data']['vaults']['items']
-            all_vaults.extend(vault_list)
-            offset += VAULT_QUERY_PAGE_SIZE
-            last_notified_ts = maybe_notify_new_pools_status(
-                msg_aggregator=msg_aggregator,
-                last_notified_ts=last_notified_ts,
-                protocol=CPT_MORPHO,
-                chain=chain_id,
-                get_new_pools_count=lambda: len(all_vaults),
-            )
-            if len(vault_list) < VAULT_QUERY_PAGE_SIZE:
-                break  # no more vaults to retrieve
+    all_vaults, last_notified_ts = [], Timestamp(0)
+    for query_field in VAULT_QUERY_FIELDS:
+        offset = 0
+        while True:
+            try:
+                response_data = requests.post(
+                    url=MORPHO_BLUE_API,
+                    json={'query': f'query {{ {query_field}(first:{VAULT_QUERY_PAGE_SIZE} skip:{offset} where:{{chainId_in:[{chain_id.value}]}}) {{ {VAULT_QUERY} }} }}'},  # noqa: E501
+                    headers={'Content-Type': 'application/json'},
+                    timeout=CachedSettings().get_timeout_tuple(),
+                )
+                vault_list = response_data.json()['data'][query_field]['items']
+                all_vaults.extend(vault_list)
+                offset += VAULT_QUERY_PAGE_SIZE
+                last_notified_ts = maybe_notify_new_pools_status(
+                    msg_aggregator=msg_aggregator,
+                    last_notified_ts=last_notified_ts,
+                    protocol=CPT_MORPHO,
+                    chain=chain_id,
+                    get_new_pools_count=lambda: len(all_vaults),
+                )
+                if len(vault_list) < VAULT_QUERY_PAGE_SIZE:
+                    break  # no more vaults to retrieve
 
-        except (requests.RequestException, JSONDecodeError, TypeError, KeyError) as e:
-            error = f'missing key {e!s}' if isinstance(e, KeyError) else f'{e!s}'
-            log.error(f'Failed to retrieve morpho vaults from api due to {error}')
-            return None
+            except (requests.RequestException, JSONDecodeError, TypeError, KeyError) as e:
+                error = f'missing key {e!s}' if isinstance(e, KeyError) else f'{e!s}'
+                log.error(f'Failed to retrieve Morpho vaults from api field {query_field} due to {error}')  # noqa: E501
+                return None
 
     return all_vaults
 
