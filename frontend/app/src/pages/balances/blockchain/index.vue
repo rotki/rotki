@@ -19,7 +19,6 @@ import VisibleColumnsSelector from '@/modules/dashboard/VisibleColumnsSelector.v
 import HideSmallBalances from '@/modules/settings/HideSmallBalances.vue';
 import { BalanceSource, DashboardTableType } from '@/modules/settings/types/frontend-settings';
 import { useFrontendSettingsStore } from '@/modules/settings/use-frontend-settings-store';
-import CardTitle from '@/modules/shell/components/CardTitle.vue';
 import TablePageLayout from '@/modules/shell/layout/TablePageLayout.vue';
 
 definePage({
@@ -70,6 +69,7 @@ onMounted(() => {
     ]"
   >
     <template #buttons>
+      <BlockchainBalanceStalenessIndicator class="self-center" />
       <PriceRefresh />
       <HideSmallBalances :source="BalanceSource.BLOCKCHAIN" />
     </template>
@@ -89,14 +89,7 @@ onMounted(() => {
                 <BlockchainBalanceRefreshBehaviourMenu />
               </template>
             </SummaryCardRefreshMenu>
-            <div class="flex flex-col ml-2">
-              <CardTitle>
-                {{ t('blockchain_balances.title') }}
-              </CardTitle>
-              <BlockchainBalanceStalenessIndicator />
-            </div>
           </div>
-          <CardTitle class="order-0 whitespace-nowrap" />
           <div class="order-3 xl:order-1 flex flex-wrap md:flex-nowrap grow justify-end w-full xl:w-auto items-center gap-2 overflow-hidden pt-1.5 -mt-1 xl:pl-6">
             <ChainSelect
               v-model="chainsFilter"
