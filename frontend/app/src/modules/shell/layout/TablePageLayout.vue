@@ -1,5 +1,14 @@
 <script setup lang="ts">
 const { hideHeader, child, title } = defineProps<{ hideHeader?: boolean; child?: boolean; title?: string[] }>();
+
+const slots = defineSlots<{
+  default?: () => unknown;
+  title?: () => unknown;
+  buttons?: () => unknown;
+  tabs?: () => unknown;
+}>();
+
+const hasTabs = computed<boolean>(() => Boolean(slots.tabs));
 </script>
 
 <template>
@@ -41,7 +50,13 @@ const { hideHeader, child, title } = defineProps<{ hideHeader?: boolean; child?:
         <div class="hidden sm:block sm:grow" />
         <slot name="buttons" />
       </div>
-      <slot />
+      <slot name="tabs" />
+      <div
+        class="flex flex-col gap-4"
+        :class="{ '-mt-2': hasTabs }"
+      >
+        <slot />
+      </div>
     </div>
   </div>
 </template>

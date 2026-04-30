@@ -1731,14 +1731,12 @@
       "accounts": "Accounts",
       "validators": "Validators"
     },
-    "title": "Blockchain Balances per asset",
     "validator_index_label": "Ethereum validator No. {index}",
     "validator_limit_reached": "You have reached the ETH staking validator limit ({total}/{limit}). {link} to add more validators.",
     "validators": {
-      "auto_detection_info": "rotki will automatically detect validators if you add the depositor address as an Ethereum account. First, ensure the events for that depositor address are fetched and decoded in history events, where any ETH deposit events will be detected. After the events are found, manually hit the refresh button to update the validator list.",
+      "auto_detection_info": "Validators are auto-detected from ETH deposits. Add the depositor address as an Ethereum account, decode its history events, then click refresh to update the list.",
       "consolidated": "Consolidated into:",
-      "selected": "{count} validator(s) selected",
-      "title": "Ethereum Validators"
+      "selected": "{count} validator(s) selected"
     }
   },
   "calendar": {
@@ -3999,7 +3997,6 @@
   },
   "manual_balances": {
     "add_manual_balance": "Add Manual Balance",
-    "balances": "Manually Tracked Balances",
     "dialog": {
       "add": {
         "title": "Add a manual balance"
@@ -4008,8 +4005,7 @@
         "subtitle": "Modify balance amount, location, and tags",
         "title": "Edit Manual Balance"
       }
-    },
-    "liabilities": "Manually Tracked Liabilities"
+    }
   },
   "manual_balances_form": {
     "fields": {
