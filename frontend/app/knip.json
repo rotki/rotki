@@ -1,0 +1,39 @@
+{
+  "$schema": "https://unpkg.com/knip@6/schema.json",
+  "entry": [
+    "src/main.ts!",
+    "src/pages/**/*.vue!",
+    "index.html!",
+    "electron/main/index.ts!",
+    "electron/preload/index.ts!",
+    "electron/preload/wallet-bridge.ts!",
+    "vite.config.ts",
+    "vite.config.main.ts",
+    "vite.config.preload.ts",
+    "vitest.config.ts",
+    "playwright.config.ts",
+    "tailwind.config.ts",
+    "postcss.config.js",
+    "scripts/**/*.{ts,js}",
+    "src/**/*.{spec,test}.ts",
+    "electron/**/*.{spec,test}.ts",
+    "shared/**/*.{spec,test}.ts",
+    "tests/unit/setup-files/**/*.{ts,js}",
+    "tests/e2e/specs/**/*.{ts,js}"
+  ],
+  "project": [
+    "src/**/*.{ts,vue}",
+    "electron/**/*.ts",
+    "shared/**/*.ts",
+    "tests/unit/**/*.ts"
+  ],
+  "ignore": [
+    "**/*.d.ts"
+  ],
+  "paths": {
+    "@/*": ["src/*"],
+    "@shared/*": ["shared/*"],
+    "@electron/*": ["electron/*"],
+    "@test/*": ["tests/unit/*"]
+  }
+}
