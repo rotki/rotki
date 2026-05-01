@@ -688,7 +688,7 @@ def test_get_events(rotkehlchen_api_server: 'APIServer') -> None:
             (None, False, 8, 8),  # premium without ignoring assets, we get all the events
             (None, True, 3, 3),  # premium with ignoring assets (ETH), we get only 3 events
             (3, False, 8, 3),  # free limit (3) without ignoring assets, total events are 8 but we get only 3 (limited)  # noqa: E501
-            (3, True, 3, 3),  # free limit (3) with ignoring assets, total events are 3, all shown (limit not exceeded)  # noqa: E501
+            (3, True, 3, 1),  # free limit (3) with ignoring assets, only 1 is in the limited window  # noqa: E501
             (1, False, 8, 1),  # free limit (1) without ignoring assets, total events are 8 but we get only 1 (limited)  # noqa: E501
             (1, True, 3, 1),  # free limit (1) with ignoring assets, total events are 2 but we get only 1 (limited)  # noqa: E501
         ):
@@ -698,6 +698,24 @@ def test_get_events(rotkehlchen_api_server: 'APIServer') -> None:
                 query_filter=HistoryEventFilterQuery.make(exclude_ignored_assets=exclude_ignored),
                 entries_limit=limit,
             ) == (total, found)
+
+    # Regression test for free tier pagination: the total used by pagination must be the
+    # number of entries available under the free limit, while entries_found_total exposes the
+    # full filtered count for the upgrade row.
+    with patch('rotkehlchen.api.services.history.get_user_limit', return_value=(3, False)):
+        response = requests.post(
+            api_url_for(
+                rotkehlchen_api_server,
+                'historyeventresource',
+            ),
+            json={'aggregate_by_group_ids': True, 'offset': 0, 'limit': 5},
+        )
+    result = assert_proper_sync_response_with_result(response)
+    assert len(result['entries']) == 1
+    assert result['entries_found'] == 1
+    assert result['entries_found_total'] == 3
+    assert result['entries_limit'] == 3
+    assert result['entries_total'] == 8
 
     # test query an event with an unknown asset
     def mock_check_asset_existence(identifier: str, query_packaged_db: bool = True) -> Exception:
