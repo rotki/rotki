@@ -750,7 +750,7 @@ def test_swap_on_polygon_pos(polygon_pos_inquirer, polygon_pos_accounts):
         asset=A_POLYGON_POS_USDT,
         amount=FVal(received_amount),
         location_label=polygon_pos_accounts[0],
-        notes=f'Receive {received_amount} USDT as the result of a swap via the 0x protocol',
+        notes=f'Receive {received_amount} USDT0 as the result of a swap via the 0x protocol',
         counterparty=CPT_ZEROX,
         address=ZEROX_ROUTER,
     )]

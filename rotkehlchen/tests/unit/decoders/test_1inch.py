@@ -591,7 +591,7 @@ def test_1inch_swap_polygon(polygon_pos_inquirer, polygon_pos_accounts):
             amount=FVal('115792089237316195423570985008687907853269984665640564039457584007913032.844935'),
             location_label=user_addy,
             address=ONEINCH_V4_ROUTER,
-            notes=f'Set USDT spending approval of {user_addy} by {ONEINCH_V4_ROUTER} to 115792089237316195423570985008687907853269984665640564039457584007913032.844935',  # noqa: E501
+            notes=f'Set USDT0 spending approval of {user_addy} by {ONEINCH_V4_ROUTER} to 115792089237316195423570985008687907853269984665640564039457584007913032.844935',  # noqa: E501
         ), EvmSwapEvent(
             tx_ref=tx_hash,
             sequence_index=278,
@@ -601,7 +601,7 @@ def test_1inch_swap_polygon(polygon_pos_inquirer, polygon_pos_accounts):
             asset=pos_usdt,
             amount=FVal('96.795'),
             location_label=user_addy,
-            notes='Swap 96.795 USDT in 1inch-v4',
+            notes='Swap 96.795 USDT0 in 1inch-v4',
             counterparty=CPT_ONEINCH_V4,
             address=ONEINCH_V4_ROUTER,
         ), EvmSwapEvent(

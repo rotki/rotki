@@ -683,7 +683,7 @@ def test_swap_on_polygon(
         asset=EvmToken('eip155:137/erc20:0xc2132D05D31c914a87C6611C10748AEb04B58e8F'),
         amount=FVal(approve_amount := '369.980225'),
         location_label=user_address,
-        notes=f'Set USDT spending approval of {user_address} by 0xedf6066a2b290C185783862C7F4776A2C8077AD1 to {approve_amount}',  # noqa: E501
+        notes=f'Set USDT0 spending approval of {user_address} by 0xedf6066a2b290C185783862C7F4776A2C8077AD1 to {approve_amount}',  # noqa: E501
         address=string_to_evm_address('0xedf6066a2b290C185783862C7F4776A2C8077AD1'),
     ), EvmSwapEvent(
         tx_ref=tx_hash,
@@ -694,7 +694,7 @@ def test_swap_on_polygon(
         asset=EvmToken('eip155:137/erc20:0xc2132D05D31c914a87C6611C10748AEb04B58e8F'),
         amount=FVal(spend_amount := '5.8559'),
         location_label=user_address,
-        notes=f'Swap {spend_amount} USDT in Uniswap V2 from {user_address}',
+        notes=f'Swap {spend_amount} USDT0 in Uniswap V2 from {user_address}',
         counterparty=CPT_UNISWAP_V2,
         address=string_to_evm_address('0xD12bA2A40289Ed8728682447DC77D001F03675F9'),
     ), EvmSwapEvent(
@@ -821,7 +821,7 @@ def test_remove_liquidity_on_arbitrum_one(
         asset=EvmToken('eip155:42161/erc20:0x342dEe677FEA9ECAA71A9490B08f9e4ADDEf79D6'),
         amount=FVal(spend_amount := '0.000020354830439389'),
         location_label=user_address,
-        notes=f'Send {spend_amount} UNI-V2 FUSD-USDT to Uniswap V2 pool',
+        notes=f'Send {spend_amount} UNI-V2 FUSD-USDT0 to Uniswap V2 pool',
         counterparty=CPT_UNISWAP_V2,
         address=pool_address,
     ), EvmEvent(
@@ -848,7 +848,7 @@ def test_remove_liquidity_on_arbitrum_one(
         asset=EvmToken('eip155:42161/erc20:0xFd086bC7CD5C481DCC9C85ebE478A1C0b69FCbb9'),
         amount=FVal(usdt_amount := '20.217226'),
         location_label=user_address,
-        notes=f'Remove {usdt_amount} USDT from Uniswap V2 LP {pool_address}',
+        notes=f'Remove {usdt_amount} USDT0 from Uniswap V2 LP {pool_address}',
         counterparty=CPT_UNISWAP_V2,
         address=pool_address,
         extra_data={'pool_address': pool_address},

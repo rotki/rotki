@@ -1122,7 +1122,7 @@ def test_swap_token_to_token_arb(arbitrum_one_inquirer, arbitrum_one_accounts):
             asset=Asset('eip155:42161/erc20:0xFd086bC7CD5C481DCC9C85ebE478A1C0b69FCbb9'),
             amount=FVal(received_amount),
             location_label=user_address,
-            notes=f'Receive {received_amount} USDT as the result of a cowswap market order',
+            notes=f'Receive {received_amount} USDT0 as the result of a cowswap market order',
             counterparty=CPT_COWSWAP,
             address=GPV2_SETTLEMENT_ADDRESS,
         ), EvmSwapEvent(

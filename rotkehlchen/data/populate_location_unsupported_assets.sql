@@ -437,7 +437,6 @@ INSERT INTO location_unsupported_assets (location, exchange_symbol) VALUES
 ('W', 'LINAUP'),
 ('W', 'ETH3L'),
 ('W', 'GMB'),
-('W', 'AI'),
 ('W', 'SOV'),
 ('W', 'DAPPX'),
 ('W', 'RBS'),

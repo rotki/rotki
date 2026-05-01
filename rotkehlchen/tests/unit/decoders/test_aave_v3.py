@@ -1155,7 +1155,7 @@ def test_aave_v3_events_with_approval(polygon_pos_inquirer, polygon_pos_accounts
             asset=A_POLYGON_POS_USDT,
             amount=FVal(approval_amount := '115792089237316195423570985008687907853269984665640564039457584007903019.443007'),  # noqa: E501
             location_label=polygon_pos_accounts[0],
-            notes=f'Set USDT spending approval of {polygon_pos_accounts[0]} by 0x794a61358D6845594F94dc1DB02A252b5b4814aD to {approval_amount}',  # noqa: E501
+            notes=f'Set USDT0 spending approval of {polygon_pos_accounts[0]} by 0x794a61358D6845594F94dc1DB02A252b5b4814aD to {approval_amount}',  # noqa: E501
             tx_ref=tx_hash,
             address=string_to_evm_address('0x794a61358D6845594F94dc1DB02A252b5b4814aD'),
         ), EvmEvent(
@@ -1168,7 +1168,7 @@ def test_aave_v3_events_with_approval(polygon_pos_inquirer, polygon_pos_accounts
             asset=A_POLYGON_POS_USDT,
             amount=ZERO,
             location_label=polygon_pos_accounts[0],
-            notes='Enable USDT as collateral on AAVE v3',
+            notes='Enable USDT0 as collateral on AAVE v3',
             counterparty=CPT_AAVE_V3,
             address=string_to_evm_address('0x794a61358D6845594F94dc1DB02A252b5b4814aD'),
         ), EvmEvent(
@@ -1181,7 +1181,7 @@ def test_aave_v3_events_with_approval(polygon_pos_inquirer, polygon_pos_accounts
             asset=A_POLYGON_POS_USDT,
             amount=FVal(deposit_amount := '72.227367'),
             location_label=polygon_pos_accounts[0],
-            notes=f'Deposit {deposit_amount} USDT into AAVE v3',
+            notes=f'Deposit {deposit_amount} USDT0 into AAVE v3',
             counterparty=CPT_AAVE_V3,
             address=string_to_evm_address('0x6ab707Aca953eDAeFBc4fD23bA73294241490620'),
         ), EvmEvent(
@@ -1746,7 +1746,7 @@ def test_aave_v3_close_position_with_safe(arbitrum_one_inquirer, arbitrum_one_ac
             asset=Asset('eip155:42161/erc20:0xFd086bC7CD5C481DCC9C85ebE478A1C0b69FCbb9'),
             amount=FVal(usd_paid_back_amount := '2353.18136'),
             location_label=user_eoa_account,
-            notes=f'Transfer {usd_paid_back_amount} USDT from {user_eoa_account} to {user_safe_proxy}',  # noqa: E501
+            notes=f'Transfer {usd_paid_back_amount} USDT0 from {user_eoa_account} to {user_safe_proxy}',  # noqa: E501
             address=user_safe_proxy,
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -1758,7 +1758,7 @@ def test_aave_v3_close_position_with_safe(arbitrum_one_inquirer, arbitrum_one_ac
             asset=Asset('eip155:42161/erc20:0xFd086bC7CD5C481DCC9C85ebE478A1C0b69FCbb9'),
             amount=FVal('0.234868'),
             location_label=user_eoa_account,
-            notes=f'Set USDT spending approval of {user_eoa_account} by {user_safe_proxy} to 0.234868',  # noqa: E501
+            notes=f'Set USDT0 spending approval of {user_eoa_account} by {user_safe_proxy} to 0.234868',  # noqa: E501
             address=user_safe_proxy,
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -1770,7 +1770,7 @@ def test_aave_v3_close_position_with_safe(arbitrum_one_inquirer, arbitrum_one_ac
             asset=Asset('eip155:42161/erc20:0xFd086bC7CD5C481DCC9C85ebE478A1C0b69FCbb9'),
             amount=ZERO,
             location_label=user_safe_proxy,
-            notes=f'Revoke USDT spending approval of {user_safe_proxy} by 0x794a61358D6845594F94dc1DB02A252b5b4814aD',  # noqa: E501
+            notes=f'Revoke USDT0 spending approval of {user_safe_proxy} by 0x794a61358D6845594F94dc1DB02A252b5b4814aD',  # noqa: E501
             address=string_to_evm_address('0x794a61358D6845594F94dc1DB02A252b5b4814aD'),
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -1782,7 +1782,7 @@ def test_aave_v3_close_position_with_safe(arbitrum_one_inquirer, arbitrum_one_ac
             asset=Asset('eip155:42161/erc20:0xFd086bC7CD5C481DCC9C85ebE478A1C0b69FCbb9'),
             amount=FVal(usd_paid_back_amount),
             location_label=user_safe_proxy,
-            notes=f'Set USDT spending approval of {user_safe_proxy} by 0x794a61358D6845594F94dc1DB02A252b5b4814aD to {usd_paid_back_amount}',   # noqa: E501
+            notes=f'Set USDT0 spending approval of {user_safe_proxy} by 0x794a61358D6845594F94dc1DB02A252b5b4814aD to {usd_paid_back_amount}',   # noqa: E501
             address=string_to_evm_address('0x794a61358D6845594F94dc1DB02A252b5b4814aD'),
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -1806,7 +1806,7 @@ def test_aave_v3_close_position_with_safe(arbitrum_one_inquirer, arbitrum_one_ac
             asset=Asset('eip155:42161/erc20:0xFd086bC7CD5C481DCC9C85ebE478A1C0b69FCbb9'),
             amount=FVal(usd_paid_back_amount),
             location_label=user_safe_proxy,
-            notes=f'Repay {usd_paid_back_amount} USDT on AAVE v3',
+            notes=f'Repay {usd_paid_back_amount} USDT0 on AAVE v3',
             counterparty=CPT_AAVE_V3,
             address=string_to_evm_address('0x6ab707Aca953eDAeFBc4fD23bA73294241490620'),
         ), EvmEvent(
@@ -1819,7 +1819,7 @@ def test_aave_v3_close_position_with_safe(arbitrum_one_inquirer, arbitrum_one_ac
             asset=Asset('eip155:42161/erc20:0xFd086bC7CD5C481DCC9C85ebE478A1C0b69FCbb9'),
             amount=ZERO,
             location_label=user_safe_proxy,
-            notes=f'Revoke USDT spending approval of {user_safe_proxy} by 0x794a61358D6845594F94dc1DB02A252b5b4814aD',  # noqa: E501
+            notes=f'Revoke USDT0 spending approval of {user_safe_proxy} by 0x794a61358D6845594F94dc1DB02A252b5b4814aD',  # noqa: E501
             address=string_to_evm_address('0x794a61358D6845594F94dc1DB02A252b5b4814aD'),
         ), EvmEvent(
             tx_ref=tx_hash,

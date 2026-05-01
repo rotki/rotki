@@ -1855,7 +1855,7 @@ def test_curve_deposit_polygon(polygon_pos_inquirer, polygon_pos_accounts, load_
             asset=A_POLYGON_POS_USDT,
             amount=FVal(approve_amount := '0.88'),
             location_label=polygon_pos_accounts[0],
-            notes=f'Set USDT spending approval of {polygon_pos_accounts[0]} by {pool_address} to {approve_amount}',  # noqa: E501
+            notes=f'Set USDT0 spending approval of {polygon_pos_accounts[0]} by {pool_address} to {approve_amount}',  # noqa: E501
             address=pool_address,
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -1867,7 +1867,7 @@ def test_curve_deposit_polygon(polygon_pos_inquirer, polygon_pos_accounts, load_
             asset=A_POLYGON_POS_USDT,
             amount=FVal(deposit_amount := '2.12'),
             location_label=polygon_pos_accounts[0],
-            notes=f'Deposit {deposit_amount} USDT in curve pool {pool_address}',
+            notes=f'Deposit {deposit_amount} USDT0 in curve pool {pool_address}',
             counterparty=CPT_CURVE,
             address=string_to_evm_address(pool_address),
         ), EvmEvent(
@@ -2092,7 +2092,7 @@ def test_deposit_via_zap_arbitrum(arbitrum_one_inquirer, arbitrum_one_accounts, 
             asset=arbitrum_usdt,
             amount=FVal(approve_amount := '115792089237316195423570985008687907853269984665640564039457584007877854.731259'),  # noqa: E501
             location_label=arbitrum_one_accounts[0],
-            notes=f'Set USDT spending approval of {arbitrum_one_accounts[0]} by {DEPOSIT_AND_STAKE_ZAP} to {approve_amount}',  # noqa: E501
+            notes=f'Set USDT0 spending approval of {arbitrum_one_accounts[0]} by {DEPOSIT_AND_STAKE_ZAP} to {approve_amount}',  # noqa: E501
             address=DEPOSIT_AND_STAKE_ZAP,
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -2104,7 +2104,7 @@ def test_deposit_via_zap_arbitrum(arbitrum_one_inquirer, arbitrum_one_accounts, 
             asset=arbitrum_usdt,
             amount=FVal(deposit_amount := '10000'),
             location_label=arbitrum_one_accounts[0],
-            notes=f'Deposit {deposit_amount} USDT in curve pool {pool_address}',
+            notes=f'Deposit {deposit_amount} USDT0 in curve pool {pool_address}',
             counterparty=CPT_CURVE,
             address=string_to_evm_address(DEPOSIT_AND_STAKE_ZAP),
         ), EvmEvent(

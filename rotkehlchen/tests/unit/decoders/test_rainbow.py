@@ -266,7 +266,7 @@ def test_rainbow_swap_on_arbitrum_one(arbitrum_one_inquirer, arbitrum_one_accoun
         asset=Asset('eip155:42161/erc20:0xFd086bC7CD5C481DCC9C85ebE478A1C0b69FCbb9'),
         amount=FVal(received_amount),
         location_label=user_address,
-        notes=f'Receive {received_amount} USDT as the result of a swap in Rainbow',
+        notes=f'Receive {received_amount} USDT0 as the result of a swap in Rainbow',
         address=RAINBOW_ROUTER_CONTRACT,
         counterparty=CPT_RAINBOW_SWAPS,
     ), EvmSwapEvent(

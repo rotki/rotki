@@ -264,7 +264,7 @@ def test_llamazip_arbitrum_swap_eth_to_token(arbitrum_one_inquirer, arbitrum_one
             asset=Asset('eip155:42161/erc20:0xFd086bC7CD5C481DCC9C85ebE478A1C0b69FCbb9'),
             amount=FVal(receive_amount := '215.453696'),
             location_label=arbitrum_one_accounts[0],
-            notes=f'Receive {receive_amount} USDT as the result of a swap in LlamaZip',
+            notes=f'Receive {receive_amount} USDT0 as the result of a swap in LlamaZip',
             counterparty=CPT_LLAMAZIP,
             address=ARBITRUM_ROUTER_ADDRESSES[0],
         ),
