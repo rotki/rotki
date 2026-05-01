@@ -1845,9 +1845,7 @@ class DBHistoryEvents:
                 query_without_limit_bindings,
             ).fetchone()[0]
 
-            # When we have a limit but the total is already smaller or equal,
-            # just return the total for both counts
-            if entries_limit is None or count_without_limit <= entries_limit:
+            if entries_limit is None:
                 return count_without_limit, count_without_limit
         else:
             count_without_limit = 0
