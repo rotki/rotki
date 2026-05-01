@@ -87,6 +87,16 @@ DEFAULT_AUTO_CREATE_PROFIT_EVENTS: Final = False
 DEFAULT_USE_ASSET_COLLECTIONS_IN_COST_BASIS: Final = True
 DEFAULT_INTERNAL_TXS_TO_REPULL: Final = 100
 DEFAULT_INTERNAL_TX_CONFLICT_REPULL_FREQUENCY: Final = 900  # every 15 mins
+DEFAULT_CHAINS_TO_SKIP_DETECTION: Final = (
+    SupportedBlockchain.ETHEREUM,
+    SupportedBlockchain.AVALANCHE,
+    SupportedBlockchain.OPTIMISM,
+    SupportedBlockchain.POLYGON_POS,
+    SupportedBlockchain.ARBITRUM_ONE,
+    SupportedBlockchain.BASE,
+    SupportedBlockchain.GNOSIS,
+    SupportedBlockchain.SCROLL,
+)
 
 LIST_KEYS: Final = (
     'current_price_oracles',
@@ -252,7 +262,7 @@ class DBSettings:
     ssf_graph_multiplier: int = DEFAULT_SSF_GRAPH_MULTIPLIER
     last_data_migration: int = DEFAULT_LAST_DATA_MIGRATION
     non_syncing_exchanges: frozenset[ExchangeLocationID] = field(default_factory=frozenset)
-    evmchains_to_skip_detection: Sequence[SUPPORTED_EVM_EVMLIKE_CHAINS_TYPE] = field(default_factory=list)  # Both EVM and EVMLike chains # noqa: E501
+    evmchains_to_skip_detection: Sequence[SUPPORTED_EVM_EVMLIKE_CHAINS_TYPE] = DEFAULT_CHAINS_TO_SKIP_DETECTION  # Both EVM and EVMLike chains # noqa: E501
     cost_basis_method: CostBasisMethod = DEFAULT_COST_BASIS_METHOD
     treat_eth2_as_eth: bool = DEFAULT_TREAT_ETH2_AS_ETH
     eth_staking_taxable_after_withdrawal_enabled: bool = DEFAULT_ETH_STAKING_TAXABLE_AFTER_WITHDRAWAL_ENABLED  # noqa: E501

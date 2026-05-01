@@ -18,6 +18,7 @@ from rotkehlchen.constants import DEFAULT_BALANCE_LABEL, ZERO
 from rotkehlchen.constants.assets import A_AVAX, A_ETH
 from rotkehlchen.db.addressbook import DBAddressbook
 from rotkehlchen.db.evmtx import DBEvmTx
+from rotkehlchen.db.settings import ModifiableDBSettings
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.externalapis.etherscan_like import HasChainActivity
 from rotkehlchen.fval import FVal
@@ -409,6 +410,12 @@ def test_detect_evm_accounts(
     support that chain with a free API key as of 2025-12-22.
     """
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+    with rotki.data.db.user_write() as write_cursor:
+        rotki.data.db.set_settings(
+            write_cursor=write_cursor,
+            settings=ModifiableDBSettings(evmchains_to_skip_detection=[]),
+        )
+
     with ExitStack() as stack:
         stack.enter_context(patch.object(
             rotki.chains_aggregator.hyperliquid.node_inquirer.etherscan,

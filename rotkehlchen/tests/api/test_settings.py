@@ -792,7 +792,7 @@ def test_excluded_exchanges_settings(rotkehlchen_api_server: 'APIServer') -> Non
 def test_update_oracles_order_settings(rotkehlchen_api_server: 'APIServer') -> None:
     response = requests.put(
         api_url_for(rotkehlchen_api_server, 'settingsresource'),
-        json={'settings': {'current_price_oracles': ['alchemy']}},
+        json={'settings': {'historical_price_oracles': ['alchemy']}},
     )
     assert_error_response(
         response=response,
@@ -800,7 +800,7 @@ def test_update_oracles_order_settings(rotkehlchen_api_server: 'APIServer') -> N
         status_code=HTTPStatus.CONFLICT,
     )
 
-    # add the api key and see that if passes.
+    # add the api key and see that it passes.
     with rotkehlchen_api_server.rest_api.rotkehlchen.data.db.user_write() as write_cursor:
         rotkehlchen_api_server.rest_api.rotkehlchen.data.db.add_external_service_credentials(
             write_cursor=write_cursor,
@@ -811,10 +811,17 @@ def test_update_oracles_order_settings(rotkehlchen_api_server: 'APIServer') -> N
         )
     response = requests.put(
         api_url_for(rotkehlchen_api_server, 'settingsresource'),
-        json={'settings': {'current_price_oracles': ['alchemy']}},
+        json={'settings': {'historical_price_oracles': ['alchemy']}},
     )
     result = assert_proper_sync_response_with_result(response=response)
-    assert result['current_price_oracles'] == ['alchemy']
+    assert result['historical_price_oracles'] == ['alchemy']
+
+    response = requests.put(
+        api_url_for(rotkehlchen_api_server, 'settingsresource'),
+        json={'settings': {'current_price_oracles': ['defillama', 'coingecko']}},
+    )
+    result = assert_proper_sync_response_with_result(response=response)
+    assert result['current_price_oracles'] == ['defillama', 'coingecko']
 
 
 def test_suppress_missing_key_msg_services_not_overwritten(

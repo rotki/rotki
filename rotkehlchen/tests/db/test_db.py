@@ -52,6 +52,7 @@ from rotkehlchen.db.settings import (
     DEFAULT_BALANCE_SAVE_FREQUENCY,
     DEFAULT_BTC_DERIVATION_GAP_LIMIT,
     DEFAULT_CALCULATE_PAST_COST_BASIS,
+    DEFAULT_CHAINS_TO_SKIP_DETECTION,
     DEFAULT_CONNECT_TIMEOUT,
     DEFAULT_CSV_EXPORT_DELIMITER,
     DEFAULT_CURRENT_PRICE_ORACLES,
@@ -536,7 +537,7 @@ def test_writing_fetching_data(data_dir, username, sql_vm_instructions_cb):
         'ssf_graph_multiplier': DEFAULT_SSF_GRAPH_MULTIPLIER,
         'last_data_migration': DEFAULT_LAST_DATA_MIGRATION,
         'non_syncing_exchanges': frozenset(),
-        'evmchains_to_skip_detection': [],
+        'evmchains_to_skip_detection': DEFAULT_CHAINS_TO_SKIP_DETECTION,
         'cost_basis_method': CostBasisMethod.FIFO,
         'treat_eth2_as_eth': DEFAULT_TREAT_ETH2_AS_ETH,
         'eth_staking_taxable_after_withdrawal_enabled': DEFAULT_ETH_STAKING_TAXABLE_AFTER_WITHDRAWAL_ENABLED,  # noqa: E501
