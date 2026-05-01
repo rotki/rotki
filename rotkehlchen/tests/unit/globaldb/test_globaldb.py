@@ -1293,6 +1293,7 @@ def test_assets_in_same_collection(globaldb: GlobalDBHandler):
         wsteth,
         Asset('eip155:10/erc20:0x1F32b1c2345538c0c6f582fCB022739c4A194Ebb'),
         Asset('eip155:100/erc20:0x6C76971f98945AE98dD7d4DFcA8711ebea946eA6'),
+        Asset('eip155:143/erc20:0x10Aeaf63194db8d453d4D85a06E5eFE1dd0b5417'),
         Asset('eip155:42161/erc20:0x5979D7b546E38E414F7E9822514be443A4800529'),
         Asset('eip155:534352/erc20:0xf610A9dfB7C89644979b4A0f27063E9e7d7Cda32'),
         Asset('eip155:8453/erc20:0xc1CBa3fCea344f92D9239c08C0568f6F2F0ee452'),

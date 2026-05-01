@@ -342,7 +342,7 @@ def test_swap_amount_in_on_curve_v1(
         asset=a_usdt,
         amount=FVal(receive_amount),
         location_label=user_address,
-        notes=f'Receive {receive_amount} USDT as the result of a swap in paraswap',
+        notes=f'Receive {receive_amount} USDT0 as the result of a swap in paraswap',
         counterparty=CPT_PARASWAP,
         address=PARASWAP_AUGUSTUS_V6_ROUTER,
     ), EvmSwapEvent(
@@ -354,7 +354,7 @@ def test_swap_amount_in_on_curve_v1(
         asset=a_usdt,
         amount=FVal(fee_amount),
         location_label=user_address,
-        notes=f'Spend {fee_amount} USDT as a paraswap fee',
+        notes=f'Spend {fee_amount} USDT0 as a paraswap fee',
         counterparty=CPT_PARASWAP,
         address=PARASWAP_AUGUSTUS_V6_ROUTER,
     )]

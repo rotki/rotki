@@ -387,7 +387,7 @@ def test_create_lp_position(
         asset=(a_usdt := Asset('eip155:137/erc20:0xc2132D05D31c914a87C6611C10748AEb04B58e8F')),
         amount=FVal(usdt_approval := '637.938815'),
         location_label=user_address,
-        notes=f'Set USDT spending approval of {user_address} by 0x000000000022D473030F116dDEE9F6B43aC78BA3 to {usdt_approval}',  # noqa: E501
+        notes=f'Set USDT0 spending approval of {user_address} by 0x000000000022D473030F116dDEE9F6B43aC78BA3 to {usdt_approval}',  # noqa: E501
         address=string_to_evm_address('0x000000000022D473030F116dDEE9F6B43aC78BA3'),
     ), EvmEvent(
         tx_ref=tx_hash,
@@ -399,7 +399,7 @@ def test_create_lp_position(
         asset=a_oauto,
         amount=FVal(oauto_amount := '0.027630635454744533'),
         location_label=user_address,
-        notes=f'Deposit {oauto_amount} oAUTO to Uniswap V4 oAUTO/USDT LP',
+        notes=f'Deposit {oauto_amount} oAUTO to Uniswap V4 oAUTO/USDT0 LP',
         counterparty=CPT_UNISWAP_V4,
         address=(pool_manager := string_to_evm_address('0x67366782805870060151383F4BbFF9daB53e5cD6')),  # noqa: E501
     ), EvmEvent(
@@ -412,7 +412,7 @@ def test_create_lp_position(
         asset=a_usdt,
         amount=FVal(usdt_amount := '10'),
         location_label=user_address,
-        notes=f'Deposit {usdt_amount} USDT to Uniswap V4 oAUTO/USDT LP',
+        notes=f'Deposit {usdt_amount} USDT0 to Uniswap V4 oAUTO/USDT0 LP',
         counterparty=CPT_UNISWAP_V4,
         address=pool_manager,
     ), EvmEvent(

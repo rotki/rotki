@@ -71,7 +71,7 @@ def test_openocean_swap_token_to_token(
             asset=pos_usdt,
             amount=FVal(approve_amount),
             location_label=user_address,
-            notes=f'Set USDT spending approval of {user_address} by 0x000000000022D473030F116dDEE9F6B43aC78BA3 to {approve_amount}',  # noqa: E501
+            notes=f'Set USDT0 spending approval of {user_address} by 0x000000000022D473030F116dDEE9F6B43aC78BA3 to {approve_amount}',  # noqa: E501
             address=string_to_evm_address('0x000000000022D473030F116dDEE9F6B43aC78BA3'),
         ), EvmSwapEvent(
             tx_ref=tx_hash,
@@ -82,7 +82,7 @@ def test_openocean_swap_token_to_token(
             asset=pos_usdt,
             amount=FVal(spend_amount),
             location_label=user_address,
-            notes=f'Swap {spend_amount} USDT in {OPENOCEAN_LABEL}',
+            notes=f'Swap {spend_amount} USDT0 in {OPENOCEAN_LABEL}',
             counterparty=CPT_OPENOCEAN,
             address=string_to_evm_address('0x1E82AD8A12068A85fCb96368463B434e77b21201'),
         ), EvmSwapEvent(

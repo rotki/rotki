@@ -612,7 +612,7 @@ def test_upgrade_v6_v7(globaldb: GlobalDBHandler, messages_aggregator):
         ):
             assert cursor.execute(
                 'SELECT COUNT(*) FROM location_asset_mappings WHERE location IS ?', (exchange,),
-            ).fetchone()[0] == expected_mappings_count
+            ).fetchone()[0] == expected_mappings_count, f'Expected amount of mappings for {exchange} is not {expected_mappings_count}'  # noqa: E501
 
         # check that correct number of unsupported assets are present.
         # exact values can be tested by pasting this gist here and running it
@@ -624,7 +624,7 @@ def test_upgrade_v6_v7(globaldb: GlobalDBHandler, messages_aggregator):
             (Location.FTX.serialize_for_db(), 65),
             (Location.GEMINI.serialize_for_db(), 10),
             (Location.ICONOMI.serialize_for_db(), 4),
-            (Location.KUCOIN.serialize_for_db(), 234),
+            (Location.KUCOIN.serialize_for_db(), 233),
             (Location.OKX.serialize_for_db(), 7),
             (Location.POLONIEX.serialize_for_db(), 133),
         ):
