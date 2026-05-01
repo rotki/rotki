@@ -60,6 +60,10 @@ export class EvmSettingsPage {
   // Chains to Skip Detection Settings
   async selectChainToIgnore(value: string, waitForMessageToDisappear: boolean = true): Promise<void> {
     const field = this.page.locator('[data-cy=chains-to-skip-detection]');
+    if (await field.locator(`[data-value=${value}]`).first().isVisible()) {
+      return;
+    }
+
     const menu = this.page.locator('[role=menu]');
     if (!await menu.isVisible()) {
       await field.locator('[data-id=activator]').click();

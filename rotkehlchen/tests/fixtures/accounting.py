@@ -25,7 +25,7 @@ from rotkehlchen.externalapis.defillama import Defillama
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.manual_price_oracles import ManualCurrentOracle
 from rotkehlchen.inquirer import Inquirer
-from rotkehlchen.oracles.structures import DEFAULT_CURRENT_PRICE_ORACLES_ORDER, CurrentPriceOracle
+from rotkehlchen.oracles.structures import CurrentPriceOracle
 from rotkehlchen.premium.premium import Premium
 from rotkehlchen.tests.utils.constants import CURRENT_PRICE_MOCK
 from rotkehlchen.tests.utils.inquirer import inquirer_inject_evm_managers_set_order
@@ -312,7 +312,13 @@ def fixture_mocked_current_prices_with_oracles():
 
 @pytest.fixture(name='current_price_oracles_order')
 def fixture_current_price_oracles_order():
-    return DEFAULT_CURRENT_PRICE_ORACLES_ORDER
+    return (
+        CurrentPriceOracle.COINGECKO,
+        CurrentPriceOracle.DEFILLAMA,
+        CurrentPriceOracle.CRYPTOCOMPARE,
+        CurrentPriceOracle.UNISWAPV2,
+        CurrentPriceOracle.UNISWAPV3,
+    )
 
 
 def _create_inquirer(
