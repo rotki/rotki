@@ -114,6 +114,7 @@ onMounted(async () => {
         prepend-icon="lu-search"
         :label="t('common.actions.search')"
         hide-details
+        data-testid="tag-manager-search"
       />
       <RuiDataTable
         v-model:sort="sort"
@@ -123,6 +124,7 @@ onMounted(async () => {
         row-attr="name"
         :cols="headers"
         :search="search"
+        data-testid="tag-manager-table"
       >
         <template #item.tagView="{ row }">
           <TagIcon
