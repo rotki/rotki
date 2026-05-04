@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :feature:`-` After a rotki update, a friendly prompt will walk you through any new recommended settings. You can accept the ones you like, keep what you have for the rest.
 * :feature:`12102` New giveth donation events will now be properly decoded on all supported chains.
 * :feature:`10654` HyperEVM and Hyperliquid Core are now supported in rotki.
 * :feature:`11812` Monad is now supported in rotki.
