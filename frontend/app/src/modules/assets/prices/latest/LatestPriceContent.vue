@@ -127,6 +127,7 @@ onMounted(async () => {
       <RuiButton
         color="primary"
         size="lg"
+        data-testid="latest-price-add"
         @click="add()"
       >
         <template #prepend>
@@ -146,6 +147,7 @@ onMounted(async () => {
           :label="t('price_management.from_asset')"
           clearable
           hide-details
+          data-testid="latest-price-filter-from"
         />
       </div>
       <RuiDataTable
@@ -156,6 +158,7 @@ onMounted(async () => {
         :loading="loading || refreshing"
         :rows="items"
         row-attr="id"
+        data-testid="latest-price-table"
       >
         <template #item.fromAsset="{ row }">
           <NftDetails
