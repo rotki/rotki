@@ -89,8 +89,9 @@ function getTabLink(category: string): RouteLocationRaw {
 
 onMounted(async () => {
   const { query } = get(route);
-  if (query.add && query.addressToAdd && typeof query.addressToAdd === 'string') {
-    createNewBlockchainAccount(query.addressToAdd);
+  if (query.add) {
+    const addressToAdd = typeof query.addressToAdd === 'string' ? query.addressToAdd : undefined;
+    createNewBlockchainAccount(addressToAdd);
     await router.replace({ query: {} });
   }
 });
