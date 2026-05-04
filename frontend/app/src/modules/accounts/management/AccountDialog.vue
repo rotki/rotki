@@ -37,7 +37,7 @@ const subtitle = computed<string>(() =>
   get(model)?.mode === 'edit' ? t('blockchain_balances.form_dialog.edit_subtitle') : '',
 );
 
-const { errorMessages, pending, save, saveError, saveErrorIsPremium } = useAccountManage();
+const { errorMessages, pending, resetSaveError, save, saveError, saveErrorIsPremium } = useAccountManage();
 const { loading } = useAccountLoading();
 const { getApiKey } = useExternalApiKeys();
 const { beaconRpcEndpoint } = storeToRefs(useGeneralSettingsStore());
@@ -74,17 +74,16 @@ const isSaveDisabled = computed<boolean>(() => {
   return state.type === 'validator' && !(getApiKey('beaconchain') || get(beaconRpcEndpoint));
 });
 
-function dismiss() {
-  set(saveError, '');
-  set(saveErrorIsPremium, false);
+function dismiss(): void {
+  resetSaveError();
   set(model, undefined);
 }
 
-async function confirm() {
+async function confirm(): Promise<void> {
   assert(isDefined(form));
   const accountForm = get(form);
   set(errorMessages, {});
-  set(saveError, '');
+  resetSaveError();
   const valid = await accountForm.validate();
   if (!valid)
     return;

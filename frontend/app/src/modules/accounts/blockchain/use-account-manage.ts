@@ -150,6 +150,7 @@ interface UseAccountManageReturn {
   saveError: Readonly<Ref<string>>;
   saveErrorIsPremium: Readonly<Ref<boolean>>;
   save: (state: AccountManageState) => Promise<boolean>;
+  resetSaveError: () => void;
 }
 
 export function useAccountManage(): UseAccountManageReturn {
@@ -290,6 +291,11 @@ export function useAccountManage(): UseAccountManageReturn {
     return result.success;
   }
 
+  function resetSaveError(): void {
+    set(saveError, '');
+    set(saveErrorIsPremium, false);
+  }
+
   const save = async (state: AccountManageState): Promise<boolean> => {
     switch (state.type) {
       case 'account':
@@ -307,6 +313,7 @@ export function useAccountManage(): UseAccountManageReturn {
     // eslint-disable-next-line @rotki/composable-return-readonly
     errorMessages,
     pending: readonly(pending),
+    resetSaveError,
     save,
     saveError: readonly(saveError),
     saveErrorIsPremium: readonly(saveErrorIsPremium),
