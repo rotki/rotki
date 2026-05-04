@@ -45,6 +45,7 @@ def test_yearn_api(database, ethereum_inquirer):
     """
     # mock coingecko response
     original_request = requests.get
+    yearn_vaults_cache_key = (CacheType.YEARN_VAULTS, str(ChainID.ETHEREUM.serialize_for_db()))
 
     def mock_yearn_api(url, timeout):
         """Return only two yearn vaults for the API response"""
@@ -58,7 +59,7 @@ def test_yearn_api(database, ethereum_inquirer):
     with GlobalDBHandler().conn.read_ctx() as cursor:
         state_before = globaldb_get_unique_cache_value(
             cursor=cursor,
-            key_parts=(CacheType.YEARN_VAULTS,),
+            key_parts=yearn_vaults_cache_key,
         )
 
     with patch.object(requests, 'get', wraps=mock_yearn_api):
@@ -67,12 +68,12 @@ def test_yearn_api(database, ethereum_inquirer):
     with GlobalDBHandler().conn.read_ctx() as cursor:
         state_after = globaldb_get_unique_cache_value(
             cursor=cursor,
-            key_parts=(CacheType.YEARN_VAULTS,),
+            key_parts=yearn_vaults_cache_key,
         )
 
         last_queried_ts = globaldb_get_unique_cache_last_queried_ts_by_key(
             cursor=cursor,
-            key_parts=(CacheType.YEARN_VAULTS,),
+            key_parts=yearn_vaults_cache_key,
         )
         assert last_queried_ts is not None
 
@@ -122,7 +123,7 @@ def test_yearn_api(database, ethereum_inquirer):
     with GlobalDBHandler().conn.read_ctx() as cursor:
         new_queried_ts = globaldb_get_unique_cache_last_queried_ts_by_key(
             cursor=cursor,
-            key_parts=(CacheType.YEARN_VAULTS,),
+            key_parts=yearn_vaults_cache_key,
         )
     assert new_queried_ts is not None
     assert new_queried_ts > last_queried_ts
@@ -155,7 +156,7 @@ def test_process_staked_vaults(
     }]"""
     original_request = requests.get
     with globaldb.conn.read_ctx() as cursor:
-        cursor.execute('DELETE FROM unique_cache WHERE key=?', ('YEARN_VAULTS',))
+        cursor.execute('DELETE FROM unique_cache WHERE key=?', ('YEARN_VAULTS1',))
 
     def mock_yearn_api(url, timeout):
         """Return only two yearn vaults for the API response"""

@@ -29,6 +29,7 @@ from rotkehlchen.types import (
     CacheType,
     ChainID,
     TokenKind,
+    UniqueCacheType,
 )
 
 if TYPE_CHECKING:
@@ -43,11 +44,8 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
-def _get_cache_args(chain_id: ChainID) -> list[str]:
-    # Keep ethereum cache key backward-compatible with existing data migrations/tests.
-    # TODO: https://github.com/rotki/rotki/issues/9024
-    # Switch ethereum cache key to include chain id and migrate existing entries.
-    return [] if chain_id == ChainID.ETHEREUM else [str(chain_id.serialize_for_db())]
+def _get_cache_args(chain_id: ChainID) -> tuple[UniqueCacheType, str]:
+    return CacheType.YEARN_VAULTS, str(chain_id.serialize_for_db())
 
 
 def _maybe_reset_yearn_cache_timestamp(count: int | None, chain_id: ChainID) -> bool:
@@ -62,7 +60,7 @@ def _maybe_reset_yearn_cache_timestamp(count: int | None, chain_id: ChainID) -> 
     with GlobalDBHandler().conn.read_ctx() as cursor:
         yearn_api_cache: str | None = globaldb_get_unique_cache_value(
             cursor=cursor,
-            key_parts=(CacheType.YEARN_VAULTS, *_get_cache_args(chain_id)),
+            key_parts=_get_cache_args(chain_id),
         )
     if count is None or (yearn_api_cache is not None and int(yearn_api_cache) == count):
         vaults_amount = yearn_api_cache if yearn_api_cache is not None else '0'
@@ -75,7 +73,7 @@ def _maybe_reset_yearn_cache_timestamp(count: int | None, chain_id: ChainID) -> 
             # update the timestamp of the last time these vaults were queried
             globaldb_set_unique_cache_value(
                 write_cursor=write_cursor,
-                key_parts=[CacheType.YEARN_VAULTS, *_get_cache_args(chain_id)],
+                key_parts=_get_cache_args(chain_id),
                 value=vaults_amount,
             )
         return True  # we should stop here
@@ -280,6 +278,6 @@ def query_yearn_vaults(db: 'DBHandler', ethereum_inquirer: 'EvmNodeInquirer') ->
 
         globaldb_set_unique_cache_value(
             write_cursor=write_cursor,
-            key_parts=(CacheType.YEARN_VAULTS, *_get_cache_args(chain_id)),
+            key_parts=_get_cache_args(chain_id),
             value=str(len(data)),
         )

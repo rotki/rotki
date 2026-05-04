@@ -4,6 +4,7 @@ from typing import TYPE_CHECKING
 
 import pytest
 
+from rotkehlchen.globaldb.cache import compute_cache_key
 from rotkehlchen.globaldb.migrations.manager import (
     MIGRATIONS_LIST,
     maybe_apply_globaldb_migrations,
@@ -11,6 +12,7 @@ from rotkehlchen.globaldb.migrations.manager import (
 from rotkehlchen.globaldb.migrations.migration1 import ilk_mapping
 from rotkehlchen.globaldb.utils import GLOBAL_DB_VERSION
 from rotkehlchen.tests.utils.globaldb import patch_for_globaldb_migrations
+from rotkehlchen.types import CacheType, ChainID
 
 if TYPE_CHECKING:
     from rotkehlchen.globaldb.handler import GlobalDBHandler
@@ -53,15 +55,25 @@ def test_migration1(globaldb: 'GlobalDBHandler'):
 def test_migration2(globaldb: 'GlobalDBHandler'):
     """Test for the 1st globalDB data migration"""
     # Check state before migration
+    ethereum_yearn_cache_key = compute_cache_key((
+        CacheType.YEARN_VAULTS,
+        str(ChainID.ETHEREUM.serialize_for_db()),
+    ))
     with globaldb.conn.read_ctx() as cursor:
-        assert cursor.execute('SELECT value FROM unique_cache WHERE key=?', ('YEARN_VAULTS',)).fetchone()[0] == '179'  # noqa: E501
+        assert cursor.execute(
+            'SELECT value FROM unique_cache WHERE key=?',
+            (ethereum_yearn_cache_key,),
+        ).fetchone()[0] == '179'
 
     with ExitStack() as stack:
         patch_for_globaldb_migrations(stack, [MIGRATIONS_LIST[1]])
         maybe_apply_globaldb_migrations(globaldb.conn)
 
     with globaldb.conn.read_ctx() as cursor:
-        assert cursor.execute('SELECT value FROM unique_cache WHERE key=?', ('YEARN_VAULTS',)).fetchone() is None  # noqa: E501
+        assert cursor.execute(
+            'SELECT value FROM unique_cache WHERE key=?',
+            (ethereum_yearn_cache_key,),
+        ).fetchone() is None
 
 
 @pytest.mark.parametrize('globaldb_upgrades', [[]])

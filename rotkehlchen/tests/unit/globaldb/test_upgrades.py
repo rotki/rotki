@@ -23,6 +23,7 @@ from rotkehlchen.db.drivers.gevent import DBConnection, DBConnectionType
 from rotkehlchen.db.utils import table_exists
 from rotkehlchen.errors.misc import DBUpgradeError
 from rotkehlchen.globaldb.cache import (
+    compute_cache_key,
     globaldb_get_general_cache_keys_and_values_like,
     globaldb_get_general_cache_last_queried_ts_by_key,
     globaldb_get_unique_cache_value,
@@ -1680,7 +1681,37 @@ def test_upgrade_v15_v16(
     caplog.set_level(logging.INFO)
     cryptocompare_source_type = HistoricalPriceOracle.CRYPTOCOMPARE.serialize_for_db()
     aura_identifier = 'eip155:1/erc20:0xC0c293ce456fF0ED870ADd98a0828Dd4d2903DBF'
+    legacy_yearn_cache_key = compute_cache_key((CacheType.YEARN_VAULTS,))
+    ethereum_yearn_cache_key = compute_cache_key((
+        CacheType.YEARN_VAULTS,
+        str(ChainID.ETHEREUM.serialize_for_db()),
+    ))
+    non_ethereum_yearn_cache_entries = [
+        ('YEARN_VAULTS10', '113', 1777275708),
+        ('YEARN_VAULTS100', '8', 1777450835),
+        ('YEARN_VAULTS137', '60', 1776174334),
+        ('YEARN_VAULTS42161', '95', 1775643847),
+        ('YEARN_VAULTS8453', '109', 1777450746),
+    ]
+    yearn_cache_entries_before = sorted([
+        *non_ethereum_yearn_cache_entries,
+        (legacy_yearn_cache_key, '759', 1777450661),
+    ])
+    yearn_cache_entries_after = sorted([
+        *non_ethereum_yearn_cache_entries,
+        (ethereum_yearn_cache_key, '759', 1777450661),
+    ])
+    assert yearn_cache_entries_before != yearn_cache_entries_after
+
     with globaldb.conn.read_ctx() as cursor:
+        assert cursor.execute(
+            'SELECT key, value, last_queried_ts FROM unique_cache WHERE key LIKE ? ORDER BY key',
+            ('YEARN_VAULTS%',),
+        ).fetchall() == yearn_cache_entries_before
+        assert cursor.execute(
+            'SELECT key, value, last_queried_ts FROM unique_cache WHERE key IN (?, ?)',
+            (legacy_yearn_cache_key, ethereum_yearn_cache_key),
+        ).fetchall() == [(legacy_yearn_cache_key, '759', 1777450661)]
         assert cursor.execute(
             'SELECT source_type, timestamp, price FROM price_history WHERE from_asset=? AND '
             'to_asset=? AND timestamp IN (?, ?) ORDER BY source_type, timestamp',
@@ -1714,6 +1745,14 @@ def test_upgrade_v15_v16(
     assert 'Removed 5 invalid old Cryptocompare price entries.' in caplog.text
     with globaldb.conn.read_ctx() as cursor:
         assert index_exists(cursor=cursor, name='idx_price_history_timestamp_desc_order') is True
+        assert cursor.execute(
+            'SELECT key, value, last_queried_ts FROM unique_cache WHERE key LIKE ? ORDER BY key',
+            ('YEARN_VAULTS%',),
+        ).fetchall() == yearn_cache_entries_after
+        assert cursor.execute(
+            'SELECT key, value, last_queried_ts FROM unique_cache WHERE key IN (?, ?)',
+            (legacy_yearn_cache_key, ethereum_yearn_cache_key),
+        ).fetchall() == [(ethereum_yearn_cache_key, '759', 1777450661)]
         assert cursor.execute(
             'SELECT source_type, timestamp, price FROM price_history WHERE from_asset=? AND '
             'to_asset=? AND timestamp IN (?, ?) ORDER BY source_type, timestamp',
