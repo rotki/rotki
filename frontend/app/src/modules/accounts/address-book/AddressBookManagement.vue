@@ -85,6 +85,7 @@ watchImmediate(location, async () => {
       <RuiButton
         color="primary"
         size="lg"
+        data-testid="address-book-add"
         @click="add()"
       >
         <template #prepend>
@@ -116,6 +117,7 @@ watchImmediate(location, async () => {
             clearable
             dense
             exclude-eth-staking
+            data-testid="address-book-chain-filter"
           />
         </div>
 
@@ -132,11 +134,13 @@ watchImmediate(location, async () => {
           v-model="tab"
           color="primary"
           class="border border-default rounded bg-white dark:bg-rui-grey-900 flex max-w-min"
+          data-testid="address-book-scope-tabs"
         >
           <RuiTab
             v-for="loc in locations"
             :key="loc"
             class="capitalize"
+            :data-testid="`address-book-scope-${loc}`"
           >
             {{ loc }}
           </RuiTab>
@@ -168,6 +172,7 @@ watchImmediate(location, async () => {
     <AddressBookFormDialog
       v-model:open="openDialog"
       :editable-item="editableItem"
+      :edit-mode="!!editableItem"
       :selected-chain="selectedChain"
       :location="location"
       @update-tab="tab = $event"
