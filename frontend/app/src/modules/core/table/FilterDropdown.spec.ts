@@ -236,4 +236,99 @@ describe('filter-dropdown', () => {
       expect(wrapper.findAll('[data-cy=suggestions] > button')).toHaveLength(3);
     });
   });
+
+  describe('suggestionsToShow', () => {
+    const sourceMatchers: StringSuggestionMatcher<any>[] = [
+      {
+        key: 'source',
+        description: 'filter by source',
+        string: true,
+        strictMatching: true,
+        suggestionsToShow: -1,
+        suggestions: () => ['alchemy', 'coingecko', 'cryptocompare', 'defillama', 'fiat'],
+        validate: () => true,
+      },
+    ];
+
+    it('should show the only matching suggestion when suggestionsToShow is -1', async () => {
+      const props = {
+        matches: {},
+        matchers: sourceMatchers,
+        selectedSuggestion: 0,
+        keyword: '',
+      };
+
+      const wrapper = createWrapper({ props });
+
+      await wrapper.setProps({
+        selectedMatcher: sourceMatchers[0],
+        keyword: 'source=de',
+      });
+
+      await nextTick();
+
+      // Regression: with suggestionsToShow=-1, slice(0, -1) used to drop the last item,
+      // leaving zero suggestions when only one matched.
+      expect(wrapper.findAll('[data-cy=suggestions] > button')).toHaveLength(1);
+      expect(wrapper.find('[data-cy=suggestions] > button:first-child').text()).toContain('defillama');
+    });
+
+    it('should show all matching suggestions when suggestionsToShow is -1', async () => {
+      const props = {
+        matches: {},
+        matchers: sourceMatchers,
+        selectedSuggestion: 0,
+        keyword: '',
+      };
+
+      const wrapper = createWrapper({ props });
+
+      await wrapper.setProps({
+        selectedMatcher: sourceMatchers[0],
+        keyword: 'source=c',
+      });
+
+      await nextTick();
+
+      // 'coingecko' and 'cryptocompare' both contain 'c' — both should appear, not be sliced.
+      expect(wrapper.findAll('[data-cy=suggestions] > button').length).toBeGreaterThanOrEqual(2);
+    });
+
+    it('should not drop the last suggestion when suggestionsToShow is -1 without strictMatching', async () => {
+      const allValues = ['alpha', 'beta', 'gamma', 'delta', 'epsilon'];
+      const nonStrictMatcher: StringSuggestionMatcher<any>[] = [
+        {
+          key: 'type',
+          description: 'filter by type',
+          string: true,
+          suggestionsToShow: -1,
+          suggestions: () => allValues,
+          validate: () => true,
+        },
+      ];
+
+      const wrapper = createWrapper({
+        props: {
+          matches: {},
+          matchers: nonStrictMatcher,
+          selectedSuggestion: 0,
+          keyword: '',
+        },
+      });
+
+      await wrapper.setProps({
+        selectedMatcher: nonStrictMatcher[0],
+        keyword: 'type=',
+      });
+
+      await nextTick();
+
+      // Regression: without strictMatching, slice(0, -1) silently dropped the last sorted item.
+      // Every option must remain reachable in the dropdown.
+      const buttons = wrapper.findAll('[data-cy=suggestions] > button');
+      expect(buttons).toHaveLength(allValues.length);
+      const renderedValues = buttons.map(b => b.text().replace('type=', '')).sort();
+      expect(renderedValues).toEqual([...allValues].sort());
+    });
+  });
 });
