@@ -4,6 +4,7 @@ from typing import TYPE_CHECKING
 
 from rotkehlchen.chain.bitcoin.bch.validation import is_valid_bitcoin_cash_address
 from rotkehlchen.chain.bitcoin.validation import is_valid_btc_address
+from rotkehlchen.db.constants import HISTORY_MAPPING_KEY_STATE, HistoryMappingState
 from rotkehlchen.db.utils import update_table_schema
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.history.events.structures.types import HistoryEventType
@@ -177,5 +178,57 @@ def upgrade_v51_to_v52(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
             'DELETE FROM external_service_credentials WHERE name=?',
             [(service_name,) for service_name in BLOCKSCOUT_SERVICES_TO_DELETE],
         )
+
+    @progress_step(description='Resetting decoded events.')
+    def _reset_decoded_events(write_cursor: 'DBCursor') -> None:
+        """Reset all decoded evm and solana events except those in zksync lite.
+        If any event in a transaction is customized, all events in that transaction
+        are preserved along with its decoded status.
+        """
+        if (
+            write_cursor.execute('SELECT COUNT(*) FROM evm_transactions').fetchone()[0] > 0 or
+            write_cursor.execute('SELECT COUNT(*) FROM solana_transactions').fetchone()[0] > 0
+        ):
+            querystr = (
+                "DELETE FROM history_events WHERE identifier IN ("
+                "SELECT H.identifier FROM history_events H INNER JOIN chain_events_info C "
+                "ON H.identifier=C.identifier AND (C.tx_ref IN "
+                "(SELECT tx_hash FROM evm_transactions) OR C.tx_ref IN "
+                "(SELECT signature FROM solana_transactions)) AND H.location != 'o')"  # location 'o' is zksync lite  # noqa: E501
+            )
+            bindings: tuple = ()
+            has_customized = write_cursor.execute(
+                'SELECT COUNT(*) FROM history_events_mappings WHERE name=? AND value=?',
+                (customized_events_bindings := (HISTORY_MAPPING_KEY_STATE, HistoryMappingState.CUSTOMIZED.serialize_for_db())),  # noqa: E501
+            ).fetchone()[0] != 0
+            if has_customized:
+                querystr += (
+                    ' AND group_identifier NOT IN ('
+                    'SELECT H2.group_identifier FROM history_events H2 '
+                    'INNER JOIN history_events_mappings M ON H2.identifier = M.parent_identifier '
+                    'WHERE M.name=? AND M.value=?)'
+                )
+                bindings = customized_events_bindings
+
+            write_cursor.execute(querystr, bindings)
+            for table, tx_table, tx_id_col in (
+                ('evm_tx_mappings', 'evm_transactions', 'tx_hash'),
+                ('solana_tx_mappings', 'solana_transactions', 'signature'),
+            ):
+                tx_querystr = (
+                    f'DELETE FROM {table} WHERE tx_id IN '
+                    f'(SELECT identifier FROM {tx_table}) AND value=?'
+                )
+                tx_bindings: tuple = (0,)  # decoded tx state
+                if has_customized:
+                    tx_querystr += (
+                        f' AND tx_id NOT IN ('
+                        f'SELECT DISTINCT T.identifier FROM {tx_table} T '
+                        f'INNER JOIN chain_events_info C ON T.{tx_id_col} = C.tx_ref '
+                        'INNER JOIN history_events_mappings M ON C.identifier = M.parent_identifier '  # noqa: E501
+                        'WHERE M.name=? AND M.value=?)'
+                    )
+                    tx_bindings += customized_events_bindings
+                write_cursor.execute(tx_querystr, tx_bindings)
 
     perform_userdb_upgrade_steps(db=db, progress_handler=progress_handler, should_vacuum=True)

@@ -1,12 +1,14 @@
 import logging
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Final
 
 from rotkehlchen.constants.prices import (
     BITCOIN_GENESIS_BLOCK_TS,
     CRYPTOCOMPARE_INVALID_PRICE_TS_CUTOFF,
 )
+from rotkehlchen.globaldb.cache import compute_cache_key
 from rotkehlchen.history.types import HistoricalPriceOracle
 from rotkehlchen.logging import RotkehlchenLogsAdapter, enter_exit_debug_log
+from rotkehlchen.types import CacheType, ChainID
 from rotkehlchen.utils.progress import perform_globaldb_upgrade_steps, progress_step
 
 if TYPE_CHECKING:
@@ -16,6 +18,12 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
+
+LEGACY_YEARN_VAULTS_CACHE_KEY: Final = compute_cache_key((CacheType.YEARN_VAULTS,))
+ETHEREUM_YEARN_VAULTS_CACHE_KEY: Final = compute_cache_key((
+    CacheType.YEARN_VAULTS,
+    str(ChainID.ETHEREUM.serialize_for_db()),
+))
 
 
 @enter_exit_debug_log(name='globaldb v15->v16 upgrade')
@@ -30,6 +38,17 @@ def migrate_to_v16(
         write_cursor.execute(
             'CREATE INDEX IF NOT EXISTS idx_price_history_timestamp_desc_order '
             'ON price_history (timestamp DESC, from_asset, to_asset, source_type);',
+        )
+
+    @progress_step('Update legacy yearn vaults cache key.')
+    def _update_legacy_yearn_cache_key(write_cursor: 'DBCursor') -> None:
+        write_cursor.execute(
+            'UPDATE OR IGNORE unique_cache SET key=? WHERE key=?',
+            (ETHEREUM_YEARN_VAULTS_CACHE_KEY, LEGACY_YEARN_VAULTS_CACHE_KEY),
+        )
+        write_cursor.execute(
+            'DELETE FROM unique_cache WHERE key=?',
+            (LEGACY_YEARN_VAULTS_CACHE_KEY,),
         )
 
     @progress_step('Remove invalid old Cryptocompare prices.')
