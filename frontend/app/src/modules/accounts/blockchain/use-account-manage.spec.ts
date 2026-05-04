@@ -1,18 +1,36 @@
-import type { StakingValidatorManage } from './use-account-manage';
-import type { ValidationErrors } from '@/modules/core/api/types/errors';
+import type { AccountManage, StakingValidatorManage } from './use-account-manage';
 import type { ActionStatus } from '@/modules/core/common/action';
 import { Blockchain } from '@rotki/common';
 import { type Pinia, setActivePinia } from 'pinia';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { ApiValidationError, type ValidationErrors } from '@/modules/core/api/types/errors';
+
+const mockAddAccounts = vi.fn();
+const mockAddEvmAccounts = vi.fn();
+const mockShowErrorMessage = vi.fn();
 
 vi.mock('@/modules/accounts/use-blockchain-account-management', () => ({
   useBlockchainAccountManagement: vi.fn(() => ({
-    addAccounts: vi.fn(),
-    addEvmAccounts: vi.fn(),
+    addAccounts: mockAddAccounts,
+    addEvmAccounts: mockAddEvmAccounts,
     fetchAccounts: vi.fn().mockResolvedValue(undefined),
     refreshAccounts: vi.fn().mockResolvedValue(undefined),
   })),
 }));
+
+vi.mock('@/modules/core/notifications/use-notifications', async () => {
+  const actual = await vi.importActual<typeof import('@/modules/core/notifications/use-notifications')>(
+    '@/modules/core/notifications/use-notifications',
+  );
+  return {
+    ...actual,
+    useNotifications: (): object => ({
+      removeMatching: vi.fn(),
+      showErrorMessage: mockShowErrorMessage,
+      showSuccessMessage: vi.fn(),
+    }),
+  };
+});
 
 vi.mock('@/modules/accounts/use-blockchain-accounts', () => ({
   useBlockchainAccounts: vi.fn(() => ({
@@ -192,6 +210,69 @@ describe('composables/accounts/blockchain/use-account-manage', () => {
       resolvePromise!({ success: true });
       await savePromise;
       expect(get(pending)).toBe(false);
+    });
+  });
+
+  describe('saveAccount API validation errors', () => {
+    function createSolanaAccountState(): AccountManage {
+      return {
+        chain: Blockchain.SOLANA,
+        data: [{ address: 'Hasda78TSaT9bjiPxDBvP4GpohFpP3TDTaJEcCYK', tags: null }],
+        mode: 'add',
+        type: 'account',
+      };
+    }
+
+    it('should map JSON-shaped api error message to inline form errors', async () => {
+      mockAddAccounts.mockRejectedValueOnce(new Error('{"address": ["Given value Hasda78TSaT9bjiPxDBvP4GpohFpP3TDTaJEcCYK is not a valid solana address"]}'));
+
+      const { errorMessages, save } = useAccountManage();
+      const result = await save(createSolanaAccountState());
+
+      expect(result).toBe(false);
+      expect(get(errorMessages)).toEqual({
+        address: ['Given value Hasda78TSaT9bjiPxDBvP4GpohFpP3TDTaJEcCYK is not a valid solana address'],
+      });
+      expect(mockShowErrorMessage).not.toHaveBeenCalled();
+    });
+
+    it('should fall back to a toast for non-JSON api errors', async () => {
+      mockAddAccounts.mockRejectedValueOnce(new Error('Network unreachable'));
+
+      const { errorMessages, save } = useAccountManage();
+      const result = await save(createSolanaAccountState());
+
+      expect(result).toBe(false);
+      expect(get(errorMessages)).toEqual({});
+      expect(mockShowErrorMessage).toHaveBeenCalledWith(
+        'account_form.error.title',
+        expect.stringContaining('Network unreachable'),
+      );
+    });
+
+    it('should fall back to a toast for empty-object JSON', async () => {
+      mockAddAccounts.mockRejectedValueOnce(new Error('{}'));
+
+      const { errorMessages, save } = useAccountManage();
+      const result = await save(createSolanaAccountState());
+
+      expect(result).toBe(false);
+      expect(get(errorMessages)).toEqual({});
+      expect(mockShowErrorMessage).toHaveBeenCalledWith(
+        'account_form.error.title',
+        expect.stringContaining('{}'),
+      );
+    });
+
+    it('should not double-parse an existing ApiValidationError', async () => {
+      mockAddAccounts.mockRejectedValueOnce(new ApiValidationError('{"address": ["already typed"]}'));
+
+      const { errorMessages, save } = useAccountManage();
+      const result = await save(createSolanaAccountState());
+
+      expect(result).toBe(false);
+      expect(get(errorMessages)).toEqual({ address: ['already typed'] });
+      expect(mockShowErrorMessage).not.toHaveBeenCalled();
     });
   });
 });

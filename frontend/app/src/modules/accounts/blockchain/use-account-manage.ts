@@ -171,6 +171,12 @@ export function useAccountManage(): UseAccountManageReturn {
     logger.error(error);
     let errors: ValidationErrors | string = getErrorMessage(error);
 
+    if (!(error instanceof ApiValidationError)) {
+      const parsed = new ApiValidationError(errors);
+      if (Object.keys(parsed.errors).length > 0)
+        error = parsed;
+    }
+
     if (error instanceof ApiValidationError)
       errors = error.getValidationErrors(props);
 
