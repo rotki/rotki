@@ -124,11 +124,11 @@ watch([() => keyword, () => selectedMatcher], async ([keyword, selectedMatcher])
   const getItemText = (item: BaseSuggestion) =>
     typeof item.value === 'string' ? item.value : `${item.value.symbol} ${item.value.evmChain}`;
 
-  const limit = selectedMatcher.suggestionsToShow || (asset ? 10 : 5);
+  const limit = selectedMatcher.suggestionsToShow ?? (asset ? 10 : 5);
+  const sorted = suggestedItems.sort((a, b) => compareTextByKeyword(getItemText(a), getItemText(b), searchString));
+  const limited = limit < 0 ? sorted : sorted.slice(0, limit);
 
-  set(suggested, suggestedItems
-    .sort((a, b) => compareTextByKeyword(getItemText(a), getItemText(b), searchString))
-    .slice(0, limit)
+  set(suggested, limited
     .map((a, index) => ({
       asset: typeof a.value !== 'string',
       exclude,
