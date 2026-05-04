@@ -22,7 +22,10 @@ function edit(event: CalendarEvent): void {
 </script>
 
 <template>
-  <RuiCard class="[&>div:last-child]:!pt-2">
+  <RuiCard
+    class="[&>div:last-child]:!pt-2"
+    data-testid="calendar-upcoming-list"
+  >
     <template #header>
       {{ t('calendar.upcoming_events') }}
     </template>

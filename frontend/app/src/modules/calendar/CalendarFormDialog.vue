@@ -117,6 +117,7 @@ const dialogTitle = computed<string>(() =>
       <RuiButton
         v-if="editMode"
         color="error"
+        data-testid="calendar-form-delete"
         @click="emit('delete')"
       >
         {{ t('calendar.delete_event') }}

@@ -24,7 +24,10 @@ function edit(event: CalendarEvent): void {
 </script>
 
 <template>
-  <RuiCard class="[&>div:last-child]:!pt-2">
+  <RuiCard
+    class="[&>div:last-child]:!pt-2"
+    data-testid="calendar-selected-list"
+  >
     <template #header>
       <div v-if="today.isSame(selectedDate, 'day')">
         {{ t('calendar.today_events') }}

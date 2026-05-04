@@ -242,6 +242,7 @@ const navItems = computed<MenuItem[]>(() => {
       type: 'divider',
     },
     {
+      class: 'calendar',
       type: 'item',
       ...Routes.CALENDAR,
     },
