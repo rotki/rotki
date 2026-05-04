@@ -75,12 +75,14 @@ defineExpose({
         include-nfts
         :disabled="editMode || disableFromAsset"
         :error-messages="toMessages(v$.fromAsset)"
+        data-testid="latest-price-from-asset"
       />
       <AssetSelect
         v-model="toAsset"
         :label="t('price_form.to_asset')"
         outlined
         :error-messages="toMessages(v$.toAsset)"
+        data-testid="latest-price-to-asset"
       />
     </div>
     <AmountInput
@@ -88,6 +90,7 @@ defineExpose({
       variant="outlined"
       :error-messages="toMessages(v$.price)"
       :label="t('common.price')"
+      data-testid="latest-price-value"
     />
     <i18n-t
       v-if="price && fromAssetSymbol && toAssetSymbol"

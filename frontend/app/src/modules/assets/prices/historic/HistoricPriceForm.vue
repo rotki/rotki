@@ -79,6 +79,7 @@ defineExpose({
         outlined
         :disabled="editMode"
         :error-messages="toMessages(v$.fromAsset)"
+        data-testid="historic-price-from-asset"
       />
       <AssetSelect
         v-model="toAsset"
@@ -86,6 +87,7 @@ defineExpose({
         :disabled="editMode"
         outlined
         :error-messages="toMessages(v$.toAsset)"
+        data-testid="historic-price-to-asset"
       />
     </div>
     <DateTimePicker
@@ -95,12 +97,14 @@ defineExpose({
       type="epoch"
       variant="outlined"
       :error-messages="toMessages(v$.timestamp)"
+      data-testid="historic-price-datetime"
     />
     <AmountInput
       v-model="price"
       variant="outlined"
       :error-messages="toMessages(v$.price)"
       :label="t('common.price')"
+      data-testid="historic-price-value"
     />
     <i18n-t
       v-if="price && fromAssetSymbol && toAssetSymbol"

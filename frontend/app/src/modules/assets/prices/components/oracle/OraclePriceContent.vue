@@ -171,6 +171,7 @@ onMounted(async () => {
         :loading="loading"
         :rows="state.data"
         row-attr="fromAsset"
+        data-testid="oracle-price-table"
       >
         <template #item.fromAsset="{ row }">
           <AssetDetails :asset="row.fromAsset" />

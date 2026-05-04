@@ -150,6 +150,7 @@ onMounted(async () => {
       <RuiButton
         color="primary"
         size="lg"
+        data-testid="historic-price-add"
         @click="add()"
       >
         <template #prepend>
@@ -167,6 +168,7 @@ onMounted(async () => {
           clearable
           class="flex-1"
           hide-details
+          data-testid="historic-price-filter-from"
         />
         <AssetSelect
           v-model="toAsset"
@@ -185,6 +187,7 @@ onMounted(async () => {
         :loading="loading"
         :rows="items"
         row-attr="fromAsset"
+        data-testid="historic-price-table"
       >
         <template #item.fromAsset="{ row }">
           <AssetDetails :asset="row.fromAsset" />
