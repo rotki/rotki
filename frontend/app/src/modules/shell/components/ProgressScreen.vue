@@ -29,7 +29,7 @@ const { t } = useI18n({ useScope: 'global' });
     <div class="flex flex-col items-center justify-center mb-10 w-full md:w-5/6">
       <template v-if="progress">
         <div class="text-4xl mb-8">
-          {{ t('progress_screen.progress', { progress }) }}
+          {{ t('progress_screen.progress', { progress: progressValue }) }}
         </div>
         <RuiProgress
           thickness="16"
