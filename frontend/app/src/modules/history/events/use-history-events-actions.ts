@@ -131,7 +131,7 @@ export function useHistoryEventsActions(options: UseHistoryEventsActionsOptions)
   async function forceRedecodeEvmEvents(data: PullLocationTransactionPayload): Promise<void> {
     set(currentAction, HISTORY_EVENT_ACTIONS.DECODE);
     await pullAndRedecodeTransactions(data);
-    await fetchData();
+    await fetchDataAndLocations();
   }
 
   async function fetchAndRedecodeEvents(data?: PullLocationTransactionPayload): Promise<void> {
@@ -143,7 +143,7 @@ export function useHistoryEventsActions(options: UseHistoryEventsActionsOptions)
   async function redecodeBlockEvents(data: PullEthBlockEventPayload): Promise<void> {
     set(currentAction, HISTORY_EVENT_ACTIONS.DECODE);
     await pullAndRecodeEthBlockEvents(data);
-    await fetchData();
+    await fetchDataAndLocations();
   }
 
   async function redecodePageTransactions(): Promise<void> {
@@ -163,7 +163,7 @@ export function useHistoryEventsActions(options: UseHistoryEventsActionsOptions)
         await redecodeBlockEvents({ blockNumbers: redecodePayload });
       }
 
-      await fetchData();
+      await fetchDataAndLocations();
     }
   }
 
@@ -181,7 +181,7 @@ export function useHistoryEventsActions(options: UseHistoryEventsActionsOptions)
     set(currentAction, HISTORY_EVENT_ACTIONS.DECODE);
     await fetchUndecodedTransactionsStatus();
     await redecodeTransactions(toValue(onlyChains));
-    await fetchData();
+    await fetchDataAndLocations();
   }
 
   async function redecode(payload: 'all' | 'page' | string[]): Promise<void> {
@@ -191,7 +191,7 @@ export function useHistoryEventsActions(options: UseHistoryEventsActionsOptions)
     else if (Array.isArray(payload)) {
       set(currentAction, HISTORY_EVENT_ACTIONS.DECODE);
       await redecodeTransactions(payload);
-      await fetchData();
+      await fetchDataAndLocations();
     }
     else if (payload === 'page') {
       await redecodePageTransactions();
