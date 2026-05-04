@@ -4,7 +4,8 @@ import type { Collection } from '@/modules/core/common/collection';
 import type { HistoryEventAction } from '@/modules/history/events/action-types';
 import type { HistoryEventRow } from '@/modules/history/events/schemas';
 import type { RepullingTransactionResult } from '@/modules/history/events/tx/use-history-transactions';
-import { type Blockchain, Severity } from '@rotki/common';
+import { type Blockchain, HistoryEventEntryType, Severity } from '@rotki/common';
+import flushPromises from 'flush-promises';
 import { afterEach, beforeEach, describe, expect, it, type Mock, vi } from 'vitest';
 import { Routes } from '@/router/routes';
 import { useHistoryEventsActions } from './use-history-events-actions';
@@ -13,11 +14,17 @@ const mockRefreshTransactions = vi.fn();
 const mockCheckMissingEventsAndRedecode = vi.fn();
 const mockNotify = vi.fn();
 const mockRouterPush = vi.fn();
+const mockFetchLocationLabels = vi.fn();
+const mockFetchAssociatedLocations = vi.fn();
+const mockPullAndRedecodeTransactions = vi.fn();
+const mockPullAndRecodeEthBlockEvents = vi.fn();
+const mockRedecodeTransactions = vi.fn();
+const mockShowConfirm = vi.fn();
 
 vi.mock('vue-router', async () => {
   const { ref } = await import('vue');
   return {
-    useRoute: vi.fn().mockReturnValue(ref({})),
+    useRoute: vi.fn().mockReturnValue(ref({ query: {} })),
     useRouter: vi.fn(() => ({
       currentRoute: ref({ path: '' }),
       push: mockRouterPush,
@@ -35,9 +42,9 @@ vi.mock('@/modules/history/events/tx/use-history-transaction-decoding', () => ({
   useHistoryTransactionDecoding: vi.fn(() => ({
     checkMissingEventsAndRedecode: mockCheckMissingEventsAndRedecode,
     fetchUndecodedTransactionsStatus: vi.fn(),
-    pullAndRecodeEthBlockEvents: vi.fn(),
-    pullAndRedecodeTransactions: vi.fn(),
-    redecodeTransactions: vi.fn(),
+    pullAndRecodeEthBlockEvents: mockPullAndRecodeEthBlockEvents,
+    pullAndRedecodeTransactions: mockPullAndRedecodeTransactions,
+    redecodeTransactions: mockRedecodeTransactions,
   })),
 }));
 
@@ -49,7 +56,7 @@ vi.mock('@/modules/history/events/mapping/use-history-event-mappings', () => ({
 
 vi.mock('@/modules/core/common/use-confirm-store', () => ({
   useConfirmStore: vi.fn(() => ({
-    show: vi.fn(),
+    show: mockShowConfirm,
   })),
 }));
 
@@ -61,8 +68,8 @@ vi.mock('@/modules/history/use-decoding-status-store', () => ({
 
 vi.mock('@/modules/history/use-history-data-fetching', () => ({
   useHistoryDataFetching: vi.fn(() => ({
-    fetchAssociatedLocations: vi.fn(),
-    fetchLocationLabels: vi.fn(),
+    fetchAssociatedLocations: mockFetchAssociatedLocations,
+    fetchLocationLabels: mockFetchLocationLabels,
   })),
 }));
 
@@ -103,6 +110,12 @@ describe('useHistoryEventsActions', () => {
     setActivePinia(createPinia());
     mockRefreshTransactions.mockResolvedValue(undefined);
     mockCheckMissingEventsAndRedecode.mockResolvedValue(undefined);
+    mockFetchLocationLabels.mockResolvedValue(undefined);
+    mockFetchAssociatedLocations.mockResolvedValue(undefined);
+    mockPullAndRedecodeTransactions.mockResolvedValue(undefined);
+    mockPullAndRecodeEthBlockEvents.mockResolvedValue(undefined);
+    mockRedecodeTransactions.mockResolvedValue(undefined);
+    mockShowConfirm.mockImplementation((_opts, onConfirm) => onConfirm());
   });
 
   afterEach(() => {
@@ -188,6 +201,87 @@ describe('useHistoryEventsActions', () => {
         },
         userInitiated: true,
       });
+    });
+  });
+
+  describe('redecode paths refresh location labels', () => {
+    it('should refresh location labels after evm redecode', async () => {
+      const options = createOptions();
+      const { redecode } = useHistoryEventsActions(options);
+
+      await redecode.evm({ transactions: [{ location: 'ethereum', txRef: '0xabc' }] });
+
+      expect(mockPullAndRedecodeTransactions).toHaveBeenCalled();
+      expect(mockFetchLocationLabels).toHaveBeenCalled();
+      expect(mockFetchAssociatedLocations).toHaveBeenCalled();
+    });
+
+    it('should refresh location labels after block-event redecode', async () => {
+      const options = createOptions();
+      const { redecode } = useHistoryEventsActions(options);
+
+      await redecode.blocks({ blockNumbers: [123] });
+
+      expect(mockPullAndRecodeEthBlockEvents).toHaveBeenCalled();
+      expect(mockFetchLocationLabels).toHaveBeenCalled();
+      expect(mockFetchAssociatedLocations).toHaveBeenCalled();
+    });
+
+    it('should refresh location labels after page redecode with evm events', async () => {
+      const options = createOptions();
+      set(options.groups, {
+        data: [{
+          entryType: HistoryEventEntryType.EVM_EVENT,
+          location: 'ethereum',
+          txHash: '0xabc',
+        } as unknown as HistoryEventRow],
+        found: 1,
+        limit: 10,
+        total: 1,
+      });
+      const { redecode } = useHistoryEventsActions(options);
+
+      await redecode.page();
+
+      expect(mockPullAndRedecodeTransactions).toHaveBeenCalled();
+      expect(mockFetchLocationLabels).toHaveBeenCalled();
+      expect(mockFetchAssociatedLocations).toHaveBeenCalled();
+    });
+
+    it('should refresh location labels after redecode by chain list', async () => {
+      const options = createOptions();
+      const { redecode } = useHistoryEventsActions(options);
+
+      await redecode.by(['eth']);
+
+      expect(mockRedecodeTransactions).toHaveBeenCalledWith(['eth']);
+      expect(mockFetchLocationLabels).toHaveBeenCalled();
+      expect(mockFetchAssociatedLocations).toHaveBeenCalled();
+    });
+
+    it('should refresh location labels after redecode all', async () => {
+      const options = createOptions();
+      const { redecode } = useHistoryEventsActions(options);
+
+      redecode.all();
+      await flushPromises();
+
+      expect(mockShowConfirm).toHaveBeenCalled();
+      expect(mockRedecodeTransactions).toHaveBeenCalled();
+      expect(mockFetchLocationLabels).toHaveBeenCalled();
+      expect(mockFetchAssociatedLocations).toHaveBeenCalled();
+    });
+
+    it('should refresh location labels after fetchAndRedecode with payload', async () => {
+      const options = createOptions();
+      const { fetch } = useHistoryEventsActions(options);
+
+      await fetch.dataAndRedecode({ transactions: [{ location: 'ethereum', txRef: '0xabc' }] });
+
+      expect(mockPullAndRedecodeTransactions).toHaveBeenCalled();
+      // Once before redecode (initial fetchDataAndLocations) and once after (post-redecode in forceRedecodeEvmEvents).
+      expect(mockFetchLocationLabels.mock.calls.length).toBeGreaterThanOrEqual(2);
+      expect(mockFetchAssociatedLocations.mock.calls.length).toBeGreaterThanOrEqual(2);
     });
   });
 });
