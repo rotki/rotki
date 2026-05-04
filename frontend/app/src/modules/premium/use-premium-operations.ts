@@ -2,6 +2,7 @@ import type { ActionStatus } from '@/modules/core/common/action';
 import type { PremiumCredentialsPayload } from '@/modules/session/types';
 import { ApiValidationError, type ValidationErrors } from '@/modules/core/api/types/errors';
 import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
+import { useFetchPremiumCapabilities } from '@/modules/premium/use-fetch-premium-capabilities';
 import { usePremiumCredentialsApi } from '@/modules/premium/use-premium-credentials-api';
 import { usePremiumStore } from '@/modules/premium/use-premium-store';
 
@@ -13,6 +14,7 @@ interface UsePremiumOperationsReturn {
 export function usePremiumOperations(): UsePremiumOperationsReturn {
   const api = usePremiumCredentialsApi();
   const { capabilities, premium } = storeToRefs(usePremiumStore());
+  const { fetchCapabilities } = useFetchPremiumCapabilities();
 
   async function setup({
     apiKey,
@@ -22,8 +24,10 @@ export function usePremiumOperations(): UsePremiumOperationsReturn {
     try {
       const success = await api.setPremiumCredentials(username, apiKey, apiSecret);
 
-      if (success)
+      if (success) {
         set(premium, true);
+        await fetchCapabilities();
+      }
 
       return { success };
     }
