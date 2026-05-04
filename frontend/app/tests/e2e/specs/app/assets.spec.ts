@@ -2,6 +2,8 @@ import { expect, test } from '@playwright/test';
 import { cleanupContext, createLoggedInContext, type SharedTestContext } from '../../fixtures/test-fixtures';
 import { apiEnsureSymbolsNotIgnored } from '../../helpers/api';
 import { AssetsManagerPage } from '../../pages/assets-manager-page';
+import { CustomAssetsPage } from '../../pages/custom-assets-page';
+import { LatestPricePage } from '../../pages/price-manager-page';
 
 // Assets used in ignored asset tests
 const TEST_ASSETS_TO_IGNORE = ['1SG', 'ZIX', '1CR'];
@@ -96,6 +98,93 @@ test.describe('assets', () => {
     test('should delete the assets', async () => {
       await assetsPage.deleteAnEvmAsset(testAddress);
       await assetsPage.deleteOtherAsset(otherAssetSymbol);
+    });
+  });
+
+  test.describe.serial('custom assets', () => {
+    let ctx: SharedTestContext;
+    let customPage: CustomAssetsPage;
+
+    const uniqueId = Date.now().toString().slice(-6);
+    const assetName = `Original-${uniqueId}`;
+    const renamedName = `Modified-${uniqueId}`;
+    const assetType = `Type-${uniqueId}`;
+
+    test.beforeAll(async ({ browser, request }) => {
+      ctx = await createLoggedInContext(browser, request, { disableModules: true });
+      customPage = new CustomAssetsPage(ctx.sharedPage);
+      await customPage.visit();
+    });
+
+    test.afterAll(async () => {
+      await cleanupContext(ctx);
+    });
+
+    test('adds a custom asset', async () => {
+      await customPage.addAsset({ name: assetName, type: assetType, notes: 'initial notes' });
+      await customPage.expectRow(assetName);
+    });
+
+    test('edits a custom asset', async () => {
+      await customPage.editAsset(assetName, { newName: renamedName, newNotes: 'updated notes' });
+      await customPage.expectRow(renamedName);
+      await customPage.expectNoRow(assetName);
+    });
+
+    test('deletes a custom asset', async () => {
+      await customPage.deleteAsset(renamedName);
+      await customPage.expectNoRow(renamedName);
+    });
+
+    test('shows validation errors when required fields are empty', async () => {
+      await customPage.openDialog();
+      await customPage.submitDialog();
+      await customPage.expectRequiredErrors();
+      await customPage.cancelDialog();
+    });
+
+    test('cancel button closes the add dialog', async () => {
+      await customPage.openDialog();
+      await customPage.cancelDialog();
+    });
+  });
+
+  test.describe.serial('custom asset + custom price', () => {
+    let ctx: SharedTestContext;
+    let customPage: CustomAssetsPage;
+    let pricePage: LatestPricePage;
+
+    const uniqueId = Date.now().toString().slice(-6);
+    const assetName = `PricedCustom-${uniqueId}`;
+    const assetType = `PricedType-${uniqueId}`;
+
+    test.beforeAll(async ({ browser, request }) => {
+      ctx = await createLoggedInContext(browser, request, { disableModules: true });
+      customPage = new CustomAssetsPage(ctx.sharedPage);
+      pricePage = new LatestPricePage(ctx.sharedPage);
+    });
+
+    test.afterAll(async () => {
+      await cleanupContext(ctx);
+    });
+
+    test('adds a custom asset with a latest price', async () => {
+      await customPage.visit();
+      await customPage.addAsset({ name: assetName, type: assetType });
+      await customPage.expectRow(assetName);
+
+      await pricePage.visit();
+      await pricePage.addPrice(assetName, 'USD', '4242');
+      await pricePage.expectRowWithValue('4,242');
+    });
+
+    test('cleans up the price and the custom asset', async () => {
+      await pricePage.visit();
+      await pricePage.deletePrice('4,242');
+
+      await customPage.visit();
+      await customPage.deleteAsset(assetName);
+      await customPage.expectNoRow(assetName);
     });
   });
 });

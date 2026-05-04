@@ -4,17 +4,34 @@ import { RotkiApp } from './rotki-app';
 
 async function selectAsset(testId: string, asset: string, page: Page): Promise<void> {
   const select = page.getByTestId(testId);
+  // Clear any pre-existing selection (chip) first so the new typeahead query
+  // is not blocked by the previously selected value (e.g. when swapping filters).
+  const clearButton = select.locator('[data-id=clear]');
+  if ((await clearButton.count()) > 0)
+    await clearButton.first().click();
   // RuiAutoComplete renders a zero-size input behind a clickable wrapper.
   // Click the wrapper to focus the typeahead, then type via keyboard.
   await select.click();
   await page.keyboard.type(asset);
-  // Wait for the option list to populate, then commit via the menu item
-  // matching the typed text exactly (case-insensitive identifier match).
   const menu = page.locator('[role="listbox"], [role="menu"]').last();
   await menu.waitFor({ state: 'visible', timeout: TIMEOUT_SHORT });
-  const option = menu.locator(`#asset-${asset.toLowerCase()}`);
-  await option.first().waitFor({ state: 'visible', timeout: TIMEOUT_SHORT });
-  await option.first().click();
+  // Prefer matching by identifier id (stable for fiats like EUR/USD), but fall
+  // back to the first menu option for assets whose identifier we cannot predict
+  // (e.g. custom assets which use a UUID identifier).
+  // The asset search inside AssetSelect is debounced (~800ms) and asynchronous,
+  // so wait for the by-id option to appear before falling back to the first
+  // option — otherwise we'd click whatever stale entry is currently rendered.
+  const byId = menu.locator(`#asset-${asset.toLowerCase()}`).first();
+  const firstOption = menu.locator('button[type="button"]').first();
+  let option = byId;
+  try {
+    await byId.waitFor({ state: 'visible', timeout: TIMEOUT_SHORT });
+  }
+  catch {
+    option = firstOption;
+    await firstOption.waitFor({ state: 'visible', timeout: TIMEOUT_SHORT });
+  }
+  await option.click();
   await menu.waitFor({ state: 'hidden', timeout: TIMEOUT_SHORT });
 }
 
