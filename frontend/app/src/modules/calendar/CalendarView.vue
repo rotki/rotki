@@ -66,6 +66,7 @@ onMounted(async () => {
       <RuiButton
         color="primary"
         size="lg"
+        data-testid="calendar-add-event"
         @click="add()"
       >
         <template #prepend>

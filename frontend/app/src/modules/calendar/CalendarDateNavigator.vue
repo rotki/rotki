@@ -63,6 +63,7 @@ watch(
       size="xl"
       class="!rounded-r-none"
       :disabled="alreadyOnToday"
+      data-testid="calendar-today"
       @click="emit('set-today')"
     >
       {{ t('calendar.today') }}

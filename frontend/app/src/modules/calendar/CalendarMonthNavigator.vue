@@ -22,6 +22,7 @@ const readableMonthAndYear = computed(() => get(model).format('MMMM YYYY'));
       variant="text"
       icon
       class="!p-2"
+      data-testid="calendar-prev-month"
       @click="prevMonth()"
     >
       <RuiIcon name="lu-chevron-left" />
@@ -30,6 +31,7 @@ const readableMonthAndYear = computed(() => get(model).format('MMMM YYYY'));
       variant="text"
       icon
       class="!p-2"
+      data-testid="calendar-next-month"
       @click="nextMonth()"
     >
       <RuiIcon name="lu-chevron-right" />
@@ -44,6 +46,7 @@ const readableMonthAndYear = computed(() => get(model).format('MMMM YYYY'));
         dense
         hide-details
         append-icon="lu-calendar-days"
+        data-testid="calendar-month-label"
       />
     </div>
   </div>

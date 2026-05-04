@@ -49,7 +49,11 @@ function onEventClicked(calendarEvent: CalendarEvent) {
 </script>
 
 <template>
-  <div class="flex items-center gap-4">
+  <div
+    class="flex items-center gap-4"
+    :data-testid="`calendar-event-${event.identifier}`"
+    :data-event-name="event.name"
+  >
     <div
       class="min-w-5 min-h-5 rounded-full"
       :style="{

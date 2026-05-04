@@ -140,6 +140,7 @@ defineExpose({
         variant="outlined"
         color="primary"
         :error-messages="toMessages(v$.name)"
+        data-testid="calendar-form-name"
         @blur="v$.name.$touch()"
       />
 
@@ -156,6 +157,7 @@ defineExpose({
       min-rows="5"
       :error-messages="toMessages(v$.description)"
       :hint="t('common.optional')"
+      data-testid="calendar-form-description"
       @blur="v$.description.$touch()"
     />
 
