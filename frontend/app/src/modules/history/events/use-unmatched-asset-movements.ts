@@ -3,6 +3,7 @@ import type { ActionStatus } from '@/modules/core/common/action';
 import type { TaskMeta } from '@/modules/core/tasks/types';
 import type { LinkedMovementMatch } from '@/modules/history/events/event-payloads';
 import type { HistoryEventCollectionRow, HistoryEventEntry } from '@/modules/history/events/schemas';
+import { NotificationGroup } from '@rotki/common';
 import { useAssetInfoRetrieval } from '@/modules/assets/use-asset-info-retrieval';
 import { arrayify } from '@/modules/core/common/data/array';
 import { logger } from '@/modules/core/common/logging/logging';
@@ -56,7 +57,7 @@ const triggerAutoMatchLoading = ref<boolean>(false);
 
 export const useUnmatchedAssetMovements = createSharedComposable((): UseUnmatchedAssetMovementsReturn => {
   const { t } = useI18n({ useScope: 'global' });
-  const { showErrorMessage, showSuccessMessage } = useNotifications();
+  const { removeMatching, showErrorMessage, showSuccessMessage } = useNotifications();
   const { getAssetInfo } = useAssetInfoRetrieval();
   const { runTask } = useTaskHandler();
   const { useIsTaskRunning } = useTaskStore();
@@ -87,6 +88,10 @@ export const useUnmatchedAssetMovements = createSharedComposable((): UseUnmatche
   const unmatchedCount = computed<number>(() => get(unmatchedMovements).length);
   const ignoredCount = computed<number>(() => get(ignoredMovements).length);
 
+  function clearUnmatchedAssetMovementsNotification(): void {
+    removeMatching(notification => notification.group === NotificationGroup.UNMATCHED_ASSET_MOVEMENTS);
+  }
+
   const fetchUnmatchedAssetMovements = async (onlyIgnored?: boolean): Promise<void> => {
     const isIgnored = onlyIgnored === true;
     const loadingRef = isIgnored ? ignoredLoading : loading;
@@ -98,6 +103,8 @@ export const useUnmatchedAssetMovements = createSharedComposable((): UseUnmatche
 
       if (groupIdentifiers.length === 0) {
         set(movementsRef, []);
+        if (!isIgnored)
+          clearUnmatchedAssetMovementsNotification();
         return;
       }
 
