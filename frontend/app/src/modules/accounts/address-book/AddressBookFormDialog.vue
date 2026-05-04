@@ -101,6 +101,7 @@ async function save(): Promise<boolean> {
   set(loading, false);
   if (success) {
     set(modelValue, undefined);
+    set(open, false);
     emit('update:tab', location === 'global' ? 0 : 1);
     emit('refresh');
   }

@@ -64,6 +64,7 @@ const { showDeleteConfirmation } = useAddressBookDeletion(location, refresh);
     row-attr="address"
     outlined
     dense
+    data-testid="address-book-table"
   >
     <template #item.address="{ row }">
       <AccountDisplay

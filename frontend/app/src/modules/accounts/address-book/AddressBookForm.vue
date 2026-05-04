@@ -112,12 +112,14 @@ defineExpose({
       key-attr="key"
       text-attr="label"
       variant="outlined"
+      data-testid="address-book-form-location"
     />
     <ChainSelect
       v-model="blockchainModel"
       :disabled="editMode"
       :items="chainOptions"
       :error-messages="toMessages(v$.blockchain)"
+      data-testid="address-book-form-chain"
     />
     <div class="flex gap-2">
       <div class="m-3 rounded-full overflow-hidden w-8 h-8 bg-rui-grey-300 dark:bg-rui-grey-600">
@@ -136,6 +138,7 @@ defineExpose({
         :disabled="editMode"
         :error-messages="toMessages(v$.address)"
         clearable
+        data-testid="address-book-form-address"
       >
         <template #item.prepend="{ item }">
           <div
@@ -158,6 +161,7 @@ defineExpose({
       color="primary"
       :label="t('common.name')"
       :error-messages="toMessages(v$.name)"
+      data-testid="address-book-form-name"
     />
   </div>
 </template>
