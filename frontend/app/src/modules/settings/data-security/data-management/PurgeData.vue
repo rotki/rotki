@@ -174,6 +174,7 @@ const chainsSelection = useArrayMap(allTxChainsInfo, item => item.id);
         key-attr="id"
         hide-details
         :disabled="pending"
+        data-testid="purge-source"
       />
       <ChainSelect
         v-if="source === Purgeable.TRANSACTIONS"
@@ -192,6 +193,7 @@ const chainsSelection = useArrayMap(allTxChainsInfo, item => item.id);
         :items="allExchanges"
         :label="t('purge_selector.centralized_exchange_to_clear.label')"
         :hint="t('purge_selector.centralized_exchange_to_clear.hint')"
+        data-testid="purge-cex-location"
       />
       <RuiAutoComplete
         v-if="source === Purgeable.CENTRALIZED_EXCHANGES"
@@ -203,6 +205,7 @@ const chainsSelection = useArrayMap(allTxChainsInfo, item => item.id);
         key-attr="id"
         hide-details
         :disabled="pending"
+        data-testid="purge-cex-data-type"
       />
       <LocationSelector
         v-else-if="source === Purgeable.DECENTRALIZED_EXCHANGES"
@@ -231,6 +234,7 @@ const chainsSelection = useArrayMap(allTxChainsInfo, item => item.id);
           :disabled="!source || pending"
           :loading="pending"
           color="error"
+          data-testid="purge-submit"
           @click="showConfirmation(source)"
         >
           <template #prepend>
