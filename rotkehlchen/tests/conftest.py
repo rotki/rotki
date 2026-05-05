@@ -18,12 +18,15 @@ from urllib.parse import parse_qs, urlparse
 import py
 import pytest
 
+from rotkehlchen.chain.ethereum.modules.eth2.beacon import BeaconNode
 from rotkehlchen.config import default_data_directory
+from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.logging import TRACE, RotkehlchenLogsAdapter, add_logging_level, configure_logging
 from rotkehlchen.tests.utils.args import default_args
 from rotkehlchen.tests.utils.gevent import ensure_gevent_patches
 from rotkehlchen.utils.mixins.enums import SerializableEnumNameMixin
+from rotkehlchen.utils.network import create_session
 from rotkehlchen.utils.serialization import jsonloads_dict
 
 if TYPE_CHECKING:
@@ -57,6 +60,26 @@ from rotkehlchen.tests.fixtures import *  # noqa: F403
 
 assert sys.version_info.major == 3, 'Need to use python 3 for rotki'
 assert sys.version_info.minor == 11, 'Need to use python 3.11 for rotki'
+
+
+@pytest.fixture(name='force_beacon_rpc_fallback')
+def fixture_force_beacon_rpc_fallback(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Keep a beacon node configured but make its queries fail.
+
+    This lets VCR tests continue exercising the recorded beaconcha.in paths while
+    also covering the beacon RPC -> beaconcha.in fallback introduced for eth2.
+    """
+    def set_rpc_endpoint(node: BeaconNode, rpc_endpoint: str) -> None:
+        node.session = create_session()
+        node.rpc_endpoint = rpc_endpoint.rstrip('/')
+
+    def fail_beacon_rpc(*args: Any, **kwargs: Any) -> None:  # pylint: disable=unused-argument
+        raise RemoteError('Beacon RPC intentionally disabled in test')
+
+    monkeypatch.setattr(BeaconNode, 'set_rpc_endpoint', set_rpc_endpoint)
+    monkeypatch.setattr(BeaconNode, 'query', fail_beacon_rpc)
+    monkeypatch.setattr(BeaconNode, 'query_chunked', fail_beacon_rpc)
+    monkeypatch.setattr(BeaconNode, 'query_validators_by_id', fail_beacon_rpc)
 
 
 def pytest_addoption(parser):

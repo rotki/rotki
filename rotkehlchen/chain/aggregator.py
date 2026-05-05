@@ -426,8 +426,7 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
         log.debug(f'Activating {module_name} module')
         kwargs: dict[str, Any] = {}
         if module_name == 'eth2':
-            with self.database.conn.read_ctx() as cursor:
-                kwargs['beacon_rpc_endpoint'] = self.database.get_setting(cursor, 'beacon_rpc_endpoint')  # noqa: E501
+            kwargs['beacon_rpc_endpoint'] = CachedSettings().get_entry('beacon_rpc_endpoint')
             kwargs['beaconchain'] = self.beaconchain
         klass = _module_name_to_class(module_name)
         try:

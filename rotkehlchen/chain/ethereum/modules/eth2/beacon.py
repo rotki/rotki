@@ -65,7 +65,7 @@ class BeaconNode:
         log.info(f'Connected to {rpc_endpoint} with beacon node {version}')
 
     @overload
-    def query(  # type: ignore  # not sure how to fix the overlapping type at overload here
+    def query(
             self,
             method: Literal['GET'],
             endpoint: Literal['eth/v1/node/version'],
@@ -85,7 +85,16 @@ class BeaconNode:
     @overload
     def query(
             self,
-            method: Literal['GET', 'POST'],
+            method: Literal['GET'],
+            endpoint: str,
+            data: dict[str, Any] | None = None,
+    ) -> dict:
+        ...
+
+    @overload
+    def query(
+            self,
+            method: Literal['POST'],
             endpoint: str,
             data: dict[str, Any] | None = None,
     ) -> list[dict]:
@@ -153,6 +162,20 @@ class BeaconNode:
 
         return data
 
+    def query_validators_by_id(
+            self,
+            indices_or_pubkeys: Sequence[int | Eth2PubKey],
+    ) -> list[dict]:
+        """Query validators one by one using the beacon node GET endpoint.
+
+        May raise:
+        - RemoteError due to problems querying the node
+        """
+        return [self.query(
+            method='GET',
+            endpoint=f'eth/v1/beacon/states/head/validators/{validator_id}',
+        ) for validator_id in indices_or_pubkeys]
+
 
 class BeaconInquirer:
 
@@ -195,14 +218,28 @@ class BeaconInquirer:
         """
         price = Inquirer.find_main_currency_price(A_ETH)
         balance_mapping: dict[Eth2PubKey, Balance] = defaultdict(Balance)
+        log.debug(f'Getting validator balances. Beacon node connected: {self.node}')
         if self.node is not None:
+            log.debug('Querying validator balances via beacon node POST endpoint')
             try:
                 node_results = self.node.query_chunked(
                     indices_or_pubkeys=indices_or_pubkeys,
                     endpoint='eth/v1/beacon/states/head/validators',
                 )
-            except RemoteError as e:  # log and try beaconcha.in
-                log.error(f'Querying validator balances via a beacon node failed due to {e!s}')
+            except RemoteError as post_error:
+                # log and try beacon node GET endpoint before beaconcha.in
+                log.error(f'Querying validator balances via beacon node POST failed due to {post_error!s}')  # noqa: E501
+                log.debug('Querying validator balances via beacon node GET endpoint')
+                try:
+                    node_results = self.node.query_validators_by_id(indices_or_pubkeys)
+                except RemoteError as get_error:
+                    log.error(f'Querying validator balances via beacon node GET failed due to {get_error!s}')  # noqa: E501
+                    log.debug('Querying validator balances via beaconcha.in')
+                else:
+                    for entry in node_results:
+                        amount = from_gwei(int(entry['balance']))
+                        balance_mapping[entry['validator']['pubkey']] = Balance(amount=amount, value=amount * price)  # noqa: E501
+                    return balance_mapping
             else:
                 for entry in node_results:
                     amount = from_gwei(int(entry['balance']))
@@ -210,6 +247,7 @@ class BeaconInquirer:
                 return balance_mapping
 
         # else we have to query beaconcha.in
+        log.debug('Querying validator balances via beaconcha.in')
         for entry in self.beaconchain.get_validator_data(indices_or_pubkeys):
             try:
                 amount = from_gwei(entry['balance'])
@@ -229,37 +267,55 @@ class BeaconInquirer:
         - DeserializationError if any of the entry data could not be
           deserialized due to unexpected format
         """
-        # Beaconcha.in only keys
-        beacon_chain_index_key = 'validatorindex'
-        index_key = beacon_chain_index_key
+        index_key = 'validatorindex'
         valuegetter = operator.getitem
         withdrawal_credentials_key = 'withdrawalcredentials'
         activation_epoch_key = 'activationepoch'
         withdrawable_epoch_key = 'withdrawableepoch'
+        exit_epoch_key = 'exitepoch'
         queried_beaconchain = False
+        log.debug(f'Getting validator data. Beacon node connected: {self.node}')
         if self.node is not None:
+            log.debug('Querying validator data via beacon node POST endpoint')
             try:
                 node_results = self.node.query_chunked(
                     indices_or_pubkeys=indices_or_pubkeys,
                     endpoint='eth/v1/beacon/states/head/validators',
                 )
-            except RemoteError as e:  # log and try beaconcha.in
-                log.error(f'Querying validator data via a beacon node failed due to {e!s}')
-                node_results = self.beaconchain.get_validator_data(indices_or_pubkeys)
-                queried_beaconchain = True
+            except RemoteError as post_error:
+                # log and try beacon node GET endpoint before beaconcha.in
+                log.error(f'Querying validator data via beacon node POST failed due to {post_error!s}')  # noqa: E501
+                log.debug('Querying validator data via beacon node GET endpoint')
+                try:
+                    node_results = self.node.query_validators_by_id(indices_or_pubkeys)
+                except RemoteError as get_error:
+                    log.error(
+                        f'Querying validator data via beacon node GET failed due to {get_error!s}',
+                    )
+                    log.debug('Querying validator data via beaconcha.in')
+                    node_results = self.beaconchain.get_validator_data(indices_or_pubkeys)
+                    queried_beaconchain = True
+                else:
+                    index_key = 'index'
+                    valuegetter = lambda x, y: x['validator'][y]  # don't want to turn this into a def, and can't find a way to do this with functools # noqa: E501, E731
+                    withdrawal_credentials_key = 'withdrawal_credentials'
+                    activation_epoch_key = 'activation_epoch'
+                    withdrawable_epoch_key = 'withdrawable_epoch'
+                    exit_epoch_key = 'exit_epoch'
             else:  # successful beacon node query. Set keys
                 index_key = 'index'
                 valuegetter = lambda x, y: x['validator'][y]  # don't want to turn this into a def, and can't find a way to do this with functools # noqa: E501, E731
                 withdrawal_credentials_key = 'withdrawal_credentials'
                 activation_epoch_key = 'activation_epoch'
                 withdrawable_epoch_key = 'withdrawable_epoch'
+                exit_epoch_key = 'exit_epoch'
         else:  # query beaconcha.in since no node is connected
+            log.debug('No beacon node connected. Querying validator data via beaconcha.in')
             node_results = self.beaconchain.get_validator_data(indices_or_pubkeys)
             queried_beaconchain = True
 
         details = []
-        indices_mapping_to_query_beaconchain = {}
-        for idx, entry in enumerate(node_results):
+        for entry in node_results:
             activation_epoch = deserialize_int(
                 value=valuegetter(entry, activation_epoch_key),
                 location='validator activation epoch',
@@ -283,11 +339,14 @@ class BeaconInquirer:
                     log.error(f'Could not deserialize 0x01/0x02 withdrawal credentials for {entry}')  # noqa: E501
 
             validator_index = deserialize_int(value=entry[index_key], location='validator index')
-            if withdrawable_ts is not None:
-                if queried_beaconchain and (exit_epoch := entry.get('exitepoch', 0)) != 0:
+            if queried_beaconchain:
+                if 0 < (exit_epoch := entry.get(exit_epoch_key, 0)) < BEACONCHAIN_MAX_EPOCH:
                     exited_ts = epoch_to_timestamp(exit_epoch)
-                else:  # query this index from beaconchain to see if exited
-                    indices_mapping_to_query_beaconchain[validator_index] = idx
+            elif (exit_epoch := deserialize_int(
+                value=valuegetter(entry, exit_epoch_key),
+                location='validator exit epoch',
+            )) < BEACONCHAIN_MAX_EPOCH:
+                exited_ts = epoch_to_timestamp(exit_epoch)
 
             details.append(ValidatorDetails(
                 validator_index=validator_index,
@@ -298,12 +357,6 @@ class BeaconInquirer:
                 validator_type=validator_type,
                 exited_timestamp=exited_ts,
             ))
-
-        if len(indices_mapping_to_query_beaconchain) != 0:  # if needed check beaconchain for exit
-            node_results = self.beaconchain.get_validator_data(list(indices_mapping_to_query_beaconchain))  # noqa: E501
-            for entry in node_results:
-                if (exit_epoch := entry.get('exitepoch', 0)) != 0:
-                    details[indices_mapping_to_query_beaconchain[entry[beacon_chain_index_key]]].exited_timestamp = epoch_to_timestamp(exit_epoch)  # noqa: E501
 
         return details
 

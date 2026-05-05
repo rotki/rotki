@@ -115,6 +115,7 @@ def _prepare_clean_validators(rotkehlchen_api_server: 'APIServer') -> None:
 @pytest.mark.parametrize('ethereum_modules', [['eth2']])
 @pytest.mark.freeze_time('2025-06-23 08:00:00 GMT')
 @pytest.mark.parametrize('network_mocking', [False])
+@pytest.mark.usefixtures('force_beacon_rpc_fallback')
 def test_staking_performance(
         rotkehlchen_api_server: 'APIServer',
         ethereum_accounts: list['ChecksumEvmAddress'],
@@ -421,6 +422,7 @@ def test_query_eth2_inactive(
 @pytest.mark.parametrize('ethereum_accounts', [[]])
 @pytest.mark.parametrize('ethereum_modules', [['eth2']])
 @pytest.mark.parametrize('start_with_valid_premium', [True, False])
+@pytest.mark.usefixtures('force_beacon_rpc_fallback')
 def test_add_get_edit_delete_eth2_validators(
         rotkehlchen_api_server: 'APIServer',
         start_with_valid_premium: bool,
@@ -656,6 +658,7 @@ def test_add_get_edit_delete_eth2_validators(
 @pytest.mark.parametrize('ethereum_modules', [['eth2']])
 @pytest.mark.parametrize('start_with_valid_premium', [True])
 @pytest.mark.parametrize('method', ['PUT', 'DELETE'])
+@pytest.mark.usefixtures('force_beacon_rpc_fallback')
 def test_add_delete_validator_errors(
         rotkehlchen_api_server: 'APIServer',
         method: Literal['PUT', 'DELETE'],
@@ -806,6 +809,7 @@ def test_add_delete_validator_errors(
 @pytest.mark.parametrize('ethereum_modules', [['eth2']])
 @pytest.mark.parametrize('start_with_valid_premium', [True])
 @pytest.mark.parametrize('query_all_balances', [False, True])
+@pytest.mark.usefixtures('force_beacon_rpc_fallback')
 def test_query_eth2_balances(
         rotkehlchen_api_server: 'APIServer',
         query_all_balances: bool,
@@ -957,6 +961,36 @@ def test_query_online_block_productions_missing_api_key(
     )
 
 
+@pytest.mark.parametrize('ethereum_modules', [['eth2']])
+@pytest.mark.parametrize('include_beaconchain_key', [False])
+@pytest.mark.parametrize('start_with_valid_premium', [True])
+@pytest.mark.usefixtures('force_beacon_rpc_fallback')
+def test_add_validator_rpc_fails_missing_beaconchain_key(
+        rotkehlchen_api_server: 'APIServer',
+) -> None:
+    """Test validator addition handles having neither beacon RPC nor beaconcha.in available."""
+    eth2 = rotkehlchen_api_server.rest_api.rotkehlchen.chains_aggregator.get_module('eth2')
+    assert eth2 is not None
+    assert eth2.beacon_inquirer.node is not None
+    message = 'Querying beaconcha.in failed due to missing API key'
+    with patch.object(
+        eth2.beacon_inquirer.beaconchain,
+        'get_validator_data',
+        side_effect=APIKeyNotAvailable(message),
+    ) as get_validator_data:
+        response = requests.put(
+            api_url_for(rotkehlchen_api_server, 'eth2validatorsresource'),
+            json={'validator_index': 4235},
+        )
+
+    assert get_validator_data.call_count == 1
+    assert_error_response(
+        response=response,
+        contained_in_msg=message,
+        status_code=HTTPStatus.BAD_GATEWAY,
+    )
+
+
 @pytest.mark.vcr(filter_headers=['authorization'], match_on=['beaconchain_matcher'])
 @pytest.mark.parametrize('ethereum_modules', [['eth2']])
 @pytest.mark.parametrize('start_with_valid_premium', [True])
@@ -964,6 +998,7 @@ def test_query_online_block_productions_missing_api_key(
 @pytest.mark.parametrize('have_decoders', [True])
 @pytest.mark.parametrize('ethereum_accounts', [['0x0fdAe061cAE1Ad4Af83b27A96ba5496ca992139b']])
 @pytest.mark.freeze_time('2025-07-25 16:00:00 GMT')
+@pytest.mark.usefixtures('force_beacon_rpc_fallback')
 def test_query_combined_mev_reward_and_block_production_events(rotkehlchen_api_server: 'APIServer') -> None:  # noqa: E501
     """Tests that combining mev rewards with block production events is seen by the API"""
     vindex1, vindex2 = 45555, 54333
@@ -1141,6 +1176,7 @@ def test_query_combined_mev_reward_and_block_production_events(rotkehlchen_api_s
 @pytest.mark.parametrize('ethereum_accounts', [[
     CLEAN_HISTORY_WITHDRAWAL1, CLEAN_HISTORY_WITHDRAWAL2, CLEAN_HISTORY_WITHDRAWAL3, '0x2B78035514401eD1592Eb691b8673a93Edf97470',  # noqa: E501
 ]])
+@pytest.mark.usefixtures('force_beacon_rpc_fallback')
 def test_get_validators(
         rotkehlchen_api_server: 'APIServer',
         ethereum_accounts: Sequence['ChecksumEvmAddress'],
@@ -1231,6 +1267,7 @@ def test_get_validators(
 @pytest.mark.parametrize('network_mocking', [False])
 @pytest.mark.parametrize('ethereum_modules', [['eth2']])
 @pytest.mark.parametrize('number_of_eth_accounts', [0])
+@pytest.mark.usefixtures('force_beacon_rpc_fallback')
 def test_balances_get_deleted_when_removing_validator(
         rotkehlchen_api_server: 'APIServer',
         rotki_premium_object: 'Premium',
@@ -1272,10 +1309,57 @@ def test_balances_get_deleted_when_removing_validator(
     assert len(result['totals']['assets']) == 0  # no assets in balances
 
 
+@pytest.mark.vcr
+@pytest.mark.parametrize('network_mocking', [False])
+@pytest.mark.parametrize('ethereum_modules', [['eth2']])
+@pytest.mark.parametrize('number_of_eth_accounts', [0])
+@pytest.mark.parametrize('start_with_valid_premium', [True])
+@pytest.mark.parametrize('include_beaconchain_key', [False])
+@pytest.mark.parametrize('db_settings', [{'beacon_rpc_endpoint': 'https://ethereum-beacon-api.publicnode.com'}])
+def test_add_validator_with_rpc(
+        rotkehlchen_api_server: 'APIServer',
+        db_settings: dict[str, str],
+        include_beaconchain_key: bool,
+) -> None:
+    """Test adding a validator uses the configured beacon RPC and does not need beaconcha.in."""
+    assert db_settings['beacon_rpc_endpoint'] == 'https://ethereum-beacon-api.publicnode.com'
+    assert include_beaconchain_key is False
+    eth2 = rotkehlchen_api_server.rest_api.rotkehlchen.chains_aggregator.get_module('eth2')
+    assert eth2 is not None
+    assert eth2.beacon_inquirer.node is not None
+
+    with patch.object(
+        eth2.beacon_inquirer.beaconchain,
+        'get_validator_data',
+        side_effect=AssertionError('beaconcha.in should not be queried'),
+    ):
+        response = requests.put(
+            api_url_for(rotkehlchen_api_server, 'eth2validatorsresource'),
+            json={
+                'validator_index': '44',
+                'public_key': '0xafad95cff162b9e33a965ec754d1225b3781207cd985ae4d594c4c087be8758a752e2045194a756ada3a65da4a2d05e5',  # noqa: E501
+                'async_query': True,
+            },
+        )
+    assert_proper_response_with_result(
+        response=response,
+        rotkehlchen_api_server=rotkehlchen_api_server,
+        async_query=True,
+    )
+
+    response = requests.get(api_url_for(rotkehlchen_api_server, 'eth2validatorsresource'))
+    result = assert_proper_sync_response_with_result(response)
+    assert result['entries'][0]['index'] == 44
+    assert result['entries'][0]['public_key'] == '0xafad95cff162b9e33a965ec754d1225b3781207cd985ae4d594c4c087be8758a752e2045194a756ada3a65da4a2d05e5'  # noqa: E501
+    assert result['entries'][0]['validator_type'] == 'distributing'
+    assert result['entries'][0]['status'] == 'exited'
+
+
 @pytest.mark.vcr(match_on=['beaconchain_matcher'], filter_headers=['authorization'])
 @pytest.mark.parametrize('network_mocking', [False])
 @pytest.mark.parametrize('ethereum_modules', [['eth2']])
 @pytest.mark.parametrize('number_of_eth_accounts', [0])
+@pytest.mark.usefixtures('force_beacon_rpc_fallback')
 def test_balances_of_exited_validators_are_not_queried(rotkehlchen_api_server: 'APIServer') -> None:  # noqa: E501
     """Test that the balances of exited validators are not queried at all."""
     response = requests.put(  # add an exited validator
@@ -1301,6 +1385,7 @@ def test_balances_of_exited_validators_are_not_queried(rotkehlchen_api_server: '
 @pytest.mark.parametrize('network_mocking', [False])
 @pytest.mark.parametrize('ethereum_modules', [['eth2']])
 @pytest.mark.parametrize('ethereum_accounts', [['0xa966b01E2136953DF4F4914CfA9D37724E99a187']])
+@pytest.mark.usefixtures('force_beacon_rpc_fallback')
 def test_consolidated_validators_status(rotkehlchen_api_server: 'APIServer') -> None:
     get_decoded_events_of_transaction(
         evm_inquirer=rotkehlchen_api_server.rest_api.rotkehlchen.chains_aggregator.ethereum.node_inquirer,
