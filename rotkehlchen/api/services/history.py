@@ -30,7 +30,7 @@ from rotkehlchen.db.filtering import (
 )
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.db.utils import get_query_chunks
-from rotkehlchen.errors.misc import AccountingError, RemoteError
+from rotkehlchen.errors.misc import AccountingError, APIKeyNotAvailable, RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.exchanges.constants import SUPPORTED_EXCHANGES
 from rotkehlchen.externalapis.gnosispay import init_gnosis_pay
@@ -329,6 +329,12 @@ class HistoryService:
                 eth2.combine_block_with_tx_events()
             else:
                 log.debug('No active or un-queried validators found. Skipping query of block production information.')  # noqa: E501
+        except APIKeyNotAvailable as e:
+            return {
+                'result': None,
+                'message': str(e),
+                'status_code': HTTPStatus.FAILED_DEPENDENCY,
+            }
         except RemoteError as e:
             return {
                 'result': None,

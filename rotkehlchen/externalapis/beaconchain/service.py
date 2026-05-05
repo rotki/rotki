@@ -15,7 +15,7 @@ from rotkehlchen.constants.timing import DAY_IN_SECONDS
 from rotkehlchen.db.cache import DBCacheDynamic
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.db.settings import CachedSettings
-from rotkehlchen.errors.misc import RemoteError
+from rotkehlchen.errors.misc import APIKeyNotAvailable, RemoteError
 from rotkehlchen.externalapis.interface import (
     ExternalServiceWithRecommendedApiKey,
 )
@@ -95,7 +95,7 @@ class BeaconChain(ExternalServiceWithRecommendedApiKey):
 
         if (api_key := self._get_api_key()) is None:
             log.warning('Missing beaconcha.in api key.')
-            raise RemoteError(f'Querying {query_str} failed due to missing API key')
+            raise APIKeyNotAvailable(f'Querying {query_str} failed due to missing API key')
 
         if data is None:
             data = {}

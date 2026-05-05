@@ -24,7 +24,7 @@ from rotkehlchen.db.cache import DBCacheDynamic
 from rotkehlchen.db.evmtx import DBEvmTx
 from rotkehlchen.db.filtering import HistoryEventFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
-from rotkehlchen.errors.misc import RemoteError
+from rotkehlchen.errors.misc import APIKeyNotAvailable, RemoteError
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.eth2 import (
     EthBlockEvent,
@@ -926,6 +926,35 @@ def test_query_eth2_balances(
     assert len(totals['assets']) == 1
     assert len(totals['liabilities']) == 0
     assert FVal(totals['assets']['ETH2'][DEFAULT_BALANCE_LABEL]['amount']) >= base_amount + amount_proportion  # noqa: E501
+
+
+@pytest.mark.parametrize('ethereum_modules', [['eth2']])
+@pytest.mark.parametrize('start_with_valid_premium', [True])
+def test_query_online_block_productions_missing_api_key(
+        rotkehlchen_api_server: 'APIServer',
+) -> None:
+    """Test missing beaconcha.in API key returns the specific failed dependency code."""
+    eth2 = rotkehlchen_api_server.rest_api.rotkehlchen.chains_aggregator.get_module('eth2')
+    assert eth2 is not None
+    message = 'Querying beaconcha.in failed due to missing API key'
+    with (
+        patch.object(eth2.beacon_inquirer.beaconchain, 'get_validators_to_query_for_blocks', return_value=[1]),  # noqa: E501
+        patch.object(
+            eth2.beacon_inquirer.beaconchain,
+            'get_and_store_produced_blocks',
+            side_effect=APIKeyNotAvailable(message),
+        ),
+    ):
+        response = requests.post(
+            url=api_url_for(rotkehlchen_api_server, 'eventsonlinequeryresource'),
+            json={'query_type': 'block_productions'},
+        )
+
+    assert_error_response(
+        response=response,
+        contained_in_msg=message,
+        status_code=HTTPStatus.FAILED_DEPENDENCY,
+    )
 
 
 @pytest.mark.vcr(filter_headers=['authorization'], match_on=['beaconchain_matcher'])
