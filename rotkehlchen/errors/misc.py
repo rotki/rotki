@@ -43,6 +43,10 @@ class RemoteError(Exception):
         super().__init__(message)
 
 
+class APIKeyNotAvailable(RemoteError):
+    """Raised when an API key required for a query is not available."""
+
+
 class NoAvailableIndexers(RemoteError):
     """Raised when there are no available indexers for a given chain."""
 

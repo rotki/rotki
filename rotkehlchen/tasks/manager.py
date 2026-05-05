@@ -36,7 +36,7 @@ from rotkehlchen.db.solanatx import DBSolanaTx
 from rotkehlchen.db.utils import table_exists
 from rotkehlchen.errors.api import PremiumAuthenticationError, PremiumPermissionError
 from rotkehlchen.errors.asset import UnknownAsset, WrongAssetType
-from rotkehlchen.errors.misc import RemoteError
+from rotkehlchen.errors.misc import APIKeyNotAvailable, RemoteError
 from rotkehlchen.externalapis.google_calendar import GoogleCalendarAPI
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.history.types import HistoricalPriceOracle
@@ -557,6 +557,14 @@ class TaskManager:
             ignore_cache=True,
         )]
 
+    def _query_produced_blocks(self, indices: list[int]) -> None:
+        try:
+            self.chains_aggregator.beaconchain.get_and_store_produced_blocks(indices=indices)
+        except APIKeyNotAvailable as e:
+            log.warning(
+                f'Skipping produced blocks query due to missing beaconcha.in API key: {e!s}',
+            )
+
     def _maybe_query_produced_blocks(self) -> list[gevent.Greenlet] | None:
         """Schedules the blocks production query if enough time has passed"""
         if (
@@ -573,7 +581,7 @@ class TaskManager:
             after_seconds=None,
             task_name=task_name,
             exception_is_error=True,
-            method=self.chains_aggregator.beaconchain.get_and_store_produced_blocks,
+            method=self._query_produced_blocks,
             indices=indices,
         )]
 
