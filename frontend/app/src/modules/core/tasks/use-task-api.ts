@@ -5,7 +5,7 @@ import { IncompleteUpgradeError, SyncConflictError, SyncConflictPayload } from '
 import { DEFAULT_TIMEOUT, TASKS_TIMEOUT } from '@/modules/core/api/constants';
 import { api } from '@/modules/core/api/rotki-api';
 import { camelCaseTransformer } from '@/modules/core/api/transformers';
-import { ApiValidationError } from '@/modules/core/api/types/errors';
+import { ApiKeyMissingError, ApiValidationError } from '@/modules/core/api/types/errors';
 import { HTTPStatus } from '@/modules/core/api/types/http';
 import { VALID_TASK_STATUS } from '@/modules/core/api/utils';
 import { type PendingTask, PendingTaskSchema, TaskNotFoundError, type TaskResultResponse, type TaskStatus } from '@/modules/core/tasks/types';
@@ -75,6 +75,9 @@ export function useTaskApi(): UseTaskApiReturn {
       }
       else if (statusCode === HTTPStatus.BAD_REQUEST) {
         throw new ApiValidationError(message);
+      }
+      else if (statusCode === HTTPStatus.FAILED_DEPENDENCY) {
+        throw new ApiKeyMissingError(message);
       }
       else if (statusCode === HTTPStatus.BAD_GATEWAY) {
         throw new Error(message);

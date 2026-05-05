@@ -80,6 +80,7 @@ const mockSupportedChains = {
 const mockRefreshHandlers = {
   queryAllExchangeEvents: vi.fn().mockResolvedValue(undefined),
   queryOnlineEvent: vi.fn().mockResolvedValue(undefined),
+  resetOnlineWarnings: vi.fn(),
 };
 
 const mockExchangeData = {

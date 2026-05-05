@@ -14,10 +14,12 @@ const {
   decoding,
   hasCancelledDecoding,
   hasCancelledProtocolCache,
+  hasWarnings,
   locations,
   protocolCache,
   totalChains,
   totalLocations,
+  warnings,
 } = useSyncProgress();
 
 const hasChains = computed<boolean>(() => get(chains).length > 0);
@@ -149,6 +151,31 @@ const protocolCacheCountColor = computed<string>(() =>
         />
       </div>
       <ProtocolCacheProgressList :protocol-cache="protocolCache" />
+    </div>
+
+    <div
+      v-if="hasWarnings"
+      :class="{ 'pt-4': !hasChains && !hasLocations && !hasDecoding && !hasProtocolCache }"
+    >
+      <div class="flex items-center gap-2 mb-2">
+        <RuiIcon
+          name="lu-circle-alert"
+          class="text-rui-warning"
+          size="14"
+        />
+        <span class="text-xs font-medium text-rui-text-secondary">
+          {{ t('sync_progress.warnings.title') }}
+        </span>
+      </div>
+      <ul class="space-y-1.5">
+        <li
+          v-for="warning in warnings"
+          :key="`${warning.source}-${warning.key}`"
+          class="text-xs text-rui-text-secondary leading-snug"
+        >
+          {{ warning.message }}
+        </li>
+      </ul>
     </div>
   </div>
 </template>

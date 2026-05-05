@@ -109,4 +109,6 @@ export interface SyncProgressState {
 
   isActive: boolean;
   canDismiss: boolean;
+
+  hasWarnings: boolean;
 }

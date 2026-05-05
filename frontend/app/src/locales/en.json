@@ -765,6 +765,12 @@
         "description": "Failed query online events with query type {queryType}: {error}",
         "title": "Online Events Query"
       },
+      "query_type": {
+        "block_productions": "Block production",
+        "eth_withdrawals": "ETH withdrawals",
+        "gnosis_pay": "Gnosis Pay",
+        "monerium": "Monerium"
+      },
       "skipped": {
         "csv_export": {
           "message": {
@@ -777,6 +783,12 @@
       "task": {
         "description": "Requesting new {queryType} events",
         "title": "Querying events"
+      },
+      "warning": {
+        "missing_api_key": {
+          "beaconchain": "{queryType} skipped: a beaconcha.in API key is required to fetch this data.",
+          "default": "{queryType} skipped: a required API key is missing."
+        }
       }
     },
     "report_events": {
@@ -5367,6 +5379,7 @@
   "sync_progress": {
     "chains_label": "chain | chains",
     "complete": "Sync Complete",
+    "complete_with_warnings": "Sync Complete with warnings",
     "completed_chains": "{count} chain complete | {count} chains complete",
     "completed_decoding": "{count} chain decoded | {count} chains decoded",
     "completed_locations": "{count} location complete | {count} locations complete",
@@ -5396,7 +5409,10 @@
       "refreshing": "Refreshing"
     },
     "title": "Syncing History",
-    "transactions": "Transactions"
+    "transactions": "Transactions",
+    "warnings": {
+      "title": "Warnings"
+    }
   },
   "table_filter": {
     "asset_suggestion": "Type the asset symbol or address to search.",

@@ -1,6 +1,7 @@
 import type { TaskMeta } from '@/modules/core/tasks/types';
 import { groupBy, omit } from 'es-toolkit';
 import { type Exchange, QueryExchangeEventsPayload } from '@/modules/balances/types/exchanges';
+import { ApiKeyMissingError } from '@/modules/core/api/types/errors';
 import { awaitParallelExecution } from '@/modules/core/common/async/await-parallel-execution';
 import { logger } from '@/modules/core/common/logging/logging';
 import { useNotifications } from '@/modules/core/notifications/use-notifications';
@@ -13,10 +14,12 @@ import { useMoneriumOAuth } from '@/modules/integrations/monerium/use-monerium-a
 import { PremiumFeature, useFeatureAccess } from '@/modules/premium/use-feature-access';
 import { Module, useModuleEnabled } from '@/modules/session/use-module-enabled';
 import { useExternalApiKeys } from '@/modules/settings/api-keys/external/use-external-api-keys';
+import { SyncWarningSource, useSyncWarningsStore } from '@/modules/shell/sync-progress/use-sync-warnings-store';
 
 interface UseRefreshHandlersReturn {
   queryAllExchangeEvents: (exchanges: Exchange[]) => Promise<void>;
   queryOnlineEvent: (queryType: OnlineHistoryEventsQueryType) => Promise<void>;
+  resetOnlineWarnings: () => void;
 }
 
 export function useRefreshHandlers(): UseRefreshHandlersReturn {
@@ -25,11 +28,34 @@ export function useRefreshHandlers(): UseRefreshHandlersReturn {
   const { markLocationCancelled } = useEventsQueryStatusStore();
   const { queryExchangeEvents, queryOnlineHistoryEvents } = useHistoryEventsApi();
   const { runTask } = useTaskHandler();
+  const { addWarning, resetWarnings } = useSyncWarningsStore();
   const { enabled: isEth2Enabled } = useModuleEnabled(Module.ETH2);
   const { getApiKey } = useExternalApiKeys();
   const { authenticated: moneriumAuthenticated, refreshStatus } = useMoneriumOAuth();
   const { allowed: gnosisPayAllowed } = useFeatureAccess(PremiumFeature.GNOSIS_PAY);
   const { allowed: moneriumAllowed } = useFeatureAccess(PremiumFeature.MONERIUM);
+
+  const queryTypeLabel = (queryType: OnlineHistoryEventsQueryType): string => {
+    switch (queryType) {
+      case OnlineHistoryEventsQueryType.BLOCK_PRODUCTIONS:
+        return t('actions.online_events.query_type.block_productions');
+      case OnlineHistoryEventsQueryType.ETH_WITHDRAWALS:
+        return t('actions.online_events.query_type.eth_withdrawals');
+      case OnlineHistoryEventsQueryType.GNOSIS_PAY:
+        return t('actions.online_events.query_type.gnosis_pay');
+      case OnlineHistoryEventsQueryType.MONERIUM:
+        return t('actions.online_events.query_type.monerium');
+    }
+  };
+
+  const buildMissingApiKeyMessage = (queryType: OnlineHistoryEventsQueryType): string => {
+    const label = queryTypeLabel(queryType);
+    if (queryType === OnlineHistoryEventsQueryType.BLOCK_PRODUCTIONS
+      || queryType === OnlineHistoryEventsQueryType.ETH_WITHDRAWALS) {
+      return t('actions.online_events.warning.missing_api_key.beaconchain', { queryType: label });
+    }
+    return t('actions.online_events.warning.missing_api_key.default', { queryType: label });
+  };
 
   const queryOnlineEvent = async (queryType: OnlineHistoryEventsQueryType): Promise<void> => {
     const eth2QueryTypes: OnlineHistoryEventsQueryType[] = [
@@ -69,13 +95,22 @@ export function useRefreshHandlers(): UseRefreshHandlersReturn {
 
     if (isActionableFailure(outcome)) {
       logger.error(outcome.error);
-      notifyError(
-        t('actions.online_events.error.title'),
-        t('actions.online_events.error.description', {
-          error: outcome.message,
-          queryType,
-        }),
-      );
+      if (outcome.error instanceof ApiKeyMissingError) {
+        addWarning({
+          key: queryType,
+          message: buildMissingApiKeyMessage(queryType),
+          source: SyncWarningSource.ONLINE_EVENTS,
+        });
+      }
+      else {
+        notifyError(
+          t('actions.online_events.error.title'),
+          t('actions.online_events.error.description', {
+            error: outcome.message,
+            queryType,
+          }),
+        );
+      }
     }
     logger.debug(`finished querying for ${queryType} events`);
   };
@@ -122,8 +157,13 @@ export function useRefreshHandlers(): UseRefreshHandlersReturn {
     }, 2);
   };
 
+  const resetOnlineWarnings = (): void => {
+    resetWarnings();
+  };
+
   return {
     queryAllExchangeEvents,
     queryOnlineEvent,
+    resetOnlineWarnings,
   };
 }
