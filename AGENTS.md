@@ -108,12 +108,15 @@ cargo run -- --database ../data/global.db --port 4343
 ### Frontend Structure
 - `frontend/app/` - Vue.js Electron application
   - `src/` - Application source code
-    - `components/` - Reusable Vue components
+    - `modules/` - Feature modules. Each module groups its components, composables, Pinia stores, and types together (e.g. `modules/balances/`, `modules/dashboard/`, `modules/settings/`). The `modules/core/` and `modules/shell/` parents hold cross-cutting building blocks.
     - `pages/` - Route pages
-    - `composables/` - Vue composition API utilities
-    - `store/` - Pinia state management
+    - `layouts/` - Top-level layout components
+    - `locales/` - i18n translation files
+    - `router/` - Route definitions
+    - `plugins/` - Vue/Pinia plugin setup
   - `electron/` - Electron main process code
-  - `tests/` - E2E test suites and unit test utilities (fixtures, mocks, setup)
+  - `tests/unit/` - Unit-test setup, fixtures, and mocks (specs themselves are co-located next to the source files in `src/`)
+  - `tests/e2e/` - Playwright E2E specs, page objects, and helpers
 
 ### Key Architectural Patterns
 1. **API Communication**: Frontend communicates with backend via REST API (port 4242) and WebSockets (port 4333)
@@ -235,7 +238,7 @@ async function fetchData() {
 ```
 
 - VueUse utilities like `get()`, `set()`, `toRefs()`, `computed()` etc. are auto-imported
-- Use Pinia for state management - stores are in `frontend/app/src/store/`
+- Use Pinia for state management - stores live alongside their feature module as `frontend/app/src/modules/<feature>/use-*-store.ts` (e.g. `modules/balances/use-balances-store.ts`)
 - TypeScript is strict - ensure proper typing
 
 #### Setup Script Organization (Preferred Order)
@@ -377,12 +380,55 @@ async function fetchData() {
   src/modules/balances/use-balances-store.ts
   src/modules/balances/use-balances-store.spec.ts
 
-  src/composables/accounts/use-account-import-export.ts
-  src/composables/accounts/use-account-import-export.spec.ts
+  src/modules/accounts/use-account-import-export.ts
+  src/modules/accounts/use-account-import-export.spec.ts
   ```
 - **All unit tests are co-located** next to the source file they test (not in a separate `tests/` directory)
 - Test descriptions must follow the `it('should ...'` pattern
 - Component tests should follow existing patterns in co-located `*.spec.ts` files
+
+#### Fast checks via pnpm scripts
+
+All checks are run from the `frontend/` directory through the workspace scripts — do not invoke the underlying tools directly. To avoid running everything on every iteration, prefer these script-only paths:
+
+- **Vitest — narrow to a file or folder** (already path-aware):
+  ```bash
+  pnpm run test:unit src/modules/dashboard/edit-snapshot/EditSnapshotDialog.spec.ts
+  pnpm run test:unit src/modules/dashboard/edit-snapshot/    # whole folder
+  pnpm run test:unit:watch src/modules/<feature>/<file>.spec.ts
+  ```
+  Positional args are forwarded to `vitest run --coverage`. No `-- --run` separator needed.
+
+- **Lint only what you've staged**:
+  ```bash
+  git add <paths>
+  pnpm run lint-staged           # runs eslint on staged files; stylelint on staged .vue/.scss
+  ```
+  This is the canonical fast lint loop and only touches files in the git index. The same hook runs automatically on commit (via Husky), so passing it locally first means the commit won't bounce.
+
+- **Lint the whole project (full pass)**:
+  ```bash
+  pnpm run lint        # report-only
+  pnpm run lint:fix    # auto-fix what it can
+  ```
+  ESLint scans everything and there is no per-file pnpm script — use `lint-staged` (above) for the fast path.
+
+- **Stylelint** is wired the same way: `pnpm run lint-staged` covers staged `.vue`/`.scss`; `pnpm run lint:style` does the full pass.
+
+- **Typecheck — incremental, project-wide**:
+  ```bash
+  pnpm run typecheck   # vue-tsc --build --force; reuses the .tsbuildinfo cache once warmed
+  ```
+  `vue-tsc --build` has no per-file mode, but after the first cold run subsequent passes only re-check files affected by your change (usually a few seconds). For instant single-file feedback, rely on Volar in the IDE — it uses the same `tsconfig`.
+
+Typical fast pre-commit loop, all from `frontend/`:
+
+```bash
+pnpm run test:unit src/modules/<feature>/<file>.spec.ts   # only your spec
+git add src/modules/<feature>/<file>.ts src/modules/<feature>/<file>.spec.ts
+pnpm run lint-staged                                       # only your files
+pnpm run typecheck                                         # incremental
+```
 
 ### Contribution guide
 
@@ -401,7 +447,7 @@ The contribution guide can be seen here: https://docs.rotki.com/contribution-gui
 
 When adding a new setting to the frontend, follow these steps:
 
-#### 1. Register IDs in `frontend/app/src/composables/settings/types.ts`
+#### 1. Register IDs in `frontend/app/src/modules/settings/setting-highlight-ids.ts`
 
 - Add a **highlight ID** to `SettingsHighlightIds` (used to scroll-to and highlight the setting):
   ```typescript
@@ -420,11 +466,11 @@ When adding a new setting to the frontend, follow these steps:
 
 #### 2. Create the setting component
 
-Create the component in the appropriate subdirectory under `frontend/app/src/components/settings/`. Use `SettingsOption` as a wrapper — it handles debounced updates, success/error messages, and API calls.
+Create the component under `frontend/app/src/modules/settings/` (alongside the other setting components). Use `SettingsOption` as a wrapper — it handles debounced updates, success/error messages, and API calls.
 
 ```vue
 <script setup lang="ts">
-import SettingsOption from '@/components/settings/controls/SettingsOption.vue';
+import SettingsOption from '@/modules/settings/controls/SettingsOption.vue';
 
 const { t } = useI18n({ useScope: 'global' });
 const value = ref<boolean>(false);
@@ -464,7 +510,7 @@ In the relevant category component (e.g., `GeneralSettingsCategory.vue`), wrap t
 
 The `:id` prop is what enables scroll-to-highlight from the settings search.
 
-#### 4. Register in settings search (`frontend/app/src/composables/settings/use-settings-search.ts`)
+#### 4. Register in settings search (`frontend/app/src/modules/settings/use-settings-search.ts`)
 
 Add an entry to the appropriate `TabGroup` and `CategoryDef` in the `tabs` array inside `getEntries()`:
 
@@ -518,13 +564,13 @@ Add all labels, subtitles, and error messages to `frontend/app/src/locales/en.js
 
 | Purpose | File |
 |---------|------|
-| Highlight & category IDs | `frontend/app/src/composables/settings/types.ts` |
-| Search registration | `frontend/app/src/composables/settings/use-settings-search.ts` |
-| Highlight/scroll logic | `frontend/app/src/composables/settings/use-settings-highlight.ts` |
-| Page layout with navigation | `frontend/app/src/components/settings/controls/SettingsPage.vue` |
-| Setting update wrapper | `frontend/app/src/components/settings/controls/SettingsOption.vue` |
-| Setting layout wrapper | `frontend/app/src/components/settings/controls/SettingsItem.vue` |
-| Category visual grouping | `frontend/app/src/components/settings/SettingCategory.vue` |
+| Highlight & category IDs | `frontend/app/src/modules/settings/setting-highlight-ids.ts` |
+| Search registration | `frontend/app/src/modules/settings/use-settings-search.ts` |
+| Highlight/scroll logic | `frontend/app/src/modules/settings/use-settings-highlight.ts` |
+| Page layout with navigation | `frontend/app/src/modules/settings/controls/SettingsPage.vue` |
+| Setting update wrapper | `frontend/app/src/modules/settings/controls/SettingsOption.vue` |
+| Setting layout wrapper | `frontend/app/src/modules/settings/controls/SettingsItem.vue` |
+| Category visual grouping | `frontend/app/src/modules/settings/SettingCategory.vue` |
 | Settings pages | `frontend/app/src/pages/settings/*/index.vue` |
 
 ### Adding EVM protocol decoders
@@ -657,7 +703,7 @@ When editing backend Python and tests, follow these preferences unless explicitl
 - Vitest for unit tests with Vue Test Utils
 - **Unit tests are co-located**: `.spec.ts` files live next to the source file they test in `frontend/app/src/`
 - Test utilities (fixtures, mocks, setup) remain in `frontend/app/tests/unit/`
-- Playwright for E2E testing (tests in `frontend/app/tests/e2e-pw/`)
+- Playwright for E2E testing (specs in `frontend/app/tests/e2e/specs/`, page objects in `frontend/app/tests/e2e/pages/`, helpers in `frontend/app/tests/e2e/helpers/`)
 - Test descriptions must follow the `it('should ...'` pattern
 
 ## Packaging
