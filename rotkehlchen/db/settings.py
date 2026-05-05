@@ -97,6 +97,7 @@ DEFAULT_CHAINS_TO_SKIP_DETECTION: Final = (
     SupportedBlockchain.GNOSIS,
     SupportedBlockchain.SCROLL,
 )
+DEFAULT_BEACON_RPC: Final = 'https://ethereum-beacon-api.publicnode.com'
 
 LIST_KEYS: Final = (
     'current_price_oracles',
@@ -243,7 +244,7 @@ class DBSettings:
     include_gas_costs: bool = DEFAULT_INCLUDE_GAS_COSTS
     ksm_rpc_endpoint: str = 'http://localhost:9933'
     dot_rpc_endpoint: str = ''  # same as kusama -- must be set by user
-    beacon_rpc_endpoint: str = ''  # must be set by user
+    beacon_rpc_endpoint: str = DEFAULT_BEACON_RPC  # must be set by user
     btc_mempool_api: str = ''
     main_currency: Asset = DEFAULT_MAIN_CURRENCY
     date_display_format: str = DEFAULT_DATE_DISPLAY_FORMAT
