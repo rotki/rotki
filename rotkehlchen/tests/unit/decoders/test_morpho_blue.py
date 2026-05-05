@@ -4,7 +4,11 @@ from unittest.mock import patch
 import pytest
 
 from rotkehlchen.assets.asset import Asset
-from rotkehlchen.chain.base.modules.morpho_blue.constants import CPT_MORPHO_BLUE, MORPHO_BLUE
+from rotkehlchen.chain.evm.decoding.morpho_blue.constants import (
+    CPT_MORPHO_BLUE,
+    MORPHO_BLUE,
+    MORPHO_BLUE_ADDRESSES,
+)
 from rotkehlchen.chain.evm.decoding.safe.constants import CPT_SAFE_MULTISIG
 from rotkehlchen.chain.evm.types import (
     string_to_evm_address,
@@ -16,7 +20,7 @@ from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.tests.unit.decoders.test_zerox import A_BASE_USDC
 from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
-from rotkehlchen.types import Location, TimestampMS, deserialize_evm_tx_hash
+from rotkehlchen.types import ChainID, Location, TimestampMS, deserialize_evm_tx_hash
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.base.node_inquirer import BaseInquirer
@@ -330,3 +334,46 @@ def test_morpho_blue_supply_collateral_and_borrow_via_bundler(
         address=MORPHO_BLUE,
         extra_data={'market_id': '0x8793cf302b8ffd655ab97bd1c695dbd967807e8367a65cb2f4edaf1380ba1bda'},  # noqa: E501
     ) in events
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('arbitrum_one_accounts', [['0xc74EA8404f1819609124ae694328699007BcF73b']])
+def test_morpho_blue_arbitrum_withdrawal(
+        arbitrum_one_inquirer,
+        arbitrum_one_accounts: list['ChecksumEvmAddress'],
+) -> None:
+    tx_hash = deserialize_evm_tx_hash('0x92b92f53d335c457183dda6adb6ba947373bc11b386cb07651648268e553572d')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=arbitrum_one_inquirer,
+        tx_hash=tx_hash,
+    )
+
+    assert events == [
+        EvmEvent(
+            tx_ref=tx_hash,
+            sequence_index=0,
+            timestamp=(timestamp := TimestampMS(1777988895000)),
+            location=Location.ARBITRUM_ONE,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_ETH,
+            amount=FVal(gas_amount := '0.000002324465626'),
+            location_label=(user_address := arbitrum_one_accounts[0]),
+            notes=f'Burn {gas_amount} ETH for gas',
+            counterparty='gas',
+        ), EvmEvent(
+            tx_ref=tx_hash,
+            sequence_index=31,
+            timestamp=timestamp,
+            location=Location.ARBITRUM_ONE,
+            event_type=HistoryEventType.WITHDRAWAL,
+            event_subtype=HistoryEventSubType.WITHDRAW_FROM_PROTOCOL,
+            asset=Asset('eip155:42161/erc20:0xaf88d065e77c8cC2239327C5EDb3A432268e5831'),
+            amount=FVal(withdrawal_amount := '100'),
+            location_label=user_address,
+            notes=f'Withdraw {withdrawal_amount} USDC from Morpho Blue',
+            counterparty=CPT_MORPHO_BLUE,
+            address=MORPHO_BLUE_ADDRESSES[ChainID.ARBITRUM_ONE],
+            extra_data={'market_id': '0xf4ab212f6fcc943e2669cb6307fa4b608b0418ac5255c100e58394822157785c'},  # noqa: E501
+        ),
+    ]

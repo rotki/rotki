@@ -24,7 +24,6 @@ from rotkehlchen.chain.arbitrum_one.modules.umami.constants import CPT_UMAMI
 from rotkehlchen.chain.base.modules.aerodrome.balances import AerodromeBalances
 from rotkehlchen.chain.base.modules.extrafi.balances import ExtrafiBalances as ExtrafiBalancesBase
 from rotkehlchen.chain.base.modules.morpho_blue.balances import MorphoBlueBalances
-from rotkehlchen.chain.base.modules.morpho_blue.constants import CPT_MORPHO_BLUE, MORPHO_BLUE
 from rotkehlchen.chain.base.modules.runmoney.balances import RunmoneyBalances
 from rotkehlchen.chain.base.modules.runmoney.constants import CPT_RUNMONEY
 from rotkehlchen.chain.ethereum.interfaces.balances import ProtocolWithBalance
@@ -62,6 +61,7 @@ from rotkehlchen.chain.evm.decoding.gearbox.constants import CPT_GEARBOX
 from rotkehlchen.chain.evm.decoding.giveth.constants import CPT_GIVETH
 from rotkehlchen.chain.evm.decoding.hop.balances import HopBalances
 from rotkehlchen.chain.evm.decoding.hop.constants import CPT_HOP
+from rotkehlchen.chain.evm.decoding.morpho_blue.constants import CPT_MORPHO_BLUE, MORPHO_BLUE
 from rotkehlchen.chain.evm.decoding.pendle.constants import CPT_PENDLE
 from rotkehlchen.chain.evm.decoding.thegraph.constants import CPT_THEGRAPH
 from rotkehlchen.chain.evm.decoding.velodrome.constants import CPT_AERODROME, CPT_VELODROME
