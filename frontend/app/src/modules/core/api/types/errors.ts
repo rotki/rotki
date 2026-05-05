@@ -18,6 +18,13 @@ function deserializeApiErrorMessage(message: string): Record<string, string[]> |
 
 export type ValidationErrors = Record<string, string[] | string>;
 
+export class ApiKeyMissingError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'ApiKeyMissingError';
+  }
+}
+
 export class ApiValidationError extends Error {
   readonly errors: ValidationErrors;
   constructor(message: string) {

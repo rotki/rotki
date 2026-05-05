@@ -2,7 +2,7 @@ import { server } from '@test/setup-files/server';
 import { http, HttpResponse } from 'msw';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { IncompleteUpgradeError, SyncConflictError } from '@/modules/auth/login';
-import { ApiValidationError } from '@/modules/core/api/types/errors';
+import { ApiKeyMissingError, ApiValidationError } from '@/modules/core/api/types/errors';
 import { TaskNotFoundError } from '@/modules/core/tasks/types';
 import { useTaskApi } from './use-task-api';
 
@@ -181,6 +181,29 @@ describe('composables/api/task', () => {
       await expect(queryTaskResult(123))
         .rejects
         .toThrow(ApiValidationError);
+    });
+
+    it('should throw ApiKeyMissingError on statusCode 424', async () => {
+      server.use(
+        http.get(`${backendUrl}/api/1/tasks/123`, () =>
+          HttpResponse.json({
+            result: {
+              outcome: {
+                result: null,
+                message: 'Querying beaconcha.in failed due to missing API key',
+              },
+              status: 'completed',
+              statusCode: 424,
+            },
+            message: '',
+          })),
+      );
+
+      const { queryTaskResult } = useTaskApi();
+
+      await expect(queryTaskResult(123))
+        .rejects
+        .toThrow(ApiKeyMissingError);
     });
 
     it('should throw error on statusCode 502', async () => {

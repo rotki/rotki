@@ -51,7 +51,7 @@ export function useRefreshTransactions(): UseRefreshTransactionsReturn {
   const { isDecodableChains } = useSupportedChains();
 
   const { syncTransactionsByChains, waitForDecoding } = useTransactionSync();
-  const { queryAllExchangeEvents, queryOnlineEvent } = useRefreshHandlers();
+  const { queryAllExchangeEvents, queryOnlineEvent, resetOnlineWarnings } = useRefreshHandlers();
   const { onHistoryFinished, onHistoryStarted } = useSchedulerState();
 
   const {
@@ -135,6 +135,7 @@ export function useRefreshTransactions(): UseRefreshTransactionsReturn {
 
   function initializeRefresh(targets: RefreshTargets): void {
     resetQueryStatus();
+    resetOnlineWarnings();
 
     if (!(targets.accounts.length > 0 || targets.exchanges.length > 0)) {
       return;

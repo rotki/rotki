@@ -14,6 +14,7 @@ import {
   type SyncProgressState,
 } from './types';
 import { useChainProgress } from './use-chain-progress';
+import { type SyncWarning, useSyncWarningsStore } from './use-sync-warnings-store';
 
 interface UseSyncProgressReturn {
   state: ComputedRef<SyncProgressState>;
@@ -37,6 +38,8 @@ interface UseSyncProgressReturn {
   totalAccounts: ComputedRef<number>;
   uniqueAddresses: ComputedRef<number>;
   completedAccounts: ComputedRef<number>;
+  warnings: ComputedRef<SyncWarning[]>;
+  hasWarnings: ComputedRef<boolean>;
 }
 
 function mapLocationStatus(data: HistoryEventsQueryData): LocationProgress {
@@ -82,6 +85,11 @@ export function useSyncProgress(): UseSyncProgressReturn {
   const eventsStore = useEventsQueryStatusStore();
   const decodingStatusStore = useDecodingStatusStore();
   const protocolCacheStatusStore = useProtocolCacheStatusStore();
+  const warningsStore = useSyncWarningsStore();
+
+  const { warnings: rawWarnings } = storeToRefs(warningsStore);
+  const warnings = computed<SyncWarning[]>(() => get(rawWarnings));
+  const hasWarnings = computed<boolean>(() => get(rawWarnings).length > 0);
 
   const { queryStatus: txQueryStatus } = storeToRefs(txStore);
   const { queryStatus: eventsQueryStatus } = storeToRefs(eventsStore);
@@ -195,7 +203,7 @@ export function useSyncProgress(): UseSyncProgressReturn {
   });
 
   const isActive = computed<boolean>(() =>
-    get(hasTxActivity) || get(hasEventsActivity) || get(hasDecodingActivity),
+    get(hasTxActivity) || get(hasEventsActivity) || get(hasDecodingActivity) || get(hasWarnings),
   );
 
   const phase = computed<SyncPhase>(() => {
@@ -237,6 +245,7 @@ export function useSyncProgress(): UseSyncProgressReturn {
     completedChains: get(completedChains),
     completedLocations: get(completedLocations),
     decoding: get(decoding),
+    hasWarnings: get(hasWarnings),
     isActive: get(isActive),
     locations: get(locations),
     overallProgress: get(overallProgress),
@@ -259,6 +268,7 @@ export function useSyncProgress(): UseSyncProgressReturn {
     hasCancelledDecoding,
     hasCancelledLocations,
     hasCancelledProtocolCache,
+    hasWarnings,
     isActive,
     locations,
     overallProgress,
@@ -269,5 +279,6 @@ export function useSyncProgress(): UseSyncProgressReturn {
     totalChains,
     totalLocations,
     uniqueAddresses,
+    warnings,
   };
 }

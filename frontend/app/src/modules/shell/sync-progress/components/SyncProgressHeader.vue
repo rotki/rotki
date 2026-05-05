@@ -23,6 +23,7 @@ const {
   hasCancelledDecoding,
   hasCancelledLocations,
   hasCancelledProtocolCache,
+  hasWarnings,
   totalChains,
   completedChains,
   totalLocations,
@@ -37,19 +38,19 @@ const showSpinner = computed<boolean>(() => get(isSyncing) && get(overallProgres
 
 const statusIcon = computed<string>(() => {
   if (get(isComplete))
-    return 'lu-circle-check';
+    return get(hasWarnings) ? 'lu-circle-alert' : 'lu-circle-check';
   return 'lu-loader-circle';
 });
 
 const statusColor = computed<string>(() => {
   if (get(isComplete))
-    return get(hasCancelled) ? 'text-rui-warning' : 'text-rui-success';
+    return (get(hasCancelled) || get(hasWarnings)) ? 'text-rui-warning' : 'text-rui-success';
   return 'text-rui-primary';
 });
 
 const title = computed<string>(() => {
   if (get(isComplete))
-    return t('sync_progress.complete');
+    return get(hasWarnings) ? t('sync_progress.complete_with_warnings') : t('sync_progress.complete');
   return t('sync_progress.title');
 });
 
