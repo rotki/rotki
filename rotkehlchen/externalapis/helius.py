@@ -38,7 +38,8 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 HELIUS_API_URL: Final = 'https://api.helius.xyz/v0'
-HELIUS_RPC_URL: Final = 'https://mainnet.helius-rpc.com'
+HELIUS_RPC_NODE_NAME: Final = 'Helius'
+HELIUS_RPC_URL: Final = 'https://mainnet.helius-rpc.com/'
 
 # Max allowed by the api
 # https://www.helius.dev/docs/api-reference/enhanced-transactions/gettransactions#body-transactions
@@ -117,7 +118,7 @@ class Helius(ExternalServiceWithRecommendedApiKey):
 
         return WeightedNode(
             node_info=NodeName(
-                name='Helius',
+                name=HELIUS_RPC_NODE_NAME,
                 endpoint=f'{HELIUS_RPC_URL}?api-key={api_key}',
                 blockchain=SupportedBlockchain.SOLANA,
                 owned=False,

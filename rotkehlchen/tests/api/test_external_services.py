@@ -6,12 +6,16 @@ import pytest
 import requests
 
 from rotkehlchen.chain.evm.types import EvmIndexer
+from rotkehlchen.constants.misc import ONE
+from rotkehlchen.externalapis.helius import HELIUS_RPC_URL
+from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.api import (
     api_url_for,
     assert_error_response,
     assert_proper_response,
     assert_proper_sync_response_with_result,
 )
+from rotkehlchen.types import SupportedBlockchain
 
 if TYPE_CHECKING:
     from rotkehlchen.api.server import APIServer
@@ -90,6 +94,64 @@ def test_etherscan_re_enabled(rotkehlchen_api_server: 'APIServer') -> None:
     ))
     for chain_manager in chain_managers:
         assert EvmIndexer.ETHERSCAN in chain_manager.node_inquirer.available_indexers
+
+
+def test_helius_key_syncs_solana_rpc_node(rotkehlchen_api_server: 'APIServer') -> None:
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+    node_inquirer = rotki.chains_aggregator.solana.node_inquirer
+
+    def assert_helius_weights() -> None:
+        nodes = rotki.data.db.get_rpc_nodes(blockchain=SupportedBlockchain.SOLANA)
+        assert next(node.weight for node in nodes if node.node_info.name == 'Helius') == FVal('0.5')  # noqa: E501
+        assert sum(
+            node.weight
+            for node in nodes
+            if node.node_info.owned is False and node.node_info.name != 'Helius'
+        ) == FVal('0.5')
+
+    with patch.object(node_inquirer, 'connect_to_multiple_nodes') as connect_mock:
+        result = assert_proper_sync_response_with_result(requests.put(
+            api_url_for(rotkehlchen_api_server, 'externalservicesresource'),
+            json={'services': [{'name': 'helius', 'api_key': 'key1'}]},
+        ))
+    assert result['helius'] == {'api_key': 'key1'}
+    connect_mock.assert_called_once()
+    assert [
+        node.node_info.endpoint for node in rotki.data.db.get_rpc_nodes(
+            blockchain=SupportedBlockchain.SOLANA,
+        )
+        if node.node_info.name == 'Helius'
+    ] == [f'{HELIUS_RPC_URL}?api-key=key1']
+    assert_helius_weights()
+
+    with patch.object(node_inquirer, 'connect_to_multiple_nodes'):
+        assert_proper_sync_response_with_result(requests.put(
+            api_url_for(rotkehlchen_api_server, 'externalservicesresource'),
+            json={'services': [{'name': 'helius', 'api_key': 'key2'}]},
+        ))
+    assert [
+        node.node_info.endpoint for node in rotki.data.db.get_rpc_nodes(
+            blockchain=SupportedBlockchain.SOLANA,
+        )
+        if node.node_info.name == 'Helius'
+    ] == [f'{HELIUS_RPC_URL}?api-key=key2']
+    assert_helius_weights()
+
+    with patch.object(node_inquirer, 'connect_to_multiple_nodes'):
+        assert_proper_sync_response_with_result(requests.delete(
+            api_url_for(rotkehlchen_api_server, 'externalservicesresource'),
+            json={'services': ['helius']},
+        ))
+    assert all(
+        node.node_info.name != 'Helius'
+        for node in rotki.data.db.get_rpc_nodes(blockchain=SupportedBlockchain.SOLANA)
+    )
+    assert sum(
+        node.weight for node in rotki.data.db.get_rpc_nodes(
+            blockchain=SupportedBlockchain.SOLANA,
+        )
+        if node.node_info.owned is False
+    ) == ONE
 
 
 @pytest.mark.parametrize('include_etherscan_key', [False])
