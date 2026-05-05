@@ -7,10 +7,10 @@ from unittest.mock import patch
 import pytest
 
 from rotkehlchen.chain.ethereum.modules.eth2.utils import calculate_query_chunks
-from rotkehlchen.errors.misc import RemoteError
+from rotkehlchen.errors.misc import APIKeyNotAvailable, RemoteError
 from rotkehlchen.externalapis.beaconchain.service import BeaconChain
 from rotkehlchen.tests.utils.mock import MockResponse
-from rotkehlchen.types import Timestamp
+from rotkehlchen.types import ApiKey, ExternalService, ExternalServiceApiCredentials, Timestamp
 from rotkehlchen.utils.misc import ts_now
 
 
@@ -110,6 +110,32 @@ def test_rate_limit(beaconchain: BeaconChain, freezer):
 
     assert beaconchain.ratelimited_until == Timestamp(ts_now() + 1000)
     assert requests_made == 2
+
+
+def test_free_trial_expired_deletes_api_key(beaconchain: BeaconChain, database) -> None:
+    api_key = ApiKey('expired-key')
+
+    def mock_session_request(url: str, **kwargs: dict[str, Any]) -> MockResponse:  # pylint: disable=unused-argument
+        return MockResponse(
+            status_code=HTTPStatus.TOO_MANY_REQUESTS,
+            headers={'ratelimit-reset': '0'},
+            text='Free trial expired',
+        )
+
+    with database.user_write() as write_cursor:
+        database.add_external_service_credentials(write_cursor, [ExternalServiceApiCredentials(
+            service=ExternalService.BEACONCHAIN,
+            api_key=api_key,
+        )])
+
+    with (
+        patch.object(beaconchain.session, 'request', mock_session_request),
+        pytest.raises(APIKeyNotAvailable, match=r'Beaconcha\.in free trial expired'),
+    ):
+        beaconchain._query(endpoint='validators/proposal-slots')
+
+    assert database.get_external_service_credentials(ExternalService.BEACONCHAIN) is None
+    assert beaconchain.api_key is None
 
 
 def test_query_with_paging_missing_next_cursor(beaconchain: BeaconChain) -> None:
