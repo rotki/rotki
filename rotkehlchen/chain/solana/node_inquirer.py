@@ -41,6 +41,7 @@ from rotkehlchen.chain.solana.utils import (
 )
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
+from rotkehlchen.externalapis.helius import HELIUS_RPC_NODE_NAME, HELIUS_RPC_URL
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import (
     deserialize_solana_pubkey,
@@ -103,7 +104,8 @@ class SolanaInquirer(SolanaRPCMixin):
                 is_archive=True,
                 supports_program_accounts=True,
             )
-            call_order.append(helius_node)
+            if all(x.node_info.endpoint.startswith(HELIUS_RPC_URL) is False for x in call_order):
+                call_order.append(helius_node)
 
         return call_order
 
@@ -120,6 +122,22 @@ class SolanaInquirer(SolanaRPCMixin):
         if call_order is None:
             call_order = self.default_call_order()
 
+        call_order = [
+            weighted_node for weighted_node in call_order
+            if (
+                (capabilities := self.known_node_capabilities.get(weighted_node.node_info.name)) is None or  # noqa: E501
+                (
+                    (only_archive_nodes is False or capabilities.is_archive) and
+                    (
+                        only_program_accounts_nodes is False or
+                        capabilities.supports_program_accounts
+                    )
+                )
+            )
+        ]
+        if only_archive_nodes:
+            call_order.sort(key=lambda weighted_node: weighted_node.node_info.name != HELIUS_RPC_NODE_NAME)  # noqa: E501
+
         is_retry = False
         while is_retry is False or len(call_order := [
             x for x in call_order
@@ -129,7 +147,7 @@ class SolanaInquirer(SolanaRPCMixin):
                 # Retrying with one or more rate-limited nodes. Filter and sort call order to
                 # contain the rate-limited nodes with the node with closest backoff end ts first.
                 # Then wait until that backoff time is up before continuing.
-                call_order.sort(  # type: ignore[attr-defined]  # call_order is a list here
+                call_order.sort(  # call_order is a list here
                     key=lambda node: self.node_backoff_info[node.node_info.name][0] or 0,
                 )
                 backoff_end_ts, _, _ = self.node_backoff_info[call_order[0].node_info.name]
@@ -162,10 +180,18 @@ class SolanaInquirer(SolanaRPCMixin):
                         continue
 
                 if only_archive_nodes and not rpc_node.is_archive:
+                    self.known_node_capabilities[node_info.name] = SolanaNodeCapabilities(
+                        is_archive=False,
+                        supports_program_accounts=rpc_node.supports_program_accounts,
+                    )
                     log.debug(f'Skipping non-archive node {node_info.name} for solana query requiring only archive nodes')  # noqa: E501
                     continue
 
                 if only_program_accounts_nodes and not rpc_node.supports_program_accounts:
+                    self.known_node_capabilities[node_info.name] = SolanaNodeCapabilities(
+                        is_archive=rpc_node.is_archive,
+                        supports_program_accounts=False,
+                    )
                     log.debug(f'Skipping solana node {node_info.name} that does not support getProgramAccounts')  # noqa: E501
                     continue
 
@@ -404,8 +430,12 @@ class SolanaInquirer(SolanaRPCMixin):
         """Query all the transaction signatures for the given address.
         May raise RemoteError if there is a problem with querying the external service.
         """
-        signatures = []
+        signatures, pages_queried = [], 0
         while True:
+            log.debug(
+                f'Querying solana transaction signatures for {address} '
+                f'with before={before} and until={until}',
+            )
             response: GetSignaturesForAddressResp = self.query(
                 method=lambda client, _before=before, _until=until: client.get_signatures_for_address(  # type: ignore[misc]  # noqa: E501
                     account=Pubkey.from_string(address),
@@ -415,7 +445,12 @@ class SolanaInquirer(SolanaRPCMixin):
                 ),
                 only_archive_nodes=True,
             )
+            pages_queried += 1
             signatures.extend([tx_sig.signature for tx_sig in response.value])
+            log.debug(
+                f'Queried solana transaction signatures page {pages_queried} for {address}. '
+                f'Got {len(response.value)} signatures in this page and {len(signatures)} total.',
+            )
             if len(response.value) < SIGNATURES_PAGE_SIZE:
                 break  # all signatures have been queried
 

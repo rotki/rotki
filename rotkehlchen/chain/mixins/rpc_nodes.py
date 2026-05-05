@@ -555,6 +555,10 @@ class SolanaRPCMixin(RPCManagerMixin['Client']):
             is_archive = self._is_archive(client)
             supports_program_accounts = self._supports_program_accounts(client)
 
+        self.known_node_capabilities[node.name] = SolanaNodeCapabilities(
+            is_archive=is_archive,
+            supports_program_accounts=supports_program_accounts,
+        )
         log.info(f'Connected Solana node {node} at {node.endpoint}')
         self.rpc_mapping[node] = RPCNode(
             rpc_client=client,

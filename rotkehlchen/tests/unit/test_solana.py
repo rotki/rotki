@@ -28,6 +28,7 @@ from rotkehlchen.chain.solana.utils import (
 from rotkehlchen.constants.misc import ONE, ZERO
 from rotkehlchen.errors.misc import InputError, RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
+from rotkehlchen.externalapis.helius import HELIUS_RPC_NODE_NAME
 from rotkehlchen.serialization.deserialize import deserialize_tx_signature
 from rotkehlchen.tests.utils.makerdao import FVal
 from rotkehlchen.types import SolanaAddress, SupportedBlockchain, Timestamp, TokenKind
@@ -351,6 +352,21 @@ def test_rate_limit_handling(
     # sure we don't loop forever if the query fails for non-rate-limit reasons.
     with pytest.raises(RemoteError):
         solana_inquirer.query(method=mock_method, call_order=call_order, only_archive_nodes=True)
+    assert solana_inquirer.known_node_capabilities['node1'] == SolanaNodeCapabilities(
+        is_archive=False,
+        supports_program_accounts=False,
+    )
+    assert solana_inquirer.known_node_capabilities['node2'] == SolanaNodeCapabilities(
+        is_archive=False,
+        supports_program_accounts=False,
+    )
+
+    with (
+        patch('rotkehlchen.chain.solana.node_inquirer.log.debug') as debug_mock,
+        pytest.raises(RemoteError),
+    ):
+        solana_inquirer.query(method=mock_method, call_order=call_order, only_archive_nodes=True)
+    assert debug_mock.call_count == 0
 
 
 def _build_stake_account_data(
@@ -536,6 +552,47 @@ def test_known_capabilities_skip_probing(
     assert rpc_node.is_archive is True
     mock_is_archive.assert_not_called()  # probes should be skipped
     mock_supports_pa.assert_not_called()
+
+
+def test_archive_queries_prefer_helius(
+        solana_inquirer: 'SolanaInquirer',
+) -> None:
+    call_order = [WeightedNode(
+        node_info=(public_node := NodeName(
+            name='PublicNode',
+            endpoint='https://public.example.com',
+            blockchain=SupportedBlockchain.SOLANA,
+            owned=False,
+        )),
+        weight=FVal('0.5'),
+        active=True,
+    ), WeightedNode(
+        node_info=(helius_node := NodeName(
+            name=HELIUS_RPC_NODE_NAME,
+            endpoint='https://mainnet.helius-rpc.com/?api-key=key',
+            blockchain=SupportedBlockchain.SOLANA,
+            owned=False,
+        )),
+        weight=FVal('0.5'),
+        active=True,
+    )]
+    public_client, helius_client = MagicMock(spec=Client), MagicMock(spec=Client)
+    public_client.name = 'PublicNode'
+    helius_client.name = HELIUS_RPC_NODE_NAME
+    solana_inquirer.rpc_mapping = {
+        public_node: RPCNode(rpc_client=public_client, is_pruned=False, is_archive=True),
+        helius_node: RPCNode(rpc_client=helius_client, is_pruned=False, is_archive=True),
+    }
+    solana_inquirer.known_node_capabilities[HELIUS_RPC_NODE_NAME] = SolanaNodeCapabilities(
+        is_archive=True,
+        supports_program_accounts=True,
+    )
+
+    assert solana_inquirer.query(
+        method=lambda client: client.name,  # type: ignore[attr-defined]
+        call_order=call_order,
+        only_archive_nodes=True,
+    ) == HELIUS_RPC_NODE_NAME
 
 
 def test_stake_query_skips_unsupported_nodes(
