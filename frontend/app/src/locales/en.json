@@ -73,7 +73,8 @@
     "advanced_tooltip": "Display the advanced xpub options | Hide the advanced xpub options",
     "error": {
       "description": "Error while adding account: {error}",
-      "title": "Adding Account"
+      "title": "Adding Account",
+      "validator_needs_credentials": "Could not add the validator. Configure a consensus layer RPC or add a Beaconcha.in API key in settings, then try again."
     },
     "labels": {
       "addresses": "Addresses",

@@ -99,7 +99,7 @@ describe('composables/accounts/blockchain/use-account-manage', () => {
       expect(get(saveErrorIsPremium)).toBe(false);
     });
 
-    it('should set saveError on failure with string message', async () => {
+    it('should translate the missing api key error to a friendly message', async () => {
       mockAddEth2Validator.mockResolvedValue({
         message: 'Querying https://beaconcha.in/api/v1/validator failed due to missing API key',
         success: false,
@@ -109,7 +109,21 @@ describe('composables/accounts/blockchain/use-account-manage', () => {
       const result = await save(createValidatorState());
 
       expect(result).toBe(false);
-      expect(get(saveError)).toBe('Querying https://beaconcha.in/api/v1/validator failed due to missing API key');
+      expect(get(saveError)).toBe('account_form.error.validator_needs_credentials');
+      expect(get(saveErrorIsPremium)).toBe(false);
+    });
+
+    it('should set saveError on failure with string message', async () => {
+      mockAddEth2Validator.mockResolvedValue({
+        message: 'Some other backend failure',
+        success: false,
+      });
+
+      const { save, saveError, saveErrorIsPremium } = useAccountManage();
+      const result = await save(createValidatorState());
+
+      expect(result).toBe(false);
+      expect(get(saveError)).toBe('Some other backend failure');
       expect(get(saveErrorIsPremium)).toBe(false);
     });
 
