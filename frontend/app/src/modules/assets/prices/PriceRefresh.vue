@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { usePriceRefresh } from '@/modules/assets/prices/use-price-refresh';
-import { useAggregatedBalances } from '@/modules/balances/use-aggregated-balances';
 import { useBalancesLoading } from '@/modules/balances/use-balance-loading';
 import { Section } from '@/modules/core/common/status';
 import { useSectionStatus } from '@/modules/shell/sync-progress/use-section-status';
@@ -14,12 +13,11 @@ const { t } = useI18n({ useScope: 'global' });
 const { refreshPrices } = usePriceRefresh();
 const { isLoading: refreshing } = useSectionStatus(Section.PRICES);
 const { loadingBalances } = useBalancesLoading();
-const { assets } = useAggregatedBalances();
 const disabled = computed<boolean>(() => get(refreshing) || get(loadingBalances));
 
 async function refresh() {
   emit('click');
-  await refreshPrices(true, get(assets));
+  await refreshPrices(true);
 }
 </script>
 
