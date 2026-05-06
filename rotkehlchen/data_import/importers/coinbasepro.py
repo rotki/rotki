@@ -18,7 +18,7 @@ from rotkehlchen.serialization.deserialize import (
     deserialize_fval,
     deserialize_timestamp_from_date,
 )
-from rotkehlchen.types import AssetAmount, Location
+from rotkehlchen.types import DEFAULT_TIMEZONE, AssetAmount, Location, Timezone
 from rotkehlchen.utils.misc import ts_sec_to_ms
 
 if TYPE_CHECKING:
@@ -37,6 +37,7 @@ class CoinbaseProImporter(BaseExchangeImporter):
             write_cursor: DBCursor,
             csv_row: dict[str, Any],
             timestamp_format: str = '%Y-%m-%dT%H:%M:%S.%f',
+            timezone: Timezone = DEFAULT_TIMEZONE,
     ) -> None:
         """Process a deposit or withdrawal row.
         May raise:
@@ -48,6 +49,7 @@ class CoinbaseProImporter(BaseExchangeImporter):
             date=csv_row['Timestamp'],
             formatstr=timestamp_format,
             location='Coinbase Pro',
+            timezone_name=timezone,
         ))
         asset = asset_from_coinbasepro(csv_row['Amount/balance unit'])
 
@@ -72,6 +74,7 @@ class CoinbaseProImporter(BaseExchangeImporter):
             write_cursor: DBCursor,
             rows: list[dict[str, Any]],
             timestamp_format: str = '%Y-%m-%dT%H:%M:%S.%f',
+            timezone: Timezone = DEFAULT_TIMEZONE,
     ) -> None:
         """Process a group of match/fee rows sharing the same Trade id.
 
@@ -109,6 +112,7 @@ class CoinbaseProImporter(BaseExchangeImporter):
             date=receive_row['Timestamp'],
             formatstr=timestamp_format,
             location='Coinbase Pro',
+            timezone_name=timezone,
         ))
 
         receive_amount = deserialize_fval(receive_row['Amount'])

@@ -19,7 +19,7 @@ from rotkehlchen.serialization.deserialize import (
     deserialize_fval_or_zero,
     deserialize_timestamp_from_date,
 )
-from rotkehlchen.types import AssetAmount, Location
+from rotkehlchen.types import DEFAULT_TIMEZONE, AssetAmount, Location, Timezone
 from rotkehlchen.utils.misc import ts_sec_to_ms
 
 if TYPE_CHECKING:
@@ -40,6 +40,7 @@ class UpholdTransactionsImporter(BaseExchangeImporter):
             write_cursor: DBCursor,
             csv_row: dict[str, Any],
             timestamp_format: str = '%a %b %d %Y %H:%M:%S %Z%z',
+            timezone: Timezone = DEFAULT_TIMEZONE,
     ) -> None:
         """
         Consume the file containing both trades and transactions from uphold.
@@ -52,6 +53,7 @@ class UpholdTransactionsImporter(BaseExchangeImporter):
             date=csv_row['Date'],
             formatstr=timestamp_format,
             location='uphold',
+            timezone_name=timezone,
         )
         destination = csv_row['Destination']
         destination_asset = asset_from_uphold(csv_row['Destination Currency'])

@@ -23,7 +23,7 @@ from rotkehlchen.serialization.deserialize import (
     deserialize_fval,
     deserialize_timestamp_from_date,
 )
-from rotkehlchen.types import Location
+from rotkehlchen.types import DEFAULT_TIMEZONE, Location, Timezone
 from rotkehlchen.utils.misc import ts_sec_to_ms
 
 if TYPE_CHECKING:
@@ -100,6 +100,7 @@ class CoinledgerImporter(BaseExchangeImporter):
             write_cursor: DBCursor,
             csv_row: dict[str, Any],
             timestamp_format: str = '%Y-%m-%dT%H:%M:%S.%f',
+            timezone: Timezone = DEFAULT_TIMEZONE,
     ) -> None:
         """Consumes a CoinLedger CSV row and adds it into the database.
 
@@ -113,6 +114,7 @@ class CoinledgerImporter(BaseExchangeImporter):
             date=csv_row['Timestamp (UTC)'],
             formatstr=timestamp_format,
             location='CoinLedger',
+            timezone_name=timezone,
         ))
         location = platform_row_to_location(csv_row['Platform'])
         asset_resolver = LOCATION_TO_ASSET_MAPPING.get(location, symbol_to_asset_or_token)

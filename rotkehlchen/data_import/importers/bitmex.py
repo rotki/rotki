@@ -26,7 +26,7 @@ from rotkehlchen.serialization.deserialize import (
     deserialize_fval_force_positive,
     deserialize_timestamp_from_date,
 )
-from rotkehlchen.types import AssetAmount, Location
+from rotkehlchen.types import DEFAULT_TIMEZONE, AssetAmount, Location, Timezone
 from rotkehlchen.utils.misc import satoshis_to_btc, ts_sec_to_ms
 
 if TYPE_CHECKING:
@@ -45,6 +45,7 @@ class BitMEXImporter(BaseExchangeImporter):
     @staticmethod
     def _consume_realised_pnl(
             csv_row: dict[str, Any], timestamp_format: str = '%m/%d/%Y, %H:%M:%S %p',
+            timezone: Timezone = DEFAULT_TIMEZONE,
     ) -> MarginPosition:
         """
         Use entries resulting from Realised PnL to generate a MarginPosition object.
@@ -56,6 +57,7 @@ class BitMEXImporter(BaseExchangeImporter):
             date=csv_row['transactTime'],
             formatstr=timestamp_format,
             location='Bitmex Wallet History Import',
+            timezone_name=timezone,
         )
         realised_pnl = satoshis_to_btc(deserialize_fval(csv_row['amount']))
         fee = deserialize_fval(csv_row['fee']) if csv_row['fee'] != 'null' else ZERO
@@ -83,6 +85,7 @@ class BitMEXImporter(BaseExchangeImporter):
     def _consume_deposits_or_withdrawals(
             csv_row: dict[str, Any],
             timestamp_format: str = '%m/%d/%Y, %H:%M:%S %p',
+            timezone: Timezone = DEFAULT_TIMEZONE,
     ) -> list[AssetMovement]:
         """
         Use Deposit and Withdrawal entries to generate an AssetMovement object.
@@ -103,6 +106,7 @@ class BitMEXImporter(BaseExchangeImporter):
             date=csv_row['transactTime'],
             formatstr=timestamp_format,
             location='Bitmex Wallet History Import',
+            timezone_name=timezone,
         )
         return create_asset_movement_with_fee(
             timestamp=ts_sec_to_ms(ts),

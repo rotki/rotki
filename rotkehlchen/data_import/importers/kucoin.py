@@ -19,7 +19,7 @@ from rotkehlchen.serialization.deserialize import (
     deserialize_fval_or_zero,
     deserialize_timestamp_from_date,
 )
-from rotkehlchen.types import AssetAmount, Location
+from rotkehlchen.types import DEFAULT_TIMEZONE, AssetAmount, Location
 from rotkehlchen.utils.misc import ts_sec_to_ms
 
 if TYPE_CHECKING:
@@ -46,6 +46,7 @@ class KucoinImporter(BaseExchangeImporter):
         - UnsupportedCSVEntry if operation not supported
         - InputError if a column we need is missing
         """
+        timezone = kwargs.get('timezone', DEFAULT_TIMEZONE)
         with open(filepath, encoding='utf-8-sig') as csvfile:
             start_pos = csvfile.tell()
             first_line = csvfile.readline()
@@ -88,6 +89,7 @@ class KucoinImporter(BaseExchangeImporter):
                                 date=row[date_key],
                                 formatstr=kwargs.get('timestamp_format', '%Y-%m-%d %H:%M:%S'),
                                 location='Kucoin order history import',
+                                timezone_name=timezone,
                             )),
                             location=Location.KUCOIN,
                             spend=spend,
