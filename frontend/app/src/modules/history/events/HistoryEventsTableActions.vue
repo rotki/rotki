@@ -4,6 +4,7 @@ import type { HistoryEventRequestPayload } from '@/modules/history/events/reques
 import type { IgnoreStatus } from '@/modules/history/events/use-history-events-selection-actions';
 import type { SelectionState } from '@/modules/history/events/use-selection-mode';
 import { type MatchedKeywordWithBehaviour, SavedFilterLocation, type SearchMatcher } from '@/modules/core/table/filtering';
+import { HistoryEventFilterKeys } from '@/modules/core/table/filters/use-events-filter';
 import TableFilter from '@/modules/core/table/TableFilter.vue';
 import HistoryEventsExport from '@/modules/history/events/HistoryEventsExport.vue';
 import HistoryEventsStateFilter from '@/modules/history/events/HistoryEventsStateFilter.vue';
@@ -85,6 +86,7 @@ function handleToggleSelectAllMatching(): void {
         v-model:matches="filters"
         class="min-w-[12rem] md:min-w-[24rem]"
         :matchers="matchers"
+        :default-matcher-key="HistoryEventFilterKeys.NOTES"
         :location="SavedFilterLocation.HISTORY_EVENTS"
       />
     </template>
