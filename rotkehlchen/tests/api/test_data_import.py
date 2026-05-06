@@ -18,6 +18,8 @@ from rotkehlchen.tests.utils.api import (
     wait_for_async_task,
 )
 from rotkehlchen.tests.utils.dataimport import (
+    CRYPTOCOM_FIRST_TIMESTAMP,
+    CRYPTOCOM_LAST_TIMESTAMP,
     assert_all_events_have_csv_marker,
     assert_binance_import_results,
     assert_bisq_trades_import_results,
@@ -142,6 +144,39 @@ def test_data_import_simple(
 
 @pytest.mark.parametrize('number_of_eth_accounts', [0])
 @pytest.mark.parametrize('mocked_price_queries', [mocked_prices])
+def test_data_import_cryptocom_with_timezone(rotkehlchen_api_server: 'APIServer') -> None:
+    """Test that the cryptocom importer respects the provided timezone."""
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+    filepath = Path(__file__).resolve().parent.parent / 'data' / 'cryptocom_trades_list.csv'
+    response = requests.put(
+        api_url_for(rotkehlchen_api_server, 'dataimportresource'),
+        json={'source': 'cryptocom', 'file': str(filepath), 'timezone': 'Asia/Shanghai'},
+    )
+    assert assert_proper_sync_response_with_result(response) is True
+
+    with rotki.data.db.conn.read_ctx() as cursor:
+        events = DBHistoryEvents(rotki.data.db).get_history_events_internal(
+            cursor=cursor,
+            filter_query=HistoryEventFilterQuery.make(order_by_rules=[
+                ('timestamp', True),
+                ('history_events_identifier', True),
+            ]),
+        )
+
+    assert len(events) == 39
+    timezone_shift = 8 * 60 * 60 * 1000
+    assert [event.timestamp for event in events[:2]] == [
+        CRYPTOCOM_FIRST_TIMESTAMP - timezone_shift,
+        CRYPTOCOM_FIRST_TIMESTAMP - timezone_shift,
+    ]
+    assert [event.timestamp for event in events[-2:]] == [
+        CRYPTOCOM_LAST_TIMESTAMP - timezone_shift,
+        CRYPTOCOM_LAST_TIMESTAMP - timezone_shift,
+    ]
+    assert_all_events_have_csv_marker(rotki)
+
+
+@pytest.mark.parametrize('number_of_eth_accounts', [0])
 def test_data_import_bitmex_wallet_history(rotkehlchen_api_server: 'APIServer') -> None:
     """Test that the data import endpoint works successfully for BitMEX wallet history"""
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
@@ -303,6 +338,18 @@ def test_data_import_errors(
     assert_error_response(
         response=response,
         contained_in_msg='"source": ["Failed to deserialize DataImportSource value',
+        status_code=HTTPStatus.BAD_REQUEST,
+    )
+
+    response = requests.put(
+        api_url_for(
+            rotkehlchen_api_server,
+            'dataimportresource',
+        ), json={'source': 'cointracking', 'file': str(filepath), 'timezone': 'Europe/Madird'},
+    )
+    assert_error_response(
+        response=response,
+        contained_in_msg='Please use an IANA timezone',
         status_code=HTTPStatus.BAD_REQUEST,
     )
 

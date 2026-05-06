@@ -17,7 +17,7 @@ from rotkehlchen.serialization.deserialize import (
     deserialize_fval,
     deserialize_timestamp_from_date,
 )
-from rotkehlchen.types import AssetAmount, Location
+from rotkehlchen.types import DEFAULT_TIMEZONE, AssetAmount, Location, Timezone
 from rotkehlchen.utils.misc import ts_sec_to_ms
 
 if TYPE_CHECKING:
@@ -38,6 +38,7 @@ class BlockfiTradesImporter(BaseExchangeImporter):
             write_cursor: DBCursor,
             csv_row: dict[str, Any],
             timestamp_format: str = '%Y-%m-%d %H:%M:%S',
+            timezone: Timezone = DEFAULT_TIMEZONE,
     ) -> None:
         """
         Consume the file containing only trades from BlockFi. As per my investigations
@@ -55,6 +56,7 @@ class BlockfiTradesImporter(BaseExchangeImporter):
                     date=csv_row['Date'],
                     formatstr=timestamp_format,
                     location='BlockFi',
+                    timezone_name=timezone,
                 )),
                 location=Location.BLOCKFI,
                 spend=AssetAmount(

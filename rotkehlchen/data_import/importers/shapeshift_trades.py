@@ -17,7 +17,7 @@ from rotkehlchen.serialization.deserialize import (
     deserialize_fval_or_zero,
     deserialize_timestamp_from_date,
 )
-from rotkehlchen.types import AssetAmount, Location
+from rotkehlchen.types import DEFAULT_TIMEZONE, AssetAmount, Location, Timezone
 from rotkehlchen.utils.misc import ts_sec_to_ms
 
 if TYPE_CHECKING:
@@ -36,6 +36,7 @@ class ShapeshiftTradesImporter(BaseExchangeImporter):
             write_cursor: DBCursor,
             csv_row: dict[str, Any],
             timestamp_format: str = 'iso8601',
+            timezone: Timezone = DEFAULT_TIMEZONE,
     ) -> None:
         """
         Consume the file containing only trades from ShapeShift.
@@ -48,6 +49,7 @@ class ShapeshiftTradesImporter(BaseExchangeImporter):
             date=csv_row['timestamp'],
             formatstr=timestamp_format,
             location='ShapeShift',
+            timezone_name=timezone,
         )
         # Use asset_from_kraken since the mapping is the same as in kraken
         buy_asset = asset_from_kraken(csv_row['outputCurrency'])

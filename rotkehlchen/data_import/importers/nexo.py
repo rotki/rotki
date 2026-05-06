@@ -25,7 +25,7 @@ from rotkehlchen.serialization.deserialize import (
     deserialize_fval_force_positive,
     deserialize_timestamp_from_date,
 )
-from rotkehlchen.types import AssetAmount, Location
+from rotkehlchen.types import DEFAULT_TIMEZONE, AssetAmount, Location, Timezone
 from rotkehlchen.utils.misc import ts_sec_to_ms
 
 if TYPE_CHECKING:
@@ -49,6 +49,7 @@ class NexoImporter(BaseExchangeImporter):
             write_cursor: DBCursor,
             csv_row: dict[str, Any],
             timestamp_format: str = '%Y-%m-%d %H:%M:%S',
+            timezone: Timezone = DEFAULT_TIMEZONE,
     ) -> None:
         """
         Consume CSV file from NEXO.
@@ -79,6 +80,7 @@ class NexoImporter(BaseExchangeImporter):
                 date=csv_row['Date / Time (UTC)'],
                 formatstr=timestamp_format,
                 location='NEXO',
+                timezone_name=timezone,
             )
         else:
             raise SkippedCSVEntry('Ignoring rejected entry.')

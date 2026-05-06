@@ -23,7 +23,7 @@ from rotkehlchen.serialization.deserialize import (
     deserialize_fval,
     deserialize_timestamp_from_date,
 )
-from rotkehlchen.types import Location
+from rotkehlchen.types import DEFAULT_TIMEZONE, Location, Timezone
 from rotkehlchen.utils.misc import ts_sec_to_ms
 
 if TYPE_CHECKING:
@@ -46,6 +46,7 @@ class BlockfiTransactionsImporter(BaseExchangeImporter):
             write_cursor: DBCursor,
             csv_row: dict[str, Any],
             timestamp_format: str = '%Y-%m-%d %H:%M:%S',
+            timezone: Timezone = DEFAULT_TIMEZONE,
     ) -> None:
         """
         Process entry for BlockFi transaction history. Trades for this file are ignored
@@ -60,6 +61,7 @@ class BlockfiTransactionsImporter(BaseExchangeImporter):
                 date=csv_row['Confirmed At'],
                 formatstr=timestamp_format,
                 location='BlockFi',
+                timezone_name=timezone,
             )
         else:
             raise SkippedCSVEntry('Entry is unconfirmed.')

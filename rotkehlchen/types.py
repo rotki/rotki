@@ -95,6 +95,10 @@ ApiSecret = NewType('ApiSecret', T_ApiSecret)
 T_HexColorCode = str
 HexColorCode = NewType('HexColorCode', T_HexColorCode)
 
+T_Timezone = str
+Timezone = NewType('Timezone', T_Timezone)
+DEFAULT_TIMEZONE: Final = Timezone('UTC')
+
 
 class ExternalService(SerializableEnumNameMixin):
     ETHERSCAN = auto()

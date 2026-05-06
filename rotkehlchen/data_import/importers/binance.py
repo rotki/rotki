@@ -28,10 +28,12 @@ from rotkehlchen.serialization.deserialize import (
     deserialize_timestamp_from_date,
 )
 from rotkehlchen.types import (
+    DEFAULT_TIMEZONE,
     AssetAmount,
     Location,
     Price,
     Timestamp,
+    Timezone,
 )
 from rotkehlchen.utils.misc import ts_sec_to_ms
 
@@ -698,6 +700,7 @@ class BinanceImporter(BaseExchangeImporter):
             self,
             rows: list[BinanceCsvRow],
             timestamp_format: str = '%Y-%m-%d %H:%M:%S',
+            timezone: Timezone = DEFAULT_TIMEZONE,
     ) -> tuple[int, dict[Timestamp, list[BinanceCsvRow]]]:
         """Groups Binance rows by timestamp and deletes unused columns"""
         multirows: dict[Timestamp, list[BinanceCsvRow]] = defaultdict(list)
@@ -708,6 +711,7 @@ class BinanceImporter(BaseExchangeImporter):
                     date=csv_row['UTC_Time'],
                     formatstr=timestamp_format,
                     location='binance',
+                    timezone_name=timezone,
                 )
                 csv_row['Coin'] = asset_from_binance(csv_row['Coin'])
                 csv_row['Change'] = deserialize_fval(csv_row['Change'])

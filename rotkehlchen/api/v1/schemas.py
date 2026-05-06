@@ -214,6 +214,7 @@ from .fields import (
     TimestampField,
     TimestampMSField,
     TimestampUntilNowField,
+    TimezoneField,
     UnionAssetField,
     XpubField,
 )
@@ -2863,6 +2864,7 @@ class DataImportSchema(AsyncQueryArgumentSchema):
     source = SerializableEnumField(enum_class=DataImportSource, required=True)
     file = FileField(required=True, allowed_extensions=('.csv',))
     timestamp_format = EmptyAsNoneStringField(load_default=None)
+    timezone = TimezoneField(load_default=None)
 
     @post_load
     def transform_data(
@@ -2873,6 +2875,8 @@ class DataImportSchema(AsyncQueryArgumentSchema):
         if data['timestamp_format'] is None:
             # We need to pop it in order to use default parameters further down the line
             data.pop('timestamp_format')
+        if data['timezone'] is None:
+            data.pop('timezone')
         return data
 
 

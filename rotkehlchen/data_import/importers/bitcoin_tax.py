@@ -23,7 +23,7 @@ from rotkehlchen.serialization.deserialize import (
     deserialize_fval,
     deserialize_timestamp_from_date,
 )
-from rotkehlchen.types import AssetAmount, Location, TimestampMS
+from rotkehlchen.types import DEFAULT_TIMEZONE, AssetAmount, Location, TimestampMS, Timezone
 from rotkehlchen.utils.misc import ts_sec_to_ms
 
 from .constants import ROTKI_EVENT_PREFIX
@@ -167,6 +167,7 @@ class BitcoinTaxImporter(BaseExchangeImporter):
             csv_row: dict[str, Any],
             csv_type: CSVType,
             timestamp_format: str = '%Y-%m-%d %H:%M:%S %z',
+            timezone: Timezone = DEFAULT_TIMEZONE,
     ) -> None:
         """
         Consumes a single event from a Bitcoin_Tax csv file.
@@ -187,6 +188,7 @@ class BitcoinTaxImporter(BaseExchangeImporter):
             date=csv_row['Date'],
             formatstr=timestamp_format,
             location='Bitcoin_Tax',
+            timezone_name=timezone,
         ))
 
         try:

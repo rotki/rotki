@@ -64,6 +64,10 @@ def get_cryptocom_note(desc: str):
     return f'{desc}\nSource: crypto.com (CSV import)'
 
 
+CRYPTOCOM_FIRST_TIMESTAMP = TimestampMS(1595833195000)
+CRYPTOCOM_LAST_TIMESTAMP = TimestampMS(1744982384000)
+
+
 def assert_all_events_have_csv_marker(rotki: Rotkehlchen) -> None:
     """Verify all history events have the IMPORTED_FROM_CSV marker."""
     with rotki.data.db.conn.read_ctx() as cursor:
@@ -229,7 +233,7 @@ def assert_cryptocom_import_results(rotki: Rotkehlchen):
     expected_events = [SwapEvent(
         identifier=22,
         group_identifier='CCM_9ae9033697be4060e51746089335fd254528354a7ef522dbb58f455a83204ff6',
-        timestamp=TimestampMS(1595833195000),
+        timestamp=CRYPTOCOM_FIRST_TIMESTAMP,
         location=Location.CRYPTOCOM,
         event_subtype=HistoryEventSubType.SPEND,
         amount=FVal('281.14'),
@@ -239,7 +243,7 @@ def assert_cryptocom_import_results(rotki: Rotkehlchen):
     ), SwapEvent(
         identifier=23,
         group_identifier='CCM_9ae9033697be4060e51746089335fd254528354a7ef522dbb58f455a83204ff6',
-        timestamp=TimestampMS(1595833195000),
+        timestamp=CRYPTOCOM_FIRST_TIMESTAMP,
         location=Location.CRYPTOCOM,
         event_subtype=HistoryEventSubType.RECEIVE,
         amount=ONE,
@@ -612,7 +616,7 @@ def assert_cryptocom_import_results(rotki: Rotkehlchen):
     ), SwapEvent(
         identifier=38,
         group_identifier='CCM_8a618a6d3ce350415977c9bbf55661dde6614fbc47da5eb836c78c79ec3ddd7f',
-        timestamp=TimestampMS(1744982384000),
+        timestamp=CRYPTOCOM_LAST_TIMESTAMP,
         location=Location.CRYPTOCOM,
         event_subtype=HistoryEventSubType.SPEND,
         asset=A_USD,
@@ -622,7 +626,7 @@ def assert_cryptocom_import_results(rotki: Rotkehlchen):
     ), SwapEvent(
         identifier=39,
         group_identifier='CCM_8a618a6d3ce350415977c9bbf55661dde6614fbc47da5eb836c78c79ec3ddd7f',
-        timestamp=TimestampMS(1744982384000),
+        timestamp=CRYPTOCOM_LAST_TIMESTAMP,
         location=Location.CRYPTOCOM,
         event_subtype=HistoryEventSubType.RECEIVE,
         asset=A_ETH,

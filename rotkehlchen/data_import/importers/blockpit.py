@@ -23,7 +23,7 @@ from rotkehlchen.serialization.deserialize import (
     deserialize_fval_or_zero,
     deserialize_timestamp_from_date,
 )
-from rotkehlchen.types import AssetAmount, Location
+from rotkehlchen.types import DEFAULT_TIMEZONE, AssetAmount, Location, Timezone
 from rotkehlchen.utils.misc import ts_sec_to_ms
 
 if TYPE_CHECKING:
@@ -60,6 +60,7 @@ class BlockpitImporter(BaseExchangeImporter):
             csv_row: dict[str, Any],
             fee_currency: AssetWithOracles,
             timestamp_format: str = '%d.%m.%Y %H:%M',
+            timezone: Timezone = DEFAULT_TIMEZONE,
     ) -> None:
         """Consume a blockpit entry row from the CSV and add it into the database
         Can raise:
@@ -72,6 +73,7 @@ class BlockpitImporter(BaseExchangeImporter):
             date=csv_row['Timestamp'],
             formatstr=timestamp_format,
             location='Blockpit',
+            timezone_name=timezone,
         )
         source_name = csv_row['Source Name']
         transaction_type = csv_row['Transaction Type']

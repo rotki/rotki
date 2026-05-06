@@ -25,7 +25,7 @@ from rotkehlchen.serialization.deserialize import (
     deserialize_fval_or_zero,
     deserialize_timestamp_from_date,
 )
-from rotkehlchen.types import AssetAmount, Location
+from rotkehlchen.types import DEFAULT_TIMEZONE, AssetAmount, Location, Timezone
 from rotkehlchen.utils.misc import ts_sec_to_ms
 
 if TYPE_CHECKING:
@@ -57,6 +57,7 @@ class BittrexImporter(BaseExchangeImporter):
             csv_row: dict[str, Any],
             file_type: BittrexFileType,
             timestamp_format: str = '%Y-%m-%dT%H:%M:%S',
+            timezone: Timezone = DEFAULT_TIMEZONE,
     ) -> list[SwapEvent]:
         """
         Consume entries of bittrex order history csv
@@ -103,6 +104,7 @@ class BittrexImporter(BaseExchangeImporter):
                 date=date,
                 formatstr=timestamp_format,
                 location='Bittrex order history import',
+                timezone_name=timezone,
             )),
             location=Location.BITTREX,
             spend=spend,
@@ -123,6 +125,7 @@ class BittrexImporter(BaseExchangeImporter):
             csv_row: dict[str, Any],
             file_type: BittrexFileType,
             timestamp_format: str = '%Y-%m-%d %H:%M:%S.%f',
+            timezone: Timezone = DEFAULT_TIMEZONE,
     ) -> list[AssetMovement]:
         """
         Use Deposit and Withdrawal entries to generate an AssetMovement object.
@@ -178,6 +181,7 @@ class BittrexImporter(BaseExchangeImporter):
                 date=date,
                 formatstr=timestamp_format,
                 location='Bittrex tx history import',
+                timezone_name=timezone,
             )),
             asset=asset,
             amount=deserialize_fval_force_positive(amount),

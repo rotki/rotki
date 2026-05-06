@@ -28,7 +28,7 @@ from rotkehlchen.serialization.deserialize import (
     deserialize_fval_force_positive,
     deserialize_timestamp_from_date,
 )
-from rotkehlchen.types import AssetAmount, Location, Timestamp
+from rotkehlchen.types import DEFAULT_TIMEZONE, AssetAmount, Location, Timestamp, Timezone
 from rotkehlchen.utils.misc import ts_sec_to_ms
 
 if TYPE_CHECKING:
@@ -59,6 +59,7 @@ class CryptocomImporter(BaseExchangeImporter):
             write_cursor: DBCursor,
             csv_row: dict[str, Any],
             timestamp_format: str = '%Y-%m-%d %H:%M:%S',
+            timezone: Timezone = DEFAULT_TIMEZONE,
     ) -> None:
         """Consumes a cryptocom entry row from the CSV and adds it into the database
         Can raise:
@@ -72,6 +73,7 @@ class CryptocomImporter(BaseExchangeImporter):
             date=csv_row['Timestamp (UTC)'],
             formatstr=timestamp_format,
             location='cryptocom',
+            timezone_name=timezone,
         ))
         description = csv_row['Transaction Description']
         notes = f'{description}\nSource: crypto.com (CSV import)'
@@ -294,6 +296,7 @@ class CryptocomImporter(BaseExchangeImporter):
             data: Any,
             tx_kind: str,
             timestamp_format: str = '%Y-%m-%d %H:%M:%S',
+            timezone: Timezone = DEFAULT_TIMEZONE,
     ) -> None:
         """Look for events that have associated entries and handle them as trades.
 
@@ -339,6 +342,7 @@ class CryptocomImporter(BaseExchangeImporter):
                     date=row['Timestamp (UTC)'],
                     formatstr=timestamp_format,
                     location='cryptocom',
+                    timezone_name=timezone,
                 )
                 if expects_debited is False and timestamp != credited_timestamp:
                     self.send_message(
@@ -360,6 +364,7 @@ class CryptocomImporter(BaseExchangeImporter):
                     date=row['Timestamp (UTC)'],
                     formatstr=timestamp_format,
                     location='cryptocom',
+                    timezone_name=timezone,
                 )
                 if timestamp not in multiple_rows:
                     multiple_rows[timestamp] = {}
@@ -473,6 +478,7 @@ class CryptocomImporter(BaseExchangeImporter):
                         date=x['Timestamp (UTC)'],
                         formatstr=timestamp_format,
                         location='cryptocom',
+                        timezone_name=timezone,
                     ),
                 )
                 investments_rows = sorted(
@@ -481,6 +487,7 @@ class CryptocomImporter(BaseExchangeImporter):
                         date=x['Timestamp (UTC)'],
                         formatstr=timestamp_format,
                         location='cryptocom',
+                        timezone_name=timezone,
                     ),
                 )
                 last_date = Timestamp(0)
@@ -489,6 +496,7 @@ class CryptocomImporter(BaseExchangeImporter):
                         date=withdrawal['Timestamp (UTC)'],
                         formatstr=timestamp_format,
                         location='cryptocom',
+                        timezone_name=timezone,
                     )
                     amount_deposited = ZERO
                     for deposit in investments_rows:
@@ -496,6 +504,7 @@ class CryptocomImporter(BaseExchangeImporter):
                             date=deposit['Timestamp (UTC)'],
                             formatstr=timestamp_format,
                             location='cryptocom',
+                            timezone_name=timezone,
                         )
                         if last_date < deposit_date <= withdrawal_date:
                             # Amount is negative

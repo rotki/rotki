@@ -32,7 +32,7 @@ from rotkehlchen.serialization.deserialize import (
     deserialize_fval_or_zero,
     deserialize_timestamp_from_date,
 )
-from rotkehlchen.types import AssetAmount, Location
+from rotkehlchen.types import DEFAULT_TIMEZONE, AssetAmount, Location, Timezone
 from rotkehlchen.utils.misc import ts_sec_to_ms
 
 if TYPE_CHECKING:
@@ -98,6 +98,7 @@ class CointrackingImporter(BaseExchangeImporter):
             write_cursor: DBCursor,
             csv_row: dict[str, Any],
             timestamp_format: str = '%d.%m.%Y %H:%M:%S',
+            timezone: Timezone = DEFAULT_TIMEZONE,
     ) -> None:
         """Consumes a cointracking entry row from the CSV and adds it into the database
         Can raise:
@@ -112,6 +113,7 @@ class CointrackingImporter(BaseExchangeImporter):
             date=csv_row['Date'],
             formatstr=timestamp_format,
             location='cointracking.info',
+            timezone_name=timezone,
         ))
         location = exchange_row_to_location(csv_row['Exchange'])
         asset_resolver = LOCATION_TO_ASSET_MAPPING.get(location, symbol_to_asset_or_token)

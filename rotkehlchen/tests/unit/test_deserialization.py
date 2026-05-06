@@ -4,8 +4,11 @@ import pytest
 
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.fval import FVal
-from rotkehlchen.serialization.deserialize import deserialize_timestamp
-from rotkehlchen.types import Timestamp
+from rotkehlchen.serialization.deserialize import (
+    deserialize_timestamp,
+    deserialize_timestamp_from_date_with_timezone,
+)
+from rotkehlchen.types import Timestamp, Timezone
 
 
 def test_deserialize_timestamp():
@@ -23,3 +26,38 @@ def test_deserialize_timestamp():
     for bad_argument in (-1, FVal('3.14'), math.pi, '3.14', '5.23267356186572e+8', ['lol']):
         with pytest.raises(DeserializationError):
             deserialize_timestamp(bad_argument)
+
+
+def test_deserialize_timestamp_from_date_with_timezone() -> None:
+    """Test timezone-aware timestamp deserialization handles DST and explicit offsets."""
+    assert deserialize_timestamp_from_date_with_timezone(
+        date='2024-01-01 12:00:00',
+        formatstr='%Y-%m-%d %H:%M:%S',
+        location='test',
+    ) == Timestamp(1704110400)
+    assert deserialize_timestamp_from_date_with_timezone(
+        date='2024-01-01 12:00:00',
+        formatstr='%Y-%m-%d %H:%M:%S',
+        location='test',
+        timezone_name=Timezone('Europe/Madrid'),
+    ) == Timestamp(1704106800)
+    assert deserialize_timestamp_from_date_with_timezone(
+        date='2024-07-01 12:00:00',
+        formatstr='%Y-%m-%d %H:%M:%S',
+        location='test',
+        timezone_name=Timezone('Europe/Madrid'),
+    ) == Timestamp(1719828000)
+    assert deserialize_timestamp_from_date_with_timezone(
+        date='2024-01-01 12:00:00 +0300',
+        formatstr='%Y-%m-%d %H:%M:%S %z',
+        location='test',
+        timezone_name=Timezone('Europe/Madrid'),
+    ) == Timestamp(1704099600)
+
+    with pytest.raises(DeserializationError, match='Invalid timezone "Europe/Madird"'):
+        deserialize_timestamp_from_date_with_timezone(
+            date='2024-01-01 12:00:00',
+            formatstr='%Y-%m-%d %H:%M:%S',
+            location='test',
+            timezone_name=Timezone('Europe/Madird'),
+        )

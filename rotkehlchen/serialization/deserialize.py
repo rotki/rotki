@@ -1,6 +1,8 @@
 import logging
 from collections.abc import Callable
+from datetime import UTC, datetime
 from typing import TYPE_CHECKING, Any, Literal, TypeVar, overload
+from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from eth_utils import to_checksum_address
 from solders.solders import Pubkey, Signature
@@ -20,6 +22,7 @@ from rotkehlchen.fval import AcceptableFValInitInput, FVal
 from rotkehlchen.history.events.structures.types import HistoryEventSubType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import (
+    DEFAULT_TIMEZONE,
     BTCTxId,
     ChainID,
     ChecksumEvmAddress,
@@ -31,10 +34,11 @@ from rotkehlchen.types import (
     SolanaAddress,
     Timestamp,
     TimestampMS,
+    Timezone,
     TradePair,
     deserialize_evm_tx_hash,
 )
-from rotkehlchen.utils.misc import convert_to_int, create_timestamp, iso8601ts_to_timestamp
+from rotkehlchen.utils.misc import convert_to_int, iso8601ts_to_timestamp
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
@@ -90,6 +94,7 @@ def deserialize_timestamp_from_date(
         date: str | None,
         formatstr: str,
         location: str,
+        timezone_name: Timezone = DEFAULT_TIMEZONE,
         skip_milliseconds: bool = False,
 ) -> Timestamp:
     """Deserializes a timestamp from a date entry depending on the format str
@@ -98,6 +103,28 @@ def deserialize_timestamp_from_date(
     function will be used.
 
     Can throw DeserializationError if the data is not as expected
+    """
+    return deserialize_timestamp_from_date_with_timezone(
+        date=date,
+        formatstr=formatstr,
+        location=location,
+        timezone_name=timezone_name,
+        skip_milliseconds=skip_milliseconds,
+    )
+
+
+def deserialize_timestamp_from_date_with_timezone(
+        date: str | None,
+        formatstr: str,
+        location: str,
+        timezone_name: Timezone = DEFAULT_TIMEZONE,
+        skip_milliseconds: bool = False,
+) -> Timestamp:
+    """Deserializes a timestamp from a date entry using timezone_name for naive dates.
+
+    If the parsed datetime already contains timezone information it is respected.
+    Otherwise timezone_name must be a valid IANA timezone and is used to interpret
+    the naive datetime before converting it to UTC.
     """
     if not date:
         raise DeserializationError(
@@ -122,11 +149,21 @@ def deserialize_timestamp_from_date(
 
     date = date.rstrip('Z')
     try:
-        return Timestamp(create_timestamp(datestr=date, formatstr=formatstr))
+        parsed_date = datetime.strptime(date, formatstr)  # noqa: DTZ007
     except ValueError as e:
         raise DeserializationError(
-            f'Failed to deserialize {date} {location} timestamp entry',
+            f'Failed to deserialize {date} {location} timestamp entry with timezone {timezone_name}',  # noqa: E501
         ) from e
+
+    if parsed_date.tzinfo is None:
+        try:
+            parsed_date = parsed_date.replace(tzinfo=ZoneInfo(timezone_name))
+        except ZoneInfoNotFoundError as e:
+            raise DeserializationError(
+                f'Invalid timezone "{timezone_name}". Please use an IANA timezone such as "Europe/Madrid".',  # noqa: E501
+            ) from e
+
+    return Timestamp(int(parsed_date.astimezone(UTC).timestamp()))
 
 
 def deserialize_timestamp_from_bitstamp_date(date: str) -> Timestamp:

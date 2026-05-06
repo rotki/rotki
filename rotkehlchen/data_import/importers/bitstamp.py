@@ -24,7 +24,7 @@ from rotkehlchen.serialization.deserialize import (
     deserialize_fval_or_zero,
     deserialize_timestamp_from_date,
 )
-from rotkehlchen.types import AssetAmount, Location, Price
+from rotkehlchen.types import DEFAULT_TIMEZONE, AssetAmount, Location, Price, Timezone
 from rotkehlchen.utils.misc import ts_sec_to_ms
 
 if TYPE_CHECKING:
@@ -43,6 +43,7 @@ class BitstampTransactionsImporter(BaseExchangeImporter):
             write_cursor: DBCursor,
             csv_row: dict[str, Any],
             timestamp_format: str = '%b. %d, %Y, %I:%M %p',
+            timezone: Timezone = DEFAULT_TIMEZONE,
     ) -> None:
         """
         Consume the file containing only trades from Bitstamp.
@@ -55,6 +56,7 @@ class BitstampTransactionsImporter(BaseExchangeImporter):
             date=csv_row['Datetime'],
             formatstr=timestamp_format,
             location='Bitstamp',
+            timezone_name=timezone,
         ))
 
         events: list[HistoryBaseEntry] = []

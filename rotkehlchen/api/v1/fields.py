@@ -6,6 +6,7 @@ from contextlib import suppress
 from enum import Enum, StrEnum
 from pathlib import Path
 from typing import Any, Final, Generic, Literal
+from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 import webargs
 from eth_utils import to_checksum_address
@@ -62,6 +63,7 @@ from rotkehlchen.types import (
     SupportedBlockchain,
     Timestamp,
     TimestampMS,
+    Timezone,
     deserialize_evm_tx_hash,
 )
 from rotkehlchen.utils.misc import ts_now
@@ -1169,6 +1171,24 @@ class NonEmptyStringField(fields.String):
             raise ValidationError('Field cannot be an empty string')
 
         return result
+
+
+class TimezoneField(EmptyAsNoneStringField):
+    """A string field that validates and deserializes IANA timezone names."""
+
+    def _deserialize(self, value: Any, attr: str | None, data: Mapping[str, Any] | None, **kwargs: Any) -> Timezone | None:  # type: ignore[override]  # noqa: E501
+        result = super()._deserialize(value=value, attr=attr, data=data, **kwargs)
+        if result is None:
+            return None
+
+        try:
+            ZoneInfo(result)
+        except ZoneInfoNotFoundError as e:
+            raise ValidationError(
+                f'Invalid timezone "{result}". Please use an IANA timezone such as "Europe/Madrid".',  # noqa: E501
+            ) from e
+
+        return Timezone(result)
 
 
 class EvmCounterpartyField(fields.Field):
