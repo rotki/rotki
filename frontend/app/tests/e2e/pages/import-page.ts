@@ -34,6 +34,20 @@ export class ImportPage {
     await fileInput.setInputFiles(filePath);
   }
 
+  async selectTimezone(sourceKey: string, timezone: string): Promise<void> {
+    const container = this.page.locator(`[data-cy="import-source-${sourceKey}"]`);
+    await container.getByTestId('import-timezone-switch').locator('input').click();
+    const select = container.getByTestId('import-timezone-select');
+    await select.waitFor({ state: 'visible' });
+    await select.locator('[data-id=activator]').click();
+    const menu = this.page.locator('[role=menu]').last();
+    await menu.waitFor({ state: 'visible' });
+    await select.locator('input').fill(timezone);
+    const option = menu.getByText(timezone, { exact: true }).first();
+    await option.waitFor({ state: 'visible' });
+    await option.click();
+  }
+
   async submitImport(sourceKey: string): Promise<void> {
     const container = this.page.locator(`[data-cy="import-source-${sourceKey}"]`);
     await container.locator('[data-cy=button-import]').click();

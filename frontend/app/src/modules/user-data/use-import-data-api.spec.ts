@@ -25,13 +25,19 @@ describe('composables/api/import/index', () => {
       );
 
       const { importDataFrom } = useImportDataApi();
-      const result = await importDataFrom('cointracking', '/path/to/file.csv', '%Y-%m-%d');
+      const result = await importDataFrom({
+        file: '/path/to/file.csv',
+        source: 'cointracking',
+        timestampFormat: '%Y-%m-%d',
+        timezone: 'Europe/Madrid',
+      });
 
       expect(capturedBody).toEqual({
         async_query: true,
         file: '/path/to/file.csv',
         source: 'cointracking',
         timestamp_format: '%Y-%m-%d',
+        timezone: 'Europe/Madrid',
       });
       expect(result.taskId).toBe(123);
     });
@@ -50,13 +56,19 @@ describe('composables/api/import/index', () => {
       );
 
       const { importDataFrom } = useImportDataApi();
-      await importDataFrom('rotki', '/path/to/export.json', null);
+      await importDataFrom({
+        file: '/path/to/export.json',
+        source: 'rotki',
+        timestampFormat: null,
+        timezone: null,
+      });
 
       expect(capturedBody).toEqual({
         async_query: true,
         file: '/path/to/export.json',
         source: 'rotki',
         timestamp_format: null,
+        timezone: null,
       });
     });
 
@@ -74,7 +86,12 @@ describe('composables/api/import/index', () => {
       );
 
       const { importDataFrom } = useImportDataApi();
-      await importDataFrom('cryptocom', '/data/crypto.csv', '%d/%m/%Y');
+      await importDataFrom({
+        file: '/data/crypto.csv',
+        source: 'cryptocom',
+        timestampFormat: '%d/%m/%Y',
+        timezone: null,
+      });
 
       expect(capturedBody).toHaveProperty('source', 'cryptocom');
       expect(capturedBody).toHaveProperty('timestamp_format', '%d/%m/%Y');
@@ -91,7 +108,12 @@ describe('composables/api/import/index', () => {
 
       const { importDataFrom } = useImportDataApi();
 
-      await expect(importDataFrom('cointracking', '/invalid.txt', null))
+      await expect(importDataFrom({
+        file: '/invalid.txt',
+        source: 'cointracking',
+        timestampFormat: null,
+        timezone: null,
+      }))
         .rejects
         .toThrow('Invalid file format');
     });

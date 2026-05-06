@@ -1,20 +1,25 @@
 import { api } from '@/modules/core/api/rotki-api';
 import { type PendingTask, PendingTaskSchema } from '@/modules/core/tasks/types';
 
+interface ImportDataFromPayload {
+  source: string;
+  file: string;
+  timestampFormat: string | null;
+  timezone: string | null;
+}
+
 interface UseImportDataApiReturn {
-  importDataFrom: (source: string, file: string, timestampFormat: string | null) => Promise<PendingTask>;
+  importDataFrom: (payload: ImportDataFromPayload) => Promise<PendingTask>;
   importFile: (data: FormData) => Promise<PendingTask>;
 }
 
 export function useImportDataApi(): UseImportDataApiReturn {
-  const importDataFrom = async (source: string, file: string, timestampFormat: string | null): Promise<PendingTask> => {
+  const importDataFrom = async (payload: ImportDataFromPayload): Promise<PendingTask> => {
     const response = await api.put<PendingTask>(
       '/import',
       {
         asyncQuery: true,
-        file,
-        source,
-        timestampFormat,
+        ...payload,
       },
     );
 
