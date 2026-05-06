@@ -74,21 +74,21 @@ const [DefineOptionBlock, ReuseOptionBlock] = createReusableTemplate<{
       class="flex flex-col gap-2 mt-2"
     >
       <ReuseOptionBlock
-        :title="t('general_settings.rpc_node_setting.consensus_rpc.beaconchain_only.title')"
-        :description="t('general_settings.rpc_node_setting.consensus_rpc.beaconchain_only.description')"
-        :button-text="t('notification_messages.missing_api_key.action')"
-        :route="{
-          path: Routes.API_KEYS_EXTERNAL_SERVICES.toString(),
-          query: { service: 'beaconchain' },
-        }"
-      />
-      <ReuseOptionBlock
         :title="t('general_settings.rpc_node_setting.consensus_rpc.consensus_rpc_only.title')"
         :description="t('general_settings.rpc_node_setting.consensus_rpc.consensus_rpc_only.description')"
         :button-text="t('general_settings.rpc_node_setting.consensus_rpc.consensus_rpc_only.input_rpc')"
         :route="{
           path: Routes.SETTINGS_RPC.toString(),
           query: { tab: 'eth_consensus_layer' },
+        }"
+      />
+      <ReuseOptionBlock
+        :title="t('general_settings.rpc_node_setting.consensus_rpc.beaconchain_only.title')"
+        :description="t('general_settings.rpc_node_setting.consensus_rpc.beaconchain_only.description')"
+        :button-text="t('notification_messages.missing_api_key.action')"
+        :route="{
+          path: Routes.API_KEYS_EXTERNAL_SERVICES.toString(),
+          query: { service: 'beaconchain' },
         }"
       />
     </div>

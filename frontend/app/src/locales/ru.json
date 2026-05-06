@@ -717,6 +717,12 @@
       "task": {
         "description": "Запрос новых событий {queryType}",
         "title": "Запрос событий"
+      },
+      "warning": {
+        "missing_api_key": {
+          "beaconchain": "{queryType} пропущено: для этого запроса требуется API ключ Beaconcha.in. Если он у вас есть, вы можете добавить его в настройках.",
+          "default": "{queryType} пропущено: отсутствует требуемый API ключ."
+        }
       }
     },
     "report_events": {
@@ -2511,8 +2517,8 @@
     },
     "api_key": "API ключ",
     "beaconchain": {
-      "api_key_message": "Пожалуйста, добавьте API ключ Beaconcha.in, чтобы иметь возможность запрашивать историю стейкинга ETH, данные о выводах и блоках.",
-      "description": "Требуется для данных стейкинга ETH. Beaconcha.in теперь требует API ключи для всех запросов.",
+      "api_key_message": "Если у вас есть API ключ Beaconcha.in, вы можете добавить его здесь, чтобы получать историю созданных блоков и расширенную аналитику стейкинга. Это не обязательно для добавления валидатора.",
+      "description": "rotki использует Beaconcha.in для получения истории созданных блоков и расширенной аналитики стейкинга. API ключ необходим, если вам нужны эти данные.",
       "hint": "Введите ваш Beaconcha.in API ключ",
       "title": "Beaconcha.in"
     },
@@ -2957,9 +2963,9 @@
     },
     "rpc_node_setting": {
       "consensus_rpc": {
-        "api_key_message": "Вам нужен API ключ Beaconcha.in или RPC клиента уровня консенсуса, чтобы видеть полную информацию о стейкинге ETH.",
+        "api_key_message": "Настройте RPC уровня консенсуса, чтобы видеть данные стейкинга ETH. Если у вас также есть API ключ Beaconcha.in, вы можете добавить его для истории созданных блоков и расширенной аналитики стейкинга.",
         "beaconchain_only": {
-          "description": "- Вы можете видеть как текущий статус (балансы валидаторов), так и историю выводов и блоков.",
+          "description": "Если у вас есть ключ, добавляет историю созданных блоков и расширенную аналитику стейкинга.",
           "title": "API ключ Beaconcha.in"
         },
         "consensus_rpc_only": {
@@ -3864,7 +3870,7 @@
     "missing_api_key": {
       "action": "Ввести ключ",
       "beaconchain": {
-        "message": "rotki не может запросить данные стейкинга ETH, потому что у вас не настроен API ключ Beaconcha.in. Нажмите @.quote:notification_messages.missing_api_key.get_key, чтобы создать его, или @.quote:notification_messages.missing_api_key.action, чтобы добавить его в приложении.",
+        "message": "Если у вас есть API ключ Beaconcha.in, вы можете добавить его, чтобы получать историю созданных блоков и расширенную аналитику стейкинга. Нажмите @.quote:notification_messages.missing_api_key.action, чтобы добавить его в приложении.",
         "title": "API ключ {service}"
       },
       "change_indexer_order": "Изменить порядок индексаторов",

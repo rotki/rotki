@@ -1693,7 +1693,7 @@
   "external_services": {
     "api_key": "API key",
     "beaconchain": {
-      "description": "rotki 使用 Beaconcha.in 獲取有關您投資組合中 ETH 質押的信息。 只有在您受到速率限制時才需要 API 密鑰。",
+      "description": "rotki 使用 Beaconcha.in 獲取區塊生產歷史記錄和更詳細的質押分析。如果您需要這些數據，則需要 API 密鑰。",
       "hint": "输入您的 Beaconcha.in API 密钥",
       "title": "Beaconcha.in"
     },

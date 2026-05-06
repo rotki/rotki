@@ -786,7 +786,7 @@
       },
       "warning": {
         "missing_api_key": {
-          "beaconchain": "{queryType} skipped: a beaconcha.in API key is required to fetch this data.",
+          "beaconchain": "{queryType} skipped: this query requires a Beaconcha.in API key. If you have one, you can add it in settings.",
           "default": "{queryType} skipped: a required API key is missing."
         }
       }
@@ -2771,8 +2771,8 @@
     },
     "api_key": "API key",
     "beaconchain": {
-      "api_key_message": "Please add a Beaconcha.in API key to be able to query the ETH staking history of withdrawals and blocks data.",
-      "description": "Required for ETH staking data. Beaconcha.in now requires API keys for all requests.",
+      "api_key_message": "If you have a Beaconcha.in API key, you can add it here to retrieve block production history and improved staking analytics. It is not required to add a validator.",
+      "description": "rotki uses Beaconcha.in to retrieve block production history and improved staking analytics. An API key is needed if you want this data.",
       "hint": "Enter your Beaconcha.in API key",
       "title": "Beaconcha.in"
     },
@@ -3282,10 +3282,10 @@
     },
     "rpc_node_setting": {
       "consensus_rpc": {
-        "api_key_message": "You need Beaconcha.in API Key or consensus layer client RPC to be set to see complete ETH staking information.",
+        "api_key_message": "Set a consensus layer RPC to see ETH staking data. If you also have a Beaconcha.in API key, you can add it for block production history and improved staking analytics.",
         "beaconchain_only": {
-          "description": "- You can see both current status (validator balances), and history of withdrawals and blocks.",
-          "title": "Beaconcha.in Api Key"
+          "description": "If you have a key, adds block production history and improved staking analytics.",
+          "title": "Beaconcha.in API key"
         },
         "consensus_rpc_only": {
           "description": "You can only see current status (validator balances)",
@@ -4318,7 +4318,7 @@
     "missing_api_key": {
       "action": "Enter key",
       "beaconchain": {
-        "message": "rotki cannot query ETH staking data because you don't have a Beaconcha.in API key configured. Press @.quote:notification_messages.missing_api_key.get_key to make one or @.quote:notification_messages.missing_api_key.action to add it in the app.",
+        "message": "If you have a Beaconcha.in API key, you can add it to retrieve block production history and improved staking analytics. Press @.quote:notification_messages.missing_api_key.action to add it in the app.",
         "title": "{service} API key"
       },
       "change_indexer_order": "Change indexer order",
