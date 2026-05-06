@@ -98,6 +98,7 @@ def test_decoders_initialization(ethereum_transaction_decoder: EthereumTransacti
         'Metamask',
         'Monerium',
         'Morpho',
+        'MorphoBlue',
         'Polygon',
         'Pendle',
         'Safe',
@@ -269,6 +270,7 @@ def test_decoders_initialization(ethereum_transaction_decoder: EthereumTransacti
         'woo-fi',
         'crosscurve',
         'giveth',
+        'morpho_blue',
     }
 
 

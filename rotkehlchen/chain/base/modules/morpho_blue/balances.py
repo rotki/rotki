@@ -3,8 +3,8 @@ from collections import defaultdict
 from typing import TYPE_CHECKING
 
 from rotkehlchen.accounting.structures.balance import Balance, BalanceSheet
-from rotkehlchen.chain.base.modules.morpho_blue.constants import CPT_MORPHO_BLUE
 from rotkehlchen.chain.ethereum.interfaces.balances import BalancesSheetType, ProtocolWithBalance
+from rotkehlchen.chain.evm.decoding.morpho_blue.constants import CPT_MORPHO_BLUE
 from rotkehlchen.constants import ZERO
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
