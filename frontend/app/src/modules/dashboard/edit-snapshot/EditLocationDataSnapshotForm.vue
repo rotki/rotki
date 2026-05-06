@@ -60,6 +60,7 @@ defineExpose({
     <AmountInput
       v-model="value"
       variant="outlined"
+      data-testid="edit-location-value"
       :label="
         t('common.value_in_symbol', {
           symbol: currencySymbol,

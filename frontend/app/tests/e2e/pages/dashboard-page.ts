@@ -1,7 +1,9 @@
 import { expect, type Page } from '@playwright/test';
 import { type BigNumber, Zero } from '@rotki/common';
 import { parseBigNumber, updateLocationBalance } from '../helpers/utils';
+import { ExportSnapshotDialog } from './export-snapshot-dialog';
 import { RotkiApp } from './rotki-app';
+import { SnapshotImportDialog } from './snapshot-import-dialog';
 
 export class DashboardPage {
   constructor(private readonly page: Page) {}
@@ -94,5 +96,51 @@ export class DashboardPage {
 
   async percentageDisplayIsNotBlurred(): Promise<void> {
     await expect(this.page.locator('[data-cy=percentage-display]').first()).not.toHaveClass(/blur/);
+  }
+
+  async openSnapshotMenu(): Promise<void> {
+    await this.page.locator('[data-testid=snapshot-action]').click();
+  }
+
+  async openImportSnapshotDialog(): Promise<SnapshotImportDialog> {
+    // The snapshot menu must already be open; the Import button lives inside it.
+    await this.page.getByRole('button', { name: 'Import', exact: true }).click();
+    const dialog = new SnapshotImportDialog(this.page);
+    await dialog.waitForVisible();
+    return dialog;
+  }
+
+  /**
+   * Clicks the rendered data point on the net-worth chart to open the export
+   * snapshot dialog. With a single seeded snapshot 7 days back the chart
+   * draws a marker at the left edge (the snapshot) and a synthetic "current
+   * balance" point on the right. The click sweeps a few x positions near the
+   * left edge to handle small layout shifts (axis label widths, padding).
+   */
+  async openSnapshotDialogAt(): Promise<ExportSnapshotDialog> {
+    const chart = this.page.locator('[data-testid=net-worth-chart]');
+    await chart.waitFor({ state: 'visible' });
+    const canvas = chart.locator('canvas').first();
+    const box = await canvas.boundingBox();
+    if (!box) {
+      throw new Error('net-worth chart canvas has no bounding box');
+    }
+    const dialog = new ExportSnapshotDialog(this.page);
+    const dialogLocator = this.page.locator('[data-testid=export-snapshot-dialog]');
+    // Echarts plots the leftmost data point a bit inside the axis margin;
+    // sweep through a handful of x positions until the dialog appears.
+    for (const xRatio of [0.06, 0.08, 0.04, 0.1, 0.02]) {
+      await canvas.click({
+        position: { x: box.width * xRatio, y: box.height * 0.4 },
+      });
+      try {
+        await dialogLocator.waitFor({ state: 'visible', timeout: 2_000 });
+        return dialog;
+      }
+      catch {
+        // Try the next x offset.
+      }
+    }
+    throw new Error('Failed to open export snapshot dialog by clicking the chart');
   }
 }
