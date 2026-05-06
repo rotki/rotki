@@ -1,15 +1,65 @@
 import type { EChartsType } from 'echarts/core';
 import type { MaybeRefOrGetter, Ref, ShallowRef } from 'vue';
 import type VChart from 'vue-echarts';
+import type { NetValueZoomRange } from '@/modules/dashboard/graph/net-value-stats';
 import type { NetValueChartData } from '@/modules/dashboard/graph/types';
 import { assert, type BigNumber } from '@rotki/common';
 import { type TooltipData, useGraphTooltip } from '@/modules/statistics/use-graph-tooltip';
+
+// ECharts emits datazoom in two shapes: with a `batch` array (inside-zoom),
+// or with the fields at the top level (slider drag). Each shape may carry
+// axis values (startValue/endValue, in ms) or only percentages (start/end,
+// 0–100 of the x-axis range) — slider drag typically only provides the
+// percentages, so we accept either.
+interface ZoomFields {
+  startValue?: unknown;
+  endValue?: unknown;
+  start?: unknown;
+  end?: unknown;
+}
+
+function isObjectValue(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null;
+}
+
+export function readZoomFields(event: unknown): ZoomFields | undefined {
+  if (isObjectValue(event) && 'batch' in event && Array.isArray(event.batch) && event.batch.length > 0) {
+    const first = event.batch[0];
+    if (!isObjectValue(first))
+      return undefined;
+    return { end: first.end, endValue: first.endValue, start: first.start, startValue: first.startValue };
+  }
+  if (isObjectValue(event))
+    return { end: event.end, endValue: event.endValue, start: event.start, startValue: event.startValue };
+  return undefined;
+}
+
+const ZOOM_MS = 1000;
+
+export function resolveZoomRange(fields: ZoomFields | undefined, times: number[]): NetValueZoomRange | undefined {
+  if (typeof fields?.startValue === 'number' && typeof fields?.endValue === 'number') {
+    return { end: Math.ceil(fields.endValue / ZOOM_MS), start: Math.floor(fields.startValue / ZOOM_MS) };
+  }
+  if (typeof fields?.start === 'number' && typeof fields?.end === 'number') {
+    const first = times[0];
+    const last = times.at(-1);
+    if (last === undefined)
+      return undefined;
+    const span = last - first;
+    return {
+      end: Math.ceil(first + (span * fields.end) / 100),
+      start: Math.floor(first + (span * fields.start) / 100),
+    };
+  }
+  return undefined;
+}
 
 interface UseNetValueEventHandlersParams {
   chartInstance: Readonly<ShallowRef<InstanceType<typeof VChart> | null>>;
   chartContainer: Readonly<ShallowRef<HTMLElement | null>>;
   chartData: MaybeRefOrGetter<NetValueChartData>;
   onHover: (timestamp: number, value: BigNumber) => void;
+  onZoomChange?: (range: NetValueZoomRange | undefined) => void;
 }
 
 interface UseNetValueEventHandlersReturn {
@@ -32,6 +82,7 @@ export function useNetValueEventHandlers(params: UseNetValueEventHandlersParams)
     chartData,
     chartInstance,
     onHover,
+    onZoomChange,
   } = params;
 
   const { resetTooltipData, tooltipData } = useGraphTooltip();
@@ -247,6 +298,35 @@ export function useNetValueEventHandlers(params: UseNetValueEventHandlersParams)
     container.addEventListener('mouseup', containerEventHandlers.mouseup);
   }
 
+  function setupZoomChangeHandler(instance: EChartsType): void {
+    if (!onZoomChange)
+      return;
+
+    const handler = (...args: unknown[]): void => {
+      const { times } = toValue(chartData);
+      const last = times.at(-1);
+      if (times.length === 0 || last === undefined) {
+        onZoomChange(undefined);
+        return;
+      }
+
+      const range = resolveZoomRange(readZoomFields(args[0]), times);
+      if (range === undefined) {
+        onZoomChange(undefined);
+        return;
+      }
+
+      // Full-range selection collapses to undefined so consumers stay on the unzoomed path.
+      if (range.start <= times[0] && range.end >= last) {
+        onZoomChange(undefined);
+        return;
+      }
+      onZoomChange(range);
+    };
+
+    instance.on('datazoom', handler);
+  }
+
   function setupZoomToolHandler(): void {
     const instance = get(chartInstance)?.chart;
     if (!instance) {
@@ -285,11 +365,13 @@ export function useNetValueEventHandlers(params: UseNetValueEventHandlersParams)
     setupMouseLeaveHandler(instance);
     setupContainerClickHandler(container);
     setupZoomToolHandler();
+    setupZoomChangeHandler(instance);
 
     // Store cleanup functions
     chartEventHandlers = [
       (): EChartsType => instance?.off('updateAxisPointer'),
       (): EChartsType => instance?.off('finished'),
+      (): EChartsType => instance?.off('datazoom'),
       (): void => instance?.getZr()?.off('dblclick'),
       (): void => instance?.getZr()?.off('mousemove'),
       (): void => instance?.getZr()?.off('globalout'),

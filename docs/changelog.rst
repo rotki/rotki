@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`12112` The dashboard's net worth percentage and trend indicator now follow the chart's data-zoom selection.
 * :feature:`12111` Free-text typed in the History events filter without a key=value prefix is now applied as a notes search on Enter, so you can quickly find events by any word in their notes instead of having to remember the notes= prefix.
 
 * :release:`1.43.0 <2026-05-08>`
