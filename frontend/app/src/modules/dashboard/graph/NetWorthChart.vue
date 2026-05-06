@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import type { NetValueZoomRange } from '@/modules/dashboard/graph/net-value-stats';
 import type { NetValueChartData } from '@/modules/dashboard/graph/types';
 import { type BigNumber, Zero } from '@rotki/common';
 import VChart from 'vue-echarts';
@@ -8,6 +9,8 @@ import { useNetValueChartConfig } from '@/modules/dashboard/graph/use-net-value-
 import { useNetValueEventHandlers } from '@/modules/dashboard/graph/use-net-value-event-handlers';
 import DateDisplay from '@/modules/shell/components/display/DateDisplay.vue';
 import NewGraphTooltipWrapper from '@/modules/statistics/NewGraphTooltipWrapper.vue';
+
+const zoomRange = defineModel<NetValueZoomRange | undefined>('zoomRange');
 
 const { chartData } = defineProps<{
   chartData: NetValueChartData;
@@ -24,7 +27,14 @@ const showExportSnapshotDialog = ref<boolean>(false);
 
 const { isDark } = useRotkiTheme();
 
-const { chartOption } = useNetValueChartConfig(() => chartData);
+const { chartOption } = useNetValueChartConfig(() => chartData, zoomRange);
+
+// datazoom fires on every drag frame; debounce the model write so consumers
+// only recompute once the user settles on a range.
+const updateZoomRange = useDebounceFn((range: NetValueZoomRange | undefined) => {
+  set(zoomRange, range);
+}, 100);
+
 const { setupChartEventHandlers, setupZoomToolHandler, tooltipData } = useNetValueEventHandlers({
   chartContainer,
   chartData: () => chartData,
@@ -33,6 +43,9 @@ const { setupChartEventHandlers, setupZoomToolHandler, tooltipData } = useNetVal
     set(selectedTimestamp, timestamp);
     set(selectedBalance, balance);
     set(showExportSnapshotDialog, true);
+  },
+  onZoomChange: (range: NetValueZoomRange | undefined) => {
+    updateZoomRange(range);
   },
 });
 

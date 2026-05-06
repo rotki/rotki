@@ -8,6 +8,7 @@ import type {
 } from 'echarts';
 import type { DataZoomComponentOption, GridComponentOption } from 'echarts/components';
 import type { ComputedRef, MaybeRefOrGetter } from 'vue';
+import type { NetValueZoomRange } from '@/modules/dashboard/graph/net-value-stats';
 import type { NetValueChartData } from '@/modules/dashboard/graph/types';
 import { useFrontendSettingsStore } from '@/modules/settings/use-frontend-settings-store';
 import { useGraph } from '@/modules/statistics/use-graph';
@@ -21,7 +22,10 @@ interface UseNetValueChartConfigReturn {
   chartOption: ComputedRef<EChartsOption>;
 }
 
-export function useNetValueChartConfig(chartData: MaybeRefOrGetter<NetValueChartData>): UseNetValueChartConfigReturn {
+export function useNetValueChartConfig(
+  chartData: MaybeRefOrGetter<NetValueChartData>,
+  zoomRange: MaybeRefOrGetter<NetValueZoomRange | undefined> = () => undefined,
+): UseNetValueChartConfigReturn {
   const data = computed<number[][]>(() => {
     const { data, times } = toValue(chartData);
     if (!(times?.length && data?.length)) {
@@ -37,6 +41,18 @@ export function useNetValueChartConfig(chartData: MaybeRefOrGetter<NetValueChart
   const { graphZeroBased, showGraphRangeSelector } = storeToRefs(useFrontendSettingsStore());
   const { baseColor, gradient } = useGraph();
 
+  const MS = 1000;
+
+  // Persist the active zoom across chart rebuilds (chartData refreshes every
+  // balance update). Without this, dataZoom rebuilds with no start/end and
+  // ECharts snaps the slider back to full range.
+  const zoomBounds = computed<{ startValue?: number; endValue?: number }>(() => {
+    const range = toValue(zoomRange);
+    if (!range)
+      return {};
+    return { endValue: range.end * MS, startValue: range.start * MS };
+  });
+
   const createSliderZoomOptions = (): DataZoomComponentOption => ({
     handleSize: 20,
     height: 30,
@@ -46,6 +62,7 @@ export function useNetValueChartConfig(chartData: MaybeRefOrGetter<NetValueChart
     showDetail: false,
     type: 'slider',
     zoomOnMouseWheel: true,
+    ...get(zoomBounds),
   });
 
   const createInsideDataZoom = (): DataZoomComponentOption => ({
@@ -56,6 +73,7 @@ export function useNetValueChartConfig(chartData: MaybeRefOrGetter<NetValueChart
     showDetail: false,
     type: 'inside',
     zoomOnMouseWheel: true,
+    ...get(zoomBounds),
   });
 
   const createDataZoomConfig = (): DataZoomComponentOption[] => {

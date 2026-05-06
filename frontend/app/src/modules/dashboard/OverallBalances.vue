@@ -3,6 +3,7 @@ import { assert, TimeFramePeriod, TimeFramePersist, timeframes, type TimeFrameSe
 import dayjs from 'dayjs';
 import { FiatDisplay } from '@/modules/assets/amount-display/components';
 import { Section } from '@/modules/core/common/status';
+import { computeNetValueDelta, type NetValueZoomRange } from '@/modules/dashboard/graph/net-value-stats';
 import NetWorthChart from '@/modules/dashboard/graph/NetWorthChart.vue';
 import SnapshotActionButton from '@/modules/dashboard/SnapshotActionButton.vue';
 import { usePremium } from '@/modules/premium/use-premium';
@@ -31,6 +32,8 @@ const { isInitialLoading, isLoading: sectionLoading } = useSectionStatus(Section
 
 const isLoading = logicOr(isInitialLoading, sectionLoading);
 
+const zoomRange = ref<NetValueZoomRange>();
+
 const allTimeframes = computed(() =>
   timeframes((unit, amount) => dayjs().subtract(amount, unit).startOf(TimeUnit.DAY).unix()),
 );
@@ -42,21 +45,13 @@ const timeframeData = computed(() => {
   return getNetValue(startingDate);
 });
 
-const startingValue = computed(() => {
-  const data = get(timeframeData).data;
-  let start = data[0];
-  if (start.isZero()) {
-    for (let i = 1; i < data.length; i++) {
-      if (data[i].gt(0)) {
-        start = data[i];
-        break;
-      }
-    }
-  }
-  return start;
+const stats = computed(() => {
+  const { data, times } = get(timeframeData);
+  return computeNetValueDelta(data, times, get(totalNetWorth), get(zoomRange));
 });
 
-const balanceDelta = computed(() => get(totalNetWorth).minus(get(startingValue)));
+const startingValue = computed(() => get(stats).startingValue);
+const balanceDelta = computed(() => get(stats).balanceDelta);
 
 const percentage = computed(() => {
   const bigNumber = get(balanceDelta).div(get(startingValue)).multipliedBy(100);
@@ -90,6 +85,13 @@ async function setTimeframe(value: TimeFrameSetting) {
   sessionStore.update({ timeframe: value });
   await updateFrontendSetting({ lastKnownTimeframe: value });
 }
+
+// Resetting on timeframe change keeps the header on the full-range numbers
+// after the user switches buttons, without clobbering an active zoom on routine
+// balance refreshes.
+watch(timeframe, () => {
+  set(zoomRange, undefined);
+});
 
 onMounted(() => {
   const isPremium = get(premium);
@@ -160,7 +162,10 @@ onMounted(() => {
         <SnapshotActionButton />
       </div>
       <div class="relative">
-        <NetWorthChart :chart-data="timeframeData" />
+        <NetWorthChart
+          v-model:zoom-range="zoomRange"
+          :chart-data="timeframeData"
+        />
         <div
           v-if="isLoading"
           class="absolute top-0 h-full w-full flex flex-col gap-3 items-center justify-center text-caption text-rui-text-secondary bg-white/[0.8] dark:bg-dark-elevated/[0.9] z-[6]"
