@@ -2947,6 +2947,11 @@
     "replace_file": "Replace file",
     "task": {
       "title": "Importing csv for source: {source}"
+    },
+    "timezone": {
+      "hint": "Used for dates in the file that do not include timezone information. Defaults to UTC.",
+      "label": "Timezone",
+      "switch_label": "Use a specific timezone for dates without timezone info"
     }
   },
   "frontend_settings": {

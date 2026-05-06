@@ -69,7 +69,11 @@ test.describe.serial('csv import', () => {
   test('import cointracking csv', async () => {
     await importPage.visit();
     await importPage.selectSource('Cointracking');
-    await importPage.importCsv('cointracking', 'cointracking_trades_list.csv');
+    await importPage.uploadFile('cointracking', 'cointracking_trades_list.csv');
+    await importPage.selectTimezone('cointracking', 'Europe/Madrid');
+    await importPage.submitImport('cointracking');
+    await importPage.waitForImportComplete('cointracking');
+    await importPage.dismissNotifications();
 
     // Navigate to history and filter by poloniex (unique: 5 XMR deposit from cointracking)
     await historyPage.visit();

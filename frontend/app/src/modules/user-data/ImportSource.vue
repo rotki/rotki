@@ -28,6 +28,8 @@ defineSlots<{
 }>();
 
 const dateInputFormat = ref<string>();
+const useCustomTimezone = ref<boolean>(false);
+const timezone = ref<string>();
 const uploaded = ref(false);
 const errorMessage = ref('');
 const formatHelp = ref<boolean>(false);
@@ -74,7 +76,12 @@ const { importDataFrom, importFile } = useImportDataApi();
 
 async function uploadPackaged(file: string): Promise<void> {
   const outcome = await runTask<boolean, ImportTaskMeta>(
-    () => importDataFrom(source, file, get(dateInputFormat) || null),
+    () => importDataFrom({
+      file,
+      source,
+      timestampFormat: get(dateInputFormat) || null,
+      timezone: get(timezone) || null,
+    }),
     {
       type: taskType,
       meta: { source, title: t('file_upload.task.title', { source }) },
@@ -106,6 +113,9 @@ async function uploadFile(): Promise<void> {
       const dateInputFormatVal = get(dateInputFormat);
       if (dateInputFormatVal)
         formData.append('timestamp_format', dateInputFormatVal);
+      const timezoneVal = get(timezone);
+      if (timezoneVal)
+        formData.append('timezone', timezoneVal);
 
       const outcome = await runTask<boolean, ImportTaskMeta>(
         () => importFile(formData),
@@ -130,6 +140,12 @@ function changeShouldCustomDateFormat() {
   if (!isDefined(dateInputFormat))
     set(dateInputFormat, DateFormat.DateMonthYearHourMinuteSecond);
   else set(dateInputFormat, undefined);
+}
+
+function toggleCustomTimezone(enabled: boolean): void {
+  set(useCustomTimezone, enabled);
+  if (!enabled)
+    set(timezone, undefined);
 }
 
 const isRotkiCustomImport = computed<boolean>(() => source.startsWith('rotki_'));
@@ -186,6 +202,33 @@ const isRotkiCustomImport = computed<boolean>(() => source.startsWith('rotki_'))
           </RuiButton>
         </template>
       </RuiTextField>
+
+      <div
+        v-if="!isRotkiCustomImport"
+        data-testid="import-timezone-switch"
+      >
+        <RuiSwitch
+          color="primary"
+          class="mt-4"
+          :model-value="useCustomTimezone"
+          @update:model-value="toggleCustomTimezone($event)"
+        >
+          {{ t('file_upload.timezone.switch_label') }}
+        </RuiSwitch>
+      </div>
+      <div
+        v-if="useCustomTimezone"
+        data-testid="import-timezone-select"
+        class="mt-2"
+      >
+        <RuiTimezoneSelect
+          v-model="timezone"
+          variant="outlined"
+          clearable
+          :label="t('file_upload.timezone.label')"
+          :hint="t('file_upload.timezone.hint')"
+        />
+      </div>
 
       <div class="mt-4 text-sm leading-7 text-rui-text-secondary">
         <slot />
