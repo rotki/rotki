@@ -270,31 +270,57 @@ export function useAccountManage(): UseAccountManageReturn {
     set(saveError, '');
     set(saveErrorIsPremium, false);
 
-    const payload = state.data;
-    const isEdit = state.mode === 'edit';
-    const result = isEdit ? await editEth2Validator(payload) : await addEth2Validator(payload);
+    try {
+      const payload = state.data;
+      const isEdit = state.mode === 'edit';
+      const result = isEdit ? await editEth2Validator(payload) : await addEth2Validator(payload);
 
-    if (result.success) {
-      if (isEdit) {
-        assert(payload.publicKey);
-        assert(payload.ownershipPercentage);
-        updateEthStakingOwnership(payload.publicKey, bigNumberify(payload.ownershipPercentage));
-        startPromise(fetchAccounts(Blockchain.ETH2));
+      if (result.success) {
+        if (isEdit) {
+          assert(payload.publicKey);
+          assert(payload.ownershipPercentage);
+          updateEthStakingOwnership(payload.publicKey, bigNumberify(payload.ownershipPercentage));
+          startPromise(fetchAccounts(Blockchain.ETH2));
+        }
+        else {
+          startPromise(refreshAccounts({ blockchain: Blockchain.ETH2 }));
+        }
+        return true;
+      }
+
+      if (typeof result.message === 'string') {
+        set(saveErrorIsPremium, result.message.includes('limit exceeded'));
+        const friendly = result.message.includes('failed due to missing API key')
+          ? t('account_form.error.validator_needs_credentials')
+          : result.message;
+        set(saveError, friendly);
       }
       else {
-        startPromise(refreshAccounts({ blockchain: Blockchain.ETH2 }));
+        set(errorMessages, result.message);
       }
+      return false;
     }
-    else if (typeof result.message === 'string') {
-      set(saveError, result.message);
-      set(saveErrorIsPremium, result.message.includes('limit exceeded'));
+    catch (error: unknown) {
+      logger.error(error);
+      if (error instanceof ApiValidationError) {
+        const validation = error.getValidationErrors({
+          ownershipPercentage: '',
+          publicKey: '',
+          validatorIndex: '',
+        });
+        if (typeof validation === 'string')
+          set(saveError, validation);
+        else
+          set(errorMessages, validation);
+      }
+      else {
+        set(saveError, getErrorMessage(error));
+      }
+      return false;
     }
-    else {
-      set(errorMessages, result.message);
+    finally {
+      set(pending, false);
     }
-
-    set(pending, false);
-    return result.success;
   }
 
   function resetSaveError(): void {
