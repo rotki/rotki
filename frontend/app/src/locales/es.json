@@ -1634,7 +1634,6 @@
     },
     "api_key": "Clave de la API",
     "beaconchain": {
-      "description": "rotki uses Beaconcha.in to obtain information about ETH staking in your portfolio. An API key is only needed if you are being rate-limited.",
       "hint": "Enter your Beaconcha.in API key",
       "title": "Beaconcha.in"
     },

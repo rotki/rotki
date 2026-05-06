@@ -115,10 +115,12 @@ export function createMissingApiKeyHandler(t: ReturnType<typeof useI18n>['t'], r
     const { category, messageKey, titleKey } = config;
     const theGraphWarning = service === SuppressibleMissingKeyService.THEGRAPH;
 
+    const isBeaconchain = service === SuppressibleMissingKeyService.BEACONCHAIN;
+
     return {
       action: actions,
       category,
-      display: true,
+      display: !isBeaconchain,
       i18nParam: {
         choice: 0,
         message: messageKey,
@@ -130,7 +132,7 @@ export function createMissingApiKeyHandler(t: ReturnType<typeof useI18n>['t'], r
       },
       message: '',
       priority: Priority.ACTION,
-      severity: Severity.WARNING,
+      severity: isBeaconchain ? Severity.INFO : Severity.WARNING,
       title: t(titleKey, metadata),
     };
   });

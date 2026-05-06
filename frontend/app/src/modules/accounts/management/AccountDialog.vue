@@ -7,8 +7,6 @@ import AccountForm from '@/modules/accounts/management/AccountForm.vue';
 import { useAccountLoading } from '@/modules/accounts/use-account-loading';
 import { useEthStaking } from '@/modules/accounts/use-eth-staking';
 import { usePremiumHelper } from '@/modules/premium/use-premium-helper';
-import { useExternalApiKeys } from '@/modules/settings/api-keys/external/use-external-api-keys';
-import { useGeneralSettingsStore } from '@/modules/settings/use-general-settings-store';
 import BigDialog from '@/modules/shell/components/dialogs/BigDialog.vue';
 import ExternalLink from '@/modules/shell/components/ExternalLink.vue';
 
@@ -39,8 +37,6 @@ const subtitle = computed<string>(() =>
 
 const { errorMessages, pending, resetSaveError, save, saveError, saveErrorIsPremium } = useAccountManage();
 const { loading } = useAccountLoading();
-const { getApiKey } = useExternalApiKeys();
-const { beaconRpcEndpoint } = storeToRefs(useGeneralSettingsStore());
 const { validatorsLimitInfo } = useEthStaking();
 const { currentTier, ethStakedLimit, premium } = usePremiumHelper();
 
@@ -67,11 +63,7 @@ const isSaveDisabled = computed<boolean>(() => {
   if (!state || state.mode === 'edit')
     return false;
 
-  if (get(isValidatorLimitReached))
-    return true;
-
-  // Disable save button for validator addition without beaconchain API key and consensus client RPC
-  return state.type === 'validator' && !(getApiKey('beaconchain') || get(beaconRpcEndpoint));
+  return get(isValidatorLimitReached);
 });
 
 function dismiss(): void {

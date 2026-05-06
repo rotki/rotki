@@ -1863,7 +1863,7 @@
   "external_services": {
     "api_key": "Clé API",
     "beaconchain": {
-      "description": "rotki utilise Beaconcha.in pour obtenir des informations sur le staking ETH dans votre portefeuille. Une clé API est uniquement nécessaire si vous êtes soumis à une limitation de taux.",
+      "description": "rotki utilise Beaconcha.in pour récupérer l'historique des productions de blocs et des analyses de staking améliorées. Une clé API est nécessaire si vous souhaitez ces données.",
       "hint": "Entrer votre clé API Beaconcha.in",
       "title": "Beaconcha.in"
     },

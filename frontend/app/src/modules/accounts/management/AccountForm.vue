@@ -128,10 +128,22 @@ interface WarningItem {
   service?: 'etherscan' | 'helius' | 'beaconchain' | 'consensusRpc' | 'blockscout';
 }
 
+function isBeaconchainService(service: WarningItem['service']): boolean {
+  return service === 'beaconchain' || service === 'consensusRpc';
+}
+
+const beaconchainInfo = computed<WarningItem | undefined>(() => {
+  const service = get(missingApiKeyService);
+  if (!service || !isBeaconchainService(service))
+    return undefined;
+  return { service, type: 'apiKey' };
+});
+
 const warnings = computed<WarningItem[]>(() => {
   const result: WarningItem[] = [];
-  if (get(missingApiKeyService))
-    result.push({ service: get(missingApiKeyService), type: 'apiKey' });
+  const service = get(missingApiKeyService);
+  if (service && !isBeaconchainService(service))
+    result.push({ service, type: 'apiKey' });
   if (get(showSolanaInitialAlert))
     result.push({ type: 'solana' });
   if (get(showBinanceEtherscanWarning))
@@ -285,6 +297,14 @@ defineExpose({
 
 <template>
   <div data-cy="blockchain-balance-form">
+    <RuiAlert
+      v-if="beaconchainInfo?.service"
+      type="info"
+      class="mb-6 -mt-2"
+    >
+      <AccountFormApiKeyAlertContent :service="beaconchainInfo.service" />
+    </RuiAlert>
+
     <RuiAlert
       v-if="warnings.length > 0"
       type="warning"
