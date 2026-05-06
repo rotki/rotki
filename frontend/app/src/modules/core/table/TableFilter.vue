@@ -20,11 +20,12 @@ defineOptions({
   inheritAttrs: false,
 });
 
-const { matches, matchers, location, disabled } = defineProps<{
+const { matches, matchers, location, disabled, defaultMatcherKey } = defineProps<{
   matches: MatchedKeywordWithBehaviour<any>;
   matchers: SearchMatcher<any, any>[];
   location?: SavedFilterLocation;
   disabled?: boolean;
+  defaultMatcherKey?: string;
 }>();
 
 const emit = defineEmits<{
@@ -117,11 +118,42 @@ function setSearchToMatcherKey(matcher: SearchMatcher<any>): void {
   });
 }
 
+// Treat unkeyed free-text as the consumer's default matcher (e.g. notes search
+// on the History table). Only fires when the input has no `key=value` separator,
+// so explicit `key=value` autocomplete is unchanged.
+async function tryApplyDefaultMatcher(): Promise<boolean> {
+  if (!defaultMatcherKey)
+    return false;
+
+  const searchVal = get(search).trim();
+  if (!searchVal || searchVal.includes('='))
+    return false;
+
+  const matcher = matcherForKey(defaultMatcherKey);
+  if (!matcher || !('string' in matcher) || !matcher.validate(searchVal))
+    return false;
+
+  await nextTick(() =>
+    applyFilter({
+      asset: false,
+      index: 0,
+      key: defaultMatcherKey,
+      total: 1,
+      value: searchVal,
+    }),
+  );
+  set(selectedSuggestion, 0);
+  set(search, '');
+  return true;
+}
+
 async function applySuggestion(): Promise<void> {
   const selectedIndex = get(selectedSuggestion);
   if (!get(selectedMatcher)) {
-    const filteredMatchersVal = get(filteredMatchers);
+    if (await tryApplyDefaultMatcher())
+      return;
 
+    const filteredMatchersVal = get(filteredMatchers);
     if (filteredMatchersVal.length > selectedIndex)
       setSearchToMatcherKey(filteredMatchersVal[selectedIndex]);
 

@@ -294,6 +294,105 @@ describe('table-filter', () => {
     expect(wrapper.emitted('update:matches')?.at(-1)).toEqual([{ start: 'valid' }]);
   });
 
+  describe('defaultMatcherKey', () => {
+    it('should apply unkeyed free-text as the default matcher when set', async () => {
+      wrapper = createWrapper({
+        props: {
+          defaultMatcherKey: FilterKeys.START,
+          matchers,
+          matches: {},
+        },
+      });
+      await vi.advanceTimersToNextTimerAsync();
+
+      await wrapper.find('[data-id=activator]').trigger('click');
+      await vi.advanceTimersToNextTimerAsync();
+
+      await wrapper.find('input').setValue('plain text search');
+      await vi.advanceTimersToNextTimerAsync();
+
+      await wrapper.find('input').trigger('keydown.enter');
+      await vi.advanceTimersToNextTimerAsync();
+
+      expect(wrapper.emitted('update:matches')?.at(-1)).toEqual([{ start: 'plain text search' }]);
+      expect(wrapper.find<HTMLInputElement>('input').element.value).toBe('');
+    });
+
+    it('should leave key=value input untouched when defaultMatcherKey is set', async () => {
+      wrapper = createWrapper({
+        props: {
+          defaultMatcherKey: FilterKeys.START,
+          matchers,
+          matches: {},
+        },
+      });
+      await vi.advanceTimersToNextTimerAsync();
+
+      await wrapper.find('[data-id=activator]').trigger('click');
+      await vi.advanceTimersToNextTimerAsync();
+
+      await wrapper.find('input').setValue('type=type 1');
+      await vi.advanceTimersToNextTimerAsync();
+
+      await wrapper.find('input').trigger('keydown.enter');
+      await vi.advanceTimersToNextTimerAsync();
+
+      expect(wrapper.emitted('update:matches')?.at(-1)).toEqual([{ type: ['type 1'] }]);
+    });
+
+    it('should not apply unkeyed free-text as a filter when defaultMatcherKey is not set', async () => {
+      wrapper = createWrapper({
+        props: {
+          matchers,
+          matches: {},
+        },
+      });
+      await vi.advanceTimersToNextTimerAsync();
+
+      await wrapper.find('[data-id=activator]').trigger('click');
+      await vi.advanceTimersToNextTimerAsync();
+
+      await wrapper.find('input').setValue('plain text search');
+      await vi.advanceTimersToNextTimerAsync();
+
+      await wrapper.find('input').trigger('keydown.enter');
+      await vi.advanceTimersToNextTimerAsync();
+
+      // Without defaultMatcherKey, free text must never be implicitly committed
+      // as a filter value for any matcher.
+      const emissions = wrapper.emitted<[Record<string, unknown>]>('update:matches') ?? [];
+      const appliedAsFilter = emissions.some(([m]) =>
+        Object.values(m).some(v => v === 'plain text search' || (Array.isArray(v) && v.includes('plain text search'))),
+      );
+      expect(appliedAsFilter).toBe(false);
+    });
+
+    it('should skip default matcher when validation fails', async () => {
+      const matchersWithValidation = createMatchers(value => value === 'valid');
+      wrapper = createWrapper({
+        props: {
+          defaultMatcherKey: FilterKeys.START,
+          matchers: matchersWithValidation,
+          matches: {},
+        },
+      });
+      await vi.advanceTimersToNextTimerAsync();
+
+      await wrapper.find('[data-id=activator]').trigger('click');
+      await vi.advanceTimersToNextTimerAsync();
+
+      await wrapper.find('input').setValue('not valid');
+      await vi.advanceTimersToNextTimerAsync();
+
+      await wrapper.find('input').trigger('keydown.enter');
+      await vi.advanceTimersToNextTimerAsync();
+
+      const emissions = wrapper.emitted('update:matches') ?? [];
+      const hasStart = emissions.some(([m]) => Object.prototype.hasOwnProperty.call(m, 'start'));
+      expect(hasStart).toBe(false);
+    });
+  });
+
   describe('strictMatching', () => {
     const createStrictMatchingMatchers = (): StringSuggestionMatcher<FilterKeys, FilterKeyValues>[] => [
       {

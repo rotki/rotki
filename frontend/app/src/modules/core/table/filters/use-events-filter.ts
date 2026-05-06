@@ -29,7 +29,7 @@ import { useHistoryEventMappings } from '@/modules/history/events/mapping/use-hi
 import { useHistoryStore } from '@/modules/history/use-history-store';
 import { useFrontendSettingsStore } from '@/modules/settings/use-frontend-settings-store';
 
-enum HistoryEventFilterKeys {
+export enum HistoryEventFilterKeys {
   START = 'start',
   END = 'end',
   ASSET = 'asset',
