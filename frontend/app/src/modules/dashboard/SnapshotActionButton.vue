@@ -120,6 +120,7 @@ watchImmediate(ignoreSnapshotError, (ignoreSnapshotError) => {
         custom-color
         v-bind="attrs"
         class="!p-2"
+        data-testid="snapshot-action"
       >
         <RuiIcon name="lu-git-commit-vertical" />
       </MenuTooltipButton>

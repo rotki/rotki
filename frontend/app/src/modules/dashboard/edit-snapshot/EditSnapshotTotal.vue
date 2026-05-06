@@ -245,6 +245,7 @@ async function save(): Promise<void> {
     <div class="border-t-2 border-rui-grey-300 dark:border-rui-grey-800 relative z-[2] flex justify-end p-2 gap-2">
       <RuiButton
         variant="text"
+        data-testid="edit-snapshot-prev"
         @click="updateStep(2)"
       >
         <template #prepend>
@@ -254,6 +255,7 @@ async function save(): Promise<void> {
       </RuiButton>
       <RuiButton
         color="primary"
+        data-testid="edit-snapshot-complete"
         @click="save()"
       >
         {{ t('common.actions.finish') }}

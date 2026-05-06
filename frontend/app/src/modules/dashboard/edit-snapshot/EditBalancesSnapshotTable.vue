@@ -458,6 +458,7 @@ function confirmDelete(): void {
         </RuiButton>
         <RuiButton
           color="primary"
+          data-testid="edit-snapshot-next"
           @click="updateStep(2)"
         >
           {{ t('common.actions.next') }}

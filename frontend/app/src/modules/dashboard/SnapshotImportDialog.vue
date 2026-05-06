@@ -44,7 +44,7 @@ const complete = logicAnd(balanceFile, locationFile);
       </RuiButton>
     </template>
 
-    <RuiCard>
+    <RuiCard data-testid="snapshot-import-dialog">
       <template #header>
         {{ t('snapshot_import_dialog.title') }}
       </template>
@@ -54,7 +54,10 @@ const complete = logicAnd(balanceFile, locationFile);
           <div class="font-bold">
             {{ t('snapshot_import_dialog.balance_snapshot_file') }}
           </div>
-          <div class="py-2">
+          <div
+            class="py-2"
+            data-testid="snapshot-import-balance-file"
+          >
             <FileUpload
               v-model="balanceFile"
               source="csv"
@@ -68,7 +71,10 @@ const complete = logicAnd(balanceFile, locationFile);
           <div class="font-bold">
             {{ t('snapshot_import_dialog.location_data_snapshot_file') }}
           </div>
-          <div class="py-2">
+          <div
+            class="py-2"
+            data-testid="snapshot-import-location-file"
+          >
             <FileUpload
               v-model="locationFile"
               source="csv"
@@ -93,6 +99,7 @@ const complete = logicAnd(balanceFile, locationFile);
           color="primary"
           :disabled="!complete"
           :loading="loading"
+          data-testid="snapshot-import-submit"
           @click="emit('import')"
         >
           {{ t('common.actions.import') }}
