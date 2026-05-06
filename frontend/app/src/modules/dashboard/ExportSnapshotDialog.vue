@@ -139,7 +139,7 @@ function showDeleteConfirmation() {
     v-model="display"
     max-width="600"
   >
-    <RuiCard>
+    <RuiCard data-testid="export-snapshot-dialog">
       <template #header>
         {{ t('dashboard.snapshot.export_database_snapshot') }}
       </template>
@@ -168,6 +168,7 @@ function showDeleteConfirmation() {
       <template #footer>
         <RuiButton
           color="primary"
+          data-testid="export-snapshot-edit"
           @click="editMode = true"
         >
           <template #prepend>
@@ -177,6 +178,7 @@ function showDeleteConfirmation() {
         </RuiButton>
         <RuiButton
           color="error"
+          data-testid="export-snapshot-delete"
           @click="showDeleteConfirmation()"
         >
           <template #prepend>
@@ -187,6 +189,7 @@ function showDeleteConfirmation() {
         <div class="grow" />
         <RuiButton
           color="primary"
+          data-testid="export-snapshot-download"
           @click="exportSnapshot()"
         >
           <template #prepend>

@@ -255,6 +255,7 @@ function showDeleteConfirmation(item: IndexedLocationDataSnapshot) {
         </RuiButton>
         <RuiButton
           variant="text"
+          data-testid="edit-snapshot-prev"
           @click="updateStep(1)"
         >
           <template #prepend>
@@ -264,6 +265,7 @@ function showDeleteConfirmation(item: IndexedLocationDataSnapshot) {
         </RuiButton>
         <RuiButton
           color="primary"
+          data-testid="edit-snapshot-next"
           @click="updateStep(3)"
         >
           {{ t('common.actions.next') }}

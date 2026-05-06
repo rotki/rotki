@@ -49,6 +49,7 @@ watchImmediate(chartOption, () => {
   <div
     ref="chartContainer"
     class="relative w-full h-full"
+    data-testid="net-worth-chart"
   >
     <VChart
       ref="chartInstance"

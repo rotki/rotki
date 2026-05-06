@@ -162,6 +162,7 @@ const steps = computed<{ title: string }[]>(() => [
       no-padding
       variant="flat"
       class="overflow-hidden"
+      data-testid="edit-snapshot-dialog"
     >
       <div class="flex bg-rui-primary text-white p-2">
         <RuiButton
