@@ -537,6 +537,7 @@ def test_add_solana_blockchain_account_rejects_invalid_address(
 @pytest.mark.parametrize('number_of_eth_accounts', [2])
 @pytest.mark.parametrize('btc_accounts', [[UNIT_BTC_ADDRESS1, UNIT_BTC_ADDRESS2]])
 @pytest.mark.parametrize('query_balances_before_first_modification', [True, False])
+@pytest.mark.usefixtures('force_beacon_rpc_fallback')
 def test_add_blockchain_accounts(  # hard to VCR, the order of requests is not always the same
         rotkehlchen_api_server: 'APIServer',
         ethereum_accounts: list['ChecksumEvmAddress'],
