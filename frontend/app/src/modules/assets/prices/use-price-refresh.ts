@@ -121,7 +121,8 @@ export const usePriceRefresh = createSharedComposable((): UsePriceRefreshReturn 
     });
 
   const refreshPrices = async (ignoreCache = false, selectedAssets: string[] | null = null): Promise<void> => {
-    const assetsToRefresh = selectedAssets?.filter(uniqueStrings) ?? get(assets);
+    const assetsToRefresh = selectedAssets?.filter(uniqueStrings)
+      ?? [...get(assets), ...Object.keys(get(prices))].filter(uniqueStrings);
     await enqueueTask(ignoreCache, assetsToRefresh);
   };
 

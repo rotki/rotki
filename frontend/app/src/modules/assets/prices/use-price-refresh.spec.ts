@@ -185,6 +185,77 @@ describe('usePriceRefresh', () => {
     });
   });
 
+  // Regression: the price seed populates `prices` for assets the user holds, but
+  // before chain balances finish loading `useAggregatedBalances.assets` can be
+  // empty. The refresh button and currency switch must still re-fetch the seeded
+  // entries (otherwise they stay stale / in the old currency).
+  // These tests reset modules so the shared composable is re-instantiated with
+  // a fresh pinia, instead of retaining state from the suite above.
+  describe('refreshPrices — seeded assets', () => {
+    beforeEach(async () => {
+      vi.resetModules();
+      setActivePinia(createPinia());
+      mockFetchExchangeRates.mockClear().mockResolvedValue({});
+      mockFetchPrices.mockClear().mockResolvedValue({});
+    });
+
+    async function loadFreshRefresh(): Promise<{ refreshPrices: (ignoreCache?: boolean, selectedAssets?: string[] | null) => Promise<void> }> {
+      const mod = await import('@/modules/assets/prices/use-price-refresh');
+      return mod.usePriceRefresh();
+    }
+
+    it('should refresh seeded assets even when aggregated balances are empty', async () => {
+      const { prices } = storeToRefs(useBalancePricesStore());
+      set(prices, {
+        BTC: createTestPriceInfo(40000),
+        ETH: createTestPriceInfo(3000),
+      });
+
+      const { refreshPrices } = await loadFreshRefresh();
+      await refreshPrices(true);
+
+      expect(mockFetchExchangeRates).toHaveBeenCalled();
+      expect(mockFetchPrices).toHaveBeenCalledTimes(1);
+      const { ignoreCache, selectedAssets } = mockFetchPrices.mock.calls[0][0];
+      expect(ignoreCache).toBe(true);
+      expect([...selectedAssets].sort()).toEqual(['BTC', 'ETH']);
+    });
+
+    it('should union aggregated assets with seeded prices when no selection is passed', async () => {
+      const { prices } = storeToRefs(useBalancePricesStore());
+      const { manualBalances } = storeToRefs(useBalancesStore());
+
+      set(manualBalances, [
+        createTestManualBalance('DAI', 50, 50, TRADE_LOCATION_BANKS),
+      ]);
+      set(prices, {
+        BTC: createTestPriceInfo(40000),
+      });
+
+      const { refreshPrices } = await loadFreshRefresh();
+      await refreshPrices(true);
+
+      expect(mockFetchPrices).toHaveBeenCalledTimes(1);
+      const { selectedAssets } = mockFetchPrices.mock.calls[0][0];
+      expect([...selectedAssets].sort()).toEqual(['BTC', 'DAI']);
+    });
+
+    it('should respect an explicit selectedAssets list and not union with priced assets', async () => {
+      const { prices } = storeToRefs(useBalancePricesStore());
+      set(prices, {
+        BTC: createTestPriceInfo(40000),
+        ETH: createTestPriceInfo(3000),
+      });
+
+      const { refreshPrices } = await loadFreshRefresh();
+      await refreshPrices(true, ['DAI']);
+
+      expect(mockFetchPrices).toHaveBeenCalledTimes(1);
+      const { selectedAssets } = mockFetchPrices.mock.calls[0][0];
+      expect([...selectedAssets]).toEqual(['DAI']);
+    });
+  });
+
   describe('queue fifo', () => {
     let executionOrder: string[];
     let callCount: number;
