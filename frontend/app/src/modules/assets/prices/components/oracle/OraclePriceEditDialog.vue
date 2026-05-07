@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { OraclePriceEntry } from '@/modules/assets/prices/price-types';
 import { useAssetPricesApi } from '@/modules/assets/api/use-asset-prices-api';
+import { useHistoricPriceCache } from '@/modules/assets/prices/use-historic-price-cache';
 import { useAssetInfoRetrieval } from '@/modules/assets/use-asset-info-retrieval';
 import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
 import { useNotifications } from '@/modules/core/notifications/use-notifications';
@@ -15,6 +16,7 @@ const emit = defineEmits<{
 const { t } = useI18n({ useScope: 'global' });
 const { getAssetField } = useAssetInfoRetrieval();
 const { editHistoricalPrice } = useAssetPricesApi();
+const { resetHistoricalPricesData } = useHistoricPriceCache();
 const { showErrorMessage } = useNotifications();
 
 const loading = ref<boolean>(false);
@@ -49,6 +51,7 @@ async function save(): Promise<void> {
       timestamp: item.timestamp,
       toAsset: item.toAsset,
     });
+    resetHistoricalPricesData([{ fromAsset: item.fromAsset, timestamp: item.timestamp }]);
     set(modelValue, undefined);
     emit('refresh');
   }

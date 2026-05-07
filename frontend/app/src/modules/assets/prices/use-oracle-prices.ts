@@ -2,6 +2,7 @@ import type { MaybeRef } from 'vue';
 import type { OraclePriceEntry, OraclePricesQuery } from '@/modules/assets/prices/price-types';
 import type { Collection } from '@/modules/core/common/collection';
 import { useAssetPricesApi } from '@/modules/assets/api/use-asset-prices-api';
+import { useHistoricPriceCache } from '@/modules/assets/prices/use-historic-price-cache';
 import { defaultCollectionState } from '@/modules/core/common/data/collection-utils';
 import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
 import { useNotifications } from '@/modules/core/notifications/use-notifications';
@@ -15,6 +16,7 @@ export function useOraclePrices(): UseOraclePricesReturn {
   const { t } = useI18n({ useScope: 'global' });
 
   const { deleteHistoricalPrice, fetchOraclePrices } = useAssetPricesApi();
+  const { resetHistoricalPricesData } = useHistoricPriceCache();
   const { notifyError } = useNotifications();
 
   const fetchData = async (
@@ -40,6 +42,7 @@ export function useOraclePrices(): UseOraclePricesReturn {
         timestamp: item.timestamp,
         toAsset: item.toAsset,
       });
+      resetHistoricalPricesData([{ fromAsset: item.fromAsset, timestamp: item.timestamp }]);
       return true;
     }
     catch (error: unknown) {
