@@ -38,6 +38,14 @@ describe('response-handlers', () => {
 
       expect(result).toEqual([{ itemName: 'first' }, { itemName: 'second' }]);
     });
+
+    it('should return null when the body is not valid JSON', () => {
+      const html = '<html><head><title>413 Request Entity Too Large</title></head></html>';
+
+      expect(createResponseParser({})(html)).toBeNull();
+      expect(createResponseParser({ skipCamelCase: true })(html)).toBeNull();
+      expect(createResponseParser({ skipRootCamelCase: true })(html)).toBeNull();
+    });
   });
 
   describe('createStatusError', () => {
@@ -65,6 +73,27 @@ describe('response-handlers', () => {
 
       expect(error).toBeInstanceOf(FetchError);
       expect(error.data).toEqual(data);
+    });
+
+    it('should use a payload-too-large fallback message for 413', () => {
+      const error = createStatusError(413);
+
+      expect(error.status).toBe(413);
+      expect(error.message).toMatch(/exceeds the limit/i);
+    });
+
+    it('should prefer an explicit message over the 413 fallback', () => {
+      const error = createStatusError(413, 'Custom message');
+
+      expect(error.message).toBe('Custom message');
+    });
+
+    it('should use a backend-unreachable fallback message for 502/503/504', () => {
+      for (const status of [502, 503, 504]) {
+        const error = createStatusError(status);
+        expect(error.status).toBe(status);
+        expect(error.message).toMatch(/backend is unreachable/i);
+      }
     });
 
     it('should handle various HTTP status codes', () => {
