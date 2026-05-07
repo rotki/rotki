@@ -6,11 +6,18 @@ import '@test/i18n';
 
 const mockFetchOraclePrices = vi.fn();
 const mockDeleteHistoricalPrice = vi.fn();
+const mockResetHistoricalPricesData = vi.fn();
 
 vi.mock('@/modules/assets/api/use-asset-prices-api', () => ({
   useAssetPricesApi: vi.fn().mockReturnValue({
     deleteHistoricalPrice: mockDeleteHistoricalPrice,
     fetchOraclePrices: mockFetchOraclePrices,
+  }),
+}));
+
+vi.mock('@/modules/assets/prices/use-historic-price-cache', () => ({
+  useHistoricPriceCache: vi.fn().mockReturnValue({
+    resetHistoricalPricesData: mockResetHistoricalPricesData,
   }),
 }));
 
@@ -47,6 +54,7 @@ describe('useOraclePrices', () => {
   beforeEach(() => {
     mockFetchOraclePrices.mockClear().mockResolvedValue(emptyCollection());
     mockDeleteHistoricalPrice.mockClear().mockResolvedValue(true);
+    mockResetHistoricalPricesData.mockClear();
   });
 
   it('should call fetchOraclePrices with provided payload', async () => {
@@ -120,6 +128,9 @@ describe('useOraclePrices', () => {
       timestamp: 1700000000,
       toAsset: 'USD',
     });
+    expect(mockResetHistoricalPricesData).toHaveBeenCalledWith([
+      { fromAsset: 'ETH', timestamp: 1700000000 },
+    ]);
     expect(success).toBe(true);
   });
 
@@ -137,5 +148,6 @@ describe('useOraclePrices', () => {
     });
 
     expect(success).toBe(false);
+    expect(mockResetHistoricalPricesData).not.toHaveBeenCalled();
   });
 });
