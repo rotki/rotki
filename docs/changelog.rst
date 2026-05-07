@@ -2,7 +2,8 @@
 Changelog
 =========
 
-* :release:`1.43.0 <2026-05-06>`
+* :release:`1.43.0 <2026-05-08>`
+* :bug:`-` Docker users can once again import data, snapshots, and asset icons larger than 1 MiB; the bundled nginx no longer rejects them with a 413 before they reach rotki.
 * :feature:`12143` CSV imports now accept an optional timezone so files whose dates lack timezone information can be interpreted in the correct local time instead of defaulting to UTC.
 * :feature:`-` After a rotki update, a friendly prompt will walk you through any new recommended settings. You can accept the ones you like, keep what you have for the rest.
 * :feature:`12102` New giveth donation events will now be properly decoded on all supported chains.
