@@ -184,16 +184,24 @@ export class SubprocessHandler {
     this.coreManager.onExit((code, signal, lastError) => {
       this.logger.error(`rotki-core exited with signal: ${signal} (Code: ${code})`);
       /**
-       * On win32 we can also get a null code on SIGTERM
+       * On win32 we can also get a null code on SIGTERM. On win32 we use
+       * `taskkill /f` to terminate the core process during a user-triggered
+       * shutdown or restart, which exits with a non-zero code — so suppress
+       * the TERMINATED error while we are intentionally tearing the process
+       * down.
        */
-      if (!(code === 0 || code === null)) {
-        // Notify the main window every 2 seconds until it acks the notification
-        listener.onProcessError(lastError, BackendCode.TERMINATED);
+      if (this.exiting || code === 0 || code === null) {
+        return;
       }
+      // Notify the main window every 2 seconds until it acks the notification
+      listener.onProcessError(lastError, BackendCode.TERMINATED);
     });
 
     this.coreManager.onError((error) => {
       this.logger.error('Encountered an error while trying to start rotki-core', error);
+      if (this.exiting) {
+        return;
+      }
       listener.onProcessError(error, BackendCode.TERMINATED);
     });
 
