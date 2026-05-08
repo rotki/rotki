@@ -8,7 +8,7 @@ from rotkehlchen.externalapis.coingecko import Coingecko
 from rotkehlchen.externalapis.cryptocompare import Cryptocompare
 from rotkehlchen.externalapis.defillama import Defillama
 from rotkehlchen.history.price import PriceHistorian
-from rotkehlchen.history.types import DEFAULT_HISTORICAL_PRICE_ORACLES_ORDER
+from rotkehlchen.history.types import HistoricalPriceOracle
 from rotkehlchen.tests.utils.history import maybe_mock_historical_price_queries
 from rotkehlchen.types import ApiKey, ExternalService, ExternalServiceApiCredentials
 
@@ -66,7 +66,13 @@ def fixture_uniswapv3():
 
 @pytest.fixture(name='historical_price_oracles_order')
 def fixture_historical_price_oracles_order():
-    return DEFAULT_HISTORICAL_PRICE_ORACLES_ORDER
+    return (
+        HistoricalPriceOracle.CRYPTOCOMPARE,
+        HistoricalPriceOracle.COINGECKO,
+        HistoricalPriceOracle.DEFILLAMA,
+        HistoricalPriceOracle.UNISWAPV3,
+        HistoricalPriceOracle.UNISWAPV2,
+    )
 
 
 @pytest.fixture(name='dont_mock_price_for')

@@ -19,6 +19,7 @@ from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.db.settings import ModifiableDBSettings
 from rotkehlchen.errors.misc import InputError
 from rotkehlchen.globaldb.handler import GlobalDBHandler
+from rotkehlchen.history.types import HistoricalPriceOracle
 from rotkehlchen.tests.utils.constants import DEFAULT_TESTS_MAIN_CURRENCY
 from rotkehlchen.types import (
     ApiKey,
@@ -122,6 +123,13 @@ def add_settings_to_test_db(
         # DO not submit usage analytics during tests
         'submit_usage_analytics': False,
         'main_currency': DEFAULT_TESTS_MAIN_CURRENCY,
+        'historical_price_oracles': [
+            HistoricalPriceOracle.CRYPTOCOMPARE,
+            HistoricalPriceOracle.COINGECKO,
+            HistoricalPriceOracle.DEFILLAMA,
+            HistoricalPriceOracle.UNISWAPV3,
+            HistoricalPriceOracle.UNISWAPV2,
+        ],
     }
     # Set the given db_settings. The pre-set values have priority unless overridden here
     if db_settings is not None:
