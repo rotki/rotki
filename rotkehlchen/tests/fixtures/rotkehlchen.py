@@ -16,6 +16,7 @@ from rotkehlchen.db.settings import CachedSettings, DBSettings, ModifiableDBSett
 from rotkehlchen.db.updates import RotkiDataUpdater
 from rotkehlchen.exchanges.constants import EXCHANGES_WITH_PASSPHRASE, EXCHANGES_WITHOUT_API_SECRET
 from rotkehlchen.history.price import PriceHistorian
+from rotkehlchen.history.types import HistoricalPriceOracle
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.premium.premium import Premium, PremiumCredentials, SubscriptionStatus
 from rotkehlchen.rotkehlchen import Rotkehlchen
@@ -442,6 +443,13 @@ def initialize_mock_rotkehlchen_instance(
             )
 
     rotki.task_manager.should_schedule = True
+    PriceHistorian().set_oracles_order((
+        HistoricalPriceOracle.CRYPTOCOMPARE,
+        HistoricalPriceOracle.COINGECKO,
+        HistoricalPriceOracle.DEFILLAMA,
+        HistoricalPriceOracle.UNISWAPV3,
+        HistoricalPriceOracle.UNISWAPV2,
+    ))
     inquirer_inject_evm_managers_set_order(
         inquirer=Inquirer(),
         add_defi_oracles=False,

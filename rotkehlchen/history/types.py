@@ -34,9 +34,9 @@ NOT_EXPOSED_SOURCES = (
 )
 
 DEFAULT_HISTORICAL_PRICE_ORACLES_ORDER = (
+    HistoricalPriceOracle.DEFILLAMA,
     HistoricalPriceOracle.CRYPTOCOMPARE,
     HistoricalPriceOracle.COINGECKO,
-    HistoricalPriceOracle.DEFILLAMA,
     HistoricalPriceOracle.UNISWAPV3,
     HistoricalPriceOracle.UNISWAPV2,
 )
