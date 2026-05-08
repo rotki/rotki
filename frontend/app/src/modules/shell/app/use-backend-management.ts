@@ -7,6 +7,7 @@ import { useMainStore } from '@/modules/core/common/use-main-store';
 import { clearUserOptions, loadUserOptions, saveUserOptions } from '@/modules/shell/app/backend-options';
 import { useBackendConnection } from '@/modules/shell/app/use-backend-connection';
 import { useInterop } from '@/modules/shell/app/use-electron-interop';
+import { useWebsocketConnection } from '@/modules/shell/app/use-websocket-connection';
 
 interface UseBackendManagementReturn {
   applyUserOptions: (config: Partial<BackendOptions>, skipRestart: boolean) => Promise<void>;
@@ -26,9 +27,10 @@ interface UseBackendManagementReturn {
 export function useBackendManagement(loaded: () => void = () => {}): UseBackendManagementReturn {
   const interop = useInterop();
   const store = useMainStore();
-  const { connected } = storeToRefs(store);
+  const { connected, connectionEnabled } = storeToRefs(store);
   const { setConnected } = store;
   const { connect } = useBackendConnection();
+  const { setConnectionEnabled: setWsConnectionEnabled } = useWebsocketConnection();
 
   const defaultLogLevel = computed<LogLevel>(() => getDefaultLogLevel());
   const logLevel = ref<LogLevel>(get(defaultLogLevel));
@@ -43,6 +45,11 @@ export function useBackendManagement(loaded: () => void = () => {}): UseBackendM
   const restartBackendWithOptions = async (options: Partial<BackendOptions>): Promise<void> => {
     setConnected(false);
     await interop.restartBackend(options);
+    // Re-enable connections in case a prior process termination disabled them
+    // (e.g. on Windows, taskkill exits the core process with a non-zero code, which
+    // is reported as a TERMINATED startup error and disables connection attempts).
+    set(connectionEnabled, true);
+    setWsConnectionEnabled(true);
     connect();
   };
 
