@@ -161,7 +161,7 @@ class Environment:
             return
 
         unmerged_commits = subprocess.check_output(
-            'git rev-list HEAD..bugfixes --no-merges | wc -l | xargs echo -n',
+            'git rev-list --count --no-merges HEAD..bugfixes',
             encoding='utf8',
             shell=True,
         ).strip()
