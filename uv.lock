@@ -2078,6 +2078,7 @@ dependencies = [
     { name = "solders" },
     { name = "sqlcipher3" },
     { name = "substrate-interface" },
+    { name = "tzdata", marker = "sys_platform == 'win32'" },
     { name = "urllib3" },
     { name = "web3" },
     { name = "webargs" },
@@ -2190,6 +2191,7 @@ requires-dist = [
     { name = "solders", specifier = "==0.26.0" },
     { name = "sqlcipher3", specifier = "==0.6.2" },
     { name = "substrate-interface", specifier = "==1.8.1" },
+    { name = "tzdata", marker = "sys_platform == 'win32'", specifier = "==2025.2" },
     { name = "urllib3", specifier = "==2.6.3" },
     { name = "web3", specifier = "==7.15.0" },
     { name = "webargs", specifier = "==8.7.0" },
@@ -2858,6 +2860,15 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/ba/c0/374639373a99b62f51c3204521235906dca1ed1886e73f65d6664465b187/typing_validation-1.2.12.tar.gz", hash = "sha256:7ea9463a18bd04922e799cac1954f687e68e9564773f81db491536852ffe1d54", size = 774523, upload-time = "2025-03-18T14:54:49.4Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/59/7b/29a088c5be56f40e0b1e611c460681f411ce79f0083d2cd3b233a35b7c4d/typing_validation-1.2.12-py3-none-any.whl", hash = "sha256:d68e22a41bf2b98ae91e5d6407db56e9ef83e9e5600164a7aff64aaa082fc232", size = 20657, upload-time = "2025-03-18T14:54:47.529Z" },
+]
+
+[[package]]
+name = "tzdata"
+version = "2025.2"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/95/32/1a225d6164441be760d75c2c42e2780dc0873fe382da3e98a2e1e48361e5/tzdata-2025.2.tar.gz", hash = "sha256:b60a638fcc0daffadf82fe0f57e53d06bdec2f36c4df66280ae79bce6bd6f2b9", size = 196380, upload-time = "2025-03-23T13:54:43.652Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/5c/23/c7abc0ca0a1526a0774eca151daeb8de62ec457e77262b66b359c3c7679e/tzdata-2025.2-py2.py3-none-any.whl", hash = "sha256:1a403fada01ff9221ca8044d701868fa132215d84beb92242d9acd2147f667a8", size = 347839, upload-time = "2025-03-23T13:54:41.845Z" },
 ]
 
 [[package]]
