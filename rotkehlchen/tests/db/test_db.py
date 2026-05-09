@@ -509,7 +509,7 @@ def test_writing_fetching_data(data_dir, username, sql_vm_instructions_cb):
     assert 0 <= last_write_diff < 3
     expected_dict = {
         'have_premium': False,
-        'ksm_rpc_endpoint': 'http://localhost:9933',
+        'ksm_rpc_endpoint': '',
         'dot_rpc_endpoint': '',
         'beacon_rpc_endpoint': DEFAULT_BEACON_RPC,
         'btc_mempool_api': '',

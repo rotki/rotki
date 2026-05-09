@@ -9,6 +9,7 @@ from rotkehlchen.constants import ONE, ZERO
 from rotkehlchen.constants.assets import A_BTC, A_DAI, A_ETH, A_ETH2, A_USDC, A_USDT
 from rotkehlchen.constants.resolver import strethaddress_to_identifier
 from rotkehlchen.db.dbhandler import DBHandler
+from rotkehlchen.db.settings import STRING_KEYS_REMOVE_IF_EMPTY, DBSettings
 from rotkehlchen.errors.price import NoPriceForGivenTimestamp
 from rotkehlchen.exchanges.data_structures import MarginPosition
 from rotkehlchen.fval import FVal
@@ -958,6 +959,14 @@ def assert_pnl_debug_import(filepath: Path, database: DBHandler) -> None:
     for x in ('version', 'last_data_migration', 'last_write_ts'):
         settings_from_db.pop(x)
         settings_from_file.pop(x)
+
+    # An empty value for these endpoint settings means "not set" — the DB row
+    # is removed and the dataclass default is returned on read. Mirror that
+    # here so the comparison reflects the post-import state.
+    default_settings = DBSettings()
+    for key in STRING_KEYS_REMOVE_IF_EMPTY:
+        if settings_from_file.get(key) == '':
+            settings_from_file[key] = getattr(default_settings, key)
 
     assert settings_from_file == settings_from_db
     assert list(ignored_actions_ids_from_db) == ignored_actions_ids_from_file

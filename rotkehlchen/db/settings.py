@@ -2,7 +2,7 @@ import json
 import logging
 from collections.abc import Mapping, Sequence
 from contextvars import ContextVar
-from dataclasses import dataclass, field, fields
+from dataclasses import MISSING, dataclass, field, fields
 from typing import TYPE_CHECKING, Any, ClassVar, Final, Literal, NamedTuple, Optional
 
 from rotkehlchen.assets.asset import Asset, AssetWithOracles
@@ -154,6 +154,16 @@ STRING_KEYS: Final = (
     'frontend_settings',
     'csv_export_delimiter',
 )
+# String settings whose empty value means "not set". For these we delete the
+# row from the DB instead of storing an empty string and we treat any empty
+# value already in the DB as if the entry was missing (the dataclass default
+# is then applied).
+STRING_KEYS_REMOVE_IF_EMPTY: Final = frozenset({
+    'ksm_rpc_endpoint',
+    'dot_rpc_endpoint',
+    'beacon_rpc_endpoint',
+    'btc_mempool_api',
+})
 FVAL_KEYS: Final = (
     'asset_movement_amount_tolerance',
 )
@@ -242,9 +252,11 @@ class DBSettings:
     taxfree_after_period: int | None = DEFAULT_TAXFREE_AFTER_PERIOD
     balance_save_frequency: int = DEFAULT_BALANCE_SAVE_FREQUENCY
     include_gas_costs: bool = DEFAULT_INCLUDE_GAS_COSTS
-    ksm_rpc_endpoint: str = 'http://localhost:9933'
-    dot_rpc_endpoint: str = ''  # same as kusama -- must be set by user
-    beacon_rpc_endpoint: str = DEFAULT_BEACON_RPC  # must be set by user
+    # All three RPC endpoints below are optional. An empty value means the
+    # endpoint is not set; the default substrate/beacon behavior is used.
+    ksm_rpc_endpoint: str = ''
+    dot_rpc_endpoint: str = ''
+    beacon_rpc_endpoint: str = DEFAULT_BEACON_RPC
     btc_mempool_api: str = ''
     main_currency: Asset = DEFAULT_MAIN_CURRENCY
     date_display_format: str = DEFAULT_DATE_DISPLAY_FORMAT
@@ -304,6 +316,18 @@ class DBSettings:
             settings_dict[field_entry.name] = serialized_value
 
         return settings_dict
+
+
+# Cache of dataclass defaults so we don't instantiate DBSettings every time
+# we need to look up a default value for a setting.
+_DBSETTINGS_DEFAULTS: Final[dict[str, Any]] = {
+    field_entry.name: (
+        field_entry.default_factory()
+        if field_entry.default_factory is not MISSING
+        else field_entry.default
+    )
+    for field_entry in fields(DBSettings)
+}
 
 
 class ModifiableDBSettings(NamedTuple):
@@ -416,6 +440,8 @@ def db_settings_from_dict(
         elif key in INTEGER_KEYS:
             specified_args[key] = int(value)
         elif key in STRING_KEYS:
+            if key in STRING_KEYS_REMOVE_IF_EMPTY and value == '':
+                continue  # treat empty as not set so the dataclass default applies
             specified_args[key] = str(value)
         elif key in FVAL_KEYS:
             specified_args[key] = FVal(value)
@@ -566,6 +592,10 @@ class CachedSettings:
         self._refresh_indexers_cache()
 
     def update_entry(self, attr: str, value: DBSettingsFieldTypes) -> None:
+        if attr in STRING_KEYS_REMOVE_IF_EMPTY and value == '':
+            # Mirror the deserialization behavior: an empty value means the
+            # entry was unset, so fall back to the dataclass default.
+            value = _DBSETTINGS_DEFAULTS[attr]
         setattr(self._settings, attr, value)
         if attr in ('evm_indexers_order', 'default_evm_indexer_order'):
             self._refresh_indexers_cache()

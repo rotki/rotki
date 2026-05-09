@@ -75,6 +75,7 @@ from rotkehlchen.db.settings import (
     DEFAULT_PREMIUM_SHOULD_SYNC,
     ROTKEHLCHEN_DB_VERSION,
     ROTKEHLCHEN_TRANSIENT_DB_VERSION,
+    STRING_KEYS_REMOVE_IF_EMPTY,
     CachedSettings,
     DBSettings,
     ModifiableDBSettings,
@@ -665,10 +666,27 @@ class DBHandler:
 
     def set_settings(self, write_cursor: 'DBCursor', settings: ModifiableDBSettings) -> None:
         settings_dict = settings.serialize()
-        write_cursor.executemany(
-            'INSERT OR REPLACE INTO settings(name, value) VALUES(?, ?)',
-            list(settings_dict.items()),
-        )
+        # Settings whose value is an empty string and which support being unset
+        # are removed from the DB (instead of stored as ''), so the dataclass
+        # default kicks in on the next read.
+        to_delete = [
+            (name,) for name, value in settings_dict.items()
+            if name in STRING_KEYS_REMOVE_IF_EMPTY and value == ''
+        ]
+        to_upsert = [
+            (name, value) for name, value in settings_dict.items()
+            if not (name in STRING_KEYS_REMOVE_IF_EMPTY and value == '')
+        ]
+        if len(to_delete) > 0:
+            write_cursor.executemany(
+                'DELETE FROM settings WHERE name=?',
+                to_delete,
+            )
+        if len(to_upsert) > 0:
+            write_cursor.executemany(
+                'INSERT OR REPLACE INTO settings(name, value) VALUES(?, ?)',
+                to_upsert,
+            )
         CachedSettings().update_entries(settings)
 
     def get_cache_for_api(self, cursor: 'DBCursor') -> dict[str, int]:
