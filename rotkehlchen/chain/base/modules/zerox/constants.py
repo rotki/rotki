@@ -22,4 +22,5 @@ SETTLER_ROUTERS: Final = {
     string_to_evm_address('0xB538fC5F024932a025AE1042Dd0F89B91197d610'),
     string_to_evm_address('0x92A2ebd4889BB53ff399e8792745B0AF1c35C0E3'),
     string_to_evm_address('0xBeC2C2f65085c674Da686B8229FA2b42f9b2f27B'),
+    string_to_evm_address('0x7747F8D2a76BD6345Cc29622a946A929647F2359'),
 }
