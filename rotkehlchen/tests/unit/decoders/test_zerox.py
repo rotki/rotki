@@ -1816,3 +1816,51 @@ def test_zerox_regression_missing_settler(ethereum_inquirer, ethereum_accounts) 
         counterparty=CPT_ZEROX,
         address=string_to_evm_address('0xf48A3f7c0575c85cF4529aa220Caf3c055773f1C'),
     )]
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('db_settings', LEGACY_TESTS_INDEXER_ORDER)
+@pytest.mark.parametrize('base_accounts', [['0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12']])
+def test_base_settler_zerox_swap_runner_to_usdc(base_inquirer, base_accounts) -> None:
+    """Regression test for a swap done via a settler contract that was missing from the
+    SETTLER_ROUTERS set, so the spend/receive events were not recognized as a 0x swap."""
+    tx_hash = deserialize_evm_tx_hash('0x55cc5e692d0b50d335573f56c4347b806214973651887c82cb5b622e503ff4de')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=base_inquirer, tx_hash=tx_hash)
+
+    assert events == [EvmEvent(
+        tx_ref=tx_hash,
+        sequence_index=0,
+        timestamp=(timestamp := TimestampMS(1778393885000)),
+        location=Location.BASE,
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.FEE,
+        asset=A_ETH,
+        amount=(gas_amount := FVal('0.000002200272016947')),
+        location_label=(user := base_accounts[0]),
+        notes=f'Burn {gas_amount} ETH for gas',
+        counterparty=CPT_GAS,
+    ), EvmSwapEvent(
+        tx_ref=tx_hash,
+        sequence_index=1,
+        timestamp=timestamp,
+        location=Location.BASE,
+        event_subtype=HistoryEventSubType.SPEND,
+        asset=Asset('eip155:8453/erc20:0x18b6f6049A0af4Ed2BBe0090319174EeeF89f53a'),
+        amount=(out_amount := FVal('58.75')),
+        location_label=user,
+        notes=f'Swap {out_amount} RUNNER via the 0x protocol',
+        counterparty=CPT_ZEROX,
+        address=string_to_evm_address('0x7747F8D2a76BD6345Cc29622a946A929647F2359'),
+    ), EvmSwapEvent(
+        tx_ref=tx_hash,
+        sequence_index=2,
+        timestamp=timestamp,
+        location=Location.BASE,
+        event_subtype=HistoryEventSubType.RECEIVE,
+        asset=A_BASE_USDC,
+        amount=(in_amount := FVal('6.405806')),
+        location_label=user,
+        notes=f'Receive {in_amount} USDC as the result of a swap via the 0x protocol',
+        counterparty=CPT_ZEROX,
+        address=string_to_evm_address('0x7747F8D2a76BD6345Cc29622a946A929647F2359'),
+    )]
