@@ -413,25 +413,24 @@ class TransactionsService:
             accounts: list[OptionalBlockchainAccount] | None,
     ) -> dict[str, Any]:
         blockchain_addresses: dict[CHAINS_WITH_TRANSACTIONS_TYPE, ListOfBlockchainAddresses]
-        with self.rotkehlchen.data.db.conn.read_ctx() as cursor:
-            if accounts is None or len(accounts) == 0:
-                blockchain_addresses = {
-                    chain: addr_list for chain in CHAINS_WITH_TRANSACTIONS
-                    if len(addr_list := self.rotkehlchen.data.db.get_single_blockchain_addresses(
-                        cursor=cursor,
-                        blockchain=chain,
-                    )) != 0
-                }
-            else:
-                blockchain_addresses = defaultdict(list)
-                unspecified_chain_addresses: list[BlockchainAddress] = []
-                for account in accounts:
-                    if account.chain is not None and account.chain in CHAINS_WITH_TRANSACTIONS:
-                        blockchain_addresses[account.chain].append(account.address)  # type: ignore
-                    else:
-                        unspecified_chain_addresses.append(account.address)
+        chains_aggregator = self.rotkehlchen.chains_aggregator
+        if accounts is None or len(accounts) == 0:
+            blockchain_addresses = {
+                chain: list(addr_list)  # type: ignore[misc]  # mypy narrows tuple union to str-list
+                for chain in CHAINS_WITH_TRANSACTIONS
+                if len(addr_list := chains_aggregator.get_active_addresses(chain)) != 0
+            }
+        else:
+            blockchain_addresses = defaultdict(list)
+            unspecified_chain_addresses: list[BlockchainAddress] = []
+            for account in accounts:
+                if account.chain is not None and account.chain in CHAINS_WITH_TRANSACTIONS:
+                    blockchain_addresses[account.chain].append(account.address)  # type: ignore
+                else:
+                    unspecified_chain_addresses.append(account.address)
 
-                if len(unspecified_chain_addresses) > 0:
+            if len(unspecified_chain_addresses) > 0:
+                with self.rotkehlchen.data.db.conn.read_ctx() as cursor:
                     for address, chain in self.rotkehlchen.data.db.get_blockchains_for_accounts(
                         cursor=cursor,
                         accounts=unspecified_chain_addresses,
@@ -440,6 +439,21 @@ class TransactionsService:
                             continue
 
                         blockchain_addresses[chain].append(address)  # type: ignore
+
+            # Apply disabled_chain_queries filter to user-supplied addresses too.
+            disabled_per_chain = CachedSettings().get_settings().disabled_chain_queries
+            for chain in list(blockchain_addresses.keys()):
+                disabled = disabled_per_chain.get(chain)
+                if disabled is None:
+                    continue
+                if len(disabled) == 0:
+                    del blockchain_addresses[chain]
+                    continue
+                filtered = [a for a in blockchain_addresses[chain] if a not in disabled]
+                if filtered:
+                    blockchain_addresses[chain] = filtered  # type: ignore[assignment]
+                else:
+                    del blockchain_addresses[chain]
 
         result, message, status_code = True, '', HTTPStatus.OK
         for blockchain, addresses in blockchain_addresses.items():

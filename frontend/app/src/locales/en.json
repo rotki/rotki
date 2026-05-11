@@ -3158,6 +3158,18 @@
         "single_character": "The decimal separator must be a single character"
       }
     },
+    "disabled_chain_queries": {
+      "chains_label": "Chains",
+      "disable_entire_chain": "Disable entire chain",
+      "exclude_addresses_hint": "Selected addresses will not be queried for balances, transactions, or history on this chain.",
+      "exclude_addresses_label": "Addresses to exclude",
+      "subtitle": "Choose chains or specific addresses that rotki should skip when querying balances, transactions, and history.",
+      "title": "Disabled chain queries",
+      "validation": {
+        "error": "Error updating the disabled chain queries setting",
+        "success": "Disabled chain queries updated"
+      }
+    },
     "display_date_in_localtime": {
       "label": "Display date in localtime and not in UTC for CSV export.",
       "title": "CSV Export",

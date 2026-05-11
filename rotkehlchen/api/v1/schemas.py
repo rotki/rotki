@@ -1554,6 +1554,54 @@ class EvmIndexerOrderField(fields.Field):
         return SerializableChainIndexerOrder(order=deserialized_map)
 
 
+class DisabledChainQueriesField(fields.Field):
+    """Maps a {chain_name: [address, ...]} dict to {SupportedBlockchain: frozenset[str]}.
+
+    Empty list value => entire chain disabled.
+    Non-empty list  => listed addresses disabled for that chain.
+    """
+
+    @staticmethod
+    def _serialize(
+            value: dict[SupportedBlockchain, frozenset[str]] | None,
+            attr: str | None,  # pylint: disable=unused-argument
+            obj: Any,
+            **_kwargs: Any,
+    ) -> dict[str, list[str]] | None:
+        if value is None:
+            return None
+        return {chain.serialize(): sorted(addrs) for chain, addrs in value.items()}
+
+    def _deserialize(
+            self,
+            value: Any,
+            attr: str | None,  # pylint: disable=unused-argument
+            data: Mapping[str, Any] | None,
+            **kwargs: Any,
+    ) -> dict[SupportedBlockchain, frozenset[str]]:
+        if not isinstance(value, dict):
+            raise ValidationError(
+                'disabled_chain_queries must be a mapping of chain name to address list',
+            )
+
+        try:
+            deserialized: dict[SupportedBlockchain, frozenset[str]] = {}
+            for chain, addrs in value.items():
+                if not isinstance(addrs, list):
+                    raise ValidationError(
+                        f'Addresses for chain {chain} must be a list, got {type(addrs).__name__}',
+                    )
+                if not all(isinstance(a, str) for a in addrs):
+                    raise ValidationError(
+                        f'Addresses for chain {chain} must all be strings',
+                    )
+                deserialized[SupportedBlockchain.deserialize(chain)] = frozenset(addrs)
+        except DeserializationError as e:
+            raise ValidationError(str(e)) from e
+
+        return deserialized
+
+
 class ExchangeLocationIDSchema(Schema):
     name = NonEmptyStringField(required=True)
     location = LocationField(required=True)
@@ -1653,6 +1701,7 @@ class ModifiableSettingsSchema(Schema):
         # Check that all values are unique
         validate=validate_predicate(lambda data: len(data) == len(set(data))),
     )
+    disabled_chain_queries = DisabledChainQueriesField(load_default=None)
     cost_basis_method = SerializableEnumField(enum_class=CostBasisMethod, load_default=None)
     eth_staking_taxable_after_withdrawal_enabled = fields.Boolean(load_default=None)
     address_name_priority = fields.List(fields.String(
@@ -1776,6 +1825,7 @@ class ModifiableSettingsSchema(Schema):
             ssf_graph_multiplier=data['ssf_graph_multiplier'],
             non_syncing_exchanges=data['non_syncing_exchanges'],
             evmchains_to_skip_detection=data['evmchains_to_skip_detection'],
+            disabled_chain_queries=data['disabled_chain_queries'],
             cost_basis_method=data['cost_basis_method'],
             treat_eth2_as_eth=data['treat_eth2_as_eth'],
             eth_staking_taxable_after_withdrawal_enabled=data['eth_staking_taxable_after_withdrawal_enabled'],

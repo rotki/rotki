@@ -97,6 +97,7 @@ DEFAULT_CHAINS_TO_SKIP_DETECTION: Final = (
     SupportedBlockchain.GNOSIS,
     SupportedBlockchain.SCROLL,
 )
+DEFAULT_DISABLED_CHAIN_QUERIES: Final[Mapping[SupportedBlockchain, frozenset[str]]] = {}
 DEFAULT_BEACON_RPC: Final = 'https://ethereum-beacon-api.publicnode.com'
 
 LIST_KEYS: Final = (
@@ -107,7 +108,7 @@ LIST_KEYS: Final = (
     'default_evm_indexer_order',
     'suppress_missing_key_msg_services',
 )
-JSON_KEYS: Final = ('evm_indexers_order',)
+JSON_KEYS: Final = ('evm_indexers_order', 'disabled_chain_queries')
 BOOLEAN_KEYS: Final = (
     'have_premium',
     'include_crypto2crypto',
@@ -212,6 +213,7 @@ CachedDBSettingsFieldNames = Literal[
     'use_asset_collections_in_cost_basis',
     'internal_txs_to_repull',
     'internal_tx_conflict_repull_frequency',
+    'disabled_chain_queries',
 ]
 
 DBSettingsFieldTypes = (
@@ -223,11 +225,12 @@ DBSettingsFieldTypes = (
     Sequence[ModuleName] |
     Sequence[CurrentPriceOracle] |
     Sequence[HistoricalPriceOracle] |
-    dict[ChainID, Sequence[EvmIndexer]] |
+    Mapping[ChainID, Sequence[EvmIndexer]] |
     Sequence[ExchangeLocationID] |
     CostBasisMethod |
     Sequence[AddressNameSource] |
-    Sequence[ExternalService]
+    Sequence[ExternalService] |
+    Mapping[SupportedBlockchain, frozenset[str]]
 )
 
 
@@ -264,6 +267,7 @@ class DBSettings:
     last_data_migration: int = DEFAULT_LAST_DATA_MIGRATION
     non_syncing_exchanges: frozenset[ExchangeLocationID] = field(default_factory=frozenset)
     evmchains_to_skip_detection: Sequence[SUPPORTED_EVM_EVMLIKE_CHAINS_TYPE] = DEFAULT_CHAINS_TO_SKIP_DETECTION  # Both EVM and EVMLike chains # noqa: E501
+    disabled_chain_queries: Mapping[SupportedBlockchain, frozenset[str]] = field(default_factory=dict)  # noqa: E501
     cost_basis_method: CostBasisMethod = DEFAULT_COST_BASIS_METHOD
     treat_eth2_as_eth: bool = DEFAULT_TREAT_ETH2_AS_ETH
     eth_staking_taxable_after_withdrawal_enabled: bool = DEFAULT_ETH_STAKING_TAXABLE_AFTER_WITHDRAWAL_ENABLED  # noqa: E501
@@ -333,6 +337,7 @@ class ModifiableDBSettings(NamedTuple):
     ssf_graph_multiplier: int | None = None
     non_syncing_exchanges: list[ExchangeLocationID] | None = None
     evmchains_to_skip_detection: list[SUPPORTED_EVM_EVMLIKE_CHAINS_TYPE] | None = None
+    disabled_chain_queries: Mapping[SupportedBlockchain, frozenset[str]] | None = None
     cost_basis_method: CostBasisMethod | None = None
     treat_eth2_as_eth: bool | None = None
     eth_staking_taxable_after_withdrawal_enabled: bool | None = None
@@ -458,6 +463,12 @@ def db_settings_from_dict(
         elif key == 'evmchains_to_skip_detection':
             values = json.loads(value)
             specified_args[key] = [SupportedBlockchain.deserialize(x) for x in values]
+        elif key == 'disabled_chain_queries':
+            raw = json.loads(value)
+            specified_args[key] = {
+                SupportedBlockchain.deserialize(chain): frozenset(addrs)
+                for chain, addrs in raw.items()
+            }
         elif key == 'cost_basis_method':
             specified_args[key] = CostBasisMethod.deserialize(value)
         elif key == 'address_name_priority':
@@ -486,6 +497,9 @@ def serialize_db_setting(
         return value.serialize()  # pylint: disable=no-member
     if setting in FVAL_KEYS:
         return str(value)  # FVal isn't json serializable so needs converted to string in all cases
+    if setting == 'disabled_chain_queries':
+        serialized = {chain.serialize(): sorted(addrs) for chain, addrs in value.items()}
+        return json.dumps(serialized) if is_modifiable else serialized
 
     if is_modifiable:
         if isinstance(value, bool):

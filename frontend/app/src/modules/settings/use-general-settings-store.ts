@@ -30,6 +30,7 @@ export const useGeneralSettingsStore = defineStore('settings/general', () => {
   const nonSyncingExchanges = useComputedRef(settings, 'nonSyncingExchanges');
   const evmchainsToSkipDetection = useComputedRef(settings, 'evmchainsToSkipDetection');
   const evmIndexersOrder = useComputedRef(settings, 'evmIndexersOrder');
+  const disabledChainQueries = useComputedRef(settings, 'disabledChainQueries');
   const defaultEvmIndexerOrder = useComputedRef(settings, 'defaultEvmIndexerOrder');
   const treatEth2AsEth = useComputedRef(settings, 'treatEth2AsEth');
   const addressNamePriority = useComputedRef(settings, 'addressNamePriority');
@@ -79,6 +80,7 @@ export const useGeneralSettingsStore = defineStore('settings/general', () => {
     currentPriceOracles,
     dateDisplayFormat,
     defaultEvmIndexerOrder,
+    disabledChainQueries,
     displayDateInLocaltime,
     dotRpcEndpoint,
     evmchainsToSkipDetection,

@@ -362,3 +362,38 @@ def test_detect_spammed_transaction_new_token(
         assert base_manager.transactions.address_has_been_spammed(
             address=base_accounts[0],
         ) is True
+
+
+@pytest.mark.parametrize('ethereum_accounts', [[
+    '0x5A0b54D5dc17e0AadC383d2db43B0a0D3E029c4c',
+    '0xC0FfEE254729296a45a3885639AC7E10F9d54979',
+]])
+def test_get_active_addresses(blockchain: 'ChainsAggregator') -> None:
+    """`get_active_addresses` honors the `disabled_chain_queries` setting:
+    - missing key   => returns all tracked addresses
+    - empty frozen  => returns ()
+    - subset frozen => returns the complement
+    """
+    from rotkehlchen.db.settings import CachedSettings
+    addr_a, addr_b = blockchain.accounts.eth
+
+    # 1. Missing key => all tracked addresses returned
+    CachedSettings().update_entry('disabled_chain_queries', {})
+    assert blockchain.get_active_addresses(SupportedBlockchain.ETHEREUM) == (addr_a, addr_b)
+
+    # 2. Empty frozenset => entire chain disabled
+    CachedSettings().update_entry(
+        'disabled_chain_queries',
+        {SupportedBlockchain.ETHEREUM: frozenset()},
+    )
+    assert blockchain.get_active_addresses(SupportedBlockchain.ETHEREUM) == ()
+
+    # 3. Subset disabled => complement returned
+    CachedSettings().update_entry(
+        'disabled_chain_queries',
+        {SupportedBlockchain.ETHEREUM: frozenset({addr_a})},
+    )
+    assert blockchain.get_active_addresses(SupportedBlockchain.ETHEREUM) == (addr_b,)
+
+    # Reset for other tests in the same session
+    CachedSettings().update_entry('disabled_chain_queries', {})

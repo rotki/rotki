@@ -183,16 +183,19 @@ class HistoryQueryingManager:
             str_blockchain = str(blockchain)
             self.processing_state_name = f'Querying {str_blockchain} transactions history'
             evm_manager = self.chains_aggregator.get_chain_manager(blockchain)
-            with self.db.conn.read_ctx() as cursor:
-                addresses = self.db.get_single_blockchain_addresses(
-                    cursor=cursor,
-                    blockchain=blockchain,
-                )
+            active_addresses = self.chains_aggregator.get_active_addresses(blockchain)
+            if len(active_addresses) == 0:
+                # Either nothing tracked on this chain, or disabled via disabled_chain_queries.
+                # Advance past the three sub-steps (transactions, receipts, decoding).
+                step = self._increase_progress(step, total_steps)
+                step = self._increase_progress(step, total_steps)
+                step = self._increase_progress(step, total_steps)
+                continue
             try:
                 evm_manager.transactions.query_chain(
                     from_timestamp=Timestamp(0),  # We need to have history of transactions since before the range  # noqa: E501
                     to_timestamp=end_ts,
-                    addresses=addresses,
+                    addresses=list(active_addresses),  # type: ignore[arg-type]  # EVM chains => ChecksumEvmAddress tuple
                 )
             except RemoteError as e:
                 msg = str(e)

@@ -68,6 +68,7 @@ function getGeneralTab(routes: SettingsRoutes, t: T): TabGroup {
       { texts: [t('general_settings.title'), t('general_settings.balance_frequency.title')], highlightId: SettingsHighlightIds.BALANCE_SAVE_FREQUENCY },
       { texts: [t('general_settings.title'), t('general_settings.labels.btc_derivation_gap')], highlightId: SettingsHighlightIds.BTC_DERIVATION_GAP },
       { texts: [t('general_settings.title'), t('date_format_help.title')], highlightId: SettingsHighlightIds.DATE_FORMAT },
+      { texts: [t('general_settings.title'), t('general_settings.disabled_chain_queries.title')], keywords: [t('general_settings.disabled_chain_queries.subtitle')], highlightId: SettingsHighlightIds.DISABLED_CHAIN_QUERIES },
     ] },
     { categoryId: SettingsCategoryIds.AMOUNT, children: [
       { texts: [t('general_settings.amount.title')], keywords: [t('general_settings.amount.subtitle')] },
