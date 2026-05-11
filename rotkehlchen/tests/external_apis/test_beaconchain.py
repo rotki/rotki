@@ -7,6 +7,7 @@ from unittest.mock import patch
 import pytest
 
 from rotkehlchen.chain.ethereum.modules.eth2.utils import calculate_query_chunks
+from rotkehlchen.db.cache import DBCacheStatic
 from rotkehlchen.errors.misc import APIKeyNotAvailable, RemoteError
 from rotkehlchen.externalapis.beaconchain.service import BeaconChain
 from rotkehlchen.tests.utils.mock import MockResponse
@@ -81,7 +82,7 @@ def test_rate_limit(beaconchain: BeaconChain, freezer):
         patch.object(beaconchain.session, 'request', mock_session_get),
         pytest.raises(RemoteError),
     ):
-        beaconchain._query(
+        beaconchain._query_with_paging(
             endpoint='validators/proposal-slots',
             data={'validator': {'validator_identifiers': [130, 131]}},
         )
@@ -91,7 +92,7 @@ def test_rate_limit(beaconchain: BeaconChain, freezer):
         patch.object(beaconchain.session, 'request', mock_session_get),
         pytest.raises(RemoteError),
     ):
-        beaconchain._query(
+        beaconchain._query_with_paging(
             endpoint='validators/proposal-slots',
             data={'validator': {'validator_identifiers': [130, 131]}},
         )
@@ -103,7 +104,7 @@ def test_rate_limit(beaconchain: BeaconChain, freezer):
         patch.object(beaconchain.session, 'request', mock_session_get),
         pytest.raises(RemoteError),
     ):
-        beaconchain._query(
+        beaconchain._query_with_paging(
             endpoint='validators/proposal-slots',
             data={'validator': {'validator_identifiers': [130, 131]}},
         )
@@ -132,10 +133,118 @@ def test_free_trial_expired_deletes_api_key(beaconchain: BeaconChain, database) 
         patch.object(beaconchain.session, 'request', mock_session_request),
         pytest.raises(APIKeyNotAvailable, match=r'Beaconcha\.in free trial expired'),
     ):
-        beaconchain._query(endpoint='validators/proposal-slots')
+        beaconchain._query_with_paging(endpoint='validators/proposal-slots')
 
     assert database.get_external_service_credentials(ExternalService.BEACONCHAIN) is None
     assert beaconchain.api_key is None
+
+
+def test_validator_limit_error_is_cached_and_retried(beaconchain: BeaconChain, database) -> None:
+    api_key = ApiKey('legacy-key')
+    with database.user_write() as write_cursor:
+        database.add_external_service_credentials(write_cursor, [ExternalServiceApiCredentials(
+            service=ExternalService.BEACONCHAIN,
+            api_key=api_key,
+        )])
+
+    requested_sizes = []
+
+    def mock_session_request(url: str, **kwargs: dict[str, Any]) -> MockResponse:  # pylint: disable=unused-argument
+        identifiers = kwargs['json']['validator']['validator_identifiers']
+        requested_sizes.append(len(identifiers))
+        if len(identifiers) > 20:
+            return MockResponse(
+                status_code=HTTPStatus.FORBIDDEN,
+                text='{"error":"number of validator identifiers exceeds allowed limit of 20 '
+                     'for your subscription tier. upgrade your subscription at '
+                     'https://beaconcha.in/pricing."}',
+            )
+
+        return MockResponse(
+            status_code=HTTPStatus.OK,
+            text='{"data": [' + ','.join(
+                '{'
+                f'"validator": {{"public_key": "0x{identifier:096x}", "index": {identifier}}},'
+                '"life_cycle_epochs": {},'
+                '"balances": {'
+                '"current": "32000000000000000000",'
+                '"effective": "32000000000000000000"'
+                '},'
+                '"withdrawal_credentials": {"credential": "0x00"},'
+                '"slashed": false,'
+                '"status": "active"'
+                '}'
+                for identifier in identifiers
+            ) + ']}',
+        )
+
+    with (
+        patch.object(beaconchain, '_get_api_key', return_value=api_key),
+        patch.object(beaconchain.session, 'request', mock_session_request),
+    ):
+        result = beaconchain.get_validator_data(list(range(25)))
+
+    assert len(result) == 25
+    assert requested_sizes == [25, 20, 5]
+    assert beaconchain.validator_query_chunk_size == 20
+    with database.conn.read_ctx() as cursor:
+        assert database.get_static_cache(
+            cursor=cursor,
+            name=DBCacheStatic.BEACONCHAIN_VALIDATOR_QUERY_LIMIT,
+        ) is not None
+
+    cached_beaconchain = BeaconChain(database=database, msg_aggregator=beaconchain.msg_aggregator)
+    assert cached_beaconchain.validator_query_chunk_size == 20
+
+    requested_sizes.clear()
+    with (
+        patch.object(cached_beaconchain.session, 'request', mock_session_request),
+    ):
+        result = cached_beaconchain.get_validator_data(list(range(25)))
+
+    assert len(result) == 25
+    assert requested_sizes == [20, 5]
+
+    database.delete_external_service_credentials([ExternalService.BEACONCHAIN])
+    with database.conn.read_ctx() as cursor:
+        assert database.get_static_cache(
+            cursor=cursor,
+            name=DBCacheStatic.BEACONCHAIN_VALIDATOR_QUERY_LIMIT,
+        ) is None
+
+
+def test_validator_limit_cache_reset(database) -> None:
+    """Ensure cached beaconcha.in validator limits are cleared on key changes/removal.
+
+    The limit is tied to a subscription tier/API key, so keeping it after changing or deleting
+    the key could incorrectly throttle future validator queries.
+    """
+    def cache_validator_limit() -> None:
+        with database.user_write() as write_cursor:
+            database.set_static_cache(
+                write_cursor=write_cursor,
+                name=DBCacheStatic.BEACONCHAIN_VALIDATOR_QUERY_LIMIT,
+                value='{"api_key": "old-key", "limit": 20, "timestamp": 1}',
+            )
+
+    def assert_no_validator_limit_cache() -> None:
+        with database.conn.read_ctx() as cursor:
+            assert database.get_static_cache(
+                cursor=cursor,
+                name=DBCacheStatic.BEACONCHAIN_VALIDATOR_QUERY_LIMIT,
+            ) is None
+
+    cache_validator_limit()
+    with database.user_write() as write_cursor:
+        database.add_external_service_credentials(write_cursor, [ExternalServiceApiCredentials(
+            service=ExternalService.BEACONCHAIN,
+            api_key=ApiKey('new-key'),
+        )])
+    assert_no_validator_limit_cache()
+
+    cache_validator_limit()
+    database.delete_external_service_credentials([ExternalService.BEACONCHAIN])
+    assert_no_validator_limit_cache()
 
 
 def test_query_with_paging_missing_next_cursor(beaconchain: BeaconChain) -> None:
@@ -157,7 +266,7 @@ def test_query_with_paging_missing_next_cursor(beaconchain: BeaconChain) -> None
         )
 
     assert response.data == [{'block': '1'}]
-    assert response.next_cursor == ''
+    assert response.next_cursor is None
 
 
 @pytest.mark.vcr(match_on=['beaconchain_matcher'], filter_headers=['authorization'])

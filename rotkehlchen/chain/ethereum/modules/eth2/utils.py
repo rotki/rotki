@@ -1,6 +1,5 @@
 import logging
 from collections.abc import Sequence
-from typing import Literal
 
 from rotkehlchen.api.v1.types import IncludeExcludeFilterData
 from rotkehlchen.chain.ethereum.modules.eth2.constants import (
@@ -38,7 +37,7 @@ def form_withdrawal_notes(is_exit: bool, validator_index: int, amount: FVal) -> 
 
 def calculate_query_chunks(
         indices_or_pubkeys: Sequence[int | Eth2PubKey],
-        chunk_size: Literal[80, 100] = DEFAULT_BEACONCHAIN_API_VALIDATOR_CHUNK_SIZE,
+        chunk_size: int = DEFAULT_BEACONCHAIN_API_VALIDATOR_CHUNK_SIZE,
 ) -> list[Sequence[int | Eth2PubKey]]:
     """Split validator queries into chunks to respect API limits.
 

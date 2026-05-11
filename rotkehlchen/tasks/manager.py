@@ -564,6 +564,8 @@ class TaskManager:
             log.warning(
                 f'Skipping produced blocks query due to missing beaconcha.in API key: {e!s}',
             )
+        except RemoteError as e:
+            log.error(f'Skipping produced blocks query due to beaconcha.in error: {e!s}')
 
     def _maybe_query_produced_blocks(self) -> list[gevent.Greenlet] | None:
         """Schedules the blocks production query if enough time has passed"""

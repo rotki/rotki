@@ -768,6 +768,7 @@ class DBHandler:
             DBCacheStatic.MONERIUM_OAUTH_CREDENTIALS,
             DBCacheStatic.STALE_BALANCES_FROM_TS,
             DBCacheStatic.STALE_BALANCES_MODIFICATION_TS,
+            DBCacheStatic.BEACONCHAIN_VALIDATOR_QUERY_LIMIT,
         ):
             return value[0]
 
@@ -1297,6 +1298,11 @@ class DBHandler:
             write_cursor: 'DBCursor',
             credentials: list[ExternalServiceApiCredentials],
     ) -> None:
+        if any(credential.service == ExternalService.BEACONCHAIN for credential in credentials):
+            write_cursor.execute(
+                'DELETE FROM key_value_cache WHERE name=?;',
+                (DBCacheStatic.BEACONCHAIN_VALIDATOR_QUERY_LIMIT.value,),
+            )
         write_cursor.executemany(
             'INSERT OR REPLACE INTO external_service_credentials(name, api_key, api_secret) VALUES(?, ?, ?)',  # noqa: E501
             [c.serialize_for_db() for c in credentials],
@@ -1308,6 +1314,11 @@ class DBHandler:
                 'DELETE FROM external_service_credentials WHERE name=?;',
                 [(service.name.lower(),) for service in services],
             )
+            if ExternalService.BEACONCHAIN in services:
+                cursor.execute(
+                    'DELETE FROM key_value_cache WHERE name=?;',
+                    (DBCacheStatic.BEACONCHAIN_VALIDATOR_QUERY_LIMIT.value,),
+                )
 
     def get_all_external_service_credentials(self) -> list[ExternalServiceApiCredentials]:
         """Returns a list with all the external service credentials saved in the DB"""
