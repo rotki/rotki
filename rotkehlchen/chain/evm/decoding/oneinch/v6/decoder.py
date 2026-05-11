@@ -5,6 +5,9 @@ from rotkehlchen.accounting.entry_type_mappings import HistoryEventSubType, Hist
 from rotkehlchen.chain.decoding.constants import CPT_GAS
 from rotkehlchen.chain.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.decoding.utils import maybe_reshuffle_events
+from rotkehlchen.chain.evm.decoding.balancer.v3.constants import (
+    SWAP_TOPIC as BALANCER_V3_SWAP_TOPIC,
+)
 from rotkehlchen.chain.evm.decoding.oneinch.constants import CPT_ONEINCH_V6, ONEINCH_V6_ROUTER
 from rotkehlchen.chain.evm.decoding.oneinch.decoder import OneinchCommonDecoder
 from rotkehlchen.chain.evm.decoding.oneinch.v4.decoder import Oneinchv3n4DecoderBase
@@ -40,6 +43,9 @@ class Oneinchv6Decoder(Oneinchv3n4DecoderBase):
             router_address=ONEINCH_V6_ROUTER,
             counterparty=CPT_ONEINCH_V6,
         )
+        # Balancer V3 is reachable through 1inch Fusion routing, so its swap log can be the
+        # only pool-side signature emitted in an otherwise opaque v6 swap transaction.
+        self.swapped_signatures.append(BALANCER_V3_SWAP_TOPIC)
 
     def _decode_limit_order_swap(self, context: 'DecoderContext') -> EvmDecodingOutput:
         """Decode 1inch v6 limit order swap transactions.

@@ -1259,3 +1259,53 @@ def test_limit_order_swap_via_uniswap(ethereum_inquirer, ethereum_accounts):
         counterparty=CPT_ONEINCH_V6,
         address=string_to_evm_address('0xfC2c6B1952B55F1380c4b502a79748Ec009872EB'),
     )]
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('ethereum_accounts', [['0x9531C059098e3d194fF87FebB587aB07B30B1306']])
+def test_1inch_v6_fusion_swap_via_balancer_v3(ethereum_inquirer, ethereum_accounts) -> None:
+    """Regression test for a 1inch v6 Fusion swap (LINK->USDC) settled through a Balancer V3
+    pool, where the user's spend leaves to a Fusion resolver instead of the v6 router. The
+    Balancer V3 swap log is the only pool-side signature in the tx, so we need it recognized
+    by the 1inch v6 post-decoding to pair the spend and receive legs."""
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=ethereum_inquirer,
+        tx_hash=(tx_hash := deserialize_evm_tx_hash('0xbd2aeb7ea4c4a341b13a477fd8c254b9d6f79da51619c0c69007adff45f86938')),  # noqa: E501
+    )
+    assert events == [EvmEvent(
+        tx_ref=tx_hash,
+        sequence_index=0,
+        timestamp=(timestamp := TimestampMS(1774217771000)),
+        location=Location.ETHEREUM,
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.FEE,
+        asset=A_ETH,
+        amount=FVal(gas_amount := '0.000022375634850778'),
+        location_label=(user_address := ethereum_accounts[0]),
+        notes=f'Burn {gas_amount} ETH for gas',
+        counterparty=CPT_GAS,
+    ), EvmSwapEvent(
+        tx_ref=tx_hash,
+        sequence_index=1,
+        timestamp=timestamp,
+        location=Location.ETHEREUM,
+        event_subtype=HistoryEventSubType.SPEND,
+        asset=Asset('eip155:1/erc20:0x514910771AF9Ca656af840dff83E8264EcF986CA'),
+        amount=FVal(spend_amount := '0.183877'),
+        location_label=user_address,
+        notes=f'Swap {spend_amount} LINK in {CPT_ONEINCH_V6}',
+        counterparty=CPT_ONEINCH_V6,
+        address=ONEINCH_V6_ROUTER,
+    ), EvmSwapEvent(
+        tx_ref=tx_hash,
+        sequence_index=2,
+        timestamp=timestamp,
+        location=Location.ETHEREUM,
+        event_subtype=HistoryEventSubType.RECEIVE,
+        asset=A_USDC,
+        amount=FVal(receive_amount := '1.60698'),
+        location_label=user_address,
+        notes=f'Receive {receive_amount} USDC as a result of a {CPT_ONEINCH_V6} swap',
+        counterparty=CPT_ONEINCH_V6,
+        address=ONEINCH_V6_ROUTER,
+    )]
