@@ -180,7 +180,10 @@ class Eth2(EthereumModule):
         """
         dbeth2 = DBEth2(self.database)
         if fetch_validators_for_eth1:
-            self.detect_and_refresh_validators(addresses)
+            try:
+                self.detect_and_refresh_validators(addresses)
+            except RemoteError as e:
+                log.error(f'Skipping eth2 validator detection during balance query due to {e!s}')
 
         with self.database.conn.read_ctx() as cursor:
             pubkey_to_ownership = dbeth2.get_active_pubkeys_to_ownership(cursor)

@@ -5,6 +5,7 @@ from collections import defaultdict
 from collections.abc import Sequence
 from http import HTTPStatus
 from typing import TYPE_CHECKING, Any, Literal, overload
+from urllib.parse import urlparse
 
 import requests
 
@@ -51,11 +52,18 @@ class BeaconNode:
         self.session = create_session()
         self.set_rpc_endpoint(rpc_endpoint)
 
+    def _normalize_rpc_endpoint(self, rpc_endpoint: str) -> str:
+        """Ensure the RPC endpoint has a scheme (http/https)."""
+        parsed = urlparse(rpc_endpoint)
+        if not parsed.scheme:
+            return f'http://{rpc_endpoint.rstrip("/")}'
+        return rpc_endpoint.rstrip('/')
+
     def set_rpc_endpoint(self, rpc_endpoint: str) -> None:
         """May raise:
         - RemoteError if we can't connect to the given rpc endpoint
         """
-        self.rpc_endpoint = rpc_endpoint.rstrip('/')
+        self.rpc_endpoint = self._normalize_rpc_endpoint(rpc_endpoint)
         result = self.query(method='GET', endpoint='eth/v1/node/version')
         try:
             version = result['version']
@@ -145,7 +153,7 @@ class BeaconNode:
             self,
             indices_or_pubkeys: Sequence[int | Eth2PubKey],
             endpoint: Literal['eth/v1/beacon/states/head/validators'],
-            chunk_size: Literal[80, 100] = DEFAULT_BEACONCHAIN_API_VALIDATOR_CHUNK_SIZE,
+            chunk_size: int = DEFAULT_BEACONCHAIN_API_VALIDATOR_CHUNK_SIZE,
     ) -> list[dict]:
         """
         May raise:
@@ -248,7 +256,13 @@ class BeaconInquirer:
 
         # else we have to query beaconcha.in
         log.debug('Querying validator balances via beaconcha.in')
-        for entry in self.beaconchain.get_validator_data(indices_or_pubkeys):
+        try:
+            beaconchain_results = self.beaconchain.get_validator_data(indices_or_pubkeys)
+        except RemoteError as e:
+            log.error(f'Querying validator balances via beaconcha.in failed due to {e!s}')
+            return balance_mapping
+
+        for entry in beaconchain_results:
             try:
                 amount = from_gwei(entry['balance'])
                 balance_mapping[entry['pubkey']] = Balance(amount=amount, value=amount * price)

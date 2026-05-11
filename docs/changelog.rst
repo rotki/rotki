@@ -3,6 +3,7 @@ Changelog
 =========
 
 * :bug:`-` 1inch swaps settling through a balancer pool should now be properly decoded.
+* :bug:`12173` Beaconcha.in queries with legacy API keys will work correctly again.
 * :bug:`-` Newer zerox swaps in base will now be properly decoded.
 
 * :release:`1.43.0 <2026-05-08>`
