@@ -27,11 +27,13 @@ const { updateSetting } = useSettings();
 const value = computed(() => get(generalSettings[setting]));
 
 function addNewRpcNode() {
+  set(errorMessages, {});
   set(openDialog, true);
   set(inputUrl, '');
 }
 
 function edit(item: string) {
+  set(errorMessages, {});
   set(openDialog, true);
   set(inputUrl, item);
 }
@@ -158,6 +160,7 @@ defineExpose({
       v-model="inputUrl"
       v-model:state-updated="stateUpdated"
       v-model:error-messages="errorMessages"
+      :disabled="submitting"
     />
   </BigDialog>
 </template>
