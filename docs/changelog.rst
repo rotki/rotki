@@ -5,6 +5,7 @@ Changelog
 * :bug:`-` 1inch swaps settling through a balancer pool should now be properly decoded.
 * :bug:`12173` Beaconcha.in queries with legacy API keys will work correctly again.
 * :bug:`-` Newer zerox swaps in base will now be properly decoded.
+* :bug:`12178` Users can now fix a rejected Kusama, Polkadot, beacon chain, or BTC mempool endpoint by editing the URL in place. The error message clears as soon as you start typing.
 
 * :release:`1.43.0 <2026-05-08>`
 * :bug:`-` Docker users can once again import data, snapshots, and asset icons larger than 1 MiB; the bundled nginx no longer rejects them with a 413 before they reach rotki.
