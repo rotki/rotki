@@ -132,7 +132,7 @@ class ProcessedAccountingEvent:
             'pnl_taxable': str(self.pnl.taxable),
             'pnl_free': str(self.pnl.free),
         }
-        tx_hash = self.extra_data.get('tx_hash', None)
+        tx_ref = self.extra_data.get('tx_ref')
         if export_type == AccountingEventExportType.CSV:
             taxable_basis = free_basis = ''
             if self.cost_basis is not None:
@@ -144,8 +144,8 @@ class ProcessedAccountingEvent:
                 exported_dict['asset'] = self.asset.symbol_or_name()
             except UnknownAsset:
                 exported_dict['asset'] = ''
-            if tx_hash is not None:
-                exported_dict['notes'] = f'{evm_explorer}{tx_hash}  ->  {self.notes}'
+            if tx_ref is not None:
+                exported_dict['notes'] = f'{evm_explorer}{tx_ref}  ->  {self.notes}'
 
             if self.location in EVM_EVMLIKE_LOCATIONS and database is not None:
                 # call _maybe_add_label_with_address on each address in the note
@@ -166,8 +166,8 @@ class ProcessedAccountingEvent:
             exported_dict['cost_basis'] = cost_basis
 
         if export_type == AccountingEventExportType.API:
-            if tx_hash is not None:
-                exported_dict['notes'] = f'transaction {tx_hash} {self.notes}'
+            if tx_ref is not None:
+                exported_dict['notes'] = f'transaction {tx_ref} {self.notes}'
 
             group_id = self.extra_data.get('group_id', None)
             if group_id is not None:
@@ -179,7 +179,7 @@ class ProcessedAccountingEvent:
         """This is used to serialize to dict for saving to the DB"""
         data = self.to_exported_dict(ts_converter=ts_converter, export_type=AccountingEventExportType.DB)  # noqa: E501
         data['extra_data'] = self.extra_data
-        data['notes'] = self.notes  # undo the tx_hash addition to notes before going to the DB
+        data['notes'] = self.notes  # undo the tx_ref addition to notes before going to the DB
         data['index'] = self.index
         data['count_entire_amount_spend'] = self.count_entire_amount_spend
         data['count_cost_basis_pnl'] = self.count_cost_basis_pnl
