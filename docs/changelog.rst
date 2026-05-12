@@ -5,6 +5,7 @@ Changelog
 * :bug:`12112` The dashboard's net worth percentage and trend indicator now follow the chart's data-zoom selection.
 * :feature:`11988` rotki now has a setting to selectively enable/disable chain / address query for transaction history. That means you can skip history querying for specific chains or chain/address combinations.
 * :feature:`12111` Free-text typed in the History events filter without a key=value prefix is now applied as a notes search on Enter, so you can quickly find events by any word in their notes instead of having to remember the notes= prefix.
+* :feature:`3216` Trades made using clipper will now be decoded correctly.
 
 * :release:`1.43.0 <2026-05-08>`
 * :bug:`-` Docker users can once again import data, snapshots, and asset icons larger than 1 MiB; the bundled nginx no longer rejects them with a 413 before they reach rotki.

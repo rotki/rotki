@@ -59,6 +59,7 @@ def test_decoders_initialization(ethereum_transaction_decoder: EthereumTransacti
         'BeefyFinance',
         'Blur',
         'Cctp',
+        'Clipper',
         'Compoundv2',
         'Compoundv3',
         'Cowswap',
@@ -271,6 +272,7 @@ def test_decoders_initialization(ethereum_transaction_decoder: EthereumTransacti
         'crosscurve',
         'giveth',
         'morpho_blue',
+        'clipper',
     }
 
 
