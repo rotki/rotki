@@ -72,6 +72,42 @@ describe('filter-dropdown', () => {
     expect(wrapper.find('div > div:first-child > span:last-child').text()).toBe(props.keyword);
   });
 
+  it('should show the default-matcher hint instead of "unsupported" when defaultMatcherKey is set', () => {
+    wrapper = createWrapper({
+      props: {
+        matches: {},
+        matchers: [],
+        keyword: 'plain text search',
+        selectedSuggestion: 0,
+        defaultMatcherKey: 'notes',
+      },
+    });
+
+    const hint = wrapper.find('div > div:first-child');
+    expect(hint.find('span:first-child').text()).toBe('table_filter.press_enter_to_apply');
+    expect(hint.find('span:last-child').text()).toBe('notes=plain text search');
+    expect(wrapper.text()).not.toContain('table_filter.unsupported_filter');
+  });
+
+  it.each([
+    ['foo=bar'],
+    ['foo:bar'],
+    ['foo!=bar'],
+  ])('should still show "unsupported" when defaultMatcherKey is set but keyword has a key separator: %s', (keyword: string) => {
+    wrapper = createWrapper({
+      props: {
+        matches: {},
+        matchers: [],
+        keyword,
+        selectedSuggestion: 0,
+        defaultMatcherKey: 'notes',
+      },
+    });
+
+    expect(wrapper.find('div > div:first-child > span:first-child').text()).toBe('table_filter.unsupported_filter');
+    expect(wrapper.text()).not.toContain('table_filter.press_enter_to_apply');
+  });
+
   it('should show suggestions', async () => {
     const props = {
       matches: {},

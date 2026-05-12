@@ -1,18 +1,31 @@
 <script setup lang="ts">
-import type { BaseSuggestion, MatchedKeywordWithBehaviour, SearchMatcher, Suggestion } from '@/modules/core/table/filtering';
 import { getTextToken } from '@rotki/common';
-import { splitSearch } from '@/modules/core/common/data/search';
+import { type SplitResult, splitSearch } from '@/modules/core/common/data/search';
 import { compareTextByKeyword } from '@/modules/core/common/display/assets';
 import { logger } from '@/modules/core/common/logging/logging';
 import FilterEntry from '@/modules/core/table/FilterEntry.vue';
+import {
+  type BaseSuggestion,
+  createEmptySuggestion,
+  type MatchedKeywordWithBehaviour,
+  type SearchMatcher,
+  type Suggestion,
+} from '@/modules/core/table/filtering';
 import SuggestedItem from '@/modules/core/table/SuggestedItem.vue';
 
-const { keyword, matchers, selectedMatcher, selectedSuggestion } = defineProps<{
+interface ResolvedSuggestions {
+  items: BaseSuggestion[];
+  exclude: boolean;
+  asset: boolean;
+}
+
+const { keyword, matchers, selectedMatcher, selectedSuggestion, defaultMatcherKey } = defineProps<{
   matches: MatchedKeywordWithBehaviour<any>;
   matchers: SearchMatcher<any>[];
   selectedMatcher?: SearchMatcher<any>;
   keyword: string;
   selectedSuggestion: number;
+  defaultMatcherKey?: string;
 }>();
 
 const emit = defineEmits<{
@@ -21,12 +34,19 @@ const emit = defineEmits<{
   'apply-filter': [item: Suggestion];
 }>();
 
-const keywordSplit = computed(() => splitSearch(keyword));
+const { t } = useI18n({ useScope: 'global' });
+
+const highlightedTextClasses = 'text-subtitle-2 text-rui-text-secondary';
 
 const lastSuggestion = ref<Suggestion | null>(null);
 const suggested = ref<Suggestion[]>([]);
 
-function updateSuggestion(value: Suggestion[], index: number) {
+const keywordSplit = computed<SplitResult>(() => splitSearch(keyword));
+const showDefaultMatcherHint = computed<boolean>(() =>
+  !!defaultMatcherKey && matchers.length === 0 && !!keyword && get(keywordSplit).exclude === undefined,
+);
+
+function updateSuggestion(value: Suggestion[], index: number): void {
   set(lastSuggestion, value[index]);
   emit('suggest', {
     ...value[index],
@@ -35,14 +55,80 @@ function updateSuggestion(value: Suggestion[], index: number) {
   });
 }
 
-function click(matcher: SearchMatcher<any>) {
+function click(matcher: SearchMatcher<any>): void {
   emit('click', matcher);
 }
 
-function applyFilter(item: Suggestion) {
+function applyFilter(item: Suggestion): void {
   const value = typeof item.value === 'string' ? item.value : item.value.symbol;
   if (value)
     emit('apply-filter', item);
+}
+
+function buildStringSuggestions(matcher: SearchMatcher<any>, searchString: string, allowExclude: boolean): ResolvedSuggestions {
+  if (!('string' in matcher))
+    return { asset: false, exclude: false, items: [] };
+
+  const exclude = !!matcher.allowExclusion && allowExclude;
+  let suggestions = matcher.suggestions();
+
+  // When strictMatching is enabled, filter suggestions to only include those containing the keyword.
+  if (matcher.strictMatching && searchString) {
+    const tokenizedSearch = getTextToken(searchString);
+    suggestions = suggestions.filter(item => getTextToken(item).includes(tokenizedSearch));
+  }
+
+  return {
+    asset: false,
+    exclude,
+    items: suggestions.map(item => ({ exclude, key: matcher.key, value: item })),
+  };
+}
+
+async function buildAssetSuggestions(matcher: SearchMatcher<any>, searchString: string): Promise<ResolvedSuggestions> {
+  if (!('asset' in matcher) || !searchString)
+    return { asset: false, exclude: false, items: [] };
+
+  try {
+    const suggestions = await matcher.suggestions(searchString);
+    return {
+      asset: true,
+      exclude: false,
+      items: (suggestions ?? []).map(value => ({ exclude: false, key: matcher.key, value })),
+    };
+  }
+  catch (error) {
+    logger.error(error);
+    return { asset: true, exclude: false, items: [] };
+  }
+}
+
+function buildBooleanSuggestions(matcher: SearchMatcher<any>): ResolvedSuggestions {
+  return {
+    asset: false,
+    exclude: false,
+    items: [{ exclude: false, key: matcher.key, value: true }],
+  };
+}
+
+async function resolveSuggestions(matcher: SearchMatcher<any>, search: SplitResult): Promise<ResolvedSuggestions> {
+  const searchString = search.value ?? '';
+
+  if ('string' in matcher)
+    return buildStringSuggestions(matcher, searchString, !!search.exclude);
+
+  if ('asset' in matcher)
+    return buildAssetSuggestions(matcher, searchString);
+
+  if ('boolean' in matcher)
+    return buildBooleanSuggestions(matcher);
+
+  logger.debug('Matcher doesn\'t have asset=true, string=true, or boolean=true.', matcher);
+  return { asset: false, exclude: false, items: [] };
+}
+
+function getSuggestionText(item: BaseSuggestion): string {
+  return typeof item.value === 'string' ? item.value : `${item.value.symbol} ${item.value.evmChain}`;
 }
 
 watch(() => selectedSuggestion, (index) => {
@@ -56,98 +142,37 @@ watch(suggested, (value) => {
   }
   else {
     set(lastSuggestion, null);
-    emit('suggest', { index: 0, key: '', total: 0 } as Suggestion);
+    emit('suggest', createEmptySuggestion());
   }
 });
 
 watch([() => keyword, () => selectedMatcher], async ([keyword, selectedMatcher]) => {
   if (!keyword || !selectedMatcher)
-    return [];
+    return;
 
   const search = splitSearch(keyword);
-  const suggestedFilter = selectedMatcher.key;
-
   const searchString = search.value ?? '';
-
-  let suggestedItems: BaseSuggestion[] = [];
-
-  let exclude = false;
-  let asset = false;
-  if ('string' in selectedMatcher) {
-    exclude = !!selectedMatcher.allowExclusion && !!search.exclude;
-    let suggestions = selectedMatcher.suggestions();
-
-    // When strictMatching is enabled, filter suggestions to only include those containing the keyword
-    if (selectedMatcher.strictMatching && searchString) {
-      const tokenizedSearch = getTextToken(searchString);
-      suggestions = suggestions.filter(item => getTextToken(item).includes(tokenizedSearch));
-    }
-
-    suggestedItems = suggestions.map(item => ({
-      exclude,
-      key: suggestedFilter,
-      value: item,
-    }));
-  }
-  else if ('asset' in selectedMatcher) {
-    if (searchString) {
-      asset = true;
-      try {
-        const suggestions = await selectedMatcher.suggestions(searchString);
-        if (suggestions) {
-          suggestedItems = suggestions.map(asset => ({
-            exclude,
-            key: suggestedFilter,
-            value: asset,
-          }));
-        }
-      }
-      catch (error) {
-        logger.error(error);
-        suggestedItems = [];
-      }
-    }
-  }
-  else if ('boolean' in selectedMatcher) {
-    suggestedItems = [
-      {
-        exclude: false,
-        key: suggestedFilter,
-        value: true,
-      },
-    ];
-  }
-  else {
-    logger.debug('Matcher doesn\'t have asset=true, string=true, or boolean=true.', selectedMatcher);
-  }
-
-  const getItemText = (item: BaseSuggestion) =>
-    typeof item.value === 'string' ? item.value : `${item.value.symbol} ${item.value.evmChain}`;
+  const { asset, exclude, items } = await resolveSuggestions(selectedMatcher, search);
 
   const limit = selectedMatcher.suggestionsToShow ?? (asset ? 10 : 5);
-  const sorted = suggestedItems.sort((a, b) => compareTextByKeyword(getItemText(a), getItemText(b), searchString));
+  const sorted = items.sort((a, b) => compareTextByKeyword(getSuggestionText(a), getSuggestionText(b), searchString));
   const limited = limit < 0 ? sorted : sorted.slice(0, limit);
 
-  set(suggested, limited
-    .map((a, index) => ({
-      asset: typeof a.value !== 'string',
-      exclude,
-      index,
-      key: a.key,
-      total: suggestedItems.length,
-      value: a.value,
-    })));
+  set(suggested, limited.map((a, index) => ({
+    asset: typeof a.value !== 'string',
+    exclude,
+    index,
+    key: a.key,
+    total: items.length,
+    value: a.value,
+  })));
 }, { immediate: true });
-
-const { t } = useI18n({ useScope: 'global' });
 
 watch(() => selectedSuggestion, async () => {
   await nextTick(() => {
     document.getElementsByClassName('highlightedMatcher')[0]?.scrollIntoView?.({ block: 'nearest' });
   });
 });
-
-const highlightedTextClasses = 'text-subtitle-2 text-rui-text-secondary';
 </script>
 
 <template>
@@ -214,6 +239,12 @@ const highlightedTextClasses = 'text-subtitle-2 text-rui-text-secondary';
       >
         {{ selectedMatcher.hint }}
       </div>
+    </div>
+    <div
+      v-else-if="showDefaultMatcherHint"
+    >
+      <span>{{ t('table_filter.press_enter_to_apply') }}</span>
+      <span class="font-medium ms-2">{{ defaultMatcherKey }}={{ keyword }}</span>
     </div>
     <div
       v-else-if="keyword && matchers.length === 0"

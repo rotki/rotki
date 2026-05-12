@@ -1,10 +1,4 @@
 <script setup lang="ts">
-import type {
-  MatchedKeywordWithBehaviour,
-  SavedFilterLocation,
-  SearchMatcher,
-  Suggestion,
-} from '@/modules/core/table/filtering';
 import { type AssetInfo, getTextToken } from '@rotki/common';
 import { splitSearch } from '@/modules/core/common/data/search';
 import { logger } from '@/modules/core/common/logging/logging';
@@ -13,8 +7,21 @@ import { useFilterMatchers } from '@/modules/core/table/composables/use-filter-m
 import { useFilterSelection } from '@/modules/core/table/composables/use-filter-selection';
 import { useMatcherUtils } from '@/modules/core/table/composables/use-matcher-utils';
 import FilterDropdown from '@/modules/core/table/FilterDropdown.vue';
+import {
+  createEmptySuggestion,
+  type MatchedKeywordWithBehaviour,
+  type SavedFilterLocation,
+  type SearchMatcher,
+  type Suggestion,
+} from '@/modules/core/table/filtering';
 import SavedFilterManagement from '@/modules/core/table/SavedFilterManagement.vue';
 import SelectionChip from '@/modules/core/table/SelectionChip.vue';
+
+interface MatcherItems {
+  items: (AssetInfo | string)[];
+  asset: boolean;
+  strictMatching: boolean;
+}
 
 defineOptions({
   inheritAttrs: false,
@@ -36,16 +43,12 @@ defineSlots<{
   tooltip: () => any;
 }>();
 
+const { t } = useI18n({ useScope: 'global' });
+
 const input = useTemplateRef<any>('input');
 const search = ref<string>('');
 const selectedSuggestion = ref<number>(0);
-const suggestedFilter = ref<Suggestion>({
-  asset: false,
-  index: 0,
-  key: '',
-  total: 0,
-  value: '',
-});
+const suggestedFilter = ref<Suggestion>(createEmptySuggestion());
 const shaking = ref<boolean>(false);
 
 // Matcher utilities
@@ -126,7 +129,7 @@ async function tryApplyDefaultMatcher(): Promise<boolean> {
     return false;
 
   const searchVal = get(search).trim();
-  if (!searchVal || searchVal.includes('='))
+  if (!searchVal || splitSearch(searchVal).exclude !== undefined)
     return false;
 
   const matcher = matcherForKey(defaultMatcherKey);
@@ -147,102 +150,115 @@ async function tryApplyDefaultMatcher(): Promise<boolean> {
   return true;
 }
 
-async function applySuggestion(): Promise<void> {
+function resetSearchState(): void {
+  set(selectedSuggestion, 0);
+  set(search, '');
+}
+
+async function applySelectedSuggestion(): Promise<void> {
+  await nextTick(() => applyFilter(get(suggestedFilter)));
+  resetSearchState();
+}
+
+function autocompleteFirstMatcher(): void {
+  const filteredMatchersVal = get(filteredMatchers);
   const selectedIndex = get(selectedSuggestion);
-  if (!get(selectedMatcher)) {
-    if (await tryApplyDefaultMatcher())
-      return;
+  if (filteredMatchersVal.length > selectedIndex)
+    setSearchToMatcherKey(filteredMatchersVal[selectedIndex]);
+}
 
-    const filteredMatchersVal = get(filteredMatchers);
-    if (filteredMatchersVal.length > selectedIndex)
-      setSearchToMatcherKey(filteredMatchersVal[selectedIndex]);
+async function collectMatcherItems(matcher: SearchMatcher<any, any>, keyword: string): Promise<MatcherItems> {
+  if ('string' in matcher) {
+    const strictMatching = !!matcher.strictMatching;
+    let items: (AssetInfo | string)[] = matcher.suggestions();
+    if (strictMatching && keyword) {
+      const tokenizedKeyword = getTextToken(keyword);
+      items = items.filter(item => typeof item === 'string' && getTextToken(item).includes(tokenizedKeyword));
+    }
+    return { asset: false, items, strictMatching };
+  }
+  if ('asset' in matcher)
+    return { asset: true, items: await matcher.suggestions(keyword), strictMatching: false };
 
+  if (!('boolean' in matcher))
+    logger.debug('Matcher doesn\'t have asset=true, string=true, or boolean=true.', matcher);
+
+  return { asset: false, items: [], strictMatching: false };
+}
+
+async function handleValidationFailure(key: string, exclude: boolean, searchVal: string): Promise<void> {
+  triggerShake();
+  const valueStart = key.length + (exclude ? 2 : 1);
+  await nextTick(async () => {
+    set(search, searchVal);
+    await nextTick(() => {
+      const inputEl = get(input)?.$el?.querySelector('input');
+      inputEl?.setSelectionRange(valueStart, searchVal.length);
+    });
+  });
+}
+
+async function commitFreeFormValue(
+  matcher: SearchMatcher<any, any>,
+  key: string,
+  keyword: string,
+  exclude: boolean,
+  asset: boolean,
+  strictMatching: boolean,
+  searchVal: string,
+): Promise<void> {
+  if (!('validate' in matcher))
+    return;
+
+  if (!strictMatching && matcher.validate(keyword)) {
+    await nextTick(() => applyFilter({ asset, exclude, index: 0, key, total: 1, value: keyword }));
+    resetSearchState();
     return;
   }
+  await handleValidationFailure(key, exclude, searchVal);
+}
 
-  const filter = get(suggestedFilter);
-  if (filter.value) {
-    await nextTick(() => applyFilter(filter));
-    set(selectedSuggestion, 0);
-    set(search, '');
-    return;
-  }
-
+async function applyKeyedSearch(): Promise<void> {
   const searchVal = get(search);
   const { exclude, key, value: keyword } = splitSearch(searchVal);
 
   if (!key) {
     get(input).blur();
-    set(selectedSuggestion, 0);
-    set(search, '');
+    resetSearchState();
     return;
   }
 
   const matcher = matcherForKey(key);
   if (!matcher) {
-    set(selectedSuggestion, 0);
-    set(search, '');
+    resetSearchState();
     return;
   }
 
-  let asset = false;
-  let suggestedItems: (AssetInfo | string)[] = [];
-  let strictMatching = false;
-  if ('string' in matcher) {
-    suggestedItems = matcher.suggestions();
-    strictMatching = !!matcher.strictMatching;
+  const { asset, items, strictMatching } = await collectMatcherItems(matcher, keyword);
 
-    // When strictMatching is enabled, filter suggestions to only include those containing the keyword
-    if (strictMatching && keyword) {
-      const tokenizedKeyword = getTextToken(keyword);
-      suggestedItems = suggestedItems.filter(item =>
-        typeof item === 'string' && getTextToken(item).includes(tokenizedKeyword),
-      );
-    }
-  }
-  else if ('asset' in matcher) {
-    suggestedItems = await matcher.suggestions(keyword);
-    asset = true;
-  }
-  else if (!('boolean' in matcher)) {
-    logger.debug('Matcher doesn\'t have asset=true, string=true, or boolean=true.', selectedMatcher);
-  }
-
-  // If there are no suggestions and the matcher has a validate function
-  // For strictMatching, validation fails when no matching suggestions exist
-  if (suggestedItems.length === 0 && 'validate' in matcher) {
-    if (!strictMatching && matcher.validate(keyword)) {
-      await nextTick(() =>
-        applyFilter({
-          asset,
-          exclude,
-          index: 0,
-          key,
-          total: 1,
-          value: keyword,
-        }),
-      );
-      set(selectedSuggestion, 0);
-      set(search, '');
-    }
-    else {
-      // Validation failed - keep search and shake
-      triggerShake();
-      const valueStart = key.length + (exclude ? 2 : 1);
-      await nextTick(async () => {
-        set(search, searchVal);
-        await nextTick(() => {
-          const inputEl = get(input)?.$el?.querySelector('input');
-          inputEl?.setSelectionRange(valueStart, searchVal.length);
-        });
-      });
-    }
+  if (items.length === 0) {
+    await commitFreeFormValue(matcher, key, keyword, !!exclude, asset, strictMatching, searchVal);
     return;
   }
 
   cancelEditSuggestion();
-  set(selectedSuggestion, 0);
-  set(search, '');
+  resetSearchState();
+}
+
+async function applySuggestion(): Promise<void> {
+  if (!get(selectedMatcher)) {
+    if (await tryApplyDefaultMatcher())
+      return;
+    autocompleteFirstMatcher();
+    return;
+  }
+
+  if (get(suggestedFilter).value) {
+    await applySelectedSuggestion();
+    return;
+  }
+
+  await applyKeyedSearch();
 }
 
 function moveSuggestion(up: boolean): void {
@@ -259,20 +275,6 @@ function moveSuggestion(up: boolean): void {
     set(selectedSuggestion, total - 1);
   else set(selectedSuggestion, position);
 }
-
-onMounted(() => {
-  get(input).onTabDown = function (e: KeyboardEvent) {
-    e.preventDefault();
-    e.stopPropagation();
-    moveSuggestion(false);
-  };
-  get(input).onEnterDown = function (e: KeyboardEvent) {
-    e.preventDefault();
-    e.stopPropagation();
-  };
-
-  restoreSelection(matches);
-});
 
 watch(search, () => {
   set(selectedSuggestion, 0);
@@ -291,7 +293,19 @@ watch(suggestionBeingEdited, (value, old) => {
   });
 });
 
-const { t } = useI18n({ useScope: 'global' });
+onMounted(() => {
+  get(input).onTabDown = function (e: KeyboardEvent) {
+    e.preventDefault();
+    e.stopPropagation();
+    moveSuggestion(false);
+  };
+  get(input).onEnterDown = function (e: KeyboardEvent) {
+    e.preventDefault();
+    e.stopPropagation();
+  };
+
+  restoreSelection(matches);
+});
 </script>
 
 <template>
@@ -358,6 +372,7 @@ const { t } = useI18n({ useScope: 'global' });
               :keyword="search"
               :selected-matcher="selectedMatcher"
               :selected-suggestion="selectedSuggestion"
+              :default-matcher-key="defaultMatcherKey"
               @apply-filter="applyFilter($event)"
               @suggest="suggestedFilter = $event"
               @click="setSearchToMatcherKey($event)"

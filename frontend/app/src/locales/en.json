@@ -5432,6 +5432,7 @@
       "example": "start = 26/05/2022"
     },
     "label": "Combined filters",
+    "press_enter_to_apply": "Press enter to apply:",
     "saved_filters": {
       "actions": {
         "add": "Save current filter to list",
