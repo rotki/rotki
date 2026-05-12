@@ -161,7 +161,29 @@ def test_withdrawals(eth2: 'Eth2', database, ethereum_accounts, query_method):
 @pytest.mark.parametrize('ethereum_accounts', [[
     '0x0fdAe061cAE1Ad4Af83b27A96ba5496ca992139b', '0x76b23B82c8dCf1635a9DF63Fe6D9AafAaF042A9B',
 ]])
-def test_block_production(eth2: 'Eth2', database, ethereum_accounts):
+@pytest.mark.parametrize(('produced_blocks_query_source', 'include_beaconchain_key', 'beacon_rpc_endpoint', 'vcr_cassette_name'), [  # noqa: E501
+    pytest.param(
+        'beaconchain',
+        True,
+        None,
+        'test_block_production[ethereum_accounts0-False]',
+        id='beaconchain',
+    ), pytest.param(
+        'rpc_fallback',
+        False,
+        'https://ethereum-beacon-api.publicnode.com',
+        'test_block_production[rpc_fallback]',
+        id='rpc_fallback',
+    ),
+])
+def test_block_production(
+        eth2: 'Eth2',
+        database,
+        ethereum_inquirer,
+        ethereum_accounts,
+        produced_blocks_query_source: str,
+        vcr_cassette_name: str,  # pylint: disable=unused-argument
+):
     """Test that providing validators that have both pure block production and running
     mev-boost works and detects the block production events.
     """
@@ -184,14 +206,28 @@ def test_block_production(eth2: 'Eth2', database, ethereum_accounts):
             ),
         ])
 
-    eth2.beacon_inquirer.beaconchain.get_and_store_produced_blocks([vindex1, vindex2])
+    if produced_blocks_query_source == 'beaconchain':
+        eth2.beacon_inquirer.beaconchain.get_and_store_produced_blocks([vindex1, vindex2])
+    else:
+        decoder: EthereumTransactionDecoder | None = None
+        for tx_hash in (
+            deserialize_evm_tx_hash('0x8d0969db1e536969ba2e29abf8e8945e4304d49ae14523b66cbe9be5d52df804'),  # noqa: E501
+            deserialize_evm_tx_hash('0x951fb37e2ace723e288be1a965f576b91f1f3cd0aee1c70a5ed4b017c45cbbe3'),  # noqa: E501
+            deserialize_evm_tx_hash('0x5ee508b67564e00d831534d88c1f5cdd5d176da26663eb52cf2ceddcf10bb1f2'),  # noqa: E501
+            deserialize_evm_tx_hash('0x717d387dc8ec391f1bc9282a4c819ef455bf24abb3ba052c11f86ec5ef07051a'),  # noqa: E501
+        ):
+            _, decoder = get_decoded_events_of_transaction(
+                evm_inquirer=ethereum_inquirer,
+                tx_hash=tx_hash,
+                evm_decoder=decoder,
+            )
 
     with database.conn.read_ctx() as cursor:
-        events = dbevents.get_history_events_internal(
+        events = [event for event in dbevents.get_history_events_internal(
             cursor=cursor,
             filter_query=HistoryEventFilterQuery.make(to_ts=Timestamp(1682370000)),
             aggregate_by_group_ids=False,
-        )
+        ) if isinstance(event, EthBlockEvent)]
 
     expected_events = [EthBlockEvent(
         validator_index=vindex1,
@@ -298,6 +334,15 @@ def test_block_production(eth2: 'Eth2', database, ethereum_accounts):
         block_number=17055026,
         is_mev_reward=True,
     )]
+    if produced_blocks_query_source == 'rpc_fallback':
+        # The RPC fallback is transaction-driven: it can only create produced-block
+        # events for blocks where we decoded a plain ETH receive tx. Beaconcha.in
+        # returns all validator proposal slots, so keep only the subset triggered
+        # by the MEV tx hashes decoded above.
+        expected_events = [
+            event for event in expected_events
+            if event.is_exit_or_blocknumber in {15824493, 15938405, 16589592, 17055026}
+        ]
     for x in events:  # do not compare identifiers
         x.identifier = None
     assert expected_events == events
