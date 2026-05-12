@@ -27,6 +27,7 @@ from rotkehlchen.types import (
     Timestamp,
 )
 from rotkehlchen.utils.misc import from_gwei, ts_sec_to_ms
+from rotkehlchen.utils.rate_limiter import TokenBucket
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
@@ -38,6 +39,10 @@ log = RotkehlchenLogsAdapter(logger)
 ETHERSCAN_PAGINATION_LIMIT: Final = 10000
 ETHERSCAN_BASE_URL: Final = 'https://api.etherscan.io/v2/api'
 ROTKI_PACKAGED_KEY: Final = ApiKey('W9CEV6QB9NIPUEHD6KNEYM4PDX6KBPRVVR')
+# Etherscan v2 free tier is 5 req/s on a single API key shared across all
+# chains. We stay slightly under to leave room for the occasional retry.
+ETHERSCAN_RATE_LIMIT_RPS: Final = 4.0
+ETHERSCAN_RATE_LIMIT_BURST: Final = 8
 
 
 class Etherscan(ExternalServiceWithRecommendedApiKey, EtherscanLikeApi):
@@ -59,6 +64,10 @@ class Etherscan(ExternalServiceWithRecommendedApiKey, EtherscanLikeApi):
             name='Etherscan',
             default_api_key=ROTKI_PACKAGED_KEY,
             pagination_limit=ETHERSCAN_PAGINATION_LIMIT,
+            rate_limiter=TokenBucket(
+                rps=ETHERSCAN_RATE_LIMIT_RPS,
+                capacity=ETHERSCAN_RATE_LIMIT_BURST,
+            ),
         )
 
     @staticmethod

@@ -1,7 +1,7 @@
 import json
 import logging
 from http import HTTPStatus
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Final
 
 import requests
 
@@ -25,6 +25,7 @@ from rotkehlchen.types import ChainID, ExternalService, Price, Timestamp
 from rotkehlchen.utils.misc import get_chunks, ts_now
 from rotkehlchen.utils.mixins.penalizable_oracle import PenalizablePriceOracleMixin
 from rotkehlchen.utils.network import create_session
+from rotkehlchen.utils.rate_limiter import TokenBucket
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
@@ -35,6 +36,11 @@ MIN_DEFILLAMA_CONFIDENCE = FVal('0.20')
 # manual testing showed the api can handle around 258 tokens in ethereum:0x format,
 # but we're using 150 to stay comfortably under the limit and avoid hitting 413/414 errors
 DEFILLAMA_CHUNK_SIZE = 150
+# Defillama's free coins endpoint has no documented hard limit; community guidance
+# converges on a few req/s. Stay conservative; pro keys can be lifted via a
+# settings override in a follow-up.
+DEFILLAMA_RATE_LIMIT_RPS: Final = 1.5
+DEFILLAMA_RATE_LIMIT_BURST: Final = 10
 
 
 class Defillama(
@@ -54,6 +60,10 @@ class Defillama(
         self.session = create_session()
         self.session.headers.update({'User-Agent': 'rotkehlchen'})
         self.db: DBHandler | None  # type: ignore  # "solve" the self.db discrepancy
+        self._rate_limiter = TokenBucket(
+            rps=DEFILLAMA_RATE_LIMIT_RPS,
+            capacity=DEFILLAMA_RATE_LIMIT_BURST,
+        )
 
     def _query(
             self,
@@ -75,6 +85,7 @@ class Defillama(
             options = {}
         url = base_url + f'{module}/{subpath or ""}'
         log.debug(f'Querying defillama: {url=} with {options=}')
+        self._rate_limiter.acquire()
         try:
             response = self.session.get(
                 url=url,

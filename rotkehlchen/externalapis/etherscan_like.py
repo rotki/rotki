@@ -46,6 +46,7 @@ from rotkehlchen.types import (
 )
 from rotkehlchen.utils.misc import convert_to_int, hexstr_to_int, set_user_agent
 from rotkehlchen.utils.network import create_session
+from rotkehlchen.utils.rate_limiter import TokenBucket
 from rotkehlchen.utils.serialization import jsonloads_dict
 
 if TYPE_CHECKING:
@@ -89,6 +90,7 @@ class EtherscanLikeApi(ABC):
             name: Literal['Etherscan', 'Blockscout', 'Routescan'],
             pagination_limit: int,
             default_api_key: ApiKey,
+            rate_limiter: TokenBucket,
     ) -> None:
         self.db = database
         self.msg_aggregator = msg_aggregator
@@ -97,6 +99,10 @@ class EtherscanLikeApi(ABC):
         self.default_api_key = default_api_key
         self.pagination_limit = pagination_limit
         self.name = name
+        # Shared across all greenlets that share this instance — required to
+        # gate parallel cross-chain calls into upstreams (e.g. etherscan-v2)
+        # that enforce a single rate-limit bucket across chains.
+        self._rate_limiter = rate_limiter
 
     @staticmethod
     @abc.abstractmethod
@@ -315,6 +321,7 @@ class EtherscanLikeApi(ABC):
         response = None
         while backoff < backoff_limit:
             log.debug(f'Querying {self.name} for {chain_id}: {api_url} with params: {params}')
+            self._rate_limiter.acquire()
             try:
                 response = self.session.get(url=api_url, params=params, timeout=timeout)
             except requests.exceptions.RequestException as e:

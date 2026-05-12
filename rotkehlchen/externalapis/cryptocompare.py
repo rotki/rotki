@@ -57,6 +57,7 @@ from rotkehlchen.types import ExternalService, Price, Timestamp
 from rotkehlchen.utils.misc import set_user_agent, ts_now
 from rotkehlchen.utils.mixins.penalizable_oracle import PenalizablePriceOracleMixin
 from rotkehlchen.utils.network import create_session
+from rotkehlchen.utils.rate_limiter import TokenBucket
 from rotkehlchen.utils.serialization import jsonloads_dict
 
 if TYPE_CHECKING:
@@ -73,6 +74,11 @@ CRYPTOCOMPARE_STARKNET_HISTORICAL_PRICE_CHANGE_TS: Final = Timestamp(1715212800)
 RATE_LIMIT_MSG = 'You are over your rate limit please upgrade your account!'
 CRYPTOCOMPARE_QUERY_RETRY_TIMES = 3
 CRYPTOCOMPARE_RATE_LIMIT_WAIT_TIME = 60
+# Cryptocompare's free tier is generous (~50/s burst, ~100k/month sustained).
+# Stay well under the burst ceiling so we don't share the budget with a noisy
+# accounting run.
+CRYPTOCOMPARE_RATE_LIMIT_RPS: Final = 4.0
+CRYPTOCOMPARE_RATE_LIMIT_BURST: Final = 20
 CRYPTOCOMPARE_SPECIAL_CASES_MAPPING = {
     'ADADOWN': A_USDT,
     'ADAUP': A_USDT,
@@ -220,6 +226,10 @@ class Cryptocompare(
         set_user_agent(self.session)
         self.last_histohour_query_ts = 0
         self.db: DBHandler | None  # type: ignore  # "solve" the self.db discrepancy
+        self._rate_limiter = TokenBucket(
+            rps=CRYPTOCOMPARE_RATE_LIMIT_RPS,
+            capacity=CRYPTOCOMPARE_RATE_LIMIT_BURST,
+        )
 
     def can_query_history(
             self,
@@ -288,6 +298,7 @@ class Cryptocompare(
         timeout = CachedSettings().get_timeout_tuple()
         while tries >= 0:
             log.debug('Querying cryptocompare', url=url, params=params)
+            self._rate_limiter.acquire()
             try:
                 response = self.session.get(url, timeout=timeout, params=params)
             except requests.exceptions.RequestException as e:

@@ -19,6 +19,7 @@ from rotkehlchen.types import (
     EVMTxHash,
     ExternalService,
 )
+from rotkehlchen.utils.rate_limiter import TokenBucket
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
@@ -34,6 +35,10 @@ ROUTESCAN_BASE_URL: Final = 'https://api.routescan.io/v2/network/mainnet/evm/{ch
 # Arbitrum One and Base are also partially supported, but currently (2026-02-13) have a status
 # of `Not fully indexed` so may be missing data. See https://docs.routescan.io/indexing-status
 ROUTESCAN_SUPPORTED_CHAINS: Final = (ChainID.ETHEREUM, ChainID.OPTIMISM)
+# Routescan free tier uses a placeholder key and publishes no hard rate limit.
+# Stay conservative; can be raised if we observe headroom.
+ROUTESCAN_RATE_LIMIT_RPS: Final = 10.0
+ROUTESCAN_RATE_LIMIT_BURST: Final = 20
 
 
 class Routescan(ExternalServiceWithApiKey, EtherscanLikeApi):
@@ -54,6 +59,10 @@ class Routescan(ExternalServiceWithApiKey, EtherscanLikeApi):
             name='Routescan',
             pagination_limit=ROUTESCAN_PAGINATION_LIMIT,
             default_api_key=ApiKey('placeholder'),  # free tier can use any placeholder api key as mentioned in their docs https://routescan.io/documentation  # noqa: E501
+            rate_limiter=TokenBucket(
+                rps=ROUTESCAN_RATE_LIMIT_RPS,
+                capacity=ROUTESCAN_RATE_LIMIT_BURST,
+            ),
         )
 
     @staticmethod

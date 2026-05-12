@@ -1,7 +1,7 @@
 import json
 import logging
 from http import HTTPStatus
-from typing import TYPE_CHECKING, Any, Literal, NamedTuple, overload
+from typing import TYPE_CHECKING, Any, Final, Literal, NamedTuple, overload
 
 import requests
 
@@ -22,12 +22,20 @@ from rotkehlchen.types import ChainID, ExternalService, Price, Timestamp, TokenK
 from rotkehlchen.utils.misc import set_user_agent, timestamp_to_date, ts_now
 from rotkehlchen.utils.mixins.penalizable_oracle import PenalizablePriceOracleMixin
 from rotkehlchen.utils.network import create_session
+from rotkehlchen.utils.rate_limiter import TokenBucket
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
+
+# CoinGecko demo (free) tier: 30 calls/minute = 0.5 rps. Pro tiers go higher but
+# share this single client instance — users with a pro key can lift this via
+# settings overrides in a follow-up. Burst lets brief multi-asset bulk fetches
+# (price lookups) finish without artificial pacing.
+COINGECKO_RATE_LIMIT_RPS: Final = 0.45
+COINGECKO_RATE_LIMIT_BURST: Final = 5
 
 
 class CoingeckoAssetData(NamedTuple):
@@ -529,6 +537,10 @@ class Coingecko(
         self.session = create_session()
         set_user_agent(self.session)
         self.db: DBHandler | None  # type: ignore  # "solve" the self.db discrepancy
+        self._rate_limiter = TokenBucket(
+            rps=COINGECKO_RATE_LIMIT_RPS,
+            capacity=COINGECKO_RATE_LIMIT_BURST,
+        )
 
     @overload
     def _query(
@@ -573,6 +585,7 @@ class Coingecko(
             self.session.headers.pop('x-cg-pro-api-key', None)
 
         log.debug(f'Querying coingecko: {url=} with {options=}')
+        self._rate_limiter.acquire()
         try:
             response = self.session.get(
                 url=url,
