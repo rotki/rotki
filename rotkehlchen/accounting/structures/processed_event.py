@@ -261,7 +261,7 @@ class ProcessedAccountingEvent:
                 cost_basis = CostBasisInfo.deserialize(data['cost_basis'])
             event = cls(
                 event_type=AccountingEventType.deserialize(data['type']),
-                notes=data['notes'],
+                notes=data['notes'] or '',  # historic reports may have stored null notes
                 location=Location.deserialize(data['location']),
                 timestamp=timestamp,
                 asset=Asset(data['asset_identifier']).check_existence(),

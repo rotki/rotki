@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`-` There should no longer be any errors when exporting CSV from PnL report containing an event with notes being Null.
 * :bug:`-` 1inch swaps settling through a balancer pool should now be properly decoded.
 * :bug:`12173` Beaconcha.in queries with legacy API keys will work correctly again.
 * :bug:`-` Newer zerox swaps in base will now be properly decoded.
