@@ -46,6 +46,7 @@ function createSettingsResponse(overrides: Record<string, unknown> = {}): Action
       last_data_migration: 13,
       non_syncing_exchanges: [],
       evmchains_to_skip_detection: [],
+      disabled_chain_queries: {},
       cost_basis_method: 'fifo',
       treat_eth2_as_eth: true,
       eth_staking_taxable_after_withdrawal_enabled: true,

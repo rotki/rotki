@@ -224,6 +224,11 @@ def test_set_settings(rotkehlchen_api_server: 'APIServer') -> None:
             value = [ExchangeLocationID(name='test_name', location=Location.KRAKEN).serialize()]
         elif setting == 'evmchains_to_skip_detection':
             value = [x.serialize() for x in (SupportedBlockchain.POLYGON_POS, SupportedBlockchain.BASE, SupportedBlockchain.ETHEREUM, SupportedBlockchain.AVALANCHE)]  # noqa: E501
+        elif setting == 'disabled_chain_queries':
+            value = {
+                SupportedBlockchain.GNOSIS.serialize(): [],
+                SupportedBlockchain.ETHEREUM.serialize(): ['0x5A0b54D5dc17e0AadC383d2db43B0a0D3E029c4c'],  # noqa: E501
+            }
         elif setting == 'cost_basis_method':
             value = CostBasisMethod.LIFO.serialize()
         elif setting == 'address_name_priority':

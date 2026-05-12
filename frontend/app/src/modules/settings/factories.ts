@@ -22,6 +22,7 @@ export function defaultGeneralSettings(mainCurrency: Currency): GeneralSettings 
     currentPriceOracles: [],
     dateDisplayFormat: Defaults.DEFAULT_DATE_DISPLAY_FORMAT,
     defaultEvmIndexerOrder: [],
+    disabledChainQueries: {},
     displayDateInLocaltime: Defaults.DISPLAY_DATE_IN_LOCALTIME,
     dotRpcEndpoint: Defaults.DOT_RPC_ENDPOINT,
     evmchainsToSkipDetection: [],

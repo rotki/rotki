@@ -111,6 +111,7 @@ from rotkehlchen.types import (
     ModuleName,
     SupportedBlockchain,
     Timestamp,
+    TuplesOfBlockchainAddresses,
 )
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.interfaces import EthereumModule, ProgressUpdater
@@ -686,6 +687,27 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
         self.totals = self.balances.recalculate_totals()
         return self.get_balances_update(blockchain)
 
+    def get_active_addresses(
+            self,
+            blockchain: SupportedBlockchain,
+    ) -> TuplesOfBlockchainAddresses:
+        """Return the addresses tracked for `blockchain` that should be queried,
+        filtered by the `disabled_chain_queries` user setting.
+
+        Empty frozenset value => entire chain disabled (returns ()).
+        Non-empty frozenset value => those specific addresses are excluded.
+        Missing key => chain fully enabled (returns all tracked addresses).
+
+        Reads only in-memory state (self.accounts + CachedSettings) so it is safe
+        to call on hot paths without a DB round-trip.
+        """
+        addresses = self.accounts.get(blockchain)
+        if (disabled := CachedSettings().get_settings().disabled_chain_queries.get(blockchain)) is None:  # noqa: E501
+            return addresses
+        if len(disabled) == 0:
+            return ()  # entire chain disabled
+        return tuple(addr for addr in addresses if addr not in disabled)  # type: ignore[return-value]
+
     @protect_with_lock(arguments_matter=True, skip_ignore_cache=True)
     @cache_response_timewise(arguments_matter=True, forward_ignore_cache=True)
     def _query_chain_balances(
@@ -698,7 +720,7 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
         existing_balances = self.balances.get(chain=blockchain)
         if addresses is None or len(addresses) == 0:
             existing_balances.clear()
-            if len(accounts := self.accounts.get(blockchain)) == 0:
+            if len(accounts := self.get_active_addresses(blockchain)) == 0:
                 return
         else:
             accounts = addresses  # type: ignore  # they are both sequences.

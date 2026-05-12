@@ -7,6 +7,7 @@ import BtcDerivationGapLimitSetting from '@/modules/settings/general/BtcDerivati
 import CsvExportDelimiterSetting from '@/modules/settings/general/CsvExportDelimiterSetting.vue';
 import DateDisplayFormatSetting from '@/modules/settings/general/DateDisplayFormatSetting.vue';
 import DateInputFormatSetting from '@/modules/settings/general/DateInputFormatSetting.vue';
+import DisabledChainQueriesSettings from '@/modules/settings/general/DisabledChainQueriesSettings.vue';
 import DisplayDateInLocaltimeSetting from '@/modules/settings/general/DisplayDateInLocaltimeSetting.vue';
 import UsageAnalyticsSetting from '@/modules/settings/general/UsageAnalyticsSetting.vue';
 import VersionUpdateFrequencySetting from '@/modules/settings/general/VersionUpdateFrequencySetting.vue';
@@ -45,6 +46,15 @@ const { t } = useI18n({ useScope: 'global' });
       </template>
       <DateDisplayFormatSetting />
       <DateInputFormatSetting />
+    </SettingsItem>
+    <SettingsItem :id="SettingsHighlightIds.DISABLED_CHAIN_QUERIES">
+      <template #title>
+        {{ t('general_settings.disabled_chain_queries.title') }}
+      </template>
+      <template #subtitle>
+        {{ t('general_settings.disabled_chain_queries.subtitle') }}
+      </template>
+      <DisabledChainQueriesSettings />
     </SettingsItem>
   </SettingCategory>
 </template>
