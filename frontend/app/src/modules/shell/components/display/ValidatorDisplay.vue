@@ -1,16 +1,23 @@
 <script setup lang="ts">
-import type { Eth2ValidatorEntry } from '@rotki/common';
 import { truncateAddress } from '@/modules/core/common/display/truncate';
 import { useScramble } from '@/modules/settings/use-scramble';
 
+interface ValidatorEntry {
+  readonly publicKey: string;
+  readonly index: number;
+}
+
 const { horizontal = false, validator } = defineProps<{
-  validator: Eth2ValidatorEntry;
+  validator: ValidatorEntry;
   horizontal?: boolean;
 }>();
 
-const length = computed(() => (horizontal ? 4 : 10));
+const HORIZONTAL_TRUNCATE_LENGTH = 4;
+const STACKED_TRUNCATE_LENGTH = 10;
 
 const { t } = useI18n({ useScope: 'global' });
+
+const length = computed<number>(() => (horizontal ? HORIZONTAL_TRUNCATE_LENGTH : STACKED_TRUNCATE_LENGTH));
 
 const { scrambleAddress, scrambleIdentifier, shouldShowAmount } = useScramble();
 </script>

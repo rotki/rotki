@@ -1,116 +1,68 @@
 <script setup lang="ts">
 import type { ChainInfo } from '@/modules/core/api/types/chains';
-import { getAccountAddress } from '@/modules/accounts/account-utils';
 import ChainDisplay from '@/modules/accounts/blockchain/ChainDisplay.vue';
-import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
+import ChainAccountMultiSelect from '@/modules/accounts/ChainAccountMultiSelect.vue';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
 import SettingsOption from '@/modules/settings/controls/SettingsOption.vue';
+import SettingsStatusMessage from '@/modules/settings/controls/SettingsStatusMessage.vue';
+import {
+  type DisabledChainQueries,
+  useDisabledChainQueriesState,
+} from '@/modules/settings/general/use-disabled-chain-queries-state';
 import { useGeneralSettingsStore } from '@/modules/settings/use-general-settings-store';
 
-type DisabledChainQueries = Record<string, string[]>;
-
-type ChainMode = 'all' | 'addresses';
+const CHAIN_OPTION_HEIGHT_PX = 56;
 
 const { t } = useI18n({ useScope: 'global' });
 
 const { disabledChainQueries } = storeToRefs(useGeneralSettingsStore());
-const { getChain, supportedChains } = useSupportedChains();
-const { accounts } = storeToRefs(useBlockchainAccountsStore());
-
-// Internal state keyed by chain.id (e.g. "polygon_pos"). Empty array => whole chain disabled.
-const localValue = ref<DisabledChainQueries>({});
-// Per-chain UI mode. Drives whether the address picker is shown.
-const chainModes = ref<Record<string, ChainMode>>({});
-
-// Normalize incoming dict (whose keys may be camelCased by the response transformer)
-// back to chain.id form. Initial sync from the store.
-watchEffect(() => {
-  const raw = get(disabledChainQueries);
-  const normalized: DisabledChainQueries = {};
-  const modes: Record<string, ChainMode> = {};
-  for (const [rawChain, addrs] of Object.entries(raw)) {
-    const chain = getChain(rawChain);
-    normalized[chain] = [...addrs];
-    modes[chain] = addrs.length === 0 ? 'all' : 'addresses';
-  }
-  set(localValue, normalized);
-  set(chainModes, modes);
-});
+const { matchChain, supportedChains } = useSupportedChains();
 
 const chains = computed<ChainInfo[]>(() => get(supportedChains));
 
-const selectedChainIds = computed<string[]>(() => Object.keys(get(localValue)));
+const {
+  excludedAddresses,
+  isEntireChainDisabled,
+  isTransientlyDisabled,
+  selectChains,
+  setEntireChainDisabled,
+  setExcludedAddresses,
+  visibleChainIds,
+} = useDisabledChainQueriesState({
+  matchChain,
+  ready: (): boolean => get(supportedChains).length > 0,
+  source: disabledChainQueries,
+});
 
-function getAddressesForChain(chainId: string): string[] {
-  const list = get(accounts)[chainId] ?? [];
-  const addresses = new Set<string>();
-  for (const account of list) {
-    const address = getAccountAddress(account);
-    if (address)
-      addresses.add(address);
-  }
-  return [...addresses].sort();
+function commit(
+  payload: DisabledChainQueries | undefined,
+  updateImmediate: (value: DisabledChainQueries) => void,
+): void {
+  if (payload !== undefined)
+    updateImmediate(payload);
 }
 
-function isEntireChainDisabled(chainId: string): boolean {
-  return get(chainModes)[chainId] === 'all';
-}
-
-// Build the dict payload to send to the backend.
-// Per-address mode with zero excluded addresses => omit the chain (effectively enabled).
-function buildPayload(value: DisabledChainQueries, modes: Record<string, ChainMode>): DisabledChainQueries {
-  const payload: DisabledChainQueries = {};
-  for (const [chain, addrs] of Object.entries(value)) {
-    const mode = modes[chain] ?? 'all';
-    if (mode === 'all') {
-      payload[chain] = [];
-    }
-    else if (addrs.length > 0) {
-      payload[chain] = [...addrs];
-    }
-  }
-  return payload;
-}
-
-function commit(updateImmediate: (value: DisabledChainQueries) => void): void {
-  updateImmediate(buildPayload(get(localValue), get(chainModes)));
-}
-
-function onSelectedChainsChange(
+function onChainsChange(
   newSelected: string[],
   updateImmediate: (value: DisabledChainQueries) => void,
 ): void {
-  const previousValue = get(localValue);
-  const previousModes = get(chainModes);
-  const nextValue: DisabledChainQueries = {};
-  const nextModes: Record<string, ChainMode> = {};
-  for (const chain of newSelected) {
-    nextValue[chain] = previousValue[chain] ?? [];
-    nextModes[chain] = previousModes[chain] ?? 'all';
-  }
-  set(localValue, nextValue);
-  set(chainModes, nextModes);
-  commit(updateImmediate);
+  commit(selectChains(newSelected), updateImmediate);
 }
 
-function setEntireChainDisabled(
+function onToggleEntireChain(
   chainId: string,
   disabled: boolean,
   updateImmediate: (value: DisabledChainQueries) => void,
 ): void {
-  set(chainModes, { ...get(chainModes), [chainId]: disabled ? 'all' : 'addresses' });
-  if (disabled)
-    set(localValue, { ...get(localValue), [chainId]: [] });
-  commit(updateImmediate);
+  commit(setEntireChainDisabled(chainId, disabled), updateImmediate);
 }
 
-function setExcludedAddresses(
+function onAddressesChange(
   chainId: string,
-  addresses: string[],
+  addresses: readonly string[],
   updateImmediate: (value: DisabledChainQueries) => void,
 ): void {
-  set(localValue, { ...get(localValue), [chainId]: addresses });
-  commit(updateImmediate);
+  commit(setExcludedAddresses(chainId, addresses), updateImmediate);
 }
 </script>
 
@@ -125,18 +77,17 @@ function setExcludedAddresses(
       <RuiAutoComplete
         :options="chains"
         :label="t('general_settings.disabled_chain_queries.chains_label')"
-        :model-value="selectedChainIds"
-        :success-messages="success"
-        :error-messages="error"
+        :model-value="[...visibleChainIds]"
         :disabled="loading"
-        data-cy="disabled-chain-queries"
+        data-testid="disabled-chain-queries"
         variant="outlined"
         key-attr="id"
         text-attr="name"
         chips
-        :item-height="56"
+        hide-details
+        :item-height="CHAIN_OPTION_HEIGHT_PX"
         auto-select-first
-        @update:model-value="onSelectedChainsChange($event, updateImmediate)"
+        @update:model-value="onChainsChange($event, updateImmediate)"
       >
         <template #selection="{ item }">
           <ChainDisplay
@@ -155,8 +106,9 @@ function setExcludedAddresses(
       </RuiAutoComplete>
 
       <div
-        v-for="chainId in selectedChainIds"
+        v-for="chainId in visibleChainIds"
         :key="chainId"
+        :data-testid="`disabled-chain-panel-${chainId}`"
         class="border border-default rounded-md p-3"
       >
         <div class="flex items-center justify-between flex-wrap gap-2">
@@ -169,30 +121,45 @@ function setExcludedAddresses(
             :disabled="loading"
             color="primary"
             hide-details
-            @update:model-value="setEntireChainDisabled(chainId, $event, updateImmediate)"
+            :data-testid="`disable-entire-chain-${chainId}`"
+            @update:model-value="onToggleEntireChain(chainId, $event, updateImmediate)"
           >
             {{ t('general_settings.disabled_chain_queries.disable_entire_chain') }}
           </RuiSwitch>
         </div>
         <div
           v-if="!isEntireChainDisabled(chainId)"
-          class="mt-3"
+          class="mt-3 flex flex-col gap-1"
         >
-          <RuiAutoComplete
-            :options="getAddressesForChain(chainId)"
-            :model-value="localValue[chainId] ?? []"
+          <ChainAccountMultiSelect
+            :chain="chainId"
+            :model-value="excludedAddresses[chainId] ?? []"
             :label="t('general_settings.disabled_chain_queries.exclude_addresses_label')"
             :disabled="loading"
-            variant="outlined"
-            chips
-            dense
-            @update:model-value="setExcludedAddresses(chainId, $event, updateImmediate)"
+            :data-testid="`exclude-addresses-${chainId}`"
+            @update:model-value="onAddressesChange(chainId, $event, updateImmediate)"
           />
-          <div class="text-caption text-rui-text-secondary mt-1">
+          <div
+            v-if="isTransientlyDisabled(chainId)"
+            :data-testid="`transient-warning-${chainId}`"
+            class="text-caption text-rui-warning"
+          >
+            {{ t('general_settings.disabled_chain_queries.transient_warning') }}
+          </div>
+          <div
+            v-else
+            class="text-caption text-rui-text-secondary"
+          >
             {{ t('general_settings.disabled_chain_queries.exclude_addresses_hint') }}
           </div>
         </div>
       </div>
+
+      <SettingsStatusMessage
+        :error="error"
+        :success="success"
+        data-testid="disabled-chain-queries-status"
+      />
     </div>
   </SettingsOption>
 </template>

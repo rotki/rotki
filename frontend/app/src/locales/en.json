@@ -1832,6 +1832,9 @@
     "upcoming_events": "Upcoming Events",
     "view_details": "View Details"
   },
+  "chain_account_multi_select": {
+    "label": "Accounts"
+  },
   "change_password": {
     "button": "Change Password",
     "labels": {
@@ -3165,6 +3168,7 @@
       "exclude_addresses_label": "Addresses to exclude",
       "subtitle": "Choose chains or specific addresses that rotki should skip when querying balances, transactions, and history.",
       "title": "Disabled chain queries",
+      "transient_warning": "The entire chain remains disabled until you pick at least one address.",
       "validation": {
         "error": "Error updating the disabled chain queries setting",
         "success": "Disabled chain queries updated"
