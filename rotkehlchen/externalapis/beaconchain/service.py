@@ -211,6 +211,9 @@ class BeaconChain(ExternalServiceWithRecommendedApiKey):
             next_cursor=paging.get('next_cursor') or None if isinstance(paging, dict) else None,
         )
 
+    def has_api_key(self) -> bool:
+        return ExternalServiceWithApiKey._get_api_key(self) is not None
+
     def is_rate_limited(self) -> bool:
         return self.ratelimited_until > ts_now()
 

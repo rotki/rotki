@@ -298,10 +298,21 @@ class Blockscout(ExternalServiceWithApiKey, EtherscanLikeApi):
     ) -> dict[str, Any]:
         ...
 
+    @overload
     def _query_v2(
             self,
             chain_id: SUPPORTED_CHAIN_IDS,
-            module: Literal['addresses', 'transactions'],
+            module: Literal['blocks'],
+            encoded_args: str,
+            endpoint: None = None,
+            extra_args: dict[str, Any] | None = None,
+    ) -> dict[str, Any]:
+        ...
+
+    def _query_v2(
+            self,
+            chain_id: SUPPORTED_CHAIN_IDS,
+            module: Literal['addresses', 'transactions', 'blocks'],
             encoded_args: str,
             endpoint: Literal['withdrawals'] | None = None,
             extra_args: dict[str, Any] | None = None,
@@ -389,6 +400,22 @@ class Blockscout(ExternalServiceWithApiKey, EtherscanLikeApi):
             raise RemoteError(f'Blockscout eth-rpc response contains no result: {response}')
 
         return response['result']
+
+    def get_block_reward(
+            self,
+            chain_id: SUPPORTED_CHAIN_IDS,
+            block_number: int,
+    ) -> dict[str, Any]:
+        """Gets execution block reward data by block number from Blockscout v2."""
+        result = self._query_v2(
+            chain_id=chain_id,
+            module='blocks',
+            encoded_args=str(block_number),
+        )
+        return {
+            'blockMiner': result['miner']['hash'],
+            'blockReward': result['priority_fee'],
+        }
 
     def query_withdrawals(self, address: ChecksumEvmAddress) -> set[int]:
         """Query withdrawals for an ethereum address and save them in the DB.

@@ -17,7 +17,10 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.eth2 import EthBlockEvent, EthWithdrawalEvent
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
-from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
+from rotkehlchen.tests.utils.ethereum import (
+    PRUNED_AND_NOT_ARCHIVED_NODE,
+    get_decoded_events_of_transaction,
+)
 from rotkehlchen.types import (
     ChecksumEvmAddress,
     Eth2PubKey,
@@ -29,6 +32,7 @@ from rotkehlchen.types import (
 from rotkehlchen.utils.misc import ts_now
 
 if TYPE_CHECKING:
+    from rotkehlchen.chain.ethereum.decoding.decoder import EthereumTransactionDecoder
     from rotkehlchen.chain.ethereum.modules.eth2.eth2 import Eth2
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.history.events.structures.base import HistoryBaseEntry
@@ -573,6 +577,96 @@ def test_block_with_mev_and_block_reward_and_multiple_mev_txs(
     )]
     expected_events += [EvmEvent(
         identifier=1 + counter,
+        group_identifier=f'BP1_{block_number}',
+        tx_ref=tx_hash,
+        sequence_index=2 + counter,
+        timestamp=timestamp,
+        location=Location.ETHEREUM,
+        event_type=HistoryEventType.STAKING,
+        event_subtype=HistoryEventSubType.MEV_REWARD,
+        asset=A_ETH,
+        amount=FVal(amount),
+        location_label=user_address,
+        address=mevbot_address,
+        notes=f'Receive {amount} ETH from {mevbot_address} as mev reward for block {block_number} in {tx_hash!s}',  # noqa: E501
+        extra_data={'validator_index': vindex},
+    ) for counter, (tx_hash, amount) in enumerate(tx_hashes_and_amounts)]
+    assert events == expected_events
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('include_beaconchain_key', [False])
+@pytest.mark.parametrize('network_mocking', [False])
+@pytest.mark.parametrize('beacon_rpc_endpoint', ['https://ethereum-beacon-api.publicnode.com'])
+@pytest.mark.parametrize('ethereum_manager_connect_at_start', [(PRUNED_AND_NOT_ARCHIVED_NODE,)])
+@pytest.mark.parametrize('ethereum_accounts', [['0x6b3A8798E5Fb9fC5603F3aB5eA2e8136694e55d0']])
+@pytest.mark.freeze_time('2025-02-04 08:55:00 GMT')
+def test_block_with_multiple_mev_txs_from_rpc_fallback(
+        eth2: 'Eth2',
+        database,
+        ethereum_inquirer,
+        ethereum_accounts,
+):
+    """Test multiple MEV reward txs are detected without querying beaconcha.in."""
+    dbevents = DBHistoryEvents(database)
+    dbeth2 = DBEth2(database)
+    vindex = 191912
+    with database.user_write() as write_cursor:
+        dbeth2.add_or_update_validators(write_cursor, [
+            ValidatorDetails(
+                validator_index=vindex,
+                public_key=Eth2PubKey('0xa5a07d88d03f4763b7341cb10c547e128b5a924d4c0b7b1d9ce8294d22584ad97c3092be9c68caad172b058d461a1c6b'),
+                ownership_proportion=ONE,
+                validator_type=ValidatorType.DISTRIBUTING,
+            ),
+        ])
+
+    tx_hashes_and_amounts = [
+        (deserialize_evm_tx_hash('0xcb7ebe40e13e7b9fa7eff0c03e727618b2d68a00b7d9e23599ac1cbb20f36864'), '0.000108734081255623'),  # noqa: E501
+        (deserialize_evm_tx_hash('0x02be96ca70adc0f0c826cf2c3466681c53bbf68270fd5b6647a962e0e9bfe41a'), '0.000112625190291071'),  # noqa: E501
+        (deserialize_evm_tx_hash('0x2327159d6b747407352de9860f86b0bfa8266f9dc7dc967ba05dc015e51d6bc1'), '0.000177763139489933'),  # noqa: E501
+    ]
+    decoder: EthereumTransactionDecoder | None = None
+    for tx_hash, _ in tx_hashes_and_amounts:
+        _, decoder = get_decoded_events_of_transaction(
+            evm_inquirer=ethereum_inquirer,
+            tx_hash=tx_hash,
+            evm_decoder=decoder,
+        )
+
+    eth2.combine_block_with_tx_events()
+    with database.conn.read_ctx() as cursor:
+        events = dbevents.get_history_events_internal(
+            cursor=cursor,
+            filter_query=HistoryEventFilterQuery.make(
+                from_ts=Timestamp(1738537200),  # 03/02/2025
+                to_ts=Timestamp(1738655703),  # 04/02/2025 08:55 UTC
+            ),
+            aggregate_by_group_ids=False,
+        )
+
+    timestamp, user_address, mevbot_address, block_number = TimestampMS(1738655099000), ethereum_accounts[0], string_to_evm_address('0xA69babEF1cA67A37Ffaf7a485DfFF3382056e78C'), 21771728  # noqa: E501
+    expected_events: list[HistoryBaseEntry] = [EthBlockEvent(
+        identifier=2,
+        validator_index=vindex,
+        timestamp=timestamp,
+        amount=FVal('0.013925706716354256'),
+        fee_recipient=user_address,
+        fee_recipient_tracked=True,
+        block_number=block_number,
+        is_mev_reward=False,
+    ), EthBlockEvent(
+        identifier=3,
+        validator_index=vindex,
+        timestamp=timestamp,
+        amount=FVal('0.000399122411036627'),
+        fee_recipient=user_address,
+        fee_recipient_tracked=True,
+        block_number=block_number,
+        is_mev_reward=True,
+    )]
+    expected_events += [EvmEvent(
+        identifier=(1 if counter == 0 else counter + 3),
         group_identifier=f'BP1_{block_number}',
         tx_ref=tx_hash,
         sequence_index=2 + counter,

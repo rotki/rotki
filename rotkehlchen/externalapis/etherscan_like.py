@@ -252,6 +252,7 @@ class EtherscanLikeApi(ABC):
             module: str,
             action: Literal[
                 'eth_getBlockByNumber',
+                'getblockreward',
             ],
             options: dict[str, Any] | None = None,
             timeout: tuple[int, int] | None = None,
@@ -842,6 +843,23 @@ class EtherscanLikeApi(ABC):
             chain_id=chain_id,
             method='eth_blockNumber',
         ))
+
+    def get_block_reward(
+            self,
+            chain_id: SUPPORTED_CHAIN_IDS,
+            block_number: int,
+    ) -> dict[str, Any]:
+        """Gets execution block reward data by block number.
+        May raise:
+         - RemoteError if there are problems contacting the indexer
+         - DeserializationError if the indexer returns an invalid response
+        """
+        return self._query(
+            chain_id=chain_id,
+            module='block',
+            action='getblockreward',
+            options={'blockno': block_number},
+        )
 
     def get_block_by_number(
             self,

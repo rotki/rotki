@@ -17,8 +17,14 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 EPOCH_DURATION_SECS = 384
+SECONDS_PER_SLOT = 12
 
 ETH2_GENESIS_TIMESTAMP = 1606824023
+
+
+def timestamp_to_slot(timestamp: Timestamp) -> int:
+    """Turn a unix timestamp to a beacon chain slot."""
+    return (timestamp - ETH2_GENESIS_TIMESTAMP) // SECONDS_PER_SLOT
 
 
 def epoch_to_timestamp(epoch: int) -> Timestamp:

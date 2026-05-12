@@ -341,6 +341,7 @@ def get_decoded_events_of_transaction(
         transactions: EvmTransactions | None = None,
         relevant_address: ChecksumAddress | None = None,
         load_global_caches: list[str] | None = None,
+        evm_decoder: EthereumTransactionDecoder | None = None,
 ) -> tuple[list['EvmEvent'], EthereumTransactionDecoder]:
     ...
 
