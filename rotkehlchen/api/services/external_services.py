@@ -79,6 +79,21 @@ class ExternalServicesService:
 
         self._refresh_solana_helius_rpc_node()
 
+    def _reset_rate_limiter_for(self, service: ExternalService) -> None:
+        """Tell the matching client that its api key changed so it re-probes its tier.
+
+        Without this, a paid key swapped in for a free one (or vice versa) would
+        keep using the previous tier's discovered rate-limit until rotki restarts.
+        """
+        if service == ExternalService.ETHERSCAN:
+            self.rotkehlchen.etherscan.on_api_key_changed()
+        elif service == ExternalService.COINGECKO:
+            self.rotkehlchen.coingecko.on_api_key_changed()
+        elif service == ExternalService.CRYPTOCOMPARE:
+            self.rotkehlchen.cryptocompare.on_api_key_changed()
+        elif service == ExternalService.DEFILLAMA:
+            self.rotkehlchen.defillama.on_api_key_changed()
+
     def add_services(
             self,
             services: list[ExternalServiceApiCredentials],
@@ -111,6 +126,9 @@ class ExternalServicesService:
                 credentials=services,
             )
 
+        for service in services:
+            self._reset_rate_limiter_for(service.service)
+
         if should_renable_etherscan:
             self.rotkehlchen.chains_aggregator.renable_etherscan_indixer()
         if helius_api_key is not None:
@@ -123,6 +141,8 @@ class ExternalServicesService:
             services: list[ExternalService],
     ) -> dict[str, Any]:
         self.rotkehlchen.data.db.delete_external_service_credentials(services)
+        for service in services:
+            self._reset_rate_limiter_for(service)
         if ExternalService.HELIUS in services:
             self._sync_helius_rpc_node(api_key=None)
         return self._build_payload()

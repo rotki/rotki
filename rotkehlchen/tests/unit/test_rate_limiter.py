@@ -3,7 +3,7 @@ import time
 import gevent
 import pytest
 
-from rotkehlchen.utils.rate_limiter import TokenBucket
+from rotkehlchen.utils.rate_limiter import TokenBucket, parse_rate_limit_headers
 
 
 def test_burst_then_steady_rate() -> None:
@@ -36,3 +36,79 @@ def test_rejects_invalid_config() -> None:
         TokenBucket(rps=0, capacity=1)
     with pytest.raises(ValueError):
         TokenBucket(rps=1, capacity=0)
+
+
+def test_widen_only_grows() -> None:
+    bucket = TokenBucket(rps=5, capacity=10)
+    assert bucket.widen(observed_rps=20, observed_capacity=30) is True
+    assert bucket.rps == 20
+    assert bucket.capacity == 30
+
+    # Same-or-lower observation must not shrink.
+    assert bucket.widen(observed_rps=5, observed_capacity=5) is False
+    assert bucket.rps == 20
+    assert bucket.capacity == 30
+
+
+def test_widen_respects_hysteresis() -> None:
+    """Small observed deltas should not flap the bucket."""
+    bucket = TokenBucket(rps=10, capacity=10)
+    # 5% delta is below the 10% threshold — ignored.
+    assert bucket.widen(observed_rps=10.5) is False
+    assert bucket.rps == 10
+    # 20% delta crosses the threshold — applied.
+    assert bucket.widen(observed_rps=12) is True
+    assert bucket.rps == 12
+
+
+def test_shrink_after_429_has_floor() -> None:
+    bucket = TokenBucket(rps=4, capacity=10)
+    bucket.shrink_after_429()
+    assert bucket.rps == 2
+    bucket.shrink_after_429()
+    assert bucket.rps == 1
+    bucket.shrink_after_429()
+    bucket.shrink_after_429()
+    bucket.shrink_after_429()
+    bucket.shrink_after_429()
+    # Floor: never drops below 0.5.
+    assert bucket.rps >= 0.5
+
+
+def test_reset_can_shrink_or_grow() -> None:
+    bucket = TokenBucket(rps=20, capacity=20)
+    bucket.reset(rps=4, capacity=8)
+    assert bucket.rps == 4
+    assert bucket.capacity == 8
+    # Outstanding tokens are clamped to the new capacity, never raised above it.
+    assert bucket.tokens <= 8
+
+
+def test_parse_rfc9239_headers() -> None:
+    rps, cap = parse_rate_limit_headers({
+        'RateLimit-Limit': '300',
+        'RateLimit-Reset': '60',
+    })
+    assert rps == 5  # 300 per 60s window
+    assert cap == 300
+
+
+def test_parse_x_ratelimit_headers() -> None:
+    rps, cap = parse_rate_limit_headers({
+        'X-RateLimit-Limit': '100',
+        'X-RateLimit-Reset': '1',
+    })
+    assert rps == 100
+    assert cap == 100
+
+
+def test_parse_limit_only_assumes_per_second() -> None:
+    rps, cap = parse_rate_limit_headers({'X-RateLimit-Limit': '30'})
+    assert rps == 30
+    assert cap == 30
+
+
+def test_parse_missing_or_malformed_headers() -> None:
+    assert parse_rate_limit_headers({}) == (None, None)
+    assert parse_rate_limit_headers({'X-RateLimit-Limit': 'unlimited'}) == (None, None)
+    assert parse_rate_limit_headers({'X-RateLimit-Limit': '0'}) == (None, None)

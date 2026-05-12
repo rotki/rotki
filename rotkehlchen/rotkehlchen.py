@@ -543,6 +543,9 @@ class Rotkehlchen:
             beaconchain=self.beaconchain,
             btc_derivation_gap_limit=settings.btc_derivation_gap_limit,
         )
+        # Expose the etherscan singleton on self so the External Services save
+        # hook can reset its rate limiter when the user changes the api key.
+        self.etherscan = etherscan
         Inquirer().inject_evm_managers([
             (chain.to_chain_id(), self.chains_aggregator.get_chain_manager(chain))
             for chain in EVM_CHAINS_WITH_TRANSACTIONS

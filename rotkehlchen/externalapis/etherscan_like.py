@@ -46,7 +46,7 @@ from rotkehlchen.types import (
 )
 from rotkehlchen.utils.misc import convert_to_int, hexstr_to_int, set_user_agent
 from rotkehlchen.utils.network import create_session
-from rotkehlchen.utils.rate_limiter import TokenBucket
+from rotkehlchen.utils.rate_limiter import TokenBucket, parse_rate_limit_headers
 from rotkehlchen.utils.serialization import jsonloads_dict
 
 if TYPE_CHECKING:
@@ -103,6 +103,17 @@ class EtherscanLikeApi(ABC):
         # gate parallel cross-chain calls into upstreams (e.g. etherscan-v2)
         # that enforce a single rate-limit bucket across chains.
         self._rate_limiter = rate_limiter
+        # Remember the default rate so on_api_key_changed() can roll back to it.
+        self._default_rps = rate_limiter.rps
+        self._default_capacity = int(rate_limiter.capacity)
+
+    def on_api_key_changed(self) -> None:
+        """Reset the rate limiter to free-tier defaults so a new key starts fresh.
+
+        Header-based adaptation in _query() will widen the bucket again if the new
+        key turns out to be on a higher tier.
+        """
+        self._rate_limiter.reset(rps=self._default_rps, capacity=self._default_capacity)
 
     @staticmethod
     @abc.abstractmethod
@@ -328,6 +339,7 @@ class EtherscanLikeApi(ABC):
                 raise RemoteError(f'{self.name} API request failed due to {e!s}') from e
 
             if response.status_code == HTTPStatus.TOO_MANY_REQUESTS:
+                self._rate_limiter.shrink_after_429()
                 backoff = self._handle_rate_limit(
                     response=response,
                     current_backoff=backoff,
@@ -342,6 +354,16 @@ class EtherscanLikeApi(ABC):
                     f'{self.name} API request {response.url} failed '
                     f'with HTTP status code {response.status_code} and text '
                     f'{response.text}',
+                )
+
+            # Best-effort widen the bucket if the response carries rate-limit headers.
+            # Etherscan publishes no tier endpoint, so this is the only way we discover
+            # higher caps for paid users.
+            observed_rps, observed_cap = parse_rate_limit_headers(response.headers)
+            if observed_rps is not None:
+                self._rate_limiter.widen(
+                    observed_rps=observed_rps,
+                    observed_capacity=observed_cap,
                 )
 
             try:

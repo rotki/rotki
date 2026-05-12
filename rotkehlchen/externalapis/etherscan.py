@@ -123,6 +123,7 @@ class Etherscan(ExternalServiceWithRecommendedApiKey, EtherscanLikeApi):
                         f'Got response: {response.text} from {self.name} while '
                         f'querying chain {chain_id}. Will backoff for {current_backoff} seconds.',
                     )
+                    self._rate_limiter.shrink_after_429()
                     gevent.sleep(current_backoff)
                     return current_backoff * 2
 

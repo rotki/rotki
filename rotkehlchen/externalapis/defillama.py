@@ -25,7 +25,7 @@ from rotkehlchen.types import ChainID, ExternalService, Price, Timestamp
 from rotkehlchen.utils.misc import get_chunks, ts_now
 from rotkehlchen.utils.mixins.penalizable_oracle import PenalizablePriceOracleMixin
 from rotkehlchen.utils.network import create_session
-from rotkehlchen.utils.rate_limiter import TokenBucket
+from rotkehlchen.utils.rate_limiter import TokenBucket, parse_rate_limit_headers
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
@@ -41,6 +41,12 @@ DEFILLAMA_CHUNK_SIZE = 150
 # settings override in a follow-up.
 DEFILLAMA_RATE_LIMIT_RPS: Final = 1.5
 DEFILLAMA_RATE_LIMIT_BURST: Final = 10
+# Defillama has no probe endpoint and no public per-tier rate sheet, but
+# configuring an api key routes traffic to pro-api.llama.fi which has a
+# substantially higher ceiling. Bump the bucket conservatively when we see a
+# key; response headers refine from there.
+DEFILLAMA_PRO_RATE_LIMIT_RPS: Final = 10.0
+DEFILLAMA_PRO_RATE_LIMIT_BURST: Final = 50
 
 
 class Defillama(
@@ -64,6 +70,30 @@ class Defillama(
             rps=DEFILLAMA_RATE_LIMIT_RPS,
             capacity=DEFILLAMA_RATE_LIMIT_BURST,
         )
+        self._probed = False
+
+    def _maybe_probe(self) -> None:
+        """Defillama has no probe endpoint. Use key presence as the tier signal."""
+        if self._probed:
+            return
+        self._probed = True
+        if self._get_api_key() is not None:
+            self._rate_limiter.widen(
+                observed_rps=DEFILLAMA_PRO_RATE_LIMIT_RPS,
+                observed_capacity=DEFILLAMA_PRO_RATE_LIMIT_BURST,
+            )
+
+    def _adapt_to_headers(self, response: requests.Response) -> None:
+        rps, cap = parse_rate_limit_headers(response.headers)
+        if rps is not None:
+            self._rate_limiter.widen(observed_rps=rps, observed_capacity=cap)
+
+    def on_api_key_changed(self) -> None:
+        self._rate_limiter.reset(
+            rps=DEFILLAMA_RATE_LIMIT_RPS,
+            capacity=DEFILLAMA_RATE_LIMIT_BURST,
+        )
+        self._probed = False
 
     def _query(
             self,
@@ -85,6 +115,7 @@ class Defillama(
             options = {}
         url = base_url + f'{module}/{subpath or ""}'
         log.debug(f'Querying defillama: {url=} with {options=}')
+        self._maybe_probe()
         self._rate_limiter.acquire()
         try:
             response = self.session.get(
@@ -98,6 +129,7 @@ class Defillama(
 
         if response.status_code == HTTPStatus.TOO_MANY_REQUESTS:
             self.last_rate_limit = ts_now()
+            self._rate_limiter.shrink_after_429()
             msg = f'Got rate limited by Defillama querying {url}'
             log.warning(msg)
             raise RemoteError(message=msg, error_code=HTTPStatus.TOO_MANY_REQUESTS)
@@ -108,6 +140,8 @@ class Defillama(
                 f'code: {response.status_code}'
             )
             raise RemoteError(msg)
+
+        self._adapt_to_headers(response)
 
         try:
             decoded_json = json.loads(response.text)
