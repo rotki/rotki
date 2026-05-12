@@ -539,8 +539,8 @@ def test_block_with_mev_and_block_reward_and_multiple_mev_txs(
 ):
     """Test that beaconcha.in and RPC produced block detection return the same data.
 
-    The MEV reward amount can differ because beaconcha.in reports the relay value while
-    the RPC fallback sums the actual ETH receive transactions seen by rotki.
+    The RPC fallback matches beaconcha.in's informational MEV event as closely as possible
+    by adding the block reward when the block reward recipient also received the MEV txs.
     """
     dbevents = DBHistoryEvents(database)
     dbeth2 = DBEth2(database)
@@ -598,7 +598,7 @@ def test_block_with_mev_and_block_reward_and_multiple_mev_txs(
         identifier=18 if produced_blocks_query_source == 'beaconchain' else 3,
         validator_index=vindex,
         timestamp=timestamp,
-        amount=FVal('0.022204362489834771' if produced_blocks_query_source == 'beaconchain' else '0.008278655773480515'),  # noqa: E501
+        amount=FVal('0.022204362489834771'),
         fee_recipient=user_address,
         fee_recipient_tracked=True,
         block_number=block_number,

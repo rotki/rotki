@@ -207,13 +207,20 @@ class EthereumTransactionDecoder(EVMTransactionDecoderWithDSProxy):
         with self.database.conn.read_ctx() as cursor:
             ethereum_tracked_accounts = self.database.get_blockchain_accounts(cursor).get(self.evm_inquirer.blockchain)  # noqa: E501
             cursor.execute(
-                'SELECT EXISTS(SELECT 1 FROM eth_staking_events_info S JOIN history_events H '
-                'ON H.identifier = S.identifier WHERE S.is_exit_or_blocknumber = ? AND '
-                'H.subtype = ?)',
+                'SELECT H.amount, H.location_label FROM eth_staking_events_info S JOIN '
+                'history_events H ON H.identifier = S.identifier WHERE '
+                'S.is_exit_or_blocknumber = ? AND H.subtype = ?',
                 (transaction.block_number, HistoryEventSubType.BLOCK_PRODUCTION.serialize()),
             )
-            has_block_production_event = cursor.fetchone()[0] == 1
+            existing_block_production_event = cursor.fetchone()
 
+        mev_reward = sum((event.amount for event in decoded_events), start=ZERO)
+        if (
+                existing_block_production_event is not None and
+                existing_block_production_event[1] == fee_recipient
+        ):
+            mev_reward += FVal(existing_block_production_event[0])
+        has_block_production_event = existing_block_production_event is not None
         with self.database.user_write() as write_cursor:
             if has_block_production_event is False:
                 try:
@@ -229,6 +236,8 @@ class EthereumTransactionDecoder(EVMTransactionDecoderWithDSProxy):
                 except (KeyError, DeserializationError, RemoteError) as e:
                     log.error(f'Failed to query produced block fallback reward for {transaction.tx_hash!s} due to {e!s}')  # noqa: E501
                 else:
+                    if block_fee_recipient == fee_recipient:
+                        mev_reward += block_reward
                     self.dbevents.add_history_event(write_cursor=write_cursor, event=EthBlockEvent(
                         validator_index=proposer_index,
                         timestamp=ts_sec_to_ms(transaction.timestamp),
@@ -242,7 +251,7 @@ class EthereumTransactionDecoder(EVMTransactionDecoderWithDSProxy):
             self.dbevents.add_history_event(write_cursor=write_cursor, event=EthBlockEvent(
                 validator_index=proposer_index,
                 timestamp=ts_sec_to_ms(transaction.timestamp),
-                amount=sum((event.amount for event in decoded_events), start=ZERO),
+                amount=mev_reward,
                 fee_recipient=fee_recipient,
                 fee_recipient_tracked=fee_recipient in ethereum_tracked_accounts,
                 block_number=transaction.block_number,
