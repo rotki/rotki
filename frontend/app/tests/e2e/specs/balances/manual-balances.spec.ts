@@ -29,7 +29,7 @@ test.describe.serial('balances', () => {
       const balance = manualBalances[i];
       await manualBalancesPage.addBalance(balance);
       await manualBalancesPage.visibleEntries(i + 1);
-      await manualBalancesPage.isVisible(i, balance);
+      await manualBalancesPage.isVisible(balance);
     }
   });
 
@@ -119,18 +119,18 @@ test.describe.serial('balances', () => {
 
     const firstNewAmount = '200';
     await manualBalancesPage.visit();
-    await manualBalancesPage.editBalance(1, firstNewAmount);
+    await manualBalancesPage.editBalance(manualBalances[1].label, firstNewAmount);
     await manualBalancesPage.visibleEntries(3);
-    await manualBalancesPage.isVisible(1, {
+    await manualBalancesPage.isVisible({
       ...manualBalances[1],
       amount: firstNewAmount,
     });
 
     const secondNewAmount = '300';
     await manualBalancesPage.visit();
-    await manualBalancesPage.editBalance(1, secondNewAmount);
+    await manualBalancesPage.editBalance(manualBalances[1].label, secondNewAmount);
     await manualBalancesPage.visibleEntries(3);
-    await manualBalancesPage.isVisible(1, {
+    await manualBalancesPage.isVisible({
       ...manualBalances[1],
       amount: secondNewAmount,
     });
@@ -139,7 +139,7 @@ test.describe.serial('balances', () => {
     const apiManualBalance = { ...manualBalances[1], label: 'extra' };
     await manualBalancesPage.addBalance(apiManualBalance);
     await manualBalancesPage.visibleEntries(4);
-    await manualBalancesPage.isVisible(2, apiManualBalance);
+    await manualBalancesPage.isVisible(apiManualBalance);
   });
 
   test('change currency', async () => {
@@ -154,8 +154,8 @@ test.describe.serial('balances', () => {
     const manualBalancesPage = new ManualBalancesPage(ctx.sharedPage);
 
     await manualBalancesPage.visit();
-    await manualBalancesPage.deleteBalance(1);
+    await manualBalancesPage.deleteBalance(manualBalances[1].label);
     await manualBalancesPage.visibleEntries(3);
-    await manualBalancesPage.isVisible(0, manualBalances[0]);
+    await manualBalancesPage.isVisible(manualBalances[0]);
   });
 });

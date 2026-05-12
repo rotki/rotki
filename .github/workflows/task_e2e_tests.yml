@@ -97,16 +97,15 @@ jobs:
           retention-days: 1
 
   e2e:
-    name: '${{ matrix.group }}'
+    name: 'shard-${{ matrix.shard }}'
     needs: [ build-frontend, build-colibri ]
     env:
       CI: true
-      GROUP: ${{ matrix.group }}
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
-        group: [ app, settings, balances, history, import ]
+        shard: [ 1, 2, 3, 4 ]
     permissions:
       actions: write
       contents: read
@@ -197,10 +196,9 @@ jobs:
         timeout-minutes: 20
         env:
           ETHERSCAN_API_KEY: ${{ secrets.ETHERSCAN_API_KEY }}
-          GROUP: ${{ matrix.group }}
           E2E_COVERAGE: true
           VITE_COVERAGE: true
-        run: pnpm run test:e2e --project=chromium
+        run: pnpm run test:e2e --project=chromium --shard=${{ matrix.shard }}/4
         working-directory: ./frontend/app
 
       - name: Generate coverage report
@@ -214,21 +212,21 @@ jobs:
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           files: ./frontend/app/tests/e2e/coverage/lcov.info
-          flags: e2e-${{ matrix.group }}
+          flags: e2e-shard-${{ matrix.shard }}
           fail_ci_if_error: false
 
       - name: Upload test artifacts
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
         if: failure()
         with:
-          name: test-artifacts-${{ runner.os }}-${{ matrix.group }}
+          name: test-artifacts-${{ runner.os }}-shard-${{ matrix.shard }}
           path: ./frontend/app/tests/e2e/test-results
 
       - name: Upload backend logs
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
         if: always()
         with:
-          name: backend-logs-${{ runner.os }}-${{ matrix.group }}
+          name: backend-logs-${{ runner.os }}-shard-${{ matrix.shard }}
           path: ./frontend/app/.e2e/logs/*.log
 
       - name: Annotate backend log errors
@@ -254,7 +252,7 @@ jobs:
                 error_line=$(sanitize "$error_line")
                 echo "::error file=$filename,line=$linenum::Python Traceback: $error_line"
               else
-                echo "::error file=$filename,line=$linenum::Python Traceback found - check backend-logs-${{ runner.os }}-${{ matrix.group }} artifact"
+                echo "::error file=$filename,line=$linenum::Python Traceback found - check backend-logs-${{ runner.os }}-shard-${{ matrix.shard }} artifact"
               fi
             done < <(grep -n "Traceback (most recent call last)" "$logfile" 2>/dev/null || true)
 
