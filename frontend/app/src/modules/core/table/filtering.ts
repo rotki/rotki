@@ -82,6 +82,16 @@ export const Suggestion = BaseSuggestion.extend({
 
 export type Suggestion = z.infer<typeof Suggestion>;
 
+export function createEmptySuggestion(): Suggestion {
+  return {
+    asset: false,
+    index: 0,
+    key: '',
+    total: 0,
+    value: '',
+  };
+}
+
 export enum SavedFilterLocation {
   HISTORY_EVENTS = 'historyEvents',
   BLOCKCHAIN_ACCOUNTS = 'blockchainAccounts',

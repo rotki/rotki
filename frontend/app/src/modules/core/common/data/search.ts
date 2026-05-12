@@ -1,6 +1,6 @@
 import type { Nullable } from '@rotki/common';
 
-interface SplitResult {
+export interface SplitResult {
   key: string;
   value: string;
   exclude?: boolean;
