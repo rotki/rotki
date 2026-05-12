@@ -58,6 +58,7 @@ from rotkehlchen.db.settings import (
     DEFAULT_CSV_EXPORT_DELIMITER,
     DEFAULT_CURRENT_PRICE_ORACLES,
     DEFAULT_DATE_DISPLAY_FORMAT,
+    DEFAULT_DISABLED_CHAIN_QUERIES,
     DEFAULT_DISPLAY_DATE_IN_LOCALTIME,
     DEFAULT_ETH_STAKING_TAXABLE_AFTER_WITHDRAWAL_ENABLED,
     DEFAULT_HISTORICAL_PRICE_ORACLES,
@@ -539,6 +540,7 @@ def test_writing_fetching_data(data_dir, username, sql_vm_instructions_cb):
         'last_data_migration': DEFAULT_LAST_DATA_MIGRATION,
         'non_syncing_exchanges': frozenset(),
         'evmchains_to_skip_detection': DEFAULT_CHAINS_TO_SKIP_DETECTION,
+        'disabled_chain_queries': DEFAULT_DISABLED_CHAIN_QUERIES,
         'cost_basis_method': CostBasisMethod.FIFO,
         'treat_eth2_as_eth': DEFAULT_TREAT_ETH2_AS_ETH,
         'eth_staking_taxable_after_withdrawal_enabled': DEFAULT_ETH_STAKING_TAXABLE_AFTER_WITHDRAWAL_ENABLED,  # noqa: E501

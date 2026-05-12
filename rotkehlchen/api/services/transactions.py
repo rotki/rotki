@@ -443,14 +443,12 @@ class TransactionsService:
             # Apply disabled_chain_queries filter to user-supplied addresses too.
             disabled_per_chain = CachedSettings().get_settings().disabled_chain_queries
             for chain in list(blockchain_addresses.keys()):
-                disabled = disabled_per_chain.get(chain)
-                if disabled is None:
+                if (disabled := disabled_per_chain.get(chain)) is None:
                     continue
                 if len(disabled) == 0:
                     del blockchain_addresses[chain]
                     continue
-                filtered = [a for a in blockchain_addresses[chain] if a not in disabled]
-                if filtered:
+                if filtered := [a for a in blockchain_addresses[chain] if a not in disabled]:
                     blockchain_addresses[chain] = filtered  # type: ignore[assignment]
                 else:
                     del blockchain_addresses[chain]

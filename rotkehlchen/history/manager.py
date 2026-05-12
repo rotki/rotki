@@ -187,9 +187,8 @@ class HistoryQueryingManager:
             if len(active_addresses) == 0:
                 # Either nothing tracked on this chain, or disabled via disabled_chain_queries.
                 # Advance past the three sub-steps (transactions, receipts, decoding).
-                step = self._increase_progress(step, total_steps)
-                step = self._increase_progress(step, total_steps)
-                step = self._increase_progress(step, total_steps)
+                for _ in range(3):
+                    step = self._increase_progress(step, total_steps)
                 continue
             try:
                 evm_manager.transactions.query_chain(

@@ -464,10 +464,9 @@ def db_settings_from_dict(
             values = json.loads(value)
             specified_args[key] = [SupportedBlockchain.deserialize(x) for x in values]
         elif key == 'disabled_chain_queries':
-            raw = json.loads(value)
             specified_args[key] = {
                 SupportedBlockchain.deserialize(chain): frozenset(addrs)
-                for chain, addrs in raw.items()
+                for chain, addrs in json.loads(value).items()
             }
         elif key == 'cost_basis_method':
             specified_args[key] = CostBasisMethod.deserialize(value)

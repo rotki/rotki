@@ -702,8 +702,7 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
         to call on hot paths without a DB round-trip.
         """
         addresses = self.accounts.get(blockchain)
-        disabled = CachedSettings().get_settings().disabled_chain_queries.get(blockchain)
-        if disabled is None:
+        if (disabled := CachedSettings().get_settings().disabled_chain_queries.get(blockchain)) is None:  # noqa: E501
             return addresses
         if len(disabled) == 0:
             return ()  # entire chain disabled
