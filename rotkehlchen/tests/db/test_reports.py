@@ -1,8 +1,12 @@
+import json
 from typing import TYPE_CHECKING
 
 from rotkehlchen.accounting.mixins.event import AccountingEventType
 from rotkehlchen.accounting.pnl import PNL, PnlTotals
-from rotkehlchen.accounting.structures.processed_event import ProcessedAccountingEvent
+from rotkehlchen.accounting.structures.processed_event import (
+    AccountingEventExportType,
+    ProcessedAccountingEvent,
+)
 from rotkehlchen.constants import ONE, ZERO
 from rotkehlchen.constants.assets import A_DAI, A_ETH
 from rotkehlchen.db.filtering import ReportDataFilterQuery
@@ -304,3 +308,41 @@ def test_get_report_data_pagination_total_count(database: 'DBHandler') -> None:
     assert len(results) == 1
     assert entries_found == 2
     assert entries_total == 2
+
+
+def test_deserialize_event_with_null_notes_can_be_csv_exported(database: 'DBHandler') -> None:
+    """Regression test: historic reports may have persisted events with a null notes
+    field. The CSV export ran EVM_ADDRESS_REGEX.sub on those notes, which raised
+    `TypeError: expected string or bytes-like object, got 'NoneType'` for EVM-location
+    events, causing the export endpoint to 500.
+    """
+    event = ProcessedAccountingEvent(
+        event_type=AccountingEventType.TRANSACTION_EVENT,
+        notes='placeholder',  # will be overwritten with null in the stored payload
+        location=Location.ETHEREUM,
+        timestamp=Timestamp(1741634066),
+        asset=A_ETH,
+        free_amount=ONE,
+        taxable_amount=ZERO,
+        price=Price(FVal('2000')),
+        pnl=PNL(free=ZERO, taxable=ZERO),
+        cost_basis=None,
+        index=0,
+        extra_data={},
+    )
+    stored = json.loads(event.serialize_for_db(ts_converter=timestamp_to_date))
+    stored['notes'] = None  # simulate a historic row saved with null notes
+
+    restored = ProcessedAccountingEvent.deserialize_from_db(
+        timestamp=event.timestamp,
+        stringified_json=json.dumps(stored),
+    )
+    # this is what crashed before the fix: EVM_ADDRESS_REGEX.sub on a None string
+    exported = restored.to_exported_dict(
+        ts_converter=timestamp_to_date,
+        export_type=AccountingEventExportType.CSV,
+        database=database,
+        evm_explorer='https://etherscan.io/tx/',
+    )
+    assert restored.notes == ''
+    assert exported['notes'] == ''
