@@ -512,15 +512,35 @@ def test_details_with_beacon_node(eth2: 'Eth2'):
 @pytest.mark.parametrize('network_mocking', [False])
 @pytest.mark.freeze_time('2025-02-04 08:55:00 GMT')
 @pytest.mark.parametrize('ethereum_accounts', [['0x6b3A8798E5Fb9fC5603F3aB5eA2e8136694e55d0']])
+@pytest.mark.parametrize(('produced_blocks_query_source', 'include_beaconchain_key', 'beacon_rpc_endpoint', 'ethereum_manager_connect_at_start', 'vcr_cassette_name'), [  # noqa: E501
+    pytest.param(
+        'beaconchain',
+        True,
+        None,
+        (),
+        'test_block_with_mev_and_block_reward_and_multiple_mev_txs[ethereum_accounts0-False]',
+        id='beaconchain',
+    ), pytest.param(
+        'rpc_fallback',
+        False,
+        'https://ethereum-beacon-api.publicnode.com',
+        (),
+        'test_block_with_mev_and_block_reward_and_multiple_mev_txs[rpc_fallback]',
+        id='rpc_fallback',
+    ),
+])
 def test_block_with_mev_and_block_reward_and_multiple_mev_txs(
         eth2: 'Eth2',
         database,
         ethereum_inquirer,
         ethereum_accounts,
+        produced_blocks_query_source: str,
+        vcr_cassette_name: str,  # pylint: disable=unused-argument
 ):
-    """Test that proposing validators that get both the block fee recipient and a mev reward on top
-    are properly seen in rotki. Also that when MEV reward
-    is sent in multiple transactions they are all marked as such and moved into the block event.
+    """Test that beaconcha.in and RPC produced block detection return the same data.
+
+    The MEV reward amount can differ because beaconcha.in reports the relay value while
+    the RPC fallback sums the actual ETH receive transactions seen by rotki.
     """
     dbevents = DBHistoryEvents(database)
     dbeth2 = DBEth2(database)
@@ -535,105 +555,24 @@ def test_block_with_mev_and_block_reward_and_multiple_mev_txs(
             ),
         ])
 
-    tx_hashes_and_amounts = [
-        (deserialize_evm_tx_hash('0xcb7ebe40e13e7b9fa7eff0c03e727618b2d68a00b7d9e23599ac1cbb20f36864'), '0.000108734081255623'),  # noqa: E501
-        (deserialize_evm_tx_hash('0x02be96ca70adc0f0c826cf2c3466681c53bbf68270fd5b6647a962e0e9bfe41a'), '0.000112625190291071'),  # noqa: E501
-        (deserialize_evm_tx_hash('0x2327159d6b747407352de9860f86b0bfa8266f9dc7dc967ba05dc015e51d6bc1'), '0.000177763139489933'),  # noqa: E501
-    ]
-    for tx_hash, _ in tx_hashes_and_amounts:
-        get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
-
-    eth2.beacon_inquirer.beaconchain.get_and_store_produced_blocks([vindex])
-    eth2.combine_block_with_tx_events()
-    with database.conn.read_ctx() as cursor:
-        events = dbevents.get_history_events_internal(
-            cursor=cursor,
-            filter_query=HistoryEventFilterQuery.make(
-                from_ts=Timestamp(1738537200),  # 03/02/2025
-                to_ts=Timestamp(1738655703),  # 04/02/2025 08:55 UTC
-            ),
-            aggregate_by_group_ids=False,
-        )
-
-    timestamp, user_address, mevbot_address, block_number = TimestampMS(1738655099000), ethereum_accounts[0], string_to_evm_address('0xA69babEF1cA67A37Ffaf7a485DfFF3382056e78C'), 21771728  # noqa: E501
-    expected_events: list[HistoryBaseEntry] = [EthBlockEvent(
-        identifier=14,
-        validator_index=vindex,
-        timestamp=timestamp,
-        amount=FVal('0.013925706716354256'),
-        fee_recipient=user_address,
-        fee_recipient_tracked=True,
-        block_number=block_number,
-        is_mev_reward=False,
-    ), EthBlockEvent(
-        identifier=15,
-        validator_index=vindex,
-        timestamp=timestamp,
-        amount=FVal('0.022204362489834771'),
-        fee_recipient=user_address,
-        fee_recipient_tracked=True,
-        block_number=block_number,
-        is_mev_reward=True,
-    )]
-    expected_events += [EvmEvent(
-        identifier=1 + counter,
-        group_identifier=f'BP1_{block_number}',
-        tx_ref=tx_hash,
-        sequence_index=2 + counter,
-        timestamp=timestamp,
-        location=Location.ETHEREUM,
-        event_type=HistoryEventType.STAKING,
-        event_subtype=HistoryEventSubType.MEV_REWARD,
-        asset=A_ETH,
-        amount=FVal(amount),
-        location_label=user_address,
-        address=mevbot_address,
-        notes=f'Receive {amount} ETH from {mevbot_address} as mev reward for block {block_number} in {tx_hash!s}',  # noqa: E501
-        extra_data={'validator_index': vindex},
-    ) for counter, (tx_hash, amount) in enumerate(tx_hashes_and_amounts)]
-    assert events == expected_events
-
-
-@pytest.mark.vcr(filter_query_parameters=['apikey'])
-@pytest.mark.parametrize('include_beaconchain_key', [False])
-@pytest.mark.parametrize('network_mocking', [False])
-@pytest.mark.parametrize('beacon_rpc_endpoint', ['https://ethereum-beacon-api.publicnode.com'])
-@pytest.mark.parametrize('ethereum_manager_connect_at_start', [(PRUNED_AND_NOT_ARCHIVED_NODE,)])
-@pytest.mark.parametrize('ethereum_accounts', [['0x6b3A8798E5Fb9fC5603F3aB5eA2e8136694e55d0']])
-@pytest.mark.freeze_time('2025-02-04 08:55:00 GMT')
-def test_block_with_multiple_mev_txs_from_rpc_fallback(
-        eth2: 'Eth2',
-        database,
-        ethereum_inquirer,
-        ethereum_accounts,
-):
-    """Test multiple MEV reward txs are detected without querying beaconcha.in."""
-    dbevents = DBHistoryEvents(database)
-    dbeth2 = DBEth2(database)
-    vindex = 191912
-    with database.user_write() as write_cursor:
-        dbeth2.add_or_update_validators(write_cursor, [
-            ValidatorDetails(
-                validator_index=vindex,
-                public_key=Eth2PubKey('0xa5a07d88d03f4763b7341cb10c547e128b5a924d4c0b7b1d9ce8294d22584ad97c3092be9c68caad172b058d461a1c6b'),
-                ownership_proportion=ONE,
-                validator_type=ValidatorType.DISTRIBUTING,
-            ),
-        ])
-
-    tx_hashes_and_amounts = [
-        (deserialize_evm_tx_hash('0xcb7ebe40e13e7b9fa7eff0c03e727618b2d68a00b7d9e23599ac1cbb20f36864'), '0.000108734081255623'),  # noqa: E501
-        (deserialize_evm_tx_hash('0x02be96ca70adc0f0c826cf2c3466681c53bbf68270fd5b6647a962e0e9bfe41a'), '0.000112625190291071'),  # noqa: E501
-        (deserialize_evm_tx_hash('0x2327159d6b747407352de9860f86b0bfa8266f9dc7dc967ba05dc015e51d6bc1'), '0.000177763139489933'),  # noqa: E501
+    tx_hashes_amounts_and_senders = [
+        (deserialize_evm_tx_hash('0xcb7ebe40e13e7b9fa7eff0c03e727618b2d68a00b7d9e23599ac1cbb20f36864'), '0.000108734081255623', string_to_evm_address('0xA69babEF1cA67A37Ffaf7a485DfFF3382056e78C')),  # noqa: E501
+        (deserialize_evm_tx_hash('0x02be96ca70adc0f0c826cf2c3466681c53bbf68270fd5b6647a962e0e9bfe41a'), '0.000112625190291071', string_to_evm_address('0xA69babEF1cA67A37Ffaf7a485DfFF3382056e78C')),  # noqa: E501
+        (deserialize_evm_tx_hash('0x2327159d6b747407352de9860f86b0bfa8266f9dc7dc967ba05dc015e51d6bc1'), '0.000177763139489933', string_to_evm_address('0xA69babEF1cA67A37Ffaf7a485DfFF3382056e78C')),  # noqa: E501
+        (deserialize_evm_tx_hash('0x551d3cebe0c1bb655d5427b9a827156e3ce40157107c191882d1de1551904961'), '0.006660013804710991', string_to_evm_address('0x807cF9A772d5a3f9CeFBc1192e939D62f0D9bD38')),  # noqa: E501
+        (deserialize_evm_tx_hash('0x0979badc30c655bc6f1b01b07dbc0d9ef2083def3d6882fb82c760def18c10ce'), '0.000892612607443302', string_to_evm_address('0xfbEedCFe378866DaB6abbaFd8B2986F5C1768737')),  # noqa: E501
+        (deserialize_evm_tx_hash('0xd44d720785664f1186b510b06b24e9fc4e7463c998bb540ba317b887ccf81fec'), '0.000326906950289595', string_to_evm_address('0x89A99a0A17D37419F99cF8dC5fFa578F3cdB58b5')),  # noqa: E501
     ]
     decoder: EthereumTransactionDecoder | None = None
-    for tx_hash, _ in tx_hashes_and_amounts:
+    for tx_hash, _, _ in tx_hashes_amounts_and_senders:
         _, decoder = get_decoded_events_of_transaction(
             evm_inquirer=ethereum_inquirer,
             tx_hash=tx_hash,
             evm_decoder=decoder,
         )
 
+    if produced_blocks_query_source == 'beaconchain':
+        eth2.beacon_inquirer.beaconchain.get_and_store_produced_blocks([vindex])
     eth2.combine_block_with_tx_events()
     with database.conn.read_ctx() as cursor:
         events = dbevents.get_history_events_internal(
@@ -645,9 +584,9 @@ def test_block_with_multiple_mev_txs_from_rpc_fallback(
             aggregate_by_group_ids=False,
         )
 
-    timestamp, user_address, mevbot_address, block_number = TimestampMS(1738655099000), ethereum_accounts[0], string_to_evm_address('0xA69babEF1cA67A37Ffaf7a485DfFF3382056e78C'), 21771728  # noqa: E501
+    timestamp, user_address, block_number = TimestampMS(1738655099000), ethereum_accounts[0], 21771728  # noqa: E501
     expected_events: list[HistoryBaseEntry] = [EthBlockEvent(
-        identifier=2,
+        identifier=17 if produced_blocks_query_source == 'beaconchain' else 2,
         validator_index=vindex,
         timestamp=timestamp,
         amount=FVal('0.013925706716354256'),
@@ -656,17 +595,17 @@ def test_block_with_multiple_mev_txs_from_rpc_fallback(
         block_number=block_number,
         is_mev_reward=False,
     ), EthBlockEvent(
-        identifier=3,
+        identifier=18 if produced_blocks_query_source == 'beaconchain' else 3,
         validator_index=vindex,
         timestamp=timestamp,
-        amount=FVal('0.000399122411036627'),
+        amount=FVal('0.022204362489834771' if produced_blocks_query_source == 'beaconchain' else '0.008278655773480515'),  # noqa: E501
         fee_recipient=user_address,
         fee_recipient_tracked=True,
         block_number=block_number,
         is_mev_reward=True,
     )]
     expected_events += [EvmEvent(
-        identifier=(1 if counter == 0 else counter + 3),
+        identifier=(1 + counter if produced_blocks_query_source == 'beaconchain' else 1 if counter == 0 else counter + 3),  # noqa: E501
         group_identifier=f'BP1_{block_number}',
         tx_ref=tx_hash,
         sequence_index=2 + counter,
@@ -677,8 +616,8 @@ def test_block_with_multiple_mev_txs_from_rpc_fallback(
         asset=A_ETH,
         amount=FVal(amount),
         location_label=user_address,
-        address=mevbot_address,
-        notes=f'Receive {amount} ETH from {mevbot_address} as mev reward for block {block_number} in {tx_hash!s}',  # noqa: E501
+        address=sender,
+        notes=f'Receive {amount} ETH from {sender} as mev reward for block {block_number} in {tx_hash!s}',  # noqa: E501
         extra_data={'validator_index': vindex},
-    ) for counter, (tx_hash, amount) in enumerate(tx_hashes_and_amounts)]
+    ) for counter, (tx_hash, amount, sender) in enumerate(tx_hashes_amounts_and_senders)]
     assert events == expected_events
