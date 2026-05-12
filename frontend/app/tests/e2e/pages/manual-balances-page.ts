@@ -49,22 +49,28 @@ export class ManualBalancesPage {
     await expect(this.page.locator('[data-cy=manual-balances] tbody tr')).toHaveCount(visible + 1);
   }
 
+  private rowByLabel(label: string) {
+    return this.page
+      .locator('[data-cy=manual-balances] tbody tr')
+      .filter({ has: this.page.locator(`[data-cy=label][title="${label}"]`) });
+  }
+
   async balanceShouldMatch(balances: FixtureManualBalance[]): Promise<void> {
-    for (const [i, balance] of balances.entries()) {
-      const row = this.page.locator('[data-cy=manual-balances] tbody tr').nth(i);
+    for (const balance of balances) {
+      const row = this.rowByLabel(balance.label);
       await expect(row.locator('[data-cy=manual-balances__amount]')).toContainText(formatAmount(balance.amount));
     }
   }
 
   async balanceShouldNotMatch(balances: FixtureManualBalance[]): Promise<void> {
-    for (const [i, balance] of balances.entries()) {
-      const row = this.page.locator('[data-cy=manual-balances] tbody tr').nth(i);
+    for (const balance of balances) {
+      const row = this.rowByLabel(balance.label);
       await expect(row.locator('[data-cy=manual-balances__amount]')).not.toContainText(formatAmount(balance.amount));
     }
   }
 
-  async isVisible(position: number, balance: FixtureManualBalance): Promise<void> {
-    const row = this.page.locator('[data-cy=manual-balances] tbody tr').nth(position);
+  async isVisible(balance: FixtureManualBalance): Promise<void> {
+    const row = this.rowByLabel(balance.label);
 
     await expect(row.locator('[data-cy=label]')).toContainText(balance.label);
     await expect(row.locator('[data-cy=manual-balances__amount]')).toContainText(formatAmount(balance.amount));
@@ -113,9 +119,8 @@ export class ManualBalancesPage {
     return { total, balances };
   }
 
-  async editBalance(position: number, amount: string): Promise<void> {
-    const rows = this.page.locator('[data-cy=manual-balances] tbody tr');
-    const editButton = rows.nth(position).locator('button[data-cy=row-edit]');
+  async editBalance(label: string, amount: string): Promise<void> {
+    const editButton = this.rowByLabel(label).locator('button[data-cy=row-edit]');
 
     await editButton.waitFor({ state: 'visible' });
     await expect(editButton).not.toBeDisabled();
@@ -129,9 +134,8 @@ export class ManualBalancesPage {
     await expect(this.page.locator('[data-cy=price-refresh]')).not.toBeDisabled();
   }
 
-  async deleteBalance(position: number): Promise<void> {
-    const rows = this.page.locator('[data-cy=manual-balances] tbody tr');
-    await rows.nth(position).locator('button[data-cy=row-delete]').click();
+  async deleteBalance(label: string): Promise<void> {
+    await this.rowByLabel(label).locator('button[data-cy=row-delete]').click();
     await this.confirmDelete();
   }
 
