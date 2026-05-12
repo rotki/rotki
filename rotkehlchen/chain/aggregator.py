@@ -673,9 +673,7 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
         client and the chain is not synced
         """
         xpub_manager = XpubManager(chains_aggregator=self)
-        chains_to_query: list[SupportedBlockchain] = (
-            list(SupportedBlockchain) if blockchain is None else [blockchain]
-        )
+        chains_to_query: list[SupportedBlockchain] = list(SupportedBlockchain) if blockchain is None else [blockchain]  # noqa: E501
 
         def _query_one(chain: SupportedBlockchain) -> None:
             if chain == SupportedBlockchain.ETHEREUM_BEACONCHAIN:
