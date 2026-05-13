@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`12113` Switching the dashboard timeframe now resets the net worth chart back to the full range instead of carrying over the previous zoom selection.
 * :bug:`12112` The dashboard's net worth percentage and trend indicator now follow the chart's data-zoom selection.
 * :feature:`11988` rotki now has a setting to selectively enable/disable chain / address query for transaction history. That means you can skip history querying for specific chains or chain/address combinations.
 * :feature:`12111` Free-text typed in the History events filter without a key=value prefix is now applied as a notes search on Enter, so you can quickly find events by any word in their notes instead of having to remember the notes= prefix.
