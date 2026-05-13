@@ -60,9 +60,10 @@ class RotkehlchenServer:
         # printing them in stdout is now too much spam (and would worry users too)
         hub = gevent.hub.get_hub()
         hub.exception_stream = None
-        # we don't use threadpool much so go to 2 instead of default 10
-        hub.threadpool_size = 2
-        hub.threadpool.maxsize = 2
+        # threadpool is used by default in gevent for DNS resolution
+        # https://www.gevent.org/dns.html#configuration
+        hub.threadpool_size = 6  # set 6 thinking that concurrently we conneect to RPC nodes on different chains  # noqa: E501
+        hub.threadpool.maxsize = 10  # up to 10 threads can be created
         if os.name != 'nt':
             gevent.hub.signal(signal.SIGQUIT, self.shutdown)
             gevent.hub.signal(signal.SIGTERM, self.shutdown)
