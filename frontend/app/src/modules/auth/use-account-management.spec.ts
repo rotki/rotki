@@ -3,6 +3,7 @@ import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vite
 import { useAccountManagement } from '@/modules/auth/use-account-management';
 import { useAutoLogin } from '@/modules/auth/use-auto-login';
 import { useLogin } from '@/modules/auth/use-login';
+import { useRememberSettings } from '@/modules/auth/use-remember-settings';
 import { useSessionAuthStore } from '@/modules/auth/use-session-auth-store';
 import { Constraints } from '@/modules/core/common/constraints';
 import { useFrontendSettingsStore } from '@/modules/settings/use-frontend-settings-store';
@@ -144,6 +145,45 @@ describe('useAccount', () => {
         credentials: { username: 'test', password: '1234' },
         initialSettings: { submitUsageAnalytics: false },
       });
+    });
+
+    it('should persist the new account as the last-used username on successful creation', async () => {
+      const authStore = useSessionAuthStore();
+      const { logged } = storeToRefs(authStore);
+      const { savedUsername } = useRememberSettings();
+
+      set(savedUsername, '');
+      set(logged, true);
+
+      vi.mocked(createAccount).mockResolvedValue({ success: true });
+
+      const { createNewAccount } = useAccountManagement();
+      await createNewAccount({
+        credentials: { username: 'fresh_user', password: '1234' },
+        initialSettings: { submitUsageAnalytics: false },
+      });
+
+      expect(get(savedUsername)).toBe('fresh_user');
+
+      set(savedUsername, '');
+      set(logged, false);
+    });
+
+    it('should not persist the username when account creation fails', async () => {
+      const { savedUsername } = useRememberSettings();
+      set(savedUsername, 'previous_user');
+
+      vi.mocked(createAccount).mockResolvedValue({ success: false, message: 'boom' });
+
+      const { createNewAccount } = useAccountManagement();
+      await createNewAccount({
+        credentials: { username: 'failed_user', password: '1234' },
+        initialSettings: { submitUsageAnalytics: false },
+      });
+
+      expect(get(savedUsername)).toBe('previous_user');
+
+      set(savedUsername, '');
     });
   });
 
