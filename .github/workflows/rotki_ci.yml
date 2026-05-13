@@ -185,7 +185,7 @@ jobs:
           cache-dependency-glob: "uv.lock"
 
       - name: Install dependencies
-        run: uv sync --group docs
+        run: uv sync --locked --group docs
 
       - name: Build html docs
         run: cd docs && uv run make html
@@ -306,7 +306,7 @@ jobs:
         run: cargo build --release
 
       - name: Install dependencies
-        run: uv sync --group lint
+        run: uv sync --locked --group lint
 
       - name: Lint
         run: uv run make lint

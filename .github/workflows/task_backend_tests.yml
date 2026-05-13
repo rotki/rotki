@@ -129,7 +129,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          uv sync --group dev --group lint --group ci
+          uv sync --locked --group dev --group lint --group ci
 
       - name: Run tests
         env:
