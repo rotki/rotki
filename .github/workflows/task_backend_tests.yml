@@ -71,7 +71,10 @@ jobs:
                 exit 0
             fi
 
-            if [ "$(curl --silent "https://api.github.com/repos/rotki/test-caching/pulls?state=open&head=$AUTHOR:$SOURCE_BRANCH&base=$TARGET_BRANCH" | jq "length")" == "0" ]; then
+            encoded_author=$(jq -nr --arg v "$AUTHOR" '$v|@uri')
+            encoded_source=$(jq -nr --arg v "$SOURCE_BRANCH" '$v|@uri')
+            encoded_target=$(jq -nr --arg v "$TARGET_BRANCH" '$v|@uri')
+            if [ "$(curl --silent "https://api.github.com/repos/rotki/test-caching/pulls?state=open&head=${encoded_author}:${encoded_source}&base=${encoded_target}" | jq "length")" == "0" ]; then
                 echo "Found the $SOURCE_BRANCH branch on $AUTHOR's test-caching fork. But no PR found. Aborting."
                 exit 1
             fi
