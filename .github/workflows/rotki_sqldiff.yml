@@ -35,7 +35,7 @@ jobs:
 
       - name: SQLDiff action
         id: sql-diff
-        uses: rotki/action-sqldiff@f993660c46af62ec07baebe149014e170ac03f9d  # v3.0.0
+        uses: rotki/action-sqldiff@a4616187138a18b2c6787f30b3f24cd52d5b8193  # v3.0.1
         with:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           files: '*.db'
