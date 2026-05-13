@@ -36,7 +36,7 @@ from rotkehlchen.db.solanatx import DBSolanaTx
 from rotkehlchen.db.utils import table_exists
 from rotkehlchen.errors.api import PremiumAuthenticationError, PremiumPermissionError
 from rotkehlchen.errors.asset import UnknownAsset, WrongAssetType
-from rotkehlchen.errors.misc import APIKeyNotAvailable, RemoteError
+from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.externalapis.google_calendar import GoogleCalendarAPI
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.history.types import HistoricalPriceOracle
@@ -558,20 +558,22 @@ class TaskManager:
         )]
 
     def _query_produced_blocks(self, indices: list[int]) -> None:
+        if (eth2 := self.chains_aggregator.get_module('eth2')) is None:
+            return
+
         try:
-            self.chains_aggregator.beaconchain.get_and_store_produced_blocks(indices=indices)
-        except APIKeyNotAvailable as e:
-            log.warning(
-                f'Skipping produced blocks query due to missing beaconcha.in API key: {e!s}',
-            )
+            eth2.get_and_store_produced_blocks(indices=indices)
         except RemoteError as e:
-            log.error(f'Skipping produced blocks query due to beaconcha.in error: {e!s}')
+            log.error(f'Skipping produced blocks query due to error: {e!s}')
 
     def _maybe_query_produced_blocks(self) -> list[gevent.Greenlet] | None:
         """Schedules the blocks production query if enough time has passed"""
         if (
             self.chains_aggregator.get_module('eth2') is None or
-            self.chains_aggregator.beaconchain.is_rate_limited() or
+            (
+                self.chains_aggregator.beaconchain.has_api_key() and
+                self.chains_aggregator.beaconchain.is_rate_limited()
+            ) or
             self.chains_aggregator.beaconchain.produced_blocks_lock.locked() or
             len(indices := self.chains_aggregator.beaconchain.get_outdated_validators_to_query_for_blocks()) == 0  # noqa: E501
         ):

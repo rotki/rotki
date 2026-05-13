@@ -122,6 +122,14 @@ class EtherscanLikeApi(ABC):
     ) -> dict[str, str]:
         """Build parameters for API requests. Override in subclasses for different formats."""
 
+    def get_validated_blocks(
+            self,
+            address: ChecksumEvmAddress,  # pylint: disable=unused-argument
+            period: TimestampOrBlockRange,  # pylint: disable=unused-argument
+    ) -> list[dict[str, Any]]:
+        """Query blocks validated by an address if supported by the indexer."""
+        raise NotImplementedError(f'{self.name} does not support validated blocks queries')
+
     @abc.abstractmethod
     def get_l1_fee(
             self,
@@ -198,6 +206,7 @@ class EtherscanLikeApi(ABC):
                 'txlistinternal',
                 'tokentx',
                 'getLogs',
+                'getminedblocks',
                 'txsBeaconWithdrawal',
             ],
             options: dict[str, Any] | None = None,
@@ -252,6 +261,7 @@ class EtherscanLikeApi(ABC):
             module: str,
             action: Literal[
                 'eth_getBlockByNumber',
+                'getblockreward',
             ],
             options: dict[str, Any] | None = None,
             timeout: tuple[int, int] | None = None,
@@ -842,6 +852,23 @@ class EtherscanLikeApi(ABC):
             chain_id=chain_id,
             method='eth_blockNumber',
         ))
+
+    def get_block_reward(
+            self,
+            chain_id: SUPPORTED_CHAIN_IDS,
+            block_number: int,
+    ) -> dict[str, Any]:
+        """Gets execution block reward data by block number.
+        May raise:
+         - RemoteError if there are problems contacting the indexer
+         - DeserializationError if the indexer returns an invalid response
+        """
+        return self._query(
+            chain_id=chain_id,
+            module='block',
+            action='getblockreward',
+            options={'blockno': block_number},
+        )
 
     def get_block_by_number(
             self,

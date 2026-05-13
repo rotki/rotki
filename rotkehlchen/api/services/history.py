@@ -325,7 +325,7 @@ class HistoryService:
                 )
             elif len(indices := eth2.beacon_inquirer.beaconchain.get_validators_to_query_for_blocks()) != 0:  # noqa: E501
                 log.debug(f'Querying block production information for validator indices {indices}')
-                eth2.beacon_inquirer.beaconchain.get_and_store_produced_blocks(indices)
+                eth2.get_and_store_produced_blocks(indices)
                 eth2.combine_block_with_tx_events()
             else:
                 log.debug('No active or un-queried validators found. Skipping query of block production information.')  # noqa: E501
@@ -911,7 +911,7 @@ class HistoryService:
             before_total, before_validators, before_addresses = _count_staking_events()
             if entry_type == HistoryBaseEntryType.ETH_BLOCK_EVENT:
                 log.debug(f'Refetching block production events for validator indices {validator_indices}')  # noqa: E501
-                eth2.beacon_inquirer.beaconchain.get_and_store_produced_blocks(
+                eth2.get_and_store_produced_blocks(
                     indices=validator_indices,
                     update_cache=False,
                 )

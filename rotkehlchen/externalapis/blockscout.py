@@ -186,7 +186,7 @@ class Blockscout(ExternalServiceWithApiKey, EtherscanLikeApi):
             self,
             chain_id: SUPPORTED_CHAIN_IDS,
             module: Literal['account'],
-            action: Literal['txlistinternal', 'txlist', 'tokentx'],
+            action: Literal['txlistinternal', 'txlist', 'tokentx', 'getminedblocks'],
             options: dict[str, Any] | None = None,
             timeout: tuple[int, int] | None = None,
     ) -> list[dict[str, Any]]:
@@ -260,7 +260,7 @@ class Blockscout(ExternalServiceWithApiKey, EtherscanLikeApi):
             raise RemoteError(f'Missing result from blockscout v1 response with {query_args}: {response}')  # noqa: E501
 
         if module == 'account':
-            if action in ('txlistinternal', 'txlist', 'tokentx'):
+            if action in ('txlistinternal', 'txlist', 'tokentx', 'getminedblocks'):
                 if not isinstance(result, list):
                     raise RemoteError(f'Expected a list result from blockscout v1 response with {query_args}: {response}')  # noqa: E501
             elif not isinstance(result, str):
@@ -298,10 +298,21 @@ class Blockscout(ExternalServiceWithApiKey, EtherscanLikeApi):
     ) -> dict[str, Any]:
         ...
 
+    @overload
     def _query_v2(
             self,
             chain_id: SUPPORTED_CHAIN_IDS,
-            module: Literal['addresses', 'transactions'],
+            module: Literal['blocks'],
+            encoded_args: str,
+            endpoint: None = None,
+            extra_args: dict[str, Any] | None = None,
+    ) -> dict[str, Any]:
+        ...
+
+    def _query_v2(
+            self,
+            chain_id: SUPPORTED_CHAIN_IDS,
+            module: Literal['addresses', 'transactions', 'blocks'],
             encoded_args: str,
             endpoint: Literal['withdrawals'] | None = None,
             extra_args: dict[str, Any] | None = None,
@@ -389,6 +400,70 @@ class Blockscout(ExternalServiceWithApiKey, EtherscanLikeApi):
             raise RemoteError(f'Blockscout eth-rpc response contains no result: {response}')
 
         return response['result']
+
+    def get_block_reward(
+            self,
+            chain_id: SUPPORTED_CHAIN_IDS,
+            block_number: int,
+    ) -> dict[str, Any]:
+        """Gets execution block reward data by block number from Blockscout v2.
+
+        May raise:
+        - RemoteError if the query fails or the response misses expected reward fields.
+        """
+        result = self._query_v2(
+            chain_id=chain_id,
+            module='blocks',
+            encoded_args=str(block_number),
+        )
+        try:
+            return {
+                'blockMiner': result['miner']['hash'],
+                'blockReward': result['priority_fee'],
+            }
+        except KeyError as e:
+            raise RemoteError(f'Malformed Blockscout block reward response for block {block_number}: missing {e!s}') from e  # noqa: E501
+
+    def get_validated_blocks(
+            self,
+            address: ChecksumEvmAddress,
+            period: TimestampOrBlockRange,
+    ) -> list[dict[str, Any]]:
+        """Query blockscout for ethereum blocks validated by an address.
+
+        May raise:
+        - RemoteError if the query fails, the response is malformed, or pagination stops making
+        progress.
+        """
+        options = self._process_timestamp_or_blockrange(
+            chain_id=ChainID.ETHEREUM,
+            period=period,
+            options={'sort': 'asc', 'address': address, 'blocktype': 'blocks'},
+        )
+        blocks = []
+        while True:
+            previous_page_state = (options.get('startblock'), options.get('page'))
+            result = self._query(
+                chain_id=ChainID.ETHEREUM,
+                module='account',
+                action='getminedblocks',
+                options=options,
+            )
+            if len(result) == 0:
+                break
+
+            blocks.extend(result)
+            try:
+                new_options = self._maybe_paginate(result=result, options=options)
+            except KeyError as e:
+                raise RemoteError(f'Malformed Blockscout validated blocks response for {address}: missing {e!s}') from e  # noqa: E501
+            if new_options is None:
+                break
+            if (new_options.get('startblock'), new_options.get('page')) == previous_page_state:
+                raise RemoteError(f'Blockscout validated blocks pagination made no progress for {address}')  # noqa: E501
+            options = new_options
+
+        return blocks
 
     def query_withdrawals(self, address: ChecksumEvmAddress) -> set[int]:
         """Query withdrawals for an ethereum address and save them in the DB.
