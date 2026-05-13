@@ -16,6 +16,8 @@ import { useSectionStatus } from '@/modules/shell/sync-progress/use-section-stat
 import TimeframeSelector from '@/modules/statistics/TimeframeSelector.vue';
 import { useStatisticsStore } from '@/modules/statistics/use-statistics-store';
 
+const netWorthChart = useTemplateRef<InstanceType<typeof NetWorthChart>>('netWorthChart');
+
 const { t } = useI18n({ useScope: 'global' });
 const sessionStore = useSessionSettingsStore();
 const { update } = sessionStore;
@@ -80,9 +82,10 @@ const balanceClass = computed(() => {
   return '!text-rui-success';
 });
 
-async function setTimeframe(value: TimeFrameSetting) {
+async function setTimeframe(value: TimeFrameSetting): Promise<void> {
   assert(value !== TimeFramePersist.REMEMBER);
   sessionStore.update({ timeframe: value });
+  get(netWorthChart)?.resetZoom();
   await updateFrontendSetting({ lastKnownTimeframe: value });
 }
 
@@ -163,6 +166,7 @@ onMounted(() => {
       </div>
       <div class="relative">
         <NetWorthChart
+          ref="netWorthChart"
           v-model:zoom-range="zoomRange"
           :chart-data="timeframeData"
         />

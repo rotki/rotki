@@ -56,6 +56,12 @@ watchImmediate(isDark, () => {
 watchImmediate(chartOption, () => {
   setupZoomToolHandler();
 });
+
+function resetZoom(): void {
+  get(chartInstance)?.chart?.dispatchAction({ end: 100, start: 0, type: 'dataZoom' });
+}
+
+defineExpose({ resetZoom });
 </script>
 
 <template>
