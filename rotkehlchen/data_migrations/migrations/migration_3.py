@@ -1,10 +1,9 @@
 import logging
 from typing import TYPE_CHECKING
 
-import filetype
-
 from rotkehlchen.icons import ALLOWED_ICON_EXTENSIONS
 from rotkehlchen.logging import RotkehlchenLogsAdapter
+from rotkehlchen.utils.filetype import guess_icon_extension
 
 if TYPE_CHECKING:
     from rotkehlchen.data_migrations.progress import MigrationProgressHandler
@@ -21,8 +20,8 @@ def _validate_asset_icons(icon_manager: 'IconManager') -> None:
     icons_directory = icon_manager.icons_dir
     for icon_entry in icons_directory.iterdir():
         if icon_entry.is_file():
-            icon_file_type = filetype.guess(icon_entry)
-            if icon_file_type is None or icon_file_type.extension not in ALLOWED_ICON_EXTENSIONS:
+            icon_extension = guess_icon_extension(icon_entry)
+            if icon_extension is None or icon_extension not in ALLOWED_ICON_EXTENSIONS:
                 icon_entry.unlink()
 
 

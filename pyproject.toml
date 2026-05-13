@@ -57,8 +57,6 @@ dependencies = [
     "marshmallow==4.2.2",
     "webargs==8.7.0",
     "werkzeug==3.1.8",
-    # for icon validation
-    "filetype==1.2.0",
     # for fuzzy search of assets
     "polyleven==0.9",
     # We used to only use this for packaging, but now use it for the version comparison functionality
