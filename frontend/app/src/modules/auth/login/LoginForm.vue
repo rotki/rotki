@@ -39,7 +39,7 @@ const { t } = useI18n({ useScope: 'global' });
 
 const isTest = import.meta.env.VITE_TEST;
 
-const { loadProfiles, savedUsernames } = useSavedProfiles();
+const { loadProfiles, resolveStoredUsername, savedUsernames } = useSavedProfiles();
 const authStore = useSessionAuthStore();
 const { conflictExist } = storeToRefs(authStore);
 const { resetIncompleteUpgradeConflict, resetSyncConflict } = authStore;
@@ -200,7 +200,8 @@ function checkRememberUsername() {
 async function loadSettings() {
   set(rememberPassword, !!get(savedRememberPassword));
   checkRememberUsername();
-  set(username, get(savedUsername));
+  set(username, resolveStoredUsername());
+
   const { sessionOnly, url } = getBackendUrl();
   set(customBackendUrl, url);
   set(customBackendSessionOnly, sessionOnly);
@@ -220,10 +221,12 @@ async function loadSettings() {
 }
 
 onBeforeMount(async () => {
-  await loadSettings();
   await loadProfiles();
-  if (get(savedUsernames).length === 0)
+  if (get(savedUsernames).length === 0) {
     newAccount();
+    return;
+  }
+  await loadSettings();
 });
 
 onMounted(() => {
