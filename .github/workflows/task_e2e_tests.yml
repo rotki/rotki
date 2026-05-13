@@ -156,7 +156,7 @@ jobs:
           cache-dependency-glob: "uv.lock"
 
       - name: Setup backend
-        run: uv sync
+        run: uv sync --locked
 
       - name: Restore dependencies
         working-directory: ./frontend
