@@ -5,6 +5,7 @@ import dayjs from 'dayjs';
 import { lastLogin } from '@/modules/auth/account-management';
 import { useLoggedUserIdentifier } from '@/modules/auth/use-logged-user-identifier';
 import { useLogin } from '@/modules/auth/use-login';
+import { useRememberSettings } from '@/modules/auth/use-remember-settings';
 import { useSessionAuthStore } from '@/modules/auth/use-session-auth-store';
 import { useMainStore } from '@/modules/core/common/use-main-store';
 import { useHistoryDataFetching } from '@/modules/history/use-history-data-fetching';
@@ -38,6 +39,7 @@ export function useAccountManagement(): UseAccountManagementReturn {
   const { clearUpgradeMessages } = authStore;
   const { isDevelop } = storeToRefs(useMainStore());
   const loggedUserIdentifier = useLoggedUserIdentifier();
+  const { savedUsername } = useRememberSettings();
   const { disconnect: disconnectWallet } = useWalletStore();
   const { fetchTransactionStatusSummary } = useHistoryDataFetching();
   const { updateFrontendSetting } = useSettingsOperations();
@@ -61,6 +63,7 @@ export function useAccountManagement(): UseAccountManagementReturn {
       if (get(logged)) {
         clearUpgradeMessages();
         set(lastLogin, username);
+        set(savedUsername, username);
         showGetPremiumButton();
         set(canRequestData, true);
         await fetchTransactionStatusSummary();
