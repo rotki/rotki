@@ -8,6 +8,7 @@ import CreateAccountCredentials
 import CreateAccountIntroduction
   from '@/modules/auth/create-account/introduction/CreateAccountIntroduction.vue';
 import CreateAccountPremium from '@/modules/auth/create-account/premium/CreateAccountPremium.vue';
+import { useSavedProfiles } from '@/modules/auth/use-saved-profiles';
 import ExternalLink from '@/modules/shell/components/ExternalLink.vue';
 import RotkiLogo from '@/modules/shell/components/RotkiLogo.vue';
 
@@ -41,6 +42,10 @@ function nextStep(): void {
 }
 
 const { t } = useI18n({ useScope: 'global' });
+
+const { hasProfiles, loadProfiles } = useSavedProfiles();
+
+onBeforeMount(loadProfiles);
 
 const parsedError = computed<{ hasLink: boolean; parts: string[] }>(() => {
   const linkPlaceholder = '_DEVICE_LIMIT_LINK_';
@@ -186,7 +191,10 @@ function confirm() {
               </RuiTabItem>
             </RuiTabItems>
           </div>
-          <div class="items-center flex justify-stretch py-6 text-rui-text-secondary">
+          <div
+            v-if="hasProfiles"
+            class="items-center flex justify-stretch py-6 text-rui-text-secondary"
+          >
             <span>{{ t('create_account.have_account.description') }}</span>
             <RuiButton
               color="primary"

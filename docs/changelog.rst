@@ -13,6 +13,7 @@ Changelog
 * :bug:`-` Newer zerox swaps in base will now be properly decoded.
 * :bug:`12178` Users can now fix a rejected Kusama, Polkadot, beacon chain, or BTC mempool endpoint by editing the URL in place. The error message clears as soon as you start typing.
 * :bug:`-` Typing dates and times by keyboard now produces the value you intended, instead of occasionally picking up stray digits from the previous segment.
+* :bug:`12088` Cancelling the create-account wizard on a fresh install no longer drops you on an empty Unlock screen; the wizard's "Already have an account? Log in" shortcut is also hidden when no profiles exist.
 
 * :release:`1.43.0 <2026-05-08>`
 * :bug:`-` Docker users can once again import data, snapshots, and asset icons larger than 1 MiB; the bundled nginx no longer rejects them with a 413 before they reach rotki.

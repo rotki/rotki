@@ -10,8 +10,8 @@ import PremiumSyncConflictAlert from '@/modules/auth/login/PremiumSyncConflictAl
 import WelcomeMessageDisplay from '@/modules/auth/login/WelcomeMessageDisplay.vue';
 import { useLogout } from '@/modules/auth/use-logout';
 import { useRememberSettings } from '@/modules/auth/use-remember-settings';
+import { useSavedProfiles } from '@/modules/auth/use-saved-profiles';
 import { useSessionAuthStore } from '@/modules/auth/use-session-auth-store';
-import { useUsersApi } from '@/modules/auth/use-users-api';
 import { compareTextByKeyword } from '@/modules/core/common/display/assets';
 import { toMessages } from '@/modules/core/common/validation/validation';
 import { useDynamicMessages } from '@/modules/core/messaging/use-dynamic-messages';
@@ -39,7 +39,7 @@ const { t } = useI18n({ useScope: 'global' });
 
 const isTest = import.meta.env.VITE_TEST;
 
-const usersApi = useUsersApi();
+const { loadProfiles, savedUsernames } = useSavedProfiles();
 const authStore = useSessionAuthStore();
 const { conflictExist } = storeToRefs(authStore);
 const { resetIncompleteUpgradeConflict, resetSyncConflict } = authStore;
@@ -114,8 +114,6 @@ const isLoggedInError = useArraySome(() => errors, error => error.includes('is a
 
 const usernameError = useArrayFind(() => errors, error => error.startsWith('User '));
 const passwordError = useArrayFind(() => errors, error => error.startsWith('Wrong password '));
-
-const savedUsernames = ref<string[]>([]);
 
 const orderedUsernamesList = computed(() => {
   const search = get(usernameSearch) || '';
@@ -221,23 +219,11 @@ async function loadSettings() {
   }
 }
 
-const router = useRouter();
-
-async function loadProfiles() {
-  const profiles = await usersApi.getUserProfiles();
-  set(savedUsernames, profiles);
-}
-
 onBeforeMount(async () => {
   await loadSettings();
   await loadProfiles();
-  const profiles = get(savedUsernames);
-  if (profiles.length === 0) {
-    const { currentRoute } = router;
-    if (!get(currentRoute).query.disableNoUserRedirection)
-      newAccount();
-    else await router.replace({ query: {} });
-  }
+  if (get(savedUsernames).length === 0)
+    newAccount();
 });
 
 onMounted(() => {
