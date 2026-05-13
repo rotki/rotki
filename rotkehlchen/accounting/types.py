@@ -1,11 +1,7 @@
-import json
 from enum import auto
 from typing import Any, NamedTuple
 
-import jsonschema
-
 from rotkehlchen.assets.asset import Asset
-from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.fval import FVal
 from rotkehlchen.types import Timestamp
 from rotkehlchen.utils.mixins.enums import DBCharEnumMixIn, SerializableEnumNameMixin
@@ -26,69 +22,6 @@ class SchemaEventType(DBCharEnumMixIn):
             return schema
 
         raise AssertionError('Should never happen')
-
-
-NamedJsonDBTuple = (
-    tuple[
-        str,  # type,
-        str,  # data
-    ]
-)
-
-
-class NamedJson(NamedTuple):
-    event_type: SchemaEventType
-    data: dict[str, Any]
-
-    @classmethod
-    def deserialize(
-            cls,
-            event_type: SchemaEventType,
-            data: dict[str, Any],
-    ) -> 'NamedJson':
-        """Turns an event type and a data dict to a NamedJson object
-
-        May raise:
-         - a DeserializationError if something is wrong with given data or json validation fails.
-        """
-        schema = event_type.get_schema()
-        try:
-            jsonschema.validate(data, schema)
-        except (jsonschema.exceptions.ValidationError, jsonschema.exceptions.SchemaError) as e:
-            raise DeserializationError(
-                f'Failed jsonschema validation of {event_type!s} data {data}. '
-                f'Error was {e!s}',
-            ) from e
-
-        return NamedJson(
-            event_type=event_type,
-            data=data,
-        )
-
-    @classmethod
-    def deserialize_from_db(
-            cls,
-            json_tuple: NamedJsonDBTuple,
-    ) -> 'NamedJson':
-        """Turns a tuple read from the database into an appropriate JsonSchema.
-
-        May raise:
-         - a DeserializationError if something is wrong with the DB data or json validation fails.
-
-        Event_tuple index - Schema columns
-        ----------------------------------
-        0 - event_type
-        1 - data
-        """
-        event_type = SchemaEventType.deserialize_from_db(json_tuple[0])
-        try:
-            data = json.loads(json_tuple[1])
-        except json.decoder.JSONDecodeError as e:
-            raise DeserializationError(
-                f'Could not decode json for {json_tuple} at NamedJson deserialization: {e!s}',
-            ) from e
-
-        return cls.deserialize(event_type=event_type, data=data)
 
 
 class MissingAcquisition(NamedTuple):

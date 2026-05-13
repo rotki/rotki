@@ -34,7 +34,6 @@ dependencies = [
     "coincurve==21.0.0",
     "base58check==1.0.2",
     "bech32==1.2.0",
-    "jsonschema==4.25.1",
     "gql[requests]==3.5.2",
     "scalecodec==1.2.11",
     "py-sr25519-bindings==0.2.2",
