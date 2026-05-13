@@ -282,7 +282,7 @@ class EventsAccountant:
             fee_out_event = (self.pot.add_out_event, {
                 'originating_event_id': fee_event.identifier,
                 'event_type': AccountingEventType.FEE,
-                'notes': fee_event.notes,
+                'notes': fee_event.notes or '',
                 'location': fee_event.location,
                 'timestamp': timestamp,
                 'asset': fee_event.asset,

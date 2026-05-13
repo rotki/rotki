@@ -6,6 +6,12 @@ Changelog
 * :feature:`11988` rotki now has a setting to selectively enable/disable chain / address query for transaction history. That means you can skip history querying for specific chains or chain/address combinations.
 * :feature:`12111` Free-text typed in the History events filter without a key=value prefix is now applied as a notes search on Enter, so you can quickly find events by any word in their notes instead of having to remember the notes= prefix.
 * :feature:`3216` Trades made using clipper will now be decoded correctly.
+* :bug:`-` There should no longer be any errors when exporting CSV from PnL report containing an event with notes being Null.
+* :bug:`-` 1inch swaps settling through a balancer pool should now be properly decoded.
+* :bug:`12173` Beaconcha.in queries with legacy API keys will work correctly again.
+* :bug:`-` Newer zerox swaps in base will now be properly decoded.
+* :bug:`12178` Users can now fix a rejected Kusama, Polkadot, beacon chain, or BTC mempool endpoint by editing the URL in place. The error message clears as soon as you start typing.
+* :bug:`-` Typing dates and times by keyboard now produces the value you intended, instead of occasionally picking up stray digits from the previous segment.
 
 * :release:`1.43.0 <2026-05-08>`
 * :bug:`-` Docker users can once again import data, snapshots, and asset icons larger than 1 MiB; the bundled nginx no longer rejects them with a 413 before they reach rotki.

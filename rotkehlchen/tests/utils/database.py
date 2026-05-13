@@ -36,10 +36,11 @@ def maybe_include_etherscan_key(db: DBHandler, include_etherscan_key: bool) -> N
     if not include_etherscan_key:
         return
     # Add the tests only etherscan API key
-    if os.environ.get('MATRIX_JOB', 'others') == 'api':
-        eth_api_key = 'R7QNMZJF1Z5EZM96GMSZSQKHQK3V2TBKW5'
-    else:
-        eth_api_key = '8JT7WQBB2VQP5C3416Y8X3S8GBA3CVZKP4'
+    eth_api_key = os.environ.get('ETHERSCAN_API_KEY') or (
+        'R7QNMZJF1Z5EZM96GMSZSQKHQK3V2TBKW5'
+        if os.environ.get('MATRIX_JOB', 'others') == 'api'
+        else '8JT7WQBB2VQP5C3416Y8X3S8GBA3CVZKP4'
+    )
 
     with db.user_write() as write_cursor:
         db.add_external_service_credentials(

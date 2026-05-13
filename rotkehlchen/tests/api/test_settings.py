@@ -338,25 +338,92 @@ def test_default_evm_indexers_orders(rotkehlchen_api_server: 'APIServer') -> Non
     assert settings['default_evm_indexer_order'] == ['blockscout', 'routescan']
 
 
-@pytest.mark.parametrize('rpc_setting', ['ksm_rpc_endpoint'])
-def test_unset_rpc_endpoint(rotkehlchen_api_server: 'APIServer', rpc_setting: list[str]) -> None:
-    """Test the rpc endpoint can be unset"""
-    response = requests.get(api_url_for(rotkehlchen_api_server, 'settingsresource'))
+@pytest.mark.parametrize(('rpc_setting', 'initial_value'), [
+    ('ksm_rpc_endpoint', 'http://kusama.example:9933'),
+    ('dot_rpc_endpoint', 'http://polkadot.example:9934'),
+    ('beacon_rpc_endpoint', 'http://lighthouse.mynode.com:6969'),
+    ('btc_mempool_api', 'http://localhost:4080'),
+])
+def test_unset_rpc_endpoint(
+        rotkehlchen_api_server: 'APIServer',
+        rpc_setting: str,
+        initial_value: str,
+) -> None:
+    """Sending an empty string for these endpoint settings should remove the
+    DB row and revert the value to the dataclass default (which itself is
+    the empty string for ksm/dot/btc and the public node for beacon)."""
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+    settings_url = api_url_for(rotkehlchen_api_server, 'settingsresource')
+    default_value = getattr(DBSettings(), rpc_setting)
+
+    ksm_connect_node = patch(
+        'rotkehlchen.chain.substrate.manager.SubstrateManager._connect_node',
+        return_value=(True, ''),
+    )
+    btc_connect_node = patch(
+        'rotkehlchen.chain.bitcoin.btc.manager.BitcoinManager._connect_node',
+        return_value=(True, ''),
+    )
+    beacon_set_endpoint = patch(
+        'rotkehlchen.chain.ethereum.modules.eth2.beacon.BeaconInquirer.set_rpc_endpoint',
+        return_value=None,
+    )
+    with ksm_connect_node, btc_connect_node, beacon_set_endpoint:
+        response = requests.put(settings_url, json={'settings': {rpc_setting: initial_value}})
+        assert_proper_response(response)
+        assert response.json()['result'][rpc_setting] == initial_value
+
+        # Sanity check: the row exists in the DB now.
+        with rotki.data.db.conn.read_ctx() as cursor:
+            assert cursor.execute(
+                'SELECT value FROM settings WHERE name=?', (rpc_setting,),
+            ).fetchone() == (initial_value,)
+
+        # Now unset by sending an empty string.
+        response = requests.put(settings_url, json={'settings': {rpc_setting: ''}})
+
     assert_proper_response(response)
     json_data = response.json()
     assert json_data['message'] == ''
-    result = json_data['result']
-    assert result[rpc_setting] != ''
+    # Response reflects the dataclass default, not an empty string.
+    assert json_data['result'][rpc_setting] == default_value
 
-    data = {'settings': {rpc_setting: ''}}
+    # The DB row must have been removed entirely.
+    with rotki.data.db.conn.read_ctx() as cursor:
+        assert cursor.execute(
+            'SELECT value FROM settings WHERE name=?', (rpc_setting,),
+        ).fetchone() is None
 
-    response = requests.put(api_url_for(rotkehlchen_api_server, 'settingsresource'), json=data)
-    assert_proper_response(response)
+    # Cached settings must also reflect the default.
+    assert getattr(CachedSettings().get_settings(), rpc_setting) == default_value
 
-    json_data = response.json()
-    result = json_data['result']
-    assert json_data['message'] == ''
-    assert result[rpc_setting] == ''
+
+@pytest.mark.parametrize('rpc_setting', [
+    'ksm_rpc_endpoint',
+    'dot_rpc_endpoint',
+    'beacon_rpc_endpoint',
+    'btc_mempool_api',
+])
+def test_empty_rpc_endpoint_in_db_treated_as_default(
+        rotkehlchen_api_server: 'APIServer',
+        rpc_setting: str,
+) -> None:
+    """An empty string already present in the DB (legacy state) must be
+    deserialized as if the entry was missing, i.e. the dataclass default
+    is applied."""
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+    default_value = getattr(DBSettings(), rpc_setting)
+
+    with rotki.data.db.conn.write_ctx() as write_cursor:
+        write_cursor.execute(
+            'INSERT OR REPLACE INTO settings(name, value) VALUES(?, ?)',
+            (rpc_setting, ''),
+        )
+
+    with rotki.data.db.conn.read_ctx() as cursor:
+        settings = rotki.data.db.get_settings(cursor)
+
+    assert getattr(settings, rpc_setting) == default_value
 
 
 def test_disable_taxfree_after_period(rotkehlchen_api_server: 'APIServer') -> None:

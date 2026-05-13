@@ -288,7 +288,10 @@ def test_history_export_download_csv(
         json={'directory_path': str(csv_dir)},
     )
     rows = assert_csv_export_response(response, csv_dir, expected_num_of_events=1)
-    assert f'Test note to check if label is added with {ETH_ADDRESS1} [ETH_ADDRESS1 IN ZKSYNC] address' in rows[0]['notes']  # noqa: E501
+    assert rows[0]['notes'] == (
+        f'https://zkscan.io/explorer/transactions/{tx_hash!s}  ->  Test note to check '
+        f'if label is added with {ETH_ADDRESS1} [ETH_ADDRESS1 IN ZKSYNC] address'
+    )
 
 
 @pytest.mark.parametrize('initialize_accounting_rules', [True])

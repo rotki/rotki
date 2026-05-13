@@ -1,22 +1,28 @@
+import json
 import logging
+import re
 from collections.abc import Sequence
 from dataclasses import dataclass
 from json.decoder import JSONDecodeError
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Final, Literal
 
 import gevent
 import requests
 from gevent.lock import Semaphore
 
-from rotkehlchen.chain.ethereum.modules.eth2.constants import BEACONCHAIN_MAX_EPOCH
+from rotkehlchen.chain.ethereum.modules.eth2.constants import (
+    BEACONCHAIN_MAX_EPOCH,
+    DEFAULT_BEACONCHAIN_API_VALIDATOR_CHUNK_SIZE,
+)
 from rotkehlchen.chain.ethereum.modules.eth2.structures import ValidatorID
 from rotkehlchen.chain.ethereum.modules.eth2.utils import calculate_query_chunks
 from rotkehlchen.constants.timing import DAY_IN_SECONDS
-from rotkehlchen.db.cache import DBCacheDynamic
+from rotkehlchen.db.cache import DBCacheDynamic, DBCacheStatic
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.misc import APIKeyNotAvailable, RemoteError
 from rotkehlchen.externalapis.interface import (
+    ExternalServiceWithApiKey,
     ExternalServiceWithRecommendedApiKey,
 )
 from rotkehlchen.history.events.structures.eth2 import EthBlockEvent
@@ -52,12 +58,17 @@ from .constants import BEACONCHAIN_READ_TIMEOUT, BEACONCHAIN_ROOT_URL, MAX_WAIT_
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
+BeaconChainEndpoint = Literal['block', 'block/rewards', 'validators', 'validators/proposal-slots']
+BeaconChainValidatorEndpoint = Literal['validators', 'validators/proposal-slots']
+BEACONCHAIN_VALIDATOR_LIMIT_RE: Final = re.compile(r'validator identifiers exceeds allowed limit')
+BEACONCHAIN_FREE_VALIDATOR_CHUNK_SIZE: Final = 20
+BEACONCHAIN_VALIDATOR_LIMIT_CACHE_TTL: Final = 30 * DAY_IN_SECONDS
 
 
 @dataclass(frozen=True)
 class BeaconChainQueryResponse:
     data: list[dict[str, Any]] | dict[str, Any]
-    next_cursor: str
+    next_cursor: str | None
 
 
 class BeaconChain(ExternalServiceWithRecommendedApiKey):
@@ -71,10 +82,11 @@ class BeaconChain(ExternalServiceWithRecommendedApiKey):
         self.url = f'{BEACONCHAIN_ROOT_URL}/api/v2/ethereum/'
         self.produced_blocks_lock = Semaphore()
         self.ratelimited_until = Timestamp(0)
+        self.validator_query_chunk_size: int = self._get_cached_validator_query_limit()
 
     def _query_with_paging(
             self,
-            endpoint: str,
+            endpoint: BeaconChainEndpoint,
             data: dict[str, Any] | None = None,
     ) -> BeaconChainQueryResponse:
         """
@@ -171,6 +183,12 @@ class BeaconChain(ExternalServiceWithRecommendedApiKey):
             break
 
         if response.status_code != 200:
+            if response.status_code == 403:
+                log.debug(
+                    f'Beaconcha.in API returned HTTP 403 for {endpoint=}. '
+                    f'This may indicate a validator query limit error. '
+                    f'Response text: {response.text}',
+                )
             raise RemoteError(
                 f'Beaconchain API request {response.url} failed '
                 f'with HTTP status code {response.status_code} and text '
@@ -190,35 +208,90 @@ class BeaconChain(ExternalServiceWithRecommendedApiKey):
         paging = json_ret.get('paging', {})
         return BeaconChainQueryResponse(
             data=json_ret['data'],
-            next_cursor=paging.get('next_cursor', '') if isinstance(paging, dict) else '',
+            next_cursor=paging.get('next_cursor') or None if isinstance(paging, dict) else None,
         )
 
     def is_rate_limited(self) -> bool:
         return self.ratelimited_until > ts_now()
 
-    def _query(
-            self,
-            endpoint: str,
-            data: dict[str, Any] | None = None,
-    ) -> list[dict[str, Any]] | dict[str, Any]:
-        """
-        May raise:
-        - RemoteError due to problems querying beaconcha.in API
-        """
-        return self._query_with_paging(endpoint=endpoint, data=data).data
+    def _get_cached_validator_query_limit(self) -> int:
+        """Read cached beaconcha.in validator query limit for the current API key."""
+        api_key = ExternalServiceWithApiKey._get_api_key(self)
+        if api_key is None:
+            return DEFAULT_BEACONCHAIN_API_VALIDATOR_CHUNK_SIZE
 
-    def _query_chunked_endpoint(
+        with self.db.conn.read_ctx() as cursor:
+            cache = self.db.get_static_cache(
+                cursor=cursor,
+                name=DBCacheStatic.BEACONCHAIN_VALIDATOR_QUERY_LIMIT,
+            )
+        if not isinstance(cache, str):
+            return DEFAULT_BEACONCHAIN_API_VALIDATOR_CHUNK_SIZE
+
+        try:
+            data = jsonloads_dict(cache)
+            limit = int(data['limit'])
+            timestamp = Timestamp(int(data['timestamp']))
+        except (KeyError, TypeError, ValueError, JSONDecodeError) as e:
+            log.warning(f'Ignoring invalid beaconcha.in validator limit cache: {cache}. {e!s}')
+            return DEFAULT_BEACONCHAIN_API_VALIDATOR_CHUNK_SIZE
+
+        if (
+                data.get('api_key') != api_key or
+                ts_now() - timestamp > BEACONCHAIN_VALIDATOR_LIMIT_CACHE_TTL or
+                limit <= 0
+        ):
+            return DEFAULT_BEACONCHAIN_API_VALIDATOR_CHUNK_SIZE
+
+        return min(limit, DEFAULT_BEACONCHAIN_API_VALIDATOR_CHUNK_SIZE)
+
+    def _maybe_update_validator_query_limit(self, error: RemoteError) -> bool:
+        """Detect and cache validator query limit for the current API key from errors."""
+        if (
+            BEACONCHAIN_VALIDATOR_LIMIT_RE.search(str(error)) is None or
+            self.validator_query_chunk_size <= BEACONCHAIN_FREE_VALIDATOR_CHUNK_SIZE
+        ):
+            return False
+
+        log.debug(
+            f'Detected beaconcha.in validator query limit error. '
+            f'Adjusting chunk size from {self.validator_query_chunk_size} '
+            f'to {BEACONCHAIN_FREE_VALIDATOR_CHUNK_SIZE}. Error: {error!s}',
+        )
+        self.validator_query_chunk_size = BEACONCHAIN_FREE_VALIDATOR_CHUNK_SIZE
+        if (api_key := self._get_api_key()) is not None:
+            with self.db.user_write() as write_cursor:
+                self.db.set_static_cache(
+                    write_cursor=write_cursor,
+                    name=DBCacheStatic.BEACONCHAIN_VALIDATOR_QUERY_LIMIT,
+                    value=json.dumps({
+                        'api_key': api_key,
+                        'limit': BEACONCHAIN_FREE_VALIDATOR_CHUNK_SIZE,
+                        'timestamp': ts_now(),
+                    }),
+                )
+        return True
+
+    def _query_chunked_endpoint_with_size(
             self,
             indices_or_pubkeys: Sequence[int | Eth2PubKey],
-            endpoint: str,
+            endpoint: BeaconChainValidatorEndpoint,
+            chunk_size: int,
     ) -> list[dict[str, Any]]:
-        chunks = calculate_query_chunks(indices_or_pubkeys)
+        """Query a validator endpoint by splitting identifiers using the given chunk size.
+
+        The chunk size is explicit so callers can first try the standard beaconcha.in limit and,
+        after detecting a legacy/free-tier key, retry once with the known free-tier size.
+        """
         data: list[dict[str, Any]] = []
-        for chunk in chunks:
-            result = self._query(
+        for chunk in calculate_query_chunks(
+            indices_or_pubkeys=indices_or_pubkeys,
+            chunk_size=chunk_size,
+        ):
+            result = self._query_with_paging(
                 endpoint=endpoint,
                 data={'validator': {'validator_identifiers': list(chunk)}},
-            )
+            ).data
             if isinstance(result, list):
                 data.extend(result)
             else:
@@ -226,32 +299,102 @@ class BeaconChain(ExternalServiceWithRecommendedApiKey):
 
         return data
 
+    def _query_chunked_endpoint(
+            self,
+            indices_or_pubkeys: Sequence[int | Eth2PubKey],
+            endpoint: BeaconChainValidatorEndpoint,
+    ) -> list[dict[str, Any]]:
+        try:
+            return self._query_chunked_endpoint_with_size(
+                indices_or_pubkeys=indices_or_pubkeys,
+                endpoint=endpoint,
+                chunk_size=self.validator_query_chunk_size,
+            )
+        except RemoteError as e:  # handle possible chunk size errors returned by beaconchain
+            if not self._maybe_update_validator_query_limit(e):
+                raise
+
+        log.debug(
+            f'Retrying beaconcha.in {endpoint} query with adjusted chunk size '
+            f'{BEACONCHAIN_FREE_VALIDATOR_CHUNK_SIZE} for '
+            f'{len(indices_or_pubkeys)} validators',
+        )
+        return self._query_chunked_endpoint_with_size(  # retry once with the adjusted free size
+            indices_or_pubkeys=indices_or_pubkeys,
+            endpoint=endpoint,
+            chunk_size=BEACONCHAIN_FREE_VALIDATOR_CHUNK_SIZE,
+        )
+
+    def _query_cursor_paginated_chunk(
+            self,
+            chunk: Sequence[int],
+            endpoint: BeaconChainValidatorEndpoint,
+            page_size: int,
+    ) -> list[dict[str, Any]]:
+        data: list[dict[str, Any]] = []
+        cursor: str | None = None
+        while True:
+            response = self._query_with_paging(
+                endpoint=endpoint,
+                data={
+                    'validator': {'validator_identifiers': list(chunk)},
+                    'cursor': cursor or '',
+                    'page_size': page_size,
+                },
+            )
+            result = response.data
+            data.extend(result)  # type: ignore[arg-type]  # is a list here
+            if not isinstance(result, list) or (cursor := response.next_cursor) in (None, ''):
+                break
+
+        return data
+
+    def _query_chunked_endpoint_with_cursor_pagination_with_size(
+            self,
+            indices: list[int],
+            endpoint: BeaconChainValidatorEndpoint,
+            page_size: int,
+            chunk_size: int,
+    ) -> list[dict[str, Any]]:
+        data: list[dict[str, Any]] = []
+        for chunk in calculate_query_chunks(indices_or_pubkeys=indices, chunk_size=chunk_size):
+            data.extend(self._query_cursor_paginated_chunk(
+                chunk=chunk,  # type: ignore[arg-type]  # chunk has the same type as indices
+                endpoint=endpoint,
+                page_size=page_size,
+            ))
+
+        return data
+
     def _query_chunked_endpoint_with_cursor_pagination(
             self,
             indices: list[int],
-            endpoint: str,
+            endpoint: BeaconChainValidatorEndpoint,
             page_size: int,
     ) -> list[dict[str, Any]]:
         """Queries chunked endpoints with cursor pagination in beaconchain."""
-        chunks = calculate_query_chunks(indices_or_pubkeys=indices, chunk_size=80)
-        data: list[dict[str, Any]] = []
-        for chunk in chunks:
-            cursor = ''
-            while True:
-                response = self._query_with_paging(
-                    endpoint=endpoint,
-                    data={
-                        'validator': {'validator_identifiers': list(chunk)},
-                        'cursor': cursor,
-                        'page_size': page_size,
-                    },
-                )
-                result = response.data
-                data.extend(result)  # type: ignore[arg-type]  # is a list here
-                if not isinstance(result, list) or (cursor := response.next_cursor) == '':
-                    break  # found the end for this chunk
+        try:
+            return self._query_chunked_endpoint_with_cursor_pagination_with_size(
+                indices=indices,
+                endpoint=endpoint,
+                page_size=page_size,
+                chunk_size=self.validator_query_chunk_size,
+            )
+        except RemoteError as e:
+            if not self._maybe_update_validator_query_limit(e):
+                raise
 
-        return data
+        log.debug(
+            f'Retrying beaconcha.in {endpoint} cursor-paginated query with adjusted '
+            f'chunk size {BEACONCHAIN_FREE_VALIDATOR_CHUNK_SIZE} for '
+            f'{len(indices)} validators',
+        )
+        return self._query_chunked_endpoint_with_cursor_pagination_with_size(
+            indices=indices,
+            endpoint=endpoint,
+            page_size=page_size,
+            chunk_size=BEACONCHAIN_FREE_VALIDATOR_CHUNK_SIZE,
+        )
 
     @staticmethod
     def _normalize_validator_entry(entry: dict[str, Any]) -> dict[str, Any]:
@@ -293,10 +436,16 @@ class BeaconChain(ExternalServiceWithRecommendedApiKey):
         }
 
     def _query_block_data(self, block_number: int) -> dict[str, Any]:
-        return self._query(endpoint='block', data={'block': {'number': block_number}})  # type: ignore[return-value]  # endpoint returns an object
+        return self._query_with_paging(
+            endpoint='block',
+            data={'block': {'number': block_number}},
+        ).data  # type: ignore[return-value]  # endpoint returns an object
 
     def _query_block_rewards(self, block_number: int) -> dict[str, Any]:
-        return self._query(endpoint='block/rewards', data={'block': {'number': block_number}})  # type: ignore[return-value]  # endpoint returns an object
+        return self._query_with_paging(
+            endpoint='block/rewards',
+            data={'block': {'number': block_number}},
+        ).data  # type: ignore[return-value]  # endpoint returns an object
 
     def get_validator_data(
             self,
@@ -520,10 +669,10 @@ class BeaconChain(ExternalServiceWithRecommendedApiKey):
         May raise:
         - RemoteError due to problems querying beaconcha.in API
         """
-        result = self._query(
+        result = self._query_with_paging(
             endpoint='validators',
             data={'validator': {'deposit_address': address}},
-        )
+        ).data
         if isinstance(result, list):
             data = result
         else:

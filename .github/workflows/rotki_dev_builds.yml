@@ -65,7 +65,7 @@ jobs:
         id: packaging
         run: |
           echo "::group::packaging dependencies"
-          uv sync --group packaging
+          uv sync --locked --group packaging
           echo "::endgroup::"
           uv run package.py --build full
 
@@ -151,7 +151,7 @@ jobs:
         id: packaging
         run: |
           echo "::group::packaging dependencies"
-          uv sync --group packaging
+          uv sync --locked --group packaging
           echo "::endgroup::"
           uv run ./package.py --build full
         env:
@@ -228,7 +228,7 @@ jobs:
           CSC_KEY_PASSWORD: ${{ secrets.CERTIFICATE_PASSWORD }}
         run: |
           echo ::group::"packaging dependencies"
-          uv sync --group packaging
+          uv sync --locked --group packaging
           echo ::endgroup::
           uv run package.py --build full
         shell: powershell

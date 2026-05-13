@@ -953,6 +953,7 @@ def test_query_chunked_endpoint_with_cursor_pagination(eth2):
         BeaconChainQueryResponse(data=[{'block': '4'}], next_cursor=''),
     ]
 
+    eth2.beacon_inquirer.beaconchain.validator_query_chunk_size = 100
     with patch.object(
         eth2.beacon_inquirer.beaconchain,
         '_query_with_paging',

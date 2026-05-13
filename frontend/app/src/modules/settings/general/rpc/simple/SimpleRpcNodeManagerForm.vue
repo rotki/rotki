@@ -10,6 +10,10 @@ const errors = defineModel<ValidationErrors>('errorMessages', { required: true }
 const stateUpdated = defineModel<boolean>('stateUpdated', { default: false, required: false });
 const modelValue = defineModel<string>({ required: true });
 
+const { disabled = false } = defineProps<{
+  disabled?: boolean;
+}>();
+
 const { t } = useI18n({ useScope: 'global' });
 
 const rules = {
@@ -31,6 +35,11 @@ const v$ = useVuelidate(
 
 useFormStateWatcher(states, stateUpdated);
 
+watch(modelValue, () => {
+  if (Object.keys(get(errors)).length > 0)
+    set(errors, {});
+});
+
 defineExpose({
   validate: async () => await get(v$).$validate(),
 });
@@ -45,6 +54,7 @@ defineExpose({
     :label="t('general_settings.labels.node_rpc_endpoint')"
     type="text"
     clearable
+    :disabled="disabled"
     :error-messages="toMessages(v$.modelValue)"
   />
 </template>
