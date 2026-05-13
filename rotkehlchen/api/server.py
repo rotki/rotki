@@ -1,6 +1,7 @@
 import json
 import logging
 import sys
+import traceback
 from http import HTTPStatus
 from typing import Any
 
@@ -468,12 +469,14 @@ class APIServer:
     @staticmethod
     def unhandled_exception(exception: Exception) -> Response:
         """ Flask.errorhandler when an exception wasn't correctly handled """
+        is_rotki_exception = exception.__class__.__module__.startswith('rotkehlchen.')
         if __debug__:
             logger.exception(exception)  # noqa: LOG004  -- this is an error handler
         log.critical(
             'Unhandled exception when processing endpoint request',
             exc_info=True,  # noqa: LOG014  -- this is an error handler
             exception=str(exception),
+            traceback=''.join(traceback.format_exception(exception)) if not is_rotki_exception else None,  # noqa: E501
         )
         return api_response(wrap_in_fail_result(str(exception)), HTTPStatus.INTERNAL_SERVER_ERROR)
 
