@@ -1,24 +1,18 @@
-import { isEqual } from 'es-toolkit';
 import { Routes } from '@/router/routes';
 
 interface UseAppNavigationReturn {
   navigateToDashboard: () => Promise<void>;
   navigateToUserCreation: () => Promise<void>;
-  navigateToUserLogin: (disableNoUserRedirection?: boolean) => Promise<void>;
+  navigateToUserLogin: () => Promise<void>;
 }
 
 export function useAppNavigation(): UseAppNavigationReturn {
   const router = useRouter();
-  const navigateToUserLogin = async (disableNoUserRedirection: boolean = false): Promise<void> => {
-    const newQuery = disableNoUserRedirection ? { disableNoUserRedirection: '1' } : {};
-    const { path, query } = get(router.currentRoute);
-    if (path === Routes.USER_LOGIN && isEqual(query, newQuery))
+  const navigateToUserLogin = async (): Promise<void> => {
+    if (get(router.currentRoute).path === Routes.USER_LOGIN)
       return;
 
-    await router.push({
-      path: '/user/login',
-      query: newQuery,
-    });
+    await router.push(Routes.USER_LOGIN);
   };
 
   const navigateToUserCreation = async (): Promise<void> => {
