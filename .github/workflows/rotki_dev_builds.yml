@@ -26,7 +26,6 @@ jobs:
     runs-on: ubuntu-22.04
     permissions:
       contents: read
-      actions: write
     steps:
       - name: Checkout
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
@@ -104,7 +103,6 @@ jobs:
     runs-on: ${{ matrix.os.runner }}
     permissions:
       contents: read
-      actions: write
     steps:
       - name: Checkout
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
@@ -186,7 +184,6 @@ jobs:
     environment: windows_sign
     permissions:
       contents: read
-      actions: write
     steps:
       - name: Checkout
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
@@ -248,7 +245,6 @@ jobs:
     environment: docker
     permissions:
       contents: read
-      actions: write
     strategy:
       fail-fast: false
       matrix:

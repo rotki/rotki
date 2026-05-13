@@ -54,7 +54,6 @@ jobs:
       CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
     permissions:
       contents: read
-      actions: write
 
   backend-coverage:
     name: 'Backend coverage upload'
