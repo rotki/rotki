@@ -50,7 +50,7 @@ export class RotkiApp {
     // Check if we're on the login page (accounts exist) or create page (fresh start)
     // On fresh start without any accounts, it might show create account form directly
     const newAccountButton = this.page.locator('[data-cy=new-account]');
-    const introductionContinue = this.page.locator('[data-cy=create-account__introduction__continue]');
+    const introductionContinue = this.page.locator('[data-testid=create-account__introduction__create]');
 
     // Wait for either the login form's "Create account" button or the create wizard's continue button
     const visibleElement = await Promise.race([
@@ -63,7 +63,7 @@ export class RotkiApp {
       await newAccountButton.click();
     }
 
-    await this.page.locator('[data-cy=create-account__introduction__continue]').click();
+    await this.page.locator('[data-testid=create-account__introduction__create]').click();
     await this.page.locator('[data-cy=create-account__premium__button__continue]').click();
     await this.page.locator('[data-cy=create-account__fields__username] input').fill(username);
     await this.page.locator('[data-cy=create-account__fields__password] input').fill(password);

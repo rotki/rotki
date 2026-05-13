@@ -1,4 +1,5 @@
 <script lang="ts" setup>
+import type { CreateAccountMode } from '@/modules/auth/create-account/types';
 import type { LoginCredentials } from '@/modules/auth/login';
 import CreateAccountCredentialsForm
   from '@/modules/auth/create-account/credentials/CreateAccountCredentialsForm.vue';
@@ -7,8 +8,8 @@ const form = defineModel<LoginCredentials>('form', { required: true });
 const passwordConfirm = defineModel<string>('passwordConfirm', { required: true });
 const userPrompted = defineModel<boolean>('userPrompted', { required: true });
 
-const { loading, syncDatabase = false } = defineProps<{
-  syncDatabase?: boolean;
+const { loading, mode = 'create' } = defineProps<{
+  mode?: CreateAccountMode;
   loading: boolean;
 }>();
 
@@ -20,11 +21,25 @@ const emit = defineEmits<{
 const valid = ref<boolean>(false);
 
 const { t } = useI18n({ useScope: 'global' });
+
+const isRestoreMode = computed<boolean>(() => mode === 'restore');
 </script>
 
 <template>
   <div class="space-y-6">
     <i18n-t
+      v-if="isRestoreMode"
+      scope="global"
+      keypath="create_account.credentials.restore_description"
+      class="text-center text-rui-text-secondary whitespace-break-spaces"
+      tag="div"
+    >
+      <template #password>
+        <strong>{{ t('create_account.credentials.restore_highlight') }}</strong>
+      </template>
+    </i18n-t>
+    <i18n-t
+      v-else
       scope="global"
       keypath="create_account.credentials.description"
       class="text-center text-rui-text-secondary whitespace-break-spaces"
@@ -39,13 +54,11 @@ const { t } = useI18n({ useScope: 'global' });
       v-model:form="form"
       v-model:password-confirm="passwordConfirm"
       v-model:user-prompted="userPrompted"
-      class="mt-8"
       :loading="loading"
     />
     <div>
       <RuiAlert
-        v-if="syncDatabase"
-        class="create-account__password-sync-requirement"
+        v-if="isRestoreMode"
         type="warning"
       >
         {{ t('create_account.credentials.password_sync_requirement') }}
