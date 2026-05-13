@@ -17,12 +17,6 @@ const { t } = useI18n({ useScope: 'global' });
 
 const apiKey = useRefPropVModel(form, 'apiKey');
 const apiSecret = useRefPropVModel(form, 'apiSecret');
-const syncDatabase = useRefPropVModel(form, 'syncDatabase');
-
-watch(() => enabled, (enabled) => {
-  if (!enabled)
-    set(syncDatabase, false);
-});
 
 const rules = {
   apiKey: {
@@ -65,13 +59,5 @@ watchImmediate(v$, ({ $invalid }) => {
         :error-messages="toMessages(v$.apiSecret)"
       />
     </div>
-    <RuiCheckbox
-      v-model="syncDatabase"
-      :disabled="loading"
-      color="primary"
-      hide-details
-    >
-      {{ t('premium_credentials.restore_synced_database') }}
-    </RuiCheckbox>
   </div>
 </template>

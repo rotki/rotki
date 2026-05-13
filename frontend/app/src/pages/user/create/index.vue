@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import type { CreateAccountMode } from '@/modules/auth/create-account/types';
 import AccountManagementAside from '@/modules/auth/AccountManagementAside.vue';
 import AccountManagementFooterText from '@/modules/auth/AccountManagementFooterText.vue';
 import AdaptiveFooterButton from '@/modules/auth/AdaptiveFooterButton.vue';
@@ -23,23 +24,34 @@ const { createNewAccount, error, loading } = useAccountManagement();
 const { t } = useI18n({ useScope: 'global' });
 
 const step = ref<number>(1);
-const steps = [
-  {
-    description: t('create_account.steps.step_1.description'),
-    title: t('create_account.steps.step_1.title'),
-  },
-  {
-    description: t('create_account.steps.step_2.description'),
-    title: t('create_account.steps.step_2.title'),
-  },
-  {
-    description: t('create_account.steps.step_3.description'),
-    title: t('create_account.steps.step_3.title'),
-  },
-  {
-    title: t('create_account.steps.step_4.title'),
-  },
-];
+const mode = ref<CreateAccountMode>();
+
+const steps = computed<{ title: string; description?: string }[]>(() => {
+  const restore = get(mode) === 'restore';
+  return [
+    {
+      description: t('create_account.steps.step_1.description'),
+      title: t('create_account.steps.step_1.title'),
+    },
+    {
+      description: restore
+        ? t('create_account.steps.step_2.restore_description')
+        : t('create_account.steps.step_2.description'),
+      title: restore
+        ? t('create_account.steps.step_2.restore_title')
+        : t('create_account.steps.step_2.title'),
+    },
+    {
+      description: t('create_account.steps.step_3.description'),
+      title: restore
+        ? t('create_account.steps.step_3.restore_title')
+        : t('create_account.steps.step_3.title'),
+    },
+    {
+      title: t('create_account.steps.step_4.title'),
+    },
+  ];
+});
 </script>
 
 <template>
@@ -55,6 +67,7 @@ const steps = [
             <CreateAccountWizard
               v-else
               v-model:step="step"
+              v-model:mode="mode"
               :loading="loading"
               :error="error"
               @clear-error="error = ''"

@@ -1,4 +1,5 @@
 <script lang="ts" setup>
+import type { CreateAccountMode } from '@/modules/auth/create-account/types';
 import type { PremiumSetup } from '@/modules/auth/login';
 import CreateAccountPremiumForm
   from '@/modules/auth/create-account/premium/CreateAccountPremiumForm.vue';
@@ -7,8 +8,9 @@ import ExternalLink from '@/modules/shell/components/ExternalLink.vue';
 const form = defineModel<PremiumSetup>('form', { required: true });
 const premiumEnabled = defineModel<boolean>('premiumEnabled', { required: true });
 
-defineProps<{
+const { mode } = defineProps<{
   loading: boolean;
+  mode: CreateAccountMode;
 }>();
 
 const emit = defineEmits<{
@@ -20,6 +22,8 @@ const { t } = useI18n({ useScope: 'global' });
 
 const valid = ref<boolean>(false);
 
+const isRestoreMode = computed<boolean>(() => mode === 'restore');
+
 const premiumSelectionButtons = computed(() => [
   { text: t('common.actions.no'), value: false },
   { text: t('create_account.premium.button_premium_approve'), value: true },
@@ -29,6 +33,21 @@ const premiumSelectionButtons = computed(() => [
 <template>
   <div class="space-y-6">
     <i18n-t
+      v-if="isRestoreMode"
+      scope="global"
+      tag="div"
+      keypath="create_account.premium.restore_question"
+      class="text-center text-rui-text-secondary whitespace-break-spaces"
+    >
+      <template #premiumLink>
+        <ExternalLink
+          :text="t('common.here')"
+          premium
+        />.
+      </template>
+    </i18n-t>
+    <i18n-t
+      v-else
       scope="global"
       tag="div"
       keypath="create_account.premium.premium_question"
@@ -41,7 +60,10 @@ const premiumSelectionButtons = computed(() => [
         />.
       </template>
     </i18n-t>
-    <div class="mt-8 flex justify-center gap-5">
+    <div
+      v-if="!isRestoreMode"
+      class="flex justify-center gap-5"
+    >
       <RuiButton
         v-for="(button, i) in premiumSelectionButtons"
         :key="i"
@@ -62,7 +84,6 @@ const premiumSelectionButtons = computed(() => [
     <CreateAccountPremiumForm
       v-model:valid="valid"
       v-model:form="form"
-      class="mt-8"
       :loading="loading"
       :enabled="premiumEnabled"
     />

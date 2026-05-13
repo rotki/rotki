@@ -2012,6 +2012,10 @@
     "incomplete": "Incomplete"
   },
   "create_account": {
+    "actions": {
+      "create_account": "Create account",
+      "restore_account": "Restore account"
+    },
     "credentials": {
       "description": "Remember that the user you create here is {highlight}, independent of the account created on the web.",
       "highlight": "only enabled in the application",
@@ -2019,7 +2023,9 @@
       "label_password_backup_reminder": "rotki saves all user data locally. I understand that if I lose my password, I lose access to my data. I have created a backup of the password.",
       "label_password_repeat": "Repeat Password",
       "label_username": "Profile Name",
-      "password_sync_requirement": "Ensure that the account uses the same password as the database originally backed up. You can't access the database if you input a different password.",
+      "password_sync_requirement": "Use the same password as the database you originally backed up. You can't access the database if you input a different password.",
+      "restore_description": "Set the profile name and the {password} of the database you backed up. The profile will be created locally and the synced database will be downloaded into it.",
+      "restore_highlight": "password",
       "validation": {
         "check_prompt": "Confirm that you have read and created a backup",
         "non_empty_password": "Please provide a password",
@@ -2037,24 +2043,36 @@
       "log_in": "Unlock your account"
     },
     "introduction": {
+      "create": {
+        "description": "Start fresh with a new local rotki profile.",
+        "title": "Create new account"
+      },
       "description": "rotki is a local application that respects your privacy.\n\nrotki accounts are encrypted using your password and {highlight}.\n\nThe account you create here is only useful for the app, on the web we use a different database.",
-      "highlight": "saved in your local filesystem"
+      "highlight": "saved in your local filesystem",
+      "restore": {
+        "description": "Already a rotki premium user? Restore the database you previously synced to the cloud.",
+        "title": "Restore from cloud sync"
+      }
     },
     "premium": {
       "button_premium_approve": "Yes, enable premium",
-      "premium_question": "Are you already a rotki premium user and want to enable premium features?\nThis is needed if you want to sync your rotki database from another device at account creation. You can buy premium {premiumLink}"
+      "premium_question": "Are you already a rotki premium user and want to enable premium features?\nYou can buy premium {premiumLink}",
+      "restore_question": "Enter your rotki premium API credentials to download the database you synced from another device. You can find your credentials in your account on {premiumLink}"
     },
     "steps": {
       "step_1": {
-        "description": "First step",
+        "description": "Choose how to get started",
         "title": "Introduction"
       },
       "step_2": {
         "description": "Do you have a premium account on our website?",
+        "restore_description": "Connect your premium account",
+        "restore_title": "Restore from cloud",
         "title": "Enable Premium"
       },
       "step_3": {
         "description": "Set your credentials",
+        "restore_title": "Restore account",
         "title": "Create account"
       },
       "step_4": {
@@ -2062,6 +2080,7 @@
       }
     },
     "title": "Create Account",
+    "title_restore": "Restore Account",
     "usage_analytics": {
       "description": "rotki is a local application and anonymous usage analytics is the only way for us to have an idea of how many people use our software, where they are from etc. These data are really important to us, are completely anonymous and help us create a better product for you.",
       "label_confirm": "Submit anonymous usage analytics"
@@ -4798,7 +4817,6 @@
   "premium_credentials": {
     "label_api_key": "rotki API Key",
     "label_api_secret": "rotki API Secret",
-    "restore_synced_database": "Restore synced database",
     "validation": {
       "non_empty_key": "The API key cannot be empty",
       "non_empty_secret": "The API secret cannot be empty"

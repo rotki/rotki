@@ -1,4 +1,5 @@
 <script lang="ts" setup>
+import type { CreateAccountMode } from '@/modules/auth/create-account/types';
 import type { CreateAccountPayload, LoginCredentials, PremiumSetup } from '@/modules/auth/login';
 import { externalLinks } from '@shared/external-links';
 import CreateAccountSubmitAnalytics
@@ -13,6 +14,7 @@ import ExternalLink from '@/modules/shell/components/ExternalLink.vue';
 import RotkiLogo from '@/modules/shell/components/RotkiLogo.vue';
 
 const step = defineModel<number>('step', { required: true });
+const mode = defineModel<CreateAccountMode | undefined>('mode', { default: undefined });
 
 const {
   error = '',
@@ -31,8 +33,18 @@ const emit = defineEmits<{
 const cancel = (): void => emit('cancel');
 const errorClear = (): void => emit('clear-error');
 
+function resetPremiumState(): void {
+  set(premiumEnabled, false);
+  set(premiumSetupForm, { apiKey: '', apiSecret: '', syncDatabase: false });
+}
+
 function prevStep(): void {
-  set(step, get(step) - 1);
+  const next = get(step) - 1;
+  set(step, next);
+  if (next === 1) {
+    set(mode, undefined);
+    resetPremiumState();
+  }
   if (error)
     errorClear();
 }
@@ -78,6 +90,25 @@ const passwordConfirm = ref<string>('');
 const userPrompted = ref<boolean>(false);
 const submitUsageAnalytics = ref<boolean>(true);
 
+const isRestoreMode = computed<boolean>(() => get(mode) === 'restore');
+
+const wizardTitle = computed<string>(() =>
+  get(isRestoreMode) ? t('create_account.title_restore') : t('create_account.title'),
+);
+
+const submitLabel = computed<string>(() =>
+  get(isRestoreMode) ? t('create_account.actions.restore_account') : t('create_account.actions.create_account'),
+);
+
+function selectMode(selected: CreateAccountMode): void {
+  set(mode, selected);
+  if (selected === 'restore') {
+    set(premiumEnabled, true);
+    set(premiumSetupForm, { ...get(premiumSetupForm), syncDatabase: true });
+  }
+  nextStep();
+}
+
 function confirm() {
   const payload: CreateAccountPayload = {
     credentials: get(credentialsForm),
@@ -108,7 +139,7 @@ function confirm() {
         <div class="flex flex-col items-center">
           <RotkiLogo unique-key="1b" />
           <h4 class="text-h4 mb-3 mt-8">
-            {{ t('create_account.title') }}
+            {{ wizardTitle }}
           </h4>
           <div class="w-full">
             <RuiTabItems
@@ -116,13 +147,14 @@ function confirm() {
               :model-value="step - 1"
             >
               <RuiTabItem>
-                <CreateAccountIntroduction @next="nextStep()" />
+                <CreateAccountIntroduction @select="selectMode($event)" />
               </RuiTabItem>
               <RuiTabItem>
                 <CreateAccountPremium
                   v-model:premium-enabled="premiumEnabled"
                   v-model:form="premiumSetupForm"
                   :loading="loading"
+                  :mode="mode ?? 'create'"
                   @back="prevStep()"
                   @next="nextStep()"
                 />
@@ -133,7 +165,7 @@ function confirm() {
                   v-model:password-confirm="passwordConfirm"
                   v-model:user-prompted="userPrompted"
                   :loading="loading"
-                  :sync-database="premiumSetupForm.syncDatabase"
+                  :mode="mode ?? 'create'"
                   @back="prevStep()"
                   @next="nextStep()"
                 />
@@ -184,7 +216,7 @@ function confirm() {
                       color="primary"
                       @click="confirm()"
                     >
-                      {{ t('common.actions.continue') }}
+                      {{ submitLabel }}
                     </RuiButton>
                   </div>
                 </div>
@@ -193,7 +225,7 @@ function confirm() {
           </div>
           <div
             v-if="hasProfiles"
-            class="items-center flex justify-stretch py-6 text-rui-text-secondary"
+            class="flex items-center py-6 text-rui-text-secondary"
           >
             <span>{{ t('create_account.have_account.description') }}</span>
             <RuiButton
