@@ -940,28 +940,23 @@ def test_query_eth2_balances(
 def test_query_online_block_productions_missing_api_key(
         rotkehlchen_api_server: 'APIServer',
 ) -> None:
-    """Test missing beaconcha.in API key returns the specific failed dependency code."""
+    """Test missing beaconcha.in API key uses the produced blocks indexer fallback."""
     eth2 = rotkehlchen_api_server.rest_api.rotkehlchen.chains_aggregator.get_module('eth2')
     assert eth2 is not None
-    message = 'Querying beaconcha.in failed due to missing API key'
     with (
+        patch.object(eth2.beacon_inquirer.beaconchain, 'has_api_key', return_value=False),
         patch.object(eth2.beacon_inquirer.beaconchain, 'get_validators_to_query_for_blocks', return_value=[1]),  # noqa: E501
-        patch.object(
-            eth2,
-            'get_and_store_produced_blocks',
-            side_effect=APIKeyNotAvailable(message),
-        ),
+        patch.object(eth2, '_get_and_store_produced_blocks_from_indexers') as indexer_fallback,
+        patch.object(eth2, 'combine_block_with_tx_events') as combine_block_with_tx_events,
     ):
         response = requests.post(
             url=api_url_for(rotkehlchen_api_server, 'eventsonlinequeryresource'),
             json={'query_type': 'block_productions'},
         )
 
-    assert_error_response(
-        response=response,
-        contained_in_msg=message,
-        status_code=HTTPStatus.FAILED_DEPENDENCY,
-    )
+    assert_simple_ok_response(response)
+    indexer_fallback.assert_called_once_with(indices=[1], update_cache=True)
+    combine_block_with_tx_events.assert_called_once_with()
 
 
 @pytest.mark.parametrize('ethereum_modules', [['eth2']])
@@ -1602,6 +1597,54 @@ def test_produced_block_fallback_from_eth_receive(rotkehlchen_api_server: 'APISe
     assert mev_reward_event.amount == FVal('0.012594557706319702')
     assert mev_reward_event.location_label == fee_recipient
     assert mev_reward_event.is_exit_or_blocknumber == 21847848
+
+
+@pytest.mark.vcr
+@pytest.mark.parametrize('include_beaconchain_key', [False])
+@pytest.mark.parametrize('ethereum_modules', [['eth2']])
+@pytest.mark.parametrize('ethereum_manager_connect_at_start', [(PRUNED_AND_NOT_ARCHIVED_NODE,)])
+def test_produced_block_fallback_from_eth_receive_redecode_idempotent(
+        rotkehlchen_api_server: 'APIServer',
+) -> None:
+    """Test re-decoding plain ETH receive txs does not inflate existing MEV rewards."""
+    db = rotkehlchen_api_server.rest_api.rotkehlchen.data.db
+    dbevents = DBHistoryEvents(db)
+    fee_recipient = string_to_evm_address('0x6d2e03b7EfFEae98BD302A9F836D0d6Ab0002766')
+    assert_proper_sync_response_with_result(requests.put(api_url_for(
+        rotkehlchen_api_server,
+        'blockchainsaccountsresource',
+        blockchain='ETH',
+    ), json={'accounts': [{'address': fee_recipient}]}))
+
+    with db.conn.write_ctx() as write_cursor:
+        write_cursor.execute(
+            'INSERT INTO eth2_validators(validator_index, public_key, validator_type, '
+            'ownership_proportion, withdrawal_address, activation_timestamp) '
+            'VALUES(?, ?, ?, ?, ?, ?)',
+            (397160, Eth2PubKey('0xaabb'), 1, '1', make_evm_address(), 0),
+        )
+
+    def get_mev_reward_amount() -> FVal:
+        with db.conn.read_ctx() as cursor:
+            block_events = dbevents.get_history_events_internal(
+                cursor=cursor,
+                filter_query=HistoryEventFilterQuery.make(
+                    group_identifiers=[EthBlockEvent.form_group_identifier(21847848)],
+                ),
+            )
+        assert len(block_events) == 2
+        mev_reward_event = next(event for event in block_events if event.event_subtype == HistoryEventSubType.MEV_REWARD)  # noqa: E501
+        assert isinstance(mev_reward_event, EthBlockEvent)
+        return mev_reward_event.amount
+
+    for _ in range(2):
+        events, _ = get_decoded_events_of_transaction(
+            evm_inquirer=rotkehlchen_api_server.rest_api.rotkehlchen.chains_aggregator.ethereum.node_inquirer,
+            tx_hash=deserialize_evm_tx_hash('0x7d0cea641c95e608ee49bed2729af661d7c80383019de435cfe3aecc0b30a013'),
+            relevant_address=fee_recipient,
+        )
+        assert len(events) == 1
+        assert get_mev_reward_amount() == FVal('0.012594557706319702')
 
 
 def test_refetch_staking_events_validation(rotkehlchen_api_server: 'APIServer') -> None:

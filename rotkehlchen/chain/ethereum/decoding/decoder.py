@@ -1,3 +1,4 @@
+import json
 import logging
 from typing import TYPE_CHECKING
 
@@ -63,6 +64,7 @@ class EthereumTransactionDecoder(EVMTransactionDecoderWithDSProxy):
             premium: 'Premium | None' = None,
     ):
         self.beacon_node: BeaconNode | None = None
+        self.beacon_rpc_endpoint: str | None = None
         super().__init__(
             database=database,
             evm_inquirer=ethereum_inquirer,
@@ -103,15 +105,15 @@ class EthereumTransactionDecoder(EVMTransactionDecoderWithDSProxy):
         )
 
     def _get_beacon_node(self) -> BeaconNode | None:
-        if self.beacon_node is not None:
-            return self.beacon_node
-
         rpc_endpoint = CachedSettings().get_entry('beacon_rpc_endpoint')
         if not isinstance(rpc_endpoint, str) or rpc_endpoint == '':
             return None
+        if self.beacon_node is not None and self.beacon_rpc_endpoint == rpc_endpoint:
+            return self.beacon_node
 
         try:
             self.beacon_node = BeaconNode(rpc_endpoint=rpc_endpoint)
+            self.beacon_rpc_endpoint = rpc_endpoint
         except RemoteError as e:
             log.error(f'Failed to connect to beacon node for produced block fallback due to {e!s}')
             return None
@@ -140,24 +142,52 @@ class EthereumTransactionDecoder(EVMTransactionDecoderWithDSProxy):
 
         with self.database.conn.read_ctx() as cursor:
             cursor.execute(
-                'SELECT H.identifier, H.amount FROM eth_staking_events_info S JOIN '
-                'history_events H ON H.identifier = S.identifier WHERE '
-                'S.is_exit_or_blocknumber = ? AND H.subtype = ?',
+                'SELECT H.identifier, H.amount, H.location_label, H.extra_data, S.validator_index FROM '  # noqa: E501
+                'eth_staking_events_info S JOIN history_events H ON H.identifier = S.identifier '
+                'WHERE S.is_exit_or_blocknumber = ? AND H.subtype = ?',
                 (transaction.block_number, HistoryEventSubType.MEV_REWARD.serialize()),
             )
-            if (existing_mev_event := cursor.fetchone()) is not None:
-                with self.database.user_write() as write_cursor:
-                    write_cursor.execute(
-                        'UPDATE history_events SET amount = ? WHERE identifier = ?',
-                        (
-                            str(FVal(existing_mev_event[1]) + sum(
-                                (event.amount for event in decoded_events),
-                                start=ZERO,
-                            )),
-                            existing_mev_event[0],
-                        ),
-                    )
+            existing_mev_event = cursor.fetchone()
+            existing_mev_extra_data = None if existing_mev_event is None or existing_mev_event[3] is None else json.loads(existing_mev_event[3])  # noqa: E501
+            if (
+                    existing_mev_extra_data is not None and
+                    transaction.tx_hash.hex() in existing_mev_extra_data.get('tx_hashes', [])
+            ):
                 return
+
+        recipients = {event.location_label for event in decoded_events}
+        if len(recipients) != 1:
+            log.error(f'Failed to determine produced block fallback recipient for {transaction.tx_hash!s}')  # noqa: E501
+            return
+
+        if (fee_recipient_raw := next(iter(recipients))) is None:
+            return
+
+        try:
+            fee_recipient = deserialize_evm_address(fee_recipient_raw)
+        except DeserializationError as e:
+            log.error(f'Failed to deserialize produced block fallback recipient for {transaction.tx_hash!s} due to {e!s}')  # noqa: E501
+            return
+
+        if existing_mev_event is not None:
+            if existing_mev_event[2] != fee_recipient:
+                log.error(f'Failed to update produced block fallback MEV reward for {transaction.tx_hash!s} due to mismatching recipient')  # noqa: E501
+                return
+
+            mev_reward = sum((event.amount for event in decoded_events), start=FVal(existing_mev_event[1]))  # noqa: E501
+            tx_hashes = [] if existing_mev_extra_data is None else existing_mev_extra_data.get('tx_hashes', [])  # noqa: E501
+            tx_hashes.append(transaction.tx_hash.hex())
+            with self.database.user_write() as write_cursor:
+                write_cursor.execute(
+                    'UPDATE history_events SET amount=?, notes=?, extra_data=? WHERE identifier=?',
+                    (
+                        str(mev_reward),
+                        f'Validator {existing_mev_event[4]} produced block {transaction.block_number}. Relayer reported {mev_reward} ETH as the MEV reward going to {fee_recipient}',  # noqa: E501
+                        json.dumps({'tx_hashes': tx_hashes}),
+                        existing_mev_event[0],
+                    ),
+                )
+            return
 
         with self.database.conn.read_ctx() as cursor:
             cursor.execute(
@@ -176,8 +206,9 @@ class EthereumTransactionDecoder(EVMTransactionDecoderWithDSProxy):
             proposer_index = beacon_node.query_block_proposer(
                 slot=timestamp_to_slot(transaction.timestamp),
             )
-        except (ValueError, RemoteError) as e:
-            log.error(f'Failed to query produced block fallback for {transaction.tx_hash!s} due to {e!s}')  # noqa: E501
+        except (KeyError, ValueError, RemoteError) as e:
+            msg = f'missing key {e!s}' if isinstance(e, KeyError) else str(e)
+            log.error(f'Failed to query produced block fallback for {transaction.tx_hash!s} due to {msg}')  # noqa: E501
             return
 
         with self.database.conn.read_ctx() as cursor:
@@ -189,20 +220,6 @@ class EthereumTransactionDecoder(EVMTransactionDecoderWithDSProxy):
             )
             if cursor.fetchone()[0] == 0:
                 return
-
-        recipients = {event.location_label for event in decoded_events}
-        if len(recipients) != 1:
-            log.error(f'Failed to determine produced block fallback recipient for {transaction.tx_hash!s}')  # noqa: E501
-            return
-
-        if (fee_recipient_raw := next(iter(recipients))) is None:
-            return
-
-        try:
-            fee_recipient = deserialize_evm_address(fee_recipient_raw)
-        except DeserializationError as e:
-            log.error(f'Failed to deserialize produced block fallback recipient for {transaction.tx_hash!s} due to {e!s}')  # noqa: E501
-            return
 
         with self.database.conn.read_ctx() as cursor:
             ethereum_tracked_accounts = self.database.get_blockchain_accounts(cursor).get(self.evm_inquirer.blockchain)  # noqa: E501
@@ -224,10 +241,10 @@ class EthereumTransactionDecoder(EVMTransactionDecoderWithDSProxy):
         with self.database.user_write() as write_cursor:
             if has_block_production_event is False:
                 try:
-                    block_reward_data = self.evm_inquirer.etherscan.get_block_reward(
+                    block_reward_data = self.evm_inquirer._try_indexers(lambda indexer: indexer.get_block_reward(  # noqa: E501
                         chain_id=self.evm_inquirer.chain_id,
                         block_number=transaction.block_number,
-                    )
+                    ))
                     block_fee_recipient = deserialize_evm_address(block_reward_data['blockMiner'])
                     block_reward = from_wei(deserialize_int_from_str(
                         symbol=block_reward_data['blockReward'],
@@ -235,6 +252,7 @@ class EthereumTransactionDecoder(EVMTransactionDecoderWithDSProxy):
                     ))
                 except (KeyError, DeserializationError, RemoteError) as e:
                     log.error(f'Failed to query produced block fallback reward for {transaction.tx_hash!s} due to {e!s}')  # noqa: E501
+                    return
                 else:
                     if block_fee_recipient == fee_recipient:
                         mev_reward += block_reward
@@ -256,6 +274,7 @@ class EthereumTransactionDecoder(EVMTransactionDecoderWithDSProxy):
                 fee_recipient_tracked=fee_recipient in ethereum_tracked_accounts,
                 block_number=transaction.block_number,
                 is_mev_reward=True,
+                extra_data={'tx_hashes': [transaction.tx_hash.hex()]},
             ))
 
     def _decode_transaction(

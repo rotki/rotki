@@ -5,8 +5,13 @@ from unittest.mock import patch
 import pytest
 
 from rotkehlchen.chain.ethereum.modules.eth2.structures import ValidatorDetails, ValidatorType
-from rotkehlchen.chain.ethereum.modules.eth2.utils import epoch_to_timestamp, form_withdrawal_notes
+from rotkehlchen.chain.ethereum.modules.eth2.utils import (
+    epoch_to_timestamp,
+    form_withdrawal_notes,
+    timestamp_to_slot,
+)
 from rotkehlchen.chain.evm.types import string_to_evm_address
+from rotkehlchen.chain.structures import TimestampOrBlockRange
 from rotkehlchen.constants import ONE
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.db.eth2 import DBEth2
@@ -27,6 +32,40 @@ from rotkehlchen.types import (
     deserialize_evm_tx_hash,
 )
 from rotkehlchen.utils.misc import ts_now
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('network_mocking', [False])
+@pytest.mark.parametrize('beacon_rpc_endpoint', ['https://ethereum-beacon-api.publicnode.com'])
+@pytest.mark.parametrize('vcr_cassette_name', ['test_etherscan_and_blockscout_produced_block_proposer_match'])  # noqa: E501
+def test_etherscan_and_blockscout_produced_block_proposer_match(
+        eth2: 'Eth2',
+        vcr_cassette_name: str,  # pylint: disable=unused-argument
+) -> None:
+    """Test Etherscan and Blockscout agree for a block whose slot proposer is queried."""
+    address = string_to_evm_address('0x6b3A8798E5Fb9fC5603F3aB5eA2e8136694e55d0')
+    block_number = 21771728
+    period = TimestampOrBlockRange('blocks', block_number, block_number)
+    etherscan_blocks = [
+        entry for entry in eth2.ethereum.etherscan.get_validated_blocks(address=address, period=period)  # noqa: E501
+        if int(entry['blockNumber']) == block_number
+    ]
+    blockscout_blocks = [
+        entry for entry in eth2.ethereum.blockscout.get_validated_blocks(address=address, period=period)  # noqa: E501
+        if int(entry['blockNumber']) == block_number
+    ]
+    assert len(etherscan_blocks) == len(blockscout_blocks) == 1
+
+    etherscan_block_number, etherscan_timestamp, _ = eth2._deserialize_validated_block(etherscan_blocks[0])  # noqa: E501
+    assert etherscan_block_number == block_number
+    assert etherscan_timestamp == Timestamp(1738655099)
+    assert blockscout_blocks[0]['timeStamp'] == '2025-02-04 07:44:59.000000Z'
+    assert eth2.beacon_inquirer.node is not None
+    slot = timestamp_to_slot(etherscan_timestamp)
+    assert eth2.beacon_inquirer.node.query_block_proposer(
+        slot=slot,
+    ) == eth2.beacon_inquirer.node.query_block_proposer(slot=slot) == 191912
+
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.decoding.decoder import EthereumTransactionDecoder

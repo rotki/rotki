@@ -710,7 +710,7 @@ class Eth2(EthereumModule):
             try:
                 return indexer.get_validated_blocks(address=address, period=period)
             except (ChainNotSupported, NotImplementedError, RemoteError) as e:
-                log.error(f'Failed to query ethereum validated blocks for {address} through {indexer.name} due to {e}. Will try next indexer.')  # noqa: E501
+                log.warning(f'Failed to query ethereum validated blocks for {address} through {indexer.name} due to {e}. Will try next indexer.')  # noqa: E501
 
         log.error(
             f'Failed to query ethereum validated blocks for {address}. '
@@ -811,6 +811,7 @@ class Eth2(EthereumModule):
             ethereum_tracked_accounts = self.database.get_blockchain_accounts(cursor).eth
 
         dbevents = DBHistoryEvents(self.database)
+        queried_indices: set[int] = set()
         for address, validator_ranges in validators_by_address.items():
             from_ts = min(entry[1] for entry in validator_ranges)
             to_ts = max(entry[2] for entry in validator_ranges)
@@ -821,6 +822,8 @@ class Eth2(EthereumModule):
                 period=period,
             )) is None:
                 continue
+
+            queried_indices.update(validator_index for validator_index, _, _ in validator_ranges)
 
             for entry in blocks:
                 try:
@@ -864,7 +867,7 @@ class Eth2(EthereumModule):
 
         if update_cache:
             with self.database.user_write() as write_cursor:
-                for index in indices:
+                for index in queried_indices:
                     self.database.set_dynamic_cache(
                         write_cursor=write_cursor,
                         name=DBCacheDynamic.LAST_PRODUCED_BLOCKS_QUERY_TS,
