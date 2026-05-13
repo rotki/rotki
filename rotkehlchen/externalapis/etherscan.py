@@ -125,8 +125,14 @@ class Etherscan(ExternalServiceWithRecommendedApiKey, EtherscanLikeApi):
 
         transaction_endpoint_and_none_found = (
                 status == 0 and
-                json_ret['message'] == 'No transactions found' and
-                action in {'txlist', 'txlistinternal', 'tokentx', 'txsBeaconWithdrawal'}
+                json_ret['message'] in {'No transactions found', 'No blocks found'} and
+                action in {
+                    'txlist',
+                    'txlistinternal',
+                    'tokentx',
+                    'txsBeaconWithdrawal',
+                    'getminedblocks',
+                }
         )
         logs_endpoint_and_none_found = (
                 status == 0 and
@@ -138,6 +144,40 @@ class Etherscan(ExternalServiceWithRecommendedApiKey, EtherscanLikeApi):
 
         # else
         raise RemoteError(f'{chain_id} {self.name} returned error response: {json_ret}')
+
+    def get_validated_blocks(
+            self,
+            address: ChecksumEvmAddress,
+            period: TimestampOrBlockRange,
+    ) -> list[dict[str, Any]]:
+        """Query etherscan for ethereum blocks validated by an address.
+
+        This method is Ethereum only.
+
+        May raise RemoteError if the etherscan query fails for some reason.
+        """
+        options = self._process_timestamp_or_blockrange(
+            chain_id=ChainID.ETHEREUM,
+            period=period,
+            options={'sort': 'asc', 'address': address, 'blocktype': 'blocks'},
+        )
+        blocks = []
+        while True:
+            result = self._query(
+                chain_id=ChainID.ETHEREUM,
+                module='account',
+                action='getminedblocks',
+                options=options,
+            )
+            if len(result) == 0:
+                break
+
+            blocks.extend(result)
+            if (new_options := self._maybe_paginate(result=result, options=options)) is None:
+                break
+            options = new_options
+
+        return blocks
 
     def get_withdrawals(
             self,

@@ -122,6 +122,14 @@ class EtherscanLikeApi(ABC):
     ) -> dict[str, str]:
         """Build parameters for API requests. Override in subclasses for different formats."""
 
+    def get_validated_blocks(
+            self,
+            address: ChecksumEvmAddress,  # pylint: disable=unused-argument
+            period: TimestampOrBlockRange,  # pylint: disable=unused-argument
+    ) -> list[dict[str, Any]]:
+        """Query blocks validated by an address if supported by the indexer."""
+        raise NotImplementedError(f'{self.name} does not support validated blocks queries')
+
     @abc.abstractmethod
     def get_l1_fee(
             self,
@@ -198,6 +206,7 @@ class EtherscanLikeApi(ABC):
                 'txlistinternal',
                 'tokentx',
                 'getLogs',
+                'getminedblocks',
                 'txsBeaconWithdrawal',
             ],
             options: dict[str, Any] | None = None,

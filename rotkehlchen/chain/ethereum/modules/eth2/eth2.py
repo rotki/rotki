@@ -16,15 +16,22 @@ from rotkehlchen.db.cache import DBCacheDynamic, DBCacheStatic
 from rotkehlchen.db.eth2 import DBEth2, IncludeExcludeFilterData
 from rotkehlchen.db.filtering import EvmEventFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
+from rotkehlchen.db.utils import get_query_chunks
 from rotkehlchen.errors.api import PremiumPermissionError
-from rotkehlchen.errors.misc import InputError, RemoteError
+from rotkehlchen.errors.misc import ChainNotSupported, InputError, RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.base import HistoryBaseEntryType
+from rotkehlchen.history.events.structures.eth2 import EthBlockEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.premium.premium import Premium, UserLimitType, get_user_limit, has_premium_check
-from rotkehlchen.serialization.deserialize import deserialize_evm_address
+from rotkehlchen.serialization.deserialize import (
+    deserialize_evm_address,
+    deserialize_fval,
+    deserialize_int,
+    deserialize_timestamp,
+)
 from rotkehlchen.types import (
     ChecksumEvmAddress,
     Eth2PubKey,
@@ -34,7 +41,7 @@ from rotkehlchen.types import (
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.data_structures import LRUCacheWithRemove
 from rotkehlchen.utils.interfaces import EthereumModule
-from rotkehlchen.utils.misc import ts_now, ts_sec_to_ms
+from rotkehlchen.utils.misc import from_wei, ts_now, ts_sec_to_ms
 
 from .constants import (
     CPT_ETH2,
@@ -49,7 +56,7 @@ from .structures import (
     ValidatorDetailsWithStatus,
     ValidatorID,
 )
-from .utils import create_profit_filter_queries
+from .utils import create_profit_filter_queries, timestamp_to_slot
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
@@ -690,6 +697,197 @@ class Eth2(EthereumModule):
 
         # Invalidate cache since we added a new validator
         self._set_staked_cache(ZERO, Timestamp(0))
+
+    def _fetch_validated_blocks_from_external_sources(
+            self,
+            address: ChecksumEvmAddress,
+            period: TimestampOrBlockRange,
+    ) -> list[dict[str, Any]] | None:
+        """Query produced blocks from available indexers in the user-defined order."""
+        tried_indexers = []
+        for _, indexer in self.ethereum._get_indexers_in_order():
+            tried_indexers.append(indexer.name)
+            try:
+                return indexer.get_validated_blocks(address=address, period=period)
+            except (ChainNotSupported, NotImplementedError, RemoteError) as e:
+                log.error(f'Failed to query ethereum validated blocks for {address} through {indexer.name} due to {e}. Will try next indexer.')  # noqa: E501
+
+        log.error(
+            f'Failed to query ethereum validated blocks for {address}. '
+            f'No indexer from the configured order could provide them. Tried: {tried_indexers}',
+        )
+        return None
+
+    @staticmethod
+    def _deserialize_validated_block(entry: dict[str, Any]) -> tuple[int, Timestamp, FVal]:
+        if (block_number_str := entry.get(
+            'blockNumber', entry.get('block_number', entry.get('height')),
+        )) is None:
+            raise DeserializationError('Missing block number in validated block entry')
+        if (timestamp_str := entry.get('timeStamp', entry.get('timestamp'))) is None:
+            raise DeserializationError('Missing timestamp in validated block entry')
+
+        block_number = deserialize_int(block_number_str, location='validated blocks query')
+        timestamp = deserialize_timestamp(timestamp_str)
+        reward = from_wei(deserialize_fval(
+            value=entry.get('blockReward', entry.get('block_reward', entry.get('reward', 0))),
+            name='block reward',
+            location='validated blocks query',
+        ))
+        return block_number, timestamp, reward
+
+    def _get_proposer_index_for_validated_block(
+            self,
+            block_number: int,
+            timestamp: Timestamp,
+            active_indices: list[int],
+    ) -> int | None:
+        if self.beacon_inquirer.node is not None:
+            try:
+                proposer_index = self.beacon_inquirer.node.query_block_proposer(
+                    slot=timestamp_to_slot(timestamp),
+                )
+            except (KeyError, ValueError, RemoteError) as e:
+                log.error(f'Failed to query proposer for produced block {block_number} due to {e!s}')  # noqa: E501
+            else:
+                return proposer_index if proposer_index in active_indices else None
+
+        if len(active_indices) == 1:
+            return active_indices[0]
+
+        log.error(f'Could not determine proposer for produced block {block_number} without a beacon node and with multiple active validators')  # noqa: E501
+        return None
+
+    def _get_and_store_produced_blocks_from_indexers(
+            self,
+            indices: list[int],
+            update_cache: bool,
+    ) -> None:
+        """Get produced blocks via etherscan/blockscout when beaconcha.in is unavailable.
+
+        Etherscan and Blockscout expose produced blocks by execution-layer address, while rotki
+        tracks produced-block freshness and PnL by validator index. To bridge this, load the
+        requested validators in DB chunks, group them by withdrawal address, and query each address
+        once for the union of the validators' active/non-cached time ranges. Each returned block is
+        then filtered back to validators active at the block timestamp. If a beacon node is
+        configured, use it to confirm the proposer index for the execution block slot; otherwise
+        only attribute the block when exactly one queried validator was active for that address at
+        that timestamp. New block events are skipped if the block number already exists, and the
+        per-validator produced-block query cache is updated after successful processing.
+        """
+        if len(indices) == 0:
+            return
+
+        now = ts_now()
+        validators_by_address: dict[ChecksumEvmAddress, list[tuple[int, Timestamp, Timestamp]]] = defaultdict(list)  # noqa: E501
+        with self.database.conn.read_ctx() as cursor:
+            for chunk, placeholders in get_query_chunks(indices):
+                validator_rows = cursor.execute(
+                    'SELECT validator_index, withdrawal_address, activation_timestamp, exited_timestamp '  # noqa: E501
+                    f'FROM eth2_validators WHERE validator_index IN ({placeholders}) AND withdrawal_address IS NOT NULL',  # noqa: E501
+                    chunk,
+                ).fetchall()
+                for validator_index, raw_address, activation_ts, exited_ts in validator_rows:
+                    if activation_ts is None:
+                        continue
+
+                    if update_cache is False:
+                        last_query_ts = Timestamp(0)
+                    else:
+                        last_query_ts = self.database.get_dynamic_cache(
+                            cursor=cursor,
+                            name=DBCacheDynamic.LAST_PRODUCED_BLOCKS_QUERY_TS,
+                            index=validator_index,
+                        ) or Timestamp(0)
+                    from_ts = max(Timestamp(activation_ts), last_query_ts)
+                    to_ts = min(Timestamp(exited_ts) if exited_ts is not None else Timestamp(now), Timestamp(now))  # noqa: E501
+                    if from_ts < to_ts:
+                        validators_by_address[deserialize_evm_address(raw_address)].append((
+                            validator_index,
+                            from_ts,
+                            to_ts,
+                        ))
+
+            ethereum_tracked_accounts = self.database.get_blockchain_accounts(cursor).eth
+
+        dbevents = DBHistoryEvents(self.database)
+        for address, validator_ranges in validators_by_address.items():
+            from_ts = min(entry[1] for entry in validator_ranges)
+            to_ts = max(entry[2] for entry in validator_ranges)
+            log.debug(f'Querying produced blocks for validator withdrawal address {address} from {from_ts} to {to_ts}')  # noqa: E501
+            period = self.ethereum.maybe_timestamp_to_block_range(TimestampOrBlockRange('timestamps', from_ts, to_ts))  # noqa: E501
+            if (blocks := self._fetch_validated_blocks_from_external_sources(
+                address=address,
+                period=period,
+            )) is None:
+                continue
+
+            for entry in blocks:
+                try:
+                    block_number, timestamp, reward = self._deserialize_validated_block(entry)
+                except (TypeError, ValueError) as e:
+                    log.error(f'Failed to deserialize validated block entry {entry} due to {e!s}')
+                    continue
+
+                active_indices = [
+                    validator_index for validator_index, active_from_ts, active_to_ts in validator_ranges  # noqa: E501
+                    if active_from_ts <= timestamp <= active_to_ts
+                ]
+                if len(active_indices) == 0:
+                    continue
+
+                with self.database.conn.read_ctx() as cursor:
+                    cursor.execute(
+                        'SELECT EXISTS(SELECT 1 FROM eth_staking_events_info WHERE is_exit_or_blocknumber=?)',  # noqa: E501
+                        (block_number,),
+                    )
+                    if cursor.fetchone()[0] == 1:
+                        continue
+
+                if (proposer_index := self._get_proposer_index_for_validated_block(
+                    block_number=block_number,
+                    timestamp=timestamp,
+                    active_indices=active_indices,
+                )) is None:
+                    continue
+
+                with self.database.user_write() as write_cursor:
+                    dbevents.add_history_event(write_cursor=write_cursor, event=EthBlockEvent(
+                        validator_index=proposer_index,
+                        timestamp=ts_sec_to_ms(timestamp),
+                        amount=reward,
+                        fee_recipient=address,
+                        fee_recipient_tracked=address in ethereum_tracked_accounts,
+                        block_number=block_number,
+                        is_mev_reward=False,
+                    ))
+
+        if update_cache:
+            with self.database.user_write() as write_cursor:
+                for index in indices:
+                    self.database.set_dynamic_cache(
+                        write_cursor=write_cursor,
+                        name=DBCacheDynamic.LAST_PRODUCED_BLOCKS_QUERY_TS,
+                        value=now,
+                        index=index,
+                    )
+
+    def get_and_store_produced_blocks(
+            self,
+            indices: list[int],
+            update_cache: bool = True,
+    ) -> None:
+        with self.beacon_inquirer.beaconchain.produced_blocks_lock:
+            if self.beacon_inquirer.beaconchain.has_api_key():
+                self.beacon_inquirer.beaconchain._get_and_store_produced_blocks(
+                    indices=indices,
+                    update_cache=update_cache,
+                )
+            else:
+                self._get_and_store_produced_blocks_from_indexers(
+                    indices=indices,
+                    update_cache=update_cache,
+                )
 
     def combine_block_with_tx_events(self) -> None:
         """Get all mev reward block production events and combine them with the

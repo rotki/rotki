@@ -186,7 +186,7 @@ class Blockscout(ExternalServiceWithApiKey, EtherscanLikeApi):
             self,
             chain_id: SUPPORTED_CHAIN_IDS,
             module: Literal['account'],
-            action: Literal['txlistinternal', 'txlist', 'tokentx'],
+            action: Literal['txlistinternal', 'txlist', 'tokentx', 'getminedblocks'],
             options: dict[str, Any] | None = None,
             timeout: tuple[int, int] | None = None,
     ) -> list[dict[str, Any]]:
@@ -260,7 +260,7 @@ class Blockscout(ExternalServiceWithApiKey, EtherscanLikeApi):
             raise RemoteError(f'Missing result from blockscout v1 response with {query_args}: {response}')  # noqa: E501
 
         if module == 'account':
-            if action in ('txlistinternal', 'txlist', 'tokentx'):
+            if action in ('txlistinternal', 'txlist', 'tokentx', 'getminedblocks'):
                 if not isinstance(result, list):
                     raise RemoteError(f'Expected a list result from blockscout v1 response with {query_args}: {response}')  # noqa: E501
             elif not isinstance(result, str):
@@ -416,6 +416,38 @@ class Blockscout(ExternalServiceWithApiKey, EtherscanLikeApi):
             'blockMiner': result['miner']['hash'],
             'blockReward': result['priority_fee'],
         }
+
+    def get_validated_blocks(
+            self,
+            address: ChecksumEvmAddress,
+            period: TimestampOrBlockRange,
+    ) -> list[dict[str, Any]]:
+        """Query blockscout for ethereum blocks validated by an address.
+
+        May raise RemoteError if the blockscout query fails.
+        """
+        options = self._process_timestamp_or_blockrange(
+            chain_id=ChainID.ETHEREUM,
+            period=period,
+            options={'sort': 'asc', 'address': address, 'blocktype': 'blocks'},
+        )
+        blocks = []
+        while True:
+            result = self._query(
+                chain_id=ChainID.ETHEREUM,
+                module='account',
+                action='getminedblocks',
+                options=options,
+            )
+            if len(result) == 0:
+                break
+
+            blocks.extend(result)
+            if (new_options := self._maybe_paginate(result=result, options=options)) is None:
+                break
+            options = new_options
+
+        return blocks
 
     def query_withdrawals(self, address: ChecksumEvmAddress) -> set[int]:
         """Query withdrawals for an ethereum address and save them in the DB.

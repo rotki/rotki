@@ -17,10 +17,7 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.eth2 import EthBlockEvent, EthWithdrawalEvent
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
-from rotkehlchen.tests.utils.ethereum import (
-    PRUNED_AND_NOT_ARCHIVED_NODE,
-    get_decoded_events_of_transaction,
-)
+from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
 from rotkehlchen.types import (
     ChecksumEvmAddress,
     Eth2PubKey,
@@ -197,24 +194,27 @@ def test_block_production(
                 validator_index=vindex1,
                 validator_type=ValidatorType.DISTRIBUTING,
                 public_key=Eth2PubKey('0xadd9843b2eb53ccaf5afb52abcc0a13223088320656fdfb162360ca53a71ebf8775dbebd0f1f1bf6c3e823d4bf2815f7'),
+                withdrawal_address=vindex1_address,
+                activation_timestamp=Timestamp(0),
                 ownership_proportion=ONE,
             ), ValidatorDetails(
                 validator_index=vindex2,
                 validator_type=ValidatorType.DISTRIBUTING,
                 public_key=Eth2PubKey('0x8cd650758f377763bf7ebaf7fe60cb14b4b05f3ffe750820abf4ae70bc4bf25f84ccdff3a92489e1435ebf94768a03f1'),
+                withdrawal_address=vindex2_address,
+                activation_timestamp=Timestamp(0),
                 ownership_proportion=ONE,
             ),
         ])
 
-    if produced_blocks_query_source == 'beaconchain':
-        eth2.beacon_inquirer.beaconchain.get_and_store_produced_blocks([vindex1, vindex2])
-    else:
+    eth2.get_and_store_produced_blocks([vindex1, vindex2])
+    if produced_blocks_query_source == 'rpc_fallback':
         decoder: EthereumTransactionDecoder | None = None
         for tx_hash in (
-            deserialize_evm_tx_hash('0x8d0969db1e536969ba2e29abf8e8945e4304d49ae14523b66cbe9be5d52df804'),  # noqa: E501
-            deserialize_evm_tx_hash('0x951fb37e2ace723e288be1a965f576b91f1f3cd0aee1c70a5ed4b017c45cbbe3'),  # noqa: E501
-            deserialize_evm_tx_hash('0x5ee508b67564e00d831534d88c1f5cdd5d176da26663eb52cf2ceddcf10bb1f2'),  # noqa: E501
-            deserialize_evm_tx_hash('0x717d387dc8ec391f1bc9282a4c819ef455bf24abb3ba052c11f86ec5ef07051a'),  # noqa: E501
+            deserialize_evm_tx_hash('0x8d0969db1e536969ba2e29abf8e8945e4304d49ae14523b66cbe9be5d52df804'),
+            deserialize_evm_tx_hash('0x951fb37e2ace723e288be1a965f576b91f1f3cd0aee1c70a5ed4b017c45cbbe3'),
+            deserialize_evm_tx_hash('0x5ee508b67564e00d831534d88c1f5cdd5d176da26663eb52cf2ceddcf10bb1f2'),
+            deserialize_evm_tx_hash('0x717d387dc8ec391f1bc9282a4c819ef455bf24abb3ba052c11f86ec5ef07051a'),
         ):
             _, decoder = get_decoded_events_of_transaction(
                 evm_inquirer=ethereum_inquirer,
@@ -334,15 +334,6 @@ def test_block_production(
         block_number=17055026,
         is_mev_reward=True,
     )]
-    if produced_blocks_query_source == 'rpc_fallback':
-        # The RPC fallback is transaction-driven: it can only create produced-block
-        # events for blocks where we decoded a plain ETH receive tx. Beaconcha.in
-        # returns all validator proposal slots, so keep only the subset triggered
-        # by the MEV tx hashes decoded above.
-        expected_events = [
-            event for event in expected_events
-            if event.is_exit_or_blocknumber in {15824493, 15938405, 16589592, 17055026}
-        ]
     for x in events:  # do not compare identifiers
         x.identifier = None
     assert expected_events == events

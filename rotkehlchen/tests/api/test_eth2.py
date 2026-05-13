@@ -947,7 +947,7 @@ def test_query_online_block_productions_missing_api_key(
     with (
         patch.object(eth2.beacon_inquirer.beaconchain, 'get_validators_to_query_for_blocks', return_value=[1]),  # noqa: E501
         patch.object(
-            eth2.beacon_inquirer.beaconchain,
+            eth2,
             'get_and_store_produced_blocks',
             side_effect=APIKeyNotAvailable(message),
         ),
