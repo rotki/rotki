@@ -235,7 +235,7 @@ class ProcessedAccountingEvent:
             string_data = rlk_jsondumps(json_data)
         except (OverflowError, ValueError, TypeError) as e:
             raise DeserializationError(
-                f'Could not dump json to string for NamedJson. Error was {e!s}',
+                f'Could not dump processed accounting event json to string. Error was {e!s}',
             ) from e
 
         return string_data
