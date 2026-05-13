@@ -107,7 +107,6 @@ jobs:
       matrix:
         shard: [ 1, 2, 3, 4 ]
     permissions:
-      actions: write
       contents: read
     steps:
       - name: Checkout

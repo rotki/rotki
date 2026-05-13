@@ -333,7 +333,6 @@ jobs:
       ETHERSCAN_API_KEY: ${{ secrets.ETHERSCAN_API_KEY }}
     permissions:
       contents: read
-      actions: write
 
   done:
     name: 'Success check'
