@@ -15,6 +15,7 @@ Changelog
 * :bug:`-` Typing dates and times by keyboard now produces the value you intended, instead of occasionally picking up stray digits from the previous segment.
 * :bug:`12088` Cancelling the create-account wizard on a fresh install no longer drops you on an empty Unlock screen; the wizard's "Already have an account? Log in" shortcut is also hidden when no profiles exist.
 * :bug:`-` Creating a new account now updates the remembered username so the login screen pre-fills with the new account on next launch.
+* :bug:`-` The login screen no longer pre-fills the username field with a remembered account that no longer exists.
 
 * :release:`1.43.0 <2026-05-08>`
 * :bug:`-` Docker users can once again import data, snapshots, and asset icons larger than 1 MiB; the bundled nginx no longer rejects them with a 413 before they reach rotki.
