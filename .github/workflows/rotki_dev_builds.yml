@@ -391,9 +391,10 @@ jobs:
           do
             echo "Processing entry $idx: ${data[$idx]}"
             if [[ ${data[$idx]} == "failure" ]]; then
-                ./.github/scripts/notifier.py --webhook ${{ secrets.DISCORD_WEBHOOK }} --run-id ${{ github.run_id }}
+                ./.github/scripts/notifier.py --webhook "$DISCORD_WEBHOOK" --run-id "$GITHUB_RUN_ID"
                 exit 1;
             fi
           done
         env:
           RESULT: ${{ toJSON(needs.*.result) }}
+          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
