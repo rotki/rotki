@@ -154,7 +154,9 @@ class Etherscan(ExternalServiceWithRecommendedApiKey, EtherscanLikeApi):
 
         This method is Ethereum only.
 
-        May raise RemoteError if the etherscan query fails for some reason.
+        May raise:
+        - RemoteError if the query fails, the response is malformed, or pagination stops making
+        progress.
         """
         options = self._process_timestamp_or_blockrange(
             chain_id=ChainID.ETHEREUM,
@@ -163,6 +165,7 @@ class Etherscan(ExternalServiceWithRecommendedApiKey, EtherscanLikeApi):
         )
         blocks = []
         while True:
+            previous_page_state = (options.get('startblock'), options.get('page'))
             result = self._query(
                 chain_id=ChainID.ETHEREUM,
                 module='account',
@@ -173,8 +176,14 @@ class Etherscan(ExternalServiceWithRecommendedApiKey, EtherscanLikeApi):
                 break
 
             blocks.extend(result)
-            if (new_options := self._maybe_paginate(result=result, options=options)) is None:
+            try:
+                new_options = self._maybe_paginate(result=result, options=options)
+            except KeyError as e:
+                raise RemoteError(f'Malformed Etherscan validated blocks response for {address}: missing {e!s}') from e  # noqa: E501
+            if new_options is None:
                 break
+            if (new_options.get('startblock'), new_options.get('page')) == previous_page_state:
+                raise RemoteError(f'Etherscan validated blocks pagination made no progress for {address}')  # noqa: E501
             options = new_options
 
         return blocks

@@ -703,7 +703,14 @@ class Eth2(EthereumModule):
             address: ChecksumEvmAddress,
             period: TimestampOrBlockRange,
     ) -> list[dict[str, Any]] | None:
-        """Query produced blocks from available indexers in the user-defined order."""
+        """Query produced blocks from available indexers in the user-defined order.
+
+        Returns None if all indexers fail with ChainNotSupported, NotImplementedError, or
+        RemoteError.
+
+        May raise:
+        - Any unexpected exception raised by an indexer implementation.
+        """
         tried_indexers = []
         for _, indexer in self.ethereum._get_indexers_in_order():
             tried_indexers.append(indexer.name)
@@ -720,6 +727,12 @@ class Eth2(EthereumModule):
 
     @staticmethod
     def _deserialize_validated_block(entry: dict[str, Any]) -> tuple[int, Timestamp, FVal]:
+        """Deserialize an indexer block-production entry.
+
+        May raise:
+        - DeserializationError if required fields are missing or malformed.
+        - TypeError or ValueError if field values have unexpected types.
+        """
         if (block_number_str := entry.get(
             'blockNumber', entry.get('block_number', entry.get('height')),
         )) is None:
@@ -742,6 +755,12 @@ class Eth2(EthereumModule):
             timestamp: Timestamp,
             active_indices: list[int],
     ) -> int | None:
+        """Determine which tracked validator proposed an execution block.
+
+        A configured beacon node is authoritative. If it cannot answer, return None instead of
+        falling back to a heuristic. Without a beacon node, attribution is only safe when a single
+        tracked validator was active for the withdrawal address at the block timestamp.
+        """
         if self.beacon_inquirer.node is not None:
             try:
                 proposer_index = self.beacon_inquirer.node.query_block_proposer(
@@ -749,6 +768,7 @@ class Eth2(EthereumModule):
                 )
             except (KeyError, ValueError, RemoteError) as e:
                 log.error(f'Failed to query proposer for produced block {block_number} due to {e!s}')  # noqa: E501
+                return None
             else:
                 return proposer_index if proposer_index in active_indices else None
 
@@ -828,7 +848,7 @@ class Eth2(EthereumModule):
             for entry in blocks:
                 try:
                     block_number, timestamp, reward = self._deserialize_validated_block(entry)
-                except (TypeError, ValueError) as e:
+                except (DeserializationError, TypeError, ValueError) as e:
                     log.error(f'Failed to deserialize validated block entry {entry} due to {e!s}')
                     continue
 
@@ -880,6 +900,7 @@ class Eth2(EthereumModule):
             indices: list[int],
             update_cache: bool = True,
     ) -> None:
+        """Query and store produced blocks via beaconcha.in or indexer fallback."""
         with self.beacon_inquirer.beaconchain.produced_blocks_lock:
             if self.beacon_inquirer.beaconchain.has_api_key():
                 self.beacon_inquirer.beaconchain._get_and_store_produced_blocks(

@@ -105,6 +105,12 @@ class EthereumTransactionDecoder(EVMTransactionDecoderWithDSProxy):
         )
 
     def _get_beacon_node(self) -> BeaconNode | None:
+        """Return a beacon node for the currently configured RPC endpoint.
+
+        Reuse the existing node only while it matches the current setting. If the setting changed,
+        create a new node for the new endpoint. If connecting fails, leave the previous cache state
+        unchanged and return None so the next decode can try again.
+        """
         rpc_endpoint = CachedSettings().get_entry('beacon_rpc_endpoint')
         if not isinstance(rpc_endpoint, str) or rpc_endpoint == '':
             return None
@@ -125,7 +131,14 @@ class EthereumTransactionDecoder(EVMTransactionDecoderWithDSProxy):
             transaction: EvmTransaction,
             decoded_events: list['EvmEvent'],
     ) -> None:
-        """Use execution and CL nodes as a beaconcha.in-less fallback for MEV rewards."""
+        """Create block-production events from plain ETH receives in produced blocks.
+
+        This is a beaconcha.in-less fallback for relay/MEV reward transactions. It only considers
+        simple ETH receives with one recipient, finds the block proposer through the configured
+        beacon node, queries the execution block reward from the configured indexers, and stores
+        block reward/MEV reward events. Existing MEV events are updated idempotently by tracking
+        the transaction hashes already included in their extra data.
+        """
         if (
                 len(decoded_events) == 0 or
                 any(
@@ -282,6 +295,7 @@ class EthereumTransactionDecoder(EVMTransactionDecoderWithDSProxy):
             transaction: EvmTransaction,
             tx_receipt: EvmTxReceipt,
     ) -> tuple[list['EvmEvent'], bool, set[str] | None]:
+        """Decode an Ethereum transaction and run produced-block fallback enrichment."""
         decoded_events, refresh_balances, reload_decoders = super()._decode_transaction(
             transaction=transaction,
             tx_receipt=tx_receipt,

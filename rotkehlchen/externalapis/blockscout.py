@@ -406,16 +406,23 @@ class Blockscout(ExternalServiceWithApiKey, EtherscanLikeApi):
             chain_id: SUPPORTED_CHAIN_IDS,
             block_number: int,
     ) -> dict[str, Any]:
-        """Gets execution block reward data by block number from Blockscout v2."""
+        """Gets execution block reward data by block number from Blockscout v2.
+
+        May raise:
+        - RemoteError if the query fails or the response misses expected reward fields.
+        """
         result = self._query_v2(
             chain_id=chain_id,
             module='blocks',
             encoded_args=str(block_number),
         )
-        return {
-            'blockMiner': result['miner']['hash'],
-            'blockReward': result['priority_fee'],
-        }
+        try:
+            return {
+                'blockMiner': result['miner']['hash'],
+                'blockReward': result['priority_fee'],
+            }
+        except KeyError as e:
+            raise RemoteError(f'Malformed Blockscout block reward response for block {block_number}: missing {e!s}') from e  # noqa: E501
 
     def get_validated_blocks(
             self,
@@ -424,7 +431,9 @@ class Blockscout(ExternalServiceWithApiKey, EtherscanLikeApi):
     ) -> list[dict[str, Any]]:
         """Query blockscout for ethereum blocks validated by an address.
 
-        May raise RemoteError if the blockscout query fails.
+        May raise:
+        - RemoteError if the query fails, the response is malformed, or pagination stops making
+        progress.
         """
         options = self._process_timestamp_or_blockrange(
             chain_id=ChainID.ETHEREUM,
@@ -433,6 +442,7 @@ class Blockscout(ExternalServiceWithApiKey, EtherscanLikeApi):
         )
         blocks = []
         while True:
+            previous_page_state = (options.get('startblock'), options.get('page'))
             result = self._query(
                 chain_id=ChainID.ETHEREUM,
                 module='account',
@@ -443,8 +453,14 @@ class Blockscout(ExternalServiceWithApiKey, EtherscanLikeApi):
                 break
 
             blocks.extend(result)
-            if (new_options := self._maybe_paginate(result=result, options=options)) is None:
+            try:
+                new_options = self._maybe_paginate(result=result, options=options)
+            except KeyError as e:
+                raise RemoteError(f'Malformed Blockscout validated blocks response for {address}: missing {e!s}') from e  # noqa: E501
+            if new_options is None:
                 break
+            if (new_options.get('startblock'), new_options.get('page')) == previous_page_state:
+                raise RemoteError(f'Blockscout validated blocks pagination made no progress for {address}')  # noqa: E501
             options = new_options
 
         return blocks
