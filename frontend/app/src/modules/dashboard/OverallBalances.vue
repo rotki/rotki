@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { assert, TimeFramePeriod, TimeFramePersist, timeframes, type TimeFrameSetting, TimeUnit } from '@rotki/common';
+import type { NetValueChartData } from '@/modules/dashboard/graph/types';
+import { assert, type BigNumber, TimeFramePeriod, TimeFramePersist, timeframes, type TimeFrameSetting, TimeUnit } from '@rotki/common';
 import dayjs from 'dayjs';
 import { FiatDisplay } from '@/modules/assets/amount-display/components';
 import { Section } from '@/modules/core/common/status';
@@ -16,20 +17,19 @@ import { useSectionStatus } from '@/modules/shell/sync-progress/use-section-stat
 import TimeframeSelector from '@/modules/statistics/TimeframeSelector.vue';
 import { useStatisticsStore } from '@/modules/statistics/use-statistics-store';
 
+const { t } = useI18n({ useScope: 'global' });
+
 const netWorthChart = useTemplateRef<InstanceType<typeof NetWorthChart>>('netWorthChart');
 
-const { t } = useI18n({ useScope: 'global' });
 const sessionStore = useSessionSettingsStore();
-const { update } = sessionStore;
+const statisticsStore = useStatisticsStore();
 const { timeframe } = storeToRefs(sessionStore);
-const premium = usePremium();
-const statistics = useStatisticsStore();
-const { getNetValue } = statistics;
-const { totalNetWorth } = storeToRefs(statistics);
-const frontendStore = useFrontendSettingsStore();
-const { visibleTimeframes } = storeToRefs(frontendStore);
-const { updateFrontendSetting } = useSettingsOperations();
+const { totalNetWorth } = storeToRefs(statisticsStore);
+const { visibleTimeframes } = storeToRefs(useFrontendSettingsStore());
+const { getNetValue } = statisticsStore;
 
+const premium = usePremium();
+const { updateFrontendSetting } = useSettingsOperations();
 const { isInitialLoading, isLoading: sectionLoading } = useSectionStatus(Section.BLOCKCHAIN);
 
 const isLoading = logicOr(isInitialLoading, sectionLoading);
@@ -40,7 +40,7 @@ const allTimeframes = computed(() =>
   timeframes((unit, amount) => dayjs().subtract(amount, unit).startOf(TimeUnit.DAY).unix()),
 );
 
-const timeframeData = computed(() => {
+const timeframeData = computed<NetValueChartData>(() => {
   const all = get(allTimeframes);
   const selection = get(timeframe);
   const startingDate = all[selection].startingDate();
@@ -52,15 +52,15 @@ const stats = computed(() => {
   return computeNetValueDelta(data, times, get(totalNetWorth), get(zoomRange));
 });
 
-const startingValue = computed(() => get(stats).startingValue);
-const balanceDelta = computed(() => get(stats).balanceDelta);
+const startingValue = computed<BigNumber>(() => get(stats).startingValue);
+const balanceDelta = computed<BigNumber>(() => get(stats).balanceDelta);
 
-const percentage = computed(() => {
+const percentage = computed<string>(() => {
   const bigNumber = get(balanceDelta).div(get(startingValue)).multipliedBy(100);
   return bigNumber.isFinite() ? bigNumber.toFormat(2) : '-';
 });
 
-const indicator = computed(() => {
+const indicator = computed<string>(() => {
   const delta = get(balanceDelta);
   if (delta.isNegative())
     return 'lu-arrow-down';
@@ -71,7 +71,7 @@ const indicator = computed(() => {
   return 'lu-arrow-up';
 });
 
-const balanceClass = computed(() => {
+const balanceClass = computed<string>(() => {
   const delta = get(balanceDelta);
   if (delta.isNegative())
     return '!text-rui-error-lighter';
@@ -97,10 +97,8 @@ watch(timeframe, () => {
 });
 
 onMounted(() => {
-  const isPremium = get(premium);
-  const selectedTimeframe = get(timeframe);
-  if (!isPremium && !isPeriodAllowed(selectedTimeframe))
-    update({ timeframe: TimeFramePeriod.TWO_WEEKS });
+  if (!get(premium) && !isPeriodAllowed(get(timeframe)))
+    sessionStore.update({ timeframe: TimeFramePeriod.TWO_WEEKS });
 });
 </script>
 
