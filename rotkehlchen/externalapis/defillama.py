@@ -44,7 +44,7 @@ DEFILLAMA_RATE_LIMIT_BURST: Final = 10
 # Defillama has no probe endpoint and no public per-tier rate sheet, but
 # configuring an api key routes traffic to pro-api.llama.fi which has a
 # substantially higher ceiling. Bump the bucket conservatively when we see a
-# key; response headers refine from there.
+# key; 429-driven shrink narrows it if we overshoot.
 DEFILLAMA_PRO_RATE_LIMIT_RPS: Final = 10.0
 DEFILLAMA_PRO_RATE_LIMIT_BURST: Final = 50
 

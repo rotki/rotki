@@ -139,6 +139,7 @@ class Blockscout(ExternalServiceWithApiKey, EtherscanLikeApi):
         backoff_in_seconds = 10
 
         while True:
+            self._rate_limiter.acquire()
             try:
                 request_kwargs: dict[str, Any] = {'timeout': timeout}
                 if query_params is not None:
@@ -154,6 +155,7 @@ class Blockscout(ExternalServiceWithApiKey, EtherscanLikeApi):
                 raise RemoteError(f'Querying {query_str} failed due to {e!s}') from e
 
             if response.status_code == 429:
+                self._rate_limiter.shrink_after_429()
                 if times == 0:
                     msg = (
                         f'Blockscout API request {response.url} failed '

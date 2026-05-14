@@ -547,8 +547,11 @@ class Coingecko(
         """One-shot Pro tier probe. Demo keys (or missing keys) just stay at defaults.
 
         Best-effort: any failure (network, HTTP, JSON) leaves _probed=True so we
-        don't double the request rate by re-probing on every query. If the probe
-        misses the real tier, 429-driven shrink in _query() converges the bucket.
+        don't fire a probe + a query on every call. If the probe fails or misses
+        the real tier the bucket stays at defaults; 429-driven shrink in _query()
+        can only narrow it further (there is no widening fallback), so paid users
+        whose probe permanently fails will run at demo-tier pacing until rotki
+        restarts or the key is re-saved.
         """
         if self._probed:
             return

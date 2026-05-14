@@ -235,16 +235,23 @@ class Cryptocompare(
     def _maybe_probe(self) -> None:
         """Probe /stats/rate/limit once per session to learn the per-second budget.
 
+        The endpoint scopes its response to the calling api key (when present),
+        so pass the key as a query param — without it paid tiers would always
+        report free-tier limits and the bucket would never widen.
+
         Best-effort: any failure (network, HTTP, JSON) leaves _probed=True so we
-        don't double the request rate by re-probing on every query. If the probe
-        misses the real tier, 429-driven shrink in _api_query() converges the bucket.
+        don't fire a probe + a query on every call. If the probe misses the
+        real tier, 429-driven shrink in _api_query() at least keeps us from
+        hammering the upstream.
         """
         if self._probed:
             return
         self._probed = True
+        probe_params = {'api_key': api_key} if (api_key := self._get_api_key()) else None
         try:
             response = self.session.get(
                 url='https://min-api.cryptocompare.com/stats/rate/limit',
+                params=probe_params,
                 timeout=CachedSettings().get_timeout_tuple(),
             )
         except requests.exceptions.RequestException as e:

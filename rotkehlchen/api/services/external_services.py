@@ -84,9 +84,16 @@ class ExternalServicesService:
 
         Without this, a paid key swapped in for a free one (or vice versa) would
         keep using the previous tier's discovered rate-limit until rotki restarts.
+        Routescan in particular only ever shrinks via 429s (no widening probe),
+        so without a reset a key change after a shrink would inherit the lower
+        rate forever.
         """
         if service == ExternalService.ETHERSCAN:
             self.rotkehlchen.etherscan.on_api_key_changed()
+        elif service == ExternalService.BLOCKSCOUT:
+            self.rotkehlchen.blockscout.on_api_key_changed()
+        elif service == ExternalService.ROUTESCAN:
+            self.rotkehlchen.routescan.on_api_key_changed()
         elif service == ExternalService.COINGECKO:
             self.rotkehlchen.coingecko.on_api_key_changed()
         elif service == ExternalService.CRYPTOCOMPARE:
