@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`-` Multi-eth donations in giveth should now be properly decoded.
 * :feature:`12179` Blocks produced by validators will be queried in the case of missing beaconcha.in API keys.
 * :bug:`-` Pressing Enter while searching in an autocomplete field no longer accidentally submits the form when there are no matches.
 * :bug:`-` There should no longer be any errors when exporting CSV from PnL report containing an event with notes being Null.
