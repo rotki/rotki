@@ -102,9 +102,11 @@ def test_parse_x_ratelimit_headers() -> None:
     assert cap == 100
 
 
-def test_parse_limit_only_assumes_per_second() -> None:
+def test_parse_limit_only_does_not_widen_rps() -> None:
+    """Without a Reset window we cannot tell if the limit is per second, minute
+    or day, so rps stays None. Capacity is still useful and is returned."""
     rps, cap = parse_rate_limit_headers({'X-RateLimit-Limit': '30'})
-    assert rps == 30
+    assert rps is None
     assert cap == 30
 
 
@@ -112,3 +114,10 @@ def test_parse_missing_or_malformed_headers() -> None:
     assert parse_rate_limit_headers({}) == (None, None)
     assert parse_rate_limit_headers({'X-RateLimit-Limit': 'unlimited'}) == (None, None)
     assert parse_rate_limit_headers({'X-RateLimit-Limit': '0'}) == (None, None)
+    # Non-int Reset is treated as missing → no rps inferred, capacity still set.
+    rps, cap = parse_rate_limit_headers({
+        'X-RateLimit-Limit': '100',
+        'X-RateLimit-Reset': 'nope',
+    })
+    assert rps is None
+    assert cap == 100

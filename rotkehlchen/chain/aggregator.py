@@ -694,18 +694,25 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
 
         # Persist the cache only for chains that succeeded. Preserve the original
         # contract by reraising the first failure after all chains have settled.
+        # Additional failures are logged so they aren't silently swallowed when
+        # multiple chains fail in the same refresh.
         first_exception: BaseException | None = None
         for chain, greenlet in greenlets.items():
             if greenlet.exception is not None:
                 if first_exception is None:
                     first_exception = greenlet.exception
+                else:
+                    log.error(f'Failed to query {chain} balances: {greenlet.exception!s}')
                 continue
             self._update_blockchain_balances_cache(blockchain=chain, addresses=addresses)
 
+        # Recompute totals regardless of failures: succeeded chains have already
+        # mutated self.balances, and a failing chain may have cleared its own
+        # entries before raising — leaving the cached self.totals out of sync.
+        self.totals = self.balances.recalculate_totals()
         if first_exception is not None:
             raise first_exception
 
-        self.totals = self.balances.recalculate_totals()
         return self.get_balances_update(blockchain)
 
     def get_active_addresses(

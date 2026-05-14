@@ -544,10 +544,15 @@ class Coingecko(
         self._probed = False
 
     def _maybe_probe(self) -> None:
-        """One-shot Pro tier probe. Demo keys (or missing keys) just stay at defaults."""
+        """One-shot Pro tier probe. Demo keys (or missing keys) just stay at defaults.
+
+        Best-effort: any failure (network, HTTP, JSON) leaves _probed=True so we
+        don't double the request rate by re-probing on every query. Header-based
+        widening in _adapt_to_headers acts as the long-term safety net.
+        """
         if self._probed:
             return
-        self._probed = True  # set first so transient failures don't trigger a retry storm
+        self._probed = True
         if (api_key := self._get_api_key()) is None:
             return  # demo tier, nothing to probe
         try:
@@ -558,7 +563,6 @@ class Coingecko(
             )
         except requests.exceptions.RequestException as e:
             log.debug(f'Coingecko tier probe failed at the network layer: {e!s}')
-            self._probed = False  # allow retry on the next query
             return
 
         if response.status_code == HTTPStatus.UNAUTHORIZED:
@@ -566,7 +570,6 @@ class Coingecko(
             return
         if response.status_code != HTTPStatus.OK:
             log.debug(f'Coingecko tier probe got HTTP {response.status_code}; ignoring')
-            self._probed = False
             return
 
         try:

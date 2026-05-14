@@ -233,7 +233,12 @@ class Cryptocompare(
         self._probed = False
 
     def _maybe_probe(self) -> None:
-        """Probe /stats/rate/limit once per session to learn the per-second budget."""
+        """Probe /stats/rate/limit once per session to learn the per-second budget.
+
+        Best-effort: any failure (network, HTTP, JSON) leaves _probed=True so we
+        don't double the request rate by re-probing on every query. Header-based
+        widening in _adapt_to_headers acts as the long-term safety net.
+        """
         if self._probed:
             return
         self._probed = True
@@ -244,12 +249,10 @@ class Cryptocompare(
             )
         except requests.exceptions.RequestException as e:
             log.debug(f'Cryptocompare tier probe failed at the network layer: {e!s}')
-            self._probed = False
             return
 
         if response.status_code != 200:
             log.debug(f'Cryptocompare tier probe got HTTP {response.status_code}; ignoring')
-            self._probed = False
             return
 
         try:

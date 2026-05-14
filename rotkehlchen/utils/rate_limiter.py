@@ -1,6 +1,7 @@
 import logging
 import time
 from collections.abc import Mapping
+from contextlib import suppress
 from types import TracebackType
 from typing import Final, Self
 
@@ -127,7 +128,6 @@ class TokenBucket:
 # lookup is case-insensitive via requests.structures.CaseInsensitiveDict, so
 # we list canonical-case variants only.
 _LIMIT_HEADERS: Final = ('RateLimit-Limit', 'X-RateLimit-Limit')
-_REMAINING_HEADERS: Final = ('RateLimit-Remaining', 'X-RateLimit-Remaining')
 _RESET_HEADERS: Final = ('RateLimit-Reset', 'X-RateLimit-Reset')
 
 
@@ -143,16 +143,16 @@ def parse_rate_limit_headers(
 ) -> tuple[float | None, int | None]:
     """Best-effort extraction of (rate-per-second, burst-capacity) from headers.
 
-    Looks for RFC 9239 and X-RateLimit-* variants. The 'reset' field, when
-    present, is interpreted as the window length in seconds — combined with
-    'limit' to derive a rate per second (e.g. limit=300, reset=60 → 5 rps).
-
-    Returns (None, None) when the headers don't provide enough information to
-    infer a rate. The caller decides whether to widen the bucket.
+    Looks for RFC 9239 and X-RateLimit-* variants. We only derive a rate when
+    the 'reset' field is present and parsable, since it conveys the window
+    length in seconds (e.g. limit=300, reset=60 → 5 rps). Without a window we
+    cannot tell whether 'limit=300' means per-second or per-day, so we leave
+    rps unset rather than risk widening the bucket past the real ceiling and
+    tripping 429s.
 
     Returns:
-        (rps, capacity) where rps may be None if no rate could be inferred
-        and capacity may be None if no limit header was found.
+        (rps, capacity) where rps is None if no usable rate could be inferred
+        and capacity is None if no Limit header was found.
     """
     limit_str = _first_header(headers, _LIMIT_HEADERS)
     reset_str = _first_header(headers, _RESET_HEADERS)
@@ -170,16 +170,8 @@ def parse_rate_limit_headers(
 
     rps: float | None = None
     if reset_str is not None:
-        try:
-            reset_seconds = int(reset_str)
-        except ValueError:
-            reset_seconds = 0
-        if reset_seconds > 0:
-            rps = limit / reset_seconds
-
-    # If we have a limit but no usable reset window, assume the limit applies
-    # per second. That's the standard convention when only Limit is published.
-    if rps is None:
-        rps = float(limit)
+        with suppress(ValueError):
+            if (reset_seconds := int(reset_str)) > 0:
+                rps = limit / reset_seconds
 
     return rps, limit
