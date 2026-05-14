@@ -506,7 +506,7 @@ def test_request_transaction_decoding_errors(rotkehlchen_api_server: 'APIServer'
     )
     assert_error_response(
         response=response,
-        contained_in_msg=f'hash {nonexisting_hash} does not correspond to a transaction',
+        contained_in_msg=f'Transaction {nonexisting_hash} was not found on ethereum',
         status_code=HTTPStatus.CONFLICT,
     )
 

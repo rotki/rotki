@@ -96,6 +96,7 @@ from rotkehlchen.api.v1.schemas import (
     EventGroupPositionSchema,
     EventsOnlineQuerySchema,
     EvmAccountsPutSchema,
+    EvmTransactionLookupSchema,
     ExchangeBalanceQuerySchema,
     ExchangeEventsQuerySchema,
     ExchangeEventsRangeQuerySchema,
@@ -276,6 +277,7 @@ from rotkehlchen.types import (
     ApiKey,
     ApiSecret,
     BTCTxId,
+    ChainID,
     ChainType,
     ChecksumEvmAddress,
     CounterpartyAssetMappingDeleteEntry,
@@ -747,6 +749,29 @@ class EvmTransactionsStatusResource(BaseMethodView):
     @use_kwargs(get_schema, location='json_and_query')
     def get(self, async_query: bool) -> Response:
         return self.rest_api.get_evm_transactions_status(async_query=async_query)
+
+
+class EvmTransactionLookupResource(BaseMethodView):
+    def make_get_schema(self) -> EvmTransactionLookupSchema:
+        return EvmTransactionLookupSchema(
+            db=self.rest_api.rotkehlchen.data.db,
+        )
+
+    @require_loggedin_user()
+    @resource_parser.use_kwargs(make_get_schema, location='json_and_query')
+    def get(
+            self,
+            async_query: bool,
+            tx_hash: EVMTxHash,
+            evm_chain: ChainID,
+            related_address: ChecksumEvmAddress,
+    ) -> Response:
+        return self.rest_api.lookup_evm_transaction(
+            async_query=async_query,
+            tx_hash=tx_hash,
+            evm_chain=evm_chain,
+            related_address=related_address,
+        )
 
 
 class HistoryStatusSummaryResource(BaseMethodView):

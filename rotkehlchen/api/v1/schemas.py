@@ -3973,6 +3973,34 @@ class EventDetailsQuerySchema(Schema):
     identifier = fields.Integer(required=True)
 
 
+class EvmTransactionLookupSchema(AsyncQueryArgumentSchema):
+    tx_hash = EVMTransactionHashField(required=True)
+    evm_chain = EvmChainNameField(required=True, limit_to=list(EVM_CHAIN_IDS_WITH_TRANSACTIONS))
+    related_address = EvmAddressField(required=True)
+
+    def __init__(self, db: 'DBHandler') -> None:
+        super().__init__()
+        self.db = db
+
+    @validates_schema
+    def validate_schema(
+            self,
+            data: dict[str, Any],
+            **_kwargs: Any,
+    ) -> None:
+        with self.db.conn.read_ctx() as cursor:
+            tracked_addresses = self.db.get_single_blockchain_addresses(
+                cursor=cursor,
+                blockchain=data['evm_chain'].to_blockchain(),
+            )
+
+        if (related_address := data['related_address']) not in tracked_addresses:
+            raise ValidationError(
+                message=f'The address {related_address} is not tracked on {data["evm_chain"].to_name()} in rotki',  # noqa: E501
+                field_name='related_address',
+            )
+
+
 class TransactionReferenceAdditionSchema(AsyncQueryArgumentSchema):
     blockchain = BlockchainField(
         required=True,

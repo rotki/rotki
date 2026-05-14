@@ -41,8 +41,8 @@ class L2WithL1FeesTransactions(EvmTransactions, ABC):
         a corresponding l1_fee value in the database. If not, pulls it.
 
         May raise:
-        - RemoteError if there is a problem querying the data sources or transaction hash does
-        not exist.
+        - RemoteError if there is a problem querying the data sources.
+        - InputError if the transaction hash does not exist.
         """
         evm_tx, tx_receipt = super().ensure_tx_data_exists(
             cursor=cursor,

@@ -134,6 +134,64 @@ class TransactionsService:
         )
         return {'result': True, 'message': '', 'status_code': HTTPStatus.OK}
 
+    def lookup_evm_transaction(
+            self,
+            evm_chain: EVM_CHAIN_IDS_WITH_TRANSACTIONS_TYPE,
+            tx_hash: EVMTxHash,
+            related_address: ChecksumEvmAddress,
+    ) -> dict[str, Any]:
+        chain_manager = self.rotkehlchen.chains_aggregator.get_evm_manager(chain_id=evm_chain)
+        chain_id_db = evm_chain.serialize_for_db()
+        try:
+            with self.rotkehlchen.data.db.conn.read_ctx() as cursor:
+                was_fetched = cursor.execute(
+                    'SELECT 1 FROM evm_transactions AS tx INNER JOIN evmtx_receipts AS receipt '
+                    'ON tx.identifier=receipt.tx_id WHERE tx.tx_hash=? AND tx.chain_id=?',
+                    (tx_hash, chain_id_db),
+                ).fetchone() is None
+                transaction, _ = chain_manager.transactions.get_or_create_transaction(
+                    cursor=cursor,
+                    tx_hash=tx_hash,
+                    relevant_address=related_address,
+                )
+        except InputError as e:
+            return {
+                'result': None,
+                'message': f'Unable to find transaction {tx_hash!s} at {evm_chain.to_name()}: {e!s}',  # noqa: E501
+                'status_code': HTTPStatus.NOT_FOUND,
+            }
+        except RemoteError as e:
+            return {
+                'result': None,
+                'message': f'Temporary error while querying transaction {tx_hash!s} at {evm_chain.to_name()}: {e!s}',  # noqa: E501
+                'status_code': HTTPStatus.CONFLICT,
+            }
+        except (DeserializationError, KeyError) as e:
+            return {
+                'result': None,
+                'message': f'Unable to deserialize transaction {tx_hash!s} at {evm_chain.to_name()} due to {e!s}',  # noqa: E501
+                'status_code': HTTPStatus.BAD_GATEWAY,
+            }
+
+        return {
+            'result': {
+                'tx_hash': str(transaction.tx_hash),
+                'evm_chain': evm_chain.to_name(),
+                'timestamp': transaction.timestamp,
+                'block_number': transaction.block_number,
+                'from_address': transaction.from_address,
+                'to_address': transaction.to_address,
+                'value': str(transaction.value),
+                'gas': str(transaction.gas),
+                'gas_price': str(transaction.gas_price),
+                'gas_used': str(transaction.gas_used),
+                'nonce': transaction.nonce,
+                'was_fetched': was_fetched,
+            },
+            'message': '',
+            'status_code': HTTPStatus.OK,
+        }
+
     def get_rpc_nodes(self, blockchain: SupportedBlockchain) -> dict[str, Any]:
         nodes = self.rotkehlchen.data.db.get_rpc_nodes(blockchain=blockchain)
 
@@ -962,6 +1020,8 @@ class TransactionsService:
                 transaction, raw_receipt_data = chain_manager.transactions.evm_inquirer.get_transaction_by_hash(  # noqa: E501
                     tx_hash=tx_ref,
                 )
+        except InputError:
+            raise
         except RemoteError as e:
             raise InputError(
                 f'hash {tx_ref!s} does not correspond to a transaction at {chain.name}. {e!s}',
