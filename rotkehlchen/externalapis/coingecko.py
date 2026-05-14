@@ -22,7 +22,7 @@ from rotkehlchen.types import ChainID, ExternalService, Price, Timestamp, TokenK
 from rotkehlchen.utils.misc import set_user_agent, timestamp_to_date, ts_now
 from rotkehlchen.utils.mixins.penalizable_oracle import PenalizablePriceOracleMixin
 from rotkehlchen.utils.network import create_session
-from rotkehlchen.utils.rate_limiter import TokenBucket, parse_rate_limit_headers
+from rotkehlchen.utils.rate_limiter import TokenBucket
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
@@ -547,8 +547,8 @@ class Coingecko(
         """One-shot Pro tier probe. Demo keys (or missing keys) just stay at defaults.
 
         Best-effort: any failure (network, HTTP, JSON) leaves _probed=True so we
-        don't double the request rate by re-probing on every query. Header-based
-        widening in _adapt_to_headers acts as the long-term safety net.
+        don't double the request rate by re-probing on every query. If the probe
+        misses the real tier, 429-driven shrink in _query() converges the bucket.
         """
         if self._probed:
             return
@@ -583,11 +583,6 @@ class Coingecko(
         if isinstance(rpm, int) and rpm > 0:
             self._rate_limiter.widen(observed_rps=rpm / 60, observed_capacity=min(rpm, 200))
             log.debug(f'Coingecko tier probe widened rate to {rpm}/min')
-
-    def _adapt_to_headers(self, response: requests.Response) -> None:
-        rps, cap = parse_rate_limit_headers(response.headers)
-        if rps is not None:
-            self._rate_limiter.widen(observed_rps=rps, observed_capacity=cap)
 
     def on_api_key_changed(self) -> None:
         """Called from the External Services save/delete hook on key change."""
@@ -665,8 +660,6 @@ class Coingecko(
                 f'code: {response.status_code}'
             )
             raise RemoteError(msg)
-
-        self._adapt_to_headers(response)
 
         try:
             decoded_json = json.loads(response.text)

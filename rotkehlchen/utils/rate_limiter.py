@@ -1,14 +1,9 @@
-import logging
 import time
-from collections.abc import Mapping
-from contextlib import suppress
 from types import TracebackType
 from typing import Final, Self
 
 import gevent
 from gevent.lock import Semaphore
-
-logger = logging.getLogger(__name__)
 
 # Hysteresis: don't churn the bucket on every response. Only update when the
 # observed rate differs from the current by at least this fraction.
@@ -42,10 +37,10 @@ class TokenBucket:
     its own rate limit (e.g. etherscan-v2's single key across all EVM
     chains).
 
-    Rates can be adjusted at runtime via widen() (when a probe or response
-    headers reveal a higher tier), shrink_after_429() (when the upstream
-    pushes back), and reset() (e.g. when the user changes their API key
-    and we no longer trust the previously-discovered rate).
+    Rates can be adjusted at runtime via widen() (when a probe reveals a
+    higher tier), shrink_after_429() (when the upstream pushes back), and
+    reset() (e.g. when the user changes their API key and we no longer
+    trust the previously-discovered rate).
     """
 
     def __init__(self, rps: float, capacity: int) -> None:
@@ -79,9 +74,9 @@ class TokenBucket:
     def widen(self, observed_rps: float, observed_capacity: int | None = None) -> bool:
         """Raise rps and (optionally) capacity towards observed values.
 
-        Never shrinks. Used when a probe or response headers reveal that the
-        upstream allows more throughput than we are currently using. Returns
-        True if anything actually changed.
+        Never shrinks. Used when a probe reveals that the upstream allows
+        more throughput than we are currently using. Returns True if
+        anything actually changed.
         """
         if observed_rps <= 0:
             return False
@@ -121,57 +116,3 @@ class TokenBucket:
             traceback: TracebackType | None,
     ) -> None:
         return None
-
-
-# Header names this parser recognises, in priority order. We accept both
-# RFC 9239 (RateLimit-*) and the de-facto X-RateLimit-* variant. Header
-# lookup is case-insensitive via requests.structures.CaseInsensitiveDict, so
-# we list canonical-case variants only.
-_LIMIT_HEADERS: Final = ('RateLimit-Limit', 'X-RateLimit-Limit')
-_RESET_HEADERS: Final = ('RateLimit-Reset', 'X-RateLimit-Reset')
-
-
-def _first_header(headers: Mapping[str, str], names: tuple[str, ...]) -> str | None:
-    for name in names:
-        if (value := headers.get(name)) is not None:
-            return value
-    return None
-
-
-def parse_rate_limit_headers(
-        headers: Mapping[str, str],
-) -> tuple[float | None, int | None]:
-    """Best-effort extraction of (rate-per-second, burst-capacity) from headers.
-
-    Looks for RFC 9239 and X-RateLimit-* variants. We only derive a rate when
-    the 'reset' field is present and parsable, since it conveys the window
-    length in seconds (e.g. limit=300, reset=60 → 5 rps). Without a window we
-    cannot tell whether 'limit=300' means per-second or per-day, so we leave
-    rps unset rather than risk widening the bucket past the real ceiling and
-    tripping 429s.
-
-    Returns:
-        (rps, capacity) where rps is None if no usable rate could be inferred
-        and capacity is None if no Limit header was found.
-    """
-    limit_str = _first_header(headers, _LIMIT_HEADERS)
-    reset_str = _first_header(headers, _RESET_HEADERS)
-    if limit_str is None:
-        return None, None
-
-    try:
-        limit = int(limit_str)
-    except ValueError:
-        logger.debug(f'rate_limiter: non-int Limit header value {limit_str!r}')
-        return None, None
-
-    if limit < 1:
-        return None, None
-
-    rps: float | None = None
-    if reset_str is not None:
-        with suppress(ValueError):
-            if (reset_seconds := int(reset_str)) > 0:
-                rps = limit / reset_seconds
-
-    return rps, limit

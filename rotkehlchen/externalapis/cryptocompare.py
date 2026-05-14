@@ -57,7 +57,7 @@ from rotkehlchen.types import ExternalService, Price, Timestamp
 from rotkehlchen.utils.misc import set_user_agent, ts_now
 from rotkehlchen.utils.mixins.penalizable_oracle import PenalizablePriceOracleMixin
 from rotkehlchen.utils.network import create_session
-from rotkehlchen.utils.rate_limiter import TokenBucket, parse_rate_limit_headers
+from rotkehlchen.utils.rate_limiter import TokenBucket
 from rotkehlchen.utils.serialization import jsonloads_dict
 
 if TYPE_CHECKING:
@@ -236,8 +236,8 @@ class Cryptocompare(
         """Probe /stats/rate/limit once per session to learn the per-second budget.
 
         Best-effort: any failure (network, HTTP, JSON) leaves _probed=True so we
-        don't double the request rate by re-probing on every query. Header-based
-        widening in _adapt_to_headers acts as the long-term safety net.
+        don't double the request rate by re-probing on every query. If the probe
+        misses the real tier, 429-driven shrink in _api_query() converges the bucket.
         """
         if self._probed:
             return
@@ -276,11 +276,6 @@ class Cryptocompare(
                 observed_capacity=min(second_budget * 2, 100),
             )
             log.debug(f'Cryptocompare tier probe widened rate to {second_budget}/s')
-
-    def _adapt_to_headers(self, response: requests.Response) -> None:
-        rps, cap = parse_rate_limit_headers(response.headers)
-        if rps is not None:
-            self._rate_limiter.widen(observed_rps=rps, observed_capacity=cap)
 
     def on_api_key_changed(self) -> None:
         self._rate_limiter.reset(
@@ -363,8 +358,6 @@ class Cryptocompare(
             except requests.exceptions.RequestException as e:
                 self.penalty_info.note_failure_or_penalize()
                 raise RemoteError(f'Cryptocompare API request failed due to {e!s}') from e
-
-            self._adapt_to_headers(response)
 
             try:
                 json_ret = jsonloads_dict(response.text)

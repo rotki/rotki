@@ -46,7 +46,7 @@ from rotkehlchen.types import (
 )
 from rotkehlchen.utils.misc import convert_to_int, hexstr_to_int, set_user_agent
 from rotkehlchen.utils.network import create_session
-from rotkehlchen.utils.rate_limiter import TokenBucket, parse_rate_limit_headers
+from rotkehlchen.utils.rate_limiter import TokenBucket
 from rotkehlchen.utils.serialization import jsonloads_dict
 
 if TYPE_CHECKING:
@@ -110,8 +110,9 @@ class EtherscanLikeApi(ABC):
     def on_api_key_changed(self) -> None:
         """Reset the rate limiter to free-tier defaults so a new key starts fresh.
 
-        Header-based adaptation in _query() will widen the bucket again if the new
-        key turns out to be on a higher tier.
+        Etherscan-like upstreams publish no tier endpoint or rate-limit headers,
+        so the bucket relies on the 429-driven shrink in _query() to converge
+        back down if the new key turns out to be on a more restrictive tier.
         """
         self._rate_limiter.reset(rps=self._default_rps, capacity=self._default_capacity)
 
@@ -354,16 +355,6 @@ class EtherscanLikeApi(ABC):
                     f'{self.name} API request {response.url} failed '
                     f'with HTTP status code {response.status_code} and text '
                     f'{response.text}',
-                )
-
-            # Best-effort widen the bucket if the response carries rate-limit headers.
-            # Etherscan publishes no tier endpoint, so this is the only way we discover
-            # higher caps for paid users.
-            observed_rps, observed_cap = parse_rate_limit_headers(response.headers)
-            if observed_rps is not None:
-                self._rate_limiter.widen(
-                    observed_rps=observed_rps,
-                    observed_capacity=observed_cap,
                 )
 
             try:

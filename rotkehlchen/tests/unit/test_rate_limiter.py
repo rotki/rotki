@@ -3,7 +3,7 @@ import time
 import gevent
 import pytest
 
-from rotkehlchen.utils.rate_limiter import TokenBucket, parse_rate_limit_headers
+from rotkehlchen.utils.rate_limiter import TokenBucket
 
 
 def test_burst_then_steady_rate() -> None:
@@ -82,42 +82,3 @@ def test_reset_can_shrink_or_grow() -> None:
     assert bucket.capacity == 8
     # Outstanding tokens are clamped to the new capacity, never raised above it.
     assert bucket.tokens <= 8
-
-
-def test_parse_rfc9239_headers() -> None:
-    rps, cap = parse_rate_limit_headers({
-        'RateLimit-Limit': '300',
-        'RateLimit-Reset': '60',
-    })
-    assert rps == 5  # 300 per 60s window
-    assert cap == 300
-
-
-def test_parse_x_ratelimit_headers() -> None:
-    rps, cap = parse_rate_limit_headers({
-        'X-RateLimit-Limit': '100',
-        'X-RateLimit-Reset': '1',
-    })
-    assert rps == 100
-    assert cap == 100
-
-
-def test_parse_limit_only_does_not_widen_rps() -> None:
-    """Without a Reset window we cannot tell if the limit is per second, minute
-    or day, so rps stays None. Capacity is still useful and is returned."""
-    rps, cap = parse_rate_limit_headers({'X-RateLimit-Limit': '30'})
-    assert rps is None
-    assert cap == 30
-
-
-def test_parse_missing_or_malformed_headers() -> None:
-    assert parse_rate_limit_headers({}) == (None, None)
-    assert parse_rate_limit_headers({'X-RateLimit-Limit': 'unlimited'}) == (None, None)
-    assert parse_rate_limit_headers({'X-RateLimit-Limit': '0'}) == (None, None)
-    # Non-int Reset is treated as missing → no rps inferred, capacity still set.
-    rps, cap = parse_rate_limit_headers({
-        'X-RateLimit-Limit': '100',
-        'X-RateLimit-Reset': 'nope',
-    })
-    assert rps is None
-    assert cap == 100

@@ -25,7 +25,7 @@ from rotkehlchen.types import ChainID, ExternalService, Price, Timestamp
 from rotkehlchen.utils.misc import get_chunks, ts_now
 from rotkehlchen.utils.mixins.penalizable_oracle import PenalizablePriceOracleMixin
 from rotkehlchen.utils.network import create_session
-from rotkehlchen.utils.rate_limiter import TokenBucket, parse_rate_limit_headers
+from rotkehlchen.utils.rate_limiter import TokenBucket
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
@@ -83,11 +83,6 @@ class Defillama(
                 observed_capacity=DEFILLAMA_PRO_RATE_LIMIT_BURST,
             )
 
-    def _adapt_to_headers(self, response: requests.Response) -> None:
-        rps, cap = parse_rate_limit_headers(response.headers)
-        if rps is not None:
-            self._rate_limiter.widen(observed_rps=rps, observed_capacity=cap)
-
     def on_api_key_changed(self) -> None:
         self._rate_limiter.reset(
             rps=DEFILLAMA_RATE_LIMIT_RPS,
@@ -140,8 +135,6 @@ class Defillama(
                 f'code: {response.status_code}'
             )
             raise RemoteError(msg)
-
-        self._adapt_to_headers(response)
 
         try:
             decoded_json = json.loads(response.text)
