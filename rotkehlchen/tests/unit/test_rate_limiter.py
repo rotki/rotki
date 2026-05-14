@@ -6,6 +6,17 @@ import pytest
 from rotkehlchen.utils.rate_limiter import TokenBucket
 
 
+@pytest.fixture(autouse=True)
+def _bypass_rate_limiter() -> None:
+    """Override the conftest-level acquire() bypass.
+
+    These tests exercise the real token-bucket pacing, so the global no-op
+    monkeypatch in tests/conftest.py would defeat them. Returning None here
+    runs no monkeypatch and leaves TokenBucket.acquire intact.
+    """
+    return
+
+
 def test_burst_then_steady_rate() -> None:
     """A fresh bucket allows a burst up to capacity, then steadies at rps."""
     bucket = TokenBucket(rps=10, capacity=5)
