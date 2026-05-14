@@ -34,7 +34,7 @@ if TYPE_CHECKING:
     from rotkehlchen.user_messages import MessagesAggregator
 
 
-@pytest.mark.skip(reason='Historical balance processing is temporarily disabled.')
+@pytest.mark.xfail(reason='Blocked by #12207 stale historical balance marker wiring')
 def test_process_historical_balances_clears_stale_marker(
         database: 'DBHandler',
         messages_aggregator: 'MessagesAggregator',
@@ -74,7 +74,7 @@ def test_process_historical_balances_clears_stale_marker(
         ).fetchone() is None
 
 
-@pytest.mark.skip(reason='Historical balance processing is temporarily disabled.')
+@pytest.mark.xfail(reason='Blocked by #12207 stale historical balance marker wiring')
 def test_has_unprocessed_events(
         database: 'DBHandler',
         messages_aggregator: 'MessagesAggregator',
@@ -184,7 +184,7 @@ def test_has_unprocessed_events(
     assert manager._has_unprocessed_events('timestamp <= ?', [TimestampMS(9999)]) is True
 
 
-@pytest.mark.skip(reason='Historical balance processing is temporarily disabled.')
+@pytest.mark.xfail(reason='Blocked by #12207 stale historical balance marker wiring')
 def test_get_balances_with_unprocessed_events_and_timestamp_filter(
         database: 'DBHandler',
         messages_aggregator: 'MessagesAggregator',
@@ -223,7 +223,6 @@ def test_get_balances_with_unprocessed_events_and_timestamp_filter(
     assert balances is None
 
 
-@pytest.mark.skip(reason='Historical balance processing is temporarily disabled.')
 def test_get_balances_skips_zero_amounts(
         database: 'DBHandler',
         messages_aggregator: 'MessagesAggregator',
@@ -276,7 +275,6 @@ def test_get_balances_skips_zero_amounts(
     assert balances == {A_BTC: FVal('5')}
 
 
-@pytest.mark.skip(reason='Historical balance processing is temporarily disabled.')
 def test_transfer_updates_sender_and_receiver_buckets(
         database: 'DBHandler',
         messages_aggregator: 'MessagesAggregator',
@@ -377,7 +375,6 @@ def test_transfer_updates_sender_and_receiver_buckets(
         ]
 
 
-@pytest.mark.skip(reason='Historical balance processing is temporarily disabled.')
 def test_deposit_to_protocol_updates_wallet_and_protocol_buckets(
         database: 'DBHandler',
         messages_aggregator: 'MessagesAggregator',
@@ -441,7 +438,6 @@ def test_deposit_to_protocol_updates_wallet_and_protocol_buckets(
         ]
 
 
-@pytest.mark.skip(reason='Historical balance processing is temporarily disabled.')
 def test_staking_deposit_and_withdraw_updates_wallet_and_protocol_buckets(
         database: 'DBHandler',
         messages_aggregator: 'MessagesAggregator',
@@ -505,7 +501,6 @@ def test_staking_deposit_and_withdraw_updates_wallet_and_protocol_buckets(
         ]
 
 
-@pytest.mark.skip(reason='Historical balance processing is temporarily disabled.')
 def test_wrapped_deposit_and_redeem_moves_between_protocol_buckets(
         database: 'DBHandler',
         messages_aggregator: 'MessagesAggregator',
@@ -578,7 +573,6 @@ def test_wrapped_deposit_and_redeem_moves_between_protocol_buckets(
         ]
 
 
-@pytest.mark.skip(reason='Historical balance processing is temporarily disabled.')
 @pytest.mark.parametrize('db_settings', [
     {'auto_create_profit_events': True},
     {'auto_create_profit_events': False},
@@ -679,7 +673,6 @@ def test_synthetic_profit_event_when_protocol_withdrawal_exceeds_deposit(
                 ]
 
 
-@pytest.mark.skip(reason='Historical balance processing is temporarily disabled.')
 @pytest.mark.parametrize('db_settings', [
     {'auto_create_profit_events': True},
     {'auto_create_profit_events': False},
@@ -743,7 +736,6 @@ def test_profit_event_when_protocol_withdrawal_amount_is_all_profit(
             ]
 
 
-@pytest.mark.skip(reason='Historical balance processing is temporarily disabled.')
 def test_staking_protocol_lp_token_received_from_untracked_address(
         database: 'DBHandler',
         messages_aggregator: 'MessagesAggregator',
@@ -806,7 +798,6 @@ def test_staking_protocol_lp_token_received_from_untracked_address(
         ]
 
 
-@pytest.mark.skip(reason='Historical balance processing is temporarily disabled.')
 def test_swapped_for_asset_tracked_under_new_identifier(
         database: 'DBHandler',
         messages_aggregator: 'MessagesAggregator',

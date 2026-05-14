@@ -156,6 +156,7 @@ TABLES_AT_INIT = [
     'xpub_mappings',
     'eth2_validators',
     'eth_validators_data_cache',
+    'event_metrics',
     'ignored_actions',
     'nfts',
     'history_events',
