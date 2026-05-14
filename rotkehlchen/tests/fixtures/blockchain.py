@@ -52,6 +52,7 @@ from rotkehlchen.externalapis.beaconchain.service import BeaconChain
 from rotkehlchen.externalapis.blockscout import Blockscout
 from rotkehlchen.externalapis.etherscan import Etherscan
 from rotkehlchen.externalapis.helius import Helius
+from rotkehlchen.externalapis.jupiter import Jupiter
 from rotkehlchen.externalapis.opensea import Opensea
 from rotkehlchen.externalapis.routescan import Routescan
 from rotkehlchen.premium.premium import Premium
@@ -1000,8 +1001,11 @@ def fixture_solana_inquirer(greenlet_manager, database, solana_nodes_connect_at_
 
 
 @pytest.fixture(name='solana_manager')
-def fixture_solana_manager(solana_inquirer):
-    return SolanaManager(node_inquirer=solana_inquirer)
+def fixture_solana_manager(solana_inquirer, database):
+    return SolanaManager(
+        node_inquirer=solana_inquirer,
+        jupiter=Jupiter(database=database),
+    )
 
 
 @pytest.fixture(name='blockchain')

@@ -7,6 +7,7 @@ Changelog
 * :feature:`11988` rotki now has a setting to selectively enable/disable chain / address query for transaction history. That means you can skip history querying for specific chains or chain/address combinations.
 * :feature:`12111` Free-text typed in the History events filter without a key=value prefix is now applied as a notes search on Enter, so you can quickly find events by any word in their notes instead of having to remember the notes= prefix.
 * :feature:`3216` Trades made using clipper will now be decoded correctly.
+* :feature:`-` Jupiter Lend Earn balances on Solana are now detected and included in portfolio balances.
 * :bug:`-` There should no longer be any errors when exporting CSV from PnL report containing an event with notes being Null.
 * :bug:`-` 1inch swaps settling through a balancer pool should now be properly decoded.
 * :bug:`12173` Beaconcha.in queries with legacy API keys will work correctly again.

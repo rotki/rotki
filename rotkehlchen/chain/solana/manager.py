@@ -26,10 +26,12 @@ from rotkehlchen.types import SolanaAddress, Timestamp
 
 from .decoding.decoder import SolanaTransactionDecoder
 from .decoding.tools import SolanaDecoderTools
+from .modules.jupiter.balances import JupiterLendBalances
 from .node_inquirer import SolanaInquirer
 from .transactions import SolanaTransactions
 
 if TYPE_CHECKING:
+    from rotkehlchen.externalapis.jupiter import Jupiter
     from rotkehlchen.premium.premium import Premium
 
 logger = logging.getLogger(__name__)
@@ -41,6 +43,7 @@ class SolanaManager(ChainManagerWithTransactions[SolanaAddress], ChainManagerWit
     def __init__(
             self,
             node_inquirer: SolanaInquirer,
+            jupiter: 'Jupiter',
             premium: 'Premium | None' = None,
     ) -> None:
         super().__init__(node_inquirer=node_inquirer)
@@ -59,6 +62,11 @@ class SolanaManager(ChainManagerWithTransactions[SolanaAddress], ChainManagerWit
                 node_inquirer=self.node_inquirer,
             ),
             premium=premium,
+        )
+        self.jupiter_lend_balances = JupiterLendBalances(
+            database=self.database,
+            solana_inquirer=self.node_inquirer,
+            jupiter=jupiter,
         )
 
     def get_multi_balance(self, accounts: Sequence[SolanaAddress]) -> dict[SolanaAddress, FVal]:
@@ -163,6 +171,14 @@ class SolanaManager(ChainManagerWithTransactions[SolanaAddress], ChainManagerWit
                     )
             except RemoteError as e:
                 log.error(f'Failed to query staked SOL balance for {account} due to {e}')
+
+        # Query Jupiter Lend protocol balances (collateral + debt)
+        try:
+            jupiter_balances = self.jupiter_lend_balances.query_balances(list(addresses))
+            for address, asset_balances in jupiter_balances.items():
+                chain_balances[address] += asset_balances
+        except RemoteError as e:
+            log.error(f'Failed to query Jupiter Lend balances due to {e!s}')
 
         return dict(chain_balances)
 

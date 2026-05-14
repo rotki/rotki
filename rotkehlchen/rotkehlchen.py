@@ -90,6 +90,7 @@ from rotkehlchen.externalapis.cryptocompare import Cryptocompare
 from rotkehlchen.externalapis.defillama import Defillama
 from rotkehlchen.externalapis.etherscan import Etherscan
 from rotkehlchen.externalapis.helius import Helius
+from rotkehlchen.externalapis.jupiter import Jupiter
 from rotkehlchen.externalapis.routescan import Routescan
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.asset_updates.manager import AssetsUpdater
@@ -532,6 +533,7 @@ class Rotkehlchen:
                     database=self.data.db,
                     helius=Helius(database=self.data.db),
                 ),
+                jupiter=Jupiter(database=self.data.db),
                 premium=self.premium,
             ),
             msg_aggregator=self.msg_aggregator,
