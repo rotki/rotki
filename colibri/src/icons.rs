@@ -3,10 +3,7 @@ use crate::blockchain::{
 };
 use crate::coingecko;
 use crate::globaldb;
-use alloy::{
-    primitives::{Address, U256},
-    sol,
-};
+use alloy_primitives::{Address, U256};
 use axum::body::Bytes;
 use axum::http::StatusCode;
 use base64::{engine::general_purpose::STANDARD, Engine as _};
@@ -19,14 +16,11 @@ use std::time::Duration;
 const SMOLDAPP_BASE_URL: &str =
     "https://raw.githubusercontent.com/SmolDapp/tokenAssets/refs/heads/main/tokens";
 
+// Selector for tokenURI(uint256) = keccak256("tokenURI(uint256)")[0:4]
+const TOKENURI_SELECTOR: &str = "c87b56dd";
+
 pub enum FileTypeError {
     UnsupportedFileType,
-}
-
-sol! {
-    #[sol(rpc)]
-    UniswapNFTManager,
-    "src/blockchain/abis/UniswapNFTManager.json"
 }
 
 // Create the response headers from a path
@@ -113,51 +107,99 @@ async fn query_token_icon_and_extension(
     None
 }
 
-/// Queries a Uniswap V3 or V4 NFT position for its SVG icon.
+/// Build the calldata for a tokenURI(uint256) call.
+fn build_token_uri_calldata(token_id: U256) -> String {
+    format!("0x{TOKENURI_SELECTOR}{token_id:064x}")
+}
+
+/// Make a raw JSON-RPC eth_call to an RPC endpoint.
+async fn eth_call(endpoint: &str, to: &Address, data: &str) -> Result<String, String> {
+    let client = Client::builder()
+        .timeout(Duration::from_secs(10))
+        .build()
+        .map_err(|e| format!("Failed to build HTTP client: {e}"))?;
+
+    let body = serde_json::json!({
+        "jsonrpc": "2.0",
+        "method": "eth_call",
+        "params": [{"to": to.to_string(), "data": data}, "latest"],
+        "id": 1,
+    });
+
+    let response = client
+        .post(endpoint)
+        .json(&body)
+        .send()
+        .await
+        .map_err(|e| format!("HTTP request failed: {e}"))?;
+
+    let status = response.status();
+    if !status.is_success() {
+        return Err(format!("HTTP error {status}"));
+    }
+
+    let json: serde_json::Value = response
+        .json()
+        .await
+        .map_err(|e| format!("Failed to parse JSON response: {e}"))?;
+
+    if let Some(error) = json.get("error") {
+        return Err(format!("RPC error: {error}"));
+    }
+
+    json.get("result")
+        .and_then(|v| v.as_str())
+        .map(String::from)
+        .ok_or_else(|| "Missing or invalid 'result' field in RPC response".to_string())
+}
+
+/// Decode an ABI-encoded string from an eth_call hex result.
+/// ABI string: 32-byte offset + 32-byte length + string data (padded).
+fn decode_abi_string(hex_result: &str) -> Option<String> {
+    let bytes = hex::decode(hex_result.strip_prefix("0x").unwrap_or(hex_result)).ok()?;
+    if bytes.len() < 64 {
+        return None;
+    }
+    let offset = u32::from_be_bytes(bytes[28..32].try_into().ok()?) as usize;
+    if offset + 32 > bytes.len() {
+        return None;
+    }
+    let str_start = offset + 32;
+    let str_len =
+        u32::from_be_bytes(bytes[offset + 28..offset + 32].try_into().ok()?) as usize;
+    if str_start + str_len > bytes.len() {
+        return None;
+    }
+    String::from_utf8(bytes[str_start..str_start + str_len].to_vec()).ok()
+}
+
+/// Queries a Uniswap V3 or V4 NFT position for its SVG icon via raw JSON-RPC eth_call.
 async fn query_uniswap_position_icon(
     chain_id: u64,
     token_id: &str,
     contract_address: Address,
     inquirer: Arc<EvmNodeInquirer>,
 ) -> Option<(Bytes, &'static str)> {
-    let token_id: U256 = token_id
-        .parse()
-        .map_err(|e| {
-            error!(
-                "Invalid token ID '{}' for NFT position on chain ID {} ({}): {}",
-                token_id,
-                chain_id,
-                inquirer.blockchain.as_str(),
-                e
-            )
-        })
-        .ok()?;
+    let token_id: U256 = token_id.parse().map_err(|e| {
+        error!(
+            "Invalid token ID '{}' for NFT position on chain ID {} ({}): {}",
+            token_id, chain_id, inquirer.blockchain.as_str(), e
+        )
+    }).ok()?;
+    let calldata = build_token_uri_calldata(token_id);
 
     for node in inquirer.rpc_nodes.read().await.clone() {
-        let provider = match inquirer.get_or_create_node_connection(&node).await {
-            Ok(p) => p,
+        let result = match eth_call(&node.endpoint, &contract_address, &calldata).await {
+            Ok(r) => r,
             Err(e) => {
-                error!("Node connection failed ({}): {}", node.name, e);
-                continue;
-            }
-        };
-        let contract = UniswapNFTManager::new(contract_address, provider);
-
-        // try to get the token URI
-        let token_uri = match contract.tokenURI(token_id).call().await {
-            Ok(result) => result,
-            Err(e) => {
-                // Check if this is a contract-related error
-                let error_message = e.to_string();
+                let error_message = e.to_lowercase();
                 let error_patterns = [
                     "function selector was not recognized",
                     "invalid function signature",
                     "contract code",
+                    "execution reverted",
                 ];
-                if error_patterns
-                    .iter()
-                    .any(|&pattern| error_message.contains(pattern))
-                {
+                if error_patterns.iter().any(|&p| error_message.contains(p)) {
                     error!(
                         "Contract appears to be malformed or not a valid Uniswap V3/V4 NFT Manager: {} - token ID {} on contract {}",
                         e, token_id, contract_address
@@ -173,25 +215,32 @@ async fn query_uniswap_position_icon(
             }
         };
 
-        // process the base64 data from the rpc call
+        let token_uri = match decode_abi_string(result.trim()) {
+            Some(uri) => uri,
+            None => {
+                error!(
+                    "Failed to decode ABI string from RPC response on node '{}' for token ID {} on contract {}: {}",
+                    node.name, token_id, contract_address, result
+                );
+                continue;
+            }
+        };
+
         let Some(base64_str) = token_uri.strip_prefix("data:application/json;base64,") else {
             error!("Invalid token URI format from node '{}' for token ID {} on contract {}: URI does not start with 'data:application/json;base64,'",
                 node.name, token_id, contract_address);
             break;
         };
 
-        // transform the base64 data into json in order to retrieve the image.
         let json_data: serde_json::Value = match STANDARD.decode(base64_str) {
-            Ok(bytes) => {
-                match serde_json::from_slice(&bytes) {
-                    Ok(json) => json,
-                    Err(e) => {
-                        error!("Failed to parse JSON from node '{}' for token ID {} on contract {}: {}",
+            Ok(bytes) => match serde_json::from_slice(&bytes) {
+                Ok(json) => json,
+                Err(e) => {
+                    error!("Failed to parse JSON from node '{}' for token ID {} on contract {}: {}",
                        node.name, token_id, contract_address, e);
-                        break;
-                    }
+                    break;
                 }
-            }
+            },
             Err(e) => {
                 error!("Failed to decode base64 JSON from node '{}' for token ID {} on contract {}: {}",
                        node.name, token_id, contract_address, e);
@@ -199,7 +248,6 @@ async fn query_uniswap_position_icon(
             }
         };
 
-        // retrieve the base64 image from the json data
         let image_base64 = match json_data.get("image").and_then(|v| v.as_str()) {
             Some(uri) => match uri.strip_prefix("data:image/svg+xml;base64,") {
                 Some(data) => data,
@@ -218,11 +266,8 @@ async fn query_uniswap_position_icon(
             }
         };
 
-        // convert the base64 image into bytes
         match STANDARD.decode(image_base64) {
-            Ok(image_data) => {
-                return Some((Bytes::from(image_data), "svg"));
-            }
+            Ok(image_data) => return Some((Bytes::from(image_data), "svg")),
             Err(e) => {
                 error!("Failed to decode base64 SVG image from node '{}' for token ID {} on contract {}: {}",
                        node.name, token_id, contract_address, e);
@@ -497,19 +542,55 @@ mod tests {
     use crate::blockchain::{AssetAddress, EvmNodeInquirer, SupportedBlockchain};
     use crate::create_globaldb;
     use crate::icons::{
-        get_asset_path, query_token_icon_and_extension, query_uniswap_position_icon,
+        build_token_uri_calldata, decode_abi_string, get_asset_path,
+        query_token_icon_and_extension, query_uniswap_position_icon, TOKENURI_SELECTOR,
     };
-    use alloy::primitives::address;
+    use alloy_primitives::Address;
     use axum::body::Bytes;
     use base64::{engine::general_purpose::STANDARD, Engine as _};
     use std::path::Path;
+    use std::str::FromStr;
     use std::sync::Arc;
+
+    /// Parse a checksummed address string (replaces `address!` macro in tests).
+    fn test_address(s: &str) -> Address {
+        Address::from_str(s).expect("valid address")
+    }
+
+    #[test]
+    fn test_build_token_uri_calldata() {
+        let calldata = build_token_uri_calldata(alloy_primitives::U256::from(150));
+        assert_eq!(
+            calldata,
+            format!(
+                "0x{TOKENURI_SELECTOR}0000000000000000000000000000000000000000000000000000000000000096"
+            )
+        );
+        let calldata =
+            build_token_uri_calldata(alloy_primitives::U256::from(61908u64));
+        assert_eq!(
+            calldata,
+            format!(
+                "0x{TOKENURI_SELECTOR}000000000000000000000000000000000000000000000000000000000000f1d4"
+            )
+        );
+    }
+
+    #[test]
+    fn test_decode_abi_string() {
+        // ABI-encoded "hello": offset=0x20, length=5, data="hello", padded to 32
+        let hex = "0x\
+            0000000000000000000000000000000000000000000000000000000000000020\
+            0000000000000000000000000000000000000000000000000000000000000005\
+            68656c6c6f000000000000000000000000000000000000000000000000000000";
+        assert_eq!(decode_abi_string(hex), Some("hello".to_string()));
+    }
 
     #[tokio::test]
     async fn test_smoldapp_icons() {
         let mut server = mockito::Server::new_async().await;
         let chain = 100;
-        let address = address!("0x177127622c4a00f3d409b75571e12cb3c8973d3c");
+        let address = test_address("0x177127622c4A00F3d409B75571e12cB3c8973d3c");
         let data = b"cowswap_icon";
 
         // mock successful query
@@ -567,7 +648,7 @@ mod tests {
         let result = query_uniswap_position_icon(
             8453,
             "150",
-            address!("0x03a520b32C04BF3bEEf7BEb72E919cf822Ed34f1"),
+            test_address("0x03a520b32C04BF3bEEf7BEb72E919cf822Ed34f1"),
             Arc::new(evm_inquirer),
         )
         .await;
@@ -599,7 +680,7 @@ mod tests {
         let result = query_uniswap_position_icon(
             42161, // Arbitrum chain ID
             "61908",
-            address!("0xd88F38F930b7952f2DB2432Cb002E7abbF3dD869"), // Arbitrum v4 position manager
+            test_address("0xd88F38F930b7952f2DB2432Cb002E7abbF3dD869"), // Arbitrum v4 position manager
             Arc::new(evm_inquirer),
         )
         .await;

@@ -1,4 +1,4 @@
-use alloy::primitives::Address;
+use alloy_primitives::Address;
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum AssetAddress {
@@ -115,7 +115,7 @@ fn parse_solana_identifier(parts: &[&str]) -> Option<AssetIdentifier> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use alloy::primitives::address;
+    use alloy_primitives::address;
 
     #[test]
     fn test_parse_asset_identifier_valid() {

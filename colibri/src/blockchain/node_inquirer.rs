@@ -1,5 +1,3 @@
-use alloy::providers::DynProvider;
-use alloy::providers::ProviderBuilder;
 use log::{debug, error};
 use std::collections::HashMap;
 use std::sync::Arc;
@@ -13,8 +11,6 @@ pub struct EvmNodeInquirer {
     globaldb: Arc<GlobalDB>,
     pub rpc_nodes: RwLock<Vec<RpcNode>>,
     pub blockchain: SupportedBlockchain,
-    // Connected nodes
-    provider_mapping: RwLock<HashMap<RpcNode, Box<DynProvider>>>,
 }
 
 impl EvmNodeInquirer {
@@ -23,7 +19,6 @@ impl EvmNodeInquirer {
             blockchain,
             globaldb,
             rpc_nodes: RwLock::new(Vec::new()),
-            provider_mapping: RwLock::new(HashMap::new()),
         };
 
         debug!("created EvmNodeInquirer for {}", blockchain.as_str());
@@ -39,30 +34,6 @@ impl EvmNodeInquirer {
 
         *self.rpc_nodes.write().await = nodes;
         Ok(())
-    }
-
-    /// Gets an existing RPC node connection or creates a new one.
-    ///
-    /// Checks if a connection to the specified RPC node already exists in the cache.
-    /// If found, returns the existing provider; otherwise creates a new connection,
-    /// stores it in the cache, and returns it.
-    pub async fn get_or_create_node_connection(
-        &self,
-        node: &RpcNode,
-    ) -> Result<Arc<DynProvider>, String> {
-        if let Some(provider) = self.provider_mapping.read().await.get(node) {
-            return Ok(Arc::from(provider.clone()));
-        }
-
-        let endpoint = node
-            .endpoint
-            .parse()
-            .map_err(|e| format!("Invalid endpoint URL: {}", e))?;
-        let provider = DynProvider::new(ProviderBuilder::new().connect_http(endpoint));
-        let mut mapping = self.provider_mapping.write().await;
-        mapping.insert(node.clone(), Box::new(provider.clone()));
-
-        Ok(Arc::new(provider))
     }
 }
 
