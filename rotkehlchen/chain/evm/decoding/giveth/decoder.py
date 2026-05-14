@@ -19,6 +19,7 @@ from rotkehlchen.chain.evm.decoding.structures import (
     EvmDecodingOutput,
 )
 from rotkehlchen.chain.evm.decoding.utils import get_donation_event_params
+from rotkehlchen.constants import ZERO
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.utils.misc import bytes_to_address
@@ -37,8 +38,11 @@ log = RotkehlchenLogsAdapter(logger)
 class GivethDonationDecoderBase(EvmDecoderInterface):
     """Decoder for Giveth's multi-donate contract (donateManyETH / donateManyERC20).
 
-    A separate DonationMade event is emitted per recipient, so each event maps 1:1
-    to a transfer that needs to be marked as a Giveth donation.
+    A separate DonationMade event is emitted per recipient. For ERC20 donations and for
+    the receiver side of native donations there's a matching transfer event per recipient
+    that we mark as a Giveth donation in place. For native multi-donations sent by the
+    user the only existing event is the aggregate spend to the donation contract, which
+    we split into one donation event per recipient.
     """
 
     def __init__(
@@ -79,21 +83,69 @@ class GivethDonationDecoderBase(EvmDecoderInterface):
             payer_address=sender_address,
             counterparty=CPT_GIVETH,
         )
+        # For ERC20 donations and for receivers a per-donation event already exists
+        # in decoded_events (one Transfer log or one internal transaction per recipient).
+        # For native multi-donations from the sender's perspective only the aggregate
+        # spend to the donation contract exists and we'll split it in the fallback below.
+        sender_perspective = sender_tracked and not recipient_tracked
         for event in context.decoded_events:
             if (
                     event.event_type == expected_type and
                     event.event_subtype == HistoryEventSubType.NONE and
                     event.asset == token_received and
-                    event.amount == amount_received
+                    event.amount == amount_received and
+                    event.counterparty is None
             ):
+                # In sender perspective the aggregate native spend matches this filter
+                # for a single donation, but its address is the donation contract instead
+                # of the recipient. Skip it so the split path handles it uniformly.
+                if sender_perspective and event.address == self.donation_contract_address:
+                    continue
+
                 event.event_type = new_type
                 event.counterparty = CPT_GIVETH
                 event.event_subtype = HistoryEventSubType.DONATE
                 event.notes = notes
-                break
-        else:
-            log.error(f'Failed to find giveth donation event in {context.transaction}')
+                if sender_perspective:
+                    event.address = recipient_address
+                return DEFAULT_EVM_DECODING_OUTPUT
 
+        if sender_perspective:
+            aggregate_event = None
+            for event in context.decoded_events:
+                if (
+                        event.event_type == HistoryEventType.SPEND and
+                        event.event_subtype == HistoryEventSubType.NONE and
+                        event.asset == token_received and
+                        event.location_label == sender_address and
+                        event.address == self.donation_contract_address and
+                        event.counterparty is None and
+                        event.amount >= amount_received
+                ):
+                    aggregate_event = event
+                    break
+
+            if aggregate_event is not None:
+                aggregate_event.amount -= amount_received
+                donation_event = self.base.make_event_from_transaction(
+                    transaction=context.transaction,
+                    tx_log=context.tx_log,
+                    event_type=new_type,
+                    event_subtype=HistoryEventSubType.DONATE,
+                    asset=token_received,
+                    amount=amount_received,
+                    location_label=sender_address,
+                    notes=notes,
+                    counterparty=CPT_GIVETH,
+                    address=recipient_address,
+                )
+                if aggregate_event.amount == ZERO:
+                    context.decoded_events.remove(aggregate_event)
+                else:
+                    aggregate_event.notes = f'Send {aggregate_event.amount} {token_received.symbol} to {self.donation_contract_address}'  # noqa: E501
+                return EvmDecodingOutput(events=[donation_event])
+
+        log.error(f'Failed to find giveth donation event in {context.transaction}')
         return DEFAULT_EVM_DECODING_OUTPUT
 
     # -- DecoderInterface methods
