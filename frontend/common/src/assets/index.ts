@@ -89,6 +89,14 @@ export function getAddressFromEvmIdentifier(identifier?: string): string {
   return identifier.split(':')[2] ?? '';
 }
 
+export function getChainIdFromEvmIdentifier(identifier?: string): number | undefined {
+  if (!identifier || !isEvmIdentifier(identifier))
+    return undefined;
+
+  const chainId = Number.parseInt(identifier.split(':')[1].split('/')[0]);
+  return Number.isNaN(chainId) ? undefined : chainId;
+}
+
 function getAddressAndNftIdFromIdentifier(identifier: string): { address: string; nftId: string } {
   const addressAndId = identifier.split(':')[2];
   const addressParts = addressAndId?.split('/') ?? [];
