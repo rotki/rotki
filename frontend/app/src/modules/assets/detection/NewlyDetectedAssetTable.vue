@@ -4,7 +4,6 @@ import { type BigNumber, getAddressFromEvmIdentifier, getAddressFromSolanaIdenti
 import { FiatDisplay } from '@/modules/assets/amount-display/components';
 import AssetDetails from '@/modules/assets/AssetDetails.vue';
 import { usePriceUtils } from '@/modules/assets/prices/use-price-utils';
-import { useAssetInfoCache } from '@/modules/assets/use-asset-info-cache';
 import { useSpamAsset } from '@/modules/assets/use-spam-asset';
 import { useAccountAddresses } from '@/modules/balances/blockchain/use-account-addresses';
 import { arrayify } from '@/modules/core/common/data/array';
@@ -16,6 +15,7 @@ import DateDisplay from '@/modules/shell/components/display/DateDisplay.vue';
 import HashLink from '@/modules/shell/components/HashLink.vue';
 import HintMenuIcon from '@/modules/shell/components/HintMenuIcon.vue';
 import TablePageLayout from '@/modules/shell/layout/TablePageLayout.vue';
+import { getTokenChain } from './get-token-chain';
 import { type NewDetectedToken, NewDetectedTokenKind } from './types';
 import { useNewlyDetectedTokens } from './use-newly-detected-tokens';
 
@@ -43,10 +43,8 @@ const { t } = useI18n({ useScope: 'global' });
 const selected = ref<string[]>([]);
 const tokenKindFilter = ref<NewDetectedTokenKind>();
 
-const { cache } = useAssetInfoCache();
-
 const { getAllIdentifiers, getData, isReady, removeNewDetectedTokens } = useNewlyDetectedTokens();
-const { getChain, isSolanaChains } = useSupportedChains();
+const { allEvmChains, isSolanaChains } = useSupportedChains();
 const { addresses } = useAccountAddresses();
 const { markAssetsAsSpam } = useSpamAsset();
 const { getAssetPrice } = usePriceUtils();
@@ -114,20 +112,13 @@ const cols = computed<DataTableColumn<Token>[]>(() => [
 useRememberTableSorting<Token>(TableId.NEWLY_DETECTED_ASSETS, sort, cols);
 
 const rows = computed<Token[]>(() => {
-  const currentCache = get(cache);
-  return get(state).data.map((data) => {
-    const evmChain = currentCache[data.tokenIdentifier]?.evmChain;
-    const chain = data.tokenKind === NewDetectedTokenKind.EVM && evmChain
-      ? getChain(evmChain)
-      : data.tokenKind;
-
-    return {
-      ...data,
-      address: TOKEN_KIND_MAPPING[data.tokenKind].addressFormatter(data.tokenIdentifier),
-      chain,
-      price: getAssetPrice(data.tokenIdentifier),
-    };
-  });
+  const evmChains = get(allEvmChains);
+  return get(state).data.map(data => ({
+    ...data,
+    address: TOKEN_KIND_MAPPING[data.tokenKind].addressFormatter(data.tokenIdentifier),
+    chain: getTokenChain(data, evmChains),
+    price: getAssetPrice(data.tokenIdentifier),
+  }));
 });
 
 const allSelected = computed<boolean>(() => {
