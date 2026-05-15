@@ -2,6 +2,8 @@
 Changelog
 =========
 
+* :feature:`12215` Cryptocompare is now removed from the default list of oracles if no API key is set.
+* :bug:`-` Searching Monad and Hyperliquid assets should now work properly.
 * :bug:`-` Multi-eth donations in giveth should now be properly decoded.
 * :feature:`12179` Blocks produced by validators will be queried in the case of missing beaconcha.in API keys.
 * :bug:`-` Pressing Enter while searching in an autocomplete field no longer accidentally submits the form when there are no matches.

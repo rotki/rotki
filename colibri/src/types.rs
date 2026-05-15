@@ -273,6 +273,10 @@ pub enum ChainID {
     Scroll = 534352,
     Sonic = 146,
     Linea = 59144,
+    Monad = 143,
+    Hyperliquid = 999,
+    Ink = 57073,
+    Megaeth = 4326,
 }
 
 impl ChainID {
@@ -298,6 +302,10 @@ impl ChainID {
             534352 => Ok(ChainID::Scroll),
             146 => Ok(ChainID::Sonic),
             59144 => Ok(ChainID::Linea),
+            143 => Ok(ChainID::Monad),
+            999 => Ok(ChainID::Hyperliquid),
+            57073 => Ok(ChainID::Ink),
+            4326 => Ok(ChainID::Megaeth),
             _ => Err(format!("Unknown chain ID: {value}")),
         }
     }
@@ -326,6 +334,10 @@ impl ChainID {
             "scroll" => Some(ChainID::Scroll),
             "sonic" => Some(ChainID::Sonic),
             "linea" => Some(ChainID::Linea),
+            "monad" => Some(ChainID::Monad),
+            "hyperliquid" => Some(ChainID::Hyperliquid),
+            "ink" => Some(ChainID::Ink),
+            "megaeth" => Some(ChainID::Megaeth),
             _ => None,
         }
     }
@@ -352,6 +364,10 @@ impl ChainID {
             ChainID::Scroll => "scroll".to_string(),
             ChainID::Sonic => "sonic".to_string(),
             ChainID::Linea => "linea".to_string(),
+            ChainID::Monad => "monad".to_string(),
+            ChainID::Hyperliquid => "hyperliquid".to_string(),
+            ChainID::Ink => "ink".to_string(),
+            ChainID::Megaeth => "megaeth".to_string(),
         }
     }
 }
