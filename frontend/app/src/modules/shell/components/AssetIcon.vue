@@ -198,7 +198,7 @@ const { copied, copy } = useCopy(() => identifier);
       >
         <div
           v-if="showChain && chain"
-          class="!rounded-full !overflow-hidden bg-white z-[0] absolute flex items-center justify-center shadow-sm -bottom-1 -right-1 border border-rui-grey-300 dark:border-rui-grey-900"
+          class="!rounded-full !overflow-hidden bg-white z-[1] absolute flex items-center justify-center shadow-sm -bottom-1 -right-1 border border-rui-grey-300 dark:border-rui-grey-900"
           :style="{ marginTop: chainIconMargin, marginLeft: chainIconMargin }"
         >
           <EvmChainIcon
