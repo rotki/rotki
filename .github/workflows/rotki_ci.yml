@@ -225,6 +225,9 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
+    defaults:
+      run:
+        working-directory: ./colibri
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
         with:
@@ -233,19 +236,22 @@ jobs:
       - uses: dtolnay/rust-toolchain@e7a32da269276b4d9cb3a0343133a168355ab751  # clippy
         with:
           toolchain: 1.91
+          components: clippy
 
       - uses: Swatinem/rust-cache@e18b497796c12c097a38f9edb9d0641fb99eee32  # v2
         with:
           cache-on-failure: true
-          workspaces: colibri
+          workspaces: |
+            colibri -> target
 
-      - run: cargo check --workspace && cargo clippy --workspace
-        working-directory: ./colibri
+      - name: Fetch Rust dependencies
+        run: cargo fetch --locked
+
+      - run: cargo check --workspace --locked && cargo clippy --workspace --locked
         env:
           RUSTFLAGS: -Dwarnings
 
-      - run: cargo test
-        working-directory: ./colibri
+      - run: cargo test --locked
         env:
           RUSTFLAGS: -Dwarnings
 
