@@ -102,6 +102,7 @@ jobs:
     env:
       CI: true
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     strategy:
       fail-fast: false
       matrix:
