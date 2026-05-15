@@ -33,6 +33,7 @@ from rotkehlchen.types import (
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import from_wei, iso8601ts_to_timestamp, set_user_agent, ts_sec_to_ms
 from rotkehlchen.utils.network import create_session
+from rotkehlchen.utils.rate_limiter import TokenBucket
 from rotkehlchen.utils.serialization import jsonloads_dict
 
 if TYPE_CHECKING:
@@ -45,6 +46,11 @@ if TYPE_CHECKING:
 # https://docs.blockscout.com/devs/apis/rpc/account#get-transactions-by-address
 BLOCKSCOUT_PAGINATION_LIMIT = 10000
 BLOCKSCOUT_PRO_API_BASE_URL = 'https://api.blockscout.com'
+# Blockscout has no documented hard rate limit on the free public endpoints.
+# Pick a conservative shared cap so parallel chain refreshes don't accidentally
+# DoS our own backend.
+BLOCKSCOUT_RATE_LIMIT_RPS: Final = 10.0
+BLOCKSCOUT_RATE_LIMIT_BURST: Final = 20
 AUTOSCOUT_INSTANCES: Final[dict[ChainID, str]] = {  # self launched instances by chains. Not in the PRO apis  # noqa: E501
     ChainID.HYPERLIQUID: 'https://www.hyperscan.com',
 }
@@ -73,6 +79,10 @@ class Blockscout(ExternalServiceWithApiKey, EtherscanLikeApi):
             name='Blockscout',
             pagination_limit=BLOCKSCOUT_PAGINATION_LIMIT,
             default_api_key=ApiKey(''),  # no default api key used for blockscout
+            rate_limiter=TokenBucket(
+                rps=BLOCKSCOUT_RATE_LIMIT_RPS,
+                capacity=BLOCKSCOUT_RATE_LIMIT_BURST,
+            ),
         )
         self.session = create_session()
         set_user_agent(self.session)
@@ -129,6 +139,7 @@ class Blockscout(ExternalServiceWithApiKey, EtherscanLikeApi):
         backoff_in_seconds = 10
 
         while True:
+            self._rate_limiter.acquire()
             try:
                 request_kwargs: dict[str, Any] = {'timeout': timeout}
                 if query_params is not None:
@@ -144,6 +155,7 @@ class Blockscout(ExternalServiceWithApiKey, EtherscanLikeApi):
                 raise RemoteError(f'Querying {query_str} failed due to {e!s}') from e
 
             if response.status_code == 429:
+                self._rate_limiter.shrink_after_429()
                 if times == 0:
                     msg = (
                         f'Blockscout API request {response.url} failed '

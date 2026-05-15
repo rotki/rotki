@@ -57,6 +57,7 @@ from rotkehlchen.types import ExternalService, Price, Timestamp
 from rotkehlchen.utils.misc import set_user_agent, ts_now
 from rotkehlchen.utils.mixins.penalizable_oracle import PenalizablePriceOracleMixin
 from rotkehlchen.utils.network import create_session
+from rotkehlchen.utils.rate_limiter import TokenBucket
 from rotkehlchen.utils.serialization import jsonloads_dict
 
 if TYPE_CHECKING:
@@ -73,6 +74,11 @@ CRYPTOCOMPARE_STARKNET_HISTORICAL_PRICE_CHANGE_TS: Final = Timestamp(1715212800)
 RATE_LIMIT_MSG = 'You are over your rate limit please upgrade your account!'
 CRYPTOCOMPARE_QUERY_RETRY_TIMES = 3
 CRYPTOCOMPARE_RATE_LIMIT_WAIT_TIME = 60
+# Cryptocompare's free tier is generous (~50/s burst, ~100k/month sustained).
+# Stay well under the burst ceiling so we don't share the budget with a noisy
+# accounting run.
+CRYPTOCOMPARE_RATE_LIMIT_RPS: Final = 4.0
+CRYPTOCOMPARE_RATE_LIMIT_BURST: Final = 20
 CRYPTOCOMPARE_SPECIAL_CASES_MAPPING = {
     'ADADOWN': A_USDT,
     'ADAUP': A_USDT,
@@ -220,6 +226,70 @@ class Cryptocompare(
         set_user_agent(self.session)
         self.last_histohour_query_ts = 0
         self.db: DBHandler | None  # type: ignore  # "solve" the self.db discrepancy
+        self._rate_limiter = TokenBucket(
+            rps=CRYPTOCOMPARE_RATE_LIMIT_RPS,
+            capacity=CRYPTOCOMPARE_RATE_LIMIT_BURST,
+        )
+        self._probed = False
+
+    def _maybe_probe(self) -> None:
+        """Probe /stats/rate/limit once per session to learn the per-second budget.
+
+        The endpoint scopes its response to the calling api key (when present),
+        so pass the key as a query param — without it paid tiers would always
+        report free-tier limits and the bucket would never widen.
+
+        Best-effort: any failure (network, HTTP, JSON) leaves _probed=True so we
+        don't fire a probe + a query on every call. If the probe misses the
+        real tier, 429-driven shrink in _api_query() at least keeps us from
+        hammering the upstream.
+        """
+        if self._probed:
+            return
+        self._probed = True
+        probe_params = {'api_key': api_key} if (api_key := self._get_api_key()) else None
+        try:
+            response = self.session.get(
+                url='https://min-api.cryptocompare.com/stats/rate/limit',
+                params=probe_params,
+                timeout=CachedSettings().get_timeout_tuple(),
+            )
+        except requests.exceptions.RequestException as e:
+            log.debug(f'Cryptocompare tier probe failed at the network layer: {e!s}')
+            return
+
+        if response.status_code != 200:
+            log.debug(f'Cryptocompare tier probe got HTTP {response.status_code}; ignoring')
+            return
+
+        try:
+            data = jsonloads_dict(response.text).get('Data', {})
+        except JSONDecodeError:
+            log.debug('Cryptocompare tier probe returned non-json body')
+            return
+
+        # Sum calls_made + calls_left to recover the per-second budget.
+        calls_left = data.get('calls_left', {}) if isinstance(data, dict) else {}
+        calls_made = data.get('calls_made', {}) if isinstance(data, dict) else {}
+        if not (isinstance(calls_left, dict) and isinstance(calls_made, dict)):
+            return
+        try:
+            second_budget = int(calls_left.get('second', 0)) + int(calls_made.get('second', 0))
+        except (TypeError, ValueError):
+            return
+        if second_budget > 0:
+            self._rate_limiter.widen(
+                observed_rps=second_budget,
+                observed_capacity=min(second_budget * 2, 100),
+            )
+            log.debug(f'Cryptocompare tier probe widened rate to {second_budget}/s')
+
+    def on_api_key_changed(self) -> None:
+        self._rate_limiter.reset(
+            rps=CRYPTOCOMPARE_RATE_LIMIT_RPS,
+            capacity=CRYPTOCOMPARE_RATE_LIMIT_BURST,
+        )
+        self._probed = False
 
     def can_query_history(
             self,
@@ -286,8 +356,10 @@ class Cryptocompare(
 
         tries = CRYPTOCOMPARE_QUERY_RETRY_TIMES
         timeout = CachedSettings().get_timeout_tuple()
+        self._maybe_probe()
         while tries >= 0:
             log.debug('Querying cryptocompare', url=url, params=params)
+            self._rate_limiter.acquire()
             try:
                 response = self.session.get(url, timeout=timeout, params=params)
             except requests.exceptions.RequestException as e:
@@ -307,6 +379,7 @@ class Cryptocompare(
                 # for example coingecko
                 if json_ret.get('Message', None) == RATE_LIMIT_MSG:
                     self.last_rate_limit = ts_now()
+                    self._rate_limiter.shrink_after_429()
                     if tries >= 1:
                         backoff_seconds = 3 / tries
                         log.debug(

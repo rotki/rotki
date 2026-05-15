@@ -22,11 +22,15 @@ from rotkehlchen.chain.ethereum.modules.eth2.beacon import BeaconNode
 from rotkehlchen.config import default_data_directory
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
+from rotkehlchen.externalapis.coingecko import Coingecko
+from rotkehlchen.externalapis.cryptocompare import Cryptocompare
+from rotkehlchen.externalapis.defillama import Defillama
 from rotkehlchen.logging import TRACE, RotkehlchenLogsAdapter, add_logging_level, configure_logging
 from rotkehlchen.tests.utils.args import default_args
 from rotkehlchen.tests.utils.gevent import ensure_gevent_patches
 from rotkehlchen.utils.mixins.enums import SerializableEnumNameMixin
 from rotkehlchen.utils.network import create_session
+from rotkehlchen.utils.rate_limiter import TokenBucket
 from rotkehlchen.utils.serialization import jsonloads_dict
 
 if TYPE_CHECKING:
@@ -101,6 +105,27 @@ def pytest_addoption(parser):
 def pytest_runtest_setup() -> None:
     """Keep gevent socket patch active even if other plugins restore stdlib sockets."""
     ensure_gevent_patches()
+
+
+@pytest.fixture(autouse=True)
+def _bypass_rate_limiter(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Disable rate-limit machinery in tests:
+    1. TokenBucket.acquire() — production pacing exists to throttle real HTTP
+       calls against free-tier ceilings. Mocked tests respond instantly so
+       the bucket's gevent.sleep becomes pure overhead.
+    2. The per-client _maybe_probe() tier-discovery HTTP requests on
+       Coingecko / Cryptocompare / Defillama. Cryptocompare in particular
+       hits /stats/rate/limit unconditionally on first use; in CI that
+       request escapes VCR cassettes (cassette miss → test fails) and on
+       non-VCR tests it waits the full connect+read timeout, accumulating
+       over the suite into multi-minute-per-test stalls.
+
+    test_rate_limiter.py overrides this fixture so its tests exercise the
+    real acquire()/widen()/shrink behaviour.
+    """
+    monkeypatch.setattr(TokenBucket, 'acquire', lambda self: None)
+    for client in (Coingecko, Cryptocompare, Defillama):
+        monkeypatch.setattr(client, '_maybe_probe', lambda self: None)
 
 
 if sys.platform == 'darwin':

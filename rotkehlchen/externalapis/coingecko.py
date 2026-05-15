@@ -1,7 +1,7 @@
 import json
 import logging
 from http import HTTPStatus
-from typing import TYPE_CHECKING, Any, Literal, NamedTuple, overload
+from typing import TYPE_CHECKING, Any, Final, Literal, NamedTuple, overload
 
 import requests
 
@@ -22,12 +22,20 @@ from rotkehlchen.types import ChainID, ExternalService, Price, Timestamp, TokenK
 from rotkehlchen.utils.misc import set_user_agent, timestamp_to_date, ts_now
 from rotkehlchen.utils.mixins.penalizable_oracle import PenalizablePriceOracleMixin
 from rotkehlchen.utils.network import create_session
+from rotkehlchen.utils.rate_limiter import TokenBucket
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
+
+# CoinGecko demo (free) tier: 30 calls/minute = 0.5 rps. Pro tiers go higher but
+# share this single client instance — users with a pro key can lift this via
+# settings overrides in a follow-up. Burst lets brief multi-asset bulk fetches
+# (price lookups) finish without artificial pacing.
+COINGECKO_RATE_LIMIT_RPS: Final = 0.45
+COINGECKO_RATE_LIMIT_BURST: Final = 5
 
 
 class CoingeckoAssetData(NamedTuple):
@@ -529,6 +537,63 @@ class Coingecko(
         self.session = create_session()
         set_user_agent(self.session)
         self.db: DBHandler | None  # type: ignore  # "solve" the self.db discrepancy
+        self._rate_limiter = TokenBucket(
+            rps=COINGECKO_RATE_LIMIT_RPS,
+            capacity=COINGECKO_RATE_LIMIT_BURST,
+        )
+        self._probed = False
+
+    def _maybe_probe(self) -> None:
+        """One-shot Pro tier probe. Demo keys (or missing keys) just stay at defaults.
+
+        Best-effort: any failure (network, HTTP, JSON) leaves _probed=True so we
+        don't fire a probe + a query on every call. If the probe fails or misses
+        the real tier the bucket stays at defaults; 429-driven shrink in _query()
+        can only narrow it further (there is no widening fallback), so paid users
+        whose probe permanently fails will run at demo-tier pacing until rotki
+        restarts or the key is re-saved.
+        """
+        if self._probed:
+            return
+        self._probed = True
+        if (api_key := self._get_api_key()) is None:
+            return  # demo tier, nothing to probe
+        try:
+            response = self.session.get(
+                url='https://pro-api.coingecko.com/api/v3/key',
+                headers={'x-cg-pro-api-key': api_key},
+                timeout=CachedSettings().get_timeout_tuple(),
+            )
+        except requests.exceptions.RequestException as e:
+            log.debug(f'Coingecko tier probe failed at the network layer: {e!s}')
+            return
+
+        if response.status_code == HTTPStatus.UNAUTHORIZED:
+            log.debug('Coingecko Pro probe returned 401; treating as demo/free tier')
+            return
+        if response.status_code != HTTPStatus.OK:
+            log.debug(f'Coingecko tier probe got HTTP {response.status_code}; ignoring')
+            return
+
+        try:
+            data = response.json()
+        except (json.decoder.JSONDecodeError, ValueError):
+            log.debug('Coingecko tier probe returned non-json body')
+            return
+
+        # CoinGecko Pro response shape: {"plan": "...", "rate_limit_request_per_minute": N, ...}
+        rpm = data.get('rate_limit_request_per_minute') if isinstance(data, dict) else None
+        if isinstance(rpm, int) and rpm > 0:
+            self._rate_limiter.widen(observed_rps=rpm / 60, observed_capacity=min(rpm, 200))
+            log.debug(f'Coingecko tier probe widened rate to {rpm}/min')
+
+    def on_api_key_changed(self) -> None:
+        """Called from the External Services save/delete hook on key change."""
+        self._rate_limiter.reset(
+            rps=COINGECKO_RATE_LIMIT_RPS,
+            capacity=COINGECKO_RATE_LIMIT_BURST,
+        )
+        self._probed = False
 
     @overload
     def _query(
@@ -573,6 +638,8 @@ class Coingecko(
             self.session.headers.pop('x-cg-pro-api-key', None)
 
         log.debug(f'Querying coingecko: {url=} with {options=}')
+        self._maybe_probe()
+        self._rate_limiter.acquire()
         try:
             response = self.session.get(
                 url=url,
@@ -585,6 +652,7 @@ class Coingecko(
 
         if response.status_code == HTTPStatus.TOO_MANY_REQUESTS:
             self.last_rate_limit = ts_now()
+            self._rate_limiter.shrink_after_429()
             msg = f'Got rate limited by coingecko querying {url}'
             log.warning(msg)
             raise RemoteError(message=msg, error_code=HTTPStatus.TOO_MANY_REQUESTS)

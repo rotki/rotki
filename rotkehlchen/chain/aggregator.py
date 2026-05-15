@@ -7,6 +7,7 @@ from importlib import import_module
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Literal, Optional, TypeVar, cast, overload
 
+import gevent
 import requests
 from gevent.lock import Semaphore
 from web3.exceptions import BadFunctionCallOutput, Web3Exception
@@ -672,19 +673,46 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
         client and the chain is not synced
         """
         xpub_manager = XpubManager(chains_aggregator=self)
-        for chain in SupportedBlockchain if blockchain is None else [blockchain]:
+        chains_to_query: list[SupportedBlockchain] = list(SupportedBlockchain) if blockchain is None else [blockchain]  # noqa: E501
+
+        def _query_one(chain: SupportedBlockchain) -> None:
             if chain == SupportedBlockchain.ETHEREUM_BEACONCHAIN:
                 self.query_eth2_balances(ignore_cache=ignore_cache)
-                self._update_blockchain_balances_cache(blockchain=chain, addresses=addresses)
-                continue
+                return
 
             if ignore_cache is True and chain.is_bitcoin():
                 xpub_manager.check_for_new_xpub_addresses(blockchain=chain)  # type: ignore[arg-type] # mypy doesn't understand is_bitcoin()
 
             self._query_chain_balances(blockchain=chain, ignore_cache=ignore_cache, addresses=addresses)  # noqa: E501
+
+        # Query all chains concurrently. Cross-chain calls into independent backends
+        # (per-chain RPC nodes, blockstream, beaconchain) parallelize freely; calls
+        # into shared upstreams (etherscan-v2's unified key, price oracles) are gated
+        # by the per-client TokenBucket so we don't trip shared rate limits.
+        greenlets = {chain: gevent.spawn(_query_one, chain) for chain in chains_to_query}
+        gevent.joinall(list(greenlets.values()))
+
+        # Persist the cache only for chains that succeeded. Preserve the original
+        # contract by reraising the first failure after all chains have settled.
+        # Additional failures are logged so they aren't silently swallowed when
+        # multiple chains fail in the same refresh.
+        first_exception: BaseException | None = None
+        for chain, greenlet in greenlets.items():
+            if greenlet.exception is not None:
+                if first_exception is None:
+                    first_exception = greenlet.exception
+                else:
+                    log.error(f'Failed to query {chain} balances: {greenlet.exception!s}')
+                continue
             self._update_blockchain_balances_cache(blockchain=chain, addresses=addresses)
 
+        # Recompute totals regardless of failures: succeeded chains have already
+        # mutated self.balances, and a failing chain may have cleared its own
+        # entries before raising — leaving the cached self.totals out of sync.
         self.totals = self.balances.recalculate_totals()
+        if first_exception is not None:
+            raise first_exception
+
         return self.get_balances_update(blockchain)
 
     def get_active_addresses(
