@@ -1553,9 +1553,14 @@ def test_set_get_rotkehlchen_premium_credentials(data_dir, username, sql_vm_inst
     msg_aggregator = MessagesAggregator()
     data = DataHandler(data_dir, msg_aggregator, sql_vm_instructions_cb)
     data.unlock(username, '123', create_new=True, resume_from_backup=False)
+    with data.db.conn.read_ctx() as cursor:
+        last_write_ts_before = data.db.get_setting(cursor, 'last_write_ts')
     data.db.set_rotkehlchen_premium(credentials)
     with data.db.conn.read_ctx() as cursor:
         returned_credentials = data.db.get_rotkehlchen_premium(cursor)
+        # Setting premium credentials must not bump last_write_ts: a fresh
+        # install needs an empty last_write_ts to sync state from the server.
+        assert data.db.get_setting(cursor, 'last_write_ts') == last_write_ts_before
     assert returned_credentials == credentials
     assert returned_credentials.serialize_key() == api_key
     assert returned_credentials.serialize_secret() == secret
