@@ -44,7 +44,9 @@ from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.globaldb.utils import set_token_spam_protocol
 from rotkehlchen.history.events.structures.base import HistoryBaseEntryType
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.history.types import HistoricalPriceOracle
 from rotkehlchen.icons import IconManager
+from rotkehlchen.oracles.structures import CurrentPriceOracle
 from rotkehlchen.rotkehlchen import Rotkehlchen
 from rotkehlchen.tests.utils.blockchain import setup_evm_addresses_activity_mock
 from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
@@ -53,10 +55,13 @@ from rotkehlchen.tests.utils.factories import make_evm_address, make_evm_tx_hash
 from rotkehlchen.types import (
     SPAM_PROTOCOL,
     SUPPORTED_EVM_EVMLIKE_CHAINS_TYPE,
+    ApiKey,
     CacheType,
     ChainID,
     ChecksumEvmAddress,
     EvmTransaction,
+    ExternalService,
+    ExternalServiceApiCredentials,
     Location,
     SupportedBlockchain,
     Timestamp,
@@ -1075,3 +1080,67 @@ def test_migration_24(database: DBHandler) -> None:
             'SELECT COUNT(*) FROM evm_internal_tx_conflicts WHERE transaction_hash=? AND chain=?',
             (tx_hash_4, ChainID.ETHEREUM.serialize_for_db()),
         ).fetchone()[0] == 0
+
+
+@pytest.mark.parametrize('perform_upgrades_at_unlock', [False])
+@pytest.mark.parametrize('data_migration_version', [24])
+@pytest.mark.parametrize('include_cryptocompare_key', [False])
+@pytest.mark.parametrize('with_cryptocompare_api_key', [False, True])
+def test_migration_25(database: DBHandler, with_cryptocompare_api_key: bool) -> None:
+    """Test migration 25 removes cryptocompare from oracles only without an API key."""
+    rotki = MockRotkiForMigrations(database)
+    current_oracles = [
+        CurrentPriceOracle.COINGECKO.serialize(),
+        CurrentPriceOracle.CRYPTOCOMPARE.serialize(),
+        CurrentPriceOracle.DEFILLAMA.serialize(),
+    ]
+    historical_oracles = [
+        HistoricalPriceOracle.MANUAL.serialize(),
+        HistoricalPriceOracle.CRYPTOCOMPARE.serialize(),
+        HistoricalPriceOracle.COINGECKO.serialize(),
+    ]
+    with database.user_write() as write_cursor:
+        write_cursor.executemany(
+            'INSERT OR REPLACE INTO settings(name, value) VALUES (?, ?)',
+            [
+                ('current_price_oracles', json.dumps(current_oracles)),
+                ('historical_price_oracles', json.dumps(historical_oracles)),
+            ],
+        )
+        if with_cryptocompare_api_key:
+            database.add_external_service_credentials(
+                write_cursor=write_cursor,
+                credentials=[ExternalServiceApiCredentials(
+                    service=ExternalService.CRYPTOCOMPARE,
+                    api_key=ApiKey('dummy-api-key'),
+                )],
+            )
+
+    with patch(
+        'rotkehlchen.data_migrations.manager.MIGRATION_LIST',
+        new=[next(migration for migration in MIGRATION_LIST if migration.version == 25)],
+    ):
+        DataMigrationManager(rotki).maybe_migrate_data()
+
+    with database.conn.read_ctx() as cursor:
+        migrated_current_oracles = json.loads(cursor.execute(
+            'SELECT value FROM settings WHERE name=?',
+            ('current_price_oracles',),
+        ).fetchone()[0])
+        migrated_historical_oracles = json.loads(cursor.execute(
+            'SELECT value FROM settings WHERE name=?',
+            ('historical_price_oracles',),
+        ).fetchone()[0])
+
+    if with_cryptocompare_api_key:
+        assert migrated_current_oracles == current_oracles
+        assert migrated_historical_oracles == historical_oracles
+    else:
+        assert migrated_current_oracles == [
+            CurrentPriceOracle.COINGECKO.serialize(),
+            CurrentPriceOracle.DEFILLAMA.serialize(),
+        ]
+        assert migrated_historical_oracles == [
+            HistoricalPriceOracle.MANUAL.serialize(),
+            HistoricalPriceOracle.COINGECKO.serialize(),
+        ]

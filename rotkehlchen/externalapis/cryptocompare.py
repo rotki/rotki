@@ -221,6 +221,9 @@ class Cryptocompare(
         self.last_histohour_query_ts = 0
         self.db: DBHandler | None  # type: ignore  # "solve" the self.db discrepancy
 
+    def has_api_key(self) -> bool:
+        return self._get_api_key() is not None
+
     def can_query_history(
             self,
             from_asset: Asset,
@@ -230,9 +233,13 @@ class Cryptocompare(
     ) -> bool:
         """Checks if it's okay to query cryptocompare historical price. This is determined by:
 
+        - Existence of an API key
         - Existence of a cached price
         - Last rate limit
         """
+        if self.has_api_key() is False:
+            return False
+
         data_range = GlobalDBHandler.get_historical_price_range(
             from_asset=from_asset,
             to_asset=to_asset,
@@ -281,8 +288,10 @@ class Cryptocompare(
         or with reading the response returned by the server
         """
         params = params if params is not None else {}
-        if api_key := self._get_api_key():
-            params |= {'api_key': api_key}
+        if (api_key := self._get_api_key()) is None:
+            raise RemoteError('Cryptocompare can not be queried without an API key')
+
+        params |= {'api_key': api_key}
 
         tries = CRYPTOCOMPARE_QUERY_RETRY_TIMES
         timeout = CachedSettings().get_timeout_tuple()

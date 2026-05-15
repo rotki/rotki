@@ -103,6 +103,7 @@ from rotkehlchen.tests.utils.constants import A_CNY, A_JPY
 from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.types import (
     EVM_CHAINS_WITH_TRANSACTIONS,
+    ApiKey,
     CacheType,
     ChainID,
     ChecksumEvmAddress,
@@ -278,7 +279,13 @@ def test_find_usd_price_cache(inquirer, freezer):  # pylint: disable=unused-argu
         'query_multiple_current_prices',
         wraps=mock_query_price,
     )
-    inquirer.set_oracles_order(oracles=[CurrentPriceOracle.CRYPTOCOMPARE])
+    api_key_patch = patch.object(
+        inquirer._cryptocompare,
+        '_get_api_key',
+        return_value=ApiKey('test'),
+    )
+    with api_key_patch:
+        inquirer.set_oracles_order(oracles=[CurrentPriceOracle.CRYPTOCOMPARE])
 
     with cc_patch as cc:
         price = inquirer.find_usd_price(A_ETH)
@@ -1046,7 +1053,8 @@ def test_connect_rpc_with_hex_chainid(ethereum_inquirer: EthereumInquirer):
 def test_fake_symbol_doesnt_query_cc(inquirer: 'Inquirer'):
     """Test that a token that has the symbol of another token (like USDC) doesn't trigger
     a price query"""
-    inquirer.set_oracles_order(oracles=[CurrentPriceOracle.CRYPTOCOMPARE])
+    with patch.object(inquirer._cryptocompare, '_get_api_key', return_value=ApiKey('test')):
+        inquirer.set_oracles_order(oracles=[CurrentPriceOracle.CRYPTOCOMPARE])
     token = EvmToken.initialize(
         address=string_to_evm_address('0x9fca10428566808CC9175412491dF4681cF39cE4'),
         chain_id=ChainID.GNOSIS,
@@ -1792,10 +1800,17 @@ def test_bsq_price(inquirer: 'Inquirer') -> None:
     assert bsq_price.is_close(btc_price * BTC_PER_BSQ)
 
 
-@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.vcr(filter_query_parameters=['apikey', 'api_key'])
 @pytest.mark.parametrize('should_mock_current_price_queries', [False])
 def test_batch_price_query(inquirer: 'Inquirer'):
     """Test that finding multiple prices at once works as expected."""
+    inquirer._cryptocompare.api_key = ApiKey('dummy-api-key')
+    inquirer._cryptocompare.last_ts = ts_now()
+    inquirer.set_oracles_order((
+        CurrentPriceOracle.COINGECKO,
+        CurrentPriceOracle.DEFILLAMA,
+        CurrentPriceOracle.CRYPTOCOMPARE,
+    ))
     assert inquirer.find_prices(
         from_assets=[A_BTC, A_BNB, A_AVAX],
         to_asset=A_ETH,

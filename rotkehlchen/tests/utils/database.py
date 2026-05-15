@@ -125,7 +125,6 @@ def add_settings_to_test_db(
         'submit_usage_analytics': False,
         'main_currency': DEFAULT_TESTS_MAIN_CURRENCY,
         'historical_price_oracles': [
-            HistoricalPriceOracle.CRYPTOCOMPARE,
             HistoricalPriceOracle.COINGECKO,
             HistoricalPriceOracle.DEFILLAMA,
             HistoricalPriceOracle.UNISWAPV3,

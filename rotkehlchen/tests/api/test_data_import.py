@@ -51,6 +51,14 @@ if TYPE_CHECKING:
     from rotkehlchen.tests.fixtures.websockets import WebsocketReader
 
 
+@pytest.fixture(name='historical_price_oracles_order')
+def fixture_historical_price_oracles_order(
+        cryptocompare_historical_price_oracles_order: tuple,
+) -> tuple:
+    """Override to use CryptoCompare-first order for VCR cassette compatibility."""
+    return cryptocompare_historical_price_oracles_order
+
+
 mocked_prices = {
     'BTC': {
         'USD': {
