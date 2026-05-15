@@ -3,9 +3,12 @@ Changelog
 =========
 
 * :feature:`12215` Cryptocompare is now removed from the default list of oracles if no API key is set.
+<<<<<<< HEAD
 * :bug:`-` Hyperliquid history pagination no longer skips entries when many fills share the same millisecond at a page boundary.
+=======
 * :bug:`-` Reviewing newly detected Monad and Hyperliquid tokens now shows the chain icon and a working block-explorer link next to the address, so you can confirm what was detected without leaving the page.
 * :bug:`-` The chain icon on an asset no longer flickers behind the asset image while it loads, so you can tell which chain a token belongs to from the moment it appears.
+>>>>>>> a93f78b5bd (docs: changelog entries for newly detected token chain fixes)
 * :bug:`-` Searching Monad and Hyperliquid assets should now work properly.
 * :bug:`-` Multi-eth donations in giveth should now be properly decoded.
 * :feature:`12179` Blocks produced by validators will be queried in the case of missing beaconcha.in API keys.
