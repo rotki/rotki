@@ -2862,18 +2862,16 @@ class DBHandler:
 
     def set_rotkehlchen_premium(self, credentials: PremiumCredentials) -> None:
         """Save the rotki premium credentials in the DB"""
-        cursor = self.conn.cursor()
-        # We don't care about previous value so simple insert or replace should work
-        cursor.execute(
-            'INSERT OR REPLACE INTO user_credentials'
-            '(name, api_key, api_secret, passphrase) VALUES (?, ?, ?, ?)',
-            ('rotkehlchen', credentials.serialize_key(), credentials.serialize_secret(), None),
-        )
-        self.conn.commit()
-        cursor.close()
-        # Do not update the last write here. If we are starting in a new machine
-        # then this write is mandatory and to sync with data from server we need
-        # an empty last write ts in that case
+        # Use write_ctx directly (not user_write) to skip the last_write_ts bump.
+        # If we are starting on a new machine then this write is mandatory and to
+        # sync with data from server we need an empty last_write_ts in that case.
+        with self.conn.write_ctx() as cursor:
+            # We don't care about previous value so simple insert or replace should work
+            cursor.execute(
+                'INSERT OR REPLACE INTO user_credentials'
+                '(name, api_key, api_secret, passphrase) VALUES (?, ?, ?, ?)',
+                ('rotkehlchen', credentials.serialize_key(), credentials.serialize_secret(), None),
+            )
 
     def delete_premium_credentials(self) -> bool:
         """Delete the rotki premium credentials in the DB for the logged-in user"""
