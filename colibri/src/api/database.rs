@@ -21,7 +21,7 @@ pub async fn unlock_user(
             StatusCode::BAD_REQUEST,
             Json(ApiResponse::<String> {
                 result: None,
-                message: "DB already unlocked".to_string(),
+                message: "The DB is already unlocked".to_string(),
             }),
         )
             .into_response();
