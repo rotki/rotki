@@ -51,7 +51,7 @@ def test_iter_entries_does_not_collapse_partial_fills_sharing_oid() -> None:
         'tid': 2, 'oid': shared_oid, 'hash': '0xtx', 'time': same_time, 'sz': '6',
     }
 
-    with patch.object(api, '_query_list', return_value=[fill_a, fill_b]):
+    with patch.object(api, '_query_list', side_effect=[[fill_a, fill_b], []]):
         contexts = list(api._iter_entries_by_time(
             query_type='userFillsByTime',
             address=address,
@@ -73,10 +73,13 @@ def test_iter_entries_dedups_same_tid_across_pages() -> None:
         'tid': 42, 'oid': 1, 'hash': '0xtx', 'time': 1700000000000, 'sz': '1',
     }
 
-    # Return the duplicate on the first page, then nothing. The backwards
-    # pagination would normally advance the cursor, but with a single entry
-    # we exit because `oldest_time >= cursor_end`.
-    with patch.object(api, '_query_list', return_value=[duplicate_fill, duplicate_fill]):
+    # Page 1 returns the entry, page 2 returns it again (overlapping window),
+    # page 3 is empty and terminates pagination.
+    with patch.object(api, '_query_list', side_effect=[
+        [duplicate_fill],
+        [duplicate_fill],
+        [],
+    ]):
         contexts = list(api._iter_entries_by_time(
             query_type='userFillsByTime',
             address=address,
@@ -85,3 +88,45 @@ def test_iter_entries_dedups_same_tid_across_pages() -> None:
         ))
 
     assert len(contexts) == 1
+
+
+def test_iter_entries_recovers_truncated_boundary_entries() -> None:
+    """When a page contains entries spanning multiple milliseconds and the
+    oldest ms had additional entries truncated by the API page cap, the next
+    query is repeated at that boundary so the remaining entries can be
+    fetched. Per-entry dedup prevents already-yielded entries from being
+    emitted twice.
+    """
+    api = HyperliquidAPI()
+    address = string_to_evm_address('0x7fC1b7863251Ac7F83c7a4E83ccd00d129Ee844c')
+    boundary_ts = 1700000000000
+    newer_fill: dict[str, Any] = {
+        'tid': 1, 'oid': 1, 'hash': '0xtx', 'time': boundary_ts + 10, 'sz': '1',
+    }
+    boundary_fill_a: dict[str, Any] = {
+        'tid': 2, 'oid': 2, 'hash': '0xtx', 'time': boundary_ts, 'sz': '2',
+    }
+    boundary_fill_b: dict[str, Any] = {
+        'tid': 3, 'oid': 3, 'hash': '0xtx', 'time': boundary_ts, 'sz': '3',
+    }
+    older_fill: dict[str, Any] = {
+        'tid': 4, 'oid': 4, 'hash': '0xtx', 'time': boundary_ts - 5, 'sz': '4',
+    }
+
+    # Page 1: newer + boundary_a (boundary_b is truncated by the page cap).
+    # Page 2: re-queried with endTime=boundary, returns boundary_a (deduped),
+    #         boundary_b (new — recovered), and an older entry.
+    # Page 3: empty, terminates pagination.
+    with patch.object(api, '_query_list', side_effect=[
+        [newer_fill, boundary_fill_a],
+        [boundary_fill_a, boundary_fill_b, older_fill],
+        [],
+    ]):
+        contexts = list(api._iter_entries_by_time(
+            query_type='userFillsByTime',
+            address=address,
+            start_ts=Timestamp(1699999998),
+            end_ts=Timestamp(1700000001),
+        ))
+
+    assert [ctx.entry['tid'] for ctx in contexts] == [1, 2, 3, 4]
