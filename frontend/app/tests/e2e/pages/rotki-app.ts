@@ -72,6 +72,7 @@ export class RotkiApp {
     await this.page.locator('[data-cy=create-account__credentials__button__continue]').click();
     await this.page.locator('[data-cy=create-account__submit-analytics__button__continue]').click();
     await this.page.locator('[data-cy=account-management-forms]').waitFor({ state: 'detached' });
+    await this.checkGetPremiumButton();
     await apiUpdateAssets(this.request);
     await this.loadEnv();
     await this.dismissSettingsSuggestionsIfVisible();
