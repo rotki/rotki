@@ -200,7 +200,8 @@ function checkRememberUsername() {
 async function loadSettings() {
   set(rememberPassword, !!get(savedRememberPassword));
   checkRememberUsername();
-  set(username, resolveStoredUsername());
+  if (!get(username))
+    set(username, resolveStoredUsername());
 
   const { sessionOnly, url } = getBackendUrl();
   set(customBackendUrl, url);
