@@ -737,6 +737,24 @@ def test_delete_snapshot(rotkehlchen_api_server: 'APIServer') -> None:
     )
 
 
+def test_delete_snapshot_with_orphan_rows(rotkehlchen_api_server: 'APIServer') -> None:
+    """Regression: if only one of the two snapshot tables has rows for the given
+    timestamp (drift from a prior partial failure), delete should still succeed
+    and clean up rather than misreport 'No snapshot found'."""
+    db = rotkehlchen_api_server.rest_api.rotkehlchen.data.db
+    ts = ts_now()
+    with db.user_write() as cursor:
+        _populate_db_with_balances(cursor, db, ts)  # only balances, no location_data
+
+    response = requests.delete(
+        api_url_for(rotkehlchen_api_server, 'dbsnapshotsresource'),
+        json={'timestamp': ts},
+    )
+    assert_simple_ok_response(response)
+    cursor = db.conn.cursor()
+    assert len(cursor.execute('SELECT timestamp FROM timed_balances WHERE timestamp=?', (ts,)).fetchall()) == 0  # noqa: E501
+
+
 def test_get_snapshot_json(rotkehlchen_api_server: 'APIServer') -> None:
     db = rotkehlchen_api_server.rest_api.rotkehlchen.data.db
     ts = ts_now()
