@@ -363,7 +363,7 @@ def test_accounting_swap_settings(accounting_pot: 'AccountingPot', counterparty:
         index=1,
         extra_data={
             'tx_ref': EXAMPLE_TX_HASH_HEX,
-            'group_id': f'{swap_spend_event.group_identifier}12',
+            'group_id': f'{swap_spend_event.group_identifier}-1-2',
             'direction': 'out',
         },
     )
@@ -384,7 +384,7 @@ def test_accounting_swap_settings(accounting_pot: 'AccountingPot', counterparty:
         index=2,
         extra_data={
             'tx_ref': EXAMPLE_TX_HASH_HEX,
-            'group_id': f'{swap_receive_event.group_identifier}12',
+            'group_id': f'{swap_receive_event.group_identifier}-1-2',
             'direction': 'in',
         },
     )

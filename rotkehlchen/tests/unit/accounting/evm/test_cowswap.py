@@ -77,12 +77,12 @@ def test_cowswap_swap_with_fee(accountant: 'Accountant'):
         pot.events_accountant.process(event=event, events_iterator=events_iterator)  # type: ignore
 
     extra_data_out = {
-        'group_id': '1' + str(tx_hash) + '12',
+        'group_id': f'1{tx_hash!s}-1-2',
         'tx_ref': str(tx_hash),
         'direction': 'out',
     }
     extra_data_in = {
-        'group_id': '1' + str(tx_hash) + '12',
+        'group_id': f'1{tx_hash!s}-1-2',
         'tx_ref': str(tx_hash),
         'direction': 'in',
     }
