@@ -517,7 +517,7 @@ class HistoryBaseEntry(AccountingEventMixin, ABC, Generic[ExtraDataType]):
         if self.identifier is not None:
             return hash(self.identifier)
 
-        return hash(str(self.group_identifier) + str(self.sequence_index))
+        return hash((self.group_identifier, self.sequence_index))
 
 
 class HistoryEvent(HistoryBaseEntry):
