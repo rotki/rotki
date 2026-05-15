@@ -39,6 +39,14 @@ from rotkehlchen.tests.utils.history_base_entry import add_entries
 from rotkehlchen.types import Location, TimestampMS
 
 
+@pytest.fixture(name='historical_price_oracles_order')
+def fixture_historical_price_oracles_order(
+        cryptocompare_historical_price_oracles_order: tuple,
+) -> tuple:
+    """Override to use CryptoCompare-first order for VCR cassette compatibility."""
+    return cryptocompare_historical_price_oracles_order
+
+
 def assert_csv_export_response(
         response: requests.Response,
         csv_path: Path,
@@ -343,6 +351,7 @@ def test_history_export_csv_free_limit(
 
 
 @pytest.mark.freeze_time('2025-04-30')
+@pytest.mark.parametrize('mocked_price_queries', [{'ETH': {'EUR': {1700000000: ONE}}, 'USD': {'EUR': {1700000000: ONE}}}])  # noqa: E501
 def test_history_export_csv_includes_matched_asset_movement_events(
         rotkehlchen_api_server_with_exchanges: APIServer,
         tmpdir_factory: pytest.TempdirFactory,

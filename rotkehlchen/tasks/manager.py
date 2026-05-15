@@ -204,6 +204,10 @@ class TaskManager:
         Runs only once and then has a number of queries prepared for the task manager to schedule
         """
         log.debug('Preparing cryptocompare historical price queries')
+        if self.cryptocompare.has_api_key() is False:
+            self.prepared_cryptocompare_query = True
+            return
+
         if len(self.cryptocompare_queries) != 0:
             return
 

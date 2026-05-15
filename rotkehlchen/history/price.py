@@ -117,8 +117,16 @@ class PriceHistorian:
             "Oracles can't be empty or have repeated items"
         )
         instance = PriceHistorian()
-        instance._oracles = oracles
-        instance._oracle_instances = [getattr(instance, f'_{oracle!s}') for oracle in oracles]
+        instance._oracles = tuple(
+            oracle for oracle in oracles
+            if (
+                oracle != HistoricalPriceOracle.CRYPTOCOMPARE or
+                instance._cryptocompare.has_api_key()
+            )
+        )
+        instance._oracle_instances = [
+            getattr(instance, f'_{oracle!s}') for oracle in instance._oracles
+        ]
 
     @staticmethod
     def _get_cached_price_or_query(
@@ -297,16 +305,22 @@ class PriceHistorian:
         oracles, oracle_instances = instance._oracles, instance._oracle_instances
         assert oracles is not None and oracle_instances is not None, 'PriceHistorian should never be called before setting the oracles'  # noqa: E501
         # try to get the price from the cache using only enabled historical sources
+        sources = (
+            HistoricalPriceOracle.MANUAL,
+            HistoricalPriceOracle.XRATESCOM,
+            *oracles,
+        )
+        if HistoricalPriceOracle.CRYPTOCOMPARE not in oracles:
+            # Consider cached cryptocompare prices if they exist. We removed it
+            # from the oracle list since they went paid.
+            sources = (*sources, HistoricalPriceOracle.CRYPTOCOMPARE)
+
         if (cached_price_entry := GlobalDBHandler.get_historical_price(
             from_asset=from_asset,
             to_asset=to_asset,
             timestamp=timestamp,
             max_seconds_distance=HOUR_IN_SECONDS,
-            sources=(
-                HistoricalPriceOracle.MANUAL,
-                HistoricalPriceOracle.XRATESCOM,
-                *oracles,
-            ),
+            sources=sources,
         )) is not None:
             return cached_price_entry.price
 

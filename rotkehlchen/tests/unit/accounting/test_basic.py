@@ -1,4 +1,5 @@
 from typing import TYPE_CHECKING
+from unittest.mock import patch
 
 import pytest
 
@@ -335,6 +336,12 @@ def test_asset_and_price_not_found_in_history_processing(accountant):
     Regression for https://github.com/rotki/rotki/issues/432
     Updated with https://github.com/rotki/rotki/pull/4196
     """
+    api_key_patch = patch.object(
+        PriceHistorian()._cryptocompare,
+        '_get_api_key',
+        return_value='test',
+    )
+    api_key_patch.start()
     PriceHistorian().set_oracles_order([HistoricalPriceOracle.CRYPTOCOMPARE])  # enforce single oracle for VCR  # noqa: E501
     fgp = EvmToken('eip155:1/erc20:0xd9A8cfe21C232D485065cb62a96866799d4645f7')
     time = Timestamp(1492685761)
@@ -362,6 +369,7 @@ def test_asset_and_price_not_found_in_history_processing(accountant):
         time=time,
         rate_limited=False,
     )
+    api_key_patch.stop()
 
 
 @pytest.mark.parametrize('mocked_price_queries', [prices])
