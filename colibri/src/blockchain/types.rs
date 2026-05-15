@@ -16,6 +16,8 @@ pub enum SupportedBlockchain {
     BinanceSc,
     Ethereum,
     Gnosis,
+    Hyperliquid,
+    Monad,
     Optimism,
     PolygonPos,
     Scroll,
@@ -39,6 +41,8 @@ impl SupportedBlockchain {
             Self::BinanceSc => "BINANCE_SC",
             Self::Ethereum => "ETH",
             Self::Gnosis => "GNOSIS",
+            Self::Hyperliquid => "HYPERLIQUID",
+            Self::Monad => "MONAD",
             Self::Optimism => "OPTIMISM",
             Self::PolygonPos => "POLYGON_POS",
             Self::Scroll => "SCROLL",
@@ -55,6 +59,8 @@ impl SupportedBlockchain {
             Self::PolygonPos => "eip155:137/erc20:0x0000000000000000000000000000000000001010",
             Self::Gnosis => "XDAI",
             Self::BinanceSc => "BNB",
+            Self::Hyperliquid => "HYPE",
+            Self::Monad => "MON",
             Self::Solana => "SOL",
             // All others: the chain identifier is also its native token
             // (Ethereum→ETH, Bitcoin→BTC, Avalanche→AVAX, etc.)
@@ -72,6 +78,8 @@ impl SupportedBlockchain {
             100 => Some(Self::Gnosis),
             137 => Some(Self::PolygonPos),
             43114 => Some(Self::Avalanche),
+            143 => Some(Self::Monad),
+            999 => Some(Self::Hyperliquid),
             8453 => Some(Self::Base),
             42161 => Some(Self::ArbitrumOne),
             534352 => Some(Self::Scroll),
@@ -98,5 +106,33 @@ mod tests {
             SupportedBlockchain::from_chain_id(43114),
             Some(SupportedBlockchain::Avalanche)
         );
+    }
+
+    #[test]
+    fn test_from_chain_id_includes_monad() {
+        assert_eq!(
+            SupportedBlockchain::from_chain_id(143),
+            Some(SupportedBlockchain::Monad)
+        );
+    }
+
+    #[test]
+    fn test_from_chain_id_includes_hyperliquid() {
+        assert_eq!(
+            SupportedBlockchain::from_chain_id(999),
+            Some(SupportedBlockchain::Hyperliquid)
+        );
+    }
+
+    #[test]
+    fn test_native_token_id_for_new_chains() {
+        assert_eq!(SupportedBlockchain::Monad.native_token_id(), "MON");
+        assert_eq!(SupportedBlockchain::Hyperliquid.native_token_id(), "HYPE");
+    }
+
+    #[test]
+    fn test_as_str_for_new_chains() {
+        assert_eq!(SupportedBlockchain::Monad.as_str(), "MONAD");
+        assert_eq!(SupportedBlockchain::Hyperliquid.as_str(), "HYPERLIQUID");
     }
 }
