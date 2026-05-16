@@ -15,7 +15,7 @@ from rotkehlchen.data_import.utils import (
     hash_csv_row,
 )
 from rotkehlchen.db.drivers.gevent import DBCursor
-from rotkehlchen.errors.asset import UnknownAsset
+from rotkehlchen.errors.asset import UnknownAsset, UnsupportedAsset
 from rotkehlchen.errors.misc import InputError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.history.events.structures.asset_movement import AssetMovement
@@ -568,6 +568,8 @@ class CryptocomImporter(BaseExchangeImporter):
                 raise InputError(f'Crypto.com csv missing entry for {e!s}') from e
             except UnknownAsset as e:
                 raise InputError(f'Encountered unknown asset {e!s} at crypto.com csv import') from e  # noqa: E501
+            except UnsupportedAsset as e:
+                raise InputError(f'Encountered unsupported asset at crypto.com csv import: {e!s}') from e  # noqa: E501
 
             for index, row in enumerate(data, start=1):
                 try:
@@ -579,6 +581,13 @@ class CryptocomImporter(BaseExchangeImporter):
                         row_index=index,
                         csv_row=row,
                         msg=f'Unknown asset {e.identifier}.',
+                        is_error=True,
+                    )
+                except UnsupportedAsset as e:
+                    self.send_message(
+                        row_index=index,
+                        csv_row=row,
+                        msg=str(e),
                         is_error=True,
                     )
                 except DeserializationError as e:

@@ -3,6 +3,7 @@ Changelog
 =========
 
 * :feature:`12215` Cryptocompare is now removed from the default list of oracles if no API key is set.
+* :bug:`12233` Importing a custom CSV that contains an asset which is unsupported on the given exchange (e.g. GLD on Bittrex) no longer crashes the import task. The offending row is reported as an error and the rest of the file is imported normally.
 * :bug:`-` Hyperliquid history pagination no longer skips entries when many fills share the same millisecond at a page boundary.
 * :bug:`-` Reviewing newly detected Monad and Hyperliquid tokens now shows the chain icon and a working block-explorer link next to the address, so you can confirm what was detected without leaving the page.
 * :bug:`-` The chain icon on an asset no longer flickers behind the asset image while it loads, so you can tell which chain a token belongs to from the moment it appears.
