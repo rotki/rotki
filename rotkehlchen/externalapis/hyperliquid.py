@@ -607,8 +607,13 @@ class HyperliquidAPI:
     ) -> Iterator[EntryContext]:
         """Query a user history endpoint in pages and iterate unique entries.
 
-        The API caps each response, so this method paginates backwards by reducing
-        `endTime` to one millisecond before the oldest item in the previous page.
+        The API caps each response, so this method paginates backwards by lowering
+        `endTime` to the oldest item on the previous page when we made progress
+        past that millisecond — per-entry dedup keeps overlapping boundary entries
+        from yielding twice. Once a millisecond is fully drained (the next page
+        returned only duplicates) we advance past it. If the page cap truncates
+        entries at a single millisecond beyond what one extra query can recover
+        we log a warning, since the API exposes no within-millisecond cursor.
 
         A single request covers the first perp dex, all HIP-3 builder-deployed perp
         dexs, and spot: Hyperliquid's history endpoints do not accept a `dex` param
@@ -642,6 +647,7 @@ class HyperliquidAPI:
                 break
 
             oldest_time = cursor_end
+            new_yields = 0
             for entry in page_entries:
                 try:
                     entry_time_ms = deserialize_timestamp_ms_from_intms(entry['time'])
@@ -680,9 +686,32 @@ class HyperliquidAPI:
                 ) is None:
                     continue
                 yield context
+                new_yields += 1
 
-            if oldest_time >= cursor_end:
-                break
+            # Advance the cursor backwards. The API caps each response, so the
+            # entries at the oldest millisecond on a page may have been
+            # truncated. If we yielded new entries and made progress past that
+            # boundary (oldest_time < cursor_end), keep the boundary inclusive
+            # on the next query so any truncated entries at oldest_time are
+            # captured — per-entry dedup keeps overlap from yielding twice.
+            # Otherwise we've drained that millisecond (or got stuck on it) and
+            # have to advance past, accepting any extras the page cap dropped.
+            if new_yields > 0 and oldest_time < cursor_end:
+                cursor_end = TimestampMS(oldest_time)
+                continue
+
+            if new_yields > 0:
+                # Full page at the cursor boundary: there may be more entries
+                # at this exact millisecond that the page cap dropped and the
+                # API has no within-millisecond cursor for us to recover them.
+                log.warning(
+                    f'Hyperliquid {query_type} for {address} returned a full '
+                    f'page of new entries at {oldest_time}ms. Some entries at '
+                    f'that millisecond may be missing from this sync.',
+                )
+
+            if oldest_time == 0:
+                break  # avoid wrapping below zero
             cursor_end = TimestampMS(oldest_time - 1)
 
         if page >= HYPERLIQUID_MAX_HISTORY_PAGES and cursor_end >= start_ms:
