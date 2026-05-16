@@ -247,8 +247,8 @@ class Coinbase(ExchangeInterface):
     def _get_active_account_info(self, accounts: list[dict[str, Any]]) -> list[str]:
         """Gets the account ids from the accounts response.
 
-        At the moment of writing this the coinbase API returns the accounts for the assets
-        that the user has interacted with and in addition account for BCH, ETH2, BTC and ETH.
+        At the time of writing this, the coinbase API returns the accounts for the assets
+        that the user has interacted with and in addition accounts for BCH, ETH2, BTC and ETH.
 
         We used to have an activity check comparing the `updated_at` and `created_at` fields
         of the response and later checking `updated_at` against its value from the last query,
