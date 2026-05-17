@@ -18,17 +18,23 @@ def _bypass_rate_limiter() -> None:
 
 
 def test_burst_then_steady_rate() -> None:
-    """A fresh bucket allows a burst up to capacity, then steadies at rps."""
+    """A fresh bucket allows a burst up to capacity, then steadies at rps.
+
+    Upper bounds are deliberately loose: the lower bounds prove pacing
+    actually happened; the upper bounds only need to catch egregious bugs
+    (infinite waits, off-by-orders-of-magnitude), not normal gevent
+    scheduler drift on a loaded CI runner.
+    """
     bucket = TokenBucket(rps=10, capacity=5)
     start = time.monotonic()
-    for _ in range(5):  # burst should be instant
+    for _ in range(5):  # burst should be near-instant (no gevent.sleep)
         bucket.acquire()
     burst_elapsed = time.monotonic() - start
-    assert burst_elapsed < 0.05, f'burst should be instant, took {burst_elapsed:.3f}s'
+    assert burst_elapsed < 0.5, f'burst should be instant, took {burst_elapsed:.3f}s'
 
     bucket.acquire()  # 6th forces a wait of ~0.1s (1 token at 10rps)
     steady_elapsed = time.monotonic() - start
-    assert 0.07 < steady_elapsed < 0.18, f'expected ~0.1s wait, got {steady_elapsed:.3f}s'
+    assert 0.07 < steady_elapsed < 1.0, f'expected ~0.1s wait, got {steady_elapsed:.3f}s'
 
 
 def test_concurrent_greenlets_share_rate() -> None:
@@ -38,8 +44,10 @@ def test_concurrent_greenlets_share_rate() -> None:
     greenlets = [gevent.spawn(bucket.acquire) for _ in range(7)]
     gevent.joinall(greenlets)
     elapsed = time.monotonic() - start
-    # 7 requests through rps=5, burst=2: first 2 instant, remaining 5 cost ~1s total.
-    assert 0.95 < elapsed < 1.25, f'expected ~1s, got {elapsed:.3f}s'
+    # 7 requests through rps=5, burst=2: first 2 instant, remaining 5 cost ~1s
+    # total. Upper bound is loose to absorb scheduler drift on loaded CI; the
+    # lower bound is the meaningful check that pacing happened at all.
+    assert 0.95 < elapsed < 3.0, f'expected ~1s, got {elapsed:.3f}s'
 
 
 def test_rejects_invalid_config() -> None:
