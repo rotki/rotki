@@ -5,7 +5,7 @@ from collections.abc import Callable, Mapping, Sequence
 from contextlib import suppress
 from enum import Enum, StrEnum
 from pathlib import Path
-from typing import Any, Final, Generic, Literal
+from typing import Any, Final, Generic, Literal, NotRequired, TypedDict
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 import webargs
@@ -79,6 +79,11 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
+class IncludeExcludeListPayload(TypedDict):
+    values: list[str]
+    behaviour: NotRequired[Literal['include', 'exclude']]
+
+
 class IncludeExcludeListField(fields.Field[IncludeExcludeFilterData]):
     """ A field that accepts an object like the following and deserializes it to the proper types.
     {
@@ -100,7 +105,7 @@ class IncludeExcludeListField(fields.Field[IncludeExcludeFilterData]):
 
     def _deserialize(
             self,
-            value: dict[str, list | str],
+            value: IncludeExcludeListPayload,
             attr: str | None,
             data: Any,
             **kwargs: Any,
