@@ -30,7 +30,7 @@ jobs:
       frontend_tasks: ${{ steps.checker.outputs.frontend_tasks }}
       e2e_tasks: ${{ steps.checker.outputs.e2e_tasks }}
       documentation_tasks: ${{ steps.checker.outputs.documentation_tasks }}
-      test_environment: ${{ steps.checker.outputs.test_environment }}
+      test_environment: ${{ steps.checker.outputs.backend_environment }}
     permissions:
       contents: read
     steps:
@@ -40,20 +40,35 @@ jobs:
           persist-credentials: false
 
       - name: Run check action
-        uses: rotki/action-job-checker@7e0e1933df593a14ee57c51d2be1f0014d4191d0  # v5.0.0
+        uses: rotki/action-job-checker@c507ef41d38d78c43014d42175dc1725019f0c23  # v6.1.0
         id: checker
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          documentation_paths: |
-            docs
-          colibri_paths: |
-            colibri
-          backend_paths: |
-            rotkehlchen
-            pyproject.toml
-            .github/workflows/task_backend_tests.yml
-          frontend_paths: |
-            frontend
+          config: |
+            # yaml-language-server: $schema=https://raw.githubusercontent.com/rotki/action-job-checker/v6.1.0/schema.json
+            groups:
+              - name: frontend
+                paths: [frontend]
+                run_tag: run frontend
+                implies: [e2e]
+              - name: e2e
+                run_tag: run e2e
+              - name: backend
+                paths:
+                  - rotkehlchen
+                  - pyproject.toml
+                  - .github/workflows/task_backend_tests.yml
+                run_tag: run backend
+                skip_tag: skip py tests
+                environments:
+                  - tag: run nft py tests
+                    value: nfts
+                  - tag: run all py tests
+                    value: nightly
+              - name: colibri
+                paths: [colibri]
+              - name: documentation
+                paths: [docs]
 
   check-typos:
     name: 'Check Typos'
