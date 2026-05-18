@@ -1287,3 +1287,31 @@ def test_detect_and_refresh_validators_only_processes_addresses_with_deposits(et
         eth2.detect_and_refresh_validators([addr_with_deposit, make_evm_address()])
 
     assert addresses_queried == []
+
+
+def test_detect_and_refresh_validators_skips_exited_validators(eth2: 'Eth2') -> None:
+    """Test that detect_and_refresh_validators doesn't refresh validators marked exited."""
+    with eth2.database.user_write() as write_cursor:
+        DBEth2(eth2.database).add_or_update_validators(write_cursor, [
+            ValidatorDetails(
+                validator_index=(active_index := 42),
+                validator_type=ValidatorType.ACCUMULATING,
+                public_key=Eth2PubKey('0xa685b19738ac8d7ee301f434f77fdbca50f7a2b8d287f4ab6f75cae251aa821576262b79ae9d58d9b458ba748968dfda'),
+            ), ValidatorDetails(
+                validator_index=43,
+                validator_type=ValidatorType.ACCUMULATING,
+                public_key=Eth2PubKey('0xb685b19738ac8d7ee301f434f77fdbca50f7a2b8d287f4ab6f75cae251aa821576262b79ae9d58d9b458ba748968dfda'),
+                exited_timestamp=Timestamp(1700000000),
+            ),
+        ])
+
+    queried_indices = []
+
+    def mock_get_validator_data(indices_or_pubkeys):
+        queried_indices.extend(indices_or_pubkeys)
+        return []
+
+    with patch.object(eth2.beacon_inquirer, 'get_validator_data', side_effect=mock_get_validator_data):  # noqa: E501
+        eth2.detect_and_refresh_validators([])
+
+    assert queried_indices == [active_index]
