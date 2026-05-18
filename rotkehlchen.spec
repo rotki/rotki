@@ -106,6 +106,10 @@ a = Entrypoint(
         'regex.tests',
         'cytoolz.tests', 'toolz.tests',
         'parsimonious.tests',
+        # substrate-interface ships smoldot_light (~24 MB) as an optional
+        # transport, loaded lazily inside a try/except. rotki only uses the
+        # RPC/WebSocket transport, so the binding is never instantiated.
+        'smoldot_light',
     ],
 )
 
