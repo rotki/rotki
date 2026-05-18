@@ -113,7 +113,11 @@ def test_rate_limit(beaconchain: BeaconChain, freezer):
     assert requests_made == 2
 
 
-def test_free_trial_expired_deletes_api_key(beaconchain: BeaconChain, database) -> None:
+def test_free_trial_expired_deletes_api_key(
+        beaconchain: BeaconChain,
+        database,
+        messages_aggregator,
+) -> None:
     api_key = ApiKey('expired-key')
 
     def mock_session_request(url: str, **kwargs: dict[str, Any]) -> MockResponse:  # pylint: disable=unused-argument
@@ -137,6 +141,9 @@ def test_free_trial_expired_deletes_api_key(beaconchain: BeaconChain, database) 
 
     assert database.get_external_service_credentials(ExternalService.BEACONCHAIN) is None
     assert beaconchain.api_key is None
+    assert messages_aggregator.consume_warnings() == [
+        'The beaconcha.in API key has been detected as expired and was removed.',
+    ]
 
 
 def test_validator_limit_error_is_cached_and_retried(beaconchain: BeaconChain, database) -> None:

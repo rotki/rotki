@@ -18,7 +18,7 @@ from rotkehlchen.db.filtering import EvmEventFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.db.utils import get_query_chunks
 from rotkehlchen.errors.api import PremiumPermissionError
-from rotkehlchen.errors.misc import ChainNotSupported, InputError, RemoteError
+from rotkehlchen.errors.misc import APIKeyNotAvailable, ChainNotSupported, InputError, RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.base import HistoryBaseEntryType
@@ -903,15 +903,20 @@ class Eth2(EthereumModule):
         """Query and store produced blocks via beaconcha.in or indexer fallback."""
         with self.beacon_inquirer.beaconchain.produced_blocks_lock:
             if self.beacon_inquirer.beaconchain.has_api_key():
-                self.beacon_inquirer.beaconchain._get_and_store_produced_blocks(
-                    indices=indices,
-                    update_cache=update_cache,
-                )
-            else:
-                self._get_and_store_produced_blocks_from_indexers(
-                    indices=indices,
-                    update_cache=update_cache,
-                )
+                try:
+                    self.beacon_inquirer.beaconchain._get_and_store_produced_blocks(
+                        indices=indices,
+                        update_cache=update_cache,
+                    )
+                except (APIKeyNotAvailable, RemoteError) as e:
+                    log.warning(f'Failed to query produced blocks via beaconcha.in due to {e!s}. Falling back to indexers.')  # noqa: E501
+                else:
+                    return
+
+            self._get_and_store_produced_blocks_from_indexers(
+                indices=indices,
+                update_cache=update_cache,
+            )
 
     def combine_block_with_tx_events(self) -> None:
         """Get all mev reward block production events and combine them with the

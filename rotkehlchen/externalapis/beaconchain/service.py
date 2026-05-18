@@ -135,6 +135,9 @@ class BeaconChain(ExternalServiceWithRecommendedApiKey):
                     self.db.delete_external_service_credentials([ExternalService.BEACONCHAIN])
                     self.api_key = None
                     self.last_ts = Timestamp(0)
+                    self.msg_aggregator.add_warning(
+                        'The beaconcha.in API key has been detected as expired and was removed.',
+                    )
                     raise APIKeyNotAvailable('Beaconcha.in free trial expired')
 
                 rate_limit_info = (
