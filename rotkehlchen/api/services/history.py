@@ -34,7 +34,6 @@ from rotkehlchen.errors.misc import AccountingError, APIKeyNotAvailable, RemoteE
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.exchanges.constants import SUPPORTED_EXCHANGES
 from rotkehlchen.externalapis.gnosispay import init_gnosis_pay
-from rotkehlchen.externalapis.monerium import init_monerium
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.history.events.structures.base import HistoryBaseEntryType
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
@@ -300,9 +299,10 @@ class HistoryService:
                     return {'result': True, 'message': ''}
                 elif (
                     query_type == HistoryEventQueryType.MONERIUM and
-                    (monerium := init_monerium(self.rotkehlchen.data.db)) is not None
+                    self.rotkehlchen.monerium is not None and
+                    self.rotkehlchen.monerium.oauth_client.is_authenticated()
                 ):
-                    monerium.get_and_process_orders()
+                    self.rotkehlchen.monerium.get_and_process_orders()
                     return {'result': True, 'message': ''}
                 return {
                     'result': None,

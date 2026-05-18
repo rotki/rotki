@@ -13,7 +13,7 @@ from rotkehlchen.chain.evm.decoding.structures import (
     EvmDecodingOutput,
 )
 from rotkehlchen.errors.misc import RemoteError
-from rotkehlchen.externalapis.monerium import SUPPORTED_MONERIUM_CHAINS, init_monerium
+from rotkehlchen.externalapis.monerium import SUPPORTED_MONERIUM_CHAINS
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import ChecksumEvmAddress, Location
@@ -29,6 +29,7 @@ from .constants import (
 if TYPE_CHECKING:
     from rotkehlchen.chain.evm.decoding.base import BaseEvmDecoderTools
     from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
+    from rotkehlchen.externalapis.monerium import Monerium
     from rotkehlchen.history.events.structures.evm_event import EvmEvent
     from rotkehlchen.user_messages import MessagesAggregator
 
@@ -44,6 +45,7 @@ class MoneriumCommonDecoder(EvmDecoderInterface, ReloadableDecoderMixin):
             evm_inquirer: 'EvmNodeInquirer',
             base_tools: 'BaseEvmDecoderTools',
             msg_aggregator: 'MessagesAggregator',
+            monerium_api: 'Monerium | None',
             monerium_token_addresses: set[ChecksumEvmAddress],
     ) -> None:
         super().__init__(
@@ -52,14 +54,13 @@ class MoneriumCommonDecoder(EvmDecoderInterface, ReloadableDecoderMixin):
             msg_aggregator=msg_aggregator,
         )
         self.monerium_token_addresses = monerium_token_addresses
-        self.monerium_api = init_monerium(database=self.base.database)
+        self.monerium_api = monerium_api
 
     def reload_data(self) -> Mapping[ChecksumEvmAddress, tuple[Any, ...]] | None:
         """Reload the monerium api from the DB with the credentials"""
         # always remember to update SUPPORTED_MONERIUM_CHAINS
         # when we add a new chain for monerium decoder
         assert Location.from_chain_id(self.node_inquirer.chain_id) in SUPPORTED_MONERIUM_CHAINS.values()  # noqa: E501
-        self.monerium_api = init_monerium(database=self.base.database)
         return self.addresses_to_decoders()
 
     def _v1_to_v2_migration_hashes(self) -> set[str]:
@@ -136,7 +137,11 @@ class MoneriumCommonDecoder(EvmDecoderInterface, ReloadableDecoderMixin):
             decoded_events: list['EvmEvent'],
             has_premium: bool,
     ) -> None:
-        if self.monerium_api is None or not has_premium:
+        if (
+                self.monerium_api is None or
+                not self.monerium_api.oauth_client.is_authenticated() or
+                not has_premium
+        ):
             return
 
         try:

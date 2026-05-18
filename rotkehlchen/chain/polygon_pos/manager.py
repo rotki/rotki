@@ -9,6 +9,7 @@ from .tokens import PolygonPOSTokens
 from .transactions import PolygonPOSTransactions
 
 if TYPE_CHECKING:
+    from rotkehlchen.externalapis.monerium import Monerium
     from rotkehlchen.premium.premium import Premium
 
     from .node_inquirer import PolygonPOSInquirer
@@ -20,6 +21,7 @@ class PolygonPOSManager(EvmManager, CurveManagerMixin):
             self,
             node_inquirer: 'PolygonPOSInquirer',
             premium: 'Premium | None' = None,
+            monerium: 'Monerium | None' = None,
     ) -> None:
         transactions = PolygonPOSTransactions(
             polygon_pos_inquirer=node_inquirer,
@@ -41,6 +43,7 @@ class PolygonPOSManager(EvmManager, CurveManagerMixin):
                 polygon_pos_inquirer=node_inquirer,
                 transactions=transactions,
                 premium=premium,
+                monerium=monerium,
             ),
             accounting_aggregator=PolygonPOSAccountingAggregator(
                 node_inquirer=node_inquirer,

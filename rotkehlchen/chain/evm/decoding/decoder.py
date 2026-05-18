@@ -109,6 +109,7 @@ if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.db.drivers.gevent import DBCursor
     from rotkehlchen.externalapis.beaconchain.service import BeaconChain
+    from rotkehlchen.externalapis.monerium import Monerium
     from rotkehlchen.history.events.structures.evm_event import EvmEvent
 
     from .base import BaseEvmDecoderTools, BaseEvmDecoderToolsWithProxy
@@ -189,6 +190,7 @@ class EVMTransactionDecoder(TransactionDecoder['EvmTransaction', EvmDecodingRule
             dbevmtx_class: type[DBEvmTx] = DBEvmTx,
             addresses_exceptions: dict[ChecksumEvmAddress, int] | None = None,
             beacon_chain: 'BeaconChain | None' = None,
+            monerium: 'Monerium | None' = None,
     ):
         """
         Initialize an evm chain transaction decoder module for a particular chain.
@@ -211,6 +213,7 @@ class EVMTransactionDecoder(TransactionDecoder['EvmTransaction', EvmDecodingRule
         self.evm_inquirer = evm_inquirer
         self.transactions = transactions
         self.beacon_chain = beacon_chain
+        self.monerium = monerium
         self.dbevents = DBHistoryEvents(database)
         self.addresses_exceptions = addresses_exceptions or {}
         TransactionDecoder.__init__(
@@ -326,9 +329,11 @@ class EVMTransactionDecoder(TransactionDecoder['EvmTransaction', EvmDecodingRule
         if class_name in self.decoders:
             raise ModuleLoadingError(f'{self.chain_name} decoder with name {class_name} already loaded')  # noqa: E501
 
-        extra_args = []
+        extra_args: list[Any] = []
         if class_name == 'Eth2':
             extra_args.append(self.beacon_chain)
+        elif class_name == 'Monerium':
+            extra_args.append(self.monerium)
 
         try:  # not giving kwargs since, kwargs name can differ
             self.decoders[class_name] = decoder_class(
@@ -1372,6 +1377,7 @@ class EVMTransactionDecoderWithDSProxy(EVMTransactionDecoder, ABC):
             base_tools: 'BaseEvmDecoderToolsWithProxy',
             beacon_chain: 'BeaconChain | None' = None,
             premium: 'Premium | None' = None,
+            monerium: 'Monerium | None' = None,
     ):
         super().__init__(
             database=database,
@@ -1383,6 +1389,7 @@ class EVMTransactionDecoderWithDSProxy(EVMTransactionDecoder, ABC):
             base_tools=base_tools,
             premium=premium,
             beacon_chain=beacon_chain,
+            monerium=monerium,
         )
         self.evm_inquirer: EvmNodeInquirerWithProxies  # Set explicit type
         self.base: BaseEvmDecoderToolsWithProxy  # Set explicit type

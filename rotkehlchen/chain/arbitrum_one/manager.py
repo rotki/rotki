@@ -9,6 +9,7 @@ from .tokens import ArbitrumOneTokens
 from .transactions import ArbitrumOneTransactions
 
 if TYPE_CHECKING:
+    from rotkehlchen.externalapis.monerium import Monerium
     from rotkehlchen.premium.premium import Premium
 
     from .node_inquirer import ArbitrumOneInquirer
@@ -20,6 +21,7 @@ class ArbitrumOneManager(EvmManager, CurveManagerMixin):
             self,
             node_inquirer: 'ArbitrumOneInquirer',
             premium: 'Premium | None' = None,
+            monerium: 'Monerium | None' = None,
     ) -> None:
         transactions = ArbitrumOneTransactions(
             arbitrum_one_inquirer=node_inquirer,
@@ -41,6 +43,7 @@ class ArbitrumOneManager(EvmManager, CurveManagerMixin):
                 arbitrum_inquirer=node_inquirer,
                 transactions=transactions,
                 premium=premium,
+                monerium=monerium,
             ),
             accounting_aggregator=ArbitrumOneAccountingAggregator(
                 node_inquirer=node_inquirer,

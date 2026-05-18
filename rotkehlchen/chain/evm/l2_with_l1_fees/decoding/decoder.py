@@ -16,6 +16,7 @@ if TYPE_CHECKING:
     from rotkehlchen.chain.evm.l2_with_l1_fees.transactions import L2WithL1FeesTransactions
     from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
     from rotkehlchen.db.dbhandler import DBHandler
+    from rotkehlchen.externalapis.monerium import Monerium
     from rotkehlchen.premium.premium import Premium
 
 logger = logging.getLogger(__name__)
@@ -38,6 +39,7 @@ class L2WithL1FeesTransactionDecoder(EVMTransactionDecoder, ABC):
             base_tools: BaseEvmDecoderTools,
             premium: 'Premium | None' = None,
             dbevmtx_class: type[DBL2WithL1FeesTx] = DBL2WithL1FeesTx,
+            monerium: 'Monerium | None' = None,
     ):
         super().__init__(
             database=database,
@@ -49,6 +51,7 @@ class L2WithL1FeesTransactionDecoder(EVMTransactionDecoder, ABC):
             base_tools=base_tools,
             premium=premium,
             dbevmtx_class=dbevmtx_class,
+            monerium=monerium,
         )
 
     def _calculate_fees(self, tx: L2WithL1FeesTransaction) -> FVal:  # type: ignore[override]

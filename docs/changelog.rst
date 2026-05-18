@@ -15,6 +15,7 @@ Changelog
 * :bug:`-` There should no longer be any errors when exporting CSV from PnL report containing an event with notes being Null.
 * :bug:`-` 1inch swaps settling through a balancer pool should now be properly decoded.
 * :bug:`12173` Beaconcha.in queries with legacy API keys will work correctly again.
+* :bug:`-` Monerium credentials should now persist correctly when a redecoding of the history events happen.
 * :bug:`-` Newer zerox swaps in base will now be properly decoded.
 * :bug:`12178` Users can now fix a rejected Kusama, Polkadot, beacon chain, or BTC mempool endpoint by editing the URL in place. The error message clears as soon as you start typing.
 * :bug:`-` Typing dates and times by keyboard now produces the value you intended, instead of occasionally picking up stray digits from the previous segment.

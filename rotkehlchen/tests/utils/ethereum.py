@@ -35,6 +35,7 @@ from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.db.evmtx import DBEvmTx
 from rotkehlchen.db.filtering import EvmTransactionsFilterQuery
 from rotkehlchen.externalapis.beaconchain.service import BeaconChain
+from rotkehlchen.externalapis.monerium import Monerium
 from rotkehlchen.history.events.structures.types import HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.tests.utils.decoders import patch_decoder_reload_data
@@ -466,6 +467,8 @@ def get_decoded_events_of_transaction(
                     database=evm_inquirer.database,
                     msg_aggregator=evm_inquirer.database.msg_aggregator,
                 ))
+            if evm_inquirer.chain_id in {ChainID.ETHEREUM, ChainID.POLYGON_POS, ChainID.ARBITRUM_ONE, ChainID.BASE, ChainID.GNOSIS, ChainID.SCROLL}:  # noqa: E501
+                decoder_args.extend([None, Monerium(database=evm_inquirer.database)])
 
             decoder: EVMTransactionDecoder = mappings_result[1](*decoder_args)
         else:

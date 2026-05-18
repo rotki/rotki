@@ -52,6 +52,7 @@ from rotkehlchen.externalapis.beaconchain.service import BeaconChain
 from rotkehlchen.externalapis.blockscout import Blockscout
 from rotkehlchen.externalapis.etherscan import Etherscan
 from rotkehlchen.externalapis.helius import Helius
+from rotkehlchen.externalapis.monerium import Monerium
 from rotkehlchen.externalapis.opensea import Opensea
 from rotkehlchen.externalapis.routescan import Routescan
 from rotkehlchen.premium.premium import Premium
@@ -362,7 +363,10 @@ def fixture_ethereum_inquirer(
 
 @pytest.fixture(name='ethereum_manager')
 def fixture_ethereum_manager(ethereum_inquirer):
-    return EthereumManager(node_inquirer=ethereum_inquirer)
+    return EthereumManager(
+        node_inquirer=ethereum_inquirer,
+        monerium=Monerium(database=ethereum_inquirer.database),
+    )
 
 
 @pytest.fixture(name='ethereum_transaction_decoder')
@@ -377,6 +381,7 @@ def fixture_ethereum_transaction_decoder(
             database=database,
             ethereum_inquirer=ethereum_inquirer,
             transactions=eth_transactions,
+            monerium=Monerium(database=database),
         )
 
 
@@ -484,6 +489,7 @@ def fixture_base_transaction_decoder(
             database=database,
             base_inquirer=base_inquirer,
             transactions=base_transactions,
+            monerium=Monerium(database=database),
         )
 
 
@@ -499,6 +505,7 @@ def fixture_arbitrum_one_transaction_decoder(
             database=database,
             arbitrum_inquirer=arbitrum_one_inquirer,
             transactions=arbitrum_one_transactions,
+            monerium=Monerium(database=database),
         )
 
 
@@ -536,7 +543,10 @@ def fixture_polygon_pos_inquirer(
 
 @pytest.fixture(name='polygon_pos_manager')
 def fixture_polygon_pos_manager(polygon_pos_inquirer):
-    return PolygonPOSManager(node_inquirer=polygon_pos_inquirer)
+    return PolygonPOSManager(
+        node_inquirer=polygon_pos_inquirer,
+        monerium=Monerium(database=polygon_pos_inquirer.database),
+    )
 
 
 @pytest.fixture(name='arbitrum_one_manager_connect_at_start')
@@ -573,7 +583,10 @@ def fixture_arbitrum_one_inquirer(
 
 @pytest.fixture(name='arbitrum_one_manager')
 def fixture_arbitrum_one_manager(arbitrum_one_inquirer):
-    return ArbitrumOneManager(node_inquirer=arbitrum_one_inquirer)
+    return ArbitrumOneManager(
+        node_inquirer=arbitrum_one_inquirer,
+        monerium=Monerium(database=arbitrum_one_inquirer.database),
+    )
 
 
 @pytest.fixture(name='base_manager_connect_at_start')
@@ -609,7 +622,10 @@ def fixture_base_inquirer(
 
 @pytest.fixture(name='base_manager')
 def fixture_base_manager(base_inquirer):
-    return BaseManager(node_inquirer=base_inquirer)
+    return BaseManager(
+        node_inquirer=base_inquirer,
+        monerium=Monerium(database=base_inquirer.database),
+    )
 
 
 @pytest.fixture(name='hyperliquid_manager_connect_at_start')
@@ -717,7 +733,10 @@ def fixture_gnosis_inquirer(
 
 @pytest.fixture(name='gnosis_manager')
 def fixture_gnosis_manager(gnosis_inquirer):
-    return GnosisManager(node_inquirer=gnosis_inquirer)
+    return GnosisManager(
+        node_inquirer=gnosis_inquirer,
+        monerium=Monerium(database=gnosis_inquirer.database),
+    )
 
 
 @pytest.fixture(name='gnosis_transactions')
@@ -764,7 +783,10 @@ def fixture_scroll_inquirer(
 
 @pytest.fixture(name='scroll_manager')
 def fixture_scroll_manager(scroll_inquirer):
-    return ScrollManager(node_inquirer=scroll_inquirer)
+    return ScrollManager(
+        node_inquirer=scroll_inquirer,
+        monerium=Monerium(database=scroll_inquirer.database),
+    )
 
 
 @pytest.fixture(name='binance_sc_manager_connect_at_start')

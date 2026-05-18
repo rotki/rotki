@@ -20,7 +20,7 @@ from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.db.filtering import EvmEventFilterQuery, HistoryEventFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.errors.misc import RemoteError
-from rotkehlchen.externalapis.monerium import MoneriumOAuthClient, init_monerium
+from rotkehlchen.externalapis.monerium import Monerium, MoneriumOAuthClient
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
@@ -50,8 +50,8 @@ def mock_monerium_and_run_periodic_task(database: DBHandler, contents: str) -> N
             return_value=True,
         ),
     ):
-        monerium = init_monerium(database)
-        assert monerium is not None
+        monerium = Monerium(database)
+        assert monerium.oauth_client.is_authenticated()
         monerium.get_and_process_orders()
 
 
@@ -251,6 +251,8 @@ def test_query_info_on_redecode_request(rotkehlchen_api_server: APIServer) -> No
                 'user_email': 'mock@monerium.com',
             }),
         )
+    assert rotki.monerium is not None
+    rotki.monerium.oauth_client.reload_credentials()
 
     def add_event(self: Any, *args: Any, **kwargs: Any) -> list[EvmEvent]:  # pylint: disable=unused-argument
         with database.conn.read_ctx() as cursor:
@@ -349,6 +351,66 @@ def test_concurrent_refresh_is_serialized(database: DBHandler, monerium_credenti
     assert len(refresh_calls) == 1
     assert client._credentials is not None
     assert client._credentials.expires_at > ts_now()
+
+
+@pytest.mark.parametrize('function_scope_initialize_mock_rotki_notifier', [True])
+def test_concurrent_refresh_with_single_monerium_instance_keeps_credentials(
+        database: DBHandler,
+        monerium_credentials: Any,  # pylint: disable=unused-argument
+) -> None:
+    """Ensure concurrent refreshes through the shared Monerium instance don't race."""
+    with database.conn.read_ctx() as cursor:
+        cached_value = database.get_static_cache(
+            cursor=cursor,
+            name=DBCacheStatic.MONERIUM_OAUTH_CREDENTIALS,
+        )
+    assert cached_value is not None
+
+    credentials = json.loads(cached_value)
+    credentials['expires_at'] = ts_now() - 10
+    with database.user_write() as write_cursor:
+        database.set_static_cache(
+            write_cursor=write_cursor,
+            name=DBCacheStatic.MONERIUM_OAUTH_CREDENTIALS,
+            value=json.dumps(credentials),
+        )
+
+    monerium = Monerium(database)
+    post_calls = 0
+
+    def mock_post(*args: Any, **kwargs: Any) -> MockResponse:  # pylint: disable=unused-argument
+        nonlocal post_calls
+        post_calls += 1
+        gevent.sleep(0.1)  # give the second greenlet time to wait on the instance lock
+        return MockResponse(
+            status_code=HTTPStatus.OK,
+            text=json.dumps({
+                'access_token': 'new-access-token',
+                'refresh_token': 'new-refresh-token',
+                'expires_in': 3600,
+                'token_type': 'Bearer',
+            }),
+        )
+
+    with patch.object(requests.Session, 'post', side_effect=mock_post):
+        first = gevent.spawn(monerium.oauth_client.ensure_access_token)
+        gevent.sleep(0)
+        second = gevent.spawn(monerium.oauth_client.ensure_access_token)
+        gevent.joinall([first, second])
+
+    assert first.exception is None
+    assert second.exception is None
+    assert post_calls == 1
+    with database.conn.read_ctx() as cursor:
+        stored_value = database.get_static_cache(
+            cursor=cursor,
+            name=DBCacheStatic.MONERIUM_OAUTH_CREDENTIALS,
+        )
+    assert stored_value is not None
+    stored_credentials = json.loads(stored_value)
+    assert stored_credentials['access_token'] == 'new-access-token'
+    assert stored_credentials['refresh_token'] == 'new-refresh-token'
+    assert database.msg_aggregator.rotki_notifier.pop_message() is None  # type: ignore[union-attr]
 
 
 @pytest.mark.parametrize('function_scope_initialize_mock_rotki_notifier', [True])

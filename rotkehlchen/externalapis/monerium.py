@@ -266,14 +266,6 @@ class Monerium:
         return event_notes is not None and not event_notes.startswith(('Burn', 'Mint'))
 
 
-def init_monerium(database: 'DBHandler') -> Monerium | None:
-    """Create a monerium instance using the provided database"""
-    if not (monerium := Monerium(database=database)).oauth_client.is_authenticated():
-        return None
-
-    return monerium
-
-
 @dataclass
 class MoneriumOAuthCredentials:
     access_token: str
@@ -351,6 +343,11 @@ class MoneriumOAuthClient:
 
         self._credentials = None
         self._oauth_client = None
+
+    def reload_credentials(self) -> None:
+        """Reload cached credentials from the database."""
+        self._credentials = self._load_credentials()
+        self._oauth_client = WebApplicationClient(AUTHORIZATION_CODE_FLOW_CLIENT_ID) if self._credentials is not None else None  # noqa: E501
 
     def is_authenticated(self) -> bool:
         """Return True when a valid credential set is loaded."""

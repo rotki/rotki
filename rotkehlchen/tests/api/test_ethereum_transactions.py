@@ -17,6 +17,7 @@ from rotkehlchen.chain.ethereum.transactions import EthereumTransactions
 from rotkehlchen.chain.evm.constants import GENESIS_HASH
 from rotkehlchen.chain.evm.decoding.curve.constants import CPT_CURVE
 from rotkehlchen.chain.evm.decoding.monerium.constants import CPT_MONERIUM
+from rotkehlchen.chain.evm.decoding.monerium.decoder import MoneriumCommonDecoder
 from rotkehlchen.chain.evm.structures import EvmTxReceipt, EvmTxReceiptLog
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.chain.gnosis.modules.gnosis_pay.constants import CPT_GNOSIS_PAY
@@ -2015,8 +2016,10 @@ def test_monerium_gnosis_pay_events_update(
             logs=[],
         ))
 
+    monerium_decoder = rotki.chains_aggregator.arbitrum_one.transactions_decoder.decoders['Monerium']  # noqa: E501
+    assert isinstance(monerium_decoder, MoneriumCommonDecoder)
+    monerium_decoder.monerium_api = monerium_instance_mock
     with (
-        patch('rotkehlchen.chain.evm.decoding.monerium.decoder.init_monerium', return_value=monerium_instance_mock),  # noqa: E501
         patch('rotkehlchen.chain.gnosis.modules.gnosis_pay.decoder.init_gnosis_pay', return_value=gnosis_pay_instance_mock),  # noqa: E501
         patch.object(
             rotki.chains_aggregator.gnosis.node_inquirer,

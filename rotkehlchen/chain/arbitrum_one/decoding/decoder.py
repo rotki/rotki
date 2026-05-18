@@ -18,6 +18,7 @@ if TYPE_CHECKING:
     from rotkehlchen.chain.arbitrum_one.types import ArbitrumOneTransaction
     from rotkehlchen.chain.evm.decoding.interfaces import EvmDecoderInterface
     from rotkehlchen.db.dbhandler import DBHandler
+    from rotkehlchen.externalapis.monerium import Monerium
     from rotkehlchen.premium.premium import Premium
 
 logger = logging.getLogger(__name__)
@@ -32,6 +33,7 @@ class ArbitrumOneTransactionDecoder(EVMTransactionDecoder):
             arbitrum_inquirer: 'ArbitrumOneInquirer',
             transactions: 'ArbitrumOneTransactions',
             premium: 'Premium | None' = None,
+            monerium: 'Monerium | None' = None,
     ):
         self.transaction_type_mappings: dict[int, list[tuple[int, Callable]]] = defaultdict(list)
         super().__init__(
@@ -49,6 +51,7 @@ class ArbitrumOneTransactionDecoder(EVMTransactionDecoder):
             ),
             premium=premium,
             dbevmtx_class=DBArbitrumOneTx,
+            monerium=monerium,
         )
 
     def _chain_specific_post_decoding_rules(
