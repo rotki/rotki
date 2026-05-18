@@ -55,6 +55,7 @@ async function afterSign(context: AfterPackContext): Promise<void> {
  */
 export default {
   appId: 'com.rotki.app',
+  compression: 'maximum',
   directories: {
     output: 'build',
     buildResources: 'buildResources',
