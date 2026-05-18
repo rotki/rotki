@@ -109,6 +109,17 @@ a = Entrypoint(
     ],
 )
 
+# Drop unused Google API discovery descriptors. google-api-python-client ships
+# pre-built JSON descriptors for ~575 Google APIs (~93 MB total); we only build
+# the Calendar v3 client (see rotkehlchen/externalapis/google_calendar.py).
+def _keep_google_discovery_entry(dest):
+    norm = dest.replace(os.sep, '/')
+    if '/discovery_cache/documents/' not in norm:
+        return True
+    return norm.rsplit('/', 1)[-1].startswith('calendar')
+
+a.datas = [entry for entry in a.datas if _keep_google_discovery_entry(entry[0])]
+
 pyz = PYZ(a.pure, a.zipped_data, cipher=None)
 
 identity = None
