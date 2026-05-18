@@ -961,6 +961,41 @@ def test_query_online_block_productions_missing_api_key(
 
 
 @pytest.mark.parametrize('ethereum_modules', [['eth2']])
+@pytest.mark.parametrize('start_with_valid_premium', [True])
+@pytest.mark.parametrize('beaconchain_error', [
+    APIKeyNotAvailable('Beaconcha.in free trial expired'),
+    RemoteError('Beaconcha.in query failed'),
+])
+def test_query_online_block_productions_beaconchain_error_falls_back_to_indexers(
+        rotkehlchen_api_server: 'APIServer',
+        beaconchain_error: APIKeyNotAvailable | RemoteError,
+) -> None:
+    """Test beaconcha.in query errors use the produced blocks indexer fallback."""
+    eth2 = rotkehlchen_api_server.rest_api.rotkehlchen.chains_aggregator.get_module('eth2')
+    assert eth2 is not None
+    with (
+        patch.object(eth2.beacon_inquirer.beaconchain, 'has_api_key', return_value=True),
+        patch.object(eth2.beacon_inquirer.beaconchain, 'get_validators_to_query_for_blocks', return_value=[1]),  # noqa: E501
+        patch.object(
+            eth2.beacon_inquirer.beaconchain,
+            '_get_and_store_produced_blocks',
+            side_effect=beaconchain_error,
+        ) as beaconchain_query,
+        patch.object(eth2, '_get_and_store_produced_blocks_from_indexers') as indexer_fallback,
+        patch.object(eth2, 'combine_block_with_tx_events') as combine_block_with_tx_events,
+    ):
+        response = requests.post(
+            url=api_url_for(rotkehlchen_api_server, 'eventsonlinequeryresource'),
+            json={'query_type': 'block_productions'},
+        )
+
+    assert_simple_ok_response(response)
+    beaconchain_query.assert_called_once_with(indices=[1], update_cache=True)
+    indexer_fallback.assert_called_once_with(indices=[1], update_cache=True)
+    combine_block_with_tx_events.assert_called_once_with()
+
+
+@pytest.mark.parametrize('ethereum_modules', [['eth2']])
 @pytest.mark.parametrize('include_beaconchain_key', [False])
 @pytest.mark.parametrize('start_with_valid_premium', [True])
 @pytest.mark.usefixtures('force_beacon_rpc_fallback')
