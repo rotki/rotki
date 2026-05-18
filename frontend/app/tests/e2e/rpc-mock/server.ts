@@ -99,33 +99,71 @@ function scheduleSave(): void {
   }, 2000);
 }
 
-async function forwardRequest(rpcRequest: JsonRpcRequest): Promise<{ result?: unknown; error?: unknown }> {
+const FORWARD_MAX_ATTEMPTS = 5;
+const FORWARD_BACKOFF_MS = 1000;
+
+interface ForwardResult {
+  result?: unknown;
+  error?: unknown;
+  /** If true, the caller should NOT persist this response to the cassette. */
+  transient?: boolean;
+}
+
+async function sleep(ms: number): Promise<void> {
+  await new Promise(resolve => setTimeout(resolve, ms));
+}
+
+async function forwardRequest(rpcRequest: JsonRpcRequest): Promise<ForwardResult> {
   if (!TARGET_URL) {
     throw new Error('MOCK_RPC_TARGET must be set in record mode');
   }
 
-  const response = await fetch(TARGET_URL, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(rpcRequest),
-  });
+  let lastStatus = 0;
+  for (let attempt = 1; attempt <= FORWARD_MAX_ATTEMPTS; attempt++) {
+    const response = await fetch(TARGET_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(rpcRequest),
+    });
 
-  const text = await response.text();
+    const text = await response.text();
 
-  if (!response.ok) {
-    logger.warn(`Target returned HTTP ${response.status} for ${rpcRequest.method}`);
-    return { error: { code: -32603, message: `Target RPC returned HTTP ${response.status}` } };
+    if (response.ok) {
+      try {
+        const body = JSON.parse(text) as { result?: unknown; error?: unknown };
+        return { result: body.result, error: body.error };
+      }
+      catch {
+        const preview = text.slice(0, 120);
+        logger.warn(`Target returned non-JSON for ${rpcRequest.method}: ${preview}`);
+        return {
+          error: { code: -32603, message: 'Target RPC returned non-JSON response' },
+          transient: true,
+        };
+      }
+    }
+
+    lastStatus = response.status;
+    // 429 (rate limit) and 5xx are transient — retry with exponential backoff.
+    const retriable = response.status === 429 || response.status >= 500;
+    if (retriable && attempt < FORWARD_MAX_ATTEMPTS) {
+      const delay = FORWARD_BACKOFF_MS * 2 ** (attempt - 1);
+      logger.warn(`Target returned HTTP ${response.status} for ${rpcRequest.method}, retrying in ${delay}ms (attempt ${attempt}/${FORWARD_MAX_ATTEMPTS})`);
+      await sleep(delay);
+      continue;
+    }
+
+    logger.warn(`Target returned HTTP ${response.status} for ${rpcRequest.method} (not caching)`);
+    return {
+      error: { code: -32603, message: `Target RPC returned HTTP ${response.status}` },
+      transient: true,
+    };
   }
 
-  try {
-    const body = JSON.parse(text) as { result?: unknown; error?: unknown };
-    return { result: body.result, error: body.error };
-  }
-  catch {
-    const preview = text.slice(0, 120);
-    logger.warn(`Target returned non-JSON for ${rpcRequest.method}: ${preview}`);
-    return { error: { code: -32603, message: `Target RPC returned non-JSON response` } };
-  }
+  return {
+    error: { code: -32603, message: `Target RPC returned HTTP ${lastStatus} after ${FORWARD_MAX_ATTEMPTS} attempts` },
+    transient: true,
+  };
 }
 
 async function handleSingleRequest(req: JsonRpcRequest): Promise<Record<string, unknown>> {
@@ -169,16 +207,18 @@ async function handleSingleRequest(req: JsonRpcRequest): Promise<Record<string, 
 
   // Record mode
   logger.info(`RECORD: ${req.method} (hash: ${hash})`);
-  const { result, error } = await forwardRequest(req);
+  const { result, error, transient } = await forwardRequest(req);
 
-  cassette[hash] = {
-    method: req.method,
-    params: req.params,
-    ...(result !== undefined && { result }),
-    ...(error !== undefined && { error }),
-  };
-  dirty = true;
-  scheduleSave();
+  if (!transient) {
+    cassette[hash] = {
+      method: req.method,
+      params: req.params,
+      ...(result !== undefined && { result }),
+      ...(error !== undefined && { error }),
+    };
+    dirty = true;
+    scheduleSave();
+  }
 
   return {
     jsonrpc: '2.0',

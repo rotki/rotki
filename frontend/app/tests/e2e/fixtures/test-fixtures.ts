@@ -1,6 +1,6 @@
 import { type APIRequestContext, test as base, type Browser, type BrowserContext, type Page } from '@playwright/test';
 import { isCoverageEnabled, startCoverage, stopCoverage } from '../coverage';
-import { apiConfigureAllEvmRpcMocks, saveMockRpcCassette } from '../helpers/rpc-mock';
+import { apiConfigureRpcMocks, saveMockRpcCassette } from '../helpers/rpc-mock';
 import { generateUsername } from '../helpers/utils';
 import { RotkiApp } from '../pages/rotki-app';
 
@@ -26,6 +26,12 @@ export interface LoginOptions {
    * If not provided, mock RPC will not be configured.
    */
   rpcMockCassette?: string;
+  /**
+   * Backend blockchain identifiers (e.g. 'ETH', 'SOLANA') that should be
+   * routed through the mock RPC server. Only used when `rpcMockCassette` is set.
+   * Defaults to ['ETH'].
+   */
+  rpcMockChains?: string[];
 }
 
 /**
@@ -75,7 +81,7 @@ export async function createLoggedInContext(
 
   // Replace default RPC nodes with mock server (if cassette specified)
   if (options.rpcMockCassette) {
-    await apiConfigureAllEvmRpcMocks(request, options.rpcMockCassette);
+    await apiConfigureRpcMocks(request, options.rpcMockCassette, options.rpcMockChains);
   }
 
   return {
