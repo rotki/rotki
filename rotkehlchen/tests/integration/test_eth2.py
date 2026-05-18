@@ -5,8 +5,13 @@ from unittest.mock import patch
 import pytest
 
 from rotkehlchen.chain.ethereum.modules.eth2.structures import ValidatorDetails, ValidatorType
-from rotkehlchen.chain.ethereum.modules.eth2.utils import epoch_to_timestamp, form_withdrawal_notes
+from rotkehlchen.chain.ethereum.modules.eth2.utils import (
+    epoch_to_timestamp,
+    form_withdrawal_notes,
+    timestamp_to_slot,
+)
 from rotkehlchen.chain.evm.types import string_to_evm_address
+from rotkehlchen.chain.structures import TimestampOrBlockRange
 from rotkehlchen.constants import ONE
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.db.eth2 import DBEth2
@@ -28,7 +33,42 @@ from rotkehlchen.types import (
 )
 from rotkehlchen.utils.misc import ts_now
 
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('network_mocking', [False])
+@pytest.mark.parametrize('beacon_rpc_endpoint', ['https://ethereum-beacon-api.publicnode.com'])
+@pytest.mark.parametrize('vcr_cassette_name', ['test_etherscan_and_blockscout_produced_block_proposer_match'])  # noqa: E501
+def test_etherscan_and_blockscout_produced_block_proposer_match(
+        eth2: 'Eth2',
+        vcr_cassette_name: str,  # pylint: disable=unused-argument
+) -> None:
+    """Test Etherscan and Blockscout agree for a block whose slot proposer is queried."""
+    address = string_to_evm_address('0x6b3A8798E5Fb9fC5603F3aB5eA2e8136694e55d0')
+    block_number = 21771728
+    period = TimestampOrBlockRange('blocks', block_number, block_number)
+    etherscan_blocks = [
+        entry for entry in eth2.ethereum.etherscan.get_validated_blocks(address=address, period=period)  # noqa: E501
+        if int(entry['blockNumber']) == block_number
+    ]
+    blockscout_blocks = [
+        entry for entry in eth2.ethereum.blockscout.get_validated_blocks(address=address, period=period)  # noqa: E501
+        if int(entry['blockNumber']) == block_number
+    ]
+    assert len(etherscan_blocks) == len(blockscout_blocks) == 1
+
+    etherscan_block_number, etherscan_timestamp, _ = eth2._deserialize_validated_block(etherscan_blocks[0])  # noqa: E501
+    assert etherscan_block_number == block_number
+    assert etherscan_timestamp == Timestamp(1738655099)
+    assert blockscout_blocks[0]['timeStamp'] == '2025-02-04 07:44:59.000000Z'
+    assert eth2.beacon_inquirer.node is not None
+    slot = timestamp_to_slot(etherscan_timestamp)
+    assert eth2.beacon_inquirer.node.query_block_proposer(
+        slot=slot,
+    ) == eth2.beacon_inquirer.node.query_block_proposer(slot=slot) == 191912
+
+
 if TYPE_CHECKING:
+    from rotkehlchen.chain.ethereum.decoding.decoder import EthereumTransactionDecoder
     from rotkehlchen.chain.ethereum.modules.eth2.eth2 import Eth2
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.history.events.structures.base import HistoryBaseEntry
@@ -157,7 +197,29 @@ def test_withdrawals(eth2: 'Eth2', database, ethereum_accounts, query_method):
 @pytest.mark.parametrize('ethereum_accounts', [[
     '0x0fdAe061cAE1Ad4Af83b27A96ba5496ca992139b', '0x76b23B82c8dCf1635a9DF63Fe6D9AafAaF042A9B',
 ]])
-def test_block_production(eth2: 'Eth2', database, ethereum_accounts):
+@pytest.mark.parametrize(('produced_blocks_query_source', 'include_beaconchain_key', 'beacon_rpc_endpoint', 'vcr_cassette_name'), [  # noqa: E501
+    pytest.param(
+        'beaconchain',
+        True,
+        None,
+        'test_block_production[ethereum_accounts0-False]',
+        id='beaconchain',
+    ), pytest.param(
+        'rpc_fallback',
+        False,
+        'https://ethereum-beacon-api.publicnode.com',
+        'test_block_production[rpc_fallback]',
+        id='rpc_fallback',
+    ),
+])
+def test_block_production(
+        eth2: 'Eth2',
+        database,
+        ethereum_inquirer,
+        ethereum_accounts,
+        produced_blocks_query_source: str,
+        vcr_cassette_name: str,  # pylint: disable=unused-argument
+):
     """Test that providing validators that have both pure block production and running
     mev-boost works and detects the block production events.
     """
@@ -171,23 +233,40 @@ def test_block_production(eth2: 'Eth2', database, ethereum_accounts):
                 validator_index=vindex1,
                 validator_type=ValidatorType.DISTRIBUTING,
                 public_key=Eth2PubKey('0xadd9843b2eb53ccaf5afb52abcc0a13223088320656fdfb162360ca53a71ebf8775dbebd0f1f1bf6c3e823d4bf2815f7'),
+                withdrawal_address=vindex1_address,
+                activation_timestamp=Timestamp(0),
                 ownership_proportion=ONE,
             ), ValidatorDetails(
                 validator_index=vindex2,
                 validator_type=ValidatorType.DISTRIBUTING,
                 public_key=Eth2PubKey('0x8cd650758f377763bf7ebaf7fe60cb14b4b05f3ffe750820abf4ae70bc4bf25f84ccdff3a92489e1435ebf94768a03f1'),
+                withdrawal_address=vindex2_address,
+                activation_timestamp=Timestamp(0),
                 ownership_proportion=ONE,
             ),
         ])
 
-    eth2.beacon_inquirer.beaconchain.get_and_store_produced_blocks([vindex1, vindex2])
+    eth2.get_and_store_produced_blocks([vindex1, vindex2])
+    if produced_blocks_query_source == 'rpc_fallback':
+        decoder: EthereumTransactionDecoder | None = None
+        for tx_hash in (
+            deserialize_evm_tx_hash('0x8d0969db1e536969ba2e29abf8e8945e4304d49ae14523b66cbe9be5d52df804'),
+            deserialize_evm_tx_hash('0x951fb37e2ace723e288be1a965f576b91f1f3cd0aee1c70a5ed4b017c45cbbe3'),
+            deserialize_evm_tx_hash('0x5ee508b67564e00d831534d88c1f5cdd5d176da26663eb52cf2ceddcf10bb1f2'),
+            deserialize_evm_tx_hash('0x717d387dc8ec391f1bc9282a4c819ef455bf24abb3ba052c11f86ec5ef07051a'),
+        ):
+            _, decoder = get_decoded_events_of_transaction(
+                evm_inquirer=ethereum_inquirer,
+                tx_hash=tx_hash,
+                evm_decoder=decoder,
+            )
 
     with database.conn.read_ctx() as cursor:
-        events = dbevents.get_history_events_internal(
+        events = [event for event in dbevents.get_history_events_internal(
             cursor=cursor,
             filter_query=HistoryEventFilterQuery.make(to_ts=Timestamp(1682370000)),
             aggregate_by_group_ids=False,
-        )
+        ) if isinstance(event, EthBlockEvent)]
 
     expected_events = [EthBlockEvent(
         validator_index=vindex1,
@@ -508,15 +587,35 @@ def test_details_with_beacon_node(eth2: 'Eth2'):
 @pytest.mark.parametrize('network_mocking', [False])
 @pytest.mark.freeze_time('2025-02-04 08:55:00 GMT')
 @pytest.mark.parametrize('ethereum_accounts', [['0x6b3A8798E5Fb9fC5603F3aB5eA2e8136694e55d0']])
+@pytest.mark.parametrize(('produced_blocks_query_source', 'include_beaconchain_key', 'beacon_rpc_endpoint', 'ethereum_manager_connect_at_start', 'vcr_cassette_name'), [  # noqa: E501
+    pytest.param(
+        'beaconchain',
+        True,
+        None,
+        (),
+        'test_block_with_mev_and_block_reward_and_multiple_mev_txs[ethereum_accounts0-False]',
+        id='beaconchain',
+    ), pytest.param(
+        'rpc_fallback',
+        False,
+        'https://ethereum-beacon-api.publicnode.com',
+        (),
+        'test_block_with_mev_and_block_reward_and_multiple_mev_txs[rpc_fallback]',
+        id='rpc_fallback',
+    ),
+])
 def test_block_with_mev_and_block_reward_and_multiple_mev_txs(
         eth2: 'Eth2',
         database,
         ethereum_inquirer,
         ethereum_accounts,
+        produced_blocks_query_source: str,
+        vcr_cassette_name: str,  # pylint: disable=unused-argument
 ):
-    """Test that proposing validators that get both the block fee recipient and a mev reward on top
-    are properly seen in rotki. Also that when MEV reward
-    is sent in multiple transactions they are all marked as such and moved into the block event.
+    """Test that beaconcha.in and RPC produced block detection return the same data.
+
+    The RPC fallback matches beaconcha.in's informational MEV event as closely as possible
+    by adding the block reward when the block reward recipient also received the MEV txs.
     """
     dbevents = DBHistoryEvents(database)
     dbeth2 = DBEth2(database)
@@ -531,15 +630,24 @@ def test_block_with_mev_and_block_reward_and_multiple_mev_txs(
             ),
         ])
 
-    tx_hashes_and_amounts = [
-        (deserialize_evm_tx_hash('0xcb7ebe40e13e7b9fa7eff0c03e727618b2d68a00b7d9e23599ac1cbb20f36864'), '0.000108734081255623'),  # noqa: E501
-        (deserialize_evm_tx_hash('0x02be96ca70adc0f0c826cf2c3466681c53bbf68270fd5b6647a962e0e9bfe41a'), '0.000112625190291071'),  # noqa: E501
-        (deserialize_evm_tx_hash('0x2327159d6b747407352de9860f86b0bfa8266f9dc7dc967ba05dc015e51d6bc1'), '0.000177763139489933'),  # noqa: E501
+    tx_hashes_amounts_and_senders = [
+        (deserialize_evm_tx_hash('0xcb7ebe40e13e7b9fa7eff0c03e727618b2d68a00b7d9e23599ac1cbb20f36864'), '0.000108734081255623', string_to_evm_address('0xA69babEF1cA67A37Ffaf7a485DfFF3382056e78C')),  # noqa: E501
+        (deserialize_evm_tx_hash('0x02be96ca70adc0f0c826cf2c3466681c53bbf68270fd5b6647a962e0e9bfe41a'), '0.000112625190291071', string_to_evm_address('0xA69babEF1cA67A37Ffaf7a485DfFF3382056e78C')),  # noqa: E501
+        (deserialize_evm_tx_hash('0x2327159d6b747407352de9860f86b0bfa8266f9dc7dc967ba05dc015e51d6bc1'), '0.000177763139489933', string_to_evm_address('0xA69babEF1cA67A37Ffaf7a485DfFF3382056e78C')),  # noqa: E501
+        (deserialize_evm_tx_hash('0x551d3cebe0c1bb655d5427b9a827156e3ce40157107c191882d1de1551904961'), '0.006660013804710991', string_to_evm_address('0x807cF9A772d5a3f9CeFBc1192e939D62f0D9bD38')),  # noqa: E501
+        (deserialize_evm_tx_hash('0x0979badc30c655bc6f1b01b07dbc0d9ef2083def3d6882fb82c760def18c10ce'), '0.000892612607443302', string_to_evm_address('0xfbEedCFe378866DaB6abbaFd8B2986F5C1768737')),  # noqa: E501
+        (deserialize_evm_tx_hash('0xd44d720785664f1186b510b06b24e9fc4e7463c998bb540ba317b887ccf81fec'), '0.000326906950289595', string_to_evm_address('0x89A99a0A17D37419F99cF8dC5fFa578F3cdB58b5')),  # noqa: E501
     ]
-    for tx_hash, _ in tx_hashes_and_amounts:
-        get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
+    decoder: EthereumTransactionDecoder | None = None
+    for tx_hash, _, _ in tx_hashes_amounts_and_senders:
+        _, decoder = get_decoded_events_of_transaction(
+            evm_inquirer=ethereum_inquirer,
+            tx_hash=tx_hash,
+            evm_decoder=decoder,
+        )
 
-    eth2.beacon_inquirer.beaconchain.get_and_store_produced_blocks([vindex])
+    if produced_blocks_query_source == 'beaconchain':
+        eth2.beacon_inquirer.beaconchain.get_and_store_produced_blocks([vindex])
     eth2.combine_block_with_tx_events()
     with database.conn.read_ctx() as cursor:
         events = dbevents.get_history_events_internal(
@@ -551,9 +659,9 @@ def test_block_with_mev_and_block_reward_and_multiple_mev_txs(
             aggregate_by_group_ids=False,
         )
 
-    timestamp, user_address, mevbot_address, block_number = TimestampMS(1738655099000), ethereum_accounts[0], string_to_evm_address('0xA69babEF1cA67A37Ffaf7a485DfFF3382056e78C'), 21771728  # noqa: E501
+    timestamp, user_address, block_number = TimestampMS(1738655099000), ethereum_accounts[0], 21771728  # noqa: E501
     expected_events: list[HistoryBaseEntry] = [EthBlockEvent(
-        identifier=14,
+        identifier=17 if produced_blocks_query_source == 'beaconchain' else 2,
         validator_index=vindex,
         timestamp=timestamp,
         amount=FVal('0.013925706716354256'),
@@ -562,7 +670,7 @@ def test_block_with_mev_and_block_reward_and_multiple_mev_txs(
         block_number=block_number,
         is_mev_reward=False,
     ), EthBlockEvent(
-        identifier=15,
+        identifier=18 if produced_blocks_query_source == 'beaconchain' else 3,
         validator_index=vindex,
         timestamp=timestamp,
         amount=FVal('0.022204362489834771'),
@@ -572,7 +680,7 @@ def test_block_with_mev_and_block_reward_and_multiple_mev_txs(
         is_mev_reward=True,
     )]
     expected_events += [EvmEvent(
-        identifier=1 + counter,
+        identifier=(1 + counter if produced_blocks_query_source == 'beaconchain' else 1 if counter == 0 else counter + 3),  # noqa: E501
         group_identifier=f'BP1_{block_number}',
         tx_ref=tx_hash,
         sequence_index=2 + counter,
@@ -583,8 +691,8 @@ def test_block_with_mev_and_block_reward_and_multiple_mev_txs(
         asset=A_ETH,
         amount=FVal(amount),
         location_label=user_address,
-        address=mevbot_address,
-        notes=f'Receive {amount} ETH from {mevbot_address} as mev reward for block {block_number} in {tx_hash!s}',  # noqa: E501
+        address=sender,
+        notes=f'Receive {amount} ETH from {sender} as mev reward for block {block_number} in {tx_hash!s}',  # noqa: E501
         extra_data={'validator_index': vindex},
-    ) for counter, (tx_hash, amount) in enumerate(tx_hashes_and_amounts)]
+    ) for counter, (tx_hash, amount, sender) in enumerate(tx_hashes_amounts_and_senders)]
     assert events == expected_events

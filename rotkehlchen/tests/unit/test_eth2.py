@@ -19,6 +19,7 @@ from rotkehlchen.chain.ethereum.modules.eth2.structures import (
     ValidatorStatus,
     ValidatorType,
 )
+from rotkehlchen.chain.ethereum.modules.eth2.utils import ETH2_GENESIS_TIMESTAMP
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants import ONE, ZERO
 from rotkehlchen.constants.assets import A_ETH
@@ -869,7 +870,7 @@ def test_refresh_activated_validators_deposits(eth2, database):
         validator_type=ValidatorType.DISTRIBUTING,
         public_key=Eth2PubKey('0x967c17368bcb6a90164d1af369115b3bf265b82c350fc78d9b1fa9389f2a216867ca02121f21c4be121f334ce2ac7f4f'),
         withdrawal_address=string_to_evm_address('0x8448db7E850468592Ac8a72D5C30A7953baF8235'),
-        activation_timestamp=Timestamp(1606824023),
+        activation_timestamp=Timestamp(ETH2_GENESIS_TIMESTAMP),
         withdrawable_timestamp=Timestamp(1755241175),
         exited_timestamp=Timestamp(1755142871),
     )
@@ -1071,7 +1072,7 @@ def test_staking_performance_division_by_zero_protection(eth2) -> None:
         dbeth2.add_or_update_validators(
             write_cursor=write_cursor,
             validators=[(validator := ValidatorDetailsWithStatus(
-                activation_timestamp=Timestamp(1606824023),
+                activation_timestamp=Timestamp(ETH2_GENESIS_TIMESTAMP),
                 validator_index=(v_index := 999999),
                 public_key=Eth2PubKey('0xb912072ccf65435991175736cd73bcb4b2852a993f7d00c4bf3abab5fcfacbd72b37114320a60d9894eaced1ddee1cae'),
                 withdrawal_address=make_evm_address(),
@@ -1286,3 +1287,31 @@ def test_detect_and_refresh_validators_only_processes_addresses_with_deposits(et
         eth2.detect_and_refresh_validators([addr_with_deposit, make_evm_address()])
 
     assert addresses_queried == []
+
+
+def test_detect_and_refresh_validators_skips_exited_validators(eth2: 'Eth2') -> None:
+    """Test that detect_and_refresh_validators doesn't refresh validators marked exited."""
+    with eth2.database.user_write() as write_cursor:
+        DBEth2(eth2.database).add_or_update_validators(write_cursor, [
+            ValidatorDetails(
+                validator_index=(active_index := 42),
+                validator_type=ValidatorType.ACCUMULATING,
+                public_key=Eth2PubKey('0xa685b19738ac8d7ee301f434f77fdbca50f7a2b8d287f4ab6f75cae251aa821576262b79ae9d58d9b458ba748968dfda'),
+            ), ValidatorDetails(
+                validator_index=43,
+                validator_type=ValidatorType.ACCUMULATING,
+                public_key=Eth2PubKey('0xb685b19738ac8d7ee301f434f77fdbca50f7a2b8d287f4ab6f75cae251aa821576262b79ae9d58d9b458ba748968dfda'),
+                exited_timestamp=Timestamp(1700000000),
+            ),
+        ])
+
+    queried_indices = []
+
+    def mock_get_validator_data(indices_or_pubkeys):
+        queried_indices.extend(indices_or_pubkeys)
+        return []
+
+    with patch.object(eth2.beacon_inquirer, 'get_validator_data', side_effect=mock_get_validator_data):  # noqa: E501
+        eth2.detect_and_refresh_validators([])
+
+    assert queried_indices == [active_index]

@@ -642,3 +642,90 @@ def test_giveth_donation_arbitrum_receiver(arbitrum_one_inquirer, arbitrum_one_a
         counterparty=CPT_GIVETH,
         address=ARBITRUM_GIVETH_DONATION_CONTRACT_ADDRESS,
     )]
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('ethereum_accounts', [['0x19d42933AD90F8d75df06AaB6D7D0B6965F11dF3']])
+def test_giveth_donation_eth_multi_sender(ethereum_inquirer, ethereum_accounts):
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=ethereum_inquirer,
+        tx_hash=(tx_hash := deserialize_evm_tx_hash('0xcc0296f12367f88162f99e50bdb1ddd5b524e0ad0e335956c7f880d9bec09155')),  # noqa: E501
+    )
+    assert events == [EvmEvent(
+        tx_ref=tx_hash,
+        sequence_index=0,
+        timestamp=(timestamp := TimestampMS(1778755763000)),
+        location=Location.ETHEREUM,
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.FEE,
+        asset=A_ETH,
+        amount=FVal(gas_amount := '0.00023611906081848'),
+        location_label=(user_address := ethereum_accounts[0]),
+        notes=f'Burn {gas_amount} ETH for gas',
+        counterparty=CPT_GAS,
+    ), EvmEvent(
+        tx_ref=tx_hash,
+        sequence_index=88,
+        timestamp=timestamp,
+        location=Location.ETHEREUM,
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.DONATE,
+        asset=A_ETH,
+        amount=(donation_1 := FVal('0.023')),
+        location_label=user_address,
+        notes=f'Make a giveth donation of {donation_1} ETH to 0xa377771b126D29eE09df2D16dCA7abc0Cf33C64d',  # noqa: E501
+        counterparty=CPT_GIVETH,
+        address=string_to_evm_address('0xa377771b126D29eE09df2D16dCA7abc0Cf33C64d'),
+    ), EvmEvent(
+        tx_ref=tx_hash,
+        sequence_index=89,
+        timestamp=timestamp,
+        location=Location.ETHEREUM,
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.DONATE,
+        asset=A_ETH,
+        amount=(donation_2 := FVal('0.015')),
+        location_label=user_address,
+        notes=f'Make a giveth donation of {donation_2} ETH to 0xe44a1051Eb97861FE9d18F69ed5CA38DB1eCA4Ec',  # noqa: E501
+        counterparty=CPT_GIVETH,
+        address=string_to_evm_address('0xe44a1051Eb97861FE9d18F69ed5CA38DB1eCA4Ec'),
+    ), EvmEvent(
+        tx_ref=tx_hash,
+        sequence_index=90,
+        timestamp=timestamp,
+        location=Location.ETHEREUM,
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.DONATE,
+        asset=A_ETH,
+        amount=(donation_3 := FVal('0.0023')),
+        location_label=user_address,
+        notes=f'Make a giveth donation of {donation_3} ETH to 0xA743b5aC96F06DA66CA3921AaD06f2a2e040fb02',  # noqa: E501
+        counterparty=CPT_GIVETH,
+        address=string_to_evm_address('0xA743b5aC96F06DA66CA3921AaD06f2a2e040fb02'),
+    ), EvmEvent(
+        tx_ref=tx_hash,
+        sequence_index=91,
+        timestamp=timestamp,
+        location=Location.ETHEREUM,
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.DONATE,
+        asset=A_ETH,
+        amount=(donation_4 := FVal('0.0023')),
+        location_label=user_address,
+        notes=f'Make a giveth donation of {donation_4} ETH to 0x848e313d4b25bC0B48CaFdB6A72391E892E6A247',  # noqa: E501
+        counterparty=CPT_GIVETH,
+        address=string_to_evm_address('0x848e313d4b25bC0B48CaFdB6A72391E892E6A247'),
+    ), EvmEvent(
+        tx_ref=tx_hash,
+        sequence_index=93,
+        timestamp=timestamp,
+        location=Location.ETHEREUM,
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.DONATE,
+        asset=A_ETH,
+        amount=(donation_5 := FVal('0.0023')),
+        location_label=user_address,
+        notes=f'Make a giveth donation of {donation_5} ETH to 0xcC2ca22AaefE22A0144A0260731a40a725AFffF0',  # noqa: E501
+        counterparty=CPT_GIVETH,
+        address=string_to_evm_address('0xcC2ca22AaefE22A0144A0260731a40a725AFffF0'),
+    )]

@@ -44,6 +44,15 @@ if TYPE_CHECKING:
     from rotkehlchen.api.server import APIServer
     from rotkehlchen.globaldb.handler import GlobalDBHandler
 
+
+@pytest.fixture(name='historical_price_oracles_order')
+def fixture_historical_price_oracles_order(
+        cryptocompare_historical_price_oracles_order: tuple,
+) -> tuple:
+    """Override to use CryptoCompare-first order for VCR cassette compatibility."""
+    return cryptocompare_historical_price_oracles_order
+
+
 START_TS = Timestamp(1672531200)
 DAY_AFTER_START_TS = Timestamp(START_TS + DAY_IN_SECONDS)
 

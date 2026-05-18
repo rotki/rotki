@@ -49,6 +49,15 @@ if TYPE_CHECKING:
     from rotkehlchen.globaldb.handler import GlobalDBHandler
     from rotkehlchen.inquirer import Inquirer
 
+
+@pytest.fixture(name='historical_price_oracles_order')
+def fixture_historical_price_oracles_order(
+        cryptocompare_historical_price_oracles_order: tuple,
+) -> tuple:
+    """Override to use CryptoCompare-first order for VCR cassette compatibility."""
+    return cryptocompare_historical_price_oracles_order
+
+
 mocked_prices = {
     strethaddress_to_identifier('0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48'): {
         'USD': {
@@ -118,7 +127,7 @@ def test_set_oracles_custom_order(fake_price_historian):
 
     price_historian.set_oracles_order([HistoricalPriceOracle.COINGECKO])
 
-    assert price_historian._oracles == [HistoricalPriceOracle.COINGECKO]
+    assert price_historian._oracles == (HistoricalPriceOracle.COINGECKO,)
     assert price_historian._oracle_instances == [price_historian._coingecko]
 
 
@@ -267,7 +276,7 @@ def test_disabled_historical_oracle_cache_is_ignored(
             to_asset=A_USD,
             price=Price(FVal('30000')),
             timestamp=query_timestamp,
-            source=HistoricalPriceOracle.CRYPTOCOMPARE,
+            source=HistoricalPriceOracle.ALCHEMY,
         ),
     )
 

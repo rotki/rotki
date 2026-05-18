@@ -361,6 +361,7 @@ def initialize_mock_rotkehlchen_instance(
         latest_accounting_rules_data,
         initialize_accounting_rules,
         should_mock_settings=True,
+        historical_price_oracles_order=None,
 ) -> None:
     if not start_with_logged_in_user:
         return
@@ -443,13 +444,14 @@ def initialize_mock_rotkehlchen_instance(
             )
 
     rotki.task_manager.should_schedule = True
-    PriceHistorian().set_oracles_order((
-        HistoricalPriceOracle.CRYPTOCOMPARE,
-        HistoricalPriceOracle.COINGECKO,
-        HistoricalPriceOracle.DEFILLAMA,
-        HistoricalPriceOracle.UNISWAPV3,
-        HistoricalPriceOracle.UNISWAPV2,
-    ))
+    if historical_price_oracles_order is None:
+        historical_price_oracles_order = (
+            HistoricalPriceOracle.COINGECKO,
+            HistoricalPriceOracle.DEFILLAMA,
+            HistoricalPriceOracle.UNISWAPV3,
+            HistoricalPriceOracle.UNISWAPV2,
+        )
+    PriceHistorian().set_oracles_order(historical_price_oracles_order)
     inquirer_inject_evm_managers_set_order(
         inquirer=Inquirer(),
         add_defi_oracles=False,
@@ -615,6 +617,7 @@ def fixture_rotkehlchen_api_server(
         perform_upgrades_at_unlock,
         new_db_unlock_actions,
         current_price_oracles_order,
+        historical_price_oracles_order,
         network_mocking,
         mock_other_web3,
         ethereum_mock_data,
@@ -673,6 +676,7 @@ def fixture_rotkehlchen_api_server(
         perform_upgrades_at_unlock=perform_upgrades_at_unlock,
         new_db_unlock_actions=new_db_unlock_actions,
         current_price_oracles_order=current_price_oracles_order,
+        historical_price_oracles_order=historical_price_oracles_order,
         network_mocking=network_mocking,
         have_decoders=have_decoders,
         add_accounts_to_db=add_accounts_to_db,

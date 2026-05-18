@@ -29,8 +29,9 @@ from rotkehlchen.oracles.structures import CurrentPriceOracle
 from rotkehlchen.premium.premium import Premium
 from rotkehlchen.tests.utils.constants import CURRENT_PRICE_MOCK
 from rotkehlchen.tests.utils.inquirer import inquirer_inject_evm_managers_set_order
-from rotkehlchen.types import Timestamp
+from rotkehlchen.types import ApiKey, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
+from rotkehlchen.utils.misc import ts_now
 
 
 @pytest.fixture(name='use_clean_caching_directory')
@@ -315,7 +316,18 @@ def fixture_current_price_oracles_order():
     return (
         CurrentPriceOracle.COINGECKO,
         CurrentPriceOracle.DEFILLAMA,
+        CurrentPriceOracle.UNISWAPV2,
+        CurrentPriceOracle.UNISWAPV3,
+    )
+
+
+@pytest.fixture(name='cryptocompare_current_price_oracles_order')
+def fixture_cryptocompare_current_price_oracles_order():
+    """CryptoCompare-first current oracle order for VCR-cassette compatibility."""
+    return (
         CurrentPriceOracle.CRYPTOCOMPARE,
+        CurrentPriceOracle.COINGECKO,
+        CurrentPriceOracle.DEFILLAMA,
         CurrentPriceOracle.UNISWAPV2,
         CurrentPriceOracle.UNISWAPV3,
     )
@@ -352,6 +364,10 @@ def _create_inquirer(
         if (original_method := getattr(Inquirer, old, None)) is not None:
             setattr(Inquirer, x, staticmethod(original_method))
             delattr(Inquirer, old)
+
+    if CurrentPriceOracle.CRYPTOCOMPARE in current_price_oracles_order:
+        inquirer._cryptocompare.api_key = ApiKey('dummy-api-key')
+        inquirer._cryptocompare.last_ts = ts_now()
 
     if len(evm_managers) > 0:
         inquirer_inject_evm_managers_set_order(

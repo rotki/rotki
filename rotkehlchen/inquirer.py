@@ -498,8 +498,17 @@ class Inquirer:
             "Oracles can't be empty or have repeated items"
         )
         instance = Inquirer()
-        instance._oracles = oracles
-        instance._oracle_instances = [getattr(instance, f'_{oracle!s}') for oracle in instance._oracles]  # noqa: E501
+        instance._oracles = []
+        instance._oracle_instances = []
+        for oracle in oracles:
+            if oracle == CurrentPriceOracle.CRYPTOCOMPARE and instance._cryptocompare.has_api_key() is False:  # noqa: E501
+                continue
+            if (oracle_instance := getattr(instance, f'_{oracle!s}')) is None:
+                continue
+
+            instance._oracles.append(oracle)
+            instance._oracle_instances.append(oracle_instance)
+
         instance._oracles_not_onchain = []
         instance._oracle_instances_not_onchain = []
         for oracle, oracle_instance in zip(instance._oracles, instance._oracle_instances, strict=True):  # noqa: E501

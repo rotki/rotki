@@ -9,6 +9,7 @@ from .tokens import BaseTokens
 from .transactions import BaseTransactions
 
 if TYPE_CHECKING:
+    from rotkehlchen.externalapis.monerium import Monerium
     from rotkehlchen.premium.premium import Premium
 
     from .node_inquirer import BaseInquirer
@@ -20,6 +21,7 @@ class BaseManager(EvmManager, CurveManagerMixin):
             self,
             node_inquirer: 'BaseInquirer',
             premium: 'Premium | None' = None,
+            monerium: 'Monerium | None' = None,
     ) -> None:
         transactions = BaseTransactions(
             base_inquirer=node_inquirer,
@@ -41,6 +43,7 @@ class BaseManager(EvmManager, CurveManagerMixin):
                 base_inquirer=node_inquirer,
                 transactions=transactions,
                 premium=premium,
+                monerium=monerium,
             ),
             accounting_aggregator=BaseAccountingAggregator(
                 node_inquirer=node_inquirer,

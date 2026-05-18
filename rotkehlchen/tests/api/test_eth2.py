@@ -15,6 +15,7 @@ from rotkehlchen.chain.ethereum.modules.eth2.structures import (
     ValidatorStatus,
     ValidatorType,
 )
+from rotkehlchen.chain.ethereum.modules.eth2.utils import ETH2_GENESIS_TIMESTAMP
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.chain.structures import TimestampOrBlockRange
 from rotkehlchen.constants import ONE
@@ -41,7 +42,10 @@ from rotkehlchen.tests.utils.api import (
     assert_proper_sync_response_with_result,
     assert_simple_ok_response,
 )
-from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
+from rotkehlchen.tests.utils.ethereum import (
+    PRUNED_AND_NOT_ARCHIVED_NODE,
+    get_decoded_events_of_transaction,
+)
 from rotkehlchen.tests.utils.factories import (
     make_eth2_deposit_event,
     make_evm_address,
@@ -437,7 +441,7 @@ def test_add_get_edit_delete_eth2_validators(
     assert result == {'entries': [], 'entries_limit': -1, 'entries_found': 0}
 
     validators = [ValidatorDetailsWithStatus(
-        activation_timestamp=Timestamp(1606824023),
+        activation_timestamp=Timestamp(ETH2_GENESIS_TIMESTAMP),
         validator_index=4235,
         public_key=Eth2PubKey('0xadd548bb2e6962c255ec5420e40e6e506dfc936592c700d56718ada7dcc52e4295644ff8f94f4ef898aa8a5ad81a5b84'),
         withdrawable_timestamp=Timestamp(1703014103),
@@ -445,7 +449,7 @@ def test_add_get_edit_delete_eth2_validators(
         status=ValidatorStatus.EXITED,
         validator_type=ValidatorType.DISTRIBUTING,
     ), ValidatorDetailsWithStatus(
-        activation_timestamp=Timestamp(1606824023),
+        activation_timestamp=Timestamp(ETH2_GENESIS_TIMESTAMP),
         validator_index=5235,
         public_key=Eth2PubKey('0x827e0f30c3d34e3ee58957dd7956b0f194d64cc404fca4a7313dc1b25ac1f28dcaddf59d05fbda798fa5b894c91b84fb'),
         withdrawal_address=string_to_evm_address('0x347A70cb4Ff0297102DC549B044c41bD61e22718'),
@@ -604,7 +608,7 @@ def test_add_get_edit_delete_eth2_validators(
 
     # Try to add validator with a custom ownership percentage
     custom_percentage_validators = [ValidatorDetailsWithStatus(
-        activation_timestamp=Timestamp(1606824023),
+        activation_timestamp=Timestamp(ETH2_GENESIS_TIMESTAMP),
         validator_index=5235,
         public_key=Eth2PubKey('0x827e0f30c3d34e3ee58957dd7956b0f194d64cc404fca4a7313dc1b25ac1f28dcaddf59d05fbda798fa5b894c91b84fb'),
         withdrawal_address=string_to_evm_address('0x347A70cb4Ff0297102DC549B044c41bD61e22718'),
@@ -832,7 +836,7 @@ def test_query_eth2_balances(
     assert result == {'entries': [], 'entries_limit': -1, 'entries_found': 0}
 
     validators = [ValidatorDetailsWithStatus(
-        activation_timestamp=Timestamp(1606824023),
+        activation_timestamp=Timestamp(ETH2_GENESIS_TIMESTAMP),
         validator_index=5234,
         public_key=Eth2PubKey('0xb0456681ca4dc1a1276a9cab5915af9f9210f0eb104b4bd60164f59243b6159c3f3dab0d712cbae1360c7eb07af6a276'),
         withdrawable_timestamp=Timestamp(1765573847),
@@ -840,7 +844,7 @@ def test_query_eth2_balances(
         status=ValidatorStatus.EXITED,
         validator_type=ValidatorType.DISTRIBUTING,
     ), ValidatorDetailsWithStatus(
-        activation_timestamp=Timestamp(1606824023),
+        activation_timestamp=Timestamp(ETH2_GENESIS_TIMESTAMP),
         validator_index=5235,
         public_key=Eth2PubKey('0x827e0f30c3d34e3ee58957dd7956b0f194d64cc404fca4a7313dc1b25ac1f28dcaddf59d05fbda798fa5b894c91b84fb'),
         withdrawal_address=string_to_evm_address('0x347A70cb4Ff0297102DC549B044c41bD61e22718'),
@@ -937,28 +941,58 @@ def test_query_eth2_balances(
 def test_query_online_block_productions_missing_api_key(
         rotkehlchen_api_server: 'APIServer',
 ) -> None:
-    """Test missing beaconcha.in API key returns the specific failed dependency code."""
+    """Test missing beaconcha.in API key uses the produced blocks indexer fallback."""
     eth2 = rotkehlchen_api_server.rest_api.rotkehlchen.chains_aggregator.get_module('eth2')
     assert eth2 is not None
-    message = 'Querying beaconcha.in failed due to missing API key'
     with (
+        patch.object(eth2.beacon_inquirer.beaconchain, 'has_api_key', return_value=False),
         patch.object(eth2.beacon_inquirer.beaconchain, 'get_validators_to_query_for_blocks', return_value=[1]),  # noqa: E501
-        patch.object(
-            eth2.beacon_inquirer.beaconchain,
-            'get_and_store_produced_blocks',
-            side_effect=APIKeyNotAvailable(message),
-        ),
+        patch.object(eth2, '_get_and_store_produced_blocks_from_indexers') as indexer_fallback,
+        patch.object(eth2, 'combine_block_with_tx_events') as combine_block_with_tx_events,
     ):
         response = requests.post(
             url=api_url_for(rotkehlchen_api_server, 'eventsonlinequeryresource'),
             json={'query_type': 'block_productions'},
         )
 
-    assert_error_response(
-        response=response,
-        contained_in_msg=message,
-        status_code=HTTPStatus.FAILED_DEPENDENCY,
-    )
+    assert_simple_ok_response(response)
+    indexer_fallback.assert_called_once_with(indices=[1], update_cache=True)
+    combine_block_with_tx_events.assert_called_once_with()
+
+
+@pytest.mark.parametrize('ethereum_modules', [['eth2']])
+@pytest.mark.parametrize('start_with_valid_premium', [True])
+@pytest.mark.parametrize('beaconchain_error', [
+    APIKeyNotAvailable('Beaconcha.in API key is no longer active'),
+    RemoteError('Beaconcha.in query failed'),
+])
+def test_query_online_block_productions_beaconchain_error_falls_back_to_indexers(
+        rotkehlchen_api_server: 'APIServer',
+        beaconchain_error: APIKeyNotAvailable | RemoteError,
+) -> None:
+    """Test beaconcha.in query errors use the produced blocks indexer fallback."""
+    eth2 = rotkehlchen_api_server.rest_api.rotkehlchen.chains_aggregator.get_module('eth2')
+    assert eth2 is not None
+    with (
+        patch.object(eth2.beacon_inquirer.beaconchain, 'has_api_key', return_value=True),
+        patch.object(eth2.beacon_inquirer.beaconchain, 'get_validators_to_query_for_blocks', return_value=[1]),  # noqa: E501
+        patch.object(
+            eth2.beacon_inquirer.beaconchain,
+            '_get_and_store_produced_blocks',
+            side_effect=beaconchain_error,
+        ) as beaconchain_query,
+        patch.object(eth2, '_get_and_store_produced_blocks_from_indexers') as indexer_fallback,
+        patch.object(eth2, 'combine_block_with_tx_events') as combine_block_with_tx_events,
+    ):
+        response = requests.post(
+            url=api_url_for(rotkehlchen_api_server, 'eventsonlinequeryresource'),
+            json={'query_type': 'block_productions'},
+        )
+
+    assert_simple_ok_response(response)
+    beaconchain_query.assert_called_once_with(indices=[1], update_cache=True)
+    indexer_fallback.assert_called_once_with(indices=[1], update_cache=True)
+    combine_block_with_tx_events.assert_called_once_with()
 
 
 @pytest.mark.parametrize('ethereum_modules', [['eth2']])
@@ -1526,6 +1560,127 @@ def test_redecode_block_production_events(rotkehlchen_api_server: 'APIServer') -
         contained_in_msg='Some of the specified block numbers do not exist in the db',
         status_code=HTTPStatus.BAD_REQUEST,
     )
+
+
+@pytest.mark.vcr
+@pytest.mark.parametrize('include_beaconchain_key', [False])
+@pytest.mark.parametrize('ethereum_modules', [['eth2']])
+@pytest.mark.parametrize('ethereum_manager_connect_at_start', [(PRUNED_AND_NOT_ARCHIVED_NODE,)])
+def test_produced_block_fallback_from_eth_receive(rotkehlchen_api_server: 'APIServer') -> None:
+    """Test detecting produced blocks from plain ETH receive transactions without beaconcha.in."""
+    db = rotkehlchen_api_server.rest_api.rotkehlchen.data.db
+    fee_recipient = string_to_evm_address('0x6d2e03b7EfFEae98BD302A9F836D0d6Ab0002766')
+    response = requests.put(api_url_for(
+        rotkehlchen_api_server,
+        'blockchainsaccountsresource',
+        blockchain='ETH',
+    ), json={'accounts': [{'address': fee_recipient}]})
+    assert_proper_sync_response_with_result(response)
+
+    with db.conn.write_ctx() as write_cursor:
+        write_cursor.execute(
+            'INSERT INTO eth2_validators(validator_index, public_key, validator_type, '
+            'ownership_proportion, withdrawal_address, activation_timestamp) '
+            'VALUES(?, ?, ?, ?, ?, ?)',
+            (
+                (validator_index := 397160),
+                Eth2PubKey('0xaabb'),
+                1,
+                '1',
+                make_evm_address(),
+                0,
+            ),
+        )
+
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=rotkehlchen_api_server.rest_api.rotkehlchen.chains_aggregator.ethereum.node_inquirer,
+        tx_hash=deserialize_evm_tx_hash('0x7d0cea641c95e608ee49bed2729af661d7c80383019de435cfe3aecc0b30a013'),
+        relevant_address=fee_recipient,
+    )
+    assert events == [EvmEvent(
+        tx_ref=deserialize_evm_tx_hash('0x7d0cea641c95e608ee49bed2729af661d7c80383019de435cfe3aecc0b30a013'),
+        sequence_index=0,
+        timestamp=TimestampMS(1739574323000),
+        location=Location.ETHEREUM,
+        event_type=HistoryEventType.RECEIVE,
+        event_subtype=HistoryEventSubType.NONE,
+        asset=A_ETH,
+        amount=FVal('0.012594557706319702'),
+        location_label=fee_recipient,
+        notes='Receive 0.012594557706319702 ETH from 0x95222290DD7278Aa3Ddd389Cc1E1d165CC4BAfe5',
+        address=string_to_evm_address('0x95222290DD7278Aa3Ddd389Cc1E1d165CC4BAfe5'),
+    )]
+
+    with db.conn.read_ctx() as cursor:
+        block_events = DBHistoryEvents(db).get_history_events_internal(
+            cursor=cursor,
+            filter_query=HistoryEventFilterQuery.make(
+                group_identifiers=[EthBlockEvent.form_group_identifier(21847848)],
+            ),
+        )
+    assert len(block_events) == 2
+    block_production_event = next(event for event in block_events if event.event_subtype == HistoryEventSubType.BLOCK_PRODUCTION)  # noqa: E501
+    assert isinstance(block_production_event, EthBlockEvent)
+    assert block_production_event.validator_index == validator_index
+    assert block_production_event.timestamp == TimestampMS(1739574323000)
+    assert block_production_event.amount == FVal('0.01232784139573991')
+    assert block_production_event.location_label == string_to_evm_address('0x95222290DD7278Aa3Ddd389Cc1E1d165CC4BAfe5')  # noqa: E501
+    assert block_production_event.is_exit_or_blocknumber == 21847848
+    mev_reward_event = next(event for event in block_events if event.event_subtype == HistoryEventSubType.MEV_REWARD)  # noqa: E501
+    assert isinstance(mev_reward_event, EthBlockEvent)
+    assert mev_reward_event.validator_index == validator_index
+    assert mev_reward_event.timestamp == TimestampMS(1739574323000)
+    assert mev_reward_event.amount == FVal('0.012594557706319702')
+    assert mev_reward_event.location_label == fee_recipient
+    assert mev_reward_event.is_exit_or_blocknumber == 21847848
+
+
+@pytest.mark.vcr
+@pytest.mark.parametrize('include_beaconchain_key', [False])
+@pytest.mark.parametrize('ethereum_modules', [['eth2']])
+@pytest.mark.parametrize('ethereum_manager_connect_at_start', [(PRUNED_AND_NOT_ARCHIVED_NODE,)])
+def test_produced_block_fallback_from_eth_receive_redecode_idempotent(
+        rotkehlchen_api_server: 'APIServer',
+) -> None:
+    """Test re-decoding plain ETH receive txs does not inflate existing MEV rewards."""
+    db = rotkehlchen_api_server.rest_api.rotkehlchen.data.db
+    dbevents = DBHistoryEvents(db)
+    fee_recipient = string_to_evm_address('0x6d2e03b7EfFEae98BD302A9F836D0d6Ab0002766')
+    assert_proper_sync_response_with_result(requests.put(api_url_for(
+        rotkehlchen_api_server,
+        'blockchainsaccountsresource',
+        blockchain='ETH',
+    ), json={'accounts': [{'address': fee_recipient}]}))
+
+    with db.conn.write_ctx() as write_cursor:
+        write_cursor.execute(
+            'INSERT INTO eth2_validators(validator_index, public_key, validator_type, '
+            'ownership_proportion, withdrawal_address, activation_timestamp) '
+            'VALUES(?, ?, ?, ?, ?, ?)',
+            (397160, Eth2PubKey('0xaabb'), 1, '1', make_evm_address(), 0),
+        )
+
+    def get_mev_reward_amount() -> FVal:
+        with db.conn.read_ctx() as cursor:
+            block_events = dbevents.get_history_events_internal(
+                cursor=cursor,
+                filter_query=HistoryEventFilterQuery.make(
+                    group_identifiers=[EthBlockEvent.form_group_identifier(21847848)],
+                ),
+            )
+        assert len(block_events) == 2
+        mev_reward_event = next(event for event in block_events if event.event_subtype == HistoryEventSubType.MEV_REWARD)  # noqa: E501
+        assert isinstance(mev_reward_event, EthBlockEvent)
+        return mev_reward_event.amount
+
+    for _ in range(2):
+        events, _ = get_decoded_events_of_transaction(
+            evm_inquirer=rotkehlchen_api_server.rest_api.rotkehlchen.chains_aggregator.ethereum.node_inquirer,
+            tx_hash=deserialize_evm_tx_hash('0x7d0cea641c95e608ee49bed2729af661d7c80383019de435cfe3aecc0b30a013'),
+            relevant_address=fee_recipient,
+        )
+        assert len(events) == 1
+        assert get_mev_reward_amount() == FVal('0.012594557706319702')
 
 
 def test_refetch_staking_events_validation(rotkehlchen_api_server: 'APIServer') -> None:

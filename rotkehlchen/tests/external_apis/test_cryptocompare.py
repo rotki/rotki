@@ -35,13 +35,13 @@ from rotkehlchen.types import Price, Timestamp
 
 def test_cryptocompare_query_pricehistorical(cryptocompare):
     """Test that cryptocompare price historical query works fine"""
-    price = cryptocompare.query_endpoint_pricehistorical(
-        from_asset=A_SNGLS.resolve_to_asset_with_oracles(),
-        to_asset=A_BTC.resolve_to_asset_with_oracles(),
-        timestamp=1475413990,
-    )
-    # Just test a price is returned
-    assert price
+    with patch.object(cryptocompare, '_api_query', return_value=[{'CLOSE': '0.00001234'}]):
+        price = cryptocompare.query_endpoint_pricehistorical(
+            from_asset=A_SNGLS.resolve_to_asset_with_oracles(),
+            to_asset=A_BTC.resolve_to_asset_with_oracles(),
+            timestamp=1475413990,
+        )
+    assert price == Price(FVal('0.00001234'))
 
 
 def get_globaldb_cache_entries(from_asset: Asset, to_asset: Asset) -> list[HistoricalPrice]:

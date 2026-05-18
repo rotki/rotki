@@ -266,11 +266,13 @@ class DBSnapshot:
         May raise:
         - InputError
         """
-        write_cursor.execute('DELETE FROM timed_balances WHERE timestamp=?', (timestamp,))
-        if write_cursor.rowcount == 0:
-            raise InputError('No snapshot found for the specified timestamp')
-        write_cursor.execute('DELETE FROM timed_location_data WHERE timestamp=?', (timestamp,))
-        if write_cursor.rowcount == 0:
+        balances_deleted = write_cursor.execute(
+            'DELETE FROM timed_balances WHERE timestamp=?', (timestamp,),
+        ).rowcount
+        location_deleted = write_cursor.execute(
+            'DELETE FROM timed_location_data WHERE timestamp=?', (timestamp,),
+        ).rowcount
+        if balances_deleted == 0 and location_deleted == 0:
             raise InputError('No snapshot found for the specified timestamp')
 
     def add_nft_asset_ids(self, write_cursor: 'DBCursor', entries: list[str]) -> None:

@@ -131,11 +131,20 @@ class BeaconChain(ExternalServiceWithRecommendedApiKey):
                 raise RemoteError(f'Querying {query_str} failed due to {e!s}') from e
 
             if response.status_code == 429:
-                if (retry_after := response.headers.get('ratelimit-reset')) == '0':
+                if all(response.headers.get(header) == '0' for header in (
+                    'x-ratelimit-limit-second',
+                    'x-ratelimit-limit-minute',
+                    'x-ratelimit-limit-hour',
+                    'x-ratelimit-limit-day',
+                    'x-ratelimit-limit-month',
+                )):
                     self.db.delete_external_service_credentials([ExternalService.BEACONCHAIN])
                     self.api_key = None
                     self.last_ts = Timestamp(0)
-                    raise APIKeyNotAvailable('Beaconcha.in free trial expired')
+                    self.msg_aggregator.add_warning(
+                        'The beaconcha.in API key is no longer active and was removed.',
+                    )
+                    raise APIKeyNotAvailable('Beaconcha.in API key is no longer active')
 
                 rate_limit_info = (
                     f"limit: {response.headers.get('ratelimit-limit', 'unknown')}, "
@@ -153,7 +162,7 @@ class BeaconChain(ExternalServiceWithRecommendedApiKey):
                     log.debug(msg)
                     raise RemoteError(msg)
 
-                retry_after = retry_after or response.headers.get('retry-after')
+                retry_after = response.headers.get('ratelimit-reset') or response.headers.get('retry-after')  # noqa: E501
                 if retry_after is not None:
                     retry_after_secs = int(retry_after)
                     if retry_after_secs > MAX_WAIT_SECS:
@@ -210,6 +219,9 @@ class BeaconChain(ExternalServiceWithRecommendedApiKey):
             data=json_ret['data'],
             next_cursor=paging.get('next_cursor') or None if isinstance(paging, dict) else None,
         )
+
+    def has_api_key(self) -> bool:
+        return ExternalServiceWithApiKey._get_api_key(self) is not None
 
     def is_rate_limited(self) -> bool:
         return self.ratelimited_until > ts_now()

@@ -184,6 +184,16 @@ class BeaconNode:
             endpoint=f'eth/v1/beacon/states/head/validators/{validator_id}',
         ) for validator_id in indices_or_pubkeys]
 
+    def query_block_proposer(self, slot: int) -> int:
+        """Query the proposer index for a consensus layer slot.
+
+        May raise:
+        - RemoteError due to problems querying the node
+        - KeyError/ValueError if the response shape is unexpected
+        """
+        data = self.query(method='GET', endpoint=f'eth/v1/beacon/headers/{slot}')
+        return int(data['header']['message']['proposer_index'])
+
 
 class BeaconInquirer:
 

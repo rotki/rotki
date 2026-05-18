@@ -607,7 +607,7 @@ dependencies = [
 
 [[package]]
 name = "colibri"
-version = "1.43.0"
+version = "1.43.1"
 dependencies = [
  "alloy-primitives",
  "async-sqlite",

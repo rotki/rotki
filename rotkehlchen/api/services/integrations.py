@@ -13,7 +13,6 @@ from rotkehlchen.externalapis.gnosispay import (
     verify_gnosis_pay_siwe_signature as external_verify_gnosis_pay_siwe_signature,
 )
 from rotkehlchen.externalapis.google_calendar import GoogleCalendarAPI
-from rotkehlchen.externalapis.monerium import Monerium
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.serialize import process_result
 from rotkehlchen.types import ApiKey, ExternalService, ExternalServiceApiCredentials
@@ -181,9 +180,9 @@ class IntegrationsService:
         return {'result': result, 'message': '', 'status_code': HTTPStatus.OK}
 
     def get_monerium_status(self) -> dict[str, Any]:
-        monerium = Monerium(self.rotkehlchen.data.db)
+        assert self.rotkehlchen.monerium is not None, 'Monerium should be initialized after login'
         return {
-            'result': monerium.oauth_client.get_status(),
+            'result': self.rotkehlchen.monerium.oauth_client.get_status(),
             'message': '',
             'status_code': HTTPStatus.OK,
         }
@@ -194,9 +193,9 @@ class IntegrationsService:
             refresh_token: str,
             expires_in: int,
     ) -> dict[str, Any]:
-        monerium = Monerium(self.rotkehlchen.data.db)
+        assert self.rotkehlchen.monerium is not None, 'Monerium should be initialized after login'
         try:
-            result = monerium.oauth_client.complete_oauth(
+            result = self.rotkehlchen.monerium.oauth_client.complete_oauth(
                 access_token=access_token,
                 refresh_token=refresh_token,
                 expires_in=expires_in,
@@ -204,11 +203,12 @@ class IntegrationsService:
         except RemoteError as e:
             return {'result': None, 'message': str(e), 'status_code': HTTPStatus.BAD_REQUEST}
 
-        gevent.spawn(monerium.get_and_process_orders)
+        gevent.spawn(self.rotkehlchen.monerium.get_and_process_orders)
         return {'result': result, 'message': '', 'status_code': HTTPStatus.OK}
 
     def disconnect_monerium(self) -> dict[str, Any]:
-        Monerium(self.rotkehlchen.data.db).oauth_client.clear_credentials()
+        assert self.rotkehlchen.monerium is not None, 'Monerium should be initialized after login'
+        self.rotkehlchen.monerium.oauth_client.clear_credentials()
         return {'result': True, 'message': '', 'status_code': HTTPStatus.OK}
 
     def get_gnosis_pay_safe_admin_addresses(self) -> dict[str, Any]:

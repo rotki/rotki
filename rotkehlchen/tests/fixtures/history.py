@@ -18,6 +18,14 @@ if TYPE_CHECKING:
 
 @pytest.fixture(name='cryptocompare')
 def fixture_cryptocompare(database):
+    with database.user_write() as write_cursor:
+        database.add_external_service_credentials(
+            write_cursor=write_cursor,
+            credentials=[ExternalServiceApiCredentials(
+                service=ExternalService.CRYPTOCOMPARE,
+                api_key=ApiKey('dummy-api-key'),
+            )],
+        )
     return Cryptocompare(database=database)
 
 
@@ -66,6 +74,17 @@ def fixture_uniswapv3():
 
 @pytest.fixture(name='historical_price_oracles_order')
 def fixture_historical_price_oracles_order():
+    return (
+        HistoricalPriceOracle.COINGECKO,
+        HistoricalPriceOracle.DEFILLAMA,
+        HistoricalPriceOracle.UNISWAPV3,
+        HistoricalPriceOracle.UNISWAPV2,
+    )
+
+
+@pytest.fixture(name='cryptocompare_historical_price_oracles_order')
+def fixture_cryptocompare_historical_price_oracles_order():
+    """CryptoCompare-first historical oracle order for VCR-cassette compatibility."""
     return (
         HistoricalPriceOracle.CRYPTOCOMPARE,
         HistoricalPriceOracle.COINGECKO,

@@ -2,26 +2,13 @@
 Changelog
 =========
 
-
-* :feature:`12094` You can now have rotki automatically scan for new tokens each time you log in, and tune how often that on-login scan should actually run via a configurable cooldown.
-* :feature:`12241` You can now silence the "No indexers available" notification for individual chains you don't plan to configure an indexer for, and re-enable notifications later from the EVM settings page.
-* :bug:`12113` Switching the dashboard timeframe now resets the net worth chart back to the full range instead of carrying over the previous zoom selection.
-* :bug:`12112` The dashboard's net worth percentage and trend indicator now follow the chart's data-zoom selection.
-* :feature:`11988` rotki now has a setting to selectively enable/disable chain / address query for transaction history. That means you can skip history querying for specific chains or chain/address combinations.
-* :feature:`12111` Free-text typed in the History events filter without a key=value prefix is now applied as a notes search on Enter, so you can quickly find events by any word in their notes instead of having to remember the notes= prefix.
-* :feature:`3216` Trades made using clipper will now be decoded correctly.
-* :feature:`-` Jupiter Lend Earn balances on Solana are now detected and included in portfolio balances.
-* :bug:`12088` Cancelling the create-account wizard on a fresh install no longer drops you on an empty Unlock screen; the wizard's "Already have an account? Log in" shortcut is also hidden when no profiles exist.
-* :bug:`-` Typing into the login form's username field while the page is still loading no longer gets wiped by the remembered-profile pre-fill.
-* :bug:`-` The login screen no longer pre-fills the username field with a remembered account that no longer exists.
-* :feature:`12086` The "Create account" flow now starts with a mode chooser so creating a new local profile and restoring a database synced from rotki cloud are separate, focused paths.
-
-* :release:`1.43.1 <2026-05-18>`
 * :feature:`12215` Cryptocompare is now removed from the default list of oracles if no API key is set.
-* :bug:`12233` Importing a custom CSV that contains an asset which is unsupported on the given exchange (e.g. GLD on Bittrex) no longer crashes the import task. The offending row is reported as an error and the rest of the file is imported normally.
+<<<<<<< HEAD
 * :bug:`-` Hyperliquid history pagination no longer skips entries when many fills share the same millisecond at a page boundary.
+=======
 * :bug:`-` Reviewing newly detected Monad and Hyperliquid tokens now shows the chain icon and a working block-explorer link next to the address, so you can confirm what was detected without leaving the page.
 * :bug:`-` The chain icon on an asset no longer flickers behind the asset image while it loads, so you can tell which chain a token belongs to from the moment it appears.
+>>>>>>> a93f78b5bd (docs: changelog entries for newly detected token chain fixes)
 * :bug:`-` Searching Monad and Hyperliquid assets should now work properly.
 * :bug:`-` Multi-eth donations in giveth should now be properly decoded.
 * :feature:`12179` Blocks produced by validators will be queried in the case of missing beaconcha.in API keys.
@@ -29,11 +16,9 @@ Changelog
 * :bug:`-` There should no longer be any errors when exporting CSV from PnL report containing an event with notes being Null.
 * :bug:`-` 1inch swaps settling through a balancer pool should now be properly decoded.
 * :bug:`12173` Beaconcha.in queries with legacy API keys will work correctly again.
-* :bug:`-` Monerium credentials should now persist correctly when a redecoding of the history events happen.
 * :bug:`-` Newer zerox swaps in base will now be properly decoded.
 * :bug:`12178` Users can now fix a rejected Kusama, Polkadot, beacon chain, or BTC mempool endpoint by editing the URL in place. The error message clears as soon as you start typing.
 * :bug:`-` Typing dates and times by keyboard now produces the value you intended, instead of occasionally picking up stray digits from the previous segment.
-* :bug:`-` Creating a new account now updates the remembered username so the login screen pre-fills with the new account on next launch.
 
 * :release:`1.43.0 <2026-05-08>`
 * :bug:`-` Docker users can once again import data, snapshots, and asset icons larger than 1 MiB; the bundled nginx no longer rejects them with a 413 before they reach rotki.

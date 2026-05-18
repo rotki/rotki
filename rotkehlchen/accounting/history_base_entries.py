@@ -226,7 +226,10 @@ class EventsAccountant:
             log.debug(f'Skipping {self} at accounting for a swap due to inability to find a price')
             return 2
 
-        group_id = out_event.group_identifier + str(out_event.sequence_index) + str(in_event.sequence_index)  # noqa: E501
+        # Separate sequence indices with delimiters so that pairs like
+        # `(1, 234)` and `(12, 34)` produce distinct group_ids within the
+        # same group_identifier (concatenation alone collides).
+        group_id = f'{out_event.group_identifier}-{out_event.sequence_index}-{in_event.sequence_index}'  # noqa: E501
         extra_data = general_extra_data | {'group_id': group_id}
         _, trade_taxable_amount = self.pot.add_out_event(
             originating_event_id=out_event.identifier,

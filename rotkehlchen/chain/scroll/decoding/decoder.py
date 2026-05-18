@@ -11,6 +11,7 @@ if TYPE_CHECKING:
     from rotkehlchen.chain.scroll.node_inquirer import ScrollInquirer
     from rotkehlchen.chain.scroll.transactions import ScrollTransactions
     from rotkehlchen.db.dbhandler import DBHandler
+    from rotkehlchen.externalapis.monerium import Monerium
     from rotkehlchen.premium.premium import Premium
 
 logger = logging.getLogger(__name__)
@@ -25,6 +26,7 @@ class ScrollTransactionDecoder(L2WithL1FeesTransactionDecoder):
             scroll_inquirer: 'ScrollInquirer',
             transactions: 'ScrollTransactions',
             premium: 'Premium | None' = None,
+            monerium: 'Monerium | None' = None,
     ):
         super().__init__(
             database=database,
@@ -40,6 +42,7 @@ class ScrollTransactionDecoder(L2WithL1FeesTransactionDecoder):
                 address_is_exchange_fn=self._address_is_exchange,
             ),
             premium=premium,
+            monerium=monerium,
         )
 
     # -- methods that need to be implemented by child classes --

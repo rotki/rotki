@@ -87,7 +87,7 @@ jobs:
       - name: Build Colibri
         if: steps.colibri-cache.outputs.cache-hit != 'true'
         working-directory: ./colibri
-        run: cargo build --release
+        run: cargo build --release --locked
 
       - name: Upload Colibri binary
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1

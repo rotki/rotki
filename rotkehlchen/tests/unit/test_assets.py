@@ -97,6 +97,7 @@ def test_ethereum_tokens():
         EvmToken('BTC')
 
 
+@pytest.mark.skip(reason='CryptoCompare free API access is discontinued')
 @pytest.mark.asset_test
 def test_cryptocompare_asset_support(cryptocompare):
     """Try to detect if a token that we have as not supported by cryptocompare got added"""

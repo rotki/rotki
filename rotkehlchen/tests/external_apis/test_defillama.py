@@ -19,6 +19,15 @@ from rotkehlchen.types import (
 if TYPE_CHECKING:
     from rotkehlchen.chain.solana.node_inquirer import SolanaInquirer
 
+
+@pytest.fixture(name='current_price_oracles_order')
+def fixture_current_price_oracles_order(
+        cryptocompare_current_price_oracles_order: tuple,
+) -> tuple:
+    """Override to use CryptoCompare-first order for VCR cassette compatibility."""
+    return cryptocompare_current_price_oracles_order
+
+
 defillama_mocked_historical_prices = {
     'USD': {
         'EUR': {

@@ -6,6 +6,7 @@ from rotkehlchen.chain.evm.decoding.monerium.decoder import MoneriumCommonDecode
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
     from rotkehlchen.chain.evm.decoding.base import BaseEvmDecoderTools
+    from rotkehlchen.externalapis.monerium import Monerium
     from rotkehlchen.user_messages import MessagesAggregator
 
 
@@ -16,11 +17,13 @@ class MoneriumDecoder(MoneriumCommonDecoder):
             ethereum_inquirer: 'EthereumInquirer',
             base_tools: 'BaseEvmDecoderTools',
             msg_aggregator: 'MessagesAggregator',
+            monerium_api: 'Monerium | None',
     ) -> None:
         super().__init__(
             evm_inquirer=ethereum_inquirer,
             base_tools=base_tools,
             msg_aggregator=msg_aggregator,
+            monerium_api=monerium_api,
             monerium_token_addresses=ETHEREUM_MONERIUM_ADDRESSES,
         )
 

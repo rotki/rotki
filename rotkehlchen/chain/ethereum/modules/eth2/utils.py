@@ -1,5 +1,6 @@
 import logging
 from collections.abc import Sequence
+from typing import Final
 
 from rotkehlchen.api.v1.types import IncludeExcludeFilterData
 from rotkehlchen.chain.ethereum.modules.eth2.constants import (
@@ -16,9 +17,21 @@ from rotkehlchen.utils.misc import get_chunks
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
-EPOCH_DURATION_SECS = 384
+EPOCH_DURATION_SECS: Final = 384
+SECONDS_PER_SLOT: Final = 12
 
-ETH2_GENESIS_TIMESTAMP = 1606824023
+ETH2_GENESIS_TIMESTAMP: Final = 1606824023
+ETH2_MERGE_TIMESTAMP: Final = 1663224162
+
+
+def timestamp_to_slot(timestamp: Timestamp) -> int:
+    """Turn a post-merge unix timestamp to a beacon chain slot."""
+    if timestamp < ETH2_MERGE_TIMESTAMP:
+        raise ValueError(
+            f'Can not query a beacon block proposer for pre-merge timestamp {timestamp}',
+        )
+
+    return (timestamp - ETH2_GENESIS_TIMESTAMP) // SECONDS_PER_SLOT
 
 
 def epoch_to_timestamp(epoch: int) -> Timestamp:

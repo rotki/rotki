@@ -71,6 +71,25 @@ def test_serialize_with_invalid_type_subtype():
     }
 
 
+def test_hash_does_not_collide_on_digit_boundary():
+    """Regression: __hash__ must not collide for pairs like (gid='0xabc', seq=12)
+    and (gid='0xabc1', seq=2) which would share the same hash under naive
+    str(group_identifier) + str(sequence_index) concatenation."""
+    def make(gid: str, seq: int) -> HistoryEvent:
+        return HistoryEvent(
+            group_identifier=gid,
+            sequence_index=seq,
+            timestamp=TimestampMS(1),
+            location=Location.KRAKEN,
+            event_type=HistoryEventType.TRANSFER,
+            event_subtype=HistoryEventSubType.NONE,
+            asset=A_ETH,
+            amount=ONE,
+        )
+
+    assert hash(make('0xabc', 12)) != hash(make('0xabc1', 2))
+
+
 @pytest.mark.parametrize('base_accounts', [[make_evm_address()]])
 def test_informational_events(database: 'DBHandler', base_accounts: list[ChecksumEvmAddress]):
     """Test that informational events don't trigger price queries"""

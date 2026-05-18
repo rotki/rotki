@@ -86,6 +86,7 @@ class EthStakingEvent(HistoryBaseEntry, ABC):  # noqa: PLW1641  # hash in superc
             is_exit_or_blocknumber: int,
             notes: str,
             identifier: int | None = None,
+            extra_data: dict[str, Any] | None = None,
     ) -> None:
         self.validator_index = validator_index
         self.is_exit_or_blocknumber = is_exit_or_blocknumber
@@ -101,6 +102,7 @@ class EthStakingEvent(HistoryBaseEntry, ABC):  # noqa: PLW1641  # hash in superc
             amount=amount,
             location_label=location_label,
             notes=notes,
+            extra_data=extra_data,
         )
 
     def __eq__(self, other: object) -> bool:
@@ -328,6 +330,7 @@ class EthBlockEvent(EthStakingEvent):
             is_mev_reward: bool,
             identifier: int | None = None,
             group_identifier: str | None = None,
+            extra_data: dict[str, Any] | None = None,
     ) -> None:
 
         if is_mev_reward:
@@ -353,6 +356,7 @@ class EthBlockEvent(EthStakingEvent):
             location_label=fee_recipient,
             is_exit_or_blocknumber=block_number,
             notes=notes,
+            extra_data=extra_data,
         )
 
     @staticmethod

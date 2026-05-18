@@ -12,6 +12,7 @@ if TYPE_CHECKING:
     from rotkehlchen.chain.base.node_inquirer import BaseInquirer
     from rotkehlchen.chain.base.transactions import BaseTransactions
     from rotkehlchen.db.dbhandler import DBHandler
+    from rotkehlchen.externalapis.monerium import Monerium
     from rotkehlchen.premium.premium import Premium
 
 logger = logging.getLogger(__name__)
@@ -26,6 +27,7 @@ class BaseTransactionDecoder(L2WithL1FeesTransactionDecoder):
             base_inquirer: 'BaseInquirer',
             transactions: 'BaseTransactions',
             premium: 'Premium | None' = None,
+            monerium: 'Monerium | None' = None,
     ):
         super().__init__(
             database=database,
@@ -42,6 +44,7 @@ class BaseTransactionDecoder(L2WithL1FeesTransactionDecoder):
             ),
             premium=premium,
             dbevmtx_class=DBL2WithL1FeesTx,
+            monerium=monerium,
         )
         self.evm_inquirer: BaseInquirer  # re-affirm type
 
