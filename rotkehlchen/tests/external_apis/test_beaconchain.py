@@ -123,7 +123,15 @@ def test_free_trial_expired_deletes_api_key(
     def mock_session_request(url: str, **kwargs: dict[str, Any]) -> MockResponse:  # pylint: disable=unused-argument
         return MockResponse(
             status_code=HTTPStatus.TOO_MANY_REQUESTS,
-            headers={'ratelimit-reset': '0'},
+            headers={
+                'x-ratelimit-limit-second': '0',
+                'x-ratelimit-limit-minute': '0',
+                'x-ratelimit-limit-hour': '0',
+                'x-ratelimit-limit-day': '0',
+                'x-ratelimit-limit-month': '0',
+                'ratelimit-reset': '123',
+                'retry-after': '123',
+            },
             text='Free trial expired',
         )
 
@@ -135,14 +143,14 @@ def test_free_trial_expired_deletes_api_key(
 
     with (
         patch.object(beaconchain.session, 'request', mock_session_request),
-        pytest.raises(APIKeyNotAvailable, match=r'Beaconcha\.in free trial expired'),
+        pytest.raises(APIKeyNotAvailable, match=r'Beaconcha\.in API key is no longer active'),
     ):
         beaconchain._query_with_paging(endpoint='validators/proposal-slots')
 
     assert database.get_external_service_credentials(ExternalService.BEACONCHAIN) is None
     assert beaconchain.api_key is None
     assert messages_aggregator.consume_warnings() == [
-        'The beaconcha.in API key has been detected as expired and was removed.',
+        'The beaconcha.in API key is no longer active and was removed.',
     ]
 
 
