@@ -157,6 +157,7 @@ function getEvmTab(routes: SettingsRoutes, t: T): TabGroup {
     ] },
     { categoryId: SettingsCategoryIds.INDEXER, children: [
       { texts: [t('evm_settings.indexer.title')], keywords: [t('evm_settings.indexer.subtitle')] },
+      { texts: [t('evm_settings.indexer.title'), t('evm_settings.indexer.suppressed_no_indexer_chains.title')], keywords: [t('evm_settings.indexer.suppressed_no_indexer_chains.subtitle')], highlightId: SettingsHighlightIds.SUPPRESSED_NO_INDEXER_CHAINS },
     ] },
   ] };
 }

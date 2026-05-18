@@ -2671,6 +2671,14 @@
       "no_indexers_warning": "At least one indexer must be selected. The list cannot be empty.",
       "remove_chain": "Remove chain specific setting",
       "subtitle": "Indexers are used to query history events. Configure the priority order of indexers for each EVM chain. If the first indexer fails, the next one will be tried, and so on.",
+      "suppressed_no_indexer_chains": {
+        "error": "Failed to update suppressed chains.",
+        "hint": "Select chains to silence the \"No indexers available\" notification. Remove a chain to start showing notifications again.",
+        "label": "Suppressed chains",
+        "subtitle": "Manage the chains for which the \"No indexers available\" notification is silenced.",
+        "success": "Suppressed chains updated",
+        "title": "Suppressed \"No indexers available\" notifications"
+      },
       "title": "Indexer Order"
     }
   },
@@ -4392,7 +4400,12 @@
     },
     "no_available_indexers": {
       "action": "Configure indexers",
+      "do_not_show_again": "Do not show again for this chain",
       "message": "No indexers are available for {chain}. Transaction queries for this chain were skipped. You can configure indexer settings to resolve this.",
+      "suppress_confirm": {
+        "message": "Future \"No indexers available\" notifications for {chain} will be suppressed. You can re-enable them later from the EVM settings page.",
+        "title": "Suppress notifications for {chain}?"
+      },
       "title": "No indexers available"
     },
     "premium": {

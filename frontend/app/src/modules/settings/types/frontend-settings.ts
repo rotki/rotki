@@ -242,6 +242,7 @@ export const FrontendSettings = z.object({
   selectedTheme: ThemeEnum.default(Theme.AUTO),
   showGraphRangeSelector: z.boolean().default(true),
   subscriptDecimals: z.boolean().default(false),
+  suppressNoIndexerChains: z.array(z.string()).default([]),
   thousandSeparator: z.string().default(Defaults.DEFAULT_THOUSAND_SEPARATOR),
   timeframeSetting: TimeFrameSetting.default(TimeFramePersist.REMEMBER),
   useHistoricalAssetBalances: z.boolean().default(false),

@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :feature:`12241` You can now silence the "No indexers available" notification for individual chains you don't plan to configure an indexer for, and re-enable notifications later from the EVM settings page.
 * :bug:`12113` Switching the dashboard timeframe now resets the net worth chart back to the full range instead of carrying over the previous zoom selection.
 * :bug:`12112` The dashboard's net worth percentage and trend indicator now follow the chart's data-zoom selection.
 * :feature:`11988` rotki now has a setting to selectively enable/disable chain / address query for transaction history. That means you can skip history querying for specific chains or chain/address combinations.
