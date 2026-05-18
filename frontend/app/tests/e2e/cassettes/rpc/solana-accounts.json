@@ -1,0 +1,175 @@
+{
+  "269c95f235e258c6": {
+    "method": "getHealth",
+    "result": "ok"
+  },
+  "f99ccdbab110acd5": {
+    "method": "getBlock",
+    "params": [
+      0,
+      {
+        "encoding": "json",
+        "transactionDetails": null,
+        "rewards": null,
+        "maxSupportedTransactionVersion": null
+      }
+    ],
+    "result": {
+      "blockHeight": 0,
+      "blockTime": 1584368940,
+      "blockhash": "4sGjMW1sUnHzSxGspuhpqLDx6wiyjNtZAMdL4VZHirAn",
+      "parentSlot": 0,
+      "previousBlockhash": "4sGjMW1sUnHzSxGspuhpqLDx6wiyjNtZAMdL4VZHirAn",
+      "rewards": [],
+      "transactions": []
+    }
+  },
+  "c223d2bfdac47fe8": {
+    "method": "getProgramAccounts",
+    "params": [
+      "Stake11111111111111111111111111111111111111",
+      {
+        "filters": [
+          {
+            "memcmp": {
+              "offset": 44,
+              "encoding": "base58",
+              "bytes": "11111111111111111111111111111111"
+            }
+          }
+        ],
+        "encoding": "base64",
+        "dataSlice": null,
+        "commitment": "finalized",
+        "minContextSlot": null,
+        "withContext": null,
+        "sortResults": null
+      }
+    ],
+    "result": [
+      {
+        "account": {
+          "data": [
+            "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+            "base64"
+          ],
+          "executable": false,
+          "lamports": 3173760,
+          "owner": "Stake11111111111111111111111111111111111111",
+          "rentEpoch": 18446744073709552000,
+          "space": 100
+        },
+        "pubkey": "eYQuyNQf7MikpPghzw2g9JRN5xpvwCRMpn7hKAs6kSq"
+      },
+      {
+        "account": {
+          "data": [
+            "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+            "base64"
+          ],
+          "executable": false,
+          "lamports": 3173760,
+          "owner": "Stake11111111111111111111111111111111111111",
+          "rentEpoch": 18446744073709552000,
+          "space": 100
+        },
+        "pubkey": "GZ5Lgoq3WWuUnAevymDvE633QEW3GEh81RpBQKRmGAW"
+      },
+      {
+        "account": {
+          "data": [
+            "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+            "base64"
+          ],
+          "executable": false,
+          "lamports": 3173760,
+          "owner": "Stake11111111111111111111111111111111111111",
+          "rentEpoch": 18446744073709552000,
+          "space": 100
+        },
+        "pubkey": "6JbNzuzZGybbHssnPxWbLSkW4zpPhp647tCkGKTkie92"
+      },
+      {
+        "account": {
+          "data": [
+            "AgAAAIDVIgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAGZLqm3L7ppUYlmmRAgF/I4P2yAf+2fyr1fIFo+jfnB8Lf0aAAAAAABvAwAAAAAAAP//////////AAAAAAAA0D/01tsuAAAAAAAAAAA=",
+            "base64"
+          ],
+          "executable": false,
+          "lamports": 4052034,
+          "owner": "Stake11111111111111111111111111111111111111",
+          "rentEpoch": 18446744073709552000,
+          "space": 200
+        },
+        "pubkey": "8TaWBxjw2dTEhfsQmKUqDdKgxh3LxfFfXLDQTJFSxMJX"
+      }
+    ]
+  },
+  "4e388a3a35eba45f": {
+    "method": "getMultipleAccounts",
+    "params": [
+      [
+        "Bw4KF9HwGtW4bpQuhV9bTtyUpf8AeCYF7Vfrg7Pxrmwq"
+      ],
+      {
+        "encoding": "base64",
+        "dataSlice": null,
+        "commitment": "finalized",
+        "minContextSlot": null
+      }
+    ],
+    "result": {
+      "context": {
+        "apiVersion": "3.1.14",
+        "slot": 420583922
+      },
+      "value": [
+        null
+      ]
+    }
+  },
+  "b986c5f4be786e1e": {
+    "method": "getTokenAccountsByOwner",
+    "params": [
+      "Bw4KF9HwGtW4bpQuhV9bTtyUpf8AeCYF7Vfrg7Pxrmwq",
+      {
+        "programId": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
+      },
+      {
+        "encoding": "base64",
+        "dataSlice": null,
+        "commitment": "finalized",
+        "minContextSlot": null
+      }
+    ],
+    "result": {
+      "context": {
+        "apiVersion": "3.1.14",
+        "slot": 420583922
+      },
+      "value": []
+    }
+  },
+  "b057ada9e69b3424": {
+    "method": "getTokenAccountsByOwner",
+    "params": [
+      "Bw4KF9HwGtW4bpQuhV9bTtyUpf8AeCYF7Vfrg7Pxrmwq",
+      {
+        "programId": "TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb"
+      },
+      {
+        "encoding": "base64",
+        "dataSlice": null,
+        "commitment": "finalized",
+        "minContextSlot": null
+      }
+    ],
+    "result": {
+      "context": {
+        "apiVersion": "3.1.14",
+        "slot": 420583922
+      },
+      "value": []
+    }
+  }
+}
