@@ -3,6 +3,7 @@ import { NoteLocation } from '@/modules/core/common/notes';
 import SettingsItem from '@/modules/settings/controls/SettingsItem.vue';
 import SettingsPage from '@/modules/settings/controls/SettingsPage.vue';
 import IndexerOrderSetting from '@/modules/settings/evm/IndexerOrderSetting.vue';
+import SuppressedNoIndexerChainsSetting from '@/modules/settings/evm/SuppressedNoIndexerChainsSetting.vue';
 import EvmChainsToIgnoreSettings from '@/modules/settings/general/EvmChainsToIgnoreSettings.vue';
 import TreatEthAsEth2Setting from '@/modules/settings/general/TreatEthAsEth2Setting.vue';
 import { SettingsCategoryIds, SettingsHighlightIds } from '@/modules/settings/setting-highlight-ids';
@@ -50,6 +51,10 @@ const navigation = computed<{ id: string; label: string }[]>(() => [
         <EvmChainsToIgnoreSettings />
       </SettingsItem>
     </SettingCategory>
-    <IndexerOrderSetting :id="SettingsCategoryIds.INDEXER" />
+    <IndexerOrderSetting :id="SettingsCategoryIds.INDEXER">
+      <template #footer>
+        <SuppressedNoIndexerChainsSetting />
+      </template>
+    </IndexerOrderSetting>
   </SettingsPage>
 </template>

@@ -30,6 +30,11 @@ describe('useFrontendSettingsStore', () => {
     expect(store.language).toBe(SupportedLanguage.GR);
   });
 
+  it('should default suppressNoIndexerChains to an empty array', () => {
+    const store = useFrontendSettingsStore(pinia);
+    expect(get(store.suppressNoIndexerChains)).toEqual([]);
+  });
+
   it('should restore settings', () => {
     const store = useFrontendSettingsStore(pinia);
     const state: FrontendSettings = {
@@ -116,6 +121,7 @@ describe('useFrontendSettingsStore', () => {
       passwordConfirmationInterval: 604800,
       newlyDetectedTokensMaxCount: 500,
       newlyDetectedTokensTtlDays: 30,
+      suppressNoIndexerChains: [],
     };
 
     store.update(state);

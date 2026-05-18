@@ -53,6 +53,7 @@ export const SettingsHighlightIds = {
   SCRAMBLE: 'setting-scramble',
   SKIPPED_EVENTS: 'setting-skipped-events',
   SUBSCRIPT: 'setting-subscript',
+  SUPPRESSED_NO_INDEXER_CHAINS: 'setting-suppressed-no-indexer-chains',
   SUPPRESS_MISSING_KEY: 'setting-suppress-missing-key',
   TIMEFRAME: 'setting-timeframe',
   TREAT_ETH2_AS_ETH: 'setting-treat-eth2-as-eth',

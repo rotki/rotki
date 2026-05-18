@@ -32,6 +32,7 @@ export const useFrontendSettingsStore = defineStore('settings/frontend', () => {
   const amountRoundingMode = useComputedRef(settings, 'amountRoundingMode');
   const valueRoundingMode = useComputedRef(settings, 'valueRoundingMode');
   const subscriptDecimals = useComputedRef(settings, 'subscriptDecimals');
+  const suppressNoIndexerChains = useComputedRef(settings, 'suppressNoIndexerChains');
   const selectedTheme = useComputedRef(settings, 'selectedTheme');
   const lightTheme = useComputedRef(settings, 'lightTheme');
   const darkTheme = useComputedRef(settings, 'darkTheme');
@@ -137,6 +138,7 @@ export const useFrontendSettingsStore = defineStore('settings/frontend', () => {
     showGraphRangeSelector,
     showSuggestionsDialog,
     subscriptDecimals,
+    suppressNoIndexerChains,
     thousandSeparator,
     timeframeSetting,
     update,

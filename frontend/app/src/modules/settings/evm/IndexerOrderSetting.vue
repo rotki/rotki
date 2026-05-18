@@ -438,6 +438,7 @@ watchImmediate([evmIndexersOrder, defaultEvmIndexerOrder], () => {
           </SettingsOption>
         </RuiTabItem>
       </RuiTabItems>
+      <slot name="footer" />
     </div>
   </div>
 </template>
