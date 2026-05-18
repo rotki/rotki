@@ -24,7 +24,16 @@ interface JsonRpcRequest {
 interface CassetteEntry {
   method: string;
   params?: unknown[];
+  /**
+   * Raw upstream response body, stored verbatim. Used on replay so that
+   * numeric fields outside Number.MAX_SAFE_INTEGER (e.g. Solana's
+   * `rentEpoch: 18446744073709551615`) are returned with full precision —
+   * a `JSON.parse → stringify` round-trip would silently corrupt them.
+   */
+  body?: string;
+  /** Parsed result. Kept for legacy cassettes and for the balance-scanner resolver. */
   result?: unknown;
+  /** Parsed error. Kept for legacy cassettes. */
   error?: unknown;
 }
 
@@ -103,6 +112,8 @@ const FORWARD_MAX_ATTEMPTS = 5;
 const FORWARD_BACKOFF_MS = 1000;
 
 interface ForwardResult {
+  /** Raw upstream response body, kept as a string to preserve number precision. */
+  body?: string;
   result?: unknown;
   error?: unknown;
   /** If true, the caller should NOT persist this response to the cassette. */
@@ -130,8 +141,8 @@ async function forwardRequest(rpcRequest: JsonRpcRequest): Promise<ForwardResult
 
     if (response.ok) {
       try {
-        const body = JSON.parse(text) as { result?: unknown; error?: unknown };
-        return { result: body.result, error: body.error };
+        const parsed = JSON.parse(text) as { result?: unknown; error?: unknown };
+        return { body: text, result: parsed.result, error: parsed.error };
       }
       catch {
         const preview = text.slice(0, 120);
@@ -166,7 +177,21 @@ async function forwardRequest(rpcRequest: JsonRpcRequest): Promise<ForwardResult
   };
 }
 
-async function handleSingleRequest(req: JsonRpcRequest): Promise<Record<string, unknown>> {
+/**
+ * Patches the `id` field of a stored JSON-RPC response body to match the
+ * current request id. We use a regex to avoid parsing+stringifying the body,
+ * which would silently truncate u64-sized integers like Solana's
+ * `rentEpoch: 18446744073709551615`.
+ */
+function patchResponseId(body: string, id: number | string): string {
+  return body.replace(/"id"\s*:\s*[^,}]+/, `"id":${JSON.stringify(id)}`);
+}
+
+function buildResponseBody(id: number | string, fields: Record<string, unknown>): string {
+  return JSON.stringify({ jsonrpc: '2.0', id, ...fields });
+}
+
+async function handleSingleRequest(req: JsonRpcRequest): Promise<string> {
   const hash = hashRequest(req.method, req.params);
 
   if (MODE === 'replay') {
@@ -175,44 +200,42 @@ async function handleSingleRequest(req: JsonRpcRequest): Promise<Record<string, 
       const resolved = tryResolveBalanceCall(req.method, req.params, balanceMaps);
       if (resolved !== null) {
         logger.debug(`BALANCE HIT: ${req.method}`);
-        return {
-          jsonrpc: '2.0',
-          id: req.id,
-          result: resolved,
-        };
+        return buildResponseBody(req.id, { result: resolved });
       }
     }
 
     const entry = cassette[hash];
     if (entry) {
       logger.debug(`HIT: ${req.method} (hash: ${hash})`);
-      return {
-        jsonrpc: '2.0',
-        id: req.id,
+      if (entry.body !== undefined) {
+        return patchResponseId(entry.body, req.id);
+      }
+      // Legacy cassette entries without the raw body — reconstruct from
+      // parsed result/error. May lose precision on huge integers.
+      return buildResponseBody(req.id, {
         ...(entry.result !== undefined && { result: entry.result }),
         ...(entry.error !== undefined && { error: entry.error }),
-      };
+      });
     }
 
     logger.warn(`MISS: ${req.method} (hash: ${hash}) params: ${JSON.stringify(req.params).slice(0, 200)}`);
-    return {
-      jsonrpc: '2.0',
-      id: req.id,
+    return buildResponseBody(req.id, {
       error: {
         code: -32603,
         message: `No recorded response for ${req.method} (hash: ${hash})`,
       },
-    };
+    });
   }
 
   // Record mode
   logger.info(`RECORD: ${req.method} (hash: ${hash})`);
-  const { result, error, transient } = await forwardRequest(req);
+  const { body, result, error, transient } = await forwardRequest(req);
 
   if (!transient) {
     cassette[hash] = {
       method: req.method,
       params: req.params,
+      ...(body !== undefined && { body }),
       ...(result !== undefined && { result }),
       ...(error !== undefined && { error }),
     };
@@ -220,12 +243,13 @@ async function handleSingleRequest(req: JsonRpcRequest): Promise<Record<string, 
     scheduleSave();
   }
 
-  return {
-    jsonrpc: '2.0',
-    id: req.id,
+  if (body !== undefined) {
+    return patchResponseId(body, req.id);
+  }
+  return buildResponseBody(req.id, {
     ...(result !== undefined && { result }),
     ...(error !== undefined && { error }),
-  };
+  });
 }
 
 async function readBody(req: IncomingMessage): Promise<string> {
@@ -238,7 +262,10 @@ async function readBody(req: IncomingMessage): Promise<string> {
 }
 
 function sendJson(res: ServerResponse, status: number, data: unknown): void {
-  const body = JSON.stringify(data);
+  sendRaw(res, status, JSON.stringify(data));
+}
+
+function sendRaw(res: ServerResponse, status: number, body: string): void {
   res.writeHead(status, {
     'Content-Type': 'application/json',
     'Content-Length': Buffer.byteLength(body),
@@ -310,14 +337,14 @@ async function handleRequest(req: IncomingMessage, res: ServerResponse): Promise
 
     // Handle batch requests
     if (Array.isArray(parsed)) {
-      const results = await Promise.all(
+      const bodies = await Promise.all(
         parsed.map(async (rpcReq: JsonRpcRequest) => handleSingleRequest(rpcReq)),
       );
-      sendJson(res, 200, results);
+      sendRaw(res, 200, `[${bodies.join(',')}]`);
     }
     else {
-      const result = await handleSingleRequest(parsed as JsonRpcRequest);
-      sendJson(res, 200, result);
+      const body = await handleSingleRequest(parsed as JsonRpcRequest);
+      sendRaw(res, 200, body);
     }
   }
   catch (error) {
