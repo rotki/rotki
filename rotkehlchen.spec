@@ -95,6 +95,8 @@ a = Entrypoint(
         # polars submodules we never import. polars.sql is NOT excluded because
         # polars/__init__.py unconditionally imports SQLContext from it.
         'polars.testing', 'polars.ml',
+        # SelfTest suites bundled inside pycryptodome and pycryptodomex.
+        'Crypto.SelfTest', 'Cryptodome.SelfTest',
     ],
 )
 
