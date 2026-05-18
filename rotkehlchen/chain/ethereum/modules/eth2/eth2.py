@@ -584,7 +584,7 @@ class Eth2(EthereumModule):
 
         May raise RemoteError due to beaconcha.in or beacon node connection"""
         with self.database.conn.read_ctx() as cursor:  # get non finalized saved validator
-            cursor.execute('SELECT validator_index, public_key FROM eth2_validators WHERE withdrawable_timestamp IS NULL')  # noqa: E501
+            cursor.execute('SELECT validator_index, public_key FROM eth2_validators WHERE withdrawable_timestamp IS NULL AND exited_timestamp IS NULL')  # noqa: E501
             validators_to_refresh = {ValidatorID(index=x[0], public_key=x[1]) for x in cursor}
 
         # Prefer validator identifiers parsed from decoded deposit events. Beaconcha.in V2 may
