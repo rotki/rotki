@@ -35,6 +35,16 @@ describe('useFrontendSettingsStore', () => {
     expect(get(store.suppressNoIndexerChains)).toEqual([]);
   });
 
+  it('should default autoDetectTokensCooldownHours to 24', () => {
+    const store = useFrontendSettingsStore(pinia);
+    expect(get(store.autoDetectTokensCooldownHours)).toBe(24);
+  });
+
+  it('should default lastAutoDetectAt to 0', () => {
+    const store = useFrontendSettingsStore(pinia);
+    expect(get(store.lastAutoDetectAt)).toBe(0);
+  });
+
   it('should restore settings', () => {
     const store = useFrontendSettingsStore(pinia);
     const state: FrontendSettings = {
@@ -122,6 +132,8 @@ describe('useFrontendSettingsStore', () => {
       newlyDetectedTokensMaxCount: 500,
       newlyDetectedTokensTtlDays: 30,
       suppressNoIndexerChains: [],
+      autoDetectTokensCooldownHours: 24,
+      lastAutoDetectAt: 0,
     };
 
     store.update(state);

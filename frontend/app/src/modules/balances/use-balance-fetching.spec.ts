@@ -1,6 +1,52 @@
+import flushPromises from 'flush-promises';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useBalanceFetching } from './use-balance-fetching';
 import '@test/i18n';
+
+const { refreshBlockchainBalances, maybeDetect, skipReason, willDetect } = vi.hoisted(() => ({
+  maybeDetect: vi.fn().mockResolvedValue(undefined),
+  refreshBlockchainBalances: vi.fn().mockResolvedValue(undefined),
+  skipReason: vi.fn().mockReturnValue('auto-detect-tokens disabled'),
+  willDetect: vi.fn().mockReturnValue(false),
+}));
+
+vi.mock('@/modules/balances/use-blockchain-balances', () => ({
+  useBlockchainBalances: vi.fn().mockReturnValue({
+    fetchBlockchainBalances: vi.fn().mockResolvedValue({}),
+    refreshBlockchainBalances,
+  }),
+}));
+
+vi.mock('@/modules/balances/blockchain/use-auto-token-detection', () => ({
+  useAutoTokenDetection: (): { maybeDetect: typeof maybeDetect; skipReason: typeof skipReason; willDetect: typeof willDetect } => ({
+    maybeDetect,
+    skipReason,
+    willDetect,
+  }),
+}));
+
+vi.mock('@/modules/core/common/use-supported-chains', async () => {
+  const { computed } = await import('vue');
+  const { Blockchain } = await import('@rotki/common');
+  return {
+    useSupportedChains: vi.fn().mockReturnValue({
+      supportedChains: computed(() => [
+        { id: Blockchain.ETH, type: 'evm', name: 'Ethereum', image: '', nativeToken: 'ETH' },
+        { id: Blockchain.BTC, type: 'bitcoin', name: 'Bitcoin', image: '', nativeToken: 'BTC' },
+      ]),
+      txEvmChains: computed(() => [
+        { id: Blockchain.ETH, evmChainName: 'ethereum', type: 'evm', name: 'Ethereum', image: '', nativeToken: 'ETH' },
+      ]),
+    }),
+  };
+});
+
+vi.mock('@/modules/core/notifications/use-notifications', () => ({
+  useNotifications: vi.fn().mockReturnValue({
+    notifyError: vi.fn(),
+  }),
+  getErrorMessage: vi.fn(),
+}));
 
 vi.mock('@/modules/core/tasks/use-task-handler', async importOriginal => ({
   ...(await importOriginal<Record<string, unknown>>()),
@@ -70,6 +116,38 @@ describe('useBalanceFetching', () => {
     it('should coordinate fetching of all balance types', async () => {
       const { fetch } = useBalanceFetching();
       await expect(fetch()).resolves.not.toThrow();
+    });
+  });
+
+  describe('refreshFromChain', () => {
+    beforeEach(() => {
+      refreshBlockchainBalances.mockClear();
+      maybeDetect.mockClear();
+      willDetect.mockReset();
+    });
+
+    it('should refresh all chains from network when detection is not going to run', async () => {
+      willDetect.mockReturnValue(false);
+      const { refreshFromChain } = useBalanceFetching();
+
+      refreshFromChain();
+      await flushPromises();
+
+      expect(refreshBlockchainBalances).toHaveBeenCalledTimes(1);
+      expect(refreshBlockchainBalances).toHaveBeenCalledWith();
+      expect(maybeDetect).not.toHaveBeenCalled();
+    });
+
+    it('should run detection and refresh only non-EVM chains from network when detection will run', async () => {
+      willDetect.mockReturnValue(true);
+      const { refreshFromChain } = useBalanceFetching();
+
+      refreshFromChain();
+      await flushPromises();
+
+      expect(maybeDetect).toHaveBeenCalledTimes(1);
+      expect(refreshBlockchainBalances).toHaveBeenCalledTimes(1);
+      expect(refreshBlockchainBalances).toHaveBeenCalledWith({ blockchain: ['btc'] });
     });
   });
 

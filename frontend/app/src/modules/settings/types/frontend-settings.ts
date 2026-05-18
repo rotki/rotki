@@ -141,6 +141,14 @@ const EvmQueryIndicatorDismissalThreshold = z
   .max(Constraints.MAX_HOURS_DELAY)
   .int();
 
+const AutoDetectTokensCooldownHours = z
+  .number()
+  .min(1)
+  .max(Constraints.MAX_HOURS_DELAY)
+  .int();
+
+const LastAutoDetectAt = z.number().int().nonnegative();
+
 const NewlyDetectedTokensMaxCount = z
   .number()
   .min(Constraints.NEWLY_DETECTED_TOKENS_MIN_COUNT)
@@ -163,6 +171,7 @@ const EnablePasswordConfirmation = z.boolean();
 export const FrontendSettings = z.object({
   abbreviateNumber: z.boolean().default(false),
   amountRoundingMode: RoundingMode.default(BigNumber.ROUND_UP),
+  autoDetectTokensCooldownHours: AutoDetectTokensCooldownHours.default(24),
   balanceValueThreshold: BalanceValueThreshold.default({}),
   blockchainRefreshButtonBehaviour: BlockchainRefreshButtonBehaviourEnum.default(
     BlockchainRefreshButtonBehaviour.ONLY_REFRESH_BALANCES,
@@ -195,6 +204,7 @@ export const FrontendSettings = z.object({
   itemsPerPage: z.number().positive().int().default(10),
   language: SupportedLanguageEnum.default(SupportedLanguage.EN),
   lastAppliedSettingsVersion: z.string().default('0.0.0'),
+  lastAutoDetectAt: LastAutoDetectAt.default(0),
   lastKnownTimeframe: TimeFramePeriodEnum.default(TimeFramePeriod.ALL),
   lastPasswordConfirmed: LastPasswordConfirmed.default(0),
   lightTheme: ThemeColors.default(LIGHT_COLORS),
