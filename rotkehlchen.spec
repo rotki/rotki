@@ -97,6 +97,15 @@ a = Entrypoint(
         'polars.testing', 'polars.ml',
         # SelfTest suites bundled inside pycryptodome and pycryptodomex.
         'Crypto.SelfTest', 'Cryptodome.SelfTest',
+        # Test packages shipped inside runtime dependencies. None of these are
+        # imported at runtime; gevent.testing is only used by gevent.tests
+        # and a towncrier release helper in gevent/_util.py.
+        'gevent.tests', 'gevent.testing',
+        'greenlet.tests',
+        'zope.interface.tests',
+        'regex.tests',
+        'cytoolz.tests', 'toolz.tests',
+        'parsimonious.tests',
     ],
 )
 
