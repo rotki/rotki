@@ -63,7 +63,6 @@ export function createSettingsSuggestions(t: ComposerTranslation): VersionSugges
           suggestedValue: [
             PriceOracle.DEFILLAMA,
             PriceOracle.COINGECKO,
-            PriceOracle.CRYPTOCOMPARE,
             PriceOracle.UNISWAP2,
             PriceOracle.UNISWAP3,
           ],
@@ -74,7 +73,6 @@ export function createSettingsSuggestions(t: ComposerTranslation): VersionSugges
           key: 'historicalPriceOracles',
           suggestedValue: [
             PriceOracle.DEFILLAMA,
-            PriceOracle.CRYPTOCOMPARE,
             PriceOracle.COINGECKO,
             PriceOracle.UNISWAP3,
             PriceOracle.UNISWAP2,
