@@ -90,6 +90,7 @@ from rotkehlchen.externalapis.cryptocompare import Cryptocompare
 from rotkehlchen.externalapis.defillama import Defillama
 from rotkehlchen.externalapis.etherscan import Etherscan
 from rotkehlchen.externalapis.helius import Helius
+from rotkehlchen.externalapis.monerium import Monerium
 from rotkehlchen.externalapis.routescan import Routescan
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.asset_updates.manager import AssetsUpdater
@@ -229,6 +230,7 @@ class Rotkehlchen:
         # Initialize EVM Contracts common abis
         EvmContracts.initialize_common_abis()
         self.task_manager: TaskManager | None = None
+        self.monerium: Monerium | None = None
         self.shutdown_event = gevent.event.Event()
         self.migration_manager = DataMigrationManager(self)
 
@@ -271,6 +273,7 @@ class Rotkehlchen:
         self.cryptocompare.db = None
         self.exchange_manager.delete_all_exchanges()
         self.data.logout()
+        self.monerium = None
         for instance in (self.cryptocompare, self.defillama, self.coingecko, self.alchemy, Inquirer()._manualcurrent):  # noqa: E501
             if instance.db is not None:  # unset DB if needed
                 instance.unset_database()
@@ -387,6 +390,8 @@ class Rotkehlchen:
             )
             blockchain_accounts = self.data.db.get_blockchain_accounts(cursor)
 
+        self.monerium = Monerium(database=self.data.db)
+
         # Initialize blockchain querying modules
         self.chains_aggregator = ChainsAggregator(
             blockchain_accounts=blockchain_accounts,
@@ -409,6 +414,7 @@ class Rotkehlchen:
                 )),
                 premium=self.premium,
                 beacon_chain=self.beaconchain,
+                monerium=self.monerium,
             ),
             optimism_manager=OptimismManager(
                 node_inquirer=OptimismInquirer(
@@ -429,6 +435,7 @@ class Rotkehlchen:
                     routescan=routescan,
                 ),
                 premium=self.premium,
+                monerium=self.monerium,
             ),
             arbitrum_one_manager=ArbitrumOneManager(
                 node_inquirer=ArbitrumOneInquirer(
@@ -439,6 +446,7 @@ class Rotkehlchen:
                     routescan=routescan,
                 ),
                 premium=self.premium,
+                monerium=self.monerium,
             ),
             base_manager=BaseManager(
                 node_inquirer=BaseInquirer(
@@ -449,6 +457,7 @@ class Rotkehlchen:
                     routescan=routescan,
                 ),
                 premium=self.premium,
+                monerium=self.monerium,
             ),
             hyperliquid_manager=HyperliquidManager(
                 node_inquirer=HyperliquidInquirer(
@@ -469,6 +478,7 @@ class Rotkehlchen:
                     routescan=routescan,
                 ),
                 premium=self.premium,
+                monerium=self.monerium,
             ),
             scroll_manager=ScrollManager(
                 node_inquirer=ScrollInquirer(
@@ -479,6 +489,7 @@ class Rotkehlchen:
                     routescan=routescan,
                 ),
                 premium=self.premium,
+                monerium=self.monerium,
             ),
             binance_sc_manager=BinanceSCManager(
                 node_inquirer=BinanceSCInquirer(
@@ -656,6 +667,7 @@ class Rotkehlchen:
         self.greenlet_manager.clear()
 
         self.data.logout()
+        self.monerium = None
         # unset the DB in the instances that need unsetting
         self.cryptocompare.unset_database()
         self.defillama.unset_database()

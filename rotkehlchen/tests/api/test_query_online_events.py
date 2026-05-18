@@ -28,6 +28,8 @@ def test_refresh_gnosis_pay_and_monerium(
         start_with_valid_premium: bool,
 ) -> None:
     """Test that refreshing gnosis pay and monerium data via the online events endpoint works."""
+    assert rotkehlchen_api_server.rest_api.rotkehlchen.monerium is not None
+    rotkehlchen_api_server.rest_api.rotkehlchen.monerium.oauth_client.reload_credentials()
     async_query = random.choice([False, True])
     for query_type, patch_path, service, error_msg, expected_call, capability_name in ((
         'gnosis_pay',
@@ -83,6 +85,7 @@ def test_refresh_gnosis_pay_and_monerium(
                     'DELETE FROM key_value_cache WHERE name=?',
                     (DBCacheStatic.MONERIUM_OAUTH_CREDENTIALS.value,),
                 )
+            rotkehlchen_api_server.rest_api.rotkehlchen.monerium.oauth_client.reload_credentials()
         with patch(
             'rotkehlchen.api.services.history.has_premium_capability',
             return_value=start_with_valid_premium,

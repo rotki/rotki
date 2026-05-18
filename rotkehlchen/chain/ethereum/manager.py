@@ -11,6 +11,7 @@ from .tokens import EthereumTokens
 
 if TYPE_CHECKING:
     from rotkehlchen.externalapis.beaconchain.service import BeaconChain
+    from rotkehlchen.externalapis.monerium import Monerium
     from rotkehlchen.premium.premium import Premium
 
     from .node_inquirer import EthereumInquirer
@@ -25,6 +26,7 @@ class EthereumManager(EvmManager, CurveManagerMixin):
             self,
             node_inquirer: 'EthereumInquirer',
             premium: 'Premium | None' = None,
+            monerium: 'Monerium | None' = None,
             beacon_chain: 'BeaconChain | None' = None,
     ) -> None:
         transactions = EthereumTransactions(
@@ -44,6 +46,7 @@ class EthereumManager(EvmManager, CurveManagerMixin):
                 transactions=transactions,
                 premium=premium,
                 beacon_chain=beacon_chain,
+                monerium=monerium,
             ),
             accounting_aggregator=EthereumAccountingAggregator(
                 node_inquirer=node_inquirer,

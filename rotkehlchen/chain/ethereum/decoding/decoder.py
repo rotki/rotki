@@ -46,6 +46,7 @@ if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.transactions import EthereumTransactions
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.externalapis.beaconchain.service import BeaconChain
+    from rotkehlchen.externalapis.monerium import Monerium
     from rotkehlchen.history.events.structures.evm_event import EvmEvent
     from rotkehlchen.premium.premium import Premium
 
@@ -62,6 +63,7 @@ class EthereumTransactionDecoder(EVMTransactionDecoderWithDSProxy):
             transactions: 'EthereumTransactions',
             beacon_chain: 'BeaconChain | None' = None,
             premium: 'Premium | None' = None,
+            monerium: 'Monerium | None' = None,
     ):
         self.beacon_node: BeaconNode | None = None
         self.beacon_rpc_endpoint: str | None = None
@@ -102,6 +104,7 @@ class EthereumTransactionDecoder(EVMTransactionDecoderWithDSProxy):
             ),
             premium=premium,
             beacon_chain=beacon_chain,
+            monerium=monerium,
         )
 
     def _get_beacon_node(self) -> BeaconNode | None:

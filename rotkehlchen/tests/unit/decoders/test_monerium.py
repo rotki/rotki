@@ -3,13 +3,17 @@ from typing import TYPE_CHECKING
 import pytest
 
 from rotkehlchen.assets.asset import Asset
+from rotkehlchen.chain.arbitrum_one.decoding.decoder import ArbitrumOneTransactionDecoder
+from rotkehlchen.chain.arbitrum_one.modules.monerium.constants import ARBITRUM_MONERIUM_ADDRESSES
 from rotkehlchen.chain.evm.decoding.monerium.constants import CPT_MONERIUM
+from rotkehlchen.chain.evm.decoding.monerium.decoder import MoneriumCommonDecoder
 from rotkehlchen.constants.assets import A_ETH_EURE
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.tests.utils.constants import A_GNOSIS_EURE
+from rotkehlchen.tests.utils.decoders import patch_decoder_reload_data
 from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
 from rotkehlchen.tests.utils.factories import make_evm_tx_hash
 from rotkehlchen.types import ChecksumEvmAddress, Location, TimestampMS, deserialize_evm_tx_hash
@@ -19,6 +23,30 @@ if TYPE_CHECKING:
     from rotkehlchen.chain.gnosis.node_inquirer import GnosisInquirer
 
 A_POLYGON_EURE = Asset('eip155:137/erc20:0x18ec0A6E18E5bc3784fDd3a3634b31245ab704F6')
+
+
+def test_monerium_decoder_initializes_without_api(
+        database,
+        arbitrum_one_inquirer: 'ArbitrumOneInquirer',
+        arbitrum_one_transactions,
+        load_global_caches,
+) -> None:
+    """Test that basic monerium decoding is available without the API instance."""
+    with patch_decoder_reload_data(load_global_caches):
+        decoder = ArbitrumOneTransactionDecoder(
+            database=database,
+            arbitrum_inquirer=arbitrum_one_inquirer,
+            transactions=arbitrum_one_transactions,
+            monerium=None,
+        )
+
+    monerium_decoder = decoder.decoders['Monerium']
+    assert isinstance(monerium_decoder, MoneriumCommonDecoder)
+    assert monerium_decoder.monerium_api is None
+    assert all(
+        address in decoder.rules.address_mappings for address in ARBITRUM_MONERIUM_ADDRESSES
+    )
+    assert CPT_MONERIUM in decoder.rules.post_processing_rules
 
 
 @pytest.mark.vcr
@@ -305,7 +333,14 @@ def test_monerium_post_processing_handles_remote_error(
     decoder = arbitrum_one_transaction_decoder.decoders['Monerium']
     error_message = '{"code":410,"status":"Gone","message":"Endpoint deprecated. Please refer to https://monerium.dev/api-docs/v1"}'
 
+    class FailingOAuthClient:
+
+        @staticmethod
+        def is_authenticated() -> bool:
+            return True
+
     class FailingMoneriumAPI:
+        oauth_client = FailingOAuthClient()
 
         def update_events(self, events: list['EvmEvent']) -> None:
             raise RemoteError(error_message)
