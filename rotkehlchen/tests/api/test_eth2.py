@@ -963,7 +963,7 @@ def test_query_online_block_productions_missing_api_key(
 @pytest.mark.parametrize('ethereum_modules', [['eth2']])
 @pytest.mark.parametrize('start_with_valid_premium', [True])
 @pytest.mark.parametrize('beaconchain_error', [
-    APIKeyNotAvailable('Beaconcha.in free trial expired'),
+    APIKeyNotAvailable('Beaconcha.in API key is no longer active'),
     RemoteError('Beaconcha.in query failed'),
 ])
 def test_query_online_block_productions_beaconchain_error_falls_back_to_indexers(
