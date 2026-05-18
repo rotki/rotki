@@ -1,6 +1,6 @@
 import type { FixtureBlockchainAccount } from '../../pages/types';
 import { expect, test } from '@playwright/test';
-import { Blockchain } from '@rotki/common';
+import { BigNumber, Blockchain } from '@rotki/common';
 import { testEnv } from '../../fixtures';
 import { cleanupContext, createLoggedInContext, type SharedTestContext } from '../../fixtures/test-fixtures';
 import { waitForNoRunningTasks } from '../../helpers/api';
@@ -41,6 +41,11 @@ test.describe.serial('solana accounts', () => {
     await blockchainAccountsPage.isEntryVisible(0, solanaAccount);
     await expect(ctx.sharedPage.locator('[data-cy=blockchain-account-refresh]')).not.toBeDisabled();
     await waitForNoRunningTasks(ctx.sharedPage);
+
+    const row = ctx.sharedPage.locator('[data-cy=account-table] tbody tr[data-id="row"]').first();
+    const usdValueText = await row.locator('[data-cy=usd-value] [data-cy=display-amount]').textContent();
+    expect(usdValueText, 'USD value should be displayed for the Solana account').not.toBeNull();
+    expect(new BigNumber((usdValueText ?? '').replace(/,/g, '')).gt(0)).toBe(true);
   });
 
   test('edit a Solana account label', async () => {
