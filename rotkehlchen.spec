@@ -17,6 +17,9 @@ PyInstaller spec file to build one-folder distributions.
 """
 
 MACOS_IDENTITY = os.environ.get('IDENTITY', None)
+# Strip debug symbols from bundled native libraries unless an opt-in test build
+# of the backend with debug symbols was requested (see package.py).
+STRIP_BINARIES = os.environ.get('ROTKI_BACKEND_DEBUG_SYMBOLS', '').lower() not in {'1', 'true', 'yes', 'on'}  # noqa: E501
 
 
 def Entrypoint(dist, group, name, scripts=None, pathex=None, hiddenimports=None, hookspath=None, excludes=None, runtime_hooks=None, datas=None):  # noqa: E501
@@ -138,7 +141,7 @@ exe = EXE(
     exclude_binaries=True,
     name=executable_name,
     debug=False,
-    strip=False,
+    strip=STRIP_BINARIES,
     upx=False,
     console=True,
     codesign_identity=identity,
@@ -150,7 +153,7 @@ coll = COLLECT(
     a.binaries,
     a.zipfiles,
     a.datas,
-    strip=False,
+    strip=STRIP_BINARIES,
     upx=False,
     name='rotki-core',
     codesign_identity=identity,

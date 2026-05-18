@@ -768,8 +768,10 @@ class BackendBuilder:
         backend_directory = self.__storage.backend_directory
         package_env = os.environ.copy()
         if self.__debug_symbols:
-            # Do not force optimized bytecode for debug-symbol test builds.
+            # Do not force optimized bytecode for debug-symbol test builds and
+            # propagate the flag to the spec so it skips stripping vendor libs.
             package_env.setdefault('PYTHONOPTIMIZE', '0')
+            package_env[BACKEND_DEBUG_SYMBOLS_ENV] = '1'
         else:
             package_env.setdefault('PYTHONOPTIMIZE', '2')
         package_ret_code = subprocess.call(
