@@ -84,6 +84,21 @@ def test_potential_maybe_schedule_task(task_manager: TaskManager):
     assert all(func in tasks for func in dir(task_manager) if func.startswith('_maybe_'))
 
 
+@pytest.mark.parametrize('max_tasks_num', [5])
+def test_cryptocompare_task_not_scheduled_without_api_key(task_manager: TaskManager) -> None:
+    task_manager.potential_tasks = [task_manager._maybe_schedule_cryptocompare_query]
+    task_manager.cryptocompare_queries = {cast('Any', MagicMock())}
+
+    with (
+        patch.object(task_manager.cryptocompare, 'has_api_key', return_value=False),
+        patch.object(task_manager.greenlet_manager, 'spawn_and_track') as spawn_mock,
+    ):
+        task_manager.schedule()
+        assert spawn_mock.call_count == 0
+
+    assert len(task_manager.cryptocompare_queries) == 0
+
+
 @pytest.mark.parametrize('number_of_eth_accounts', [2])
 @pytest.mark.parametrize('max_tasks_num', [5])
 def test_maybe_query_ethereum_transactions(task_manager, ethereum_accounts):
