@@ -13,7 +13,9 @@ export const useFrontendSettingsStore = defineStore('settings/frontend', () => {
   const defiSetupDone = useComputedRef(settings, 'defiSetupDone');
   const enablePasswordConfirmation = useComputedRef(settings, 'enablePasswordConfirmation');
   const language = useComputedRef(settings, 'language');
+  const autoDetectTokensCooldownHours = useComputedRef(settings, 'autoDetectTokensCooldownHours');
   const lastAppliedSettingsVersion = useComputedRef(settings, 'lastAppliedSettingsVersion');
+  const lastAutoDetectAt = useComputedRef(settings, 'lastAutoDetectAt');
   const timeframeSetting = useComputedRef(settings, 'timeframeSetting');
   const visibleTimeframes = useComputedRef(settings, 'visibleTimeframes');
   const lastKnownTimeframe = useComputedRef(settings, 'lastKnownTimeframe');
@@ -92,6 +94,7 @@ export const useFrontendSettingsStore = defineStore('settings/frontend', () => {
   return {
     abbreviateNumber,
     amountRoundingMode,
+    autoDetectTokensCooldownHours,
     balanceValueThreshold,
     blockchainRefreshButtonBehaviour,
     currencyLocation,
@@ -111,6 +114,7 @@ export const useFrontendSettingsStore = defineStore('settings/frontend', () => {
     itemsPerPage,
     language,
     lastAppliedSettingsVersion,
+    lastAutoDetectAt,
     lastKnownTimeframe,
     lastPasswordConfirmed,
     lightTheme,

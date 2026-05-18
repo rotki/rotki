@@ -97,6 +97,8 @@ describe('user-types', () => {
       newlyDetectedTokensMaxCount: 500,
       newlyDetectedTokensTtlDays: 30,
       suppressNoIndexerChains: [],
+      autoDetectTokensCooldownHours: 24,
+      lastAutoDetectAt: 0,
     };
 
     const raw = {

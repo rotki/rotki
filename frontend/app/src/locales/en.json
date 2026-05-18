@@ -3161,6 +3161,17 @@
         "error": "Error setting tokens auto detection"
       }
     },
+    "auto_detect_tokens_cooldown": {
+      "label": "Cooldown in hours",
+      "subtitle": "Minimum time between two automatic token-detection runs. Manual re-detect ignores this.",
+      "title": "Auto detect tokens cooldown",
+      "validation": {
+        "error": "Error saving the auto-detect cooldown",
+        "invalid_value": "Cooldown must be between {start} and {end} hours",
+        "non_empty": "Cooldown cannot be empty",
+        "success": "Auto-detect cooldown updated"
+      }
+    },
     "balance_frequency": {
       "label": "Balance data saving frequency in hours",
       "title": "Balance saving",
