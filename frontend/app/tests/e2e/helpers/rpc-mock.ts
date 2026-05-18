@@ -97,15 +97,17 @@ export async function apiConfigureRpcMock(
 }
 
 /**
- * Configures all EVM chains to use the mock RPC server with the specified cassette.
+ * Configures the given blockchains to use the mock RPC server with the specified cassette.
  * Call this after user login but before any blockchain queries.
  *
  * @param request - Playwright API request context
  * @param cassetteName - Name of the cassette file (without .json extension)
+ * @param chains - Backend blockchain identifiers (e.g. 'ETH', 'SOLANA'). Defaults to ['ETH'].
  */
-export async function apiConfigureAllEvmRpcMocks(
+export async function apiConfigureRpcMocks(
   request: APIRequestContext,
   cassetteName: string,
+  chains: string[] = ['ETH'],
 ): Promise<void> {
   const available = await isMockRpcAvailable();
   if (!available) {
@@ -116,8 +118,9 @@ export async function apiConfigureAllEvmRpcMocks(
   // Switch to the test-specific cassette
   await switchMockRpcCassette(cassetteName);
 
-  // Configure Ethereum (primary chain used in E2E tests)
-  await apiConfigureRpcMock(request, 'ETH');
+  for (const chain of chains) {
+    await apiConfigureRpcMock(request, chain);
+  }
 }
 
 /**
