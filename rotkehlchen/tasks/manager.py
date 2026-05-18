@@ -249,6 +249,10 @@ class TaskManager:
 
     def _maybe_schedule_cryptocompare_query(self) -> list[gevent.Greenlet] | None:
         """Schedules a cryptocompare query for a single asset history"""
+        if self.cryptocompare.has_api_key() is False:
+            self.cryptocompare_queries.clear()
+            return None
+
         if self.prepared_cryptocompare_query is False:
             self._prepare_cryptocompare_queries()
 
