@@ -90,7 +90,12 @@ a = Entrypoint(
             'rotkehlchen/chain/ethereum/modules/dxdaomesa/data',
         ),
     ],
-    excludes=['FixTk', 'tcl', 'tk', '_tkinter', 'tkinter', 'Tkinter', 'debugimporter'],
+    excludes=[
+        'FixTk', 'tcl', 'tk', '_tkinter', 'tkinter', 'Tkinter', 'debugimporter',
+        # polars submodules we never import. polars.sql is NOT excluded because
+        # polars/__init__.py unconditionally imports SQLContext from it.
+        'polars.testing', 'polars.ml',
+    ],
 )
 
 pyz = PYZ(a.pure, a.zipped_data, cipher=None)
