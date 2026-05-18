@@ -193,18 +193,17 @@ try {
     & $signTool verify /pa /v $file.FullName
     
     if ($LASTEXITCODE -ne 0) {
-        Write-Warning "Signature verification failed"
-    } else {
-        Write-Log "Signatures verified successfully"
+        throw "Signature verification failed (signtool verify /pa exit $LASTEXITCODE). Refusing to produce signed artifacts."
     }
-    
-    # Extract version from filename (expecting format like rotki-win32_x64-v1.39.1.exe)
-    $versionPattern = 'v?(\d+\.\d+\.\d+(?:\.\d+)?)'
+    Write-Log "Signatures verified successfully"
+
+    # Extract version from filename. Anchor to the rotki naming so we never
+    # match an unrelated version-shaped substring elsewhere in the path.
+    $versionPattern = '^rotki-win32_x64-v?(\d+\.\d+\.\d+(?:\.\d+)?)\.exe$'
     if ($file.Name -match $versionPattern) {
         $version = $Matches[1]
     } else {
-        Write-Warning "Could not extract version from filename. Using 0.0.0"
-        $version = "0.0.0"
+        throw "Could not extract version from filename '$($file.Name)'. Expected pattern: rotki-win32_x64-vX.Y.Z[.W].exe"
     }
     
     # Create output directory
@@ -260,7 +259,11 @@ releaseDate: '$releaseDate'
 "@
     
     $yamlFileName = Join-Path $outputDir "latest.yml"
-    $yamlContent | Out-File -FilePath $yamlFileName -Encoding UTF8
+    # Write UTF-8 WITHOUT BOM. Out-File -Encoding UTF8 on Windows PowerShell 5.1
+    # emits a BOM which most YAML tooling chokes on; electron-updater tolerates
+    # it but we don't want to depend on that.
+    $utf8NoBom = New-Object System.Text.UTF8Encoding($false)
+    [System.IO.File]::WriteAllText($yamlFileName, $yamlContent, $utf8NoBom)
     
     Write-Log "Generated auto-updater file: $yamlFileName"
     
