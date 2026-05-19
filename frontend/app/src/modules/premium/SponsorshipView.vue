@@ -71,7 +71,7 @@ const data: Sponsor = {
         <div class="w-full flex justify-center">
           <ExternalLink
             color="primary"
-            class="!text-xs text-center [&>span]:!whitespace-pre-line"
+            class="text-xs text-center whitespace-pre-line"
             :url="externalLinks.sponsor"
           >
             {{ t('sponsorship.sponsor') }}

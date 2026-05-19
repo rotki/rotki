@@ -1,6 +1,6 @@
 <script setup lang="ts">
+import type { ContextColorsType } from '@rotki/ui-library';
 import { externalLinks } from '@shared/external-links';
-import { truncateAddress } from '@/modules/core/common/display/truncate';
 import { useInterop } from '@/modules/shell/app/use-electron-interop';
 import ConfirmDialog from '@/modules/shell/components/dialogs/ConfirmDialog.vue';
 import { useLinks } from '@/modules/shell/layout/use-links';
@@ -10,49 +10,55 @@ defineOptions({
 });
 
 const {
+  color = 'primary',
   confirm = false,
   custom = false,
   premium = false,
   text = '',
-  truncate = false,
   url,
 } = defineProps<{
   url?: string;
-  truncate?: boolean;
   text?: string;
   custom?: boolean;
   premium?: boolean;
   confirm?: boolean;
+  color?: ContextColorsType;
 }>();
 
 defineSlots<{
   default: () => any;
-  append: () => any;
 }>();
+
+const showConfirmation = ref<boolean>(false);
 
 const { isPackaged, openUrl } = useInterop();
 const { t } = useI18n({ useScope: 'global' });
 
 const { href, linkTarget, onLinkClick: defaultOnLinkClick } = useLinks(() => url);
 
-const displayText = computed<string>(() => (truncate ? truncateAddress(text) : text));
-
 const targetUrl = computed<string>(() => url ?? externalLinks.premium);
 
-const showConfirmation = ref<boolean>(false);
+const colorClass = computed<string>(() => {
+  const map: Record<ContextColorsType, string> = {
+    error: 'text-rui-error hover:text-rui-error-darker',
+    info: 'text-rui-info hover:text-rui-info-darker',
+    primary: 'text-rui-primary hover:text-rui-primary-darker',
+    secondary: 'text-rui-secondary hover:text-rui-secondary-darker',
+    success: 'text-rui-success hover:text-rui-success-darker',
+    warning: 'text-rui-warning hover:text-rui-warning-darker',
+  };
+  return map[color] ?? map.primary;
+});
 
 async function onLinkClick(event?: Event): Promise<void> {
-  // If confirm is not enabled, use default behavior
   if (!confirm) {
     defaultOnLinkClick();
     return;
   }
 
-  // Prevent default navigation
   if (event)
     event.preventDefault();
 
-  // Show confirmation dialog
   set(showConfirmation, true);
 }
 
@@ -67,24 +73,19 @@ function cancelOpen(): void {
 </script>
 
 <template>
-  <RuiButton
+  <component
+    :is="isPackaged ? 'button' : 'a'"
     v-if="(url || premium) && !custom"
-    :tag="isPackaged ? 'button' : 'a'"
-    :href="href"
+    :href="isPackaged ? undefined : href"
     :target="linkTarget"
+    :type="isPackaged ? 'button' : undefined"
     v-bind="$attrs"
-    variant="text"
-    class="!inline !text-[1em] !p-0 !px-0.5 !-mx-0.5 !font-[inherit] [&_span]:underline"
+    class="cursor-pointer underline"
+    :class="colorClass"
     @click="onLinkClick($event)"
   >
-    <slot>{{ displayText }}</slot>
-    <template
-      v-if="$slots.append"
-      #append
-    >
-      <slot name="append" />
-    </template>
-  </RuiButton>
+    <slot>{{ text }}</slot>
+  </component>
   <a
     v-else-if="url || premium"
     :href="href"
@@ -93,7 +94,7 @@ function cancelOpen(): void {
     v-bind="$attrs"
     @click="onLinkClick($event)"
   >
-    <slot>{{ displayText }}</slot>
+    <slot>{{ text }}</slot>
   </a>
   <div
     v-else

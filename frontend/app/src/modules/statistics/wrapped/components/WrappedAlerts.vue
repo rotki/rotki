@@ -29,18 +29,18 @@ const { t } = useI18n({ useScope: 'global' });
       <div class="flex justify-between items-center">
         {{ t('wrapped.premium_nudge') }}
         <ExternalLink
-          :text="t('wrapped.get_rotki_premium')"
-          variant="default"
           premium
-          class="!flex [&_span]:!no-underline !px-3 !py-2"
-          color="primary"
+          custom
         >
-          <template #append>
-            <RuiIcon
-              name="lu-external-link"
-              size="12"
-            />
-          </template>
+          <RuiButton color="primary">
+            {{ t('wrapped.get_rotki_premium') }}
+            <template #append>
+              <RuiIcon
+                name="lu-external-link"
+                size="12"
+              />
+            </template>
+          </RuiButton>
         </ExternalLink>
       </div>
     </RuiAlert>
