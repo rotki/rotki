@@ -70,6 +70,7 @@ dependencies = [
     "solana==0.36.9",
     "solders==0.26.0",
     "tzdata==2025.2 ; sys_platform == 'win32'",
+    "mcp==1.27.1",
     # enfore transitive deps versions
     "aiohttp>=3.13.4",  # dependency of web3.py that has security issues before this version
     "urllib3>=2.7.0",  # enforced due to dependabot reports
