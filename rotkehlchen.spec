@@ -18,8 +18,16 @@ PyInstaller spec file to build one-folder distributions.
 
 MACOS_IDENTITY = os.environ.get('IDENTITY', None)
 # Strip debug symbols from bundled native libraries unless an opt-in test build
-# of the backend with debug symbols was requested (see package.py).
-STRIP_BINARIES = os.environ.get('ROTKI_BACKEND_DEBUG_SYMBOLS', '').lower() not in {'1', 'true', 'yes', 'on'}  # noqa: E501
+# of the backend with debug symbols was requested (see package.py). Skipped on
+# Windows because PyInstaller drives GNU `strip` (available on the CI via
+# Strawberry Perl/MSYS), which corrupts PE binaries like python311.dll and
+# causes the resulting bundle to fail with "LoadLibrary: Invalid access to
+# memory location." Windows debug info lives in separate PDB files anyway, so
+# there is nothing to gain from stripping the bundled .dll/.pyd files.
+STRIP_BINARIES = (
+    platform.system().lower() != 'windows'
+    and os.environ.get('ROTKI_BACKEND_DEBUG_SYMBOLS', '').lower() not in {'1', 'true', 'yes', 'on'}
+)
 
 
 def Entrypoint(dist, group, name, scripts=None, pathex=None, hiddenimports=None, hookspath=None, excludes=None, runtime_hooks=None, datas=None):  # noqa: E501
