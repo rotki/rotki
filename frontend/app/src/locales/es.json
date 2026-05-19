@@ -1808,8 +1808,8 @@
         "success": "The BTC derivation gap limit was successfully changed to {limit}"
       },
       "chains_to_skip_detection": {
-        "error": "Error al configurar cadenas EVM para las que omitir la detección automática de fichas",
-        "success": "Cadenas EVM para las que omitir la detección automática de fichas guardadas correctamente"
+        "error": "Error al configurar las cadenas EVM para omitir la detección de actividad de cuentas entre cadenas",
+        "success": "Cadenas EVM para omitir la detección de actividad de cuentas entre cadenas guardadas correctamente"
       },
       "currency": {
         "error": "Error setting the main currency",

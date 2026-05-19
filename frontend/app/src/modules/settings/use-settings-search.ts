@@ -154,7 +154,7 @@ function getEvmTab(routes: SettingsRoutes, t: T): TabGroup {
     { categoryId: SettingsCategoryIds.CHAINS, children: [
       { texts: [t('evm_settings.general.title')] },
       { texts: [t('evm_settings.general.title'), t('evm_settings.general.treat_eth2_as_eth.title')], keywords: [t('evm_settings.general.treat_eth2_as_eth.subtitle')], highlightId: SettingsHighlightIds.TREAT_ETH2_AS_ETH },
-      { texts: [t('evm_settings.general.title'), t('evm_settings.general.chains_to_skip_detection.title')], keywords: [t('evm_settings.general.chains_to_skip_detection.subtitle')], highlightId: SettingsHighlightIds.CHAINS_TO_SKIP_DETECTION },
+      { texts: [t('evm_settings.general.title'), t('evm_settings.general.chains_to_skip_detection.title')], keywords: [t('evm_settings.general.chains_to_skip_detection.subtitle'), t('evm_settings.general.chains_to_skip_detection.search_keywords')], highlightId: SettingsHighlightIds.CHAINS_TO_SKIP_DETECTION },
     ] },
     { categoryId: SettingsCategoryIds.INDEXER, children: [
       { texts: [t('evm_settings.indexer.title')], keywords: [t('evm_settings.indexer.subtitle')] },

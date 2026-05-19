@@ -1868,8 +1868,8 @@
         "success": "BTC衍生差额限制已成功更改为{limit}"
       },
       "chains_to_skip_detection": {
-        "error": "错误设置跳过自动令牌检测的 EVM 链",
-        "success": "成功保存的跳过自动令牌检测的 EVM 链"
+        "error": "设置跳过跨链账户活动检测的 EVM 链时出错",
+        "success": "已成功保存要跳过跨链账户活动检测的 EVM 链"
       },
       "currency": {
         "error": "主要货币设置错误",
