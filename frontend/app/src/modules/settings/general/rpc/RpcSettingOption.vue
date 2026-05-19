@@ -1,26 +1,12 @@
 <script setup lang="ts">
-import type { Blockchain } from '@rotki/common';
 import LocationDisplay from '@/modules/history/LocationDisplay.vue';
+import { isChainTab, type RpcSettingTab } from '@/modules/settings/general/rpc/use-rpc-settings-tabs';
 import AppImage from '@/modules/shell/components/AppImage.vue';
 
-interface ChainTab {
-  chain: Blockchain;
-}
-
-interface CustomTab {
-  id: string;
-  name: string;
-  image: string;
-}
-
 const { tab, groupLabel } = defineProps<{
-  tab: ChainTab | CustomTab;
+  tab: RpcSettingTab;
   groupLabel?: string;
 }>();
-
-function isChain(item: ChainTab | CustomTab): item is ChainTab {
-  return 'chain' in item;
-}
 </script>
 
 <template>
@@ -33,7 +19,7 @@ function isChain(item: ChainTab | CustomTab): item is ChainTab {
     </div>
     <div class="flex items-center gap-2">
       <LocationDisplay
-        v-if="isChain(tab)"
+        v-if="isChainTab(tab)"
         :open-details="false"
         :identifier="tab.chain"
         horizontal
@@ -47,7 +33,7 @@ function isChain(item: ChainTab | CustomTab): item is ChainTab {
         class="icon-bg"
       />
       <span
-        v-if="!isChain(tab)"
+        v-if="!isChainTab(tab)"
         class="text-rui-text-secondary"
       >
         {{ tab.name }}
