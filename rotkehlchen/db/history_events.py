@@ -18,7 +18,11 @@ from rotkehlchen.chain.bitcoin.btc.constants import BTC_GROUP_IDENTIFIER_PREFIX
 from rotkehlchen.chain.bitcoin.validation import is_valid_btc_address
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants import ZERO
-from rotkehlchen.db.cache import IGNORED_CUSTOMIZED_EVENT_DUPLICATE_PREFIX, DBCacheDynamic
+from rotkehlchen.db.cache import (
+    IGNORED_CUSTOMIZED_EVENT_DUPLICATE_PREFIX,
+    DBCacheDynamic,
+    DBCacheStatic,
+)
 from rotkehlchen.db.constants import (
     CHAIN_EVENT_FIELDS,
     CHAIN_EVENT_NULL_FIELDS,
@@ -86,7 +90,7 @@ from rotkehlchen.types import (
     Timestamp,
     TimestampMS,
 )
-from rotkehlchen.utils.misc import ts_ms_to_sec, ts_sec_to_ms
+from rotkehlchen.utils.misc import ts_ms_to_sec, ts_now_in_ms, ts_sec_to_ms
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
@@ -192,8 +196,30 @@ class DBHistoryEvents:
             write_cursor: 'DBCursor',
             timestamp: TimestampMS,
     ) -> None:
-        """Track earliest modified event timestamp and when modification occurred."""
-        # Historical balances processing is temporarily disabled.
+        """Track earliest modified event timestamp and when modification occurred.
+
+        Updates two cache entries:
+        - STALE_BALANCES_FROM_TS: the minimum event timestamp that may need re-processing
+        - STALE_BALANCES_MODIFICATION_TS: when the modification occurred (for detecting
+          concurrent modifications during processing)
+        """
+        write_cursor.execute(
+            'INSERT INTO key_value_cache(name, value) VALUES(?, ?), (?, ?) '
+            'ON CONFLICT(name) DO UPDATE SET value=CASE '
+            'WHEN key_value_cache.name = ? THEN '
+            'MIN(CAST(key_value_cache.value AS INTEGER), CAST(excluded.value AS INTEGER)) '
+            'ELSE excluded.value END '
+            'WHERE key_value_cache.name != ? OR '
+            'CAST(key_value_cache.value AS INTEGER) > CAST(excluded.value AS INTEGER)',
+            (
+                DBCacheStatic.STALE_BALANCES_FROM_TS.value,
+                timestamp,
+                DBCacheStatic.STALE_BALANCES_MODIFICATION_TS.value,
+                ts_now_in_ms(),
+                DBCacheStatic.STALE_BALANCES_FROM_TS.value,
+                DBCacheStatic.STALE_BALANCES_FROM_TS.value,
+            ),
+        )
 
     def _execute_and_track_modified(
             self,
@@ -209,7 +235,8 @@ class DBHistoryEvents:
             if min_ts is None or ts < min_ts:
                 min_ts = ts
 
-        # TODO (balances): add _mark_events_modified for min_ts if count > 0
+        if count > 0 and min_ts is not None:
+            self._mark_events_modified(write_cursor=write_cursor, timestamp=min_ts)
         return count
 
     def delete_events_and_track(
@@ -364,7 +391,8 @@ class DBHistoryEvents:
             decoded_addresses=getattr(event, BITCOIN_COUNTERPARTY_ADDRESSES_METADATA_KEY, None),
         )
 
-        # TODO (balances): add _mark_events_modified for event.timestamp if not skip_tracking
+        if not skip_tracking:
+            self._mark_events_modified(write_cursor=write_cursor, timestamp=event.timestamp)
         return identifier
 
     def add_history_events(
@@ -400,7 +428,8 @@ class DBHistoryEvents:
                 min_timestamp = event.timestamp
 
         # Call tracking ONCE for the entire batch with minimum timestamp
-        # TODO (balances): add _mark_events_modified for min_timestamp if min_timestamp is not None
+        if min_timestamp is not None:
+            self._mark_events_modified(write_cursor=write_cursor, timestamp=min_timestamp)
 
     @staticmethod
     def save_history_event_backup(
@@ -596,7 +625,9 @@ class DBHistoryEvents:
         ):
             return
 
-        # TODO (balances): add _mark_events_modified for min(old_data[0], event.timestamp)
+        # Track modification only if balance-affecting fields changed
+        min_ts = min(old_data[0], event.timestamp)
+        self._mark_events_modified(write_cursor=write_cursor, timestamp=min_ts)
 
     @staticmethod
     def set_event_mapping_state(
