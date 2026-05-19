@@ -10,7 +10,26 @@ export class RpcSettingsPage {
     await this.page.locator('[data-cy=settings-button]').click();
     await this.page.locator('[data-cy=user-dropdown]').waitFor({ state: 'detached' });
     await this.page.locator('[data-cy="settings__rpc"]').click();
-    await this.page.locator('[data-cy=add-node]').waitFor({ state: 'visible' });
+    // Default Playwright viewport is wide enough to show the rail.
+    await this.page.getByTestId('rpc-settings-rail').waitFor({ state: 'visible' });
+  }
+
+  async expectRailVisible(): Promise<void> {
+    await expect(this.page.getByTestId('rpc-settings-rail')).toBeVisible();
+    await expect(this.page.getByTestId('rpc-settings-dropdowns')).toHaveCount(0);
+  }
+
+  async expectDropdownFallbackVisible(): Promise<void> {
+    await expect(this.page.getByTestId('rpc-settings-dropdowns')).toBeVisible();
+    await expect(this.page.getByTestId('rpc-settings-rail')).toHaveCount(0);
+  }
+
+  async expectAddNodeVisible(): Promise<void> {
+    await expect(this.page.getByTestId('add-node')).toBeVisible();
+  }
+
+  async expectAddNodeHidden(): Promise<void> {
+    await expect(this.page.getByTestId('add-node')).toHaveCount(0);
   }
 
   async changePassword(currentPassword: string, newPassword: string): Promise<void> {

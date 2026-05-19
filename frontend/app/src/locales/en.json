@@ -3354,6 +3354,10 @@
           "title": "Consensus layer RPC"
         }
       },
+      "groups": {
+        "evm": "EVM chains",
+        "other": "Other endpoints"
+      },
       "subtitle": "Manage and view your RPC node.",
       "title": "RPC node setting"
     },
