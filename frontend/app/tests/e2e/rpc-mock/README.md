@@ -37,6 +37,22 @@ Alternative RPC targets (if one is rate-limited):
 
 For faster/more reliable recording, use a private RPC endpoint (Alchemy, Infura, etc.).
 
+### Recording non-EVM chains
+
+Solana, Polkadot (DOT) and Kusama (KSM) speak JSON-RPC and are mocked the same way. Use a target appropriate for the chain when recording:
+
+```bash
+# Solana
+MOCK_RPC_MODE=record MOCK_RPC_TARGET=https://api.mainnet-beta.solana.com \
+  pnpm exec playwright test specs/balances/solana-accounts.spec.ts
+
+# Polkadot — point at the public HTTP RPC (not the ws:// one)
+MOCK_RPC_MODE=record MOCK_RPC_TARGET=https://rpc.polkadot.io \
+  pnpm exec playwright test specs/balances/substrate-accounts.spec.ts
+```
+
+Substrate chains (DOT/KSM) don't use the multi-node API like EVM/Solana — the mock helper sets their single `dot_rpc_endpoint`/`ksm_rpc_endpoint` user setting instead. The setup is otherwise identical: list the chain in `rpcMockChains` (e.g. `['DOT']`).
+
 ## Cassette files
 
 Cassettes are stored in `tests/e2e/cassettes/rpc/{name}.json`. Each test suite specifies its cassette name:

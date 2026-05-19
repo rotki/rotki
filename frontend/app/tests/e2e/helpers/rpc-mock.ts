@@ -49,6 +49,46 @@ export async function switchMockRpcCassette(name: string): Promise<void> {
 }
 
 /**
+ * Substrate chains (Polkadot/Kusama) don't use the multi-node API like EVM/Solana —
+ * they have a single `<chain>_rpc_endpoint` user setting. Map each substrate chain
+ * identifier to the corresponding settings key.
+ */
+const SUBSTRATE_ENDPOINT_SETTINGS: Record<string, string> = {
+  DOT: 'dot_rpc_endpoint',
+  KSM: 'ksm_rpc_endpoint',
+};
+
+/**
+ * Configures the backend to use the mock RPC server for a substrate chain (DOT/KSM)
+ * by updating the user setting that controls that chain's RPC endpoint.
+ *
+ * Setting the endpoint triggers a connection attempt that fetches chain metadata,
+ * so the mock RPC server (or its recording target) must be reachable at this point.
+ */
+async function apiConfigureSubstrateRpcMock(
+  request: APIRequestContext,
+  blockchain: string,
+): Promise<void> {
+  const settingKey = SUBSTRATE_ENDPOINT_SETTINGS[blockchain];
+  if (!settingKey) {
+    logger.error(`No substrate endpoint setting mapped for ${blockchain}`);
+    return;
+  }
+
+  const response = await request.put(`${backendUrl}/api/1/settings`, {
+    failOnStatusCode: false,
+    data: { settings: { [settingKey]: mockRpcUrl } },
+  });
+
+  if (response.ok()) {
+    logger.info(`Configured ${blockchain} to use mock RPC at ${mockRpcUrl}`);
+  }
+  else {
+    logger.error(`Failed to set ${settingKey} for ${blockchain}: ${response.status()}`);
+  }
+}
+
+/**
  * Configures the backend to use the mock RPC server for the specified blockchain.
  * Removes all existing default nodes and adds the mock server as the only node.
  */
@@ -56,6 +96,11 @@ export async function apiConfigureRpcMock(
   request: APIRequestContext,
   blockchain: string = 'ETH',
 ): Promise<void> {
+  if (blockchain in SUBSTRATE_ENDPOINT_SETTINGS) {
+    await apiConfigureSubstrateRpcMock(request, blockchain);
+    return;
+  }
+
   const nodesUrl = `${backendUrl}/api/1/blockchains/${blockchain}/nodes`;
 
   // Get all existing nodes

@@ -69,7 +69,7 @@ function saveCassette(): void {
     mkdirSync(CASSETTE_DIR, { recursive: true });
   }
   const filePath = getCassettePath();
-  writeFileSync(filePath, JSON.stringify(cassette, null, 2));
+  writeFileSync(filePath, `${JSON.stringify(cassette, null, 2)}\n`);
   logger.info(`Saved cassette "${cassetteName}" (${Object.keys(cassette).length} entries)`);
 }
 
