@@ -12,6 +12,10 @@ export const testEnv = {
   // address (e.g. navigating to the history page while it is the tracked
   // account); it has ~1000+ signatures and would inflate the cassette.
   SOLANA_ADDRESS: 'updtkJ8HAhh3rSkBCd3p9Z1Q74yJW4rMhSbScRskDPM',
+  // Stable Polkadot fixture wallet — picked because it holds a non-trivial,
+  // long-running DOT balance, so the test's "USD value > 0" assertion is
+  // stable across re-recordings.
+  POLKADOT_ADDRESS: '13UVJyLnbVp9RBZYFwFGyDvVd1y27Tt8tkntv6Q7JVPhFsTB',
   KRAKEN_API_KEY: 'a39939bffed348299c6a859ca3f9a41e',
   KRAKEN_API_SECRET: '68203af4221446a08d156bb3a4fd27dc',
 };
