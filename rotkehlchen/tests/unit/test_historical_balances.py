@@ -18,6 +18,7 @@ from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.assets import A_BTC, A_ETH
 from rotkehlchen.constants.misc import ONE, ZERO
 from rotkehlchen.db.cache import DBCacheStatic
+from rotkehlchen.db.constants import HistoryMappingState
 from rotkehlchen.db.filtering import HistoricalBalancesFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.fval import FVal
@@ -32,6 +33,64 @@ from rotkehlchen.utils.misc import ts_now
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.user_messages import MessagesAggregator
+
+
+def _make_balance_event(timestamp: int, amount: str = '10') -> EvmEvent:
+    return EvmEvent(
+        tx_ref=make_evm_tx_hash(),
+        sequence_index=0,
+        timestamp=TimestampMS(timestamp),
+        location=Location.ETHEREUM,
+        event_type=HistoryEventType.RECEIVE,
+        event_subtype=HistoryEventSubType.NONE,
+        asset=A_ETH,
+        amount=FVal(amount),
+        location_label=TEST_ADDR1,
+    )
+
+
+def _get_stale_cache_values(database: 'DBHandler') -> tuple[int | None, int | None]:
+    """Return the stale historical balances cache markers.
+
+    The returned tuple contains:
+    - the timestamp from which historical balances need to be recalculated, or None if no
+      stale marker exists.
+    - the timestamp when that stale marker was last modified, or None if no modification
+      marker exists.
+    """
+    with database.conn.read_ctx() as cursor:
+        rows = dict(cursor.execute(
+            'SELECT name, value FROM key_value_cache WHERE name IN (?, ?)',
+            (DBCacheStatic.STALE_BALANCES_FROM_TS.value,
+             DBCacheStatic.STALE_BALANCES_MODIFICATION_TS.value),
+        ).fetchall())
+    return (
+        int(value) if (value := rows.get(DBCacheStatic.STALE_BALANCES_FROM_TS.value)) else None,
+        int(value) if (
+            value := rows.get(DBCacheStatic.STALE_BALANCES_MODIFICATION_TS.value)
+        ) else None,
+    )
+
+
+def _assert_resume_from_stale_timestamp(
+        database: 'DBHandler',
+        messages_aggregator: 'MessagesAggregator',
+        expected_from_ts: int,
+) -> None:
+    """Assert stale balances resume from the stored timestamp and clear both cache markers.
+
+    The helper reads the tuple returned by _get_stale_cache_values(), where the first item is
+    expected_from_ts: the expected recalculation start timestamp stored in the stale marker.
+    The second item is the marker modification timestamp. After processing, both tuple items
+    are expected to be None.
+    """
+    assert _get_stale_cache_values(database)[0] == expected_from_ts
+    process_historical_balances(
+        database=database,
+        msg_aggregator=messages_aggregator,
+        from_ts=TimestampMS(expected_from_ts),
+    )
+    assert _get_stale_cache_values(database) == (None, None)
 
 
 def test_process_historical_balances_clears_stale_marker(
@@ -71,6 +130,144 @@ def test_process_historical_balances_clears_stale_marker(
             'SELECT value FROM key_value_cache WHERE name = ?',
             (cache_key,),
         ).fetchone() is None
+
+
+def test_add_history_event_marks_balances_stale(
+        database: 'DBHandler',
+        messages_aggregator: 'MessagesAggregator',
+) -> None:
+    with database.user_write() as write_cursor:
+        assert DBHistoryEvents(database).add_history_event(
+            write_cursor=write_cursor,
+            event=_make_balance_event(timestamp=2000),
+        ) is not None
+
+    assert _get_stale_cache_values(database)[1] is not None
+    _assert_resume_from_stale_timestamp(database, messages_aggregator, expected_from_ts=2000)
+
+
+def test_add_history_events_marks_balances_stale_from_min_timestamp(
+        database: 'DBHandler',
+        messages_aggregator: 'MessagesAggregator',
+) -> None:
+    with database.user_write() as write_cursor:
+        DBHistoryEvents(database).add_history_events(
+            write_cursor=write_cursor,
+            history=[_make_balance_event(timestamp=3000), _make_balance_event(timestamp=1000)],
+        )
+
+    assert _get_stale_cache_values(database)[1] is not None
+    _assert_resume_from_stale_timestamp(database, messages_aggregator, expected_from_ts=1000)
+
+
+def test_delete_events_and_track_marks_balances_stale_from_deleted_timestamp(
+        database: 'DBHandler',
+        messages_aggregator: 'MessagesAggregator',
+) -> None:
+    events_db = DBHistoryEvents(database)
+    with database.user_write() as write_cursor:
+        events_db.add_history_events(
+            write_cursor=write_cursor,
+            history=[_make_balance_event(timestamp=1000), _make_balance_event(timestamp=2000)],
+        )
+    process_historical_balances(database, messages_aggregator)
+
+    with database.user_write() as write_cursor:
+        assert events_db.delete_events_and_track(
+            write_cursor=write_cursor,
+            where_clause='WHERE timestamp=?',
+            where_bindings=(TimestampMS(2000),),
+        ) == 1
+
+    assert _get_stale_cache_values(database)[1] is not None
+    _assert_resume_from_stale_timestamp(database, messages_aggregator, expected_from_ts=2000)
+    with database.conn.read_ctx() as cursor:
+        assert cursor.execute(
+            'SELECT timestamp, metric_value FROM event_metrics ORDER BY timestamp',
+        ).fetchall() == [(1000, '10')]
+
+
+def test_update_events_and_track_marks_balances_stale_from_updated_timestamp(
+        database: 'DBHandler',
+        messages_aggregator: 'MessagesAggregator',
+) -> None:
+    events_db = DBHistoryEvents(database)
+    with database.user_write() as write_cursor:
+        events_db.add_history_events(
+            write_cursor=write_cursor,
+            history=[_make_balance_event(timestamp=1000), _make_balance_event(timestamp=2000)],
+        )
+    process_historical_balances(database, messages_aggregator)
+
+    with database.user_write() as write_cursor:
+        assert events_db.update_events_and_track(
+            write_cursor=write_cursor,
+            where_clause='WHERE timestamp=?',
+            where_bindings=(TimestampMS(2000),),
+            set_clause='SET amount=?',
+            set_bindings=('7',),
+        ) == 1
+
+    assert _get_stale_cache_values(database)[1] is not None
+    _assert_resume_from_stale_timestamp(database, messages_aggregator, expected_from_ts=2000)
+    with database.conn.read_ctx() as cursor:
+        assert cursor.execute(
+            'SELECT timestamp, metric_value FROM event_metrics ORDER BY timestamp',
+        ).fetchall() == [(1000, '10'), (2000, '17')]
+
+
+def test_edit_history_event_marks_balances_stale_from_earliest_timestamp(
+        database: 'DBHandler',
+        messages_aggregator: 'MessagesAggregator',
+) -> None:
+    events_db = DBHistoryEvents(database)
+    with database.user_write() as write_cursor:
+        assert (event_id := events_db.add_history_event(
+            write_cursor=write_cursor,
+            event=(event := _make_balance_event(timestamp=3000)),
+        )) is not None
+    process_historical_balances(database, messages_aggregator)
+
+    event.identifier = event_id
+    event.timestamp = TimestampMS(2000)
+    event.amount = FVal('15')
+    with database.user_write() as write_cursor:
+        events_db.edit_history_event(
+            write_cursor=write_cursor,
+            event=event,
+            mapping_state=HistoryMappingState.CUSTOMIZED,
+        )
+
+    assert _get_stale_cache_values(database)[1] is not None
+    _assert_resume_from_stale_timestamp(database, messages_aggregator, expected_from_ts=2000)
+    with database.conn.read_ctx() as cursor:
+        assert cursor.execute(
+            'SELECT timestamp, metric_value FROM event_metrics ORDER BY timestamp',
+        ).fetchall() == [(2000, '15')]
+
+
+def test_edit_history_event_notes_only_does_not_mark_balances_stale(
+        database: 'DBHandler',
+        messages_aggregator: 'MessagesAggregator',
+) -> None:
+    events_db = DBHistoryEvents(database)
+    with database.user_write() as write_cursor:
+        assert (event_id := events_db.add_history_event(
+            write_cursor=write_cursor,
+            event=(event := _make_balance_event(timestamp=1000)),
+        )) is not None
+    process_historical_balances(database, messages_aggregator)
+
+    event.identifier = event_id
+    event.notes = 'Only notes changed'
+    with database.user_write() as write_cursor:
+        events_db.edit_history_event(
+            write_cursor=write_cursor,
+            event=event,
+            mapping_state=HistoryMappingState.CUSTOMIZED,
+        )
+
+    assert _get_stale_cache_values(database) == (None, None)
 
 
 def test_has_unprocessed_events(
