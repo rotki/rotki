@@ -18,7 +18,7 @@ from rotkehlchen.history.events.structures.types import (
 )
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import EventMetricKey, Location, Timestamp, TimestampMS
-from rotkehlchen.utils.misc import ts_ms_to_sec, ts_now, ts_now_in_ms
+from rotkehlchen.utils.misc import ts_ms_to_sec, ts_now
 from rotkehlchen.utils.mixins.lockable import skip_if_running
 
 if TYPE_CHECKING:
@@ -260,7 +260,7 @@ def process_historical_balances(
 ) -> None:
     """Process events and compute balance metrics."""
     log.debug(f'Starting historical balance processing from_ts={from_ts}')
-    processing_started_at, bucket_balances = ts_now_in_ms(), {}
+    bucket_balances: dict[Bucket, FVal] = {}
     if from_ts is not None:
         bucket_balances = _load_bucket_balances_before_ts(database, from_ts)
 
@@ -277,10 +277,24 @@ def process_historical_balances(
                 exclude_ignored_assets=True,
             ),
         )
+        # Snapshot the modification timestamp after reading events. This allows us to
+        # detect concurrent modifications: if the modification timestamp changed between
+        # the read and processing completion, events were modified during processing.
+        modification_ts_at_start = cursor.execute(
+            'SELECT value FROM key_value_cache WHERE name = ?',
+            (DBCacheStatic.STALE_BALANCES_MODIFICATION_TS.value,),
+        ).fetchone()
+        modification_ts_at_start = (
+            int(modification_ts_at_start[0])
+            if modification_ts_at_start else None
+        )
 
     if (total_events := len(events)) == 0:
         log.debug('No events to process for historical balances')
-        _finalize_processing(database=database, processing_started_at=processing_started_at)
+        _finalize_processing(
+            database=database,
+            modification_ts_at_start=modification_ts_at_start,
+        )
         return
 
     metrics_batch: list[tuple[int | None, str, str | None, str | None, str, str, str, int, int, int]] = []  # noqa: E501
@@ -336,12 +350,20 @@ def process_historical_balances(
             'processed': total_events,
         },
     )
-    _finalize_processing(database=database, processing_started_at=processing_started_at)
+    _finalize_processing(database=database, modification_ts_at_start=modification_ts_at_start)
     log.debug(f'Completed historical balance processing for {total_events} events')
 
 
-def _finalize_processing(database: 'DBHandler', processing_started_at: TimestampMS) -> None:
-    """Update cache timestamps. Only clears stale marker if no modifications during processing."""
+def _finalize_processing(
+        database: 'DBHandler',
+        modification_ts_at_start: int | None,
+) -> None:
+    """Update cache timestamps. Only clears stale marker if no modifications during processing.
+
+    Uses a snapshot of the modification timestamp taken after reading events. If the current
+    modification timestamp is strictly greater than the snapshot, events were modified during
+    processing and the stale marker is kept for the next run.
+    """
     with database.user_write() as write_cursor:
         database.set_static_cache(
             write_cursor=write_cursor,
@@ -354,7 +376,7 @@ def _finalize_processing(database: 'DBHandler', processing_started_at: Timestamp
                 'SELECT value FROM key_value_cache WHERE name = ?',
                 (DBCacheStatic.STALE_BALANCES_MODIFICATION_TS.value,),
             ).fetchone()) is None or
-            int(modification_ts[0]) >= processing_started_at
+            int(modification_ts[0]) > (modification_ts_at_start or 0)
         ):
             if modification_ts is not None:
                 log.debug(

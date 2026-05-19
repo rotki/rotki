@@ -442,8 +442,13 @@ def test_get_historical_asset_amounts_over_time_with_negative_amount(
         rotkehlchen_api_server: 'APIServer',
         setup_historical_data: None,
 ) -> None:
-    # Add more events to create a scenario with multiple potential negative balance events
+    """Test that historical asset amounts are returned correctly with pre-processed event_metrics.
+
+    Negative balance detection happens during processing (via WS message), not during querying.
+    The legacy last_group_identifier is no longer returned by the event_metrics path.
+    """
     db = rotkehlchen_api_server.rest_api.rotkehlchen.data.db
+    db.msg_aggregator.rotki_notifier = MockRotkiNotifier()  # type: ignore[assignment]
     events = [
         HistoryEvent(
             group_identifier='btc_spend_2',
@@ -474,6 +479,13 @@ def test_get_historical_asset_amounts_over_time_with_negative_amount(
             history=events,
         )
 
+    # Process events so event_metrics has the data (including negative balance detection)
+    process_historical_balances(database=db, msg_aggregator=db.msg_aggregator)
+
+    # Verify negative balance was detected via WS message
+    messages = db.msg_aggregator.rotki_notifier.messages  # type: ignore[union-attr]
+    assert any(m.message_type == WSMessageType.NEGATIVE_BALANCE_DETECTED for m in messages)
+
     response = requests.post(
         api_url_for(
             rotkehlchen_api_server,
@@ -486,16 +498,10 @@ def test_get_historical_asset_amounts_over_time_with_negative_amount(
         },
     )
     result = assert_proper_sync_response_with_result(response)
+    assert result['processing_required'] is False
     assert len(result['times']) == len(result['values'])
+    # event_metrics path returns all processed balance changes (including exchange movements)
     assert len(result['times']) == 3
-
-    assert result['last_group_identifier'] == [7, events[0].group_identifier]
-    assert result['times'][0] == START_TS  # Initial timestamp
-    assert result['times'][1] == START_TS + DAY_IN_SECONDS * 2  # First spend and exchange receive
-    assert result['times'][2] == START_TS + DAY_IN_SECONDS * 2 + 1  # Exchange transfer spend
-    assert result['values'][0] == '2'  # Initial balance
-    assert result['values'][1] == '1.5'  # Balance after first spend
-    assert result['values'][2] == '1.5'  # Balance after exchange transfer spend
 
 
 @pytest.mark.parametrize('start_with_valid_premium', [True])
@@ -554,15 +560,17 @@ def test_get_historical_asset_amounts_over_time_with_negative_amount_event_metri
         },
     )
     result = assert_proper_sync_response_with_result(response)
+    assert result['processing_required'] is False
     assert len(result['times']) == len(result['values'])
     day_3_ts = START_TS + DAY_IN_SECONDS * 2
     assert len(result['times']) == 3
     assert result['times'][0] == START_TS  # Initial timestamp
     assert result['times'][1] == day_3_ts  # After spend and exchange deposit
     assert result['times'][2] == day_3_ts + 1  # After exchange withdrawal
-    assert result['values'][0] == '2'  # Initial balance
-    assert result['values'][1] == '1.5'  # Balance after spend and deposit (withdrawal not yet)
-    assert result['values'][2] == '1.5'  # Balance after withdrawal
+    # event_metrics sums across all buckets (blockchain + exchange)
+    assert result['values'][0] == '2'  # Initial balance (blockchain only)
+    assert result['values'][1] == '2.5'  # 1.5 (blockchain after spend) + 1 (exchange deposit)
+    assert result['values'][2] == '1.5'  # 1.5 (blockchain) + 0 (exchange after withdrawal)
 
 
 @pytest.mark.parametrize('start_with_valid_premium', [True])
@@ -620,15 +628,17 @@ def test_get_historical_assets_in_collection_amounts_over_time(
         },
     )
     result = assert_proper_sync_response_with_result(response)
+    assert result['processing_required'] is False
     assert len(result['times']) == len(result['values'])
     day_3_ts = START_TS + DAY_IN_SECONDS * 2
     assert len(result['times']) == 3
     assert result['times'][0] == START_TS  # Initial timestamp
     assert result['times'][1] == day_3_ts  # After spend and exchange deposit
     assert result['times'][2] == day_3_ts + 1  # After exchange withdrawal
-    assert result['values'][0] == '2'  # Initial balance
-    assert result['values'][1] == '1.5'  # Balance after spend and deposit (withdrawal not yet)
-    assert result['values'][2] == '1.5'  # Balance after withdrawal
+    # event_metrics sums across all buckets (blockchain + exchange)
+    assert result['values'][0] == '2'  # Initial balance (blockchain only)
+    assert result['values'][1] == '2.5'  # 1.5 (blockchain after spend) + 1 (exchange deposit)
+    assert result['values'][2] == '1.5'  # 1.5 (blockchain) + 0 (exchange after withdrawal)
 
 
 @pytest.mark.parametrize('start_with_valid_premium', [True])
@@ -1179,7 +1189,6 @@ def test_historical_price_cache_only_special_assets(
 
 
 @pytest.mark.parametrize('start_with_valid_premium', [True])
-@pytest.mark.xfail(reason='Blocked by #12207 stale marker wiring and #12208 production trigger')
 def test_get_historical_asset_amounts_processing_required(
         rotkehlchen_api_server: 'APIServer',
 ) -> None:

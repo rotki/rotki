@@ -857,7 +857,6 @@ def test_match_exact_events(database: 'DBHandler', start_with_valid_premium: boo
         assert result_match_grouped[0][1].asset == A_DAI
 
 
-@pytest.mark.skip(reason='Event modification tracking is temporarily removed.')
 def test_event_modification_tracks_earliest_timestamp(database: 'DBHandler') -> None:
     db = DBHistoryEvents(database)
     event_ts_key = DBCacheStatic.STALE_BALANCES_FROM_TS.value
@@ -992,7 +991,6 @@ def test_event_modification_tracks_earliest_timestamp(database: 'DBHandler') -> 
         ).fetchone()[0]) == ts_500  # updated to deleted event's timestamp
 
 
-@pytest.mark.skip(reason='Event modification tracking is temporarily removed.')
 def test_modification_ts_updated_on_each_modification(database: 'DBHandler') -> None:
     db = DBHistoryEvents(database)
     event_ts_key = DBCacheStatic.STALE_BALANCES_FROM_TS.value

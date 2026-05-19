@@ -167,6 +167,7 @@ from rotkehlchen.tasks.events import (
     should_exclude_possible_match,
     update_asset_movement_matched_event,
 )
+from rotkehlchen.tasks.historical_balances import process_historical_balances
 from rotkehlchen.types import (
     AVAILABLE_MODULES_MAP,
     CHAINS_WITH_TRANSACTION_DECODERS_TYPE,
@@ -3214,7 +3215,8 @@ class RestAPI:
                     )
                     assets = tuple(Asset(row[0]) for row in cursor)
 
-            balances, last_group_identifier = HistoricalBalancesManager(self.rotkehlchen.data.db).get_assets_amounts(  # noqa: E501
+            manager = HistoricalBalancesManager(self.rotkehlchen.data.db)
+            processing_required, balances = manager.get_assets_amounts_event_metrics(
                 assets=assets,
                 from_ts=from_timestamp,
                 to_ts=to_timestamp,
@@ -3224,12 +3226,16 @@ class RestAPI:
         except NotFoundError as e:
             return api_response(wrap_in_fail_result(str(e)), status_code=HTTPStatus.NOT_FOUND)
 
-        result = {
-            'times': list(balances),
-            'values': [str(x) for x in balances.values()],
-        }
-        if last_group_identifier is not None:
-            result['last_group_identifier'] = last_group_identifier
+        result: dict[str, Any] = {'processing_required': processing_required}
+        if balances is not None:
+            result['times'] = list(balances)
+            result['values'] = [str(x) for x in balances.values()]
+        elif processing_required is False:
+            # No events exist for the given time range
+            return api_response(
+                wrap_in_fail_result('No historical data found'),
+                status_code=HTTPStatus.NOT_FOUND,
+            )
 
         return api_response(_wrap_in_ok_result(result=result))
 
@@ -3237,7 +3243,11 @@ class RestAPI:
     def trigger_task(self, task: TaskName) -> dict[str, Any]:
         """Trigger the specified async task."""
         if task == TaskName.HISTORICAL_BALANCE_PROCESSING:
-            return wrap_in_fail_result('Historical balance processing is temporarily disabled.')
+            process_historical_balances(
+                database=self.rotkehlchen.data.db,
+                msg_aggregator=self.rotkehlchen.data.db.msg_aggregator,
+            )
+            return OK_RESULT
         else:  # task == TaskName.ASSET_MOVEMENT_MATCHING
             if has_premium_capability(
                     premium=self.rotkehlchen.premium,

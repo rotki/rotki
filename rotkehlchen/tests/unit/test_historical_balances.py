@@ -34,7 +34,6 @@ if TYPE_CHECKING:
     from rotkehlchen.user_messages import MessagesAggregator
 
 
-@pytest.mark.xfail(reason='Blocked by #12207 stale historical balance marker wiring')
 def test_process_historical_balances_clears_stale_marker(
         database: 'DBHandler',
         messages_aggregator: 'MessagesAggregator',
@@ -74,7 +73,6 @@ def test_process_historical_balances_clears_stale_marker(
         ).fetchone() is None
 
 
-@pytest.mark.xfail(reason='Blocked by #12207 stale historical balance marker wiring')
 def test_has_unprocessed_events(
         database: 'DBHandler',
         messages_aggregator: 'MessagesAggregator',
@@ -184,7 +182,6 @@ def test_has_unprocessed_events(
     assert manager._has_unprocessed_events('timestamp <= ?', [TimestampMS(9999)]) is True
 
 
-@pytest.mark.xfail(reason='Blocked by #12207 stale historical balance marker wiring')
 def test_get_balances_with_unprocessed_events_and_timestamp_filter(
         database: 'DBHandler',
         messages_aggregator: 'MessagesAggregator',
