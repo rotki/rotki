@@ -634,6 +634,9 @@ class Bitfinex(ExchangeInterface, SignatureGeneratorMixin):
                     ]:
                         try:
                             asset = get_asset_func(param)  # type: ignore[operator]
+                        except UnsupportedAsset:
+                            log.warning(f'Found unsupported asset {bfx_symbol} in Bitfinex. Support for it has to be added.')  # noqa: E501
+                            break  # Don't try fallbacks; this asset is explicitly unsupported
                         except UnknownAsset:
                             continue
 

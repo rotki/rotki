@@ -184,6 +184,10 @@ def test_assets_are_known(mock_bitfinex, globaldb):
             asset_from_bitfinex(bitfinex_name=symbol)
         except UnsupportedAsset:
             assert is_asset_symbol_unsupported(globaldb, Location.BITFINEX, symbol)
+            test_warnings.warn(UserWarning(
+                f'Found unsupported asset with symbol {symbol} in '
+                f'{mock_bitfinex.name}. Support for it has to be added',
+            ))
         except UnknownAsset as e:
             test_warnings.warn(UserWarning(
                 f'Found unknown asset {e.identifier} with symbol {symbol} in '
