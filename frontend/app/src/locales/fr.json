@@ -2071,8 +2071,8 @@
         "success": "La limite d'écart de dérivation BTC a été modifiée avec succès en {limit}"
       },
       "chains_to_skip_detection": {
-        "error": "Erreur lors de la configuration des réseaux EVM à ignorer pour la détection automatique des jetons",
-        "success": "Les réseaux EVM pour lesquels ignorer la détection automatique des jetons ont été enregistrés avec succès"
+        "error": "Erreur lors de la configuration des réseaux EVM à ignorer pour la détection d'activité de comptes inter-chaînes",
+        "success": "Les réseaux EVM à ignorer pour la détection d'activité de comptes inter-chaînes ont été enregistrés avec succès"
       },
       "currency": {
         "error": "Erreur lors de la configuration de la devise principale",

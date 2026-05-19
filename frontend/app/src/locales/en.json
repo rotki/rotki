@@ -2645,8 +2645,9 @@
   "evm_settings": {
     "general": {
       "chains_to_skip_detection": {
-        "subtitle": "Select EVM chains where automatic token detection should be disabled.",
-        "title": "Skip Token Detection"
+        "search_keywords": "skip token detection",
+        "subtitle": "Select EVM chains to exclude from automatic cross-chain account activity detection. Tracked addresses will not be checked for activity on the selected chains.",
+        "title": "Skip Account Activity Detection"
       },
       "title": "EVM General Setting",
       "treat_eth2_as_eth": {
@@ -3385,8 +3386,8 @@
         "success": "The BTC derivation gap limit was successfully changed to {limit}"
       },
       "chains_to_skip_detection": {
-        "error": "Error setting EVM chains for which to skip automatic token detection",
-        "success": "EVM Chains for which to skip automatic token detection saved successfully"
+        "error": "Error setting EVM chains to skip for cross-chain account activity detection",
+        "success": "EVM chains to skip for cross-chain account activity detection saved successfully"
       },
       "csv_delimiter": {
         "empty": "CSV delimiter cannot be empty.",
