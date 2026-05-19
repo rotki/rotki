@@ -1,5 +1,6 @@
 import dataclasses
 import logging
+import sqlite3
 import tempfile
 import time
 from contextlib import suppress
@@ -37,7 +38,11 @@ from rotkehlchen.db.constants import KRAKEN_FUTURES_API_KEY_KEY, KRAKEN_FUTURES_
 from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.db.filtering import AddressbookFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
-from rotkehlchen.db.misc import detect_sqlcipher_version
+from rotkehlchen.db.misc import (
+    detect_sqlcipher_version,
+    evaluate_integrity_check_rows,
+    plaintext_db_integrity_check,
+)
 from rotkehlchen.db.queried_addresses import QueriedAddresses
 from rotkehlchen.db.schema import DB_CREATE_USER_NOTES
 from rotkehlchen.db.settings import (
@@ -1892,6 +1897,50 @@ def test_db_schema_sanity_check(database: 'DBHandler', caplog) -> None:
         with pytest.raises(DBSchemaError) as exception_info:
             connection.schema_sanity_check()
     assert "Tables {'user_notes'} are missing" in str(exception_info.value)
+
+
+def test_db_integrity_check(database: 'DBHandler') -> None:
+    """The integrity check on a healthy user DB should pass and on a corrupted file fail."""
+    ok, error = database.db_integrity_check()
+    assert ok is True
+    assert error is None
+
+
+def test_plaintext_db_integrity_check(tmp_path: Path) -> None:
+    """Verify the plaintext integrity check helper on healthy, corrupt and missing files."""
+    healthy_db = tmp_path / 'healthy.db'
+    with sqlite3.connect(healthy_db) as conn:
+        conn.execute('CREATE TABLE foo (id INTEGER PRIMARY KEY, value TEXT)')
+        conn.execute('INSERT INTO foo(value) VALUES (?)', ('bar',))
+        conn.commit()
+    ok, error = plaintext_db_integrity_check(healthy_db)
+    assert ok is True
+    assert error is None
+
+    # Corrupt the file by overwriting most of it with garbage but keeping a sqlite header
+    corrupted_db = tmp_path / 'corrupted.db'
+    corrupted_db.write_bytes(b'SQLite format 3\x00' + b'\x00' * 1024)
+    ok, error = plaintext_db_integrity_check(corrupted_db)
+    assert ok is False
+    assert error is not None and error != ''
+
+    # Not a sqlite file at all
+    not_a_db = tmp_path / 'not-a-db.db'
+    not_a_db.write_bytes(b'this is plain text not a database')
+    ok, error = plaintext_db_integrity_check(not_a_db)
+    assert ok is False
+    assert error is not None and error != ''
+
+
+def test_evaluate_integrity_check_rows() -> None:
+    """The row evaluator should return ok only on the canonical `ok` row from SQLite."""
+    assert evaluate_integrity_check_rows([('ok',)]) == (True, None)
+    ok, error = evaluate_integrity_check_rows([('row 1 missing from index foo',)])
+    assert ok is False
+    assert error == 'row 1 missing from index foo'
+    ok, error = evaluate_integrity_check_rows([('error a',), ('error b',)])
+    assert ok is False
+    assert error == 'error a; error b'
 
 
 def test_db_add_skipped_external_event_twice(database: 'DBHandler') -> None:

@@ -11,12 +11,13 @@ from rotkehlchen.constants.misc import USERSDIR_NAME
 from rotkehlchen.data_handler import DataHandler
 from rotkehlchen.data_migrations.manager import DataMigrationManager
 from rotkehlchen.db.cache import DBCacheStatic
+from rotkehlchen.db.misc import plaintext_db_integrity_check
 from rotkehlchen.errors.api import (
     PremiumAuthenticationError,
     PremiumPermissionError,
     RotkehlchenPermissionError,
 )
-from rotkehlchen.errors.misc import RemoteError, UnableToDecryptRemoteData
+from rotkehlchen.errors.misc import DataIntegrityError, RemoteError, UnableToDecryptRemoteData
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.premium.premium import (
     Premium,
@@ -146,6 +147,9 @@ class PremiumSyncManager(LockableQueryMixIn):
                 'The given password can not unlock the database that was retrieved  from '
                 'the server. Make sure to use the same password as when the account was created.',
             ) from e
+        except DataIntegrityError as e:
+            log.error('sync from server -- downloaded db integrity check failed', error=str(e))
+            return False, str(e)
 
         # Need to run migrations in case the app was updated since last sync and in
         # case this is a request to sync from the API, where all modules are initialized
@@ -187,6 +191,17 @@ class PremiumSyncManager(LockableQueryMixIn):
         """
         assert self.premium is not None, 'caller should make sure premium exists'
         log.debug('Starting maybe_upload_data_to_server')
+        ok, integrity_error = self.data.db.db_integrity_check()
+        if not ok:
+            message = f'Local database failed the integrity check: {integrity_error}'
+            log.error(f'upload to server aborted -- {message}')
+            self.data.msg_aggregator.add_message(
+                message_type=WSMessageType.DATABASE_UPLOAD_RESULT,
+                data={'uploaded': False, 'actionable': True, 'message': message},
+            )
+            self.last_upload_attempt_ts = ts_now()
+            return False, message
+
         try:
             metadata = self._query_last_data_metadata()
         except (RemoteError, PremiumAuthenticationError) as e:
@@ -216,6 +231,17 @@ class PremiumSyncManager(LockableQueryMixIn):
 
         with tempfile.NamedTemporaryFile(delete=False, suffix='.db') as tempdbfile:
             tempdbpath = self.data.db.export_unencrypted(tempdbfile)
+            exported_ok, exported_error = plaintext_db_integrity_check(tempdbpath)
+            if not exported_ok:
+                tempdbpath.unlink(missing_ok=True)
+                message = f'Exported database failed the integrity check: {exported_error}'
+                log.error(f'upload to server aborted -- {message}')
+                self.data.msg_aggregator.add_message(
+                    message_type=WSMessageType.DATABASE_UPLOAD_RESULT,
+                    data={'uploaded': False, 'actionable': True, 'message': message},
+                )
+                self.last_upload_attempt_ts = ts_now()
+                return False, message
             greenlet = gevent.get_hub().threadpool.spawn(self.data.compress_and_encrypt_db, tempdbpath)  # noqa: E501
             data, our_hash = greenlet.get()
 

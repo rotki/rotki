@@ -2,6 +2,7 @@ import base64
 import hashlib
 import logging
 import shutil
+import tempfile
 import zlib
 from collections.abc import Sequence
 from pathlib import Path
@@ -11,9 +12,10 @@ from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants.misc import USERDB_NAME, USERSDIR_NAME
 from rotkehlchen.crypto import decrypt, encrypt
 from rotkehlchen.db.dbhandler import DBHandler
+from rotkehlchen.db.misc import plaintext_db_integrity_check
 from rotkehlchen.db.settings import ModifiableDBSettings
 from rotkehlchen.errors.api import AuthenticationError
-from rotkehlchen.errors.misc import SystemPermissionError
+from rotkehlchen.errors.misc import DataIntegrityError, SystemPermissionError
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import timestamp_to_date, ts_now
@@ -235,6 +237,7 @@ class DataHandler:
         there is a DB upgrade and there is an error or if the version is older
         than the one supported.
         - SystemPermissionError if the DB file permissions are not correct
+        - DataIntegrityError if the downloaded database fails the SQLite integrity check
         """
         log.info('Decompress and decrypt DB')
         # First make a backup of the DB we are about to replace
@@ -247,4 +250,13 @@ class DataHandler:
 
         decrypted_data = decrypt(self.db.password.encode(), encrypted_data)
         decompressed_data = zlib.decompress(decrypted_data)
+        # Verify the downloaded plaintext DB before letting it overwrite the local one
+        with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as tmpdirname:  # needed on windows, see https://tinyurl.com/tmp-win-err  # noqa: E501
+            tempdbpath = Path(tmpdirname) / 'remote.db'
+            tempdbpath.write_bytes(decompressed_data)
+            ok, integrity_error = plaintext_db_integrity_check(tempdbpath)
+        if not ok:
+            message = f'Downloaded database failed the integrity check: {integrity_error}'
+            log.error(message)
+            raise DataIntegrityError(message)
         self.db.import_unencrypted(decompressed_data)

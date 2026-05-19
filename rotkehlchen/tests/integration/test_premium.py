@@ -276,6 +276,58 @@ def test_upload_data_to_server_smaller_db(rotkehlchen_instance, db_settings: dic
             assert post_mock.called
 
 
+@pytest.mark.parametrize('start_with_valid_premium', [True])
+def test_upload_aborts_on_local_db_integrity_failure(rotkehlchen_instance: 'Rotkehlchen') -> None:
+    """If the local DB fails the integrity check, no upload happens and the user is notified."""
+    with rotkehlchen_instance.data.db.user_write() as write_cursor:
+        # Write to the DB so last_write_ts is non-zero and would normally trigger an upload
+        rotkehlchen_instance.data.db.set_settings(
+            write_cursor,
+            ModifiableDBSettings(main_currency=A_EUR.resolve_to_asset_with_oracles()),
+        )
+
+    assert rotkehlchen_instance.premium is not None
+    patched_post = patch.object(rotkehlchen_instance.premium.session, 'post')
+    patched_get = create_patched_requests_get_for_premium(
+        session=rotkehlchen_instance.premium.session,
+        metadata_last_modify_ts=0,
+        metadata_data_hash='somehash',
+        metadata_data_size=2,
+        saved_data=b'foo',
+    )
+    integrity_message = 'row 1 missing from index foo'
+    integrity_patch = patch.object(
+        rotkehlchen_instance.data.db,
+        'db_integrity_check',
+        return_value=(False, integrity_message),
+    )
+    ws_patch = patch.object(rotkehlchen_instance.msg_aggregator, 'add_message')
+
+    with patched_get, integrity_patch, patched_post as post_mock, ws_patch as ws_mock:
+        success, error = rotkehlchen_instance.premium_sync_manager.maybe_upload_data_to_server(
+            force_upload=True,
+        )
+
+    assert success is False
+    assert error is not None and integrity_message in error
+    assert not post_mock.called
+    assert ws_mock.call_args_list == [
+        call(
+            message_type=WSMessageType.DATABASE_UPLOAD_RESULT,
+            data={
+                'uploaded': False,
+                'actionable': True,
+                'message': f'Local database failed the integrity check: {integrity_message}',
+            },
+        ),
+    ]
+    # The local last upload ts should remain unset since no upload happened
+    with rotkehlchen_instance.data.db.conn.read_ctx() as cursor:
+        assert rotkehlchen_instance.data.db.get_static_cache(
+            cursor=cursor, name=DBCacheStatic.LAST_DATA_UPLOAD_TS,
+        ) is None
+
+
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
 @pytest.mark.parametrize('start_with_valid_premium', [True])
 def test_try_premium_at_start_new_account_can_pull_data(
@@ -667,8 +719,8 @@ def test_upload_data_to_server_db_locked(rotkehlchen_instance):
         export occur under a critical section
         """
         with db.conn.read_ctx() as cursor:
-            result = cursor.execute('SELECT * FROM pragma_database_list;')
-            assert len(result.fetchall()) == 1, 'the plaintext DB should not be attached here'
+            attached = {row[1] for row in cursor.execute('SELECT * FROM pragma_database_list;').fetchall()}  # noqa: E501
+            assert 'plaintext' not in attached, 'the plaintext DB should not be attached here'
 
     with db.user_write() as cursor:
         last_ts = rotkehlchen_instance.data.db.get_static_cache(
