@@ -66,7 +66,7 @@ from rotkehlchen.db.evmtx import DBEvmTx
 from rotkehlchen.db.filtering import UserNotesFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.db.loopring import DBLoopring
-from rotkehlchen.db.misc import detect_sqlcipher_version
+from rotkehlchen.db.misc import detect_sqlcipher_version, evaluate_integrity_check_rows
 from rotkehlchen.db.schema import DB_SCRIPT_CREATE_TABLES
 from rotkehlchen.db.schema_transient import DB_SCRIPT_CREATE_TRANSIENT_TABLES
 from rotkehlchen.db.settings import (
@@ -561,6 +561,20 @@ class DBHandler:
         if conn:
             conn.close()
             setattr(self, conn_attribute, None)
+
+    def db_integrity_check(self) -> tuple[bool, str | None]:
+        """Run `PRAGMA integrity_check` on the user DB.
+
+        Returns (True, None) if the database is structurally sound. Otherwise returns
+        (False, error_message) with the messages reported by SQLite, or with the database
+        error raised when running the pragma.
+        """
+        try:
+            with self.conn.read_ctx() as cursor:
+                rows = cursor.execute('PRAGMA integrity_check;').fetchall()
+        except sqlcipher.DatabaseError as e:  # pylint: disable=no-member
+            return False, str(e)
+        return evaluate_integrity_check_rows(rows)
 
     def export_unencrypted(self, tempdbfile: 'tempfile._TemporaryFileWrapper[bytes]') -> Path:
         """Export the unencrypted DB to the temppath as plaintext DB
