@@ -100,6 +100,7 @@ from rotkehlchen.globaldb.manual_price_oracles import ManualCurrentOracle
 from rotkehlchen.greenlets.manager import GreenletManager
 from rotkehlchen.history.manager import HistoryQueryingManager
 from rotkehlchen.history.price import Price, PriceHistorian
+from rotkehlchen.history.processing import HistoryProcessingCoordinator
 from rotkehlchen.history.types import HistoricalPrice, HistoricalPriceOracle
 from rotkehlchen.icons import IconManager
 from rotkehlchen.inquirer import Inquirer
@@ -583,6 +584,7 @@ class Rotkehlchen:
         )
         Inquirer().set_oracles_order(settings.current_price_oracles)
 
+        self.history_processing_coordinator = HistoryProcessingCoordinator()
         self.accountant = Accountant(
             db=self.data.db,
             msg_aggregator=self.msg_aggregator,
@@ -595,6 +597,7 @@ class Rotkehlchen:
             msg_aggregator=self.msg_aggregator,
             exchange_manager=self.exchange_manager,
             chains_aggregator=self.chains_aggregator,
+            processing_coordinator=self.history_processing_coordinator,
         )
         self.data_updater = RotkiDataUpdater(
             msg_aggregator=self.msg_aggregator,
@@ -615,6 +618,7 @@ class Rotkehlchen:
             msg_aggregator=self.msg_aggregator,
             data_updater=self.data_updater,
             username=user,
+            history_processing_coordinator=self.history_processing_coordinator,
         )
 
         self.migration_manager.maybe_migrate_data()

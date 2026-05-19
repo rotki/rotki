@@ -639,6 +639,30 @@ def test_key_value_cache_entry_types(database):
     assert default_value is None
 
 
+def test_get_static_caches(database):
+    with database.user_write() as cursor:
+        database.set_static_cache(
+            write_cursor=cursor,
+            name=DBCacheStatic.LAST_HISTORICAL_BALANCE_PROCESSING_TS,
+            value=(last_processing_ts := Timestamp(123)),
+        )
+        database.set_static_cache(
+            write_cursor=cursor,
+            name=DBCacheStatic.STALE_BALANCES_FROM_TS,
+            value=(stale_from_ts := '456'),
+        )
+
+    with database.conn.read_ctx() as cursor:
+        assert database.get_static_caches(
+            cursor=cursor,
+            names=(
+                DBCacheStatic.STALE_BALANCES_FROM_TS,
+                DBCacheStatic.LAST_DATA_UPDATES_TS,
+                DBCacheStatic.LAST_HISTORICAL_BALANCE_PROCESSING_TS,
+            ),
+        ) == (stale_from_ts, None, last_processing_ts)
+
+
 def test_balance_save_frequency_check(data_dir, username, sql_vm_instructions_cb):
     msg_aggregator = MessagesAggregator()
     data = DataHandler(data_dir, msg_aggregator, sql_vm_instructions_cb)

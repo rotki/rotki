@@ -702,6 +702,20 @@ class DBHandler:
             DBCacheStatic.LAST_DATA_UPLOAD_TS.value: db_cache.get(DBCacheStatic.LAST_DATA_UPLOAD_TS.value, 0),  # noqa: E501
         }
 
+    @staticmethod
+    def _deserialize_static_cache_value(name: DBCacheStatic, value: str) -> Timestamp | str:
+        # Return string for these cache entries, timestamp for all others
+        if name in (
+            DBCacheStatic.DOCKER_DEVICE_INFO,
+            DBCacheStatic.MONERIUM_OAUTH_CREDENTIALS,
+            DBCacheStatic.STALE_BALANCES_FROM_TS,
+            DBCacheStatic.STALE_BALANCES_MODIFICATION_TS,
+            DBCacheStatic.BEACONCHAIN_VALIDATOR_QUERY_LIMIT,
+        ):
+            return value
+
+        return Timestamp(int(value))
+
     @overload
     def get_static_cache(
             self,
@@ -762,17 +776,27 @@ class DBHandler:
         ).fetchone()) is None:
             return None
 
-        # Return string for these cache entries, timestamp for all others
-        if name in (
-            DBCacheStatic.DOCKER_DEVICE_INFO,
-            DBCacheStatic.MONERIUM_OAUTH_CREDENTIALS,
-            DBCacheStatic.STALE_BALANCES_FROM_TS,
-            DBCacheStatic.STALE_BALANCES_MODIFICATION_TS,
-            DBCacheStatic.BEACONCHAIN_VALIDATOR_QUERY_LIMIT,
-        ):
-            return value[0]
+        return self._deserialize_static_cache_value(name=name, value=value[0])
 
-        return Timestamp(int(value[0]))
+    def get_static_caches(
+            self,
+            cursor: 'DBCursor',
+            names: tuple[DBCacheStatic, ...],
+    ) -> tuple[Timestamp | str | None, ...]:
+        """Returns cache values in the same order as the requested static cache names."""
+        if len(names) == 0:
+            return ()
+
+        name_values = tuple(name.value for name in names)
+        cursor.execute(
+            f"SELECT {','.join('MAX(CASE WHEN name=? THEN value END)' for _ in names)} "
+            f"FROM key_value_cache WHERE name IN ({','.join('?' for _ in names)})",
+            name_values + name_values,
+        )
+        return tuple(
+            None if value is None else self._deserialize_static_cache_value(name=name, value=value)
+            for name, value in zip(names, cursor.fetchone(), strict=True)
+        )
 
     def set_static_cache(
             self,

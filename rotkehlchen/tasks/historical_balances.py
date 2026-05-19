@@ -1,6 +1,8 @@
 import logging
 from typing import TYPE_CHECKING, Final, Literal, NamedTuple, TypeAlias
 
+import gevent
+
 from rotkehlchen.api.websockets.typedefs import ProgressUpdateSubType, WSMessageType
 from rotkehlchen.constants import ZERO
 from rotkehlchen.db.cache import DBCacheStatic
@@ -332,6 +334,7 @@ def process_historical_balances(
                     first_batch_written=first_batch_written,
                 )
             first_batch_written, metrics_batch = True, []
+            gevent.sleep(0)
 
     if len(metrics_batch) != 0:
         with database.user_write() as write_cursor:

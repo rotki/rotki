@@ -167,7 +167,6 @@ from rotkehlchen.tasks.events import (
     should_exclude_possible_match,
     update_asset_movement_matched_event,
 )
-from rotkehlchen.tasks.historical_balances import process_historical_balances
 from rotkehlchen.types import (
     AVAILABLE_MODULES_MAP,
     CHAINS_WITH_TRANSACTION_DECODERS_TYPE,
@@ -3243,10 +3242,7 @@ class RestAPI:
     def trigger_task(self, task: TaskName) -> dict[str, Any]:
         """Trigger the specified async task."""
         if task == TaskName.HISTORICAL_BALANCE_PROCESSING:
-            process_historical_balances(
-                database=self.rotkehlchen.data.db,
-                msg_aggregator=self.rotkehlchen.data.db.msg_aggregator,
-            )
+            self.rotkehlchen.task_manager.trigger_historical_balance_processing()  # type: ignore[union-attr]  # exists after login.
             return OK_RESULT
         else:  # task == TaskName.ASSET_MOVEMENT_MATCHING
             if has_premium_capability(
