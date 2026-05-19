@@ -32,6 +32,34 @@ export class RpcSettingsPage {
     await expect(this.page.getByTestId('add-node')).toHaveCount(0);
   }
 
+  async visitWithTab(tab: string): Promise<void> {
+    await this.page.goto(`/#/settings/rpc?tab=${tab}`);
+    await this.page.getByTestId('rpc-settings-rail').waitFor({ state: 'visible' });
+  }
+
+  async expectActiveTab(label: string): Promise<void> {
+    const active = this.page.getByTestId('rpc-settings-rail').locator('[role="tab"][aria-selected="true"]');
+    await expect(active).toHaveText(new RegExp(label));
+  }
+
+  async clickRailTab(label: string): Promise<void> {
+    await this.page.getByTestId('rpc-settings-rail').locator('[role="tab"]', { hasText: label }).click();
+  }
+
+  async expectUrlTab(tab: string): Promise<void> {
+    await expect(this.page).toHaveURL(new RegExp(`tab=${tab}(?:&|$)`));
+  }
+
+  async expectSolanaUnderOtherEndpoints(): Promise<void> {
+    const rail = this.page.getByTestId('rpc-settings-rail');
+    const groups = rail.locator('> div');
+    const otherGroup = groups.nth(1);
+    await expect(otherGroup).toContainText('Other endpoints');
+    await expect(otherGroup).toContainText('Solana');
+    const evmGroup = groups.nth(0);
+    await expect(evmGroup).not.toContainText('Solana');
+  }
+
   async changePassword(currentPassword: string, newPassword: string): Promise<void> {
     await this.page.locator('[data-cy=current-password-input] input').clear();
     await this.page.locator('[data-cy=current-password-input] input').fill(currentPassword);

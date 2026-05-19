@@ -38,6 +38,38 @@ test.describe.serial('settings::rpc', () => {
     await pageRpc.visit();
     await pageRpc.confirmRPCAddition(name, endpoint);
   });
+
+  test('deep-link via ?tab= selects the Beacon Node and hides Add Node', async () => {
+    await pageRpc.visitWithTab('eth_consensus_layer');
+    await pageRpc.expectActiveTab('ETH Beacon Node');
+    await pageRpc.expectAddNodeHidden();
+  });
+
+  test('clicking a rail tab updates the URL', async () => {
+    await pageRpc.visit();
+    await pageRpc.clickRailTab('Polkadot');
+    await pageRpc.expectUrlTab('dot');
+    await pageRpc.expectActiveTab('Polkadot');
+  });
+
+  test('Add Node is hidden on every single-value endpoint', async () => {
+    for (const label of ['Bitcoin Mempool', 'Kusama', 'Polkadot', 'ETH Beacon Node']) {
+      await pageRpc.clickRailTab(label);
+      await pageRpc.expectAddNodeHidden();
+    }
+  });
+
+  test('Add Node is visible on EVM chains and Solana', async () => {
+    for (const label of ['Ethereum', 'Solana']) {
+      await pageRpc.clickRailTab(label);
+      await pageRpc.expectAddNodeVisible();
+    }
+  });
+
+  test('Solana is grouped under Other endpoints, not EVM chains', async () => {
+    await pageRpc.visit();
+    await pageRpc.expectSolanaUnderOtherEndpoints();
+  });
 });
 
 test.describe.serial('settings::rpc narrow viewport', () => {
