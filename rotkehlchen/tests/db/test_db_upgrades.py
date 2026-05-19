@@ -3305,8 +3305,7 @@ def test_latest_upgrade_correctness(user_data_dir):
     this is just to reminds us not to forget to add create table statements.
     """
     msg_aggregator = MessagesAggregator()
-    base_database = f'v{ROTKEHLCHEN_DB_VERSION - 1}_rotkehlchen.db'
-    _use_prepared_db(user_data_dir, base_database)
+    _use_prepared_db(user_data_dir, 'v50_rotkehlchen.db')
     last_db = _init_db_with_target_version(
         target_version=ROTKEHLCHEN_DB_VERSION - 1,
         user_data_dir=user_data_dir,
@@ -3362,7 +3361,7 @@ def test_latest_upgrade_correctness(user_data_dir):
     assert tables_after_creation - tables_after_upgrade == {'evm_internal_tx_conflicts'}
     assert views_after_creation - views_after_upgrade == set()
     new_tables = tables_after_upgrade - tables_before
-    assert new_tables == {'bitcoin_events_addresses', 'blockchain_balances_cache'}
+    assert new_tables == {'event_metrics'}
     new_views = views_after_upgrade - views_before
     assert new_views == set()
     db.logout()
@@ -4124,5 +4123,95 @@ def test_upgrade_db_51_to_52(user_data_dir, messages_aggregator):
         assert cursor.execute(
             "SELECT COUNT(*) FROM location WHERE location = 'z' AND seq = 58",
         ).fetchone()[0] == 1
+
+    db.logout()
+
+
+@pytest.mark.parametrize('use_clean_caching_directory', [True])
+def test_upgrade_db_52_to_53(user_data_dir, messages_aggregator):
+    """Test upgrading the DB from version 52 to version 53."""
+    _use_prepared_db(user_data_dir, 'v50_rotkehlchen.db')
+    db_v52 = _init_db_with_target_version(
+        target_version=52,
+        user_data_dir=user_data_dir,
+        msg_aggregator=messages_aggregator,
+        resume_from_backup=False,
+    )
+    with db_v52.conn.write_ctx() as write_cursor:
+        assert not table_exists(cursor=write_cursor, name='event_metrics')
+        write_cursor.execute(
+            'INSERT INTO history_events('
+            'entry_type, group_identifier, sequence_index, timestamp, location, location_label, '
+            'asset, amount, notes, type, subtype'
+            ') VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+            (
+                HistoryBaseEntryType.HISTORY_EVENT.serialize_for_db(),
+                'EVENT_METRICS_TEST_1',
+                0,
+                1730000000000,
+                Location.BLOCKCHAIN.serialize_for_db(),
+                '0x0000000000000000000000000000000000000001',
+                'ETH',
+                '1',
+                'Receive 1 ETH',
+                HistoryEventType.RECEIVE.serialize(),
+                HistoryEventSubType.NONE.serialize(),
+            ),
+        )
+
+    db_v52.logout()
+    db = _init_db_with_target_version(
+        target_version=53,
+        user_data_dir=user_data_dir,
+        msg_aggregator=messages_aggregator,
+        resume_from_backup=False,
+    )
+    with db.conn.write_ctx() as cursor:
+        assert table_exists(cursor=cursor, name='event_metrics')
+        for index_name in (
+            'idx_event_metrics_event',
+            'idx_event_metrics_location_label',
+            'idx_event_metrics_protocol',
+            'idx_event_metrics_metric_key',
+            'idx_event_metrics_metric_key_timestamp',
+            'idx_event_metrics_metric_key_asset_sort_key',
+            'idx_event_metrics_asset',
+        ):
+            assert index_exists(cursor=cursor, name=index_name)
+
+        assert cursor.execute(
+            'SELECT COUNT(*) FROM history_events WHERE group_identifier=?',
+            ('EVENT_METRICS_TEST_1',),
+        ).fetchone()[0] == 1
+        metric_entry = (
+            cursor.execute(
+                'SELECT identifier FROM history_events WHERE group_identifier=?',
+                ('EVENT_METRICS_TEST_1',),
+            ).fetchone()[0],
+            Location.BLOCKCHAIN.serialize_for_db(),
+            '0x0000000000000000000000000000000000000001',
+            'wallet',
+            'balance',
+            '1',
+            'ETH',
+            1730000000000,
+            0,
+            1730000000000,
+        )
+        cursor.execute(
+            'INSERT INTO event_metrics(event_identifier, location, location_label, protocol, '
+            'metric_key, metric_value, asset, timestamp, sequence_index, sort_key) '
+            'VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+            metric_entry,
+        )
+        with pytest.raises(sqlcipher.IntegrityError):  # pylint: disable=no-member
+            cursor.execute(
+                'INSERT INTO event_metrics(event_identifier, location, location_label, protocol, '
+                'metric_key, metric_value, asset, timestamp, sequence_index, sort_key) '
+                'VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+                metric_entry,
+            )
+
+        assert db.get_setting(cursor, 'version') == 53
 
     db.logout()

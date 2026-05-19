@@ -957,7 +957,7 @@ CREATE TABLE IF NOT EXISTS blockchain_balances_cache (
 # - metric_key is the type of metric ('balance', 'pnl', 'cost_basis', etc.)
 # - asset is the identifier this metric is aggregated under (may differ from event asset,
 #   e.g., token upgrades)
-"""
+DB_CREATE_EVENT_METRICS = """
 CREATE TABLE IF NOT EXISTS event_metrics (
     id INTEGER NOT NULL PRIMARY KEY,
     event_identifier INTEGER NOT NULL REFERENCES history_events(identifier) ON DELETE CASCADE,
@@ -999,10 +999,6 @@ CREATE INDEX IF NOT EXISTS idx_history_event_links_composite ON history_event_li
 CREATE INDEX IF NOT EXISTS idx_history_event_link_ignores_type ON history_event_link_ignores(link_type);
 CREATE INDEX IF NOT EXISTS idx_chain_events_info_tx_ref ON chain_events_info(tx_ref);
 CREATE UNIQUE INDEX IF NOT EXISTS unique_generic_accounting_rules ON accounting_rules(type, subtype, counterparty) WHERE is_event_specific = 0;
-"""  # noqa: E501
-
-# The event metrics table is temporarily removed.
-"""
 CREATE INDEX IF NOT EXISTS idx_event_metrics_event ON event_metrics(event_identifier);
 CREATE INDEX IF NOT EXISTS idx_event_metrics_location_label ON event_metrics(location_label);
 CREATE INDEX IF NOT EXISTS idx_event_metrics_protocol ON event_metrics(protocol);
@@ -1085,6 +1081,7 @@ BEGIN TRANSACTION;
 {DB_CREATE_LIDO_CSM_NODE_OPERATOR_METRICS}
 {DB_CREATE_HISTORICAL_BALANCE_CACHE}
 {DB_CREATE_BLOCKCHAIN_BALANCES_CACHE}
+{DB_CREATE_EVENT_METRICS}
 {DB_CREATE_INDEXES}
 COMMIT;
 PRAGMA foreign_keys=on;
