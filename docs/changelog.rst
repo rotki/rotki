@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :feature:`12250` You can now reach every RPC endpoint, including the ETH Beacon Node, Polkadot, Kusama and Bitcoin Mempool, without horizontal scrolling on the RPC settings page. Endpoints are listed in a grouped vertical rail (EVM chains and other endpoints) that scales as new chains are added.
 * :feature:`12254` The EVM "Skip Token Detection" setting has been renamed to "Skip Account Activity Detection" to accurately describe its behavior — it controls cross-chain account activity scanning, not ERC-20 token discovery.
 * :feature:`12094` You can now have rotki automatically scan for new tokens each time you log in, and tune how often that on-login scan should actually run via a configurable cooldown.
 * :feature:`12241` You can now silence the "No indexers available" notification for individual chains you don't plan to configure an indexer for, and re-enable notifications later from the EVM settings page.
