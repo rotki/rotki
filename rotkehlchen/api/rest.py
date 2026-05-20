@@ -221,6 +221,7 @@ if TYPE_CHECKING:
     from rotkehlchen.chain.bitcoin.xpub import XpubData
     from rotkehlchen.chain.evm.accounting.structures import BaseEventSettings
     from rotkehlchen.chain.evm.manager import EvmManager
+    from rotkehlchen.exchanges.gate import GateLocation
     from rotkehlchen.exchanges.kraken import KrakenAccountType
     from rotkehlchen.exchanges.okx import OkxLocation
     from rotkehlchen.history.events.structures.base import HistoryBaseEntry
@@ -569,6 +570,7 @@ class RestAPI:
             kraken_futures_api_secret: ApiSecret | None,
             binance_markets: list[str] | None,
             okx_location: Optional['OkxLocation'],
+            gate_location: Optional['GateLocation'],
     ) -> Response:
         result, msg, status_code = self.exchanges_service.setup_exchange(
             name=name,
@@ -581,6 +583,7 @@ class RestAPI:
             kraken_futures_api_secret=kraken_futures_api_secret,
             binance_markets=binance_markets,
             okx_location=okx_location,
+            gate_location=gate_location,
         )
         return api_response(_wrap_in_result(result, msg), status_code=status_code)
 
@@ -597,6 +600,7 @@ class RestAPI:
             kraken_futures_api_secret: ApiSecret | None,
             binance_markets: list[str] | None,
             okx_location: Optional['OkxLocation'],
+            gate_location: Optional['GateLocation'],
     ) -> Response:
         result, msg, status_code = self.exchanges_service.edit_exchange(
             name=name,
@@ -610,6 +614,7 @@ class RestAPI:
             kraken_futures_api_secret=kraken_futures_api_secret,
             binance_markets=binance_markets,
             okx_location=okx_location,
+            gate_location=gate_location,
         )
         return api_response(_wrap_in_result(result, msg), status_code=status_code)
 

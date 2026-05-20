@@ -8,6 +8,7 @@ from .bybit import *  # noqa: F403
 from .coinbase import *  # noqa: F403
 from .cryptocom import *  # noqa: F403
 from .exchanges import *  # noqa: F403
+from .gate import *  # noqa: F403
 from .gemini import *  # noqa: F403
 from .htx import *  # noqa: F403
 from .iconomi import *  # noqa: F403

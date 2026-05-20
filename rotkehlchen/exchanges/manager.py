@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING, Any, Optional
 from rotkehlchen.api.websockets.typedefs import HistoryEventsStep
 from rotkehlchen.db.constants import (
     BINANCE_MARKETS_KEY,
+    GATE_LOCATION_KEY,
     KRAKEN_ACCOUNT_TYPE_KEY,
     KRAKEN_FUTURES_API_KEY_KEY,
     KRAKEN_FUTURES_API_SECRET_KEY,
@@ -32,6 +33,7 @@ from .constants import EXCHANGES_WITHOUT_API_SECRET, SUPPORTED_EXCHANGES
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
+    from rotkehlchen.exchanges.gate import GateLocation
     from rotkehlchen.exchanges.kraken import KrakenAccountType
     from rotkehlchen.exchanges.okx import OkxLocation
 
@@ -93,6 +95,7 @@ class ExchangeManager:
             kraken_futures_api_secret: ApiSecret | None,
             binance_selected_trade_pairs: list[str] | None,
             okx_location: Optional['OkxLocation'],
+            gate_location: Optional['GateLocation'] = None,
     ) -> tuple[bool, str]:
         """Edits both the exchange object and the database entry
 
@@ -127,6 +130,7 @@ class ExchangeManager:
                 KRAKEN_FUTURES_API_SECRET_KEY: kraken_futures_api_secret,
                 BINANCE_MARKETS_KEY: binance_selected_trade_pairs,
                 OKX_LOCATION_KEY: okx_location,
+                GATE_LOCATION_KEY: gate_location,
             })
             if success is False:
                 exchangeobj.reset_to_db_credentials()
@@ -147,6 +151,7 @@ class ExchangeManager:
                     kraken_futures_api_secret=kraken_futures_api_secret,
                     binance_selected_trade_pairs=binance_selected_trade_pairs,
                     okx_location=okx_location,
+                    gate_location=gate_location,
                 )
         except InputError as e:
             exchangeobj.reset_to_db_credentials()  # DB is already rolled back at this point
@@ -198,6 +203,8 @@ class ExchangeManager:
                     data[KRAKEN_ACCOUNT_TYPE_KEY] = str(exchangeobj.account_type)  # type: ignore
                 elif location == Location.OKX:  # ignore type since we know this is okx here
                     data[OKX_LOCATION_KEY] = exchangeobj.okx_location.serialize()  # type: ignore
+                elif location == Location.GATE:  # ignore type since we know this is gate here
+                    data[GATE_LOCATION_KEY] = exchangeobj.gate_location.serialize()  # type: ignore
 
                 exchange_info.append(data)
 

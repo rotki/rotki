@@ -8,11 +8,20 @@ export const KrakenAccountType = z.enum(['starter', 'intermediate', 'pro']);
 
 export type KrakenAccountType = z.infer<typeof KrakenAccountType>;
 
+const GATE_LOCATIONS = ['global', 'europe', 'us'];
 const OKX_LOCATIONS = ['global', 'eea', 'us'];
+
+export const GateLocation = z.enum(GATE_LOCATIONS);
 
 export const OkxLocation = z.enum(OKX_LOCATIONS);
 
+export type GateLocation = z.infer<typeof GateLocation>;
+
 export type OkxLocation = z.infer<typeof OkxLocation>;
+
+function isValidGateLocation(val: unknown): val is GateLocation {
+  return typeof val === 'string' && GATE_LOCATIONS.includes(val);
+}
 
 function isValidOkxLocation(val: unknown): val is OkxLocation {
   return typeof val === 'string' && OKX_LOCATIONS.includes(val);
@@ -28,6 +37,16 @@ export type QueryExchangeEventsPayload = z.infer<typeof QueryExchangeEventsPaylo
 export const Exchange = z.object({
   ...QueryExchangeEventsPayload.shape,
   krakenAccountType: KrakenAccountType.optional(),
+  gateLocation: z.preprocess(
+    (val) => {
+      if (val === undefined)
+        return undefined;
+      if (isValidGateLocation(val))
+        return val;
+      return 'global';
+    },
+    GateLocation.optional(),
+  ),
   okxLocation: z.preprocess(
     (val) => {
       if (val === undefined)
@@ -69,6 +88,7 @@ interface ExchangePayload {
   readonly krakenFuturesApiKey?: string;
   readonly krakenFuturesApiSecret?: string;
   readonly binanceMarkets?: string[];
+  readonly gateLocation?: GateLocation;
   readonly okxLocation?: OkxLocation;
 }
 
