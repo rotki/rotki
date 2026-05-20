@@ -68,6 +68,7 @@ EVENT_CATEGORY_MAPPINGS = {  # possible combinations of types and subtypes mappe
         HistoryEventSubType.NONE: {DEFAULT: EventCategory.SEND},
         HistoryEventSubType.CLAWBACK: {DEFAULT: EventCategory.CLAWBACK},
         HistoryEventSubType.BURN: {DEFAULT: EventCategory.BURN},
+        HistoryEventSubType.REFUND: {DEFAULT: EventCategory.REFUND},
     },
     HistoryEventType.LOSS: {
         HistoryEventSubType.LIQUIDATE: {DEFAULT: EventCategory.LIQUIDATION_LOSS},
