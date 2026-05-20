@@ -17,6 +17,7 @@ Changelog
 * :bug:`12088` Cancelling the create-account wizard on a fresh install no longer drops you on an empty Unlock screen; the wizard's "Already have an account? Log in" shortcut is also hidden when no profiles exist.
 * :bug:`-` Typing into the login form's username field while the page is still loading no longer gets wiped by the remembered-profile pre-fill.
 * :bug:`-` The login screen no longer pre-fills the username field with a remembered account that no longer exists.
+* :feature:`12002` Adding or editing a history event now uses a plain-language "Action" picker grouped by intent (Trade, Transfer, DeFi, Staking, etc.) with search and keyboard navigation, replacing the raw event-type and subtype dropdowns.
 * :feature:`12086` The "Create account" flow now starts with a mode chooser so creating a new local profile and restoring a database synced from rotki cloud are separate, focused paths.
 
 * :release:`1.43.1 <2026-05-18>`

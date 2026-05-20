@@ -91,6 +91,17 @@ export class HistoryEventsPage {
     await menu.waitFor({ state: 'hidden', timeout: TIMEOUT_MEDIUM });
   }
 
+  private async selectAction(eventType: string, eventSubtype: string): Promise<void> {
+    const picker = this.page.locator('[data-cy=eventActionPicker]');
+    await picker.locator('[data-id=activator]').click();
+    const menu = this.page.locator('[role=menu]').last();
+    await menu.waitFor({ state: 'visible' });
+    const row = menu.locator(`[data-event-types~="${eventType}:${eventSubtype}"]`);
+    await row.waitFor({ state: 'visible' });
+    await row.click();
+    await menu.waitFor({ state: 'hidden', timeout: TIMEOUT_MEDIUM });
+  }
+
   private async selectLocation(location: string): Promise<void> {
     await this.selectAutocompleteOption('location', location);
   }
@@ -98,8 +109,7 @@ export class HistoryEventsPage {
   async fillOnlineEventForm(data: OnlineEventFixture): Promise<void> {
     await this.fillDatetime();
     await this.selectLocation(data.location);
-    await this.selectAutocompleteOption('eventType', data.eventType);
-    await this.selectAutocompleteOption('eventSubtype', data.eventSubtype);
+    await this.selectAction(data.eventType, data.eventSubtype);
     await selectAsset(this.page, '[data-cy=asset]', data.asset, data.assetId);
     await this.page.locator('[data-cy=amount] input').clear();
     await this.page.locator('[data-cy=amount] input').fill(data.amount);
@@ -239,8 +249,7 @@ export class HistoryEventsPage {
   async fillSolanaEventForm(data: SolanaEventFixture): Promise<void> {
     await this.fillDatetime();
     await this.page.locator('[data-cy=tx-ref] input').fill(data.txRef);
-    await this.selectAutocompleteOption('eventType', data.eventType);
-    await this.selectAutocompleteOption('eventSubtype', data.eventSubtype);
+    await this.selectAction(data.eventType, data.eventSubtype);
     await selectAsset(this.page, '[data-cy=asset]', data.asset, data.assetId);
     await this.page.locator('[data-cy=amount] input').clear();
     await this.page.locator('[data-cy=amount] input').fill(data.amount);
@@ -301,8 +310,7 @@ export class HistoryEventsPage {
     await this.fillDatetime();
     await this.selectLocation('ethereum');
     await this.page.locator('[data-cy=tx-ref] input').fill(data.txRef);
-    await this.selectAutocompleteOption('eventType', data.eventType);
-    await this.selectAutocompleteOption('eventSubtype', data.eventSubtype);
+    await this.selectAction(data.eventType, data.eventSubtype);
     await selectAsset(this.page, '[data-cy=asset]', data.asset, data.assetId);
     await this.page.locator('[data-cy=amount] input').clear();
     await this.page.locator('[data-cy=amount] input').fill(data.amount);

@@ -14,6 +14,7 @@ from web3.exceptions import BadFunctionCallOutput
 from rotkehlchen.accounting.constants import (
     ACCOUNTING_EVENTS_ICONS,
     EVENT_CATEGORY_DETAILS,
+    EVENT_CATEGORY_GROUP_DETAILS,
     EVENT_CATEGORY_MAPPINGS,
 )
 from rotkehlchen.accounting.entry_type_mappings import ENTRY_TYPE_MAPPINGS
@@ -1014,8 +1015,13 @@ class AssetsService:
                 category: {
                     'counterparty_mappings': entries,
                     'direction': category.direction.serialize(),
+                    'group': category.group.serialize(),
                 }
                 for category, entries in EVENT_CATEGORY_DETAILS.items()
+            },
+            'event_category_groups': {
+                group.serialize(): details.serialize()
+                for group, details in EVENT_CATEGORY_GROUP_DETAILS.items()
             },
             'accounting_events_icons': ACCOUNTING_EVENTS_ICONS,
         }

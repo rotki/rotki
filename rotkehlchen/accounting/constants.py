@@ -5,6 +5,8 @@ from rotkehlchen.chain.decoding.constants import CPT_GAS
 from rotkehlchen.history.events.structures.types import (
     EventCategory,
     EventCategoryDetails,
+    EventCategoryGroup,
+    EventCategoryGroupDetails,
     HistoryEventSubType,
     HistoryEventType,
 )
@@ -394,6 +396,25 @@ EVENT_CATEGORY_DETAILS = {
         icon='lu-shield-alert',
         color='error',
     )},
+}
+
+EVENT_CATEGORY_GROUP_DETAILS: Final = {  # user-facing group metadata for the action picker. Labels live in the frontend i18n catalogue keyed by group identifier.  # noqa: E501
+    EventCategoryGroup.TRADE: EventCategoryGroupDetails(icon='lu-arrow-left-right', order=10),
+    EventCategoryGroup.TRANSFER: EventCategoryGroupDetails(icon='lu-arrow-right', order=20),
+    EventCategoryGroup.DEFI_DEPOSIT_WITHDRAW: EventCategoryGroupDetails(icon='lu-piggy-bank', order=30),  # noqa: E501
+    EventCategoryGroup.DEFI_BORROW_REPAY: EventCategoryGroupDetails(icon='lu-hand-coins', order=40),  # noqa: E501
+    EventCategoryGroup.STAKING: EventCategoryGroupDetails(icon='lu-coins', order=50),
+    EventCategoryGroup.INCOME: EventCategoryGroupDetails(icon='lu-trending-up', order=60),
+    EventCategoryGroup.EXPENSE: EventCategoryGroupDetails(icon='lu-receipt', order=70),
+    EventCategoryGroup.DONATION: EventCategoryGroupDetails(icon='lu-heart-handshake', order=80),
+    EventCategoryGroup.NFT: EventCategoryGroupDetails(icon='lu-image', order=90),
+    EventCategoryGroup.BRIDGE: EventCategoryGroupDetails(icon='lu-arrow-left-right', order=100),
+    EventCategoryGroup.CEX: EventCategoryGroupDetails(icon='lu-building-2', order=110),
+    EventCategoryGroup.VALIDATOR: EventCategoryGroupDetails(icon='lu-shield', order=120),
+    EventCategoryGroup.GOVERNANCE: EventCategoryGroupDetails(icon='lu-landmark', order=130),
+    EventCategoryGroup.APPROVAL: EventCategoryGroupDetails(icon='lu-check', order=140),
+    EventCategoryGroup.LOSS: EventCategoryGroupDetails(icon='lu-trending-down', order=150),
+    EventCategoryGroup.OTHER: EventCategoryGroupDetails(icon='lu-circle-question-mark', order=999),
 }
 
 ACCOUNTING_EVENTS_ICONS = {

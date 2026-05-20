@@ -1,8 +1,8 @@
 <script setup lang="ts">
+import type { HistoryEventEntryType } from '@rotki/common';
 import type { Validation } from '@vuelidate/core';
-import type { ActionDataEntry } from '@/modules/core/common/action';
 import { toMessages } from '@/modules/core/common/validation/validation';
-import HistoryEventTypeCombination from '@/modules/history/events/HistoryEventTypeCombination.vue';
+import HistoryEventActionPicker from '@/modules/history/events/action-picker/HistoryEventActionPicker.vue';
 import { useHistoryEventMappings } from '@/modules/history/events/mapping/use-history-event-mappings';
 
 interface HistoryEventTypeFormProps {
@@ -11,6 +11,7 @@ interface HistoryEventTypeFormProps {
   disabled?: boolean;
   v$: Validation;
   disableWarning?: boolean;
+  entryType?: HistoryEventEntryType;
 }
 
 const eventType = defineModel<string>('eventType', { required: true });
@@ -22,14 +23,27 @@ const {
   disabled,
   v$,
   disableWarning,
+  entryType,
 } = defineProps<HistoryEventTypeFormProps>();
 
-const {
-  findEventTypeData,
-  historyEventSubTypesData,
-  historyEventTypeGlobalMapping,
-  historyEventTypesData,
-} = useHistoryEventMappings();
+const pickerValue = computed<{ eventType: string; eventSubtype: string } | undefined>({
+  get: () => {
+    const t = get(eventType);
+    const s = get(eventSubType);
+    if (!t || !s)
+      return undefined;
+
+    return { eventSubtype: s, eventType: t };
+  },
+  set: (value) => {
+    set(eventType, value?.eventType ?? '');
+    set(eventSubType, value?.eventSubtype);
+    v$.eventType.$touch();
+    v$.eventSubtype.$touch();
+  },
+});
+
+const { findEventTypeData } = useHistoryEventMappings();
 
 const historyTypeCombination = computed(() => findEventTypeData({
   counterparty,
@@ -38,75 +52,31 @@ const historyTypeCombination = computed(() => findEventTypeData({
   location,
 }, false));
 
-const showHistoryEventTypeCombinationWarning = computed(() => {
+const showHistoryEventTypeCombinationWarning = computed<boolean>(() => {
   if (!v$.eventType.$dirty && !v$.eventSubtype.$dirty)
     return false;
 
   return !get(historyTypeCombination).identifier;
 });
 
-const historyEventSubTypeFilteredData = computed<ActionDataEntry[]>(() => {
-  const eventTypeVal = get(eventType);
-  const allData = get(historyEventSubTypesData);
-  const globalMapping = get(historyEventTypeGlobalMapping);
-
-  if (!eventTypeVal)
-    return allData;
-
-  let globalMappingKeys: string[] = [];
-
-  const globalMappingFound = globalMapping[eventTypeVal];
-  if (globalMappingFound)
-    globalMappingKeys = Object.keys(globalMappingFound);
-
-  return allData.filter((data: ActionDataEntry) => globalMappingKeys.includes(data.identifier));
-});
+const pickerErrorMessages = computed<string[]>(() => [
+  ...toMessages(v$.eventType),
+  ...toMessages(v$.eventSubtype),
+]);
 
 const { t } = useI18n({ useScope: 'global' });
 </script>
 
 <template>
   <div>
-    <div class="grid md:grid-cols-3 gap-4">
-      <RuiAutoComplete
-        v-model="eventType"
-        variant="outlined"
-        :disabled="disabled"
-        :label="t('transactions.events.form.event_type.label')"
-        required
-        :options="historyEventTypesData"
-        key-attr="identifier"
-        text-attr="label"
-        data-cy="eventType"
-        auto-select-first
-        :error-messages="toMessages(v$.eventType)"
-        @blur="v$.eventType.$touch()"
-      />
-      <RuiAutoComplete
-        v-model="eventSubType"
-        variant="outlined"
-        :disabled="disabled"
-        :label="t('transactions.events.form.event_subtype.label')"
-        required
-        :options="historyEventSubTypeFilteredData"
-        key-attr="identifier"
-        text-attr="label"
-        data-cy="eventSubtype"
-        auto-select-first
-        :error-messages="toMessages(v$.eventSubtype)"
-        @blur="v$.eventSubtype.$touch()"
-      />
-
-      <div class="flex flex-col gap-1 -mt-2 md:pl-4 mb-3">
-        <div class="text-caption">
-          {{ t('transactions.events.form.resulting_combination.label') }}
-        </div>
-        <HistoryEventTypeCombination
-          :type="historyTypeCombination"
-          show-label
-        />
-      </div>
-    </div>
+    <HistoryEventActionPicker
+      v-model="pickerValue"
+      :entry-type="entryType"
+      :disabled="disabled"
+      required
+      :hint="t('transactions.events.form.action.hint')"
+      :error-messages="pickerErrorMessages"
+    />
     <RuiAlert
       v-if="!disableWarning && showHistoryEventTypeCombinationWarning"
       class="mt-2 mb-6"

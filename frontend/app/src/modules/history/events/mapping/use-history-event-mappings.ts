@@ -1,6 +1,7 @@
 import type { MaybeRefOrGetter } from 'vue';
 import type { ActionDataEntry } from '@/modules/core/common/action';
 import type {
+  EventTypeCombination,
   HistoryEventCategoryDetailWithId,
   HistoryEventCategoryMapping,
   HistoryEventTypeData,
@@ -30,6 +31,7 @@ export const useHistoryEventMappings = createSharedComposable(() => {
     accountingEventsIcons: {},
     entryTypeMappings: {},
     eventCategoryDetails: {},
+    eventCategoryGroups: {},
     globalMappings: {},
   }));
 
@@ -41,6 +43,22 @@ export const useHistoryEventMappings = createSharedComposable(() => {
   const historyEventTypeGlobalMapping = computed(() => get(historyEventTypeData).globalMappings);
 
   const historyEventTypeByEntryTypeMapping = computed(() => get(historyEventTypeData).entryTypeMappings);
+
+  const eventTypeCombinationsByVerb = computed<Record<string, EventTypeCombination[]>>(() => {
+    const result: Record<string, EventTypeCombination[]> = {};
+    const globalMappings = get(historyEventTypeGlobalMapping);
+    for (const eventType in globalMappings) {
+      const subtypeMap = globalMappings[eventType];
+      for (const eventSubtype in subtypeMap) {
+        const { default: defaultVerb, exchange: exchangeVerb } = subtypeMap[eventSubtype];
+        (result[defaultVerb] ??= []).push({ eventSubtype, eventType });
+        if (exchangeVerb && exchangeVerb !== defaultVerb) {
+          (result[exchangeVerb] ??= []).push({ eventSubtype, eventType });
+        }
+      }
+    }
+    return result;
+  });
 
   const historyEventTypes = computed<string[]>(() => Object.keys(get(historyEventTypeGlobalMapping)));
 
@@ -81,6 +99,20 @@ export const useHistoryEventMappings = createSharedComposable(() => {
       }
     }
     return newEventCategoryDetails;
+  });
+
+  const eventCategoryGroupsData = computed<Record<string, { label: string; icon: string; order: number }>>(() => {
+    const groups = get(historyEventTypeData).eventCategoryGroups;
+    const out: Record<string, { label: string; icon: string; order: number }> = {};
+    for (const identifier in groups) {
+      const translationId = identifier.split(' ').join('_');
+      const translationKey = `backend_mappings.events.group.${translationId}`;
+      out[identifier] = {
+        ...groups[identifier],
+        label: te(translationKey) ? t(translationKey) : toSentenceCase(identifier),
+      };
+    }
+    return out;
   });
 
   const accountingEventsTypeData = computed<ActionDataEntry[]>(() =>
@@ -220,6 +252,8 @@ export const useHistoryEventMappings = createSharedComposable(() => {
 
   return {
     accountingEventsTypeData,
+    eventCategoryGroupsData,
+    eventTypeCombinationsByVerb,
     findEventTypeData,
     getAccountingEventTypeData,
     getEventType,
