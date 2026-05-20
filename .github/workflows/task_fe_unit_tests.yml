@@ -49,5 +49,6 @@ jobs:
       - name: Upload coverage
         uses: codecov/codecov-action@57e3a136b779b570ffcdbf80b3bdc90e7fab3de2  # v6.0.0
         with:
+          files: ./frontend/app/tests/unit/coverage/lcov.info
           flags: frontend_unit
           token: ${{ secrets.CODECOV_TOKEN }}

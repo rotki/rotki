@@ -8,8 +8,13 @@ coverage:
     project: off
     patch: off
 
+comment:
+  layout: "reach, diff, flags, files"
+  behavior: default
+  require_changes: false
+
 flags:
-  backend:
+  backend-nightly:
     carryforward: true
     paths:
       - rotkehlchen
@@ -21,3 +26,11 @@ flags:
     carryforward: true
     paths:
       - frontend/app
+
+ignore:
+  - "**/*.d.ts"
+  - "**/*.spec.ts"
+  - "**/*.test.ts"
+  - "frontend/app/src/locales/**"
+  - "frontend/app/tests/**"
+  - "rotkehlchen/tests/**"
