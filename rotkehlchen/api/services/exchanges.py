@@ -12,6 +12,7 @@ from rotkehlchen.utils.misc import combine_dicts
 if TYPE_CHECKING:
     from rotkehlchen.accounting.structures.balance import Balance
     from rotkehlchen.assets.asset import AssetWithOracles
+    from rotkehlchen.exchanges.gate import GateLocation
     from rotkehlchen.exchanges.kraken import KrakenAccountType
     from rotkehlchen.exchanges.okx import OkxLocation
     from rotkehlchen.fval import FVal
@@ -38,6 +39,7 @@ class ExchangesService:
             kraken_futures_api_secret: ApiSecret | None,
             binance_markets: list[str] | None,
             okx_location: OkxLocation | None,
+            gate_location: GateLocation | None,
     ) -> tuple[bool | None, str, HTTPStatus]:
         result, msg = self.rotkehlchen.setup_exchange(
             name=name,
@@ -50,6 +52,7 @@ class ExchangesService:
             kraken_futures_api_secret=kraken_futures_api_secret,
             binance_selected_trade_pairs=binance_markets,
             okx_location=okx_location,
+            gate_location=gate_location,
         )
         if not result:
             return None, msg, HTTPStatus.CONFLICT
@@ -68,6 +71,7 @@ class ExchangesService:
             kraken_futures_api_secret: ApiSecret | None,
             binance_markets: list[str] | None,
             okx_location: OkxLocation | None,
+            gate_location: GateLocation | None,
     ) -> tuple[bool | None, str, HTTPStatus]:
         edited, msg = self.rotkehlchen.exchange_manager.edit_exchange(
             name=name,
@@ -81,6 +85,7 @@ class ExchangesService:
             kraken_futures_api_secret=kraken_futures_api_secret,
             binance_selected_trade_pairs=binance_markets,
             okx_location=okx_location,
+            gate_location=gate_location,
         )
         if not edited:
             return None, msg, HTTPStatus.CONFLICT

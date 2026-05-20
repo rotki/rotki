@@ -54,6 +54,7 @@ from rotkehlchen.db.constants import (
     EVM_ACCOUNTS_DETAILS_LAST_QUERIED_TS,
     EVM_ACCOUNTS_DETAILS_TOKENS,
     EXTRAINTERNALTXPREFIX,
+    GATE_LOCATION_KEY,
     KDF_ITER,
     KRAKEN_ACCOUNT_TYPE_KEY,
     KRAKEN_FUTURES_API_KEY_KEY,
@@ -117,6 +118,7 @@ from rotkehlchen.errors.misc import (
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.exchanges.constants import SUPPORTED_EXCHANGES
 from rotkehlchen.exchanges.data_structures import MarginPosition
+from rotkehlchen.exchanges.gate import GateLocation
 from rotkehlchen.exchanges.kraken import KrakenAccountType
 from rotkehlchen.exchanges.okx import OkxLocation
 from rotkehlchen.fval import FVal
@@ -2264,6 +2266,7 @@ class DBHandler:
             kraken_futures_api_secret: ApiSecret | None = None,
             binance_selected_trade_pairs: list[str] | None = None,
             okx_location: OkxLocation | None = None,
+            gate_location: GateLocation | None = None,
     ) -> None:
         if location not in SUPPORTED_EXCHANGES:
             raise InputError(f'Unsupported exchange {location!s}')
@@ -2296,6 +2299,14 @@ class DBHandler:
                     except sqlcipher.DatabaseError as e:  # pylint: disable=no-member
                         raise InputError(f'Could not update DB user_credentials_mappings due to {e!s}') from e  # noqa: E501
 
+            if location == Location.GATE and gate_location is not None:
+                self._insert_into_credentials_mappings(
+                    cursor=cursor,
+                    name=name,
+                    location=location.serialize_for_db(),
+                    settings={GATE_LOCATION_KEY: gate_location.serialize()},
+                )
+
             if location == Location.OKX and okx_location is not None:
                 self._insert_into_credentials_mappings(
                     cursor=cursor,
@@ -2321,6 +2332,7 @@ class DBHandler:
             kraken_futures_api_secret: ApiSecret | None,
             binance_selected_trade_pairs: list[str] | None,
             okx_location: Optional['OkxLocation'],
+            gate_location: Optional['GateLocation'] = None,
     ) -> None:
         """May raise InputError if something is wrong with editing the DB"""
         if location not in SUPPORTED_EXCHANGES:
@@ -2376,6 +2388,17 @@ class DBHandler:
                     )
                 except sqlcipher.DatabaseError as e:  # pylint: disable=no-member
                     raise InputError(f'Could not update DB user_credentials_mappings due to {e!s}') from e  # noqa: E501
+
+        if location == Location.GATE and gate_location is not None:
+            try:
+                self._insert_into_credentials_mappings(
+                    cursor=write_cursor,
+                    name=new_name if new_name is not None else name,
+                    location=location.serialize_for_db(),
+                    settings={GATE_LOCATION_KEY: gate_location.serialize()},
+                )
+            except sqlcipher.DatabaseError as e:  # pylint: disable=no-member
+                raise InputError(f'Could not update DB user_credentials_mappings due to {e!s}') from e  # noqa: E501
 
         if location == Location.OKX and okx_location is not None:
             try:
@@ -2514,7 +2537,7 @@ class DBHandler:
                 'WHERE credential_name=? AND credential_location=?',
                 (name, location.serialize_for_db()),
             )
-            extras = {}
+            extras: dict[str, Any] = {}
             for entry in cursor:
                 if entry[0] not in USER_CREDENTIAL_MAPPING_KEYS:
                     log.error(
@@ -2530,9 +2553,14 @@ class DBHandler:
                         log.error(f'Couldnt deserialize kraken account type from DB. {e!s}')
                 elif key in (KRAKEN_FUTURES_API_KEY_KEY, KRAKEN_FUTURES_API_SECRET_KEY):
                     extras[key] = entry[1]
+                elif key == GATE_LOCATION_KEY:
+                    try:
+                        extras[key] = GateLocation.deserialize(entry[1])
+                    except DeserializationError as e:
+                        log.error(f'Couldnt deserialize gate location from DB. {e!s}')
                 elif key == OKX_LOCATION_KEY:
                     try:  # type is checked above
-                        extras[key] = OkxLocation.deserialize(entry[1])  # type: ignore
+                        extras[key] = OkxLocation.deserialize(entry[1])
                     except DeserializationError as e:
                         log.error(f'Couldnt deserialize okx location from DB. {e!s}')
                 else:  # can only be BINANCE_MARKETS_KEY

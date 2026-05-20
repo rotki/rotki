@@ -6,12 +6,13 @@ from rotkehlchen.utils.mixins.enums import DBIntEnumMixIn
 
 KDF_ITER: Final = 64000
 
+BINANCE_MARKETS_KEY: Final = 'binance_selected_trade_pairs'
+GATE_LOCATION_KEY: Final = 'gate_location'
 KRAKEN_ACCOUNT_TYPE_KEY: Final = 'kraken_account_type'
 KRAKEN_FUTURES_API_KEY_KEY: Final = 'kraken_futures_api_key'
 KRAKEN_FUTURES_API_SECRET_KEY: Final = 'kraken_futures_api_secret'
 OKX_LOCATION_KEY: Final = 'okx_location'
-BINANCE_MARKETS_KEY: Final = 'binance_selected_trade_pairs'
-USER_CREDENTIAL_MAPPING_KEYS: Final = (KRAKEN_ACCOUNT_TYPE_KEY, KRAKEN_FUTURES_API_KEY_KEY, KRAKEN_FUTURES_API_SECRET_KEY, BINANCE_MARKETS_KEY, OKX_LOCATION_KEY)  # noqa: E501
+USER_CREDENTIAL_MAPPING_KEYS: Final = (BINANCE_MARKETS_KEY, GATE_LOCATION_KEY, KRAKEN_ACCOUNT_TYPE_KEY, KRAKEN_FUTURES_API_KEY_KEY, KRAKEN_FUTURES_API_SECRET_KEY, OKX_LOCATION_KEY)  # noqa: E501
 
 
 # -- EVM transactions attributes values -- used in evm_tx_mappings

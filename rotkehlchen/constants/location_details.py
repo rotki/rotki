@@ -83,6 +83,10 @@ LOCATION_DETAILS: dict = {
         'label': 'HTX',
         'image': 'htx.svg',
     },
+    Location.GATE: {
+        'label': 'Gate',
+        'image': 'gate.svg',
+    },
     Location.ZKSYNC_LITE: {'image': 'zksync_lite.svg'},
     Location.BITCOIN: {'image': 'bitcoin.svg'},
     Location.BITCOIN_CASH: {

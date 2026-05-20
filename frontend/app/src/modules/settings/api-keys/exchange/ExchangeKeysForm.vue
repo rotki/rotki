@@ -4,7 +4,7 @@ import { toSentenceCase } from '@rotki/common';
 import { RuiRevealableTextField, RuiTextField } from '@rotki/ui-library';
 import useVuelidate from '@vuelidate/core';
 import { helpers, requiredIf, requiredUnless } from '@vuelidate/validators';
-import { type ExchangeFormData, KrakenAccountType, OkxLocation } from '@/modules/balances/types/exchanges';
+import { type ExchangeFormData, GateLocation, KrakenAccountType, OkxLocation } from '@/modules/balances/types/exchanges';
 import { useFormStateWatcher } from '@/modules/core/common/use-form';
 import { useLocationStore } from '@/modules/core/common/use-location-store';
 import { useLocations } from '@/modules/core/common/use-locations';
@@ -12,6 +12,7 @@ import { refOptional, useRefPropVModel } from '@/modules/core/common/validation/
 import { toMessages } from '@/modules/core/common/validation/validation';
 import BinancePairsSelector from '@/modules/settings/api-keys/BinancePairsSelector.vue';
 import ExchangeKeysFormStructure from '@/modules/settings/api-keys/exchange/ExchangeKeysFormStructure.vue';
+import GateRegionSelectorItem from '@/modules/settings/api-keys/exchange/GateRegionSelectorItem.vue';
 import OkxRegionSelectorItem from '@/modules/settings/api-keys/exchange/OkxRegionSelectorItem.vue';
 import { useSessionSettingsStore } from '@/modules/settings/use-session-settings-store';
 import ExchangeInput from '@/modules/shell/components/inputs/ExchangeInput.vue';
@@ -46,7 +47,12 @@ const isBinance = computed(() => {
   return ['binance', 'binanceus'].includes(location);
 });
 
-const isKraken = computed(() => {
+const isGate = computed<boolean>(() => {
+  const { location } = get(modelValue);
+  return location === 'gate';
+});
+
+const isKraken = computed<boolean>(() => {
   const { location } = get(modelValue);
   return ['kraken'].includes(location);
 });
@@ -126,6 +132,7 @@ const krakenAccountType = useRefPropVModel(modelValue, 'krakenAccountType');
 const krakenFuturesApiKey = useRefPropVModel(modelValue, 'krakenFuturesApiKey');
 const krakenFuturesApiSecret = useRefPropVModel(modelValue, 'krakenFuturesApiSecret');
 const binanceMarkets = useRefPropVModel(modelValue, 'binanceMarkets');
+const gateLocation = useRefPropVModel(modelValue, 'gateLocation');
 const okxLocation = useRefPropVModel(modelValue, 'okxLocation');
 
 const name = computed<string>({
@@ -153,6 +160,7 @@ useFormStateWatcher({
   apiKey,
   apiSecret,
   binanceMarkets,
+  gateLocation,
   krakenAccountType,
   krakenFuturesApiKey,
   krakenFuturesApiSecret,
@@ -189,6 +197,16 @@ function toggleFuturesEdit() {
     });
   }
 }
+
+const gateLocations = GateLocation.options.map((item) => {
+  const translationKey = `backend_mappings.exchanges.gate.location.${item.toLowerCase()}`;
+  const label = te(translationKey) ? t(translationKey) : item;
+
+  return {
+    identifier: item,
+    label,
+  };
+});
 
 const krakenAccountTypes = KrakenAccountType.options.map((item) => {
   const translationKey = `backend_mappings.exchanges.kraken.type.${item}`;
@@ -258,6 +276,12 @@ const v$ = useVuelidate({
       requiredIf(editMode),
     ),
   },
+  gateLocation: {
+    required: helpers.withMessage(
+      t('exchange_keys_form.validation.non_empty'),
+      requiredIf(isGate),
+    ),
+  },
   okxLocation: {
     required: helpers.withMessage(
       t('exchange_keys_form.validation.non_empty'),
@@ -278,6 +302,7 @@ const v$ = useVuelidate({
   binanceMarkets,
   name: nameProp,
   newName: newNameProp,
+  gateLocation,
   okxLocation,
   passphrase,
 }, { $autoDirty: true, $externalResults: errorMessages });
@@ -292,6 +317,7 @@ function onExchangeChange(exchange?: string) {
     binanceMarkets: undefined,
     krakenAccountType: isKraken ? 'starter' : undefined,
     krakenFuturesApiKey: isKraken ? '' : undefined,
+    gateLocation: name === 'gate' ? 'global' : undefined,
     krakenFuturesApiSecret: isKraken ? '' : undefined,
     location: name,
     mode: get(modelValue, 'mode'),
@@ -359,6 +385,30 @@ defineExpose({
       text-attr="label"
       variant="outlined"
     />
+
+    <RuiMenuSelect
+      v-if="isGate"
+      v-model="gateLocation"
+      data-cy="gate-location"
+      :options="gateLocations"
+      :label="t('exchange_keys_form.region')"
+      key-attr="identifier"
+      text-attr="label"
+      variant="outlined"
+    >
+      <template #selection="{ item }">
+        <GateRegionSelectorItem
+          :identifier="item.identifier"
+          :label="item.label"
+        />
+      </template>
+      <template #item="{ item }">
+        <GateRegionSelectorItem
+          :identifier="item.identifier"
+          :label="item.label"
+        />
+      </template>
+    </RuiMenuSelect>
 
     <RuiMenuSelect
       v-if="isOkx"

@@ -148,7 +148,7 @@ def test_cryptocompare_asset_support(cryptocompare):
         'TFC',  # TheFutbolCoin but The Freedom Coin in CC
         strethaddress_to_identifier('0xE4f726Adc8e89C6a6017F01eadA77865dB22dA14'),  # balanced crypto pie but 0xE4f726Adc8e89C6a6017F01eadA77865dB22dA14 in CC  # noqa: E501
         strethaddress_to_identifier('0x7aBc60B3290F68c85f495fD2e0c3Bd278837a313'),  # Cyber Movie Chain but Crowdmachine in CC  # noqa: E501
-        strethaddress_to_identifier('0xBAE235823D7255D9D48635cEd4735227244Cd583'),  # Staker Token but Gateio Stater in CC  # noqa: E501
+        strethaddress_to_identifier('0xBAE235823D7255D9D48635cEd4735227244Cd583'),  # Staker Token but Gate Stater in CC  # noqa: E501
         strethaddress_to_identifier('0xe2DA716381d7E0032CECaA5046b34223fC3f218D'),  # Carbon Utility Token but CUTCoin in CC  # noqa: E501
         strethaddress_to_identifier('0x1FA3bc860bF823d792f04F662f3AA3a500a68814'),  # 1X Short Bitcoin Token but Hedgecoin in CC  # noqa: E501
         strethaddress_to_identifier('0xc7283b66Eb1EB5FB86327f08e1B5816b0720212B'),  # Tribe Token (FEI) but another TribeToken in CC  # noqa: E501

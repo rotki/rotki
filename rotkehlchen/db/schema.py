@@ -120,6 +120,8 @@ INSERT OR IGNORE INTO location(location, seq) VALUES ('x', 56);
 INSERT OR IGNORE INTO location(location, seq) VALUES ('y', 57);
 /* Monad */
 INSERT OR IGNORE INTO location(location, seq) VALUES ('z', 58);
+/* Gate */
+INSERT OR IGNORE INTO location(location, seq) VALUES ('{', 59);
 """
 
 # Custom enum table for Balance categories (asset/liability)

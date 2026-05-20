@@ -471,6 +471,31 @@ def asset_from_bitcoinde(bitcoinde: str) -> AssetWithOracles:
     ))
 
 
+def asset_from_gate(gate_name: str) -> AssetWithOracles:
+    """May raise:
+    - DeserializationError
+    - UnsupportedAsset
+    - UnknownAsset
+    """
+    if not isinstance(gate_name, str):
+        raise DeserializationError(f'Got non-string type {type(gate_name)} for gate asset')
+
+    # Some gate assets have network suffixes like USDT_TRX. Try the full name first,
+    # then try without the suffix.
+    name = GlobalDBHandler.get_assetid_from_exchange_name(
+        exchange=Location.GATE,
+        symbol=gate_name,
+        default=gate_name,
+    )
+    if name == gate_name and '_' in gate_name:
+        name = GlobalDBHandler.get_assetid_from_exchange_name(
+            exchange=Location.GATE,
+            symbol=(split_name := gate_name.split('_', maxsplit=1)[0]),
+            default=split_name,
+        )
+    return symbol_to_asset_or_token(name)
+
+
 LOCATION_TO_ASSET_MAPPING: dict[Location, Callable[[str], AssetWithOracles]] = {
     Location.BINANCE: asset_from_binance,
     Location.CRYPTOCOM: asset_from_cryptocom,
@@ -488,5 +513,6 @@ LOCATION_TO_ASSET_MAPPING: dict[Location, Callable[[str], AssetWithOracles]] = {
     Location.WOO: asset_from_woo,
     Location.HTX: asset_from_htx,
     Location.BITCOINDE: asset_from_bitcoinde,
+    Location.GATE: asset_from_gate,
     Location.EXTERNAL: asset_from_common_identifier,
 }

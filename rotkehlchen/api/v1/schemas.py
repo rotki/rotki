@@ -98,6 +98,7 @@ from rotkehlchen.exchanges.constants import (
     EXCHANGES_WITHOUT_API_SECRET,
     SUPPORTED_EXCHANGES,
 )
+from rotkehlchen.exchanges.gate import GateLocation
 from rotkehlchen.exchanges.kraken import KrakenAccountType
 from rotkehlchen.exchanges.okx import OkxLocation
 from rotkehlchen.fval import FVal
@@ -2025,6 +2026,7 @@ class ExchangesResourceEditSchema(BinanceMarketsSchemaMixin, KrakenFutureKeysSch
     passphrase = EmptyAsNoneStringField(load_default=None)
     kraken_account_type = SerializableEnumField(enum_class=KrakenAccountType, load_default=None)
     okx_location = SerializableEnumField(enum_class=OkxLocation, load_default=None)
+    gate_location = SerializableEnumField(enum_class=GateLocation, load_default=None)
 
 
 class ExchangesResourceAddSchema(BinanceMarketsSchemaMixin, KrakenFutureKeysSchemaMixin):
@@ -2034,6 +2036,7 @@ class ExchangesResourceAddSchema(BinanceMarketsSchemaMixin, KrakenFutureKeysSche
     passphrase = EmptyAsNoneStringField(load_default=None)
     kraken_account_type = SerializableEnumField(enum_class=KrakenAccountType, load_default=None)
     okx_location = SerializableEnumField(enum_class=OkxLocation, load_default=None)
+    gate_location = SerializableEnumField(enum_class=GateLocation, load_default=None)
 
     @validates_schema
     def validate_schema(

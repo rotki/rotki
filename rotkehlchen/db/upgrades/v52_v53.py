@@ -42,4 +42,10 @@ CREATE INDEX IF NOT EXISTS idx_event_metrics_metric_key_asset_sort_key ON event_
 CREATE INDEX IF NOT EXISTS idx_event_metrics_asset ON event_metrics(asset);
 """)  # noqa: E501
 
+    @progress_step(description='Add Gate location.')
+    def _add_gate_location(write_cursor: 'DBCursor') -> None:
+        write_cursor.execute(
+            "INSERT OR IGNORE INTO location(location, seq) VALUES ('{', 59);",
+        )
+
     perform_userdb_upgrade_steps(db=db, progress_handler=progress_handler)

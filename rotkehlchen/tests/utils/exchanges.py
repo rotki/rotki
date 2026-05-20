@@ -21,6 +21,7 @@ from rotkehlchen.exchanges.coinbase import Coinbase
 from rotkehlchen.exchanges.coinbaseprime import Coinbaseprime
 from rotkehlchen.exchanges.cryptocom import Cryptocom
 from rotkehlchen.exchanges.exchange import ExchangeInterface, ExchangeWithoutApiSecret
+from rotkehlchen.exchanges.gate import Gate
 from rotkehlchen.exchanges.gemini import Gemini
 from rotkehlchen.exchanges.htx import Htx
 from rotkehlchen.exchanges.iconomi import Iconomi
@@ -872,6 +873,19 @@ def create_test_htx(
     )
 
 
+def create_test_gate(
+        database: DBHandler,
+        msg_aggregator: MessagesAggregator,
+) -> Gate:
+    return Gate(
+        name='gate',
+        api_key=make_api_key(),
+        secret=make_api_secret(),
+        database=database,
+        msg_aggregator=msg_aggregator,
+    )
+
+
 def create_test_kucoin(
         database: DBHandler,
         msg_aggregator: MessagesAggregator,
@@ -1081,6 +1095,14 @@ def try_get_first_exchange(
         exchange_manager: ExchangeManager,
         location: Literal[Location.HTX],
 ) -> Htx | None:
+    ...
+
+
+@overload
+def try_get_first_exchange(
+        exchange_manager: ExchangeManager,
+        location: Literal[Location.GATE],
+) -> Gate | None:
     ...
 
 

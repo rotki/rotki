@@ -310,6 +310,7 @@ if TYPE_CHECKING:
         HistoryEventFilterQuery,
         InternalTxConflictsFilterQuery,
     )
+    from rotkehlchen.exchanges.gate import GateLocation
     from rotkehlchen.exchanges.kraken import KrakenAccountType
     from rotkehlchen.exchanges.okx import OkxLocation
     from rotkehlchen.history.events.structures.base import HistoryBaseEntry
@@ -608,6 +609,7 @@ class ExchangesResource(BaseMethodView):
             kraken_futures_api_secret: ApiSecret | None,
             binance_markets: list[str] | None,
             okx_location: Optional['OkxLocation'],
+            gate_location: Optional['GateLocation'],
     ) -> Response:
         return self.rest_api.setup_exchange(
             name=name,
@@ -620,6 +622,7 @@ class ExchangesResource(BaseMethodView):
             kraken_futures_api_secret=kraken_futures_api_secret,
             binance_markets=binance_markets,
             okx_location=okx_location,
+            gate_location=gate_location,
         )
 
     @require_loggedin_user()
@@ -637,6 +640,7 @@ class ExchangesResource(BaseMethodView):
             kraken_futures_api_secret: ApiSecret | None,
             binance_markets: list[str] | None,
             okx_location: Optional['OkxLocation'],
+            gate_location: Optional['GateLocation'],
     ) -> Response:
         return self.rest_api.edit_exchange(
             name=name,
@@ -650,6 +654,7 @@ class ExchangesResource(BaseMethodView):
             kraken_futures_api_secret=kraken_futures_api_secret,
             binance_markets=binance_markets,
             okx_location=okx_location,
+            gate_location=gate_location,
         )
 
     @require_loggedin_user()

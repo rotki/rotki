@@ -97,12 +97,13 @@ export function useExchanges(): UseExchangesReturn {
     setConnectedExchanges([...get(connectedExchanges), exchange]);
   };
 
-  const editExchange = ({ exchange: { krakenAccountType, location, name: oldName, okxLocation }, newName }: EditExchange): void => {
+  const editExchange = ({ exchange: { gateLocation, krakenAccountType, location, name: oldName, okxLocation }, newName }: EditExchange): void => {
     const exchanges = [...get(connectedExchanges)];
     const name = newName ?? oldName;
     const index = exchanges.findIndex(value => value.name === oldName && value.location === location);
     exchanges[index] = {
       ...exchanges[index],
+      gateLocation,
       krakenAccountType,
       location,
       name,
@@ -160,13 +161,14 @@ export function useExchanges(): UseExchangesReturn {
   };
 
   const setupExchange = async (exchange: ExchangeFormData): Promise<boolean> => {
-    const { krakenAccountType, krakenFuturesApiKey, krakenFuturesApiSecret, location, mode, newName, okxLocation } = exchange;
+    const { gateLocation, krakenAccountType, krakenFuturesApiKey, krakenFuturesApiSecret, location, mode, newName, okxLocation } = exchange;
 
     const filteredPayload: ExchangeFormData = {
       ...exchange,
       krakenAccountType: location === 'kraken' ? krakenAccountType : undefined,
       krakenFuturesApiKey: location === 'kraken' ? krakenFuturesApiKey : undefined,
       krakenFuturesApiSecret: location === 'kraken' ? krakenFuturesApiSecret : undefined,
+      gateLocation: location === 'gate' ? gateLocation : undefined,
       okxLocation: location === 'okx' ? okxLocation : undefined,
     };
 

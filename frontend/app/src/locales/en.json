@@ -1595,6 +1595,13 @@
       }
     },
     "exchanges": {
+      "gate": {
+        "location": {
+          "europe": "Europe",
+          "global": "Global",
+          "us": "United States (US)"
+        }
+      },
       "kraken": {
         "type": {
           "intermediate": "Intermediate",
