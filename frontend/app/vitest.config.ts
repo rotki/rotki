@@ -44,7 +44,7 @@ export default mergeConfig(
         provider: 'v8',
         reportsDirectory: 'tests/unit/coverage',
         reporter: ['json', 'lcov', 'html'],
-        include: ['src/*'],
+        include: ['src/**'],
         exclude: ['node_modules', 'tests/', '**/*.d.ts', '**/*.spec.ts'],
       },
     },

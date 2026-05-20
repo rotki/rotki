@@ -212,7 +212,7 @@ jobs:
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           files: ./frontend/app/tests/e2e/coverage/lcov.info
-          flags: e2e-shard-${{ matrix.shard }}
+          flags: frontend_integration
           fail_ci_if_error: false
 
       - name: Upload test artifacts
