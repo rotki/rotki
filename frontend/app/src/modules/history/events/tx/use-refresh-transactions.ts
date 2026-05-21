@@ -44,7 +44,7 @@ export function useRefreshTransactions(): UseRefreshTransactionsReturn {
 
   const { initializeQueryStatus, resetQueryStatus, stopSyncing: stopTxSyncing } = useTxQueryStatusStore();
   const { initializeQueryStatus: initializeExchangeEventsQueryStatus, resetQueryStatus: resetExchangesQueryStatus, stopSyncing: stopEventsSyncing } = useEventsQueryStatusStore();
-  const { getAllAccounts } = useHistoryTransactionAccounts();
+  const { filterDisabledChainAccounts, getAllAccounts } = useHistoryTransactionAccounts();
   const { fetchDisabled, isFirstLoad, resetStatus, setStatus } = useStatusUpdater(Section.HISTORY);
   const { fetchUndecodedTransactionsBreakdown, fetchUndecodedTransactionsStatus } = useHistoryTransactionDecoding();
   const { resetDecodingSyncProgress, resetUndecodedTransactionsStatus, stopDecodingSyncProgress } = useDecodingStatusStore();
@@ -122,9 +122,11 @@ export function useRefreshTransactions(): UseRefreshTransactionsReturn {
     else
       resolved = { accounts: payload.accounts || [], exchanges: payload.exchanges || [] };
 
+    const accounts = filterDisabledChainAccounts(resolved.accounts);
+
     return {
-      accounts: resolved.accounts,
-      decodableAccounts: resolved.accounts.filter(account => isDecodableChains(account.chain)),
+      accounts,
+      decodableAccounts: accounts.filter(account => isDecodableChains(account.chain)),
       exchanges: resolved.exchanges,
       fullRefresh,
       queryExchanges: fullRefresh || !!payload.exchanges,
@@ -241,7 +243,11 @@ export function useRefreshTransactions(): UseRefreshTransactionsReturn {
     const fullRefresh = Object.keys(payload).length === 0;
 
     const usedExchanges = filterSyncingExchanges(payload.exchanges);
-    const allCurrentAccounts = resolveInputAccounts(payload.accounts, fullRefresh, chains);
+    // Filter before novelty detection so disabled-chain accounts are not flagged as newly
+    // added and queued as pending refreshes that the backend would silently skip.
+    const allCurrentAccounts = filterDisabledChainAccounts(
+      resolveInputAccounts(payload.accounts, fullRefresh, chains),
+    );
     const novelty = detectNovelty(allCurrentAccounts, usedExchanges);
 
     if (shouldNotRefresh(userInitiated, novelty))
