@@ -12,6 +12,7 @@ export const SettingsHighlightIds = {
   AUTO_CREATE_PROFIT_EVENTS: 'setting-auto-create-profit-events',
   AUTO_DETECT_TOKENS: 'setting-auto-detect-tokens',
   AUTO_DETECT_TOKENS_COOLDOWN: 'setting-auto-detect-tokens-cooldown',
+  AUTO_DETECT_TOKENS_ON_LOGIN: 'setting-auto-detect-tokens-on-login',
   BALANCE_SAVE_FREQUENCY: 'setting-balance-save-frequency',
   BTC_DERIVATION_GAP: 'setting-btc-derivation-gap',
   CHAINS_TO_SKIP_DETECTION: 'setting-chains-to-skip-detection',

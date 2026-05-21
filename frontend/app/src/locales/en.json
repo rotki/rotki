@@ -3171,13 +3171,21 @@
     },
     "auto_detect_tokens_cooldown": {
       "label": "Cooldown in hours",
-      "subtitle": "Minimum time between two automatic token-detection runs. Manual re-detect ignores this.",
+      "subtitle": "Minimum time between two on-login token-detection runs (1 to 168 hours). Manual re-detect ignores this.",
       "title": "Auto detect tokens cooldown",
       "validation": {
         "error": "Error saving the auto-detect cooldown",
         "invalid_value": "Cooldown must be between {start} and {end} hours",
         "non_empty": "Cooldown cannot be empty",
         "success": "Auto-detect cooldown updated"
+      }
+    },
+    "auto_detect_tokens_on_login": {
+      "label": "Re-run token detection on login",
+      "subtitle": "When enabled, the app triggers token detection after the first balance scan following login, so newly acquired tokens show up without waiting for the next periodic backend run.",
+      "title": "Auto detect tokens on login",
+      "validation": {
+        "error": "Error toggling on-login token auto-detection"
       }
     },
     "balance_frequency": {

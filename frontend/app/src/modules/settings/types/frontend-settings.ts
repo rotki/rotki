@@ -143,8 +143,8 @@ const EvmQueryIndicatorDismissalThreshold = z
 
 const AutoDetectTokensCooldownHours = z
   .number()
-  .min(1)
-  .max(Constraints.MAX_HOURS_DELAY)
+  .min(Constraints.AUTO_DETECT_TOKENS_COOLDOWN_MIN_HOURS)
+  .max(Constraints.AUTO_DETECT_TOKENS_COOLDOWN_MAX_HOURS)
   .int();
 
 const LastAutoDetectAt = z.number().int().nonnegative();
@@ -172,6 +172,7 @@ export const FrontendSettings = z.object({
   abbreviateNumber: z.boolean().default(false),
   amountRoundingMode: RoundingMode.default(BigNumber.ROUND_UP),
   autoDetectTokensCooldownHours: AutoDetectTokensCooldownHours.default(24),
+  autoDetectTokensOnLogin: z.boolean().default(false),
   balanceValueThreshold: BalanceValueThreshold.default({}),
   blockchainRefreshButtonBehaviour: BlockchainRefreshButtonBehaviourEnum.default(
     BlockchainRefreshButtonBehaviour.ONLY_REFRESH_BALANCES,
