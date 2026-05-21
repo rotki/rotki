@@ -2,7 +2,7 @@ import logging
 import random
 from collections import defaultdict
 from collections.abc import Callable
-from typing import TYPE_CHECKING, NamedTuple
+from typing import TYPE_CHECKING, Final, NamedTuple
 
 import gevent
 
@@ -55,6 +55,7 @@ from rotkehlchen.tasks.calendar import (
     maybe_create_calendar_reminders,
     notify_reminders,
 )
+from rotkehlchen.tasks.historical_balances import process_historical_balances
 from rotkehlchen.tasks.internal_tx_conflicts import (
     repull_internal_tx_conflicts,
 )
@@ -68,10 +69,14 @@ from rotkehlchen.types import (
     ExchangeLocationID,
     SupportedBlockchain,
     Timestamp,
+    TimestampMS,
 )
 from rotkehlchen.utils.misc import ts_now
 
 from .events import process_eth2_events
+
+HISTORICAL_BALANCE_PROCESSING_REFRESH: Final = DAY_IN_SECONDS
+HISTORICAL_BALANCE_PROCESSING_TASK_NAME: Final = 'Process historical balances'
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.aggregator import ChainsAggregator
@@ -80,6 +85,7 @@ if TYPE_CHECKING:
     from rotkehlchen.exchanges.manager import ExchangeManager
     from rotkehlchen.externalapis.cryptocompare import Cryptocompare
     from rotkehlchen.greenlets.manager import GreenletManager
+    from rotkehlchen.history.processing import HistoryProcessingCoordinator
     from rotkehlchen.premium.sync import PremiumSyncManager
     from rotkehlchen.user_messages import MessagesAggregator
 
@@ -126,6 +132,7 @@ class TaskManager:
             msg_aggregator: 'MessagesAggregator',
             data_updater: 'RotkiDataUpdater',
             username: str,
+            history_processing_coordinator: 'HistoryProcessingCoordinator',
     ) -> None:
         self.should_schedule = False
         self.max_tasks_num = max_tasks_num
@@ -153,6 +160,7 @@ class TaskManager:
         self.premium_sync_manager: PremiumSyncManager | None = premium_sync_manager
         self.data_updater = data_updater
         self.username = username
+        self.history_processing_coordinator = history_processing_coordinator
 
         self.potential_tasks: list[Callable[[], list[gevent.Greenlet] | None]] = [
             self._maybe_schedule_cryptocompare_query,
@@ -165,6 +173,7 @@ class TaskManager:
             self._maybe_check_premium_status,
             self._maybe_check_data_updates,
             self._maybe_update_snapshot_balances,
+            self._maybe_process_historical_balances,
             self._maybe_detect_evm_accounts,
             self._maybe_update_ilk_cache,
             self._maybe_query_produced_blocks,
@@ -538,6 +547,50 @@ class TaskManager:
             self.premium_check_retries = 0
         finally:
             self.last_premium_status_check = now
+
+    def _spawn_historical_balance_processing(
+            self,
+            from_ts: TimestampMS | None,
+    ) -> list[gevent.Greenlet]:
+        log.debug(f'Scheduling task to {HISTORICAL_BALANCE_PROCESSING_TASK_NAME}')
+        return [self.greenlet_manager.spawn_and_track(
+            after_seconds=None,
+            task_name=HISTORICAL_BALANCE_PROCESSING_TASK_NAME,
+            exception_is_error=True,
+            method=process_historical_balances,
+            database=self.database,
+            msg_aggregator=self.msg_aggregator,
+            from_ts=from_ts,
+        )]
+
+    def trigger_historical_balance_processing(self) -> list[gevent.Greenlet] | None:
+        if self.history_processing_coordinator.is_history_fetching():
+            return None
+        return self._spawn_historical_balance_processing(from_ts=None)
+
+    def _maybe_process_historical_balances(self) -> list[gevent.Greenlet] | None:
+        if self.history_processing_coordinator.is_history_fetching():
+            return None
+
+        with self.database.conn.read_ctx() as cursor:
+            stale_from_ts, last_processing_ts = self.database.get_static_caches(
+                cursor=cursor,
+                names=(
+                    DBCacheStatic.STALE_BALANCES_FROM_TS,
+                    DBCacheStatic.LAST_HISTORICAL_BALANCE_PROCESSING_TS,
+                ),
+            )
+
+        if (
+            stale_from_ts is None and
+            last_processing_ts is not None and
+            ts_now() - Timestamp(int(last_processing_ts)) < HISTORICAL_BALANCE_PROCESSING_REFRESH
+        ):
+            return None
+
+        return self._spawn_historical_balance_processing(
+            from_ts=TimestampMS(int(stale_from_ts)) if stale_from_ts is not None else None,
+        )
 
     def _maybe_update_snapshot_balances(self) -> list[gevent.Greenlet] | None:
         """

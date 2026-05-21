@@ -2,6 +2,7 @@
 import pytest
 
 from rotkehlchen.db.updates import RotkiDataUpdater
+from rotkehlchen.history.processing import HistoryProcessingCoordinator
 from rotkehlchen.tasks.manager import TaskManager
 
 
@@ -58,6 +59,7 @@ def fixture_task_manager(
         msg_aggregator=msg_aggregator,
         data_updater=RotkiDataUpdater(msg_aggregator=msg_aggregator, user_db=database),
         username=username,
+        history_processing_coordinator=HistoryProcessingCoordinator(),
     )
     task_manager.should_schedule = True
     return task_manager

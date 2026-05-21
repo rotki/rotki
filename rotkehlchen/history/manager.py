@@ -9,6 +9,7 @@ from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.exchanges.manager import ExchangeManager
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.base import HistoryBaseEntry, HistoryEvent
+from rotkehlchen.history.processing import HistoryProcessingCoordinator
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.premium.premium import UserLimitType, get_user_limit
 from rotkehlchen.types import EVM_CHAINS_WITH_TRANSACTIONS, Location, Timestamp
@@ -48,6 +49,7 @@ class HistoryQueryingManager:
             msg_aggregator: MessagesAggregator,
             exchange_manager: ExchangeManager,
             chains_aggregator: 'ChainsAggregator',
+            processing_coordinator: HistoryProcessingCoordinator,
     ) -> None:
 
         self.msg_aggregator = msg_aggregator
@@ -55,6 +57,7 @@ class HistoryQueryingManager:
         self.db = db
         self.exchange_manager = exchange_manager
         self.chains_aggregator = chains_aggregator
+        self.processing_coordinator = processing_coordinator
         self._reset_variables()
 
     def timestamp_to_date(self, timestamp: Timestamp) -> str:
@@ -131,6 +134,19 @@ class HistoryQueryingManager:
         Creates all events history from start_ts to end_ts. Returns it
         sorted by ascending timestamp.
         """
+        with self.processing_coordinator.history_fetch():
+            return self._get_history(
+                start_ts=start_ts,
+                end_ts=end_ts,
+                has_premium=has_premium,
+            )
+
+    def _get_history(
+            self,
+            start_ts: Timestamp,
+            end_ts: Timestamp,
+            has_premium: bool,
+    ) -> tuple[str, list['AccountingEventMixin']]:
         self._reset_variables()
         step = 0
         total_steps = (
