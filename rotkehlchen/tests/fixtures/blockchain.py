@@ -108,6 +108,7 @@ def _initialize_and_yield_evm_inquirer_fixture(
     nodes_to_connect_to = maybe_modify_rpc_nodes(database, blockchain, manager_connect_at_start)
 
     with ExitStack() as init_stack:
+        init_stack.enter_context(patch.object(Etherscan, 'detect_api_key_tier', return_value=None))
         if mock_other_web3 is True:
             init_stack.enter_context(patch(  # at init of Inquirer attempt no connection if mocking
                 class_path,

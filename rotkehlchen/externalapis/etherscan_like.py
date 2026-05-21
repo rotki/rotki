@@ -279,6 +279,7 @@ class EtherscanLikeApi(ABC):
             module: str,
             action: Literal[
                 'eth_getBlockByNumber',
+                'getapilimit',
                 'getblockreward',
             ],
             options: dict[str, Any] | None = None,
@@ -342,8 +343,8 @@ class EtherscanLikeApi(ABC):
         api_url = self._get_url(chain_id=chain_id)
         response = None
         while backoff < backoff_limit:
-            log.debug(f'Querying {self.name} for {chain_id}: {api_url} with params: {params}')
             self._rate_limiter.acquire()
+            log.debug(f'Querying {self.name} for {chain_id}: {api_url} with params: {params}')
             try:
                 response = self.session.get(url=api_url, params=params, timeout=timeout)
             except requests.exceptions.RequestException as e:
