@@ -60,8 +60,6 @@ vi.mock('@/modules/shell/app/use-electron-interop', () => {
   };
 });
 
-vi.mock('');
-
 describe('useAssets', () => {
   setActivePinia(createPinia());
   let store: ReturnType<typeof useAssets>;

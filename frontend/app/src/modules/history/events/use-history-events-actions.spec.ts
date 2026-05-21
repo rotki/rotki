@@ -1,4 +1,3 @@
-import type { Ref } from 'vue';
 import type { Exchange } from '@/modules/balances/types/exchanges';
 import type { Collection } from '@/modules/core/common/collection';
 import type { HistoryEventAction } from '@/modules/history/events/action-types';
@@ -7,6 +6,7 @@ import type { RepullingTransactionResult } from '@/modules/history/events/tx/use
 import { type Blockchain, HistoryEventEntryType, Severity } from '@rotki/common';
 import flushPromises from 'flush-promises';
 import { afterEach, beforeEach, describe, expect, it, type Mock, vi } from 'vitest';
+import { ref, type Ref } from 'vue';
 import { Routes } from '@/router/routes';
 import { useHistoryEventsActions } from './use-history-events-actions';
 

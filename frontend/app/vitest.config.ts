@@ -1,11 +1,10 @@
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { merge } from 'es-toolkit';
 import { configDefaults, defineConfig, mergeConfig } from 'vitest/config';
 import viteConfig from './vite.config';
 
 export default mergeConfig(
-  merge(viteConfig, {
+  mergeConfig(viteConfig, {
     resolve: {
       alias: {
         '@test': `${path.join(__dirname, 'tests', 'unit')}/`,
