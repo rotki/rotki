@@ -6,23 +6,22 @@ import { useValidation } from '@/modules/core/common/use-validation';
 import { toMessages } from '@/modules/core/common/validation/validation';
 import SettingsOption from '@/modules/settings/controls/SettingsOption.vue';
 import { useFrontendSettingsStore } from '@/modules/settings/use-frontend-settings-store';
-import { useGeneralSettingsStore } from '@/modules/settings/use-general-settings-store';
 
-const { autoDetectTokensCooldownHours } = storeToRefs(useFrontendSettingsStore());
+const { autoDetectTokensCooldownHours, autoDetectTokensOnLogin } = storeToRefs(useFrontendSettingsStore());
 const cooldownHours = ref<string>(get(autoDetectTokensCooldownHours).toString());
-const { autoDetectTokens } = storeToRefs(useGeneralSettingsStore());
 
 const { t } = useI18n({ useScope: 'global' });
 
-const maxHours = Constraints.MAX_HOURS_DELAY;
+const minHours = Constraints.AUTO_DETECT_TOKENS_COOLDOWN_MIN_HOURS;
+const maxHours = Constraints.AUTO_DETECT_TOKENS_COOLDOWN_MAX_HOURS;
 const rules = {
   cooldownHours: {
     between: helpers.withMessage(
       t('general_settings.auto_detect_tokens_cooldown.validation.invalid_value', {
         end: maxHours,
-        start: 1,
+        start: minHours,
       }),
-      between(1, maxHours),
+      between(minHours, maxHours),
     ),
     required: helpers.withMessage(
       t('general_settings.auto_detect_tokens_cooldown.validation.non_empty'),
@@ -48,7 +47,7 @@ watch(autoDetectTokensCooldownHours, () => {
 
 <template>
   <SettingsOption
-    v-if="autoDetectTokens"
+    v-if="autoDetectTokensOnLogin"
     frontend-setting
     setting="autoDetectTokensCooldownHours"
     :transform="transform"
@@ -67,7 +66,7 @@ watch(autoDetectTokensCooldownHours, () => {
         v-model="cooldownHours"
         variant="outlined"
         color="primary"
-        min="1"
+        :min="minHours"
         :max="maxHours"
         data-cy="auto-detect-tokens-cooldown-input"
         class="w-full"

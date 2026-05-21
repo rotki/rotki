@@ -14,6 +14,7 @@ export const useFrontendSettingsStore = defineStore('settings/frontend', () => {
   const enablePasswordConfirmation = useComputedRef(settings, 'enablePasswordConfirmation');
   const language = useComputedRef(settings, 'language');
   const autoDetectTokensCooldownHours = useComputedRef(settings, 'autoDetectTokensCooldownHours');
+  const autoDetectTokensOnLogin = useComputedRef(settings, 'autoDetectTokensOnLogin');
   const lastAppliedSettingsVersion = useComputedRef(settings, 'lastAppliedSettingsVersion');
   const lastAutoDetectAt = useComputedRef(settings, 'lastAutoDetectAt');
   const timeframeSetting = useComputedRef(settings, 'timeframeSetting');
@@ -95,6 +96,7 @@ export const useFrontendSettingsStore = defineStore('settings/frontend', () => {
     abbreviateNumber,
     amountRoundingMode,
     autoDetectTokensCooldownHours,
+    autoDetectTokensOnLogin,
     balanceValueThreshold,
     blockchainRefreshButtonBehaviour,
     currencyLocation,

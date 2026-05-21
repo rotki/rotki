@@ -1,7 +1,6 @@
 import { useTokenDetectionOrchestrator } from '@/modules/balances/blockchain/use-token-detection-orchestrator';
 import { logger } from '@/modules/core/common/logging/logging';
 import { useFrontendSettingsStore } from '@/modules/settings/use-frontend-settings-store';
-import { useGeneralSettingsStore } from '@/modules/settings/use-general-settings-store';
 import { useSettingsOperations } from '@/modules/settings/use-settings-operations';
 
 interface UseAutoTokenDetectionReturn {
@@ -14,11 +13,14 @@ const HOUR_IN_MS = 60 * 60 * 1000;
 
 export function useAutoTokenDetection(): UseAutoTokenDetectionReturn {
   const { detectAllTokens } = useTokenDetectionOrchestrator();
-  const { autoDetectTokens } = storeToRefs(useGeneralSettingsStore());
-  const { autoDetectTokensCooldownHours, lastAutoDetectAt } = storeToRefs(useFrontendSettingsStore());
+  const {
+    autoDetectTokensCooldownHours,
+    autoDetectTokensOnLogin,
+    lastAutoDetectAt,
+  } = storeToRefs(useFrontendSettingsStore());
   const { updateFrontendSetting } = useSettingsOperations();
 
-  const inFlight = ref<boolean>(false);
+  const inFlight = shallowRef<boolean>(false);
 
   function isCooldownElapsed(): boolean {
     const now = Date.now();
@@ -33,8 +35,8 @@ export function useAutoTokenDetection(): UseAutoTokenDetectionReturn {
   function skipReason(): string | null {
     if (get(inFlight))
       return 'already in-flight';
-    if (!get(autoDetectTokens))
-      return 'auto-detect-tokens disabled';
+    if (!get(autoDetectTokensOnLogin))
+      return 'auto-detect-tokens-on-login disabled';
     if (!isCooldownElapsed()) {
       const lastAt = get(lastAutoDetectAt);
       const remainingMs = get(autoDetectTokensCooldownHours) * HOUR_IN_MS - (Date.now() - lastAt);

@@ -133,6 +133,7 @@ describe('useFrontendSettingsStore', () => {
       newlyDetectedTokensTtlDays: 30,
       suppressNoIndexerChains: [],
       autoDetectTokensCooldownHours: 24,
+      autoDetectTokensOnLogin: false,
       lastAutoDetectAt: 0,
     };
 

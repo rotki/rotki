@@ -1,16 +1,8 @@
 import { libraryDefaults } from '@test/utils/provide-defaults';
 import { flushPromises, mount, type VueWrapper } from '@vue/test-utils';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import AutoDetectTokensCooldownSetting from '@/modules/settings/general/AutoDetectTokensCooldownSetting.vue';
 import { useFrontendSettingsStore } from '@/modules/settings/use-frontend-settings-store';
-
-const autoDetectTokensRef = ref<boolean>(true);
-
-vi.mock('@/modules/settings/use-general-settings-store', () => ({
-  useGeneralSettingsStore: (): { autoDetectTokens: typeof autoDetectTokensRef } => ({
-    autoDetectTokens: autoDetectTokensRef,
-  }),
-}));
 
 vi.mock('@/modules/settings/use-settings-operations', () => ({
   useSettingsOperations: (): Record<string, ReturnType<typeof vi.fn>> => ({
@@ -25,20 +17,17 @@ vi.mock('@/modules/settings/use-settings-operations', () => ({
 describe('autoDetectTokensCooldownSetting', () => {
   let wrapper: VueWrapper<InstanceType<typeof AutoDetectTokensCooldownSetting>>;
 
-  function createWrapper(): VueWrapper<InstanceType<typeof AutoDetectTokensCooldownSetting>> {
+  function createWrapper(autoDetectTokensOnLogin = true): VueWrapper<InstanceType<typeof AutoDetectTokensCooldownSetting>> {
     const pinia = createPinia();
     setActivePinia(pinia);
+    useFrontendSettingsStore().update({ autoDetectTokensOnLogin });
     return mount(AutoDetectTokensCooldownSetting, {
       global: { plugins: [pinia] },
       provide: libraryDefaults,
     });
   }
 
-  beforeEach(() => {
-    set(autoDetectTokensRef, true);
-  });
-
-  it('should render the cooldown input when auto-detect is enabled', async () => {
+  it('should render the cooldown input when on-login auto-detect is enabled', async () => {
     wrapper = createWrapper();
     await flushPromises();
 
@@ -47,9 +36,8 @@ describe('autoDetectTokensCooldownSetting', () => {
     expect(input.element.value).toBe('24');
   });
 
-  it('should hide the cooldown input when auto-detect is disabled', async () => {
-    set(autoDetectTokensRef, false);
-    wrapper = createWrapper();
+  it('should hide the cooldown input when on-login auto-detect is disabled', async () => {
+    wrapper = createWrapper(false);
     await flushPromises();
 
     expect(wrapper.find('[data-cy=auto-detect-tokens-cooldown-input]').exists()).toBe(false);
@@ -59,8 +47,7 @@ describe('autoDetectTokensCooldownSetting', () => {
     wrapper = createWrapper();
     await flushPromises();
 
-    const store = useFrontendSettingsStore();
-    store.update({ autoDetectTokensCooldownHours: 48 });
+    useFrontendSettingsStore().update({ autoDetectTokensCooldownHours: 48 });
     await flushPromises();
     await nextTick();
 

@@ -2,6 +2,7 @@
 import SettingsItem from '@/modules/settings/controls/SettingsItem.vue';
 import AskUserUponSizeDiscrepancySetting from '@/modules/settings/general/AskUserUponSizeDiscrepancySetting.vue';
 import AutoDetectTokensCooldownSetting from '@/modules/settings/general/AutoDetectTokensCooldownSetting.vue';
+import AutoDetectTokensOnLoginSetting from '@/modules/settings/general/AutoDetectTokensOnLoginSetting.vue';
 import AutoDetectTokensSetting from '@/modules/settings/general/AutoDetectTokensSetting.vue';
 import BalanceSaveFrequencySetting from '@/modules/settings/general/BalanceSaveFrequencySetting.vue';
 import BtcDerivationGapLimitSetting from '@/modules/settings/general/BtcDerivationGapLimitSetting.vue';
@@ -28,6 +29,9 @@ const { t } = useI18n({ useScope: 'global' });
     </template>
     <UsageAnalyticsSetting :id="SettingsHighlightIds.USAGE_ANALYTICS" />
     <AutoDetectTokensSetting :id="SettingsHighlightIds.AUTO_DETECT_TOKENS" />
+    <SettingsItem :id="SettingsHighlightIds.AUTO_DETECT_TOKENS_ON_LOGIN">
+      <AutoDetectTokensOnLoginSetting />
+    </SettingsItem>
     <SettingsItem :id="SettingsHighlightIds.AUTO_DETECT_TOKENS_COOLDOWN">
       <AutoDetectTokensCooldownSetting />
     </SettingsItem>

@@ -62,6 +62,7 @@ function getGeneralTab(routes: SettingsRoutes, t: T): TabGroup {
       { texts: [t('general_settings.title')], keywords: [t('general_settings.subtitle')] },
       { texts: [t('general_settings.title'), t('general_settings.usage_analytics.title')], highlightId: SettingsHighlightIds.USAGE_ANALYTICS },
       { texts: [t('general_settings.title'), t('general_settings.auto_detect_tokens.title')], highlightId: SettingsHighlightIds.AUTO_DETECT_TOKENS },
+      { texts: [t('general_settings.title'), t('general_settings.auto_detect_tokens_on_login.title')], keywords: [t('general_settings.auto_detect_tokens_on_login.subtitle')], highlightId: SettingsHighlightIds.AUTO_DETECT_TOKENS_ON_LOGIN },
       { texts: [t('general_settings.title'), t('general_settings.auto_detect_tokens_cooldown.title')], keywords: [t('general_settings.auto_detect_tokens_cooldown.subtitle')], highlightId: SettingsHighlightIds.AUTO_DETECT_TOKENS_COOLDOWN },
       { texts: [t('general_settings.title'), t('general_settings.display_date_in_localtime.title')], highlightId: SettingsHighlightIds.DISPLAY_DATE_IN_LOCALTIME },
       { texts: [t('general_settings.title'), t('sync_indicator.setting.ask_user_upon_size_discrepancy.title')], highlightId: SettingsHighlightIds.ASK_SIZE_DISCREPANCY },
