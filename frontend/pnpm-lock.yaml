@@ -300,12 +300,8 @@ overrides:
   yaml-eslint-parser: 1.3.2
 
 patchedDependencies:
-  app-builder-lib:
-    hash: 74f87c34f13b5c0d45e0c56b221cf7c77dac257298868081bdacddaa543aa97f
-    path: patches/app-builder-lib.patch
-  bignumber.js@9.3.1:
-    hash: 61396dd0164598dffc80190e90a8d2bd4ec88d03f7ec9956ab22182f63c0cb1d
-    path: patches/bignumber.js@9.3.1.patch
+  app-builder-lib: 74f87c34f13b5c0d45e0c56b221cf7c77dac257298868081bdacddaa543aa97f
+  bignumber.js@9.3.1: 61396dd0164598dffc80190e90a8d2bd4ec88d03f7ec9956ab22182f63c0cb1d
 
 importers:
 

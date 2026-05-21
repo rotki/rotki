@@ -1,7 +1,7 @@
 {
   "name": "rotki-workspace",
   "version": "1.0.0",
-  "packageManager": "pnpm@10.33.0",
+  "packageManager": "pnpm@11.1.2",
   "description": "A portfolio tracking, asset analytics and tax reporting application specializing in Cryptoassets that protects your privacy",
   "type": "module",
   "license": "AGPL-3.0",
@@ -55,7 +55,7 @@
   },
   "engines": {
     "node": ">=24 <25",
-    "pnpm": ">=10 <11"
+    "pnpm": ">=11 <12"
   },
   "lint-staged": {
     "*": "eslint",
