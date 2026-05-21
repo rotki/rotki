@@ -1,12 +1,11 @@
 #!/usr/bin/env node
 
-import type { OutputPlugin } from 'rollup';
 import { type ChildProcessWithoutNullStreams, spawn } from 'node:child_process';
 import process from 'node:process';
 import { cac } from 'cac';
 import consola from 'consola';
 import electron from 'electron';
-import { build, createLogger, createServer, type ViteDevServer } from 'vite';
+import { build, createLogger, createServer, type Plugin, type ViteDevServer } from 'vite';
 import { type BuildOutput, LOG_LEVEL, sharedConfig } from './setup';
 
 /** Messages on stderr that match any of the contained patterns will be stripped from output */
@@ -20,7 +19,7 @@ const stderrFilterPatterns = [
 interface WatcherConfig {
   name: string;
   configFile: string;
-  writeBundle: OutputPlugin['writeBundle'];
+  writeBundle: Plugin['writeBundle'];
 }
 
 interface ServeOptions {

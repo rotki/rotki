@@ -9,6 +9,7 @@ import { libraryDefaults } from '@test/utils/provide-defaults';
 import { type ComponentMountingOptions, mount, type VueWrapper } from '@vue/test-utils';
 import { type Pinia, setActivePinia } from 'pinia';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { computed } from 'vue';
 import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
 import EvmNativeTokenBreakdown from '@/modules/balances/EvmNativeTokenBreakdown.vue';
 import { BalanceType } from '@/modules/balances/types/balances';

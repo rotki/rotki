@@ -167,9 +167,15 @@ export default defineConfig({
     hmr: hmrEnabled,
     watch: {
       ignored: [
-        '**/.e2e/**',
-        '**/*.spec.ts',
-        '**/coverage/**',
+        /[/\\]\.e2e[/\\]/,
+        /\.spec\.ts$/,
+        /[/\\]coverage[/\\]/,
+        /[/\\]dist[/\\]/,
+        /[/\\]build[/\\]/,
+        /[/\\]\.nyc_output[/\\]/,
+        /[/\\]\.contract[/\\]/,
+        /[/\\]playwright-report[/\\]/,
+        /[/\\]tests[/\\]e2e[/\\]/,
       ],
     },
   },
@@ -178,7 +184,7 @@ export default defineConfig({
     outDir: 'dist',
     assetsDir: '.',
     minify: true,
-    rollupOptions: {
+    rolldownOptions: {
       external: [
         'electron',
         ...builtinModules.filter(isNotRequired).flatMap(p => [p, `node:${p}`]),
@@ -193,30 +199,38 @@ export default defineConfig({
             : currentName;
           return `${name}-[hash].js`;
         },
-        manualChunks: {
-          'vue-vendor': ['vue', 'vue-router', 'pinia', 'vue-i18n'],
-          'common': ['@rotki/common', 'bignumber.js'],
-          'ui-vendor': ['@rotki/ui-library'],
-          'chart': ['echarts/core', 'echarts/charts', 'echarts/components', 'echarts/renderers', 'vue-echarts'],
-          'editor': ['vanilla-jsoneditor'],
-          'utils': [
-            '@vueuse/math',
-            '@vueuse/core',
-            '@vueuse/shared',
-            '@vuelidate/core',
-            '@vuelidate/validators',
-            'ofetch',
-            'es-toolkit',
-            'imask',
-            'dayjs',
-            'consola',
-            'zod',
-          ],
-          'wallet-connect': [
-            '@reown/appkit',
-            '@reown/appkit-adapter-ethers',
-            '@walletconnect/core',
-          ],
+        manualChunks: (id: string): string | undefined => {
+          const chunkGroups: Record<string, string[]> = {
+            'vue-vendor': ['vue', 'vue-router', 'pinia', 'vue-i18n'],
+            'common': ['@rotki/common', 'bignumber.js'],
+            'ui-vendor': ['@rotki/ui-library'],
+            'chart': ['echarts', 'vue-echarts'],
+            'editor': ['vanilla-jsoneditor'],
+            'utils': [
+              '@vueuse/math',
+              '@vueuse/core',
+              '@vueuse/shared',
+              '@vuelidate/core',
+              '@vuelidate/validators',
+              'ofetch',
+              'es-toolkit',
+              'imask',
+              'dayjs',
+              'consola',
+              'zod',
+            ],
+            'wallet-connect': [
+              '@reown/appkit',
+              '@reown/appkit-adapter-ethers',
+              '@walletconnect/core',
+            ],
+          };
+          for (const [chunk, packages] of Object.entries(chunkGroups)) {
+            if (packages.some(pkg => id.includes(`/node_modules/${pkg}/`))) {
+              return chunk;
+            }
+          }
+          return undefined;
         },
       },
     },

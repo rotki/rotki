@@ -29,8 +29,8 @@ export function useEditModeStateTracker(): EditModeStateTracker {
    */
   function unwrapStatesRefs(statesRefs: Record<string, Ref<any>>): Record<string, any> {
     const unwrapped: Record<string, any> = {};
-    for (const [key, ref] of Object.entries(statesRefs)) {
-      unwrapped[key] = get(ref);
+    for (const [key, refValue] of Object.entries(statesRefs)) {
+      unwrapped[key] = get(refValue);
     }
     return unwrapped;
   }

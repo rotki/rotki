@@ -63,7 +63,7 @@ export default defineConfig({
       entry: 'electron/main/index.ts',
       formats: ['es'],
     },
-    rollupOptions: {
+    rolldownOptions: {
       external: ['electron', ...builtinModules.flatMap(p => [p, `node:${p}`])],
       output: {
         entryFileNames: 'main.js',
@@ -81,7 +81,7 @@ export default defineConfig({
     },
     emptyOutDir: false,
   },
-  esbuild: {
+  oxc: {
     target: 'node24',
   },
 });

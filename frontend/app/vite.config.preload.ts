@@ -26,7 +26,7 @@ export default defineConfig({
       entry: 'electron/preload/index.ts',
       formats: ['cjs'],
     },
-    rollupOptions: {
+    rolldownOptions: {
       external: ['electron', ...builtinModules.flatMap(p => [p, `node:${p}`])],
       output: {
         entryFileNames: 'preload.js',
@@ -34,7 +34,7 @@ export default defineConfig({
     },
     emptyOutDir: false,
   },
-  esbuild: {
+  oxc: {
     target: 'node24',
   },
 });

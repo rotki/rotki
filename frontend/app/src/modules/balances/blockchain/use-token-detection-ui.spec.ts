@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { ref } from 'vue';
 import { useTokenDetectionStore } from './use-token-detection-store';
 
 vi.mock('@/modules/core/common/use-supported-chains', () => ({

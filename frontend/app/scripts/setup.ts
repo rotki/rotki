@@ -1,9 +1,8 @@
-import type { RollupOutput, RollupWatcher } from 'rollup';
-import type { InlineConfig, LogLevel } from 'vite';
+import type { build, InlineConfig, LogLevel } from 'vite';
 import path from 'node:path';
 import process from 'node:process';
 
-export type BuildOutput = RollupOutput | RollupOutput[] | RollupWatcher;
+export type BuildOutput = Awaited<ReturnType<typeof build>>;
 
 export const mode: 'production' | 'development' = (process.env.NODE_ENV = process.env.NODE_ENV !== 'development' ? 'production' : 'development');
 
