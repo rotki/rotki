@@ -9,7 +9,7 @@ import BtcDerivationGapLimitSetting from '@/modules/settings/general/BtcDerivati
 import CsvExportDelimiterSetting from '@/modules/settings/general/CsvExportDelimiterSetting.vue';
 import DateDisplayFormatSetting from '@/modules/settings/general/DateDisplayFormatSetting.vue';
 import DateInputFormatSetting from '@/modules/settings/general/DateInputFormatSetting.vue';
-import DisabledChainQueriesSettings from '@/modules/settings/general/DisabledChainQueriesSettings.vue';
+import DisabledChainQueriesSettings from '@/modules/settings/general/disabled-chain-queries/DisabledChainQueriesSettings.vue';
 import DisplayDateInLocaltimeSetting from '@/modules/settings/general/DisplayDateInLocaltimeSetting.vue';
 import UsageAnalyticsSetting from '@/modules/settings/general/UsageAnalyticsSetting.vue';
 import VersionUpdateFrequencySetting from '@/modules/settings/general/VersionUpdateFrequencySetting.vue';

@@ -3216,13 +3216,29 @@
       }
     },
     "disabled_chain_queries": {
-      "chains_label": "Chains",
-      "disable_entire_chain": "Disable entire chain",
-      "exclude_addresses_hint": "Selected addresses will not be queried for balances, transactions, or history on this chain.",
-      "exclude_addresses_label": "Addresses to exclude",
-      "subtitle": "Choose chains or specific addresses that rotki should skip when querying balances, transactions, and history.",
+      "add_rule": "Add rule",
+      "dialog": {
+        "address_label": "Address",
+        "address_tracked_on": "Tracked on {count} chain | Tracked on {count} chains",
+        "chain_label": "Chain",
+        "chains_label": "Chains",
+        "kind_address": "Address",
+        "kind_chain": "Chain",
+        "kind_label": "Rule type",
+        "scope_all": "All chains",
+        "scope_label": "Apply to",
+        "scope_specific": "Specific chains",
+        "title_add": "Add rule",
+        "title_edit": "Edit rule"
+      },
+      "empty": "No rules configured. Add a rule to skip a chain entirely, or to exclude an address from balance, transaction, and history queries.",
+      "entire_chain_tooltip": "{chain} — entire chain disabled",
+      "scope": {
+        "entire_chain": "entire chain",
+        "no_chains": "no chains selected"
+      },
+      "subtitle": "Skip chains entirely, or exclude specific addresses (on all chains or a subset) when querying balances, transactions, and history.",
       "title": "Disabled chain queries",
-      "transient_warning": "The entire chain remains disabled until you pick at least one address.",
       "validation": {
         "error": "Error updating the disabled chain queries setting",
         "success": "Disabled chain queries updated"
