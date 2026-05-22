@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools==67.3.2", "setuptools-scm==7.1.0", "wheel==0.45.1"]
+requires = ["setuptools==78.1.1", "setuptools-scm==7.1.0", "wheel==0.45.1"]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -30,7 +30,6 @@ dependencies = [
     "sqlcipher3==0.6.2",
     "rotki-sqlite==2025.8.1",
     "requests==2.33.1",
-    "urllib3==2.6.3",
     "coincurve==21.0.0",
     "base58check==1.0.2",
     "bech32==1.2.0",
@@ -42,7 +41,7 @@ dependencies = [
     "substrate-interface==1.8.1",
     "beautifulsoup4==4.14.2",
     "maxminddb==2.6.3",
-    "pywin32==306; sys_platform == 'win32'",
+    "pywin32==311; sys_platform == 'win32'",
     "miniupnpc==2.3.3",
     "cryptography==46.0.7",
     "py-machineid==0.8.0",
@@ -65,14 +64,18 @@ dependencies = [
     # For Google Calendar integration
     "google-api-python-client==2.192.0",
     "google-auth==2.49.1",
-    #constraints
-    "pycparser<=2.17", # ugly -- to avoid https://github.com/eliben/pycparser/pull/198
     # To build JWT for coinbase exchange key validation
     "PyJWT==2.12.0",
     # solana
     "solana==0.36.9",
     "solders==0.26.0",
     "tzdata==2025.2 ; sys_platform == 'win32'",
+    # enfore transitive deps versions
+    "aiohttp>=3.13.4",  # dependency of web3.py that has security issues before this version
+    "urllib3>=2.7.0",  # enforced due to dependabot reports
+    "idna==3.15",  # enforced due to dependabot reports
+    "cbor2>=5.9.0",  # enforced due to dependabot reports
+    "protobuf>6.33.5",  # enforced due to dependabot reports
 ]
 
 [project.urls]
