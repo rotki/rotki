@@ -42,7 +42,7 @@ dependencies = [
     "substrate-interface==1.8.1",
     "beautifulsoup4==4.14.2",
     "maxminddb==2.6.3",
-    "pywin32==306; sys_platform == 'win32'",
+    "pywin32==311; sys_platform == 'win32'",
     "miniupnpc==2.3.3",
     "cryptography==46.0.7",
     "py-machineid==0.8.0",
