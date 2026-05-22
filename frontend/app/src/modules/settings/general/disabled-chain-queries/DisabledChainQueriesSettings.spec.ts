@@ -4,7 +4,7 @@ import { mount, type VueWrapper } from '@vue/test-utils';
 import flushPromises from 'flush-promises';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useMainStore } from '@/modules/core/common/use-main-store';
-import DisabledChainQueriesSettings from '@/modules/settings/general/DisabledChainQueriesSettings.vue';
+import DisabledChainQueriesSettings from '@/modules/settings/general/disabled-chain-queries/DisabledChainQueriesSettings.vue';
 import { useGeneralSettingsStore } from '@/modules/settings/use-general-settings-store';
 
 const setSettingsMock = vi.fn();
@@ -59,46 +59,55 @@ describe('disabled-chain-queries-settings', () => {
     await flushPromises();
   });
 
-  it('should render the chains autocomplete', () => {
-    expect(wrapper.find('[data-testid="disabled-chain-queries"]').exists()).toBe(true);
+  it('should render the empty state when there are no rules', () => {
+    expect(wrapper.find('[data-testid="disabled-chain-queries-empty"]').exists()).toBe(true);
   });
 
-  it('should render no per-chain panels when the store is empty', () => {
-    expect(wrapper.findAll('[data-testid^="disabled-chain-panel-"]')).toHaveLength(0);
+  it('should render the add-rule button', () => {
+    expect(wrapper.find('[data-testid="rule-add"]').exists()).toBe(true);
   });
 
-  it('should render one panel per chain when the store has entries', async () => {
+  it('should render a chain rule row for an empty-list chain', async () => {
+    await seedStore({ eth: [] });
+    expect(wrapper.findAll('[data-testid^="rule-"]').length).toBeGreaterThan(0);
+    expect(wrapper.find('[data-testid="disabled-chain-queries-empty"]').exists()).toBe(false);
+  });
+
+  it('should render one address rule row that groups multiple chains', async () => {
     await seedStore({
-      eth: [],
+      eth: ['0x5A0b54D5dc17e0AadC383d2db43B0a0D3E029c4c'],
       optimism: ['0x5A0b54D5dc17e0AadC383d2db43B0a0D3E029c4c'],
     });
-
-    expect(wrapper.find('[data-testid="disabled-chain-panel-eth"]').exists()).toBe(true);
-    expect(wrapper.find('[data-testid="disabled-chain-panel-optimism"]').exists()).toBe(true);
-  });
-
-  it('should hide the address picker for an entirely-disabled chain', async () => {
-    await seedStore({ eth: [] });
-    expect(wrapper.find('[data-testid="exclude-addresses-eth"]').exists()).toBe(false);
-  });
-
-  it('should show the address picker when a chain has excluded addresses', async () => {
-    await seedStore({ optimism: ['0x5A0b54D5dc17e0AadC383d2db43B0a0D3E029c4c'] });
-    expect(wrapper.find('[data-testid="exclude-addresses-optimism"]').exists()).toBe(true);
-    expect(wrapper.find('[data-testid="transient-warning-optimism"]').exists()).toBe(false);
-  });
-
-  it('should render the entire-chain toggle for each visible chain', async () => {
-    await seedStore({ eth: [] });
-    expect(wrapper.find('[data-testid="disable-entire-chain-eth"]').exists()).toBe(true);
+    const rows = wrapper.findAll('[data-testid^="rule-edit-"]');
+    expect(rows).toHaveLength(1);
   });
 
   it('should render the status message slot', () => {
     expect(wrapper.find('[data-testid="disabled-chain-queries-status"]').exists()).toBe(true);
   });
 
-  it('should not render panels for unsupported chains', async () => {
+  it('should ignore unsupported chains', async () => {
     await seedStore({ not_a_real_chain: [] });
-    expect(wrapper.findAll('[data-testid^="disabled-chain-panel-"]')).toHaveLength(0);
+    expect(wrapper.find('[data-testid="disabled-chain-queries-empty"]').exists()).toBe(true);
+  });
+
+  it('should commit a payload without the removed rule when remove is clicked', async () => {
+    await seedStore({
+      eth: [],
+      optimism: ['0x5A0b54D5dc17e0AadC383d2db43B0a0D3E029c4c'],
+    });
+    setSettingsMock.mockClear();
+
+    const removeButtons = wrapper.findAll('[data-testid^="rule-remove-"]');
+    expect(removeButtons).toHaveLength(2);
+
+    // The chain rule (eth) renders first since chain rules come before address rules in parsePayload.
+    await removeButtons[0].trigger('click');
+    await flushPromises();
+
+    expect(setSettingsMock).toHaveBeenCalledTimes(1);
+    expect(setSettingsMock.mock.calls[0][0]).toMatchObject({
+      disabledChainQueries: { optimism: ['0x5A0b54D5dc17e0AadC383d2db43B0a0D3E029c4c'] },
+    });
   });
 });
