@@ -223,11 +223,19 @@ class EthWithdrawalEvent(EthStakingEvent):
             events_iterator: Iterator['AccountingEventMixin'],  # pylint: disable=unused-argument
     ) -> int:
         with accounting.database.conn.read_ctx() as cursor:
-            validator_info = accounting.dbeth2.get_validators_with_status(
+            validators_info = accounting.dbeth2.get_validators_with_status(
                 cursor=cursor,
                 validator_indices={self.validator_index},
-            )[0]
+            )
 
+        if len(validators_info) == 0:
+            log.error(
+                f'Could not find validator {self.validator_index} in the DB while processing '
+                f'{self} for accounting. Skipping the event.',
+            )
+            return 1
+
+        validator_info = validators_info[0]
         event_ts, is_exit = self.get_timestamp_in_sec(), self.is_exit_or_blocknumber != 0
         name = 'Exit' if is_exit else 'Withdrawal'
         if validator_info.validator_type != ValidatorType.ACCUMULATING:
@@ -251,10 +259,17 @@ class EthWithdrawalEvent(EthStakingEvent):
                     withdrawals_pnl=defaultdict(lambda: ZERO),
                     exits_pnl=defaultdict(lambda: ZERO),
                 )
-                if len(validator_balances := list(balances[self.validator_index].values())) == 0 or validator_balances[-1] < self.amount:  # noqa: E501
+                if len(validator_balances := list(balances[self.validator_index].values())) == 0:
                     log.error(
-                        f'Validator {self.validator_index} has an unexpected last balance ({validator_balances[-1]}) '  # noqa: E501
-                        f'less than exit amount ({self.amount}) for {self}. Using zero as amount',
+                        f'Validator {self.validator_index} has no balance history before its '
+                        f'exit event {self}. Using zero as amount',
+                    )
+                    profit_or_loss_amount = ZERO
+                elif validator_balances[-1] < self.amount:
+                    log.error(
+                        f'Validator {self.validator_index} has an unexpected last balance '
+                        f'({validator_balances[-1]}) less than exit amount ({self.amount}) for '
+                        f'{self}. Using zero as amount',
                     )
                     profit_or_loss_amount = ZERO
                 else:
