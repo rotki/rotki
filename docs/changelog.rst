@@ -2,6 +2,8 @@
 Changelog
 =========
 
+* :bug:`-` Poloniex history should now be properly queried again.
+
 * :release:`1.43.1 <2026-05-18>`
 * :feature:`12215` Cryptocompare is now removed from the default list of oracles if no API key is set.
 * :bug:`12233` Importing a custom CSV that contains an asset which is unsupported on the given exchange (e.g. GLD on Bittrex) no longer crashes the import task. The offending row is reported as an error and the rest of the file is imported normally.
