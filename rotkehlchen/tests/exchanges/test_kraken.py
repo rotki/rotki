@@ -1,4 +1,5 @@
 import binascii
+import json
 import warnings as test_warnings
 from collections import defaultdict
 from contextlib import ExitStack
@@ -675,6 +676,47 @@ def test_kraken_trade_with_adjustment(kraken):
     warnings = kraken.msg_aggregator.consume_warnings()
     assert len(errors) == 0
     assert len(warnings) == 0
+
+
+@pytest.mark.parametrize('use_clean_caching_directory', [True])
+def test_kraken_multiple_adjustment_pairs(kraken):
+    """Regression test: all adjustment pairs must be converted to SwapEvents.
+
+    process_kraken_trades used to remove() from the adjustments list while iterating it via
+    pairwise() (a single shared iterator). Mutating mid-iteration shifted the indices and skipped
+    every other pair when there were 4+ adjustments, leaving those pairs as raw ADJUSTMENT events
+    instead of swaps.
+    """
+    ledger = {}
+    for idx, (asset, amount) in enumerate(
+        [('XDAO', '-0.001'), ('XETH', '0.002'),   # pair 1: spend + receive
+         ('XDAO', '-0.003'), ('XETH', '0.004')],  # pair 2: spend + receive
+        start=1,
+    ):
+        ledger[f'L{idx}'] = {
+            'refid': str(idx),
+            'time': 1636406000.0 + idx / 10,  # increasing so the sort keeps the pairs adjacent
+            'type': 'adjustment',
+            'subtype': '',
+            'aclass': 'currency',
+            'asset': asset,
+            'amount': amount,
+            'fee': '0',
+            'balance': '1',
+        }
+
+    with _patch_ledger(kraken, json.dumps({'ledger': ledger, 'count': len(ledger)})):
+        kraken.query_history_events()
+
+    with kraken.db.conn.read_ctx() as cursor:
+        events = DBHistoryEvents(kraken.db).get_history_events_internal(
+            cursor=cursor,
+            filter_query=HistoryEventFilterQuery.make(location=Location.KRAKEN),
+        )
+
+    # both pairs must convert: 2 pairs -> 4 SwapEvents, with nothing left as raw adjustments
+    assert len([e for e in events if not isinstance(e, SwapEvent)]) == 0
+    assert len([e for e in events if isinstance(e, SwapEvent)]) == 4
 
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
