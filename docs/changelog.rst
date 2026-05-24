@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`-` Swaps through a newer zeroxsettler will now be properly decoded by rotki.
 * :bug:`-` Poloniex history should now be properly queried again.
 
 * :release:`1.43.1 <2026-05-18>`
