@@ -19,6 +19,7 @@ from eth_abi import decode as decode_abi
 from eth_utils import function_signature_to_4byte_selector
 
 from rotkehlchen.assets.asset import Asset, AssetWithOracles, EvmToken, FiatAsset, UnderlyingToken
+from rotkehlchen.assets.resolver import AssetResolver
 from rotkehlchen.assets.utils import (
     TokenEncounterInfo,
     get_or_create_evm_token,
@@ -774,7 +775,7 @@ class Inquirer:
         """
         if asset == A_ETH2:
             return A_ETH
-        elif (main_asset_id := GlobalDBHandler.get_collection_main_asset(asset.identifier)) is not None:  # noqa: E501
+        elif (main_asset_id := AssetResolver.get_collection_main_asset(asset.identifier)) is not None:  # noqa: E501
             return Asset(main_asset_id)
 
         return asset
