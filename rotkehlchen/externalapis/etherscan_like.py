@@ -106,6 +106,7 @@ class EtherscanLikeApi(ABC):
         # Remember the default rate so on_api_key_changed() can roll back to it.
         self._default_rps = rate_limiter.rps
         self._default_capacity = int(rate_limiter.capacity)
+        self._default_minimum_rps = rate_limiter.minimum_rps
 
     def on_api_key_changed(self) -> None:
         """Reset the rate limiter to free-tier defaults so a new key starts fresh.
@@ -114,7 +115,11 @@ class EtherscanLikeApi(ABC):
         so the bucket relies on the 429-driven shrink in _query() to converge
         back down if the new key turns out to be on a more restrictive tier.
         """
-        self._rate_limiter.reset(rps=self._default_rps, capacity=self._default_capacity)
+        self._rate_limiter.reset(
+            rps=self._default_rps,
+            capacity=self._default_capacity,
+            minimum_rps=self._default_minimum_rps,
+        )
 
     @staticmethod
     @abc.abstractmethod

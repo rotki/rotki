@@ -87,6 +87,7 @@ class Etherscan(ExternalServiceWithRecommendedApiKey, EtherscanLikeApi):
             rate_limiter=TokenBucket(
                 rps=FREE_ETHERSCAN_RATE_LIMIT_RPS,
                 capacity=FREE_ETHERSCAN_RATE_LIMIT_BURST,
+                minimum_rps=FREE_ETHERSCAN_RATE_LIMIT_RPS,
             ),
         )
         self.detect_api_key_tier()
@@ -154,6 +155,7 @@ class Etherscan(ExternalServiceWithRecommendedApiKey, EtherscanLikeApi):
             self._rate_limiter.reset(
                 rps=FREE_ETHERSCAN_RATE_LIMIT_RPS,
                 capacity=FREE_ETHERSCAN_RATE_LIMIT_BURST,
+                minimum_rps=FREE_ETHERSCAN_RATE_LIMIT_RPS,
             )
             return
 
@@ -162,7 +164,7 @@ class Etherscan(ExternalServiceWithRecommendedApiKey, EtherscanLikeApi):
                 return
             self._cache_api_key_tier(tier=tier)
 
-        self._rate_limiter.reset(rps=tier.rps, capacity=tier.burst)
+        self._rate_limiter.reset(rps=tier.rps, capacity=tier.burst, minimum_rps=tier.rps)
         log.debug(f'Detected Etherscan API key tier {tier.name}. Set rate limit to {tier.rps} rps')
 
     def on_api_key_changed(self) -> None:
