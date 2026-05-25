@@ -43,12 +43,15 @@ class TokenBucket:
     trust the previously-discovered rate).
     """
 
-    def __init__(self, rps: float, capacity: int) -> None:
+    def __init__(self, rps: float, capacity: int, minimum_rps: float = _MIN_RPS_FLOOR) -> None:
         if rps <= 0:
             raise ValueError(f'rps must be positive, got {rps}')
         if capacity < 1:
             raise ValueError(f'capacity must be >= 1, got {capacity}')
+        if minimum_rps <= 0:
+            raise ValueError(f'minimum_rps must be positive, got {minimum_rps}')
         self.rps = rps
+        self.minimum_rps = minimum_rps
         self.capacity = float(capacity)
         self.tokens = float(capacity)
         self.last_refill = time.monotonic()
@@ -94,14 +97,18 @@ class TokenBucket:
     def shrink_after_429(self) -> None:
         """Halve rps (with a floor) after a 429. Capacity untouched."""
         with self._lock:
-            self.rps = max(_MIN_RPS_FLOOR, self.rps / 2)
+            self.rps = max(self.minimum_rps, self.rps / 2)
 
-    def reset(self, rps: float, capacity: int) -> None:
+    def reset(self, rps: float, capacity: int, minimum_rps: float | None = None) -> None:
         """Hard-set rps and capacity (e.g. after an API key change)."""
         if rps <= 0 or capacity < 1:
             raise ValueError(f'invalid reset values: {rps=}, {capacity=}')
+        if minimum_rps is not None and minimum_rps <= 0:
+            raise ValueError(f'invalid reset value: {minimum_rps=}')
         with self._lock:
             self.rps = rps
+            if minimum_rps is not None:
+                self.minimum_rps = minimum_rps
             self.capacity = float(capacity)
             self.tokens = min(self.tokens, self.capacity)
 

@@ -8,11 +8,12 @@ from rotkehlchen.chain.accounts import BlockchainAccountData
 from rotkehlchen.chain.ethereum.constants import ETHEREUM_GENESIS
 from rotkehlchen.chain.evm.constants import GENESIS_HASH, ZERO_ADDRESS
 from rotkehlchen.chain.evm.types import string_to_evm_address
+from rotkehlchen.db.cache import DBCacheStatic
 from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.db.evmtx import DBEvmTx
 from rotkehlchen.db.filtering import EvmTransactionsFilterQuery
 from rotkehlchen.errors.misc import RemoteError
-from rotkehlchen.externalapis.etherscan import Etherscan
+from rotkehlchen.externalapis.etherscan import ETHERSCAN_TIER_BY_DAILY_LIMIT, Etherscan
 from rotkehlchen.externalapis.etherscan_like import HasChainActivity
 from rotkehlchen.serialization.deserialize import deserialize_evm_transaction
 from rotkehlchen.tests.utils.mock import MockResponse
@@ -52,7 +53,8 @@ def fixture_temp_etherscan(function_scope_messages_aggregator, tmpdir_factory, s
                 ExternalServiceApiCredentials(service=ExternalService.ETHERSCAN, api_key=api_key),
             ])
 
-    return Etherscan(database=db, msg_aggregator=function_scope_messages_aggregator)
+    with patch.object(Etherscan, 'detect_api_key_tier', return_value=None):
+        return Etherscan(database=db, msg_aggregator=function_scope_messages_aggregator)
 
 
 def patch_etherscan(etherscan, response_msg):
@@ -105,6 +107,44 @@ def test_maximum_daily_rate_limit_reached(temp_etherscan, **kwargs):  # pylint: 
             '0x4678f0a6958e4D2Bc4F1BAF7Bc52E8F3564f3fE4',
             '0xc455279100000000000000000000000027a2eaaa8bebea8d23db486fb49627c165baacb5',
         )
+
+
+def test_detect_api_key_tier_caches_and_reuses_value(temp_etherscan: Etherscan) -> None:
+    temp_etherscan._delete_cached_api_key_tier()
+    with patch.object(
+        temp_etherscan,
+        '_query',
+        return_value={'creditLimit': 500000},
+    ) as query_mock:
+        temp_etherscan.detect_api_key_tier()
+
+    assert temp_etherscan._rate_limiter.rps == 20.0
+    assert temp_etherscan._rate_limiter.capacity == 20
+    with temp_etherscan.db.conn.read_ctx() as cursor:
+        assert temp_etherscan.db.get_static_cache(
+            cursor=cursor,
+            name=DBCacheStatic.ETHERSCAN_API_KEY_TIER,
+        ) == 'advanced'
+
+    temp_etherscan._rate_limiter.reset(rps=3.0, capacity=3)
+    temp_etherscan.detect_api_key_tier()
+    assert query_mock.call_count == 1
+    assert temp_etherscan._rate_limiter.rps == 20.0
+    assert temp_etherscan._rate_limiter.capacity == 20
+
+
+def test_api_key_change_invalidates_cached_tier(temp_etherscan: Etherscan) -> None:
+    temp_etherscan._cache_api_key_tier(tier=ETHERSCAN_TIER_BY_DAILY_LIMIT[500000])
+    with patch.object(temp_etherscan, '_query', return_value={'creditLimit': 200000}):
+        temp_etherscan.on_api_key_changed()
+
+    assert temp_etherscan._rate_limiter.rps == 10.0
+    assert temp_etherscan._rate_limiter.capacity == 10
+    with temp_etherscan.db.conn.read_ctx() as cursor:
+        assert temp_etherscan.db.get_static_cache(
+            cursor=cursor,
+            name=DBCacheStatic.ETHERSCAN_API_KEY_TIER,
+        ) == 'standard'
 
 
 def test_deserialize_transaction_from_etherscan():

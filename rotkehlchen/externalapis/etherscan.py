@@ -1,5 +1,5 @@
 import logging
-from typing import TYPE_CHECKING, Any, Final
+from typing import TYPE_CHECKING, Any, Final, Literal, NamedTuple
 
 import gevent
 from requests import Response
@@ -7,7 +7,7 @@ from sqlcipher3 import dbapi2 as sqlcipher
 
 from rotkehlchen.chain.evm.l2_with_l1_fees.types import L2ChainIdsWithL1FeesType
 from rotkehlchen.chain.structures import TimestampOrBlockRange
-from rotkehlchen.db.cache import DBCacheDynamic
+from rotkehlchen.db.cache import DBCacheDynamic, DBCacheStatic
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.errors.misc import ChainNotSupported, RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
@@ -39,10 +39,30 @@ log = RotkehlchenLogsAdapter(logger)
 ETHERSCAN_PAGINATION_LIMIT: Final = 10000
 ETHERSCAN_BASE_URL: Final = 'https://api.etherscan.io/v2/api'
 ROTKI_PACKAGED_KEY: Final = ApiKey('W9CEV6QB9NIPUEHD6KNEYM4PDX6KBPRVVR')
-# Etherscan v2 free tier is 5 req/s on a single API key shared across all
-# chains. We stay slightly under to leave room for the occasional retry.
-ETHERSCAN_RATE_LIMIT_RPS: Final = 4.0
-ETHERSCAN_RATE_LIMIT_BURST: Final = 8
+# Etherscan v2 free tier is 3 req/s on a single API key shared across all
+# chains. Keep the default at the documented free-tier rate; higher tiers can
+# still proceed, and 429 responses will shrink dynamically if needed.
+FREE_ETHERSCAN_RATE_LIMIT_RPS: Final = 3.0
+FREE_ETHERSCAN_RATE_LIMIT_BURST: Final = 3
+
+
+class EtherscanTier(NamedTuple):
+    name: Literal['free_or_lite', 'standard', 'advanced', 'professional', 'pro_plus']
+    rps: float
+    burst: int
+
+
+ETHERSCAN_TIER_BY_DAILY_LIMIT: Final[dict[int, EtherscanTier]] = {
+    100000: EtherscanTier(
+        name='free_or_lite',
+        rps=FREE_ETHERSCAN_RATE_LIMIT_RPS,
+        burst=FREE_ETHERSCAN_RATE_LIMIT_BURST,
+    ),
+    200000: EtherscanTier(name='standard', rps=10.0, burst=10),
+    500000: EtherscanTier(name='advanced', rps=20.0, burst=20),
+    1000000: EtherscanTier(name='professional', rps=30.0, burst=30),
+    1500000: EtherscanTier(name='pro_plus', rps=30.0, burst=30),
+}
 
 
 class Etherscan(ExternalServiceWithRecommendedApiKey, EtherscanLikeApi):
@@ -65,10 +85,94 @@ class Etherscan(ExternalServiceWithRecommendedApiKey, EtherscanLikeApi):
             default_api_key=ROTKI_PACKAGED_KEY,
             pagination_limit=ETHERSCAN_PAGINATION_LIMIT,
             rate_limiter=TokenBucket(
-                rps=ETHERSCAN_RATE_LIMIT_RPS,
-                capacity=ETHERSCAN_RATE_LIMIT_BURST,
+                rps=FREE_ETHERSCAN_RATE_LIMIT_RPS,
+                capacity=FREE_ETHERSCAN_RATE_LIMIT_BURST,
+                minimum_rps=FREE_ETHERSCAN_RATE_LIMIT_RPS,
             ),
         )
+        self.detect_api_key_tier()
+
+    def _cache_api_key_tier(self, tier: EtherscanTier) -> None:
+        with self.db.user_write() as write_cursor:
+            self.db.set_static_cache(
+                write_cursor=write_cursor,
+                name=DBCacheStatic.ETHERSCAN_API_KEY_TIER,
+                value=tier.name,
+            )
+
+    def _get_cached_api_key_tier(self) -> EtherscanTier | None:
+        with self.db.conn.read_ctx() as cursor:
+            if (cached_value := self.db.get_static_cache(
+                cursor=cursor,
+                name=DBCacheStatic.ETHERSCAN_API_KEY_TIER,
+            )) is None:
+                return None
+
+        for tier in ETHERSCAN_TIER_BY_DAILY_LIMIT.values():
+            if tier.name == cached_value:
+                return tier
+        return None
+
+    def _delete_cached_api_key_tier(self) -> None:
+        with self.db.user_write() as write_cursor:
+            write_cursor.execute(
+                'DELETE FROM key_value_cache WHERE name=?',
+                (DBCacheStatic.ETHERSCAN_API_KEY_TIER.value,),
+            )
+
+    def _query_api_key_tier(self, api_key: ApiKey) -> EtherscanTier | None:
+        try:
+            result = self._query(
+                chain_id=ChainID.ETHEREUM,
+                module='getapilimit',
+                action='getapilimit',
+            )
+        except RemoteError as e:
+            log.debug(f'Failed to query Etherscan API key tier for {api_key} due to {e!s}')
+            return None
+
+        if not isinstance(result, dict) or not isinstance(
+            credit_limit := result.get('creditLimit'),
+            int,
+        ):
+            log.debug(f'Etherscan API key tier query returned unexpected result: {result}')
+            return None
+
+        if (tier := ETHERSCAN_TIER_BY_DAILY_LIMIT.get(credit_limit)) is None:
+            log.debug(f'Etherscan API key has unknown daily credit limit: {credit_limit}')
+            return None
+
+        return tier
+
+    def detect_api_key_tier(self) -> None:
+        """Read/cache Etherscan's daily limit and adjust the token bucket.
+
+        The getapilimit endpoint exposes only daily credits, not per-second limits. This means
+        Free and Lite are indistinguishable (both 100k/day), so the 100k bucket stays at the
+        documented Free tier of 3 rps.
+        """
+        if (api_key := self._get_api_key()) is None:
+            self._rate_limiter.reset(
+                rps=FREE_ETHERSCAN_RATE_LIMIT_RPS,
+                capacity=FREE_ETHERSCAN_RATE_LIMIT_BURST,
+                minimum_rps=FREE_ETHERSCAN_RATE_LIMIT_RPS,
+            )
+            return
+
+        if (tier := self._get_cached_api_key_tier()) is None:
+            if (tier := self._query_api_key_tier(api_key)) is None:
+                return
+            self._cache_api_key_tier(tier=tier)
+
+        self._rate_limiter.reset(rps=tier.rps, capacity=tier.burst, minimum_rps=tier.rps)
+        log.debug(f'Detected Etherscan API key tier {tier.name}. Set rate limit to {tier.rps} rps')
+
+    def on_api_key_changed(self) -> None:
+        self.api_key = None
+        self.last_ts = Timestamp(0)
+        self._delete_cached_api_key_tier()
+        super().on_api_key_changed()
+        self.detect_api_key_tier()
 
     @staticmethod
     def _get_url(chain_id: ChainID) -> str:

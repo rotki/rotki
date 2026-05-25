@@ -129,10 +129,6 @@ class Blockscout(ExternalServiceWithApiKey, EtherscanLikeApi):
             http_method: Literal['get', 'post'] = 'get',
     ) -> dict[str, Any]:
         """Shared logic between v1 and v2 for querying blockscout api"""
-        log.debug(
-            f'Querying blockscout API for {query_str} with body {params} '
-            f'and query params {query_params}',
-        )
         times = (cached_settings := CachedSettings()).get_query_retry_limit()
         retries_num = times
         timeout = timeout or cached_settings.get_timeout_tuple()
@@ -140,6 +136,10 @@ class Blockscout(ExternalServiceWithApiKey, EtherscanLikeApi):
 
         while True:
             self._rate_limiter.acquire()
+            log.debug(
+                f'Querying blockscout API for {query_str} with body {params} '
+                f'and query params {query_params}',
+            )
             try:
                 request_kwargs: dict[str, Any] = {'timeout': timeout}
                 if query_params is not None:

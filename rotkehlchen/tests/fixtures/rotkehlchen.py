@@ -15,6 +15,7 @@ from rotkehlchen.data_migrations.constants import LAST_USERDB_DATA_MIGRATION
 from rotkehlchen.db.settings import CachedSettings, DBSettings, ModifiableDBSettings
 from rotkehlchen.db.updates import RotkiDataUpdater
 from rotkehlchen.exchanges.constants import EXCHANGES_WITH_PASSPHRASE, EXCHANGES_WITHOUT_API_SECRET
+from rotkehlchen.externalapis.etherscan import Etherscan
 from rotkehlchen.history.price import PriceHistorian
 from rotkehlchen.history.types import HistoricalPriceOracle
 from rotkehlchen.inquirer import Inquirer
@@ -405,6 +406,7 @@ def initialize_mock_rotkehlchen_instance(
 
     with ExitStack() as stack:
         stack.enter_context(data_unlock_patch)
+        stack.enter_context(patch.object(Etherscan, 'detect_api_key_tier', return_value=None))
         patch_and_enter_before_unlock(
             rotki=rotki,
             stack=stack,
@@ -565,7 +567,8 @@ def fixture_uninitialized_rotkehlchen(cli_args, inquirer, asset_resolver, global
     Adding the AssetResolver as a requirement so that the first initialization happens here
     """
     rotki = Rotkehlchen(cli_args)
-    yield rotki
+    with patch.object(Etherscan, 'detect_api_key_tier', return_value=None):
+        yield rotki
     rotki.data.logout()
 
 

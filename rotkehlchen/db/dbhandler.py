@@ -720,10 +720,10 @@ class DBHandler:
 
     @staticmethod
     def _deserialize_static_cache_value(name: DBCacheStatic, value: str) -> Timestamp | str:
-        # Return string for these cache entries, timestamp for all others
-        if name in (
+        if name in (  # Return string for these cache entries, timestamp for all others
             DBCacheStatic.DOCKER_DEVICE_INFO,
             DBCacheStatic.MONERIUM_OAUTH_CREDENTIALS,
+            DBCacheStatic.ETHERSCAN_API_KEY_TIER,
             DBCacheStatic.STALE_BALANCES_FROM_TS,
             DBCacheStatic.STALE_BALANCES_MODIFICATION_TS,
             DBCacheStatic.BEACONCHAIN_VALIDATOR_QUERY_LIMIT,
@@ -738,6 +738,7 @@ class DBHandler:
             cursor: 'DBCursor',
             name: Literal[
                 DBCacheStatic.DOCKER_DEVICE_INFO,
+                DBCacheStatic.ETHERSCAN_API_KEY_TIER,
                 DBCacheStatic.MONERIUM_OAUTH_CREDENTIALS,
                 DBCacheStatic.STALE_BALANCES_FROM_TS,
                 DBCacheStatic.STALE_BALANCES_MODIFICATION_TS,
