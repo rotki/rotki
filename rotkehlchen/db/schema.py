@@ -1029,6 +1029,7 @@ CREATE INDEX IF NOT EXISTS idx_event_metrics_metric_key ON event_metrics(metric_
 CREATE INDEX IF NOT EXISTS idx_event_metrics_metric_key_timestamp ON event_metrics(metric_key, timestamp);
 CREATE INDEX IF NOT EXISTS idx_event_metrics_metric_key_asset_sort_key ON event_metrics(metric_key, asset, sort_key);
 CREATE INDEX IF NOT EXISTS idx_event_metrics_asset ON event_metrics(asset);
+CREATE INDEX IF NOT EXISTS idx_event_metrics_balances_latest ON event_metrics(metric_key, location, location_label, protocol, asset, timestamp, sort_key, metric_value);
 CREATE INDEX IF NOT EXISTS idx_data_issues_state ON data_issues(state);
 CREATE INDEX IF NOT EXISTS idx_data_issues_kind_state ON data_issues(kind, state);
 CREATE INDEX IF NOT EXISTS idx_data_issues_location_label_asset ON data_issues(location, location_label, asset);

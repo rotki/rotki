@@ -2560,6 +2560,7 @@ class HistoricalBalancesFilterQuery(DBFilterQuery, FilterWithTimestamp):
             cls,
             and_op: bool = True,
             timestamp: Timestamp | None = None,
+            from_timestamp: Timestamp | None = None,
             asset: 'Asset | None' = None,
             location: Location | None = None,
             location_label: str | None = None,
@@ -2576,11 +2577,15 @@ class HistoricalBalancesFilterQuery(DBFilterQuery, FilterWithTimestamp):
 
         filter_query.timestamp_filter = DBTimestampFilter(
             and_op=True,
+            from_ts=from_timestamp,
             to_ts=timestamp,
             scaling_factor=(scaling_factor := FVal(1000)),  # timestamps are in MS
             timestamp_field='timestamp',
         )
         filters.append(filter_query.timestamp_filter)
+        if from_timestamp is not None:
+            unprocessed_clauses.append('timestamp >= ?')
+            unprocessed_bindings.append((from_timestamp * scaling_factor).to_int(exact=False))
         if timestamp is not None:
             unprocessed_clauses.append('timestamp <= ?')
             unprocessed_bindings.append((timestamp * scaling_factor).to_int(exact=False))

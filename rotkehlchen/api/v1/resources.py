@@ -73,6 +73,7 @@ from rotkehlchen.api.v1.schemas import (
     CreateAccountingRuleSchema,
     CreateHistoryEventSchema,
     CurrentAssetsPriceSchema,
+    CurrentHistoricalBalanceSchema,
     CustomAssetsQuerySchema,
     CustomizedEventDuplicatesFixSchema,
     CustomizedEventDuplicatesIgnoreSchema,
@@ -113,6 +114,7 @@ from rotkehlchen.api.v1.schemas import (
     GetUnmatchedAssetMovementsSchema,
     GnosisPaySiweChallengeSchema,
     HistoricalAssetsPriceSchema,
+    HistoricalBalanceSeriesSchema,
     HistoricalPerAssetBalanceSchema,
     HistoricalPriceDeleteSchema,
     HistoricalPricesPerAssetSchema,
@@ -3607,8 +3609,54 @@ class TimestampHistoricalBalanceResource(BaseMethodView):
             self,
             async_query: bool,
             filter_query: HistoricalBalancesFilterQuery,
+            group_by_account: bool,
     ) -> Response:
         return self.rest_api.get_historical_balance(
+            filter_query=filter_query,
+            group_by_account=group_by_account,
+            async_query=async_query,
+        )
+
+
+class CurrentHistoricalBalanceResource(BaseMethodView):
+
+    def make_post_schema(self) -> CurrentHistoricalBalanceSchema:
+        return CurrentHistoricalBalanceSchema(
+            db=self.rest_api.rotkehlchen.data.db,
+            known_counterparties={cpt.identifier for cpt in self.rest_api.rotkehlchen.chains_aggregator.get_all_counterparties()},  # noqa: E501
+        )
+
+    @require_premium_user(active_check=False)
+    @resource_parser.use_kwargs(make_post_schema, location='json')
+    def post(
+            self,
+            async_query: bool,
+            filter_query: HistoricalBalancesFilterQuery,
+            group_by_account: bool,
+    ) -> Response:
+        return self.rest_api.get_historical_balance(
+            filter_query=filter_query,
+            group_by_account=group_by_account,
+            async_query=async_query,
+        )
+
+
+class HistoricalBalanceSeriesResource(BaseMethodView):
+
+    def make_post_schema(self) -> HistoricalBalanceSeriesSchema:
+        return HistoricalBalanceSeriesSchema(
+            db=self.rest_api.rotkehlchen.data.db,
+            known_counterparties={cpt.identifier for cpt in self.rest_api.rotkehlchen.chains_aggregator.get_all_counterparties()},  # noqa: E501
+        )
+
+    @require_premium_user(active_check=False)
+    @resource_parser.use_kwargs(make_post_schema, location='json')
+    def post(
+            self,
+            async_query: bool,
+            filter_query: HistoricalBalancesFilterQuery,
+    ) -> Response:
+        return self.rest_api.get_historical_balance_series(
             filter_query=filter_query,
             async_query=async_query,
         )
