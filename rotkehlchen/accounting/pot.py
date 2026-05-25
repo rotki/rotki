@@ -1,6 +1,6 @@
 import contextlib
 import logging
-from typing import TYPE_CHECKING, Any, Literal
+from typing import TYPE_CHECKING, Any, Final, Literal
 
 from rotkehlchen.accounting.cost_basis import CostBasisCalculator
 from rotkehlchen.accounting.cost_basis.prefork import (
@@ -27,11 +27,15 @@ from rotkehlchen.history.price import PriceHistorian
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import Location, Price, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
+from rotkehlchen.utils.data_structures import LRUCacheWithRemove
 from rotkehlchen.utils.mixins.customizable_date import CustomizableDateMixin
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.evm.accounting.aggregator import EVMAccountingAggregators
     from rotkehlchen.db.dbhandler import DBHandler
+
+# keeping it small since reusing will only be assets in same event since we only go forward in time
+PROFIT_CURRENCY_RATE_CACHE_SIZE: Final = 64
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -80,6 +84,10 @@ class AccountingPot(CustomizableDateMixin):
         self.dbeth2 = DBEth2(database)
         self.query_start_ts = self.query_end_ts = Timestamp(0)
         self.report_id: int | None = None
+        # memoize profit-currency rates per report. profit_currency is fixed for the
+        # duration of a report so keying on (asset identifier, timestamp) is enough.
+        # Only successful lookups are cached so error paths keep being retried.
+        self._profit_currency_rates: LRUCacheWithRemove[tuple[str, Timestamp], Price] = LRUCacheWithRemove(maxsize=PROFIT_CURRENCY_RATE_CACHE_SIZE)  # noqa: E501
 
     def _add_processed_event(self, event: ProcessedAccountingEvent) -> None:
         dbpnl = DBAccountingReports(self.database)
@@ -108,13 +116,20 @@ class AccountingPot(CustomizableDateMixin):
         or with reading the response returned by the server
         """
         if asset == self.profit_currency:
-            rate = Price(ONE)
-        else:
-            rate = PriceHistorian().query_historical_price(
-                from_asset=asset,
-                to_asset=self.profit_currency,
-                timestamp=timestamp,
-            )
+            return Price(ONE)
+
+        if (cached := self._profit_currency_rates.get(
+                key := (asset.identifier, timestamp),
+        )) is not None:
+
+            return cached
+
+        rate = PriceHistorian().query_historical_price(
+            from_asset=asset,
+            to_asset=self.profit_currency,
+            timestamp=timestamp,
+        )
+        self._profit_currency_rates.add(key, rate)
         return rate
 
     def reset(
@@ -129,6 +144,7 @@ class AccountingPot(CustomizableDateMixin):
             self.ignored_asset_ids = self.database.get_ignored_asset_ids(cursor)
         self.report_id = report_id
         self.profit_currency = self.settings.main_currency.resolve_to_asset_with_oracles()
+        self._profit_currency_rates.clear()
         self.query_start_ts = start_ts
         self.query_end_ts = end_ts
         self.pnls.reset()
