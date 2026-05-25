@@ -42,6 +42,35 @@ CREATE INDEX IF NOT EXISTS idx_event_metrics_metric_key_asset_sort_key ON event_
 CREATE INDEX IF NOT EXISTS idx_event_metrics_asset ON event_metrics(asset);
 """)  # noqa: E501
 
+    @progress_step(description='Create data issues table and indexes.')
+    def _create_data_issues_table(write_cursor: 'DBCursor') -> None:
+        # Hardcoded schema/indexes to prevent future schema changes from affecting this upgrade.
+        write_cursor.execute("""
+CREATE TABLE IF NOT EXISTS data_issues (
+    id INTEGER NOT NULL PRIMARY KEY,
+    kind TEXT NOT NULL,
+    location TEXT NOT NULL,
+    location_label TEXT NOT NULL DEFAULT '',
+    protocol TEXT NOT NULL DEFAULT '',
+    asset TEXT NOT NULL DEFAULT '',
+    event_identifier INTEGER NOT NULL,
+    ts_start INTEGER NOT NULL,
+    ts_end INTEGER NOT NULL,
+    severity TEXT NOT NULL,
+    state TEXT NOT NULL,
+    auto_remediation_attempts_json TEXT NOT NULL DEFAULT '[]',
+    payload_json TEXT NOT NULL,
+    created_at INTEGER NOT NULL,
+    resolved_at INTEGER,
+    UNIQUE(kind, location, location_label, protocol, asset, event_identifier)
+);
+""")
+        write_cursor.executescript("""
+CREATE INDEX IF NOT EXISTS idx_data_issues_state ON data_issues(state);
+CREATE INDEX IF NOT EXISTS idx_data_issues_kind_state ON data_issues(kind, state);
+CREATE INDEX IF NOT EXISTS idx_data_issues_location_label_asset ON data_issues(location, location_label, asset);
+""")  # noqa: E501
+
     @progress_step(description='Add Gate location.')
     def _add_gate_location(write_cursor: 'DBCursor') -> None:
         write_cursor.execute(

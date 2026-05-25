@@ -959,6 +959,27 @@ CREATE TABLE IF NOT EXISTS blockchain_balances_cache (
 # - metric_key is the type of metric ('balance', 'pnl', 'cost_basis', etc.)
 # - asset is the identifier this metric is aggregated under (may differ from event asset,
 #   e.g., token upgrades)
+DB_CREATE_DATA_ISSUES = """
+CREATE TABLE IF NOT EXISTS data_issues (
+    id INTEGER NOT NULL PRIMARY KEY,
+    kind TEXT NOT NULL,
+    location TEXT NOT NULL,
+    location_label TEXT NOT NULL DEFAULT '',
+    protocol TEXT NOT NULL DEFAULT '',
+    asset TEXT NOT NULL DEFAULT '',
+    event_identifier INTEGER NOT NULL,
+    ts_start INTEGER NOT NULL,
+    ts_end INTEGER NOT NULL,
+    severity TEXT NOT NULL,
+    state TEXT NOT NULL,
+    auto_remediation_attempts_json TEXT NOT NULL DEFAULT '[]',
+    payload_json TEXT NOT NULL,
+    created_at INTEGER NOT NULL,
+    resolved_at INTEGER,
+    UNIQUE(kind, location, location_label, protocol, asset, event_identifier)
+);
+"""
+
 DB_CREATE_EVENT_METRICS = """
 CREATE TABLE IF NOT EXISTS event_metrics (
     id INTEGER NOT NULL PRIMARY KEY,
@@ -1008,6 +1029,9 @@ CREATE INDEX IF NOT EXISTS idx_event_metrics_metric_key ON event_metrics(metric_
 CREATE INDEX IF NOT EXISTS idx_event_metrics_metric_key_timestamp ON event_metrics(metric_key, timestamp);
 CREATE INDEX IF NOT EXISTS idx_event_metrics_metric_key_asset_sort_key ON event_metrics(metric_key, asset, sort_key);
 CREATE INDEX IF NOT EXISTS idx_event_metrics_asset ON event_metrics(asset);
+CREATE INDEX IF NOT EXISTS idx_data_issues_state ON data_issues(state);
+CREATE INDEX IF NOT EXISTS idx_data_issues_kind_state ON data_issues(kind, state);
+CREATE INDEX IF NOT EXISTS idx_data_issues_location_label_asset ON data_issues(location, location_label, asset);
 """  # noqa: E501
 
 DB_SCRIPT_CREATE_TABLES = f"""
@@ -1083,6 +1107,7 @@ BEGIN TRANSACTION;
 {DB_CREATE_LIDO_CSM_NODE_OPERATOR_METRICS}
 {DB_CREATE_HISTORICAL_BALANCE_CACHE}
 {DB_CREATE_BLOCKCHAIN_BALANCES_CACHE}
+{DB_CREATE_DATA_ISSUES}
 {DB_CREATE_EVENT_METRICS}
 {DB_CREATE_INDEXES}
 COMMIT;

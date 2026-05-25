@@ -12,6 +12,8 @@ from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.asset import UnknownAsset, WrongAssetType
 from rotkehlchen.fval import FVal
+from rotkehlchen.history.data_issues.constants import IssueKind
+from rotkehlchen.history.data_issues.manager import DataIssuesManager
 from rotkehlchen.history.events.structures.onchain_event import OnchainEvent
 from rotkehlchen.history.events.structures.types import (
     EventDirection,
@@ -447,6 +449,20 @@ def _apply_to_buckets(
                     'balance_before': str(current_balance),
                     'last_run_ts': last_run_ts,
                 },
+            )
+            DataIssuesManager(database).write_issue(
+                IssueKind.NEGATIVE_BALANCE,
+                location=bucket.location,
+                location_label=bucket.location_label,
+                protocol=bucket.protocol,
+                asset=bucket.asset,
+                payload={
+                    'event_identifier': event.identifier,
+                    'in_memory_negative_amount': str(new_balance),
+                    'derived_balance_before_event': str(current_balance),
+                },
+                ts_start=event.timestamp,
+                ts_end=event.timestamp,
             )
             log.warning(
                 f'Negative balance detected for {event.asset.identifier} '

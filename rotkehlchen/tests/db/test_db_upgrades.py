@@ -3361,7 +3361,7 @@ def test_latest_upgrade_correctness(user_data_dir):
     assert tables_after_creation - tables_after_upgrade == {'evm_internal_tx_conflicts'}
     assert views_after_creation - views_after_upgrade == set()
     new_tables = tables_after_upgrade - tables_before
-    assert new_tables == {'event_metrics'}
+    assert new_tables == {'data_issues', 'event_metrics'}
     new_views = views_after_upgrade - views_before
     assert new_views == set()
     db.logout()
@@ -4139,6 +4139,7 @@ def test_upgrade_db_52_to_53(user_data_dir, messages_aggregator):
     )
     with db_v52.conn.write_ctx() as write_cursor:
         assert not table_exists(cursor=write_cursor, name='event_metrics')
+        assert not table_exists(cursor=write_cursor, name='data_issues')
         write_cursor.execute(
             'INSERT INTO history_events('
             'entry_type, group_identifier, sequence_index, timestamp, location, location_label, '
@@ -4168,6 +4169,7 @@ def test_upgrade_db_52_to_53(user_data_dir, messages_aggregator):
     )
     with db.conn.write_ctx() as cursor:
         assert table_exists(cursor=cursor, name='event_metrics')
+        assert table_exists(cursor=cursor, name='data_issues')
         for index_name in (
             'idx_event_metrics_event',
             'idx_event_metrics_location_label',
@@ -4176,6 +4178,9 @@ def test_upgrade_db_52_to_53(user_data_dir, messages_aggregator):
             'idx_event_metrics_metric_key_timestamp',
             'idx_event_metrics_metric_key_asset_sort_key',
             'idx_event_metrics_asset',
+            'idx_data_issues_state',
+            'idx_data_issues_kind_state',
+            'idx_data_issues_location_label_asset',
         ):
             assert index_exists(cursor=cursor, name=index_name)
 

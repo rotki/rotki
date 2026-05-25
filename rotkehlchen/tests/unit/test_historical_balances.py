@@ -1,3 +1,4 @@
+import json
 from typing import TYPE_CHECKING
 from unittest.mock import patch
 
@@ -22,6 +23,7 @@ from rotkehlchen.db.constants import HistoryMappingState
 from rotkehlchen.db.filtering import HistoricalBalancesFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.fval import FVal
+from rotkehlchen.history.data_issues.manager import DataIssuesManager
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.tasks.historical_balances import process_historical_balances
@@ -1068,3 +1070,124 @@ def test_swapped_for_asset_tracked_under_new_identifier(
             (glm.identifier, glm.identifier, '60'),  # spend 10 GLM -> 70 - 10 = 60
             (glm.identifier, glm.identifier, '110'),  # receive 50 GLM -> 60 + 50 = 110
         ]
+
+
+def test_negative_balance_writes_data_issue(
+        database: 'DBHandler',
+        messages_aggregator: 'MessagesAggregator',
+) -> None:
+    """Negative balance detection should write a data issue without changing WS/halt behavior."""
+    events_db = DBHistoryEvents(database)
+    with database.user_write() as write_cursor:
+        receive_id = events_db.add_history_event(
+            write_cursor=write_cursor,
+            event=EvmEvent(
+                tx_ref=make_evm_tx_hash(),
+                sequence_index=0,
+                timestamp=TimestampMS(1000),
+                location=Location.ETHEREUM,
+                event_type=HistoryEventType.RECEIVE,
+                event_subtype=HistoryEventSubType.NONE,
+                asset=A_ETH,
+                amount=FVal('1'),
+                location_label=TEST_ADDR1,
+            ),
+        )
+        spend_id = events_db.add_history_event(
+            write_cursor=write_cursor,
+            event=EvmEvent(
+                tx_ref=make_evm_tx_hash(),
+                sequence_index=0,
+                timestamp=TimestampMS(2000),
+                location=Location.ETHEREUM,
+                event_type=HistoryEventType.SPEND,
+                event_subtype=HistoryEventSubType.NONE,
+                asset=A_ETH,
+                amount=FVal('2'),
+                location_label=TEST_ADDR1,
+            ),
+        )
+
+    with patch.object(database.msg_aggregator, 'add_message') as msg_mock:
+        process_historical_balances(database, messages_aggregator)
+        assert WSMessageType.NEGATIVE_BALANCE_DETECTED in [
+            x.kwargs['message_type'] for x in msg_mock.call_args_list
+        ]
+
+    with database.conn.read_ctx() as cursor:
+        assert cursor.execute('SELECT COUNT(*) FROM data_issues').fetchone()[0] == 1
+        issue_row = cursor.execute(
+            'SELECT kind, state, severity, payload_json FROM data_issues',
+        ).fetchone()
+        assert issue_row[0] == 'negative_balance'
+        assert issue_row[1] == 'open'
+        assert issue_row[2] == 'warning'
+        payload = json.loads(issue_row[3])
+        assert payload == {
+            'event_identifier': spend_id,
+            'in_memory_negative_amount': '-1',
+            'derived_balance_before_event': '1',
+        }
+        assert cursor.execute(
+            'SELECT COUNT(*) FROM event_metrics WHERE event_identifier = ?',
+            (receive_id,),
+        ).fetchone()[0] == 1
+        assert cursor.execute(
+            'SELECT COUNT(*) FROM event_metrics WHERE event_identifier = ?',
+            (spend_id,),
+        ).fetchone()[0] == 0
+
+    process_historical_balances(database, messages_aggregator)
+    with database.conn.read_ctx() as cursor:
+        assert cursor.execute('SELECT COUNT(*) FROM data_issues').fetchone()[0] == 1
+
+    issue_id = DataIssuesManager(database).list_issues()[0].id
+    DataIssuesManager(database).dismiss(issue_id)
+    process_historical_balances(database, messages_aggregator)
+    with database.conn.read_ctx() as cursor:
+        assert cursor.execute(
+            'SELECT state FROM data_issues WHERE id = ?',
+            (issue_id,),
+        ).fetchone()[0] == 'dismissed'
+
+
+def test_negative_balance_reopens_resolved_data_issue(
+        database: 'DBHandler',
+        messages_aggregator: 'MessagesAggregator',
+) -> None:
+    with database.user_write() as write_cursor:
+        DBHistoryEvents(database).add_history_event(
+            write_cursor=write_cursor,
+            event=EvmEvent(
+                tx_ref=make_evm_tx_hash(),
+                sequence_index=0,
+                timestamp=TimestampMS(1000),
+                location=Location.ETHEREUM,
+                event_type=HistoryEventType.RECEIVE,
+                event_subtype=HistoryEventSubType.NONE,
+                asset=A_ETH,
+                amount=FVal('1'),
+                location_label=TEST_ADDR1,
+            ),
+        )
+        DBHistoryEvents(database).add_history_event(
+            write_cursor=write_cursor,
+            event=EvmEvent(
+                tx_ref=make_evm_tx_hash(),
+                sequence_index=0,
+                timestamp=TimestampMS(2000),
+                location=Location.ETHEREUM,
+                event_type=HistoryEventType.SPEND,
+                event_subtype=HistoryEventSubType.NONE,
+                asset=A_ETH,
+                amount=FVal('2'),
+                location_label=TEST_ADDR1,
+            ),
+        )
+
+    process_historical_balances(database, messages_aggregator)
+
+    issue_id = DataIssuesManager(database).list_issues()[0].id
+    DataIssuesManager(database).resolve_manually(issue_id)
+    process_historical_balances(database, messages_aggregator)
+    assert DataIssuesManager(database).get_issue(issue_id).state == 'open'
