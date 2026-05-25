@@ -360,3 +360,68 @@ def test_eth_withdrawal_processing(accountant: Accountant, ethereum_accounts: li
 
     assert processed_events[4].notes == f'Exit of 60 ETH from validator {v_accum_2}. Loss of -4 incurred'  # noqa: E501
     assert processed_events[4].pnl.taxable == FVal(-4) * 3000  # $6000 taxable
+
+
+@pytest.mark.parametrize('ethereum_accounts', [['0x0fdAe061cAE1Ad4Af83b27A96ba5496ca992139b']])
+@pytest.mark.parametrize('should_mock_price_queries', [True])
+@pytest.mark.parametrize('default_mock_price_value', [ONE])
+@pytest.mark.parametrize('db_settings', [{
+    'eth_staking_taxable_after_withdrawal_enabled': True,
+}])
+def test_eth_withdrawal_unknown_validator(
+        accountant: Accountant,
+        ethereum_accounts: list[ChecksumEvmAddress],
+) -> None:
+    """A withdrawal/exit event referencing a validator that is missing from the
+    eth2_validators table (e.g. the validator was deleted but its events remained) must be
+    skipped, not raise an IndexError that aborts the entire PnL report."""
+    accountant.process_history(
+        start_ts=Timestamp(0),
+        end_ts=ts_now(),
+        events=[EthWithdrawalEvent(
+            validator_index=99999,  # not present in eth2_validators
+            timestamp=TimestampMS(1729000004000),
+            amount=FVal(32),
+            withdrawal_address=ethereum_accounts[0],
+            is_exit=True,
+        )],
+    )
+    assert len(accountant.pots[0].processed_events) == 0
+
+
+@pytest.mark.parametrize('ethereum_accounts', [['0x0fdAe061cAE1Ad4Af83b27A96ba5496ca992139b']])
+@pytest.mark.parametrize('should_mock_price_queries', [True])
+@pytest.mark.parametrize('default_mock_price_value', [ONE])
+@pytest.mark.parametrize('db_settings', [{
+    'eth_staking_taxable_after_withdrawal_enabled': True,
+}])
+def test_accumulating_validator_exit_without_balance_history(
+        accountant: Accountant,
+        ethereum_accounts: list[ChecksumEvmAddress],
+) -> None:
+    """An accumulating validator exit with no preceding balance events in the DB must not
+    raise an IndexError when logging the missing last balance. It should fall back to a zero
+    profit/loss amount instead of crashing the PnL report."""
+    with accountant.db.conn.write_ctx() as write_cursor:
+        DBEth2(accountant.db).add_or_update_validators(write_cursor, [
+            ValidatorDetails(
+                validator_index=(vindex := 2002),
+                public_key=Eth2PubKey('0xbeeff7a39b4e56a5f5a9e06550a8b9a3251c4a8d8b7c5c9e5d8e9f0a1b2c3d4'),
+                validator_type=ValidatorType.ACCUMULATING,
+            ),
+        ])
+    accountant.process_history(
+        start_ts=Timestamp(0),
+        end_ts=ts_now(),
+        events=[EthWithdrawalEvent(
+            validator_index=vindex,
+            timestamp=TimestampMS(1729000004000),
+            amount=FVal(32),  # <= MAX_EFFECTIVE_BALANCE, so it takes the no-profit branch
+            withdrawal_address=ethereum_accounts[0],
+            is_exit=True,
+        )],
+    )
+    # reaching here without an IndexError is the regression check. The exit falls back to a
+    # zero profit/loss amount, which records no taxable event.
+    assert len(accountant.pots[0].processed_events) == 0
+    assert accountant.pots[0].pnls.taxable == ZERO
