@@ -271,8 +271,14 @@ def bytes_to_hexstr(value: bytes) -> str:
     return '0x' + hexstr
 
 
+@functools.lru_cache(maxsize=8192)
 def bytes_to_address(value: bytes) -> ChecksumEvmAddress:
     """Turns 32 bytes/hexbytes into a checksummed EVM address
+
+    Cached since it's called for every address extracted from a transaction log's
+    topics/data during decoding and the underlying to_checksum_address() runs a
+    keccak256 hash per call. The input bytes are immutable/hashable and the function
+    is pure, so caching is safe; lru_cache never caches the raised exception below.
 
     May raise:
     - DeserializationError if it can't convert a value to an int or if an unexpected
