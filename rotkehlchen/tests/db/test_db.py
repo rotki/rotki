@@ -186,6 +186,7 @@ TABLES_AT_INIT = [
     'zksynclite_swaps',
     'calendar_reminders',
     'cowswap_orders',
+    'data_issues',
     'gnosispay_data',
     'historical_balance_cache',
     'solana_transactions',
