@@ -12,7 +12,6 @@ import { useAssetPricesApi } from '@/modules/assets/api/use-asset-prices-api';
 import { setupDayjs } from '@/modules/core/common/data/date';
 import { useLocations } from '@/modules/core/common/use-locations';
 import { useHistoryEventCounterpartyMappings } from '@/modules/history/events/mapping/use-history-event-counterparty-mappings';
-import { useHistoryEventMappings } from '@/modules/history/events/mapping/use-history-event-mappings';
 import { useHistoryEvents } from '@/modules/history/events/use-history-events';
 import SolanaEventForm from '@/modules/history/management/forms/SolanaEventForm.vue';
 
@@ -189,26 +188,6 @@ describe('forms/SolanaEventForm.vue', () => {
     expect(notesTextArea.element.value).toBe(group.userNotes);
   });
 
-  it('should show all eventTypes options correctly', async () => {
-    wrapper = createWrapper({ props: { data: { group, nextSequenceId: '1', type: 'group-add' } } });
-    await vi.advanceTimersToNextTimerAsync();
-
-    const { historyEventTypesData } = useHistoryEventMappings();
-
-    expect(wrapper.findAll('[data-cy=eventType] .selections span')).toHaveLength(get(historyEventTypesData).length);
-  });
-
-  it('should show all eventSubTypes options correctly', async () => {
-    wrapper = createWrapper({ props: { data: { group, nextSequenceId: '1', type: 'group-add' } } });
-    await vi.advanceTimersToNextTimerAsync();
-
-    const { historyEventSubTypesData } = useHistoryEventMappings();
-
-    expect(wrapper.findAll('[data-cy=eventSubtype] .selections span')).toHaveLength(
-      get(historyEventSubTypesData).length,
-    );
-  });
-
   it('should show all counterparties options correctly', async () => {
     wrapper = createWrapper({ props: { data: { group, nextSequenceId: '1', type: 'group-add' } } });
     await vi.advanceTimersToNextTimerAsync();
@@ -218,29 +197,6 @@ describe('forms/SolanaEventForm.vue', () => {
     expect(wrapper.findAll('[data-cy=counterparty] .selections span')).toHaveLength(get(counterparties).length);
   });
 
-  it('should show correct eventSubtypes options, based on selected eventType and counterparty', async () => {
-    wrapper = createWrapper({ props: { data: { group, nextSequenceId: '1', type: 'group-add' } } });
-    await vi.advanceTimersToNextTimerAsync();
-
-    const { historyEventTypeGlobalMapping } = useHistoryEventMappings();
-
-    const selectedEventType = 'deposit';
-
-    await wrapper.find('[data-cy=eventType] .input-value').trigger('input', {
-      value: selectedEventType,
-    });
-
-    await vi.advanceTimersToNextTimerAsync();
-
-    const keysFromGlobalMappings = Object.keys(get(historyEventTypeGlobalMapping)?.[selectedEventType] ?? {});
-
-    const spans = wrapper.findAll('[data-cy=eventSubtype] .selections span');
-    expect(spans).toHaveLength(keysFromGlobalMappings.length);
-
-    for (let i = 0; i < keysFromGlobalMappings.length; i++)
-      expect(keysFromGlobalMappings).toContain(spans.at(i)!.text());
-  });
-
   it('should add a new solana event when form is submitted', async () => {
     wrapper = createWrapper();
     await nextTick();
@@ -248,7 +204,11 @@ describe('forms/SolanaEventForm.vue', () => {
 
     await wrapper.find('[data-cy=tx-ref] input').setValue(group.txRef);
     await wrapper.find('[data-cy=location] input').setValue(group.location);
-    await wrapper.find('[data-cy=eventType] input').setValue(group.eventType);
+    wrapper.findComponent({ name: 'HistoryEventActionPicker' }).vm.$emit('update:modelValue', {
+      eventSubtype: group.eventSubtype || 'none',
+      eventType: group.eventType,
+    });
+    await nextTick();
     await wrapper.find('[data-cy=asset] input').setValue(group.asset);
     await wrapper.find('[data-cy=amount] input').setValue('100');
     await wrapper.find('[data-cy=sequence-index] input').setValue(group.sequenceIndex);

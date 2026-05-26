@@ -573,6 +573,13 @@ def test_events_mappings(rotkehlchen_api_server_with_exchanges: 'APIServer') -> 
         },
     }
     assert 'event_category_details' in result
+    for category_details in result['event_category_details'].values():
+        assert {'counterparty_mappings', 'direction', 'group'} <= category_details.keys()
+        assert category_details['group'] in result['event_category_groups']
+    assert 'event_category_groups' in result
+    for group_details in result['event_category_groups'].values():
+        assert {'icon', 'order'} == group_details.keys()
+        assert isinstance(group_details['order'], int)
     assert 'accounting_events_icons' in result
     received_accounting_event_types = {
         AccountingEventType.deserialize(event_type)

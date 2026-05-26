@@ -86,7 +86,8 @@
             "icon": "lu-arrow-up"
           }
         },
-        "direction": "out"
+        "direction": "out",
+        "group": "other"
       },
       "receive": {
         "counterparty_mappings": {
@@ -96,7 +97,8 @@
             "color": "success"
           }
         },
-        "direction": "in"
+        "direction": "in",
+        "group": "other"
       },
       "swap out": {
         "counterparty_mappings": {
@@ -105,7 +107,8 @@
             "icon": "lu-redo-2"
           }
         },
-        "direction": "out"
+        "direction": "out",
+        "group": "other"
       },
       "swap in": {
         "counterparty_mappings": {
@@ -115,7 +118,8 @@
             "color": "success"
           }
         },
-        "direction": "in"
+        "direction": "in",
+        "group": "other"
       },
       "migrate out": {
         "counterparty_mappings": {
@@ -124,7 +128,8 @@
             "icon": "lu-redo-2"
           }
         },
-        "direction": "out"
+        "direction": "out",
+        "group": "other"
       },
       "migrate in": {
         "counterparty_mappings": {
@@ -134,7 +139,8 @@
             "color": "success"
           }
         },
-        "direction": "in"
+        "direction": "in",
+        "group": "other"
       },
       "approval": {
         "counterparty_mappings": {
@@ -143,7 +149,8 @@
             "icon": "lu-lock-keyhole-open"
           }
         },
-        "direction": "neutral"
+        "direction": "neutral",
+        "group": "other"
       },
       "deposit": {
         "counterparty_mappings": {
@@ -153,7 +160,8 @@
             "color": "success"
           }
         },
-        "direction": "out"
+        "direction": "out",
+        "group": "other"
       },
       "withdraw": {
         "counterparty_mappings": {
@@ -162,7 +170,8 @@
             "icon": "lu-download"
           }
         },
-        "direction": "in"
+        "direction": "in",
+        "group": "other"
       },
       "airdrop": {
         "counterparty_mappings": {
@@ -171,7 +180,8 @@
             "icon": "lu-gift"
           }
         },
-        "direction": "in"
+        "direction": "in",
+        "group": "other"
       },
       "borrow": {
         "counterparty_mappings": {
@@ -180,7 +190,8 @@
             "icon": "lu-hand-coins"
           }
         },
-        "direction": "in"
+        "direction": "in",
+        "group": "other"
       },
       "repay": {
         "counterparty_mappings": {
@@ -189,7 +200,8 @@
             "icon": "lu-history"
           }
         },
-        "direction": "out"
+        "direction": "out",
+        "group": "other"
       },
       "deploy": {
         "counterparty_mappings": {
@@ -198,7 +210,8 @@
             "icon": "lu-rocket"
           }
         },
-        "direction": "neutral"
+        "direction": "neutral",
+        "group": "other"
       },
       "deploy with spend": {
         "counterparty_mappings": {
@@ -207,7 +220,8 @@
             "icon": "lu-rocket"
           }
         },
-        "direction": "out"
+        "direction": "out",
+        "group": "other"
       },
       "bridge deposit": {
         "counterparty_mappings": {
@@ -217,7 +231,8 @@
             "color": "error"
           }
         },
-        "direction": "out"
+        "direction": "out",
+        "group": "other"
       },
       "bridge withdrawal": {
         "counterparty_mappings": {
@@ -227,7 +242,8 @@
             "color": "success"
           }
         },
-        "direction": "in"
+        "direction": "in",
+        "group": "other"
       },
       "governance": {
         "counterparty_mappings": {
@@ -236,7 +252,8 @@
             "icon": "lu-scale"
           }
         },
-        "direction": "neutral"
+        "direction": "neutral",
+        "group": "other"
       },
       "donate": {
         "counterparty_mappings": {
@@ -245,7 +262,8 @@
             "icon": "lu-donate-fill"
           }
         },
-        "direction": "out"
+        "direction": "out",
+        "group": "other"
       },
       "receive donation": {
         "counterparty_mappings": {
@@ -254,7 +272,8 @@
             "icon": "lu-receive-donation-fill"
           }
         },
-        "direction": "in"
+        "direction": "in",
+        "group": "other"
       },
       "renew": {
         "counterparty_mappings": {
@@ -263,7 +282,8 @@
             "icon": "lu-refresh-cw"
           }
         },
-        "direction": "out"
+        "direction": "out",
+        "group": "other"
       },
       "place order": {
         "counterparty_mappings": {
@@ -272,7 +292,8 @@
             "icon": "lu-briefcase"
           }
         },
-        "direction": "neutral"
+        "direction": "neutral",
+        "group": "other"
       },
       "transfer": {
         "counterparty_mappings": {
@@ -281,7 +302,8 @@
             "icon": "lu-arrow-up-down"
           }
         },
-        "direction": "neutral"
+        "direction": "neutral",
+        "group": "other"
       },
       "staking reward": {
         "counterparty_mappings": {
@@ -290,7 +312,8 @@
             "icon": "lu-trophy"
           }
         },
-        "direction": "in"
+        "direction": "in",
+        "group": "other"
       },
       "claim reward": {
         "counterparty_mappings": {
@@ -299,7 +322,8 @@
             "icon": "lu-gift"
           }
         },
-        "direction": "in"
+        "direction": "in",
+        "group": "other"
       },
       "liquidation reward": {
         "counterparty_mappings": {
@@ -308,7 +332,8 @@
             "icon": "lu-droplet-fill"
           }
         },
-        "direction": "in"
+        "direction": "in",
+        "group": "other"
       },
       "liquidation loss": {
         "counterparty_mappings": {
@@ -317,7 +342,8 @@
             "icon": "lu-droplet-half-fill"
           }
         },
-        "direction": "out"
+        "direction": "out",
+        "group": "other"
       },
       "informational": {
         "counterparty_mappings": {
@@ -326,7 +352,8 @@
             "icon": "lu-info"
           }
         },
-        "direction": "neutral"
+        "direction": "neutral",
+        "group": "other"
       },
       "cancel order": {
         "counterparty_mappings": {
@@ -336,7 +363,8 @@
             "color": "error"
           }
         },
-        "direction": "in"
+        "direction": "in",
+        "group": "other"
       },
       "refund": {
         "counterparty_mappings": {
@@ -345,7 +373,8 @@
             "icon": "lu-refund"
           }
         },
-        "direction": "in"
+        "direction": "in",
+        "group": "other"
       },
       "fee": {
         "counterparty_mappings": {
@@ -358,7 +387,8 @@
             "icon": "lu-flame"
           }
         },
-        "direction": "out"
+        "direction": "out",
+        "group": "other"
       },
       "mev reward": {
         "counterparty_mappings": {
@@ -367,7 +397,8 @@
             "icon": "lu-medal"
           }
         },
-        "direction": "in"
+        "direction": "in",
+        "group": "other"
       },
       "create block": {
         "counterparty_mappings": {
@@ -376,7 +407,8 @@
             "icon": "lu-box"
           }
         },
-        "direction": "in"
+        "direction": "in",
+        "group": "other"
       },
       "create project": {
         "counterparty_mappings": {
@@ -385,7 +417,8 @@
             "icon": "lu-file-plus"
           }
         },
-        "direction": "neutral"
+        "direction": "neutral",
+        "group": "other"
       },
       "update project": {
         "counterparty_mappings": {
@@ -394,7 +427,8 @@
             "icon": "lu-square-pen"
           }
         },
-        "direction": "neutral"
+        "direction": "neutral",
+        "group": "other"
       },
       "apply": {
         "counterparty_mappings": {
@@ -403,7 +437,8 @@
             "icon": "lu-circle-arrow-out-up-right"
           }
         },
-        "direction": "neutral"
+        "direction": "neutral",
+        "group": "other"
       },
       "stake deposit": {
         "counterparty_mappings": {
@@ -412,7 +447,8 @@
             "icon": "lu-layers-in"
           }
         },
-        "direction": "out"
+        "direction": "out",
+        "group": "other"
       },
       "stake withdrawal": {
         "counterparty_mappings": {
@@ -421,8 +457,12 @@
             "icon": "lu-layers-out"
           }
         },
-        "direction": "in"
+        "direction": "in",
+        "group": "other"
       }
+    },
+    "event_category_groups": {
+      "other": { "icon": "lu-circle-question-mark", "order": 999 }
     },
     "accounting_events_icons": {
       "trade": "lu-send-to-back",

@@ -218,6 +218,15 @@ defineExpose({
 
 <template>
   <div>
+    <HistoryEventTypeForm
+      v-model:event-type="eventType"
+      v-model:event-subtype="eventSubtype"
+      :counterparty="counterparty"
+      :entry-type="HistoryEventEntryType.EVM_EVENT"
+      :v$="v$"
+      class="mb-4"
+    />
+
     <div class="grid md:grid-cols-2 gap-4 mb-4">
       <EventDateLocation
         v-model:timestamp="timestamp"
@@ -243,15 +252,6 @@ defineExpose({
       required
       :error-messages="toMessages(v$.txRef)"
       @blur="v$.txRef.$touch()"
-    />
-
-    <RuiDivider class="mb-6 mt-2" />
-
-    <HistoryEventTypeForm
-      v-model:event-type="eventType"
-      v-model:event-subtype="eventSubtype"
-      :counterparty="counterparty"
-      :v$="v$"
     />
 
     <RuiDivider class="mb-6 mt-2" />

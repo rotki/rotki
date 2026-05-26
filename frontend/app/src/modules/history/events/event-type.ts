@@ -28,7 +28,19 @@ const HistoryEventCategoryDirection = z.enum(['neutral', 'in', 'out']);
 const HistoryEventCategory = z.object({
   counterpartyMappings: z.record(z.string(), HistoryEventCategoryDetail),
   direction: HistoryEventCategoryDirection,
+  group: z.string(),
 });
+
+export const EventCategoryGroupDetail = z.object({
+  icon: RuiIcon,
+  order: z.number(),
+});
+
+export type EventCategoryGroupDetail = z.infer<typeof EventCategoryGroupDetail>;
+
+export const EventCategoryGroups = z.record(z.string(), EventCategoryGroupDetail);
+
+export type EventCategoryGroups = z.infer<typeof EventCategoryGroups>;
 
 export const HistoryEventCategoryDetailWithId = HistoryEventCategoryDetail.extend({
   direction: HistoryEventCategoryDirection,
@@ -41,10 +53,16 @@ export const HistoryEventCategoryMapping = z.record(z.string(), HistoryEventCate
 
 export type HistoryEventCategoryMapping = z.infer<typeof HistoryEventCategoryMapping>;
 
+export interface EventTypeCombination {
+  eventType: string;
+  eventSubtype: string;
+}
+
 export const HistoryEventTypeData = z.object({
   accountingEventsIcons: z.record(z.string(), RuiIcon),
   entryTypeMappings: z.partialRecord(z.enum(HistoryEventEntryType), z.record(z.string(), HistoryEventTypeMapping)),
   eventCategoryDetails: HistoryEventCategoryMapping,
+  eventCategoryGroups: EventCategoryGroups,
   globalMappings: HistoryEventTypeGlobalMapping,
 });
 

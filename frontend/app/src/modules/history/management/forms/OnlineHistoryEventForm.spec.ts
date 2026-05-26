@@ -12,7 +12,6 @@ import { useAssetPricesApi } from '@/modules/assets/api/use-asset-prices-api';
 import { usePriceTaskManager } from '@/modules/assets/prices/use-price-task-manager';
 import { setupDayjs } from '@/modules/core/common/data/date';
 import { useLocations } from '@/modules/core/common/use-locations';
-import { useHistoryEventMappings } from '@/modules/history/events/mapping/use-history-event-mappings';
 import { useHistoryEvents } from '@/modules/history/events/use-history-events';
 import OnlineHistoryEventForm from '@/modules/history/management/forms/OnlineHistoryEventForm.vue';
 
@@ -183,49 +182,6 @@ describe('forms/OnlineHistoryEventForm.vue', () => {
     expect(noteTextArea.element.value).toBe(event.userNotes);
   });
 
-  it('should show all eventTypes options correctly', async () => {
-    wrapper = createWrapper({ props: { data: { group: event, nextSequenceId: '1', type: 'group-add' } } });
-    await vi.advanceTimersToNextTimerAsync();
-
-    const { historyEventTypesData } = useHistoryEventMappings();
-
-    expect(wrapper.findAll('[data-cy=eventType] .selections span')).toHaveLength(get(historyEventTypesData).length);
-  });
-
-  it('should show all eventSubTypes options correctly', async () => {
-    wrapper = createWrapper({ props: { data: { group: event, nextSequenceId: '1', type: 'group-add' } } });
-    await vi.advanceTimersToNextTimerAsync();
-
-    const { historyEventSubTypesData } = useHistoryEventMappings();
-
-    expect(wrapper.findAll('[data-cy=eventSubtype] .selections span')).toHaveLength(
-      get(historyEventSubTypesData).length,
-    );
-  });
-
-  it('should show correct eventSubtypes options, based on selected eventType', async () => {
-    wrapper = createWrapper({ props: { data: { group: event, nextSequenceId: '1', type: 'group-add' } } });
-    await vi.advanceTimersToNextTimerAsync();
-
-    const { historyEventTypeGlobalMapping } = useHistoryEventMappings();
-
-    const selectedEventType = 'deposit';
-
-    await wrapper.find('[data-cy=eventType] .input-value').trigger('input', {
-      value: selectedEventType,
-    });
-
-    await vi.advanceTimersToNextTimerAsync();
-
-    const keysFromGlobalMappings = Object.keys(get(historyEventTypeGlobalMapping)?.[selectedEventType] ?? {});
-
-    const spans = wrapper.findAll('[data-cy=eventSubtype] .selections span');
-    expect(spans).toHaveLength(keysFromGlobalMappings.length);
-
-    for (let i = 0; i < keysFromGlobalMappings.length; i++)
-      expect(keysFromGlobalMappings).toContain(spans.at(i)!.text());
-  });
-
   it('should add a new online event', async () => {
     wrapper = createWrapper();
     await vi.advanceTimersToNextTimerAsync();
@@ -234,8 +190,11 @@ describe('forms/OnlineHistoryEventForm.vue', () => {
     await wrapper.find('[data-cy=location] input').setValue(event.location);
     await wrapper.find('[data-cy=locationLabel] input').setValue(event.locationLabel);
     await wrapper.find('[data-cy=datetime] input').setValue(dayjs(event.timestamp).format('DD/MM/YYYY HH:mm:ss.SSS'));
-    await wrapper.find('[data-cy=eventType] input').setValue(event.eventType);
-    await wrapper.find('[data-cy=eventSubtype] input').setValue(event.eventSubtype);
+    wrapper.findComponent({ name: 'HistoryEventActionPicker' }).vm.$emit('update:modelValue', {
+      eventSubtype: event.eventSubtype,
+      eventType: event.eventType,
+    });
+    await nextTick();
     await wrapper.find('[data-cy=asset] input').setValue(asset.symbol);
     await wrapper.find('[data-cy=amount] input').setValue(event.amount.toString());
     await wrapper.find('[data-cy=sequence-index] input').setValue(event.sequenceIndex.toString());
@@ -366,8 +325,11 @@ describe('forms/OnlineHistoryEventForm.vue', () => {
 
     await wrapper.find('[data-cy=location] input').setValue(event.location);
     await wrapper.find('[data-cy=datetime] input').setValue(dayjs(event.timestamp).format('DD/MM/YYYY HH:mm:ss.SSS'));
-    await wrapper.find('[data-cy=eventType] input').setValue(event.eventType);
-    await wrapper.find('[data-cy=eventSubtype] input').setValue(event.eventSubtype);
+    wrapper.findComponent({ name: 'HistoryEventActionPicker' }).vm.$emit('update:modelValue', {
+      eventSubtype: event.eventSubtype,
+      eventType: event.eventType,
+    });
+    await nextTick();
     await wrapper.find('[data-cy=asset] input').setValue(asset.symbol);
     await wrapper.find('[data-cy=amount] input').setValue(event.amount.toString());
     // Note: groupIdentifier field is left empty

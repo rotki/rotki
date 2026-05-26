@@ -423,6 +423,7 @@ describe('composables/api/history/events/index', () => {
               global_mappings: {},
               entry_type_mappings: {},
               event_category_details: {},
+              event_category_groups: {},
               accounting_events_icons: {},
             },
             message: '',

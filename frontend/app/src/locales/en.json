@@ -1520,6 +1520,24 @@
   },
   "backend_mappings": {
     "events": {
+      "group": {
+        "approval": "Approval",
+        "bridge": "Bridge",
+        "cex": "Centralized exchange",
+        "defi_borrow_repay": "DeFi borrow & repay",
+        "defi_deposit_withdraw": "DeFi deposit & withdraw",
+        "donation": "Donation",
+        "expense": "Expense",
+        "governance": "Governance",
+        "income": "Income",
+        "loss": "Loss",
+        "nft": "NFT",
+        "other": "Other",
+        "staking": "Staking",
+        "trade": "Trade",
+        "transfer": "Transfer",
+        "validator": "Validator"
+      },
       "history_event_subtype": {
         "airdrop": "Airdrop",
         "approve": "Approve",
@@ -1871,6 +1889,7 @@
       "cancel": "Cancel",
       "clear_selection": "Clear Selection",
       "close": "Close",
+      "collapse": "Collapse",
       "confirm": "Confirm",
       "continue": "Continue",
       "copy": "Copy",
@@ -1881,6 +1900,7 @@
       "download": "Download",
       "download_csv": "Download CSV",
       "edit": "Edit",
+      "expand": "Expand",
       "export_csv": "Export CSV",
       "filter": "Filter",
       "finish": "Finish",
@@ -3643,6 +3663,19 @@
     "timestamp_label": "Date and Time",
     "title": "Historical Balances",
     "trigger_processing": "Process Historical Events"
+  },
+  "history_event_action": {
+    "direction": {
+      "in": "In",
+      "neutral": "Neutral",
+      "out": "Out"
+    },
+    "picker": {
+      "empty": "No actions match your search.",
+      "keyboard_hint": "↑↓ navigate · ↵ select · esc close",
+      "label": "Action",
+      "placeholder": "Choose an action"
+    }
   },
   "history_events_alert": {
     "nudge": "History events need to be queried and decoded. Navigate to {link} view to ensure your data is up to date."
@@ -5788,6 +5821,9 @@
       "form": {
         "account_address": {
           "label": "Account Address"
+        },
+        "action": {
+          "hint": "What this event represents — e.g. receive, swap, stake."
         },
         "address": {
           "validation": {
