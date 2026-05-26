@@ -16,6 +16,7 @@ import { useBalancesStore } from '@/modules/balances/use-balances-store';
 import { getBlockchainLocationBreakdown, getExchangeByLocationBalances, useLocationBreakdown } from '@/modules/balances/use-location-breakdown';
 import { bigNumberSum } from '@/modules/core/common/data/calculation';
 import { TRADE_LOCATION_BLOCKCHAIN } from '@/modules/core/common/defaults';
+import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
 
 interface UseAggregatedBalancesReturn {
   useBalances: (hideIgnored?: boolean, groupMultiChain?: boolean, exclude?: ExclusionSource[]) => ComputedRef<AssetBalanceWithPriceAndChains[]>;
@@ -41,6 +42,7 @@ export function useAggregatedBalances(): UseAggregatedBalancesReturn {
 
   const resolveAssetIdentifier = useResolveAssetIdentifier();
   const { getCollectionId, getCollectionMainAsset } = useCollectionInfo();
+  const { matchChain } = useSupportedChains();
   const baseExchangeBalances = useBaseExchangeBalances();
 
   const blockchainAssetBalances = computed<AssetProtocolBalancesWithChains>(() => blockchainToAssetProtocolBalances(get(blockchainBalances)));
@@ -227,6 +229,7 @@ export function useAggregatedBalances(): UseAggregatedBalancesReturn {
       getCollectionMainAsset,
       getAssetPrice,
       NoPrice,
+      matchChain,
     ),
   };
 }

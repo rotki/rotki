@@ -52,15 +52,26 @@ export function useLocationBreakdown(
   getCollectionMainAsset: (collectionId: string) => string | undefined,
   getAssetPrice: (asset: string, defaultValue: BigNumber) => BigNumber,
   noPrice: BigNumber,
+  matchChain: (location: string) => string | undefined,
 ): ComputedRef<AssetBalanceWithPrice[]> {
   return computed<AssetBalanceWithPrice[]>(() => {
     const selectedLocation = toValue(location);
+    const isBlockchainLocation = selectedLocation === TRADE_LOCATION_BLOCKCHAIN;
+    // A location identifier may be a chain alias (e.g. 'ethereum' → 'eth').
+    // When it is, treat the location as that specific chain so blockchain
+    // balances scoped to that chain are surfaced (plus any manual balances
+    // tagged with the same location label).
+    const chain = isBlockchainLocation ? undefined : matchChain(selectedLocation);
+
+    let blockchainSource: AssetProtocolBalances = {};
+    if (isBlockchainLocation)
+      blockchainSource = blockchainToAssetProtocolBalances(toValue(blockchainBalances));
+    else if (chain)
+      blockchainSource = blockchainToAssetProtocolBalances(toValue(blockchainBalances), 'assets', [chain]);
 
     const sources: Record<string, AssetProtocolBalances> = {
-      blockchain: selectedLocation === TRADE_LOCATION_BLOCKCHAIN
-        ? blockchainToAssetProtocolBalances(toValue(blockchainBalances))
-        : {},
-      exchanges: selectedLocation === TRADE_LOCATION_BLOCKCHAIN
+      blockchain: blockchainSource,
+      exchanges: isBlockchainLocation || chain
         ? {}
         : toValue(useBaseExchangeBalances(selectedLocation)),
       manual: manualToAssetProtocolBalances(
