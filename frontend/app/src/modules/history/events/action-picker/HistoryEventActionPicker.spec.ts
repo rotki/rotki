@@ -100,7 +100,11 @@ describe('historyEventActionPicker', () => {
     expect(updates[0][0]).toEqual({ eventSubtype: 'spend', eventType: 'trade' });
   });
 
-  it('should emit undefined when cleared', async () => {
+  it('should ignore implicit clears from the underlying autocomplete', async () => {
+    // RuiAutoComplete emits update:modelValue with undefined on Backspace-from-empty
+    // and on internal options resync. The picker is required and has no clear
+    // affordance, so these implicit clears must be discarded — the model value
+    // should only change in response to a row pick.
     findRowByTypeSubtype.mockReturnValue(row);
     const wrapper = mountPicker({ eventSubtype: 'spend', eventType: 'trade' });
     await flushPromises();
@@ -109,9 +113,7 @@ describe('historyEventActionPicker', () => {
     stub.vm.$emit('update:modelValue', undefined);
     await flushPromises();
 
-    const updates = wrapper.emitted('update:modelValue') ?? [];
-    expect(updates).toHaveLength(1);
-    expect(updates[0][0]).toBeUndefined();
+    expect(wrapper.emitted('update:modelValue')).toBeUndefined();
   });
 
   it('should render the row content in the item slot', async () => {
