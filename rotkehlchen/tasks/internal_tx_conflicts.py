@@ -23,6 +23,7 @@ from rotkehlchen.utils.misc import get_chunks, ts_now
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.aggregator import ChainsAggregator
+    from rotkehlchen.chain.evm.types import EvmIndexer
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.types import (
         EVM_CHAIN_IDS_WITH_TRANSACTIONS_TYPE,
@@ -156,7 +157,7 @@ def _repull_internal_tx_data(
         )
 
     parent_hash_internal_txs: list[EvmInternalTransaction] = []
-    indexer_source = ''
+    indexer_source: EvmIndexer | None = None
     if tx_data.to_address is not None:  # internals exist only for contract interactions
         try:
             parent_hash_internal_txs, _, indexer_source = chain_manager.transactions._query_internal_transactions_for_parent_hash(  # noqa: E501

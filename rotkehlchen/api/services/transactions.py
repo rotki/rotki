@@ -971,7 +971,7 @@ class TransactionsService:
 
         dbevmtx = chain_manager.transactions.dbevmtx  # either DBL2WithL1FeesTx or DBEvmTx
         parent_hash_internal_txs: list[EvmInternalTransaction] = []
-        indexer_source = 'unknown'
+        indexer_source: EvmIndexer | None = None
         if transaction.to_address is not None:  # internal transactions only through contracts
             parent_hash_internal_txs, _, indexer_source = (
                 chain_manager.transactions._query_internal_transactions_for_parent_hash(

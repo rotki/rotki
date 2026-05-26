@@ -130,8 +130,13 @@ class DBEvmTx(DBCommonTx[ChecksumEvmAddress, EvmTransaction, EVMTxHash, EvmTrans
             write_cursor: 'DBCursor',
             transactions: list[EvmInternalTransaction],
             relevant_address: ChecksumEvmAddress | None,
+            source: InternalTxSource = InternalTxSource.LEGACY,
     ) -> None:
-        """Adds evm internal transactions to the database"""
+        """Adds evm internal transactions to the database.
+
+        source is the indexer that produced these rows and is persisted for all of them.
+        It defaults to legacy for genesis/manual paths where the indexer is unknown."""
+        serialized_source = source.serialize_for_db()
         tx_tuples = [(
             tx.trace_id,
             tx.from_address,
@@ -139,7 +144,7 @@ class DBEvmTx(DBCommonTx[ChecksumEvmAddress, EvmTransaction, EVMTxHash, EvmTrans
             str(tx.value),
             str(tx.gas),
             str(tx.gas_used),
-            tx.source.serialize_for_db(),
+            serialized_source,
             tx.parent_tx_hash,
             tx.chain_id.serialize_for_db(),
         ) for tx in transactions]

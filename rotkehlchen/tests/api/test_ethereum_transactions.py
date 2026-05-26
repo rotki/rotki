@@ -19,7 +19,7 @@ from rotkehlchen.chain.evm.decoding.curve.constants import CPT_CURVE
 from rotkehlchen.chain.evm.decoding.monerium.constants import CPT_MONERIUM
 from rotkehlchen.chain.evm.decoding.monerium.decoder import MoneriumCommonDecoder
 from rotkehlchen.chain.evm.structures import EvmTxReceipt, EvmTxReceiptLog
-from rotkehlchen.chain.evm.types import string_to_evm_address
+from rotkehlchen.chain.evm.types import EvmIndexer, string_to_evm_address
 from rotkehlchen.chain.gnosis.modules.gnosis_pay.constants import CPT_GNOSIS_PAY
 from rotkehlchen.constants import ONE
 from rotkehlchen.constants.assets import A_BTC, A_DAI, A_ETH, A_EUR, A_MKR, A_USDT, A_WETH
@@ -1655,7 +1655,7 @@ def test_repull_empty_internals_preserves_db(
         patch.object(
             rotki.chains_aggregator.ethereum.node_inquirer,
             'get_transactions_with_source',
-            return_value=(iter([[]]), 'blockscout'),
+            return_value=(iter([[]]), EvmIndexer.BLOCKSCOUT),
         ),
     ):
         response = requests.put(
@@ -1790,7 +1790,7 @@ def test_repulling_transaction_internal_replace_failure_rolls_back_tx_data(
         patch.object(
             rotki.chains_aggregator.ethereum.transactions,
             '_query_internal_transactions_for_parent_hash',
-            return_value=(internal_before, None, 'etherscan'),
+            return_value=(internal_before, None, EvmIndexer.ETHERSCAN),
         ),
         patch.object(
             rotki.chains_aggregator.ethereum.transactions,

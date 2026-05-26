@@ -214,7 +214,7 @@ def test_query_and_save_internal_transactions_returns_only_new_hashes(
             gas=1,
             gas_used=1,
         ),
-    ]]), 'etherscan')), patch.object(
+    ]]), EvmIndexer.ETHERSCAN)), patch.object(
         ethereum_manager.node_inquirer,
         'get_transaction_by_hash',
         side_effect=_mock_get_transaction_by_hash,
@@ -278,7 +278,7 @@ def test_query_single_parent_hash_replaces_existing_internal_transactions(
             value=100,
             gas=30945,
             gas_used=0,
-        )]]), 'etherscan'),
+        )]]), EvmIndexer.ETHERSCAN),
     ):
         ethereum_manager.transactions._query_and_save_internal_transactions_for_parent_hash(
             parent_tx_hash=parent_tx.tx_hash,
@@ -337,7 +337,7 @@ def test_empty_repull_blocked_when_db_has_internals(
     with patch.object(
         ethereum_manager.node_inquirer,
         'get_transactions_with_source',
-        return_value=(iter([[]]), 'blockscout'),
+        return_value=(iter([[]]), EvmIndexer.BLOCKSCOUT),
     ), pytest.raises(DataIntegrityError, match='empty result'):
         ethereum_manager.transactions._query_and_save_internal_transactions_for_parent_hash(
             parent_tx_hash=parent_tx.tx_hash,
@@ -380,7 +380,7 @@ def test_empty_repull_allowed_when_db_has_no_internals(
     with patch.object(
         ethereum_manager.node_inquirer,
         'get_transactions_with_source',
-        return_value=(iter([[]]), 'blockscout'),
+        return_value=(iter([[]]), EvmIndexer.BLOCKSCOUT),
     ):
         ethereum_manager.transactions._query_and_save_internal_transactions_for_parent_hash(
             parent_tx_hash=parent_tx.tx_hash,
@@ -446,7 +446,7 @@ def test_nonempty_repull_replaces_existing_internals(
     with patch.object(
         ethereum_manager.node_inquirer,
         'get_transactions_with_source',
-        return_value=(iter([[updated_internal_tx]]), 'routescan'),
+        return_value=(iter([[updated_internal_tx]]), EvmIndexer.ROUTESCAN),
     ):
         ethereum_manager.transactions._query_and_save_internal_transactions_for_parent_hash(
             parent_tx_hash=parent_tx.tx_hash,
@@ -539,7 +539,7 @@ def test_query_range_replaces_internal_transactions_for_address(
             value=100,
             gas=30945,
             gas_used=0,
-        )]]), 'etherscan'),
+        )]]), EvmIndexer.ETHERSCAN),
     ):
         ethereum_manager.transactions._query_and_save_internal_transactions_for_range(
             address=queried_address,
