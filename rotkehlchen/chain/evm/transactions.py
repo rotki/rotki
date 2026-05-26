@@ -1099,8 +1099,8 @@ class EvmTransactions(ABC):  # noqa: B024
         receipt. Can be extended by subclasses for chain-specific information.
 
         May raise:
-        - RemoteError if there is a problem querying the data sources or transaction hash does
-        not exist.
+        - RemoteError if there is a problem querying the data sources.
+        - InputError if the transaction hash does not exist.
         """
         tx_receipt = self.dbevmtx.get_receipt(cursor=cursor, tx_hash=tx_hash, chain_id=self.evm_inquirer.chain_id)  # noqa: E501
         if tx_receipt is not None:
@@ -1383,10 +1383,7 @@ class EvmTransactions(ABC):  # noqa: B024
             )) == 1 and self.dbevmtx.get_receipt(cursor=cursor, tx_hash=tx_hash, chain_id=self.evm_inquirer.chain_id) is not None:  # noqa: E501
                 raise AlreadyExists(f'Transaction {tx_hash!s} is already in the DB')
 
-        tx_result = self.evm_inquirer.maybe_get_transaction_by_hash(tx_hash=tx_hash, must_exist=must_exist)  # noqa: E501
-        if tx_result is None:
-            raise InputError(f'Transaction data for {tx_hash!s} not found on chain.')
-        transaction, receipt_data = tx_result
+        transaction, receipt_data = self.evm_inquirer.maybe_get_transaction_by_hash(tx_hash=tx_hash, must_exist=must_exist)  # noqa: E501
         with self.database.user_write() as write_cursor:
             self.dbevmtx.add_transactions(
                 write_cursor=write_cursor,

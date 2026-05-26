@@ -267,9 +267,9 @@ def test_transaction_reference_addition(rotkehlchen_api_server: 'APIServer', sol
     if is_async_query:
         task_id = assert_ok_async_response(response)
         response_data = wait_for_async_task(rotkehlchen_api_server, task_id)
-        assert_error_async_response(response_data, f'{random_tx_hash} not found on chain.', status_code=HTTPStatus.NOT_FOUND)  # noqa: E501
+        assert_error_async_response(response_data, f'Transaction {random_tx_hash} was not found on ethereum', status_code=HTTPStatus.NOT_FOUND)  # noqa: E501
     else:
-        assert_error_response(response, f'{random_tx_hash} not found on chain.', status_code=HTTPStatus.NOT_FOUND)  # noqa: E501
+        assert_error_response(response, f'Transaction {random_tx_hash} was not found on ethereum', status_code=HTTPStatus.NOT_FOUND)  # noqa: E501
 
     # Test Solana transaction addition
     assert assert_proper_response_with_result(

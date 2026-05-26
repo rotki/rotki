@@ -2,7 +2,7 @@ import itertools
 import json
 import logging
 from collections import defaultdict
-from collections.abc import Callable, Iterator, Sequence
+from collections.abc import Callable, Iterator, Mapping, Sequence
 from itertools import zip_longest
 from typing import TYPE_CHECKING, Any, Literal, TypeVar, overload
 
@@ -46,6 +46,7 @@ from rotkehlchen.errors.misc import (
     BlockchainQueryError,
     ChainNotSupported,
     EventNotInABI,
+    InputError,
     NoAvailableIndexers,
     NotERC20Conformant,
     NotERC721Conformant,
@@ -480,6 +481,7 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
         if call_order is None:
             call_order = self.default_call_order()
         gas_limit_error_seen = False
+        transaction_not_found_seen = False
         for node_idx, weighted_node in enumerate(call_order):
             node_info = weighted_node.node_info
             if (rpc_node := self.rpc_mapping.get(node_info, None)) is None:
@@ -511,6 +513,7 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
                 web3 = rpc_node.rpc_client if rpc_node is not None else None
                 result = method(web3, **kwargs)
             except TransactionNotFound:
+                transaction_not_found_seen = True
                 if kwargs.get('must_exist', False) is True:
                     continue  # try other nodes, as transaction has to exist
                 return None
@@ -566,6 +569,8 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
             raise RequestTooLargeError(
                 f'Failed to query {method.__name__} for {self.blockchain} due to gas limit error',
             )
+        if transaction_not_found_seen:
+            raise InputError(f'Transaction {kwargs["tx_hash"]!s} was not found on {self.chain_name}')  # noqa: E501
 
         raise RemoteError(f'Error querying information from {self.blockchain!s}. Check logs for more information')  # noqa: E501
 
@@ -839,9 +844,12 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
             ))
         else:
             tx_data = web3.eth.get_transaction(tx_hash)  # type: ignore
-        if tx_data is None:
+        if tx_data is None or tx_data == 'null' or (
+            isinstance(tx_data, Mapping) and 'result' in tx_data and tx_data['result'] is None
+        ):
+            log.debug(f'{self.chain_name} transaction {tx_hash!s} was not found. Response was {tx_data}')  # noqa: E501
             if must_exist:  # fail, so other nodes can be tried
-                raise RemoteError(f'Querying for {self.chain_name} transaction {tx_hash!s} returned None')  # noqa: E501
+                raise TransactionNotFound(f'Transaction {tx_hash!s} was not found on {self.chain_name}')  # noqa: E501
 
             return None  # else it does not exist
 
@@ -866,14 +874,22 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
             tx_hash: EVMTxHash,
             call_order: Sequence[WeightedNode] | None = None,
             must_exist: bool = False,
-    ) -> tuple[EvmTransaction, dict[str, Any]] | None:
-        """Gets transaction by hash and raw receipt data"""
-        return self._query(
+    ) -> tuple[EvmTransaction, dict[str, Any]]:
+        """Gets transaction by hash and raw receipt data.
+
+        May raise:
+        - InputError if the transaction does not exist on-chain.
+        - RemoteError if no node can reliably answer the query.
+        """
+        if (result := self._query(
             method=self._get_transaction_by_hash,
             call_order=call_order,
             tx_hash=tx_hash,
             must_exist=must_exist,
-        )
+        )) is None:
+            raise InputError(f'Transaction {tx_hash!s} was not found on {self.chain_name}')
+
+        return result
 
     def get_transaction_by_hash(
             self,
@@ -885,15 +901,11 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
         This method assumes the tx_hash is present on-chain,
         and we are connected to at least 1 node that can retrieve it.
         """
-        result = self.maybe_get_transaction_by_hash(
+        return self.maybe_get_transaction_by_hash(
             call_order=call_order,
             tx_hash=tx_hash,
             must_exist=True,
         )
-        if result is None:
-            raise RemoteError(f'{self.chain_name} transaction {tx_hash!s} is expected to exist')
-
-        return result
 
     def get_logs(
             self,

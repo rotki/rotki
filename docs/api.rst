@@ -2645,6 +2645,82 @@ Managing blockchain transactions
    :statuscode 500: Internal rotki error.
    :statuscode 502: An external service used in the query such as etherscan could not be reached or returned unexpected response.
 
+.. http:get:: /api/(version)/blockchains/evm/transactions/lookup
+
+   Doing a GET on this endpoint will look up metadata for an EVM transaction. If the transaction and its receipt are already present in the database, the saved data is returned. Otherwise rotki will query the chain, validate that the transaction exists, save the transaction and receipt data, and return the metadata.
+
+   This is useful for forms that accept an EVM transaction hash and need to auto-populate transaction-derived fields such as the timestamp.
+
+   .. note::
+      This endpoint can also be queried asynchronously by using ``"async_query": true``.
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      GET /api/1/blockchains/evm/transactions/lookup HTTP/1.1
+      Host: localhost:5042
+      Content-Type: application/json;charset=UTF-8
+
+      {
+        "async_query": false,
+        "tx_hash": "0x65d53653c584cde22e559cec4667a7278f75966360590b725d87055fb17552ba",
+        "evm_chain": "ethereum",
+        "related_address": "0xb8553D9ee35dd23BB96fbd679E651B929821969B"
+      }
+
+   :reqjson bool async_query: Boolean denoting whether this is an asynchronous query or not.
+   :reqjson str tx_hash: The EVM transaction hash to look up.
+   :reqjson str evm_chain: The EVM chain name for the transaction, e.g. ``"ethereum"``, ``"optimism"`` or ``"base"``.
+   :reqjson str related_address: A tracked address on the requested EVM chain to relate to the transaction when it needs to be fetched and saved.
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+        "result": {
+          "tx_hash": "0x65d53653c584cde22e559cec4667a7278f75966360590b725d87055fb17552ba",
+          "evm_chain": "ethereum",
+          "timestamp": 1713350400,
+          "block_number": 19680000,
+          "from_address": "0xb8553D9ee35dd23BB96fbd679E651B929821969B",
+          "to_address": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+          "value": "0",
+          "gas": "21000",
+          "gas_price": "1000000000",
+          "gas_used": "21000",
+          "nonce": 7,
+          "was_fetched": true
+        },
+        "message": ""
+      }
+
+   :resjson object result: The transaction metadata.
+   :resjson string result.tx_hash: The transaction hash.
+   :resjson string result.evm_chain: The EVM chain name.
+   :resjson int result.timestamp: The transaction timestamp in seconds.
+   :resjson int result.block_number: The block number containing the transaction.
+   :resjson string result.from_address: The transaction sender.
+   :resjson string result.to_address: The transaction recipient. Can be null for contract creation transactions.
+   :resjson string result.value: The native token value transferred, in wei.
+   :resjson string result.gas: The transaction gas limit.
+   :resjson string result.gas_price: The transaction gas price.
+   :resjson string result.gas_used: The gas used by the transaction.
+   :resjson int result.nonce: The sender nonce.
+   :resjson bool result.was_fetched: True if rotki had to query and save the transaction before returning it. False if transaction and receipt data were already present in the database.
+
+   :statuscode 200: Transaction metadata was returned successfully.
+   :statuscode 400: Provided JSON is in some way malformed, the transaction hash/chain is invalid, or ``related_address`` is not tracked on the requested chain.
+   :statuscode 401: No user is currently logged in.
+   :statuscode 404: The transaction does not exist on the requested chain.
+   :statuscode 409: Temporary external service/node error. The request can be retried.
+   :statuscode 500: Internal rotki error.
+   :statuscode 502: The transaction data could not be deserialized or an external service/node returned an unexpected response.
+
 .. http:post:: /api/(version)/blockchains/transactions
 
    Doing a POST on the blockchain transactions endpoint will refresh/query blockchain transactions for the specified accounts within the given time range.

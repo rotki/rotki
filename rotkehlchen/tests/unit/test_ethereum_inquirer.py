@@ -1,5 +1,6 @@
 import json
 from collections.abc import Callable
+from contextlib import suppress
 from typing import TYPE_CHECKING, Any, Final
 from unittest.mock import patch
 
@@ -17,7 +18,7 @@ from rotkehlchen.chain.evm.structures import EvmTxReceipt, EvmTxReceiptLog
 from rotkehlchen.chain.evm.types import EvmIndexer, WeightedNode, string_to_evm_address
 from rotkehlchen.db.evmtx import DBEvmTx
 from rotkehlchen.db.settings import CachedSettings
-from rotkehlchen.errors.misc import EventNotInABI, RemoteError
+from rotkehlchen.errors.misc import EventNotInABI, InputError, RemoteError
 from rotkehlchen.tests.utils.checks import assert_serialized_dicts_equal
 from rotkehlchen.tests.utils.ethereum import (
     ETHEREUM_NODES_PARAMETERS_WITH_PRUNED_AND_NOT_ARCHIVED,
@@ -483,9 +484,10 @@ def test_get_pruned_nodes_behaviour_in_txn_queries(
     # ensure the pruned node comes first in the call order.
     call_order = ethereum_manager_connect_at_start
     random_evm_tx_hash = deserialize_evm_tx_hash('0x12ef63b6b8a863c028023374e5fb7a30a8b05559072ead2684084c58abbbeb6d')  # noqa: E501
-    tx_result = ethereum_inquirer.maybe_get_transaction_by_hash(random_evm_tx_hash, call_order)
+    with pytest.raises(InputError, match='was not found on ethereum'):
+        ethereum_inquirer.maybe_get_transaction_by_hash(random_evm_tx_hash, call_order)
     receipt = ethereum_inquirer.maybe_get_transaction_receipt(random_evm_tx_hash, call_order)
-    assert not tx_result and not receipt, 'transaction does not exist on-chain'
+    assert not receipt, 'transaction does not exist on-chain'
 
     # now, try retrieving an old transaction and see that the pruned node isn't called at all.
     # https://etherscan.io/tx/0x5958b93e28657cb34777c5b706b36bf6c72c9d0d704473163ba18cb14ba5a77a
@@ -498,6 +500,7 @@ def test_get_pruned_nodes_behaviour_in_txn_queries(
         assert tx_hash == txn_hash
         assert not web3 or web3.manager.provider.endpoint_uri != 'https://ethereum.publicnode.com'
         tx_or_tx_receipt_calls += 1
+        return 'query-result'
 
     get_tx_patch = patch.object(ethereum_inquirer, '_get_transaction_by_hash', side_effect=mock_get_tx_or_tx_receipt, autospec=True)  # noqa: E501
     get_tx_receipt_patch = patch.object(ethereum_inquirer, '_get_transaction_receipt', side_effect=mock_get_tx_or_tx_receipt, autospec=True)  # noqa: E501
@@ -520,6 +523,7 @@ def test_get_pruned_nodes_behaviour_in_txn_queries(
         nonlocal etherscan_tx_or_tx_receipt_calls
         assert tx_hash == txn_hash
         etherscan_tx_or_tx_receipt_calls += 1
+        return 'query-result'
 
     etherscan_get_tx_patch = patch.object(
         ethereum_inquirer.etherscan,
@@ -535,8 +539,10 @@ def test_get_pruned_nodes_behaviour_in_txn_queries(
     )
     call_order = pruned_node + [EVM_INDEXERS_NODE]
     with etherscan_get_tx_patch, etherscan_get_tx_receipt_patch:
-        ethereum_inquirer.maybe_get_transaction_by_hash(txn_hash, call_order)
-        ethereum_inquirer.maybe_get_transaction_receipt(txn_hash, call_order)
+        with suppress(RemoteError, InputError):
+            ethereum_inquirer.maybe_get_transaction_by_hash(txn_hash, call_order)
+        with suppress(RemoteError, InputError):
+            ethereum_inquirer.maybe_get_transaction_receipt(txn_hash, call_order)
         assert etherscan_tx_or_tx_receipt_calls == 2
 
 

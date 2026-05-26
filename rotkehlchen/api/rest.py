@@ -2178,6 +2178,19 @@ class RestAPI:
         return self.transactions_service.get_evm_transactions_status()
 
     @async_api_call()
+    def lookup_evm_transaction(
+            self,
+            tx_hash: EVMTxHash,
+            evm_chain: EVM_CHAIN_IDS_WITH_TRANSACTIONS_TYPE,
+            related_address: ChecksumEvmAddress,
+    ) -> dict[str, Any]:
+        return self.transactions_service.lookup_evm_transaction(
+            tx_hash=tx_hash,
+            evm_chain=evm_chain,
+            related_address=related_address,
+        )
+
+    @async_api_call()
     def get_count_transactions_not_decoded(self) -> dict[str, Any]:
         return self.transactions_service.get_count_transactions_not_decoded()
 
