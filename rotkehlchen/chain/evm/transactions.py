@@ -20,7 +20,7 @@ from rotkehlchen.chain.evm.types import EvmAccount
 from rotkehlchen.chain.structures import TimestampOrBlockRange
 from rotkehlchen.constants.resolver import evm_address_to_identifier
 from rotkehlchen.db.cache import DBCacheDynamic
-from rotkehlchen.db.constants import TX_INTERNALS_QUERIED
+from rotkehlchen.db.constants import TX_INTERNALS_QUERIED, InternalTxSource
 from rotkehlchen.db.evmtx import DBEvmTx
 from rotkehlchen.db.filtering import EvmTransactionsFilterQuery
 from rotkehlchen.db.ranges import DBQueryRanges
@@ -457,13 +457,17 @@ class EvmTransactions(ABC):  # noqa: B024
         else:
             queried_from_ts = None
 
-        for new_internal_txs in self.evm_inquirer.get_transactions(
+        internal_txs_iterator, indexer_source = self.evm_inquirer.get_transactions_with_source(
                 account=address,
                 period_or_hash=self.evm_inquirer.maybe_timestamp_to_block_range(period=period),
                 action='txlistinternal',
-        ):
+        )
+        # stamp the indexer that answered onto each row so it is persisted (see
+        # _query_internal_transactions). A single indexer serves the whole iterator.
+        tx_source = InternalTxSource.deserialize(indexer_source)
+        for new_internal_txs in internal_txs_iterator:
             if len(internal_txs_with_timestamps := self._process_internal_transactions_batch(
-                new_internal_txs=new_internal_txs,
+                new_internal_txs=[tx._replace(source=tx_source) for tx in new_internal_txs],
                 address=address,
                 parent_tx_timestamps=parent_tx_timestamps,
                 queried_hashes=queried_hashes,
@@ -622,9 +626,12 @@ class EvmTransactions(ABC):  # noqa: B024
                 action='txlistinternal',
                 tx_timestamp=tx_timestamp,
         )
+        # map the indexer display name (e.g. "Etherscan") to the normalized int-backed
+        # enum we persist. Names match InternalTxSource members so deserialize handles it.
+        tx_source = InternalTxSource.deserialize(indexer_source)
         for new_internal_txs in internal_txs_iterator:
             internal_txs_with_timestamps.extend(self._process_internal_transactions_batch(
-                new_internal_txs=[tx._replace(source=indexer_source) for tx in new_internal_txs],
+                new_internal_txs=[tx._replace(source=tx_source) for tx in new_internal_txs],
                 address=address,
                 parent_tx_timestamps=parent_tx_timestamps,
                 queried_hashes=queried_hashes,

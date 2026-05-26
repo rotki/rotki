@@ -2650,7 +2650,8 @@ class DBHandler:
                 if tuple_type == 'evm_transaction':
                     tx_hash_idx, chain_id_idx = 0, 1
                 else:  # relevant address can only be left for internal tx
-                    tx_hash_idx, chain_id_idx = 6, 7
+                    # tuple: (trace_id, from, to, value, gas, gas_used, source, tx_hash, chain_id)
+                    tx_hash_idx, chain_id_idx = 7, 8
                 write_cursor.executemany(
                     'INSERT OR IGNORE INTO evmtx_address_mappings(tx_id, address) '
                     'SELECT TX.identifier, ? FROM evm_transactions TX WHERE '

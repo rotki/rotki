@@ -21,6 +21,22 @@ TX_SPAM: Final = 1
 # Marks that full parent-hash internal transactions were queried and persisted for this tx.
 TX_INTERNALS_QUERIED: Final = 2
 
+
+class InternalTxSource(DBIntEnumMixIn):
+    """The indexer that produced an evm_internal_transactions row.
+
+    Persisted as int in the `source` column so indexer discrepancies are traceable.
+    LEGACY (0) is used for rows that predate source tracking and for any manual/test
+    insertion path where the indexer is unknown. Member names intentionally match the
+    indexer display names returned by the node inquirer so they can be deserialized
+    from those names directly.
+    """
+    LEGACY = 0
+    ETHERSCAN = 1
+    BLOCKSCOUT = 2
+    ROUTESCAN = 3
+
+
 # -- history_events_mappings values --
 HISTORY_MAPPING_KEY_STATE: Final = 'state'
 

@@ -13,6 +13,7 @@ from rotkehlchen.chain.evm.types import (
 )
 from rotkehlchen.chain.structures import TimestampOrBlockRange
 from rotkehlchen.constants.misc import ONE
+from rotkehlchen.db.constants import InternalTxSource
 from rotkehlchen.db.evmtx import DBEvmTx
 from rotkehlchen.db.filtering import EvmEventFilterQuery, EvmTransactionsFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
@@ -462,6 +463,9 @@ def test_nonempty_repull_replaces_existing_internals(
         parent_tx_id=parent_tx_id,
     )
     assert stored == [updated_internal_tx]
+    # the indexer that produced the row is persisted and read back (equality only checks
+    # identity, so assert source explicitly). 'routescan' -> InternalTxSource.ROUTESCAN
+    assert stored[0].source == InternalTxSource.ROUTESCAN
 
 
 def test_query_range_replaces_internal_transactions_for_address(
@@ -548,14 +552,16 @@ def test_query_range_replaces_internal_transactions_for_address(
             (parent_tx.tx_hash, ChainID.ETHEREUM.serialize_for_db()),
         ).fetchone()[0]
         rows = cursor.execute(
-            'SELECT trace_id, from_address, to_address, value, gas, gas_used '
+            'SELECT trace_id, from_address, to_address, value, gas, gas_used, source '
             'FROM evm_internal_transactions WHERE parent_tx=? ORDER BY trace_id ASC',
             (tx_identifier,),
         ).fetchall()
 
+    # the refetched row (trace_id 1) gets the real indexer source ('etherscan'); the
+    # untouched unrelated row (trace_id 2) keeps its legacy source from the initial insert
     assert rows == [
-        (1, queried_address, receiver, '100', '30945', '0'),
-        (2, unrelated_sender, unrelated_receiver, '111', '123', '0'),
+        (1, queried_address, receiver, '100', '30945', '0', InternalTxSource.ETHERSCAN.serialize_for_db()),  # noqa: E501
+        (2, unrelated_sender, unrelated_receiver, '111', '123', '0', InternalTxSource.LEGACY.serialize_for_db()),  # noqa: E501
     ]
 
 
