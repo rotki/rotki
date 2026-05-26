@@ -245,8 +245,24 @@ async function applyKeyedSearch(): Promise<void> {
   resetSearchState();
 }
 
+function highlightedMatcherKeyMatchesSearch(): boolean {
+  const searchToken = getTextToken(get(search).trim());
+  if (!searchToken)
+    return false;
+
+  const highlighted = get(filteredMatchers)[get(selectedSuggestion)];
+  if (!highlighted || highlighted.key === defaultMatcherKey)
+    return false;
+
+  return getTextToken(highlighted.key).includes(searchToken);
+}
+
 async function applySuggestion(): Promise<void> {
   if (!get(selectedMatcher)) {
+    if (highlightedMatcherKeyMatchesSearch()) {
+      autocompleteFirstMatcher();
+      return;
+    }
     if (await tryApplyDefaultMatcher())
       return;
     autocompleteFirstMatcher();

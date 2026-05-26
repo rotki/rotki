@@ -391,6 +391,245 @@ describe('table-filter', () => {
       const hasStart = emissions.some(([m]) => Object.prototype.hasOwnProperty.call(m, 'start'));
       expect(hasStart).toBe(false);
     });
+
+    it('should autocomplete the first key match on enter when multiple keys partially match', async () => {
+      const multiMatchers: StringSuggestionMatcher<string, string>[] = [
+        {
+          description: 'filter by event type',
+          key: 'event_type',
+          keyValue: 'event_type',
+          string: true,
+          suggestions: (): string[] => [],
+          validate: (): boolean => true,
+        },
+        {
+          description: 'filter by event subtype',
+          key: 'event_subtype',
+          keyValue: 'event_subtype',
+          string: true,
+          suggestions: (): string[] => [],
+          validate: (): boolean => true,
+        },
+      ];
+
+      wrapper = createWrapper({
+        props: {
+          defaultMatcherKey: 'note',
+          matchers: [
+            ...multiMatchers,
+            {
+              description: 'free-text notes',
+              key: 'note',
+              keyValue: 'note',
+              string: true,
+              suggestions: (): string[] => [],
+              validate: (): boolean => true,
+            },
+          ],
+          matches: {},
+        },
+      });
+      await vi.advanceTimersToNextTimerAsync();
+
+      await wrapper.find('[data-id=activator]').trigger('click');
+      await vi.advanceTimersToNextTimerAsync();
+
+      await wrapper.find('input').setValue('event');
+      await vi.advanceTimersToNextTimerAsync();
+
+      await wrapper.find('input').trigger('keydown.enter');
+      await vi.advanceTimersToNextTimerAsync();
+
+      expect(wrapper.find<HTMLInputElement>('input').element.value).toBe('event_type=');
+
+      const emissions = wrapper.emitted('update:matches') ?? [];
+      const committedAsNote = emissions.some(([m]) => Object.prototype.hasOwnProperty.call(m, 'note'));
+      expect(committedAsNote).toBe(false);
+    });
+
+    it('should still autocomplete on dropdown click when defaultMatcherKey is set', async () => {
+      wrapper = createWrapper({
+        props: {
+          defaultMatcherKey: FilterKeys.START,
+          matchers,
+          matches: {},
+        },
+      });
+      await vi.advanceTimersToNextTimerAsync();
+
+      await wrapper.find('[data-id=activator]').trigger('click');
+      await vi.advanceTimersToNextTimerAsync();
+
+      await wrapper.find('input').setValue('ty');
+      await vi.advanceTimersToNextTimerAsync();
+
+      await wrapper.find('[data-cy=suggestions] > button:first-child').trigger('click');
+      await vi.advanceTimersToNextTimerAsync();
+
+      expect(wrapper.find<HTMLInputElement>('input').element.value).toBe(`${FilterKeys.TYPE}=`);
+
+      const emissions = wrapper.emitted('update:matches') ?? [];
+      const committedAsStart = emissions.some(([m]) => Object.prototype.hasOwnProperty.call(m, 'start'));
+      expect(committedAsStart).toBe(false);
+    });
+
+    it('should autocomplete matcher key instead of committing default when search matches a key', async () => {
+      wrapper = createWrapper({
+        props: {
+          defaultMatcherKey: FilterKeys.START,
+          matchers,
+          matches: {},
+        },
+      });
+      await vi.advanceTimersToNextTimerAsync();
+
+      await wrapper.find('[data-id=activator]').trigger('click');
+      await vi.advanceTimersToNextTimerAsync();
+
+      // Partial match of an existing key ('type') — Enter must autocomplete to
+      // `type=` rather than commit `start=ty` via the default matcher.
+      await wrapper.find('input').setValue('ty');
+      await vi.advanceTimersToNextTimerAsync();
+
+      await wrapper.find('input').trigger('keydown.enter');
+      await vi.advanceTimersToNextTimerAsync();
+
+      expect(wrapper.find<HTMLInputElement>('input').element.value).toBe(`${FilterKeys.TYPE}=`);
+
+      const emissions = wrapper.emitted<[Record<string, unknown>]>('update:matches') ?? [];
+      const committed = emissions.some(([m]) => Object.values(m).some(v => v === 'ty' || (Array.isArray(v) && v.includes('ty'))));
+      expect(committed).toBe(false);
+    });
+
+    it('should commit as default matcher when typed text is a substring of the default key', async () => {
+      const matchersWithNotes: StringSuggestionMatcher<string, string>[] = [
+        {
+          description: 'filter by type',
+          key: 'type',
+          keyValue: 'type',
+          string: true,
+          suggestions: (): string[] => [],
+          validate: (): boolean => true,
+        },
+        {
+          description: 'free-text notes',
+          key: 'notes',
+          keyValue: 'notes',
+          string: true,
+          suggestions: (): string[] => [],
+          validate: (): boolean => true,
+        },
+      ];
+
+      wrapper = createWrapper({
+        props: {
+          defaultMatcherKey: 'notes',
+          matchers: matchersWithNotes,
+          matches: {},
+        },
+      });
+      await vi.advanceTimersToNextTimerAsync();
+
+      await wrapper.find('[data-id=activator]').trigger('click');
+      await vi.advanceTimersToNextTimerAsync();
+
+      await wrapper.find('input').setValue('note');
+      await vi.advanceTimersToNextTimerAsync();
+
+      await wrapper.find('input').trigger('keydown.enter');
+      await vi.advanceTimersToNextTimerAsync();
+
+      expect(wrapper.emitted('update:matches')?.at(-1)).toEqual([{ notes: 'note' }]);
+      expect(wrapper.find<HTMLInputElement>('input').element.value).toBe('');
+    });
+
+    it('should autocomplete on a single-character search when a key matches', async () => {
+      wrapper = createWrapper({
+        props: {
+          defaultMatcherKey: FilterKeys.START,
+          matchers,
+          matches: {},
+        },
+      });
+      await vi.advanceTimersToNextTimerAsync();
+
+      await wrapper.find('[data-id=activator]').trigger('click');
+      await vi.advanceTimersToNextTimerAsync();
+
+      // 't' matches the 'type' matcher key (the highlighted suggestion).
+      // The default matcher ('start') must NOT commit; instead autocomplete.
+      await wrapper.find('input').setValue('t');
+      await vi.advanceTimersToNextTimerAsync();
+
+      await wrapper.find('input').trigger('keydown.enter');
+      await vi.advanceTimersToNextTimerAsync();
+
+      expect(wrapper.find<HTMLInputElement>('input').element.value).toBe(`${FilterKeys.TYPE}=`);
+
+      const emissions = wrapper.emitted('update:matches') ?? [];
+      const committedAsStart = emissions.some(([m]) => Object.prototype.hasOwnProperty.call(m, 'start'));
+      expect(committedAsStart).toBe(false);
+    });
+
+    it('should autocomplete the highlighted key, not hijack via an unrelated key match', async () => {
+      // Two matchers: one whose KEY matches the search, one whose DESCRIPTION
+      // matches. Arrow-down moves the highlight onto the description-only entry.
+      // Enter must not autocomplete the description-only entry's key.
+      const mixedMatchers: StringSuggestionMatcher<string, string>[] = [
+        {
+          description: 'filter by event type',
+          key: 'event_type',
+          keyValue: 'event_type',
+          string: true,
+          suggestions: (): string[] => [],
+          validate: (): boolean => true,
+        },
+        {
+          description: 'related event sender address',
+          key: 'address',
+          keyValue: 'address',
+          string: true,
+          suggestions: (): string[] => [],
+          validate: (): boolean => true,
+        },
+        {
+          description: 'free-text notes',
+          key: 'notes',
+          keyValue: 'notes',
+          string: true,
+          suggestions: (): string[] => [],
+          validate: (): boolean => true,
+        },
+      ];
+
+      wrapper = createWrapper({
+        props: {
+          defaultMatcherKey: 'notes',
+          matchers: mixedMatchers,
+          matches: {},
+        },
+      });
+      await vi.advanceTimersToNextTimerAsync();
+
+      await wrapper.find('[data-id=activator]').trigger('click');
+      await vi.advanceTimersToNextTimerAsync();
+
+      await wrapper.find('input').setValue('event');
+      await vi.advanceTimersToNextTimerAsync();
+
+      // ArrowDown moves the highlight from event_type (key match) to address
+      // (description match).
+      await wrapper.find('input').trigger('keydown.down');
+      await vi.advanceTimersToNextTimerAsync();
+
+      await wrapper.find('input').trigger('keydown.enter');
+      await vi.advanceTimersToNextTimerAsync();
+
+      // Highlighted entry's key ('address') doesn't contain 'event' — fall back
+      // to the default matcher rather than autocompleting an unrelated key.
+      expect(wrapper.find<HTMLInputElement>('input').element.value).not.toBe('address=');
+      expect(wrapper.emitted('update:matches')?.at(-1)).toEqual([{ notes: 'event' }]);
+    });
   });
 
   describe('strictMatching', () => {
