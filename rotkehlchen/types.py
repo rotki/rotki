@@ -22,6 +22,7 @@ from hexbytes import HexBytes as Web3HexBytes
 
 from rotkehlchen.chain.solana.validation import is_valid_solana_address
 from rotkehlchen.constants import ZERO
+from rotkehlchen.db.constants import InternalTxSource
 from rotkehlchen.errors.misc import AddressNotSupported, InputError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.fval import FVal
@@ -396,7 +397,7 @@ class EvmInternalTransaction(NamedTuple):
     value: int
     gas: int
     gas_used: int
-    source: str | None = None
+    source: InternalTxSource = InternalTxSource.LEGACY
 
     def __hash__(self) -> int:
         return hash(self.identifier)

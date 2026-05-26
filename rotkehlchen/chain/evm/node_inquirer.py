@@ -1595,7 +1595,7 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
             action: Literal['txlistinternal'],
             period_or_hash: TimestampOrBlockRange | EVMTxHash | None = None,
             tx_timestamp: Timestamp | None = None,
-    ) -> tuple[Iterator[list[EvmInternalTransaction]], str]:
+    ) -> tuple[Iterator[list[EvmInternalTransaction]], EvmIndexer]:
         ...
 
     @overload
@@ -1605,7 +1605,7 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
             action: Literal['txlist'],
             period_or_hash: TimestampOrBlockRange | EVMTxHash | None = None,
             tx_timestamp: Timestamp | None = None,
-    ) -> tuple[Iterator[list[EvmTransaction]], str]:
+    ) -> tuple[Iterator[list[EvmTransaction]], EvmIndexer]:
         ...
 
     def get_transactions_with_source(
@@ -1614,8 +1614,8 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
             action: Literal['txlist', 'txlistinternal'],
             period_or_hash: TimestampOrBlockRange | EVMTxHash | None = None,
             tx_timestamp: Timestamp | None = None,
-    ) -> tuple[Iterator[list[EvmTransaction]] | Iterator[list[EvmInternalTransaction]], str]:
-        """Like get_transactions(), but also returns the indexer source name used."""
+    ) -> tuple[Iterator[list[EvmTransaction]] | Iterator[list[EvmInternalTransaction]], EvmIndexer]:  # noqa: E501
+        """Like get_transactions(), but also returns the indexer used."""
         if action == 'txlistinternal':
             return self._try_indexers_iterable_with_source(
                 func=lambda indexer: indexer.get_transactions(
@@ -1707,8 +1707,8 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
         result, _ = self._try_indexers_with_name(func=func)
         return result
 
-    def _try_indexers_with_name(self, func: Callable[[EtherscanLikeApi], T]) -> tuple[T, str]:
-        """Like _try_indexers, but also returns the indexer name used for the query."""
+    def _try_indexers_with_name(self, func: Callable[[EtherscanLikeApi], T]) -> tuple[T, EvmIndexer]:  # noqa: E501
+        """Like _try_indexers, but also returns the indexer used for the query."""
         if len(ordered_indexers := self._get_indexers_in_order()) == 0:
             if not self._no_indexer_notified:
                 self._no_indexer_notified = True
@@ -1738,7 +1738,7 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
                 log.warning(f'Failed to query {indexer.name} due to {e!s}. Trying next indexer.')
                 errors.append((indexer.name, e))
             else:
-                return result, indexer.name
+                return result, indexer_name
 
         raise RemoteError(
             f'Failed to query any indexer. '
@@ -1756,8 +1756,8 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
     def _try_indexers_iterable_with_source(
             self,
             func: Callable[[EtherscanLikeApi], Iterator[T]],
-    ) -> tuple[Iterator[T], str]:
-        """Like _try_indexers_iterable, but also returns the indexer name used."""
+    ) -> tuple[Iterator[T], EvmIndexer]:
+        """Like _try_indexers_iterable, but also returns the indexer used."""
         def _query_indexer_iterator(indexer: EtherscanLikeApi) -> Iterator[T]:
             """Consume the first item in the iterator returned by `func` so if it fails the
             exception is raised immediately, and _try_indexers goes to the next indexer.

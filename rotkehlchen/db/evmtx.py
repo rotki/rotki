@@ -24,6 +24,7 @@ from rotkehlchen.db.constants import (
     TX_DECODED,
     TX_INTERNALS_QUERIED,
     TX_SPAM,
+    InternalTxSource,
 )
 from rotkehlchen.db.dbtx import DBCommonTx
 from rotkehlchen.db.filtering import (
@@ -129,8 +130,13 @@ class DBEvmTx(DBCommonTx[ChecksumEvmAddress, EvmTransaction, EVMTxHash, EvmTrans
             write_cursor: 'DBCursor',
             transactions: list[EvmInternalTransaction],
             relevant_address: ChecksumEvmAddress | None,
+            source: InternalTxSource = InternalTxSource.LEGACY,
     ) -> None:
-        """Adds evm internal transactions to the database"""
+        """Adds evm internal transactions to the database.
+
+        source is the indexer that produced these rows and is persisted for all of them.
+        It defaults to legacy for genesis/manual paths where the indexer is unknown."""
+        serialized_source = source.serialize_for_db()
         tx_tuples = [(
             tx.trace_id,
             tx.from_address,
@@ -138,6 +144,7 @@ class DBEvmTx(DBCommonTx[ChecksumEvmAddress, EvmTransaction, EVMTxHash, EvmTrans
             str(tx.value),
             str(tx.gas),
             str(tx.gas_used),
+            serialized_source,
             tx.parent_tx_hash,
             tx.chain_id.serialize_for_db(),
         ) for tx in transactions]
@@ -149,8 +156,9 @@ class DBEvmTx(DBCommonTx[ChecksumEvmAddress, EvmTransaction, EVMTxHash, EvmTrans
               to_address,
               value,
               gas,
-              gas_used
-        ) SELECT evm_transactions.identifier, ?, ?, ?, ?, ?, ? FROM evm_transactions
+              gas_used,
+              source
+        ) SELECT evm_transactions.identifier, ?, ?, ?, ?, ?, ?, ? FROM evm_transactions
             WHERE tx_hash=? AND chain_id=?
         """
         self.db.write_tuples(
@@ -210,7 +218,7 @@ class DBEvmTx(DBCommonTx[ChecksumEvmAddress, EvmTransaction, EVMTxHash, EvmTrans
             bindings.append(to_address)
 
         query = (
-            'SELECT trace_id, from_address, to_address, value, gas, gas_used '
+            'SELECT trace_id, from_address, to_address, value, gas, gas_used, source '
             f'FROM evm_internal_transactions WHERE parent_tx=?{address_filter}'
         )
         with self.db.conn.read_ctx() as cursor:
@@ -226,6 +234,7 @@ class DBEvmTx(DBCommonTx[ChecksumEvmAddress, EvmTransaction, EVMTxHash, EvmTrans
                     value=int(result[3]),
                     gas=int(result[4]),
                     gas_used=int(result[5]),
+                    source=InternalTxSource.deserialize_from_db(result[6]),
                 )
                 transactions.append(tx)
 

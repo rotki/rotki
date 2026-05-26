@@ -77,4 +77,18 @@ CREATE INDEX IF NOT EXISTS idx_data_issues_location_label_asset ON data_issues(l
             "INSERT OR IGNORE INTO location(location, seq) VALUES ('{', 59);",
         )
 
+    @progress_step(description='Persist indexer source for internal transactions.')
+    def _add_internal_tx_source(write_cursor: 'DBCursor') -> None:
+        # Track which indexer produced each internal tx row. DEFAULT 0 backfills all
+        # existing rows as legacy since source tracking only starts from this upgrade.
+        if 'source' not in {
+            row[1] for row in write_cursor.execute(
+                'PRAGMA table_info(evm_internal_transactions)',
+            )
+        }:
+            write_cursor.execute(
+                'ALTER TABLE evm_internal_transactions '
+                'ADD COLUMN source INTEGER NOT NULL DEFAULT 0',
+            )
+
     perform_userdb_upgrade_steps(db=db, progress_handler=progress_handler)

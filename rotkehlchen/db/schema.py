@@ -366,6 +366,7 @@ CREATE TABLE IF NOT EXISTS evm_internal_transactions (
     value TEXT NOT NULL,
     gas TEXT NOT NULL,
     gas_used TEXT NOT NULL,
+    source INTEGER NOT NULL DEFAULT 0,
     FOREIGN KEY(parent_tx) REFERENCES evm_transactions(identifier) ON DELETE CASCADE ON UPDATE CASCADE,
     PRIMARY KEY(parent_tx, trace_id, from_address, to_address, value, gas, gas_used)
 );

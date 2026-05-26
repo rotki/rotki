@@ -12,6 +12,7 @@ from rotkehlchen.chain.evm.decoding.weth.constants import (
     CHAINS_WITHOUT_NATIVE_ETH,
 )
 from rotkehlchen.chain.evm.types import (
+    EvmIndexer,
     NodeName,
     WeightedNode,
     asset_id_is_evm_token,
@@ -207,7 +208,7 @@ def test_get_transactions_populates_block_timestamp_cache(
         input_data=b'',
         nonce=1,
     )
-    with patch.object(ethereum_inquirer, '_try_indexers_iterable_with_source', return_value=(iter([[tx]]), 'mock')):  # noqa: E501
+    with patch.object(ethereum_inquirer, '_try_indexers_iterable_with_source', return_value=(iter([[tx]]), EvmIndexer.ETHERSCAN)):  # noqa: E501
         result = list(ethereum_inquirer.get_transactions(
             account=make_evm_address(),
             action='txlist',

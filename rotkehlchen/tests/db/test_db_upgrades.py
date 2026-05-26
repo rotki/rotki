@@ -31,6 +31,7 @@ from rotkehlchen.db.constants import (
     HISTORY_MAPPING_KEY_STATE,
     NO_ACCOUNTING_COUNTERPARTY,
     HistoryMappingState,
+    InternalTxSource,
 )
 from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.db.drivers.gevent import DBConnection, DBConnectionType
@@ -4160,6 +4161,39 @@ def test_upgrade_db_52_to_53(user_data_dir, messages_aggregator):
             ),
         )
 
+        # evm_internal_transactions has no source column yet at v52
+        assert 'source' not in {
+            row[1] for row in write_cursor.execute(
+                'PRAGMA table_info(evm_internal_transactions)',
+            )
+        }
+        # insert a parent tx and an internal tx so we can check the legacy backfill
+        write_cursor.execute(
+            'INSERT INTO evm_transactions(tx_hash, chain_id, timestamp, block_number, '
+            'from_address, to_address, value, gas, gas_price, gas_used, input_data, nonce) '
+            'VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+            (
+                b'\x01' * 32, 1, 1730000000, 1,
+                '0x0000000000000000000000000000000000000001',
+                '0x0000000000000000000000000000000000000002',
+                '1', '0', '0', '0', b'', 0,
+            ),
+        )
+        parent_tx_id = write_cursor.execute(
+            'SELECT identifier FROM evm_transactions WHERE tx_hash=? AND chain_id=?',
+            (b'\x01' * 32, 1),
+        ).fetchone()[0]
+        write_cursor.execute(
+            'INSERT INTO evm_internal_transactions(parent_tx, trace_id, from_address, '
+            'to_address, value, gas, gas_used) VALUES (?, ?, ?, ?, ?, ?, ?)',
+            (
+                parent_tx_id, 1,
+                '0x0000000000000000000000000000000000000001',
+                '0x0000000000000000000000000000000000000002',
+                '1', '0', '0',
+            ),
+        )
+
     db_v52.logout()
     db = _init_db_with_target_version(
         target_version=53,
@@ -4216,6 +4250,19 @@ def test_upgrade_db_52_to_53(user_data_dir, messages_aggregator):
                 'VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
                 metric_entry,
             )
+
+        # the source column now exists and all existing rows (the pre-existing ones from
+        # the prepared db plus the one inserted above) were backfilled as legacy (0)
+        assert 'source' in {
+            row[1] for row in cursor.execute('PRAGMA table_info(evm_internal_transactions)')
+        }
+        internal_tx_sources = cursor.execute(
+            'SELECT source FROM evm_internal_transactions',
+        ).fetchall()
+        assert len(internal_tx_sources) >= 1
+        assert all(
+            row[0] == InternalTxSource.LEGACY.serialize_for_db() for row in internal_tx_sources
+        )
 
         assert db.get_setting(cursor, 'version') == 53
 

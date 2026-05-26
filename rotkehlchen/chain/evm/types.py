@@ -6,6 +6,7 @@ from typing import Any, Final, NamedTuple
 
 from eth_typing import HexAddress, HexStr
 
+from rotkehlchen.db.constants import InternalTxSource
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.fval import FVal
 from rotkehlchen.types import (
@@ -134,6 +135,17 @@ class EvmIndexer(SerializableEnumNameMixin):
     ETHERSCAN = auto()
     BLOCKSCOUT = auto()
     ROUTESCAN = auto()
+
+    def to_internal_tx_source(self) -> 'InternalTxSource':
+        """Map the indexer to the source enum persisted for its internal tx rows."""
+        return EVM_INDEXER_TO_INTERNAL_TX_SOURCE[self]
+
+
+EVM_INDEXER_TO_INTERNAL_TX_SOURCE: Final[dict[EvmIndexer, InternalTxSource]] = {
+    EvmIndexer.ETHERSCAN: InternalTxSource.ETHERSCAN,
+    EvmIndexer.BLOCKSCOUT: InternalTxSource.BLOCKSCOUT,
+    EvmIndexer.ROUTESCAN: InternalTxSource.ROUTESCAN,
+}
 
 
 class SerializableChainIndexerOrder(NamedTuple):
