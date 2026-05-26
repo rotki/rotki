@@ -27,6 +27,19 @@ import { useSessionSettingsStore } from '@/modules/settings/use-session-settings
 import { useAggregatedBalances } from './use-aggregated-balances';
 import '@test/i18n';
 
+const matchChainMock = vi.fn<(location: string) => string | undefined>(() => undefined);
+
+vi.mock('@/modules/core/common/use-supported-chains', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/modules/core/common/use-supported-chains')>();
+  return {
+    ...actual,
+    useSupportedChains: vi.fn().mockImplementation(() => ({
+      ...actual.useSupportedChains(),
+      matchChain: matchChainMock,
+    })),
+  };
+});
+
 vi.mock('@/modules/assets/use-collection-info', () => ({
   useCollectionInfo: (): any => ({
     getCollectionId: vi.fn((asset: string): string | undefined => {
@@ -54,6 +67,7 @@ describe('useAggregatedBalances', () => {
   beforeEach(() => {
     setActivePinia(createPinia());
     vi.clearAllMocks();
+    matchChainMock.mockImplementation(() => undefined);
   });
 
   it('should aggregate balances from multiple sources with manual balance tracking', () => {
@@ -548,6 +562,63 @@ describe('useAggregatedBalances', () => {
         price: bigNumberify(-1),
         value: bigNumberify(150),
       }]);
+    });
+
+    it('should include blockchain balances when the location identifier is a chain alias', () => {
+      // Simulate `matchChain('ethereum') === 'eth'`. The same call is what
+      // `useSupportedChains` exposes for real chain identifiers, but in tests
+      // `supportedChains` is empty, so we wire it explicitly.
+      matchChainMock.mockImplementation(location => (location === 'ethereum' ? 'eth' : undefined));
+
+      const { manualBalances } = storeToRefs(useBalancesStore());
+      const { updateBalances } = useBalancesStore();
+      const { updateAccounts } = useBlockchainAccountsStore();
+      const { useLocationBreakdown } = useAggregatedBalances();
+
+      // One manual balance tagged with location 'ethereum'.
+      set(manualBalances, [{
+        amount: bigNumberify(10),
+        asset: 'ETH',
+        balanceType: BalanceType.ASSET,
+        identifier: 1,
+        label: 'Ethereum manual',
+        location: 'ethereum',
+        tags: [],
+        value: bigNumberify(10),
+      }]);
+
+      // And blockchain balances on the eth chain.
+      updateBalances('eth', testEthereumBalances);
+      updateAccounts('eth', testAccounts);
+
+      const breakdown = useLocationBreakdown('ethereum');
+      const result = get(breakdown);
+
+      // Both sources should contribute — the manual ETH adds to the blockchain
+      // ETH balance, and other chain assets (e.g. DAI from testEthereumBalances)
+      // should also appear.
+      const eth = result.find(entry => entry.asset === 'ETH');
+      expect(eth, 'eth entry should be present').toBeDefined();
+      expect(eth?.amount.gte(bigNumberify(10))).toBe(true);
+      expect(result.length).toBeGreaterThan(1);
+    });
+
+    it('should ignore exchange balances for chain-aliased locations', () => {
+      matchChainMock.mockImplementation(location => (location === 'ethereum' ? 'eth' : undefined));
+
+      const { exchangeBalances } = storeToRefs(useBalancesStore());
+      const { connectedExchanges } = storeToRefs(useSessionSettingsStore());
+      const { useLocationBreakdown } = useAggregatedBalances();
+
+      // An exchange named 'ethereum' must not pollute the chain breakdown.
+      set(connectedExchanges, [{ location: 'ethereum', name: 'Bogus' }]);
+      set(exchangeBalances, {
+        ethereum: {
+          ETH: createTestBalance(999, 999),
+        },
+      });
+
+      expect(get(useLocationBreakdown('ethereum'))).toEqual([]);
     });
 
     it('should return location breakdown with collection grouping for complex assets', () => {

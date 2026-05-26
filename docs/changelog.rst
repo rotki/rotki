@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`12304` Opening a location breakdown page for a blockchain (e.g. ``/locations/ethereum``) now shows that chain's on-chain assets and total — previously the page rendered as 0 value with an empty/loading table whenever the location identifier was a chain alias.
 * :feature:`12049` rotki now runs a DB integrity check before uploading a cloud backup or replacing the local DB with a downloaded copy
 * :feature:`3668` Gate exchange is now supported, including Global, Europe, and US regions.
 * :feature:`12250` You can now reach every RPC endpoint, including the ETH Beacon Node, Polkadot, Kusama and Bitcoin Mempool, without horizontal scrolling on the RPC settings page. Endpoints are listed in a grouped vertical rail (EVM chains and other endpoints) that scales as new chains are added.
