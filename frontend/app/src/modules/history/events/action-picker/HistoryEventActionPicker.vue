@@ -75,10 +75,13 @@ function subtitleFor(row: EventActionRow): string {
 }
 
 function onUpdate(verbKey: string | undefined): void {
-  if (!verbKey) {
-    set(modelValue, undefined);
+  // The picker is required and has no clear affordance, so we must reject
+  // RuiAutoComplete's implicit clears (Backspace-from-empty, options-watcher
+  // resync) and only react to genuine row selections. The defensive watcher
+  // above still clears the model when the current value is no longer mappable
+  // to a row (e.g. after an entry-type switch).
+  if (!verbKey)
     return;
-  }
 
   const row = get(rows).find(r => r.verbKey === verbKey);
   if (!row)
