@@ -16,6 +16,7 @@ import { useBalancesStore } from '@/modules/balances/use-balances-store';
 import { getBlockchainLocationBreakdown, getExchangeByLocationBalances, useLocationBreakdown } from '@/modules/balances/use-location-breakdown';
 import { bigNumberSum } from '@/modules/core/common/data/calculation';
 import { TRADE_LOCATION_BLOCKCHAIN } from '@/modules/core/common/defaults';
+import { useLocations } from '@/modules/core/common/use-locations';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
 
 interface UseAggregatedBalancesReturn {
@@ -31,6 +32,7 @@ interface UseAggregatedBalancesReturn {
   useExchangeBalances: (exchange?: MaybeRefOrGetter<string>) => ComputedRef<AssetBalanceWithPriceAndChains[]>;
   useLocationBreakdown: (location: MaybeRefOrGetter<string>) => ComputedRef<AssetBalanceWithPriceAndChains[]>;
   balancesByLocation: ComputedRef<Record<string, BigNumber>>;
+  balancesByChainLocation: ComputedRef<Record<string, BigNumber>>;
 }
 
 export function useAggregatedBalances(): UseAggregatedBalancesReturn {
@@ -39,6 +41,7 @@ export function useAggregatedBalances(): UseAggregatedBalancesReturn {
   const { exchanges, getBaseExchangeBalances, useBaseExchangeBalances } = useExchangeData();
   const { balances: blockchainBalances, manualBalances, manualLiabilities } = storeToRefs(useBalancesStore());
   const { manualBalanceByLocation } = useManualBalanceData();
+  const { tradeLocations } = useLocations();
 
   const resolveAssetIdentifier = useResolveAssetIdentifier();
   const { getCollectionId, getCollectionMainAsset } = useCollectionInfo();
@@ -206,8 +209,33 @@ export function useAggregatedBalances(): UseAggregatedBalancesReturn {
     return map;
   });
 
+  // Per-chain on-chain totals keyed by trade-location identifier (e.g. 'ethereum').
+  // Drives chain discoverability in global search; kept separate from
+  // `balancesByLocation` so the umbrella `'blockchain'` aggregate stays
+  // authoritative for premium consumers iterating that map.
+  const balancesByChainLocation = computed<Record<string, BigNumber>>(() => {
+    const balances = get(blockchainBalances);
+    const locations = get(tradeLocations);
+    const result: Record<string, BigNumber> = {};
+    for (const location of locations) {
+      const chain = matchChain(location.identifier);
+      if (!chain || !balances[chain])
+        continue;
+      const assets = getBlockchainLocationBreakdown(
+        { [chain]: balances[chain] },
+        resolveAssetIdentifier,
+        asset => isAssetIgnored(asset),
+      );
+      const total = bigNumberSum(Object.values(assets).map(asset => asset.value));
+      if (!total.isZero())
+        result[location.identifier] = total;
+    }
+    return result;
+  });
+
   return {
     assets,
+    balancesByChainLocation,
     balancesByLocation,
     getAssetPriceInfo,
     getBalances,

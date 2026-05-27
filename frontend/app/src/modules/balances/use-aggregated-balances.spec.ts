@@ -23,6 +23,7 @@ import { BalanceType } from '@/modules/balances/types/balances';
 import { useBalancePricesStore } from '@/modules/balances/use-balance-prices-store';
 import { useBalancesStore } from '@/modules/balances/use-balances-store';
 import { TRADE_LOCATION_BANKS } from '@/modules/core/common/defaults';
+import { useLocationStore } from '@/modules/core/common/use-location-store';
 import { useSessionSettingsStore } from '@/modules/settings/use-session-settings-store';
 import { useAggregatedBalances } from './use-aggregated-balances';
 import '@test/i18n';
@@ -495,6 +496,45 @@ describe('useAggregatedBalances', () => {
       const ethBreakdown = ethItems[0];
       expect(ethBreakdown.amount).toEqual(bigNumberify(5));
       expect(ethBreakdown.value).toEqual(bigNumberify(20000));
+    });
+  });
+
+  describe('balancesByChainLocation', () => {
+    it('should expose per-chain on-chain totals keyed by trade-location identifier', () => {
+      matchChainMock.mockImplementation(location => (location === 'ethereum' ? 'eth' : undefined));
+
+      const { updateBalances } = useBalancesStore();
+      const { updateAccounts } = useBlockchainAccountsStore();
+      const { allLocations } = storeToRefs(useLocationStore());
+      const { balancesByChainLocation } = useAggregatedBalances();
+
+      set(allLocations, {
+        ethereum: { isExchange: false, label: 'Ethereum' },
+        kraken: { isExchange: true, label: 'Kraken' },
+      });
+
+      updateBalances('eth', testEthereumBalances);
+      updateAccounts('eth', testAccounts);
+
+      const result = get(balancesByChainLocation);
+
+      expect(result.ethereum).toBeDefined();
+      expect(result.ethereum.gt(0)).toBe(true);
+      // Non-chain locations (exchanges) are not included here.
+      expect(result.kraken).toBeUndefined();
+    });
+
+    it('should skip chains with no on-chain balance', () => {
+      matchChainMock.mockImplementation(location => (location === 'ethereum' ? 'eth' : undefined));
+
+      const { allLocations } = storeToRefs(useLocationStore());
+      const { balancesByChainLocation } = useAggregatedBalances();
+
+      set(allLocations, {
+        ethereum: { isExchange: false, label: 'Ethereum' },
+      });
+
+      expect(get(balancesByChainLocation)).toEqual({});
     });
   });
 

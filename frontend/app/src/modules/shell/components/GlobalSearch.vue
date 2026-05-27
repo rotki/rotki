@@ -54,7 +54,7 @@ const router = useRouter();
 const interop = useInterop();
 
 const { connectedExchanges } = storeToRefs(useSessionSettingsStore());
-const { balancesByLocation, getBalances } = useAggregatedBalances();
+const { balancesByChainLocation, balancesByLocation, getBalances } = useAggregatedBalances();
 const { getLocationData } = useLocations();
 const { assetSearch } = useAssetInfoRetrieval();
 
@@ -298,13 +298,24 @@ async function getAssets(keyword: string): Promise<SearchItemWithoutValue[]> {
 
 function* transformLocations(): IterableIterator<SearchItemWithoutValue> {
   const locationBalances = get(balancesByLocation);
+  const chainBalances = get(balancesByChainLocation);
 
-  for (const identifier in locationBalances) {
+  // Merge per-chain on-chain totals so chain locations (e.g. 'ethereum')
+  // surface in global search even when the user has no manual balance
+  // tagged with that label. When both exist for the same identifier, sum.
+  const merged: Record<string, BigNumber> = { ...locationBalances };
+  for (const identifier in chainBalances) {
+    const existing = merged[identifier];
+    const chainTotal = chainBalances[identifier];
+    merged[identifier] = existing ? existing.plus(chainTotal) : chainTotal;
+  }
+
+  for (const identifier in merged) {
     const location = getLocationData(identifier);
     if (!location)
       continue;
 
-    const total = locationBalances[identifier];
+    const total = merged[identifier];
     yield {
       location,
       route: {
