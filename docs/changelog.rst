@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`-` Coinbase Advanced Trade buys are no longer sometimes imported as sells when the trade direction is missing from the API.
 * :bug:`-` Swaps through a newer zeroxsettler will now be properly decoded by rotki.
 * :bug:`-` Poloniex history should now be properly queried again.
 
