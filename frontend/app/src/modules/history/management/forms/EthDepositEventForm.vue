@@ -13,6 +13,7 @@ import { useEditModeStateTracker } from '@/modules/history/events/use-edit-mode-
 import { useHistoryEventsForm } from '@/modules/history/events/use-history-events-form';
 import HistoryEventAssetPriceForm from '@/modules/history/management/forms/HistoryEventAssetPriceForm.vue';
 import { useEventFormValidation } from '@/modules/history/management/forms/use-event-form-validation';
+import { useEvmTxAutoFill } from '@/modules/history/management/forms/use-evm-tx-lookup';
 import AmountInput from '@/modules/shell/components/inputs/AmountInput.vue';
 import AutoCompleteWithSearchSync from '@/modules/shell/components/inputs/AutoCompleteWithSearchSync.vue';
 import DateTimePicker from '@/modules/shell/components/inputs/DateTimePicker.vue';
@@ -82,6 +83,32 @@ const v$ = useVuelidate(
 
 useFormStateWatcher(states, stateUpdated);
 
+const {
+  canRetry: lookupCanRetry,
+  loading: lookupLoading,
+  needsRelatedAddress: lookupNeedsRelatedAddress,
+  reset: resetLookup,
+  retry: retryLookup,
+} = useEvmTxAutoFill({
+  enabled: () => data.type === 'add',
+  errorFields: { relatedAddress: 'depositor', txHash: 'txRef' },
+  errorMessages,
+  evmChain: 'ethereum',
+  onResolved: (result) => {
+    set(timestamp, result.timestamp * 1000);
+  },
+  relatedAddress: depositor,
+  txHash: txRef,
+});
+
+const txRefHint = computed<string>(() => {
+  if (get(lookupLoading))
+    return t('actions.evm_tx_lookup.loading');
+  if (get(lookupNeedsRelatedAddress))
+    return t('actions.evm_tx_lookup.needs_related_address');
+  return '';
+});
+
 const depositorSuggestions = computed(() => getAddresses(Blockchain.ETH));
 
 function reset() {
@@ -96,10 +123,12 @@ function reset() {
   set(extraData, {});
   set(errorMessages, {});
 
+  resetLookup();
   get(assetPriceForm)?.reset();
 }
 
 function applyEditableData(entry: EthDepositEvent) {
+  resetLookup();
   set(sequenceIndex, entry.sequenceIndex?.toString() ?? '');
   set(txRef, entry.txRef);
   const hasActual = !!entry.actualGroupIdentifier;
@@ -116,6 +145,7 @@ function applyEditableData(entry: EthDepositEvent) {
 }
 
 function applyGroupHeaderData(entry: EthDepositEvent) {
+  resetLookup();
   set(sequenceIndex, data?.nextSequenceId || '0');
   set(groupIdentifier, entry.groupIdentifier);
   set(txRef, entry.txRef);
@@ -217,9 +247,41 @@ defineExpose({
       data-cy="tx-ref"
       :label="t('common.tx_hash')"
       required
+      :hint="txRefHint"
       :error-messages="toMessages(v$.txRef)"
       @blur="v$.txRef.$touch()"
-    />
+    >
+      <template
+        v-if="lookupLoading || lookupCanRetry"
+        #append
+      >
+        <RuiProgress
+          v-if="lookupLoading"
+          circular
+          variant="indeterminate"
+          color="primary"
+          size="20"
+          data-cy="tx-ref-loading"
+        />
+        <RuiTooltip
+          v-else
+          :open-delay="400"
+        >
+          <template #activator>
+            <RuiButton
+              icon
+              variant="text"
+              size="sm"
+              data-cy="tx-ref-retry"
+              @click="retryLookup()"
+            >
+              <RuiIcon name="lu-refresh-cw" />
+            </RuiButton>
+          </template>
+          {{ t('actions.evm_tx_lookup.retry') }}
+        </RuiTooltip>
+      </template>
+    </RuiTextField>
 
     <RuiDivider class="mb-6 mt-2" />
 

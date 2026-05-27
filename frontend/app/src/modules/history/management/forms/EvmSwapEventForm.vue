@@ -2,7 +2,7 @@
 import type { AddEvmSwapEventPayload, EvmHistoryEvent, EvmSwapEvent } from '@/modules/history/events/schemas';
 import type { EvmSwapFormData } from '@/modules/history/management/forms/evm-swap-event-form';
 import type { GroupEventData, StandaloneEventData } from '@/modules/history/management/forms/form-types';
-import { assert, HistoryEventEntryType } from '@rotki/common';
+import { assert, HistoryEventEntryType, toSnakeCase } from '@rotki/common';
 import dayjs from 'dayjs';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
 import { useRefPropVModel } from '@/modules/core/common/validation/model';
@@ -10,6 +10,7 @@ import CounterpartyInput from '@/modules/history/events/mapping/CounterpartyInpu
 import EventDateLocation from '@/modules/history/management/forms/common/EventDateLocation.vue';
 import SwapSubEventList from '@/modules/history/management/forms/swap/SwapSubEventList.vue';
 import { toMessages, useEventFormBase } from '@/modules/history/management/forms/use-event-form-base';
+import { useEvmTxAutoFill } from '@/modules/history/management/forms/use-evm-tx-lookup';
 import { useSwapEventForm } from '@/modules/history/management/forms/use-swap-event-form';
 import { toSubEvent } from '@/modules/history/management/forms/utils';
 import AmountInput from '@/modules/shell/components/inputs/AmountInput.vue';
@@ -66,6 +67,35 @@ const { v$, captureEditModeState, shouldSkipSave } = useEventFormBase({
   stateUpdated,
 });
 
+const {
+  canRetry: lookupCanRetry,
+  loading: lookupLoading,
+  needsRelatedAddress: lookupNeedsRelatedAddress,
+  reset: resetLookup,
+  retry: retryLookup,
+} = useEvmTxAutoFill({
+  enabled: () => data.type === 'add',
+  // The swap form has no dedicated tracked-address field; route validation
+  // errors to the tx-hash field with a hint pointing the user at the spend list.
+  errorFields: { relatedAddress: 'txRef', txHash: 'txRef' },
+  errorMessages,
+  evmChain: () => toSnakeCase(get(states).location),
+  onResolved: (result) => {
+    set(states, { ...get(states), timestamp: result.timestamp * 1000 });
+  },
+  // Use the first spend sub-event's locationLabel as the user's tracked address.
+  relatedAddress: () => get(states).spend[0]?.locationLabel ?? '',
+  txHash: () => get(states).txRef,
+});
+
+const txRefHint = computed<string>(() => {
+  if (get(lookupLoading))
+    return t('actions.evm_tx_lookup.loading');
+  if (get(lookupNeedsRelatedAddress))
+    return t('actions.evm_tx_lookup.needs_related_address_swap');
+  return '';
+});
+
 async function save(): Promise<boolean> {
   if (!(await get(v$).$validate())) {
     return false;
@@ -119,6 +149,7 @@ async function save(): Promise<boolean> {
 }
 
 watchImmediate(() => data, (data) => {
+  resetLookup();
   if (data.type === 'group-add') {
     const group = data.group;
 
@@ -193,9 +224,41 @@ defineExpose({
       data-cy="tx-ref"
       :label="t('common.tx_hash')"
       required
+      :hint="txRefHint"
       :error-messages="toMessages(v$.txRef)"
       @blur="v$.txRef.$touch()"
-    />
+    >
+      <template
+        v-if="lookupLoading || lookupCanRetry"
+        #append
+      >
+        <RuiProgress
+          v-if="lookupLoading"
+          circular
+          variant="indeterminate"
+          color="primary"
+          size="20"
+          data-cy="tx-ref-loading"
+        />
+        <RuiTooltip
+          v-else
+          :open-delay="400"
+        >
+          <template #activator>
+            <RuiButton
+              icon
+              variant="text"
+              size="sm"
+              data-cy="tx-ref-retry"
+              @click="retryLookup()"
+            >
+              <RuiIcon name="lu-refresh-cw" />
+            </RuiButton>
+          </template>
+          {{ t('actions.evm_tx_lookup.retry') }}
+        </RuiTooltip>
+      </template>
+    </RuiTextField>
 
     <RuiDivider class="mb-6 mt-2" />
 

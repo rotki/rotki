@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { EvmHistoryEvent, NewEvmHistoryEventPayload } from '@/modules/history/events/schemas';
 import type { StandaloneEventData } from '@/modules/history/management/forms/form-types';
-import { HistoryEventEntryType, Zero } from '@rotki/common';
+import { HistoryEventEntryType, toSnakeCase, Zero } from '@rotki/common';
 import dayjs from 'dayjs';
 import { bigNumberifyFromRef } from '@/modules/core/common/data/bignumbers';
 import { TRADE_LOCATION_EXTERNAL } from '@/modules/core/common/defaults';
@@ -14,6 +14,7 @@ import EvmLocation from '@/modules/history/management/forms/common/EvmLocation.v
 import HistoryEventAssetPriceForm from '@/modules/history/management/forms/HistoryEventAssetPriceForm.vue';
 import HistoryEventTypeForm from '@/modules/history/management/forms/HistoryEventTypeForm.vue';
 import { toMessages, useEventFormBase } from '@/modules/history/management/forms/use-event-form-base';
+import { useEvmTxAutoFill } from '@/modules/history/management/forms/use-evm-tx-lookup';
 import AmountInput from '@/modules/shell/components/inputs/AmountInput.vue';
 import JsonInput from '@/modules/shell/components/inputs/JsonInput.vue';
 
@@ -96,6 +97,34 @@ const { v$, captureEditModeStateFromRefs, shouldSkipSaveFromRefs } = useEventFor
   stateUpdated,
 });
 
+const {
+  canRetry: lookupCanRetry,
+  loading: lookupLoading,
+  needsRelatedAddress: lookupNeedsRelatedAddress,
+  reset: resetLookup,
+  retry: retryLookup,
+} = useEvmTxAutoFill({
+  enabled: () => data.type === 'add',
+  errorFields: { relatedAddress: 'locationLabel', txHash: 'txRef' },
+  errorMessages,
+  // Backend expects the canonical chain key (e.g. 'polygon_pos'); the form's
+  // `location` ref carries the human-readable form from `txChainsToLocation`.
+  evmChain: () => toSnakeCase(get(location)),
+  onResolved: (result) => {
+    set(timestamp, result.timestamp * 1000);
+  },
+  relatedAddress: locationLabel,
+  txHash: txRef,
+});
+
+const txRefHint = computed<string>(() => {
+  if (get(lookupLoading))
+    return t('actions.evm_tx_lookup.loading');
+  if (get(lookupNeedsRelatedAddress))
+    return t('actions.evm_tx_lookup.needs_related_address');
+  return '';
+});
+
 function reset() {
   set(sequenceIndex, data?.nextSequenceId || '0');
   set(txRef, '');
@@ -114,10 +143,12 @@ function reset() {
   set(extraData, {});
   set(errorMessages, {});
 
+  resetLookup();
   get(assetPriceForm)?.reset();
 }
 
 function applyEditableData(entry: EvmHistoryEvent) {
+  resetLookup();
   set(sequenceIndex, entry.sequenceIndex?.toString() ?? '');
   set(txRef, entry.txRef);
   const hasActual = !!entry.actualGroupIdentifier;
@@ -140,6 +171,7 @@ function applyEditableData(entry: EvmHistoryEvent) {
 }
 
 function applyGroupHeaderData(entry: EvmHistoryEvent) {
+  resetLookup();
   set(sequenceIndex, data?.nextSequenceId || '0');
   set(groupIdentifier, entry.groupIdentifier);
   set(location, entry.location || get(lastLocation));
@@ -250,9 +282,41 @@ defineExpose({
       data-cy="tx-ref"
       :label="t('common.tx_hash')"
       required
+      :hint="txRefHint"
       :error-messages="toMessages(v$.txRef)"
       @blur="v$.txRef.$touch()"
-    />
+    >
+      <template
+        v-if="lookupLoading || lookupCanRetry"
+        #append
+      >
+        <RuiProgress
+          v-if="lookupLoading"
+          circular
+          variant="indeterminate"
+          color="primary"
+          size="20"
+          data-cy="tx-ref-loading"
+        />
+        <RuiTooltip
+          v-else
+          :open-delay="400"
+        >
+          <template #activator>
+            <RuiButton
+              icon
+              variant="text"
+              size="sm"
+              data-cy="tx-ref-retry"
+              @click="retryLookup()"
+            >
+              <RuiIcon name="lu-refresh-cw" />
+            </RuiButton>
+          </template>
+          {{ t('actions.evm_tx_lookup.retry') }}
+        </RuiTooltip>
+      </template>
+    </RuiTextField>
 
     <RuiDivider class="mb-6 mt-2" />
 
