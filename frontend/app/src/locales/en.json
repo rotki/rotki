@@ -621,6 +621,17 @@
         "title": "Decoding ETH block events"
       }
     },
+    "evm_tx_lookup": {
+      "error": {
+        "generic": "Could not look up transaction metadata",
+        "not_found": "Transaction not found on {chain}"
+      },
+      "loading": "Fetching transaction details...",
+      "needs_related_address": "Pick a tracked address below to auto-fill the timestamp from this transaction",
+      "needs_related_address_swap": "Set a tracked address on the first spend below to auto-fill the timestamp from this transaction",
+      "retry": "Retry transaction lookup",
+      "title": "Looking up EVM transaction"
+    },
     "exchange_events": {
       "error": {
         "description": "Failed to query exchange events for {location} with name '{name}': {error}",

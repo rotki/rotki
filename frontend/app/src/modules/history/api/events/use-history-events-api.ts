@@ -43,6 +43,29 @@ const TransactionStatusSchema = z.object({
 
 export type TransactionStatus = z.infer<typeof TransactionStatusSchema>;
 
+export const EvmTransactionLookupResultSchema = z.object({
+  blockNumber: z.number(),
+  evmChain: z.string(),
+  fromAddress: z.string(),
+  gas: z.string(),
+  gasPrice: z.string(),
+  gasUsed: z.string(),
+  nonce: z.number(),
+  timestamp: z.number(),
+  toAddress: z.string().nullable(),
+  txHash: z.string(),
+  value: z.string(),
+  wasFetched: z.boolean(),
+});
+
+export type EvmTransactionLookupResult = z.infer<typeof EvmTransactionLookupResultSchema>;
+
+export interface EvmTransactionLookupPayload {
+  txHash: string;
+  evmChain: string;
+  relatedAddress: string;
+}
+
 interface UseHistoryEventsApiReturn {
   fetchTransactionsTask: (payload: TransactionRequestPayload) => Promise<PendingTask>;
   deleteTransactions: (chain: string, txRef?: string) => Promise<boolean>;
@@ -71,6 +94,7 @@ interface UseHistoryEventsApiReturn {
   deleteStakeEvents: (entryType: string) => Promise<boolean>;
   pullAndRecodeEthBlockEventRequest: (payload: PullEthBlockEventPayload) => Promise<PendingTask>;
   getTransactionStatusSummary: () => Promise<TransactionStatus>;
+  lookupEvmTransaction: (payload: EvmTransactionLookupPayload) => Promise<PendingTask>;
 }
 
 export function useHistoryEventsApi(): UseHistoryEventsApiReturn {
@@ -315,6 +339,18 @@ export function useHistoryEventsApi(): UseHistoryEventsApiReturn {
     return PendingTaskSchema.parse(response);
   };
 
+  const lookupEvmTransaction = async (payload: EvmTransactionLookupPayload): Promise<PendingTask> => {
+    const response = await api.get<PendingTask>('/blockchains/evm/transactions/lookup', {
+      query: {
+        asyncQuery: true,
+        ...payload,
+      },
+      validStatuses: VALID_TASK_STATUS,
+    });
+
+    return PendingTaskSchema.parse(response);
+  };
+
   const getTransactionStatusSummary = async (): Promise<TransactionStatus> => {
     const response = await api.get<TransactionStatus>('/history/status/summary');
 
@@ -339,6 +375,7 @@ export function useHistoryEventsApi(): UseHistoryEventsApiReturn {
     getTransactionStatusSummary,
     getTransactionTypeMappings,
     getUndecodedTransactionsBreakdown,
+    lookupEvmTransaction,
     pullAndRecodeEthBlockEventRequest,
     pullAndRecodeTransactionRequest,
     queryExchangeEvents,
