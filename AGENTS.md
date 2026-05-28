@@ -690,6 +690,17 @@ When editing backend Python and tests, follow these preferences unless explicitl
 
 ## Testing Strategy
 
+### Historical balance / accounting refactor context
+
+When a user mentions the "accounting refactor", "accounting buckets", "balance buckets", or issue/PR `#12204`, assume they are referring to the historical balance engine in `rotkehlchen/tasks/historical_balances.py` and its `event_metrics` bucket tracking, not the legacy accounting pot/cost-basis code unless they explicitly say cost basis or PnL accounting.
+
+Key files:
+- `rotkehlchen/tasks/historical_balances.py` — bucket derivation and event metric generation.
+- `rotkehlchen/balances/historical.py` — historical balance query/read API.
+- `rotkehlchen/db/schema.py` — `event_metrics` schema.
+- `rotkehlchen/db/history_events.py` — stale marker invalidation when events change.
+- `rotkehlchen/tests/unit/test_historical_balances.py` and `rotkehlchen/tests/api/test_historical_balances.py` — primary tests.
+
 ### Backend Testing
 - Uses pytest with gevent for async testing
 - Extensive fixtures in `rotkehlchen/tests/fixtures/`
