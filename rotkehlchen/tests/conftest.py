@@ -25,6 +25,7 @@ from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.externalapis.coingecko import Coingecko
 from rotkehlchen.externalapis.cryptocompare import Cryptocompare
 from rotkehlchen.externalapis.defillama import Defillama
+from rotkehlchen.feature_flags import is_accounting_update_enabled
 from rotkehlchen.logging import TRACE, RotkehlchenLogsAdapter, add_logging_level, configure_logging
 from rotkehlchen.tests.utils.args import default_args
 from rotkehlchen.tests.utils.gevent import ensure_gevent_patches
@@ -208,6 +209,18 @@ def _fixture_profiler(request):
 
             if profiler_instance is not None:
                 profiler_instance.stop()
+
+
+def pytest_collection_modifyitems(config: pytest.Config, items: list[pytest.Item]) -> None:
+    if is_accounting_update_enabled():
+        return
+
+    skip_accounting_update = pytest.mark.skip(
+        reason='Accounting update tests require ROTKI_ACCOUNTING_UPDATE=True',
+    )
+    for item in items:
+        if 'accounting_update' in item.keywords:
+            item.add_marker(skip_accounting_update)
 
 
 def requires_env(allowed_envs: list[TestEnvironment]):

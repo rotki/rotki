@@ -7,6 +7,7 @@ import tempfile
 import traceback
 from collections import defaultdict
 from collections.abc import Callable, Mapping, Sequence
+from functools import wraps
 from http import HTTPStatus
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Literal, Optional, overload
@@ -134,6 +135,7 @@ from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.exchanges.constants import ALL_SUPPORTED_EXCHANGES, SUPPORTED_EXCHANGES
 from rotkehlchen.exchanges.utils import query_binance_exchange_pairs
 from rotkehlchen.externalapis.github import Github
+from rotkehlchen.feature_flags import is_accounting_update_enabled
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.asset_updates.manager import ASSETS_VERSION_KEY
 from rotkehlchen.globaldb.handler import GlobalDBHandler
@@ -324,6 +326,22 @@ def login_lock() -> Callable:
         def inner(rest_api: 'RestAPI', **kwargs: Any) -> Response:
             with rest_api.login_lock:
                 return func(rest_api, **kwargs)
+        return inner
+    return wrapper
+
+
+def accounting_update_required(message: str, response: bool = False) -> Callable:
+    """Require the accounting update feature flag for an API endpoint."""
+    def wrapper(func: Callable) -> Callable:
+        @wraps(func)
+        def inner(*args: Any, **kwargs: Any) -> dict[str, Any] | Response:
+            if is_accounting_update_enabled() is False:
+                fail_result = wrap_in_fail_result(message, status_code=HTTPStatus.NOT_FOUND)
+                if response is True:
+                    return api_response(fail_result, status_code=HTTPStatus.NOT_FOUND)
+                return fail_result
+
+            return func(*args, **kwargs)
         return inner
     return wrapper
 
@@ -3196,6 +3214,7 @@ class RestAPI:
         return api_response(_wrap_in_ok_result(result=stats, status_code=HTTPStatus.OK))
 
     @async_api_call()
+    @accounting_update_required('Historical balances are disabled')
     def get_historical_balance(
             self,
             filter_query: HistoricalBalancesFilterQuery,
@@ -3236,6 +3255,7 @@ class RestAPI:
         return _wrap_in_ok_result(result=result, status_code=HTTPStatus.OK)
 
     @async_api_call()
+    @accounting_update_required('Historical balance series is disabled')
     def get_historical_balance_series(
             self,
             filter_query: HistoricalBalancesFilterQuery,
@@ -3266,6 +3286,7 @@ class RestAPI:
 
         return _wrap_in_ok_result(result=result, status_code=HTTPStatus.OK)
 
+    @accounting_update_required('Historical asset amounts are disabled', response=True)
     def get_historical_asset_amounts(
             self,
             asset: Asset | None,
@@ -3309,12 +3330,17 @@ class RestAPI:
 
         return api_response(_wrap_in_ok_result(result=result))
 
+    @accounting_update_required('Historical balance processing is disabled')
+    def _trigger_historical_balance_processing(self) -> dict[str, Any]:
+        self.rotkehlchen.task_manager.trigger_historical_balance_processing()  # type: ignore[union-attr]  # exists after login.
+        return OK_RESULT
+
     @async_api_call()
     def trigger_task(self, task: TaskName) -> dict[str, Any]:
         """Trigger the specified async task."""
         if task == TaskName.HISTORICAL_BALANCE_PROCESSING:
-            self.rotkehlchen.task_manager.trigger_historical_balance_processing()  # type: ignore[union-attr]  # exists after login.
-            return OK_RESULT
+            return self._trigger_historical_balance_processing()
+
         else:  # task == TaskName.ASSET_MOVEMENT_MATCHING
             if has_premium_capability(
                     premium=self.rotkehlchen.premium,

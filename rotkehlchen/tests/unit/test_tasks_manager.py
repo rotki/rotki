@@ -29,6 +29,7 @@ from rotkehlchen.db.settings import CachedSettings, ModifiableDBSettings
 from rotkehlchen.db.utils import LocationData
 from rotkehlchen.errors.api import PremiumAuthenticationError, PremiumPermissionError
 from rotkehlchen.errors.misc import RemoteError
+from rotkehlchen.feature_flags import is_accounting_update_enabled
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
@@ -81,7 +82,13 @@ if TYPE_CHECKING:
 def test_potential_maybe_schedule_task(task_manager: TaskManager):
     """Check that all the _maybe_... tasks are included in the potential tasks."""
     tasks = {function.__name__ for function in task_manager.potential_tasks}
-    assert all(func in tasks for func in dir(task_manager) if func.startswith('_maybe_'))
+    expected_tasks = {
+        func for func in dir(task_manager) if func.startswith('_maybe_')
+    }
+    if is_accounting_update_enabled() is False:
+        expected_tasks.remove('_maybe_process_historical_balances')
+
+    assert expected_tasks == tasks
 
 
 @pytest.mark.parametrize('max_tasks_num', [5])

@@ -32,6 +32,8 @@ from rotkehlchen.tests.utils.factories import make_evm_tx_hash
 from rotkehlchen.types import ChainID, Location, Timestamp, TimestampMS
 from rotkehlchen.utils.misc import ts_now
 
+pytestmark = pytest.mark.accounting_update
+
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.user_messages import MessagesAggregator

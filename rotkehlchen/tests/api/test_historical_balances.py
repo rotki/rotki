@@ -40,6 +40,8 @@ from rotkehlchen.tests.utils.factories import make_evm_address, make_evm_tx_hash
 from rotkehlchen.types import AssetAmount, ChainID, Location, Price, Timestamp
 from rotkehlchen.utils.misc import timestamp_to_daystart_timestamp, ts_now, ts_sec_to_ms
 
+pytestmark = pytest.mark.accounting_update
+
 if TYPE_CHECKING:
     from rotkehlchen.api.server import APIServer
     from rotkehlchen.globaldb.handler import GlobalDBHandler
