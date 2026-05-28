@@ -1598,7 +1598,13 @@ def test_coinbase_query_trade_history_advanced_fill(function_scope_coinbase):
 
 
 def test_advancedtrade_missing_order_side(mock_coinbase):
-    """Test that we can read coinbase advanced trades missing order_side """
+    """Test that we can read coinbase advanced trades missing order_side.
+
+    When order_side is absent the direction is inferred from the sign of the balance
+    change. raw_trade_a imports the quote (USD) leg of a buy (USD sent, amount < 0) and
+    raw_trade_b imports the base (ETH) leg of a buy (ETH received, amount > 0). Both must
+    be recognized as buys.
+    """
     tx_id1 = '77c5ad72-764e-414b-8bdb-b5aed20fb4b1'
     raw_trade_a = {
         'advanced_trade_fill': {
@@ -1684,8 +1690,8 @@ def test_advancedtrade_missing_order_side(mock_coinbase):
         timestamp=TimestampMS(1653588330000),
         location=Location.COINBASE,
         event_subtype=HistoryEventSubType.SPEND,
-        asset=A_ETH,
-        amount=FVal('0.00100000'),
+        asset=A_USD,
+        amount=FVal('1.8701600000'),
         location_label='coinbase1',
         group_identifier=create_group_identifier_from_unique_id(
             location=Location.COINBASE,
@@ -1695,8 +1701,8 @@ def test_advancedtrade_missing_order_side(mock_coinbase):
         timestamp=TimestampMS(1653588330000),
         location=Location.COINBASE,
         event_subtype=HistoryEventSubType.RECEIVE,
-        asset=A_USD,
-        amount=FVal('1.8701600000'),
+        asset=A_ETH,
+        amount=FVal('0.00100000'),
         location_label='coinbase1',
         group_identifier=create_group_identifier_from_unique_id(
             location=Location.COINBASE,
@@ -1712,6 +1718,64 @@ def test_advancedtrade_missing_order_side(mock_coinbase):
         group_identifier=create_group_identifier_from_unique_id(
             location=Location.COINBASE,
             unique_id=tx_id2,
+        ),
+    )]
+
+    tx_id3 = '55c5ad72-764e-2f4b-8bdb-b5aed20fb277'
+    raw_trade_c = {
+        'advanced_trade_fill': {
+            'commission': '0.5',
+            'fill_price': '2000',
+            'order_id': 'a1b2c3d4-9b18-1dea-756c-c960fd3d18a2',
+            'product_id': 'ETH-USD',
+        },
+        'amount': {  # base (ETH) leg of a sell: ETH leaves the account, so amount < 0
+            'amount': '-0.50000000',
+            'currency': 'ETH',
+        },
+        'created_at': '2022-05-26T18:05:30Z',
+        'id': tx_id3,
+        'native_amount': {
+            'amount': '1000',
+            'currency': 'USD',
+        },
+        'resource': 'transaction',
+        'resource_path': f'/v2/accounts/b7a7a05a-58ed-5a74-a328-266530609c9f/transactions/{tx_id3}',  # noqa: E501
+        'status': 'completed',
+        'type': 'advanced_trade_fill',
+    }
+    assert mock_coinbase._process_coinbase_trade(raw_trade_c) == [SwapEvent(
+        timestamp=TimestampMS(1653588330000),
+        location=Location.COINBASE,
+        event_subtype=HistoryEventSubType.SPEND,
+        asset=A_ETH,
+        amount=FVal('0.50000000'),
+        location_label='coinbase1',
+        group_identifier=create_group_identifier_from_unique_id(
+            location=Location.COINBASE,
+            unique_id=tx_id3,
+        ),
+    ), SwapEvent(
+        timestamp=TimestampMS(1653588330000),
+        location=Location.COINBASE,
+        event_subtype=HistoryEventSubType.RECEIVE,
+        asset=A_USD,
+        amount=FVal('1000.00000000'),
+        location_label='coinbase1',
+        group_identifier=create_group_identifier_from_unique_id(
+            location=Location.COINBASE,
+            unique_id=tx_id3,
+        ),
+    ), SwapEvent(
+        timestamp=TimestampMS(1653588330000),
+        location=Location.COINBASE,
+        event_subtype=HistoryEventSubType.FEE,
+        asset=A_USD,
+        amount=FVal('0.5'),
+        location_label='coinbase1',
+        group_identifier=create_group_identifier_from_unique_id(
+            location=Location.COINBASE,
+            unique_id=tx_id3,
         ),
     )]
 
