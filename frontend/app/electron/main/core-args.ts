@@ -1,9 +1,35 @@
 import type { BackendOptions } from '@shared/ipc';
+import { execSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
 import process from 'node:process';
 import { assert } from '@rotki/common';
 import { resolveLogLevel } from './resolve-log-level';
+
+/**
+ * In dev mode the backend defaults to the `python` on PATH, which fails
+ * unless a venv is active. Mirror the dev launcher's behaviour
+ * (`frontend/scripts/dev/prerequisites.ts`): if no venv and `uv` is
+ * available, run the backend via `uv run --locked` so it resolves against
+ * the repo's uv.lock without requiring the developer to activate anything.
+ * Cached because this is invoked per-spawn and `execSync` is not free.
+ */
+let uvAvailable: boolean | undefined;
+
+function shouldUseUv(): boolean {
+  if (process.env.VIRTUAL_ENV)
+    return false;
+  if (uvAvailable === undefined) {
+    try {
+      execSync('uv --version', { stdio: 'ignore' });
+      uvAvailable = true;
+    }
+    catch {
+      uvAvailable = false;
+    }
+  }
+  return uvAvailable;
+}
 
 const BACKEND_DIRECTORY = 'backend';
 
@@ -103,6 +129,10 @@ export const RotkiCoreConfig = {
           profilingCmd,
           profilingArgs?.split(' '),
         ).withCorsUrl(devServerUrl);
+      }
+      else if (shouldUseUv()) {
+        command = builder.setCommand('uv', ['run', '--locked', 'python', ...pythonArgs])
+          .withCorsUrl(devServerUrl);
       }
       else {
         command = builder.setCommand('python', pythonArgs)

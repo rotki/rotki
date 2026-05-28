@@ -1,347 +1,294 @@
-import type { Buffer } from 'node:buffer';
-import { type ChildProcess, execSync, spawn } from 'node:child_process';
 import fs from 'node:fs';
-import net from 'node:net';
-import { platform } from 'node:os';
-import path from 'node:path';
-import process, { exit } from 'node:process';
-import { assert } from '@rotki/common';
+import process from 'node:process';
 import { cac } from 'cac';
 import consola from 'consola';
 import { config } from 'dotenv';
-import { omit } from 'es-toolkit';
+import {
+  cleanAll,
+  cleanInstance,
+  clearManagedEnvBlock,
+  DEFAULT_PORTS,
+  type InstanceRuntime,
+  PortSlotAllocationError,
+  prepareInstance,
+  printInstanceList,
+  pruneInstances,
+  readManagedInstanceName,
+  repairRegistry,
+} from './dev-instance';
+import { errorMessage, formatPort } from './dev-instance/format';
+import { getCurrentGitBranch } from './dev-instance/git';
+import { ensurePrerequisites, parsePort } from './dev/prerequisites';
+import { registerShutdownHandlers, terminateSubprocesses } from './dev/process-pool';
+import { startDevelopmentEnvironment } from './dev/services';
 
-interface OutputListener {
-  out: (buffer: Buffer) => void;
-  err: (buffer: Buffer) => void;
+const ENV_FILE_RELATIVE = 'app/.env.development.local';
+
+const logger = consola.withTag('[36mdev[0m');
+
+interface DevCliOptions {
+  web?: boolean;
+  webPort?: string;
+  colibriPort?: string;
+  profilingArgs?: string;
+  profilingCmd?: string;
+
+  // management subcommands
+  list?: boolean;
+  clean?: string | boolean;
+  cleanAll?: boolean;
+  prune?: boolean;
+  repair?: boolean;
+  yes?: boolean;
+  olderThan?: string;
+
+  // runtime instance-mode flags
+  instance?: string | boolean;
+  seed?: boolean;
+  acceptManagedEnv?: boolean;
+  includeBackups?: boolean;
+
+  // dev-proxy gate
+  proxy?: boolean;
 }
 
-interface BackendEnv {
-  VITE_BACKEND_URL: string;
-  VITE_COLIBRI_URL: string;
-}
-
-const DEFAULT_BACKEND_PORT = 4242;
-const DEFAULT_COLIBRI_PORT = 4343;
-
-const PROXY = 'proxy';
-const ROTKI = 'rotki';
-const BACKEND = 'backend';
-const COLIBRI = 'colibri';
-
-function getPort(port: string, defaultValue: number): number {
-  if (!port) {
-    return defaultValue;
+async function dispatchManagementSubcommand(options: DevCliOptions): Promise<boolean> {
+  if (options.list) {
+    await printInstanceList();
+    return true;
   }
-  const portNumber = parseInt(port);
-  if (!isFinite(portNumber) || portNumber < 0 || portNumber > 65535) {
-    return defaultValue;
+  if (options.cleanAll) {
+    await cleanAll({ yes: options.yes, envFile: ENV_FILE_RELATIVE });
+    return true;
   }
-  return portNumber;
+  if (options.clean !== undefined) {
+    if (typeof options.clean !== 'string' || options.clean.length === 0) {
+      logger.error('--clean requires an instance name (e.g. --clean my-instance)');
+      process.exit(1);
+    }
+    await cleanInstance(options.clean, { yes: options.yes, envFile: ENV_FILE_RELATIVE });
+    return true;
+  }
+  if (options.prune) {
+    await pruneInstances({ yes: options.yes, olderThan: options.olderThan, envFile: ENV_FILE_RELATIVE });
+    return true;
+  }
+  if (options.repair) {
+    await repairRegistry({ yes: options.yes });
+    return true;
+  }
+  return false;
 }
 
-async function isPortAvailable(port: number): Promise<boolean> {
-  return new Promise<boolean>((resolve, reject) => {
-    const server = net.createServer();
-
-    server.unref();
-
-    server.once('error', (err: any) => {
-      if (err.code === 'EADDRINUSE' || err.code === 'EACCES')
-        resolve(false);
-      else
-        reject(err instanceof Error ? err : new Error(err));
-    });
-
-    server.once('listening', () => {
-      server.close(() => resolve(true));
-    });
-
-    server.listen(port, '127.0.0.1');
-  });
+function loadDevEnv(): void {
+  if (fs.existsSync(ENV_FILE_RELATIVE)) {
+    config({ path: ENV_FILE_RELATIVE });
+  }
 }
 
-export async function selectPort(startPort: number): Promise<number> {
-  for (let portNumber = startPort; portNumber <= 65535; portNumber++) {
-    if (await isPortAvailable(portNumber))
-      return portNumber;
-  }
-  throw new Error('no free ports found');
-}
+const DEV_PROXY_ASYNC_MOCK = 'dev-proxy/async-mock.json';
 
-function checkForCargo(): boolean {
-  try {
-    const cargoVersion = execSync('cargo --version', { encoding: 'utf-8' });
-    consola.info(`detected cargo: ${cargoVersion}`);
-    return /cargo\s\d+\.\d+\.\d+/.test(cargoVersion);
-  }
-  catch {
-    consola.error('Cargo is not installed');
+/**
+ * Resolves whether to spawn the dev-proxy:
+ *  - explicit `--proxy` / `--no-proxy` always wins
+ *  - else auto-on if PREMIUM_COMPONENT_DIR resolves to a real dir, or
+ *    dev-proxy/async-mock.json exists (the two features the proxy provides
+ *    beyond plain pass-through)
+ *  - else off — the frontend talks directly to the backend (CORS allows it)
+ *
+ * Note: `PREMIUM_COMPONENT_DIR` must be set in `frontend/app/.env.development.local`
+ * or in the shell for auto-detect to see it — `frontend/dev-proxy/.env` is only
+ * read by the proxy subprocess itself.
+ */
+function shouldUseProxy(options: DevCliOptions): boolean {
+  if (options.proxy === true)
+    return true;
+  if (options.proxy === false)
     return false;
-  }
+  const premiumDir = process.env.PREMIUM_COMPONENT_DIR;
+  if (premiumDir && fs.existsSync(premiumDir) && fs.statSync(premiumDir).isDirectory())
+    return true;
+  if (fs.existsSync(DEV_PROXY_ASYNC_MOCK))
+    return true;
+  return false;
 }
 
-const colors = {
-  red: (msg: string) => `\u001B[31m${msg}\u001B[0m`,
-  green: (msg: string) => `\u001B[32m${msg}\u001B[0m`,
-  yellow: (msg: string) => `\u001B[33m${msg}\u001B[0m`,
-  blue: (msg: string) => `\u001B[34m${msg}\u001B[0m`,
-  magenta: (msg: string) => `\u001B[35m${msg}\u001B[0m`,
-  cyan: (msg: string) => `\u001B[36m${msg}\u001B[0m`,
-} as const;
-
-const logger = consola.withTag(colors.cyan('dev'));
-
-if (!process.env.VIRTUAL_ENV) {
-  logger.info('No python virtual environment detected');
-  process.exit(1);
-}
-
-const cargoInstalled = checkForCargo();
-if (cargoInstalled) {
-  consola.info('Cargo is installed building colibri binary');
-  execSync('cargo build', {
-    encoding: 'utf-8',
-    cwd: path.join('..', 'colibri'),
-    stdio: 'inherit',
-  });
-}
-
-let startDevProxy = false;
-const devEnvExists = fs.existsSync('app/.env.development.local');
-if (devEnvExists) {
-  config({ path: 'app/.env.development.local' });
-  startDevProxy = !!process.env.VITE_BACKEND_URL;
-}
-
-const pids: Record<number, string> = {};
-const listeners: Record<number, OutputListener> = {};
-const subprocesses: ChildProcess[] = [];
-
-function startProcess(
-  cmd: string,
-  tag: string,
-  name: string,
-  args: string[] = [],
-  opts: Record<string, any> = {},
-): ChildProcess {
-  const logger = consola.withTag(tag);
-  const createListeners = (): OutputListener => ({
-    out: (buffer: Buffer): void => {
-      logger.log(buffer.toString().replace(/\n$/, ''));
-    },
-    err: (buffer: Buffer): void => {
-      logger.log(buffer.toString().replace(/\n$/, ''));
-    },
-  });
-
-  const envVars = opts?.env ?? {};
-  const env = {
-    FORCE_COLOR: '1',
-    ...process.env,
-    NODE_ENV: 'development',
-    ...envVars,
-  };
-
-  const child = spawn(cmd, args, {
-    ...omit(opts, ['env']),
-    shell: true,
-    stdio: [process.stdin],
-    env,
-  });
-
-  subprocesses.push(child);
-
-  const stdListeners = createListeners();
-  child.stdout?.on('data', stdListeners.out);
-  child.stderr?.on('data', stdListeners.err);
-  const pid = child.pid;
-  assert(pid !== undefined, 'pid is undefined');
-  pids[pid] = name;
-  listeners[pid] = stdListeners;
-  return child;
-}
-
-function terminateSubprocesses(): void {
-  let subprocess;
-  // eslint-disable-next-line no-cond-assign
-  while ((subprocess = subprocesses.pop())) {
-    if (subprocess.killed)
-      continue;
-
-    const pid = subprocess.pid;
-    if (pid === undefined) {
-      continue;
+function pickInstanceName(option: DevCliOptions['instance']): string | undefined {
+  if (typeof option === 'string' && option.length > 0)
+    return option;
+  if (option === true) {
+    // Bare `--instance` → user explicitly wants instance mode without typing a name.
+    // Fall back to INSTANCE_NAME env (wt-managed case), then current git branch,
+    // then error.
+    const envName = process.env.INSTANCE_NAME;
+    if (envName)
+      return envName;
+    const branch = getCurrentGitBranch();
+    if (branch) {
+      logger.info(`--instance with no name — deriving from current git branch "${branch}"`);
+      return branch;
     }
-
-    const name = pids[pid] ?? '';
-    logger.info(`terminating process: ${name} (${pid})`);
-    const ls = listeners[pid];
-    if (ls) {
-      subprocess.stdout?.off('data', ls.out);
-      subprocess.stderr?.off('data', ls.err);
-      delete listeners[pid];
-    }
-
-    subprocess.kill();
+    logger.error(
+      '--instance requires a name (e.g. --instance scratch).\n'
+      + 'No INSTANCE_NAME env var or git branch was available to derive one. '
+      + 'Use --no-instance to disable instance mode.',
+    );
+    process.exit(1);
   }
+  return process.env.INSTANCE_NAME || undefined;
 }
 
-function getDebuggerPort(): number | null {
+function readSlotHint(resolvedName: string): number | undefined {
+  const raw = process.env.INSTANCE_PORT_SLOT;
+  if (raw === undefined)
+    return undefined;
+  // INSTANCE_NAME and INSTANCE_PORT_SLOT are written as a pair by the managed
+  // env block. If the resolved instance differs from the name that block was
+  // written for, the slot hint doesn't apply to us — ignore it rather than
+  // trying to grab another instance's slot.
+  const pairedName = process.env.INSTANCE_NAME;
+  if (pairedName && pairedName !== resolvedName) {
+    logger.info(
+      `Ignoring INSTANCE_PORT_SLOT=${raw}: it was paired with INSTANCE_NAME="${pairedName}", `
+      + `but this run resolved to "${resolvedName}".`,
+    );
+    return undefined;
+  }
+  const slot = Number.parseInt(raw, 10);
+  if (!Number.isFinite(slot)) {
+    logger.error(`INSTANCE_PORT_SLOT="${raw}" is not a valid integer.`);
+    process.exit(1);
+  }
+  return slot;
+}
+
+async function resolveInstance(options: DevCliOptions, useProxy: boolean): Promise<InstanceRuntime | null> {
+  if (options.instance === false) {
+    // Explicit --no-instance: erase any stale managed block from a prior
+    // instance run so Vite doesn't read INSTANCE_PORT_SLOT / VITE_BACKEND_URL
+    // pointing at a slot we're no longer using.
+    const staleOwner = readManagedInstanceName(ENV_FILE_RELATIVE);
+    if (staleOwner !== undefined) {
+      clearManagedEnvBlock(ENV_FILE_RELATIVE);
+      logger.info(`--no-instance: cleared managed env block left over from "${staleOwner}"`);
+    }
+    return null;
+  }
+  const name = pickInstanceName(options.instance);
+  if (!name)
+    return null;
+  return prepareInstance({
+    name,
+    slotHint: readSlotHint(name),
+    seed: options.seed !== false,
+    acceptManagedEnv: options.acceptManagedEnv === true,
+    envFile: ENV_FILE_RELATIVE,
+    useProxy,
+    includeBackups: options.includeBackups === true,
+  });
+}
+
+function setupProfilingEnvironment(options: DevCliOptions): void {
+  if (options.profilingCmd)
+    process.env.ROTKI_BACKEND_PROFILING_CMD = options.profilingCmd;
+  if (options.profilingArgs)
+    process.env.ROTKI_BACKEND_PROFILING_ARGS = options.profilingArgs;
+}
+
+function exitOnAllocationError<T>(error: unknown): T {
+  if (error instanceof PortSlotAllocationError) {
+    logger.error(error.message);
+    process.exit(1);
+  }
+  throw error;
+}
+
+async function tearDownAndExit(error: unknown, exitCode: number): Promise<never> {
+  logger.error(errorMessage(error));
   try {
-    const debuggerPort = process.env.DEBUGGER_PORT;
-    if (debuggerPort) {
-      const portNum = Number.parseInt(debuggerPort);
-      return isFinite(portNum) && (portNum > 0 || portNum < 65535) ? portNum : null;
-    }
-    return null;
+    await terminateSubprocesses();
   }
-  catch {
-    return null;
+  catch (shutdownError) {
+    logger.error(`shutdown error: ${errorMessage(shutdownError)}`);
   }
+  process.exit(exitCode);
 }
 
-async function startPythonBackend(
-  webPort: number,
-  logDir: string,
-  profilingArgs?: string,
-  profilingCmd?: string,
-): Promise<number> {
-  const availableWebPort = await selectPort(webPort);
-  logger.info(`Starting python backend at port: ${availableWebPort}`);
-
-  const args = [
-    ...(profilingArgs ? profilingArgs.split(' ') : []),
-    ...(profilingCmd ? ['python'] : []),
-    '-m',
-    'rotkehlchen',
-    '--rest-api-port',
-    availableWebPort.toString(),
-    '--api-cors',
-    'http://localhost:*',
-    '--logfile',
-    `${path.join(logDir, 'backend.log')}`,
-  ];
-
-  startProcess(profilingCmd ?? 'python', colors.yellow(BACKEND), BACKEND, args, {
-    cwd: path.join('..'),
-  });
-  return availableWebPort;
-}
-
-async function startColibriService(colibriPort: number, logDir: string): Promise<number> {
-  const availableColibriPort = await selectPort(colibriPort);
-
-  logger.info(`Starting colibri at port: ${availableColibriPort}`);
-
-  const colibriArgs: string[] = [
-    `--logfile-path=${path.join(logDir, 'colibri.log')}`,
-    `--port=${availableColibriPort}`,
-    '--api-cors=http://localhost:*',
-  ];
-
-  startProcess('cargo run --locked -- ', colors.red(COLIBRI), COLIBRI, colibriArgs, {
-    cwd: path.join('..', 'colibri'),
-  });
-  return availableColibriPort;
-}
-
-async function startBackendServices(
-  webPort: number,
-  colibriPort: number,
-  profilingArgs?: string,
-  profilingCmd?: string,
-): Promise<BackendEnv> {
-  const logDir = path.join(process.cwd(), 'logs');
-  if (!fs.existsSync(logDir))
-    fs.mkdirSync(logDir);
-
-  const availableWebPort = await startPythonBackend(webPort, logDir, profilingArgs, profilingCmd);
-  const availableColibriPort = await startColibriService(colibriPort, logDir);
-
-  return {
-    VITE_BACKEND_URL: `http://localhost:${availableWebPort}`,
-    VITE_COLIBRI_URL: `http://localhost:${availableColibriPort}`,
-  };
-}
-
-function startDevServer(noElectron: boolean, backendEnv?: BackendEnv) {
-  logger.info('Starting rotki dev mode');
-
-  const debuggerPort = getDebuggerPort();
-  const args = debuggerPort ? ` --remote-debugging-port=${debuggerPort}` : '';
-  if (args)
-    logger.info(`starting rotki with args: ${args}`);
-
-  const serveCmd = noElectron ? 'pnpm run --filter rotki serve' : 'pnpm run --filter rotki electron:serve';
-  const cmd = platform() === 'win32' ? serveCmd : `sleep 20 && ${serveCmd}`;
-
-  const devRotkiProcess = startProcess(`${cmd} ${args}`, colors.magenta(ROTKI), ROTKI, [], {
-    env: backendEnv,
-  });
-
-  devRotkiProcess.on('exit', () => {
-    logger.info('dev rotki process exited, terminating subprocesses');
-    terminateSubprocesses();
-    process.exit(0);
-  });
-}
-
-async function startDevelopmentEnvironment(
-  webPort: number,
-  colibriPort: number,
-  noElectron: boolean,
-  profilingArgs?: string,
-  profilingCmd?: string,
-): Promise<void> {
-  process.on('SIGINT', () => {
-    logger.info(`preparing to terminate subprocesses`);
-    terminateSubprocesses();
-    exit(0);
-  });
-
-  if (startDevProxy) {
-    logger.info('Starting dev-proxy');
-    startProcess('pnpm run --filter @rotki/dev-proxy serve', colors.green(PROXY), PROXY);
+async function runDevAction(options: DevCliOptions): Promise<void> {
+  try {
+    if (await dispatchManagementSubcommand(options))
+      process.exit(process.exitCode ?? 0);
+  }
+  catch (error) {
+    exitOnAllocationError(error);
   }
 
-  let backendEnv: BackendEnv | undefined;
+  ensurePrerequisites();
+  loadDevEnv();
 
-  if (noElectron) {
-    backendEnv = await startBackendServices(webPort, colibriPort, profilingArgs, profilingCmd);
+  const useProxy = shouldUseProxy(options);
+  logger.info(`dev-proxy: ${useProxy ? 'on' : 'off'}${options.proxy === undefined ? ' (auto)' : ''}`);
+
+  let instance: InstanceRuntime | null;
+  try {
+    instance = await resolveInstance(options, useProxy);
+  }
+  catch (error) {
+    return exitOnAllocationError(error);
+  }
+  if (instance) {
+    logger.info(`Instance "${instance.name}" → slot ${instance.slot}, dir ${instance.dir}`);
+    logger.info(
+      `  ports: backend=${formatPort(instance.ports.restApi)} proxy=${formatPort(instance.ports.proxy)} `
+      + `colibri=${formatPort(instance.ports.colibri)} dev=${formatPort(instance.ports.dev)}`,
+    );
   }
 
-  startDevServer(noElectron, backendEnv);
-}
+  registerShutdownHandlers();
+  setupProfilingEnvironment(options);
 
-function setupProfilingEnvironment({ profilingArgs, profilingCmd }: { profilingCmd?: string; profilingArgs?: string }): void {
-  if (profilingCmd)
-    process.env.ROTKI_BACKEND_PROFILING_CMD = profilingCmd;
-
-  if (profilingArgs)
-    process.env.ROTKI_BACKEND_PROFILING_ARGS = profilingArgs;
+  try {
+    await startDevelopmentEnvironment({
+      webPort: parsePort(options.webPort, DEFAULT_PORTS.restApi),
+      colibriPort: parsePort(options.colibriPort, DEFAULT_PORTS.colibri),
+      noElectron: !!options.web,
+      profilingArgs: options.profilingArgs,
+      profilingCmd: options.profilingCmd,
+      instance,
+      useProxy,
+      onChildExit: () => {
+        terminateSubprocesses()
+          .catch(error => logger.error(`shutdown error: ${errorMessage(error)}`))
+          .finally(() => process.exit(0));
+      },
+    });
+  }
+  catch (error) {
+    await tearDownAndExit(error, 1);
+  }
 }
 
 const cli = cac();
 
 cli.command('', 'Start the development environment')
   .option('--web', 'Start without electron as a web service (starts the backend too)')
-  .option('--web-port <number>', 'The port to use for the web server', {
-    default: DEFAULT_BACKEND_PORT,
-  })
-  .option('--colibri-port <number>', 'The port to use for the colibri server', {
-    default: DEFAULT_COLIBRI_PORT,
-  })
-  .option('--profiling-args <string>', 'Arguments to pass to the backend process')
-  .option('--profiling-cmd <string>', 'Command to use to start the backend process')
-  .action(async (options) => {
-    const webPort = getPort(options.webPort, DEFAULT_BACKEND_PORT);
-    const colibriPort = getPort(options.colibriPort, DEFAULT_COLIBRI_PORT);
-    const noElectron = options.web;
-
-    setupProfilingEnvironment(options);
-    await startDevelopmentEnvironment(webPort, colibriPort, noElectron, options.profilingArgs, options.profilingCmd);
-  });
+  .option('--web-port <number>', 'The port to use for the web server', { default: DEFAULT_PORTS.restApi })
+  .option('--colibri-port <number>', 'The port to use for the colibri server', { default: DEFAULT_PORTS.colibri })
+  .option('--profiling-args <string>', 'Arguments to pass to the backend process (see docs.rotki.com/contribution-guides/code-profiling.html)')
+  .option('--profiling-cmd <string>', 'Command used to start the backend process (see docs.rotki.com/contribution-guides/code-profiling.html)')
+  .option('--instance [name]', 'Run with an isolated data dir / port slot; --no-instance forces default mode even if INSTANCE_NAME is set')
+  .option('--seed', 'Seed the instance data dir from the prod rotki data dir on first run (default: true); pass --no-seed to skip', { default: true })
+  .option('--include-backups', 'Include `*.backup` files when seeding (default: skipped to keep the seed lean)')
+  .option('--accept-managed-env', 'Consent to dev:web managing INSTANCE_*, VITE_BACKEND_URL, VITE_COLIBRI_URL, DEV_PORT in .env.development.local')
+  .option('--proxy', 'Force the dev-proxy on (default: auto, on iff PREMIUM_COMPONENT_DIR is set or async-mock.json exists)')
+  .option('--list', 'List dev instances and exit')
+  .option('--clean [name]', 'Remove a single instance and exit (name is required; passing --clean without a name shows usage)')
+  .option('--clean-all', 'Remove all instances and exit (double-confirm)')
+  .option('--prune', 'Remove instances whose worktrees no longer exist (dry-run unless --yes)')
+  .option('--repair', 'Rebuild .port-index.json from sidecars (dry-run unless --yes)')
+  .option('--older-than <duration>', 'Used with --prune; only consider instances whose lastUsedAt is older (e.g. 30d, 12h, 45m)')
+  .option('--yes', 'Skip confirmation prompts for --clean/--clean-all/--prune/--repair')
+  .action(runDevAction);
 
 cli.help();
 cli.parse();

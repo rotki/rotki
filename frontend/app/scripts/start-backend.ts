@@ -37,6 +37,7 @@ function startBackend(options: BackendOptions): void {
 
   const args = [
     'run',
+    '--locked',
     '-m',
     'rotkehlchen',
     '--rest-api-port',
