@@ -1,15 +1,22 @@
 import fs from 'node:fs';
-import os from 'node:os';
 import path from 'node:path';
 import process from 'node:process';
 import { cancel, intro, isCancel, multiselect, outro } from '@clack/prompts';
 import { cac } from 'cac';
 import consola from 'consola';
+import { baseDataDir, copyTree } from './dev-instance';
 
 const APP_NAME = 'rotki';
 const DATA_DIR = 'data';
 const DEVELOP_DATA_DIR = 'develop_data';
 const USER_DIR = 'users';
+
+function copyAndLog(src: string, dst: string): void {
+  copyTree(src, dst, {
+    preserveMtime: true,
+    onFile: ({ src: s, dst: d }) => consola.info(`Copying ${s} to ${d}`),
+  });
+}
 
 async function promptUser(appDataDir: string): Promise<void> {
   intro('Select which users and data directories to copy from data to develop_data.');
@@ -61,7 +68,7 @@ async function promptUser(appDataDir: string): Promise<void> {
       fs.rmSync(targetUserDir, { recursive: true });
     }
     consola.info(`Copying ${sourceUserDir} to ${targetUserDir}`);
-    copyDir(sourceUserDir, targetUserDir);
+    copyTree(sourceUserDir, targetUserDir, { preserveMtime: true });
   }
 
   for (const selectedDir of selectedDataDirs) {
@@ -72,41 +79,13 @@ async function promptUser(appDataDir: string): Promise<void> {
       fs.rmSync(targetDataDir, { recursive: true });
     }
     consola.info(`Copying ${sourceDataDir} to ${targetDataDir}`);
-    copyDir(sourceDataDir, targetDataDir);
+    copyTree(sourceDataDir, targetDataDir, { preserveMtime: true });
   }
 
   outro('Copying is complete.');
 }
 
-function copyFile(src: string, dest: string): void {
-  fs.mkdirSync(path.dirname(dest), { recursive: true });
-  fs.copyFileSync(src, dest);
-  const stats = fs.statSync(src);
-  fs.utimesSync(dest, stats.atime, stats.mtime);
-}
-
-function copyDir(src: string, dest: string, log = false): void {
-  fs.mkdirSync(dest, { recursive: true });
-  const entries = fs.readdirSync(src, { withFileTypes: true });
-
-  for (const entry of entries) {
-    const srcPath = path.join(src, entry.name);
-    const destPath = path.join(dest, entry.name);
-
-    if (log) {
-      consola.info(`Copying ${srcPath} to ${destPath}`);
-    }
-
-    if (entry.isDirectory()) {
-      copyDir(srcPath, destPath);
-    }
-    else {
-      copyFile(srcPath, destPath);
-    }
-  }
-}
-
-function copyData(appDataDir: string) {
+function copyData(appDataDir: string): void {
   const dataDir = path.join(appDataDir, DATA_DIR);
   const developDataDir = path.join(appDataDir, DEVELOP_DATA_DIR);
 
@@ -120,43 +99,18 @@ function copyData(appDataDir: string) {
   consola.success(`Removed content from ${developDataDir}`);
 
   const dirContents = fs.readdirSync(dataDir);
-  consola.info(`Preparing to Copy ${dirContents.length} files/directories from ${dataDir} to ${developDataDir}`);
+  consola.info(`Preparing to copy ${dirContents.length} files/directories from ${dataDir} to ${developDataDir}`);
 
-  copyDir(dataDir, developDataDir, true);
+  copyAndLog(dataDir, developDataDir);
 
   consola.success(`Copied all content from ${dataDir} to ${developDataDir}`);
 }
 
 function resolveDataDirectory(): string {
-  const platform = os.platform();
-  const homedir = os.homedir();
-
-  let baseDir: string;
-
-  // eslint-disable-next-line @typescript-eslint/switch-exhaustiveness-check
-  switch (platform) {
-    case 'win32':
-      baseDir = process.env.LOCALAPPDATA ?? path.join(homedir, 'AppData', 'Local');
-      break;
-
-    case 'darwin':
-      baseDir = path.join(homedir, 'Library', 'Application Support');
-      break;
-
-    case 'linux':
-      baseDir = process.env.XDG_DATA_HOME ?? path.join(homedir, '.local', 'share');
-      break;
-
-    default:
-      baseDir = path.join(homedir, '.local', 'share');
-  }
-
-  const appDataDir = path.join(baseDir, APP_NAME);
-
+  const appDataDir = path.join(baseDataDir(), APP_NAME);
   if (!fs.existsSync(appDataDir)) {
     throw new Error(`Data directory ${appDataDir} does not exist`);
   }
-
   return appDataDir;
 }
 

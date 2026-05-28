@@ -94,7 +94,6 @@
     "c8": "catalog:",
     "dmg-license": "catalog:",
     "dotenv": "catalog:",
-    "dotenv-cli": "catalog:",
     "electron": "catalog:",
     "electron-builder": "catalog:",
     "electron-store": "catalog:",
