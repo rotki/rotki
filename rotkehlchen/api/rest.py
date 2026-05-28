@@ -51,7 +51,10 @@ from rotkehlchen.assets.asset import (
     SolanaToken,
 )
 from rotkehlchen.assets.resolver import AssetResolver
-from rotkehlchen.balances.historical import HistoricalBalancesManager
+from rotkehlchen.balances.historical import (
+    HistoricalBalanceEntry,
+    HistoricalBalancesManager,
+)
 from rotkehlchen.balances.manual import ManuallyTrackedBalance
 from rotkehlchen.chain.accounts import OptionalBlockchainAccount, SingleBlockchainAccountData
 from rotkehlchen.chain.balances import BlockchainBalancesUpdate
@@ -3196,20 +3199,70 @@ class RestAPI:
     def get_historical_balance(
             self,
             filter_query: HistoricalBalancesFilterQuery,
+            group_by_account: bool = False,
     ) -> dict[str, Any]:
         """Query historical balances for all assets at a given timestamp
         by processing historical events
         """
         processing_required, balances = HistoricalBalancesManager(
             self.rotkehlchen.data.db,
-        ).get_balances(filter_query=filter_query)
+        ).get_balances(filter_query=filter_query, group_by_account=group_by_account)
 
         result: dict[str, Any] = {'processing_required': processing_required}
-        if balances is not None:
+        if balances is None:
+            if group_by_account is True and processing_required is False:
+                return wrap_in_fail_result(
+                    'No historical data found',
+                    status_code=HTTPStatus.NOT_FOUND,
+                )
+        elif group_by_account is True:
+            result['entries'] = [
+                {
+                    'location': entry.location.serialize(),
+                    'location_label': entry.location_label,
+                    'protocol': entry.protocol,
+                    'asset': entry.asset.identifier,
+                    'amount': str(entry.amount),
+                }
+                for entry in balances
+                if isinstance(entry, HistoricalBalanceEntry)
+            ]
+        elif isinstance(balances, dict):
             result['entries'] = {
                 asset.identifier: str(amount)
                 for asset, amount in balances.items()
             }
+
+        return _wrap_in_ok_result(result=result, status_code=HTTPStatus.OK)
+
+    @async_api_call()
+    def get_historical_balance_series(
+            self,
+            filter_query: HistoricalBalancesFilterQuery,
+    ) -> dict[str, Any]:
+        processing_required, entries = HistoricalBalancesManager(
+            self.rotkehlchen.data.db,
+        ).get_balance_series(filter_query=filter_query)
+
+        result: dict[str, Any] = {'processing_required': processing_required}
+        if entries is None:
+            if processing_required is False:
+                return wrap_in_fail_result(
+                    'No historical data found',
+                    status_code=HTTPStatus.NOT_FOUND,
+                )
+        else:
+            result['entries'] = [
+                {
+                    'location': entry.location.serialize(),
+                    'location_label': entry.location_label,
+                    'protocol': entry.protocol,
+                    'asset': entry.asset.identifier,
+                    'times': [int(timestamp) for timestamp in entry.times],
+                    'values': [str(value) for value in entry.values],
+                }
+                for entry in entries
+            ]
 
         return _wrap_in_ok_result(result=result, status_code=HTTPStatus.OK)
 

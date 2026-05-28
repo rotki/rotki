@@ -1,7 +1,7 @@
 import logging
 from collections import defaultdict
 from collections.abc import Sequence
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, NamedTuple
 
 import polars as pl
 
@@ -20,7 +20,7 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.base import HistoryEvent, get_event_direction
 from rotkehlchen.history.events.structures.types import EventDirection, HistoryEventSubType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import EventMetricKey, Timestamp, TimestampMS
+from rotkehlchen.types import EventMetricKey, Location, Timestamp, TimestampMS
 from rotkehlchen.utils.misc import ts_ms_to_sec, ts_sec_to_ms
 
 if TYPE_CHECKING:
@@ -30,6 +30,23 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
+
+
+class HistoricalBalanceEntry(NamedTuple):
+    location: Location
+    location_label: str
+    protocol: str | None
+    asset: Asset
+    amount: FVal
+
+
+class HistoricalBalanceSeriesEntry(NamedTuple):
+    location: Location
+    location_label: str
+    protocol: str | None
+    asset: Asset
+    times: list[Timestamp]
+    values: list[FVal]
 
 
 class HistoricalBalancesManager:
@@ -48,7 +65,8 @@ class HistoricalBalancesManager:
     def get_balances(
             self,
             filter_query: HistoricalBalancesFilterQuery,
-    ) -> tuple[bool, dict[Asset, FVal] | None]:
+            group_by_account: bool = False,
+    ) -> tuple[bool, dict[Asset, FVal] | list[HistoricalBalanceEntry] | None]:
         """Get historical balances for all assets at a given timestamp.
 
         The inner query gets the latest balance per bucket via MAX(sort_key),
@@ -57,30 +75,117 @@ class HistoricalBalancesManager:
 
         Returns a tuple of (processing_required, balances):
         - processing_required: True if events exist but haven't been processed yet
-        - balances: Dict of asset to amount, or None if no data available
+        - balances: When group_by_account is False, a dict of asset to total amount.
+          When group_by_account is True, a list of per location/account/protocol/asset entries.
+          None is returned when no balance data is available.
         """
         filter_str, filter_bindings = filter_query.prepare()
         query_bindings: list = [EventMetricKey.BALANCE.serialize(), *filter_bindings]
+        data: dict[Asset, FVal] | list[HistoricalBalanceEntry] | None
         with self.db.conn.read_ctx() as cursor:
-            cursor.execute(
-                f"""SELECT asset, SUM(metric_value) FROM (
-                    SELECT asset, metric_value, MAX(sort_key)
+            if group_by_account is True:
+                cursor.execute(
+                    f"""SELECT
+                        location, location_label, protocol, asset, metric_value, MAX(sort_key)
                     FROM event_metrics em
                     WHERE metric_key = ? {filter_str}
                     AND asset NOT IN (
                         SELECT value FROM multisettings WHERE name='ignored_asset'
                     )
                     GROUP BY location, location_label, protocol, asset
-                ) GROUP BY asset HAVING SUM(metric_value) > 0
-                """,
-                query_bindings,
-            )
-            data = {Asset(asset_id): FVal(total) for asset_id, total in cursor} or None
+                    HAVING metric_value > 0
+                    """,
+                    query_bindings,
+                )
+                data = [
+                    HistoricalBalanceEntry(
+                        location=Location.deserialize_from_db(location),
+                        location_label=location_label,
+                        protocol=protocol,
+                        asset=Asset(asset_id),
+                        amount=FVal(amount),
+                    ) for location, location_label, protocol, asset_id, amount, _sort_key in cursor
+                ] or None
+            else:
+                cursor.execute(
+                    f"""SELECT asset, SUM(metric_value) FROM (
+                        SELECT asset, metric_value, MAX(sort_key)
+                        FROM event_metrics em
+                        WHERE metric_key = ? {filter_str}
+                        AND asset NOT IN (
+                            SELECT value FROM multisettings WHERE name='ignored_asset'
+                        )
+                        GROUP BY location, location_label, protocol, asset
+                    ) GROUP BY asset HAVING SUM(metric_value) > 0
+                    """,
+                    query_bindings,
+                )
+                data = {Asset(asset_id): FVal(total) for asset_id, total in cursor} or None
 
         return self._has_unprocessed_events(
             where_clause=filter_query.unprocessed_where_clause,
             bindings=filter_query.unprocessed_bindings,
         ), data
+
+    def get_balance_series(
+            self,
+            filter_query: HistoricalBalancesFilterQuery,
+    ) -> tuple[bool, list[HistoricalBalanceSeriesEntry] | None]:
+        """Get historical balance series per location/account/protocol/asset bucket."""
+        filter_str, filter_bindings = filter_query.prepare()
+        query_bindings: list = [EventMetricKey.BALANCE.serialize(), *filter_bindings]
+        entries: list[HistoricalBalanceSeriesEntry] = []
+        current_key: tuple[Location, str, str | None, Asset] | None = None
+        times: list[Timestamp] = []
+        values: list[FVal] = []
+        with self.db.conn.read_ctx() as cursor:
+            cursor.execute(
+                f"""SELECT location, location_label, protocol, asset, timestamp, metric_value
+                FROM event_metrics em
+                WHERE metric_key = ? {filter_str}
+                AND asset NOT IN (SELECT value FROM multisettings WHERE name='ignored_asset')
+                AND metric_value > 0
+                ORDER BY location, location_label, protocol, asset, timestamp, sort_key
+                """,
+                query_bindings,
+            )
+            for location_raw, location_label, protocol, asset_id, timestamp, amount in cursor:
+                key = (
+                    Location.deserialize_from_db(location_raw),
+                    location_label,
+                    protocol,
+                    Asset(asset_id),
+                )
+                if current_key is not None and key != current_key:
+                    entries.append(HistoricalBalanceSeriesEntry(
+                        location=current_key[0],
+                        location_label=current_key[1],
+                        protocol=current_key[2],
+                        asset=current_key[3],
+                        times=times,
+                        values=values,
+                    ))
+                    times = []
+                    values = []
+
+                current_key = key
+                times.append(ts_ms_to_sec(timestamp))
+                values.append(FVal(amount))
+
+            if current_key is not None:
+                entries.append(HistoricalBalanceSeriesEntry(
+                    location=current_key[0],
+                    location_label=current_key[1],
+                    protocol=current_key[2],
+                    asset=current_key[3],
+                    times=times,
+                    values=values,
+                ))
+
+        return self._has_unprocessed_events(
+            where_clause=filter_query.unprocessed_where_clause,
+            bindings=filter_query.unprocessed_bindings,
+        ), entries or None
 
     def get_erc721_tokens_balances(
             self,

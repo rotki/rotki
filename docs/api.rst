@@ -14833,6 +14833,11 @@ Historical Balance Queries
     been processed yet. If ``processing_required`` is true, call ``POST /tasks/trigger`` to trigger
     processing, then retry this endpoint.
 
+    Filtering by ``asset``, ``location``, ``location_label`` and ``protocol`` is applied before
+    grouping. When ``group_by_account`` is true, the response returns separate records per matching
+    ``location``, ``location_label``, ``protocol`` and ``asset`` bucket. The entries order is not
+    guaranteed and clients should not rely on it.
+
     .. note::
       This endpoint can also be queried asynchronously by using ``"async_query": true``.
 
@@ -14840,17 +14845,30 @@ Historical Balance Queries
 
       .. http:example:: curl wget httpie python-requests
 
-        PUT /api/(version)/balances/historical HTTP/1.1
+        POST /api/(version)/balances/historical HTTP/1.1
         Host: localhost:5042
         Content-Type: application/json;charset=UTF-8
 
         { "timestamp": 1672531200 }
 
+    **Example Request (Grouped by Account):**
+
+      .. http:example:: curl wget httpie python-requests
+
+      POST /api/(version)/balances/historical HTTP/1.1
+      Host: localhost:5042
+      Content-Type: application/json;charset=UTF-8
+
+      {
+        "timestamp": 1672531200,
+        "group_by_account": true
+      }
+
     **Example Request (Single Asset):**
 
       .. http:example:: curl wget httpie python-requests
 
-      PUT /api/(version)/balances/historical HTTP/1.1
+      POST /api/(version)/balances/historical HTTP/1.1
       Host: localhost:5042
       Content-Type: application/json;charset=UTF-8
 
@@ -14863,7 +14881,7 @@ Historical Balance Queries
 
       .. http:example:: curl wget httpie python-requests
 
-      PUT /api/(version)/balances/historical HTTP/1.1
+      POST /api/(version)/balances/historical HTTP/1.1
       Host: localhost:5042
       Content-Type: application/json;charset=UTF-8
 
@@ -14876,20 +14894,20 @@ Historical Balance Queries
 
       .. http:example:: curl wget httpie python-requests
 
-      PUT /api/(version)/balances/historical HTTP/1.1
+      POST /api/(version)/balances/historical HTTP/1.1
       Host: localhost:5042
       Content-Type: application/json;charset=UTF-8
 
       {
         "timestamp": 1672531200,
-        "location_label": "0x1234567890abcdef1234567890abcdef12345678"
+        "location_label": "0x1234567890AbcdEF1234567890aBcdef12345678"
       }
 
     **Example Request (Filtered by Protocol):**
 
       .. http:example:: curl wget httpie python-requests
 
-      PUT /api/(version)/balances/historical HTTP/1.1
+      POST /api/(version)/balances/historical HTTP/1.1
       Host: localhost:5042
       Content-Type: application/json;charset=UTF-8
 
@@ -14903,6 +14921,7 @@ Historical Balance Queries
       :reqjsonarr string location: (Optional) Filter balances by location (e.g., "ethereum", "kraken", "binance"). If not provided, returns balances across all locations.
       :reqjsonarr string location_label: (Optional) Filter balances by location label (e.g., a specific wallet address). If not provided, returns balances across all location labels.
       :reqjsonarr string protocol: (Optional) Filter balances by protocol (e.g., "aave", "uniswap-v2"). If not provided, returns balances across all protocols.
+      :reqjsonarr boolean group_by_account: (Optional, default false) If true, returns one record per location, location label, protocol and asset bucket instead of aggregating by asset.
 
     **Example Response (All Assets - data available):**
 
@@ -14941,6 +14960,44 @@ Historical Balance Queries
         "status_code": 200
       }
 
+    **Example Response (Grouped by Account - data available):**
+
+      .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+        "message": "",
+        "result": {
+          "processing_required": false,
+          "entries": [
+            {
+              "location": "ethereum",
+              "location_label": "0x52908400098527886E0F7030069857D2E4169EE7",
+              "protocol": null,
+              "asset": "ETH",
+              "amount": "1.2"
+            },
+            {
+              "location": "ethereum",
+              "location_label": "0x8617E340B3D01FA5F11F306F4090FD50E238070D",
+              "protocol": null,
+              "asset": "ETH",
+              "amount": "0.8"
+            },
+            {
+              "location": "ethereum",
+              "location_label": "0x52908400098527886E0F7030069857D2E4169EE7",
+              "protocol": "aave_v3",
+              "asset": "eip155:1/erc20:0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+              "amount": "250.12"
+            }
+          ]
+        },
+        "status_code": 200
+      }
+
     **Example Response (processing required):**
 
       .. sourcecode:: http
@@ -14957,10 +15014,142 @@ Historical Balance Queries
       }
 
       :resjson bool processing_required: Whether historical events exist but need processing. If true, call the processing endpoint and retry.
-      :resjson object entries: (Only present when data is available) A mapping of asset identifiers to their amount as string.
+      :resjson object entries: (Only present when data is available and ``group_by_account`` is false) A mapping of asset identifiers to their amount as string.
+      :resjson list entries: (Only present when data is available and ``group_by_account`` is true) Records with ``location``, ``location_label``, ``protocol``, ``asset`` and ``amount``.
       :statuscode 200: Historical balances returned
       :statuscode 400: Malformed query
       :statuscode 403: User does not have premium access
+      :statuscode 404: No historical data found when ``group_by_account`` is true
+      :statuscode 409: User is not logged in
+      :statuscode 500: Internal Rotki error
+
+  .. http:post:: /api/(version)/balances/historical/current
+
+    Gets current balances derived from processed historical events. This is equivalent to querying
+    ``/balances/historical`` with the current timestamp and ``group_by_account`` set to true.
+    Optional ``asset``, ``location``, ``location_label`` and ``protocol`` filters are applied before
+    grouping, and omitted filters include all matching buckets. The entries order is not guaranteed
+    and clients should not rely on it.
+
+    .. note::
+      This endpoint can also be queried asynchronously by using ``"async_query": true``.
+
+    **Example Request:**
+
+      .. http:example:: curl wget httpie python-requests
+
+      POST /api/(version)/balances/historical/current HTTP/1.1
+      Host: localhost:5042
+      Content-Type: application/json;charset=UTF-8
+
+      {
+        "asset": "ETH",
+        "location": "ethereum"
+      }
+
+      :reqjsonarr string asset: (Optional) The asset identifier to query balance for.
+      :reqjsonarr string location: (Optional) Filter balances by location.
+      :reqjsonarr string location_label: (Optional) Filter balances by location label.
+      :reqjsonarr string protocol: (Optional) Filter balances by protocol.
+
+    **Example Response:**
+
+      .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+        "message": "",
+        "result": {
+          "processing_required": false,
+          "entries": [
+            {
+              "location": "ethereum",
+              "location_label": "0x1234567890AbcdEF1234567890aBcdef12345678",
+              "protocol": null,
+              "asset": "ETH",
+              "amount": "1.25"
+            }
+          ]
+        },
+        "status_code": 200
+      }
+
+      :resjson bool processing_required: Whether historical events exist but need processing.
+      :resjson list entries: (Only present when data is available) Records with ``location``, ``location_label``, ``protocol``, ``asset`` and ``amount``.
+      :statuscode 200: Current derived historical balances returned
+      :statuscode 400: Malformed query
+      :statuscode 403: User does not have premium access
+      :statuscode 404: No historical data found
+      :statuscode 409: User is not logged in
+      :statuscode 500: Internal Rotki error
+
+  .. http:post:: /api/(version)/balances/historical/asset/series
+
+    Gets historical balance series for one account and asset, grouped by matching
+    location and protocol buckets. Each point is the bucket balance after the event at
+    that timestamp. The entries order is not guaranteed and clients should not rely on it.
+    The required selector is ``location_label`` and ``asset``. Optional ``location`` and
+    ``protocol`` filters only narrow that selector; if omitted, matching locations and
+    protocols are returned as separate series records.
+
+    .. note::
+      This endpoint can also be queried asynchronously by using ``"async_query": true``.
+
+    **Example Request:**
+
+      .. http:example:: curl wget httpie python-requests
+
+      POST /api/(version)/balances/historical/asset/series HTTP/1.1
+      Host: localhost:5042
+      Content-Type: application/json;charset=UTF-8
+
+      {
+        "asset": "ETH",
+        "location_label": "0x1234567890AbcdEF1234567890aBcdef12345678",
+        "from_timestamp": 1714521600,
+        "to_timestamp": 1714608000
+      }
+
+      :reqjsonarr string asset: The asset identifier to query balance series for.
+      :reqjsonarr string location_label: The account/address label to query.
+      :reqjsonarr integer from_timestamp: (Optional, default 0) Inclusive start timestamp.
+      :reqjsonarr integer to_timestamp: (Optional, default now) Inclusive end timestamp.
+      :reqjsonarr string location: (Optional) Filter balances by location.
+      :reqjsonarr string protocol: (Optional) Filter balances by protocol.
+
+    **Example Response:**
+
+      .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+        "message": "",
+        "result": {
+          "processing_required": false,
+          "entries": [
+            {
+              "location": "ethereum",
+              "location_label": "0x1234567890AbcdEF1234567890aBcdef12345678",
+              "protocol": null,
+              "asset": "ETH",
+              "times": [1714521600, 1714608000],
+              "values": ["1.0", "1.25"]
+            }
+          ]
+        },
+        "status_code": 200
+      }
+
+      :resjson bool processing_required: Whether historical events exist but need processing.
+      :resjson list entries: (Only present when data is available) Series records with ``location``, ``location_label``, ``protocol``, ``asset``, ``times`` and ``values``.
+      :statuscode 200: Historical balance series returned
+      :statuscode 400: Malformed query
+      :statuscode 403: User does not have premium access
+      :statuscode 404: No historical data found
       :statuscode 409: User is not logged in
       :statuscode 500: Internal Rotki error
 

@@ -97,6 +97,7 @@ MINIMIZED_USER_DB_INDEXES = {
     "idx_event_metrics_metric_key_timestamp": "createindexifnotexistsidx_event_metrics_metric_key_timestamponevent_metrics(metric_key,timestamp)",
     "idx_event_metrics_metric_key_asset_sort_key": "createindexifnotexistsidx_event_metrics_metric_key_asset_sort_keyonevent_metrics(metric_key,asset,sort_key)",
     "idx_event_metrics_asset": "createindexifnotexistsidx_event_metrics_assetonevent_metrics(asset)",
+    "idx_event_metrics_balances_latest": "createindexifnotexistsidx_event_metrics_balances_latestonevent_metrics(metric_key,location,location_label,protocol,asset,timestamp,sort_key,metric_value)",
     "idx_data_issues_state": "createindexifnotexistsidx_data_issues_stateondata_issues(state)",
     "idx_data_issues_kind_state": "createindexifnotexistsidx_data_issues_kind_stateondata_issues(kind,state)",
     "idx_data_issues_location_label_asset": "createindexifnotexistsidx_data_issues_location_label_assetondata_issues(location,location_label,asset)",

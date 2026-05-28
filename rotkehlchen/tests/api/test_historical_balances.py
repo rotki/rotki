@@ -336,6 +336,109 @@ def test_get_historical_balance_with_filters(
         assert result['processing_required'] is False, f'Failed for filters: {filters}'
         assert result['entries']['ETH'] == expected_eth, f'Failed for filters: {filters}'
 
+    result = assert_proper_sync_response_with_result(requests.post(
+        api_url_for(rotkehlchen_api_server, 'timestamphistoricalbalanceresource'),
+        json={'timestamp': day3_ts, 'group_by_account': True},
+    ))
+    expected_entries: list[dict[str, str | None]] = [{
+        'location': 'base',
+        'location_label': addr1,
+        'protocol': None,
+        'asset': 'ETH',
+        'amount': '2',
+    }, {
+        'location': 'ethereum',
+        'location_label': addr2,
+        'protocol': None,
+        'asset': 'ETH',
+        'amount': '4',
+    }, {
+        'location': 'ethereum',
+        'location_label': addr1,
+        'protocol': None,
+        'asset': 'ETH',
+        'amount': '7',
+    }, {
+        'location': 'ethereum',
+        'location_label': addr1,
+        'protocol': 'aave',
+        'asset': 'ETH',
+        'amount': '10',
+    }, {
+        'location': 'ethereum',
+        'location_label': addr1,
+        'protocol': 'compound',
+        'asset': 'ETH',
+        'amount': '6',
+    }]
+    assert result['processing_required'] is False
+    assert len(result['entries']) == len(expected_entries)
+    for entry in expected_entries:
+        assert entry in result['entries']
+
+    result = assert_proper_sync_response_with_result(requests.post(
+        api_url_for(rotkehlchen_api_server, 'timestamphistoricalbalanceresource'),
+        json={'timestamp': day3_ts, 'location_label': addr2, 'group_by_account': True},
+    ))
+    assert result['entries'] == [{
+        'location': 'ethereum',
+        'location_label': addr2,
+        'protocol': None,
+        'asset': 'ETH',
+        'amount': '4',
+    }]
+
+    result = assert_proper_sync_response_with_result(requests.post(
+        api_url_for(rotkehlchen_api_server, 'currenthistoricalbalanceresource'),
+        json={'location': 'base', 'location_label': addr1},
+    ))
+    assert result == {
+        'processing_required': False,
+        'entries': [{
+            'location': 'base',
+            'location_label': addr1,
+            'protocol': None,
+            'asset': 'ETH',
+            'amount': '2',
+        }],
+    }
+
+    result = assert_proper_sync_response_with_result(requests.post(
+        api_url_for(rotkehlchen_api_server, 'historicalbalanceseriesresource'),
+        json={
+            'asset': 'ETH',
+            'location_label': addr1,
+            'location': 'ethereum',
+            'from_timestamp': START_TS,
+            'to_timestamp': day3_ts,
+        },
+    ))
+    assert result == {
+        'processing_required': False,
+        'entries': [{
+            'location': 'ethereum',
+            'location_label': addr1,
+            'protocol': None,
+            'asset': 'ETH',
+            'times': [START_TS, day2_ts],
+            'values': ['5', '7'],
+        }, {
+            'location': 'ethereum',
+            'location_label': addr1,
+            'protocol': 'aave',
+            'asset': 'ETH',
+            'times': [START_TS],
+            'values': ['10'],
+        }, {
+            'location': 'ethereum',
+            'location_label': addr1,
+            'protocol': 'compound',
+            'asset': 'ETH',
+            'times': [day2_ts],
+            'values': ['6'],
+        }],
+    }
+
     for filters, error_msg in (  # test validation errors
         ({'timestamp': START_TS, 'location_label': make_evm_address()}, 'Unknown location label'),
         ({'timestamp': START_TS, 'protocol': 'idontexist'}, 'Unknown protocol'),
@@ -1189,6 +1292,7 @@ def test_historical_price_cache_only_special_assets(
 
 
 @pytest.mark.parametrize('start_with_valid_premium', [True])
+@pytest.mark.parametrize('have_decoders', [True])
 def test_get_historical_asset_amounts_processing_required(
         rotkehlchen_api_server: 'APIServer',
 ) -> None:
@@ -1230,6 +1334,14 @@ def test_get_historical_asset_amounts_processing_required(
     assert result['processing_required'] is True
     assert 'times' not in result
     assert 'values' not in result
+
+    response = requests.post(
+        api_url_for(rotkehlchen_api_server, 'timestamphistoricalbalanceresource'),
+        json={'timestamp': START_TS, 'group_by_account': True},
+    )
+    result = assert_proper_sync_response_with_result(response)
+    assert result['processing_required'] is True
+    assert 'entries' not in result
 
     # trigger processing via the API
     response = requests.post(
