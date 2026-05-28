@@ -12,6 +12,8 @@ from rotkehlchen.history.data_issues.manager import DataIssuesManager
 from rotkehlchen.history.data_issues.types import DataIssueFilters
 from rotkehlchen.types import Location
 
+pytestmark = pytest.mark.accounting_update
+
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
 

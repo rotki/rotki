@@ -55,6 +55,7 @@ from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.misc import InputError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.exchanges.constants import ALL_SUPPORTED_EXCHANGES
+from rotkehlchen.feature_flags import is_accounting_update_enabled
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.constants import CHAIN_ENTRY_TYPES, STAKING_ENTRY_TYPES
 from rotkehlchen.history.events.structures.asset_movement import AssetMovement
@@ -203,6 +204,9 @@ class DBHistoryEvents:
         - STALE_BALANCES_MODIFICATION_TS: when the modification occurred (for detecting
           concurrent modifications during processing)
         """
+        if is_accounting_update_enabled() is False:
+            return
+
         write_cursor.execute(
             'INSERT INTO key_value_cache(name, value) VALUES(?, ?), (?, ?) '
             'ON CONFLICT(name) DO UPDATE SET value=CASE '

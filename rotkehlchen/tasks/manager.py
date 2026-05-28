@@ -38,6 +38,7 @@ from rotkehlchen.errors.api import PremiumAuthenticationError, PremiumPermission
 from rotkehlchen.errors.asset import UnknownAsset, WrongAssetType
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.externalapis.google_calendar import GoogleCalendarAPI
+from rotkehlchen.feature_flags import is_accounting_update_enabled
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.history.types import HistoricalPriceOracle
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -173,7 +174,7 @@ class TaskManager:
             self._maybe_check_premium_status,
             self._maybe_check_data_updates,
             self._maybe_update_snapshot_balances,
-            self._maybe_process_historical_balances,
+            *([self._maybe_process_historical_balances] if is_accounting_update_enabled() else []),
             self._maybe_detect_evm_accounts,
             self._maybe_update_ilk_cache,
             self._maybe_query_produced_blocks,
@@ -564,7 +565,10 @@ class TaskManager:
         )]
 
     def trigger_historical_balance_processing(self) -> list[gevent.Greenlet] | None:
-        if self.history_processing_coordinator.is_history_fetching():
+        if (
+            is_accounting_update_enabled() is False or
+            self.history_processing_coordinator.is_history_fetching()
+        ):
             return None
         return self._spawn_historical_balance_processing(from_ts=None)
 

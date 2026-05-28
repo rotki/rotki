@@ -531,6 +531,7 @@ pythonVersion = "3.11"
 
 [tool.pytest.ini_options]
 markers = [
+    "accounting_update: tests for the experimental accounting update",
     "asset_test: tests that check for asset coverage and definitions",
     "vcr: tests that use vcrpy cassettes",
 ]
