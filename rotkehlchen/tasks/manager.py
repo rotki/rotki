@@ -837,6 +837,7 @@ class TaskManager:
         if (now := ts_now()) - self.last_calendar_reminder_check < 60 * 5:
             return None
 
+        self.last_calendar_reminder_check = now
         reminders: dict[int, list[CalendarNotification]] = defaultdict(list)
         with self.database.conn.read_ctx() as cursor:
             cursor.execute(
@@ -846,6 +847,7 @@ class TaskManager:
                 'calendar_reminders AS reminder LEFT JOIN calendar AS event '
                 'ON reminder.event_id = event.identifier WHERE '
                 '? > event.timestamp - reminder.secs_before '
+                'AND reminder.acknowledged = 0 '
                 'ORDER BY event.identifier, reminder.secs_before ASC',
                 (now,),
             )
@@ -859,7 +861,6 @@ class TaskManager:
         if len(reminders) == 0:
             return None
 
-        self.last_calendar_reminder_check = now
         return [self.greenlet_manager.spawn_and_track(
             after_seconds=None,
             task_name='Notify calendar reminders',

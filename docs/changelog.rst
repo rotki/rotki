@@ -4,6 +4,7 @@ Changelog
 
 * :bug:`-` Swaps through a newer zeroxsettler will now be properly decoded by rotki.
 * :bug:`-` Poloniex history should now be properly queried again.
+* :bug:`-` Dismissing a calendar reminder (such as an L2 bridge claim) now sticks, instead of popping up again days later as if you had never acknowledged it.
 
 * :release:`1.43.1 <2026-05-18>`
 * :feature:`12215` Cryptocompare is now removed from the default list of oracles if no API key is set.
