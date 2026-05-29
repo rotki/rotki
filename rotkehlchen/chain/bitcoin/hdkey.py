@@ -7,7 +7,6 @@ from dataclasses import dataclass
 from enum import auto
 from typing import NamedTuple, Optional, cast
 
-from base58check import b58decode, b58encode
 from coincurve import PrivateKey, PublicKey
 
 from rotkehlchen.chain.bitcoin.utils import (
@@ -21,6 +20,7 @@ from rotkehlchen.chain.bitcoin.utils import (
 from rotkehlchen.errors.misc import XPUBError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.types import BTCAddress
+from rotkehlchen.utils.base58 import b58decode, b58encode
 from rotkehlchen.utils.mixins.enums import SerializableEnumNameMixin
 
 COMPRESSED_PUBKEY = True

@@ -1987,7 +1987,6 @@ name = "rotkehlchen"
 source = { editable = "." }
 dependencies = [
     { name = "aiohttp" },
-    { name = "base58check" },
     { name = "beautifulsoup4" },
     { name = "bech32" },
     { name = "bip-utils" },
@@ -2101,7 +2100,6 @@ profiling = [
 [package.metadata]
 requires-dist = [
     { name = "aiohttp", specifier = ">=3.13.4" },
-    { name = "base58check", specifier = "==1.0.2" },
     { name = "beautifulsoup4", specifier = "==4.14.2" },
     { name = "bech32", specifier = "==1.2.0" },
     { name = "bip-utils", specifier = "==2.12.1" },
