@@ -2,10 +2,10 @@ import logging
 from collections.abc import Sequence
 from typing import TYPE_CHECKING, Literal, overload
 
-from ens.abis import PUBLIC_RESOLVER_2 as ENS_RESOLVER_ABI
-from ens.constants import ENS_MAINNET_ADDR
+from ens.abis import PUBLIC_RESOLVER_2 as ENS_RESOLVER_ABI, UNIVERSAL_RESOLVER
+from ens.constants import UNIVERSAL_RESOLVER_ADDR
 from ens.exceptions import InvalidName
-from ens.utils import is_none_or_zero_address, normal_name_to_hash, normalize_name
+from ens.utils import dns_encode_name, is_none_or_zero_address, normal_name_to_hash, normalize_name
 from eth_typing import HexStr
 from web3 import Web3
 
@@ -24,7 +24,7 @@ from rotkehlchen.chain.evm.node_inquirer import (
 )
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.assets import A_ETH
-from rotkehlchen.errors.misc import InputError
+from rotkehlchen.errors.misc import BlockchainQueryError, InputError, RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.fval import FVal
 from rotkehlchen.greenlets.manager import GreenletManager
@@ -78,7 +78,6 @@ class EthereumInquirer(DSProxyInquirerWithCacheData):
             dsproxy_registry=contracts.contract(string_to_evm_address('0x4678f0a6958e4D2Bc4F1BAF7Bc52E8F3564f3fE4')),
             native_token=A_ETH.resolve_to_crypto_asset(),
         )
-        self.ens_reverse_records = self.contracts.contract(string_to_evm_address('0x3671aE578E63FdF66ad4F3E12CC0c0d71Ac7510C'))  # noqa: E501
 
     def ens_reverse_lookup(self, addresses: list[ChecksumEvmAddress]) -> dict[ChecksumEvmAddress, str | None]:  # noqa: E501
         """Performs a reverse ENS lookup on a list of addresses
@@ -91,18 +90,39 @@ class EthereumInquirer(DSProxyInquirerWithCacheData):
         reaching it or with the returned result
         - BlockchainQueryError if web3 is used and there is a VM execution error"""
         human_names: dict[ChecksumEvmAddress, str | None] = {}
-        chunks = get_chunks(lst=addresses, n=MAX_ADDRESSES_IN_REVERSE_ENS_QUERY)
-        for chunk in chunks:
-            result = self.ens_reverse_records.call(
-                node_inquirer=self,
-                method_name='getNames',
-                arguments=[chunk],
-            )
-            for addr, name in zip(chunk, result, strict=True):
-                if name == '':
-                    human_names[addr] = None
-                else:
-                    human_names[addr] = name
+        web3 = Web3()
+        universal_resolver = web3.eth.contract(abi=UNIVERSAL_RESOLVER)
+        for chunk in get_chunks(lst=addresses, n=MAX_ADDRESSES_IN_REVERSE_ENS_QUERY):
+            calls = [(
+                UNIVERSAL_RESOLVER_ADDR,
+                universal_resolver.encode_abi(
+                    'reverse',
+                    args=[bytes.fromhex(address.removeprefix('0x')), SupportedBlockchain.ETHEREUM.ens_coin_type()],  # noqa: E501
+                ),
+            ) for address in chunk]
+            try:
+                results = self.multicall_2(calls=calls, require_success=False)
+            except RemoteError as e:
+                log.error(f'blockchain query for ens_reverse_lookup failed due to {e}')
+                human_names.update(dict.fromkeys(chunk, None))
+                continue
+
+            for address, result in zip(chunk, results, strict=True):
+                if result[0] is False or len(result[1]) == 0:
+                    human_names[address] = None
+                    continue
+
+                try:
+                    name, _, _ = web3.codec.decode(['string', 'address', 'address'], result[1])
+                except (DeserializationError, ValueError) as e:
+                    log.error(
+                        f'Failed to decode ens reverse lookup result for {address} due to {e!s}',
+                    )
+                    human_names[address] = None
+                    continue
+
+                human_names[address] = name or None
+
         return human_names
 
     @overload
@@ -176,29 +196,44 @@ class EthereumInquirer(DSProxyInquirerWithCacheData):
         parsing its response
         - InputError if the given name is not a valid ENS name
         """
-        resolver_addr, normal_name = self.get_ens_resolver_addr(name)
-        if resolver_addr is None:
-            log.error(f'Could not get ENS resolver for {name}')
+        try:
+            normal_name = normalize_name(name)
+        except InvalidName as e:
+            raise InputError(str(e)) from e
+
+        w3 = web3 if web3 is not None else Web3()
+        resolver_contract = w3.eth.contract(abi=ENS_RESOLVER_ABI)
+        node = normal_name_to_hash(normal_name)
+        resolver_call = resolver_contract.encode_abi(
+            'addr',
+            args=[node] if blockchain == SupportedBlockchain.ETHEREUM else [node, blockchain.ens_coin_type()],  # noqa: E501
+        )
+        try:
+            result, _ = self._call_contract(
+                web3=web3,
+                contract_address=UNIVERSAL_RESOLVER_ADDR,
+                abi=UNIVERSAL_RESOLVER,
+                method_name='resolve',
+                arguments=[dns_encode_name(normal_name), resolver_call],
+            )
+        except (BlockchainQueryError, RemoteError) as e:
+            # Universal Resolver reverts for unresolvable names. RPC nodes surface this as
+            # BlockchainQueryError while indexers surface it as RemoteError. In both cases
+            # the ENS lookup should behave like the old registry flow and return None.
+            log.error(f'blockchain query for ens_lookup failed due to {e}')
             return None
 
-        ens_resolver_abi = ENS_RESOLVER_ABI.copy()
-        arguments = [normal_name_to_hash(normal_name)]
+        if result in (None, b''):
+            return None
+
         if blockchain != SupportedBlockchain.ETHEREUM:
-            arguments.append(blockchain.ens_coin_type())
+            address = w3.codec.decode(['bytes'], result)[0]
+            return None if is_none_or_zero_address(address) else HexStr(address.hex())
 
-        address = self._call_contract(
-            web3=web3,
-            contract_address=resolver_addr,
-            abi=ens_resolver_abi,
-            method_name='addr',
-            arguments=arguments,
-        )
-
+        address = w3.codec.decode(['address'], result)[0]
         if is_none_or_zero_address(address):
             return None
 
-        if blockchain != SupportedBlockchain.ETHEREUM:
-            return HexStr(address.hex())
         try:
             return deserialize_evm_address(address)
         except DeserializationError:
@@ -221,11 +256,17 @@ class EthereumInquirer(DSProxyInquirerWithCacheData):
         except InvalidName as e:
             raise InputError(str(e)) from e
 
-        resolver_addr = self.contracts.contract(ENS_MAINNET_ADDR).call(
-            self,
-            method_name='resolver',
-            arguments=[normal_name_to_hash(normal_name)],
-        )
+        try:
+            resolver_addr, _, _ = self._call_contract(
+                web3=None,
+                contract_address=UNIVERSAL_RESOLVER_ADDR,
+                abi=UNIVERSAL_RESOLVER,
+                method_name='findResolver',
+                arguments=[dns_encode_name(normal_name)],
+            )
+        except (BlockchainQueryError, RemoteError) as e:
+            log.error(f'blockchain query for get_ens_resolver_addr failed due to {e}')
+            return None, None
         if is_none_or_zero_address(resolver_addr):
             return None, None
 

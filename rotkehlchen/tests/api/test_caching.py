@@ -35,13 +35,13 @@ def test_icons_and_avatars_cache_deletion(rotkehlchen_api_server: 'APIServer') -
         dbens.add_ens_mapping(
             write_cursor=write_cursor,
             address=make_evm_address(),
-            name='nebolax.eth',
+            name='tewshi.eth',
             now=ts_now(),
         )
 
         write_cursor.execute(
             'UPDATE ens_mappings SET last_avatar_update=? WHERE ens_name=?',
-            (ts_now(), 'nebolax.eth'),
+            (ts_now(), 'tewshi.eth'),
         )
 
     # populate icons dir
@@ -80,7 +80,7 @@ def test_icons_and_avatars_cache_deletion(rotkehlchen_api_server: 'APIServer') -
     # populate avatars dir to test the cache deletion
     Path(f'{avatars_dir}/ava.eth.png').write_bytes(b'')
     Path(f'{avatars_dir}/prettyirrelevant.eth.png').write_bytes(b'')
-    Path(f'{avatars_dir}/nebolax.eth.png').write_bytes(b'')
+    Path(f'{avatars_dir}/tewshi.eth.png').write_bytes(b'')
 
     assert len([i for i in avatars_dir.iterdir() if i.is_file()]) == 4
     response = requests.post(
@@ -111,7 +111,7 @@ def test_icons_and_avatars_cache_deletion(rotkehlchen_api_server: 'APIServer') -
         api_url_for(
             rotkehlchen_api_server,
             'ensavatarsresource',
-            ens_name='nebolax.eth',
+            ens_name='tewshi.eth',
         ),
     )
     assert response.status_code == 200
