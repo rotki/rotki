@@ -1,8 +1,9 @@
 import hashlib
 
-import base58check
 import bech32
 from bip_utils import Bech32ChecksumError, SegwitBech32Decoder
+
+from rotkehlchen.utils.base58 import b58decode, b58encode
 
 
 def is_valid_btc_address(value: str) -> bool:
@@ -51,7 +52,7 @@ def is_valid_base58_address(value: str) -> bool:
         return False
 
     try:
-        abytes = base58check.b58decode(value)
+        abytes = b58decode(value)
     except ValueError:
         return False
 
@@ -62,4 +63,4 @@ def is_valid_base58_address(value: str) -> bool:
     if abytes[-4:] != checksum:
         return False
 
-    return value == base58check.b58encode(abytes).decode()
+    return value == b58encode(abytes).decode()

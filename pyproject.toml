@@ -31,7 +31,6 @@ dependencies = [
     "rotki-sqlite==2025.8.1",
     "requests==2.33.1",
     "coincurve==21.0.0",
-    "base58check==1.0.2",
     "bech32==1.2.0",
     "gql[requests]==3.5.2",
     "scalecodec==1.2.11",

@@ -6,7 +6,6 @@ from enum import Enum, auto
 from http import HTTPStatus
 from typing import TYPE_CHECKING, Any
 
-import base58check
 import bech32
 import requests
 from bip_utils import P2TRAddrEncoder, P2WPKHAddrEncoder
@@ -21,6 +20,7 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import ensure_type
 from rotkehlchen.types import BTCAddress
+from rotkehlchen.utils.base58 import b58encode
 from rotkehlchen.utils.misc import satoshis_to_btc
 from rotkehlchen.utils.network import request_get_dict, retry_calls
 
@@ -96,7 +96,7 @@ def pubkey_to_base58_address(data: bytes) -> BTCAddress:
     - ValueError, TypeError due to b58encode
     """
     prefixed_hash, checksum = _calculate_hash160_and_checksum(b'\x00', data)
-    return BTCAddress(base58check.b58encode(prefixed_hash + checksum[:4]).decode('ascii'))
+    return BTCAddress(b58encode(prefixed_hash + checksum[:4]).decode('ascii'))
 
 
 def pubkey_to_p2sh_p2wpkh_address(data: bytes) -> BTCAddress:
@@ -110,7 +110,7 @@ def pubkey_to_p2sh_p2wpkh_address(data: bytes) -> BTCAddress:
 
     prefix = b'\x05'  # this is mainnet prefix -- we don't care about testnet
     prefixed_hash, checksum = _calculate_hash160_and_checksum(prefix, script)
-    address = base58check.b58encode(prefixed_hash + checksum[:4])
+    address = b58encode(prefixed_hash + checksum[:4])
     return BTCAddress(address.decode('ascii'))
 
 
@@ -187,7 +187,7 @@ def scriptpubkey_to_p2pkh_address(data: bytes) -> BTCAddress:
 
     prefixed_hash = bytes.fromhex('00') + data[3:23]  # 20 byte pubkey hash
     checksum = hashlib.sha256(hashlib.sha256(prefixed_hash).digest()).digest()
-    address = base58check.b58encode(prefixed_hash + checksum[:4])
+    address = b58encode(prefixed_hash + checksum[:4])
     return BTCAddress(address.decode('ascii'))
 
 
@@ -201,7 +201,7 @@ def scriptpubkey_to_p2sh_address(data: bytes) -> BTCAddress:
 
     prefixed_hash = bytes.fromhex('05') + data[2:22]  # 20 byte pubkey hash
     checksum = hashlib.sha256(hashlib.sha256(prefixed_hash).digest()).digest()
-    address = base58check.b58encode(prefixed_hash + checksum[:4])
+    address = b58encode(prefixed_hash + checksum[:4])
     return BTCAddress(address.decode('ascii'))
 
 
