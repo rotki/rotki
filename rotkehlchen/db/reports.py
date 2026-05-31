@@ -233,6 +233,59 @@ class DBAccountingReports:
                     f'Could not delete PnL report {report_id} from the DB. Report was not found',
                 )
 
+    PNL_EVENTS_INSERT = (
+        'INSERT INTO pnl_events(report_id, timestamp, data, pnl_taxable, pnl_free, asset) '
+        'VALUES(?, ?, ?, ?, ?, ?);'
+    )
+
+    @staticmethod
+    def serialize_report_row(
+            report_id: int,
+            time: Timestamp,
+            ts_converter: Callable[[Timestamp], str],
+            event: ProcessedAccountingEvent,
+    ) -> tuple[int, Timestamp, str, str, str, str | None]:
+        """Serialize a processed accounting event into a pnl_events row tuple.
+
+        May raise DeserializationError if there is a conflict at serialization of the event.
+        """
+        try:
+            asset_symbol: str | None = event.asset.symbol_or_name()
+        except WrongAssetType:
+            asset_symbol = None
+
+        return (
+            report_id,
+            time,
+            event.serialize_for_db(ts_converter),
+            str(event.pnl.taxable),
+            str(event.pnl.free),
+            asset_symbol,
+        )
+
+    def add_report_data_rows(
+            self,
+            rows: list[tuple[int, Timestamp, str, str, str, str | None]],
+    ) -> None:
+        """Batch-insert pre-serialized pnl_events rows in a single transient-DB transaction.
+
+        Batching keeps a whole report's writes in one commit instead of one commit per
+        processed event, which dominates the I/O cost of large PnL reports.
+
+        May raise InputError if the rows can not be written. Probably report id does not exist.
+        """
+        if len(rows) == 0:
+            return
+
+        with self.db.transient_write() as cursor:
+            try:
+                cursor.executemany(self.PNL_EVENTS_INSERT, rows)
+            except sqlcipher.IntegrityError as e:  # pylint: disable=no-member
+                raise InputError(
+                    f'Could not write report data to the DB due to {e!s}. '
+                    f'Probably the report does not exist?',
+                ) from e
+
     def add_report_data(
             self,
             report_id: int,
@@ -240,41 +293,18 @@ class DBAccountingReports:
             ts_converter: Callable[[Timestamp], str],
             event: ProcessedAccountingEvent,
     ) -> None:
-        """Adds a new entry to a transient report for the PnL history in a given time range
+        """Adds a single processed event to a transient report.
+
         May raise:
         - DeserializationError if there is a conflict at serialization of the event
         - InputError if the event can not be written to the DB. Probably report id does not exist.
         """
-        data = event.serialize_for_db(ts_converter)
-
-        try:
-            asset_symbol = event.asset.symbol_or_name()
-        except WrongAssetType:
-            asset_symbol = None
-
-        query = """
-        INSERT INTO pnl_events(
-            report_id, timestamp, data, pnl_taxable, pnl_free, asset
-        )
-        VALUES(?, ?, ?, ?, ?, ?);"""
-        with self.db.transient_write() as cursor:
-            try:
-                cursor.execute(
-                    query,
-                    (
-                        report_id,
-                        time,
-                        data,
-                        str(event.pnl.taxable),
-                        str(event.pnl.free),
-                        asset_symbol,
-                    ),
-                )
-            except sqlcipher.IntegrityError as e:  # pylint: disable=no-member
-                raise InputError(
-                    f'Could not write {event} data to the DB due to {e!s}. '
-                    f'Probably report {report_id} does not exist?',
-                ) from e
+        self.add_report_data_rows([self.serialize_report_row(
+            report_id=report_id,
+            time=time,
+            ts_converter=ts_converter,
+            event=event,
+        )])
 
     def get_report_data(
             self,

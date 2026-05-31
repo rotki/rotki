@@ -36,6 +36,9 @@ if TYPE_CHECKING:
 
 # keeping it small since reusing will only be assets in same event since we only go forward in time
 PROFIT_CURRENCY_RATE_CACHE_SIZE: Final = 64
+# how many processed-event rows to buffer before flushing them to the transient report DB
+# in a single batched transaction (instead of one commit per processed event)
+REPORT_ROWS_FLUSH_SIZE: Final = 1000
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -84,26 +87,49 @@ class AccountingPot(CustomizableDateMixin):
         self.dbeth2 = DBEth2(database)
         self.query_start_ts = self.query_end_ts = Timestamp(0)
         self.report_id: int | None = None
+        self._dbpnl = DBAccountingReports(database)
+        # buffer of serialized pnl_events rows, flushed in batches to avoid one DB
+        # commit per processed event (the dominant I/O cost of large PnL reports)
+        self._pending_report_rows: list[tuple[int, Timestamp, str, str, str, str | None]] = []
         # memoize profit-currency rates per report. profit_currency is fixed for the
         # duration of a report so keying on (asset identifier, timestamp) is enough.
         # Only successful lookups are cached so error paths keep being retried.
         self._profit_currency_rates: LRUCacheWithRemove[tuple[str, Timestamp], Price] = LRUCacheWithRemove(maxsize=PROFIT_CURRENCY_RATE_CACHE_SIZE)  # noqa: E501
 
     def _add_processed_event(self, event: ProcessedAccountingEvent) -> None:
-        dbpnl = DBAccountingReports(self.database)
         self.processed_events.append(event)
+        if self.is_dummy_pot:  # dummy pots never persist events (see __init__ docstring)
+            return
+
         try:
-            dbpnl.add_report_data(
+            row = DBAccountingReports.serialize_report_row(
                 report_id=self.report_id,  # type: ignore # report id is initialized by now
                 time=event.timestamp,
                 ts_converter=self.timestamp_to_date,
                 event=event,
             )
-        except (DeserializationError, InputError) as e:
+        except DeserializationError as e:
             log.error(str(e))
             return
 
+        self._pending_report_rows.append(row)
+        if len(self._pending_report_rows) >= REPORT_ROWS_FLUSH_SIZE:
+            self.flush_pending_report_rows()
+
         log.debug(event.to_string(self.timestamp_to_date))
+
+    def flush_pending_report_rows(self) -> None:
+        """Persist any buffered processed-event rows to the transient report DB in a single
+        batched transaction. Called periodically during processing and once at report end."""
+        if len(self._pending_report_rows) == 0:
+            return
+
+        try:
+            self._dbpnl.add_report_data_rows(self._pending_report_rows)
+        except InputError as e:
+            log.error(str(e))
+
+        self._pending_report_rows = []
 
     def get_rate_in_profit_currency(self, asset: Asset, timestamp: Timestamp) -> Price:
         """Get the profit_currency price of asset in the given timestamp
@@ -151,6 +177,7 @@ class AccountingPot(CustomizableDateMixin):
         self.cost_basis.reset(settings)
         self.events_accountant.reset()
         self.processed_events = []
+        self._pending_report_rows = []
 
     def add_in_event(
             self,  # pylint: disable=unused-argument
