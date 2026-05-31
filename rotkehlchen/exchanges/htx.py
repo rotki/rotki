@@ -246,7 +246,7 @@ class Htx(ExchangeInterface, SignatureGeneratorMixin):
         # copy since we are modifying the dict and could affect other queries using
         # the same options
         query_options = options.copy()
-        while len(output := self._query(absolute_path=endpoint, options=options)) != 0:
+        while len(output := self._query(absolute_path=endpoint, options=query_options)) != 0:
             result.extend(output)
             try:
                 query_options['from'] = output[-1]['id'] + 1  # from is inclusive, so we want after
