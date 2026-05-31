@@ -1834,6 +1834,56 @@ def test_add_edit_remove_kraken_futures(database: DBHandler) -> None:
     assert kraken_extras == {}
 
 
+def test_edit_binance_pairs_clears_history_events_query_range(database: DBHandler) -> None:
+    """Editing Binance selected trade pairs must clear that exchange's
+    ``_history_events_`` used_query_range, so history for any newly added pairs is
+    fetched again instead of being treated as already covered.
+
+    Regression test for a typo in the DELETE's LIKE pattern (an unescaped ``_``
+    acting as a single-char wildcard) which made it match nothing: the range
+    survived the edit and trades for the new pairs were never backfilled.
+    """
+    name = 'binance1'
+    database.add_exchange(
+        name=name,
+        location=Location.BINANCE,
+        api_key=ApiKey('binance_api_key'),
+        api_secret=ApiSecret(b'binance_api_secret'),
+    )
+    # range name built exactly like ExchangeInterface.query_history_events does
+    events_range = f'{Location.BINANCE!s}_history_events_{name}'
+    trades_range = f'{Location.BINANCE!s}_trades_{name}'  # unrelated, must survive
+    with database.user_write() as write_cursor:
+        for range_name in (events_range, trades_range):
+            database.update_used_query_range(
+                write_cursor=write_cursor,
+                name=range_name,
+                start_ts=Timestamp(0),
+                end_ts=Timestamp(1500000000),
+            )
+
+        database.edit_exchange(
+            write_cursor,
+            name=name,
+            location=Location.BINANCE,
+            new_name=None,
+            api_key=None,
+            api_secret=None,
+            passphrase=None,
+            kraken_account_type=None,
+            kraken_futures_api_key=None,
+            kraken_futures_api_secret=None,
+            binance_selected_trade_pairs=['ETHBTC', 'BTCUSDT'],
+            okx_location=None,
+        )
+
+    with database.conn.read_ctx() as cursor:
+        assert database.get_used_query_range(cursor, events_range) is None, \
+            'editing binance pairs should have cleared the history events query range'
+        assert database.get_used_query_range(cursor, trades_range) is not None, \
+            'unrelated query ranges must not be deleted when editing binance pairs'
+
+
 def test_fresh_db_adds_version(user_data_dir, sql_vm_instructions_cb):
     """Test that the DB version gets committed to a fresh DB.
 

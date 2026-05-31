@@ -2383,7 +2383,7 @@ class DBHandler:
                 # from the possible new pairs
                 write_cursor.execute(
                     'DELETE FROM used_query_ranges WHERE name LIKE ? ESCAPE ?;',
-                    (f'{location!s}\\_history_events_\\_{name}', '\\'),
+                    (f'{location!s}\\_history_events\\_{name}', '\\'),
                 )
             except sqlcipher.DatabaseError as e:  # pylint: disable=no-member
                 raise InputError(f'Could not update DB user_credentials_mappings due to {e!s}') from e  # noqa: E501
