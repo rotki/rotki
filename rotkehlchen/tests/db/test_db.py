@@ -113,6 +113,7 @@ from rotkehlchen.types import (
     ExchangeLocationID,
     ExternalService,
     ExternalServiceApiCredentials,
+    HexColorCode,
     Location,
     SupportedBlockchain,
     Timestamp,
@@ -1882,6 +1883,57 @@ def test_edit_binance_pairs_clears_history_events_query_range(database: DBHandle
             'editing binance pairs should have cleared the history events query range'
         assert database.get_used_query_range(cursor, trades_range) is not None, \
             'unrelated query ranges must not be deleted when editing binance pairs'
+
+
+def test_remove_multichain_address_keeps_tags_on_other_chains(database: DBHandler) -> None:
+    """Removing a multi-chain address from one chain must not delete its tags while
+    the same address is still tracked on another chain.
+
+    Regression test: tag mappings are keyed by address only (a single mapping shared
+    across chains), and removal previously deleted them unconditionally by address,
+    wiping the tags of every other chain the address was still tracked on.
+    """
+    address = string_to_evm_address('0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12')
+
+    def has_tag() -> bool:
+        with database.conn.read_ctx() as cursor:
+            return cursor.execute(
+                'SELECT COUNT(*) FROM tag_mappings WHERE object_reference=? AND tag_name=?',
+                (address, 'hot'),
+            ).fetchone()[0] > 0
+
+    with database.user_write() as write_cursor:
+        database.add_tag(
+            write_cursor=write_cursor,
+            name='hot',
+            description='hot wallet',
+            background_color=HexColorCode('ffffff'),
+            foreground_color=HexColorCode('000000'),
+        )
+        # the same address is tracked on two evm chains, tagged on both
+        database.add_blockchain_accounts(
+            write_cursor,
+            [
+                BlockchainAccountData(chain=SupportedBlockchain.ETHEREUM, address=address, tags=['hot']),  # noqa: E501
+                BlockchainAccountData(chain=SupportedBlockchain.POLYGON_POS, address=address, tags=['hot']),  # noqa: E501
+            ],
+        )
+
+    assert has_tag(), 'the tag mapping should exist after adding the tagged account'
+
+    # removing the address from a single chain must keep the tag (still on the other)
+    with database.user_write() as write_cursor:
+        database.remove_single_blockchain_accounts(
+            write_cursor, SupportedBlockchain.POLYGON_POS, [address],
+        )
+    assert has_tag(), 'tag must survive while the address is still tracked on another chain'
+
+    # removing it from the last remaining chain should finally drop the tag mapping
+    with database.user_write() as write_cursor:
+        database.remove_single_blockchain_accounts(
+            write_cursor, SupportedBlockchain.ETHEREUM, [address],
+        )
+    assert not has_tag(), 'tag mapping should be removed once the address is gone from all chains'
 
 
 def test_fresh_db_adds_version(user_data_dir, sql_vm_instructions_cb):
