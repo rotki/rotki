@@ -683,17 +683,21 @@ class Inquirer:
             else:
                 assets_without_special_price.append(from_asset)
 
-        if (
-                to_asset != A_USD and
+        if to_asset == A_USD:
+            found_prices = usd_found_prices
+        elif (
                 len(usd_found_prices) > 0 and
                 (rate_price := Inquirer.find_price(from_asset=A_USD, to_asset=to_asset)) != ZERO_PRICE  # noqa: E501
-        ):  # convert USD prices to target currency if needed
+        ):  # convert the USD prices to the target currency
             found_prices = {
                 asset: (Price(price * rate_price), oracle)
                 for asset, (price, oracle) in usd_found_prices.items()
             }
         else:
-            found_prices = usd_found_prices
+            # We found USD-denominated special prices but could not obtain the USD->target
+            # rate (e.g. a transient fiat-rate failure). Returning the USD values labeled as
+            # `to_asset` would corrupt the valuation, so report these assets as unpriced.
+            assets_without_special_price.extend(usd_found_prices)
 
         if len(eur_collection_assets) > 0:
             # EURe collection assets are pegged to EUR (1:1 by definition).

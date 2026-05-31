@@ -695,16 +695,39 @@ def test_eur_pegged_asset_special_price_non_usd(inquirer: 'Inquirer') -> None:
             to_asset=A_JPY,
         )
 
-    assert len(assets_without_price) == 0
     # EURe should be priced at the EUR→JPY rate
     price, oracle = found_prices[A_ETH_EURE]
     assert price == eur_jpy_rate
     assert oracle == CurrentPriceOracle.FIAT
-    # KFEE has a USD price of 0.01, but USD→JPY returned ZERO_PRICE
-    # so it falls back to the raw USD price
-    kfee_price, kfee_oracle = found_prices[A_KFEE]
-    assert kfee_price == Price(FVal('0.01'))
-    assert kfee_oracle == CurrentPriceOracle.FIAT
+    # KFEE has a USD price of 0.01, but USD→JPY returned ZERO_PRICE, so it cannot be
+    # converted to the target currency. It must be reported as unpriced rather than
+    # returning the USD value labeled as JPY, which would corrupt the valuation.
+    assert A_KFEE not in found_prices
+    assert A_KFEE in assets_without_price
+
+
+@pytest.mark.parametrize('should_mock_current_price_queries', [False])
+def test_special_price_unpriced_when_target_rate_unavailable(inquirer: 'Inquirer') -> None:
+    """Regression test: a special-asset USD price must not be returned labeled as a
+    non-USD target currency when the USD->target rate is unavailable. Otherwise e.g. a
+    0.01 USD KFEE value would be shown as 0.01 of the (very different) target currency.
+    """
+    with patch.object(Inquirer, 'find_price', return_value=ZERO_PRICE):  # USD->EUR unavailable
+        assets_without_price, found_prices = Inquirer._get_special_prices(
+            from_assets=[A_KFEE],
+            to_asset=A_EUR,
+        )
+    assert A_KFEE not in found_prices, 'the USD value must not be returned as the EUR price'
+    assert A_KFEE in assets_without_price
+
+    # sanity: when the USD->EUR rate IS available, KFEE is converted correctly
+    with patch.object(Inquirer, 'find_price', return_value=Price(FVal('0.9'))):
+        assets_without_price, found_prices = Inquirer._get_special_prices(
+            from_assets=[A_KFEE],
+            to_asset=A_EUR,
+        )
+    assert A_KFEE not in assets_without_price
+    assert found_prices[A_KFEE][0] == Price(FVal('0.009'))  # 0.01 USD * 0.9 USD/EUR
 
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
