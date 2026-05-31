@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`-` Changing the selected trade pairs of a Binance or Binance US exchange now correctly fetches the history of the newly added pairs.
 * :bug:`-` HTX deposit and withdrawal history is now queried correctly for accounts with more than 500 transfers, instead of getting stuck re-fetching the same first page.
 * :bug:`-` Coinbase Advanced Trade buys are no longer sometimes imported as sells when the trade direction is missing from the API.
 * :bug:`-` Swaps through a newer zeroxsettler will now be properly decoded by rotki.
