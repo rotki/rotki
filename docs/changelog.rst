@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`-` Special-cased asset prices are no longer shown in USD by mistake for non-USD main currencies when the exchange rate is temporarily unavailable.
 * :bug:`-` Tags of an address tracked on multiple chains are now kept when you remove the address from only one of those chains.
 * :bug:`-` Changing the selected trade pairs of a Binance or Binance US exchange now correctly fetches the history of the newly added pairs.
 * :bug:`-` HTX deposit and withdrawal history is now queried correctly for accounts with more than 500 transfers, instead of getting stuck re-fetching the same first page.
