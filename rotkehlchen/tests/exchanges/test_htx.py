@@ -12,7 +12,7 @@ from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.converters import asset_from_htx
 from rotkehlchen.constants.assets import A_CRV, A_DAI, A_USDT, A_ZRX
 from rotkehlchen.errors.asset import UnknownAsset, UnsupportedAsset
-from rotkehlchen.exchanges.htx import Htx
+from rotkehlchen.exchanges.htx import PAGINATION_LIMIT, Htx
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.asset_movement import AssetMovement
 from rotkehlchen.history.events.structures.swap import SwapEvent
@@ -348,3 +348,40 @@ def test_trades(htx_exchange: Htx) -> None:
             unique_id='3409716930791340',
         ),
     )]
+
+
+def test_paginated_query_advances_cursor(htx_exchange: Htx) -> None:
+    """Regression test: deposit/withdrawal pagination must send the advancing `from`
+    cursor on each request.
+
+    A bug previously queried the original options dict (which never received the
+    cursor), so every page re-fetched the same first PAGINATION_LIMIT records. For
+    accounts with more than PAGINATION_LIMIT transfers in the window this looped
+    forever and accumulated duplicates. Here the second page is short, so a correct
+    implementation stops after two requests; the old code keeps re-requesting the
+    full first page and trips the call cap.
+    """
+    page1 = [{'id': i, 'created-at': 2000} for i in range(PAGINATION_LIMIT)]  # full page, newest
+    page2 = [{'id': PAGINATION_LIMIT + i, 'created-at': 1000} for i in range(3)]  # short -> stop
+    seen_options: list[dict[str, Any]] = []
+
+    def mock_query(absolute_path: str, options: dict[str, Any] | None = None) -> list[dict[str, Any]]:  # noqa: E501
+        seen_options.append(dict(options or {}))
+        if len(seen_options) > 5:
+            raise AssertionError('pagination did not advance the cursor (infinite loop)')
+        return page2 if 'from' in (options or {}) else page1
+
+    with patch.object(htx_exchange, '_query', side_effect=mock_query):
+        result = htx_exchange._paginated_query(
+            endpoint='/v1/query/deposit-withdraw',
+            options={'type': 'deposit', 'size': PAGINATION_LIMIT, 'direct': 'next'},
+            start_ts=Timestamp(0),
+        )
+
+    assert len(seen_options) == 2, 'should fetch exactly two pages'
+    assert 'from' not in seen_options[0], 'first request must not carry a cursor'
+    # cursor must be the last (oldest) id of page1 + 1, since results are descending
+    assert seen_options[1]['from'] == PAGINATION_LIMIT - 1 + 1
+    ids = [entry['id'] for entry in result]
+    # all records collected exactly once, no duplicates
+    assert len(ids) == len(set(ids)) == PAGINATION_LIMIT + 3
