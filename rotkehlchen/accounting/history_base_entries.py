@@ -107,12 +107,9 @@ class EventsAccountant:
 
             in_event = cast('HistoryBaseEntry', next(events_iterator))  # consume the paired event
 
-            with self.pot.database.conn.read_ctx() as cursor:
-                if (
-                    event.asset in (ignored_assets := self.pot.database.get_ignored_asset_ids(cursor)) or  # noqa: E501
-                    in_event.asset in ignored_assets
-                ):
-                    return 2
+            ignored_assets = self.pot.ignored_asset_ids
+            if event.asset in ignored_assets or in_event.asset in ignored_assets:
+                return 2
 
             # event_direction is OUT (first event is always the deposit/spend)
             # paired_direction is IN (second event is always the receive/withdraw)
@@ -172,13 +169,13 @@ class EventsAccountant:
                 fee_events.append(cast('HistoryBaseEntry', next(events_iterator)))  # guaranteed by if check  # noqa: E501
                 processed_event_count += 1
 
-            with self.pot.database.conn.read_ctx() as cursor:
-                if (
-                        event.asset in (ignored_assets := self.pot.database.get_ignored_asset_ids(cursor)) or  # noqa: E501
-                        in_event.asset in ignored_assets or
-                        any(fee_event.asset in ignored_assets for fee_event in fee_events)
-                ):  # return early if any events in the swap group have ignored assets.
-                    return processed_event_count
+            ignored_assets = self.pot.ignored_asset_ids
+            if (
+                    event.asset in ignored_assets or
+                    in_event.asset in ignored_assets or
+                    any(fee_event.asset in ignored_assets for fee_event in fee_events)
+            ):  # return early if any events in the swap group have ignored assets.
+                return processed_event_count
 
             return self._process_swap(
                 timestamp=timestamp,
