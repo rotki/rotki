@@ -1,6 +1,7 @@
 import datetime
 import logging
 import urllib.parse
+from collections import defaultdict
 from collections.abc import Sequence
 from typing import TYPE_CHECKING, Any, Final, Literal
 
@@ -158,7 +159,7 @@ class Htx(ExchangeInterface, SignatureGeneratorMixin):
 
     def query_balances(self, **kwargs: Any) -> ExchangeQueryBalances:
         """Query balances for the accounts linked to the api key"""
-        returned_balances: dict[AssetWithOracles, Balance] = {}
+        returned_balances: dict[AssetWithOracles, Balance] = defaultdict(Balance)
         for account in self.get_accounts():
             account_id = account['id']
             path = f'/v1/account/accounts/{account_id}/balance'
@@ -219,7 +220,7 @@ class Htx(ExchangeInterface, SignatureGeneratorMixin):
                     )
                     continue
 
-                returned_balances[asset] = Balance(
+                returned_balances[asset] += Balance(
                     amount=amount,
                     value=amount * price,
                 )
