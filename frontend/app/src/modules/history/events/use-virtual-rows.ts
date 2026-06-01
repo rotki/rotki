@@ -41,6 +41,8 @@ export interface EventDetailRow {
   groupId: string;
   data: HistoryEventEntry;
   index: number;
+  /** True when this row is a sub-event of an expanded linked (matched) movement. */
+  matchedMovement?: boolean;
 }
 
 export interface EventPlaceholderRow {
@@ -190,6 +192,7 @@ export function useVirtualRows(
                   groupId,
                   data: subEvent,
                   index: subIndex,
+                  matchedMovement: true,
                 });
               });
             }

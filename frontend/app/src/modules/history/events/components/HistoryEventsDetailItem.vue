@@ -15,6 +15,7 @@ const {
   index,
   completeGroupEvents,
   groupLocationLabel,
+  matchedMovement,
   hideActions,
   highlight,
   highlightType,
@@ -29,6 +30,8 @@ const {
    */
   completeGroupEvents: HistoryEventEntry[];
   groupLocationLabel?: string;
+  /** Set when this row is a sub-event of an expanded linked (matched) movement. */
+  matchedMovement?: boolean;
   hideActions?: boolean;
   highlight?: boolean;
   highlightType?: HighlightType;
@@ -99,6 +102,7 @@ const isCard = computed<boolean>(() => variant === 'card');
           :event="event"
           :chain="chain"
           :group-location-label="groupLocationLabel"
+          :matched-movement="matchedMovement"
           :highlight="highlight"
           class="min-w-0 flex-1"
         />
@@ -163,6 +167,7 @@ const isCard = computed<boolean>(() => variant === 'card');
       :event="event"
       :chain="chain"
       :group-location-label="groupLocationLabel"
+      :matched-movement="matchedMovement"
       :highlight="highlight"
       class="w-56 shrink-0"
     />

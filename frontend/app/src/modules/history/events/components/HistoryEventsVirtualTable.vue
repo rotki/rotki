@@ -360,6 +360,7 @@ function isShowingIgnoredAssets(groupId: string): boolean {
             :index="row.index"
             :complete-group-events="getCompleteEventsForItem(row.groupId, row.data)"
             :group-location-label="findGroup(row.groupId)?.locationLabel ?? undefined"
+            :matched-movement="row.matchedMovement"
             :hide-actions="hideActions"
             :highlight="isHighlighted(row.data)"
             :highlight-type="getHighlightType(row.data)"
