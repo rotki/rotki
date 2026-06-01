@@ -4014,17 +4014,26 @@ def test_upgrade_db_51_to_52(user_data_dir, messages_aggregator):
             ),
         )
 
-    # Insert manually tracked balances with duplicate labels to test dedup
+    # Insert manually tracked balances with duplicate labels (to test dedup) and an id gap
+    # with a tagged balance above it. The rebuild must preserve ids so tag_mappings (which
+    # reference manually_tracked_balances.id) are not orphaned/re-pointed.
     with db_v51.conn.write_ctx() as write_cursor:
         write_cursor.executemany(
-            'INSERT INTO manually_tracked_balances(asset, label, amount, location, category) '
-            'VALUES(?, ?, ?, ?, ?)',
+            'INSERT INTO manually_tracked_balances(id, asset, label, amount, location, category) '
+            'VALUES(?, ?, ?, ?, ?, ?)',
             [
-                ('BTC', 'My wallet', '1.5', 'A', 'A'),
-                ('ETH', 'My wallet', '10', 'A', 'A'),  # duplicate label
-                ('ETH', 'My wallet', '20', 'A', 'A'),  # another duplicate
-                ('BTC', 'Unique balance', '0.5', 'A', 'A'),
+                (1, 'BTC', 'My wallet', '1.5', 'A', 'A'),
+                (2, 'ETH', 'My wallet', '10', 'A', 'A'),  # duplicate label
+                (3, 'ETH', 'My wallet', '20', 'A', 'A'),  # another duplicate
+                (5, 'BTC', 'Unique balance', '0.5', 'A', 'A'),  # id 4 missing -> gap
             ],
+        )
+        write_cursor.execute(
+            'INSERT OR IGNORE INTO tags(name, description, background_color, foreground_color) '
+            'VALUES(?, ?, ?, ?)', ('public', '', 'ffffff', '000000'),
+        )
+        write_cursor.execute(  # tag the balance sitting above the id gap
+            'INSERT INTO tag_mappings(object_reference, tag_name) VALUES(?, ?)', ('5', 'public'),
         )
         # make sure new chain locations not in the old DB
         assert write_cursor.execute(
@@ -4116,6 +4125,16 @@ def test_upgrade_db_51_to_52(user_data_dir, messages_aggregator):
         ).fetchall()
         assert len(rows) == 4
         assert all(row[0] is not None for row in rows)  # all have an id
+        # ids are preserved across the rebuild (the gap at 4 is kept), so the tag mapping that
+        # references id 5 still resolves to the correct balance instead of being orphaned
+        assert cursor.execute(
+            'SELECT id FROM manually_tracked_balances ORDER BY id',
+        ).fetchall() == [(1,), (2,), (3,), (5,)]
+        assert cursor.execute(
+            'SELECT B.tag_name FROM manually_tracked_balances A '
+            'JOIN tag_mappings B ON B.object_reference = A.id WHERE A.label = ?',
+            ('Unique balance',),
+        ).fetchall() == [('public',)]
 
         # make sure new chain locations exist
         assert cursor.execute(

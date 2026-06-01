@@ -167,8 +167,8 @@ def upgrade_v51_to_v52(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
             location CHAR(1) NOT NULL DEFAULT('A') REFERENCES location(location),
             category CHAR(1) NOT NULL DEFAULT('A') REFERENCES balance_category(category),
             FOREIGN KEY(asset) REFERENCES assets(identifier) ON UPDATE CASCADE""",
-            insert_columns='asset, label, amount, location, category',
-            insert_order='(asset, label, amount, location, category)',
+            insert_columns='id, asset, label, amount, location, category',
+            insert_order='(id, asset, label, amount, location, category)',
         )
         write_cursor.switch_foreign_keys('ON')
 
