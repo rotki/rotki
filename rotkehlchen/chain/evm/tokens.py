@@ -194,22 +194,15 @@ class EvmTokens(ABC):  # noqa: B024
             tokens_num=len(tokens),
         )
         balances: dict[DetectedTokenBalanceAsset, FVal] = defaultdict(FVal)
-        try:
-            result = self.evm_inquirer.contract_scan.call(
-                node_inquirer=self.evm_inquirer,
-                method_name='tokens_balance',
-                arguments=[address, [x.address for x in tokens]],
-                call_order=call_order,
-            )
-        except RequestTooLargeError:
-            # Let callers reduce chunk size and retry.
-            raise
-        except RemoteError as e:
-            log.error(
-                f'{self.evm_inquirer.chain_name} tokensBalance call failed for address {address}.'
-                f' Token addresses: {[x.address for x in tokens]}. Error: {e}',
-            )
-            return balances
+        # RequestTooLargeError and RemoteError (its parent) are intentionally not caught here.
+        # Callers reduce the chunk size and retry on the former, and mark the detection as failed
+        # on the latter to avoid overwriting the cached tokens with a partial result.
+        result = self.evm_inquirer.contract_scan.call(
+            node_inquirer=self.evm_inquirer,
+            method_name='tokens_balance',
+            arguments=[address, [x.address for x in tokens]],
+            call_order=call_order,
+        )
 
         try:
             for token_balance, token in zip(result, tokens, strict=True):
@@ -340,6 +333,14 @@ class EvmTokens(ABC):  # noqa: B024
                 smaller_chunks = list(get_chunks(chunk, n=smaller_chunk_size))
                 for item in reversed(smaller_chunks):
                     chunks_to_process.appendleft((item, use_indexer_only))
+                continue
+            except RemoteError as e:
+                had_failures = True
+                log.error(
+                    f'{self.evm_inquirer.chain_name} tokensBalance call failed for address '
+                    f'{address}. Marking detection as failed to avoid overwriting the cached '
+                    f'tokens with a partial result. Error: {e}',
+                )
                 continue
 
             total_token_balances = combine_dicts(total_token_balances, new_token_balances)
