@@ -7,6 +7,7 @@ Changelog
 * :bug:`-` Changing the selected trade pairs of a Binance or Binance US exchange now correctly fetches the history of the newly added pairs.
 * :bug:`-` HTX deposit and withdrawal history is now queried correctly for accounts with more than 500 transfers, instead of getting stuck re-fetching the same first page.
 * :bug:`-` Coinbase Advanced Trade buys are no longer sometimes imported as sells when the trade direction is missing from the API.
+* :bug:`12319` Hyperliquid Valantis staked HYPE balances will no longer be shown twice as both stHYPE and wstHYPE.
 * :bug:`-` Swaps through a newer zeroxsettler will now be properly decoded by rotki.
 * :bug:`-` Poloniex history should now be properly queried again.
 * :bug:`-` Dismissing a calendar reminder (such as an L2 bridge claim) now sticks, instead of popping up again days later as if you had never acknowledged it.
