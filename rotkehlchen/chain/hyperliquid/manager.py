@@ -30,6 +30,9 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 HYPERLIQUID_CORE_HISTORY_RANGE_PREFIX: Final = 'hyperliquid_core_history'
+HYPERLIQUID_EVM_TOKEN_PREFIX: Final = 'eip155:999/erc20:'
+STHYPE_IDENTIFIER: Final = 'eip155:999/erc20:0xfFaa4a3D97fE9107Cef8a3F48c069F577Ff76cC1'
+WSTHYPE_IDENTIFIER: Final = 'eip155:999/erc20:0x94e8396e0869c9F2200760aF0621aFd240E1CF38'
 
 
 class HyperliquidManager(EvmManager):
@@ -68,6 +71,17 @@ class HyperliquidManager(EvmManager):
     ) -> defaultdict[ChecksumEvmAddress, BalanceSheet]:
         """Query EVM on-chain balances plus Hyperliquid core spot/perp balances."""
         balances = defaultdict(BalanceSheet, super().query_balances(addresses))
+        for address in addresses:
+            if (
+                (assets := balances[address].assets) and
+                (wsthype := next((asset for asset in assets if asset.identifier == WSTHYPE_IDENTIFIER), None)) is not None and  # noqa: E501
+                (sthype := next((asset for asset in assets if asset.identifier == STHYPE_IDENTIFIER), None)) is not None  # noqa: E501
+            ):
+                log.debug(
+                    f'Skipping {sthype} balance for {address} since it represents the same '
+                    f'Valantis staked HYPE position as {wsthype}',
+                )
+                del assets[sthype]
 
         api = HyperliquidAPI()
         main_currency = CachedSettings().main_currency
@@ -86,6 +100,16 @@ class HyperliquidManager(EvmManager):
                     )
                 except RemoteError:
                     price = ZERO_PRICE
+
+                if (
+                    asset.identifier.startswith(HYPERLIQUID_EVM_TOKEN_PREFIX) and
+                    asset in balances[address].assets
+                ):
+                    log.debug(
+                        f'Skipping Hyperliquid core balance for {asset} at {address} '
+                        'since it is already present in HyperEVM balances',
+                    )
+                    continue
 
                 balances[address].assets[asset][DEFAULT_BALANCE_LABEL] += Balance(
                     amount=amount,
