@@ -3822,7 +3822,7 @@ def test_upgrade_db_50_to_51(user_data_dir, messages_aggregator):
         }.issubset(json.loads(raw_monerium_credentials))
         assert cursor.execute(
             'SELECT identifier, event_identifier, sequence_index, asset, amount, type, subtype '
-            'FROM history_events WHERE identifier >= 10 ORDER BY identifier',
+            'FROM history_events WHERE identifier >= 10 AND identifier <= 14 ORDER BY identifier',
         ).fetchall() == ([
             (10, 'TEST_EVENT_4', 0, 'eip155:1/erc20:0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48', '200.000000', 'trade', 'spend'),  # noqa: E501
             (11, 'TEST_EVENT_4', 1, 'USD', '200.00', 'trade', 'receive'),
@@ -3898,7 +3898,7 @@ def test_upgrade_db_50_to_51(user_data_dir, messages_aggregator):
         # Check that the USD->USD trade is removed and only the actual USDC->USD trade remains.
         assert cursor.execute(
             'SELECT identifier, group_identifier, sequence_index, asset, amount, type, subtype '
-            'FROM history_events WHERE identifier >= 10 ORDER BY identifier',
+            'FROM history_events WHERE identifier >= 10 AND identifier <= 14 ORDER BY identifier',
         ).fetchall() == ([
             (10, 'TEST_EVENT_4', 0, 'eip155:1/erc20:0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48', '200.000000', 'trade', 'spend'),  # noqa: E501
             (11, 'TEST_EVENT_4', 1, 'USD', '200.00', 'trade', 'receive'),
@@ -4193,6 +4193,66 @@ def test_upgrade_db_52_to_53(user_data_dir, messages_aggregator):
                 '1', '0', '0',
             ),
         )
+        write_cursor.execute(
+            'DELETE FROM user_credentials WHERE location=?',
+            (Location.POLONIEX.serialize_for_db(),),
+        )
+        write_cursor.executemany(
+            'INSERT INTO history_events('
+            'entry_type, group_identifier, sequence_index, timestamp, location, location_label, '
+            'asset, amount, notes, type, subtype'
+            ') VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+            [(
+                HistoryBaseEntryType.HISTORY_EVENT.serialize_for_db(),
+                group_identifier,
+                0,
+                timestamp,
+                Location.POLONIEX.serialize_for_db(),
+                location_label,
+                'ETH',
+                '1',
+                'Poloniex event',
+                HistoryEventType.TRADE.serialize(),
+                HistoryEventSubType.NONE.serialize(),
+            ) for group_identifier, timestamp, location_label in (
+                ('LOCATION_LABEL_UPGRADE_POLONIEX_NULL_1', 1730100011000, None),
+                ('LOCATION_LABEL_UPGRADE_POLONIEX_NULL_2', 1730100012000, None),
+                ('LOCATION_LABEL_UPGRADE_POLONIEX_SET', 1730100013000, 'old-poloniex'),
+            )],
+        )
+        write_cursor.execute(
+            'INSERT INTO user_credentials(name, location, api_key, api_secret, passphrase) '
+            'VALUES (?, ?, ?, ?, ?)',
+            (
+                'poloniex-main', Location.POLONIEX.serialize_for_db(),
+                'poloniex-key', 'secret', None,
+            ),
+        )
+        expected_location_labels = {
+            'LOCATION_LABEL_UPGRADE_BINANCE_NULL': None,
+            'LOCATION_LABEL_UPGRADE_BINANCE_OTHER': 'legacy-binance',
+            'LOCATION_LABEL_UPGRADE_BINANCE_SET': 'binance-main',
+            'LOCATION_LABEL_UPGRADE_BITSTAMP_NULL': None,
+            'LOCATION_LABEL_UPGRADE_BITSTAMP_SET': 'bitstamp-main',
+            'LOCATION_LABEL_UPGRADE_COINBASE_NULL': None,
+            'LOCATION_LABEL_UPGRADE_COINBASE_SET': 'coinbase-main',
+            'LOCATION_LABEL_UPGRADE_ETHEREUM_SET': '0x0000000000000000000000000000000000000001',
+            'LOCATION_LABEL_UPGRADE_FTX_SET': 'old-ftx',
+            'LOCATION_LABEL_UPGRADE_GEMINI_NULL': None,
+            'LOCATION_LABEL_UPGRADE_GEMINI_SET': 'old-gemini',
+            'LOCATION_LABEL_UPGRADE_POLONIEX_NULL_1': None,
+            'LOCATION_LABEL_UPGRADE_POLONIEX_NULL_2': None,
+            'LOCATION_LABEL_UPGRADE_POLONIEX_SET': 'old-poloniex',
+        }
+        assert dict(write_cursor.execute(
+            "SELECT group_identifier, location_label FROM history_events "
+            "WHERE group_identifier LIKE 'LOCATION_LABEL_UPGRADE_%' "
+            "ORDER BY group_identifier",
+        ).fetchall()) == expected_location_labels
+        assert write_cursor.execute(
+            'SELECT COUNT(*) FROM user_credentials WHERE location=?',
+            (Location.COINBASE.serialize_for_db(),),
+        ).fetchone()[0] == 2
 
     db_v52.logout()
     db = _init_db_with_target_version(
@@ -4263,6 +4323,26 @@ def test_upgrade_db_52_to_53(user_data_dir, messages_aggregator):
         assert all(
             row[0] == InternalTxSource.LEGACY.serialize_for_db() for row in internal_tx_sources
         )
+
+        actual_location_labels = dict(cursor.execute(
+            "SELECT group_identifier, location_label FROM history_events "
+            "WHERE group_identifier LIKE 'LOCATION_LABEL_UPGRADE_%' "
+            "ORDER BY group_identifier",
+        ).fetchall())
+        # Expected label changes: Bitstamp has one key and one existing non-null label, so its
+        # NULL label is filled. Poloniex has two NULL labels and one existing non-null label that
+        # differs from the key name, and both NULL labels should still be filled. All other labels
+        # must remain unchanged, including Binance where
+        # one key exists but existing non-null labels are mixed, Coinbase where multiple keys
+        # exist, FTX/Gemini where labels may belong to CSV imports or removed credentials, and
+        # Ethereum which is not an exchange.
+        assert actual_location_labels.pop('LOCATION_LABEL_UPGRADE_BITSTAMP_NULL') == 'bitstamp-main'  # noqa: E501
+        assert expected_location_labels.pop('LOCATION_LABEL_UPGRADE_BITSTAMP_NULL') is None
+        assert actual_location_labels.pop('LOCATION_LABEL_UPGRADE_POLONIEX_NULL_1') == 'poloniex-main'  # noqa: E501
+        assert expected_location_labels.pop('LOCATION_LABEL_UPGRADE_POLONIEX_NULL_1') is None
+        assert actual_location_labels.pop('LOCATION_LABEL_UPGRADE_POLONIEX_NULL_2') == 'poloniex-main'  # noqa: E501
+        assert expected_location_labels.pop('LOCATION_LABEL_UPGRADE_POLONIEX_NULL_2') is None
+        assert actual_location_labels == expected_location_labels
 
         assert db.get_setting(cursor, 'version') == 53
 
