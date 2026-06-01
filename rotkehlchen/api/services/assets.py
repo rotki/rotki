@@ -450,7 +450,7 @@ class AssetsService:
                     avatars_dir=avatars_dir,
                     ens_name=ens_name,
                 )
-            except RemoteError:
+            except (InputError, RemoteError):
                 return make_response(
                     (
                         b'',
