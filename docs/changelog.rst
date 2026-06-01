@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`-` HTX balances are no longer under-reported. Funds locked in open orders (and balances of an asset held across multiple HTX account types) are now summed instead of overwriting each other.
 * :bug:`-` Special-cased asset prices are no longer shown in USD by mistake for non-USD main currencies when the exchange rate is temporarily unavailable.
 * :bug:`-` Tags of an address tracked on multiple chains are now kept when you remove the address from only one of those chains.
 * :bug:`-` Changing the selected trade pairs of a Binance or Binance US exchange now correctly fetches the history of the newly added pairs.

@@ -59,6 +59,7 @@ def test_balances(htx_exchange: Htx):
         "status": "ok",
         "data": {"id": 50, "type": "spot", "state": "working", "list": [
             {"currency": "atom", "type": "trade", "balance": "1.100000007177861711", "available": "1.100000007177861711", "debt": "0", "seq-num": "11"},
+            {"currency": "atom", "type": "frozen", "balance": "0.5", "debt": "0", "seq-num": "12"},
             {"currency": "ksm", "type": "frozen", "balance": "0", "debt": "0", "seq-num": "0"},
             {"currency": "crv", "type": "trade", "balance": "0.100000007177861711", "available": "0.100000007177861711", "debt": "0", "seq-num": "0"}
         ]}
@@ -73,8 +74,8 @@ def test_balances(htx_exchange: Htx):
     with patch.object(htx_exchange.session, 'get', side_effect=mock_api_return):
         balances, _ = htx_exchange.query_balances()
 
-    assert balances == {
-        Asset('ATOM'): Balance(amount=FVal('1.100000007177861711'), value=FVal('1.6500000107667925665')),  # noqa: E501
+    assert balances == {  # available (trade) and locked (frozen) must be summed per asset
+        Asset('ATOM'): Balance(amount=FVal('1.600000007177861711'), value=FVal('2.4000000107667925665')),  # noqa: E501
         A_CRV: Balance(amount=FVal('0.100000007177861711'), value=FVal('0.1500000107667925665')),
     }
 
