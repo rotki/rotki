@@ -274,8 +274,9 @@ class EnsDecoder(GovernableDecoderInterface, EnsCommonDecoder):
         expires = decoded_data[2]
 
         refund_event_idx, refund_amount, checked_cost = None, ZERO, logged_cost
+        renewal_event_found = False
         for idx, event in enumerate(context.decoded_events):
-            if event.event_type == HistoryEventType.RECEIVE and event.event_subtype == HistoryEventSubType.NONE and event.asset == A_ETH and event.address == context.tx_log.address:  # noqa: E501
+            if event.event_type == HistoryEventType.RECEIVE and event.event_subtype == HistoryEventSubType.NONE and event.asset == A_ETH and event.address in {context.tx_log.address, context.transaction.to_address}:  # noqa: E501
                 refund_event_idx = idx
                 refund_amount = event.amount
 
@@ -284,14 +285,32 @@ class EnsDecoder(GovernableDecoderInterface, EnsCommonDecoder):
                     checked_cost = logged_cost + refund_amount
                 # else new controller logs the msg.value, which is the brutto value
 
-            # Find the transfer event which should be before the name renewed event
-            if event.event_type == HistoryEventType.SPEND and event.asset == A_ETH and event.amount == checked_cost and event.address == context.tx_log.address:  # noqa: E501
+            # Find the transfer event which should be before the name renewed event.
+            # Some extensions go through a wrapper contract that forwards the payment to the
+            # registrar controller emitting this event, so also match the transaction recipient.
+            if event.event_type == HistoryEventType.SPEND and event.asset == A_ETH and event.amount == checked_cost and event.address in {context.tx_log.address, context.transaction.to_address}:  # noqa: E501
                 event.amount -= refund_amount  # get correct amount spent
                 event.event_type = HistoryEventType.RENEW
                 event.event_subtype = HistoryEventSubType.NONE
                 event.counterparty = CPT_ENS
                 event.notes = f'Renew ENS name {fullname} for {event.amount} ETH until {self.timestamp_to_date(expires)}'  # noqa: E501
                 event.extra_data = {'name': fullname, 'expires': expires}
+                renewal_event_found = True
+
+        if renewal_event_found is False and self.base.is_tracked(context.transaction.from_address):
+            context.decoded_events.append(self.base.make_event_from_transaction(
+                transaction=context.transaction,
+                tx_log=context.tx_log,
+                event_type=HistoryEventType.RENEW,
+                event_subtype=HistoryEventSubType.NONE,
+                asset=A_ETH,
+                amount=logged_cost - refund_amount,
+                location_label=context.transaction.from_address,
+                notes=f'Renew ENS name {fullname} for {logged_cost - refund_amount} ETH until {self.timestamp_to_date(expires)}',  # noqa: E501
+                counterparty=CPT_ENS,
+                address=context.transaction.to_address,
+                extra_data={'name': fullname, 'expires': expires},
+            ))
 
         if refund_event_idx is not None:
             del context.decoded_events[refund_event_idx]
