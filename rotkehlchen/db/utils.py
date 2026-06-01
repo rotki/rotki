@@ -388,6 +388,7 @@ def update_table_schema(
         insert_columns: str | None = None,
         insert_order: str = '',
         insert_where: str | None = None,
+        allow_pk_renumber: bool = False,
 ) -> bool:
     """Update the schema of a given table. Need to provide:
     1. The name
@@ -395,11 +396,18 @@ def update_table_schema(
     3. The insert_columns of the old table that are to be inserted to the new one. If missing * is used
     4. Optionally an order of insertion parentheses in case not all are added or names changed.
     5. Optionally a WHERE statement for the insertion
+    6. Optionally allow_pk_renumber to permit dropping an existing INTEGER PRIMARY KEY from
+       insert_columns. This silently reassigns rowids and breaks any external references to the
+       old id (e.g. tag_mappings.object_reference), so it is rejected by default. Only set it
+       when the renumbering is intentional and nothing references the id.
 
     Also is made error-proof to simply create the table if the old one for some
     reason did not exist.
 
     Returns True if the table existed and insertions were made and False otherwise
+
+    May raise:
+    - ValueError if insert_columns drops an existing INTEGER PRIMARY KEY without allow_pk_renumber
     """  # noqa: E501
     indexes = write_cursor.execute(
         "SELECT sql FROM sqlite_master WHERE type='index' AND tbl_name=? AND sql IS NOT NULL",
@@ -409,6 +417,28 @@ def update_table_schema(
     select_insert_columns = '*' if insert_columns is None else insert_columns
     write_cursor.execute(f'CREATE TABLE IF NOT EXISTS {new_table_name} ({schema});')
     if new_table_name != table_name:
+        # Guard against silently renumbering an INTEGER PRIMARY KEY (rowid alias). If the new
+        # schema declares one and the old table already has that column but it is omitted from an
+        # explicit insert_columns, sqlite reassigns fresh rowids and any external reference to
+        # the old id (e.g. tag_mappings.object_reference) is orphaned. See the
+        # manually_tracked_balances regression fixed in the v51->v52 upgrade.
+        if (
+            insert_columns is not None and
+            allow_pk_renumber is False and
+            (pk_match := re.search(r'(\w+)\s+INTEGER\b[^,]*\bPRIMARY\s+KEY\b', schema, re.IGNORECASE)) is not None  # noqa: E501
+        ):
+            pk_column = pk_match.group(1).lower()
+            old_columns = {row[1].lower() for row in write_cursor.execute(f'PRAGMA table_info({table_name})')}  # noqa: E501
+            insert_column_set = {column.strip().strip('"').lower() for column in insert_columns.split(',')}  # noqa: E501
+            if pk_column in old_columns and pk_column not in insert_column_set:
+                raise ValueError(
+                    f"update_table_schema for '{table_name}' would renumber the INTEGER PRIMARY "
+                    f"KEY '{pk_column}' because it is not part of insert_columns. This silently "
+                    f'breaks external references to that id (e.g. tag_mappings). Include '
+                    f"'{pk_column}' in insert_columns, or pass allow_pk_renumber=True if the "
+                    f'renumbering is intentional and nothing references the id.',
+                )
+
         insert_where = f' WHERE {insert_where}' if insert_where else ''
         write_cursor.execute(f'INSERT OR IGNORE INTO {new_table_name}{insert_order} SELECT {select_insert_columns} FROM {table_name}{insert_where}')  # noqa: E501
         write_cursor.execute(f'DROP TABLE {table_name}')
