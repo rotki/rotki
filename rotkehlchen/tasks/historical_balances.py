@@ -128,7 +128,7 @@ class Bucket(NamedTuple):
           destination protocol buckets (e.g., depositing Balancer LP into Aura updates
           the Balancer bucket with OUT and the Aura bucket with IN)
         - Wrapped tokens and debt positions: tracked in protocol bucket
-        - Everything else: tracked in wallet bucket
+        - Everything else: tracked in wallet bucket, or protocol bucket if asset has protocol
         """
         location = event.location.serialize_for_db()
         asset = event.asset.resolve_swapped_for().identifier
@@ -209,10 +209,7 @@ class Bucket(NamedTuple):
         ):
             return []
 
-        if (  # Wrapped tokens and debt positions are tracked in protocol buckets
-            counterparty is not None and
-            event.event_subtype in PROTOCOL_BUCKET_SUBTYPES
-        ):
+        if event.event_subtype in PROTOCOL_BUCKET_SUBTYPES and counterparty is not None:
             return [(cls(
                 location=location,
                 location_label=event.location_label,
@@ -421,6 +418,29 @@ def _write_metrics_batch(
     )
 
 
+def _resolve_protocol_out_bucket(
+        bucket: Bucket,
+        bucket_balances: dict[Bucket, FVal],
+        amount: FVal,
+) -> Bucket | None:
+    """Find a protocol bucket to spend from when the wallet bucket has insufficient balance."""
+    if bucket.protocol is not None:
+        return None
+
+    matching_buckets = [
+        protocol_bucket for protocol_bucket, balance in bucket_balances.items()
+        if protocol_bucket.location == bucket.location and
+        protocol_bucket.location_label == bucket.location_label and
+        protocol_bucket.asset == bucket.asset and
+        protocol_bucket.protocol is not None and
+        balance >= amount
+    ]
+    if len(matching_buckets) != 1:
+        return None
+
+    return matching_buckets[0]
+
+
 def _apply_to_buckets(
         database: 'DBHandler',
         event: 'HistoryBaseEntry',
@@ -439,37 +459,46 @@ def _apply_to_buckets(
         if direction == EventDirection.IN:
             new_balance = current_balance + event.amount
         elif (new_balance := current_balance - event.amount) < ZERO:  # direction == EventDirection.OUT (direction from from_event will not be NEUTRAL) # noqa: E501
-            database.msg_aggregator.add_message(
-                message_type=WSMessageType.NEGATIVE_BALANCE_DETECTED,
-                data={
-                    'event_identifier': event.identifier,
-                    'group_identifier': event.group_identifier,
-                    'asset': event.asset.identifier,
-                    'bucket': bucket.serialize(),
-                    'balance_before': str(current_balance),
-                    'last_run_ts': last_run_ts,
-                },
-            )
-            DataIssuesManager(database).write_issue(
-                IssueKind.NEGATIVE_BALANCE,
-                location=bucket.location,
-                location_label=bucket.location_label,
-                protocol=bucket.protocol,
-                asset=bucket.asset,
-                payload={
-                    'event_identifier': event.identifier,
-                    'in_memory_negative_amount': str(new_balance),
-                    'derived_balance_before_event': str(current_balance),
-                },
-                ts_start=event.timestamp,
-                ts_end=event.timestamp,
-            )
-            log.warning(
-                f'Negative balance detected for {event.asset.identifier} '
-                f'at event {event.identifier}. Skipping {bucket}.',
-            )
-            bucket_balances[bucket] = new_balance
-            continue
+            if (protocol_bucket := _resolve_protocol_out_bucket(
+                bucket=bucket,
+                bucket_balances=bucket_balances,
+                amount=event.amount,
+            )) is not None:
+                bucket = protocol_bucket
+                current_balance = bucket_balances[bucket]
+                new_balance = current_balance - event.amount
+            else:
+                database.msg_aggregator.add_message(
+                    message_type=WSMessageType.NEGATIVE_BALANCE_DETECTED,
+                    data={
+                        'event_identifier': event.identifier,
+                        'group_identifier': event.group_identifier,
+                        'asset': event.asset.identifier,
+                        'bucket': bucket.serialize(),
+                        'balance_before': str(current_balance),
+                        'last_run_ts': last_run_ts,
+                    },
+                )
+                DataIssuesManager(database).write_issue(
+                    IssueKind.NEGATIVE_BALANCE,
+                    location=bucket.location,
+                    location_label=bucket.location_label,
+                    protocol=bucket.protocol,
+                    asset=bucket.asset,
+                    payload={
+                        'event_identifier': event.identifier,
+                        'in_memory_negative_amount': str(new_balance),
+                        'derived_balance_before_event': str(current_balance),
+                    },
+                    ts_start=event.timestamp,
+                    ts_end=event.timestamp,
+                )
+                log.warning(
+                    f'Negative balance detected for {event.asset.identifier} '
+                    f'at event {event.identifier}. Skipping {bucket}.',
+                )
+                bucket_balances[bucket] = new_balance
+                continue
 
         bucket_balances[bucket] = new_balance
         metrics_batch.append((
