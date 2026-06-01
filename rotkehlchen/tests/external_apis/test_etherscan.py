@@ -147,6 +147,65 @@ def test_api_key_change_invalidates_cached_tier(temp_etherscan: Etherscan) -> No
         ) == 'standard'
 
 
+def test_get_logs_dedup_keeps_no_duplicates(temp_etherscan: 'Etherscan') -> None:
+    """Regression test for the get_logs overlap dedup.
+
+    When etherscan returns the 1000-log page cap, pagination re-queries from the last returned
+    block, so the boundary block's logs come back again. get_logs must remove exactly those
+    duplicates from the accumulator (`existing_events`). It used to pop the *last* list element
+    instead of the matched one, which left duplicates whenever the boundary block contributed
+    more than one log to the accumulator.
+    """
+    # accumulator from the previous page (already deserialized to ints), ending in the boundary
+    # block 100 with three logs.
+    existing_events = [
+        {'blockNumber': 99, 'logIndex': 0, 'transactionHash': '0xhash_99_0'},
+        {'blockNumber': 100, 'logIndex': 0, 'transactionHash': '0xhash_100_0'},
+        {'blockNumber': 100, 'logIndex': 1, 'transactionHash': '0xhash_100_1'},
+        {'blockNumber': 100, 'logIndex': 2, 'transactionHash': '0xhash_100_2'},
+    ]
+
+    def raw(block: int, log_index: int) -> dict:  # an etherscan log as returned by _query (hex)
+        return {
+            'blockNumber': hex(block),
+            'logIndex': hex(log_index),
+            'transactionHash': f'0xhash_{block}_{log_index}',
+            'address': ZERO_ADDRESS,
+            'timeStamp': '0x1',
+            'gasPrice': '0x1',
+            'gasUsed': '0x1',
+            'transactionIndex': '0x1',
+        }
+
+    # the re-queried page: boundary block 100 again (0,1,2 are dupes, 3,4 new) then block 101
+    new_events_raw = [raw(100, i) for i in range(5)] + [raw(101, 0)]
+    with patch.object(temp_etherscan, '_query', return_value=new_events_raw):
+        new_events = temp_etherscan.get_logs(
+            chain_id=ChainID.ETHEREUM,
+            contract_address=ZERO_ADDRESS,
+            topics=[],
+            from_block=100,
+            to_block=200,
+            existing_events=existing_events,
+        )
+
+    # the caller does events.extend(new_events); the resulting full set must have no duplicates
+    combined = [
+        (e['blockNumber'], e['logIndex'], e['transactionHash'])
+        for e in existing_events + new_events
+    ]
+    assert len(combined) == len(set(combined)), 'duplicate logs leaked through the overlap dedup'
+    assert set(combined) == {
+        (99, 0, '0xhash_99_0'),
+        (100, 0, '0xhash_100_0'),
+        (100, 1, '0xhash_100_1'),
+        (100, 2, '0xhash_100_2'),
+        (100, 3, '0xhash_100_3'),
+        (100, 4, '0xhash_100_4'),
+        (101, 0, '0xhash_101_0'),
+    }
+
+
 def test_deserialize_transaction_from_etherscan():
     # Make sure that a missing to address due to contract creation is handled
     data = {'blockNumber': 54092, 'timeStamp': 1439048640, 'hash': '0x9c81f44c29ff0226f835cd0a8a2f2a7eca6db52a711f8211b566fd15d3e0e8d4', 'nonce': 0, 'blockHash': '0xd3cabad6adab0b52ea632c386ea19403680571e682c62cb589b5abcd76de2159', 'transactionIndex': 0, 'from': '0x5153493bB1E1642A63A098A65dD3913daBB6AE24', 'to': '', 'value': 11901464239480000000000000, 'gas': 2000000, 'gasPrice': 10000000000000, 'isError': 0, 'txreceipt_status': '', 'input': '0x313233', 'contractAddress': '0xde0b295669a9fd93d5f28d9ec85e40f4cb697bae', 'cumulativeGasUsed': 1436963, 'gasUsed': 1436963, 'confirmations': 8569454}  # noqa: E501

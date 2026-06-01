@@ -49,6 +49,15 @@ class FVal:
                 f'Found {type(data)}.',
             ) from e
 
+    @classmethod
+    def _from_decimal(cls, num: Decimal) -> 'FVal':
+        """Wrap an already-final Decimal without re-running __init__'s type dispatch and
+        its redundant Decimal() copy. The arithmetic operators below all produce a finished
+        Decimal, so this is a safe, byte-identical fast path."""
+        instance = cls.__new__(cls)
+        instance.num = num
+        return instance
+
     def __str__(self) -> str:
         s = format(self.num.normalize(), 'f')
         return '0' if s == '-0' else s
@@ -60,86 +69,65 @@ class FVal:
         return hash(self.num)
 
     def __gt__(self, other: AcceptableFValOtherInput) -> bool:
-        evaluated_other = _evaluate_input(other)
-        return self.num.compare_signal(evaluated_other) == Decimal(1)
+        return self.num > _evaluate_input(other)
 
     def __lt__(self, other: AcceptableFValOtherInput) -> bool:
-        evaluated_other = _evaluate_input(other)
-        return self.num.compare_signal(evaluated_other) == Decimal(-1)
+        return self.num < _evaluate_input(other)
 
     def __le__(self, other: AcceptableFValOtherInput) -> bool:
-        evaluated_other = _evaluate_input(other)
-        return self.num.compare_signal(evaluated_other) in (Decimal(-1), Decimal(0))
+        return self.num <= _evaluate_input(other)
 
     def __ge__(self, other: AcceptableFValOtherInput) -> bool:
-        evaluated_other = _evaluate_input(other)
-        return self.num.compare_signal(evaluated_other) in (Decimal(1), Decimal(0))
+        return self.num >= _evaluate_input(other)
 
     def __eq__(self, other: object) -> bool:
-        evaluated_other: Decimal | int
         if isinstance(other, FVal):
-            evaluated_other = other.num
-        elif not isinstance(other, int):
-            return False
-        else:
-            evaluated_other = other
-
-        return self.num.compare_signal(evaluated_other) == Decimal(0)
+            return self.num == other.num
+        if isinstance(other, int):  # note: bool is an int subclass, matching prior behavior
+            return self.num == other
+        return False
 
     def __add__(self, other: AcceptableFValOtherInput) -> 'FVal':
-        evaluated_other = _evaluate_input(other)
-        return FVal(self.num.__add__(evaluated_other))
+        return FVal._from_decimal(self.num + _evaluate_input(other))
 
     def __sub__(self, other: AcceptableFValOtherInput) -> 'FVal':
-        evaluated_other = _evaluate_input(other)
-        return FVal(self.num.__sub__(evaluated_other))
+        return FVal._from_decimal(self.num - _evaluate_input(other))
 
     def __mul__(self, other: AcceptableFValOtherInput) -> 'FVal':
-        evaluated_other = _evaluate_input(other)
-        return FVal(self.num.__mul__(evaluated_other))
+        return FVal._from_decimal(self.num * _evaluate_input(other))
 
     def __truediv__(self, other: AcceptableFValOtherInput) -> 'FVal':
-        evaluated_other = _evaluate_input(other)
-        return FVal(self.num.__truediv__(evaluated_other))
+        return FVal._from_decimal(self.num / _evaluate_input(other))
 
     def __floordiv__(self, other: AcceptableFValOtherInput) -> 'FVal':
-        evaluated_other = _evaluate_input(other)
-        return FVal(self.num.__floordiv__(evaluated_other))
+        return FVal._from_decimal(self.num // _evaluate_input(other))
 
     def __pow__(self, other: AcceptableFValOtherInput) -> 'FVal':
-        evaluated_other = _evaluate_input(other)
-        return FVal(self.num.__pow__(evaluated_other))
+        return FVal._from_decimal(self.num ** _evaluate_input(other))
 
     def __radd__(self, other: AcceptableFValOtherInput) -> 'FVal':
-        evaluated_other = _evaluate_input(other)
-        return FVal(self.num.__radd__(evaluated_other))
+        return FVal._from_decimal(_evaluate_input(other) + self.num)
 
     def __rsub__(self, other: AcceptableFValOtherInput) -> 'FVal':
-        evaluated_other = _evaluate_input(other)
-        return FVal(self.num.__rsub__(evaluated_other))
+        return FVal._from_decimal(_evaluate_input(other) - self.num)
 
     def __rmul__(self, other: AcceptableFValOtherInput) -> 'FVal':
-        evaluated_other = _evaluate_input(other)
-        return FVal(self.num.__rmul__(evaluated_other))
+        return FVal._from_decimal(_evaluate_input(other) * self.num)
 
     def __rtruediv__(self, other: AcceptableFValOtherInput) -> 'FVal':
-        evaluated_other = _evaluate_input(other)
-        return FVal(self.num.__rtruediv__(evaluated_other))
+        return FVal._from_decimal(_evaluate_input(other) / self.num)
 
     def __rfloordiv__(self, other: AcceptableFValOtherInput) -> 'FVal':
-        evaluated_other = _evaluate_input(other)
-        return FVal(self.num.__rfloordiv__(evaluated_other))
+        return FVal._from_decimal(_evaluate_input(other) // self.num)
 
     def __mod__(self, other: AcceptableFValOtherInput) -> 'FVal':
-        evaluated_other = _evaluate_input(other)
-        return FVal(self.num.__mod__(evaluated_other))
+        return FVal._from_decimal(self.num % _evaluate_input(other))
 
     def __rmod__(self, other: AcceptableFValOtherInput) -> 'FVal':
-        evaluated_other = _evaluate_input(other)
-        return FVal(self.num.__rmod__(evaluated_other))
+        return FVal._from_decimal(_evaluate_input(other) % self.num)
 
     def __round__(self, ndigits: int) -> 'FVal':
-        return FVal(round(self.num, ndigits))
+        return FVal._from_decimal(round(self.num, ndigits))
 
     def __float__(self) -> float:
         return float(self.num)
@@ -147,10 +135,10 @@ class FVal:
     # --- Unary operands
 
     def __neg__(self) -> 'FVal':
-        return FVal(self.num.__neg__())
+        return FVal._from_decimal(-self.num)
 
     def __abs__(self) -> 'FVal':
-        return FVal(self.num.copy_abs())
+        return FVal._from_decimal(self.num.copy_abs())
 
     # --- Other operations
 

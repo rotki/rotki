@@ -1831,12 +1831,17 @@ class DBHandler:
                 solana_tx_db.delete_data_for_address(write_cursor, address)  # type: ignore
 
         write_cursor.executemany(
-            'DELETE FROM tag_mappings WHERE object_reference = ?;',
-            [(account,) for account in accounts],
-        )
-        write_cursor.executemany(
             'DELETE FROM blockchain_accounts WHERE '
             'blockchain = ? and account = ?;', tuples,
+        )
+        # Only remove the address' tag mappings if it is no longer tracked on any
+        # other chain. The same address (e.g. an EVM address) can be tracked on
+        # multiple chains, all sharing a single address-keyed tag mapping, so the
+        # mapping must survive until the address is removed from its last chain.
+        write_cursor.executemany(
+            'DELETE FROM tag_mappings WHERE object_reference = ? AND NOT EXISTS('
+            'SELECT 1 FROM blockchain_accounts WHERE account = ?);',
+            [(account, account) for account in accounts],
         )
 
     def get_tokens_for_address(
@@ -2445,7 +2450,7 @@ class DBHandler:
                 # from the possible new pairs
                 write_cursor.execute(
                     'DELETE FROM used_query_ranges WHERE name LIKE ? ESCAPE ?;',
-                    (f'{location!s}\\_history_events_\\_{name}', '\\'),
+                    (f'{location!s}\\_history_events\\_{name}', '\\'),
                 )
             except sqlcipher.DatabaseError as e:  # pylint: disable=no-member
                 raise InputError(f'Could not update DB user_credentials_mappings due to {e!s}') from e  # noqa: E501

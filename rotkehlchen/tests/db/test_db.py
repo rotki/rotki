@@ -119,6 +119,7 @@ from rotkehlchen.types import (
     ExchangeLocationID,
     ExternalService,
     ExternalServiceApiCredentials,
+    HexColorCode,
     Location,
     SupportedBlockchain,
     Timestamp,
@@ -1865,6 +1866,107 @@ def test_add_edit_remove_kraken_futures(database: DBHandler) -> None:
     assert len(credentials) == 0
     assert len(credentials[Location.KRAKEN]) == 0
     assert kraken_extras == {}
+
+
+def test_edit_binance_pairs_clears_history_events_query_range(database: DBHandler) -> None:
+    """Editing Binance selected trade pairs must clear that exchange's
+    ``_history_events_`` used_query_range, so history for any newly added pairs is
+    fetched again instead of being treated as already covered.
+
+    Regression test for a typo in the DELETE's LIKE pattern (an unescaped ``_``
+    acting as a single-char wildcard) which made it match nothing: the range
+    survived the edit and trades for the new pairs were never backfilled.
+    """
+    name = 'binance1'
+    database.add_exchange(
+        name=name,
+        location=Location.BINANCE,
+        api_key=ApiKey('binance_api_key'),
+        api_secret=ApiSecret(b'binance_api_secret'),
+    )
+    # range name built exactly like ExchangeInterface.query_history_events does
+    events_range = f'{Location.BINANCE!s}_history_events_{name}'
+    trades_range = f'{Location.BINANCE!s}_trades_{name}'  # unrelated, must survive
+    with database.user_write() as write_cursor:
+        for range_name in (events_range, trades_range):
+            database.update_used_query_range(
+                write_cursor=write_cursor,
+                name=range_name,
+                start_ts=Timestamp(0),
+                end_ts=Timestamp(1500000000),
+            )
+
+        database.edit_exchange(
+            write_cursor,
+            name=name,
+            location=Location.BINANCE,
+            new_name=None,
+            api_key=None,
+            api_secret=None,
+            passphrase=None,
+            kraken_account_type=None,
+            kraken_futures_api_key=None,
+            kraken_futures_api_secret=None,
+            binance_selected_trade_pairs=['ETHBTC', 'BTCUSDT'],
+            okx_location=None,
+        )
+
+    with database.conn.read_ctx() as cursor:
+        assert database.get_used_query_range(cursor, events_range) is None, \
+            'editing binance pairs should have cleared the history events query range'
+        assert database.get_used_query_range(cursor, trades_range) is not None, \
+            'unrelated query ranges must not be deleted when editing binance pairs'
+
+
+def test_remove_multichain_address_keeps_tags_on_other_chains(database: DBHandler) -> None:
+    """Removing a multi-chain address from one chain must not delete its tags while
+    the same address is still tracked on another chain.
+
+    Regression test: tag mappings are keyed by address only (a single mapping shared
+    across chains), and removal previously deleted them unconditionally by address,
+    wiping the tags of every other chain the address was still tracked on.
+    """
+    address = string_to_evm_address('0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12')
+
+    def has_tag() -> bool:
+        with database.conn.read_ctx() as cursor:
+            return cursor.execute(
+                'SELECT COUNT(*) FROM tag_mappings WHERE object_reference=? AND tag_name=?',
+                (address, 'hot'),
+            ).fetchone()[0] > 0
+
+    with database.user_write() as write_cursor:
+        database.add_tag(
+            write_cursor=write_cursor,
+            name='hot',
+            description='hot wallet',
+            background_color=HexColorCode('ffffff'),
+            foreground_color=HexColorCode('000000'),
+        )
+        # the same address is tracked on two evm chains, tagged on both
+        database.add_blockchain_accounts(
+            write_cursor,
+            [
+                BlockchainAccountData(chain=SupportedBlockchain.ETHEREUM, address=address, tags=['hot']),  # noqa: E501
+                BlockchainAccountData(chain=SupportedBlockchain.POLYGON_POS, address=address, tags=['hot']),  # noqa: E501
+            ],
+        )
+
+    assert has_tag(), 'the tag mapping should exist after adding the tagged account'
+
+    # removing the address from a single chain must keep the tag (still on the other)
+    with database.user_write() as write_cursor:
+        database.remove_single_blockchain_accounts(
+            write_cursor, SupportedBlockchain.POLYGON_POS, [address],
+        )
+    assert has_tag(), 'tag must survive while the address is still tracked on another chain'
+
+    # removing it from the last remaining chain should finally drop the tag mapping
+    with database.user_write() as write_cursor:
+        database.remove_single_blockchain_accounts(
+            write_cursor, SupportedBlockchain.ETHEREUM, [address],
+        )
+    assert not has_tag(), 'tag mapping should be removed once the address is gone from all chains'
 
 
 def test_fresh_db_adds_version(user_data_dir, sql_vm_instructions_cb):

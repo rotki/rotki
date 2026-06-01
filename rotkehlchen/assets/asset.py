@@ -262,9 +262,11 @@ class Asset:
             return False
 
         if isinstance(other, Asset):
-            return self.identifier.lower() == other.identifier.lower()
+            # fast path: identifiers are normally already-normalized and identical,
+            # so avoid lowercasing both sides on every comparison
+            return self.identifier == other.identifier or self.identifier.lower() == other.identifier.lower()  # noqa: E501
         if isinstance(other, str):
-            return self.identifier.lower() == other.lower()
+            return self.identifier == other or self.identifier.lower() == other.lower()
 
         return False
 

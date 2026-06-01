@@ -106,7 +106,10 @@ class EventsAccountant:
                 return 1
 
             in_event = cast('HistoryBaseEntry', next(events_iterator))  # consume the paired event
-            if event.asset in self.pot.ignored_asset_ids or in_event.asset in self.pot.ignored_asset_ids:  # noqa: E501
+            if (
+                event.asset in self.pot.ignored_asset_ids or
+                in_event.asset in self.pot.ignored_asset_ids
+            ):
                 return 2
 
             # event_direction is OUT (first event is always the deposit/spend)

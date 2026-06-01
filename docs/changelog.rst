@@ -21,6 +21,15 @@ Changelog
 * :bug:`-` The login screen no longer pre-fills the username field with a remembered account that no longer exists.
 * :feature:`12002` Adding or editing a history event now uses a plain-language "Action" picker grouped by intent (Trade, Transfer, DeFi, Staking, etc.) with search and keyboard navigation, replacing the raw event-type and subtype dropdowns.
 * :feature:`12086` The "Create account" flow now starts with a mode chooser so creating a new local profile and restoring a database synced from rotki cloud are separate, focused paths.
+* :bug:`-` Special-cased asset prices are no longer shown in USD by mistake for non-USD main currencies when the exchange rate is temporarily unavailable.
+* :bug:`-` Tags of an address tracked on multiple chains are now kept when you remove the address from only one of those chains.
+* :bug:`-` Changing the selected trade pairs of a Binance or Binance US exchange now correctly fetches the history of the newly added pairs.
+* :bug:`-` HTX deposit and withdrawal history is now queried correctly for accounts with more than 500 transfers, instead of getting stuck re-fetching the same first page.
+* :bug:`-` Coinbase Advanced Trade buys are no longer sometimes imported as sells when the trade direction is missing from the API.
+* :bug:`12319` Hyperliquid Valantis staked HYPE balances will no longer be shown twice as both stHYPE and wstHYPE.
+* :bug:`-` Swaps through a newer zeroxsettler will now be properly decoded by rotki.
+* :bug:`-` Poloniex history should now be properly queried again.
+* :bug:`-` Dismissing a calendar reminder (such as an L2 bridge claim) now sticks, instead of popping up again days later as if you had never acknowledged it.
 
 * :release:`1.43.1 <2026-05-18>`
 * :feature:`12215` Cryptocompare is now removed from the default list of oracles if no API key is set.

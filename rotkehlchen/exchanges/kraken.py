@@ -786,12 +786,18 @@ class Kraken(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
             max_ts = max(max_ts, ts_ms_to_sec(events[0].timestamp))
 
         adjustments.sort(key=lambda x: x.timestamp)
+        # Collect the adjustments that aren't converted into SwapEvents in a new list instead of
+        # removing them from `adjustments` while iterating it. pairwise() iterates a single shared
+        # iterator, so mutating the list mid-iteration shifts the indices and skips pairs.
+        unconverted_adjustments: list[HistoryEvent] = adjustments
         if len(adjustments) % 2 == 0:
+            unconverted_adjustments = []
             for a1, a2 in pairwise(adjustments):
                 if a1.event_subtype is None or a2.event_subtype is None:
                     log.warning(
                         f'Found two kraken adjustment entries without a subtype: {a1} {a2}',
                     )
+                    unconverted_adjustments.extend((a1, a2))
                     continue
 
                 if a1.event_subtype == HistoryEventSubType.SPEND and a2.event_subtype == HistoryEventSubType.RECEIVE:  # noqa: E501
@@ -804,6 +810,7 @@ class Kraken(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
                     log.warning(
                         f'Found two kraken adjustment with unmatching subtype {a1} {a2}',
                     )
+                    unconverted_adjustments.extend((a1, a2))
                     continue
 
                 swap_events.extend(create_swap_events(
@@ -817,9 +824,6 @@ class Kraken(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
                     ),
                     location_label=self.name,
                 ))
-                # Remove these adjustments since they are now represented by SwapEvents
-                adjustments.remove(a1)
-                adjustments.remove(a2)
 
         else:
             log.warning(
@@ -827,7 +831,7 @@ class Kraken(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
                 f'Skipping reading them. {adjustments}',
             )
 
-        return swap_events + adjustments, Timestamp(max_ts)
+        return swap_events + unconverted_adjustments, Timestamp(max_ts)
 
     def process_kraken_raw_events(
             self,

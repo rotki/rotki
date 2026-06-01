@@ -1,4 +1,5 @@
 import math
+from decimal import InvalidOperation
 
 import pytest
 
@@ -101,6 +102,58 @@ def test_int_comparison():
     assert e <= c
     assert e >= c
     assert e == c
+
+
+def test_operators_preserve_decimal_value():
+    """The arithmetic/unary operators wrap the result via the _from_decimal fast path.
+    Pin that every result still equals the underlying raw Decimal operation, so the fast
+    path can never silently diverge from constructing FVal from the Decimal result."""
+    a, b = FVal('12.3456789'), FVal('0.98765')
+    assert (a + b).num == a.num + b.num
+    assert (a - b).num == a.num - b.num
+    assert (a * b).num == a.num * b.num
+    assert (a / b).num == a.num / b.num
+    assert (a // b).num == a.num // b.num
+    assert (a % b).num == a.num % b.num
+    assert (a ** 2).num == a.num ** 2
+    assert (-a).num == -a.num
+    assert abs(-a).num == a.num
+    assert round(a, 3).num == round(a.num, 3)
+    # reflected operators
+    assert (2 + b).num == 2 + b.num
+    assert (2 - b).num == 2 - b.num
+    assert (2 * b).num == 2 * b.num
+    assert isinstance(a + b, FVal)  # results are real FVal instances
+
+
+def test_comparisons_match_decimal():
+    """The native comparisons must match the Decimal semantics they replaced."""
+    a, b = FVal('1.0'), FVal('1.00')
+    assert a == b  # numerically equal despite different scale
+    assert a <= b
+    assert a >= b
+    assert not a < b
+    assert not a > b
+    assert FVal('2') > FVal('1')
+    assert FVal('1') < FVal('2')
+    assert FVal('2') == 2
+    assert FVal('2') != 3
+    assert FVal('2') != 'foo'  # non-numeric -> not equal, must not raise
+
+
+def test_nan_comparison_contract():
+    """A NaN never arises in practice (the decimal context traps the operations that would
+    produce one, and nothing constructs FVal('nan')), but pin the contract anyway: equality
+    returns False (standard IEEE behavior, and safe for dict/set membership), while ordering
+    raises InvalidOperation exactly like the previous compare_signal-based implementation."""
+    nan = FVal('nan')
+    assert nan.num.is_nan()
+    assert (nan == FVal(1)) is False
+    assert (nan == 1) is False
+    assert (FVal(1) == nan) is False
+    for bad in (lambda: nan > FVal(1), lambda: nan < FVal(1), lambda: nan >= FVal(1)):
+        with pytest.raises(InvalidOperation):
+            bad()
 
 
 def test_representation():

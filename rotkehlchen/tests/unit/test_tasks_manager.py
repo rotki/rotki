@@ -1075,6 +1075,66 @@ def test_send_ws_calendar_reminder(
 
 
 @pytest.mark.parametrize('max_tasks_num', [5])
+@pytest.mark.freeze_time('2023-04-16 22:31:11 GMT')
+@pytest.mark.parametrize('legacy_messages_via_websockets', [True])
+def test_acknowledged_calendar_reminder_does_not_retrigger(
+        rotkehlchen_api_server: 'APIServer',
+        websocket_connection: WebsocketReader,
+        legacy_messages_via_websockets: bool,  # pylint: disable=unused-argument
+        freezer,
+) -> None:
+    """Acknowledged reminders must not be re-sent on subsequent trigger cycles.
+
+    Regression test: previously the trigger query ignored the `acknowledged`
+    column, so reminders the user had dismissed kept reappearing.
+    """
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+    database = rotki.data.db
+    task_manager = rotki.task_manager
+    assert task_manager is not None
+
+    calendar_db = DBCalendar(database)
+    calendar_db.create_calendar_entry(
+        calendar=CalendarEntry(
+            name='Bridge claim',
+            description='Claim Optimism bridge deposit on Ethereum',
+            timestamp=Timestamp(1713621899),  # 20/04/2024
+            counterparty=None,
+            address=None,
+            blockchain=None,
+            color=None,
+            auto_delete=False,
+        ),
+    )
+    calendar_db.create_reminder_entries([ReminderEntry(
+        identifier=1,
+        event_id=1,
+        secs_before=0,
+        acknowledged=False,
+    )])
+
+    freezer.move_to(datetime.datetime(2024, 4, 20, 20, 0, 1, tzinfo=datetime.UTC))
+    task_manager.potential_tasks = [task_manager._maybe_trigger_calendar_reminder]
+    task_manager.schedule()
+    gevent.joinall(task_manager.running_greenlets[task_manager._maybe_trigger_calendar_reminder])
+    websocket_connection.wait_until_messages_num(num=1, timeout=2)
+    websocket_connection.pop_message()
+
+    calendar_db.update_reminder_entry(ReminderEntry(
+        identifier=1,
+        event_id=1,
+        secs_before=0,
+        acknowledged=True,
+    ))
+
+    freezer.move_to(datetime.datetime(2024, 4, 25, 20, 0, 1, tzinfo=datetime.UTC))
+    task_manager.last_calendar_reminder_check = Timestamp(0)  # bypass 5-min throttle
+    assert task_manager._maybe_trigger_calendar_reminder() is None
+    assert task_manager.last_calendar_reminder_check != 0  # throttle set even on empty match
+    assert websocket_connection.messages_num() == 0
+
+
+@pytest.mark.parametrize('max_tasks_num', [5])
 @pytest.mark.freeze_time('2023-06-01 22:31:11 GMT')
 @pytest.mark.parametrize('db_settings', [
     {'auto_delete_calendar_entries': False},

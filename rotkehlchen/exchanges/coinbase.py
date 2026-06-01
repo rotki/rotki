@@ -855,8 +855,17 @@ class Coinbase(ExchangeInterface):
             log.error('Error processing asset identifiers for coinbase trade', trade=event)
             return []
 
+        # The base/quote asset is determined from the product id
+        quote_asset = asset_from_coinbase(asset_identifiers[1], time=timestamp)
         if (order_side := event['advanced_trade_fill'].get('order_side')) is None:
-            order_side = 'buy' if amount < 0 else 'sell'
+            # No order_side given, so infer it from the sign of the balance change.
+            # event['amount'] is the signed change of tx_asset's account: positive means
+            # the asset was received, negative means it was sent. Spending the quote asset
+            # (amount < 0) is a buy, while receiving the base asset (amount > 0) is a buy.
+            order_side = (
+                ('buy' if amount < 0 else 'sell') if tx_asset == quote_asset
+                else ('buy' if amount > 0 else 'sell')
+            )
         elif (
             (order_id := event['advanced_trade_fill'].get('order_id')) is not None and
             (event_currency := event['amount'].get('currency')) is not None
@@ -867,8 +876,6 @@ class Coinbase(ExchangeInterface):
                 log.debug('Ignoring other side of already seen coinbase advanced trade', other_side=event)  # noqa: E501
                 return []
 
-        # The base/quote asset is determined from the product id
-        quote_asset = asset_from_coinbase(asset_identifiers[1], time=timestamp)
         rate = Price(deserialize_fval(event['advanced_trade_fill']['fill_price'], name='fill_price', location='Coinbase advanced trade'))  # noqa: E501
         if tx_asset == quote_asset:  # calculate trade amount depending on the denominated asset
             amount /= rate

@@ -325,14 +325,17 @@ class Poloniex(ExchangeInterface, SignatureGeneratorMixin):
                 'limit': self.TRADES_LIMIT,
             })
             results_length = len(new_data)
+            existing_ids = {x['id'] for x in data}
             if results_length < self.TRADES_LIMIT:
-                data = new_data
+                # got all the trades for this 180 day chunk. Accumulate them (deduplicating
+                # against previous chunks) and move on to the next chunk. Note we extend
+                # instead of overwriting since data may hold trades from previous chunks.
+                data.extend(trade for trade in new_data if trade['id'] not in existing_ids)
                 current_start_ms = current_end_ms
-                continue  # simple case - only one query needed for this 180 day chunk
+                continue
 
             latest_ts_ms = current_start_ms
             # add results to data and prepare for next query
-            existing_ids = {x['id'] for x in data}
             for trade in new_data:
                 try:
                     timestamp_ms = trade['createTime']
@@ -354,13 +357,9 @@ class Poloniex(ExchangeInterface, SignatureGeneratorMixin):
                     )
                     continue
 
-            if results_length < self.TRADES_LIMIT:
-                current_start_ms = current_end_ms
-                continue  # last query has less than limit. We are done with this 180 day chunk.
-
-            # otherwise we query again from the last ts seen in the last result
+            # the chunk returned TRADES_LIMIT results so it may have more. Query again
+            # from the last ts seen in the last result.
             current_start_ms = latest_ts_ms
-            continue
 
         return data
 

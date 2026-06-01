@@ -224,6 +224,9 @@ class Accountant:
                 )
                 break
 
+        for pot in self.pots:  # flush any buffered processed-event rows to the report DB
+            pot.flush_pending_report_rows()
+
         dbpnl.add_report_overview(
             report_id=report_id,
             last_processed_timestamp=last_event_ts,

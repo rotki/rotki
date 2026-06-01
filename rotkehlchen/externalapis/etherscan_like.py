@@ -1024,7 +1024,11 @@ class EtherscanLikeApi(ABC):
                             previous_event['logIndex'] == log_index and
                             previous_event['transactionHash'] == event['transactionHash']
                         ):
-                            existing_events.pop()
+                            # remove the matched duplicate itself, not the last element of the
+                            # list. The boundary block can have multiple logs in existing_events,
+                            # so the match is not necessarily the tail.
+                            existing_events.remove(previous_event)
+                            break
 
                 new_events[e_idx]['address'] = deserialize_evm_address(event['address'])
                 new_events[e_idx]['blockNumber'] = block_number

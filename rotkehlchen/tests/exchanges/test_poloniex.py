@@ -1,6 +1,8 @@
+import json
 import warnings as test_warnings
 from typing import TYPE_CHECKING, cast
 from unittest.mock import patch
+from urllib.parse import parse_qs, urlparse
 
 import pytest
 
@@ -227,6 +229,39 @@ def test_query_trade_history(poloniex: 'Poloniex'):
             ),
             location_label=poloniex.name,
         )]
+
+
+def test_query_trade_history_multiple_chunks(poloniex: 'Poloniex') -> None:
+    """Regression test for trades spanning more than one 180-day chunk.
+
+    Poloniex limits the /trades query window to 180 days, so a long history range is
+    split into 180-day chunks. Trades from earlier chunks must be accumulated and not
+    overwritten by the results of the last chunk.
+    """
+    end_ts = Timestamp((start_ts := Timestamp(1500000000)) + 400 * 86400)  # ~400 days -> 3 chunks
+    start_ms = start_ts * 1000
+    # one trade comfortably inside each of the 3 chunks (each chunk has < TRADES_LIMIT trades)
+    all_trades = [
+        {'id': 1, 'createTime': start_ms + 86_400_000},      # ~day 1   -> chunk 1
+        {'id': 2, 'createTime': start_ms + 20_000_000_000},  # ~day 231 -> chunk 2
+        {'id': 3, 'createTime': start_ms + 33_000_000_000},  # ~day 382 -> chunk 3
+    ]
+
+    def mock_api_return(url: str, **kwargs):  # pylint: disable=unused-argument
+        if '/trades' not in url:
+            return MockResponse(200, '{"withdrawals": [], "deposits": []}')
+
+        params = parse_qs(urlparse(url).query)
+        window_start, window_end = int(params['startTime'][0]), int(params['endTime'][0])
+        # emulate poloniex only returning the trades within the requested [startTime, endTime]
+        return MockResponse(200, json.dumps(
+            [t for t in all_trades if window_start <= t['createTime'] <= window_end],
+        ))
+
+    with patch.object(poloniex.session, 'get', side_effect=mock_api_return):
+        raw_trades = poloniex.return_trade_history(start=start_ts, end=end_ts)
+
+    assert {trade['id'] for trade in raw_trades} == {1, 2, 3}
 
 
 def test_query_trade_history_unexpected_data(poloniex):
