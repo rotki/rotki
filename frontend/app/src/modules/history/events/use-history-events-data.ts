@@ -48,7 +48,7 @@ interface UseHistoryEventsDataReturn {
   /** Events grouped by groupIdentifier, with both hidden and ignored-asset events filtered out. */
   displayedEventsMapped: ComputedRef<Record<string, HistoryEventRow[]>>;
   groupsWithHiddenIgnoredAssets: ComputedRef<Set<string>>;
-  groupsShowingIgnoredAssets: Ref<Set<string>>;
+  groupsShowingIgnoredAssets: ComputedRef<Set<string>>;
   hasIgnoredEvent: ComputedRef<boolean>;
   groups: ComputedRef<HistoryEventEntry[]>;
   events: ComputedRef<HistoryEventEntry[]>;
@@ -167,18 +167,49 @@ export function useHistoryEventsData(
     return mapping;
   });
 
-  // Track which groups have opted to show ignored assets (per-group toggle)
-  const groupsShowingIgnoredAssets = shallowRef<Set<string>>(new Set());
+  // User intent: which groups the user has toggled to reveal their ignored
+  // assets. This is the only mutable piece of state; everything else is derived.
+  const showIgnoredAssetsIntent = shallowRef<Set<string>>(new Set());
+
+  // Groups that currently contain at least one event with an ignored asset.
+  const groupsWithIgnoredAssets = computed<Set<string>>(() => {
+    const result = new Set<string>();
+    for (const [groupId, rows] of Object.entries(get(completeEventsMapped))) {
+      const hasIgnored = rows.some(row => Array.isArray(row)
+        ? row.some(item => isAssetIgnored(item.asset))
+        : isAssetIgnored(row.asset));
+      if (hasIgnored)
+        result.add(groupId);
+    }
+    return result;
+  });
+
+  // Effective showing state: the user's intent intersected with the groups that
+  // still actually have an ignored asset. Deriving (rather than mutating) means
+  // stale state is impossible — unignoring an asset drops it automatically.
+  const groupsShowingIgnoredAssets = computed<Set<string>>(() => {
+    const valid = get(groupsWithIgnoredAssets);
+    return new Set([...get(showIgnoredAssetsIntent)].filter(groupId => valid.has(groupId)));
+  });
+
+  // Groups that have an ignored-asset event currently hidden: those with an
+  // ignored asset that the user has not revealed via the per-group toggle.
+  const groupsWithHiddenIgnoredAssets = computed<Set<string>>(() => {
+    if (!toValue(excludeIgnored))
+      return new Set();
+
+    const showing = get(groupsShowingIgnoredAssets);
+    return new Set([...get(groupsWithIgnoredAssets)].filter(groupId => !showing.has(groupId)));
+  });
 
   function toggleShowIgnoredAssets(groupId: string): void {
-    const current = get(groupsShowingIgnoredAssets);
-    const newSet = new Set(current);
-    if (newSet.has(groupId))
-      newSet.delete(groupId);
+    const next = new Set(get(showIgnoredAssetsIntent));
+    if (next.has(groupId))
+      next.delete(groupId);
     else
-      newSet.add(groupId);
+      next.add(groupId);
 
-    set(groupsShowingIgnoredAssets, newSet);
+    set(showIgnoredAssetsIntent, next);
   }
 
   /** Events grouped by groupIdentifier, with both hidden and ignored-asset events filtered out. */
@@ -220,33 +251,6 @@ export function useHistoryEventsData(
     events,
     event => Array.isArray(event) ? event.some(item => item.ignoredInAccounting) : event.ignoredInAccounting,
   );
-
-  function flattenedEventCount(rows: HistoryEventRow[]): number {
-    let count = 0;
-    for (const row of rows)
-      count += Array.isArray(row) ? row.length : 1;
-
-    return count;
-  }
-
-  // Track which groups have events hidden due to ignored assets filter
-  const groupsWithHiddenIgnoredAssets = computed<Set<string>>(() => {
-    if (!toValue(excludeIgnored))
-      return new Set();
-
-    const all = get(completeEventsMapped);
-    const displayed = get(displayedEventsMapped);
-    const result = new Set<string>();
-
-    for (const groupId of Object.keys(all)) {
-      const allCount = flattenedEventCount(all[groupId] ?? []);
-      const displayedCount = flattenedEventCount(displayed[groupId] ?? []);
-      if (allCount > displayedCount)
-        result.add(groupId);
-    }
-
-    return result;
-  });
 
   // Map each event identifier to its complete subgroup size for detecting incomplete subgroups
   const completeSubgroupSizes = computed<Map<number, number>>(() => {
