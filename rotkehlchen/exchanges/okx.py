@@ -355,7 +355,7 @@ class Okx(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
         )
         withdrawals = self._api_query_list_paginated(
             endpoint=OkxEndpoint.WITHDRAWALS,
-            pagination_key='ordId',
+            pagination_key='ts',
             options={
                 'start_ts': start_ts,
                 'end_ts': end_ts,
