@@ -4,7 +4,7 @@ import shutil
 import sys
 from collections import defaultdict
 from collections.abc import Generator
-from contextlib import ExitStack, suppress
+from contextlib import ExitStack
 from pathlib import Path
 from tempfile import NamedTemporaryFile
 from typing import Any
@@ -32,6 +32,8 @@ from rotkehlchen.tests.utils.inquirer import inquirer_inject_evm_managers_set_or
 from rotkehlchen.types import ApiKey, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import ts_now
+
+LAST_ACCOUNTING_RULES_VERSION = 5
 
 
 @pytest.fixture(name='use_clean_caching_directory')
@@ -130,7 +132,7 @@ def fixture_use_dummy_pot() -> bool:
 
 @pytest.fixture(name='last_accounting_rules_version', scope='session')
 def fixture_last_accounting_rules_version() -> int:
-    return 5
+    return LAST_ACCOUNTING_RULES_VERSION
 
 
 def _read_rules_from_file(rules_file: Path) -> list[dict[str, Any]]:
@@ -170,16 +172,36 @@ def _download_rules_file(version: int, rules_file: Path) -> None:
             tmp.write('\n')
             tmp_file = tmp.name
 
-        with suppress(PermissionError):
-            # On Windows os.replace() raises PermissionError when another
-            # xdist worker has the target file open. Since all workers
-            # download identical content and we validated our payload
-            # above, the on-disk file is guaranteed to be valid.
-            # See https://bugs.python.org/issue46003
-            os.replace(tmp_file, rules_file)
+        os.replace(tmp_file, rules_file)
     finally:
         if tmp_file is not None and Path(tmp_file).exists():
             Path(tmp_file).unlink()
+
+
+def _accounting_rules_dir() -> Path:
+    """Return the shared cache directory for accounting rules used by tests."""
+    return default_data_directory().parent / 'test-caching' / 'accounting_rules'
+
+
+def _ensure_accounting_rules(version: int) -> Path:
+    """Make sure a valid accounting rules file exists before workers read it."""
+    rules_file = _accounting_rules_dir() / f'v{version}.json'
+    rules_file.parent.mkdir(exist_ok=True, parents=True)
+    try:
+        _read_rules_from_file(rules_file)
+    except (OSError, json.JSONDecodeError, KeyError, TypeError):
+        _download_rules_file(version=version, rules_file=rules_file)
+
+    return rules_file
+
+
+def pytest_configure(config: pytest.Config) -> None:
+    """Prepare shared accounting-rules test cache before xdist workers start."""
+    if hasattr(config, 'workerinput'):  # xdist worker; the controller already synced the files.
+        return
+
+    for version in range(1, LAST_ACCOUNTING_RULES_VERSION + 1):
+        _ensure_accounting_rules(version)
 
 
 @pytest.fixture(name='latest_accounting_rules', autouse=True, scope='session')
@@ -191,20 +213,11 @@ def fixture_download_rules(last_accounting_rules_version) -> list[tuple[int, Pat
 
     Returns a list of tuples. (version, update_json_file_path)
     """
-    root_dir = default_data_directory().parent / 'test-caching'
-    base_dir = root_dir / 'accounting_rules'
-    result = []
-    for i in range(1, last_accounting_rules_version + 1):
-        rules_file = Path(base_dir / f'v{i}.json')
-        rules_file.parent.mkdir(exist_ok=True, parents=True)
-        try:
-            _read_rules_from_file(rules_file)
-        except (OSError, json.JSONDecodeError, KeyError, TypeError):
-            _download_rules_file(version=i, rules_file=rules_file)
-
-        result.append((i, rules_file))
-
-    return result
+    base_dir = _accounting_rules_dir()
+    return [
+        (i, Path(base_dir / f'v{i}.json'))
+        for i in range(1, last_accounting_rules_version + 1)
+    ]
 
 
 @pytest.fixture(name='latest_accounting_rules_data', scope='session')
