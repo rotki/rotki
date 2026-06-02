@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`-` When you unignore an asset from a history event, its group no longer keeps flagging hidden ignored assets, so you are not misled into thinking events are still hidden when there is nothing left to reveal.
 * :bug:`-` In an expanded linked movement, each leg now shows its own location icon: the exchange icon on the exchange deposit/withdrawal and the chain icon on the on-chain transfer leg, instead of the exchange icon incorrectly appearing on the on-chain leg.
 * :bug:`-` Tags on manually tracked balances are no longer dropped (or shown on the wrong balance) after updating, for users who had previously deleted a manual balance. The faulty cleanup that orphaned those tags is also reverted.
 * :bug:`-` A temporary node/indexer failure during token detection no longer wipes the previously detected tokens for an address. The cached token list is now kept intact until a successful detection can replace it, so balances no longer silently go missing after a transient RPC error.

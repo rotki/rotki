@@ -12,6 +12,7 @@ const mockItemsPerPage = ref<number>(10);
 const mockFetchHistoryEvents = vi.fn();
 const mockIsAssetIgnored = vi.fn();
 const mockCancelByTag = vi.fn();
+const mockIgnoredAssets = ref<string[]>([]);
 
 vi.mock('@/modules/history/events/use-history-events', () => ({
   useHistoryEvents: vi.fn(() => ({
@@ -38,7 +39,7 @@ vi.mock('@/modules/history/events/use-history-events-status', () => ({
 vi.mock('@/modules/assets/use-assets-store', () => ({
   useAssetsStore: vi.fn(() => ({
     isAssetIgnored: mockIsAssetIgnored,
-    ignoredAssets: ref<string[]>([]),
+    ignoredAssets: mockIgnoredAssets,
   })),
 }));
 
@@ -103,6 +104,7 @@ describe('use-history-events-data', () => {
     scope = effectScope();
     mockFetchHistoryEvents.mockResolvedValue({ data: [] });
     mockIsAssetIgnored.mockReturnValue(false);
+    set(mockIgnoredAssets, []);
   });
 
   afterEach(() => {
@@ -1020,6 +1022,140 @@ describe('use-history-events-data', () => {
       const result = scope.run(() => useHistoryEventsData(options, emit))!;
 
       expect(result.isSubgroupIncomplete([])).toBe(false);
+    });
+  });
+
+  describe('showing ignored assets reconciliation', () => {
+    async function waitForFetchEvents(): Promise<void> {
+      await nextTick();
+      await vi.runAllTimersAsync();
+      await nextTick();
+      await vi.runAllTimersAsync();
+      await nextTick();
+    }
+
+    beforeEach(() => {
+      vi.useFakeTimers();
+    });
+
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
+    it('should drop showing-ignored-assets state once the asset is unignored', async () => {
+      const { useHistoryEventsData } = await import('./use-history-events-data');
+
+      const ethEvent = createMockEvent({ asset: 'ETH', groupIdentifier: 'group1', identifier: 1 });
+      const btcEvent = createMockEvent({ asset: 'BTC', groupIdentifier: 'group1', identifier: 2 });
+
+      mockFetchHistoryEvents.mockResolvedValue({ data: [ethEvent, btcEvent] });
+      mockIsAssetIgnored.mockImplementation((asset: string) => get(mockIgnoredAssets).includes(asset));
+      set(mockIgnoredAssets, ['BTC']);
+
+      const groups = ref<Collection<HistoryEventRow>>(createMockCollection([ethEvent]));
+      const options = {
+        excludeIgnored: ref<boolean>(true),
+        groupLoading: ref<boolean>(false),
+        groups,
+        pageParams: ref<HistoryEventRequestPayload | undefined>(undefined),
+      };
+
+      const emit = vi.fn();
+      const result = scope.run(() => useHistoryEventsData(options, emit))!;
+
+      await waitForFetchEvents();
+
+      // BTC is ignored and hidden, so the group is flagged as having hidden ignored assets
+      expect(get(result.groupsWithHiddenIgnoredAssets).has('group1')).toBe(true);
+
+      // The user reveals the ignored asset for this group (clicking the header eye)
+      result.toggleShowIgnoredAssets('group1');
+      await nextTick();
+      expect(get(result.groupsShowingIgnoredAssets).has('group1')).toBe(true);
+      // While revealed, nothing is hidden anymore
+      expect(get(result.groupsWithHiddenIgnoredAssets).has('group1')).toBe(false);
+
+      // The user unignores BTC
+      set(mockIgnoredAssets, []);
+      await nextTick();
+
+      // The stale "showing" state must be cleared so the header indicator disappears
+      expect(get(result.groupsShowingIgnoredAssets).has('group1')).toBe(false);
+      expect(get(result.groupsWithHiddenIgnoredAssets).has('group1')).toBe(false);
+    });
+
+    it('should keep showing-ignored-assets state while the asset is still ignored', async () => {
+      const { useHistoryEventsData } = await import('./use-history-events-data');
+
+      const ethEvent = createMockEvent({ asset: 'ETH', groupIdentifier: 'group1', identifier: 1 });
+      const btcEvent = createMockEvent({ asset: 'BTC', groupIdentifier: 'group1', identifier: 2 });
+
+      mockFetchHistoryEvents.mockResolvedValue({ data: [ethEvent, btcEvent] });
+      mockIsAssetIgnored.mockImplementation((asset: string) => get(mockIgnoredAssets).includes(asset));
+      set(mockIgnoredAssets, ['BTC']);
+
+      const groups = ref<Collection<HistoryEventRow>>(createMockCollection([ethEvent]));
+      const options = {
+        excludeIgnored: ref<boolean>(true),
+        groupLoading: ref<boolean>(false),
+        groups,
+        pageParams: ref<HistoryEventRequestPayload | undefined>(undefined),
+      };
+
+      const emit = vi.fn();
+      const result = scope.run(() => useHistoryEventsData(options, emit))!;
+
+      await waitForFetchEvents();
+
+      result.toggleShowIgnoredAssets('group1');
+      await nextTick();
+      expect(get(result.groupsShowingIgnoredAssets).has('group1')).toBe(true);
+
+      // Ignoring an unrelated asset must not prune the still-valid showing state
+      set(mockIgnoredAssets, ['BTC', 'DOGE']);
+      await nextTick();
+
+      expect(get(result.groupsShowingIgnoredAssets).has('group1')).toBe(true);
+    });
+
+    it('should not unignore the asset when revealing a group', async () => {
+      const { useHistoryEventsData } = await import('./use-history-events-data');
+
+      const ethEvent = createMockEvent({ asset: 'ETH', groupIdentifier: 'group1', identifier: 1 });
+      const btcEvent = createMockEvent({ asset: 'BTC', groupIdentifier: 'group1', identifier: 2 });
+
+      mockFetchHistoryEvents.mockResolvedValue({ data: [ethEvent, btcEvent] });
+      mockIsAssetIgnored.mockImplementation((asset: string) => get(mockIgnoredAssets).includes(asset));
+      set(mockIgnoredAssets, ['BTC']);
+
+      const groups = ref<Collection<HistoryEventRow>>(createMockCollection([ethEvent]));
+      const options = {
+        excludeIgnored: ref<boolean>(true),
+        groupLoading: ref<boolean>(false),
+        groups,
+        pageParams: ref<HistoryEventRequestPayload | undefined>(undefined),
+      };
+
+      const emit = vi.fn();
+      const result = scope.run(() => useHistoryEventsData(options, emit))!;
+
+      await waitForFetchEvents();
+
+      // Revealing only changes what is displayed; it must never touch the ignore list
+      result.toggleShowIgnoredAssets('group1');
+      await nextTick();
+      expect(get(result.groupsShowingIgnoredAssets).has('group1')).toBe(true);
+
+      // BTC is still ignored after revealing, and the group still has an ignored asset
+      expect(get(mockIgnoredAssets)).toEqual(['BTC']);
+      expect(get(result.groupsWithHiddenIgnoredAssets).has('group1')).toBe(false);
+
+      // Hiding again leaves the ignore list untouched and re-hides the asset
+      result.toggleShowIgnoredAssets('group1');
+      await nextTick();
+      expect(get(mockIgnoredAssets)).toEqual(['BTC']);
+      expect(get(result.groupsShowingIgnoredAssets).has('group1')).toBe(false);
+      expect(get(result.groupsWithHiddenIgnoredAssets).has('group1')).toBe(true);
     });
   });
 });
