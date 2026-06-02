@@ -25,7 +25,7 @@ from rotkehlchen.constants.assets import A_CRV, A_DAI, A_ETH, A_OMG, A_WETH
 from rotkehlchen.constants.resolver import evm_address_to_identifier
 from rotkehlchen.db.constants import EVM_ACCOUNTS_DETAILS_TOKENS
 from rotkehlchen.db.history_events import DBHistoryEvents
-from rotkehlchen.errors.misc import InputError, RequestTooLargeError
+from rotkehlchen.errors.misc import InputError, RemoteError, RequestTooLargeError
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.history.events.structures.base import HistoryEvent
@@ -313,6 +313,39 @@ def test_query_chunks_retries_with_smaller_chunks(tokens: EthereumTokens) -> Non
     assert result.balances == {}
     assert result.had_failures is False
     assert queried_chunk_sizes == [4, 2, 2, 1]
+
+
+def test_query_chunks_marks_failure_on_remote_error(tokens: EthereumTokens) -> None:
+    """A RemoteError on a chunk must mark the address as failed (so its cached tokens are
+    not overwritten) while balances from the other chunks are still collected."""
+    token_data = [
+        EvmTokenDetectionData(
+            identifier=f'eip155:1/erc20:0x{i:040x}',
+            address=string_to_evm_address(f'0x{i:040x}'),
+            decimals=18,
+        ) for i in range(1, 5)
+    ]
+
+    def mocked_get_token_balances(
+            address: ChecksumEvmAddress,
+            tokens: list[EvmTokenDetectionData],
+            call_order: list[Any],
+    ) -> dict[Asset, FVal]:
+        if any(token.identifier == token_data[0].identifier for token in tokens):
+            raise RemoteError('all nodes failed')
+
+        return {Asset(tokens[0].identifier): ONE}
+
+    with patch.object(tokens, 'get_token_balances', side_effect=mocked_get_token_balances):
+        result = tokens._query_chunks(
+            address=make_evm_address(),
+            tokens=token_data,
+            chunk_size=2,
+            call_order=[],
+        )
+
+    assert result.had_failures is True
+    assert result.balances == {Asset(token_data[2].identifier): ONE}
 
 
 def test_query_chunks_retries_with_reduced_rpc_chunks(tokens: EthereumTokens) -> None:

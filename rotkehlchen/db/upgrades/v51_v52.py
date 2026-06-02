@@ -156,6 +156,14 @@ def upgrade_v51_to_v52(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
                     (f'{label} ({idx})', row_id),
                 )
 
+        # Preserve the id column when it exists so tag_mappings (which reference
+        # manually_tracked_balances.id) are not orphaned by a rowid renumbering. Some older DBs
+        # may predate the id column, so detect it instead of assuming it is present.
+        has_id = any(
+            row[1] == 'id'
+            for row in write_cursor.execute('PRAGMA table_info(manually_tracked_balances)')
+        )
+        columns = ('id, ' if has_id else '') + 'asset, label, amount, location, category'
         write_cursor.switch_foreign_keys('OFF')
         update_table_schema(
             write_cursor=write_cursor,
@@ -167,8 +175,8 @@ def upgrade_v51_to_v52(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
             location CHAR(1) NOT NULL DEFAULT('A') REFERENCES location(location),
             category CHAR(1) NOT NULL DEFAULT('A') REFERENCES balance_category(category),
             FOREIGN KEY(asset) REFERENCES assets(identifier) ON UPDATE CASCADE""",
-            insert_columns='asset, label, amount, location, category',
-            insert_order='(asset, label, amount, location, category)',
+            insert_columns=columns,
+            insert_order=f'({columns})',
         )
         write_cursor.switch_foreign_keys('ON')
 

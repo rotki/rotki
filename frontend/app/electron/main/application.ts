@@ -1,5 +1,6 @@
 import type { AppConfig } from '@electron/main/app-config';
 import process from 'node:process';
+import { protectHtmlAssociation } from '@electron/main/html-mime-protection';
 import { IpcManager } from '@electron/main/ipc-setup';
 import { LogService } from '@electron/main/log-service';
 import { MenuManager } from '@electron/main/menu';
@@ -83,27 +84,47 @@ export class Application {
   }
 
   private registerAsDefaultProtocolHandler() {
-    // Register the app as the default handler for rotki:// protocol
+    // On Linux, registering a URL-scheme handler via xdg-settings can hijack the
+    // default text/html association on GNOME with old xdg-utils (issue #12323,
+    // xdg-utils#180). Run the registration inside a guard that snapshots and
+    // restores the text/html handler if our call corrupts it.
+    protectHtmlAssociation(this.logger, () => this.registerProtocolClient());
+  }
+
+  private registerProtocolClient(): boolean {
     if (process.defaultApp) {
-      // In development
-      if (process.argv.length >= 2) {
-        this.logger.info(`Registering ${process.execPath} ${process.argv[1]} as the default handler for rotki:// protocol`);
-        const registrationSuccess = app.setAsDefaultProtocolClient('rotki', process.execPath, [process.argv[1]]);
-        if (!registrationSuccess) {
-          this.protocolRegistrationFailed = true;
-          this.logger.warn(`Failed to register ${process.execPath} ${process.argv[1]} as the default handler for rotki:// protocol`);
-        }
-      }
-    }
-    else {
-      // In production
-      this.logger.info(`Registering the app as the default handler for rotki:// protocol`);
-      const registrationSuccess = app.setAsDefaultProtocolClient('rotki');
+      // In development we always (re)register so rotki:// deep links point at the
+      // current dev binary. On Linux app.isDefaultProtocolClient ignores the
+      // path/args, so guarding here would wrongly skip when a production install
+      // already claimed the scheme.
+      if (process.argv.length < 2)
+        return false;
+
+      const devArgs = [process.argv[1]];
+      this.logger.info(`Registering ${process.execPath} ${process.argv[1]} as the default handler for rotki:// protocol`);
+      const registrationSuccess = app.setAsDefaultProtocolClient('rotki', process.execPath, devArgs);
       if (!registrationSuccess) {
         this.protocolRegistrationFailed = true;
-        this.logger.warn(`Failed to register the app as the default handler for rotki:// protocol`);
+        this.logger.warn(`Failed to register ${process.execPath} ${process.argv[1]} as the default handler for rotki:// protocol`);
       }
+      return true;
     }
+
+    // In production, skip re-registering when we are already the default handler
+    // so we do not re-run the (destructive on affected Linux setups) xdg-settings
+    // call on every launch.
+    if (app.isDefaultProtocolClient('rotki')) {
+      this.logger.info('rotki:// protocol handler already registered; skipping');
+      return false;
+    }
+
+    this.logger.info(`Registering the app as the default handler for rotki:// protocol`);
+    const registrationSuccess = app.setAsDefaultProtocolClient('rotki');
+    if (!registrationSuccess) {
+      this.protocolRegistrationFailed = true;
+      this.logger.warn(`Failed to register the app as the default handler for rotki:// protocol`);
+    }
+    return true;
   }
 
   private async initialize() {

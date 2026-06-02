@@ -21,6 +21,13 @@ Changelog
 * :bug:`-` The login screen no longer pre-fills the username field with a remembered account that no longer exists.
 * :feature:`12002` Adding or editing a history event now uses a plain-language "Action" picker grouped by intent (Trade, Transfer, DeFi, Staking, etc.) with search and keyboard navigation, replacing the raw event-type and subtype dropdowns.
 * :feature:`12086` The "Create account" flow now starts with a mode chooser so creating a new local profile and restoring a database synced from rotki cloud are separate, focused paths.
+* :bug:`-` When you unignore an asset from a history event, its group no longer keeps flagging hidden ignored assets, so you are not misled into thinking events are still hidden when there is nothing left to reveal.
+* :bug:`-` In an expanded linked movement, each leg now shows its own location icon: the exchange icon on the exchange deposit/withdrawal and the chain icon on the on-chain transfer leg, instead of the exchange icon incorrectly appearing on the on-chain leg.
+* :bug:`-` Tags on manually tracked balances are no longer dropped (or shown on the wrong balance) after updating, for users who had previously deleted a manual balance. The faulty cleanup that orphaned those tags is also reverted.
+* :bug:`-` A temporary node/indexer failure during token detection no longer wipes the previously detected tokens for an address. The cached token list is now kept intact until a successful detection can replace it, so balances no longer silently go missing after a transient RPC error.
+* :bug:`-` HTX balances are no longer under-reported. Funds locked in open orders (and balances of an asset held across multiple HTX account types) are now summed instead of overwriting each other.
+* :bug:`12329` ENS domain extensions made through the renewal wrapper are now decoded as renewal events.
+* :bug:`12323` rotki no longer hijacks the system's default browser for HTML files on Linux (GNOME with older xdg-utils) when registering its ``rotki://`` link handler, and restores the association for users already affected by a previous version.
 * :bug:`-` Special-cased asset prices are no longer shown in USD by mistake for non-USD main currencies when the exchange rate is temporarily unavailable.
 * :bug:`-` Tags of an address tracked on multiple chains are now kept when you remove the address from only one of those chains.
 * :bug:`-` Changing the selected trade pairs of a Binance or Binance US exchange now correctly fetches the history of the newly added pairs.

@@ -866,6 +866,48 @@ def test_for_truncated_labelhash(ethereum_inquirer, ethereum_accounts, add_subgr
 
 
 @pytest.mark.vcr
+@pytest.mark.parametrize('ethereum_accounts', [['0x5e4D630C35ef5c23ac57cF6bf8f2267D9E3CB78F']])
+def test_extension_via_wrapper(ethereum_inquirer, ethereum_accounts):
+    """Test extending an ENS name through the renewal wrapper."""
+    tx_hash = deserialize_evm_tx_hash('0x8365058e30784fd8df69d7b7fc9d9f2744f75069b89362e2c8d48cd16ee9105e')  # noqa: E501
+    user_address = ethereum_accounts[0]
+    events, decoder = get_decoded_events_of_transaction(
+        evm_inquirer=ethereum_inquirer,
+        tx_hash=tx_hash,
+    )
+    assert events == [
+        EvmEvent(
+            tx_ref=tx_hash,
+            sequence_index=0,
+            timestamp=(timestamp := TimestampMS(1780304555000)),
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_ETH,
+            amount=FVal(gas_str := '0.000019979395167774'),
+            location_label=user_address,
+            notes=f'Burn {gas_str} ETH for gas',
+            counterparty=CPT_GAS,
+            address=None,
+        ), EvmEvent(
+            tx_ref=tx_hash,
+            sequence_index=2,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.RENEW,
+            event_subtype=HistoryEventSubType.NONE,
+            asset=A_ETH,
+            amount=FVal(renewal_amount := '0.007576424869459731'),
+            location_label=user_address,
+            notes=f'Renew ENS name celka.eth for {renewal_amount} ETH until {decoder.decoders["Ens"].timestamp_to_date(Timestamp(1874993627))}',  # noqa: E501
+            counterparty=CPT_ENS,
+            address=string_to_evm_address('0xf55575Bde5953ee4272d5CE7cdD924c74d8fA81A'),
+            extra_data={'name': 'celka.eth', 'expires': Timestamp(1874993627)},
+        ),
+    ]
+
+
+@pytest.mark.vcr
 @pytest.mark.parametrize('ethereum_accounts', [[ADDY]])
 def test_vote_cast(ethereum_inquirer, ethereum_accounts):
     """Test voting for ENS governance"""

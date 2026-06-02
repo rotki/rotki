@@ -185,10 +185,12 @@ jobs:
 
       - name: Install Playwright browsers
         if: steps.playwright-cache.outputs.cache-hit != 'true'
+        timeout-minutes: 10
         working-directory: ./frontend/app
         run: npx playwright install chromium
 
       - name: Install Playwright system dependencies
+        timeout-minutes: 10
         working-directory: ./frontend/app
         run: npx playwright install-deps chromium
 

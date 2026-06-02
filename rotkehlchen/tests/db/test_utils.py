@@ -7,6 +7,7 @@ from rotkehlchen.db.utils import (
     combine_asset_balances,
     db_tuple_to_str,
     form_query_to_filter_timestamps,
+    update_table_schema,
 )
 from rotkehlchen.fval import FVal
 from rotkehlchen.types import SUPPORTED_EVM_EVMLIKE_CHAINS, SupportedBlockchain
@@ -200,3 +201,51 @@ def test_db_tuple_to_str(data, tuple_type, expected_str):
 ])
 def test_get_chains_to_detect_evm_accounts(database, expected_chains):
     assert set(database.get_chains_to_detect_evm_accounts()) == expected_chains
+
+
+def test_update_table_schema_rejects_pk_renumber(database):
+    """update_table_schema must refuse to silently renumber an existing INTEGER PRIMARY KEY,
+    since that orphans external references (e.g. tag_mappings.object_reference). It is allowed
+    only when the id is preserved, or explicitly opted into via allow_pk_renumber."""
+    schema = 'id INTEGER PRIMARY KEY, name TEXT'
+    with database.user_write() as write_cursor:
+        write_cursor.execute('CREATE TABLE pk_test (id INTEGER PRIMARY KEY, name TEXT)')
+        write_cursor.executemany(
+            'INSERT INTO pk_test(id, name) VALUES(?, ?)',
+            [(1, 'a'), (3, 'b')],  # gap at 2
+        )
+
+        def current_ids() -> list:
+            return write_cursor.execute('SELECT id FROM pk_test ORDER BY id').fetchall()
+
+        # dropping the id from an explicit insert_columns is rejected
+        with pytest.raises(ValueError, match='would renumber the INTEGER PRIMARY KEY'):
+            update_table_schema(
+                write_cursor=write_cursor,
+                table_name='pk_test',
+                schema=schema,
+                insert_columns='name',
+                insert_order='(name)',
+            )
+        write_cursor.execute('DROP TABLE IF EXISTS pk_test_new')  # clean the half-built table
+
+        # including the id preserves the original ids (and the gap)
+        update_table_schema(
+            write_cursor=write_cursor,
+            table_name='pk_test',
+            schema=schema,
+            insert_columns='id, name',
+            insert_order='(id, name)',
+        )
+        assert current_ids() == [(1,), (3,)]
+
+        # explicit opt-in renumbers without raising
+        update_table_schema(
+            write_cursor=write_cursor,
+            table_name='pk_test',
+            schema=schema,
+            insert_columns='name',
+            insert_order='(name)',
+            allow_pk_renumber=True,
+        )
+        assert current_ids() == [(1,), (2,)]
