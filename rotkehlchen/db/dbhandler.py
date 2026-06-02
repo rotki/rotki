@@ -3288,43 +3288,36 @@ class DBHandler:
             globaldb.delete_asset_by_identifier(source_identifier)
 
         if userdb_query != 0:
-            with self.user_write() as write_cursor:
-                write_cursor.execute(  # merge the assets in the timed_balances table
-                    """
-                    WITH merged_rows AS (
-                        SELECT
-                            category,
-                            timestamp,
-                            currency,
-                            SUM(amount) AS total_amount,
-                            SUM(usd_value) AS total_usd_value
-                        FROM timed_balances
-                        WHERE currency IN (?, ?)
-                        GROUP BY category, timestamp
-                    )
-                    UPDATE timed_balances AS tb
-                    SET
-                        currency = ?,
-                        amount = mr.total_amount,
-                        usd_value = mr.total_usd_value
-                    FROM merged_rows mr
-                    WHERE
-                        tb.category = mr.category AND
-                        tb.timestamp = mr.timestamp AND
-                        tb.currency = mr.currency AND
-                        tb.currency IN (?, ?);
-                    """,
-                    (
-                        source_identifier,
-                        target_asset.identifier,
-                        target_asset.identifier,
-                        target_asset.identifier,
-                        source_identifier,
-                    ),
+            # Merge the source and target rows in the timed_balances table. The summation
+            # is done in python with FVal because amount/usd_value are TEXT columns holding
+            # arbitrary-precision values; SQLite's SUM() would coerce them to floats and
+            # corrupt the stored balances. Collapsing per (category, timestamp) here also
+            # guarantees a single resulting row, which a plain UPDATE could not (it would
+            # leave the target's own row behind, duplicating and double-counting it).
+            merged: dict[tuple[str, int], list[FVal]] = defaultdict(lambda: [ZERO, ZERO])
+            with self.conn.read_ctx() as cursor:
+                cursor.execute(
+                    'SELECT category, timestamp, amount, usd_value FROM timed_balances '
+                    'WHERE currency IN (?, ?)',
+                    (source_identifier, target_asset.identifier),
                 )
+                for category, timestamp, amount, usd_value in cursor:
+                    totals = merged[category, timestamp]
+                    totals[0] += FVal(amount)
+                    totals[1] += FVal(usd_value)
+
+            with self.user_write() as write_cursor:
                 write_cursor.execute(
-                    'DELETE FROM timed_balances WHERE currency=?',
-                    (source_identifier,),
+                    'DELETE FROM timed_balances WHERE currency IN (?, ?)',
+                    (source_identifier, target_asset.identifier),
+                )
+                write_cursor.executemany(
+                    'INSERT INTO timed_balances(category, timestamp, currency, amount, usd_value) '
+                    'VALUES(?, ?, ?, ?, ?)',
+                    [
+                        (category, timestamp, target_asset.identifier, str(amount), str(usd_value))
+                        for (category, timestamp), (amount, usd_value) in merged.items()
+                    ],
                 )
                 # the tricky part here is that we need to disable foreign keys for this
                 # approach and disabling foreign keys needs a commit. So rollback is impossible.
