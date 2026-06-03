@@ -187,16 +187,26 @@ def combine_nested_dicts_inplace(
     For each key in `b`, combines the inner dicts using the given operation.
     Returns the modified `a` for method chaining.
     """
+    missing = object()  # sentinel to distinguish missing keys from stored None values
+    is_subtraction = op is operator.sub
     for outer_key, inner_dict_b in b.items():
-        if outer_key not in a:  # create new inner dict with same default factory as b's inner dict
-            a[outer_key] = defaultdict(inner_dict_b.default_factory)
+        if (inner_dict_a := a.get(outer_key)) is None:
+            default_factory = inner_dict_b.default_factory
+            if is_subtraction:
+                a[outer_key] = defaultdict(default_factory, {
+                    inner_key: op(default_factory(), value_b)  # type: ignore[misc]
+                    for inner_key, value_b in inner_dict_b.items()
+                })
+            else:
+                a[outer_key] = defaultdict(default_factory, inner_dict_b)
+            continue
 
-        inner_dict_a = a[outer_key]
-        for inner_key, value_b in inner_dict_b.items():  # combine inner dictionaries
-            if inner_key in inner_dict_a:
-                inner_dict_a[inner_key] = op(inner_dict_a[inner_key], value_b)
-            elif op is operator.sub:
-                inner_dict_a[inner_key] = op(inner_dict_a.default_factory(), value_b)  # type: ignore[misc]
+        default_factory = inner_dict_a.default_factory
+        for inner_key, value_b in inner_dict_b.items():
+            if (value_a := inner_dict_a.get(inner_key, missing)) is not missing:
+                inner_dict_a[inner_key] = op(value_a, value_b)
+            elif is_subtraction:
+                inner_dict_a[inner_key] = op(default_factory(), value_b)  # type: ignore[misc]
             else:
                 inner_dict_a[inner_key] = value_b
     return a
