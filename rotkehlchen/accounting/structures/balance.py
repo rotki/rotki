@@ -1,7 +1,8 @@
 import operator
 from collections import defaultdict
+from collections.abc import Callable
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Self
 
 from rotkehlchen.constants import ZERO
 from rotkehlchen.errors.misc import InputError
@@ -183,28 +184,44 @@ class BalanceSheet:
             },
         }
 
+    def _merged_with(self, other: 'BalanceSheet', op: Callable) -> 'BalanceSheet':
+        """Return a new BalanceSheet combining self and other, without mutating either.
+
+        Used by the non-augmented operators (+, -, sum) so that `a + b` does not alter `a`.
+        """
+        result = self.copy()
+        combine_nested_dicts_inplace(a=result.assets, b=other.assets, op=op)
+        combine_nested_dicts_inplace(a=result.liabilities, b=other.liabilities, op=op)
+        return result
+
+    def _merge_inplace(self, other: 'BalanceSheet', op: Callable) -> Self:
+        """Merge other into self in place and return self.
+
+        Used by the augmented operators (+=, -=); this is the fast path relied upon by the
+        accumulation loops (e.g. recalculate_totals) and avoids copying the accumulator.
+        """
+        combine_nested_dicts_inplace(a=self.assets, b=other.assets, op=op)
+        combine_nested_dicts_inplace(a=self.liabilities, b=other.liabilities, op=op)
+        return self
+
     def __add__(self, other: Any) -> 'BalanceSheet':
-        other = _evaluate_balance_sheet_input(other, 'addition')
-        return BalanceSheet(
-            assets=combine_nested_dicts_inplace(a=self.assets, b=other.assets, op=operator.add),
-            liabilities=combine_nested_dicts_inplace(a=self.liabilities, b=other.liabilities, op=operator.add),  # noqa: E501
-        )
+        return self._merged_with(_evaluate_balance_sheet_input(other, 'addition'), operator.add)
 
     def __radd__(self, other: Any) -> 'BalanceSheet':
-        if other == 0:
-            return self
+        if other == 0:  # identity element used by sum(); return a copy so the first
+            return self.copy()  # element of the summed iterable is never mutated
 
-        other = _evaluate_balance_sheet_input(other, 'addition')
-        return BalanceSheet(
-            assets=combine_nested_dicts_inplace(a=self.assets, b=other.assets, op=operator.add),
-            liabilities=combine_nested_dicts_inplace(a=self.liabilities, b=other.liabilities, op=operator.add),  # noqa: E501
-        )
+        return self._merged_with(_evaluate_balance_sheet_input(other, 'addition'), operator.add)
 
     def __sub__(self, other: Any) -> 'BalanceSheet':
-        other = _evaluate_balance_sheet_input(other, 'subtraction')
-        return BalanceSheet(
-            assets=combine_nested_dicts_inplace(a=self.assets, b=other.assets, op=operator.sub),
-            liabilities=combine_nested_dicts_inplace(a=self.liabilities, b=other.liabilities, op=operator.sub),  # noqa: E501
+        return self._merged_with(_evaluate_balance_sheet_input(other, 'subtraction'), operator.sub)
+
+    def __iadd__(self, other: Any) -> Self:
+        return self._merge_inplace(_evaluate_balance_sheet_input(other, 'addition'), operator.add)
+
+    def __isub__(self, other: Any) -> Self:
+        return self._merge_inplace(
+            _evaluate_balance_sheet_input(other, 'subtraction'), operator.sub,
         )
 
 
