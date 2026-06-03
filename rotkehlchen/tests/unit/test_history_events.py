@@ -27,6 +27,7 @@ from rotkehlchen.tests.utils.factories import (
 from rotkehlchen.types import ChecksumEvmAddress, Location, TimestampMS
 
 if TYPE_CHECKING:
+    from rotkehlchen.assets.asset import Asset
     from rotkehlchen.db.dbhandler import DBHandler
 
 
@@ -295,3 +296,38 @@ def test_edit_bitcoin_event_updates_counterparty_mappings(database: 'DBHandler')
             'SELECT COUNT(*) FROM bitcoin_events_addresses WHERE event_identifier=?',
             (event_id,),
         ).fetchone()[0] == 0
+
+
+def test_add_history_events_sets_ignored_flag(database: 'DBHandler') -> None:
+    """Batch insert must set the `ignored` flag from the precomputed ignored-asset set: 1 for
+    events whose asset is ignored, 0 (the column default) otherwise. Regression test for the
+    optimization that replaced the per-event correlated subquery with a once-per-batch lookup.
+    """
+    events_db = DBHistoryEvents(database)
+    with database.user_write() as write_cursor:
+        database.add_to_ignored_assets(write_cursor=write_cursor, asset=A_BTC)
+
+    def make_event(group_identifier: str, asset: 'Asset') -> HistoryEvent:
+        return HistoryEvent(
+            group_identifier=group_identifier,
+            sequence_index=0,
+            timestamp=TimestampMS(1710000000000),
+            location=Location.KRAKEN,
+            event_type=HistoryEventType.RECEIVE,
+            event_subtype=HistoryEventSubType.NONE,
+            asset=asset,
+            amount=ONE,
+        )
+
+    with database.user_write() as write_cursor:
+        events_db.add_history_events(write_cursor=write_cursor, history=[
+            make_event('ignored_flag_test_btc', A_BTC),  # ignored asset -> ignored=1
+            make_event('ignored_flag_test_eth', A_ETH),  # not ignored -> stays 0
+        ])
+        ignored_by_asset = dict(write_cursor.execute(
+            'SELECT asset, ignored FROM history_events WHERE group_identifier IN (?, ?)',
+            ('ignored_flag_test_btc', 'ignored_flag_test_eth'),
+        ).fetchall())
+
+    assert ignored_by_asset[A_BTC.identifier] == 1
+    assert ignored_by_asset[A_ETH.identifier] == 0
