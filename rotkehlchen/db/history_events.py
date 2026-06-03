@@ -2429,18 +2429,30 @@ class DBHistoryEvents:
                     joined_events_result.ignored_group_identifiers,
                 )
 
-            # Include the newly loaded events with their associated groups.
+            # Include the newly loaded events with their associated groups. A movement can be
+            # matched with multiple events (manual multi-match), so the same joined group can be
+            # reachable from several groups present in the page. Track which joined groups have
+            # already been emitted to avoid adding their events more than once (e.g. the movement
+            # showing up twice when two of its matches are on the page but the movement isn't).
+            consumed_joined_groups: set[str] = set()
+
+            def extend_with_joined_group(events: list[HistoryBaseEntry], joined_group_id: str) -> None:  # noqa: E501
+                if joined_group_id in consumed_joined_groups:
+                    return
+                consumed_joined_groups.add(joined_group_id)
+                events.extend(joined_events_by_group[joined_group_id])
+
             for group_identifier, events in events_by_group.items():
                 if (match_info_list := movement_group_to_match_info.get(group_identifier)) is not None:  # noqa: E501
                     for _, matched_group_id, _ in match_info_list:
-                        events.extend(joined_events_by_group[matched_group_id])
+                        extend_with_joined_group(events, matched_group_id)
                 elif (movement_info := match_group_to_movement_info.get(group_identifier)) is not None:  # noqa: E501
-                    events.extend(joined_events_by_group[movement_group_id := movement_info[0]])
+                    extend_with_joined_group(events, movement_group_id := movement_info[0])
                     # also include all events from the groups of any other events that are
                     # matched with this movement.
                     if (match_info_list := movement_group_to_match_info.get(movement_group_id)) is not None:  # noqa: E501
                         for _, group_id, _ in match_info_list:
-                            events.extend(joined_events_by_group[group_id])
+                            extend_with_joined_group(events, group_id)
 
                 processed_events_result.extend(sorted(events, key=lambda event: event.timestamp))  # type: ignore  # will be a list of HistoryBaseEntry
 
