@@ -309,7 +309,7 @@ class RotkiDataUpdater:
             file_url = f'https://raw.githubusercontent.com/rotki/data/{self.branch}/updates/{UpdateType.ACCOUNTING_RULES.value}/v{update_version}.json'
             remote = query_file(file_url, True)  # RemoteError here aborts before any DB change
             if (data := remote.get(UpdateType.ACCOUNTING_RULES.value)) is None:
-                log.error(f'Remote update {file_url} does not contain accounting_rules key')
+                log.error('Remote update %s does not contain accounting_rules key', file_url)
                 continue
 
             rules_data.extend(data)
@@ -335,7 +335,7 @@ class RotkiDataUpdater:
                 try:
                     event_type, event_subtype, counterparty, rule = _deserialize_accounting_rule(rule_data)  # noqa: E501
                 except (KeyError, DeserializationError) as e:
-                    log.error(f'Failed to read key {e} while resetting accounting rules')
+                    log.error('Failed to read key %s while resetting accounting rules', e)
                     continue
 
                 rules_db.add_accounting_rule(
