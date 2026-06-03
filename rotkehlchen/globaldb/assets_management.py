@@ -112,7 +112,7 @@ def export_assets_from_file(
             user_db_cursor=user_cursor,
             user_db=db_handler,
         )
-        log.debug(f'Exporting {len(assets)} user assets. Asset ids retrieval took {perf_counter() - assets_fetch_start:.3f}s')  # noqa: E501
+        log.debug('Exporting %s user assets. Asset ids retrieval took %.3fs', len(assets), perf_counter() - assets_fetch_start)  # noqa: E501
         query = gdb_cursor.execute("SELECT value from settings WHERE name='version';")
         version = query.fetchone()[0]
 
@@ -122,7 +122,7 @@ def export_assets_from_file(
     for asset in globaldb.retrieve_assets_optimized(list(assets)):
         serialized.append(_normalize_asset_data_for_export(asset.to_dict()))
         found_assets.add(asset.identifier)
-    log.debug(f'Optimized serialization wrote {len(serialized)} assets in {perf_counter() - serialization_start:.3f}s')  # noqa: E501
+    log.debug('Optimized serialization wrote %s assets in %.3fs', len(serialized), perf_counter() - serialization_start)  # noqa: E501
 
     fallback_start = perf_counter()
     missing_assets = assets - found_assets
@@ -132,7 +132,7 @@ def export_assets_from_file(
         except UnknownAsset as e:
             log.error(e)
     if len(missing_assets) != 0:
-        log.debug(f'Fallback-resolved {len(missing_assets)} assets in {perf_counter() - fallback_start:.3f}s')  # noqa: E501
+        log.debug('Fallback-resolved %s assets in %.3fs', len(missing_assets), perf_counter() - fallback_start)  # noqa: E501
 
     json_start = perf_counter()
     data = {
@@ -147,6 +147,6 @@ def export_assets_from_file(
     with ZipFile(file=zip_path, mode='w', compression=ZIP_DEFLATED) as assets_zip:
         assets_zip.writestr('assets.json', data=json_data)
     log.debug(f'ZIP write took {perf_counter() - zip_write_start:.3f}s')
-    log.debug(f'Asset export completed with {len(serialized)} assets in {perf_counter() - export_start:.3f}s. Output: {zip_path}')  # noqa: E501
+    log.debug('Asset export completed with %s assets in %.3fs. Output: %s', len(serialized), perf_counter() - export_start, zip_path)  # noqa: E501
 
     return zip_path

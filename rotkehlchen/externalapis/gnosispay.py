@@ -352,7 +352,7 @@ class GnosisPay:
             log.error(f'Could not query Gnosis Pay API due to {e!s}')
             return None
 
-        log.debug(f'Gnosis api query returned {len(data)} transactions')
+        log.debug('Gnosis api query returned %s transactions', len(data))
         # since this may contain more transactions than the one we need dont
         # let the query go to waste and update data for all
         for entry in data:

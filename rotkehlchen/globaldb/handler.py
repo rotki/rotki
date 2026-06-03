@@ -2102,7 +2102,7 @@ class GlobalDBHandler:
         unique_asset_ids = list(dict.fromkeys(asset_ids))
         chunks = get_query_chunks(unique_asset_ids, chunk_size=500)
         total_chunks = len(chunks)
-        log.debug(f'Starting optimized assets retrieval for {len(unique_asset_ids)} ids in {total_chunks} chunks')  # noqa: E501
+        log.debug('Starting optimized assets retrieval for %s ids in %s chunks', len(unique_asset_ids), total_chunks)  # noqa: E501
         retrieval_start = perf_counter()
         connection = GlobalDBHandler().packaged_db_conn() if use_packaged_db is True else GlobalDBHandler().conn  # noqa: E501
         yielded_assets = 0
@@ -2175,7 +2175,7 @@ class GlobalDBHandler:
                         underlying_tokens=underlying_tokens_map.get(row[0]),
                     )
 
-                log.debug(f'Chunk {chunk_index}/{total_chunks} resolved {len(rows)} assets in {perf_counter() - chunk_start:.3f}s')  # noqa: E501
+                log.debug('Chunk %s/%s resolved %s assets in %.3fs', chunk_index, total_chunks, len(rows), perf_counter() - chunk_start)  # noqa: E501
 
         log.debug(f'Optimized assets retrieval completed: yielded {yielded_assets} assets in {perf_counter() - retrieval_start:.3f}s')  # noqa: E501
 

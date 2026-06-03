@@ -1220,7 +1220,7 @@ class EVMTransactionDecoder(TransactionDecoder['EvmTransaction', EvmDecodingRule
         has been decoded.
         """
         if events is not None:
-            log.debug(f'Executing post processing with {len(events)} events and {refresh_balances=}')  # noqa: E501
+            log.debug('Executing post processing with %s events and refresh_balances=%s', len(events), refresh_balances)  # noqa: E501
             counterparties_to_events = defaultdict(list)
             for event in events:
                 if event.counterparty is None:

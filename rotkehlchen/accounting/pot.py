@@ -116,7 +116,8 @@ class AccountingPot(CustomizableDateMixin):
         if len(self._pending_report_rows) >= REPORT_ROWS_FLUSH_SIZE:
             self.flush_pending_report_rows()
 
-        log.debug(event.to_string(self.timestamp_to_date))
+        if log.isEnabledFor(logging.DEBUG):  # event.to_string() is expensive; skip if disabled
+            log.debug(event.to_string(self.timestamp_to_date))
 
     def flush_pending_report_rows(self) -> None:
         """Persist any buffered processed-event rows to the transient report DB in a single
