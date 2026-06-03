@@ -10,7 +10,6 @@ from rotkehlchen.db.constants import HISTORY_MAPPING_KEY_STATE, HistoryMappingSt
 from rotkehlchen.db.filtering import HistoryEventFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.db.settings import CachedSettings
-from rotkehlchen.errors.asset import UnknownAsset, WrongAssetType
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.data_issues.constants import IssueKind
 from rotkehlchen.history.data_issues.manager import DataIssuesManager
@@ -26,7 +25,6 @@ from rotkehlchen.utils.misc import ts_ms_to_sec, ts_now
 from rotkehlchen.utils.mixins.lockable import skip_if_running
 
 if TYPE_CHECKING:
-    from rotkehlchen.assets.asset import Asset
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.db.drivers.gevent import DBCursor
     from rotkehlchen.history.events.structures.base import HistoryBaseEntry
@@ -38,11 +36,9 @@ log = RotkehlchenLogsAdapter(logger)
 EventTypeSubtypePairs: TypeAlias = set[tuple[HistoryEventType, HistoryEventSubType]]
 
 # Event subtypes that route to a protocol bucket (single bucket).
-# These represent positions within a protocol (e.g., receiving aTokens, generating debt).
+# These represent positions within a protocol (e.g., generating debt).
 PROTOCOL_BUCKET_SUBTYPES: Final = {
-    HistoryEventSubType.RECEIVE_WRAPPED,
     HistoryEventSubType.GENERATE_DEBT,
-    HistoryEventSubType.RETURN_WRAPPED,
     HistoryEventSubType.PAYBACK_DEBT,
 }
 
@@ -67,23 +63,7 @@ DUAL_BUCKET_TRANSFER_EVENTS: Final[EventTypeSubtypePairs] = {
     (HistoryEventType.TRANSFER, HistoryEventSubType.DONATE),
 }
 
-# Events where wrapped tokens with a protocol attribute move between protocol buckets.
-# Example: depositing Balancer LP into Aura gauge moves from balancer bucket to aura bucket.
-DUAL_BUCKET_WRAPPED_EVENTS: Final[EventTypeSubtypePairs] = {
-    (HistoryEventType.DEPOSIT, HistoryEventSubType.DEPOSIT_FOR_WRAPPED),
-    (HistoryEventType.WITHDRAWAL, HistoryEventSubType.REDEEM_WRAPPED),
-}
-
 METRICS_BATCH_SIZE: Final = 500
-
-
-def _get_asset_protocol(asset: 'Asset') -> str | None:
-    if not asset.is_evm_token():
-        return None
-    try:
-        return asset.resolve_to_evm_token().protocol
-    except (UnknownAsset, WrongAssetType):
-        return None
 
 
 class Bucket(NamedTuple):
@@ -121,21 +101,16 @@ class Bucket(NamedTuple):
 
         Handles the following cases:
         - Protocol deposits/withdrawals: affects both wallet and protocol buckets
-        - Transfers: affects sender (OUT) and receiver (IN) buckets. If the transferred
-          asset has a protocol attribute (e.g., Curve LP, Balancer LP), both sender and
-          receiver use that protocol's bucket; otherwise, wallet buckets are used.
-        - Wrapped token deposits/redemptions: updates balances in both source and
-          destination protocol buckets (e.g., depositing Balancer LP into Aura updates
-          the Balancer bucket with OUT and the Aura bucket with IN)
-        - Wrapped tokens and debt positions: tracked in protocol bucket
-        - Everything else: tracked in wallet bucket, or protocol bucket if asset has protocol
+        - Transfers: affects sender (OUT) and receiver (IN) wallet buckets.
+        - Wrapped token deposits/redemptions: tracked as wallet-held asset conversions
+        - Debt positions: tracked in protocol bucket
+        - Everything else: tracked in wallet bucket
         """
         location = event.location.serialize_for_db()
         asset = event.asset.resolve_swapped_for().identifier
         event_key = (event.event_type, event.event_subtype)
         counterparty = getattr(event, 'counterparty', None)
         address = getattr(event, 'address', None)
-        asset_protocol = _get_asset_protocol(event.asset)
 
         if (  # Depositing/withdrawing to protocols affects both wallet and protocol buckets
             event_key in DUAL_BUCKET_PROTOCOL_EVENTS and
@@ -146,7 +121,7 @@ class Bucket(NamedTuple):
                 (cls(  # type: ignore[list-item]  # wallet_direction will not be neutral for dual bucket protocol events.
                     location=location,
                     location_label=event.location_label,
-                    protocol=asset_protocol,
+                    protocol=None,
                     asset=asset,
                 ), wallet_direction),
                 (cls(
@@ -157,7 +132,7 @@ class Bucket(NamedTuple):
                 ), EventDirection.IN if wallet_direction == EventDirection.OUT else EventDirection.OUT),  # noqa: E501
             ]
 
-        if (  # Transfers affect both sender and receiver. Protocol tokens use protocol buckets.
+        if (  # Transfers affect both sender and receiver wallet buckets.
             event_key in DUAL_BUCKET_TRANSFER_EVENTS and
             address is not None
         ):
@@ -165,40 +140,13 @@ class Bucket(NamedTuple):
                 (cls(
                     location=location,
                     location_label=event.location_label,
-                    protocol=asset_protocol,
+                    protocol=None,
                     asset=asset,
                 ), EventDirection.OUT),
                 (cls(
                     location=location,
                     location_label=address,
-                    protocol=asset_protocol,
-                    asset=asset,
-                ), EventDirection.IN),
-            ]
-
-        if (  # Wrapping protocol tokens moves between protocol buckets (e.g. Balancer LP to Aura)
-            event_key in DUAL_BUCKET_WRAPPED_EVENTS and
-            counterparty is not None and
-            asset_protocol is not None
-        ):
-            if event_key == (HistoryEventType.DEPOSIT, HistoryEventSubType.DEPOSIT_FOR_WRAPPED):
-                src_protocol, dst_protocol = asset_protocol, counterparty
-            elif event_key == (HistoryEventType.WITHDRAWAL, HistoryEventSubType.REDEEM_WRAPPED):
-                src_protocol, dst_protocol = counterparty, asset_protocol
-            else:
-                log.error(f'Unexpected event_key {event_key} in DUAL_BUCKET_WRAPPED_EVENTS')
-                return []
-            return [
-                (cls(
-                    location=location,
-                    location_label=event.location_label,
-                    protocol=src_protocol,
-                    asset=asset,
-                ), EventDirection.OUT),
-                (cls(
-                    location=location,
-                    location_label=event.location_label,
-                    protocol=dst_protocol,
+                    protocol=None,
                     asset=asset,
                 ), EventDirection.IN),
             ]
@@ -217,11 +165,12 @@ class Bucket(NamedTuple):
                 asset=asset,
             ), direction)]
 
-        # Everything else: wallet bucket, or protocol bucket if asset has protocol
+        # Everything else: wallet bucket. Token protocol metadata describes asset identity,
+        # not custody.
         return [(cls(
             location=location,
             location_label=event.location_label,
-            protocol=asset_protocol,
+            protocol=None,
             asset=asset,
         ), direction)]
 
@@ -418,29 +367,6 @@ def _write_metrics_batch(
     )
 
 
-def _resolve_protocol_out_bucket(
-        bucket: Bucket,
-        bucket_balances: dict[Bucket, FVal],
-        amount: FVal,
-) -> Bucket | None:
-    """Find a protocol bucket to spend from when the wallet bucket has insufficient balance."""
-    if bucket.protocol is not None:
-        return None
-
-    matching_buckets = [
-        protocol_bucket for protocol_bucket, balance in bucket_balances.items()
-        if protocol_bucket.location == bucket.location and
-        protocol_bucket.location_label == bucket.location_label and
-        protocol_bucket.asset == bucket.asset and
-        protocol_bucket.protocol is not None and
-        balance >= amount
-    ]
-    if len(matching_buckets) != 1:
-        return None
-
-    return matching_buckets[0]
-
-
 def _apply_to_buckets(
         database: 'DBHandler',
         event: 'HistoryBaseEntry',
@@ -459,46 +385,37 @@ def _apply_to_buckets(
         if direction == EventDirection.IN:
             new_balance = current_balance + event.amount
         elif (new_balance := current_balance - event.amount) < ZERO:  # direction == EventDirection.OUT (direction from from_event will not be NEUTRAL) # noqa: E501
-            if (protocol_bucket := _resolve_protocol_out_bucket(
-                bucket=bucket,
-                bucket_balances=bucket_balances,
-                amount=event.amount,
-            )) is not None:
-                bucket = protocol_bucket
-                current_balance = bucket_balances[bucket]
-                new_balance = current_balance - event.amount
-            else:
-                database.msg_aggregator.add_message(
-                    message_type=WSMessageType.NEGATIVE_BALANCE_DETECTED,
-                    data={
-                        'event_identifier': event.identifier,
-                        'group_identifier': event.group_identifier,
-                        'asset': event.asset.identifier,
-                        'bucket': bucket.serialize(),
-                        'balance_before': str(current_balance),
-                        'last_run_ts': last_run_ts,
-                    },
-                )
-                DataIssuesManager(database).write_issue(
-                    IssueKind.NEGATIVE_BALANCE,
-                    location=bucket.location,
-                    location_label=bucket.location_label,
-                    protocol=bucket.protocol,
-                    asset=bucket.asset,
-                    payload={
-                        'event_identifier': event.identifier,
-                        'in_memory_negative_amount': str(new_balance),
-                        'derived_balance_before_event': str(current_balance),
-                    },
-                    ts_start=event.timestamp,
-                    ts_end=event.timestamp,
-                )
-                log.warning(
-                    f'Negative balance detected for {event.asset.identifier} '
-                    f'at event {event.identifier}. Skipping {bucket}.',
-                )
-                bucket_balances[bucket] = new_balance
-                continue
+            database.msg_aggregator.add_message(
+                message_type=WSMessageType.NEGATIVE_BALANCE_DETECTED,
+                data={
+                    'event_identifier': event.identifier,
+                    'group_identifier': event.group_identifier,
+                    'asset': event.asset.identifier,
+                    'bucket': bucket.serialize(),
+                    'balance_before': str(current_balance),
+                    'last_run_ts': last_run_ts,
+                },
+            )
+            DataIssuesManager(database).write_issue(
+                IssueKind.NEGATIVE_BALANCE,
+                location=bucket.location,
+                location_label=bucket.location_label,
+                protocol=bucket.protocol,
+                asset=bucket.asset,
+                payload={
+                    'event_identifier': event.identifier,
+                    'in_memory_negative_amount': str(new_balance),
+                    'derived_balance_before_event': str(current_balance),
+                },
+                ts_start=event.timestamp,
+                ts_end=event.timestamp,
+            )
+            log.warning(
+                f'Negative balance detected for {event.asset.identifier} '
+                f'at event {event.identifier}. Skipping {bucket}.',
+            )
+            bucket_balances[bucket] = new_balance
+            continue
 
         bucket_balances[bucket] = new_balance
         metrics_batch.append((

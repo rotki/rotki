@@ -484,12 +484,12 @@ def test_transfer_updates_sender_and_receiver_buckets(
     1. Receive 10 ETH -> wallet1 = 10
     2. Transfer 3 ETH to wallet2 -> wallet1 = 7, wallet2 = 3
 
-    Protocol token transfer uses protocol buckets:
-    3. Receive 10 Balancer LP -> wallet1 Balancer = 10
-    4. Transfer 3 LP to wallet2 -> wallet1 Balancer = 7, wallet2 Balancer = 3
+    Protocol token transfer uses wallet buckets:
+    3. Receive 10 Balancer LP -> wallet1 = 10
+    4. Transfer 3 LP to wallet2 -> wallet1 = 7, wallet2 = 3
 
-    Protocol tokens from untracked address use protocol bucket:
-    5. Receive 5 LP via RECEIVE/NONE -> wallet1 Balancer = 12
+    Protocol tokens from untracked address use wallet bucket:
+    5. Receive 5 LP via RECEIVE/NONE -> wallet1 = 12
     """
     balancer_lp_token = get_or_create_evm_token(
         userdb=database,
@@ -544,7 +544,7 @@ def test_transfer_updates_sender_and_receiver_buckets(
                 amount=FVal('3'),
                 location_label=TEST_ADDR1,
                 address=TEST_ADDR2,
-            ), EvmEvent(  # protocol token from untracked address uses protocol bucket
+            ), EvmEvent(  # protocol token from untracked address uses wallet bucket
                 tx_ref=make_evm_tx_hash(),
                 sequence_index=0,
                 timestamp=TimestampMS(5000),
@@ -567,10 +567,10 @@ def test_transfer_updates_sender_and_receiver_buckets(
             (1000, A_ETH.identifier, TEST_ADDR1, None, '10'),  # wallet1: 0 + 10 = 10
             (2000, A_ETH.identifier, TEST_ADDR2, None, '3'),  # wallet2: 0 + 3 = 3
             (2000, A_ETH.identifier, TEST_ADDR1, None, '7'),  # wallet1: 10 - 3 = 7
-            (3000, balancer_lp_token.identifier, TEST_ADDR1, CPT_BALANCER_V2, '10'),  # 0 + 10 = 10
-            (4000, balancer_lp_token.identifier, TEST_ADDR2, CPT_BALANCER_V2, '3'),  # 0 + 3 = 3
-            (4000, balancer_lp_token.identifier, TEST_ADDR1, CPT_BALANCER_V2, '7'),  # 10 - 3 = 7
-            (5000, balancer_lp_token.identifier, TEST_ADDR1, CPT_BALANCER_V2, '12'),  # 7 + 5 = 12
+            (3000, balancer_lp_token.identifier, TEST_ADDR1, None, '10'),  # 0 + 10 = 10
+            (4000, balancer_lp_token.identifier, TEST_ADDR2, None, '3'),  # 0 + 3 = 3
+            (4000, balancer_lp_token.identifier, TEST_ADDR1, None, '7'),  # 10 - 3 = 7
+            (5000, balancer_lp_token.identifier, TEST_ADDR1, None, '12'),  # 7 + 5 = 12
         ]
 
 
@@ -700,16 +700,16 @@ def test_staking_deposit_and_withdraw_updates_wallet_and_protocol_buckets(
         ]
 
 
-def test_wrapped_deposit_and_redeem_moves_between_protocol_buckets(
+def test_wrapped_deposit_and_redeem_updates_wallet_bucket(
         database: 'DBHandler',
         messages_aggregator: 'MessagesAggregator',
 ) -> None:
     """Test DEPOSIT_FOR_WRAPPED and REDEEM_WRAPPED with protocol assets.
 
     Simulates Balancer LP token flow through Aura Finance gauge:
-    1. Receive 10 LP from Balancer -> Balancer bucket = 10
-    2. Deposit 6 LP into Aura -> Balancer = 4, Aura = 6
-    3. Redeem 3 LP from Aura -> Balancer = 7, Aura = 3
+    1. Receive 10 LP from Balancer -> wallet bucket = 10
+    2. Deposit 6 LP into Aura -> wallet bucket = 4
+    3. Redeem 3 LP from Aura -> wallet bucket = 7
     """
     balancer_lp_token = get_or_create_evm_token(
         userdb=database,
@@ -764,11 +764,9 @@ def test_wrapped_deposit_and_redeem_moves_between_protocol_buckets(
             'SELECT timestamp, location_label, protocol, metric_value FROM event_metrics '
             'ORDER BY timestamp, protocol',
         ).fetchall() == [
-            (1000, TEST_ADDR1, CPT_BALANCER_V2, '10'),  # 0 + 10 = 10
-            (2000, TEST_ADDR1, CPT_AURA_FINANCE, '6'),  # 0 + 6 = 6
-            (2000, TEST_ADDR1, CPT_BALANCER_V2, '4'),  # 10 - 6 = 4
-            (3000, TEST_ADDR1, CPT_AURA_FINANCE, '3'),  # 6 - 3 = 3
-            (3000, TEST_ADDR1, CPT_BALANCER_V2, '7'),  # 4 + 3 = 7
+            (1000, TEST_ADDR1, None, '10'),  # 0 + 10 = 10
+            (2000, TEST_ADDR1, None, '4'),  # 10 - 6 = 4
+            (3000, TEST_ADDR1, None, '7'),  # 4 + 3 = 7
         ]
 
 
@@ -942,11 +940,11 @@ def test_weth_wrap_then_swap_updates_wallet_buckets(
     """Test ETH wrapping followed by WETH swap updates the wallet WETH bucket.
 
     1. Receive 1 ETH -> ETH wallet = 1
-    2. Wrap 1 ETH -> ETH wallet = 0, WETH protocol bucket = 1
-    3. Swap 1 WETH for 3000 DAI -> WETH protocol bucket = 0, DAI wallet = 3000
+    2. Wrap 1 ETH -> ETH wallet = 0, WETH wallet bucket = 1
+    3. Swap 1 WETH for 3000 DAI -> WETH wallet bucket = 0, DAI wallet = 3000
 
-    This guards against OUT events for assets held in protocol buckets being deducted from the
-    wallet bucket instead.
+    This guards against wrapped assets being routed to the event protocol bucket instead of
+    the wallet bucket.
     """
     with database.user_write() as write_cursor:
         DBHistoryEvents(database).add_history_events(
@@ -1015,20 +1013,20 @@ def test_weth_wrap_then_swap_updates_wallet_buckets(
         ).fetchall() == [
             (1000, A_ETH.identifier, TEST_ADDR1, None, '1'),
             (2000, A_ETH.identifier, TEST_ADDR1, None, '0'),
-            (2000, A_WETH.identifier, TEST_ADDR1, CPT_WETH, '1'),
+            (2000, A_WETH.identifier, TEST_ADDR1, None, '1'),
             (3000, A_DAI.identifier, TEST_ADDR1, None, '3000'),
-            (3000, A_WETH.identifier, TEST_ADDR1, CPT_WETH, '0'),
+            (3000, A_WETH.identifier, TEST_ADDR1, None, '0'),
         ]
 
 
-def test_protocol_token_spend_from_protocol_bucket(
+def test_protocol_token_spend_from_wallet_bucket(
         database: 'DBHandler',
         messages_aggregator: 'MessagesAggregator',
 ) -> None:
-    """Test non-trade OUT event deducts from the protocol bucket for protocol tokens.
+    """Test non-trade OUT event deducts from the wallet bucket for protocol tokens.
 
-    1. Receive 10 Balancer LP via RECEIVE_WRAPPED -> Balancer bucket = 10
-    2. Spend 3 LP via SPEND/NONE -> Balancer bucket = 7
+    1. Receive 10 Balancer LP via RECEIVE_WRAPPED -> wallet bucket = 10
+    2. Spend 3 LP via SPEND/NONE -> wallet bucket = 7
     """
     balancer_lp_token = get_or_create_evm_token(
         userdb=database,
@@ -1071,8 +1069,8 @@ def test_protocol_token_spend_from_protocol_bucket(
             'SELECT timestamp, asset, location_label, protocol, metric_value FROM event_metrics '
             'ORDER BY timestamp, metric_value',
         ).fetchall() == [
-            (1000, balancer_lp_token.identifier, TEST_ADDR1, CPT_BALANCER_V2, '10'),
-            (2000, balancer_lp_token.identifier, TEST_ADDR1, CPT_BALANCER_V2, '7'),
+            (1000, balancer_lp_token.identifier, TEST_ADDR1, None, '10'),
+            (2000, balancer_lp_token.identifier, TEST_ADDR1, None, '7'),
         ]
 
 
@@ -1083,14 +1081,11 @@ def test_staking_protocol_lp_token_received_from_untracked_address(
     """Test staking a protocol LP token that was received via RECEIVE/NONE from untracked address.
 
     When a protocol LP token (e.g., HOP LP) is received from an untracked address, it goes into
-    the protocol bucket. When later staking that token, the withdrawal should come from the
-    protocol bucket, not the wallet bucket.
+    the wallet bucket. When later staking that token, the withdrawal comes from the wallet bucket
+    and the protocol bucket gets the explicit custody increase.
 
-    Since asset_protocol == counterparty (both 'hop'), both buckets are the same, so the net
-    balance remains unchanged (10 - 5 + 5 = 10). The key is that no negative balance error occurs.
-
-    1. Receive 10 HOP LP via RECEIVE/NONE -> hop bucket = 10
-    2. Stake 5 HOP LP to HOP -> hop bucket = 10 (same bucket: -5 out, +5 in)
+    1. Receive 10 HOP LP via RECEIVE/NONE -> wallet bucket = 10
+    2. Stake 5 HOP LP to HOP -> wallet bucket = 5, hop bucket = 5
     """
     hop_lp_token = get_or_create_evm_token(
         userdb=database,
@@ -1133,8 +1128,9 @@ def test_staking_protocol_lp_token_received_from_untracked_address(
             'SELECT timestamp, location_label, protocol, metric_value FROM event_metrics '
             'ORDER BY timestamp, protocol',
         ).fetchall() == [
-            (1000, TEST_ADDR1, CPT_HOP, '10'),  # hop bucket: 0 + 10 = 10
-            (2000, TEST_ADDR1, CPT_HOP, '10'),  # hop bucket: 10 - 5 + 5 = 10 (same bucket)
+            (1000, TEST_ADDR1, None, '10'),  # wallet bucket: 0 + 10 = 10
+            (2000, TEST_ADDR1, None, '5'),  # wallet bucket: 10 - 5 = 5
+            (2000, TEST_ADDR1, CPT_HOP, '5'),  # hop bucket: 0 + 5 = 5
         ]
 
 
