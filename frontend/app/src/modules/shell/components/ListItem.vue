@@ -1,11 +1,12 @@
 <script setup lang="ts">
-const { size = 'sm', title = '', subtitle = '', noPadding = false, noHover = false, loading = false } = defineProps<{
+const { size = 'sm', title = '', subtitle = '', noPadding = false, noHover = false, loading = false, blurContent = false } = defineProps<{
   size?: 'sm' | 'md' | 'lg';
   title?: string;
   subtitle?: string;
   noPadding?: boolean;
   noHover?: boolean;
   loading?: boolean;
+  blurContent?: boolean;
 }>();
 
 defineSlots<{
@@ -49,7 +50,10 @@ const avatarSizeClasses = computed<string>(() => {
         class="w-full h-full rounded-full"
       />
     </div>
-    <div class="flex-1 flex flex-col text-truncate leading-[1.25em]">
+    <div
+      class="flex-1 flex flex-col text-truncate leading-[1.25em]"
+      :class="{ blur: blurContent }"
+    >
       <template v-if="loading">
         <RuiSkeletonLoader class="mt-[3px] mb-1.5 w-8" />
         <RuiSkeletonLoader class="w-16 mb-0.5 h-3" />

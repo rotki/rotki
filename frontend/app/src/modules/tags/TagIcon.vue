@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { Tag } from '@/modules/tags/tags';
+import { useFrontendSettingsStore } from '@/modules/settings/use-frontend-settings-store';
 
 defineOptions({
   inheritAttrs: false,
@@ -10,10 +11,15 @@ const { tag, small = false, showDescription = false } = defineProps<{
   small?: boolean;
   showDescription?: boolean;
 }>();
+
+const { shouldShowAmount } = storeToRefs(useFrontendSettingsStore());
 </script>
 
 <template>
-  <div class="flex items-center overflow-hidden">
+  <div
+    class="flex items-center overflow-hidden"
+    :class="{ blur: !shouldShowAmount }"
+  >
     <RuiChip
       class="font-medium !rounded-md shrink-0"
       data-cy="tag"
