@@ -772,6 +772,32 @@ def test_special_price_unpriced_when_target_rate_unavailable(inquirer: 'Inquirer
     assert found_prices[A_KFEE][0] == Price(FVal('0.009'))  # 0.01 USD * 0.9 USD/EUR
 
 
+@pytest.mark.parametrize('should_mock_current_price_queries', [False])
+def test_special_price_cached_for_non_usd_target(inquirer: 'Inquirer') -> None:
+    """Regression test: for a non-USD target currency the underlying onchain USD price of a
+    protocol/LP token must be queried only once and then served from cache (converted to the
+    target currency). Previously only the USD price was cached while lookups used the
+    (asset, target) key, so every balance refresh re-ran the underlying onchain price query
+    (e.g. a curve/yearn multicall) for non-USD main currencies.
+    """
+    token = A_CRV  # a plain evm token that reaches the _maybe_get_evm_token_usd_price branch
+    with (
+        patch.object(
+            Inquirer,
+            '_maybe_get_evm_token_usd_price',
+            return_value=(Price(FVal('1.05')), CurrentPriceOracle.BLOCKCHAIN),
+        ) as usd_price_mock,
+        patch.object(Inquirer, 'find_price', return_value=Price(FVal('0.9'))),  # USD->EUR rate
+    ):
+        first = Inquirer.find_prices(from_assets=[token], to_asset=A_EUR, ignore_cache=True)
+        second = Inquirer.find_prices(from_assets=[token], to_asset=A_EUR)
+
+    # the second (normal) refresh must hit the cache instead of re-querying the onchain price
+    assert usd_price_mock.call_count == 1, 'onchain USD price must be queried only once across refreshes'  # noqa: E501
+    assert first[token].is_close(FVal('1.05') * FVal('0.9'))  # 1.05 USD * 0.9 USD/EUR
+    assert second[token] == first[token]
+
+
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
 @pytest.mark.parametrize('should_mock_current_price_queries', [False])
 def test_find_asset_with_no_api_oracles(inquirer_defi):

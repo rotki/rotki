@@ -726,6 +726,18 @@ class Inquirer:
                     for from_asset in eur_collection_assets:
                         found_prices[from_asset] = eur_to_target, CurrentPriceOracle.FIAT
 
+        # Cache the resolved prices under the actual target currency so a subsequent query
+        # short-circuits in _preprocess_assets_to_query. Otherwise non-USD targets always miss
+        # the cache (only the USD price is cached in _maybe_get_evm_token_usd_price) and re-run
+        # the underlying onchain price query (e.g. the curve/yearn multicall) on every refresh.
+        now = ts_now()
+        for from_asset, (price, oracle) in found_prices.items():
+            if price != ZERO_PRICE:
+                Inquirer.set_cached_price(
+                    cache_key=(from_asset, to_asset),
+                    cached_price=CachedPriceEntry(price=price, time=now, oracle=oracle),
+                )
+
         return assets_without_special_price, found_prices
 
     @staticmethod
