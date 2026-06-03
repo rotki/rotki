@@ -219,7 +219,7 @@ class GoogleCalendarAPI:
 
     def sync_events(self, events: 'Sequence[CalendarEntry]') -> dict[str, Any]:
         """Sync rotki calendar events to Google Calendar."""
-        log.debug(f'Syncing {len(events)} calendar entries to Google Calendar')
+        log.debug('Syncing %s calendar entries to Google Calendar', len(events))
 
         if len(events) == 0:
             log.info('No calendar events found in rotki to sync')

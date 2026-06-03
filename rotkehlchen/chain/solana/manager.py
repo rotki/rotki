@@ -89,7 +89,7 @@ class SolanaManager(ChainManagerWithTransactions[SolanaAddress], ChainManagerWit
 
         total_lamports = sum(sa.lamports for sa in stake_accounts)
         staked_balance = lamports_to_sol(total_lamports)
-        log.debug(f'Found {len(stake_accounts)} stake accounts for {account} with total staked balance {staked_balance} SOL')  # noqa: E501
+        log.debug('Found %s stake accounts for %s with total staked balance %s SOL', len(stake_accounts), account, staked_balance)  # noqa: E501
         return staked_balance
 
     def get_token_balances(self, account: SolanaAddress) -> dict[Asset, FVal]:

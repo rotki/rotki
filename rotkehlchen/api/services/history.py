@@ -168,7 +168,7 @@ class HistoryService:
                 'message': msg,
                 'status_code': HTTPStatus.CONFLICT,
             }
-        log.debug(f'extracted {len(data["events"])} events from {filepath}')
+        log.debug('extracted %s events from %s', len(data['events']), filepath)
         self.rotkehlchen.accountant.process_history(
             start_ts=Timestamp(data['pnl_settings']['from_timestamp']),
             end_ts=Timestamp(data['pnl_settings']['to_timestamp']),

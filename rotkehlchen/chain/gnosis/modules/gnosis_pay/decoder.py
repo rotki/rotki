@@ -149,7 +149,7 @@ class GnosisPayDecoder(EvmDecoderInterface, ReloadableDecoderMixin):
             return
 
         # refunds are handled in a different way by the decoder so we don't try to query for them
-        log.debug(f'Executing gnosis pay post processing for {len(decoded_events)} events')
+        log.debug('Executing gnosis pay post processing for %s events', len(decoded_events))
         self.gnosispay_api.update_events(
             tx_timestamps={
                 event.tx_ref: event.get_timestamp_in_sec()

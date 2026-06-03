@@ -213,16 +213,17 @@ class BaseCostBasisMethod(ABC):
                     taxable_amount += remaining_sold_amount
                     taxable_bought_cost += acquisition_cost
 
-                log.debug(
-                    'Spend uses up part of historical acquisition',
-                    tax_status='TAX-FREE' if at_taxfree_period else 'TAXABLE',
-                    used_amount=remaining_sold_amount,
-                    from_amount=acquisition_event.amount,
-                    asset=spending_asset,
-                    acquisition_rate=acquisition_event.rate,
-                    profit_currency=settings.main_currency,
-                    time=timestamp_to_date(acquisition_event.timestamp),
-                )
+                if log.isEnabledFor(logging.DEBUG):  # avoid eager timestamp_to_date when disabled
+                    log.debug(
+                        'Spend uses up part of historical acquisition',
+                        tax_status='TAX-FREE' if at_taxfree_period else 'TAXABLE',
+                        used_amount=remaining_sold_amount,
+                        from_amount=acquisition_event.amount,
+                        asset=spending_asset,
+                        acquisition_rate=acquisition_event.rate,
+                        profit_currency=settings.main_currency,
+                        time=timestamp_to_date(acquisition_event.timestamp),
+                    )
                 matched_acquisitions.append(MatchedAcquisition(
                     amount=remaining_sold_amount,
                     event=acquisition_event,
@@ -245,15 +246,16 @@ class BaseCostBasisMethod(ABC):
                 taxable_amount += acquisition_event.remaining_amount
                 taxable_bought_cost += acquisition_cost
 
-            log.debug(
-                'Spend uses up entire historical acquisition',
-                tax_status='TAX-FREE' if at_taxfree_period else 'TAXABLE',
-                bought_amount=acquisition_event.remaining_amount,
-                asset=spending_asset,
-                acquisition_rate=acquisition_event.rate,
-                profit_currency=settings.main_currency,
-                time=timestamp_to_date(acquisition_event.timestamp),
-            )
+            if log.isEnabledFor(logging.DEBUG):  # avoid eager timestamp_to_date when disabled
+                log.debug(
+                    'Spend uses up entire historical acquisition',
+                    tax_status='TAX-FREE' if at_taxfree_period else 'TAXABLE',
+                    bought_amount=acquisition_event.remaining_amount,
+                    asset=spending_asset,
+                    acquisition_rate=acquisition_event.rate,
+                    profit_currency=settings.main_currency,
+                    time=timestamp_to_date(acquisition_event.timestamp),
+                )
             matched_acquisitions.append(MatchedAcquisition(
                 amount=acquisition_event.remaining_amount,
                 event=acquisition_event,

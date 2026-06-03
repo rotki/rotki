@@ -248,7 +248,7 @@ def _load_bucket_balances_before_ts(
         for row in cursor:
             bucket_balances[Bucket.from_db(row[:4])] = FVal(row[4])
 
-    log.debug(f'Loaded {len(bucket_balances)} bucket balances before ts={from_ts}')
+    log.debug('Loaded %s bucket balances before ts=%s', len(bucket_balances), from_ts)
     return bucket_balances
 
 
