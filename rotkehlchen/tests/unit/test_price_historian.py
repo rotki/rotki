@@ -621,3 +621,47 @@ def test_historical_price_underlying_tokens(globaldb: 'GlobalDBHandler') -> None
         max_seconds_distance=3600,
     )
     assert price == Price(FVal('67'))
+
+
+def test_historical_price_underlying_tokens_unpriced_when_a_leg_is_missing(
+        globaldb: 'GlobalDBHandler',
+) -> None:
+    """Regression test: a token valued from its underlying tokens must be reported as
+    unpriced when any underlying leg has no historical price, instead of returning a
+    too-low partial sum that the user would mistake for the real value."""
+    aave_weight, link_weight, crv_weight = FVal('0.6'), FVal('0.2'), FVal('0.2')
+    address = string_to_evm_address('0xc37b40ABdB939635068d3c5f13E7faF686F03B65')
+    token = EvmToken.initialize(
+        address=address,
+        chain_id=ChainID.ETHEREUM,
+        token_kind=TokenKind.ERC20,
+        decimals=18,
+        name='Test',
+        symbol='YAB',
+        underlying_tokens=[
+            UnderlyingToken(address=A_AAVE.resolve_to_evm_token().evm_address, token_kind=TokenKind.ERC20, weight=aave_weight),  # noqa: E501
+            UnderlyingToken(address=A_LINK.resolve_to_evm_token().evm_address, token_kind=TokenKind.ERC20, weight=link_weight),  # noqa: E501
+            UnderlyingToken(address=A_CRV.resolve_to_evm_token().evm_address, token_kind=TokenKind.ERC20, weight=crv_weight),  # noqa: E501
+        ],
+    )
+    globaldb.add_asset(token)
+
+    # add historical prices for every underlying token except A_LINK, which stays unpriced
+    query_timestamp = Timestamp(1710719119)
+    globaldb.add_single_historical_price(HistoricalPrice(
+        from_asset=A_AAVE, to_asset=A_USD, price=Price(FVal('100')),
+        timestamp=query_timestamp, source=HistoricalPriceOracle.MANUAL,
+    ))
+    globaldb.add_single_historical_price(HistoricalPrice(
+        from_asset=A_CRV, to_asset=A_USD, price=Price(FVal('10')),
+        timestamp=query_timestamp, source=HistoricalPriceOracle.MANUAL,
+    ))
+
+    # before the fix this returned the partial sum 100*0.6 + 10*0.2 = 62
+    price = PriceHistorian.get_price_for_special_asset(
+        from_asset=token,
+        to_asset=A_USD,
+        timestamp=query_timestamp,
+        max_seconds_distance=3600,
+    )
+    assert price is None

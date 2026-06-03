@@ -323,8 +323,14 @@ def get_underlying_asset_price(token: EvmToken) -> tuple[Price | None, CurrentPr
     if token.underlying_tokens is not None:
         usd_price = ZERO
         for underlying_token in token.underlying_tokens:
-            token = EvmToken(underlying_token.get_identifier(parent_chain=token.chain_id))
-            underlying_asset_price, oracle = Inquirer.find_usd_price_and_oracle(token)
+            underlying_asset = EvmToken(underlying_token.get_identifier(parent_chain=token.chain_id))  # noqa: E501
+            underlying_asset_price, oracle = Inquirer.find_usd_price_and_oracle(underlying_asset)
+            if underlying_asset_price == ZERO_PRICE:
+                # if any underlying token can't be priced the aggregated price would be
+                # incomplete (too low), so treat the whole token as unpriced instead of
+                # returning a partial value the user would mistake for the real one.
+                return None, oracle
+
             usd_price += underlying_asset_price * underlying_token.weight
 
         if usd_price != ZERO_PRICE:

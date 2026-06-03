@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`-` LP, wrapped and vault tokens are now reported as unpriced instead of at a too-low value when one of their underlying assets has no price.
 * :bug:`-` Merging assets now correctly combines their historical balances with exact precision, instead of failing or double-counting when both had a balance at the same timestamp.
 * :bug:`-` OKX withdrawal history is now queried correctly for accounts with more than 100 withdrawals, instead of failing and aborting the whole OKX history sync.
 * :bug:`-` When you unignore an asset from a history event, its group no longer keeps flagging hidden ignored assets, so you are not misled into thinking events are still hidden when there is nothing left to reveal.

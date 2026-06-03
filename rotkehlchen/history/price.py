@@ -242,8 +242,13 @@ class PriceHistorian:
                     to_asset=to_asset,
                     timestamp=timestamp,
                     max_seconds_distance=max_seconds_distance,
-                )) is not None:
-                    aggregated_price += FVal(underlying_price) * underlying_token.weight
+                )) is None:
+                    # if any underlying token can't be priced the aggregated price would be
+                    # incomplete (too low), so treat the whole token as unpriced instead of
+                    # returning a partial value the user would mistake for the real one.
+                    return None
+
+                aggregated_price += FVal(underlying_price) * underlying_token.weight
 
             if aggregated_price != ZERO:
                 return Price(aggregated_price)
