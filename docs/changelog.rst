@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`-` A deposit or withdrawal manually matched to multiple on-chain transactions is no longer duplicated in the history view when filtering by chain.
 * :bug:`-` LP, wrapped and vault tokens are now reported as unpriced instead of at a too-low value when one of their underlying assets has no price.
 * :bug:`-` Merging assets now correctly combines their historical balances with exact precision, instead of failing or double-counting when both had a balance at the same timestamp.
 * :bug:`-` OKX withdrawal history is now queried correctly for accounts with more than 100 withdrawals, instead of failing and aborting the whole OKX history sync.
