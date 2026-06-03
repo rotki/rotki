@@ -207,6 +207,7 @@
       "add": "Add accounting rule",
       "add_error": "Could not add accounting rule: {message}",
       "confirm_delete": "Are you sure you want to delete this custom accounting rule?",
+      "confirm_reset": "Are you sure you want to reset all accounting rules to rotki's defaults? This removes every custom and edited rule and cannot be undone.",
       "conflicts": {
         "error": {
           "description": "Error while resolving accounting rules conflicts: {error}",
@@ -255,6 +256,7 @@
       },
       "overwrite_by_setting": "Overwrite by value from other accounting setting",
       "refresh_tooltip": "Refresh accounting rules",
+      "reset": "Reset to defaults",
       "subtitle": "Manage and view your event accounting rules",
       "tabs": {
         "custom": "Special rules for certain events",
@@ -293,6 +295,13 @@
           "success": "Accounting rules imported successfully"
         },
         "title": "Accounting Rules Import"
+      },
+      "reset": {
+        "message": {
+          "failure": "Accounting rules reset failed: {description}",
+          "success": "Accounting rules reset to defaults successfully"
+        },
+        "title": "Accounting Rules Reset"
       }
     },
     "add_eth2_validator": {

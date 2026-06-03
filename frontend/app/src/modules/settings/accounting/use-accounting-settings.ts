@@ -25,6 +25,7 @@ interface UseAccountingSettingReturn {
   resolveAccountingRuleConflicts: (payload: AccountingRuleConflictResolution) => Promise<ActionStatus>;
   exportJSON: () => Promise<void>;
   importJSON: (file: File) => Promise<ActionStatus | null>;
+  resetToDefaults: () => Promise<ActionStatus | null>;
 }
 
 export function useAccountingSettings(): UseAccountingSettingReturn {
@@ -34,6 +35,7 @@ export function useAccountingSettings(): UseAccountingSettingReturn {
     fetchAccountingRuleConflicts,
     fetchAccountingRules,
     importAccountingRulesData,
+    resetAccountingRules,
     resolveAccountingRuleConflicts: resolveAccountingRuleConflictsCaller,
     uploadAccountingRulesData,
   } = useAccountingApi();
@@ -203,12 +205,34 @@ export function useAccountingSettings(): UseAccountingSettingReturn {
     return { message: outcome.message, success: false };
   }
 
+  async function resetToDefaults(): Promise<ActionStatus | null> {
+    const title = t('actions.accounting_rules.reset.title');
+    const outcome = await runTask<boolean, TaskMeta>(
+      async () => resetAccountingRules(),
+      { type: TaskType.RESET_ACCOUNTING_RULES, meta: { title } },
+    );
+
+    if (outcome.success) {
+      showSuccessMessage(title, t('actions.accounting_rules.reset.message.success'));
+      return { message: '', success: outcome.result };
+    }
+
+    if (!isActionableFailure(outcome))
+      return null;
+
+    showErrorMessage(title, t('actions.accounting_rules.reset.message.failure', {
+      description: outcome.message,
+    }));
+    return { message: outcome.message, success: false };
+  }
+
   return {
     exportJSON,
     getAccountingRule,
     getAccountingRules,
     getAccountingRulesConflicts,
     importJSON,
+    resetToDefaults,
     resolveAccountingRuleConflicts,
   };
 }

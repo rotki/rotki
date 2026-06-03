@@ -3388,6 +3388,16 @@ class AccountingRulesResource(BaseMethodView):
         return self.rest_api.delete_accounting_rule(rule_id=identifier)
 
 
+class AccountingRulesResetResource(BaseMethodView):
+
+    put_schema = AsyncQueryArgumentSchema()
+
+    @require_loggedin_user()
+    @use_kwargs(put_schema, location='json_and_query')
+    def put(self, async_query: bool) -> Response:
+        return self.rest_api.reset_accounting_rules(async_query=async_query)
+
+
 class AccountingLinkablePropertiesResource(BaseMethodView):
 
     def get(self) -> Response:
