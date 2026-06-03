@@ -1068,6 +1068,25 @@ def test_cache_is_hit_for_collection(inquirer: Inquirer):
 
 
 @pytest.mark.parametrize('should_mock_current_price_queries', [False])
+def test_collection_assets_query_is_memoized(inquirer: Inquirer):
+    """Test that get_assets_in_same_collection is memoized so set_cached_price (called once per
+    priced asset on every balance refresh) does not re-run the collection JOIN every time."""
+    wsteth = Asset('eip155:1/erc20:0x7f39C581F595B53c5cb19bD0b3f8dA6c935E2Ca0')
+    AssetResolver.clean_memory_cache(wsteth.identifier)
+    with mock.patch.object(
+        GlobalDBHandler,
+        'get_assets_in_same_collection',
+        wraps=GlobalDBHandler.get_assets_in_same_collection,
+    ) as collection_query:
+        first = AssetResolver.get_assets_in_same_collection(wsteth.identifier)
+        second = AssetResolver.get_assets_in_same_collection(wsteth.identifier)
+
+    assert collection_query.call_count == 1, 'collection JOIN must be memoized across calls'
+    assert first == second
+    assert wsteth in first  # sanity: wstETH belongs to a multi-chain collection
+
+
+@pytest.mark.parametrize('should_mock_current_price_queries', [False])
 @requires_env([TestEnvironment.NIGHTLY])
 def test_usd_price(inquirer: Inquirer, globaldb: GlobalDBHandler):
     """Check that price is queried for tokens in different chains using defillama"""

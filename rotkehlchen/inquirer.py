@@ -526,7 +526,7 @@ class Inquirer:
     @staticmethod
     def set_cached_price(cache_key: tuple[Asset, Asset], cached_price: CachedPriceEntry) -> None:
         """Save cached price for the key provided and all the assets in the same collection"""
-        related_assets = GlobalDBHandler.get_assets_in_same_collection(cache_key[0].identifier)
+        related_assets = AssetResolver.get_assets_in_same_collection(cache_key[0].identifier)
         for related_asset in related_assets:
             Inquirer._cached_current_price.add((related_asset, cache_key[1]), cached_price)
 
