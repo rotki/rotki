@@ -91,6 +91,7 @@ from rotkehlchen.inquirer import (
     DEFAULT_RATE_LIMIT_WAITING_TIME,
     CurrentPriceOracle,
     Inquirer,
+    get_underlying_asset_price,
 )
 from rotkehlchen.interfaces import CurrentPriceOracleInterface
 from rotkehlchen.tests.conftest import TestEnvironment, requires_env
@@ -427,6 +428,47 @@ def test_price_underlying_tokens(inquirer, globaldb):
 
     price = inquirer.find_price(EvmToken(identifier), A_USD)
     assert price == FVal(67)
+
+
+def test_price_underlying_tokens_unpriced_when_a_leg_is_missing(inquirer, globaldb):
+    """Regression test: a token valued from its underlying tokens must be reported as
+    unpriced when any underlying leg has no price, instead of returning a too-low partial
+    sum that the user would mistake for the real value."""
+    address = string_to_evm_address('0xc37b40ABdB939635068d3c5f13E7faF686F03B65')
+    identifier = ethaddress_to_identifier(address)
+    token = EvmToken.initialize(
+        address=address,
+        chain_id=ChainID.ETHEREUM,
+        token_kind=TokenKind.ERC20,
+        decimals=18,
+        name='Test',
+        symbol='YAB',
+        underlying_tokens=[
+            UnderlyingToken(address=A_AAVE.resolve_to_evm_token().evm_address, token_kind=TokenKind.ERC20, weight=FVal('0.5')),  # noqa: E501
+            UnderlyingToken(address=A_LINK.resolve_to_evm_token().evm_address, token_kind=TokenKind.ERC20, weight=FVal('0.5')),  # noqa: E501
+        ],
+    )
+    globaldb.add_asset(token)
+
+    def mock_find(asset, *args, **kwargs):  # AAVE is priced, LINK can't be priced
+        if asset == A_AAVE:
+            return Price(FVal('100')), CurrentPriceOracle.COINGECKO
+        return ZERO_PRICE, CurrentPriceOracle.BLOCKCHAIN
+
+    with patch.object(Inquirer, 'find_usd_price_and_oracle', side_effect=mock_find):
+        price, _ = get_underlying_asset_price(EvmToken(identifier))
+
+    assert price is None  # before the fix this returned 50 (0.5 * 100), half the real value
+
+    # sanity check: when every leg is priced the correct weighted sum is still returned
+    with patch.object(
+        Inquirer,
+        'find_usd_price_and_oracle',
+        return_value=(Price(FVal('100')), CurrentPriceOracle.COINGECKO),
+    ):
+        price, _ = get_underlying_asset_price(EvmToken(identifier))
+
+    assert price == Price(FVal('100'))  # 0.5 * 100 + 0.5 * 100
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
