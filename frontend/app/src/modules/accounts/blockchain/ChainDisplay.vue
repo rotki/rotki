@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { Blockchain } from '@rotki/common';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
+import { useFrontendSettingsStore } from '@/modules/settings/use-frontend-settings-store';
 import ChainIcon from '@/modules/shell/components/ChainIcon.vue';
 import EvmChainIcon from '@/modules/shell/components/EvmChainIcon.vue';
 import ListItem from '@/modules/shell/components/ListItem.vue';
@@ -14,6 +15,7 @@ const { chain, dense = false, evmChain = false } = defineProps<{
 const { t } = useI18n({ useScope: 'global' });
 
 const { getChainName } = useSupportedChains();
+const { shouldShowAmount } = storeToRefs(useFrontendSettingsStore());
 const name = computed(() => {
   if (chain === 'all')
     return t('account_form.labels.all_supported_chains');
@@ -31,6 +33,7 @@ const evmChainsRepresentative = [Blockchain.ETH, Blockchain.ARBITRUM_ONE, Blockc
     no-padding
     no-hover
     class="!py-0"
+    :blur-content="!shouldShowAmount"
   >
     <template #avatar>
       <div

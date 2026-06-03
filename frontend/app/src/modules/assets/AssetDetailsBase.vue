@@ -5,6 +5,7 @@ import { useTemplateRef } from 'vue';
 import AssetDetailsMenuContent from '@/modules/assets/AssetDetailsMenuContent.vue';
 import { useAssetInfoCache } from '@/modules/assets/use-asset-info-cache';
 import { useAssetPageNavigation } from '@/modules/assets/use-asset-page-navigation';
+import { useFrontendSettingsStore } from '@/modules/settings/use-frontend-settings-store';
 import AppImage from '@/modules/shell/components/AppImage.vue';
 import AssetIcon from '@/modules/shell/components/AssetIcon.vue';
 import ListItem from '@/modules/shell/components/ListItem.vue';
@@ -49,6 +50,7 @@ const menuOpened = ref<boolean>(false);
 const menuContentRef = useTemplateRef<InstanceType<typeof AssetDetailsMenuContent>>('menuContentRef');
 
 const { isPending } = useAssetInfoCache();
+const { shouldShowAmount } = storeToRefs(useFrontendSettingsStore());
 const { navigateToDetails } = useAssetPageNavigation(() => asset.identifier, () => isCollectionParent);
 const loading = isPending(() => asset.identifier);
 
@@ -111,6 +113,7 @@ watch(menuOpened, (menuOpened) => {
     v-bind="$attrs"
     :size="dense ? 'sm' : 'md'"
     :loading="loading"
+    :blur-content="!shouldShowAmount"
     :title="asset.isCustomAsset ? asset.name : asset.symbol"
     :subtitle="asset.isCustomAsset ? asset.customAssetType : asset.name"
   >
@@ -142,6 +145,7 @@ watch(menuOpened, (menuOpened) => {
           v-bind="{ ...$attrs, ...useContextMenu(attrs) }"
           :size="dense ? 'sm' : 'md'"
           :loading="loading"
+          :blur-content="!shouldShowAmount"
           :title="asset.isCustomAsset ? asset.name : asset.symbol"
           :subtitle="asset.isCustomAsset ? asset.customAssetType : asset.name"
         >

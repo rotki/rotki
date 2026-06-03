@@ -7,6 +7,7 @@ import { type AssetResolutionOptions, useAssetInfoRetrieval } from '@/modules/as
 import { useAssetsStore } from '@/modules/assets/use-assets-store';
 import { isBlockchain } from '@/modules/core/common/chains';
 import { useCopy } from '@/modules/core/common/use-clipboard';
+import { useFrontendSettingsStore } from '@/modules/settings/use-frontend-settings-store';
 import AppImage from '@/modules/shell/components/AppImage.vue';
 import CounterpartyDisplay from '@/modules/shell/components/display/CounterpartyDisplay.vue';
 import EvmChainIcon from '@/modules/shell/components/EvmChainIcon.vue';
@@ -56,6 +57,7 @@ const { getAssetIconUrl } = useAssetsStore();
 const { checkIfAssetExists } = useAssetIconCheck();
 const { currencies } = useCurrencies();
 const { useAssetInfo } = useAssetInfoRetrieval();
+const { shouldShowAmount } = storeToRefs(useFrontendSettingsStore());
 
 const mappedIdentifier = computed<string>(() => {
   const id = getIdentifierFromSymbolMap(identifier);
@@ -187,7 +189,7 @@ const { copied, copy } = useCopy(() => identifier);
   <RuiTooltip
     :popper="popperOptions"
     :open-delay="400"
-    :disabled="noTooltip"
+    :disabled="noTooltip || !shouldShowAmount"
     persist-on-tooltip-hover
   >
     <template #activator>
@@ -210,6 +212,7 @@ const { copied, copy } = useCopy(() => identifier);
         <div
           v-if="protocol"
           class="z-[1] absolute -top-1 -left-1 border border-rui-grey-300 dark:border-rui-grey-900 rounded-md bg-white"
+          :class="{ blur: !shouldShowAmount }"
         >
           <CounterpartyDisplay
             :counterparty="protocol"
@@ -222,6 +225,7 @@ const { copied, copy } = useCopy(() => identifier);
           class="flex items-center justify-center cursor-pointer h-full w-full icon-bg"
           :class="{
             '!rounded-full !overflow-hidden': circle,
+            'blur': !shouldShowAmount,
           }"
         >
           <GeneratedIcon

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { useLocations } from '@/modules/core/common/use-locations';
+import { useFrontendSettingsStore } from '@/modules/settings/use-frontend-settings-store';
 import AppImage from '@/modules/shell/components/AppImage.vue';
 
 const { item, horizontal, icon, size = '24px', imageClass } = defineProps<{
@@ -15,6 +16,7 @@ const emit = defineEmits<{
 }>();
 
 const { useLocationData } = useLocations();
+const { shouldShowAmount } = storeToRefs(useFrontendSettingsStore());
 
 const location = useLocationData(() => item);
 </script>
@@ -27,6 +29,7 @@ const location = useLocationData(() => item);
       'flex-row gap-2': horizontal,
       'flex-col gap-1': !horizontal,
       'skeleton': !location,
+      'blur': !shouldShowAmount,
     }"
     :style="icon ? { height: size, width: size } : undefined"
     @click="emit('click', item)"

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { LOOPRING_CHAIN } from '@/modules/balances/blockchain-types';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
+import { useFrontendSettingsStore } from '@/modules/settings/use-frontend-settings-store';
 import AppImage from '@/modules/shell/components/AppImage.vue';
 
 interface Props {
@@ -11,6 +12,7 @@ interface Props {
 const { chain, size = '26px' } = defineProps<Props>();
 
 const { matchChain, useChainImageUrl } = useSupportedChains();
+const { shouldShowAmount } = storeToRefs(useFrontendSettingsStore());
 
 const src = useChainImageUrl(() => chain);
 
@@ -30,11 +32,13 @@ const OTHER_CHAINS = [
     :max-height="size"
     contain
     class="icon-bg"
+    :class="{ blur: !shouldShowAmount }"
   />
   <RuiIcon
     v-else
     :size="size"
     name="lu-link"
     class="text-rui-grey-400 dark:text-rui-grey-600 icon-bg"
+    :class="{ blur: !shouldShowAmount }"
   />
 </template>
