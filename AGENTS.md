@@ -725,6 +725,7 @@ python package.py
 4. Use the existing test infrastructure - comprehensive fixtures are available
 5. WebSocket messages follow specific format - check `api/websockets/typedefs.py`
 6. For all python backend constants make sure to use the `Final` type specifier.
+7. Never iterate over `cursor.execute(...).fetchall()`. `fetchall()` already walks the cursor and materializes every row into a list, so a following `for` loop iterates the data a second time. When you only need a single pass, iterate the cursor directly: `for row in cursor.execute(...):`. Reserve `fetchall()` for when you genuinely need the materialized list (e.g. to reuse it, get its length, or assert on it in a test). The same applies to a write cursor — prefer a read cursor (`self.conn.read_ctx()`) for plain `SELECT`s.
 
 ## Committing
 - Commits should be just to the point, not too long and not too short.
