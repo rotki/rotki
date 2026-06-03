@@ -1200,13 +1200,24 @@ def test_merge_assets_timed_balances(database: 'DBHandler') -> None:
     """
     with database.conn.write_ctx() as write_cursor:
         serialized_balances = [
-            (0, 'BTC', '1.00', '178.44', BalanceType.ASSET.serialize_for_db()),
+            # ts 0: source(ETH) inserted BEFORE target(BTC) for the shared asset row. This is the
+            # case that used to leave a stale duplicate target row and double-count it, since the
+            # merge result depended on which row sqlite happened to pick in its GROUP BY.
             (0, 'ETH', '1.00', '87', BalanceType.ASSET.serialize_for_db()),
+            (0, 'BTC', '1.00', '178.44', BalanceType.ASSET.serialize_for_db()),
             (0, 'ETH', '0.50', '87', BalanceType.LIABILITY.serialize_for_db()),
             (1, 'BTC', '1.00', '178.44', BalanceType.ASSET.serialize_for_db()),
             (1, 'ETH', '1.00', '87', BalanceType.ASSET.serialize_for_db()),
             (2, 'BTC', '1.00', '178.44', BalanceType.ASSET.serialize_for_db()),
             (3, 'ETH', '1.00', '87', BalanceType.ASSET.serialize_for_db()),
+            # ts 4: high-precision amounts that are NOT float-exact, both present at the same
+            # timestamp. Locks in that the sum is computed with FVal (exact) and not via a
+            # float-coercing SQL SUM() over the TEXT columns.
+            (4, 'ETH', '0.1', '0', BalanceType.ASSET.serialize_for_db()),
+            (4, 'BTC', '0.2', '0', BalanceType.ASSET.serialize_for_db()),
+            # ts 5: a single high-precision source row, to ensure even unmerged rows keep their
+            # full precision instead of being truncated to a float.
+            (5, 'ETH', '123456789.123456789123456789', '0', BalanceType.ASSET.serialize_for_db()),
         ]
         write_cursor.executemany(
             'INSERT INTO timed_balances( '
@@ -1217,11 +1228,16 @@ def test_merge_assets_timed_balances(database: 'DBHandler') -> None:
 
     database.replace_asset_identifier(source_identifier='ETH', target_asset=Asset('BTC'))
     with database.conn.read_ctx() as cursor:
-        cursor.execute('SELECT timestamp, currency, amount, category FROM timed_balances')
+        cursor.execute(
+            'SELECT timestamp, currency, amount, category FROM timed_balances '
+            'ORDER BY timestamp, category',
+        )
         assert cursor.fetchall() == [
-            (0, 'BTC', '2.0', BalanceType.ASSET.serialize_for_db()),  # 1 ETH + 1 BTC
+            (0, 'BTC', '2', BalanceType.ASSET.serialize_for_db()),  # 1 ETH + 1 BTC, single row
             (0, 'BTC', '0.5', BalanceType.LIABILITY.serialize_for_db()),  # 0.5 ETH -> 0.5 BTC
-            (1, 'BTC', '2.0', BalanceType.ASSET.serialize_for_db()),  # 1 ETH + 1 BTC
-            (2, 'BTC', '1.0', BalanceType.ASSET.serialize_for_db()),  # 1 BTC = 1 BTC
-            (3, 'BTC', '1.0', BalanceType.ASSET.serialize_for_db()),  # 1 ETH -> 1 BTC
+            (1, 'BTC', '2', BalanceType.ASSET.serialize_for_db()),  # 1 ETH + 1 BTC
+            (2, 'BTC', '1', BalanceType.ASSET.serialize_for_db()),  # 1 BTC = 1 BTC
+            (3, 'BTC', '1', BalanceType.ASSET.serialize_for_db()),  # 1 ETH -> 1 BTC
+            (4, 'BTC', '0.3', BalanceType.ASSET.serialize_for_db()),  # 0.1 + 0.2 exactly, not 0.3000..04  # noqa: E501
+            (5, 'BTC', '123456789.123456789123456789', BalanceType.ASSET.serialize_for_db()),  # full precision kept  # noqa: E501
         ]
