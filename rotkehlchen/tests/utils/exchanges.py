@@ -82,7 +82,7 @@ POLONIEX_MOCK_DEPOSIT_WITHDRAWALS_RESPONSE: Final = """{
       "withdrawalRequestsId": 3,
       "status": "COMPLETE: 0xbd4da74e1a0b81c21d056c6f58a5b306de85d21ddf89992693b812bb117eace4"
     }, {
-      "currency": "BALLS",
+      "currency": "NOTAREALASSET",
       "timestamp": 1478994442,
       "amount": "10.0",
       "fee": "0.1",
@@ -181,10 +181,6 @@ BINANCE_BALANCES_RESPONSE: Final = """
       "locked": "0.00000000"
     }, {
       "asset": "IDONTEXIST",
-      "free": "5.0",
-      "locked": "0.0"
-    }, {
-      "asset": "ETF",
       "free": "5.0",
       "locked": "0.0"
 }]}"""

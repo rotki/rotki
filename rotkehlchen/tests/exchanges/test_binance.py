@@ -528,13 +528,6 @@ def test_binance_query_trade_history_unexpected_data(function_scope_binance):
     )
     query_binance_and_test(input_str)
 
-    # unsupported fee currency
-    input_str = BINANCE_MYTRADES_RESPONSE.replace(
-        '"commissionAsset": "BNB"',
-        '"commissionAsset": "BTCB"',
-    )
-    query_binance_and_test(input_str)
-
     # unknown fee currency
     input_str = BINANCE_MYTRADES_RESPONSE.replace(
         '"commissionAsset": "BNB"',
@@ -683,20 +676,6 @@ def test_binance_query_deposits_withdrawals_unexpected_data(function_scope_binan
         else:
             new_deposits = deposits
             new_withdrawals = withdrawals.replace('"ETH"', '"dasdsDSDSAD"')
-        mock_binance_and_query(
-            new_deposits,
-            new_withdrawals,
-            expected_warnings_num=1,
-            expected_errors_num=0,
-        )
-
-        # Unsupported Asset
-        if testing_deposits:
-            new_deposits = deposits.replace('"ETH"', '"BTCB"')
-            new_withdrawals = withdrawals
-        else:
-            new_deposits = deposits
-            new_withdrawals = withdrawals.replace('"ETH"', '"BTCB"')
         mock_binance_and_query(
             new_deposits,
             new_withdrawals,

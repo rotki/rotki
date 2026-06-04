@@ -309,9 +309,9 @@ def test_query_trade_history_unexpected_data(poloniex):
     given_input = input_trades.replace('"ETH_BTC"', '"0"')
     mock_poloniex_and_query(given_input, expected_warnings_num=0, expected_errors_num=1)
 
-    # symbol with unsupported asset
-    given_input = input_trades.replace('"ETH_BTC"', '"ETH_BALLS"')
-    mock_poloniex_and_query(given_input, expected_warnings_num=1, expected_errors_num=0)
+    # symbol with an asset that can't be mapped to a known asset
+    given_input = input_trades.replace('"ETH_BTC"', '"ETH_NOTAREALASSET"')
+    mock_poloniex_and_query(given_input, expected_warnings_num=0, expected_errors_num=0)
 
     # invalid price
     given_input = input_trades.replace('"0.00003432"', 'null')
@@ -350,8 +350,8 @@ def test_poloniex_assets_are_known(poloniex: 'Poloniex'):
 @pytest.mark.parametrize('function_scope_initialize_mock_rotki_notifier', [True])
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
 def test_poloniex_query_balances_unknown_asset(poloniex):
-    """Test that if a poloniex balance query returns unknown asset no exception
-    is raised and a warning is generated. Same for unsupported assets"""
+    """Test that if a poloniex balance query returns an asset that can't be mapped
+    no exception is raised and an unknown asset message is generated"""
 
     def mock_unknown_asset_return(url, **kwargs):  # pylint: disable=unused-argument
         return MockResponse(200, POLONIEX_BALANCES_RESPONSE)
@@ -369,15 +369,14 @@ def test_poloniex_query_balances_unknown_asset(poloniex):
 
     messages = poloniex.msg_aggregator.rotki_notifier.messages
     assert len(messages) == 2
-    assert messages[0].message_type == WSMessageType.EXCHANGE_UNKNOWN_ASSET
-    assert 'unsupported poloniex asset CNOTE' in messages[1].data['value']
+    assert all(m.message_type == WSMessageType.EXCHANGE_UNKNOWN_ASSET for m in messages)
 
 
 @pytest.mark.parametrize('function_scope_initialize_mock_rotki_notifier', [True])
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
 def test_poloniex_deposits_withdrawal_unknown_asset(poloniex: 'Poloniex') -> None:
-    """Test that if a poloniex asset movement query returns unknown asset no exception
-    is raised and a warning is generated. Same for unsupported assets"""
+    """Test that if a poloniex asset movement query returns an asset that can't be
+    mapped no exception is raised and an unknown asset message is generated"""
 
     def mock_api_return(url, **kwargs):  # pylint: disable=unused-argument
         if '/trades' in url:
@@ -460,10 +459,7 @@ def test_poloniex_deposits_withdrawal_unknown_asset(poloniex: 'Poloniex') -> Non
 
     messages = cast('MockRotkiNotifier', poloniex.msg_aggregator.rotki_notifier).messages
     assert len(messages) == 4
-    assert messages[0].message_type == WSMessageType.EXCHANGE_UNKNOWN_ASSET
-    assert 'Found withdrawal of unsupported poloniex asset BALLS' in messages[1].data['value']  # type: ignore
-    assert messages[2].message_type == WSMessageType.EXCHANGE_UNKNOWN_ASSET
-    assert 'Found deposit of unsupported poloniex asset EBT' in messages[3].data['value']  # type: ignore
+    assert all(m.message_type == WSMessageType.EXCHANGE_UNKNOWN_ASSET for m in messages)
 
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])

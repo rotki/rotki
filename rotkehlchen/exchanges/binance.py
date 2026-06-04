@@ -519,11 +519,10 @@ class Binance(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
             try:
                 asset = asset_from_binance(asset_symbol)
             except UnsupportedAsset as e:
-                if e.identifier != 'ETF':
-                    log.error(
-                        f'Found unsupported {self.name} asset {e.identifier}. '
-                        f'Ignoring its balance query.',
-                    )
+                log.error(
+                    f'Found unsupported {self.name} asset {e.identifier}. '
+                    f'Ignoring its balance query.',
+                )
                 continue
             except UnknownAsset as e:
                 self.send_unknown_asset_message(
