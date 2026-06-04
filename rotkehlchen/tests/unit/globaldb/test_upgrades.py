@@ -29,10 +29,7 @@ from rotkehlchen.globaldb.cache import (
     globaldb_get_unique_cache_value,
 )
 from rotkehlchen.globaldb.handler import GlobalDBHandler
-from rotkehlchen.globaldb.schema import (
-    DB_CREATE_LOCATION_ASSET_MAPPINGS,
-    DB_CREATE_LOCATION_UNSUPPORTED_ASSETS,
-)
+from rotkehlchen.globaldb.schema import DB_CREATE_LOCATION_ASSET_MAPPINGS
 from rotkehlchen.globaldb.upgrades.manager import maybe_upgrade_globaldb
 from rotkehlchen.globaldb.upgrades.v2_v3 import OTHER_EVM_CHAINS_ASSETS
 from rotkehlchen.globaldb.upgrades.v3_v4 import (
@@ -582,7 +579,11 @@ def test_upgrade_v6_v7(globaldb: GlobalDBHandler, messages_aggregator):
         assert table_exists(
             cursor=cursor,
             name='location_unsupported_assets',
-            schema=DB_CREATE_LOCATION_UNSUPPORTED_ASSETS,
+            schema="""CREATE TABLE IF NOT EXISTS location_unsupported_assets (
+                location CHAR(1) NOT NULL,
+                exchange_symbol TEXT NOT NULL,
+                UNIQUE (location, exchange_symbol)
+            );""",
         ) is True
 
         # check that correct number of exchanges mappings are present.
@@ -1776,6 +1777,35 @@ def test_upgrade_v15_v16(
                 1262304000,
             ),
         ).fetchall() == [(1262304000, '0.7')]
+
+
+@pytest.mark.parametrize('globaldb_upgrades', [[]])
+@pytest.mark.parametrize('custom_globaldb', ['v14_global.db'])
+@pytest.mark.parametrize('target_globaldb_version', [14])
+@pytest.mark.parametrize('reload_user_assets', [False])
+@pytest.mark.parametrize('use_in_memory_globaldb', [False])
+def test_upgrade_v16_v17(
+        globaldb: GlobalDBHandler,
+        messages_aggregator: MessagesAggregator,
+) -> None:
+    """Test the global DB upgrade from v16 to v17 that drops the now-unused
+    location_unsupported_assets table."""
+    assert globaldb.get_setting_value('version', 0) == 14
+    with globaldb.conn.read_ctx() as cursor:
+        assert table_exists(cursor=cursor, name='location_unsupported_assets') is True
+
+    with ExitStack() as stack:
+        patch_for_globaldb_upgrade_to(stack, 17)
+        maybe_upgrade_globaldb(
+            connection=globaldb.conn,
+            global_dir=globaldb._data_directory / GLOBALDIR_NAME,  # type: ignore
+            db_filename=GLOBALDB_NAME,
+            msg_aggregator=messages_aggregator,
+        )
+
+    assert globaldb.get_setting_value('version', 0) == 17
+    with globaldb.conn.read_ctx() as cursor:
+        assert table_exists(cursor=cursor, name='location_unsupported_assets') is False
 
 
 @pytest.mark.parametrize('custom_globaldb', ['v2_global.db'])

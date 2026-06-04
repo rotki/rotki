@@ -22,7 +22,6 @@ MINIMIZED_GLOBAL_DB_SCHEMA = {
     "contract_data": "addressvarchar[42]notnull,chain_idintegernotnull,abiintegernotnull,deployed_blockinteger,foreignkey(abi)referencescontract_abi(id)onupdatecascadeondeletesetnull,primarykey(address,chain_id)",
     "default_rpc_nodes": "identifierintegernotnullprimarykey,nametextnotnull,endpointtextnotnull,ownedintegernotnullcheck(ownedin(0,1)),activeintegernotnullcheck(activein(0,1)),weighttextnotnull,blockchaintextnotnull",
     "location_asset_mappings": "locationtext,exchange_symboltextnotnull,local_idtextnotnullcollatenocase,unique(location,exchange_symbol)",
-    "location_unsupported_assets": "locationchar(1)notnull,exchange_symboltextnotnull,unique(location,exchange_symbol)",
     "counterparty_asset_mappings": "counterpartytextnotnull,symboltextnotnull,local_idtextnotnullcollatenocase,primarykey(counterparty,symbol)",
     "solana_tokens": "identifiertextprimarykeynotnullcollatenocase,token_kindchar(1)notnulldefault('d')referencestoken_kinds(token_kind),addressvarchar[44]notnull,decimalsinteger,protocoltext,foreignkey(identifier)referencesassets(identifier)onupdatecascadeondeletecascade",
 }

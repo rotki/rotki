@@ -346,14 +346,6 @@ CREATE TABLE IF NOT EXISTS counterparty_asset_mappings (
 );
 """
 
-DB_CREATE_LOCATION_UNSUPPORTED_ASSETS = """
-CREATE TABLE IF NOT EXISTS location_unsupported_assets (
-    location CHAR(1) NOT NULL,
-    exchange_symbol TEXT NOT NULL,
-    UNIQUE (location, exchange_symbol)
-);
-"""
-
 DB_CREATE_INDEXES = """
 CREATE INDEX IF NOT EXISTS idx_assets_identifier ON assets (identifier);
 CREATE INDEX IF NOT EXISTS idx_evm_tokens_identifier ON evm_tokens (identifier, chain, protocol);
@@ -395,7 +387,6 @@ BEGIN TRANSACTION;
 {DB_CREATE_CONTRACT_DATA}
 {DB_CREATE_DEFAULT_RPC_NODES}
 {DB_CREATE_LOCATION_ASSET_MAPPINGS}
-{DB_CREATE_LOCATION_UNSUPPORTED_ASSETS}
 {DB_CREATE_COUNTERPARTY_ASSET_MAPPINGS}
 {DB_CREATE_SOLANA_TOKENS}
 {DB_CREATE_INDEXES}
