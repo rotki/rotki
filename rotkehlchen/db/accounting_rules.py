@@ -88,6 +88,7 @@ class DBAccountingRules:
             links: dict[LINKABLE_ACCOUNTING_PROPERTIES, LINKABLE_ACCOUNTING_SETTINGS_NAME],
             force_update: bool = False,
             event_ids: list[int] | None = None,
+            write_cursor: 'DBCursor | None' = None,
     ) -> int:
         """
         Adds a single accounting rule to the database and returns the identifier
@@ -97,73 +98,110 @@ class DBAccountingRules:
         Then either adds them to an existing event-specific rule with identical settings
         (type/subtype/counterparty and all rule properties) or creates a new event-specific rule.
 
+        A write_cursor can be passed when the caller already holds an open write transaction
+        (e.g. when adding many rules atomically) so we reuse it instead of opening a nested one.
+
         May raise:
         - InputError: If the combination of type, subtype and counterparty already exists
         and we are not force updating.
         """  # noqa: E501
-        if event_ids is not None and len(event_ids) > 0:
-            with self.db.conn.write_ctx() as write_cursor:
-                write_cursor.executemany(  # remove event IDs from any existing rules first
-                    'DELETE FROM accounting_rule_events WHERE event_id=?',
-                    [(event_id,) for event_id in event_ids],
-                )
+        if write_cursor is not None:
+            return self._add_accounting_rule(
+                write_cursor=write_cursor,
+                event_type=event_type,
+                event_subtype=event_subtype,
+                counterparty=counterparty,
+                rule=rule,
+                links=links,
+                force_update=force_update,
+                event_ids=event_ids,
+            )
 
-                # Check if there's already an event-specific rule
-                # with identical settings (type/subtype/counterparty/rule properties)
-                if (existing_rule := write_cursor.execute(
-                    'SELECT identifier FROM accounting_rules '
-                    'WHERE type=? AND subtype=? AND counterparty=? AND is_event_specific=1 '
-                    'AND taxable=? AND count_entire_amount_spend=? AND count_cost_basis_pnl=? '
-                    'AND accounting_treatment IS ?',
-                    (
-                        event_type.serialize(),
-                        event_subtype.serialize(),
-                        counterparty if counterparty is not None else NO_ACCOUNTING_COUNTERPARTY,
-                        *rule.serialize_for_db(),
-                    ),
-                ).fetchone()) is not None:  # add event IDs to the existing event-specific rule
-                    write_cursor.executemany(
-                        'INSERT INTO accounting_rule_events(rule_id, event_id) VALUES (?, ?)',
-                        ((existing_rule[0], event_id) for event_id in event_ids),
-                    )
-                    return existing_rule[0]
+        with self.db.conn.write_ctx() as cursor:
+            return self._add_accounting_rule(
+                write_cursor=cursor,
+                event_type=event_type,
+                event_subtype=event_subtype,
+                counterparty=counterparty,
+                rule=rule,
+                links=links,
+                force_update=force_update,
+                event_ids=event_ids,
+            )
+
+    def _add_accounting_rule(
+            self,
+            write_cursor: 'DBCursor',
+            event_type: HistoryEventType,
+            event_subtype: HistoryEventSubType,
+            counterparty: str | None,
+            rule: 'BaseEventSettings',
+            links: dict[LINKABLE_ACCOUNTING_PROPERTIES, LINKABLE_ACCOUNTING_SETTINGS_NAME],
+            force_update: bool,
+            event_ids: list[int] | None,
+    ) -> int:
+        """Add a single rule with the provided write cursor. See add_accounting_rule."""
+        if event_ids is not None and len(event_ids) > 0:
+            write_cursor.executemany(  # remove event IDs from any existing rules first
+                'DELETE FROM accounting_rule_events WHERE event_id=?',
+                [(event_id,) for event_id in event_ids],
+            )
+
+            # Check if there's already an event-specific rule
+            # with identical settings (type/subtype/counterparty/rule properties)
+            if (existing_rule := write_cursor.execute(
+                'SELECT identifier FROM accounting_rules '
+                'WHERE type=? AND subtype=? AND counterparty=? AND is_event_specific=1 '
+                'AND taxable=? AND count_entire_amount_spend=? AND count_cost_basis_pnl=? '
+                'AND accounting_treatment IS ?',
+                (
+                    event_type.serialize(),
+                    event_subtype.serialize(),
+                    counterparty if counterparty is not None else NO_ACCOUNTING_COUNTERPARTY,
+                    *rule.serialize_for_db(),
+                ),
+            ).fetchone()) is not None:  # add event IDs to the existing event-specific rule
+                write_cursor.executemany(
+                    'INSERT INTO accounting_rule_events(rule_id, event_id) VALUES (?, ?)',
+                    ((existing_rule[0], event_id) for event_id in event_ids),
+                )
+                return existing_rule[0]
 
         verb = 'INSERT OR REPLACE' if force_update else 'INSERT'
-        with self.db.conn.write_ctx() as write_cursor:
-            try:
-                write_cursor.execute(
-                    f'{verb} INTO accounting_rules(type, subtype, counterparty, taxable, '
-                    'count_entire_amount_spend, count_cost_basis_pnl, '
-                    'accounting_treatment, is_event_specific) VALUES (?, ?, ?, ?, ?, ?, ?, ?) RETURNING identifier',  # noqa: E501
-                    (
-                        event_type.serialize(),
-                        event_subtype.serialize(),
-                        counterparty if counterparty is not None else NO_ACCOUNTING_COUNTERPARTY,
-                        *rule.serialize_for_db(),
-                        event_ids is not None and len(event_ids) > 0,
-                    ),
-                )
-            except sqlcipher.IntegrityError as e:  # pylint: disable=no-member
-                raise InputError(
-                    f'{self._rule_for_string(event_type=event_type, event_subtype=event_subtype, counterparty=counterparty, event_ids=event_ids)} already exists',  # noqa: E501
-                ) from e
+        try:
+            write_cursor.execute(
+                f'{verb} INTO accounting_rules(type, subtype, counterparty, taxable, '
+                'count_entire_amount_spend, count_cost_basis_pnl, '
+                'accounting_treatment, is_event_specific) VALUES (?, ?, ?, ?, ?, ?, ?, ?) RETURNING identifier',  # noqa: E501
+                (
+                    event_type.serialize(),
+                    event_subtype.serialize(),
+                    counterparty if counterparty is not None else NO_ACCOUNTING_COUNTERPARTY,
+                    *rule.serialize_for_db(),
+                    event_ids is not None and len(event_ids) > 0,
+                ),
+            )
+        except sqlcipher.IntegrityError as e:  # pylint: disable=no-member
+            raise InputError(
+                f'{self._rule_for_string(event_type=event_type, event_subtype=event_subtype, counterparty=counterparty, event_ids=event_ids)} already exists',  # noqa: E501
+            ) from e
 
-            inserted_rule_id = write_cursor.fetchone()[0]
-            if event_ids is not None:
-                write_cursor.executemany(
-                    'INSERT OR REPLACE INTO accounting_rule_events(rule_id, event_id) VALUES (?, ?)',  # noqa: E501
-                    ((inserted_rule_id, event_id) for event_id in event_ids),
-                )
+        inserted_rule_id = write_cursor.fetchone()[0]
+        if event_ids is not None:
+            write_cursor.executemany(
+                'INSERT OR REPLACE INTO accounting_rule_events(rule_id, event_id) VALUES (?, ?)',
+                ((inserted_rule_id, event_id) for event_id in event_ids),
+            )
 
-            for property_name, setting_name in links.items():
-                self.add_linked_setting(
-                    write_cursor=write_cursor,
-                    rule_identifier=inserted_rule_id,
-                    rule_property=property_name,
-                    setting_name=setting_name,
-                )
+        for property_name, setting_name in links.items():
+            self.add_linked_setting(
+                write_cursor=write_cursor,
+                rule_identifier=inserted_rule_id,
+                rule_property=property_name,
+                setting_name=setting_name,
+            )
 
-            return inserted_rule_id
+        return inserted_rule_id
 
     def remove_accounting_rule(self, rule_id: int) -> tuple[list[int] | None, HistoryEventType, HistoryEventSubType, str | None]:  # noqa: E501
         """

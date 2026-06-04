@@ -44,7 +44,7 @@ const { t } = useI18n({ useScope: 'global' });
 const router = useRouter();
 const route = useRoute();
 
-const { exportJSON, getAccountingRule, getAccountingRules, getAccountingRulesConflicts } = useAccountingSettings();
+const { exportJSON, getAccountingRule, getAccountingRules, getAccountingRulesConflicts, resetToDefaults } = useAccountingSettings();
 
 const editMode = ref<boolean>(false);
 const customRuleHandling = ref<CustomRuleHandling>(CustomRuleHandling.EXCLUDE);
@@ -163,6 +163,22 @@ function showDeleteConfirmation(item: AccountingRuleEntry) {
       title: t('accounting_settings.rule.delete'),
     },
     async () => await deleteAccountingRule(item),
+  );
+}
+
+async function resetRulesToDefaults() {
+  const result = await resetToDefaults();
+  if (result?.success)
+    await refresh();
+}
+
+function showResetConfirmation() {
+  show(
+    {
+      message: t('accounting_settings.rule.confirm_reset'),
+      title: t('accounting_settings.rule.reset'),
+    },
+    resetRulesToDefaults,
   );
 }
 
@@ -299,6 +315,7 @@ const { useIsTaskRunning } = useTaskStore();
 
 const exportFileLoading = useIsTaskRunning(TaskType.EXPORT_ACCOUNTING_RULES);
 const importFileLoading = useIsTaskRunning(TaskType.IMPORT_ACCOUNTING_RULES);
+const resetLoading = useIsTaskRunning(TaskType.RESET_ACCOUNTING_RULES);
 
 const importFileDialog = ref<boolean>(false);
 </script>
@@ -380,6 +397,16 @@ const importFileDialog = ref<boolean>(false);
               <RuiIcon name="lu-file-up" />
             </template>
             {{ t('accounting_settings.rule.import') }}
+          </RuiButton>
+          <RuiButton
+            variant="list"
+            :loading="resetLoading"
+            @click="showResetConfirmation()"
+          >
+            <template #prepend>
+              <RuiIcon name="lu-history" />
+            </template>
+            {{ t('accounting_settings.rule.reset') }}
           </RuiButton>
         </RuiMenu>
       </div>

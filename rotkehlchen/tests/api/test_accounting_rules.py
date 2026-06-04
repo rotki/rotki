@@ -4,6 +4,7 @@ from http import HTTPStatus
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from typing import Any, Literal, get_args
+from unittest.mock import patch
 
 import pytest
 import requests
@@ -19,7 +20,7 @@ from rotkehlchen.db.constants import (
     NO_ACCOUNTING_COUNTERPARTY,
 )
 from rotkehlchen.db.history_events import DBHistoryEvents
-from rotkehlchen.db.updates import RotkiDataUpdater
+from rotkehlchen.db.updates import RotkiDataUpdater, UpdateType
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.rotkehlchen import Rotkehlchen
@@ -109,6 +110,41 @@ def test_query_rules(rotkehlchen_api_server: 'APIServer') -> None:
     assert len(result['entries']) == 1
     assert result['entries_found'] == 1
     assert result['entries_total'] != 0
+
+
+@pytest.mark.parametrize('initialize_accounting_rules', [False])
+def test_reset_accounting_rules(rotkehlchen_api_server: 'APIServer') -> None:
+    """Test that resetting accounting rules wipes user customizations and restores the defaults
+    pulled from the data repo."""
+    from rotkehlchen.tests.unit.test_data_updates import (  # local import to avoid test cycle
+        ACCOUNTING_RULES_DATA,
+        make_single_mock_github_data_response,
+    )
+    assert_simple_ok_response(requests.put(
+        api_url_for(rotkehlchen_api_server, 'accountingrulesresource'),
+        json={
+            'taxable': {'value': True},
+            'count_entire_amount_spend': {'value': False},
+            'count_cost_basis_pnl': {'value': True},
+            'event_type': HistoryEventType.STAKING.serialize(),
+            'event_subtype': HistoryEventSubType.REWARD.serialize(),
+            'counterparty': 'my_custom_cpt',
+        },
+    ))
+
+    with patch(  # reset to defaults, with the data repo network mocked
+        'requests.get',
+        wraps=make_single_mock_github_data_response(UpdateType.ACCOUNTING_RULES),
+    ):
+        assert_simple_ok_response(requests.put(
+            api_url_for(rotkehlchen_api_server, 'accountingrulesresetresource'),
+        ))
+
+    result = assert_proper_sync_response_with_result(requests.post(
+        api_url_for(rotkehlchen_api_server, 'accountingrulesresource'), json={},
+    ))
+    assert result['entries_found'] == len(ACCOUNTING_RULES_DATA['accounting_rules'])
+    assert all(entry['counterparty'] != 'my_custom_cpt' for entry in result['entries'])
 
 
 @pytest.mark.parametrize('db_settings', [{'include_crypto2crypto': False}])

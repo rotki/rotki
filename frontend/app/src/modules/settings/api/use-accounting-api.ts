@@ -27,6 +27,7 @@ interface UseAccountingApiReturn {
   exportAccountingRules: (directoryPath?: string) => Promise<PendingTask>;
   importAccountingRulesData: (filepath: string) => Promise<PendingTask>;
   uploadAccountingRulesData: (filepath: File) => Promise<PendingTask>;
+  resetAccountingRules: () => Promise<PendingTask>;
 }
 
 export function useAccountingApi(): UseAccountingApiReturn {
@@ -124,6 +125,13 @@ export function useAccountingApi(): UseAccountingApiReturn {
     return PendingTaskSchema.parse(response);
   };
 
+  const resetAccountingRules = async (): Promise<PendingTask> => {
+    const response = await api.put<PendingTask>('/accounting/rules/reset', {
+      asyncQuery: true,
+    });
+    return PendingTaskSchema.parse(response);
+  };
+
   return {
     addAccountingRule,
     deleteAccountingRule,
@@ -134,6 +142,7 @@ export function useAccountingApi(): UseAccountingApiReturn {
     fetchAccountingRules,
     getAccountingRuleLinkedMapping,
     importAccountingRulesData,
+    resetAccountingRules,
     resolveAccountingRuleConflicts,
     uploadAccountingRulesData,
   };

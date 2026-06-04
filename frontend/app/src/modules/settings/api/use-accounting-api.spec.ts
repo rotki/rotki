@@ -670,4 +670,30 @@ describe('useAccountingApi', () => {
       expect(result.taskId).toBe(44);
     });
   });
+
+  describe('resetAccountingRules', () => {
+    it('should send PUT request and returns pending task', async () => {
+      let capturedBody: unknown;
+
+      server.use(
+        http.put(`${backendUrl}/api/1/accounting/rules/reset`, async ({ request }) => {
+          capturedBody = await request.json();
+          return HttpResponse.json({
+            result: {
+              task_id: 45,
+            },
+            message: '',
+          });
+        }),
+      );
+
+      const { resetAccountingRules } = useAccountingApi();
+      const result = await resetAccountingRules();
+
+      expect(capturedBody).toEqual({
+        async_query: true,
+      });
+      expect(result.taskId).toBe(45);
+    });
+  });
 });
