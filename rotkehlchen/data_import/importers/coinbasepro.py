@@ -8,7 +8,7 @@ from rotkehlchen.assets.converters import asset_from_coinbasepro
 from rotkehlchen.data_import.importers.constants import COINBASEPRO_EVENT_PREFIX
 from rotkehlchen.data_import.utils import BaseExchangeImporter
 from rotkehlchen.db.drivers.gevent import DBCursor
-from rotkehlchen.errors.asset import UnknownAsset, UnsupportedAsset
+from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.misc import InputError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.history.events.structures.asset_movement import AssetMovement
@@ -178,11 +178,6 @@ class CoinbaseProImporter(BaseExchangeImporter):
                     row_index=index, csv_row=row,
                     msg=f'Unknown asset {e.identifier}.', is_error=True,
                 )
-            except UnsupportedAsset as e:
-                self.send_message(
-                    row_index=index, csv_row=row,
-                    msg=str(e), is_error=True,
-                )
             except DeserializationError as e:
                 self.send_message(
                     row_index=index, csv_row=row,
@@ -201,12 +196,6 @@ class CoinbaseProImporter(BaseExchangeImporter):
                 self.send_message(
                     row_index=0, csv_row=rows[0],
                     msg=f'Unknown asset {e.identifier} in trade {trade_id}.',
-                    is_error=True,
-                )
-            except UnsupportedAsset as e:
-                self.send_message(
-                    row_index=0, csv_row=rows[0],
-                    msg=f'{e!s} (trade {trade_id}).',
                     is_error=True,
                 )
             except (DeserializationError, ValueError) as e:

@@ -16,7 +16,7 @@ from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import A_BTC
 from rotkehlchen.data_import.utils import maybe_set_transaction_extra_data
 from rotkehlchen.db.settings import CachedSettings
-from rotkehlchen.errors.asset import UnknownAsset, UnsupportedAsset
+from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.exchanges.data_structures import Location, MarginPosition
@@ -61,7 +61,6 @@ def independentreserve_asset(symbol: str) -> AssetWithOracles:
     """Returns the asset corresponding to the independentreserve symbol
 
     May raise:
-    - UnsupportedAsset
     - UnknownAsset
     """
     return symbol_to_asset_or_token(GlobalDBHandler.get_assetid_from_exchange_name(
@@ -77,7 +76,6 @@ def _asset_movement_from_independentreserve(raw_tx: dict) -> AssetMovement | Non
     https://www.independentreserve.com/products/api#GetTransactions
     May raise:
     - DeserializationError
-    - UnsupportedAsset
     - UnknownAsset
     - KeyError
     """
@@ -260,12 +258,6 @@ class Independentreserve(ExchangeInterface, SignatureGeneratorMixin):
                 price = Inquirer.find_main_currency_price(asset)
                 amount = deserialize_fval(entry['TotalBalance'])
                 account_guids.append(entry['AccountGuid'])
-            except UnsupportedAsset as e:
-                log.error(
-                    f'Found unsupported {self.name} asset {e.identifier}. '
-                    f'Ignoring its balance query.',
-                )
-                continue
             except UnknownAsset as e:
                 self.send_unknown_asset_message(
                     asset_identifier=e.identifier,
@@ -365,11 +357,6 @@ class Independentreserve(ExchangeInterface, SignatureGeneratorMixin):
                         unique_id=str(raw_trade['TradeGuid']),
                     ),
                 ))
-            except UnsupportedAsset as e:
-                log.error(
-                    f'Found unsupported {self.name} asset {e.identifier}. '
-                    f'Ignoring this trade entry {raw_trade}.',
-                )
             except UnknownAsset as e:
                 self.send_unknown_asset_message(
                     asset_identifier=e.identifier,
@@ -427,12 +414,6 @@ class Independentreserve(ExchangeInterface, SignatureGeneratorMixin):
                     movement = _asset_movement_from_independentreserve(entry)
                     if movement:
                         movements.append(movement)
-                except UnsupportedAsset as e:
-                    log.error(
-                        f'Found unsupported {self.name} asset {e.identifier}. '
-                        f'Ignoring this asset movement entry {entry}.',
-                    )
-                    continue
                 except UnknownAsset as e:
                     self.send_unknown_asset_message(
                         asset_identifier=e.identifier,

@@ -7,7 +7,7 @@ from rotkehlchen.assets.converters import asset_from_blockfi
 from rotkehlchen.constants import ZERO
 from rotkehlchen.data_import.utils import BaseExchangeImporter, SkippedCSVEntry
 from rotkehlchen.db.drivers.gevent import DBCursor
-from rotkehlchen.errors.asset import UnknownAsset, UnsupportedAsset
+from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.misc import InputError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.history.events.structures.swap import create_swap_events
@@ -93,13 +93,6 @@ class BlockfiTradesImporter(BaseExchangeImporter):
                         row_index=index,
                         csv_row=row,
                         msg=f'Unknown asset {e.identifier}.',
-                        is_error=True,
-                    )
-                except UnsupportedAsset as e:
-                    self.send_message(
-                        row_index=index,
-                        csv_row=row,
-                        msg=str(e),
                         is_error=True,
                     )
                 except DeserializationError as e:

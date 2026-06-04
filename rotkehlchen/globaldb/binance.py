@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING
 
 import rsqlite
 
-from rotkehlchen.errors.asset import UnknownAsset, UnsupportedAsset
+from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.misc import InputError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.exchanges.data_structures import BinancePair
@@ -59,7 +59,7 @@ class GlobalDBBinance:
             for pair in cursor:
                 try:
                     pairs.append(BinancePair.deserialize_from_db(pair))
-                except (DeserializationError, UnsupportedAsset, UnknownAsset) as e:
+                except (DeserializationError, UnknownAsset) as e:
                     log.debug(f'Failed to deserialize binance pair {pair}. {e!s}')
 
         return pairs

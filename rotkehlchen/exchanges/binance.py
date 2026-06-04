@@ -25,7 +25,7 @@ from rotkehlchen.db.constants import BINANCE_MARKETS_KEY
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.db.ranges import DBQueryRanges
 from rotkehlchen.db.settings import CachedSettings
-from rotkehlchen.errors.asset import UnknownAsset, UnsupportedAsset
+from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.misc import InputError, RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.exchanges.data_structures import BinancePair, MarginPosition
@@ -143,7 +143,6 @@ def trade_from_binance(
 
     Returns a tuple containing the unique_id and list of SwapEvents for this trade.
     May raise:
-        - UnsupportedAsset due to asset_from_binance
         - DeserializationError due to unexpected format of dict entries
         - KeyError due to dict entries missing an expected entry
     """
@@ -518,13 +517,6 @@ class Binance(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
 
             try:
                 asset = asset_from_binance(asset_symbol)
-            except UnsupportedAsset as e:
-                log.error(
-                    'Found unsupported %s asset %s. Ignoring its balance query.',
-                    self.name,
-                    e.identifier,
-                )
-                continue
             except UnknownAsset as e:
                 self.send_unknown_asset_message(
                     asset_identifier=e.identifier,
@@ -650,12 +642,6 @@ class Binance(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
                         continue
 
                     asset = asset_from_binance(entry['asset'])
-                except UnsupportedAsset as e:
-                    log.error(
-                        f'Found unsupported {self.name} asset {e.identifier}. '
-                        'Ignoring its lending balance query.',
-                    )
-                    continue
                 except UnknownAsset as e:
                     self.send_unknown_asset_message(
                         asset_identifier=e.identifier,
@@ -774,12 +760,6 @@ class Binance(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
 
                     try:
                         asset = asset_from_binance(entry['asset'])
-                    except UnsupportedAsset as e:
-                        log.error(
-                            f'Found unsupported {self.name} asset {e.identifier}. '
-                            f'Ignoring its lending interest history query.',
-                        )
-                        continue
                     except UnknownAsset as e:
                         self.send_unknown_asset_message(
                             asset_identifier=e.identifier,
@@ -848,12 +828,6 @@ class Binance(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
 
                 try:
                     asset = asset_from_binance(entry['asset'])
-                except UnsupportedAsset as e:
-                    log.error(
-                        f'Found unsupported {self.name} asset {e.identifier}. '
-                        f'Ignoring its lending interest history query.',
-                    )
-                    continue
                 except UnknownAsset as e:
                     self.send_unknown_asset_message(
                         asset_identifier=e.identifier,
@@ -908,12 +882,6 @@ class Binance(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
 
                 try:
                     asset = asset_from_binance(entry['collateralCoin'])
-                except UnsupportedAsset as e:
-                    log.error(
-                        f'Found unsupported {self.name} asset {e.identifier}. '
-                        f'Ignoring its futures balance query.',
-                    )
-                    continue
                 except UnknownAsset as e:
                     self.send_unknown_asset_message(
                         asset_identifier=e.identifier,
@@ -984,12 +952,6 @@ class Binance(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
 
                 try:
                     asset = asset_from_binance(entry['asset'])
-                except UnsupportedAsset as e:
-                    log.error(
-                        f'Found unsupported {self.name} asset {e.identifier}. '
-                        f'Ignoring its margined futures balance query.',
-                    )
-                    continue
                 except UnknownAsset as e:
                     self.send_unknown_asset_message(
                         asset_identifier=e.identifier,
@@ -1041,12 +1003,6 @@ class Binance(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
 
             try:
                 asset = asset_from_binance(asset_name)
-            except UnsupportedAsset as e:
-                log.error(
-                    f'Found unsupported {self.name} asset {asset_name}. '
-                    f'Ignoring its {self.name} pool balance query. {e!s}',
-                )
-                return None
             except UnknownAsset as e:
                 self.send_unknown_asset_message(
                     asset_identifier=e.identifier,
@@ -1232,12 +1188,6 @@ class Binance(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
                     details='trade',
                 )
                 continue
-            except UnsupportedAsset as e:
-                log.error(
-                    f'Found {self.name} trade with unsupported asset '
-                    f'{e.identifier}. Ignoring it.',
-                )
-                continue
             except (DeserializationError, KeyError) as e:
                 msg = str(e)
                 if isinstance(e, KeyError):
@@ -1360,11 +1310,6 @@ class Binance(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
                     self.send_unknown_asset_message(
                         asset_identifier=e.identifier,
                         details=operation_type,
-                    )
-                except UnsupportedAsset as e:
-                    log.error(
-                        f'Found {self.location!s} {operation_type} with unsupported asset '
-                        f'{e.identifier}. Ignoring it.',
                     )
                 except (DeserializationError, KeyError) as e:
                     msg = str(e)

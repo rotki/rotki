@@ -16,7 +16,7 @@ from rotkehlchen.constants import DAY_IN_SECONDS, ZERO
 from rotkehlchen.constants.assets import A_LEND
 from rotkehlchen.data_import.utils import maybe_set_transaction_extra_data
 from rotkehlchen.db.settings import CachedSettings
-from rotkehlchen.errors.asset import UnknownAsset, UnprocessableTradePair, UnsupportedAsset
+from rotkehlchen.errors.asset import UnknownAsset, UnprocessableTradePair
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.exchanges.data_structures import MarginPosition
@@ -77,7 +77,6 @@ def trade_from_poloniex(exchange_name: str, poloniex_trade: dict[str, Any]) -> l
     """Convert a poloniex trade returned from poloniex trade history into a list of SwapEvents.
 
     Throws:
-        - UnsupportedAsset due to asset_from_poloniex()
         - DeserializationError due to the data being in unexpected format
         - UnprocessableTradePair due to the pair data being in an unexpected format
     """
@@ -403,12 +402,6 @@ class Poloniex(ExchangeInterface, SignatureGeneratorMixin):
                 if available != ZERO or on_orders != ZERO:
                     try:
                         asset = asset_from_poloniex(poloniex_asset)
-                    except UnsupportedAsset as e:
-                        self.msg_aggregator.add_warning(
-                            f'Found unsupported poloniex asset {e.identifier}. '
-                            f'Ignoring its balance query.',
-                        )
-                        continue
                     except UnknownAsset as e:
                         self.send_unknown_asset_message(
                             asset_identifier=e.identifier,
@@ -473,11 +466,6 @@ class Poloniex(ExchangeInterface, SignatureGeneratorMixin):
                     f'Error deserializing a poloniex trade. Unknown trade '
                     f'accountType {account_type} found.',
                 )
-        except UnsupportedAsset as e:
-            self.msg_aggregator.add_warning(
-                f'Found poloniex trade with unsupported asset'
-                f' {e.identifier}. Ignoring it.',
-            )
         except UnknownAsset as e:
             self.send_unknown_asset_message(asset_identifier=e.identifier, details='trade')
         except (UnprocessableTradePair, DeserializationError) as e:
@@ -541,11 +529,6 @@ class Poloniex(ExchangeInterface, SignatureGeneratorMixin):
                     address=deserialize_asset_movement_address(movement_data, 'address', asset),
                     transaction_id=transaction_id,
                 ),
-            )
-        except UnsupportedAsset as e:
-            self.msg_aggregator.add_warning(
-                f'Found {movement_type!s} of unsupported poloniex asset '
-                f'{e.identifier}. Ignoring it.',
             )
         except UnknownAsset as e:
             self.send_unknown_asset_message(

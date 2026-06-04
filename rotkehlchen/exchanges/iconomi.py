@@ -13,7 +13,7 @@ from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.converters import asset_from_iconomi
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import A_AUST
-from rotkehlchen.errors.asset import UnknownAsset, UnsupportedAsset
+from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.exchanges.data_structures import Location, MarginPosition
@@ -196,12 +196,6 @@ class Iconomi(ExchangeInterface, SignatureGeneratorMixin):
                     amount=amount,
                     value=amount * price,
                 )
-            except UnsupportedAsset:
-                self.msg_aggregator.add_warning(
-                    f'Found unsupported ICONOMI asset {ticker}. '
-                    f' Ignoring its balance query.',
-                )
-                continue
             except UnknownAsset as e:
                 self.send_unknown_asset_message(
                     asset_identifier=e.identifier,

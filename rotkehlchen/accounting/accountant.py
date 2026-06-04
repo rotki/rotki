@@ -13,7 +13,7 @@ from rotkehlchen.accounting.types import EventAccountingRuleStatus, MissingPrice
 from rotkehlchen.chain.evm.accounting.aggregator import EVMAccountingAggregators
 from rotkehlchen.db.reports import DBAccountingReports
 from rotkehlchen.db.settings import DBSettings
-from rotkehlchen.errors.asset import UnknownAsset, UnprocessableTradePair, UnsupportedAsset
+from rotkehlchen.errors.asset import UnknownAsset, UnprocessableTradePair
 from rotkehlchen.errors.misc import AccountingError, RemoteError
 from rotkehlchen.errors.price import NoPriceForGivenTimestamp, PriceQueryUnsupportedAsset
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -282,12 +282,6 @@ class Accountant:
         except UnknownAsset as e:
             self.msg_aggregator.add_warning(
                 f'At history processing found event with unknown asset {e.identifier}. '
-                f'Ignoring the event.',
-            )
-            return 1, prev_time
-        except UnsupportedAsset as e:
-            self.msg_aggregator.add_warning(
-                f'At history processing found event with unsupported asset {e.identifier}. '
                 f'Ignoring the event.',
             )
             return 1, prev_time
