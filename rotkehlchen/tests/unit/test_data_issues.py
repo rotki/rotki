@@ -45,6 +45,34 @@ def _write_negative_balance_issue(
     )
 
 
+def _write_current_balance_mismatch_issue(
+        manager: DataIssuesManager,
+        location: str = Location.ETHEREUM.serialize_for_db(),
+        location_label: str = '0x0000000000000000000000000000000000000001',
+        asset: str = 'ETH',
+        derived_balance: str = '1',
+        observed_balance: str = '2',
+        delta: str = '1',
+        latest_event_identifier: int | None = 1,
+) -> int:
+    return manager.write_issue(
+        IssueKind.CURRENT_BALANCE_MISMATCH,
+        location=location,
+        location_label=location_label,
+        protocol=None,
+        asset=asset,
+        payload={
+            'derived_balance': derived_balance,
+            'observed_balance': observed_balance,
+            'delta': delta,
+            'queried_at_ts': 2000,
+            'latest_event_identifier': latest_event_identifier,
+        },
+        ts_start=1000,
+        ts_end=2000,
+    )
+
+
 def test_write_and_list_issues(database: 'DBHandler') -> None:
     manager = DataIssuesManager(database)
     issue_id = _write_negative_balance_issue(manager)
@@ -133,6 +161,33 @@ def test_write_issue_idempotency(database: 'DBHandler') -> None:
     assert same_id == issue_id
     assert len(manager.list_issues()) == 1
     assert manager.get_issue(issue_id).payload['derived_balance_before_event'] == '2'
+
+
+def test_write_bucket_scoped_issue_idempotency(database: 'DBHandler') -> None:
+    manager = DataIssuesManager(database)
+    issue_id = _write_current_balance_mismatch_issue(manager)
+    same_id = _write_current_balance_mismatch_issue(
+        manager=manager,
+        observed_balance='3',
+        delta='2',
+        latest_event_identifier=2,
+    )
+    assert same_id == issue_id
+    assert len(manager.list_issues()) == 1
+    assert manager.get_issue(issue_id).payload['observed_balance'] == '3'
+    with database.conn.read_ctx() as cursor:
+        assert cursor.execute(
+            'SELECT event_identifier FROM data_issues WHERE id = ?',
+            (issue_id,),
+        ).fetchone()[0] is None
+
+
+def test_event_scoped_issue_uniqueness_uses_event_identifier(database: 'DBHandler') -> None:
+    manager = DataIssuesManager(database)
+    issue_id = _write_negative_balance_issue(manager, event_identifier=1)
+    other_id = _write_negative_balance_issue(manager, event_identifier=2)
+    assert other_id != issue_id
+    assert len(manager.list_issues()) == 2
 
 
 def test_write_issue_dismissed_not_reopened(database: 'DBHandler') -> None:

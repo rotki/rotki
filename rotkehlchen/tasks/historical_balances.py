@@ -200,6 +200,10 @@ class Bucket(NamedTuple):
         ), direction)]
 
 
+ModifiedBucketData: TypeAlias = tuple[TimestampMS, int]
+ModifiedBuckets: TypeAlias = dict[Bucket, ModifiedBucketData]
+
+
 def _load_bucket_balances_before_ts(
         database: 'DBHandler',
         from_ts: TimestampMS,
@@ -280,6 +284,7 @@ def process_historical_balances(
         return
 
     metrics_batch: list[tuple[int | None, str, str | None, str | None, str, str, str, int, int, int]] = []  # noqa: E501
+    modified_buckets: ModifiedBuckets = {}
     first_batch_written, send_ws_every = False, msg_aggregator.how_many_events_per_ws(total_events)
     for idx, event in enumerate(events):
         for event_to_apply in events_to_apply if (events_to_apply := _maybe_add_profit_event(
@@ -293,6 +298,7 @@ def process_historical_balances(
                 event=event_to_apply,
                 bucket_balances=bucket_balances,
                 metrics_batch=metrics_batch,
+                modified_buckets=modified_buckets,
                 last_run_ts=last_run_ts,
                 treat_eth2_as_eth=treat_eth2_as_eth,
             )
@@ -336,7 +342,11 @@ def process_historical_balances(
         },
     )
     _finalize_processing(database=database, modification_ts_at_start=modification_ts_at_start)
-    log.debug(f'Completed historical balance processing for {total_events} events')
+    log.debug(
+        'Completed historical balance processing for %s events with %s modified buckets',
+        total_events,
+        len(modified_buckets),
+    )
 
 
 def _finalize_processing(
@@ -406,6 +416,7 @@ def _apply_to_buckets(
         event: 'HistoryBaseEntry',
         bucket_balances: dict[Bucket, FVal],
         metrics_batch: list[tuple[int | None, str, str | None, str | None, str, str, str, int, int, int]],  # noqa: E501
+        modified_buckets: ModifiedBuckets,
         last_run_ts: Timestamp | None,
         treat_eth2_as_eth: bool,
 ) -> None:
@@ -423,6 +434,7 @@ def _apply_to_buckets(
         if direction == EventDirection.IN:
             new_balance = current_balance + event.amount
         elif (new_balance := current_balance - event.amount) < ZERO:  # direction == EventDirection.OUT (direction from from_event will not be NEUTRAL) # noqa: E501
+            assert event.identifier is not None, 'Processed history events should have identifiers'
             database.msg_aggregator.add_message(
                 message_type=WSMessageType.NEGATIVE_BALANCE_DETECTED,
                 data={
@@ -468,6 +480,8 @@ def _apply_to_buckets(
             event.sequence_index,
             event.timestamp + event.sequence_index,
         ))
+        if event.identifier is not None:
+            modified_buckets[bucket] = (event.timestamp, event.identifier)
 
 
 def _maybe_add_profit_event(

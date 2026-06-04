@@ -1,6 +1,6 @@
 import json
 import logging
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, cast
 
 from rotkehlchen.errors.misc import InputError, NotFoundError
 from rotkehlchen.history.data_issues.constants import (
@@ -10,13 +10,17 @@ from rotkehlchen.history.data_issues.constants import (
     IssueSeverity,
     IssueState,
 )
-from rotkehlchen.history.data_issues.types import DataIssue, DataIssueFilters
+from rotkehlchen.history.data_issues.types import (
+    DataIssue,
+    DataIssueFilters,
+    DataIssuePayload,
+    NegativeBalanceIssuePayload,
+)
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.utils.misc import ts_now
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
-    from rotkehlchen.db.drivers.gevent import DBCursor
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -92,7 +96,7 @@ class DataIssuesManager:
             location_label: str | None,
             protocol: str | None,
             asset: str | None,
-            payload: dict[str, Any],
+            payload: DataIssuePayload,
             ts_start: int,
             ts_end: int,
             severity: IssueSeverity | None = None,
@@ -104,7 +108,10 @@ class DataIssuesManager:
         issue_severity = severity if severity is not None else ISSUE_KIND_SEVERITY[kind]
         payload_json = json.dumps(payload, separators=(',', ':'))
         created_at = ts_now()
-        event_identifier = payload['event_identifier']
+        if kind == IssueKind.NEGATIVE_BALANCE:
+            event_identifier = cast('NegativeBalanceIssuePayload', payload)['event_identifier']
+        else:  # kind == IssueKind.CURRENT_BALANCE_MISMATCH
+            event_identifier = None
         with self.db.user_write() as write_cursor:
             write_cursor.execute(
                 DATA_ISSUE_INSERT_QUERY,
@@ -127,18 +134,18 @@ class DataIssuesManager:
             if write_cursor.rowcount == 1:
                 return write_cursor.lastrowid
 
-            issue_id, existing_state = self._get_issue_id_and_state_by_natural_key(
-                write_cursor=write_cursor,
-                kind=kind,
-                location=location,
-                location_label=location_label,
-                protocol=protocol,
-                asset=asset,
-                event_identifier=event_identifier,
-            )
-            if existing_state == IssueState.DISMISSED:
-                return issue_id
+        issue_id, existing_state = self._get_issue_id_and_state_by_natural_key(
+            kind=kind,
+            location=location,
+            location_label=location_label,
+            protocol=protocol,
+            asset=asset,
+            event_identifier=event_identifier,
+        )
+        if existing_state == IssueState.DISMISSED:
+            return issue_id
 
+        with self.db.user_write() as write_cursor:
             if existing_state == IssueState.RESOLVED:
                 write_cursor.execute(
                     'UPDATE data_issues SET state = ?, ts_start = ?, ts_end = ?, '
@@ -267,20 +274,30 @@ class DataIssuesManager:
             raise NotFoundError(f'Data issue with id {issue_id} not found')
         return _row_to_data_issue(row)
 
-    @staticmethod
     def _get_issue_id_and_state_by_natural_key(
-            write_cursor: 'DBCursor',
+            self,
             kind: str,
             location: str,
             location_label: str,
             protocol: str,
             asset: str,
-            event_identifier: int,
+            event_identifier: int | None,
     ) -> tuple[int, str]:
-        if (row := write_cursor.execute(
-            'SELECT id, state FROM data_issues WHERE kind = ? AND location = ? AND '
-            'location_label = ? AND protocol = ? AND asset = ? AND event_identifier = ?',
-            (kind, location, location_label, protocol, asset, event_identifier),
-        ).fetchone()) is None:
+        if event_identifier is None:
+            query = (
+                'SELECT id, state FROM data_issues WHERE kind = ? AND location = ? AND '
+                'location_label = ? AND protocol = ? AND asset = ? AND event_identifier IS NULL'
+            )
+            bindings: tuple[Any, ...] = (kind, location, location_label, protocol, asset)
+        else:
+            query = (
+                'SELECT id, state FROM data_issues WHERE kind = ? AND location = ? AND '
+                'location_label = ? AND protocol = ? AND asset = ? AND event_identifier = ?'
+            )
+            bindings = (kind, location, location_label, protocol, asset, event_identifier)
+
+        with self.db.conn.read_ctx() as cursor:
+            row = cursor.execute(query, bindings).fetchone()
+        if row is None:
             raise NotFoundError('Expected existing data issue after upsert conflict')
         return row
