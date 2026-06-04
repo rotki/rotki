@@ -58,6 +58,7 @@ const {
   numberParts,
   tooltip,
 } = useAmountFormatter({
+  decimals: () => format?.decimals,
   integer: isInteger,
   rounding: roundingType,
   value: () => value,

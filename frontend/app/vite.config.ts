@@ -24,6 +24,14 @@ const isDevelopment = process.env.NODE_ENV === 'development';
 const isTest = !!process.env.VITE_TEST;
 const isCoverage = !!process.env.VITE_COVERAGE;
 const hmrEnabled = isDevelopment && !(process.env.CI && isTest);
+// Single source of truth for the accounting-update feature: the backend gates its
+// endpoints behind ROTKI_ACCOUNTING_UPDATE, so we mirror that same shell var into a
+// VITE_-prefixed entry, which Vite then exposes on import.meta.env. Exporting the one
+// var drives both backend and frontend with no drift and no separate frontend flag.
+// We must match the backend's exact check (feature_flags.py: `== 'True'`) — copying
+// the raw value would let e.g. `=1` enable the frontend while the backend stays off.
+if (process.env.ROTKI_ACCOUNTING_UPDATE === 'True')
+  process.env.VITE_ACCOUNTING_UPDATE = 'true';
 
 function RuiComponentResolver(): ComponentResolver {
   return {

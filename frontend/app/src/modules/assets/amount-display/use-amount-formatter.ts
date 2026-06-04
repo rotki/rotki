@@ -16,6 +16,11 @@ export interface AmountFormatterOptions {
   value: MaybeRefOrGetter<BigNumber>;
   integer?: MaybeRefOrGetter<boolean>;
   /**
+   * Fixed number of decimal places to render, overriding the user's floating-precision setting.
+   * When set, abbreviation and subscript notation are disabled so values stay column-aligned.
+   */
+  decimals?: MaybeRefOrGetter<number | undefined>;
+  /**
    * Which rounding mode to use from frontend settings.
    * - 'value' (default): Uses valueRoundingMode setting (typically ROUND_DOWN)
    * - 'amount': Uses amountRoundingMode setting (typically ROUND_UP)
@@ -51,7 +56,7 @@ function fixExponentialSeparators(value: string, thousands: string, decimals: st
 }
 
 export function useAmountFormatter(options: AmountFormatterOptions): AmountFormatterReturn {
-  const { integer = false, rounding = 'value', value } = options;
+  const { decimals, integer = false, rounding = 'value', value } = options;
 
   const {
     abbreviateNumber,
@@ -70,17 +75,32 @@ export function useAmountFormatter(options: AmountFormatterOptions): AmountForma
 
   const decimalPlaces = computed<number>(() => get(displayValue).decimalPlaces() ?? 0);
 
+  // An explicit, fixed precision requested by the caller (e.g. to align a column of amounts).
+  const fixedDecimals = computed<number | undefined>(() => toValue(decimals));
+
+  // The precision actually rendered: explicit override, else 0 for integers, else the user setting.
+  const effectivePrecision = computed<number>(() => {
+    if (toValue(integer))
+      return 0;
+    return get(fixedDecimals) ?? get(floatingPrecision);
+  });
+
   const showExponential = computed<boolean>(() => get(displayValue).gt(1e18));
 
   const abbreviate = computed<boolean>(
-    () => get(abbreviateNumber) && get(displayValue).gte(10 ** (get(minimumDigitToBeAbbreviated) - 1)),
+    () => get(fixedDecimals) === undefined
+      && get(abbreviateNumber)
+      && get(displayValue).gte(10 ** (get(minimumDigitToBeAbbreviated) - 1)),
   );
+
+  // Subscript notation is suppressed when a fixed precision is requested, so columns stay aligned.
+  const subscriptEnabled = computed<boolean>(() => get(fixedDecimals) === undefined && get(subscriptDecimals));
 
   // Use valueRoundingMode for 'value' (default), amountRoundingMode for 'amount'
   const roundingMode = computed(() => (toValue(rounding) === 'amount' ? get(amountRoundingMode) : get(valueRoundingMode)));
 
   const renderedValue = computed<string>(() => {
-    const floatingPrecisionUsed = toValue(integer) ? 0 : get(floatingPrecision);
+    const floatingPrecisionUsed = get(effectivePrecision);
 
     if (get(isNaN)) {
       return '-';
@@ -105,7 +125,7 @@ export function useAmountFormatter(options: AmountFormatterOptions): AmountForma
   });
 
   const tooltip = computed<string | null>(() => {
-    if (get(decimalPlaces) > get(floatingPrecision) || get(showExponential) || get(abbreviate)) {
+    if (get(decimalPlaces) > get(effectivePrecision) || get(showExponential) || get(abbreviate)) {
       const val = get(displayValue);
       return val.toFormat(val.decimalPlaces() ?? 0);
     }
@@ -118,9 +138,8 @@ export function useAmountFormatter(options: AmountFormatterOptions): AmountForma
     }
 
     const val = get(displayValue);
-    const floatingPrecisionUsed = toValue(integer) ? 0 : get(floatingPrecision);
-    const decimals = get(decimalPlaces);
-    const hiddenDecimals = decimals > floatingPrecisionUsed;
+    const floatingPrecisionUsed = get(effectivePrecision);
+    const hiddenDecimals = get(decimalPlaces) > floatingPrecisionUsed;
 
     if (hiddenDecimals && get(roundingMode) === BigNumber.ROUND_UP) {
       return '<';
@@ -132,23 +151,25 @@ export function useAmountFormatter(options: AmountFormatterOptions): AmountForma
     return '';
   });
 
-  const shouldUseSubscript = computed<boolean>(() => {
-    if (!get(subscriptDecimals) || get(showExponential) || get(abbreviate)) {
-      return false;
-    }
-
+  // Leading zeros in the fractional part of a sub-1 positive value (0 for anything else), which
+  // is what decides whether subscript notation is worthwhile. Extracted so shouldUseSubscript
+  // stays simple.
+  const subscriptLeadingZeros = computed<number>(() => {
     const val = get(displayValue);
-
     if (!val.lt(1) || !val.gt(0) || val.isZero() || val.isNaN()) {
-      return false;
+      return 0;
     }
 
-    const valueString = val.toFormat(val.decimalPlaces() || 0);
-    const [, decimalPart = ''] = valueString.split(get(decimalSeparator));
-    const leadingZeros = decimalPart.match(/^0+/)?.[0]?.length || 0;
-
-    return leadingZeros >= 2;
+    const decimalPart = val.toFormat(val.decimalPlaces() || 0).split(get(decimalSeparator))[1] ?? '';
+    return decimalPart.match(/^0+/)?.[0]?.length || 0;
   });
+
+  const shouldUseSubscript = computed<boolean>(() =>
+    get(subscriptEnabled)
+    && !get(showExponential)
+    && !get(abbreviate)
+    && get(subscriptLeadingZeros) >= 2,
+  );
 
   const numberParts = computed<NumberParts>(() => {
     if (!get(shouldUseSubscript)) {

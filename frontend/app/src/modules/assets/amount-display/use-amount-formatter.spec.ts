@@ -186,6 +186,43 @@ describe('modules/amount-display/composables/use-amount-formatter', () => {
     });
   });
 
+  describe('decimals override', () => {
+    it('should pad to the requested decimals without rounding', () => {
+      const value = ref(bigNumberify(1.5));
+      const formatter = useAmountFormatter({ decimals: 4, value });
+
+      expect(get(formatter.renderedValue)).toBe('1.5000');
+    });
+
+    it('should override the floating-precision setting', () => {
+      updateGeneralSettings({ uiFloatingPrecision: 2 });
+      const value = ref(bigNumberify('1.12345678'));
+      const formatter = useAmountFormatter({ decimals: 8, value });
+
+      expect(get(formatter.renderedValue)).toBe('1.12345678');
+    });
+
+    it('should disable abbreviation when decimals are fixed', () => {
+      const frontendStore = useFrontendSettingsStore();
+      frontendStore.update({ abbreviateNumber: true, minimumDigitToBeAbbreviated: 4 });
+      const value = ref(bigNumberify(1000000));
+      const formatter = useAmountFormatter({ decimals: 2, value });
+
+      expect(get(formatter.abbreviate)).toBe(false);
+      expect(get(formatter.renderedValue)).toBe('1,000,000.00');
+    });
+
+    it('should disable subscript notation when decimals are fixed', () => {
+      const frontendStore = useFrontendSettingsStore();
+      frontendStore.update({ subscriptDecimals: true });
+      const value = ref(bigNumberify(0.00012345));
+      const formatter = useAmountFormatter({ decimals: 8, value });
+
+      expect(get(formatter.shouldUseSubscript)).toBe(false);
+      expect(get(formatter.numberParts).full).toBe('0.00012345');
+    });
+  });
+
   describe('reactivity', () => {
     it('should update when value changes', () => {
       const value = ref(bigNumberify(100));

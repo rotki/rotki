@@ -3,6 +3,7 @@ import type { HistoryEventEntry } from '@/modules/history/events/schemas';
 import type { HistoryEventDeletePayload } from '@/modules/history/events/types';
 import type { UseHistoryEventsSelectionModeReturn } from '@/modules/history/events/use-selection-mode';
 import type { HistoryEventEditData } from '@/modules/history/management/forms/form-types';
+import AccountingOverlayCell from '@/modules/history/balances/AccountingOverlayCell.vue';
 import { getHighlightClass, type HighlightType } from '@/modules/history/events/action-types';
 import HistoryEventAsset from '@/modules/history/events/HistoryEventAsset.vue';
 import HistoryEventNote from '@/modules/history/events/HistoryEventNote.vue';
@@ -284,6 +285,12 @@ const isCard = computed<boolean>(() => variant === 'card');
         class="flex-1 min-w-0 overflow-hidden self-center line-clamp-2"
       />
     </div>
+
+    <!-- Balance overlay keys off the received asset — the balance the user holds after the swap. -->
+    <AccountingOverlayCell
+      v-if="receiveEvent"
+      :event="receiveEvent"
+    />
 
     <HistoryEventsListItemAction
       v-if="!hideActions"

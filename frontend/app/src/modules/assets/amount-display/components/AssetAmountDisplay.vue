@@ -36,13 +36,15 @@ interface Props {
   noTruncate?: boolean;
   /** Skip scrambling even when privacy mode is enabled */
   noScramble?: boolean;
+  /** Fixed number of decimal places to render, overriding the user's floating-precision setting */
+  decimals?: number;
 }
 
 defineOptions({
   inheritAttrs: false,
 });
 
-const { amount, asset = '', noCollectionParent, noScramble } = defineProps<Props>();
+const { amount, asset = '', decimals, noCollectionParent, noScramble } = defineProps<Props>();
 
 // Composables
 const { useAssetInfo } = useAssetInfoRetrieval();
@@ -64,7 +66,7 @@ const assetSymbol = computed<string>(() => {
     :value="scrambledValue"
     :symbol="assetSymbol"
     :loading="loading"
-    :format="{ rounding: 'amount' }"
+    :format="{ decimals, rounding: 'amount' }"
     :no-truncate="noTruncate"
     v-bind="$attrs"
   />

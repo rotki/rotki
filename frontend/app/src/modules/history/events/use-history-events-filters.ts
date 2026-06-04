@@ -12,13 +12,14 @@ import { type Filters, type Matcher, useHistoryEventFilter } from '@/modules/cor
 import { RouterLocationLabelsSchema } from '@/modules/core/table/route';
 import { usePaginationFilters } from '@/modules/core/table/use-pagination-filter';
 import { TableId } from '@/modules/core/table/use-remember-table-sorting';
+import { OverlayMode } from '@/modules/history/balances/use-accounting-overlay';
 import {
   isEvmEventType,
   isOnlineHistoryEventType,
 } from '@/modules/history/event-utils';
 import { DuplicateHandlingStatus, type HighlightType } from '@/modules/history/events/action-types';
 import { isValidHistoryEventState } from '@/modules/history/events/mapping/use-history-event-state-mapping';
-import { HIGHLIGHT_FETCH_DEBOUNCE, useHistoryEventNavigation } from '@/modules/history/events/use-history-event-navigation';
+import { HIGHLIGHT_FETCH_DEBOUNCE, useHistoryEventHighlights, useHistoryEventNavigation } from '@/modules/history/events/use-history-event-navigation';
 import { useHistoryEvents } from '@/modules/history/events/use-history-events';
 
 export { useHistoryEventNavigationConsumer } from '@/modules/history/events/use-history-event-navigation-consumer';
@@ -76,6 +77,7 @@ interface UseHistoryEventsFiltersReturn {
 export function useHistoryEventsFilters(
   options: HistoryEventsFiltersOptions,
   toggles: Ref<HistoryEventsToggles>,
+  overlayMode: Ref<OverlayMode> = ref<OverlayMode>(OverlayMode.NONE),
 ): UseHistoryEventsFiltersReturn {
   const {
     entryTypes,
@@ -203,6 +205,10 @@ export function useHistoryEventsFilters(
           ? stateMarkersParam.split(',').filter(isValidHistoryEventState)
           : [],
       });
+
+      // Restore the accounting-overlay mode from the route (e.g. on back navigation); an
+      // empty/absent param resets it to 'none', so a fresh visit starts with the overlay off.
+      set(overlayMode, query.overlay === OverlayMode.BALANCE ? OverlayMode.BALANCE : OverlayMode.NONE);
     },
     persistFilter: computed(() => ({
       enabled: true,
@@ -215,6 +221,8 @@ export function useHistoryEventsFilters(
         'highlightedInternalTxConflict',
         'highlightedPotentialMatch',
         'highlightedNegativeBalanceEvent',
+        // Keep the overlay out of the remembered filter so it never persists across sessions.
+        'overlay',
       ],
       tableId: TableId.HISTORY,
       transientKeys: ['txRefs'],
@@ -241,6 +249,8 @@ export function useHistoryEventsFilters(
           : {}),
         locationLabels: get(usedLocationLabels),
         missingAcquisitionIdentifier: missingAcquisitionValue?.join(','),
+        // Only the 'balance' mode lands in the URL; 'none' is stripped as an empty value.
+        ...(get(overlayMode) === OverlayMode.BALANCE ? { overlay: OverlayMode.BALANCE } : {}),
         ...(stateMarkersValue.length > 0 ? { stateMarkers: stateMarkersValue.join(',') } : {}),
       };
     }),
@@ -291,35 +301,8 @@ export function useHistoryEventsFilters(
     return [];
   });
 
-  const highlightedIdentifiers = computed<string[] | undefined>(() => {
-    const { highlightedAssetMovement, highlightedPotentialMatch, highlightedNegativeBalanceEvent } = get(route).query;
-    const identifiers: string[] = [];
-    if (highlightedAssetMovement)
-      identifiers.push(highlightedAssetMovement.toString());
-    if (highlightedPotentialMatch)
-      identifiers.push(highlightedPotentialMatch.toString());
-    if (highlightedNegativeBalanceEvent)
-      identifiers.push(highlightedNegativeBalanceEvent.toString());
-    return identifiers.length > 0 ? identifiers : undefined;
-  });
-  const highlightedGroupIdentifier = computed<string | undefined>(() => {
-    const { highlightedInternalTxConflict } = get(route).query;
-    return highlightedInternalTxConflict ? highlightedInternalTxConflict.toString() : undefined;
-  });
-  const highlightTypes = computed<Record<string, HighlightType>>(() => {
-    const { highlightedAssetMovement, highlightedPotentialMatch, highlightedNegativeBalanceEvent } = get(route).query;
-    const types: Record<string, HighlightType> = {};
-    if (highlightedAssetMovement)
-      types[highlightedAssetMovement.toString()] = 'warning';
-    if (highlightedNegativeBalanceEvent)
-      types[highlightedNegativeBalanceEvent.toString()] = 'error';
-    if (highlightedPotentialMatch)
-      types[highlightedPotentialMatch.toString()] = 'success';
-    const groupId = get(highlightedGroupIdentifier);
-    if (groupId)
-      types[`group:${groupId}`] = 'warning';
-    return types;
-  });
+  const { highlightedGroupIdentifier, highlightedIdentifiers, highlightTypes } = useHistoryEventHighlights();
+
   const includes = computed<{ evmEvents: boolean; onlineEvents: boolean }>(() => {
     const entryTypesValue = toValue(entryTypes);
     return {
