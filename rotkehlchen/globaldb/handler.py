@@ -39,7 +39,7 @@ from rotkehlchen.constants.misc import (
 from rotkehlchen.constants.resolver import evm_address_to_identifier, tokenid_to_collectible_id
 from rotkehlchen.db.drivers.gevent import DBConnection, DBConnectionType, DBCursor
 from rotkehlchen.db.utils import get_query_chunks
-from rotkehlchen.errors.asset import UnknownAsset, UnsupportedAsset, WrongAssetType
+from rotkehlchen.errors.asset import UnknownAsset, WrongAssetType
 from rotkehlchen.errors.misc import InputError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.history.deserialization import deserialize_price
@@ -2401,12 +2401,6 @@ class GlobalDBHandler:
         location_asset_mappings table. Use exchange=None to get the common id for all exchanges.
         If the mapping is not present returns default."""
         with GlobalDBHandler().conn.read_ctx() as cursor:
-            if exchange is not None and cursor.execute(
-                'SELECT COUNT(*) FROM location_unsupported_assets WHERE location=? AND exchange_symbol=?',  # noqa: E501
-                (exchange.serialize_for_db(), symbol),
-            ).fetchone()[0] > 0:
-                raise UnsupportedAsset(symbol)
-
             location_filter, bindings = '', [symbol]
             if exchange is not None:
                 location_filter = 'location IS ? OR'

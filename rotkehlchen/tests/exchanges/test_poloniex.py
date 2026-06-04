@@ -10,7 +10,7 @@ from rotkehlchen.api.websockets.typedefs import WSMessageType
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.converters import asset_from_poloniex
 from rotkehlchen.constants.assets import A_BCH, A_BTC, A_ETH
-from rotkehlchen.errors.asset import UnknownAsset, UnsupportedAsset
+from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.exchanges.poloniex import Poloniex, trade_from_poloniex
 from rotkehlchen.fval import FVal
@@ -23,14 +23,11 @@ from rotkehlchen.tests.utils.exchanges import (
     POLONIEX_BALANCES_RESPONSE,
     POLONIEX_MOCK_DEPOSIT_WITHDRAWALS_RESPONSE,
     POLONIEX_TRADES_RESPONSE,
-    get_exchange_asset_symbols,
 )
-from rotkehlchen.tests.utils.globaldb import is_asset_symbol_unsupported
 from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.types import Location, Timestamp, TimestampMS
 
 if TYPE_CHECKING:
-    from rotkehlchen.globaldb.handler import GlobalDBHandler
     from rotkehlchen.tests.fixtures.messages import MockRotkiNotifier
 
 
@@ -338,17 +335,12 @@ def test_query_trade_history_unexpected_data(poloniex):
 
 
 @pytest.mark.asset_test
-def test_poloniex_assets_are_known(poloniex: 'Poloniex', globaldb: 'GlobalDBHandler'):
-    for asset in get_exchange_asset_symbols(Location.POLONIEX):
-        assert is_asset_symbol_unsupported(globaldb, Location.POLONIEX, asset) is False, f'Poloniex assets {asset} should not be unsupported'  # noqa: E501
-
+def test_poloniex_assets_are_known(poloniex: 'Poloniex'):
     currencies = poloniex.api_query_list('/currencies')
     for asset_data in currencies:
         for poloniex_asset in asset_data:
             try:
                 _ = asset_from_poloniex(poloniex_asset)
-            except UnsupportedAsset:
-                assert is_asset_symbol_unsupported(globaldb, Location.POLONIEX, poloniex_asset)
             except UnknownAsset as e:
                 test_warnings.warn(UserWarning(
                     f'Found unknown asset {e.identifier} with symbol {poloniex_asset} in Poloniex. Support for it has to be added',  # noqa: E501

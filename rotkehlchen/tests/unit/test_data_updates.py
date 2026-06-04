@@ -222,19 +222,6 @@ COUNTERPARTY_ASSET_MAPPINGS_DATA: dict[str, dict[str, list[dict[str, Any]]]] = {
     },
 }
 
-LOCATION_UNSUPPORTED_ASSETS_DATA: dict[str, dict[str, dict[str, list[str]]]] = {
-    'location_unsupported_assets': {
-        'insert': {
-            'binance': ['OJ', '123'],  # 123 already exists
-            'kucoin': ['OJ', 'NAKA'],  # NAKA already exists
-        },
-        'remove': {
-            'bitfinex': ['OJ', 'IDX'],  # OJ does not exist
-            'bittrex': ['OJ', 'SLV'],  # OJ does not exist
-        },
-    },
-}
-
 
 def make_single_mock_github_data_response(target: UpdateType):
     """Creates a mocking function for a single update type for github requests."""
@@ -248,7 +235,6 @@ def make_single_mock_github_data_response(target: UpdateType):
                 'accounting_rules': {'latest': 1 if target == UpdateType.ACCOUNTING_RULES else 0},
                 'location_asset_mappings': {'latest': 1 if target == UpdateType.LOCATION_ASSET_MAPPINGS else 0},  # noqa: E501
                 'counterparty_asset_mappings': {'latest': 1 if target == UpdateType.COUNTERPARTY_ASSET_MAPPINGS else 0},  # noqa: E501
-                'location_unsupported_assets': {'latest': 1 if target == UpdateType.LOCATION_UNSUPPORTED_ASSETS else 0},  # noqa: E501
             }
         elif 'spam_assets/v' in url:
             data = SPAM_ASSET_MOCK_DATA
@@ -262,8 +248,6 @@ def make_single_mock_github_data_response(target: UpdateType):
             data = ACCOUNTING_RULES_DATA
         elif 'location_asset_mappings/v' in url:
             data = LOCATION_ASSET_MAPPINGS_DATA
-        elif 'location_unsupported_assets/v' in url:
-            data = LOCATION_UNSUPPORTED_ASSETS_DATA
         elif 'counterparty_asset_mappings/v' in url:
             data = COUNTERPARTY_ASSET_MAPPINGS_DATA
         else:
@@ -303,8 +287,6 @@ def make_mock_github_response(latest: int, min_version: str | None = None, max_v
             result = ACCOUNTING_RULES_DATA
         elif 'location_asset_mappings/v' in url:
             result = LOCATION_ASSET_MAPPINGS_DATA
-        elif 'location_unsupported_assets/v' in url:
-            result = LOCATION_UNSUPPORTED_ASSETS_DATA
         elif 'counterparty_asset_mappings/v' in url:
             result = COUNTERPARTY_ASSET_MAPPINGS_DATA
         else:
@@ -324,7 +306,6 @@ def reset_update_type_mappings(data_updater: RotkiDataUpdater) -> None:
         UpdateType.GLOBAL_ADDRESSBOOK: data_updater.update_global_addressbook,
         UpdateType.ACCOUNTING_RULES: data_updater.update_accounting_rules,
         UpdateType.LOCATION_ASSET_MAPPINGS: data_updater.update_location_asset_mappings,
-        UpdateType.LOCATION_UNSUPPORTED_ASSETS: data_updater.update_location_unsupported_assets,
         UpdateType.COUNTERPARTY_ASSET_MAPPINGS: data_updater.update_counterparty_asset_mappings,
     }
 
@@ -403,7 +384,6 @@ def test_no_update_due_to_update_version(data_updater: RotkiDataUpdater) -> None
                 (UpdateType.GLOBAL_ADDRESSBOOK.serialize(), 999),
                 (UpdateType.ACCOUNTING_RULES.serialize(), 999),
                 (UpdateType.LOCATION_ASSET_MAPPINGS.serialize(), 999),
-                (UpdateType.LOCATION_UNSUPPORTED_ASSETS.serialize(), 999),
                 (UpdateType.COUNTERPARTY_ASSET_MAPPINGS.serialize(), 999),
             ],
         )
@@ -808,43 +788,6 @@ def test_counterparty_asset_mappings_updates(
 
     with globaldb.conn.read_ctx() as cursor:
         _check_counterparty_asset_mappings(cursor, after_upgrade=True)
-
-
-def _check_location_unsupported_assets(cursor: 'DBCursor', after_upgrade: bool) -> None:
-    """Auxiliary function to check the db values before and after the upgrade"""
-    assert cursor.execute('SELECT COUNT(*) FROM location_asset_mappings').fetchone()[0] == NUM_PACKAGED_ASSETS_MAPPINGS  # noqa: E501
-
-    for operation, expected_count in (
-        ('insert', lambda symbol: 0 if after_upgrade is False and symbol == 'OJ' else 1),
-        ('remove', lambda symbol: 1 if after_upgrade is False and symbol != 'OJ' else 0),
-    ):
-        for location, symbols in LOCATION_UNSUPPORTED_ASSETS_DATA['location_unsupported_assets'][operation].items():  # noqa: E501
-            for symbol in symbols:
-                assert cursor.execute(
-                    'SELECT COUNT(*) FROM location_unsupported_assets '
-                    'WHERE location = ? AND exchange_symbol = ?;', (
-                        Location.deserialize(location).serialize_for_db(), symbol,
-                    ),
-                ).fetchone()[0] == expected_count(symbol)  # type: ignore[no-untyped-call]
-
-
-def test_location_unsupported_assets_updates(
-        data_updater: RotkiDataUpdater,
-        globaldb: 'GlobalDBHandler',
-) -> None:
-    """Test that remote updates for location unsupported assets work"""
-    # check state of the location asset mappings before updating
-    with globaldb.conn.read_ctx() as cursor:
-        _check_location_unsupported_assets(cursor, after_upgrade=False)
-
-    with patch(
-        'requests.get',
-        wraps=make_single_mock_github_data_response(UpdateType.LOCATION_UNSUPPORTED_ASSETS),
-    ):
-        data_updater.check_for_updates()
-
-    with globaldb.conn.read_ctx() as cursor:
-        _check_location_unsupported_assets(cursor, after_upgrade=True)
 
 
 def test_version_used_in_updates(database: 'DBHandler', monkeypatch: pytest.MonkeyPatch) -> None:

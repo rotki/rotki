@@ -634,9 +634,6 @@ class Bitfinex(ExchangeInterface, SignatureGeneratorMixin):
                     ]:
                         try:
                             asset = get_asset_func(param)  # type: ignore[operator]
-                        except UnsupportedAsset:
-                            log.warning(f'Found unsupported asset {bfx_symbol} in Bitfinex. Support for it has to be added.')  # noqa: E501
-                            break  # Don't try fallbacks; this asset is explicitly unsupported
                         except UnknownAsset:
                             continue
 
@@ -645,8 +642,6 @@ class Bitfinex(ExchangeInterface, SignatureGeneratorMixin):
                                 bfx_db_serialized,
                                 bfx_symbol,
                                 asset.serialize(),
-                                bfx_db_serialized,
-                                bfx_symbol,
                             ))
 
                         break
@@ -654,12 +649,11 @@ class Bitfinex(ExchangeInterface, SignatureGeneratorMixin):
                         log.warning(f'Found new asset symbol {bfx_symbol} for {symbol} in Bitfinex. Support for it has to be added.')  # noqa: E501
                         continue  # skip unknown assets
 
-                # insert the mapping, and skip unsupported assets
+                # insert the fetched mappings
                 with GlobalDBHandler().conn.write_ctx() as write_cursor:
                     write_cursor.executemany(
                         'INSERT OR IGNORE INTO location_asset_mappings (location, '
-                        'exchange_symbol, local_id) SELECT ?, ?, ? WHERE NOT EXISTS (SELECT 1 '
-                        'FROM location_unsupported_assets WHERE location=? AND exchange_symbol=?)',
+                        'exchange_symbol, local_id) VALUES(?, ?, ?)',
                         bindings,
                     )
 
