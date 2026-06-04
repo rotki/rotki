@@ -318,6 +318,18 @@ class RotkiDataUpdater:
         if len(rules_data) == 0:  # do not wipe the user's rules if we got nothing to restore
             raise RemoteError('Did not receive any accounting rules from the data repo')
 
+        # Deserialize everything before touching the DB so the write transaction below stays as
+        # lean as possible and we hold the db lock for as little time as we can.
+        deserialized_rules = []
+        for rule_data in rules_data:
+            try:
+                event_type, event_subtype, counterparty, rule = _deserialize_accounting_rule(rule_data)  # noqa: E501
+            except (KeyError, DeserializationError) as e:
+                log.error('Failed to read key %s while resetting accounting rules', e)
+                continue
+
+            deserialized_rules.append((event_type, event_subtype, counterparty, rule, rule_data.get('links', {})))  # noqa: E501
+
         # Everything is fetched and ready. Atomically swap the user's rules for the defaults.
         rules_db = DBAccountingRules(self.user_db)
         with self.user_db.conn.write_ctx() as write_cursor:
@@ -331,19 +343,14 @@ class RotkiDataUpdater:
                 'INSERT OR REPLACE INTO settings(name, value) VALUES (?, ?)',
                 (UpdateType.ACCOUNTING_RULES.serialize(), applied_version),
             )
-            for rule_data in rules_data:
-                try:
-                    event_type, event_subtype, counterparty, rule = _deserialize_accounting_rule(rule_data)  # noqa: E501
-                except (KeyError, DeserializationError) as e:
-                    log.error('Failed to read key %s while resetting accounting rules', e)
-                    continue
-
+            for event_type, event_subtype, counterparty, rule, links in deserialized_rules:
                 rules_db.add_accounting_rule(
+                    write_cursor=write_cursor,
                     event_type=event_type,
                     event_subtype=event_subtype,
                     counterparty=counterparty,
                     rule=rule,
-                    links=rule_data.get('links', {}),
+                    links=links,
                     force_update=True,
                 )
 
