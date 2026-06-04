@@ -637,6 +637,62 @@ def test_deposit_to_protocol_updates_wallet_and_protocol_buckets(
         ]
 
 
+def test_empty_counterparty_does_not_create_protocol_bucket(
+        database: 'DBHandler',
+        messages_aggregator: 'MessagesAggregator',
+) -> None:
+    """Test that an empty counterparty is not considered a valid protocol bucket."""
+    with database.user_write() as write_cursor:
+        DBHistoryEvents(database).add_history_events(
+            write_cursor=write_cursor,
+            history=[EvmEvent(
+                tx_ref=make_evm_tx_hash(),
+                sequence_index=0,
+                timestamp=TimestampMS(1000),
+                location=Location.ETHEREUM,
+                event_type=HistoryEventType.RECEIVE,
+                event_subtype=HistoryEventSubType.NONE,
+                asset=A_ETH,
+                amount=FVal('10'),
+                location_label=TEST_ADDR1,
+            ), EvmEvent(
+                tx_ref=make_evm_tx_hash(),
+                sequence_index=0,
+                timestamp=TimestampMS(2000),
+                location=Location.ETHEREUM,
+                event_type=HistoryEventType.DEPOSIT,
+                event_subtype=HistoryEventSubType.DEPOSIT_TO_PROTOCOL,
+                asset=A_ETH,
+                amount=FVal('3'),
+                location_label=TEST_ADDR1,
+                counterparty='',
+            ), EvmEvent(
+                tx_ref=make_evm_tx_hash(),
+                sequence_index=0,
+                timestamp=TimestampMS(3000),
+                location=Location.ETHEREUM,
+                event_type=HistoryEventType.SPEND,
+                event_subtype=HistoryEventSubType.GENERATE_DEBT,
+                asset=A_ETH,
+                amount=FVal('1'),
+                location_label=TEST_ADDR1,
+                counterparty='',
+            )],
+        )
+
+    process_historical_balances(database, messages_aggregator)
+
+    with database.conn.read_ctx() as cursor:
+        assert cursor.execute(
+            'SELECT timestamp, location_label, protocol, metric_value FROM event_metrics '
+            'ORDER BY timestamp',
+        ).fetchall() == [
+            (1000, TEST_ADDR1, None, '10'),
+            (2000, TEST_ADDR1, None, '7'),
+            (3000, TEST_ADDR1, None, '6'),
+        ]
+
+
 def test_staking_deposit_and_withdraw_updates_wallet_and_protocol_buckets(
         database: 'DBHandler',
         messages_aggregator: 'MessagesAggregator',
