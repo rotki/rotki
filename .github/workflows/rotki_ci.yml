@@ -282,6 +282,7 @@ jobs:
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
         with:
           persist-credentials: false
+          fetch-depth: 0  # full history so the diff-scoped logging lint can reach the PR base
 
       - name: Load env
         uses: rotki/action-env@49f59e650cfdc8796c4ac6533ec044b190d83f9a  # v4.0.0
@@ -330,6 +331,8 @@ jobs:
         run: uv sync --locked --group lint
 
       - name: Lint
+        env:
+          LINT_DIFF_BASE: ${{ github.event.pull_request.base.sha }}  # diff-scoped logging lint base
         run: uv run make lint
 
   test-backend:

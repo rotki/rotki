@@ -10,6 +10,7 @@ lint:
 	PYRIGHT_PYTHON_IGNORE_WARNINGS=1 pyright $(COMMON_LINT_PATHS)
 	pylint --rcfile .pylint.rc $(ALL_LINT_PATHS)
 	python tools/lint_checksum_addresses.py
+	python tools/lint_new_logging_fstrings.py
 
 
 format:

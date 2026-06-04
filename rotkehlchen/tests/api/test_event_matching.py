@@ -358,6 +358,24 @@ def test_multi_match_asset_movements(rotkehlchen_api_server: 'APIServer') -> Non
     assert len(result[3]) == 3  # movement and two matched events
     assert result[4]['entry']['group_identifier'] == before_event.group_identifier
 
+    # Regression test: non-aggregated filtering that returns several of the movement's matched
+    # events but not the movement itself must not duplicate the movement. Filtering by the
+    # ethereum location returns both matched onchain events but excludes the Kraken movement,
+    # which the join then pulls back in - previously once per matched event (i.e. twice).
+    result = assert_proper_response_with_result(
+        response=requests.post(
+            api_url_for(rotkehlchen_api_server, 'historyeventresource'),
+            json={'aggregate_by_group_ids': False, 'location': Location.ETHEREUM.serialize()},
+        ),
+        rotkehlchen_api_server=rotkehlchen_api_server,
+    )['entries']
+    flattened = [
+        sub for entry in result for sub in (entry if isinstance(entry, list) else [entry])
+    ]
+    assert sum(
+        1 for x in flattened if x['entry']['identifier'] == asset_movement.identifier
+    ) == 1, 'the matched movement must appear exactly once, not once per matched event on the page'
+
     # Check that unlinking a multi-match works properly
     assert_simple_ok_response(requests.delete(
         url=api_url_for(rotkehlchen_api_server, 'matchassetmovementsresource'),

@@ -976,3 +976,55 @@ def test_okx_query_deposits_withdrawals(mock_okx: 'Okx') -> None:
     ]
 
     assert asset_movements == expected_asset_movements
+
+
+def test_okx_withdrawals_pagination(mock_okx: 'Okx') -> None:
+    """Regression test for withdrawal history pagination.
+
+    Withdrawal records have no `ordId` field (only trade records do), so
+    paginating them on `ordId` raised KeyError and aborted the whole OKX
+    query once a user had more than MAX_RESULTS withdrawals. Pagination must
+    use the `ts` cursor, matching the deposit path and OKX's documented
+    `after` semantics.
+    """
+    def make_withdrawal(idx: int) -> str:
+        return f"""
+      {{
+         "chain":"USDT-Arbitrum one",
+         "fee":"0.1",
+         "amt":"100.0",
+         "txId":"0xwithdrawal{idx}",
+         "ccy":"USDT",
+         "to":"0x388c818ca8b9251b393131c08a736a67ccb19297",
+         "state":"2",
+         "nonTradableAsset":false,
+         "ts":"{1670953159000 - idx * 1000}",
+         "wdId":"{idx}",
+         "feeCcy":"USDT"
+      }}"""
+
+    seen_after: list[str] = []
+
+    def mock_request(method, url, **_kwargs):  # pylint: disable=unused-argument
+        if 'withdrawal' in url:
+            # `after` is always present but empty on the first page
+            if (after := url.split('after=')[1].split('&')[0]) != '':
+                seen_after.append(after)  # second (final) page stops pagination
+                records = make_withdrawal(idx=100)
+            else:  # first page: exactly MAX_RESULTS records -> triggers pagination
+                records = ','.join(make_withdrawal(idx=i) for i in range(mock_okx.MAX_RESULTS))
+            return MockResponse(200, f'{{"code":"0","data":[{records}],"msg":""}}')
+        return MockResponse(200, '{"code":"0","data":[]}')
+
+    with patch.object(mock_okx.session, 'request', side_effect=mock_request):
+        asset_movements, _ = mock_okx.query_online_history_events(
+            Timestamp(1609103082),
+            Timestamp(1672175105),
+        )
+
+    # pagination must have happened on the `ts` of the last record of page 1
+    assert seen_after == [str(1670953159000 - (mock_okx.MAX_RESULTS - 1) * 1000)]
+    # 100 + 1 withdrawals, each producing a SPEND and a FEE movement
+    assert sum(
+        movement.event_subtype == HistoryEventSubType.SPEND for movement in asset_movements
+    ) == mock_okx.MAX_RESULTS + 1

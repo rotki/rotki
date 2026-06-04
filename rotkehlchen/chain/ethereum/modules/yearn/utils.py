@@ -265,7 +265,7 @@ def query_yearn_vaults(db: 'DBHandler', ethereum_inquirer: 'EvmNodeInquirer') ->
             tokens_to_update_by_protocol[vault_type].append(vault_token)
 
     for protocol, tokens in tokens_to_update_by_protocol.items():
-        log.debug(f'Updating protocol for {len(tokens)} {chain_id.name} {protocol} assets')
+        log.debug('Updating protocol for %s %s %s assets', len(tokens), chain_id.name, protocol)
         GlobalDBHandler.set_tokens_protocol_if_missing(
             tokens=tokens,
             new_protocol=protocol,

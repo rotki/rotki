@@ -309,11 +309,16 @@ class DBHistoryEvents:
             event_type: HistoryEventType,
             notes: str | None,
             decoded_addresses: list[str] | None,
+            clear_existing: bool = True,
     ) -> None:
-        write_cursor.execute(
-            'DELETE FROM bitcoin_events_addresses WHERE event_identifier=?',
-            (identifier,),
-        )
+        # clear_existing is only needed when editing an event (its location/addresses may have
+        # changed). On a fresh insert the identifier is a brand new rowid and the FK to
+        # history_events is ON DELETE CASCADE, so there can never be pre-existing rows to delete.
+        if clear_existing:
+            write_cursor.execute(
+                'DELETE FROM bitcoin_events_addresses WHERE event_identifier=?',
+                (identifier,),
+            )
         if (
             location not in (Location.BITCOIN, Location.BITCOIN_CASH) or
             event_type not in (
@@ -348,6 +353,7 @@ class DBHistoryEvents:
             event: HistoryBaseEntry,
             mapping_values: dict[str, HistoryMappingState] | None = None,
             skip_tracking: bool = False,
+            ignored_assets: set[str] | None = None,
     ) -> int | None:
         """Insert a single history entry to the DB. Returns its identifier or
         None if it already exists. This function serializes the event depending
@@ -371,12 +377,22 @@ class DBHistoryEvents:
             else:
                 write_cursor.execute(f'INSERT OR IGNORE INTO {insertquery}', (identifier, *bindings))  # noqa: E501
 
-        write_cursor.execute(
-            'UPDATE history_events SET ignored=(CASE WHEN EXISTS '
-            "(SELECT 1 FROM multisettings WHERE name = 'ignored_asset' AND value = ?) "
-            'THEN 1 ELSE 0 END) WHERE identifier=?',
-            (event.asset.identifier, identifier),
-        )
+        # The `ignored` column defaults to 0 on insert. When the caller precomputes the
+        # ignored-asset set (e.g. add_history_events for a batch), only issue an UPDATE for the
+        # rare events whose asset is ignored, avoiding a per-event correlated subquery. Callers
+        # that don't pass the set fall back to determining the flag inline.
+        if ignored_assets is None:
+            write_cursor.execute(
+                'UPDATE history_events SET ignored=(CASE WHEN EXISTS '
+                "(SELECT 1 FROM multisettings WHERE name = 'ignored_asset' AND value = ?) "
+                'THEN 1 ELSE 0 END) WHERE identifier=?',
+                (event.asset.identifier, identifier),
+            )
+        elif event.asset.identifier in ignored_assets:
+            write_cursor.execute(
+                'UPDATE history_events SET ignored=1 WHERE identifier=?',
+                (identifier,),
+            )
 
         if mapping_values is not None:
             write_cursor.executemany(
@@ -393,6 +409,7 @@ class DBHistoryEvents:
             event_type=event.event_type,
             notes=event.notes,
             decoded_addresses=getattr(event, BITCOIN_COUNTERPARTY_ADDRESSES_METADATA_KEY, None),
+            clear_existing=False,  # fresh insert: no pre-existing rows can exist (see method)
         )
 
         if not skip_tracking:
@@ -417,6 +434,9 @@ class DBHistoryEvents:
             return
 
         min_timestamp: TimestampMS | None = None
+        # Load the ignored-asset set once for the whole batch (the call is cached) so each event
+        # insert avoids a per-event correlated subquery to compute its `ignored` flag.
+        ignored_assets = self.db.get_ignored_asset_ids(cursor=write_cursor)
 
         # Add all events WITHOUT calling _mark_events_modified for each
         for event in history:
@@ -425,6 +445,7 @@ class DBHistoryEvents:
                     write_cursor=write_cursor,
                     event=event,
                     skip_tracking=True,  # Skip tracking per-event
+                    ignored_assets=ignored_assets,
                 ) is not None  # Only track if event was actually added (not a duplicate)
                 and (min_timestamp is None or event.timestamp < min_timestamp)
             ):
@@ -2443,18 +2464,30 @@ class DBHistoryEvents:
                     joined_events_result.ignored_group_identifiers,
                 )
 
-            # Include the newly loaded events with their associated groups.
+            # Include the newly loaded events with their associated groups. A movement can be
+            # matched with multiple events (manual multi-match), so the same joined group can be
+            # reachable from several groups present in the page. Track which joined groups have
+            # already been emitted to avoid adding their events more than once (e.g. the movement
+            # showing up twice when two of its matches are on the page but the movement isn't).
+            consumed_joined_groups: set[str] = set()
+
+            def extend_with_joined_group(events: list[HistoryBaseEntry], joined_group_id: str) -> None:  # noqa: E501
+                if joined_group_id in consumed_joined_groups:
+                    return
+                consumed_joined_groups.add(joined_group_id)
+                events.extend(joined_events_by_group[joined_group_id])
+
             for group_identifier, events in events_by_group.items():
                 if (match_info_list := movement_group_to_match_info.get(group_identifier)) is not None:  # noqa: E501
                     for _, matched_group_id, _ in match_info_list:
-                        events.extend(joined_events_by_group[matched_group_id])
+                        extend_with_joined_group(events, matched_group_id)
                 elif (movement_info := match_group_to_movement_info.get(group_identifier)) is not None:  # noqa: E501
-                    events.extend(joined_events_by_group[movement_group_id := movement_info[0]])
+                    extend_with_joined_group(events, movement_group_id := movement_info[0])
                     # also include all events from the groups of any other events that are
                     # matched with this movement.
                     if (match_info_list := movement_group_to_match_info.get(movement_group_id)) is not None:  # noqa: E501
                         for _, group_id, _ in match_info_list:
-                            events.extend(joined_events_by_group[group_id])
+                            extend_with_joined_group(events, group_id)
 
                 processed_events_result.extend(sorted(events, key=lambda event: event.timestamp))  # type: ignore  # will be a list of HistoryBaseEntry
 

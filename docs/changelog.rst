@@ -21,6 +21,10 @@ Changelog
 * :bug:`-` The login screen no longer pre-fills the username field with a remembered account that no longer exists.
 * :feature:`12002` Adding or editing a history event now uses a plain-language "Action" picker grouped by intent (Trade, Transfer, DeFi, Staking, etc.) with search and keyboard navigation, replacing the raw event-type and subtype dropdowns.
 * :feature:`12086` The "Create account" flow now starts with a mode chooser so creating a new local profile and restoring a database synced from rotki cloud are separate, focused paths.
+* :bug:`-` A deposit or withdrawal manually matched to multiple on-chain transactions is no longer duplicated in the history view when filtering by chain.
+* :bug:`-` LP, wrapped and vault tokens are now reported as unpriced instead of at a too-low value when one of their underlying assets has no price.
+* :bug:`-` Merging assets now correctly combines their historical balances with exact precision, instead of failing or double-counting when both had a balance at the same timestamp.
+* :bug:`-` OKX withdrawal history is now queried correctly for accounts with more than 100 withdrawals, instead of failing and aborting the whole OKX history sync.
 * :bug:`-` When you unignore an asset from a history event, its group no longer keeps flagging hidden ignored assets, so you are not misled into thinking events are still hidden when there is nothing left to reveal.
 * :bug:`-` In an expanded linked movement, each leg now shows its own location icon: the exchange icon on the exchange deposit/withdrawal and the chain icon on the on-chain transfer leg, instead of the exchange icon incorrectly appearing on the on-chain leg.
 * :bug:`-` Tags on manually tracked balances are no longer dropped (or shown on the wrong balance) after updating, for users who had previously deleted a manual balance. The faulty cleanup that orphaned those tags is also reverted.

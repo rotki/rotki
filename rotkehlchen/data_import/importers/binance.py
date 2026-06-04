@@ -868,7 +868,7 @@ class BinanceImporter(BaseExchangeImporter):
         log.debug(f'Skipped Binance non-trade rows {skipped_nontrade_rows}')
         log.debug(f'Total found Binance entries: {total_found}')
         log.debug(f'Total skipped Binance csv rows: {ignored_count}')
-        log.debug(f'Binance import stats: {[{type(entry_class).__name__: amount} for entry_class, amount in stats.items()]}')  # noqa: E501
+        log.debug('Binance import stats: %s', [{type(entry_class).__name__: amount} for entry_class, amount in stats.items()])  # noqa: E501
 
         return skipped_count
 

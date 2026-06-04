@@ -128,6 +128,40 @@ def test_balance_sheet_raddition():
     assert result == c
 
 
+def test_balance_sheet_operators_do_not_mutate_operands():
+    """Regression test: the non-augmented operators (+, -, sum) must not mutate their
+    operands, while the augmented operators (+=, -=) intentionally accumulate in place."""
+    def sheet(asset, amount: str) -> BalanceSheet:
+        result = BalanceSheet()
+        result.assets[asset][DEFAULT_BALANCE_LABEL] += Balance(FVal(amount), FVal(amount))
+        return result
+
+    # `a + b` must leave `a` untouched and not alias its dict
+    a, b = sheet(A_ETH, '1'), sheet(A_ETH, '2')
+    combined = a + b
+    assert a.assets[A_ETH][DEFAULT_BALANCE_LABEL] == Balance(FVal('1'), FVal('1'))
+    assert combined.assets[A_ETH][DEFAULT_BALANCE_LABEL] == Balance(FVal('3'), FVal('3'))
+    assert combined.assets is not a.assets
+
+    # `sum([...])` must not corrupt the first element of the iterable (the sum() seed)
+    sheets = [sheet(A_ETH, '10'), sheet(A_ETH, '20'), sheet(A_ETH, '30')]
+    total = sum(sheets)
+    assert total.assets[A_ETH][DEFAULT_BALANCE_LABEL] == Balance(FVal('60'), FVal('60'))
+    assert sheets[0].assets[A_ETH][DEFAULT_BALANCE_LABEL] == Balance(FVal('10'), FVal('10'))
+
+    # `a - b` must leave `a` untouched
+    a, b = sheet(A_ETH, '5'), sheet(A_ETH, '2')
+    assert (a - b).assets[A_ETH][DEFAULT_BALANCE_LABEL] == Balance(FVal('3'), FVal('3'))
+    assert a.assets[A_ETH][DEFAULT_BALANCE_LABEL] == Balance(FVal('5'), FVal('5'))
+
+    # `+=` is the in-place fast path: it mutates and returns the accumulator object itself
+    acc = BalanceSheet()
+    acc_id = id(acc)
+    acc += sheet(A_ETH, '4')
+    assert id(acc) == acc_id
+    assert acc.assets[A_ETH][DEFAULT_BALANCE_LABEL] == Balance(FVal('4'), FVal('4'))
+
+
 def test_default_balance_sheet():
     a = BalanceSheet(
         assets=defaultdict(lambda: defaultdict(Balance), {

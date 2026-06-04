@@ -216,7 +216,7 @@ class TransactionDecoder(ABC, Generic[T_Transaction, T_DecodingRules, T_DecoderI
                 filter_query=self._get_tx_not_decoded_filter_query(limit=limit),
             )
             if len(hashes) != 0:
-                log.debug(f'Will decode {len(hashes)} transactions for {self.chain_name}')
+                log.debug('Will decode %s transactions for %s', len(hashes), self.chain_name)
                 self.decode_transaction_hashes(
                     ignore_cache=False,
                     tx_hashes=hashes,

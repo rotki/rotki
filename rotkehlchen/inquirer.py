@@ -323,8 +323,14 @@ def get_underlying_asset_price(token: EvmToken) -> tuple[Price | None, CurrentPr
     if token.underlying_tokens is not None:
         usd_price = ZERO
         for underlying_token in token.underlying_tokens:
-            token = EvmToken(underlying_token.get_identifier(parent_chain=token.chain_id))
-            underlying_asset_price, oracle = Inquirer.find_usd_price_and_oracle(token)
+            underlying_asset = EvmToken(underlying_token.get_identifier(parent_chain=token.chain_id))  # noqa: E501
+            underlying_asset_price, oracle = Inquirer.find_usd_price_and_oracle(underlying_asset)
+            if underlying_asset_price == ZERO_PRICE:
+                # if any underlying token can't be priced the aggregated price would be
+                # incomplete (too low), so treat the whole token as unpriced instead of
+                # returning a partial value the user would mistake for the real one.
+                return None, oracle
+
             usd_price += underlying_asset_price * underlying_token.weight
 
         if usd_price != ZERO_PRICE:
@@ -520,7 +526,7 @@ class Inquirer:
     @staticmethod
     def set_cached_price(cache_key: tuple[Asset, Asset], cached_price: CachedPriceEntry) -> None:
         """Save cached price for the key provided and all the assets in the same collection"""
-        related_assets = GlobalDBHandler.get_assets_in_same_collection(cache_key[0].identifier)
+        related_assets = AssetResolver.get_assets_in_same_collection(cache_key[0].identifier)
         for related_asset in related_assets:
             Inquirer._cached_current_price.add((related_asset, cache_key[1]), cached_price)
 
@@ -719,6 +725,18 @@ class Inquirer:
                 if eur_to_target != ZERO_PRICE:
                     for from_asset in eur_collection_assets:
                         found_prices[from_asset] = eur_to_target, CurrentPriceOracle.FIAT
+
+        # Cache the resolved prices under the actual target currency so a subsequent query
+        # short-circuits in _preprocess_assets_to_query. Otherwise non-USD targets always miss
+        # the cache (only the USD price is cached in _maybe_get_evm_token_usd_price) and re-run
+        # the underlying onchain price query (e.g. the curve/yearn multicall) on every refresh.
+        now = ts_now()
+        for from_asset, (price, oracle) in found_prices.items():
+            if price != ZERO_PRICE:
+                Inquirer.set_cached_price(
+                    cache_key=(from_asset, to_asset),
+                    cached_price=CachedPriceEntry(price=price, time=now, oracle=oracle),
+                )
 
         return assets_without_special_price, found_prices
 

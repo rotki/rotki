@@ -91,6 +91,7 @@ from rotkehlchen.inquirer import (
     DEFAULT_RATE_LIMIT_WAITING_TIME,
     CurrentPriceOracle,
     Inquirer,
+    get_underlying_asset_price,
 )
 from rotkehlchen.interfaces import CurrentPriceOracleInterface
 from rotkehlchen.tests.conftest import TestEnvironment, requires_env
@@ -429,6 +430,47 @@ def test_price_underlying_tokens(inquirer, globaldb):
     assert price == FVal(67)
 
 
+def test_price_underlying_tokens_unpriced_when_a_leg_is_missing(inquirer, globaldb):
+    """Regression test: a token valued from its underlying tokens must be reported as
+    unpriced when any underlying leg has no price, instead of returning a too-low partial
+    sum that the user would mistake for the real value."""
+    address = string_to_evm_address('0xc37b40ABdB939635068d3c5f13E7faF686F03B65')
+    identifier = ethaddress_to_identifier(address)
+    token = EvmToken.initialize(
+        address=address,
+        chain_id=ChainID.ETHEREUM,
+        token_kind=TokenKind.ERC20,
+        decimals=18,
+        name='Test',
+        symbol='YAB',
+        underlying_tokens=[
+            UnderlyingToken(address=A_AAVE.resolve_to_evm_token().evm_address, token_kind=TokenKind.ERC20, weight=FVal('0.5')),  # noqa: E501
+            UnderlyingToken(address=A_LINK.resolve_to_evm_token().evm_address, token_kind=TokenKind.ERC20, weight=FVal('0.5')),  # noqa: E501
+        ],
+    )
+    globaldb.add_asset(token)
+
+    def mock_find(asset, *args, **kwargs):  # AAVE is priced, LINK can't be priced
+        if asset == A_AAVE:
+            return Price(FVal('100')), CurrentPriceOracle.COINGECKO
+        return ZERO_PRICE, CurrentPriceOracle.BLOCKCHAIN
+
+    with patch.object(Inquirer, 'find_usd_price_and_oracle', side_effect=mock_find):
+        price, _ = get_underlying_asset_price(EvmToken(identifier))
+
+    assert price is None  # before the fix this returned 50 (0.5 * 100), half the real value
+
+    # sanity check: when every leg is priced the correct weighted sum is still returned
+    with patch.object(
+        Inquirer,
+        'find_usd_price_and_oracle',
+        return_value=(Price(FVal('100')), CurrentPriceOracle.COINGECKO),
+    ):
+        price, _ = get_underlying_asset_price(EvmToken(identifier))
+
+    assert price == Price(FVal('100'))  # 0.5 * 100 + 0.5 * 100
+
+
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
 @pytest.mark.parametrize('should_mock_current_price_queries', [False])
@@ -730,6 +772,32 @@ def test_special_price_unpriced_when_target_rate_unavailable(inquirer: 'Inquirer
     assert found_prices[A_KFEE][0] == Price(FVal('0.009'))  # 0.01 USD * 0.9 USD/EUR
 
 
+@pytest.mark.parametrize('should_mock_current_price_queries', [False])
+def test_special_price_cached_for_non_usd_target(inquirer: 'Inquirer') -> None:
+    """Regression test: for a non-USD target currency the underlying onchain USD price of a
+    protocol/LP token must be queried only once and then served from cache (converted to the
+    target currency). Previously only the USD price was cached while lookups used the
+    (asset, target) key, so every balance refresh re-ran the underlying onchain price query
+    (e.g. a curve/yearn multicall) for non-USD main currencies.
+    """
+    token = A_CRV  # a plain evm token that reaches the _maybe_get_evm_token_usd_price branch
+    with (
+        patch.object(
+            Inquirer,
+            '_maybe_get_evm_token_usd_price',
+            return_value=(Price(FVal('1.05')), CurrentPriceOracle.BLOCKCHAIN),
+        ) as usd_price_mock,
+        patch.object(Inquirer, 'find_price', return_value=Price(FVal('0.9'))),  # USD->EUR rate
+    ):
+        first = Inquirer.find_prices(from_assets=[token], to_asset=A_EUR, ignore_cache=True)
+        second = Inquirer.find_prices(from_assets=[token], to_asset=A_EUR)
+
+    # the second (normal) refresh must hit the cache instead of re-querying the onchain price
+    assert usd_price_mock.call_count == 1, 'onchain USD price must be queried only once across refreshes'  # noqa: E501
+    assert first[token].is_close(FVal('1.05') * FVal('0.9'))  # 1.05 USD * 0.9 USD/EUR
+    assert second[token] == first[token]
+
+
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
 @pytest.mark.parametrize('should_mock_current_price_queries', [False])
 def test_find_asset_with_no_api_oracles(inquirer_defi):
@@ -997,6 +1065,25 @@ def test_cache_is_hit_for_collection(inquirer: Inquirer):
         inquirer.find_usd_price(wsteth_op)
 
     assert oracle_query.call_count == 1
+
+
+@pytest.mark.parametrize('should_mock_current_price_queries', [False])
+def test_collection_assets_query_is_memoized(inquirer: Inquirer):
+    """Test that get_assets_in_same_collection is memoized so set_cached_price (called once per
+    priced asset on every balance refresh) does not re-run the collection JOIN every time."""
+    wsteth = Asset('eip155:1/erc20:0x7f39C581F595B53c5cb19bD0b3f8dA6c935E2Ca0')
+    AssetResolver.clean_memory_cache(wsteth.identifier)
+    with mock.patch.object(
+        GlobalDBHandler,
+        'get_assets_in_same_collection',
+        wraps=GlobalDBHandler.get_assets_in_same_collection,
+    ) as collection_query:
+        first = AssetResolver.get_assets_in_same_collection(wsteth.identifier)
+        second = AssetResolver.get_assets_in_same_collection(wsteth.identifier)
+
+    assert collection_query.call_count == 1, 'collection JOIN must be memoized across calls'
+    assert first == second
+    assert wsteth in first  # sanity: wstETH belongs to a multi-chain collection
 
 
 @pytest.mark.parametrize('should_mock_current_price_queries', [False])

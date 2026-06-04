@@ -337,9 +337,9 @@ class EvmTokens(ABC):  # noqa: B024
             except RemoteError as e:
                 had_failures = True
                 log.error(
-                    f'{self.evm_inquirer.chain_name} tokensBalance call failed for address '
-                    f'{address}. Marking detection as failed to avoid overwriting the cached '
-                    f'tokens with a partial result. Error: {e}',
+                    '%s tokensBalance call failed for address %s. Marking detection as failed '
+                    'to avoid overwriting the cached tokens with a partial result. Error: %s',
+                    self.evm_inquirer.chain_name, address, e,
                 )
                 continue
 
