@@ -520,8 +520,9 @@ class Binance(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
                 asset = asset_from_binance(asset_symbol)
             except UnsupportedAsset as e:
                 log.error(
-                    f'Found unsupported {self.name} asset {e.identifier}. '
-                    f'Ignoring its balance query.',
+                    'Found unsupported %s asset %s. Ignoring its balance query.',
+                    self.name,
+                    e.identifier,
                 )
                 continue
             except UnknownAsset as e:
