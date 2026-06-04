@@ -388,7 +388,7 @@ def mock_exchange_responses(rotki: Rotkehlchen, remote_errors: bool):
                     "type": "LIMIT",
                     "accountType": "SPOT"
                 }, {
-                    "symbol": "ETH_BALLS",
+                    "symbol": "ETH_NOTAREALASSET",
                     "id": 394131419,
                     "createTime": 1539713237000,
                     "price": "0.06935244",

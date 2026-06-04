@@ -26,8 +26,8 @@ def test_query_messages(
     rotki = rotkehlchen_api_server_with_exchanges.rest_api.rotkehlchen
     setup = mock_history_processing_and_exchanges(rotki)
 
-    # Query polo trades of to get them saved in the DB. This generates
-    # warnings due to unsupported assets found during querying
+    # Query polo trades of to get them saved in the DB. This generates unknown
+    # asset messages for the assets that can't be mapped during querying
     with setup.polo_patch:
         response = requests.post(
             api_url_for(rotkehlchen_api_server_with_exchanges, 'exchangeeventsqueryresource'),
@@ -41,14 +41,18 @@ def test_query_messages(
     )
     assert_proper_sync_response_with_result(response)
     websocket_connection.wait_until_messages_num(num=9, timeout=10)
-    assert [msg for msg in websocket_connection.messages if msg['type'] != 'history_events_status'] == [  # noqa: E501
-        {'type': 'legacy', 'data': {'verbosity': 'warning', 'value': 'Found poloniex trade with unsupported asset BALLS. Ignoring it.'}},  # noqa: E501
-        {'type': 'exchange_unknown_asset', 'data': {'location': 'poloniex', 'name': 'poloniex', 'identifier': 'NOEXISTINGASSET', 'details': 'trade'}},  # noqa: E501
-        {'type': 'legacy', 'data': {'verbosity': 'warning', 'value': 'Found deposit of unsupported poloniex asset EBT. Ignoring it.'}},  # noqa: E501
-        {'type': 'exchange_unknown_asset', 'data': {'location': 'poloniex', 'name': 'poloniex', 'identifier': 'IDONTEXIST', 'details': 'asset movement'}},  # noqa: E501
-        {'type': 'legacy', 'data': {'verbosity': 'warning', 'value': 'Found withdrawal of unsupported poloniex asset BALLS. Ignoring it.'}},  # noqa: E501
-        {'type': 'exchange_unknown_asset', 'data': {'location': 'poloniex', 'name': 'poloniex', 'identifier': 'IDONTEXIST', 'details': 'asset movement'}},  # noqa: E501
-    ]
+    non_status_messages = [msg for msg in websocket_connection.messages if msg['type'] != 'history_events_status']  # noqa: E501
+    assert all(msg['type'] == 'exchange_unknown_asset' for msg in non_status_messages)
+    assert sorted(
+        (msg['data']['identifier'], msg['data']['details']) for msg in non_status_messages
+    ) == sorted([
+        ('NOEXISTINGASSET', 'trade'),
+        ('NOTAREALASSET', 'trade'),
+        ('EBT', 'asset movement'),
+        ('IDONTEXIST', 'asset movement'),
+        ('NOTAREALASSET', 'asset movement'),
+        ('IDONTEXIST', 'asset movement'),
+    ])
 
     # now query for the messages again and make sure that nothing is return, since
     # our previous query should have popped all the messages in the queue

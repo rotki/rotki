@@ -14,7 +14,7 @@ from rotkehlchen.assets.converters import asset_from_coinbase
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.data_import.utils import maybe_set_transaction_extra_data
 from rotkehlchen.db.settings import CachedSettings
-from rotkehlchen.errors.asset import UnknownAsset, UnsupportedAsset
+from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.exchanges.data_structures import MarginPosition
@@ -518,11 +518,6 @@ class Coinbaseprime(ExchangeInterface):
                     self.send_unknown_asset_message(
                         asset_identifier=e.identifier,
                         details='balance query',
-                    )
-                except UnsupportedAsset as e:
-                    log.warning(
-                        f'Found coinbase prime balance result with unsupported asset '
-                        f'{e.identifier}. Ignoring it.',
                     )
                 except (DeserializationError, KeyError) as e:
                     msg = str(e)

@@ -17,7 +17,7 @@ from rotkehlchen.data_import.utils import maybe_set_transaction_extra_data
 from rotkehlchen.db.cache import DBCacheDynamic
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.db.settings import CachedSettings
-from rotkehlchen.errors.asset import UnknownAsset, UnsupportedAsset
+from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.exchanges.data_structures import MarginPosition
@@ -205,12 +205,6 @@ class Bitstamp(ExchangeInterface, SignatureGeneratorMixin):
                 self.msg_aggregator.add_error(
                     'Failed to deserialize a Bitstamp balance. '
                     'Check logs for details. Ignoring it.',
-                )
-                continue
-            except UnsupportedAsset as e:
-                log.error(str(e))
-                self.msg_aggregator.add_warning(
-                    f'Found unsupported Bistamp asset {e.identifier}. Ignoring its balance query.',
                 )
                 continue
             except UnknownAsset as e:
@@ -866,7 +860,7 @@ class Bitstamp(ExchangeInterface, SignatureGeneratorMixin):
         try:
             base_asset = asset_from_bitstamp(base_asset_symbol)
             quote_asset = asset_from_bitstamp(quote_asset_symbol)
-        except (UnknownAsset, UnsupportedAsset) as e:
+        except UnknownAsset as e:
             log.error(str(e))
             asset_tag = 'Unknown' if isinstance(e, UnknownAsset) else 'Unsupported'
             raise DeserializationError(

@@ -86,7 +86,6 @@ def asset_from_kraken(kraken_name: str) -> AssetWithOracles:
 def asset_from_poloniex(poloniex_name: str) -> AssetWithOracles:
     """May raise:
     - DeserializationError
-    - UnsupportedAsset
     - UnknownAsset
     """
     if not isinstance(poloniex_name, str):
@@ -102,7 +101,6 @@ def asset_from_poloniex(poloniex_name: str) -> AssetWithOracles:
 def asset_from_bitfinex(bitfinex_name: str) -> AssetWithOracles:
     """May raise:
     - DeserializationError
-    - UnsupportedAsset
     - UnknownAsset
 
     Currency map fetched in `<Bitfinex>._query_currency_map()` is already
@@ -121,7 +119,6 @@ def asset_from_bitfinex(bitfinex_name: str) -> AssetWithOracles:
 def asset_from_bitstamp(bitstamp_name: str) -> AssetWithOracles:
     """May raise:
     - DeserializationError
-    - UnsupportedAsset
     - UnknownAsset
     """
     if not isinstance(bitstamp_name, str):
@@ -138,7 +135,6 @@ def asset_from_bitstamp(bitstamp_name: str) -> AssetWithOracles:
 def asset_from_bittrex(bittrex_name: str) -> AssetWithOracles:
     """May raise:
     - DeserializationError
-    - UnsupportedAsset
     - UnknownAsset
     """
     if not isinstance(bittrex_name, str):
@@ -154,7 +150,6 @@ def asset_from_bittrex(bittrex_name: str) -> AssetWithOracles:
 def asset_from_coinbasepro(coinbase_pro_name: str) -> AssetWithOracles:
     """May raise:
     - DeserializationError
-    - UnsupportedAsset
     - UnknownAsset
     """
     if not isinstance(coinbase_pro_name, str):
@@ -172,7 +167,6 @@ def asset_from_coinbasepro(coinbase_pro_name: str) -> AssetWithOracles:
 def asset_from_binance(binance_name: str) -> AssetWithOracles:
     """May raise:
     - DeserializationError
-    - UnsupportedAsset
     - UnknownAsset
     """
     if not isinstance(binance_name, str):
@@ -220,7 +214,6 @@ def asset_from_coinbase(cb_name: str, time: Timestamp | None = None) -> AssetWit
 def asset_from_kucoin(kucoin_name: str) -> AssetWithOracles:
     """May raise:
     - DeserializationError
-    - UnsupportedAsset
     - UnknownAsset
     """
     if not isinstance(kucoin_name, str):
@@ -236,7 +229,6 @@ def asset_from_kucoin(kucoin_name: str) -> AssetWithOracles:
 def asset_from_gemini(symbol: str) -> AssetWithOracles:
     """May raise:
     - DeserializationError
-    - UnsupportedAsset
     - UnknownAsset
     """
     if not isinstance(symbol, str):
@@ -268,7 +260,6 @@ def asset_from_blockfi(symbol: str) -> AssetWithOracles:
 def asset_from_iconomi(symbol: str) -> AssetWithOracles:
     """May raise:
     - DeserializationError
-    - UnsupportedAsset
     - UnknownAsset
     """
     if not isinstance(symbol, str):
@@ -285,7 +276,6 @@ def asset_from_iconomi(symbol: str) -> AssetWithOracles:
 def asset_from_uphold(symbol: str) -> AssetWithOracles:
     """May raise:
     - DeserializationError
-    - UnsupportedAsset
     - UnknownAsset
     """
     if not isinstance(symbol, str):
@@ -301,7 +291,6 @@ def asset_from_uphold(symbol: str) -> AssetWithOracles:
 def asset_from_nexo(nexo_name: str) -> AssetWithOracles:
     """May raise:
     - DeserializationError
-    - UnsupportedAsset
     - UnknownAsset
     """
     if not isinstance(nexo_name, str):
@@ -320,7 +309,6 @@ def asset_from_nexo(nexo_name: str) -> AssetWithOracles:
 def asset_from_bitpanda(bitpanda_name: str) -> AssetWithOracles:
     """May raise:
     - DeserializationError
-    - UnsupportedAsset
     - UnknownAsset
     """
     if not isinstance(bitpanda_name, str):
@@ -336,7 +324,6 @@ def asset_from_bitpanda(bitpanda_name: str) -> AssetWithOracles:
 def asset_from_cryptocom(cryptocom_name: str) -> AssetWithOracles:
     """May raise:
     - DeserializationError
-    - UnsupportedAsset
     - UnknownAsset
     """
     if not isinstance(cryptocom_name, str):
@@ -354,7 +341,6 @@ def asset_from_cryptocom(cryptocom_name: str) -> AssetWithOracles:
 def asset_from_okx(okx_name: str) -> AssetWithOracles:
     """May raise:
     - DeserializationError
-    - UnsupportedAsset
     - UnknownAsset
     """
     if not isinstance(okx_name, str):
@@ -370,7 +356,6 @@ def asset_from_okx(okx_name: str) -> AssetWithOracles:
 def asset_from_ftx(ftx_name: str) -> AssetWithOracles:
     """May raise:
     - DeserializationError
-    - UnsupportedAsset
     - UnknownAsset
     """
     if not isinstance(ftx_name, str):
@@ -390,7 +375,6 @@ def asset_from_ftx(ftx_name: str) -> AssetWithOracles:
 def asset_from_bybit(name: str) -> AssetWithOracles:
     """May raise:
     - DeserializationError
-    - UnsupportedAsset
     - UnknownAsset
     """
     if not isinstance(name, str):
@@ -443,7 +427,6 @@ def asset_from_common_identifier(common_identifier: str) -> AssetWithOracles:
 def asset_from_htx(htx_name: str) -> AssetWithOracles:
     """May raise:
     - DeserializationError
-    - UnsupportedAsset
     - UnknownAsset
     """
     if not isinstance(htx_name, str):
@@ -460,7 +443,6 @@ def asset_from_htx(htx_name: str) -> AssetWithOracles:
 def asset_from_bitcoinde(bitcoinde: str) -> AssetWithOracles:
     """May raise:
     - DeserializationError
-    - UnsupportedAsset
     - UnknownAsset
     """
     bitcoinde = bitcoinde.upper()

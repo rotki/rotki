@@ -11,9 +11,7 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.swap import SwapEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType
 from rotkehlchen.history.events.utils import create_group_identifier_from_unique_id
-from rotkehlchen.tests.utils.exchanges import get_exchange_asset_symbols
 from rotkehlchen.tests.utils.factories import make_api_key, make_api_secret
-from rotkehlchen.tests.utils.globaldb import is_asset_symbol_unsupported
 from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.types import Location, Timestamp, TimestampMS
 from rotkehlchen.user_messages import MessagesAggregator
@@ -124,11 +122,7 @@ def test_query_trade_history(function_scope_iconomi):
 def test_iconomi_assets_are_known(
         database,
         inquirer,  # pylint: disable=unused-argument
-        globaldb,
 ):
-    for asset in get_exchange_asset_symbols(Location.ICONOMI):
-        assert is_asset_symbol_unsupported(globaldb, Location.ICONOMI, asset) is False, f'Iconomi assets {asset} should not be unsupported'  # noqa: E501
-
     # use a real Iconomi instance so that we always get the latest data
     iconomi = Iconomi(
         name='iconomi1',
@@ -140,15 +134,7 @@ def test_iconomi_assets_are_known(
     supported_tickers = []
     resp = iconomi._api_query('get', 'assets', authenticated=False)
     for asset_info in resp:
-        if (
-            asset_info['supported'] is False or
-            asset_info['status'] == 'OFFLINE' or
-            is_asset_symbol_unsupported(
-                globaldb=globaldb,
-                location=Location.ICONOMI,
-                asset_symbol=asset_info['ticker'],
-            ) is True
-        ):
+        if asset_info['supported'] is False or asset_info['status'] == 'OFFLINE':
             continue
 
         supported_tickers.append(asset_info['ticker'])

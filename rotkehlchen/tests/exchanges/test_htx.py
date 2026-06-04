@@ -11,7 +11,7 @@ from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.converters import asset_from_htx
 from rotkehlchen.constants.assets import A_CRV, A_DAI, A_USDT, A_ZRX
-from rotkehlchen.errors.asset import UnknownAsset, UnsupportedAsset
+from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.exchanges.htx import PAGINATION_LIMIT, Htx
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.asset_movement import AssetMovement
@@ -19,7 +19,6 @@ from rotkehlchen.history.events.structures.swap import SwapEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType
 from rotkehlchen.history.events.utils import create_group_identifier_from_unique_id
 from rotkehlchen.tests.utils.constants import A_DOGE
-from rotkehlchen.tests.utils.globaldb import is_asset_symbol_unsupported
 from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.types import Location, Timestamp, TimestampMS
 
@@ -80,7 +79,7 @@ def test_balances(htx_exchange: Htx):
     }
 
 
-def test_assets_are_known(htx_exchange: Htx, globaldb):
+def test_assets_are_known(htx_exchange: Htx):
     with patch('rotkehlchen.exchanges.htx.Htx._sign_request', return_value={}):
         tickers = htx_exchange._query('/v2/settings/common/symbols')
     for ticker in tickers:
@@ -93,12 +92,6 @@ def test_assets_are_known(htx_exchange: Htx, globaldb):
                 f'Found unknown asset {e.identifier} in HTX. '
                 f'Support for it has to be added',
             ))
-        except UnsupportedAsset as e:
-            if is_asset_symbol_unsupported(globaldb, Location.HTX, ticker['bcdn']) is False:
-                test_warnings.warn(UserWarning(
-                    f'Found unsupported asset {e.identifier} in HTX. '
-                    f'Support for it has to be added',
-                ))
 
 
 def test_deposit_withdrawals(htx_exchange: Htx) -> None:

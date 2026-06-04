@@ -13,7 +13,7 @@ from rotkehlchen.assets.converters import asset_from_cryptocom
 from rotkehlchen.constants import MONTH_IN_MILLISECONDS, WEEK_IN_MILLISECONDS, ZERO
 from rotkehlchen.data_import.utils import maybe_set_transaction_extra_data
 from rotkehlchen.db.settings import CachedSettings
-from rotkehlchen.errors.asset import UnknownAsset, UnsupportedAsset
+from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.exchanges.data_structures import MarginPosition
@@ -229,7 +229,6 @@ class Cryptocom(ExchangeInterface, SignatureGeneratorMixin):
         Can raise:
          - DeserializationError
          - UnknownAsset
-         - UnsupportedAsset
          - KeyError
         """
         raw_fee = raw_result.get('fee')
@@ -261,7 +260,6 @@ class Cryptocom(ExchangeInterface, SignatureGeneratorMixin):
         Can raise:
          - DeserializationError
          - UnknownAsset
-         - UnsupportedAsset
          - KeyError
         """
         # Parse the instrument name (e.g., "BTC_USDT")
@@ -316,11 +314,6 @@ class Cryptocom(ExchangeInterface, SignatureGeneratorMixin):
                     amount=amount,
                     value=amount * Inquirer.find_main_currency_price(asset),
                 )
-        except UnsupportedAsset as e:
-            self.msg_aggregator.add_warning(
-                f'Found unsupported {self.name} asset {e.identifier} due to: {e!s}. '
-                f'Ignoring its balance query.',
-            )
         except UnknownAsset as e:
             self.send_unknown_asset_message(
                 asset_identifier=e.identifier,
@@ -477,7 +470,7 @@ class Cryptocom(ExchangeInterface, SignatureGeneratorMixin):
                 for raw_asset_movement in (raw_list := result.result.get(result_key, [])):
                     try:
                         events.extend(deserialize_fn(raw_asset_movement))
-                    except (DeserializationError, UnsupportedAsset, UnknownAsset, KeyError) as e:
+                    except (DeserializationError, UnknownAsset, KeyError) as e:
                         msg = f'missing key: {e!s}' if isinstance(e, KeyError) else str(e)
                         log.error(
                             f'Error processing {self.name} {query_type}: '

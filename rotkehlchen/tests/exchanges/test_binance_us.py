@@ -7,7 +7,7 @@ import requests
 from rotkehlchen.assets.converters import asset_from_binance
 from rotkehlchen.constants import HOUR_IN_SECONDS
 from rotkehlchen.constants.assets import A_BNB, A_BTC
-from rotkehlchen.errors.asset import UnknownAsset, UnsupportedAsset
+from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.exchanges.binance import BINANCEUS_BASE_URL, Binance
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.swap import SwapEvent
@@ -19,7 +19,6 @@ from rotkehlchen.tests.utils.exchanges import (
     BINANCE_WITHDRAWALS_HISTORY_RESPONSE,
     assert_binance_asset_movements_result,
 )
-from rotkehlchen.tests.utils.globaldb import is_asset_symbol_unsupported
 from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.types import Location, Timestamp, TimestampMS
 from rotkehlchen.utils.misc import ts_now
@@ -32,7 +31,7 @@ def test_name():
 
 
 @pytest.mark.asset_test
-def test_binance_assets_are_known(inquirer, globaldb):  # pylint: disable=unused-argument
+def test_binance_assets_are_known(inquirer):  # pylint: disable=unused-argument
     exchange_data = requests.get('https://api.binance.us/api/v3/exchangeInfo').json()
     binance_assets = set()
     for pair_symbol in exchange_data['symbols']:
@@ -43,8 +42,6 @@ def test_binance_assets_are_known(inquirer, globaldb):  # pylint: disable=unused
     for binance_asset in sorted_assets:
         try:
             _ = asset_from_binance(binance_asset)
-        except UnsupportedAsset:
-            assert is_asset_symbol_unsupported(globaldb, Location.BINANCE, binance_asset)
         except UnknownAsset as e:
             test_warnings.warn(UserWarning(
                 f'Found unknown asset {e.identifier} in binanceus. '

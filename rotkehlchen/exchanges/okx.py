@@ -14,7 +14,7 @@ from rotkehlchen.constants import ZERO
 from rotkehlchen.data_import.utils import maybe_set_transaction_extra_data
 from rotkehlchen.db.constants import OKX_LOCATION_KEY
 from rotkehlchen.db.settings import CachedSettings
-from rotkehlchen.errors.asset import UnknownAsset, UnsupportedAsset
+from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.exchanges.data_structures import MarginPosition
@@ -292,12 +292,6 @@ class Okx(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
                     details='balance query',
                 )
                 continue
-            except UnsupportedAsset as e:
-                self.msg_aggregator.add_warning(
-                    f'Found {self.name} balance with unsupported asset '
-                    f'{e.identifier}. Ignoring it.',
-                )
-                continue
 
             try:
                 price = Inquirer.find_main_currency_price(asset)
@@ -416,11 +410,6 @@ class Okx(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
                 asset_identifier=e.identifier,
                 details='trade',
             )
-        except UnsupportedAsset as e:
-            self.msg_aggregator.add_warning(
-                f'Found {self.name} trade with unsupported asset '
-                f'{e.identifier}. Ignoring it.',
-            )
         except (DeserializationError, KeyError) as e:
             self.msg_aggregator.add_error(
                 f'Unexpected data encountered during deserialization of {self.name}'
@@ -480,11 +469,6 @@ class Okx(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
             self.send_unknown_asset_message(
                 asset_identifier=e.identifier,
                 details='deposit/withdrawal',
-            )
-        except UnsupportedAsset as e:
-            self.msg_aggregator.add_warning(
-                f'Found {self.name} deposit/withdrawal with unsupported asset '
-                f'{e.identifier}. Ignoring it.',
             )
         except (DeserializationError, KeyError) as e:
             self.msg_aggregator.add_error(

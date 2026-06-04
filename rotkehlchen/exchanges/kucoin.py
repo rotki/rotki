@@ -19,7 +19,7 @@ from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.timing import MONTH_IN_SECONDS, WEEK_IN_SECONDS
 from rotkehlchen.data_import.utils import maybe_set_transaction_extra_data
 from rotkehlchen.db.settings import CachedSettings
-from rotkehlchen.errors.asset import UnknownAsset, UnprocessableTradePair, UnsupportedAsset
+from rotkehlchen.errors.asset import UnknownAsset, UnprocessableTradePair
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.exchanges.data_structures import MarginPosition
@@ -132,7 +132,6 @@ def deserialize_trade_pair(trade_pair_symbol: str) -> tuple[AssetWithOracles, As
     """May raise:
     - UnprocessableTradePair
     - UnknownAsset
-    - UnsupportedAsset
     """
     try:
         base_asset_symbol, quote_asset_symbol = trade_pair_symbol.split('-')
@@ -401,7 +400,6 @@ class Kucoin(ExchangeInterface, SignatureGeneratorMixin):
                     DeserializationError,
                     KeyError,
                     UnprocessableTradePair,
-                    UnsupportedAsset,
                 ) as e:
                     error_msg = f'Missing key: {e!s}.' if isinstance(e, KeyError) else str(e)
                     log.error(
@@ -409,9 +407,6 @@ class Kucoin(ExchangeInterface, SignatureGeneratorMixin):
                         error=error_msg,
                         raw_result=raw_result,
                     )
-                    if isinstance(e, UnsupportedAsset):
-                        error_msg = f'Found unsupported kucoin asset {e.identifier}'
-
                     self.msg_aggregator.add_error(
                         f'Failed to deserialize a kucoin {case} result. {error_msg}. Ignoring it. '
                         f'Check logs for more details')
@@ -487,12 +482,6 @@ class Kucoin(ExchangeInterface, SignatureGeneratorMixin):
                     'Failed to deserialize a kucoin balance. Ignoring it.',
                 )
                 continue
-            except UnsupportedAsset as e:
-                self.msg_aggregator.add_warning(
-                    f'Found unsupported kucoin asset {e.identifier} while deserializing '
-                    f'a balance. Ignoring it.',
-                )
-                continue
             except UnknownAsset as e:
                 self.send_unknown_asset_message(
                     asset_identifier=e.identifier,
@@ -525,7 +514,6 @@ class Kucoin(ExchangeInterface, SignatureGeneratorMixin):
         May raise:
         - DeserializationError
         - UnknownAsset
-        - UnsupportedAsset
         """
         event_subtype: Literal[HistoryEventSubType.RECEIVE, HistoryEventSubType.SPEND]
         if case == KucoinCase.DEPOSITS:
@@ -578,7 +566,6 @@ class Kucoin(ExchangeInterface, SignatureGeneratorMixin):
         - DeserializationError
         - UnknownAsset
         - UnprocessableTradePair
-        - UnsupportedAsset
         """
         try:
             timestamp = deserialize_timestamp(raw_result['createdAt'])

@@ -10,7 +10,7 @@ from rotkehlchen.data_import.utils import (
     process_rotki_generic_import_csv_fields,
 )
 from rotkehlchen.db.drivers.gevent import DBCursor
-from rotkehlchen.errors.asset import UnknownAsset, UnsupportedAsset
+from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.misc import InputError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.history.events.structures.base import HistoryBaseEntry, HistoryEvent
@@ -101,13 +101,6 @@ class RotkiGenericEventsImporter(BaseExchangeImporter):
                         row_index=index,
                         csv_row=row,
                         msg=f'Unknown asset {e.identifier}.',
-                        is_error=True,
-                    )
-                except UnsupportedAsset as e:
-                    self.send_message(
-                        row_index=index,
-                        csv_row=row,
-                        msg=f'{e!s} for location {row.get("Location", "")}.',
                         is_error=True,
                     )
                 except DeserializationError as e:

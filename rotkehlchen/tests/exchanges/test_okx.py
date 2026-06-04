@@ -6,7 +6,7 @@ import pytest
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.converters import asset_from_okx
 from rotkehlchen.constants.assets import A_ETH, A_USDC, A_USDT
-from rotkehlchen.errors.asset import UnknownAsset, UnsupportedAsset
+from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.exchanges.okx import Okx, OkxEndpoint
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.asset_movement import AssetMovement
@@ -14,7 +14,6 @@ from rotkehlchen.history.events.structures.swap import SwapEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType
 from rotkehlchen.history.events.utils import create_group_identifier_from_unique_id
 from rotkehlchen.tests.utils.constants import A_SOL, A_XMR
-from rotkehlchen.tests.utils.globaldb import is_asset_symbol_unsupported
 from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.types import Location, Timestamp, TimestampMS
 
@@ -26,7 +25,7 @@ def test_name():
 
 
 @pytest.mark.asset_test
-def test_assets_are_known(mock_okx: Okx, globaldb):
+def test_assets_are_known(mock_okx: Okx):
     currencies = mock_okx._api_query(OkxEndpoint.CURRENCIES)
     okx_assets = {currency['ccy'] for currency in currencies['data']}
 
@@ -38,12 +37,6 @@ def test_assets_are_known(mock_okx: Okx, globaldb):
                 f'Found unknown asset {e.identifier} in OKX. '
                 f'Support for it has to be added',
             ))
-        except UnsupportedAsset as e:
-            if is_asset_symbol_unsupported(globaldb, Location.OKX, okx_asset) is False:
-                test_warnings.warn(UserWarning(
-                    f'Found unsupported asset {e.identifier} in OKX. '
-                    f'Support for it has to be added',
-                ))
 
 
 def test_okx_api_signature(mock_okx: Okx):

@@ -17,7 +17,7 @@ from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.timing import GLOBAL_REQUESTS_TIMEOUT
 from rotkehlchen.data_import.utils import maybe_set_transaction_extra_data
 from rotkehlchen.db.settings import CachedSettings
-from rotkehlchen.errors.asset import UnknownAsset, UnprocessableTradePair, UnsupportedAsset
+from rotkehlchen.errors.asset import UnknownAsset, UnprocessableTradePair
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.exchanges.data_structures import MarginPosition
@@ -360,12 +360,6 @@ class Gemini(ExchangeInterface, SignatureGeneratorMixin):
                     details='balance query',
                 )
                 continue
-            except UnsupportedAsset as e:
-                self.msg_aggregator.add_warning(
-                    f'Found gemini balance result with unsupported '
-                    f'asset {e.identifier}. Ignoring it.',
-                )
-                continue
             except (DeserializationError, KeyError) as e:
                 msg = str(e)
                 if isinstance(e, KeyError):
@@ -565,12 +559,6 @@ class Gemini(ExchangeInterface, SignatureGeneratorMixin):
                 self.send_unknown_asset_message(
                     asset_identifier=e.identifier,
                     details='deposit/withdrawal',
-                )
-                continue
-            except UnsupportedAsset as e:
-                self.msg_aggregator.add_warning(
-                    f'Found gemini deposit/withdrawal with unsupported asset '
-                    f'{e.identifier}. Ignoring it.',
                 )
                 continue
             except (DeserializationError, KeyError) as e:

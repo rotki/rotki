@@ -59,18 +59,18 @@ def test_detect_duplicate_event_escapes_like(database) -> None:
         ) is False
 
 
-def test_rotki_generic_trades_unsupported_asset(database, tmp_path) -> None:
+def test_rotki_generic_trades_unknown_asset(database, tmp_path) -> None:
     """Regression for https://github.com/rotki/rotki/issues/12233.
 
-    An UnsupportedAsset on a row (GLD on Bittrex is blacklisted in
-    location_unsupported_assets) must not crash the import task — it should be
-    surfaced as a per-row error and the rest of the file should import fine.
+    An asset on a row that can't be mapped to a known asset must not crash the
+    import task — it should be surfaced as a per-row error and the rest of the
+    file should import fine.
     """
     filepath = tmp_path / 'rotki_generic_trades.csv'
     filepath.write_text(
         'Location,Spend Currency,Receive Currency,Receive Amount,Spend Amount,'
         'Fee,Fee Currency,Description,Timestamp\n'
-        'bittrex,GLD,BTC,0.01,100,,,Trade GLD for BTC,1545575255000\n'
+        'bittrex,ZZZFAKE,BTC,0.01,100,,,Trade ZZZFAKE for BTC,1545575255000\n'
         'kraken,LTC,BTC,4.3241,392.8870,,,Trade LTC for BTC,1659171600000\n',
     )
 
@@ -82,17 +82,16 @@ def test_rotki_generic_trades_unsupported_asset(database, tmp_path) -> None:
     assert importer.imported_entries == 1
     error_msgs = [m for m in importer.import_msgs if m.get('is_error')]
     assert len(error_msgs) == 1
-    assert 'GLD' in error_msgs[0]['msg']
-    assert 'not supported' in error_msgs[0]['msg']
-    assert 'bittrex' in error_msgs[0]['msg']
+    assert 'ZZZFAKE' in error_msgs[0]['msg']
+    assert 'Unknown asset' in error_msgs[0]['msg']
 
 
-def test_rotki_generic_events_unsupported_asset(database, tmp_path) -> None:
+def test_rotki_generic_events_unknown_asset(database, tmp_path) -> None:
     """Same regression for the rotki generic events importer."""
     filepath = tmp_path / 'rotki_generic_events.csv'
     filepath.write_text(
         'Type,Location,Currency,Amount,Fee,Fee Currency,Description,Timestamp\n'
-        'Deposit,bittrex,GLD,100,,,Deposit GLD,1545575255000\n'
+        'Deposit,bittrex,ZZZFAKE,100,,,Deposit ZZZFAKE,1545575255000\n'
         'Deposit,kraken,LTC,5,,,Deposit LTC,1659171600000\n',
     )
 
@@ -104,6 +103,5 @@ def test_rotki_generic_events_unsupported_asset(database, tmp_path) -> None:
     assert importer.imported_entries == 1
     error_msgs = [m for m in importer.import_msgs if m.get('is_error')]
     assert len(error_msgs) == 1
-    assert 'GLD' in error_msgs[0]['msg']
-    assert 'not supported' in error_msgs[0]['msg']
-    assert 'bittrex' in error_msgs[0]['msg']
+    assert 'ZZZFAKE' in error_msgs[0]['msg']
+    assert 'Unknown asset' in error_msgs[0]['msg']
