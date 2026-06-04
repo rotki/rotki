@@ -13,7 +13,7 @@ from rotkehlchen.constants.assets import A_BTC, A_ETH, A_USDT
 from rotkehlchen.constants.timing import DAY_IN_SECONDS
 from rotkehlchen.db.constants import GATE_LOCATION_KEY
 from rotkehlchen.db.ranges import DBQueryRanges
-from rotkehlchen.errors.asset import UnknownAsset, UnsupportedAsset
+from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.exchanges.gate import (
     GATE_BASE_URL,
     GATE_MAX_MOVEMENT_WINDOW,
@@ -27,7 +27,6 @@ from rotkehlchen.history.events.structures.asset_movement import AssetMovement
 from rotkehlchen.history.events.structures.swap import SwapEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.history.events.utils import create_group_identifier_from_unique_id
-from rotkehlchen.tests.utils.globaldb import is_asset_symbol_unsupported
 from rotkehlchen.types import Location, Timestamp, TimestampMS
 from rotkehlchen.utils.misc import ts_now
 
@@ -173,7 +172,7 @@ def test_validate_api_key(gate_exchange: Gate):
     assert msg == ''
 
 
-def test_assets_are_known(gate_exchange: Gate, globaldb):
+def test_assets_are_known(gate_exchange: Gate):
     mock_fn = gate_account_mock(calls={
         '/spot/accounts': [(None, [])],
     })
@@ -188,12 +187,6 @@ def test_assets_are_known(gate_exchange: Gate, globaldb):
                     f'Found unknown asset {e.identifier} in Gate. '
                     f'Support for it has to be added',
                 ))
-            except UnsupportedAsset as e:
-                if is_asset_symbol_unsupported(globaldb, Location.GATE, symbol) is False:
-                    test_warnings.warn(UserWarning(
-                        f'Found unsupported asset {e.identifier} in Gate. '
-                        f'Support for it has to be added',
-                    ))
 
 
 def test_deposit_withdrawals(gate_exchange: Gate) -> None:
