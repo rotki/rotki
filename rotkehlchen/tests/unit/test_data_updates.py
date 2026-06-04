@@ -8,13 +8,16 @@ import pytest
 from packaging.version import Version
 
 from rotkehlchen.assets.asset import EvmToken
+from rotkehlchen.chain.evm.accounting.structures import BaseEventSettings
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
 from rotkehlchen.constants.resolver import evm_address_to_identifier
 from rotkehlchen.db.accounting_rules import DBAccountingRules
 from rotkehlchen.db.addressbook import DBAddressbook
 from rotkehlchen.db.filtering import AccountingRulesFilterQuery, AddressbookFilterQuery
+from rotkehlchen.db.unresolved_conflicts import ConflictType
 from rotkehlchen.db.updates import RotkiDataUpdater, UpdateType
 from rotkehlchen.errors.asset import UnknownAsset
+from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.tests.api.test_location_asset_mappings import NUM_PACKAGED_ASSETS_MAPPINGS
@@ -219,19 +222,6 @@ COUNTERPARTY_ASSET_MAPPINGS_DATA: dict[str, dict[str, list[dict[str, Any]]]] = {
     },
 }
 
-LOCATION_UNSUPPORTED_ASSETS_DATA: dict[str, dict[str, dict[str, list[str]]]] = {
-    'location_unsupported_assets': {
-        'insert': {
-            'binance': ['OJ', '123'],  # 123 already exists
-            'kucoin': ['OJ', 'NAKA'],  # NAKA already exists
-        },
-        'remove': {
-            'bitfinex': ['OJ', 'IDX'],  # OJ does not exist
-            'bittrex': ['OJ', 'SLV'],  # OJ does not exist
-        },
-    },
-}
-
 
 def make_single_mock_github_data_response(target: UpdateType):
     """Creates a mocking function for a single update type for github requests."""
@@ -245,7 +235,6 @@ def make_single_mock_github_data_response(target: UpdateType):
                 'accounting_rules': {'latest': 1 if target == UpdateType.ACCOUNTING_RULES else 0},
                 'location_asset_mappings': {'latest': 1 if target == UpdateType.LOCATION_ASSET_MAPPINGS else 0},  # noqa: E501
                 'counterparty_asset_mappings': {'latest': 1 if target == UpdateType.COUNTERPARTY_ASSET_MAPPINGS else 0},  # noqa: E501
-                'location_unsupported_assets': {'latest': 1 if target == UpdateType.LOCATION_UNSUPPORTED_ASSETS else 0},  # noqa: E501
             }
         elif 'spam_assets/v' in url:
             data = SPAM_ASSET_MOCK_DATA
@@ -259,8 +248,6 @@ def make_single_mock_github_data_response(target: UpdateType):
             data = ACCOUNTING_RULES_DATA
         elif 'location_asset_mappings/v' in url:
             data = LOCATION_ASSET_MAPPINGS_DATA
-        elif 'location_unsupported_assets/v' in url:
-            data = LOCATION_UNSUPPORTED_ASSETS_DATA
         elif 'counterparty_asset_mappings/v' in url:
             data = COUNTERPARTY_ASSET_MAPPINGS_DATA
         else:
@@ -300,8 +287,6 @@ def make_mock_github_response(latest: int, min_version: str | None = None, max_v
             result = ACCOUNTING_RULES_DATA
         elif 'location_asset_mappings/v' in url:
             result = LOCATION_ASSET_MAPPINGS_DATA
-        elif 'location_unsupported_assets/v' in url:
-            result = LOCATION_UNSUPPORTED_ASSETS_DATA
         elif 'counterparty_asset_mappings/v' in url:
             result = COUNTERPARTY_ASSET_MAPPINGS_DATA
         else:
@@ -321,7 +306,6 @@ def reset_update_type_mappings(data_updater: RotkiDataUpdater) -> None:
         UpdateType.GLOBAL_ADDRESSBOOK: data_updater.update_global_addressbook,
         UpdateType.ACCOUNTING_RULES: data_updater.update_accounting_rules,
         UpdateType.LOCATION_ASSET_MAPPINGS: data_updater.update_location_asset_mappings,
-        UpdateType.LOCATION_UNSUPPORTED_ASSETS: data_updater.update_location_unsupported_assets,
         UpdateType.COUNTERPARTY_ASSET_MAPPINGS: data_updater.update_counterparty_asset_mappings,
     }
 
@@ -400,7 +384,6 @@ def test_no_update_due_to_update_version(data_updater: RotkiDataUpdater) -> None
                 (UpdateType.GLOBAL_ADDRESSBOOK.serialize(), 999),
                 (UpdateType.ACCOUNTING_RULES.serialize(), 999),
                 (UpdateType.LOCATION_ASSET_MAPPINGS.serialize(), 999),
-                (UpdateType.LOCATION_UNSUPPORTED_ASSETS.serialize(), 999),
                 (UpdateType.COUNTERPARTY_ASSET_MAPPINGS.serialize(), 999),
             ],
         )
@@ -640,6 +623,68 @@ def test_accounting_rules_updates(data_updater: RotkiDataUpdater) -> None:
     ]
 
 
+def test_reset_accounting_rules(data_updater: RotkiDataUpdater) -> None:
+    """Resetting accounting rules wipes all user customizations and restores the defaults, while
+    leaving the user's rules untouched if the data repo can not be reached."""
+    rules_db = DBAccountingRules(data_updater.user_db)
+    # simulate a customized state: a user-only rule with a linked property and a stray conflict
+    custom_rule_id = rules_db.add_accounting_rule(
+        event_type=HistoryEventType.STAKING,
+        event_subtype=HistoryEventSubType.REWARD,
+        counterparty='my_custom_cpt',
+        rule=BaseEventSettings(
+            taxable=True,
+            count_entire_amount_spend=False,
+            count_cost_basis_pnl=True,
+            accounting_treatment=None,
+        ),
+        links={'count_cost_basis_pnl': 'include_crypto2crypto'},
+    )
+    with data_updater.user_db.conn.write_ctx() as write_cursor:
+        write_cursor.execute(
+            'INSERT INTO unresolved_remote_conflicts(local_id, remote_data, type) VALUES (?, ?, ?)',  # noqa: E501
+            (custom_rule_id, '{}', ConflictType.ACCOUNTING_RULE.serialize_for_db()),
+        )
+
+    # if fetching the defaults fails, the user's rules must be left untouched
+    def mock_info_ok_file_fail(url, timeout):  # pylint: disable=unused-argument
+        if 'info' in url:
+            return MockResponse(200, json.dumps({'accounting_rules': {'latest': 1}}))
+        return MockResponse(500, 'boom')  # the version file fetch fails
+
+    with patch('requests.get', wraps=mock_info_ok_file_fail), pytest.raises(RemoteError):
+        data_updater.reset_accounting_rules()
+
+    rules, n_rules = rules_db.query_rules_and_serialize(AccountingRulesFilterQuery.make())
+    assert n_rules == 1 and rules[0]['counterparty'] == 'my_custom_cpt'  # unchanged
+
+    # happy path: the defaults are fetched and atomically swapped in
+    with patch(
+        'requests.get',
+        wraps=make_single_mock_github_data_response(UpdateType.ACCOUNTING_RULES),
+    ):
+        data_updater.reset_accounting_rules()
+
+    _, n_rules = rules_db.query_rules_and_serialize(AccountingRulesFilterQuery.make())
+    assert n_rules == 3  # only the 3 default rules from ACCOUNTING_RULES_DATA
+    with data_updater.user_db.conn.read_ctx() as cursor:
+        assert cursor.execute(
+            "SELECT COUNT(*) FROM accounting_rules WHERE counterparty='my_custom_cpt'",
+        ).fetchone()[0] == 0  # the user's custom rule is gone
+        assert cursor.execute(
+            'SELECT COUNT(*) FROM unresolved_remote_conflicts',
+        ).fetchone()[0] == 0
+        # the only linked property now belongs to a default rule, not the wiped custom one
+        assert cursor.execute(
+            'SELECT ar.counterparty FROM linked_rules_properties lrp '
+            'JOIN accounting_rules ar ON lrp.accounting_rule = ar.identifier',
+        ).fetchall() == [('test_counterparty',)]
+        assert cursor.execute(
+            'SELECT value FROM settings WHERE name=?',
+            (UpdateType.ACCOUNTING_RULES.serialize(),),
+        ).fetchone()[0] == '1'  # the version pointer is set to the latest applied version
+
+
 def _check_location_asset_mappings(cursor: 'DBCursor', after_upgrade: bool) -> None:
     """Auxiliary function to check the db values before and after the upgrade"""
     assert cursor.execute('SELECT COUNT(*) FROM location_asset_mappings').fetchone()[0] == NUM_PACKAGED_ASSETS_MAPPINGS  # noqa: E501
@@ -743,43 +788,6 @@ def test_counterparty_asset_mappings_updates(
 
     with globaldb.conn.read_ctx() as cursor:
         _check_counterparty_asset_mappings(cursor, after_upgrade=True)
-
-
-def _check_location_unsupported_assets(cursor: 'DBCursor', after_upgrade: bool) -> None:
-    """Auxiliary function to check the db values before and after the upgrade"""
-    assert cursor.execute('SELECT COUNT(*) FROM location_asset_mappings').fetchone()[0] == NUM_PACKAGED_ASSETS_MAPPINGS  # noqa: E501
-
-    for operation, expected_count in (
-        ('insert', lambda symbol: 0 if after_upgrade is False and symbol == 'OJ' else 1),
-        ('remove', lambda symbol: 1 if after_upgrade is False and symbol != 'OJ' else 0),
-    ):
-        for location, symbols in LOCATION_UNSUPPORTED_ASSETS_DATA['location_unsupported_assets'][operation].items():  # noqa: E501
-            for symbol in symbols:
-                assert cursor.execute(
-                    'SELECT COUNT(*) FROM location_unsupported_assets '
-                    'WHERE location = ? AND exchange_symbol = ?;', (
-                        Location.deserialize(location).serialize_for_db(), symbol,
-                    ),
-                ).fetchone()[0] == expected_count(symbol)  # type: ignore[no-untyped-call]
-
-
-def test_location_unsupported_assets_updates(
-        data_updater: RotkiDataUpdater,
-        globaldb: 'GlobalDBHandler',
-) -> None:
-    """Test that remote updates for location unsupported assets work"""
-    # check state of the location asset mappings before updating
-    with globaldb.conn.read_ctx() as cursor:
-        _check_location_unsupported_assets(cursor, after_upgrade=False)
-
-    with patch(
-        'requests.get',
-        wraps=make_single_mock_github_data_response(UpdateType.LOCATION_UNSUPPORTED_ASSETS),
-    ):
-        data_updater.check_for_updates()
-
-    with globaldb.conn.read_ctx() as cursor:
-        _check_location_unsupported_assets(cursor, after_upgrade=True)
 
 
 def test_version_used_in_updates(database: 'DBHandler', monkeypatch: pytest.MonkeyPatch) -> None:

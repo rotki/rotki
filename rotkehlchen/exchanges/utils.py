@@ -16,7 +16,7 @@ from rotkehlchen.assets.converters import asset_from_binance
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.constants.timing import DAY_IN_SECONDS
 from rotkehlchen.db.settings import CachedSettings
-from rotkehlchen.errors.asset import UnknownAsset, UnsupportedAsset
+from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.exchanges.data_structures import BinancePair
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.binance import GlobalDBBinance
@@ -174,7 +174,7 @@ def create_binance_symbols_to_pair(
                 quote_asset=asset_from_binance(symbol['quoteAsset']),
                 location=location,
             )
-        except (UnknownAsset, UnsupportedAsset) as e:
+        except UnknownAsset as e:
             log.debug(f'Found binance pair with no processable asset. {e!s}')
     return result
 

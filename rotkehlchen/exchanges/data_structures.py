@@ -304,7 +304,6 @@ class BinancePair(NamedTuple):
     def deserialize_from_db(cls, entry: BINANCE_PAIR_DB_TUPLE) -> 'BinancePair':
         """Create a BinancePair from data in the database. May raise:
         - DeserializationError
-        - UnsupportedAsset
         - UnknownAsset
         """
         return BinancePair(

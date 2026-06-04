@@ -21,6 +21,8 @@ Changelog
 * :bug:`-` The login screen no longer pre-fills the username field with a remembered account that no longer exists.
 * :feature:`12002` Adding or editing a history event now uses a plain-language "Action" picker grouped by intent (Trade, Transfer, DeFi, Staking, etc.) with search and keyboard navigation, replacing the raw event-type and subtype dropdowns.
 * :feature:`12086` The "Create account" flow now starts with a mode chooser so creating a new local profile and restoring a database synced from rotki cloud are separate, focused paths.
+* :feature:`12301` You can now reset all accounting rules back to rotki's defaults from the accounting rules settings, undoing any customizations in a single action.
+* :bug:`12348` User exchange balance queries should no longer hit the Unsupportedasset errors.
 * :bug:`-` A deposit or withdrawal manually matched to multiple on-chain transactions is no longer duplicated in the history view when filtering by chain.
 * :bug:`-` LP, wrapped and vault tokens are now reported as unpriced instead of at a too-low value when one of their underlying assets has no price.
 * :bug:`-` Merging assets now correctly combines their historical balances with exact precision, instead of failing or double-counting when both had a balance at the same timestamp.

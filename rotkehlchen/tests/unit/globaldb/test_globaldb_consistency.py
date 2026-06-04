@@ -466,7 +466,6 @@ def test_remote_updates_consistency_with_packaged_db(
     """Test that the remote updates are consistent with the packaged db for:
     - Location asset mappings
     - Counterparty asset mappings
-    - Location unsupported assets
     """
     temp_data_dir = Path(tmpdir_factory.mktemp(GLOBALDIR_NAME))
     (old_db_dir := temp_data_dir / GLOBALDIR_NAME).mkdir(parents=True, exist_ok=True)
@@ -482,7 +481,6 @@ def test_remote_updates_consistency_with_packaged_db(
     )
     data_updater.check_for_updates(updates=[
         UpdateType.LOCATION_ASSET_MAPPINGS,
-        UpdateType.LOCATION_UNSUPPORTED_ASSETS,
         UpdateType.COUNTERPARTY_ASSET_MAPPINGS,
     ])
 
@@ -491,8 +489,8 @@ def test_remote_updates_consistency_with_packaged_db(
         globaldb.packaged_db_conn().read_ctx() as packaged_db_cursor,
     ):
         (
-            (updated_location_asset_mappings, updated_counterparty_asset_mappings, updated_location_unsupported_assets),  # noqa: E501
-            (packaged_location_asset_mappings, packaged_counterparty_asset_mappings, packaged_location_unsupported_assets),  # noqa: E501
+            (updated_location_asset_mappings, updated_counterparty_asset_mappings),
+            (packaged_location_asset_mappings, packaged_counterparty_asset_mappings),
         ) = (
             (
                 {
@@ -506,9 +504,7 @@ def test_remote_updates_consistency_with_packaged_db(
                     for counterparty, symbol, identifier in cursor.execute(
                         'SELECT counterparty, symbol, local_id FROM counterparty_asset_mappings',
                     )
-                }, set(cursor.execute(
-                    'SELECT location, exchange_symbol FROM location_unsupported_assets',
-                ).fetchall()),
+                },
             )
             for cursor in (old_db_cursor, packaged_db_cursor)
         )
@@ -571,22 +567,6 @@ def test_remote_updates_consistency_with_packaged_db(
             for (field1, field2), identifier in packaged_mappings.items()
             if (field1, field2) in updated_mappings and updated_mappings[field1, field2] != identifier  # noqa: E501
         ])
-
-    # find all the location_unsupported_assets that are present in remote updates but not in packaged db  # noqa: E501
-    missing_in_packaged_db.extend([
-        f"INSERT INTO location_unsupported_assets(location, exchange_symbol) VALUES('{location}', '{symbol}');"  # noqa: E501
-        for location, symbol in updated_location_unsupported_assets
-        if (location, symbol) not in packaged_location_unsupported_assets
-    ])
-
-    # find all the location_unsupported_assets that are present in packaged db but not in remote updates  # noqa: E501
-    missing_unsupported_assets = defaultdict(list)
-    for location, symbol in packaged_location_unsupported_assets:
-        if (location, symbol) not in updated_location_unsupported_assets:
-            missing_unsupported_assets[Location.deserialize_from_db(location).serialize()].append(symbol)
-
-    if len(missing_unsupported_assets) > 0:
-        missing_in_remote_updates.append(missing_unsupported_assets)
 
     if len(missing_in_packaged_db) > 0:
         # warning here instead of failing because we generally keep adding remote updates without

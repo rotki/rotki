@@ -16,7 +16,7 @@ from rotkehlchen.constants.assets import A_BNB, A_BTC, A_DOT, A_ETH, A_EUR, A_US
 from rotkehlchen.constants.misc import ONE
 from rotkehlchen.db.cache import DBCacheDynamic
 from rotkehlchen.db.constants import BINANCE_MARKETS_KEY
-from rotkehlchen.errors.asset import UnknownAsset, UnsupportedAsset
+from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.exchanges.binance import (
     API_TIME_INTERVAL_CONSTRAINT_TS,
@@ -41,10 +41,8 @@ from rotkehlchen.tests.utils.exchanges import (
     BINANCE_MYTRADES_RESPONSE,
     BINANCE_WITHDRAWALS_HISTORY_RESPONSE,
     assert_binance_asset_movements_result,
-    get_exchange_asset_symbols,
     mock_binance_balance_response,
 )
-from rotkehlchen.tests.utils.globaldb import is_asset_symbol_unsupported
 from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.types import ApiKey, ApiSecret, Timestamp, TimestampMS
 from rotkehlchen.utils.misc import ts_now_in_ms
@@ -268,10 +266,7 @@ def test_trade_from_binance(function_scope_binance):
     reason='https://twitter.com/LefterisJP/status/1598107187184037888',
 )
 @pytest.mark.asset_test
-def test_binance_assets_are_known(inquirer, globaldb):  # pylint: disable=unused-argument
-    for asset in get_exchange_asset_symbols(Location.BINANCE):
-        assert is_asset_symbol_unsupported(globaldb, Location.BINANCE, asset) is False, f'Binance assets {asset} should not be unsupported'  # noqa: E501
-
+def test_binance_assets_are_known(inquirer):  # pylint: disable=unused-argument
     exchange_data = requests.get('https://api3.binance.com/api/v3/exchangeInfo').json()
     binance_assets = set()
     assets_starting_with_ld = set()
@@ -290,8 +285,6 @@ def test_binance_assets_are_known(inquirer, globaldb):  # pylint: disable=unused
     for binance_asset in sorted_assets:
         try:
             _ = asset_from_binance(binance_asset)
-        except UnsupportedAsset:
-            assert is_asset_symbol_unsupported(globaldb, Location.BINANCE, binance_asset)
         except UnknownAsset as e:
             if binance_asset not in missing_assets:
                 test_warnings.warn(UserWarning(
@@ -535,13 +528,6 @@ def test_binance_query_trade_history_unexpected_data(function_scope_binance):
     )
     query_binance_and_test(input_str)
 
-    # unsupported fee currency
-    input_str = BINANCE_MYTRADES_RESPONSE.replace(
-        '"commissionAsset": "BNB"',
-        '"commissionAsset": "BTCB"',
-    )
-    query_binance_and_test(input_str)
-
     # unknown fee currency
     input_str = BINANCE_MYTRADES_RESPONSE.replace(
         '"commissionAsset": "BNB"',
@@ -690,20 +676,6 @@ def test_binance_query_deposits_withdrawals_unexpected_data(function_scope_binan
         else:
             new_deposits = deposits
             new_withdrawals = withdrawals.replace('"ETH"', '"dasdsDSDSAD"')
-        mock_binance_and_query(
-            new_deposits,
-            new_withdrawals,
-            expected_warnings_num=1,
-            expected_errors_num=0,
-        )
-
-        # Unsupported Asset
-        if testing_deposits:
-            new_deposits = deposits.replace('"ETH"', '"BTCB"')
-            new_withdrawals = withdrawals
-        else:
-            new_deposits = deposits
-            new_withdrawals = withdrawals.replace('"ETH"', '"BTCB"')
         mock_binance_and_query(
             new_deposits,
             new_withdrawals,

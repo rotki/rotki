@@ -20,7 +20,7 @@ from rotkehlchen.assets.utils import symbol_to_asset_or_token
 from rotkehlchen.constants import ZERO
 from rotkehlchen.data_import.utils import maybe_set_transaction_extra_data
 from rotkehlchen.db.settings import CachedSettings
-from rotkehlchen.errors.asset import UnknownAsset, UnsupportedAsset
+from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.exchanges.data_structures import MarginPosition
@@ -414,13 +414,6 @@ class Bitfinex(ExchangeInterface, SignatureGeneratorMixin):
                     f'Failed to deserialize a {self.name} {case} result. '
                     f'Check logs for details. Ignoring it.',
                 )
-            except UnsupportedAsset as e:
-                msg = (
-                    f'Found {self.name} {case} with unsupported '
-                    f'asset {e.identifier}'
-                )
-                log.warning(f'{msg}. raw_data={raw_result}')
-                self.msg_aggregator.add_warning(f'{msg}. Ignoring {case}')
             except UnknownAsset as e:
                 self.send_unknown_asset_message(
                     asset_identifier=e.identifier,
@@ -444,7 +437,6 @@ class Bitfinex(ExchangeInterface, SignatureGeneratorMixin):
         Can raise:
          - DeserializationError.
          - UnknownAsset
-         - UnsupportedAsset
 
         Schema reference in:
         https://docs.bitfinex.com/reference#rest-auth-movements
@@ -494,7 +486,6 @@ class Bitfinex(ExchangeInterface, SignatureGeneratorMixin):
         Can raise:
          - DeserializationError.
          - UnknownAsset
-         - UnsupportedAsset
 
         Schema reference in:
         https://docs.bitfinex.com/reference#rest-auth-trades
@@ -634,9 +625,6 @@ class Bitfinex(ExchangeInterface, SignatureGeneratorMixin):
                     ]:
                         try:
                             asset = get_asset_func(param)  # type: ignore[operator]
-                        except UnsupportedAsset:
-                            log.warning(f'Found unsupported asset {bfx_symbol} in Bitfinex. Support for it has to be added.')  # noqa: E501
-                            break  # Don't try fallbacks; this asset is explicitly unsupported
                         except UnknownAsset:
                             continue
 
@@ -645,8 +633,6 @@ class Bitfinex(ExchangeInterface, SignatureGeneratorMixin):
                                 bfx_db_serialized,
                                 bfx_symbol,
                                 asset.serialize(),
-                                bfx_db_serialized,
-                                bfx_symbol,
                             ))
 
                         break
@@ -654,12 +640,11 @@ class Bitfinex(ExchangeInterface, SignatureGeneratorMixin):
                         log.warning(f'Found new asset symbol {bfx_symbol} for {symbol} in Bitfinex. Support for it has to be added.')  # noqa: E501
                         continue  # skip unknown assets
 
-                # insert the mapping, and skip unsupported assets
+                # insert the fetched mappings
                 with GlobalDBHandler().conn.write_ctx() as write_cursor:
                     write_cursor.executemany(
                         'INSERT OR IGNORE INTO location_asset_mappings (location, '
-                        'exchange_symbol, local_id) SELECT ?, ?, ? WHERE NOT EXISTS (SELECT 1 '
-                        'FROM location_unsupported_assets WHERE location=? AND exchange_symbol=?)',
+                        'exchange_symbol, local_id) VALUES(?, ?, ?)',
                         bindings,
                     )
 
@@ -880,12 +865,6 @@ class Bitfinex(ExchangeInterface, SignatureGeneratorMixin):
 
             try:
                 asset = asset_from_bitfinex(bitfinex_name=wallet[currency_index])
-            except UnsupportedAsset as e:
-                self.msg_aggregator.add_warning(
-                    f'Found unsupported {self.name} asset {e.identifier} due to: {e!s}. '
-                    f'Ignoring its balance query.',
-                )
-                continue
             except UnknownAsset as e:
                 self.send_unknown_asset_message(
                     asset_identifier=e.identifier,

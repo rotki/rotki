@@ -10,7 +10,7 @@ from rotkehlchen.db.constants import (
     LINKABLE_ACCOUNTING_SETTINGS_NAME,
 )
 from rotkehlchen.db.unresolved_conflicts import DBRemoteConflicts
-from rotkehlchen.errors.misc import InputError
+from rotkehlchen.errors.misc import InputError, RemoteError
 from rotkehlchen.history.events.structures.base import get_event_type_identifier
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.serialization.serialize import process_result
@@ -47,6 +47,22 @@ class AccountingService:
                 'result': None,
                 'message': f'Failed to export accounting rules due to: {e!s}',
                 'status_code': HTTPStatus.BAD_REQUEST,
+            }
+
+        return {'result': True, 'message': '', 'status_code': HTTPStatus.OK}
+
+    def reset_accounting_rules(self) -> dict[str, Any]:
+        """Reset all accounting rules to rotki's current defaults, pulling them from the data
+        repo. Destructive: removes all user customizations, event-specific rules and unresolved
+        accounting rule conflicts. The user's rules are left untouched if the repo is unreachable.
+        """
+        try:
+            self.rotkehlchen.data_updater.reset_accounting_rules()
+        except RemoteError as e:
+            return {
+                'result': None,
+                'message': f'Failed to reset accounting rules due to: {e!s}',
+                'status_code': HTTPStatus.BAD_GATEWAY,
             }
 
         return {'result': True, 'message': '', 'status_code': HTTPStatus.OK}

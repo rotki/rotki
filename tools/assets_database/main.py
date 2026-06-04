@@ -133,7 +133,6 @@ def populate_location_mappings():
         print(f'Applying remote updates from data branch: {rotki_updater.branch}')
         rotki_updater.check_for_updates(updates=[
             UpdateType.LOCATION_ASSET_MAPPINGS,
-            UpdateType.LOCATION_UNSUPPORTED_ASSETS,
             UpdateType.COUNTERPARTY_ASSET_MAPPINGS,
             UpdateType.RPC_NODES,
         ])

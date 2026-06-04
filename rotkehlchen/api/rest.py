@@ -1381,6 +1381,11 @@ class RestAPI:
         """Imports the accounting rules from the given json file and stores them in the DB."""
         return self.accounting_service.import_accounting_rules(filepath)
 
+    @async_api_call()
+    def reset_accounting_rules(self) -> dict[str, Any]:
+        """Resets all accounting rules to rotki's current defaults from the data repo."""
+        return self.accounting_service.reset_accounting_rules()
+
     def get_history_actionable_items(self) -> Response:
         response_data = self.history_service.get_history_actionable_items()
         return make_response_from_dict(response_data)

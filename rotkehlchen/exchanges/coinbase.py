@@ -23,7 +23,7 @@ from rotkehlchen.constants.timing import HOUR_IN_SECONDS
 from rotkehlchen.data_import.utils import maybe_set_transaction_extra_data
 from rotkehlchen.db.cache import DBCacheDynamic
 from rotkehlchen.db.settings import CachedSettings
-from rotkehlchen.errors.asset import UnknownAsset, UnsupportedAsset
+from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.exchanges.data_structures import MarginPosition
@@ -398,12 +398,6 @@ class Coinbase(ExchangeInterface):
                     details='balance query',
                 )
                 continue
-            except UnsupportedAsset as e:
-                log.warning(
-                    f'Found coinbase balance result with unsupported asset '
-                    f'{e.identifier}. Ignoring it.',
-                )
-                continue
             except (DeserializationError, KeyError) as e:
                 msg = str(e)
                 if isinstance(e, KeyError):
@@ -588,12 +582,6 @@ class Coinbase(ExchangeInterface):
                     details='conversion',
                 )
                 continue
-            except UnsupportedAsset as e:
-                self.msg_aggregator.add_warning(
-                    f'Found coinbase conversion with unsupported asset '
-                    f'{e.identifier}. Ignoring it.',
-                )
-                continue
             except (DeserializationError, KeyError) as e:
                 msg = str(e)
                 if isinstance(e, KeyError):
@@ -759,11 +747,6 @@ class Coinbase(ExchangeInterface):
             self.send_unknown_asset_message(
                 asset_identifier=e.identifier,
                 details='transaction',
-            )
-        except UnsupportedAsset as e:
-            self.msg_aggregator.add_warning(
-                f'Found coinbase trade with unsupported asset '
-                f'{e.identifier}. Ignoring it.',
             )
         except (DeserializationError, KeyError, IndexError, ZeroDivisionError) as e:
             msg = str(e)
@@ -999,11 +982,6 @@ class Coinbase(ExchangeInterface):
                 asset_identifier=e.identifier,
                 details='deposit/withdrawal',
             )
-        except UnsupportedAsset as e:
-            self.msg_aggregator.add_warning(
-                f'Found coinbase deposit/withdrawal with unsupported asset '
-                f'{e.identifier}. Ignoring it.',
-            )
         except (DeserializationError, KeyError) as e:
             msg = str(e)
             if isinstance(e, KeyError):
@@ -1121,11 +1099,6 @@ class Coinbase(ExchangeInterface):
             self.send_unknown_asset_message(
                 asset_identifier=e.identifier,
                 details='transaction',
-            )
-        except UnsupportedAsset as e:
-            self.msg_aggregator.add_warning(
-                f'Found coinbase transaction with unsupported asset '
-                f'{e.identifier}. Ignoring it.',
             )
         except (DeserializationError, KeyError) as e:
             msg = str(e)

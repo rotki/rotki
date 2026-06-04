@@ -7,7 +7,6 @@ from typing import TYPE_CHECKING, Any, Literal
 import requests
 from packaging import version as pversion
 from packaging.version import Version
-from rsqlite import OperationalError
 
 from rotkehlchen.api.websockets.typedefs import WSMessageType
 from rotkehlchen.assets.asset import Asset
@@ -51,6 +50,28 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
+def _deserialize_accounting_rule(
+        rule_data: dict[str, Any],
+) -> tuple[HistoryEventType, HistoryEventSubType, str, BaseEventSettings]:
+    """Deserialize a single accounting rule entry coming from the remote data repo.
+
+    May raise:
+    - KeyError: if an expected key is missing from the remote data.
+    - DeserializationError: if a value can not be deserialized.
+    """
+    return (
+        HistoryEventType.deserialize(rule_data['event_type']),
+        HistoryEventSubType.deserialize(rule_data['event_subtype']),
+        rule_data['counterparty'] if rule_data['counterparty'] is not None else NO_ACCOUNTING_COUNTERPARTY,  # noqa: E501
+        BaseEventSettings(
+            taxable=rule_data['taxable'],
+            count_entire_amount_spend=rule_data['count_entire_amount_spend'],
+            count_cost_basis_pnl=rule_data['count_cost_basis_pnl'],
+            accounting_treatment=TxAccountingTreatment.deserialize(rule_data['accounting_treatment']) if rule_data['accounting_treatment'] else None,  # noqa: E501
+        ),
+    )
+
+
 class RotkiDataUpdater:
     """
     Handle updates from the rotki repository related to data that needs to be provided to
@@ -73,7 +94,6 @@ class RotkiDataUpdater:
             UpdateType.GLOBAL_ADDRESSBOOK: self.update_global_addressbook,
             UpdateType.ACCOUNTING_RULES: self.update_accounting_rules,
             UpdateType.LOCATION_ASSET_MAPPINGS: self.update_location_asset_mappings,
-            UpdateType.LOCATION_UNSUPPORTED_ASSETS: self.update_location_unsupported_assets,
             UpdateType.COUNTERPARTY_ASSET_MAPPINGS: self.update_counterparty_asset_mappings,
         }  # If we ever change this also change tests/unit/test_data_updates::reset_update_type_mappings  # noqa: E501
         self.version = get_current_version().our_version
@@ -212,15 +232,7 @@ class RotkiDataUpdater:
         conflicts = []
         for rule_data in data:
             try:
-                event_type = HistoryEventType.deserialize(rule_data['event_type'])
-                event_subtype = HistoryEventSubType.deserialize(rule_data['event_subtype'])
-                counterparty = rule_data['counterparty'] if rule_data['counterparty'] is not None else NO_ACCOUNTING_COUNTERPARTY  # noqa: E501
-                rule = BaseEventSettings(
-                    taxable=rule_data['taxable'],
-                    count_entire_amount_spend=rule_data['count_entire_amount_spend'],
-                    count_cost_basis_pnl=rule_data['count_cost_basis_pnl'],
-                    accounting_treatment=TxAccountingTreatment.deserialize(rule_data['accounting_treatment']) if rule_data['accounting_treatment'] else None,  # noqa: E501
-                )
+                event_type, event_subtype, counterparty, rule = _deserialize_accounting_rule(rule_data)  # noqa: E501
             except (KeyError, DeserializationError) as e:
                 log.error(f'Failed to read key {e} while iterating new accounting rules')
                 continue
@@ -262,6 +274,83 @@ class RotkiDataUpdater:
             message_type=WSMessageType.ACCOUNTING_RULE_CONFLICT,
             data={'num_of_conflicts': len(conflicts)},
         )
+
+    def reset_accounting_rules(self) -> None:
+        """Reset all of the user's accounting rules to rotki's current defaults.
+
+        This is the same set of rules a fresh user gets for their rotki version. Every applicable
+        remote update is fetched into memory first and only once everything has been fetched
+        successfully are the user's rules wiped and the defaults applied, in a single transaction.
+        This is destructive: all user customizations, event-specific rules and any unresolved
+        accounting rule conflicts are removed.
+
+        May raise:
+        - RemoteError: if the rotki data repo could not be reached or returned no rules. The
+        user's existing rules are left untouched in that case.
+        """
+        info = self._get_remote_info_json()[UpdateType.ACCOUNTING_RULES.value]
+        latest_version, limits = info['latest'], info.get('limits', {})
+        applied_version, rules_data = 0, []
+        for update_version in range(1, latest_version + 1):  # replay every applicable version
+            version_info = limits.get(str(update_version), {})
+            if (
+                (min_version := version_info.get('min_version')) is not None and
+                pversion.parse(min_version) > self.version
+            ):
+                break  # all later versions are also unavailable for this rotki version
+            if (
+                (max_version := version_info.get('max_version')) is not None and
+                pversion.parse(max_version) < self.version
+            ):
+                continue
+
+            file_url = f'https://raw.githubusercontent.com/rotki/data/{self.branch}/updates/{UpdateType.ACCOUNTING_RULES.value}/v{update_version}.json'
+            remote = query_file(file_url, True)  # RemoteError here aborts before any DB change
+            if (data := remote.get(UpdateType.ACCOUNTING_RULES.value)) is None:
+                log.error('Remote update %s does not contain accounting_rules key', file_url)
+                continue
+
+            rules_data.extend(data)
+            applied_version = update_version
+
+        if len(rules_data) == 0:  # do not wipe the user's rules if we got nothing to restore
+            raise RemoteError('Did not receive any accounting rules from the data repo')
+
+        # Deserialize everything before touching the DB so the write transaction below stays as
+        # lean as possible and we hold the db lock for as little time as we can.
+        deserialized_rules = []
+        for rule_data in rules_data:
+            try:
+                event_type, event_subtype, counterparty, rule = _deserialize_accounting_rule(rule_data)  # noqa: E501
+            except (KeyError, DeserializationError) as e:
+                log.error('Failed to read key %s while resetting accounting rules', e)
+                continue
+
+            deserialized_rules.append((event_type, event_subtype, counterparty, rule, rule_data.get('links', {})))  # noqa: E501
+
+        # Everything is fetched and ready. Atomically swap the user's rules for the defaults.
+        rules_db = DBAccountingRules(self.user_db)
+        with self.user_db.conn.write_ctx() as write_cursor:
+            write_cursor.execute('DELETE FROM linked_rules_properties')
+            write_cursor.execute(
+                'DELETE FROM unresolved_remote_conflicts WHERE type=?',
+                (ConflictType.ACCOUNTING_RULE.serialize_for_db(),),
+            )
+            write_cursor.execute('DELETE FROM accounting_rules')  # cascades accounting_rule_events
+            write_cursor.execute(
+                'INSERT OR REPLACE INTO settings(name, value) VALUES (?, ?)',
+                (UpdateType.ACCOUNTING_RULES.serialize(), applied_version),
+            )
+            for event_type, event_subtype, counterparty, rule, links in deserialized_rules:
+                rules_db.add_accounting_rule(
+                    write_cursor=write_cursor,
+                    event_type=event_type,
+                    event_subtype=event_subtype,
+                    counterparty=counterparty,
+                    rule=rule,
+                    links=links,
+                    force_update=True,
+                )
 
     def update_contracts(self, data: dict[str, Any], version: int) -> None:
         """
@@ -406,32 +495,6 @@ class RotkiDataUpdater:
                     log.error(f'Could not deserialize {entry_type.__name__} {raw_entry!s}: {e!s}')
 
             update_function(entries=entries, skip_errors=True)
-
-    def update_location_unsupported_assets(self, data: dict[str, dict[str, list[str]]], version: int) -> None:  # noqa: E501
-        """Applies location unsupported assets updates in the global DB"""
-        log.info(f'Applying update for location unsupported assets to v{version}')
-        for raw_data_key, update_query in (
-            ('insert', 'INSERT OR IGNORE INTO location_unsupported_assets(location, exchange_symbol) VALUES(?, ?);'),  # noqa: E501
-            ('remove', 'DELETE FROM location_unsupported_assets WHERE location = ? AND exchange_symbol = ?;'),  # noqa: E501
-        ):
-            raw_data: dict[str, list[str]] | None = data.get(raw_data_key)
-            if raw_data is None:
-                continue  # no data to update
-
-            for raw_location, exchange_symbols in raw_data.items():
-                try:
-                    location = Location.deserialize(raw_location).serialize_for_db()
-                except DeserializationError as e:
-                    log.error(f'Could not deserialize a valid location from {raw_location}: {e!s}')
-                    continue
-
-                try:
-                    with GlobalDBHandler().conn.write_ctx() as write_cursor:
-                        write_cursor.executemany(
-                            update_query, [(location, symbol) for symbol in exchange_symbols],
-                        )
-                except OperationalError as e:
-                    log.error(f'Could not {raw_data_key} location unsupported asset for {raw_location} due to: {e!s}')  # noqa: E501
 
     def check_for_updates(self, updates: Sequence[UpdateType] = tuple(UpdateType)) -> None:
         """Retrieve the information about the latest available update"""

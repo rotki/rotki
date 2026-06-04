@@ -8,7 +8,7 @@ from rotkehlchen.constants.assets import A_DAI, A_SAI
 from rotkehlchen.constants.timing import SAI_DAI_MIGRATION_TS
 from rotkehlchen.data_import.utils import BaseExchangeImporter, SkippedCSVEntry, hash_csv_row
 from rotkehlchen.db.drivers.gevent import DBCursor
-from rotkehlchen.errors.asset import UnknownAsset, UnsupportedAsset
+from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.misc import InputError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.history.events.structures.swap import create_swap_events
@@ -112,13 +112,6 @@ Trade from ShapeShift with ShapeShift Deposit Address:
                         row_index=index,
                         csv_row=row,
                         msg=f'Unknown asset {e.identifier}.',
-                        is_error=True,
-                    )
-                except UnsupportedAsset as e:
-                    self.send_message(
-                        row_index=index,
-                        csv_row=row,
-                        msg=str(e),
                         is_error=True,
                     )
                 except DeserializationError as e:
