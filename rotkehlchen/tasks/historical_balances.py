@@ -114,7 +114,7 @@ class Bucket(NamedTuple):
 
         if (  # Depositing/withdrawing to protocols affects both wallet and protocol buckets
             event_key in DUAL_BUCKET_PROTOCOL_EVENTS and
-            counterparty is not None and
+            counterparty not in (None, '') and
             (wallet_direction := event.maybe_get_direction(for_balance_tracking=True)) is not None
         ):
             return [
@@ -157,7 +157,7 @@ class Bucket(NamedTuple):
         ):
             return []
 
-        if event.event_subtype in PROTOCOL_BUCKET_SUBTYPES and counterparty is not None:
+        if event.event_subtype in PROTOCOL_BUCKET_SUBTYPES and counterparty not in (None, ''):
             return [(cls(
                 location=location,
                 location_label=event.location_label,
