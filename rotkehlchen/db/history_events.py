@@ -1986,11 +1986,15 @@ class DBHistoryEvents:
 
         return final_amounts, total_value
 
-    def get_hidden_event_ids(self, cursor: 'DBCursor') -> list[int]:
+    def get_hidden_event_ids(self, cursor: 'DBCursor') -> set[int]:
         """Returns all event identifiers that should be hidden in the UI
 
         These are, at the moment, special cases where due to grouping different event
         types with similar info they all appear together but the UI should just show one.
+
+        Returned as a set since the only use is per-event membership testing during
+        serialization (see HistoryBaseEntry.serialize_for_api). A list there is an O(N*M)
+        scan (N events serialized x M hidden ids); a set makes it O(N).
         """
         # Only 1 type of hidden event for now
         cursor.execute(
@@ -1999,7 +2003,7 @@ class DBHistoryEvents:
             'AND (SELECT COUNT(*) FROM history_events E2 WHERE '
             'E2.group_identifier=E.group_identifier) > 2',
         )
-        return [x[0] for x in cursor]
+        return {x[0] for x in cursor}
 
     def edit_event_extra_data(
             self,

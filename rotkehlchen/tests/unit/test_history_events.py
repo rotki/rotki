@@ -50,7 +50,7 @@ def test_serialize_with_invalid_type_subtype():
     assert event.serialize_for_api(
         mapping_states={},
         ignored_ids=set(),
-        hidden_event_ids=[],
+        hidden_event_ids=set(),
         event_accounting_rule_status=EventAccountingRuleStatus.NOT_PROCESSED,  # needed to recreate the error this tests for  # noqa: E501
         grouped_events_num=None,
     ) == {

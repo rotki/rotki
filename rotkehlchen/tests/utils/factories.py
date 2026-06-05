@@ -178,7 +178,7 @@ def generate_events_response(
         x.serialize_for_api(
             mapping_states={},
             ignored_ids=set(),
-            hidden_event_ids=[],
+            hidden_event_ids=set(),
             event_accounting_rule_status=accounting_status,
             has_ignored_assets=processed_ignored_list[idx],
         ) for idx, x in enumerate(data)
