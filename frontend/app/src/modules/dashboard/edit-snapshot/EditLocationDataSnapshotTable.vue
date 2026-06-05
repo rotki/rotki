@@ -1,13 +1,14 @@
 <script setup lang="ts">
 import type { DataTableColumn, DataTableSortData } from '@rotki/ui-library';
 import type { LocationDataSnapshot, LocationDataSnapshotPayload } from '@/modules/dashboard/snapshots';
-import { type BigNumber, bigNumberify, One, Zero } from '@rotki/common';
-import { AssetValueDisplay, FiatDisplay } from '@/modules/assets/amount-display/components';
-import { CURRENCY_USD } from '@/modules/assets/amount-display/currencies';
-import { usePriceUtils } from '@/modules/assets/prices/use-price-utils';
+import { type BigNumber, bigNumberify } from '@rotki/common';
 import { useConfirmStore } from '@/modules/core/common/use-confirm-store';
 import { TableId, useRememberTableSorting } from '@/modules/core/table/use-remember-table-sorting';
 import EditLocationDataSnapshotForm from '@/modules/dashboard/edit-snapshot/EditLocationDataSnapshotForm.vue';
+import SnapshotFiatDisplay from '@/modules/dashboard/snapshots/components/SnapshotFiatDisplay.vue';
+import { useHistoricFiatConversion } from '@/modules/dashboard/snapshots/composables/use-historic-fiat-conversion';
+import { convertFiatToUsd, convertUsdToFiat } from '@/modules/dashboard/snapshots/lib/snapshot-fx';
+import { getTotalValue, TOTAL_LOCATION } from '@/modules/dashboard/snapshots/lib/snapshot-totals';
 import LocationDisplay from '@/modules/history/LocationDisplay.vue';
 import { useGeneralSettingsStore } from '@/modules/settings/use-general-settings-store';
 import BigDialog from '@/modules/shell/components/dialogs/BigDialog.vue';
@@ -66,11 +67,12 @@ const tableHeaders = computed<DataTableColumn<IndexedLocationDataSnapshot>[]>(()
 
 useRememberTableSorting<LocationDataSnapshot>(TableId.EDIT_LOCATION_DATA_SNAPSHOT, sort, tableHeaders);
 
-const { getExchangeRate } = usePriceUtils();
-const fiatExchangeRate = computed<BigNumber>(() => getExchangeRate(get(currencySymbol), One));
+// Snapshots are stored in USD; editing in the user's fiat must use the
+// historic USD -> fiat rate at the snapshot's timestamp, not today's (#12277).
+const { isUsd, loading: fetchingRate, rate, rateReady } = useHistoricFiatConversion(() => timestamp);
 
 const data = computed<IndexedLocationDataSnapshot[]>(() =>
-  get(modelValue).map((item: LocationDataSnapshot, index: number) => ({ ...item, index })).filter((item: IndexedLocationDataSnapshot) => item.location !== 'total'),
+  get(modelValue).map((item: LocationDataSnapshot, index: number) => ({ ...item, index })).filter((item: IndexedLocationDataSnapshot) => item.location !== TOTAL_LOCATION),
 );
 
 function updateStep(step: number): void {
@@ -81,9 +83,9 @@ function editClick(item: IndexedLocationDataSnapshot): void {
   set(editedIndex, item.index);
 
   const convertedFiatValue
-    = get(currencySymbol) === CURRENCY_USD
+    = get(isUsd)
       ? item.usdValue.toFixed()
-      : item.usdValue.multipliedBy(get(fiatExchangeRate)).toFixed();
+      : convertUsdToFiat(item.usdValue, get(rate)).toFixed();
 
   set(formModel, {
     ...item,
@@ -129,9 +131,9 @@ async function save(): Promise<boolean> {
   const timestampVal = timestamp;
 
   const convertedUsdValue
-    = get(currencySymbol) === CURRENCY_USD
+    = get(isUsd)
       ? bigNumberify(formData.usdValue)
-      : bigNumberify(formData.usdValue).dividedBy(get(fiatExchangeRate));
+      : convertFiatToUsd(bigNumberify(formData.usdValue), get(rate));
 
   const newValue = [...val];
   const payload = {
@@ -170,14 +172,7 @@ function confirmDelete(index: number): void {
   set(modelValue, newValue);
 }
 
-const total = computed<BigNumber>(() => {
-  const totalEntry = get(modelValue).find((item: LocationDataSnapshot) => item.location === 'total');
-
-  if (!totalEntry)
-    return Zero;
-
-  return totalEntry.usdValue;
-});
+const total = computed<BigNumber>(() => getTotalValue(get(modelValue)));
 
 const { show } = useConfirmStore();
 
@@ -210,14 +205,15 @@ function showDeleteConfirmation(item: IndexedLocationDataSnapshot) {
       </template>
 
       <template #item.usdValue="{ row }">
-        <FiatDisplay
+        <SnapshotFiatDisplay
           :value="row.usdValue"
-          from="USD"
+          :timestamp="timestamp"
         />
       </template>
 
       <template #item.action="{ row }">
         <RowActions
+          :edit-disabled="!rateReady"
           :edit-tooltip="t('dashboard.snapshot.edit.dialog.actions.edit_item')"
           :delete-tooltip="t('dashboard.snapshot.edit.dialog.actions.delete_item')"
           @edit-click="editClick(row)"
@@ -233,11 +229,9 @@ function showDeleteConfirmation(item: IndexedLocationDataSnapshot) {
           {{ t('common.total') }}:
         </div>
         <div class="font-bold text-h6 -mt-1">
-          <AssetValueDisplay
-            :asset="CURRENCY_USD"
-            :amount="total"
+          <SnapshotFiatDisplay
             :value="total"
-            :timestamp="{ ms: timestamp }"
+            :timestamp="timestamp"
           />
         </div>
       </div>
@@ -246,6 +240,8 @@ function showDeleteConfirmation(item: IndexedLocationDataSnapshot) {
         <RuiButton
           variant="text"
           color="primary"
+          :disabled="!rateReady"
+          :loading="fetchingRate"
           @click="add()"
         >
           <template #prepend>

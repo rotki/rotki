@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import type { BigNumber } from '@rotki/common';
 import type { BalanceSnapshotPayload } from '@/modules/dashboard/snapshots';
+import type { LocationBalancePreview } from '@/modules/dashboard/snapshots/lib/snapshot-location-balance';
 import useVuelidate from '@vuelidate/core';
 import { helpers, required } from '@vuelidate/validators';
 import { isNft } from '@/modules/assets/nft-utils';
@@ -17,7 +17,7 @@ const model = defineModel<BalanceSnapshotPayloadAndLocation>({ required: true })
 const { locations, previewLocationBalance = null, timestamp } = defineProps<{
   edit?: boolean;
   locations: string[];
-  previewLocationBalance?: Record<string, BigNumber> | null;
+  previewLocationBalance?: LocationBalancePreview | null;
   timestamp: number;
 }>();
 
@@ -135,6 +135,7 @@ defineExpose({
       optional-show-existing
       :locations="locations"
       :preview-location-balance="previewLocationBalance"
+      :timestamp="timestamp"
     />
   </div>
 </template>

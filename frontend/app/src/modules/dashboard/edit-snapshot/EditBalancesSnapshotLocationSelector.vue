@@ -1,14 +1,15 @@
 <script setup lang="ts">
-import type { BigNumber } from '@rotki/common';
-import { FiatDisplay } from '@/modules/assets/amount-display/components';
+import type { LocationBalancePreview } from '@/modules/dashboard/snapshots/lib/snapshot-location-balance';
 import LocationSelector from '@/modules/balances/LocationSelector.vue';
+import SnapshotFiatDisplay from '@/modules/dashboard/snapshots/components/SnapshotFiatDisplay.vue';
 
 const model = defineModel<string>({ default: '', required: true });
 
-const { locations = [], optionalShowExisting = false, previewLocationBalance = null } = defineProps<{
+const { locations = [], optionalShowExisting = false, previewLocationBalance = null, timestamp } = defineProps<{
   locations?: string[];
-  previewLocationBalance?: Record<string, BigNumber> | null;
+  previewLocationBalance?: LocationBalancePreview | null;
   optionalShowExisting?: boolean;
+  timestamp: number;
 }>();
 
 const { t } = useI18n({ useScope: 'global' });
@@ -58,9 +59,9 @@ const showOnlyExisting = ref<boolean>(true);
           <div class="text-overline text-rui-text-secondary -mb-2">
             {{ t('dashboard.snapshot.edit.dialog.balances.preview.from') }}
           </div>
-          <FiatDisplay
+          <SnapshotFiatDisplay
             :value="previewLocationBalance.before"
-            from="USD"
+            :timestamp="timestamp"
           />
         </div>
         <div class="px-8 text-rui-text-secondary">
@@ -70,9 +71,9 @@ const showOnlyExisting = ref<boolean>(true);
           <div class="text-overline text-rui-text-secondary -mb-2">
             {{ t('dashboard.snapshot.edit.dialog.balances.preview.to') }}
           </div>
-          <FiatDisplay
+          <SnapshotFiatDisplay
             :value="previewLocationBalance.after"
-            from="USD"
+            :timestamp="timestamp"
           />
         </div>
       </div>
