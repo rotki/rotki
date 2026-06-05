@@ -362,11 +362,6 @@ class HistoryService:
                 entries_table='history_events',
                 group_by='group_identifier' if aggregate_by_group_ids else None,
             )
-            event_mapping_states = dbevents.get_event_mapping_states(
-                cursor=cursor,
-                location=filter_query.location,
-            )
-            hidden_event_ids = dbevents.get_hidden_event_ids(cursor)
             ignored_ids = self.rotkehlchen.data.db.get_ignored_action_ids(cursor=cursor)
             # entries_total is the unfiltered row/group count for the whole table. If it is
             # already at or below the tier limit then the filtered count must also be, so the
@@ -388,6 +383,25 @@ class HistoryService:
                 joined_group_ids.get(group_identifier, group_identifier)
                 for group_identifier in ignored_group_identifiers
             }
+            grouped_events_nums: list[int | None]
+            events: list[HistoryBaseEntry]
+            grouped_events_nums, events = (
+                zip(*processed_events_result, strict=False)  # type: ignore
+                if aggregate_by_group_ids is True and len(processed_events_result) != 0 else
+                ([None] * len(processed_events_result), processed_events_result)
+            )
+            # mapping states and hidden ids are only needed for the events of this page, so
+            # scope the lookups to them instead of scanning those tables for the whole DB
+            event_identifiers = [event.identifier for event in events if event.identifier is not None]  # noqa: E501
+            event_mapping_states = dbevents.get_event_mapping_states(
+                cursor=cursor,
+                location=filter_query.location,
+                entry_identifiers=event_identifiers,
+            )
+            hidden_event_ids = dbevents.get_hidden_event_ids(
+                cursor=cursor,
+                entry_identifiers=event_identifiers,
+            )
 
         accountant_pot = AccountingPot(
             database=self.rotkehlchen.data.db,
@@ -397,13 +411,6 @@ class HistoryService:
             ]),
             msg_aggregator=self.rotkehlchen.msg_aggregator,
             is_dummy_pot=True,
-        )
-        grouped_events_nums: list[int | None]
-        events: list[HistoryBaseEntry]
-        grouped_events_nums, events = (
-            zip(*processed_events_result, strict=False)  # type: ignore
-            if aggregate_by_group_ids is True and len(processed_events_result) != 0 else
-            ([None] * len(processed_events_result), processed_events_result)
         )
         result = {
             # entries are already serialized to JSON primitives, so wrap them to skip
