@@ -736,7 +736,7 @@ class HistoryService:
             grouped_events_nums: list[int | None],
             mapping_states: dict[int, list[HistoryMappingState]],
             ignored_ids: set[str],
-            hidden_event_ids: list[int],
+            hidden_event_ids: set[int],
             joined_group_ids: dict[str, str],
             group_has_ignored_assets: set[str],
     ) -> list[dict[str, Any] | list[dict[str, Any]]]:

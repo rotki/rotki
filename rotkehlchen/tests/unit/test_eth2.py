@@ -751,7 +751,7 @@ def test_combine_block_with_tx_events(eth2, database):
 
     with database.conn.read_ctx() as cursor:
         hidden_ids = dbevents.get_hidden_event_ids(cursor)
-        assert hidden_ids == [2]
+        assert hidden_ids == {2}
 
 
 def test_combine_block_with_tx_events_without_relay_data(eth2, database):

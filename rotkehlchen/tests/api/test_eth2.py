@@ -1550,7 +1550,7 @@ def test_redecode_block_production_events(rotkehlchen_api_server: 'APIServer') -
             (5, 4, f'BP1_{block_number + 2}', 0, timestamp + 2, 'f', fee_recipient_address, 'ETH', reward4, f'Validator {v_index} produced block {block_number + 2} with {reward4} ETH going to {fee_recipient_address} as the block reward', 'informational', 'block production', None, 0),  # noqa: E501
         ]
         # Confirm combine_block_with_tx_events marked the EthBlockEvent as hidden
-        assert dbevents.get_hidden_event_ids(cursor) == [2]
+        assert dbevents.get_hidden_event_ids(cursor) == {2}
 
     assert_error_response(  # Check validation with non-existent block number.
         response=requests.put(
