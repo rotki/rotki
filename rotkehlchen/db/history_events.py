@@ -936,6 +936,7 @@ class DBHistoryEvents:
             cursor: 'DBCursor',
             location: Location | None,
             mapping_state: HistoryMappingState,
+            entry_identifiers: Sequence[int] | None = None,
     ) -> list[int]:
         ...
 
@@ -945,6 +946,7 @@ class DBHistoryEvents:
             cursor: 'DBCursor',
             location: Location | None,
             mapping_state: None = None,
+            entry_identifiers: Sequence[int] | None = None,
     ) -> dict[int, list[HistoryMappingState]]:
         ...
 
@@ -953,10 +955,29 @@ class DBHistoryEvents:
             cursor: 'DBCursor',
             location: Location | None,
             mapping_state: HistoryMappingState | None = None,
+            entry_identifiers: Sequence[int] | None = None,
     ) -> dict[int, list[HistoryMappingState]] | list[int]:
         """Get the mapping states of each event in the database that has a mapping state,
-        optionally filtered by Location or
+        optionally filtered by Location.
+
+        If entry_identifiers is given the lookup is scoped to those events (e.g. a single
+        page) instead of scanning the whole name='state' mappings table, which can grow
+        large (matched asset movements, customized and csv-imported events all live there).
+        Only supported for the dict (mapping_state is None) variant.
         """
+        if entry_identifiers is not None:
+            assert mapping_state is None, 'entry_identifiers scoping is only for the dict variant'
+            scoped_states: dict[int, list[HistoryMappingState]] = defaultdict(list)
+            for chunk, placeholders in get_query_chunks(entry_identifiers):
+                for identifier, state_value in cursor.execute(
+                    f'SELECT parent_identifier, value FROM history_events_mappings '
+                    f'WHERE name=? AND parent_identifier IN ({placeholders})',
+                    (HISTORY_MAPPING_KEY_STATE, *chunk),
+                ):
+                    scoped_states[identifier].append(HistoryMappingState(state_value))
+
+            return scoped_states
+
         where_str = 'A.name = ? '
         bindings: list[Any] = [HISTORY_MAPPING_KEY_STATE]
         if mapping_state is not None:
@@ -1986,24 +2007,43 @@ class DBHistoryEvents:
 
         return final_amounts, total_value
 
-    def get_hidden_event_ids(self, cursor: 'DBCursor') -> set[int]:
-        """Returns all event identifiers that should be hidden in the UI
+    def get_hidden_event_ids(
+            self,
+            cursor: 'DBCursor',
+            entry_identifiers: Sequence[int] | None = None,
+    ) -> set[int]:
+        """Returns the event identifiers that should be hidden in the UI
 
         These are, at the moment, special cases where due to grouping different event
         types with similar info they all appear together but the UI should just show one.
+
+        If entry_identifiers is given the search is scoped to those events (e.g. a single
+        page) instead of the whole DB; otherwise every hidden event in the DB is returned.
 
         Returned as a set since the only use is per-event membership testing during
         serialization (see HistoryBaseEntry.serialize_for_api). A list there is an O(N*M)
         scan (N events serialized x M hidden ids); a set makes it O(N).
         """
-        # Only 1 type of hidden event for now
-        cursor.execute(
+        # Only 1 type of hidden event for now: the sequence_index=1 eth staking event of a
+        # staking group with more than 2 events. The COUNT subquery is over the whole group
+        # (correct regardless of scoping) since group membership does not depend on the page.
+        base_query = (
             'SELECT E.identifier FROM history_events E LEFT JOIN eth_staking_events_info S '
-            'ON E.identifier=S.identifier WHERE E.sequence_index=1 AND S.identifier IS NOT NULL '
-            'AND (SELECT COUNT(*) FROM history_events E2 WHERE '
-            'E2.group_identifier=E.group_identifier) > 2',
+            'ON E.identifier=S.identifier WHERE {extra}E.sequence_index=1 '
+            'AND S.identifier IS NOT NULL AND (SELECT COUNT(*) FROM history_events E2 WHERE '
+            'E2.group_identifier=E.group_identifier) > 2'
         )
-        return {x[0] for x in cursor}
+        if entry_identifiers is None:
+            return {x[0] for x in cursor.execute(base_query.format(extra=''))}
+
+        hidden: set[int] = set()
+        for chunk, placeholders in get_query_chunks(entry_identifiers):
+            hidden.update(x[0] for x in cursor.execute(
+                base_query.format(extra=f'E.identifier IN ({placeholders}) AND '),
+                tuple(chunk),
+            ))
+
+        return hidden
 
     def edit_event_extra_data(
             self,
