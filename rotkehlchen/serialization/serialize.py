@@ -63,6 +63,18 @@ from rotkehlchen.types import (
 from rotkehlchen.utils.version_check import VersionCheckResult
 
 
+class PreSerializedList(list):  # noqa: FURB189  # we want a genuine list subclass (not UserList) so json.dumps serializes it natively and isinstance(x, list) holds; it adds no methods, just acts as a marker type
+    """A list whose elements are already plain JSON primitives (produced by the
+    objects' own ``serialize()``). ``process_result`` returns it untouched instead
+    of recursively re-walking and rebuilding it, which for large payloads (e.g. a
+    full page of history events) avoids a redundant deep copy of the whole list.
+
+    It subclasses ``list`` so that even on a code path that does not pass through
+    ``process_result`` ``json.dumps`` still serializes it correctly as a normal
+    array rather than raising.
+    """
+
+
 def _process_dict(entry: dict) -> dict:
     new_dict = {}
     for k, v in entry.items():
@@ -156,6 +168,8 @@ HANDLERS.update(dict.fromkeys((
     DefiProtocolBalances,
     BlockchainAccountData,
 ), lambda x: _process_dict(x._asdict())))
+# already JSON-ready: return as-is and skip the (expensive) recursive re-walk
+HANDLERS[PreSerializedList] = lambda x: x
 
 
 def _process_entry(entry: Any) -> str | (list[Any] | (dict[str, Any] | Any)):

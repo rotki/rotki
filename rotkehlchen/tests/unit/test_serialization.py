@@ -1,3 +1,4 @@
+import json
 from unittest.mock import MagicMock
 
 import pytest
@@ -19,6 +20,7 @@ from rotkehlchen.serialization.deserialize import (
     deserialize_int_from_hex_or_int,
 )
 from rotkehlchen.serialization.schemas import ExportedAssetsSchema
+from rotkehlchen.serialization.serialize import PreSerializedList, process_result
 from rotkehlchen.types import (
     ChainID,
     EvmTransaction,
@@ -47,6 +49,29 @@ def test_rlk_jsondumps():
         '{"a": "5.4", "b": "foo", "c": "32.1", "d": 5, '
         '"e": [1, "a", "5.1"], "f": "ETH", "BTC": "test_with_asset_key"}'
     )
+
+
+def test_pre_serialized_list_skips_rewalk() -> None:
+    """A PreSerializedList must be returned untouched by process_result (no deep
+    re-walk) while producing byte-identical json to walking a plain list. This guards
+    the history-events hot path where the entries are already JSON primitives -- note
+    extra_data can hold floats (it is json.loads'd from the DB), so the output must
+    match plain json.dumps and not go through an FVal-only encoder.
+    """
+    entries = [
+        {'entry': {'identifier': 1, 'asset': 'BTC', 'amount': '0.5', 'extra_data': {'ratio': 1.5, 'x': None}}, 'hidden': True},  # noqa: E501
+        [  # a grouped sub-list of events
+            {'entry': {'identifier': 2, 'asset': 'ETH', 'amount': '3'}, 'states': [0, 1]},
+            {'entry': {'identifier': 3, 'asset': 'ETH', 'amount': '1', 'extra_data': {'n': 2}}},
+        ],
+    ]
+    marker = PreSerializedList(entries)
+    processed = process_result({'result': {'entries': marker, 'entries_found': 2}, 'message': ''})
+    # the wrapped list is the very same object -> no rebuild/deep copy happened
+    assert processed['result']['entries'] is marker
+    # and the emitted json is identical to re-walking a plain list
+    plain = process_result({'result': {'entries': entries, 'entries_found': 2}, 'message': ''})
+    assert json.dumps(plain) == json.dumps(processed)
 
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
