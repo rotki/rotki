@@ -164,6 +164,7 @@ def _populate_initial_balances(api_server: 'APIServer') -> list[dict[str, Any]]:
     return expected_balances
 
 
+@pytest.mark.vcr
 @pytest.mark.parametrize('number_of_eth_accounts', [2])
 def test_add_and_query_manually_tracked_balances(
         rotkehlchen_api_server: 'APIServer',
