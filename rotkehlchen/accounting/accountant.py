@@ -1,6 +1,7 @@
 import logging
 from collections.abc import Sequence
 from pathlib import Path
+from time import monotonic
 from typing import TYPE_CHECKING
 
 import gevent
@@ -160,6 +161,7 @@ class Accountant:
             actions_length = len(events)
             prev_time = last_event_ts = Timestamp(0)
             ignored_ids = self.db.get_ignored_action_ids(cursor=cursor)
+            last_yield = monotonic()
 
         events_iter = peekable(events)
         while True:
@@ -210,11 +212,17 @@ class Accountant:
                 break  # we reached the period end
 
             last_event_ts = prev_time
-            if count % 500 == 0:
+            if monotonic() - last_yield > 0.1:
                 # This loop can take a very long time depending on the amount of events
-                # to process. We need to yield to other greenlets or else calls to the
-                # API may time out
-                gevent.sleep(0.5)
+                # to process. We need to periodically yield to other greenlets or else
+                # calls to the API may time out. A positive sleep value is required: it
+                # forces a full event-loop cycle (including the I/O poll) so greenlets
+                # blocked on socket I/O -- like the API server -- actually get to run.
+                # gevent.sleep(0) does NOT guarantee this and starves the API. The
+                # wall-clock cadence (vs an event count) keeps the overhead a fixed
+                # fraction of report time regardless of how long individual events take.
+                gevent.sleep(0.01)
+                last_yield = monotonic()
             count += processed_events_num
             if not active_premium and count >= FREE_PNL_EVENTS_LIMIT:
                 log.debug(
