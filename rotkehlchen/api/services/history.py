@@ -51,6 +51,7 @@ from rotkehlchen.premium.premium import (
     has_premium_capability,
     has_premium_check,
 )
+from rotkehlchen.serialization.serialize import PreSerializedList
 from rotkehlchen.types import (
     EVM_CHAIN_IDS_WITH_TRANSACTIONS,
     EVM_CHAINS_WITH_TRANSACTIONS,
@@ -405,7 +406,9 @@ class HistoryService:
             ([None] * len(processed_events_result), processed_events_result)
         )
         result = {
-            'entries': self._serialize_and_group_history_events(
+            # entries are already serialized to JSON primitives, so wrap them to skip
+            # the redundant process_result re-walk of the whole (potentially huge) list
+            'entries': PreSerializedList(self._serialize_and_group_history_events(
                 events=events,
                 aggregate_by_group_ids=aggregate_by_group_ids,
                 event_accounting_rule_statuses=query_missing_accounting_rules(
@@ -421,7 +424,7 @@ class HistoryService:
                 hidden_event_ids=hidden_event_ids,
                 joined_group_ids=joined_group_ids,
                 group_has_ignored_assets=group_has_ignored_assets,
-            ),
+            )),
             'entries_found': entries_with_limit,
             'entries_limit': entries_limit,
             'entries_total': entries_total,
