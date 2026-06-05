@@ -1,15 +1,10 @@
 <script setup lang="ts">
 import type { BalanceSnapshot, LocationDataSnapshot } from '@/modules/dashboard/snapshots';
-import { assert, type BigNumber, bigNumberify, One, Zero } from '@rotki/common';
 import useVuelidate from '@vuelidate/core';
 import { helpers, required } from '@vuelidate/validators';
-import { FiatDisplay } from '@/modules/assets/amount-display/components';
-import { CURRENCY_USD } from '@/modules/assets/amount-display/currencies';
-import { isNft } from '@/modules/assets/nft-utils';
-import { useHistoricPriceCache } from '@/modules/assets/prices/use-historic-price-cache';
-import { bigNumberSum } from '@/modules/core/common/data/calculation';
 import { toMessages } from '@/modules/core/common/validation/validation';
-import { useGeneralSettingsStore } from '@/modules/settings/use-general-settings-store';
+import SnapshotFiatDisplay from '@/modules/dashboard/snapshots/components/SnapshotFiatDisplay.vue';
+import { type TotalSuggestionKey, useSnapshotTotalInput } from '@/modules/dashboard/snapshots/composables/use-snapshot-total-input';
 import AmountInput from '@/modules/shell/components/inputs/AmountInput.vue';
 
 const modelValue = defineModel<LocationDataSnapshot[]>({ required: true });
@@ -23,108 +18,21 @@ const emit = defineEmits<{
   'update:step': [step: number];
 }>();
 
-const total = ref<string>('');
-
 const { t } = useI18n({ useScope: 'global' });
-const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
-const { createKey, getHistoricPrice, isPending } = useHistoricPriceCache();
 
-const isCurrencyCurrencyUsd = computed<boolean>(() => get(currencySymbol) === CURRENCY_USD);
-
-const rate = computed<BigNumber>(() => {
-  if (get(isCurrencyCurrencyUsd))
-    return One;
-  return getHistoricPrice(CURRENCY_USD, timestamp);
+const {
+  applyTotal,
+  fetchingRate,
+  nftsExcludedTotal,
+  rateReady,
+  setTotal,
+  suggestions,
+  total,
+} = useSnapshotTotalInput({
+  balancesSnapshot: () => balancesSnapshot,
+  modelValue,
+  timestamp: () => timestamp,
 });
-
-const fetchingRate = isPending(createKey(CURRENCY_USD, timestamp));
-
-const assetTotal = computed<BigNumber>(() => {
-  const numbers = balancesSnapshot.map((item: BalanceSnapshot) => {
-    if (item.category === 'asset')
-      return item.usdValue;
-
-    return item.usdValue.negated();
-  });
-
-  return bigNumberSum(numbers);
-});
-
-const locationTotal = computed<BigNumber>(() => {
-  const numbers = get(modelValue).map((item: LocationDataSnapshot) => {
-    if (item.location === 'total')
-      return Zero;
-
-    return item.usdValue;
-  });
-
-  return bigNumberSum(numbers);
-});
-
-const nftsTotal = computed<BigNumber>(() => {
-  const numbers = balancesSnapshot.map((item: BalanceSnapshot) => {
-    if (!isNft(item.assetIdentifier))
-      return Zero;
-
-    if (item.category === 'asset')
-      return item.usdValue;
-
-    return item.usdValue.negated();
-  });
-
-  return bigNumberSum(numbers);
-});
-
-const numericTotal = computed<BigNumber>(() => {
-  const value = get(total);
-
-  if (value === '')
-    return Zero;
-
-  return get(isCurrencyCurrencyUsd)
-    ? bigNumberify(value)
-    : bigNumberify(value).dividedBy(get(rate));
-});
-
-const nftsExcludedTotal = computed<BigNumber>(() => get(numericTotal).minus(get(nftsTotal)));
-
-const suggestions = computed(() => {
-  const assetTotalValue = get(assetTotal);
-  const locationTotalValue = get(locationTotal);
-
-  if (assetTotalValue.minus(locationTotalValue).abs().lt(1e-8) || !get(isCurrencyCurrencyUsd)) {
-    return {
-      total: assetTotalValue,
-    };
-  }
-  return {
-    asset: assetTotalValue,
-    location: locationTotalValue,
-  };
-});
-
-watchImmediate(rate, (rate) => {
-  const totalEntry = get(modelValue).find((item: LocationDataSnapshot) => item.location === 'total');
-
-  if (totalEntry) {
-    const convertedFiatValue
-      = get(isCurrencyCurrencyUsd)
-        ? totalEntry.usdValue.toFixed()
-        : totalEntry.usdValue.multipliedBy(get(rate)).toFixed();
-
-    set(total, convertedFiatValue);
-  }
-});
-
-function updateStep(step: number): void {
-  emit('update:step', step);
-}
-
-function setTotal(number?: BigNumber) {
-  assert(number);
-  const convertedFiatValue = number.multipliedBy(get(rate)).toFixed();
-  set(total, convertedFiatValue);
-}
 
 const rules = {
   total: {
@@ -132,17 +40,13 @@ const rules = {
   },
 };
 
-const states = {
-  total,
-};
-
 const v$ = useVuelidate(
   rules,
-  states,
+  { total },
   { $autoDirty: true },
 );
 
-const suggestionsLabel = computed(() => ({
+const suggestionsLabel = computed<Record<TotalSuggestionKey, string>>(() => ({
   asset: t('dashboard.snapshot.edit.dialog.total.use_calculated_asset', {
     length: balancesSnapshot.length,
   }),
@@ -152,18 +56,15 @@ const suggestionsLabel = computed(() => ({
   total: t('dashboard.snapshot.edit.dialog.total.use_calculated_total'),
 }));
 
+function updateStep(step: number): void {
+  emit('update:step', step);
+}
+
 async function save(): Promise<void> {
   if (!(await get(v$).$validate()))
     return;
 
-  const val = get(modelValue);
-  const index = val.findIndex((item: LocationDataSnapshot) => item.location === 'total')!;
-
-  const newValue = [...val];
-
-  newValue[index].usdValue = get(numericTotal);
-
-  set(modelValue, newValue);
+  applyTotal();
 }
 </script>
 
@@ -178,7 +79,7 @@ async function save(): Promise<void> {
           v-model="total"
           variant="outlined"
           :error-messages="toMessages(v$.total)"
-          :disabled="fetchingRate"
+          :disabled="fetchingRate || !rateReady"
         >
           <template
             v-if="fetchingRate"
@@ -200,9 +101,9 @@ async function save(): Promise<void> {
             keypath="dashboard.snapshot.edit.dialog.total.warning"
           >
             <template #amount>
-              <FiatDisplay
+              <SnapshotFiatDisplay
                 :value="nftsExcludedTotal"
-                from="USD"
+                :timestamp="timestamp"
               />
             </template>
           </i18n-t>
@@ -216,17 +117,17 @@ async function save(): Promise<void> {
           <RuiButton
             color="primary"
             class="mb-4 w-full"
+            :disabled="!rateReady"
             @click="setTotal(number)"
           >
             <div class="flex flex-col items-center">
               <span>
                 {{ suggestionsLabel[key] }}
               </span>
-              <FiatDisplay
+              <SnapshotFiatDisplay
                 v-if="number"
                 :value="number"
-                :timestamp="{ ms: timestamp }"
-                from="USD"
+                :timestamp="timestamp"
                 class="text-2xl"
               />
             </div>
