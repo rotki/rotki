@@ -164,6 +164,7 @@ def _populate_initial_balances(api_server: 'APIServer') -> list[dict[str, Any]]:
     return expected_balances
 
 
+@pytest.mark.freeze_time('2026-06-05 04:27:20 GMT', tick=True)
 @pytest.mark.vcr
 @pytest.mark.parametrize('number_of_eth_accounts', [2])
 def test_add_and_query_manually_tracked_balances(
