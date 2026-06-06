@@ -173,6 +173,7 @@ def assert_all_balances(
 
 # Use real current price querying in this test since it's very extensive
 # and we can make sure that we can query current prices properly in the real app
+@pytest.mark.freeze_time('2026-06-05 04:27:20 GMT', tick=True)
 @pytest.mark.vcr
 @pytest.mark.parametrize('should_mock_current_price_queries', [False])
 @pytest.mark.parametrize('number_of_eth_accounts', [2])
@@ -263,6 +264,7 @@ def test_query_all_balances(
         assert last_save_timestamp != new_save_timestamp
 
 
+@pytest.mark.freeze_time('2026-06-05 04:27:20 GMT', tick=True)
 @pytest.mark.vcr
 @pytest.mark.parametrize('number_of_eth_accounts', [2])
 @pytest.mark.parametrize('btc_accounts', [[UNIT_BTC_ADDRESS1, UNIT_BTC_ADDRESS2]])
@@ -398,6 +400,7 @@ def test_query_all_balances_ignore_cache(
         assert etherscan_mock.call_count == full_query_etherscan_count * 2, msg
 
 
+@pytest.mark.freeze_time('2026-06-05 04:27:20 GMT', tick=True)
 @pytest.mark.vcr
 @pytest.mark.parametrize('tags', [[{
     'name': 'private',
@@ -653,6 +656,7 @@ def test_balance_snapshot_error_message(
     assert websocket_connection.messages_num() == 0
 
 
+@pytest.mark.freeze_time('2026-06-05 04:27:20 GMT', tick=True)
 @pytest.mark.vcr
 @pytest.mark.parametrize('number_of_eth_accounts', [2])
 @pytest.mark.parametrize('btc_accounts', [[UNIT_BTC_ADDRESS1, UNIT_BTC_ADDRESS2]])
@@ -989,6 +993,7 @@ def test_ethereum_tokens_detection(
     assert result[account]['last_update_timestamp'] >= cur_time
 
 
+@pytest.mark.freeze_time('2026-06-05 04:27:20 GMT', tick=True)
 @pytest.mark.vcr
 @pytest.mark.parametrize('number_of_eth_accounts', [2])
 @pytest.mark.parametrize('ignore_mocked_prices_for', [['ETH', 'eip155:1/erc20:0x255Aa6DF07540Cb5d3d297f0D0D4D84cb52bc8e6']])  # noqa: E501
