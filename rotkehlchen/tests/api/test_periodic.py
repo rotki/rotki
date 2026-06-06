@@ -15,6 +15,7 @@ from rotkehlchen.types import Location, SupportedBlockchain
 from rotkehlchen.utils.misc import ts_now
 
 
+@pytest.mark.freeze_time('2026-06-05 04:27:20 GMT', tick=True)
 @pytest.mark.vcr
 @pytest.mark.parametrize('number_of_eth_accounts', [0])
 @pytest.mark.parametrize('added_exchanges', [(Location.BINANCE, Location.POLONIEX)])

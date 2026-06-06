@@ -60,6 +60,7 @@ if TYPE_CHECKING:
     from rotkehlchen.api.server import APIServer
 
 
+@pytest.mark.freeze_time('2026-06-05 04:27:20 GMT', tick=True)
 @pytest.mark.vcr
 @pytest.mark.parametrize('number_of_eth_accounts', [2])
 @pytest.mark.parametrize('btc_accounts', [[UNIT_BTC_ADDRESS1, UNIT_BTC_ADDRESS2]])
@@ -100,6 +101,7 @@ def test_query_statistics_netvalue(
     assert len(result['data']) == 1
 
 
+@pytest.mark.freeze_time('2026-06-05 04:27:20 GMT', tick=True)
 @pytest.mark.vcr
 @pytest.mark.parametrize('number_of_eth_accounts', [2])
 @pytest.mark.parametrize('btc_accounts', [[UNIT_BTC_ADDRESS1, UNIT_BTC_ADDRESS2]])
@@ -251,6 +253,7 @@ def test_query_statistics_asset_balance_errors(rotkehlchen_api_server: 'APIServe
     )
 
 
+@pytest.mark.freeze_time('2026-06-05 04:27:20 GMT', tick=True)
 @pytest.mark.vcr
 @pytest.mark.parametrize('number_of_eth_accounts', [2])
 @pytest.mark.parametrize('btc_accounts', [[UNIT_BTC_ADDRESS1, UNIT_BTC_ADDRESS2]])
