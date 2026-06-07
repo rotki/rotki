@@ -768,6 +768,13 @@ def query_missing_accounting_rules(
     For a list of events returns a list of the same length with boolean values where True
     means that the event won't be affected by any accounting rule or processed in accounting
     """
+    # Fast path: if every event on the page is already resolved in the cache (repeat/poll/
+    # back-pagination loads), return the cached statuses directly and skip re-querying and
+    # re-deserializing all related events. Cache freshness is handled by rule invalidation.
+    cached_statuses = [accountant.processable_events_cache.get(event.identifier) for event in events]  # type: ignore  # identifier is set for events loaded from the DB  # noqa: E501
+    if all(status is not None for status in cached_statuses):
+        return cached_statuses  # type: ignore  # all entries are non-None here
+
     history_db = DBHistoryEvents(db)
     with db.conn.read_ctx() as cursor:
         # to know if an event will be processed or not in accounting we also need the related
