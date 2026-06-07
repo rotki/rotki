@@ -11,9 +11,12 @@ lands on a line ADDED relative to a base git ref. Legacy lines are grandfathered
 Base ref resolution order:
   1. --base <ref> argument
   2. LINT_DIFF_BASE environment variable (CI passes the PR base sha here)
-  3. first existing of origin/develop, develop, origin/main, main
+  3. local autodetect: of the known base branches that exist (origin/ and local
+     develop, main, bugfixes), pick the one whose merge-base with HEAD is the most
+     recent - i.e. the branch this one actually stems from - so a feature branch off
+     bugfixes is diffed against bugfixes, not against a stale develop.
 
-If no base can be resolved (e.g. a local checkout without the upstream branch), the
+If no base can be resolved (e.g. a local checkout without any of those branches), the
 check prints a notice and exits 0 so it never blocks local `make lint`.
 """
 
@@ -25,7 +28,11 @@ import sys
 from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
-DEFAULT_BASE_CANDIDATES = ('origin/develop', 'develop', 'origin/main', 'main')
+# base branch names to look for locally, in preference order (origin/<name> first for each)
+BASE_BRANCH_NAMES = ('develop', 'main', 'bugfixes')
+DEFAULT_BASE_CANDIDATES = tuple(
+    f'{prefix}{name}' for name in BASE_BRANCH_NAMES for prefix in ('origin/', '')
+)
 HUNK_RE = re.compile(r'^@@ -\d+(?:,\d+)? \+(\d+)(?:,(\d+))? @@')
 
 
@@ -39,6 +46,30 @@ def _git(*args: str) -> subprocess.CompletedProcess:
     )
 
 
+def _autodetect_base() -> str | None:
+    """Pick the existing base branch closest to HEAD (the one HEAD branched off).
+
+    For each candidate we take its merge-base with HEAD and keep the candidate whose
+    merge-base is the most recent commit. Candidates whose merge-base IS HEAD (the
+    currently checked-out branch's own ref, or any descendant) are skipped, since
+    diffing against them would yield no changes and silently pass.
+    """
+    head = _git('rev-parse', 'HEAD').stdout.strip()
+    current_branch = _git('symbolic-ref', '--quiet', '--short', 'HEAD').stdout.strip()
+    best_ref: str | None = None
+    best_ts = -1
+    for ref in DEFAULT_BASE_CANDIDATES:
+        if ref == current_branch:  # the checked-out branch itself is not a useful base
+            continue
+        if _git('rev-parse', '--verify', '--quiet', ref).returncode != 0:
+            continue  # ref does not exist in this checkout
+        if (merge_base := _git('merge-base', 'HEAD', ref).stdout.strip()) in ('', head):
+            continue  # unrelated history, or ref is at/ahead of HEAD (empty diff)
+        if (ts := int(_git('show', '-s', '--format=%ct', merge_base).stdout.strip() or -1)) > best_ts:  # noqa: E501
+            best_ts, best_ref = ts, ref
+    return best_ref
+
+
 def resolve_base() -> str | None:
     """Resolve the git ref to diff against, or None if none is available."""
     args = sys.argv[1:]
@@ -46,10 +77,7 @@ def resolve_base() -> str | None:
         return args[args.index('--base') + 1]
     if (env_base := os.environ.get('LINT_DIFF_BASE')):
         return env_base
-    for ref in DEFAULT_BASE_CANDIDATES:
-        if _git('rev-parse', '--verify', '--quiet', ref).returncode == 0:
-            return ref
-    return None
+    return _autodetect_base()
 
 
 def added_lines(base: str) -> dict[str, set[int]]:
