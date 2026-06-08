@@ -198,6 +198,34 @@ def test_gnosis_pay_spend(gnosis_inquirer, gnosis_accounts, rotki_premium_object
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('gnosis_accounts', [[
+    '0x9E0D8c9ff04F58e8D4053b78d33e582D8aCc8c44',  # user's gnosis pay safe
+]])
+def test_gnosis_pay_new_spender_contract(gnosis_inquirer, gnosis_accounts) -> None:
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=gnosis_inquirer,
+        tx_hash=(tx_hash := deserialize_evm_tx_hash('0x91e34df64e80dde83ca30a8275019b239a52a0165bce348c6b44e4b4b0acd0fd')),  # noqa: E501
+    )
+
+    assert events == [
+        EvmEvent(
+            sequence_index=29,
+            timestamp=TimestampMS(1780902380000),
+            location=Location.GNOSIS,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.PAYMENT,
+            asset=Asset('eip155:100/erc20:0x420CA0f9B9b604cE0fd9C18EF134C705e5Fa3430'),
+            amount=FVal(amount := '2.1'),
+            location_label=gnosis_accounts[0],
+            notes=f'Spend {amount} EURe via Gnosis Pay',
+            tx_ref=tx_hash,
+            counterparty=CPT_GNOSIS_PAY,
+            address=GNOSIS_PAY_SPENDING_COLLECTOR,
+        ),
+    ]
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('gnosis_accounts', [[
     '0x49e52a677BD19E50beE3642a8050A5A08a6EC697',  # user's gnosis pay safe
 ]])
 def test_gnosis_pay_refund(gnosis_inquirer, gnosis_accounts):

@@ -4,6 +4,7 @@ Changelog
 
 
 * :feature:`12301` You can now reset all accounting rules back to rotki's defaults from the accounting rules settings, undoing any customizations in a single action.
+* :bug:`-` Gnosis Pay card payments made through the new post-hack contract are now decoded correctly as payments instead of plain token spends.
 * :bug:`-` Older Gnosis Pay safes frozen by Gnosis Pay's post-hack migration can now be re-authenticated again, instead of failing with "No Gnosis Pay safe accounts are registered in rotki".
 * :bug:`12348` User exchange balance queries should no longer hit the Unsupportedasset errors.
 * :bug:`-` A deposit or withdrawal manually matched to multiple on-chain transactions is no longer duplicated in the history view when filtering by chain.
