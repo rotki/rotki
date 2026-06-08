@@ -3954,7 +3954,10 @@ class DBHandler:
         Returns whether we should save a balance snapshot depending on whether the last snapshot
         and last query timestamps are older than the period defined by the save frequency setting.
         """
-        settings = self.get_settings(cursor)
+        # balance_save_frequency is a cached setting kept in sync on every write, so read it from
+        # the in-memory cache instead of doing a full settings DB read (this runs on every
+        # scheduler tick and balance query).
+        settings = CachedSettings().get_settings()
         # Setting is saved in hours, convert to seconds here
         period = settings.balance_save_frequency * 60 * 60
         now = ts_now()
