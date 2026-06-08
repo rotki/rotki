@@ -136,6 +136,29 @@ def test_maybe_query_ethereum_transactions(task_manager, ethereum_accounts):
         raise AssertionError(f'The transaction query was not scheduled within {timeout} seconds') from e  # noqa: E501
 
 
+@pytest.mark.parametrize('number_of_eth_accounts', [1])
+@pytest.mark.parametrize('max_tasks_num', [5])
+def test_maybe_query_evm_transactions_skips_repeat_range_reads(task_manager, ethereum_accounts):
+    """An up-to-date account's queried range is read once and then remembered in memory, so
+    subsequent scheduler ticks skip the per-account queried-range DB read."""
+    task_manager.potential_tasks = [task_manager._maybe_query_evm_transactions]
+    # return a recent end_ts so every account is considered up to date (not queriable)
+    range_patch = patch.object(
+        DBEvmTx,
+        'get_queried_range',
+        return_value=(Timestamp(0), Timestamp(ts_now())),
+    )
+    with range_patch as range_mock:
+        task_manager.schedule()
+        gevent.sleep(.2)
+        first_tick_reads = range_mock.call_count
+        assert first_tick_reads >= 1, 'first tick reads the queried range from the DB'
+
+        task_manager.schedule()
+        gevent.sleep(.2)
+        assert range_mock.call_count == first_tick_reads, 'later ticks skip the read (memoized)'
+
+
 @pytest.mark.parametrize('max_tasks_num', [5])
 def test_maybe_schedule_xpub_derivation(task_manager, database):
     xpub = 'xpub68V4ZQQ62mea7ZUKn2urQu47Bdn2Wr7SxrBxBDDwE3kjytj361YBGSKDT4WoBrE5htrSB8eAMe59NPnKrcAbiv2veN5GQUmfdjRddD1Hxrk'  # noqa: E501
