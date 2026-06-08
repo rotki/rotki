@@ -403,15 +403,20 @@ class HistoryService:
                 entry_identifiers=event_identifiers,
             )
 
-        accountant_pot = AccountingPot(
-            database=self.rotkehlchen.data.db,
-            evm_accounting_aggregators=EVMAccountingAggregators([
-                self.rotkehlchen.chains_aggregator.get_evm_manager(x).accounting_aggregator
-                for x in EVM_CHAIN_IDS_WITH_TRANSACTIONS
-            ]),
-            msg_aggregator=self.rotkehlchen.msg_aggregator,
-            is_dummy_pot=True,
-        )
+        # The dummy pot is only needed when query_missing_accounting_rules misses its cache,
+        # so build it lazily to avoid the construction cost (settings reads + accounting
+        # machinery instantiation) on the common repeat/poll/back-pagination loads.
+        def build_dummy_pot() -> AccountingPot:
+            return AccountingPot(
+                database=self.rotkehlchen.data.db,
+                evm_accounting_aggregators=EVMAccountingAggregators([
+                    self.rotkehlchen.chains_aggregator.get_evm_manager(x).accounting_aggregator
+                    for x in EVM_CHAIN_IDS_WITH_TRANSACTIONS
+                ]),
+                msg_aggregator=self.rotkehlchen.msg_aggregator,
+                is_dummy_pot=True,
+            )
+
         result = {
             # entries are already serialized to JSON primitives, so wrap them to skip
             # the redundant process_result re-walk of the whole (potentially huge) list
@@ -420,8 +425,7 @@ class HistoryService:
                 aggregate_by_group_ids=aggregate_by_group_ids,
                 event_accounting_rule_statuses=query_missing_accounting_rules(
                     db=self.rotkehlchen.data.db,
-                    accounting_pot=accountant_pot,
-                    evm_accounting_aggregator=accountant_pot.events_accountant.evm_accounting_aggregators,
+                    pot_factory=build_dummy_pot,
                     events=events,
                     accountant=self.rotkehlchen.accountant,
                 ),

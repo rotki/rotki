@@ -222,8 +222,7 @@ def test_missing_accounting_rules_accounting_treatment(
     events = store_and_retrieve_events([swap_event_spend, swap_event_receive, swap_event_fee], database)  # noqa: E501
     assert EventAccountingRuleStatus.NOT_PROCESSED not in query_missing_accounting_rules(
         db=database,
-        accounting_pot=accountant.pots[0],
-        evm_accounting_aggregator=accountant.pots[0].events_accountant.evm_accounting_aggregators,
+        pot_factory=lambda: accountant.pots[0],
         events=events,
         accountant=accountant,
     )
@@ -281,8 +280,7 @@ def test_events_affected_by_others_accounting_treatment(
     events = store_and_retrieve_events([return_wrapped, remove_asset], database)
     assert query_missing_accounting_rules(
         db=database,
-        accounting_pot=accountant.pots[0],
-        evm_accounting_aggregator=accountant.pots[0].events_accountant.evm_accounting_aggregators,
+        pot_factory=lambda: accountant.pots[0],
         events=events,
         accountant=accountant,
     ) == [
@@ -355,8 +353,7 @@ def test_events_affected_by_others_accounting_treatment_with_fee(
     events = store_and_retrieve_events([return_wrapped, fee_event, remove_asset], database)
     assert query_missing_accounting_rules(
         db=database,
-        accounting_pot=accountant.pots[0],
-        evm_accounting_aggregator=accountant.pots[0].events_accountant.evm_accounting_aggregators,
+        pot_factory=lambda: accountant.pots[0],
         events=events,
         accountant=accountant,
     ) == [
@@ -431,8 +428,7 @@ def test_correct_accounting_treatment_is_selected(
     events = store_and_retrieve_events([return_wrapped, remove_asset], database)
     assert query_missing_accounting_rules(
         db=database,
-        accounting_pot=accountant.pots[0],
-        evm_accounting_aggregator=accountant.pots[0].events_accountant.evm_accounting_aggregators,
+        pot_factory=lambda: accountant.pots[0],
         events=events,
         accountant=accountant,
     ) == [EventAccountingRuleStatus.HAS_RULE, EventAccountingRuleStatus.PROCESSED]
