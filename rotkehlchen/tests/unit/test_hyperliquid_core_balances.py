@@ -128,6 +128,57 @@ def test_query_balances_core_failure_returns_evm_only(
     assert len(result[ADDR_A].assets) == 1
 
 
+def test_query_balances_does_not_double_count_open_perp_margin(globaldb) -> None:
+    """Regression test for the reported HYPE/USDC perp double count.
+
+    Hyperliquid reports the USDC margin used by an open perp as held spot USDC and
+    in the perp account value. Rotki should replace the duplicated margin with perp
+    equity, not add both on top of each other.
+    """
+    api = HyperliquidAPI()
+    with patch.object(api, '_query', side_effect=[
+        {
+            'balances': [{
+                'coin': 'USDC',
+                'token': 0,
+                'total': '31.79386159',
+                'hold': '1.22538',
+                'entryNtl': '0.0',
+            }],
+        }, {
+            'marginSummary': {
+                'accountValue': '1.20604',
+                'totalNtlPos': '12.2476',
+                'totalRawUsd': '-11.04156',
+                'totalMarginUsed': '1.22476',
+            },
+            'crossMarginSummary': {
+                'accountValue': '1.20604',
+                'totalNtlPos': '12.2476',
+                'totalRawUsd': '-11.04156',
+                'totalMarginUsed': '1.22476',
+            },
+            'assetPositions': [{
+                'type': 'oneWay',
+                'position': {
+                    'coin': 'HYPE',
+                    'szi': '0.2',
+                    'positionValue': '12.2476',
+                    'unrealizedPnl': '-0.0204',
+                    'marginUsed': '1.22476',
+                },
+            }],
+        },
+    ]):
+        result = api.query_balances(
+            address=string_to_evm_address('0x48Bf3df773B557e8068Dd3FC76E13301b8a0De22'),
+            include_discovered_dexs=False,
+        )
+
+    double_counted_balance = FVal('31.79386159') + FVal('1.20604')
+    assert result[api.arb_usdc] == double_counted_balance - FVal('1.22476')
+
+
 @pytest.mark.vcr(match_on=['uri', 'method', 'body'], record_mode='once')
 def test_query_balances_fetches_core_balances_with_vcr(
         globaldb,
