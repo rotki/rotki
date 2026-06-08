@@ -5,6 +5,7 @@ import type { HistoryEventEntry, HistoryEventRow } from '@/modules/history/event
 import AccountingOverlayToggle from '@/modules/history/balances/AccountingOverlayToggle.vue';
 import { OverlayMode, type OverlayPair, useAccountingOverlay } from '@/modules/history/balances/use-accounting-overlay';
 import { provideAccountingOverlay } from '@/modules/history/balances/use-accounting-overlay-context';
+import { useHistoricalBalancesStore } from '@/modules/history/balances/use-historical-balances-store';
 import { HISTORY_EVENT_ACTIONS, type HistoryEventAction } from '@/modules/history/events/action-types';
 import HistoryEventsVirtualTable from '@/modules/history/events/components/HistoryEventsVirtualTable.vue';
 import {
@@ -170,6 +171,15 @@ const accountingOverlay = useAccountingOverlay({
 });
 
 provideAccountingOverlay({ enabled: overlayEnabled, overlay: accountingOverlay });
+
+// When historical-balance sync finishes (isProcessing flips true -> false, i.e. it hit 100%),
+// any rows that were waiting on metrics now have them — refetch just those PROCESSING pairs so
+// their spinners resolve without re-querying everything. Guarded so a hidden overlay stays idle.
+const { isProcessing } = storeToRefs(useHistoricalBalancesStore());
+watch(isProcessing, (processing, wasProcessing) => {
+  if (get(overlayEnabled) && wasProcessing && !processing)
+    accountingOverlay.refreshProcessing();
+});
 
 const actions = useHistoryEventsActions({
   currentAction,

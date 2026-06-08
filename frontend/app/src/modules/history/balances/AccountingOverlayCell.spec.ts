@@ -47,6 +47,7 @@ function mountCell(opts: {
     bucketsAt: () => [],
     ensurePair: () => {},
     refresh: async () => {},
+    refreshProcessing: () => {},
     seriesUpTo: () => [],
     state: computed(() => 'ready'),
     statusFor: () => opts.status ?? 'ready',

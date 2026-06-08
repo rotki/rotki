@@ -219,6 +219,49 @@ describe('useAccountingOverlay', () => {
     expect(runTaskMock).toHaveBeenCalledTimes(1);
   });
 
+  describe('refreshProcessing', () => {
+    it('should refetch only the pairs stuck on processing', async () => {
+      // 0xA resolves immediately; 0xB is still processing.
+      runTaskMock.mockImplementation(async (taskFn: () => Promise<unknown>) => {
+        const meta = await taskFn();
+        return meta;
+      });
+      runTaskMock.mockResolvedValueOnce(success([entry({ times: [100], values: ['5'] })])); // 0xA
+      runTaskMock.mockResolvedValueOnce(success([], true)); // 0xB processing
+      const { overlay } = create([
+        { asset: 'ETH', locationLabel: '0xA' },
+        { asset: 'ETH', locationLabel: '0xB' },
+      ]);
+      await overlay.refresh();
+      await flushPromises();
+      expect(overlay.statusFor('0xA', 'ETH')).toBe('ready');
+      expect(overlay.statusFor('0xB', 'ETH')).toBe('processing');
+      expect(runTaskMock).toHaveBeenCalledTimes(2);
+
+      // Sync completed: 0xB now has metrics. Only it should be refetched.
+      runTaskMock.mockResolvedValue(success([entry({ times: [100], values: ['8'] })]));
+      overlay.refreshProcessing();
+      await flushPromises();
+
+      expect(runTaskMock).toHaveBeenCalledTimes(3); // only 0xB refetched, not the ready 0xA
+      expect(overlay.statusFor('0xB', 'ETH')).toBe('ready');
+      expect(overlay.balanceAfter('0xB', 'ETH', 150_000)?.toString()).toBe('8');
+    });
+
+    it('should do nothing when the overlay is disabled', async () => {
+      runTaskMock.mockResolvedValue(success([], true));
+      const { overlay, enabledRef } = create([{ asset: 'ETH', locationLabel: '0xA' }]);
+      await overlay.refresh();
+      await flushPromises();
+      expect(runTaskMock).toHaveBeenCalledTimes(1);
+
+      set(enabledRef, false);
+      overlay.refreshProcessing();
+      await flushPromises();
+      expect(runTaskMock).toHaveBeenCalledTimes(1); // guarded: no refetch while disabled
+    });
+  });
+
   describe('seriesUpTo', () => {
     it('should return the full balance trajectory up to the event, plus the event point', async () => {
       runTaskMock.mockResolvedValue(success([entry({ times: [100, 200, 300], values: ['1', '3', '2'] })]));
