@@ -80,6 +80,7 @@ from rotkehlchen.db.settings import (
     DEFAULT_UI_FLOATING_PRECISION,
     DEFAULT_USE_ASSET_COLLECTIONS_IN_COST_BASIS,
     ROTKEHLCHEN_DB_VERSION,
+    CachedSettings,
     DBSettings,
     ModifiableDBSettings,
 )
@@ -641,6 +642,10 @@ def test_balance_save_frequency_check(data_dir, username, sql_vm_instructions_cb
     msg_aggregator = MessagesAggregator()
     data = DataHandler(data_dir, msg_aggregator, sql_vm_instructions_cb)
     data.unlock(username, '123', create_new=True, resume_from_backup=False)
+    # should_save_balances reads balance_save_frequency from CachedSettings, so initialize it
+    # from the DB here (DataHandler.unlock does not, unlike the full Rotkehlchen.unlock_user).
+    with data.db.conn.read_ctx() as cursor:
+        CachedSettings().initialize(data.db.get_settings(cursor))
 
     now = int(time.time())
     data_save_ts = now - 24 * 60 * 60 + 20
