@@ -734,6 +734,42 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
             ) from e
         return result
 
+    def get_storage_at(
+            self,
+            account_address: ChecksumEvmAddress,
+            position: int,
+            call_order: Sequence[WeightedNode] | None = None,
+    ) -> bytes:
+        """Read the raw 32-byte storage word at the given slot of an address.
+
+        May raise:
+        - RemoteError if none of the nodes could return a result
+        """
+        return self._query(
+            method=self._get_storage_at,
+            call_order=call_order,
+            account_address=account_address,
+            position=position,
+        )
+
+    def _get_storage_at(
+            self,
+            web3: Web3 | None,
+            account_address: ChecksumEvmAddress,
+            position: int,
+    ) -> bytes:
+        """Read the raw 32-byte storage word at the given slot of an address.
+
+        May raise:
+        - RemoteError if web3 is None, since indexers can't read raw storage and we need to
+          fail over to an rpc node
+        - Web3Exception/ValueError propagated by web3 if the rpc call itself fails, which
+          _query() turns into a RemoteError so the next node is tried
+        """
+        if web3 is None:  # indexers can't read raw storage, fail over to an rpc node
+            raise RemoteError('Reading contract storage requires an rpc node')
+        return bytes(web3.eth.get_storage_at(account_address, position))
+
     def _get_transaction_receipt(
             self,
             web3: Web3 | None,
