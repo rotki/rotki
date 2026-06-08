@@ -1,10 +1,11 @@
-import type { HistoricalBalancesPayload, OnchainHistoricalBalancePayload } from '@/modules/history/balances/types';
+import type { HistoricalBalanceSeriesPayload, HistoricalBalancesPayload, OnchainHistoricalBalancePayload } from '@/modules/history/balances/types';
 import { api } from '@/modules/core/api/rotki-api';
 import { type PendingTask, PendingTaskSchema } from '@/modules/core/tasks/types';
 import { useTaskApi } from '@/modules/core/tasks/use-task-api';
 
 interface UseHistoricalBalancesApiReturn {
   fetchHistoricalBalances: (payload: HistoricalBalancesPayload) => Promise<PendingTask>;
+  fetchHistoricalBalanceSeries: (payload: HistoricalBalanceSeriesPayload) => Promise<PendingTask>;
   fetchOnchainHistoricalBalance: (payload: OnchainHistoricalBalancePayload) => Promise<PendingTask>;
   processHistoricalBalances: () => Promise<PendingTask>;
 }
@@ -14,6 +15,14 @@ export function useHistoricalBalancesApi(): UseHistoricalBalancesApiReturn {
 
   const fetchHistoricalBalances = async (payload: HistoricalBalancesPayload): Promise<PendingTask> => {
     const response = await api.post<PendingTask>('/balances/historical', {
+      asyncQuery: true,
+      ...payload,
+    });
+    return PendingTaskSchema.parse(response);
+  };
+
+  const fetchHistoricalBalanceSeries = async (payload: HistoricalBalanceSeriesPayload): Promise<PendingTask> => {
+    const response = await api.post<PendingTask>('/balances/historical/asset/series', {
       asyncQuery: true,
       ...payload,
     });
@@ -33,6 +42,7 @@ export function useHistoricalBalancesApi(): UseHistoricalBalancesApiReturn {
 
   return {
     fetchHistoricalBalances,
+    fetchHistoricalBalanceSeries,
     fetchOnchainHistoricalBalance,
     processHistoricalBalances,
   };

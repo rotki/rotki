@@ -3,6 +3,10 @@ import { startPromise } from '@shared/utils';
 import { useHistoryEventsApi } from '@/modules/history/api/events/use-history-events-api';
 import { Routes } from '@/router/routes';
 
+// Re-exported here (the highlight-navigation module) so consumers that already depend on it can
+// pull in the route-derived highlight targets without an extra import dependency.
+export { useHistoryEventHighlights } from '@/modules/history/events/use-history-event-highlights';
+
 /**
  * Timing constants that coordinate highlight navigation with the pagination system.
  * All values are derived from a single base debounce so they stay in sync.

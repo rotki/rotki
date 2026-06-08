@@ -3,6 +3,7 @@ import type { HistoryEventEntry } from '@/modules/history/events/schemas';
 import type { HistoryEventDeletePayload } from '@/modules/history/events/types';
 import type { UseHistoryEventsSelectionModeReturn } from '@/modules/history/events/use-selection-mode';
 import type { HistoryEventEditData } from '@/modules/history/management/forms/form-types';
+import AccountingOverlayCell from '@/modules/history/balances/AccountingOverlayCell.vue';
 import { getHighlightClass, type HighlightType } from '@/modules/history/events/action-types';
 import HistoryEventAsset from '@/modules/history/events/HistoryEventAsset.vue';
 import HistoryEventNote from '@/modules/history/events/HistoryEventNote.vue';
@@ -189,6 +190,8 @@ const isCard = computed<boolean>(() => variant === 'card');
       :extra-data="extraData"
       class="flex-1 min-w-0 overflow-hidden line-clamp-2"
     />
+
+    <AccountingOverlayCell :event="event" />
 
     <HistoryEventsListItemAction
       v-if="!hideActions"

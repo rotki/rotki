@@ -185,6 +185,28 @@
     "tax_free_period": "There was a tax free period:",
     "title": "Accounting Settings"
   },
+  "accounting_overlay": {
+    "balance_after": "Balance after this event",
+    "error": "Could not load the balance for this event.",
+    "high_precision": "This balance has unusually high precision and is shown rounded to {decimals} decimals. The actual value is preserved for calculations.",
+    "label": "Accounting overlay",
+    "modes": {
+      "balance": "Balance",
+      "none": "Off"
+    },
+    "no_account": "This event has no account, so no running balance can be shown.",
+    "no_balance": "No known balance for this asset after this event.",
+    "no_data": "—",
+    "over_time": "Balance over time",
+    "processing": "Still computing balances for this scope.",
+    "show_breakdown": "Show balance breakdown",
+    "task": {
+      "title": "Querying balance history for {asset}"
+    },
+    "tooltip": "Show the known balance after each event",
+    "total": "Total",
+    "wallet": "Wallet"
+  },
   "accounting_settings": {
     "rule": {
       "action_dialog": {

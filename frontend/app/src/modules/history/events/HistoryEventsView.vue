@@ -2,6 +2,9 @@
 import type { Account, Blockchain, HistoryEventEntryType } from '@rotki/common';
 import type { PullLocationTransactionPayload } from '@/modules/history/events/event-payloads';
 import type { HistoryEventEntry, HistoryEventRow } from '@/modules/history/events/schemas';
+import AccountingOverlayToggle from '@/modules/history/balances/AccountingOverlayToggle.vue';
+import { OverlayMode, type OverlayPair, useAccountingOverlay } from '@/modules/history/balances/use-accounting-overlay';
+import { provideAccountingOverlay } from '@/modules/history/balances/use-accounting-overlay-context';
 import { HISTORY_EVENT_ACTIONS, type HistoryEventAction } from '@/modules/history/events/action-types';
 import HistoryEventsVirtualTable from '@/modules/history/events/components/HistoryEventsVirtualTable.vue';
 import {
@@ -68,6 +71,8 @@ const router = useRouter();
 const route = useRoute();
 
 const toggles = ref<HistoryEventsToggles>(getDefaultToggles());
+// Synced through the router query by useHistoryEventsFilters' queryParamsOnly (see below).
+const overlayMode = ref<OverlayMode>(OverlayMode.NONE);
 
 const showAlerts = ref<boolean>(false);
 const currentAction = ref<HistoryEventAction>(HISTORY_EVENT_ACTIONS.QUERY);
@@ -131,7 +136,40 @@ const {
     validators: () => validators,
   },
   toggles,
+  overlayMode,
 );
+
+// Accounting overlay: shows the known balance after each event. Keys off each event's own
+// (account, asset) pair, so no extra filter is required. Gated by VITE_ACCOUNTING_UPDATE,
+// which is derived at build/dev time from the backend's ROTKI_ACCOUNTING_UPDATE env var (see
+// vite.config.ts), so the overlay only appears in builds where the backend serves it.
+// The mode is synced through the router query (via useHistoryEventsFilters' queryParamsOnly):
+// it rides along with pagination instead of being clobbered by it, and is NOT persisted across
+// sessions. Fresh navigation to history resets it to 'none' (empty query), while browser/in-app
+// back restores it from the history entry's query. Only the main page syncs (history: 'router').
+const overlayAvailable = !!import.meta.env.VITE_ACCOUNTING_UPDATE;
+
+// Require the build flag too, so the 'balance' choice can't enable it where the
+// backend would reject every call.
+const overlayEnabled = computed<boolean>(() => overlayAvailable && get(overlayMode) === OverlayMode.BALANCE);
+
+const overlayPairs = computed<OverlayPair[]>(() => {
+  const events = get(groups).data.flatMap(row => Array.isArray(row) ? row : [row]);
+  // Map keyed by `${account} ${asset}` dedupes for free; last write wins (identical payload).
+  const byKey = new Map<string, OverlayPair>();
+  for (const { asset, locationLabel } of events) {
+    if (locationLabel)
+      byKey.set(`${locationLabel} ${asset}`, { asset, locationLabel });
+  }
+  return [...byKey.values()];
+});
+
+const accountingOverlay = useAccountingOverlay({
+  enabled: overlayEnabled,
+  pairs: overlayPairs,
+});
+
+provideAccountingOverlay({ enabled: overlayEnabled, overlay: accountingOverlay });
 
 const actions = useHistoryEventsActions({
   currentAction,
@@ -306,6 +344,13 @@ watchDebounced(route, async () => {
             @redecode="actions.redecode.by($event)"
             @selection:action="handleSelectionAction($event)"
           />
+
+          <div
+            v-if="overlayAvailable"
+            class="flex items-center justify-end px-2 pt-2 mb-1"
+          >
+            <AccountingOverlayToggle v-model="overlayMode" />
+          </div>
 
           <HistoryEventsFiltersChips
             ref="filtersChips"
