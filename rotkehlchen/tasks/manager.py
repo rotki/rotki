@@ -344,9 +344,19 @@ class TaskManager:
 
                 queriable_accounts: list[ChecksumEvmAddress] = []
                 for account in accounts:
+                    # Skip the queried-range DB read when the in-memory timestamp already shows
+                    # the account was queried within the refresh period. It is set when we
+                    # schedule a query (below) or, in the else branch, when we confirm the
+                    # account is already up to date - so later ticks avoid re-reading the range.
+                    last_queried = self.last_evm_tx_query_ts[account, blockchain]
+                    if now - last_queried <= EVM_TX_QUERY_FREQUENCY:
+                        continue
+
                     _, end_ts = dbevmtx.get_queried_range(cursor, account, blockchain)
-                    if now - max(self.last_evm_tx_query_ts[account, blockchain], end_ts) > EVM_TX_QUERY_FREQUENCY:  # noqa: E501
+                    if now - max(last_queried, end_ts) > EVM_TX_QUERY_FREQUENCY:
                         queriable_accounts.append(account)
+                    else:  # up to date: memoize so subsequent ticks skip the queried-range read
+                        self.last_evm_tx_query_ts[account, blockchain] = max(last_queried, end_ts)
 
                 if len(queriable_accounts) == 0:
                     continue
