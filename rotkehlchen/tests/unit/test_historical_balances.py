@@ -17,14 +17,16 @@ from rotkehlchen.chain.evm.decoding.balancer.constants import CPT_BALANCER_V2
 from rotkehlchen.chain.evm.decoding.hop.constants import CPT_HOP
 from rotkehlchen.chain.evm.decoding.weth.constants import CPT_WETH
 from rotkehlchen.chain.evm.types import string_to_evm_address
-from rotkehlchen.constants.assets import A_BTC, A_DAI, A_ETH, A_WETH
+from rotkehlchen.constants.assets import A_BTC, A_DAI, A_ETH, A_ETH2, A_WETH
 from rotkehlchen.constants.misc import ONE, ZERO
 from rotkehlchen.db.cache import DBCacheStatic
 from rotkehlchen.db.constants import HistoryMappingState
 from rotkehlchen.db.filtering import HistoricalBalancesFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
+from rotkehlchen.db.settings import ModifiableDBSettings
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.data_issues.manager import DataIssuesManager
+from rotkehlchen.history.events.structures.base import HistoryEvent
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.tasks.historical_balances import process_historical_balances
@@ -753,6 +755,113 @@ def test_staking_deposit_and_withdraw_updates_wallet_and_protocol_buckets(
             (2000, TEST_ADDR1, CPT_EIGENLAYER, '4'),  # protocol: 0 + 4 = 4
             (3000, TEST_ADDR1, None, '8'),  # wallet: 6 + 2 = 8
             (3000, TEST_ADDR1, CPT_EIGENLAYER, '2'),  # protocol: 4 - 2 = 2
+        ]
+
+
+def test_treat_eth2_as_eth_setting_combines_balance_buckets(
+        database: 'DBHandler',
+        messages_aggregator: 'MessagesAggregator',
+) -> None:
+    """Test the treat_eth2_as_eth setting maps ETH2 events to the ETH balance bucket."""
+    with database.user_write() as write_cursor:
+        database.set_settings(write_cursor, ModifiableDBSettings(treat_eth2_as_eth=True))
+        DBHistoryEvents(database).add_history_events(
+            write_cursor=write_cursor,
+            history=[HistoryEvent(
+                group_identifier='eth_receive',
+                sequence_index=0,
+                timestamp=TimestampMS(1000),
+                location=Location.KRAKEN,
+                event_type=HistoryEventType.RECEIVE,
+                event_subtype=HistoryEventSubType.NONE,
+                asset=A_ETH,
+                amount=FVal('10'),
+                location_label='Kraken',
+            ), HistoryEvent(
+                group_identifier='eth2_spend',
+                sequence_index=0,
+                timestamp=TimestampMS(2000),
+                location=Location.KRAKEN,
+                event_type=HistoryEventType.SPEND,
+                event_subtype=HistoryEventSubType.NONE,
+                asset=A_ETH2,
+                amount=FVal('4'),
+                location_label='Kraken',
+            )],
+        )
+
+    process_historical_balances(database, messages_aggregator)
+
+    with database.conn.read_ctx() as cursor:
+        assert cursor.execute(
+            'SELECT timestamp, location_label, asset, metric_value FROM event_metrics '
+            'ORDER BY timestamp',
+        ).fetchall() == [
+            (1000, 'Kraken', A_ETH.identifier, '10'),
+            (2000, 'Kraken', A_ETH.identifier, '6'),
+        ]
+
+
+def test_kraken_staking_lock_does_not_change_balance(
+        database: 'DBHandler',
+        messages_aggregator: 'MessagesAggregator',
+) -> None:
+    """Test Kraken staking lock/unlock events don't affect the exchange account balance."""
+    with database.user_write() as write_cursor:
+        DBHistoryEvents(database).add_history_events(
+            write_cursor=write_cursor,
+            history=[HistoryEvent(
+                group_identifier='kraken_receive',
+                sequence_index=0,
+                timestamp=TimestampMS(1000),
+                location=Location.KRAKEN,
+                event_type=HistoryEventType.RECEIVE,
+                event_subtype=HistoryEventSubType.NONE,
+                asset=A_ETH,
+                amount=FVal('10'),
+                location_label='Kraken',
+            ), HistoryEvent(
+                group_identifier='kraken_stake',
+                sequence_index=0,
+                timestamp=TimestampMS(2000),
+                location=Location.KRAKEN,
+                event_type=HistoryEventType.STAKING,
+                event_subtype=HistoryEventSubType.DEPOSIT_ASSET,
+                asset=A_ETH,
+                amount=FVal('4'),
+                location_label='Kraken',
+            ), HistoryEvent(
+                group_identifier='kraken_unstake',
+                sequence_index=0,
+                timestamp=TimestampMS(3000),
+                location=Location.KRAKEN,
+                event_type=HistoryEventType.STAKING,
+                event_subtype=HistoryEventSubType.REMOVE_ASSET,
+                asset=A_ETH,
+                amount=FVal('2'),
+                location_label='Kraken',
+            ), HistoryEvent(
+                group_identifier='kraken_staking_reward',
+                sequence_index=0,
+                timestamp=TimestampMS(4000),
+                location=Location.KRAKEN,
+                event_type=HistoryEventType.STAKING,
+                event_subtype=HistoryEventSubType.REWARD,
+                asset=A_ETH,
+                amount=FVal('0.5'),
+                location_label='Kraken',
+            )],
+        )
+
+    process_historical_balances(database, messages_aggregator)
+
+    with database.conn.read_ctx() as cursor:
+        assert cursor.execute(
+            'SELECT timestamp, location_label, protocol, metric_value FROM event_metrics '
+            'ORDER BY timestamp',
+        ).fetchall() == [
+            (1000, 'Kraken', None, '10'),
+            (4000, 'Kraken', None, '10.5'),
         ]
 
 
