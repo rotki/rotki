@@ -866,6 +866,43 @@ def test_query_collection_timed_balances(data_dir, username, sql_vm_instructions
     data.logout()
 
 
+@pytest.mark.parametrize('db_settings', [{'infer_zero_timed_balances': True}])
+def test_query_collection_timed_balances_scans_once(database):
+    """The zero-inference timed_balances scans depend only on the time range, not the asset,
+    so for a collection they must be computed once and reused - not re-scanned per asset."""
+    a_ousdc = Asset('eip155:10/erc20:0x7F5c764cBc14f9669B88837ca1490cCa17c31607')
+    asset_balances = [
+        DBAssetBalance(
+            category=BalanceType.ASSET,
+            time=Timestamp(1451606400 + i * 10000000),
+            asset=asset,
+            amount=FVal('10'),
+            usd_value=FVal('10'),
+        )
+        for i in range(3)
+        for asset in (A_USDC, a_ousdc)
+    ]
+    with database.user_write() as cursor:
+        database.add_multiple_balances(cursor, asset_balances)
+        with (
+            patch.object(
+                database,
+                '_count_distinct_balance_timestamps',
+                wraps=database._count_distinct_balance_timestamps,
+            ) as count_mock,
+            patch.object(
+                database,
+                '_query_balance_timestamps_and_categories',
+                wraps=database._query_balance_timestamps_and_categories,
+            ) as scan_mock,
+        ):
+            database.query_collection_timed_balances(cursor=cursor, collection_id=36)
+
+    # 2 assets in the collection, but each asset-independent scan must run exactly once
+    assert count_mock.call_count == 1
+    assert scan_mock.call_count == 1
+
+
 def test_timed_balances_inferred_zero_balances(data_dir, username, sql_vm_instructions_cb):
     """
     Test that zero balance entries are inferred properly. (So that the chart in the frontend
