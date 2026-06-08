@@ -344,8 +344,9 @@ class HyperliquidAPI:
     ) -> None:
         """Query spot and perp balances for one Hyperliquid DEX context."""
         dex_display = dex_name if dex_name is not None else 'main'
+        spot_usdc_hold = ZERO
         if include_spot is True:
-            self._query_spot_balances_for_dex(
+            spot_usdc_hold = self._query_spot_balances_for_dex(
                 address=address,
                 dex_name=dex_name,
                 dex_display=dex_display,
@@ -365,9 +366,15 @@ class HyperliquidAPI:
             )
         else:
             try:
-                balances[self.arb_usdc] += deserialize_fval(
-                    value=perp_data.get('crossMarginSummary', {}).get('accountValue', 0),
+                perp_summary = perp_data.get('crossMarginSummary', {})
+                perp_account_value = deserialize_fval(
+                    value=perp_summary.get('accountValue', 0),
                     name='clearinghouseState total balances',
+                    location='hyperliquid',
+                )
+                perp_margin_used = deserialize_fval(
+                    value=perp_summary.get('totalMarginUsed', 0),
+                    name='clearinghouseState total margin used',
                     location='hyperliquid',
                 )
             except DeserializationError as e:
@@ -375,6 +382,11 @@ class HyperliquidAPI:
                     f'Failed to read hyperliquid crossMarginSummary '
                     f'for dex={dex_display} due to {e}',
                 )
+            else:
+                if (duplicated_spot_margin := min(spot_usdc_hold, perp_margin_used)) > ZERO:
+                    balances[self.arb_usdc] -= duplicated_spot_margin
+
+                balances[self.arb_usdc] += perp_account_value
 
     def _query_spot_balances_for_dex(
             self,
@@ -382,7 +394,7 @@ class HyperliquidAPI:
             dex_name: str | None,
             dex_display: str,
             balances: defaultdict[Asset, FVal],
-    ) -> None:
+    ) -> FVal:
         """Query and aggregate spot balances for one Hyperliquid DEX context."""
         try:
             data = self._query(
@@ -395,8 +407,9 @@ class HyperliquidAPI:
                 f'Skipping spotClearinghouseState balances in hyperliquid '
                 f'for {address} and dex={dex_display} due to {e}',
             )
-            return
+            return ZERO
 
+        usdc_hold = ZERO
         for asset_entry in data.get('balances', []):
             try:
                 if (
@@ -423,6 +436,23 @@ class HyperliquidAPI:
                 continue
 
             balances[asset] += balance
+            if asset == self.arb_usdc:
+                try:
+                    usdc_hold += deserialize_fval(
+                        value=asset_entry.get('hold', 0),
+                        name='spotClearinghouseState held USDC balance',
+                        location='hyperliquid',
+                    )
+                except DeserializationError as e:
+                    log.error(
+                        'Failed to read held USDC balance %s from hyperliquid '
+                        'for dex=%s due to %s. Skipping hold deduction',
+                        asset_entry,
+                        dex_display,
+                        e,
+                    )
+
+        return usdc_hold
 
     @staticmethod
     def _entry_strict_unique_id(entry: dict[str, Any]) -> str | None:
