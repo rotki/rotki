@@ -41,7 +41,10 @@ from rotkehlchen.premium.premium import (
 from rotkehlchen.serialization.deserialize import deserialize_timestamp
 from rotkehlchen.tasks.assets import _find_missing_tokens
 from rotkehlchen.tasks.manager import PREMIUM_STATUS_CHECK, TaskManager
-from rotkehlchen.tasks.utils import should_run_periodic_task
+from rotkehlchen.tasks.utils import (
+    prefetch_scheduler_task_timestamps,
+    should_run_periodic_task,
+)
 from rotkehlchen.tests.fixtures.websockets import WebsocketReader
 from rotkehlchen.tests.utils.ethereum import (
     TEST_ADDR1,
@@ -590,6 +593,36 @@ def test_should_run_periodic_task(database: 'DBHandler') -> None:
         database=database,
         key_name=DBCacheStatic.LAST_DATA_UPDATES_TS,
         refresh_period=DATA_UPDATES_REFRESH,
+    ) is True
+
+
+def test_should_run_periodic_task_cached_timestamps(database: 'DBHandler') -> None:
+    """When the key is present in the prefetched timestamps map its value is used (over the DB);
+    when it is missing we fall back to a single DB read."""
+    old_ts = str(ts_now() - DATA_UPDATES_REFRESH * 2)  # value stored in the DB -> would say "run"
+    with database.user_write() as write_cursor:
+        write_cursor.execute(
+            'INSERT INTO key_value_cache(name, value) VALUES (?, ?)',
+            (DBCacheStatic.LAST_DATA_UPDATES_TS.value, old_ts),
+        )
+
+    # the prefetch helper reads the stored value
+    assert prefetch_scheduler_task_timestamps(database) == {DBCacheStatic.LAST_DATA_UPDATES_TS.value: old_ts}  # noqa: E501
+
+    # a recent value in the cache map wins over the (old) DB value -> should not run
+    assert should_run_periodic_task(
+        database=database,
+        key_name=DBCacheStatic.LAST_DATA_UPDATES_TS,
+        refresh_period=DATA_UPDATES_REFRESH,
+        cached_timestamps={DBCacheStatic.LAST_DATA_UPDATES_TS.value: str(ts_now())},
+    ) is False
+
+    # key absent from the cache map -> falls back to the DB read (old ts -> should run)
+    assert should_run_periodic_task(
+        database=database,
+        key_name=DBCacheStatic.LAST_DATA_UPDATES_TS,
+        refresh_period=DATA_UPDATES_REFRESH,
+        cached_timestamps={},
     ) is True
 
 

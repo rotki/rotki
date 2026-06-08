@@ -1,7 +1,7 @@
 import logging
 import random
 from collections import defaultdict
-from collections.abc import Callable
+from collections.abc import Callable, Mapping
 from typing import TYPE_CHECKING, NamedTuple
 
 import gevent
@@ -58,7 +58,10 @@ from rotkehlchen.tasks.calendar import (
 from rotkehlchen.tasks.internal_tx_conflicts import (
     repull_internal_tx_conflicts,
 )
-from rotkehlchen.tasks.utils import should_run_periodic_task
+from rotkehlchen.tasks.utils import (
+    prefetch_scheduler_task_timestamps,
+    should_run_periodic_task,
+)
 from rotkehlchen.types import (
     CHAINS_WITH_TRANSACTION_DECODERS,
     EVM_CHAINS_WITH_TRANSACTIONS,
@@ -141,6 +144,9 @@ class TaskManager:
         self.last_exchange_query_ts: defaultdict[ExchangeLocationID, int] = defaultdict(int)
         self.prepared_cryptocompare_query = False
         self.running_greenlets: dict[Callable, list[gevent.Greenlet]] = {}
+        # Per-tick snapshot of periodic-task last-run timestamps, set for the duration of a
+        # _schedule pass so each task's should_run check reads from memory instead of the DB.
+        self._scheduler_task_timestamps: Mapping[str, str] | None = None
         self.deactivate_premium = deactivate_premium
         self.activate_premium = activate_premium
         self.query_balances = query_balances
@@ -660,6 +666,7 @@ class TaskManager:
                 database=self.database,
                 key_name=DBCacheStatic.LAST_ETH2_EVENTS_PROCESSING_TS,
                 refresh_period=HOUR_IN_SECONDS,
+                cached_timestamps=self._scheduler_task_timestamps,
             ) is False
         ):
             return None
@@ -678,7 +685,7 @@ class TaskManager:
         Function that schedules the data update task if either there is no data update
         cache yet or this cache is older than `DATA_UPDATES_REFRESH`
         """
-        if should_run_periodic_task(self.database, DBCacheStatic.LAST_DATA_UPDATES_TS, DATA_UPDATES_REFRESH) is False:  # noqa: E501
+        if should_run_periodic_task(self.database, DBCacheStatic.LAST_DATA_UPDATES_TS, DATA_UPDATES_REFRESH, cached_timestamps=self._scheduler_task_timestamps) is False:  # noqa: E501
             return None
 
         return [self.greenlet_manager.spawn_and_track(
@@ -693,7 +700,7 @@ class TaskManager:
         Function that schedules the EVM accounts detection task if there has been more than
         EVM_ACCOUNTS_DETECTION_REFRESH seconds since the last time it ran.
         """
-        if should_run_periodic_task(self.database, DBCacheStatic.LAST_EVM_ACCOUNTS_DETECT_TS, EVMLIKE_ACCOUNTS_DETECTION_REFRESH) is False:  # noqa: E501
+        if should_run_periodic_task(self.database, DBCacheStatic.LAST_EVM_ACCOUNTS_DETECT_TS, EVMLIKE_ACCOUNTS_DETECTION_REFRESH, cached_timestamps=self._scheduler_task_timestamps) is False:  # noqa: E501
             return None
 
         return [self.greenlet_manager.spawn_and_track(
@@ -726,7 +733,7 @@ class TaskManager:
         This function queries the globaldb looking for assets that look like spam tokens
         and ignores them in addition to marking them as spam tokens
         """
-        if should_run_periodic_task(self.database, DBCacheStatic.LAST_SPAM_ASSETS_DETECT_KEY, SPAM_ASSETS_DETECTION_REFRESH) is False:  # noqa: E501
+        if should_run_periodic_task(self.database, DBCacheStatic.LAST_SPAM_ASSETS_DETECT_KEY, SPAM_ASSETS_DETECTION_REFRESH, cached_timestamps=self._scheduler_task_timestamps) is False:  # noqa: E501
             return None
 
         return [self.greenlet_manager.spawn_and_track(
@@ -747,6 +754,7 @@ class TaskManager:
             database=self.database,
             key_name=DBCacheStatic.LAST_INTERNAL_TX_CONFLICTS_REPULL_TS,
             refresh_period=cached_settings.internal_tx_conflict_repull_frequency,
+            cached_timestamps=self._scheduler_task_timestamps,
         ) is False:
             return None
 
@@ -766,7 +774,7 @@ class TaskManager:
         This task is required to have a fresh status on the assets searches when the filter for
         owned assets is used.
         """
-        if should_run_periodic_task(self.database, DBCacheStatic.LAST_OWNED_ASSETS_UPDATE, OWNED_ASSETS_UPDATE) is False:  # noqa: E501
+        if should_run_periodic_task(self.database, DBCacheStatic.LAST_OWNED_ASSETS_UPDATE, OWNED_ASSETS_UPDATE, cached_timestamps=self._scheduler_task_timestamps) is False:  # noqa: E501
             return None
 
         return [self.greenlet_manager.spawn_and_track(
@@ -782,7 +790,7 @@ class TaskManager:
         This function runs the logic to query the aave v3 contracts to get all the
         underlying assets supported by them and save them in the globaldb.
         """
-        if should_run_periodic_task(self.database, DBCacheStatic.LAST_AAVE_V3_ASSETS_UPDATE, AAVE_V3_ASSETS_UPDATE) is False:  # noqa: E501
+        if should_run_periodic_task(self.database, DBCacheStatic.LAST_AAVE_V3_ASSETS_UPDATE, AAVE_V3_ASSETS_UPDATE, cached_timestamps=self._scheduler_task_timestamps) is False:  # noqa: E501
             return None
 
         return [self.greenlet_manager.spawn_and_track(
@@ -801,6 +809,7 @@ class TaskManager:
             database=self.database,
             refresh_period=WEEK_IN_SECONDS,
             key_name=DBCacheStatic.LAST_SPARK_ASSETS_UPDATE,
+            cached_timestamps=self._scheduler_task_timestamps,
         ) is False:
             return None
 
@@ -820,6 +829,7 @@ class TaskManager:
                 database=self.database,
                 key_name=DBCacheStatic.LAST_CREATE_REMINDER_CHECK_TS,
                 refresh_period=DAY_IN_SECONDS,
+                cached_timestamps=self._scheduler_task_timestamps,
             ) is False
         ):
             return None
@@ -876,7 +886,7 @@ class TaskManager:
         Delete old calendar events if the setting for deleting them allows it and if they haven't
         been marked to not be deleted.
         """
-        if should_run_periodic_task(self.database, DBCacheStatic.LAST_DELETE_PAST_CALENDAR_EVENTS, DAY_IN_SECONDS) is False:  # noqa: E501
+        if should_run_periodic_task(self.database, DBCacheStatic.LAST_DELETE_PAST_CALENDAR_EVENTS, DAY_IN_SECONDS, cached_timestamps=self._scheduler_task_timestamps) is False:  # noqa: E501
             return None
 
         return [self.greenlet_manager.spawn_and_track(
@@ -933,7 +943,7 @@ class TaskManager:
         particularly, search for DelegationTransferredToL2 event. If not found, it decodes
         and adds them.
         """
-        if should_run_periodic_task(self.database, DBCacheStatic.LAST_GRAPH_DELEGATIONS_CHECK_TS, DAY_IN_SECONDS) is False:  # noqa: E501
+        if should_run_periodic_task(self.database, DBCacheStatic.LAST_GRAPH_DELEGATIONS_CHECK_TS, DAY_IN_SECONDS, cached_timestamps=self._scheduler_task_timestamps) is False:  # noqa: E501
             return None
 
         if len(self.chains_aggregator.accounts.get(SupportedBlockchain.ETHEREUM)) == 0:
@@ -969,17 +979,23 @@ class TaskManager:
         random.shuffle(self.potential_tasks)
         max_tasks = min(self.max_tasks_num - current_greenlets, len(self.potential_tasks))
 
-        spawned_new = 0
-        for scheduling_fn in self.potential_tasks:
-            if spawned_new >= max_tasks:
-                break  # no more task slots left
-            if scheduling_fn in self.running_greenlets:
-                continue  # the specified task is already running
-            new_greenlets = scheduling_fn()
-            if new_greenlets is None:
-                continue  # The scheduling function for the specific task decided to not schedule it  # noqa: E501
-            self.running_greenlets[scheduling_fn] = new_greenlets
-            spawned_new += 1
+        # Read all periodic-task last-run timestamps once for this pass so the should_run checks
+        # below hit this snapshot instead of each issuing its own key_value_cache query.
+        self._scheduler_task_timestamps = prefetch_scheduler_task_timestamps(self.database)
+        try:
+            spawned_new = 0
+            for scheduling_fn in self.potential_tasks:
+                if spawned_new >= max_tasks:
+                    break  # no more task slots left
+                if scheduling_fn in self.running_greenlets:
+                    continue  # the specified task is already running
+                new_greenlets = scheduling_fn()
+                if new_greenlets is None:
+                    continue  # The scheduling function for the specific task decided to not schedule it  # noqa: E501
+                self.running_greenlets[scheduling_fn] = new_greenlets
+                spawned_new += 1
+        finally:
+            self._scheduler_task_timestamps = None
 
     def schedule(self) -> None:
         """Schedules background task while holding the scheduling lock
