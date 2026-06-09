@@ -462,6 +462,43 @@ def test_binance_query_trade_history(function_scope_binance: 'Binance'):
     )]
 
 
+def test_binance_query_history_events_failure_keeps_range(function_scope_binance):
+    """Test that a failing sub-query makes query_online_history_events report no progress,
+    so the base class does not mark the range as queried.
+
+    Regression test for end_ts being returned unconditionally even when a sub-query
+    raised: the failed window was saved as queried and its deposits/withdrawals/fiat
+    movements were never fetched again.
+    """
+    def query_success(**kwargs):
+        return []
+
+    def query_failure(**kwargs):
+        raise RemoteError('boom')
+
+    binance = function_scope_binance
+    end_ts = Timestamp(1638529919)
+    with (
+        patch.object(binance, '_query_online_asset_movements', query_success),
+        patch.object(binance, '_query_online_trade_history', query_failure),
+    ):
+        _, actual_end_ts = binance.query_online_history_events(
+            start_ts=Timestamp(0),
+            end_ts=end_ts,
+        )
+    assert actual_end_ts == Timestamp(0)
+
+    with (  # and when nothing fails the full range is reported as queried
+        patch.object(binance, '_query_online_asset_movements', query_success),
+        patch.object(binance, '_query_online_trade_history', query_success),
+    ):
+        _, actual_end_ts = binance.query_online_history_events(
+            start_ts=Timestamp(0),
+            end_ts=end_ts,
+        )
+    assert actual_end_ts == end_ts
+
+
 def test_binance_query_trade_history_unexpected_data(function_scope_binance):
     """Test that turning a binance trade that contains unexpected data is handled gracefully"""
     binance = function_scope_binance
