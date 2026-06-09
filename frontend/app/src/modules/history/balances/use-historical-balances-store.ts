@@ -1,23 +1,8 @@
-import type { AddressData, BlockchainAccount } from '@/modules/accounts/blockchain-accounts';
 import type { HistoricalBalanceProcessingData, NegativeBalanceDetectedData } from '@/modules/core/messaging/types/status-types';
-import type { HistoricalBalanceSource } from '@/modules/history/balances/types';
-
-export interface SavedHistoricalBalancesFilters {
-  timestamp: number;
-  selectedAsset?: string;
-  selectedLocation: string;
-  selectedLocationLabel: string;
-  selectedProtocol?: string;
-  source: HistoricalBalanceSource;
-  selectedAccount?: BlockchainAccount<AddressData>;
-}
 
 export const useHistoricalBalancesStore = defineStore('balances/historical', () => {
   const processingProgress = ref<HistoricalBalanceProcessingData>();
   const negativeBalances = ref<NegativeBalanceDetectedData[]>([]);
-
-  // Saved filter state - only persisted when user clicks "Get Historical Balances"
-  const savedFilters = ref<SavedHistoricalBalancesFilters>();
 
   const isProcessing = computed<boolean>(() => {
     const progress = get(processingProgress);
@@ -55,19 +40,13 @@ export const useHistoricalBalancesStore = defineStore('balances/historical', () 
     set(negativeBalances, [...current, data]);
   }
 
-  function setSavedFilters(filters: SavedHistoricalBalancesFilters): void {
-    set(savedFilters, filters);
-  }
-
   return {
     addNegativeBalance,
     isProcessing,
     negativeBalances,
     processingPercentage,
     processingProgress,
-    savedFilters,
     setProcessingProgress,
-    setSavedFilters,
   };
 });
 
