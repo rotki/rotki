@@ -177,6 +177,43 @@ def test_protocol_balances(blockchain: 'ChainsAggregator') -> None:
     assert blockchain.balances.eth[ETH_ADDRESS2].assets == {}
 
 
+def test_partial_balance_refresh_keeps_other_accounts(blockchain: 'ChainsAggregator') -> None:
+    """Test that refreshing balances for a subset of addresses does not replace the
+    balance sheets of the other tracked accounts.
+
+    Protocol balance queries (query_protocols_with_balance/_add_eth_protocol_balances)
+    return entries for any tracked address with protocol activity, not only the queried
+    ones. Before the fix those entries replaced the other accounts' full balance sheets
+    with protocol-only data.
+    """
+    refreshed_address, other_address = make_evm_address(), make_evm_address()
+    other_sheet = BalanceSheet()
+    other_sheet.assets[A_ETH][DEFAULT_BALANCE_LABEL] = Balance(amount=ONE, value=ONE)
+    other_sheet.assets[A_DAI][DEFAULT_BALANCE_LABEL] = Balance(amount=FVal('100'), value=FVal('100'))  # noqa: E501
+    blockchain.balances.eth[other_address] = other_sheet
+
+    refreshed_sheet = BalanceSheet()
+    refreshed_sheet.assets[A_ETH][DEFAULT_BALANCE_LABEL] = Balance(amount=FVal('2'), value=FVal('2'))  # noqa: E501
+    protocol_only_sheet = BalanceSheet()  # what a protocol query returns for the non-queried address  # noqa: E501
+    protocol_only_sheet.assets[A_LQTY][CPT_LIQUITY] = Balance(amount=ONE, value=ONE)
+
+    with patch.object(
+        blockchain,
+        'query_eth_balances',
+        return_value={
+            refreshed_address: refreshed_sheet,
+            other_address: protocol_only_sheet,
+        },
+    ):
+        blockchain._query_chain_balances(
+            blockchain=SupportedBlockchain.ETHEREUM,
+            addresses=[refreshed_address],
+        )
+
+    assert blockchain.balances.eth[refreshed_address] == refreshed_sheet
+    assert blockchain.balances.eth[other_address] == other_sheet
+
+
 def test_blockchain_balances_cache_removes_spent_token(blockchain: 'ChainsAggregator') -> None:
     """Test that refreshing an address removes token balances no longer returned."""
     address = make_evm_address()
