@@ -3,6 +3,7 @@ Changelog
 =========
 
 
+* :bug:`-` Refreshing the balances of a single blockchain account no longer makes other accounts' wallet balances disappear from the dashboard and net worth totals when those accounts have DeFi protocol positions on the same chain.
 * :feature:`12301` You can now reset all accounting rules back to rotki's defaults from the accounting rules settings, undoing any customizations in a single action.
 * :bug:`-` Gnosis Pay card payments made through the new post-hack contract are now decoded correctly as payments instead of plain token spends.
 * :bug:`-` Older Gnosis Pay safes frozen by Gnosis Pay's post-hack migration can now be re-authenticated again, instead of failing with "No Gnosis Pay safe accounts are registered in rotki".
