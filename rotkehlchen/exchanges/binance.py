@@ -1536,6 +1536,7 @@ class Binance(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
             force_refresh: bool = False,
     ) -> tuple[Sequence['HistoryBaseEntry'], Timestamp]:
         events: list[HistoryBaseEntry] = []
+        with_errors = False
         for query_func in (
             self._query_online_asset_movements,
             self._query_online_trade_history,
@@ -1543,13 +1544,17 @@ class Binance(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
             try:
                 events.extend(query_func(start_ts=start_ts, end_ts=end_ts, force_refresh=force_refresh))  # noqa: E501
             except (RemoteError, BinancePermissionError) as e:
+                with_errors = True
                 log.error(
                     f'Failed to call {self.name} {query_func.__name__} '
                     f'between {start_ts} and {end_ts} due to {e!s}',
                 )
                 continue
 
-        return events, end_ts
+        # Don't claim the range as queried if any sub-query failed, otherwise the base class
+        # marks it as done and the failed window's events are never fetched again. Mirrors
+        # kraken's behavior and the query_online_history_events contract.
+        return events, start_ts if with_errors else end_ts
 
     def _query_online_asset_movements(
             self,

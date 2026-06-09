@@ -3,6 +3,7 @@ Changelog
 =========
 
 
+* :bug:`-` A failed Binance history query no longer marks the time range as queried, which permanently skipped the deposits and withdrawals of that range.
 * :bug:`-` Coinbase crypto-to-crypto conversions are no longer sometimes recorded as sales to fiat with the received asset missing.
 * :bug:`-` Solana events with a counterparty are no longer silently excluded from PnL reports.
 * :bug:`-` Refreshing the balances of a single blockchain account no longer makes other accounts' wallet balances disappear from the dashboard and net worth totals when those accounts have DeFi protocol positions on the same chain.
