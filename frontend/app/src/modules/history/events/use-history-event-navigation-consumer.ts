@@ -12,7 +12,7 @@ const historyEventsPath = Routes.HISTORY_EVENTS.toString();
 /**
  * Sets up watchers that consume pending navigation requests.
  * Should be called once from HistoryEventsView to handle navigation
- * from any producer (e.g., MatchAssetMovementsPinned, NegativeBalancesDialog, external packages).
+ * from any producer (e.g., MatchAssetMovementsPinned, external packages).
  *
  * Supports two input channels:
  * 1. Composable-based: internal components call requestNavigation() directly
