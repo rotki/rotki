@@ -283,6 +283,30 @@ def test_maybe_schedule_ethereum_txreceipts(
     assert receipt2 == receipts[1]
 
 
+@pytest.mark.parametrize('max_tasks_num', [5])
+def test_maybe_schedule_txreceipts_checks_all_chains(task_manager: TaskManager) -> None:
+    """Test that the receipts task is scheduled for a chain with transactions missing
+    receipts even when a chain checked before it has none pending.
+
+    Regression test for the loop returning None on the first chain with no pending
+    receipts instead of continuing with the rest of the chains.
+    """
+    with (
+        patch(
+            'rotkehlchen.tasks.manager.EVM_CHAINS_WITH_TRANSACTIONS',
+            new=(SupportedBlockchain.ETHEREUM, SupportedBlockchain.OPTIMISM),
+        ),
+        patch('rotkehlchen.tasks.manager.random.shuffle'),  # keep ethereum checked first
+        patch('rotkehlchen.tasks.manager.DBEvmTx') as mock_evm_tx,
+    ):
+        mock_evm_tx.return_value.get_transaction_hashes_no_receipt.side_effect = [
+            [],  # ethereum has no transactions missing receipts
+            [make_evm_tx_hash()],  # optimism has one
+        ]
+        result = task_manager._maybe_schedule_evm_txreceipts()
+        assert result is not None and len(result) == 1
+
+
 @pytest.mark.parametrize('max_tasks_num', [7])
 @pytest.mark.parametrize('start_with_valid_premium', [True])
 def test_check_premium_status(rotkehlchen_api_server, username):
@@ -1578,5 +1602,30 @@ def test_maybe_decode_transactions(task_manager: TaskManager) -> None:
         ),
     ):
         mock_solana_tx.return_value.count_hashes_not_decoded.return_value = 5
+        result = task_manager._maybe_decode_transactions()
+        assert result is not None and len(result) == 1
+
+
+@pytest.mark.parametrize('max_tasks_num', [5])
+@pytest.mark.parametrize('ethereum_accounts', [[make_evm_address()]])
+def test_maybe_decode_transactions_checks_all_chains(task_manager: TaskManager) -> None:
+    """Test that the decoding task is scheduled for a chain with undecoded transactions
+    even when a chain checked before it has nothing to decode.
+
+    Regression test for the loop returning None on the first chain with no pending
+    work instead of continuing with the rest of the chains.
+    """
+    task_manager.should_schedule = True
+    with (
+        patch(
+            'rotkehlchen.tasks.manager.CHAINS_WITH_TRANSACTION_DECODERS',
+            new=(SupportedBlockchain.ETHEREUM, SupportedBlockchain.SOLANA),
+        ),
+        patch('rotkehlchen.tasks.manager.random.shuffle'),  # keep ethereum checked first
+        patch('rotkehlchen.tasks.manager.DBEvmTx') as mock_evm_tx,
+        patch('rotkehlchen.tasks.manager.DBSolanaTx') as mock_solana_tx,
+    ):
+        mock_evm_tx.return_value.count_hashes_not_decoded.return_value = 0  # nothing on ethereum
+        mock_solana_tx.return_value.count_hashes_not_decoded.return_value = 5  # solana has work
         result = task_manager._maybe_decode_transactions()
         assert result is not None and len(result) == 1

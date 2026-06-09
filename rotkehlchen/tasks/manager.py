@@ -394,7 +394,7 @@ class TaskManager:
                 limit=TX_RECEIPTS_QUERY_LIMIT,
             )
             if len(hash_results) == 0:
-                return None
+                continue
 
             evm_inquirer = self.chains_aggregator.get_chain_manager(blockchain)
             task_name = f'Query {len(hash_results)} {blockchain!s} transactions receipts'
@@ -461,7 +461,7 @@ class TaskManager:
                 )
 
             if number_of_tx_to_decode == 0:
-                return None
+                continue
 
             chain_inquirer = self.chains_aggregator.get_chain_manager(blockchain)
             task_name = f'decode {min(number_of_tx_to_decode, TX_DECODING_LIMIT)} {blockchain!s} transactions'  # noqa: E501
