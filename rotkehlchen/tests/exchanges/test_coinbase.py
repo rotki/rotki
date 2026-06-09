@@ -1,4 +1,5 @@
 import base64
+import json
 import re
 import uuid
 import warnings as test_warnings
@@ -777,6 +778,82 @@ def test_conversion_with_fee(mock_coinbase):
             location=Location.COINBASE,
             unique_id=tx_id,
         ),
+    )]
+
+
+def test_conversion_across_wallets(function_scope_coinbase):
+    """Test that a conversion whose two legs live in two different wallets produces
+    a single correct swap after all accounts have been queried.
+
+    Regression test for conversion pairs being processed inside the per-account loop:
+    the first-seen leg was treated as a complete single-leg conversion, creating a
+    wrong sell-to-fiat swap that then shadowed the correct one in the DB through the
+    unique (group_identifier, sequence_index) constraint.
+    """
+    coinbase = function_scope_coinbase
+    tx_id = '61258a99-7e8a-4ece-94cf-485b33d09319'
+    usdc_wallet_id, eth_wallet_id = '40e03599-5601-534c-95c2-0db5f5c5e652', '16ff1367-5834-5827-95f3-f503d891421c'  # noqa: E501
+    usdc_leg = {'amount': {'amount': '-10.571942', 'currency': 'USDC'}, 'created_at': '2024-12-06T10:27:56Z', 'id': '39073929-386e-58a2-9ec4-d8371a395a9e', 'native_amount': {'amount': '-10.00', 'currency': 'EUR'}, 'resource': 'transaction', 'resource_path': f'/v2/accounts/{usdc_wallet_id}/transactions/39073929-386e-58a2-9ec4-d8371a395a9e', 'status': 'completed', 'trade': {'fee': {'amount': '0.109974', 'currency': 'USDC'}, 'id': tx_id, 'payment_method_name': 'billetera de USDC'}, 'type': 'trade'}  # noqa: E501
+    eth_leg = {'amount': {'amount': '0.00266121', 'currency': 'ETH'}, 'created_at': '2024-12-06T10:27:57Z', 'id': 'e34548a2-4eec-54fc-a13f-6b48996e9ecf', 'native_amount': {'amount': '9.70', 'currency': 'EUR'}, 'resource': 'transaction', 'resource_path': f'/v2/accounts/{eth_wallet_id}/transactions/e34548a2-4eec-54fc-a13f-6b48996e9ecf', 'status': 'completed', 'trade': {'fee': {'amount': '0.109974', 'currency': 'USDC'}, 'id': tx_id, 'payment_method_name': 'billetera de USDC'}, 'type': 'trade'}  # noqa: E501
+
+    def mock_query(url, **kwargs):  # pylint: disable=unused-argument
+        if f'accounts/{usdc_wallet_id}/transactions' in url:
+            return MockResponse(200, json.dumps({'data': [usdc_leg]}))
+        if f'accounts/{eth_wallet_id}/transactions' in url:
+            return MockResponse(200, json.dumps({'data': [eth_leg]}))
+        if 'accounts' in url:
+            return MockResponse(200, json.dumps({'data': [
+                {'id': usdc_wallet_id}, {'id': eth_wallet_id},
+            ]}))
+        raise AssertionError(f'Unexpected url {url} for test')
+
+    with patch.object(coinbase.session, 'get', side_effect=mock_query):
+        returned_events = coinbase._query_transactions()
+
+    with coinbase.db.user_write() as write_cursor:
+        DBHistoryEvents(coinbase.db).add_history_events(
+            write_cursor=write_cursor,
+            history=returned_events,
+        )
+    with coinbase.db.conn.read_ctx() as cursor:
+        stored_events = DBHistoryEvents(coinbase.db).get_history_events_internal(
+            cursor=cursor,
+            filter_query=HistoryEventFilterQuery.make(
+                location=Location.COINBASE,
+                entry_types=IncludeExcludeFilterData(values=[HistoryBaseEntryType.SWAP_EVENT]),
+            ),
+        )
+    for event in stored_events:
+        event.identifier = None  # set to None for comparison below
+
+    group_identifier = create_group_identifier_from_unique_id(
+        location=Location.COINBASE,
+        unique_id=tx_id,
+    )
+    assert returned_events == stored_events == [SwapEvent(
+        timestamp=TimestampMS(1733480876000),
+        location=Location.COINBASE,
+        event_subtype=HistoryEventSubType.SPEND,
+        asset=A_USDC,
+        amount=FVal('10.571942'),
+        location_label=coinbase.name,
+        group_identifier=group_identifier,
+    ), SwapEvent(
+        timestamp=TimestampMS(1733480876000),
+        location=Location.COINBASE,
+        event_subtype=HistoryEventSubType.RECEIVE,
+        asset=A_ETH,
+        amount=FVal('0.00266121'),
+        location_label=coinbase.name,
+        group_identifier=group_identifier,
+    ), SwapEvent(
+        timestamp=TimestampMS(1733480876000),
+        location=Location.COINBASE,
+        event_subtype=HistoryEventSubType.FEE,
+        asset=A_USDC,
+        amount=FVal('0.1162638749508'),
+        location_label=coinbase.name,
+        group_identifier=group_identifier,
     )]
 
 
