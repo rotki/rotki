@@ -2,6 +2,7 @@ from typing import TYPE_CHECKING, Any, Literal
 
 import pytest
 from more_itertools import peekable
+from solders.solders import Signature
 
 from rotkehlchen.accounting.accountant import Accountant
 from rotkehlchen.accounting.cost_basis.base import (
@@ -23,6 +24,7 @@ from rotkehlchen.db.settings import ModifiableDBSettings
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.base import HistoryEvent
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
+from rotkehlchen.history.events.structures.solana_swap import SolanaSwapEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.tests.utils.factories import make_evm_address, make_evm_tx_hash
 from rotkehlchen.types import Location, Price, Timestamp, TimestampMS
@@ -392,6 +394,48 @@ def test_accounting_swap_settings(accounting_pot: 'AccountingPot', counterparty:
     expected_receive_event.count_cost_basis_pnl = False
     assert accounting_pot.processed_events[1:] == [expected_spend_event, expected_receive_event]
     assert accounting_pot.pnls.taxable == ETH_PRICE_TS_1 + expected_spend_event.pnl.taxable
+
+
+@pytest.mark.parametrize('mocked_price_queries', [MOCKED_PRICES])
+def test_accounting_solana_swap_counterparty_fallback(accounting_pot: 'AccountingPot') -> None:
+    """Test that solana swap events with a counterparty that has no specific accounting
+    rule fall back to the default swap treatment instead of being silently skipped.
+
+    Regression test for the no-counterparty rule fallback being gated on EvmEvent,
+    which excluded all counterparty-tagged solana events (e.g. jupiter swaps) from
+    PnL reports.
+    """
+    _gain_one_ether(events_accountant=accounting_pot.events_accountant)
+    signature = Signature.default()
+    swap_spend_event = SolanaSwapEvent(
+        tx_ref=signature,
+        sequence_index=1,
+        timestamp=TIMESTAMP_2_MS,
+        event_subtype=HistoryEventSubType.SPEND,
+        asset=A_ETH,
+        amount=ONE,
+        notes='Swap 1 ETH in Jupiter',
+        counterparty='jupiter',
+    )
+    swap_receive_event = SolanaSwapEvent(
+        tx_ref=signature,
+        sequence_index=2,
+        timestamp=TIMESTAMP_2_MS,
+        event_subtype=HistoryEventSubType.RECEIVE,
+        asset=A_DAI,
+        amount=FVal(3000),
+        notes='Receive 3000 DAI as the result of a swap in Jupiter',
+        counterparty='jupiter',
+    )
+    assert accounting_pot.events_accountant.process(
+        event=swap_spend_event,
+        events_iterator=peekable([swap_receive_event]),
+    ) == 2
+    assert len(accounting_pot.processed_events) == 3  # initial ETH gain + both swap legs
+    assert accounting_pot.processed_events[-2].asset == A_ETH
+    assert accounting_pot.processed_events[-2].pnl.taxable == ETH_PRICE_TS_2 - ETH_PRICE_TS_1
+    assert accounting_pot.processed_events[-1].asset == A_DAI
+    assert accounting_pot.processed_events[-1].free_amount == FVal(3000)
 
 
 # --- BASIS_TRANSFER tests ---
