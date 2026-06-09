@@ -5,6 +5,7 @@ import gevent
 
 from rotkehlchen.api.websockets.typedefs import ProgressUpdateSubType, WSMessageType
 from rotkehlchen.constants import ZERO
+from rotkehlchen.constants.assets import A_ETH, A_ETH2
 from rotkehlchen.db.cache import DBCacheStatic
 from rotkehlchen.db.constants import HISTORY_MAPPING_KEY_STATE, HistoryMappingState
 from rotkehlchen.db.filtering import HistoryEventFilterQuery
@@ -56,6 +57,13 @@ DUAL_BUCKET_PROTOCOL_EVENTS: Final[EventTypeSubtypePairs] = {
     (HistoryEventType.STAKING, HistoryEventSubType.DEPOSIT_ASSET),
 }
 
+# Kraken staking/unstaking events are internal spot <-> staking lock state changes.
+# They don't move the asset out of the user's Kraken account, so they should not affect balances.
+KRAKEN_INTERNAL_STAKING_EVENTS: Final[EventTypeSubtypePairs] = {
+    (HistoryEventType.STAKING, HistoryEventSubType.DEPOSIT_ASSET),
+    (HistoryEventType.STAKING, HistoryEventSubType.REMOVE_ASSET),
+}
+
 # Events that affect both sender and receiver wallet buckets.
 # Sender direction is OUT, receiver direction is IN.
 DUAL_BUCKET_TRANSFER_EVENTS: Final[EventTypeSubtypePairs] = {
@@ -96,6 +104,7 @@ class Bucket(NamedTuple):
     def from_event(
             cls,
             event: 'HistoryBaseEntry',
+            treat_eth2_as_eth: bool = False,
     ) -> list[tuple['Bucket', Literal[EventDirection.IN, EventDirection.OUT]]]:
         """Returns list of (Bucket, direction) pairs affected by this event.
 
@@ -107,10 +116,19 @@ class Bucket(NamedTuple):
         - Everything else: tracked in wallet bucket
         """
         location = event.location.serialize_for_db()
-        asset = event.asset.resolve_swapped_for().identifier
+        asset = (
+            A_ETH.identifier if treat_eth2_as_eth is True and event.asset == A_ETH2 else
+            event.asset.resolve_swapped_for().identifier
+        )
         event_key = (event.event_type, event.event_subtype)
         counterparty = getattr(event, 'counterparty', None)
         address = getattr(event, 'address', None)
+
+        if (
+            location == Location.KRAKEN.serialize_for_db() and
+            event_key in KRAKEN_INTERNAL_STAKING_EVENTS
+        ):
+            return []
 
         if (  # Depositing/withdrawing to protocols affects both wallet and protocol buckets
             event_key in DUAL_BUCKET_PROTOCOL_EVENTS and
@@ -187,6 +205,7 @@ def _load_bucket_balances_before_ts(
     """
     bucket_balances: dict[Bucket, FVal] = {}
     with database.conn.read_ctx() as cursor:
+        treat_eth2_as_eth = CachedSettings().get_entry('treat_eth2_as_eth') is True
         cursor.execute(
             """
             SELECT location, location_label, protocol, asset, metric_value, MAX(sort_key)
@@ -196,7 +215,12 @@ def _load_bucket_balances_before_ts(
             (EventMetricKey.BALANCE.serialize(), from_ts),
         )
         for row in cursor:
-            bucket_balances[Bucket.from_db(row[:4])] = FVal(row[4])
+            asset = (
+                A_ETH.identifier if treat_eth2_as_eth is True and row[3] == A_ETH2.identifier else
+                row[3]
+            )
+            bucket = Bucket.from_db((row[0], row[1], row[2], asset))
+            bucket_balances[bucket] = bucket_balances.get(bucket, ZERO) + FVal(row[4])
 
     log.debug('Loaded %s bucket balances before ts=%s', len(bucket_balances), from_ts)
     return bucket_balances
@@ -238,6 +262,7 @@ def process_historical_balances(
             int(modification_ts_at_start[0])
             if modification_ts_at_start else None
         )
+        treat_eth2_as_eth = CachedSettings().get_entry('treat_eth2_as_eth') is True
 
     if (total_events := len(events)) == 0:
         log.debug('No events to process for historical balances')
@@ -254,6 +279,7 @@ def process_historical_balances(
             database=database,
             event=event,
             bucket_balances=bucket_balances,
+            treat_eth2_as_eth=treat_eth2_as_eth,
         )) is not None else (event,):
             _apply_to_buckets(
                 database=database,
@@ -261,6 +287,7 @@ def process_historical_balances(
                 bucket_balances=bucket_balances,
                 metrics_batch=metrics_batch,
                 last_run_ts=last_run_ts,
+                treat_eth2_as_eth=treat_eth2_as_eth,
             )
 
         if idx % send_ws_every == 0:
@@ -373,9 +400,13 @@ def _apply_to_buckets(
         bucket_balances: dict[Bucket, FVal],
         metrics_batch: list[tuple[int | None, str, str | None, str | None, str, str, str, int, int, int]],  # noqa: E501
         last_run_ts: Timestamp | None,
+        treat_eth2_as_eth: bool,
 ) -> None:
     """Apply the given event to the buckets it affects."""
-    if len(bucket_directions := Bucket.from_event(event)) == 0:
+    if len(bucket_directions := Bucket.from_event(
+        event=event,
+        treat_eth2_as_eth=treat_eth2_as_eth,
+    )) == 0:
         return
 
     for bucket, direction in bucket_directions:
@@ -436,6 +467,7 @@ def _maybe_add_profit_event(
         database: 'DBHandler',
         event: 'HistoryBaseEntry',
         bucket_balances: dict[Bucket, FVal],
+        treat_eth2_as_eth: bool,
 ) -> tuple[OnchainEvent, ...] | None:
     """Maybe add a receive/reward event for the profit earned while an asset was in a protocol.
     If the profit event is already present, take no action and return None. Otherwise, update the
@@ -446,7 +478,10 @@ def _maybe_add_profit_event(
     if CachedSettings().get_entry('auto_create_profit_events') is False:
         return None
 
-    if len(bucket_directions := Bucket.from_event(event)) == 0:
+    if len(bucket_directions := Bucket.from_event(
+        event=event,
+        treat_eth2_as_eth=treat_eth2_as_eth,
+    )) == 0:
         return None
 
     for bucket, direction in bucket_directions:
