@@ -10,6 +10,7 @@ from rotkehlchen.assets.asset import Asset, EvmToken
 from rotkehlchen.assets.utils import token_normalized_value
 from rotkehlchen.chain.evm.tokens import get_rpc_first_chunk_size_call_order
 from rotkehlchen.chain.evm.types import WeightedNode, string_to_evm_address
+from rotkehlchen.constants.prices import ZERO_PRICE
 from rotkehlchen.db.filtering import EvmEventFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.errors.misc import RemoteError
@@ -119,6 +120,32 @@ class ProtocolWithBalance(abc.ABC):
     def addresses_with_deposits(self) -> dict[ChecksumEvmAddress, list['EvmEvent']]:
         return self.addresses_with_activity(event_types=self.deposit_event_types)
 
+    def _add_priced_balances(
+            self,
+            balances: BalancesSheetType,
+            amounts: Sequence[tuple[ChecksumEvmAddress, 'Asset', FVal]],
+            category: Literal['assets', 'liabilities'] = 'assets',
+    ) -> None:
+        """Price all the given (address, asset, amount) entries in the user's main
+        currency with a single batched query and add them to the balances under the
+        protocol's counterparty.
+
+        Using one batched query instead of a per-asset one lets the inquirer serve
+        already-cached assets from the cache and query all the remaining ones from each
+        oracle in a single request. Assets for which no price could be found get a zero
+        value (price errors are logged by the inquirer).
+        """
+        if len(amounts) == 0:
+            return
+
+        prices = Inquirer.find_main_currency_prices(list({asset for _, asset, _ in amounts}))
+        for address, asset, amount in amounts:
+            sheet = balances[address].assets if category == 'assets' else balances[address].liabilities  # noqa: E501
+            sheet[asset][self.counterparty] += Balance(
+                amount=amount,
+                value=amount * prices.get(asset, ZERO_PRICE),
+            )
+
     # --- Methods to be implemented by all subclasses
 
     @abc.abstractmethod
@@ -161,12 +188,12 @@ class ProtocolWithGauges(ProtocolWithBalance):
             call_order: list[WeightedNode],
             chunk_size: int,
             balances_contract: Callable,
-    ) -> BalanceSheet:
+    ) -> dict[EvmToken, FVal]:
         """
-        Query the set of gauges in gauges_to_token and return the balances for each
-        lp token deposited in all gauges.
+        Query the set of gauges in gauges_to_token and return the deposited amount
+        of each lp token in all gauges.
         """
-        balances = BalanceSheet()
+        amounts: defaultdict[EvmToken, FVal] = defaultdict(FVal)
         gauge_chunks = get_chunks(list(gauges_to_token.keys()), n=chunk_size)
         for gauge_chunk in gauge_chunks:
             tokens = [gauges_to_token[staking_addr] for staking_addr in gauge_chunk]
@@ -179,13 +206,9 @@ class ProtocolWithGauges(ProtocolWithBalance):
 
             # Now map the gauge to the underlying token
             for lp_token, balance in gauges_balances.items():
-                lp_token_price = Inquirer.find_main_currency_price(lp_token)
-                balances.assets[lp_token][self.counterparty] += Balance(
-                    amount=balance,
-                    value=lp_token_price * balance,
-                )
+                amounts[lp_token] += balance
 
-        return balances
+        return amounts
 
     def _get_staking_contract_balances(
             self,
@@ -238,6 +261,7 @@ class ProtocolWithGauges(ProtocolWithBalance):
         """
         balances: BalancesSheetType = defaultdict(BalanceSheet)
         gauges_to_token: dict[ChecksumEvmAddress, EvmToken] = {}
+        entries: list[tuple[ChecksumEvmAddress, Asset, FVal]] = []
         # query addresses and gauges where they interacted
         chunk_size, call_order = get_rpc_first_chunk_size_call_order(self.evm_inquirer)
         for address, events in self.addresses_with_gauge_deposits().items():
@@ -251,14 +275,15 @@ class ProtocolWithGauges(ProtocolWithBalance):
 
                 gauges_to_token[gauge_address] = event.asset.resolve_to_evm_token()
 
-            balances[address] = self._query_gauges_balances(
+            entries.extend((address, lp_token, amount) for lp_token, amount in self._query_gauges_balances(  # noqa: E501
                 user_address=address,
                 gauges_to_token=gauges_to_token,
                 call_order=call_order,
                 chunk_size=chunk_size,
                 balances_contract=self._get_staking_contract_balances,
-            )
+            ).items())
 
+        self._add_priced_balances(balances=balances, amounts=entries)
         return balances
 
     # --- Methods to be implemented by all subclasses
