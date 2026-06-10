@@ -466,7 +466,31 @@ class TransactionDecoder(ABC, Generic[T_Transaction, T_DecodingRules, T_DecoderI
 
         Events at positions that were previously customized (original position cached) are
         filtered out to prevent duplicates during redecoding.
+
+        Events that ended up sharing a sequence index (decoders allocate indices via
+        independent schemes that are not guaranteed to be collision-free) are relocated
+        past all used indices, since the unique constraint on
+        (group_identifier, sequence_index) would otherwise silently drop them at insertion.
         """
+        seen_indices = set()
+        collided_events = []
+        for event in events:
+            if event.sequence_index in seen_indices:
+                collided_events.append(event)
+            else:
+                seen_indices.add(event.sequence_index)
+
+        if len(collided_events) != 0:
+            next_index = max(seen_indices) + 1
+            for event in collided_events:
+                log.error(
+                    'Sequence index collision at %s for %s. Relocating it to index %s '
+                    'so it is not silently dropped at insertion',
+                    action_id, event, next_index,
+                )
+                event.sequence_index = next_index
+                next_index += 1
+
         with self.database.user_write() as write_cursor:
             if len(events) == 0:
                 # This is probably a phishing zero value token transfer tx.
