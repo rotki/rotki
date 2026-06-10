@@ -8,7 +8,6 @@ import requests
 from gevent.lock import Semaphore
 from requests.adapters import Response
 
-from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.converters import asset_from_cryptocom
 from rotkehlchen.constants import MONTH_IN_MILLISECONDS, WEEK_IN_MILLISECONDS, ZERO
 from rotkehlchen.data_import.utils import maybe_set_transaction_extra_data
@@ -19,6 +18,7 @@ from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.exchanges.data_structures import MarginPosition
 from rotkehlchen.exchanges.exchange import ExchangeInterface, ExchangeQueryBalances
 from rotkehlchen.exchanges.utils import SignatureGeneratorMixin
+from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.asset_movement import (
     AssetMovement,
     AssetMovementExtraData,
@@ -31,7 +31,6 @@ from rotkehlchen.history.events.structures.swap import (
 )
 from rotkehlchen.history.events.structures.types import HistoryEventSubType
 from rotkehlchen.history.events.utils import create_group_identifier_from_unique_id
-from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import (
     deserialize_fval,
@@ -298,8 +297,8 @@ class Cryptocom(ExchangeInterface, SignatureGeneratorMixin):
             self,
             new_balance_data: dict[str, Any],
             balance_key: str,
-            existing_balances: defaultdict['AssetWithOracles', Balance],
-    ) -> defaultdict['AssetWithOracles', Balance]:
+            existing_balances: defaultdict['AssetWithOracles', FVal],
+    ) -> defaultdict['AssetWithOracles', FVal]:
         """Deserialize a balance dict using the amount from the specified balance_key.
         Returns the updated existing_balances.
         """
@@ -309,11 +308,7 @@ class Cryptocom(ExchangeInterface, SignatureGeneratorMixin):
 
         try:
             if (amount := deserialize_fval(new_balance_data[balance_key])) > ZERO:
-                asset = asset_from_cryptocom(instrument_name)
-                existing_balances[asset] += Balance(
-                    amount=amount,
-                    value=amount * Inquirer.find_main_currency_price(asset),
-                )
+                existing_balances[asset_from_cryptocom(instrument_name)] += amount
         except UnknownAsset as e:
             self.send_unknown_asset_message(
                 asset_identifier=e.identifier,
@@ -323,11 +318,6 @@ class Cryptocom(ExchangeInterface, SignatureGeneratorMixin):
             self.msg_aggregator.add_error(
                 f'Error processing {self.name} {instrument_name} balance result due to inability '
                 f'to deserialize asset amount due to {e!s}. Skipping balance result.',
-            )
-        except RemoteError as e:
-            self.msg_aggregator.add_error(
-                f'Error processing {self.name} {instrument_name} balance result due to inability '
-                f'to query price: {e!s}. Skipping balance result.',
             )
 
         return existing_balances
@@ -344,7 +334,7 @@ class Cryptocom(ExchangeInterface, SignatureGeneratorMixin):
         if result.code != API_SUCCESS_CODE:
             return None, f'{self.name} balance query failed: {result.message}'
 
-        assets_balance: defaultdict[AssetWithOracles, Balance] = defaultdict(Balance)
+        assets_balance: defaultdict[AssetWithOracles, FVal] = defaultdict(FVal)
 
         if result.result is not None:
             balance_data = result.result.get('data', [])
@@ -366,7 +356,7 @@ class Cryptocom(ExchangeInterface, SignatureGeneratorMixin):
                     existing_balances=assets_balance,
                 )
 
-        return dict(assets_balance), ''
+        return dict(self.balances_from_amounts(assets_balance)), ''
 
     def _query_deposits_withdrawals(
             self,

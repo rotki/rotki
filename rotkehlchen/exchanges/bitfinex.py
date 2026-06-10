@@ -14,7 +14,6 @@ import requests
 from gevent.lock import Semaphore
 from requests.adapters import Response
 
-from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.converters import BITFINEX_EXCHANGE_TEST_ASSETS, asset_from_bitfinex
 from rotkehlchen.assets.utils import symbol_to_asset_or_token
 from rotkehlchen.constants import ZERO
@@ -26,6 +25,7 @@ from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.exchanges.data_structures import MarginPosition
 from rotkehlchen.exchanges.exchange import ExchangeInterface, ExchangeQueryBalances
 from rotkehlchen.exchanges.utils import SignatureGeneratorMixin
+from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.history.deserialization import deserialize_price
 from rotkehlchen.history.events.structures.asset_movement import (
@@ -39,7 +39,6 @@ from rotkehlchen.history.events.structures.swap import (
 )
 from rotkehlchen.history.events.structures.types import HistoryEventSubType
 from rotkehlchen.history.events.utils import create_group_identifier_from_unique_id
-from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import (
     deserialize_fval,
@@ -846,7 +845,7 @@ class Bitfinex(ExchangeInterface, SignatureGeneratorMixin):
         # Wallet items indices
         currency_index = 1
         balance_index = 2
-        assets_balance: defaultdict[AssetWithOracles, Balance] = defaultdict(Balance)
+        amounts: defaultdict[AssetWithOracles, FVal] = defaultdict(FVal)
         for wallet in response_list:
             if len(wallet) < API_WALLET_MIN_RESULT_LENGTH:
                 log.error(
@@ -873,15 +872,6 @@ class Bitfinex(ExchangeInterface, SignatureGeneratorMixin):
                 continue
 
             try:
-                price = Inquirer.find_main_currency_price(asset)
-            except RemoteError as e:
-                self.msg_aggregator.add_error(
-                    f'Error processing {self.name} {asset.name} balance result due to inability '
-                    f'to query price: {e!s}. Skipping balance result.',
-                )
-                continue
-
-            try:
                 amount = deserialize_fval(wallet[balance_index])
             except DeserializationError as e:
                 self.msg_aggregator.add_error(
@@ -890,12 +880,9 @@ class Bitfinex(ExchangeInterface, SignatureGeneratorMixin):
                 )
                 continue
 
-            assets_balance[asset] += Balance(
-                amount=amount,
-                value=amount * price,
-            )
+            amounts[asset] += amount
 
-        return dict(assets_balance), ''
+        return dict(self.balances_from_amounts(amounts)), ''
 
     def query_online_history_events(
             self,

@@ -42,6 +42,7 @@ from rotkehlchen.exchanges.exchange import (
     ExchangeWithExtras,
 )
 from rotkehlchen.exchanges.utils import SignatureGeneratorMixin
+from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.asset_movement import (
     AssetMovement,
     create_asset_movement_with_fee,
@@ -58,7 +59,6 @@ from rotkehlchen.history.events.structures.swap import (
     create_swap_events_multi_fee,
 )
 from rotkehlchen.history.events.utils import create_group_identifier_from_unique_id
-from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import deserialize_fval
 from rotkehlchen.types import (
@@ -477,7 +477,8 @@ class Kraken(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
         return kraken_balances, ''
 
     def deserialize_kraken_balance(self, kraken_balances: dict) -> tuple[dict, str]:
-        assets_balance: defaultdict[AssetWithOracles, Balance] = defaultdict(Balance)
+        kfee_amount = ZERO
+        amounts: defaultdict[AssetWithOracles, FVal] = defaultdict(FVal)
         for kraken_name, amount_ in kraken_balances.items():
             log.debug(
                 f'deserializing kraken balance for {kraken_name} with amount: {amount_}')
@@ -507,27 +508,14 @@ class Kraken(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
                 )
                 continue
 
-            balance = Balance(amount=amount)
-            if our_asset.identifier != 'KFEE':
-                # There is no price value for KFEE
-                try:
-                    price = Inquirer.find_main_currency_price(our_asset)
-                except RemoteError as e:
-                    self.msg_aggregator.add_error(
-                        f'Error processing kraken balance entry due to inability to '
-                        f'query price: {e!s}. Skipping balance entry',
-                    )
-                    continue
+            if our_asset.identifier == 'KFEE':
+                kfee_amount += amount  # There is no price value for KFEE
+            else:
+                amounts[our_asset] += amount
 
-                balance.value = balance.amount * price
-
-            assets_balance[our_asset] += balance
-            log.debug(
-                'kraken balance query result',
-                currency=our_asset,
-                amount=balance.amount,
-                value=balance.value,
-            )
+        assets_balance = self.balances_from_amounts(amounts)
+        if kfee_amount != ZERO:
+            assets_balance[asset_from_kraken('KFEE')] += Balance(amount=kfee_amount)
 
         return dict(assets_balance), ''
 

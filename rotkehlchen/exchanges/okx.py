@@ -8,7 +8,6 @@ from urllib.parse import urlencode, urljoin
 
 import requests
 
-from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.converters import asset_from_okx
 from rotkehlchen.constants import ZERO
 from rotkehlchen.data_import.utils import maybe_set_transaction_extra_data
@@ -24,6 +23,7 @@ from rotkehlchen.exchanges.exchange import (
     ExchangeWithExtras,
 )
 from rotkehlchen.exchanges.utils import SignatureGeneratorMixin, deserialize_asset_movement_address
+from rotkehlchen.fval import FVal
 from rotkehlchen.history.deserialization import deserialize_price
 from rotkehlchen.history.events.structures.asset_movement import (
     AssetMovement,
@@ -37,7 +37,6 @@ from rotkehlchen.history.events.structures.swap import (
 )
 from rotkehlchen.history.events.structures.types import HistoryEventSubType
 from rotkehlchen.history.events.utils import create_group_identifier_from_unique_id
-from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import deserialize_fval, deserialize_fval_or_zero
 from rotkehlchen.types import (
@@ -282,7 +281,7 @@ class Okx(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
             return None, msg
 
         currencies_data.extend(self._api_query_list(endpoint=OkxEndpoint.FUNDING_BALANCE))
-        assets_balance: defaultdict[AssetWithOracles, Balance] = defaultdict(Balance)
+        amounts: defaultdict[AssetWithOracles, FVal] = defaultdict(FVal)
         for currency_data in currencies_data:
             try:
                 asset = asset_from_okx(okx_name=currency_data['ccy'])
@@ -290,15 +289,6 @@ class Okx(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
                 self.send_unknown_asset_message(
                     asset_identifier=e.identifier,
                     details='balance query',
-                )
-                continue
-
-            try:
-                price = Inquirer.find_main_currency_price(asset)
-            except RemoteError as e:
-                self.msg_aggregator.add_error(
-                    f'Error processing {self.name} {asset.name} balance result due to inability '
-                    f'to query price: {e!s}. Skipping balance result.',
                 )
                 continue
 
@@ -311,12 +301,9 @@ class Okx(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
                 )
                 continue
 
-            assets_balance[asset] += Balance(
-                amount=amount,
-                value=amount * price,
-            )
+            amounts[asset] += amount
 
-        return dict(assets_balance), ''
+        return dict(self.balances_from_amounts(amounts)), ''
 
     def query_online_margin_history(
             self,

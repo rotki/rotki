@@ -14,7 +14,6 @@ import gevent
 import requests
 from rsqlite import IntegrityError
 
-from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.api.websockets.typedefs import WSMessageType
 from rotkehlchen.assets.asset import AssetWithOracles
 from rotkehlchen.assets.converters import asset_from_binance
@@ -54,7 +53,6 @@ from rotkehlchen.history.events.structures.swap import (
 )
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.history.events.utils import create_group_identifier_from_unique_id
-from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import (
     deserialize_fval,
@@ -486,10 +484,10 @@ class Binance(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
 
     def _add_balances(
             self,
-            balances: defaultdict[AssetWithOracles, Balance],
+            balances: defaultdict[AssetWithOracles, FVal],
             new_balances: list[dict],
-    ) -> defaultdict[AssetWithOracles, Balance]:
-        """Add new balances to balances dict"""
+    ) -> defaultdict[AssetWithOracles, FVal]:
+        """Add new balance amounts to the balances dict"""
         for entry in new_balances:
             try:
                 # force string https://github.com/rotki/rotki/issues/2342
@@ -530,23 +528,14 @@ class Binance(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
                 )
                 continue
 
-            try:
-                price = Inquirer.find_main_currency_price(asset)
-            except RemoteError as e:
-                log.error(
-                    f'Error processing {self.name} balance entry due to inability to '
-                    f'query price: {e!s}. Skipping balance entry',
-                )
-                continue
-
-            balances[asset] += Balance(amount=amount, value=amount * price)
+            balances[asset] += amount
 
         return balances
 
     def _query_spot_balances(
             self,
-            balances: defaultdict[AssetWithOracles, Balance],
-    ) -> defaultdict[AssetWithOracles, Balance]:
+            balances: defaultdict[AssetWithOracles, FVal],
+    ) -> defaultdict[AssetWithOracles, FVal]:
         try:
             account_data = self.api_query_dict(api_type='api', method='account')
         except (RemoteError, BinancePermissionError) as e:
@@ -563,8 +552,8 @@ class Binance(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
 
     def _query_funding_balances(
             self,
-            balances: defaultdict[AssetWithOracles, Balance],
-    ) -> defaultdict[AssetWithOracles, Balance]:
+            balances: defaultdict[AssetWithOracles, FVal],
+    ) -> defaultdict[AssetWithOracles, FVal]:
         """Query the balances of funding wallet in binance.
         Docs: https://binance-docs.github.io/apidocs/spot/en/#funding-wallet-user_data
 
@@ -588,8 +577,8 @@ class Binance(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
 
     def _query_lending_balances(
             self,
-            balances: defaultdict[AssetWithOracles, Balance],
-    ) -> defaultdict[AssetWithOracles, Balance]:
+            balances: defaultdict[AssetWithOracles, FVal],
+    ) -> defaultdict[AssetWithOracles, FVal]:
         """Queries binance lending balances and if any found adds them to `balances`
 
         May raise:
@@ -658,19 +647,7 @@ class Binance(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
                     )
                     continue
 
-                try:
-                    price = Inquirer.find_main_currency_price(asset)
-                except RemoteError as e:
-                    log.error(
-                        f'Error processing {self.name} balance entry due to inability to '
-                        f'query price: {e!s}. Skipping balance entry',
-                    )
-                    continue
-
-                balances[asset] += Balance(
-                    amount=amount,
-                    value=amount * price,
-                )
+                balances[asset] += amount
 
         return balances
 
@@ -865,8 +842,8 @@ class Binance(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
 
     def _query_cross_collateral_futures_balances(
             self,
-            balances: defaultdict[AssetWithOracles, Balance],
-    ) -> defaultdict[AssetWithOracles, Balance]:
+            balances: defaultdict[AssetWithOracles, FVal],
+    ) -> defaultdict[AssetWithOracles, FVal]:
         """Queries binance collateral future balances and if any found adds them to `balances`
 
         May raise:
@@ -895,19 +872,7 @@ class Binance(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
                     )
                     continue
 
-                try:
-                    price = Inquirer.find_main_currency_price(asset)
-                except RemoteError as e:
-                    log.error(
-                        f'Error processing {self.name} balance entry due to inability to '
-                        f'query price: {e!s}. Skipping balance entry',
-                    )
-                    continue
-
-                balances[asset] += Balance(
-                    amount=amount,
-                    value=amount * price,
-                )
+                balances[asset] += amount
 
         except KeyError as e:
             self.msg_aggregator.add_error(
@@ -917,19 +882,19 @@ class Binance(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
 
         return balances
 
-    def _query_margined_fapi(self, balances: defaultdict[AssetWithOracles, Balance]) -> defaultdict[AssetWithOracles, Balance]:  # noqa: E501
+    def _query_margined_fapi(self, balances: defaultdict[AssetWithOracles, FVal]) -> defaultdict[AssetWithOracles, FVal]:  # noqa: E501
         """Only a convenience function to give same interface as other query methods"""
         return self._query_margined_futures_balances('fapi', balances)
 
-    def _query_margined_dapi(self, balances: defaultdict[AssetWithOracles, Balance]) -> defaultdict[AssetWithOracles, Balance]:  # noqa: E501
+    def _query_margined_dapi(self, balances: defaultdict[AssetWithOracles, FVal]) -> defaultdict[AssetWithOracles, FVal]:  # noqa: E501
         """Only a convenience function to give same interface as other query methods"""
         return self._query_margined_futures_balances('dapi', balances)
 
     def _query_margined_futures_balances(
             self,
             api_type: Literal['fapi', 'dapi'],
-            balances: defaultdict[AssetWithOracles, Balance],
-    ) -> defaultdict[AssetWithOracles, Balance]:
+            balances: defaultdict[AssetWithOracles, FVal],
+    ) -> defaultdict[AssetWithOracles, FVal]:
         """Queries binance margined future balances and if any found adds them to `balances`
 
         May raise:
@@ -965,19 +930,7 @@ class Binance(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
                     )
                     continue
 
-                try:
-                    price = Inquirer.find_main_currency_price(asset)
-                except RemoteError as e:
-                    log.error(
-                        f'Error processing {self.name} balance entry due to inability to '
-                        f'query price: {e!s}. Skipping margined futures balance entry',
-                    )
-                    continue
-
-                balances[asset] += Balance(
-                    amount=amount,
-                    value=amount * price,
-                )
+                balances[asset] += amount
 
         except KeyError as e:
             self.msg_aggregator.add_error(
@@ -989,8 +942,8 @@ class Binance(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
 
     def _query_pools_balances(
             self,
-            balances: defaultdict[AssetWithOracles, Balance],
-    ) -> defaultdict[AssetWithOracles, Balance]:
+            balances: defaultdict[AssetWithOracles, FVal],
+    ) -> defaultdict[AssetWithOracles, FVal]:
         """Queries binance pool balances and if any found adds them to `balances`
 
         May raise:
@@ -1016,19 +969,7 @@ class Binance(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
                 )
                 return None
 
-            try:
-                price = Inquirer.find_main_currency_price(asset)
-            except RemoteError as e:
-                log.error(
-                    f'Error processing {self.name} balance entry due to inability to '
-                    f'query price: {e!s}. Skipping {self.name} pool balance entry',
-                )
-                return None
-
-            balances[asset] += Balance(
-                amount=asset_amount,
-                value=asset_amount * price,
-            )
+            balances[asset] += asset_amount
             return None
 
         try:
@@ -1065,9 +1006,9 @@ class Binance(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
     def query_balances(self) -> ExchangeQueryBalances:
         try:
             self.first_connection()
-            returned_balances: defaultdict[AssetWithOracles, Balance] = defaultdict(Balance)
-            returned_balances = self._query_spot_balances(returned_balances)
-            returned_balances = self._query_funding_balances(returned_balances)
+            amounts: defaultdict[AssetWithOracles, FVal] = defaultdict(FVal)
+            amounts = self._query_spot_balances(amounts)
+            amounts = self._query_funding_balances(amounts)
             if self.location != Location.BINANCEUS:
                 for method in (
                         self._query_lending_balances,
@@ -1077,7 +1018,7 @@ class Binance(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
                         self._query_pools_balances,
                 ):
                     try:
-                        returned_balances = method(returned_balances)
+                        amounts = method(amounts)
                     except RemoteError as e:  # errors in any of these methods should not be fatal
                         log.warning(f'Failed to query binance method {method.__name__} due to {e!s}')  # noqa: E501
 
@@ -1089,6 +1030,7 @@ class Binance(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
             self.msg_aggregator.add_error(msg)
             return None, msg
 
+        returned_balances = self.balances_from_amounts(amounts)
         log.debug(
             f'{self.name} balance query result',
             balances=returned_balances,

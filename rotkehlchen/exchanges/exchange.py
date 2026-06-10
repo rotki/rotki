@@ -1,5 +1,6 @@
 import logging
 from abc import abstractmethod
+from collections import defaultdict
 from collections.abc import Callable, Sequence
 from http.client import RemoteDisconnected
 from typing import TYPE_CHECKING, Any
@@ -15,10 +16,13 @@ from rotkehlchen.api.websockets.typedefs import (
     WSMessageType,
 )
 from rotkehlchen.assets.asset import AssetWithOracles
+from rotkehlchen.constants.prices import ZERO_PRICE
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.db.ranges import DBQueryRanges
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.exchanges.data_structures import MarginPosition
+from rotkehlchen.fval import FVal
+from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import (
     ApiKey,
@@ -258,6 +262,28 @@ class ExchangeWithoutApiSecret(CacheableMixIn, LockableQueryMixIn):
         The name must be the canonical name used by rotkehlchen
         """
         raise NotImplementedError('query_balances should only be implemented by subclasses')
+
+    @staticmethod
+    def balances_from_amounts(
+            amounts: dict[AssetWithOracles, FVal],
+    ) -> defaultdict[AssetWithOracles, Balance]:
+        """Price all the given asset amounts in the user's main currency with a single
+        batched query and return the corresponding balances mapping.
+
+        Using one batched query instead of a per-asset one lets the inquirer serve
+        already-cached assets from the cache and query all the remaining ones from each
+        oracle in a single request. Assets for which no price could be found get a zero
+        value (price errors are logged by the inquirer).
+        """
+        prices = Inquirer.find_main_currency_prices(list(amounts))
+        balances: defaultdict[AssetWithOracles, Balance] = defaultdict(Balance)
+        for asset, amount in amounts.items():
+            balances[asset] = Balance(
+                amount=amount,
+                value=amount * prices.get(asset, ZERO_PRICE),
+            )
+
+        return balances
 
     def query_exchange_specific_history(
             self,
