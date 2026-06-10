@@ -4,7 +4,7 @@ from collections import defaultdict
 from collections.abc import Callable, Iterator, Sequence
 from contextlib import contextmanager
 from functools import wraps
-from typing import TYPE_CHECKING, Any, Literal, Optional, TypeVar, cast, overload
+from typing import TYPE_CHECKING, Any, Final, Literal, Optional, TypeVar, cast, overload
 
 from gevent.lock import Semaphore
 
@@ -50,7 +50,7 @@ from rotkehlchen.types import (
     deserialize_evm_tx_hash,
 )
 from rotkehlchen.utils.hexbytes import hexstring_to_bytes
-from rotkehlchen.utils.misc import ts_now
+from rotkehlchen.utils.misc import get_chunks, ts_now
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
@@ -61,6 +61,10 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
+
+# Receipts queried per batched JSON-RPC request. Kept modest since public
+# nodes commonly cap the number of calls allowed in a single batch.
+RECEIPTS_QUERY_BATCH_SIZE: Final = 25
 
 T = TypeVar('T', bound=Callable[..., Any])
 
@@ -1348,19 +1352,28 @@ class EvmTransactions(ABC):  # noqa: B024
             if len(hash_results) == 0:
                 return  # nothing to do
 
-            for entry in hash_results:
-                try:
-                    tx_receipt_data = self.evm_inquirer.get_transaction_receipt(tx_hash=entry)
-                except RemoteError as e:
-                    log.warning(f'Failed to query information for {self.evm_inquirer.chain_name} transaction {entry!s} due to {e!s}. Skipping...')  # noqa: E501
-                    continue
+            for chunk in get_chunks(hash_results, n=RECEIPTS_QUERY_BATCH_SIZE):
+                if (receipts := self.evm_inquirer.get_transaction_receipts(tx_hashes=chunk)) is None:  # noqa: E501
+                    # No connected node could serve the batch. Query per-tx, which can
+                    # also use indexers and skips single missing receipts instead of
+                    # failing the whole chunk.
+                    receipts = []
+                    for entry in chunk:
+                        try:
+                            receipts.append(self.evm_inquirer.get_transaction_receipt(tx_hash=entry))
+                        except RemoteError as e:
+                            log.warning(
+                                'Failed to query information for %s transaction %s due to %s. Skipping...',  # noqa: E501
+                                self.evm_inquirer.chain_name, entry, e,
+                            )
 
                 with self.database.user_write() as write_cursor:
-                    self.dbevmtx.add_or_ignore_receipt_data(
-                        write_cursor=write_cursor,
-                        chain_id=self.evm_inquirer.chain_id,
-                        data=tx_receipt_data,
-                    )
+                    for tx_receipt_data in receipts:
+                        self.dbevmtx.add_or_ignore_receipt_data(
+                            write_cursor=write_cursor,
+                            chain_id=self.evm_inquirer.chain_id,
+                            data=tx_receipt_data,
+                        )
 
     def add_transaction_by_hash(
             self,

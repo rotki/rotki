@@ -865,6 +865,89 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
             raise RemoteError(f'{self.chain_name} tx_receipt should exist for {tx_hash!s}')
         return tx_receipt
 
+    def _get_transaction_receipts(
+            self,
+            web3: Web3 | None,
+            tx_hashes: Sequence[EVMTxHash],
+    ) -> list[dict[str, Any]]:
+        """Queries the receipts for all tx_hashes from a single node in one batched
+        JSON-RPC request and returns them in the order of the given hashes.
+
+        May raise:
+        - RemoteError if web3 is None (indexers don't support JSON-RPC batching) or if
+          the node errors on or mishandles the batched request (for example because it
+          does not support batching), so that _query() fails over to the next node
+        - TransactionNotFound if the node is missing any of the receipts, in which case
+          _query() returns None and the caller falls back to per-tx queries
+        """
+        if web3 is None:
+            raise RemoteError(f'Batched receipt queries for {self.chain_name} require an rpc node')
+
+        if len(batched_hashes := [x for x in tx_hashes if x != GENESIS_HASH]) == 0:
+            return [FAKE_GENESIS_TX_RECEIPT] * len(tx_hashes)
+
+        try:
+            with web3.batch_requests() as batch:
+                for tx_hash in batched_hashes:
+                    batch.add(web3.eth.get_transaction_receipt(tx_hash))  # type: ignore
+                results = batch.execute()
+        except (Web3Exception, KeyError) as e:
+            if isinstance(e, TransactionNotFound):
+                raise  # the node is missing a receipt. Handled by _query() as documented
+
+            # Any other web3-level error here most likely means the node does not
+            # properly support batched JSON-RPC requests
+            raise RemoteError(
+                f'Batched receipt query to a {self.chain_name} node failed, probably '
+                f'due to the node not supporting batched requests: {e!s}',
+            ) from e
+
+        if len(results) != len(batched_hashes):
+            raise RemoteError(
+                f'A {self.chain_name} node returned {len(results)} receipts to a '
+                f'batched query for {len(batched_hashes)} transactions',
+            )
+
+        results_iter = iter(results)
+        return [
+            FAKE_GENESIS_TX_RECEIPT if tx_hash == GENESIS_HASH else process_result(next(results_iter))  # noqa: E501
+            for tx_hash in tx_hashes
+        ]
+
+    def get_transaction_receipts(
+            self,
+            tx_hashes: Sequence[EVMTxHash],
+            call_order: Sequence[WeightedNode] | None = None,
+    ) -> list[dict[str, Any]] | None:
+        """Retrieves the receipts for the given tx hashes with a single batched JSON-RPC
+        request per attempted node and returns them in the order of the given hashes.
+
+        Only already-connected non-pruned rpc nodes are tried, since indexers don't
+        support batching and old receipts may be missing from pruned nodes. Returns None
+        if no such node exists or none of them could serve the full batch, in which case
+        the caller should fall back to per-tx queries which can also use indexers and
+        handle single missing receipts.
+        """
+        if len(tx_hashes) == 0:
+            return []
+
+        web3_call_order = [
+            node for node in (call_order if call_order is not None else self.default_call_order())
+            if (rpc_node := self.rpc_mapping.get(node.node_info)) is not None and
+            rpc_node.is_pruned is False
+        ]
+        if len(web3_call_order) == 0:
+            return None
+
+        try:
+            return self._query(
+                method=self._get_transaction_receipts,
+                call_order=web3_call_order,
+                tx_hashes=tx_hashes,
+            )
+        except RemoteError:
+            return None
+
     def _get_transaction_by_hash(
             self,
             web3: Web3 | None,

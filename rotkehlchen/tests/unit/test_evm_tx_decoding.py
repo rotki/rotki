@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 from unittest.mock import patch
 
 import pytest
@@ -285,6 +285,72 @@ def test_query_and_decode_transactions_works_with_different_chains(
         filter_query=EvmTransactionsNotDecodedFilterQuery.make(chain_id=ChainID.ETHEREUM, limit=None),  # noqa: E501
     )
     assert len(hashes) == 1
+
+
+def _make_mock_receipt(tx_hash: EVMTxHash) -> dict[str, Any]:
+    return {
+        'transactionHash': tx_hash.hex(),
+        'type': '0x2',
+        'status': 1,
+        'contractAddress': None,
+        'logs': [],
+    }
+
+
+@pytest.mark.parametrize('ethereum_accounts', [['0x9531C059098e3d194fF87FebB587aB07B30B1306', '0xc37b40ABdB939635068d3c5f13E7faF686F03B65']])  # noqa: E501
+def test_get_receipts_missing_them_uses_batching(
+        database: 'DBHandler',
+        eth_transactions: 'EthereumTransactions',
+        ethereum_accounts: list[ChecksumEvmAddress],
+) -> None:
+    """Test that missing receipts are queried via a batched JSON-RPC request and
+    saved, without falling back to per-tx queries when batching works"""
+    tx_hash_eth, tx_hash_eth_yabir, tx_hash_opt = _add_transactions_to_db(database, ethereum_accounts)  # noqa: E501
+    batch_queries = []
+
+    def mock_batch(tx_hashes: list[EVMTxHash], call_order: 'Any | None' = None) -> list[dict[str, Any]]:  # noqa: E501
+        batch_queries.append(list(tx_hashes))
+        return [_make_mock_receipt(x) for x in tx_hashes]
+
+    with (
+        patch.object(eth_transactions.evm_inquirer, 'get_transaction_receipts', side_effect=mock_batch),  # noqa: E501
+        patch.object(eth_transactions.evm_inquirer, 'get_transaction_receipt', side_effect=AssertionError('should not query receipts per-tx when batching works')),  # noqa: E501
+    ):
+        eth_transactions.get_receipts_for_transactions_missing_them()
+
+    assert batch_queries == [[tx_hash_eth, tx_hash_eth_yabir]]
+    assert DBEvmTx(database).get_transaction_hashes_no_receipt(
+        tx_filter_query=None,
+        limit=None,
+    ) == [tx_hash_opt]  # both ethereum receipts got saved from the batch
+
+
+@pytest.mark.parametrize('ethereum_accounts', [['0x9531C059098e3d194fF87FebB587aB07B30B1306', '0xc37b40ABdB939635068d3c5f13E7faF686F03B65']])  # noqa: E501
+def test_get_receipts_missing_them_falls_back_to_per_tx(
+        database: 'DBHandler',
+        eth_transactions: 'EthereumTransactions',
+        ethereum_accounts: list[ChecksumEvmAddress],
+) -> None:
+    """Test that when no node can serve a batched receipt query the receipts are
+    queried and saved with the per-tx fallback"""
+    tx_hash_eth, tx_hash_eth_yabir, tx_hash_opt = _add_transactions_to_db(database, ethereum_accounts)  # noqa: E501
+    per_tx_queries = []
+
+    def mock_single(tx_hash: EVMTxHash, call_order: 'Any | None' = None) -> dict[str, Any]:
+        per_tx_queries.append(tx_hash)
+        return _make_mock_receipt(tx_hash)
+
+    with (
+        patch.object(eth_transactions.evm_inquirer, 'get_transaction_receipts', return_value=None),
+        patch.object(eth_transactions.evm_inquirer, 'get_transaction_receipt', side_effect=mock_single),  # noqa: E501
+    ):
+        eth_transactions.get_receipts_for_transactions_missing_them()
+
+    assert per_tx_queries == [tx_hash_eth, tx_hash_eth_yabir]
+    assert DBEvmTx(database).get_transaction_hashes_no_receipt(
+        tx_filter_query=None,
+        limit=None,
+    ) == [tx_hash_opt]
 
 
 @pytest.mark.parametrize('ethereum_accounts', [['0x9531C059098e3d194fF87FebB587aB07B30B1306', '0xc37b40ABdB939635068d3c5f13E7faF686F03B65']])  # noqa: E501
