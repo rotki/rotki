@@ -307,3 +307,28 @@ def test_has_activity(temp_etherscan: 'Etherscan') -> None:
     assert temp_etherscan.has_activity(ChainID.ETHEREUM, string_to_evm_address('0x3C69Bc9B9681683890ad82953Fe67d13Cd91D5EE')) == HasChainActivity.BALANCE  # noqa: E501
     assert temp_etherscan.has_activity(ChainID.ETHEREUM, string_to_evm_address('0x014cd0535b2Ea668150a681524392B7633c8681c')) == HasChainActivity.TOKENS  # noqa: E501
     assert temp_etherscan.has_activity(ChainID.ETHEREUM, string_to_evm_address('0x6c66149E65c517605e0a2e4F707550ca342f9c1B')) == HasChainActivity.NONE  # noqa: E501
+
+
+def test_eth_call_historical_block_refused(temp_etherscan: 'Etherscan') -> None:
+    """Etherscan silently executes eth_call at the latest block when given a block tag,
+    so historical calls must be refused instead of returning wrong data"""
+    with (
+        patch.object(temp_etherscan, '_query_rpc_method') as query_mock,
+        pytest.raises(RemoteError, match='does not support eth_call at a past block'),
+    ):
+        temp_etherscan.eth_call(
+            chain_id=ChainID.ETHEREUM,
+            to_address=string_to_evm_address('0x6B175474E89094C44Da98b954EedeAC495271d0F'),
+            input_data='0x18160ddd',
+            block_identifier=10000000,
+        )
+
+    assert query_mock.call_count == 0
+    with patch.object(temp_etherscan, '_query_rpc_method', return_value='0x1') as query_mock:
+        assert temp_etherscan.eth_call(  # latest is still queried, without a tag
+            chain_id=ChainID.ETHEREUM,
+            to_address=(dai := string_to_evm_address('0x6B175474E89094C44Da98b954EedeAC495271d0F')),  # noqa: E501
+            input_data='0x18160ddd',
+        ) == '0x1'
+
+    assert query_mock.call_args.kwargs['options'] == {'to': dai, 'data': '0x18160ddd'}
