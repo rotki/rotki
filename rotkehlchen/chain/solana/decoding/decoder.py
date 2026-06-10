@@ -187,6 +187,7 @@ class SolanaTransactionDecoder(TransactionDecoder[SolanaTransaction, SolanaDecod
             context: SolanaTransaction,
             ignore_cache: bool,
             delete_customized: bool,
+            write_buffer: list[tuple[list[SolanaEvent], str, int]] | None = None,
     ) -> tuple[list[SolanaEvent], bool, set[str] | None]:
         if (events := self._maybe_load_or_purge_events_from_db(
             transaction=context,
@@ -198,7 +199,7 @@ class SolanaTransactionDecoder(TransactionDecoder[SolanaTransaction, SolanaDecod
             return events, False, None
 
         # else we should decode now
-        return self._decode_transaction(transaction=context)
+        return self._decode_transaction(transaction=context, write_buffer=write_buffer)
 
     def _make_event_filter_query(self, tx_ref: Signature) -> SolanaEventFilterQuery:
         return SolanaEventFilterQuery.make(signatures=[tx_ref])
@@ -572,8 +573,10 @@ class SolanaTransactionDecoder(TransactionDecoder[SolanaTransaction, SolanaDecod
     def _decode_transaction(
             self,
             transaction: SolanaTransaction,
+            write_buffer: list[tuple[list[SolanaEvent], str, int]] | None = None,
     ) -> tuple[list[SolanaEvent], bool, set[str] | None]:
         """Decodes a solana transaction and saves the result in the DB.
+        If write_buffer is given the DB write is deferred into it instead.
         Returns
         - the list of decoded events
         - a flag which is True if balances refresh is needed
@@ -593,6 +596,7 @@ class SolanaTransactionDecoder(TransactionDecoder[SolanaTransaction, SolanaDecod
                 events=[],  # marks the tx as decoded and adds to the ignored action ids since there are no events.  # noqa: E501
                 action_id=str(transaction.signature),
                 db_id=tx_id,
+                write_buffer=write_buffer,
             )
             return [], False, None
 
@@ -647,6 +651,7 @@ class SolanaTransactionDecoder(TransactionDecoder[SolanaTransaction, SolanaDecod
             events=events,
             action_id=str(transaction.signature),
             db_id=tx_id,
+            write_buffer=write_buffer,
         )
         return events, refresh_balances, (reload_decoders if len(reload_decoders) > 0 else None)
 

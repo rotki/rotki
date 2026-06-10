@@ -133,6 +133,7 @@ class EthereumTransactionDecoder(EVMTransactionDecoderWithDSProxy):
             self,
             transaction: EvmTransaction,
             decoded_events: list['EvmEvent'],
+            write_buffer: list[tuple[list['EvmEvent'], str, int]] | None = None,
     ) -> None:
         """Create block-production events from plain ETH receives in produced blocks.
 
@@ -155,6 +156,12 @@ class EthereumTransactionDecoder(EVMTransactionDecoderWithDSProxy):
                 self.beacon_chain.has_api_key() is True
         ):
             return
+
+        if write_buffer is not None:
+            # The logic below writes block events directly to the DB. Persist any deferred
+            # event writes first so the DB insertion order (and thus the assigned event
+            # identifiers) stays the same as with per-tx writes.
+            self._flush_buffered_tx_event_writes(write_buffer)
 
         with self.database.conn.read_ctx() as cursor:
             cursor.execute(
@@ -297,15 +304,18 @@ class EthereumTransactionDecoder(EVMTransactionDecoderWithDSProxy):
             self,
             transaction: EvmTransaction,
             tx_receipt: EvmTxReceipt,
+            write_buffer: list[tuple[list['EvmEvent'], str, int]] | None = None,
     ) -> tuple[list['EvmEvent'], bool, set[str] | None]:
         """Decode an Ethereum transaction and run produced-block fallback enrichment."""
         decoded_events, refresh_balances, reload_decoders = super()._decode_transaction(
             transaction=transaction,
             tx_receipt=tx_receipt,
+            write_buffer=write_buffer,
         )
         self._maybe_create_produced_block_event_from_eth_receive(
             transaction=transaction,
             decoded_events=decoded_events,
+            write_buffer=write_buffer,
         )
         return decoded_events, refresh_balances, reload_decoders
 

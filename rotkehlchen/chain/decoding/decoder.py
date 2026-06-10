@@ -3,7 +3,7 @@ import logging
 import pkgutil
 from abc import ABC, abstractmethod
 from contextlib import suppress
-from typing import TYPE_CHECKING, Generic, Literal, TypeVar
+from typing import TYPE_CHECKING, Final, Generic, Literal, TypeVar
 
 from gevent.lock import Semaphore
 from more_itertools import peekable
@@ -37,6 +37,12 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
+
+# Number of decoded transactions whose event writes are flushed to the DB in a single
+# write transaction during batch decoding. Bounds both the work lost if decoding dies
+# mid-batch and the size of the buffered payload, while amortizing the per-commit cost
+# (the dominant DB overhead of the decode loop) over the whole batch.
+EVENT_WRITES_BATCH_SIZE: Final = 25
 
 
 T_DecodingRules = TypeVar('T_DecodingRules', bound=DecodingRulesBase)
@@ -294,8 +300,13 @@ class TransactionDecoder(ABC, Generic[T_Transaction, T_DecodingRules, T_DecoderI
             context: T_TransactionDecodingContext,
             ignore_cache: bool,
             delete_customized: bool,
+            write_buffer: list[tuple[list[T_Event], str, int]] | None = None,
     ) -> tuple[list[T_Event], bool, set[str] | None]:
         """Decode a transaction using the previously loaded `context`.
+
+        If `write_buffer` is given, the decoded events' DB write is deferred by appending
+        its payload to the buffer instead of committing it per transaction. The caller is
+        then responsible for flushing via `_flush_buffered_tx_event_writes`.
 
         Returns `(events, refresh_balances, reload_decoders)` where:
         - `events` is the list of decoded events for this transaction,
@@ -399,6 +410,7 @@ class TransactionDecoder(ABC, Generic[T_Transaction, T_DecodingRules, T_DecoderI
             self.reload_data(cursor)
 
         refresh_balances, new_events = False, []
+        write_buffer: list[tuple[list[T_Event], str, int]] = []
         total_transactions = len(tx_hashes)
         log.debug(f'Started logic to decode {total_transactions} transactions from {self.chain_name}')  # noqa: E501
         for tx_index, tx_hash in enumerate(tx_hashes):
@@ -426,7 +438,10 @@ class TransactionDecoder(ABC, Generic[T_Transaction, T_DecodingRules, T_DecoderI
                 context=context,
                 ignore_cache=ignore_cache,
                 delete_customized=delete_customized,
+                write_buffer=write_buffer,
             )
+            if len(write_buffer) >= EVENT_WRITES_BATCH_SIZE:
+                self._flush_buffered_tx_event_writes(write_buffer)
 
             if events is not None:
                 events.extend(fresh_events)
@@ -436,8 +451,13 @@ class TransactionDecoder(ABC, Generic[T_Transaction, T_DecodingRules, T_DecoderI
                 refresh_balances = True
 
             if reload_decoders is not None:
+                # decoder reloads may read the just-decoded events from the DB
+                # (e.g. eigenpod deployments), so persist any deferred writes first
+                self._flush_buffered_tx_event_writes(write_buffer)
                 with self.database.conn.read_ctx() as cursor:
                     self.reload_specific_decoders(cursor, decoders=reload_decoders)
+
+        self._flush_buffered_tx_event_writes(write_buffer)
 
         if send_ws_notifications:
             self.msg_aggregator.add_message(
@@ -457,12 +477,18 @@ class TransactionDecoder(ABC, Generic[T_Transaction, T_DecodingRules, T_DecoderI
             events: list[T_Event],
             action_id: str,
             db_id: int,
+            write_buffer: list[tuple[list[T_Event], str, int]] | None = None,
     ) -> None:
         """Writes new events from a single tx to the DB and sets the decoded flag.
 
         `action_id` uniquely identifies the tx (for example, chain id + tx hash for EVM txs)
         which is added to the ignored_action_ids if there are no events.
         `db_id` is the id of the transaction in the DB, used in the tx mappings table.
+
+        If `write_buffer` is given, the write is deferred by appending its payload to the
+        buffer instead of opening a write transaction per tx. The caller is responsible
+        for flushing via `_flush_buffered_tx_event_writes`. Sequence index relocation
+        still happens here so the returned events carry their final indices either way.
 
         Events at positions that were previously customized (original position cached) are
         filtered out to prevent duplicates during redecoding.
@@ -491,36 +517,77 @@ class TransactionDecoder(ABC, Generic[T_Transaction, T_DecodingRules, T_DecoderI
                 event.sequence_index = next_index
                 next_index += 1
 
-        with self.database.user_write() as write_cursor:
-            if len(events) == 0:
-                # This is probably a phishing zero value token transfer tx.
-                # Details here: https://github.com/rotki/rotki/issues/5749
-                with suppress(InputError):  # We don't care if it's already in the DB
-                    self.database.add_to_ignored_action_ids(
-                        write_cursor=write_cursor,
-                        identifiers=[action_id],
-                    )
-            else:  # Filter out events at positions previously customized to prevent duplicates
-                cached_keys = {row[0] for row in write_cursor.execute(
-                    'SELECT name FROM key_value_cache WHERE name LIKE ?',
-                    (f'customized_event_original_{events[0].group_identifier}_%',),
-                )}
-                if len(filtered_events := [
-                    event for event in events
-                    if DBCacheDynamic.CUSTOMIZED_EVENT_ORIGINAL_SEQ_IDX.get_db_key(
-                        group_identifier=event.group_identifier,
-                        sequence_index=event.sequence_index,
-                    ) not in cached_keys
-                ]) != 0:
-                    self.dbevents.add_history_events(
-                        write_cursor=write_cursor,
-                        history=filtered_events,
-                    )
+        if write_buffer is not None:
+            write_buffer.append((events, action_id, db_id))
+            return
 
-            write_cursor.execute(
-                f'INSERT OR IGNORE INTO {self.tx_mappings_table}(tx_id, value) VALUES(?, ?)',
-                (db_id, TX_DECODED),
+        with self.database.user_write() as write_cursor:
+            self._write_tx_events(
+                write_cursor=write_cursor,
+                events=events,
+                action_id=action_id,
+                db_id=db_id,
             )
+
+    def _flush_buffered_tx_event_writes(
+            self,
+            write_buffer: list[tuple[list[T_Event], str, int]],
+    ) -> None:
+        """Writes all buffered per-tx event payloads to the DB in a single write
+        transaction and clears the buffer. Amortizes the per-commit cost over the batch
+        while keeping the write lock hold short, since only the inserts happen here."""
+        if len(write_buffer) == 0:
+            return
+
+        with self.database.user_write() as write_cursor:
+            for events, action_id, db_id in write_buffer:
+                self._write_tx_events(
+                    write_cursor=write_cursor,
+                    events=events,
+                    action_id=action_id,
+                    db_id=db_id,
+                )
+
+        write_buffer.clear()
+
+    def _write_tx_events(
+            self,
+            write_cursor: 'DBCursor',
+            events: list[T_Event],
+            action_id: str,
+            db_id: int,
+    ) -> None:
+        """Writes a single tx's events to the DB with the given cursor and sets the
+        decoded flag. See _write_new_tx_events_to_the_db for the arguments."""
+        if len(events) == 0:
+            # This is probably a phishing zero value token transfer tx.
+            # Details here: https://github.com/rotki/rotki/issues/5749
+            with suppress(InputError):  # We don't care if it's already in the DB
+                self.database.add_to_ignored_action_ids(
+                    write_cursor=write_cursor,
+                    identifiers=[action_id],
+                )
+        else:  # Filter out events at positions previously customized to prevent duplicates
+            cached_keys = {row[0] for row in write_cursor.execute(
+                'SELECT name FROM key_value_cache WHERE name LIKE ?',
+                (f'customized_event_original_{events[0].group_identifier}_%',),
+            )}
+            if len(filtered_events := [
+                event for event in events
+                if DBCacheDynamic.CUSTOMIZED_EVENT_ORIGINAL_SEQ_IDX.get_db_key(
+                    group_identifier=event.group_identifier,
+                    sequence_index=event.sequence_index,
+                ) not in cached_keys
+            ]) != 0:
+                self.dbevents.add_history_events(
+                    write_cursor=write_cursor,
+                    history=filtered_events,
+                )
+
+        write_cursor.execute(
+            f'INSERT OR IGNORE INTO {self.tx_mappings_table}(tx_id, value) VALUES(?, ?)',
+            (db_id, TX_DECODED),
+        )
 
     def _process_swaps(
             self,
