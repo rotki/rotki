@@ -549,9 +549,11 @@ class EVMTransactionDecoder(TransactionDecoder['EvmTransaction', EvmDecodingRule
             self,
             transaction: EvmTransaction,
             tx_receipt: EvmTxReceipt,
+            write_buffer: list[tuple[list['EvmEvent'], str, int]] | None = None,
     ) -> tuple[list['EvmEvent'], bool, set[str] | None]:
         """
         Decodes an evm transaction and its receipt and saves result in the DB.
+        If write_buffer is given the DB write is deferred into it instead.
 
         Returns
         - the list of decoded events
@@ -742,6 +744,7 @@ class EVMTransactionDecoder(TransactionDecoder['EvmTransaction', EvmDecodingRule
             events=events,
             action_id=transaction.identifier,
             db_id=tx_id,
+            write_buffer=write_buffer,
         )
         return events, refresh_balances, reload_decoders  # Propagate for post processing in the caller  # noqa: E501
 
@@ -773,9 +776,11 @@ class EVMTransactionDecoder(TransactionDecoder['EvmTransaction', EvmDecodingRule
             tx_receipt: EvmTxReceipt,
             ignore_cache: bool,
             delete_customized: bool = False,
+            write_buffer: list[tuple[list['EvmEvent'], str, int]] | None = None,
     ) -> tuple[list['EvmEvent'], bool, set[str] | None]:
         """
         Get a transaction's events if existing in the DB or decode them.
+        If write_buffer is given the decoded events' DB write is deferred into it.
         Returns:
         - the list of decoded events
         - a flag which is True if balances refresh is needed
@@ -791,7 +796,11 @@ class EVMTransactionDecoder(TransactionDecoder['EvmTransaction', EvmDecodingRule
             return events, False, None
 
         # else we should decode now
-        return self._decode_transaction(transaction=transaction, tx_receipt=tx_receipt)
+        return self._decode_transaction(
+            transaction=transaction,
+            tx_receipt=tx_receipt,
+            write_buffer=write_buffer,
+        )
 
     def _maybe_decode_internal_transactions(
             self,
@@ -1272,12 +1281,14 @@ class EVMTransactionDecoder(TransactionDecoder['EvmTransaction', EvmDecodingRule
             context: EvmTransactionContext,
             ignore_cache: bool,
             delete_customized: bool,
+            write_buffer: list[tuple[list['EvmEvent'], str, int]] | None = None,
     ) -> tuple[list['EvmEvent'], bool, set[str] | None]:
         return self._get_or_decode_transaction_events(
             transaction=context.transaction,
             tx_receipt=context.receipt,
             ignore_cache=ignore_cache,
             delete_customized=delete_customized,
+            write_buffer=write_buffer,
         )
 
     def _make_event_filter_query(self, tx_ref: EVMTxHash) -> EvmEventFilterQuery:
