@@ -33,6 +33,7 @@ from rotkehlchen.types import (
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.manager import EthereumManager
     from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
+    from rotkehlchen.chain.ethereum.transactions import EthereumTransactions
     from rotkehlchen.chain.optimism.manager import OptimismManager
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.types import ChecksumEvmAddress
@@ -772,3 +773,28 @@ def test_all_indexers_get_same_tx_results(
     for idx, internal_tx_list in enumerate(txlistinteral_results):
         txlistinteral_results[idx] = [x._replace(trace_id=0) for x in internal_tx_list]
     assert all(x == txlistinteral_results[0] for x in txlistinteral_results[1:])
+
+
+def test_wait_until_no_query_for_releases_locks_on_error(
+        eth_transactions: 'EthereumTransactions',
+) -> None:
+    """Test that the address tx locks are released when the caller's body raises.
+
+    Regression test for account removal failing while holding the locks
+    (remove_single_blockchain_accounts enters the context manager via ExitStack,
+    which throws the body's exception into the generator at the yield point),
+    leaking the locks forever and permanently blocking all transaction querying
+    for those addresses - and with it the periodic tx query task - until restart.
+    """
+    addresses = [make_evm_address(), make_evm_address()]
+
+    def removal_that_fails() -> None:
+        with ExitStack() as stack:
+            stack.enter_context(eth_transactions.wait_until_no_query_for(addresses))
+            raise ValueError('simulated error during account removal')
+
+    with pytest.raises(ValueError, match='simulated'):
+        removal_that_fails()
+
+    for address in addresses:
+        assert eth_transactions.address_tx_locks[address].locked() is False
