@@ -1,8 +1,8 @@
 import type { EventActionRow } from '@/modules/history/events/action-picker/use-event-action-picker';
 import { mount } from '@vue/test-utils';
 import flushPromises from 'flush-promises';
-import { describe, expect, it, vi } from 'vitest';
-import { defineComponent, type VNode } from 'vue';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { defineComponent, type PropType, type VNode } from 'vue';
 import HistoryEventActionPicker from '@/modules/history/events/action-picker/HistoryEventActionPicker.vue';
 
 function buildRow(): EventActionRow {
@@ -27,6 +27,16 @@ vi.mock('@/modules/history/events/action-picker/use-event-action-picker', () => 
   }),
 }));
 
+const recentRef = ref<string[]>([]);
+const record = vi.fn<(verbKey: string) => void>();
+
+vi.mock('@/modules/history/events/action-picker/use-recent-actions', () => ({
+  useRecentActions: (): unknown => ({
+    recent: recentRef,
+    record,
+  }),
+}));
+
 vi.mock('@/modules/history/events/mapping/use-history-event-mappings', () => ({
   useHistoryEventMappings: (): unknown => ({
     eventCategoryGroupsData: computed(() => ({
@@ -38,30 +48,62 @@ vi.mock('@/modules/history/events/mapping/use-history-event-mappings', () => ({
 }));
 
 const RuiAutoCompleteStub = defineComponent({
-  emits: ['update:modelValue'],
+  emits: ['update:modelValue', 'update:searchInput'],
   props: {
+    groupBy: { default: undefined, type: Function as unknown as PropType<(item: EventActionRow) => string> },
     label: { default: '', type: String },
     modelValue: { default: undefined, type: String },
     options: { required: true, type: Array as () => EventActionRow[] },
+    searchInput: { default: '', type: String },
   },
   setup(props, { emit, slots }) {
-    return (): VNode => h('div', { 'data-testid': 'autocomplete-stub' }, [
-      h('div', { 'data-testid': 'autocomplete-value' }, [props.modelValue ?? '']),
-      h('div', { 'data-testid': 'autocomplete-label' }, [props.label ?? '']),
-      ...props.options.map(item => h(
+    return (): VNode => {
+      const query = props.searchInput.trim().toLowerCase();
+      const visible = query
+        ? props.options.filter(item => item.label.toLowerCase().includes(query))
+        : props.options;
+
+      const groupBy = props.groupBy;
+      const groups: string[] = [];
+      for (const item of visible) {
+        const group = groupBy ? groupBy(item) : '';
+        if (!groups.includes(group))
+          groups.push(group);
+      }
+
+      const renderItem = (item: EventActionRow): VNode => h(
         'button',
         {
           'data-testid': `option-${item.verbKey}`,
           'onClick': (): void => emit('update:modelValue', item.verbKey),
         },
         slots.item ? [slots.item({ item })] : [item.label],
-      )),
-      slots.footer ? h('div', { 'data-testid': 'footer-slot' }, [slots.footer({})]) : null,
-    ]);
+      );
+
+      const renderGroup = (group: string): VNode => h('div', { 'data-testid': `group-${group}` }, [
+        slots['group-header'] ? slots['group-header']({ group }) : null,
+        ...visible.filter(item => (groupBy ? groupBy(item) : '') === group).map(renderItem),
+      ]);
+
+      return h('div', { 'data-testid': 'autocomplete-stub' }, [
+        h('div', { 'data-testid': 'autocomplete-value' }, [props.modelValue ?? '']),
+        h('div', { 'data-testid': 'autocomplete-label' }, [props.label ?? '']),
+        ...groups.map(renderGroup),
+        visible.length === 0 && slots['no-data']
+          ? h('div', { 'data-testid': 'no-data-slot' }, [slots['no-data']()])
+          : null,
+        slots.footer ? h('div', { 'data-testid': 'footer-slot' }, [slots.footer({})]) : null,
+      ]);
+    };
   },
 });
 
 describe('historyEventActionPicker', () => {
+  beforeEach(() => {
+    set(recentRef, []);
+    record.mockClear();
+  });
+
   function mountPicker(modelValue: { eventType: string; eventSubtype: string } | undefined = undefined): ReturnType<typeof mount<typeof HistoryEventActionPicker>> {
     return mount(HistoryEventActionPicker, {
       global: {
@@ -131,5 +173,91 @@ describe('historyEventActionPicker', () => {
     await flushPromises();
 
     expect(wrapper.find('[data-testid="footer-slot"]').exists()).toBe(true);
+  });
+
+  it('should not highlight any part of the label when the search is empty', async () => {
+    findRowByTypeSubtype.mockReturnValue(undefined);
+    const wrapper = mountPicker();
+    await flushPromises();
+
+    const rowEl = wrapper.find('[data-testid="event-action-picker-row-swap out"]');
+    expect(rowEl.find('.text-rui-primary').exists()).toBe(false);
+    expect(rowEl.text()).toContain('Swap out');
+  });
+
+  it('should highlight the matched substring of the label while searching', async () => {
+    findRowByTypeSubtype.mockReturnValue(undefined);
+    const wrapper = mountPicker();
+    await flushPromises();
+
+    wrapper.findComponent(RuiAutoCompleteStub).vm.$emit('update:searchInput', 'swap');
+    await flushPromises();
+
+    const highlighted = wrapper.find('[data-testid="event-action-picker-row-swap out"] .text-rui-primary');
+    expect(highlighted.exists()).toBe(true);
+    expect(highlighted.text()).toBe('Swap');
+  });
+
+  it('should show the empty state with the query when nothing matches', async () => {
+    findRowByTypeSubtype.mockReturnValue(undefined);
+    const wrapper = mountPicker();
+    await flushPromises();
+
+    wrapper.findComponent(RuiAutoCompleteStub).vm.$emit('update:searchInput', 'zzz');
+    await flushPromises();
+
+    const empty = wrapper.find('[data-testid="event-action-picker-empty"]');
+    expect(empty.exists()).toBe(true);
+    expect(empty.text()).toContain('zzz');
+  });
+
+  it('should hide the empty state when the search matches a row', async () => {
+    findRowByTypeSubtype.mockReturnValue(undefined);
+    const wrapper = mountPicker();
+    await flushPromises();
+
+    wrapper.findComponent(RuiAutoCompleteStub).vm.$emit('update:searchInput', 'swap');
+    await flushPromises();
+
+    expect(wrapper.find('[data-testid="event-action-picker-empty"]').exists()).toBe(false);
+  });
+
+  it('should pin recent verbs to a synthetic recent group', async () => {
+    findRowByTypeSubtype.mockReturnValue(undefined);
+    set(recentRef, ['swap out']);
+    const wrapper = mountPicker();
+    await flushPromises();
+
+    expect(wrapper.find('[data-testid="event-action-picker-recent-header"]').exists()).toBe(true);
+    expect(wrapper.find('[data-testid="option-recent:swap out"]').exists()).toBe(true);
+    // The canonical row in its own group is still present.
+    expect(wrapper.find('[data-testid="option-swap out"]').exists()).toBe(true);
+  });
+
+  it('should not render the recent group while searching', async () => {
+    findRowByTypeSubtype.mockReturnValue(undefined);
+    set(recentRef, ['swap out']);
+    const wrapper = mountPicker();
+    await flushPromises();
+
+    wrapper.findComponent(RuiAutoCompleteStub).vm.$emit('update:searchInput', 'swap');
+    await flushPromises();
+
+    expect(wrapper.find('[data-testid="event-action-picker-recent-header"]').exists()).toBe(false);
+    expect(wrapper.find('[data-testid="option-recent:swap out"]').exists()).toBe(false);
+  });
+
+  it('should record the canonical verb key when a recent row is picked', async () => {
+    findRowByTypeSubtype.mockReturnValue(undefined);
+    set(recentRef, ['swap out']);
+    const wrapper = mountPicker();
+    await flushPromises();
+
+    await wrapper.find('[data-testid="option-recent:swap out"]').trigger('click');
+    await flushPromises();
+
+    expect(record).toHaveBeenCalledWith('swap out');
+    const updates = wrapper.emitted('update:modelValue') ?? [];
+    expect(updates[0][0]).toEqual({ eventSubtype: 'spend', eventType: 'trade' });
   });
 });

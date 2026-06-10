@@ -1,7 +1,9 @@
 <script setup lang="ts">
 import type { HistoryEventEntryType } from '@rotki/common';
+import { type HighlightSegment, splitHighlight } from '@/modules/history/events/action-picker/highlight-match';
 import HistoryEventActionDirectionBadge from '@/modules/history/events/action-picker/HistoryEventActionDirectionBadge.vue';
 import { type EventActionRow, useEventActionPicker } from '@/modules/history/events/action-picker/use-event-action-picker';
+import { useRecentActions } from '@/modules/history/events/action-picker/use-recent-actions';
 import { useHistoryEventMappings } from '@/modules/history/events/mapping/use-history-event-mappings';
 
 interface ModelValue {
@@ -10,7 +12,6 @@ interface ModelValue {
 }
 
 const modelValue = defineModel<ModelValue | undefined>({ required: true });
-
 const { entryType, disabled = false, label, errorMessages, required = false, hint } = defineProps<{
   entryType?: HistoryEventEntryType;
   disabled?: boolean;
@@ -19,10 +20,18 @@ const { entryType, disabled = false, label, errorMessages, required = false, hin
   required?: boolean;
   hint?: string;
 }>();
+// Synthetic group used to pin frequently picked verbs to the top. Recent rows
+// reuse a real row but carry a distinct key/group so RuiAutoComplete doesn't
+// collide with the canonical row that also lives in its taxonomy group.
+const RECENT_GROUP_ID = '__recent__';
+const RECENT_KEY_PREFIX = 'recent:';
 
 const { t } = useI18n({ useScope: 'global' });
 
+const search = ref<string>('');
+
 const { findRowByTypeSubtype, rows } = useEventActionPicker(() => entryType);
+const { recent, record } = useRecentActions(() => entryType);
 const { eventCategoryGroupsData, getHistoryEventSubTypeName, getHistoryEventTypeName } = useHistoryEventMappings();
 
 const selectedVerbKey = computed<string | undefined>(() => {
@@ -42,13 +51,61 @@ watch([selectedVerbKey, rows], ([verbKey, currentRows]) => {
 
 const triggerLabel = computed<string>(() => label ?? t('history_event_action.picker.label'));
 
+const trimmedSearch = computed<string>(() => get(search).trim());
+
+// Map the persisted recent verb keys back onto live rows (dropping any that the
+// current entry type filtered out), tagging them for the synthetic group.
+const recentRows = computed<EventActionRow[]>(() => {
+  const byKey = new Map(get(rows).map(row => [row.verbKey, row]));
+  const result: EventActionRow[] = [];
+
+  for (const verbKey of get(recent)) {
+    const row = byKey.get(verbKey);
+    if (row)
+      result.push({ ...row, groupId: RECENT_GROUP_ID, verbKey: `${RECENT_KEY_PREFIX}${verbKey}` });
+  }
+
+  return result;
+});
+
+// Recents only make sense while browsing; once a query is typed they'd just
+// duplicate the filtered results, so they're dropped.
+const displayRows = computed<EventActionRow[]>(() => {
+  const base = [...get(rows)];
+  if (get(trimmedSearch) || get(recentRows).length === 0)
+    return base;
+
+  return [...get(recentRows), ...base];
+});
+
+function highlightLabel(value: string): HighlightSegment[] {
+  return splitHighlight(value, get(search));
+}
+
 const FALLBACK_GROUP: Readonly<{ label: string; icon: string }> = {
   icon: 'lu-circle-question-mark',
   label: '',
 };
 
-function getGroupConfig(groupId: string): { label: string; icon: string } {
-  return get(eventCategoryGroupsData)[groupId] ?? FALLBACK_GROUP;
+interface GroupHeaderConfig {
+  label: string;
+  icon: string;
+  classes: string;
+  testId?: string;
+}
+
+function getGroupConfig(groupId: string): GroupHeaderConfig {
+  if (groupId === RECENT_GROUP_ID) {
+    return {
+      classes: 'text-rui-primary font-medium',
+      icon: 'lu-history',
+      label: t('history_event_action.picker.recent'),
+      testId: 'event-action-picker-recent-header',
+    };
+  }
+
+  const group = get(eventCategoryGroupsData)[groupId] ?? FALLBACK_GROUP;
+  return { classes: 'text-rui-text-secondary', icon: group.icon, label: group.label };
 }
 
 function rowEventTypes(row: EventActionRow): string {
@@ -83,16 +140,23 @@ function onUpdate(verbKey: string | undefined): void {
   if (!verbKey)
     return;
 
-  const row = get(rows).find(r => r.verbKey === verbKey);
-  if (!row)
-    return;
+  // A pick from the synthetic recent group carries the prefixed key; resolve it
+  // back to the canonical verb before touching the model or the recents store.
+  const realKey = verbKey.startsWith(RECENT_KEY_PREFIX) ? verbKey.slice(RECENT_KEY_PREFIX.length) : verbKey;
 
-  const current = get(modelValue);
-  if (current && row.combinations.some(c => c.eventType === current.eventType && c.eventSubtype === current.eventSubtype))
+  const row = get(rows).find(r => r.verbKey === realKey);
+  if (!row)
     return;
 
   const first = row.combinations[0];
   if (!first)
+    return;
+
+  // Record even when re-picking the current value so it bubbles back to the top.
+  record(realKey);
+
+  const current = get(modelValue);
+  if (current && row.combinations.some(c => c.eventType === current.eventType && c.eventSubtype === current.eventSubtype))
     return;
 
   set(modelValue, { eventSubtype: first.eventSubtype, eventType: first.eventType });
@@ -101,15 +165,15 @@ function onUpdate(verbKey: string | undefined): void {
 
 <template>
   <RuiAutoComplete
+    v-model:search-input="search"
     :model-value="selectedVerbKey"
-    :options="[...rows]"
+    :options="displayRows"
     key-attr="verbKey"
     text-attr="label"
     variant="outlined"
     :group-by="(row: EventActionRow) => row.groupId"
     :label="triggerLabel"
     :placeholder="t('history_event_action.picker.placeholder')"
-    :no-data-text="t('history_event_action.picker.empty')"
     :disabled="disabled"
     :required="required"
     :error-messages="errorMessages"
@@ -136,7 +200,11 @@ function onUpdate(verbKey: string | undefined): void {
       </div>
     </template>
     <template #group-header="{ group }">
-      <div class="flex items-center gap-2 px-3 py-2 text-xs uppercase tracking-wide text-rui-text-secondary">
+      <div
+        class="flex items-center gap-2 px-3 py-2 text-xs uppercase tracking-wide"
+        :class="getGroupConfig(group).classes"
+        :data-testid="getGroupConfig(group).testId"
+      >
         <RuiIcon
           :name="getGroupConfig(group).icon"
           size="14"
@@ -157,7 +225,13 @@ function onUpdate(verbKey: string | undefined): void {
         />
         <div class="flex-1 min-w-0">
           <div class="text-sm text-rui-text truncate">
-            {{ item.label }}
+            <span
+              v-for="(segment, index) in highlightLabel(item.label)"
+              :key="index"
+              :class="{ 'font-bold text-rui-primary': segment.matched }"
+            >
+              {{ segment.text }}
+            </span>
           </div>
           <div
             v-if="subtitleFor(item)"
@@ -170,6 +244,22 @@ function onUpdate(verbKey: string | undefined): void {
           :direction="item.direction"
           class="shrink-0"
         />
+      </div>
+    </template>
+    <template #no-data>
+      <div
+        class="flex flex-col gap-1 px-4 py-3 text-sm text-rui-text-secondary"
+        data-testid="event-action-picker-empty"
+      >
+        <span v-if="trimmedSearch">
+          {{ t('history_event_action.picker.empty_state.with_query', { query: trimmedSearch }) }}
+        </span>
+        <span v-else>
+          {{ t('history_event_action.picker.empty_state.no_query') }}
+        </span>
+        <span class="text-xs">
+          {{ t('history_event_action.picker.empty_state.hint') }}
+        </span>
       </div>
     </template>
     <template #footer>

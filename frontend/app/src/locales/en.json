@@ -3675,10 +3675,15 @@
       "out": "Out"
     },
     "picker": {
-      "empty": "No actions match your search.",
+      "empty_state": {
+        "hint": "Try a different word, or browse the groups.",
+        "no_query": "No actions available.",
+        "with_query": "No actions match \"{query}\"."
+      },
       "keyboard_hint": "↑↓ navigate · ↵ select · esc close",
       "label": "Action",
-      "placeholder": "Choose an action"
+      "placeholder": "Choose an action",
+      "recent": "Recent"
     }
   },
   "history_events_alert": {
