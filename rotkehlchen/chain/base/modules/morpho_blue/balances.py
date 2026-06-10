@@ -2,19 +2,19 @@ import logging
 from collections import defaultdict
 from typing import TYPE_CHECKING
 
-from rotkehlchen.accounting.structures.balance import Balance, BalanceSheet
+from rotkehlchen.accounting.structures.balance import BalanceSheet
 from rotkehlchen.chain.ethereum.interfaces.balances import BalancesSheetType, ProtocolWithBalance
 from rotkehlchen.chain.evm.decoding.morpho_blue.constants import CPT_MORPHO_BLUE
 from rotkehlchen.constants import ZERO
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
-from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 
 if TYPE_CHECKING:
     from rotkehlchen.assets.asset import Asset
     from rotkehlchen.chain.base.decoding.decoder import BaseTransactionDecoder
     from rotkehlchen.chain.base.node_inquirer import BaseInquirer
+    from rotkehlchen.types import ChecksumEvmAddress
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -49,6 +49,8 @@ class MorphoBlueBalances(ProtocolWithBalance):
         if len(address_to_events) == 0:
             return balances
 
+        asset_entries: list[tuple[ChecksumEvmAddress, Asset, FVal]] = []
+        liability_entries: list[tuple[ChecksumEvmAddress, Asset, FVal]] = []
         for address, events in address_to_events.items():
             assets_per_market: dict[tuple[str, Asset], FVal] = defaultdict(FVal)
             liabilities_per_market: dict[tuple[str, Asset], FVal] = defaultdict(FVal)
@@ -85,22 +87,19 @@ class MorphoBlueBalances(ProtocolWithBalance):
                 ):
                     liabilities_per_market[key] -= event.amount
 
-            for (_, asset), amount in assets_per_market.items():
-                if amount <= ZERO:
-                    continue
+            asset_entries.extend(
+                (address, asset, amount)
+                for (_, asset), amount in assets_per_market.items() if amount > ZERO
+            )
+            liability_entries.extend(
+                (address, asset, amount)
+                for (_, asset), amount in liabilities_per_market.items() if amount > ZERO
+            )
 
-                balances[address].assets[asset][self.counterparty] += Balance(
-                    amount=amount,
-                    value=amount * Inquirer.find_main_currency_price(asset),
-                )
-
-            for (_, asset), amount in liabilities_per_market.items():
-                if amount <= ZERO:
-                    continue
-
-                balances[address].liabilities[asset][self.counterparty] += Balance(
-                    amount=amount,
-                    value=amount * Inquirer.find_main_currency_price(asset),
-                )
-
+        self._add_priced_balances(balances=balances, amounts=asset_entries)
+        self._add_priced_balances(
+            balances=balances,
+            amounts=liability_entries,
+            category='liabilities',
+        )
         return balances

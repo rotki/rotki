@@ -177,6 +177,7 @@ class WoofiBalances(ProtocolWithBalance):
                 )
                 return balances
 
+            entries = []
             for (pool_id, vault_token), result in zip(pool_info_list, results, strict=False):
                 raw_balance, _ = master_chef_contract.decode(
                     result=result,
@@ -186,12 +187,11 @@ class WoofiBalances(ProtocolWithBalance):
                 if raw_balance == 0:
                     continue
 
-                balances[address].assets[vault_token][self.counterparty] += Balance(
-                    amount=(balance := asset_normalized_value(
-                        amount=raw_balance,
-                        asset=vault_token.resolve_to_crypto_asset(),
-                    )),
-                    value=balance * Inquirer.find_main_currency_price(vault_token),
-                )
+                entries.append((address, vault_token, asset_normalized_value(
+                    amount=raw_balance,
+                    asset=vault_token.resolve_to_crypto_asset(),
+                )))
+
+            self._add_priced_balances(balances=balances, amounts=entries)
 
         return balances
