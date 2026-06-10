@@ -747,20 +747,26 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
     ) -> None:
         existing_balances = self.balances.get(chain=blockchain)
         if addresses is None or len(addresses) == 0:
+            full_query = True
             existing_balances.clear()
             if len(accounts := self.get_active_addresses(blockchain)) == 0:
                 return
         else:
+            full_query = False
             accounts = addresses  # type: ignore  # they are both sequences.
             for account in accounts:
                 existing_balances.pop(account, None)  # type: ignore[arg-type]
 
-        existing_balances.update(
-            (  # Ethereum balances are handled differently to include eth module balances.
-                self.query_eth_balances(accounts) if blockchain == SupportedBlockchain.ETHEREUM  # type: ignore[arg-type]  # will be checksum addresses
-                else self.get_chain_manager(blockchain).query_balances(accounts)
-            ),
+        new_balances = (  # Ethereum balances are handled differently to include eth module balances.  # noqa: E501
+            self.query_eth_balances(accounts) if blockchain == SupportedBlockchain.ETHEREUM  # type: ignore[arg-type]  # will be checksum addresses
+            else self.get_chain_manager(blockchain).query_balances(accounts)
         )
+        if full_query is False:
+            # Protocol balance queries return entries for any tracked address with protocol
+            # activity, not only the queried ones. Keep only the requested addresses so the
+            # other accounts' full balance sheets don't get replaced by protocol-only data.
+            new_balances = {address: balance for address, balance in new_balances.items() if address in accounts}  # type: ignore[assignment]  # per-chain key/value types are preserved  # noqa: E501
+        existing_balances.update(new_balances)  # type: ignore[arg-type]  # chain/balance types match per chain
 
     def _update_blockchain_balances_cache(
             self,
@@ -1030,7 +1036,7 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
         if (vaults_module := self.get_module('makerdao_vaults')) is not None:
             vault_balances = vaults_module.get_balances()
             for address, entry in vault_balances.items():
-                if address not in eth_balances:
+                if address not in self.accounts.eth:
                     self.msg_aggregator.add_error(
                         f'The owner of a vault {address} was not in the tracked addresses.'
                         f' This should not happen and is probably a bug. Please report it.',

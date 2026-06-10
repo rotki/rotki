@@ -36,6 +36,7 @@ from rotkehlchen.history.events.structures.base import (
 )
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.tests.utils.ethereum import INFURA_ETH_NODE, get_decoded_events_of_transaction
+from rotkehlchen.tests.utils.factories import make_evm_address, make_evm_tx_hash
 from rotkehlchen.types import (
     ChainID,
     ChecksumEvmAddress,
@@ -624,3 +625,65 @@ def test_redecode_skips_customized_event_original_position(
         assert len(all_events) == len(events)
         assert all_events[1].sequence_index == new_seq_index
         assert all_events[1].notes == edited_note
+
+
+@pytest.mark.parametrize('ethereum_accounts', [[make_evm_address()]])
+def test_write_events_relocates_sequence_index_collision(
+        ethereum_transaction_decoder: 'EthereumTransactionDecoder',
+        database: 'DBHandler',
+        ethereum_accounts: list[ChecksumEvmAddress],
+) -> None:
+    """Test that events sharing a sequence index are relocated to a free index when
+    written to the DB instead of being silently dropped by the unique constraint on
+    (group_identifier, sequence_index) via INSERT OR IGNORE.
+
+    Decoders allocate sequence indices via independent schemes (log-based and
+    counter-based) with no global uniqueness guarantee, so the write boundary
+    has to guard against collisions.
+    """
+    transaction = EvmTransaction(
+        tx_hash=(tx_hash := make_evm_tx_hash()),
+        chain_id=ChainID.ETHEREUM,
+        timestamp=Timestamp(1646375440),
+        block_number=14318825,
+        from_address=(user_address := ethereum_accounts[0]),
+        to_address=make_evm_address(),
+        value=0,
+        gas=171249,
+        gas_price=22990000000,
+        gas_used=171249,
+        input_data=b'',
+        nonce=0,
+    )
+    with database.user_write() as write_cursor:
+        DBEvmTx(database).add_transactions(write_cursor, [transaction], relevant_address=user_address)  # noqa: E501
+    with database.conn.read_ctx() as cursor:
+        db_id = transaction.get_or_query_db_id(cursor)
+
+    ethereum_transaction_decoder._write_new_tx_events_to_the_db(
+        events=[EvmEvent(
+            tx_ref=tx_hash,
+            sequence_index=sequence_index,
+            timestamp=TimestampMS(1646375440000),
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.INFORMATIONAL,
+            event_subtype=HistoryEventSubType.NONE,
+            asset=A_ETH,
+            amount=ZERO,
+            location_label=user_address,
+            notes=notes,
+        ) for sequence_index, notes in ((0, 'gas event'), (3, 'first at 3'), (3, 'second at 3'))],
+        action_id=transaction.identifier,
+        db_id=db_id,
+    )
+
+    with database.conn.read_ctx() as cursor:
+        saved_events = DBHistoryEvents(database).get_history_events_internal(
+            cursor=cursor,
+            filter_query=EvmEventFilterQuery.make(tx_hashes=[tx_hash]),
+        )
+    assert [(x.sequence_index, x.notes) for x in saved_events] == [
+        (0, 'gas event'),
+        (3, 'first at 3'),
+        (4, 'second at 3'),  # relocated past the max used index instead of being dropped
+    ]

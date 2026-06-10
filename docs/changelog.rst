@@ -22,7 +22,14 @@ Changelog
 * :bug:`-` The login screen no longer pre-fills the username field with a remembered account that no longer exists.
 * :feature:`12002` Adding or editing a history event now uses a plain-language "Action" picker grouped by intent (Trade, Transfer, DeFi, Staking, etc.) with search and keyboard navigation, replacing the raw event-type and subtype dropdowns.
 * :feature:`12086` The "Create account" flow now starts with a mode chooser so creating a new local profile and restoring a database synced from rotki cloud are separate, focused paths.
+* :bug:`-` A temporary premium server error no longer permanently stops all background tasks (balance snapshots, transaction querying and decoding, database sync) until the application is restarted.
+* :bug:`-` A failed Binance history query no longer marks the time range as queried, which permanently skipped the deposits and withdrawals of that range.
+* :bug:`-` Coinbase crypto-to-crypto conversions are no longer sometimes recorded as sales to fiat with the received asset missing.
+* :bug:`-` Solana events with a counterparty are no longer silently excluded from PnL reports.
+* :bug:`-` Refreshing the balances of a single blockchain account no longer makes other accounts' wallet balances disappear from the dashboard and net worth totals when those accounts have DeFi protocol positions on the same chain.
 * :feature:`12301` You can now reset all accounting rules back to rotki's defaults from the accounting rules settings, undoing any customizations in a single action.
+* :bug:`-` Gnosis Pay card payments made through the new post-hack contract are now decoded correctly as payments instead of plain token spends.
+* :bug:`-` Older Gnosis Pay safes frozen by Gnosis Pay's post-hack migration can now be re-authenticated again, instead of failing with "No Gnosis Pay safe accounts are registered in rotki".
 * :bug:`12348` User exchange balance queries should no longer hit the Unsupportedasset errors.
 * :bug:`-` A deposit or withdrawal manually matched to multiple on-chain transactions is no longer duplicated in the history view when filtering by chain.
 * :bug:`-` LP, wrapped and vault tokens are now reported as unpriced instead of at a too-low value when one of their underlying assets has no price.
@@ -33,6 +40,7 @@ Changelog
 * :bug:`-` Tags on manually tracked balances are no longer dropped (or shown on the wrong balance) after updating, for users who had previously deleted a manual balance. The faulty cleanup that orphaned those tags is also reverted.
 * :bug:`-` A temporary node/indexer failure during token detection no longer wipes the previously detected tokens for an address. The cached token list is now kept intact until a successful detection can replace it, so balances no longer silently go missing after a transient RPC error.
 * :bug:`-` HTX balances are no longer under-reported. Funds locked in open orders (and balances of an asset held across multiple HTX account types) are now summed instead of overwriting each other.
+* :bug:`-` Hyperliquid balances with open perp positions no longer count the reserved USDC margin twice, so your account value should match Hyperliquid more closely.
 * :bug:`12329` ENS domain extensions made through the renewal wrapper are now decoded as renewal events.
 * :bug:`12323` rotki no longer hijacks the system's default browser for HTML files on Linux (GNOME with older xdg-utils) when registering its ``rotki://`` link handler, and restores the association for users already affected by a previous version.
 * :bug:`-` Special-cased asset prices are no longer shown in USD by mistake for non-USD main currencies when the exchange rate is temporarily unavailable.

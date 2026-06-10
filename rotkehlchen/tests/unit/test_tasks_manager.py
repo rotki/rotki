@@ -39,10 +39,14 @@ from rotkehlchen.premium.premium import (
     RemoteMetadata,
     SubscriptionStatus,
 )
+from rotkehlchen.premium.sync import PremiumSyncManager
 from rotkehlchen.serialization.deserialize import deserialize_timestamp
 from rotkehlchen.tasks.assets import _find_missing_tokens
 from rotkehlchen.tasks.manager import PREMIUM_STATUS_CHECK, TaskManager
-from rotkehlchen.tasks.utils import should_run_periodic_task
+from rotkehlchen.tasks.utils import (
+    prefetch_scheduler_task_timestamps,
+    should_run_periodic_task,
+)
 from rotkehlchen.tests.fixtures.websockets import WebsocketReader
 from rotkehlchen.tests.utils.ethereum import (
     TEST_ADDR1,
@@ -138,6 +142,29 @@ def test_maybe_query_ethereum_transactions(task_manager, ethereum_accounts):
 
     except gevent.Timeout as e:
         raise AssertionError(f'The transaction query was not scheduled within {timeout} seconds') from e  # noqa: E501
+
+
+@pytest.mark.parametrize('number_of_eth_accounts', [1])
+@pytest.mark.parametrize('max_tasks_num', [5])
+def test_maybe_query_evm_transactions_skips_repeat_range_reads(task_manager, ethereum_accounts):
+    """An up-to-date account's queried range is read once and then remembered in memory, so
+    subsequent scheduler ticks skip the per-account queried-range DB read."""
+    task_manager.potential_tasks = [task_manager._maybe_query_evm_transactions]
+    # return a recent end_ts so every account is considered up to date (not queriable)
+    range_patch = patch.object(
+        DBEvmTx,
+        'get_queried_range',
+        return_value=(Timestamp(0), Timestamp(ts_now())),
+    )
+    with range_patch as range_mock:
+        task_manager.schedule()
+        gevent.sleep(.2)
+        first_tick_reads = range_mock.call_count
+        assert first_tick_reads >= 1, 'first tick reads the queried range from the DB'
+
+        task_manager.schedule()
+        gevent.sleep(.2)
+        assert range_mock.call_count == first_tick_reads, 'later ticks skip the read (memoized)'
 
 
 @pytest.mark.parametrize('max_tasks_num', [5])
@@ -262,6 +289,30 @@ def test_maybe_schedule_ethereum_txreceipts(
     assert receipt1 == receipts[0]
     receipt2 = eth_transactions.get_or_query_transaction_receipt(tx_hash_2)
     assert receipt2 == receipts[1]
+
+
+@pytest.mark.parametrize('max_tasks_num', [5])
+def test_maybe_schedule_txreceipts_checks_all_chains(task_manager: TaskManager) -> None:
+    """Test that the receipts task is scheduled for a chain with transactions missing
+    receipts even when a chain checked before it has none pending.
+
+    Regression test for the loop returning None on the first chain with no pending
+    receipts instead of continuing with the rest of the chains.
+    """
+    with (
+        patch(
+            'rotkehlchen.tasks.manager.EVM_CHAINS_WITH_TRANSACTIONS',
+            new=(SupportedBlockchain.ETHEREUM, SupportedBlockchain.OPTIMISM),
+        ),
+        patch('rotkehlchen.tasks.manager.random.shuffle'),  # keep ethereum checked first
+        patch('rotkehlchen.tasks.manager.DBEvmTx') as mock_evm_tx,
+    ):
+        mock_evm_tx.return_value.get_transaction_hashes_no_receipt.side_effect = [
+            [],  # ethereum has no transactions missing receipts
+            [make_evm_tx_hash()],  # optimism has one
+        ]
+        result = task_manager._maybe_schedule_evm_txreceipts()
+        assert result is not None and len(result) == 1
 
 
 @pytest.mark.parametrize('max_tasks_num', [7])
@@ -597,6 +648,36 @@ def test_should_run_periodic_task(database: 'DBHandler') -> None:
         database=database,
         key_name=DBCacheStatic.LAST_DATA_UPDATES_TS,
         refresh_period=DATA_UPDATES_REFRESH,
+    ) is True
+
+
+def test_should_run_periodic_task_cached_timestamps(database: 'DBHandler') -> None:
+    """When the key is present in the prefetched timestamps map its value is used (over the DB);
+    when it is missing we fall back to a single DB read."""
+    old_ts = str(ts_now() - DATA_UPDATES_REFRESH * 2)  # value stored in the DB -> would say "run"
+    with database.user_write() as write_cursor:
+        write_cursor.execute(
+            'INSERT INTO key_value_cache(name, value) VALUES (?, ?)',
+            (DBCacheStatic.LAST_DATA_UPDATES_TS.value, old_ts),
+        )
+
+    # the prefetch helper reads the stored value
+    assert prefetch_scheduler_task_timestamps(database) == {DBCacheStatic.LAST_DATA_UPDATES_TS.value: old_ts}  # noqa: E501
+
+    # a recent value in the cache map wins over the (old) DB value -> should not run
+    assert should_run_periodic_task(
+        database=database,
+        key_name=DBCacheStatic.LAST_DATA_UPDATES_TS,
+        refresh_period=DATA_UPDATES_REFRESH,
+        cached_timestamps={DBCacheStatic.LAST_DATA_UPDATES_TS.value: str(ts_now())},
+    ) is False
+
+    # key absent from the cache map -> falls back to the DB read (old ts -> should run)
+    assert should_run_periodic_task(
+        database=database,
+        key_name=DBCacheStatic.LAST_DATA_UPDATES_TS,
+        refresh_period=DATA_UPDATES_REFRESH,
+        cached_timestamps={},
     ) is True
 
 
@@ -1330,6 +1411,8 @@ def test_deadlock_logout(
     assert len(task_manager.running_greenlets) == 0
 
 
+@pytest.mark.freeze_time('2026-06-05 04:27:20 GMT', tick=True)
+@pytest.mark.vcr
 @pytest.mark.parametrize('max_tasks_num', [5])
 @pytest.mark.parametrize('number_of_eth_accounts', [0])
 def test_snapshots_dont_happen_always(rotkehlchen_api_server: 'APIServer') -> None:
@@ -1531,3 +1614,66 @@ def test_maybe_decode_transactions(task_manager: TaskManager) -> None:
         mock_solana_tx.return_value.count_hashes_not_decoded.return_value = 5
         result = task_manager._maybe_decode_transactions()
         assert result is not None and len(result) == 1
+
+
+@pytest.mark.parametrize('max_tasks_num', [5])
+@pytest.mark.parametrize('ethereum_accounts', [[make_evm_address()]])
+def test_maybe_decode_transactions_checks_all_chains(task_manager: TaskManager) -> None:
+    """Test that the decoding task is scheduled for a chain with undecoded transactions
+    even when a chain checked before it has nothing to decode.
+
+    Regression test for the loop returning None on the first chain with no pending
+    work instead of continuing with the rest of the chains.
+    """
+    task_manager.should_schedule = True
+    with (
+        patch(
+            'rotkehlchen.tasks.manager.CHAINS_WITH_TRANSACTION_DECODERS',
+            new=(SupportedBlockchain.ETHEREUM, SupportedBlockchain.SOLANA),
+        ),
+        patch('rotkehlchen.tasks.manager.random.shuffle'),  # keep ethereum checked first
+        patch('rotkehlchen.tasks.manager.DBEvmTx') as mock_evm_tx,
+        patch('rotkehlchen.tasks.manager.DBSolanaTx') as mock_solana_tx,
+    ):
+        mock_evm_tx.return_value.count_hashes_not_decoded.return_value = 0  # nothing on ethereum
+        mock_solana_tx.return_value.count_hashes_not_decoded.return_value = 5  # solana has work
+        result = task_manager._maybe_decode_transactions()
+        assert result is not None and len(result) == 1
+
+
+@pytest.mark.parametrize('max_tasks_num', [5])
+def test_schedule_survives_failing_task_check(task_manager: TaskManager) -> None:
+    """Test that a scheduling function raising during the schedule tick neither
+    propagates out of schedule() nor prevents the remaining tasks from being checked.
+
+    Regression test for the premium capabilities query in check_if_should_sync
+    raising RemoteError through TaskManager.schedule() into the main loop,
+    permanently killing the background task scheduler until app restart.
+    """
+    checked_after_failure = []
+
+    def failing_check() -> None:
+        raise RemoteError('rotki server unreachable')
+
+    def working_check() -> None:
+        checked_after_failure.append(True)
+
+    task_manager.potential_tasks = [failing_check, working_check]
+    with patch('rotkehlchen.tasks.manager.random.shuffle'):  # keep the failing task first
+        task_manager.schedule()
+
+    assert checked_after_failure == [True]
+
+
+def test_check_if_should_sync_survives_premium_errors() -> None:
+    """Test that a remote/auth error when querying premium capabilities makes the
+    db sync check return False instead of raising through the task scheduler.
+
+    Regression test for the main loop greenlet dying on a transient premium
+    server error (see test_schedule_survives_failing_task_check).
+    """
+    sync_manager = object.__new__(PremiumSyncManager)
+    sync_manager.premium = MagicMock()
+    for error in (RemoteError('connection timeout'), PremiumAuthenticationError('key rejected')):
+        sync_manager.premium.get_capabilities.side_effect = error
+        assert sync_manager.check_if_should_sync(force_upload=False) is False

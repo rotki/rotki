@@ -15,6 +15,7 @@ from rotkehlchen.db.constants import (
     OKX_LOCATION_KEY,
 )
 from rotkehlchen.db.history_events import DBHistoryEvents
+from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.misc import InputError
 from rotkehlchen.exchanges.binance import BINANCE_BASE_URL, BINANCEUS_BASE_URL
 from rotkehlchen.exchanges.exchange import ExchangeInterface, ExchangeWithExtras
@@ -74,8 +75,9 @@ class ExchangeManager:
 
     def iterate_exchanges(self) -> Iterator[ExchangeInterface]:
         """Iterate all connected and syncing exchanges"""
-        with self.database.conn.read_ctx() as cursor:
-            excluded = self.database.get_settings(cursor).non_syncing_exchanges
+        # non_syncing_exchanges is a cached setting kept in sync on every write, so read it
+        # from the in-memory cache instead of doing a full settings DB read on every call.
+        excluded = CachedSettings().get_settings().non_syncing_exchanges
         for exchanges in self.connected_exchanges.values():
             for exchange in exchanges:
                 # We are not yielding excluded exchanges

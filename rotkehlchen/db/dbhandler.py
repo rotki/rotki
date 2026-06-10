@@ -8,7 +8,7 @@ from collections import defaultdict
 from collections.abc import Iterator, Mapping, Sequence
 from contextlib import contextmanager, suppress
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Literal, Optional, Unpack, cast, overload
+from typing import TYPE_CHECKING, Any, Literal, NamedTuple, Optional, Unpack, cast, overload
 
 from gevent.lock import Semaphore
 from sqlcipher3 import dbapi2 as sqlcipher
@@ -197,6 +197,18 @@ EXCHANGE_ASSET_MOVEMENT_EVENT_TYPES: tuple[str, ...] = (
 
 # https://stackoverflow.com/questions/4814167/storing-time-series-data-relational-or-non
 # http://www.sql-join.com/sql-join-types
+
+
+class TimedBalanceRangeData(NamedTuple):
+    """Asset-independent timed_balances timestamp data for a [from_ts, to_ts] range.
+
+    Used by `_infer_zero_timed_balances`. Since it depends only on the time range and
+    not on the asset, it can be computed once and reused across all assets of a
+    collection instead of re-scanning timed_balances for every asset.
+    """
+    num_distinct_timestamps: int
+    all_timestamps: tuple[Timestamp, ...]
+    all_categories: tuple[str, ...]
 
 
 class DBHandler:
@@ -3013,11 +3025,44 @@ class DBHandler:
         return times_int, data
 
     @staticmethod
+    def _count_distinct_balance_timestamps(
+            cursor: 'DBCursor',
+            from_ts: Timestamp,
+            to_ts: Timestamp,
+    ) -> int:
+        """Number of distinct timestamps with any timed balance in the given range."""
+        return cursor.execute(
+            'SELECT COUNT(DISTINCT timestamp) FROM timed_balances WHERE timestamp BETWEEN ? AND ?',
+            (from_ts, to_ts),
+        ).fetchone()[0]
+
+    @staticmethod
+    def _query_balance_timestamps_and_categories(
+            cursor: 'DBCursor',
+            from_ts: Timestamp,
+            to_ts: Timestamp,
+    ) -> tuple[tuple[Timestamp, ...], tuple[str, ...]]:
+        """All (timestamp, category) timed balances in the range, ordered by timestamp ASC."""
+        # zip(*cursor) consumes the cursor in a single pass and transposes the rows into a
+        # (timestamps, categories) pair, so there is no need to materialize them with fetchall().
+        columns = tuple(zip(*cursor.execute(
+            'SELECT timestamp, category FROM timed_balances WHERE timestamp BETWEEN ? AND ? '
+            'ORDER BY timestamp ASC',
+            (from_ts, to_ts),
+        ), strict=True))
+        if len(columns) == 0:  # no rows in the range
+            return (), ()
+
+        all_timestamps, all_categories = columns
+        return all_timestamps, all_categories
+
     def _infer_zero_timed_balances(
+            self,
             cursor: 'DBCursor',
             balances: list[SingleDBAssetBalance],
             from_ts: Timestamp | None = None,
             to_ts: Timestamp | None = None,
+            range_data: TimedBalanceRangeData | None = None,
     ) -> list[SingleDBAssetBalance]:
         """
         Given a list of asset specific timed balances, infers the missing zero timed balances
@@ -3034,6 +3079,10 @@ class DBHandler:
 
         Keep in mind that in a case like this (1, 1), (1, 2), (5, 4) we will infer (0, 3)
         despite the fact that it is not strictly needed by the front end.
+
+        The two timed_balances scans below depend only on the time range, not on the asset.
+        When inferring for many assets of the same range (e.g. a collection) the caller can
+        precompute them once and pass `range_data` to avoid re-scanning per asset.
         """
         if len(balances) == 0:
             return []
@@ -3043,22 +3092,18 @@ class DBHandler:
         if to_ts is None:
             to_ts = ts_now()
 
-        cursor.execute(
-            'SELECT COUNT(DISTINCT timestamp) FROM timed_balances WHERE timestamp BETWEEN ? AND ?',
-            (from_ts, to_ts),
+        num_distinct_timestamps = (
+            range_data.num_distinct_timestamps if range_data is not None
+            else self._count_distinct_balance_timestamps(cursor, from_ts, to_ts)
         )
-        num_distinct_timestamps = cursor.fetchone()[0]
-
         asset_timestamps = [b.time for b in balances if b.amount != ZERO]  # ignore timestamps from 0 balances added by the ssf_graph_multiplier setting  # noqa: E501
         if len(asset_timestamps) == num_distinct_timestamps:
             return []
 
-        cursor.execute(
-            'SELECT timestamp, category FROM timed_balances WHERE timestamp BETWEEN ? AND ? '
-            'ORDER BY timestamp ASC',
-            (from_ts, to_ts),
-        )
-        all_timestamps, all_categories = zip(*cursor, strict=True)
+        if range_data is not None:
+            all_timestamps, all_categories = range_data.all_timestamps, range_data.all_categories
+        else:
+            all_timestamps, all_categories = self._query_balance_timestamps_and_categories(cursor, from_ts, to_ts)  # noqa: E501
         # dicts maintain insertion order in python 3.7+
         timestamps_have_asset_balance = dict.fromkeys(all_timestamps, False)
         timestamps_with_asset_balance = dict.fromkeys(asset_timestamps, True)
@@ -3067,7 +3112,7 @@ class DBHandler:
         prev_timestamp = all_timestamps[0]
         inferred_balances: list[SingleDBAssetBalance] = []
         is_zero_period_open = False
-        last_asset_category = all_categories[-1]  # just a placeholder value, no need to calculate the actual value here  # noqa: E501
+        last_asset_category = BalanceType.deserialize_from_db(all_categories[-1])  # just a placeholder value, no need to calculate the actual value here  # noqa: E501
         for idx, (timestamp, has_asset_balance) in enumerate(timestamps_have_asset_balance.items()):  # noqa: E501
             if idx == len(timestamps_have_asset_balance) - 1 and has_asset_balance is False:
                 # If there is no balance for the last timestamp add a zero balance.
@@ -3114,15 +3159,22 @@ class DBHandler:
             balance_type: BalanceType,
             from_ts: Timestamp | None = None,
             to_ts: Timestamp | None = None,
+            settings: DBSettings | None = None,
+            range_data: TimedBalanceRangeData | None = None,
     ) -> list[SingleDBAssetBalance]:
         """Query all balance entries for an asset and balance type within a range of timestamps
+
+        `settings` and `range_data` may be passed by callers that query many assets over the
+        same range (e.g. `query_collection_timed_balances`) to avoid re-reading settings and
+        re-scanning timed_balances for the zero-balance inference once per asset.
         """
         if from_ts is None:
             from_ts = Timestamp(0)
         if to_ts is None:
             to_ts = ts_now()
 
-        settings = self.get_settings(cursor)
+        if settings is None:
+            settings = self.get_settings(cursor)
         querystr = (
             'SELECT timestamp, amount, usd_value, category FROM timed_balances '
             'WHERE timestamp BETWEEN ? AND ? AND currency=?'
@@ -3172,7 +3224,7 @@ class DBHandler:
                 )
 
         if settings.infer_zero_timed_balances is True:
-            inferred_balances = self._infer_zero_timed_balances(cursor, balances, from_ts, to_ts)
+            inferred_balances = self._infer_zero_timed_balances(cursor, balances, from_ts, to_ts, range_data=range_data)  # noqa: E501
             if len(inferred_balances) != 0:
                 balances.extend(inferred_balances)
                 balances.sort(key=lambda x: x.time)
@@ -3191,6 +3243,26 @@ class DBHandler:
     ) -> list[SingleDBAssetBalance]:
         """Query all balance entries for all assets of a collection within a range of timestamps
         """
+        if from_ts is None:
+            from_ts = Timestamp(0)
+        if to_ts is None:
+            to_ts = ts_now()
+
+        # Read settings and (when zero-inference is on) the asset-independent timed_balances
+        # timestamps once, then reuse them for every asset of the collection instead of
+        # re-reading settings and re-scanning timed_balances per asset. infer_zero_timed_balances
+        # is a cached setting kept in sync on write, so read it from CachedSettings to avoid a
+        # full settings DB read + deserialization.
+        settings = CachedSettings().get_settings()
+        range_data = None
+        if settings.infer_zero_timed_balances is True:
+            all_timestamps, all_categories = self._query_balance_timestamps_and_categories(cursor, from_ts, to_ts)  # noqa: E501
+            range_data = TimedBalanceRangeData(
+                num_distinct_timestamps=self._count_distinct_balance_timestamps(cursor, from_ts, to_ts),  # noqa: E501
+                all_timestamps=all_timestamps,
+                all_categories=all_categories,
+            )
+
         with GlobalDBHandler().conn.read_ctx() as global_cursor:
             global_cursor.execute(
                 'SELECT asset FROM multiasset_mappings WHERE collection_id=?',
@@ -3204,6 +3276,8 @@ class DBHandler:
                     balance_type=BalanceType.ASSET,
                     from_ts=from_ts,
                     to_ts=to_ts,
+                    settings=settings,
+                    range_data=range_data,
                 ))
 
         asset_balances.sort(key=lambda x: x.time)
@@ -4022,9 +4096,11 @@ class DBHandler:
         Returns whether we should save a balance snapshot depending on whether the last snapshot
         and last query timestamps are older than the period defined by the save frequency setting.
         """
-        settings = self.get_settings(cursor)
+        # balance_save_frequency is a cached setting kept in sync on every write, so read it from
+        # the in-memory cache instead of doing a full settings DB read (this runs on every
+        # scheduler tick and balance query).
         # Setting is saved in hours, convert to seconds here
-        period = settings.balance_save_frequency * 60 * 60
+        period = CachedSettings().get_settings().balance_save_frequency * 60 * 60
         now = ts_now()
         if last_query_ts is not None and now - last_query_ts < period:
             return False

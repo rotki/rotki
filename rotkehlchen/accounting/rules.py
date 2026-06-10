@@ -5,7 +5,7 @@ from rotkehlchen.db.accounting_rules import DBAccountingRules
 from rotkehlchen.db.filtering import AccountingRulesFilterQuery
 from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.history.events.structures.base import HistoryBaseEntry, get_event_type_identifier
-from rotkehlchen.history.events.structures.evm_event import EvmEvent
+from rotkehlchen.history.events.structures.onchain_event import OnchainEvent
 
 if TYPE_CHECKING:
     from rotkehlchen.accounting.pot import AccountingPot
@@ -71,7 +71,7 @@ class AccountingRulesManager:
         else:
             callback = None
 
-        if isinstance(event, EvmEvent) is False or rule is not None:
+        if isinstance(event, OnchainEvent) is False or rule is not None:
             return rule, callback
 
         event_id_no_cpt = event.get_type_identifier(include_counterparty=False)

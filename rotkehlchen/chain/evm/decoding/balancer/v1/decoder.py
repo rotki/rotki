@@ -26,7 +26,7 @@ from rotkehlchen.globaldb.cache import globaldb_get_general_cache_values
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import CacheType, ChecksumEvmAddress, EvmTransaction
+from rotkehlchen.types import CacheType, ChecksumEvmAddress, EvmTransaction, EVMTxHash
 from rotkehlchen.utils.misc import bytes_to_address
 
 if TYPE_CHECKING:
@@ -61,6 +61,10 @@ class Balancerv1CommonDecoder(BalancerCommonDecoder):
                 cache_type=CacheType.BALANCER_V1_POOLS,
             ),
         )
+        # Single-entry per-transaction memo for _decode_v1_pool_event. Its result depends only on
+        # the transaction logs, but the enricher runs once per transfer, so we cache it keyed by
+        # tx hash to avoid rescanning all logs for every transfer (see the enricher below).
+        self._v1_pool_events_cache: tuple[EVMTxHash, list[dict[str, Any]] | None] | None = None
 
     def _decode_v1_pool_event(self, all_logs: list[EvmTxReceiptLog]) -> list[dict[str, Any]] | None:  # noqa: E501
         """Read the list of logs in search for a Balancer v1 event and return the information
@@ -103,7 +107,17 @@ class Balancerv1CommonDecoder(BalancerCommonDecoder):
         In balancer v1 pools are managed using a DSProxy so the account doesn't interact
         directly with the pools.
         """
-        if (events_information := self._decode_v1_pool_event(all_logs=context.all_logs)) is None:
+        # _decode_v1_pool_event scans every log of the transaction and its result is the same for
+        # all transfers of the transaction. This enricher runs once per transfer, so memoize the
+        # scan per transaction (transfers of a tx are enriched consecutively) instead of
+        # rescanning all logs for every transfer - which almost always finds nothing.
+        if self._v1_pool_events_cache is not None and self._v1_pool_events_cache[0] == context.transaction.tx_hash:  # noqa: E501
+            events_information = self._v1_pool_events_cache[1]
+        else:
+            events_information = self._decode_v1_pool_event(all_logs=context.all_logs)
+            self._v1_pool_events_cache = (context.transaction.tx_hash, events_information)
+
+        if events_information is None:
             return FAILED_ENRICHMENT_OUTPUT
 
         for proxied_event in events_information:

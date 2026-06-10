@@ -193,7 +193,7 @@ class OnchainEvent(HistoryBaseEntry, Generic[T_TxRef, T_Address]):
             self,
             mapping_states: dict[int, list[HistoryMappingState]],
             ignored_ids: set[str],
-            hidden_event_ids: list[int],
+            hidden_event_ids: set[int],
             event_accounting_rule_status: EventAccountingRuleStatus,
             grouped_events_num: int | None = None,
             has_ignored_assets: bool = False,

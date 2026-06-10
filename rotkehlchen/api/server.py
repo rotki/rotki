@@ -505,18 +505,22 @@ class APIServer:
         Logs the response if required. This is determined by the
         fake header rotki-log-result passed to all responses.
         """
-        if response.headers.pop('rotki-log-result', 'True') == 'True':
-            result = response.json
-        else:
-            result = 'redacted'
-
-        log.debug(
-            f'end rotki api {request.method} {request.path}',
-            view_args=request.view_args,
-            query_string=request.query_string,
-            status_code=response.status_code,
-            result=result,
-        )
+        # Always pop the internal header so it never leaks to the client.
+        log_result = response.headers.pop('rotki-log-result', 'True') == 'True'
+        # Only touch response.json (a full json.loads of the entire response body)
+        # when the debug log that consumes it is actually enabled. In packaged
+        # builds the backend runs at CRITICAL, so otherwise we'd parse and discard
+        # the whole response body on every single request.
+        if log.isEnabledFor(logging.DEBUG):
+            log.debug(
+                'end rotki api',
+                method=request.method,
+                path=request.path,
+                view_args=request.view_args,
+                query_string=request.query_string,
+                status_code=response.status_code,
+                result=response.json if log_result else 'redacted',
+            )
         return response
 
     def run(self, host: str = '127.0.0.1', port: int = 5042, **kwargs: Any) -> None:

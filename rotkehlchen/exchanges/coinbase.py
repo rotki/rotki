@@ -457,11 +457,7 @@ class Coinbase(ExchangeInterface):
                 last_tx_id=last_id,
                 force_refresh=force_refresh,
             )
-            if len(conversion_pairs := combine_dicts(conversion_pairs, conversions)) != 0:
-                history_events.extend(self._process_trades_from_conversion(
-                    transaction_pairs=conversion_pairs,
-                ))
-
+            conversion_pairs = combine_dicts(conversion_pairs, conversions)
             all_events.extend(history_events)
 
             if not force_refresh:
@@ -474,6 +470,15 @@ class Coinbase(ExchangeInterface):
                         location_name=self.name,
                         account_id=account_id,
                     )
+
+        # Process conversions only after all accounts have been queried, since the two
+        # legs of a conversion live in the wallets of the two involved assets. Processing
+        # earlier would treat a pair whose second leg is in a not-yet-queried wallet as a
+        # single-leg conversion and create a wrong sell-to-fiat swap.
+        if len(conversion_pairs) != 0:
+            all_events.extend(self._process_trades_from_conversion(
+                transaction_pairs=conversion_pairs,
+            ))
 
         return all_events
 

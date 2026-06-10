@@ -432,10 +432,10 @@ class EVMTransactionDecoder(TransactionDecoder['EvmTransaction', EvmDecodingRule
         Execute event rules for the current tx log. Returns None when no
         new event or actions need to be propagated.
         """
-        for rule in self.rules.event_rules:
-            if len(tx_log.topics) == 0:
-                continue  # ignore anonymous events
+        if len(tx_log.topics) == 0:
+            return None  # ignore anonymous events
 
+        for rule in self.rules.event_rules:
             decoding_output, err = decode_safely(
                 handled_exceptions=self.possible_decoding_exceptions,
                 msg_aggregator=self.msg_aggregator,

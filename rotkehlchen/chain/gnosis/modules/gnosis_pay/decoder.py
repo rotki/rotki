@@ -14,6 +14,7 @@ from rotkehlchen.chain.gnosis.modules.gnosis_pay.constants import (
     CPT_GNOSIS_PAY,
     GNOSIS_PAY_CASHBACK_ADDRESS,
     GNOSIS_PAY_CPT_DETAILS,
+    GNOSIS_PAY_NEW_SPENDER_ADDRESS,
     GNOSIS_PAY_REFERRAL_ADDRESS,
     GNOSIS_PAY_SPENDER_ADDRESS,
     GNOSIS_PAY_SPENDING_COLLECTOR,
@@ -164,6 +165,7 @@ class GnosisPayDecoder(EvmDecoderInterface, ReloadableDecoderMixin):
         return {
             GNOSIS_PAY_REFERRAL_ADDRESS: (self.decode_referral_events,),
             GNOSIS_PAY_CASHBACK_ADDRESS: (self.decode_cashback_events,),
+            GNOSIS_PAY_NEW_SPENDER_ADDRESS: (self.decode_spend,),
             GNOSIS_PAY_SPENDER_ADDRESS: (self.decode_spend,),
             GNOSIS_PAY_SPENDING_COLLECTOR: (self.decode_refund_events,),
         }

@@ -51,6 +51,7 @@ from rotkehlchen.premium.premium import (
     has_premium_capability,
     has_premium_check,
 )
+from rotkehlchen.serialization.serialize import PreSerializedList
 from rotkehlchen.types import (
     EVM_CHAIN_IDS_WITH_TRANSACTIONS,
     EVM_CHAINS_WITH_TRANSACTIONS,
@@ -361,11 +362,6 @@ class HistoryService:
                 entries_table='history_events',
                 group_by='group_identifier' if aggregate_by_group_ids else None,
             )
-            event_mapping_states = dbevents.get_event_mapping_states(
-                cursor=cursor,
-                location=filter_query.location,
-            )
-            hidden_event_ids = dbevents.get_hidden_event_ids(cursor)
             ignored_ids = self.rotkehlchen.data.db.get_ignored_action_ids(cursor=cursor)
             # entries_total is the unfiltered row/group count for the whole table. If it is
             # already at or below the tier limit then the filtered count must also be, so the
@@ -387,31 +383,49 @@ class HistoryService:
                 joined_group_ids.get(group_identifier, group_identifier)
                 for group_identifier in ignored_group_identifiers
             }
+            grouped_events_nums: list[int | None]
+            events: list[HistoryBaseEntry]
+            grouped_events_nums, events = (
+                zip(*processed_events_result, strict=False)  # type: ignore
+                if aggregate_by_group_ids is True and len(processed_events_result) != 0 else
+                ([None] * len(processed_events_result), processed_events_result)
+            )
+            # mapping states and hidden ids are only needed for the events of this page, so
+            # scope the lookups to them instead of scanning those tables for the whole DB
+            event_identifiers = [event.identifier for event in events if event.identifier is not None]  # noqa: E501
+            event_mapping_states = dbevents.get_event_mapping_states(
+                cursor=cursor,
+                location=filter_query.location,
+                entry_identifiers=event_identifiers,
+            )
+            hidden_event_ids = dbevents.get_hidden_event_ids(
+                cursor=cursor,
+                entry_identifiers=event_identifiers,
+            )
 
-        accountant_pot = AccountingPot(
-            database=self.rotkehlchen.data.db,
-            evm_accounting_aggregators=EVMAccountingAggregators([
-                self.rotkehlchen.chains_aggregator.get_evm_manager(x).accounting_aggregator
-                for x in EVM_CHAIN_IDS_WITH_TRANSACTIONS
-            ]),
-            msg_aggregator=self.rotkehlchen.msg_aggregator,
-            is_dummy_pot=True,
-        )
-        grouped_events_nums: list[int | None]
-        events: list[HistoryBaseEntry]
-        grouped_events_nums, events = (
-            zip(*processed_events_result, strict=False)  # type: ignore
-            if aggregate_by_group_ids is True and len(processed_events_result) != 0 else
-            ([None] * len(processed_events_result), processed_events_result)
-        )
+        # The dummy pot is only needed when query_missing_accounting_rules misses its cache,
+        # so build it lazily to avoid the construction cost (settings reads + accounting
+        # machinery instantiation) on the common repeat/poll/back-pagination loads.
+        def build_dummy_pot() -> AccountingPot:
+            return AccountingPot(
+                database=self.rotkehlchen.data.db,
+                evm_accounting_aggregators=EVMAccountingAggregators([
+                    self.rotkehlchen.chains_aggregator.get_evm_manager(x).accounting_aggregator
+                    for x in EVM_CHAIN_IDS_WITH_TRANSACTIONS
+                ]),
+                msg_aggregator=self.rotkehlchen.msg_aggregator,
+                is_dummy_pot=True,
+            )
+
         result = {
-            'entries': self._serialize_and_group_history_events(
+            # entries are already serialized to JSON primitives, so wrap them to skip
+            # the redundant process_result re-walk of the whole (potentially huge) list
+            'entries': PreSerializedList(self._serialize_and_group_history_events(
                 events=events,
                 aggregate_by_group_ids=aggregate_by_group_ids,
                 event_accounting_rule_statuses=query_missing_accounting_rules(
                     db=self.rotkehlchen.data.db,
-                    accounting_pot=accountant_pot,
-                    evm_accounting_aggregator=accountant_pot.events_accountant.evm_accounting_aggregators,
+                    pot_factory=build_dummy_pot,
                     events=events,
                     accountant=self.rotkehlchen.accountant,
                 ),
@@ -421,7 +435,7 @@ class HistoryService:
                 hidden_event_ids=hidden_event_ids,
                 joined_group_ids=joined_group_ids,
                 group_has_ignored_assets=group_has_ignored_assets,
-            ),
+            )),
             'entries_found': entries_with_limit,
             'entries_limit': entries_limit,
             'entries_total': entries_total,
@@ -733,7 +747,7 @@ class HistoryService:
             grouped_events_nums: list[int | None],
             mapping_states: dict[int, list[HistoryMappingState]],
             ignored_ids: set[str],
-            hidden_event_ids: list[int],
+            hidden_event_ids: set[int],
             joined_group_ids: dict[str, str],
             group_has_ignored_assets: set[str],
     ) -> list[dict[str, Any] | list[dict[str, Any]]]:

@@ -10,6 +10,7 @@ from rotkehlchen.externalapis.xratescom import (
 from rotkehlchen.tests.utils.constants import A_CNY
 
 
+@pytest.mark.vcr
 def test_get_current_xratescom_exchange_rates():
     rates_map = get_current_xratescom_exchange_rates(A_USD.resolve_to_fiat_asset())
     for asset, price in rates_map.items():
@@ -22,6 +23,7 @@ def test_get_current_xratescom_exchange_rates():
         assert price is not None and price > ZERO
 
 
+@pytest.mark.vcr
 def test_get_historical_xratescom_exchange_rates():
 
     rates_map = get_historical_xratescom_exchange_rates(
