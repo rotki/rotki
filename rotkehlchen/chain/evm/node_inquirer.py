@@ -646,6 +646,7 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
             abi: ABI,
             method_name: str,
             arguments: list[Any] | None = None,
+            block_identifier: BlockIdentifier = 'latest',
     ) -> Any:
         """Performs an eth_call to an evm contract via the indexers.
 
@@ -660,6 +661,7 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
             chain_id=self.chain_id,
             to_address=contract_address,
             input_data=input_data,
+            block_identifier=block_identifier,
         ))) == '0x':
             raise BlockchainQueryError(
                 f'Error doing call on contract {contract_address} for {method_name} '
@@ -720,6 +722,7 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
                 abi=abi,
                 method_name=method_name,
                 arguments=arguments,
+                block_identifier=block_identifier,
             )
 
         contract = web3.eth.contract(address=contract_address, abi=abi)

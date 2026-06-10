@@ -13,6 +13,7 @@ from typing import TYPE_CHECKING, Any, Final, Literal, overload
 import gevent
 import requests
 from requests import Response
+from web3.types import BlockIdentifier
 
 from rotkehlchen.chain.evm.constants import GENESIS_HASH, ZERO_ADDRESS
 from rotkehlchen.chain.evm.l2_with_l1_fees.types import L2ChainIdsWithL1FeesType
@@ -81,6 +82,11 @@ class HasChainActivity(Enum):
 
 class EtherscanLikeApi(ABC):
     """Base class for any APIs similar to etherscan."""
+
+    # Whether the indexer honors a block tag for eth_call. Etherscan silently ignores
+    # unrecognized tags and executes at the latest block, while routescan rejects the
+    # parameter, so only enable after verifying the indexer returns historical state.
+    supports_historical_eth_call: bool = False
 
     def __init__(
             self,
@@ -934,14 +940,23 @@ class EtherscanLikeApi(ABC):
             chain_id: SUPPORTED_CHAIN_IDS,
             to_address: ChecksumEvmAddress,
             input_data: str,
+            block_identifier: BlockIdentifier = 'latest',
     ) -> str:
         """Performs an eth_call on the given address and the given input data.
-        May raise RemoteError if there are problems contacting the indexer.
+        May raise RemoteError if there are problems contacting the indexer or if the
+        call is for a past block and the indexer can't execute it at historical state.
         """
+        options = {'to': to_address, 'data': input_data}
+        if block_identifier != 'latest':
+            if self.supports_historical_eth_call is False:
+                raise RemoteError(f'{self.name} does not support eth_call at a past block')
+
+            options['tag'] = hex(block_identifier) if isinstance(block_identifier, int) else str(block_identifier)  # noqa: E501
+
         return self._query_rpc_method(
             chain_id=chain_id,
             method='eth_call',
-            options={'to': to_address, 'data': input_data},
+            options=options,
         )
 
     def get_logs(

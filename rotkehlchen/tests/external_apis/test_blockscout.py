@@ -346,3 +346,20 @@ def test_pro_api_urls_for_v1_v2_and_rpc(blockscout: Blockscout) -> None:
                     'params': [],
                 },
             )
+
+
+def test_eth_call_historical_block_passes_tag(blockscout: Blockscout) -> None:
+    """Blockscout honors the eth_call block tag, so historical calls should forward it"""
+    with patch.object(blockscout, '_query_rpc_method', return_value='0x1') as query_mock:
+        assert blockscout.eth_call(
+            chain_id=ChainID.ETHEREUM,
+            to_address=(dai := string_to_evm_address('0x6B175474E89094C44Da98b954EedeAC495271d0F')),  # noqa: E501
+            input_data='0x18160ddd',
+            block_identifier=10000000,
+        ) == '0x1'
+
+    query_mock.assert_called_once_with(
+        chain_id=ChainID.ETHEREUM,
+        method='eth_call',
+        options={'to': dai, 'data': '0x18160ddd', 'tag': '0x989680'},
+    )
