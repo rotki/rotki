@@ -1403,6 +1403,8 @@ def test_deadlock_logout(
     assert len(task_manager.running_greenlets) == 0
 
 
+@pytest.mark.freeze_time('2026-06-05 04:27:20 GMT', tick=True)
+@pytest.mark.vcr
 @pytest.mark.parametrize('max_tasks_num', [5])
 @pytest.mark.parametrize('number_of_eth_accounts', [0])
 def test_snapshots_dont_happen_always(rotkehlchen_api_server: 'APIServer') -> None:
