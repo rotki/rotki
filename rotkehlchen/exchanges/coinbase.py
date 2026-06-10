@@ -16,7 +16,6 @@ import requests
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric import ed25519
 
-from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.converters import asset_from_coinbase
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.timing import HOUR_IN_SECONDS
@@ -29,6 +28,7 @@ from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.exchanges.data_structures import MarginPosition
 from rotkehlchen.exchanges.exchange import ExchangeInterface, ExchangeQueryBalances
 from rotkehlchen.exchanges.utils import deserialize_asset_movement_address, get_key_if_has_val
+from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.asset_movement import (
     AssetMovement,
     create_asset_movement_with_fee,
@@ -42,7 +42,6 @@ from rotkehlchen.history.events.structures.swap import (
 )
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.history.events.utils import create_group_identifier_from_unique_id
-from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import (
     deserialize_fval,
@@ -68,7 +67,6 @@ from rotkehlchen.utils.serialization import jsonloads_dict
 if TYPE_CHECKING:
     from rotkehlchen.assets.asset import AssetWithOracles
     from rotkehlchen.db.dbhandler import DBHandler
-    from rotkehlchen.fval import FVal
     from rotkehlchen.history.events.structures.base import HistoryBaseEntry
     from rotkehlchen.types import Asset, TimestampMS
 
@@ -362,7 +360,7 @@ class Coinbase(ExchangeInterface):
             log.error(f'{msg_prefix} Could not reach coinbase due to {e}')
             return None, f'{msg_prefix} Check logs for more details'
 
-        returned_balances: defaultdict[AssetWithOracles, Balance] = defaultdict(Balance)
+        amounts: defaultdict[AssetWithOracles, FVal] = defaultdict(FVal)
         for account in resp:
             try:
                 if (balance := account.get('balance')) is None:
@@ -381,17 +379,7 @@ class Coinbase(ExchangeInterface):
                 if amount == ZERO:
                     continue
 
-                asset = asset_from_coinbase(account['balance']['currency'])
-                try:
-                    price = Inquirer.find_main_currency_price(asset)
-                except RemoteError as e:
-                    log.error(
-                        f'Error processing coinbase balance for {asset.identifier} due to'
-                        f' inability to query price: {e!s}. Skipping balance entry',
-                    )
-                    continue
-
-                returned_balances[asset] += Balance(amount=amount, value=amount * price)
+                amounts[asset_from_coinbase(account['balance']['currency'])] += amount
             except UnknownAsset as e:
                 self.send_unknown_asset_message(
                     asset_identifier=e.identifier,
@@ -409,7 +397,7 @@ class Coinbase(ExchangeInterface):
                 )
                 continue
 
-        return dict(returned_balances), ''
+        return dict(self.balances_from_amounts(amounts)), ''
 
     @protect_with_lock()
     def _query_transactions(self, force_refresh: bool = False) -> list['HistoryBaseEntry']:

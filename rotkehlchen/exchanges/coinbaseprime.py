@@ -9,7 +9,6 @@ from urllib.parse import urlparse
 
 import requests
 
-from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.converters import asset_from_coinbase
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.data_import.utils import maybe_set_transaction_extra_data
@@ -19,6 +18,7 @@ from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.exchanges.data_structures import MarginPosition
 from rotkehlchen.exchanges.exchange import ExchangeInterface, ExchangeQueryBalances
+from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.asset_movement import (
     AssetMovement,
     create_asset_movement_with_fee,
@@ -30,7 +30,6 @@ from rotkehlchen.history.events.structures.base import (
 )
 from rotkehlchen.history.events.structures.swap import SwapEvent, create_swap_events
 from rotkehlchen.history.events.utils import create_group_identifier_from_unique_id
-from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import (
     deserialize_asset_movement_event_type,
@@ -471,7 +470,7 @@ class Coinbaseprime(ExchangeInterface):
             log.error(f'{msg_prefix} Could not reach coinbase due to {e}')
             return None, f'{msg_prefix} Check logs for more details'
 
-        returned_balances: defaultdict[AssetWithOracles, Balance] = defaultdict(Balance)
+        amounts: defaultdict[AssetWithOracles, FVal] = defaultdict(FVal)
         for account_id in portfolio_ids:
             try:
                 balances_query: dict[str, list[dict[str, Any]]] = self._api_query(
@@ -500,20 +499,7 @@ class Coinbaseprime(ExchangeInterface):
                     if total_balance == ZERO:
                         continue
 
-                    asset = asset_from_coinbase(balance_entry['symbol'])
-                    try:
-                        price = Inquirer.find_main_currency_price(asset)
-                    except RemoteError as e:
-                        log.error(
-                            f'Error processing coinbase balance entry due to inability to '
-                            f'query price: {e!s}. Skipping balance entry',
-                        )
-                        continue
-
-                    returned_balances[asset] += Balance(
-                        amount=total_balance,
-                        value=total_balance * price,
-                    )
+                    amounts[asset_from_coinbase(balance_entry['symbol'])] += total_balance
                 except UnknownAsset as e:
                     self.send_unknown_asset_message(
                         asset_identifier=e.identifier,
@@ -529,7 +515,7 @@ class Coinbaseprime(ExchangeInterface):
                         error=msg,
                     )
 
-        return dict(returned_balances), ''
+        return dict(self.balances_from_amounts(amounts)), ''
 
     def query_online_history_events(
             self,

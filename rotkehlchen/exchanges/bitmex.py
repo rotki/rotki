@@ -1,5 +1,6 @@
 import json
 import logging
+from collections import defaultdict
 from collections.abc import Sequence
 from json.decoder import JSONDecodeError
 from typing import TYPE_CHECKING, Any, Literal, overload
@@ -7,7 +8,6 @@ from urllib.parse import urlencode
 
 import requests
 
-from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.asset import AssetWithOracles
 from rotkehlchen.assets.utils import normalized_fval_value_decimals, symbol_to_asset_or_token
 from rotkehlchen.constants.assets import A_BTC, A_ETH
@@ -28,7 +28,6 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.history.events.structures.asset_movement import create_asset_movement_with_fee
 from rotkehlchen.history.events.structures.types import HistoryEventSubType
-from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import deserialize_fval, deserialize_fval_or_zero
 from rotkehlchen.types import (
@@ -274,7 +273,7 @@ class Bitmex(ExchangeInterface, SignatureGeneratorMixin):
     @cache_response_timewise()
     def query_balances(self, **kwargs: Any) -> ExchangeQueryBalances:
         self.first_connection()
-        returned_balances: dict[AssetWithOracles, Balance] = {}
+        amounts: defaultdict[AssetWithOracles, FVal] = defaultdict(FVal)
         try:
             resp = self._api_query('user/wallet', {'currency': 'all'})
         except RemoteError as e:
@@ -295,25 +294,9 @@ class Bitmex(ExchangeInterface, SignatureGeneratorMixin):
                 log.error(f'Unknown decimals for asset balance {balance} in bitmex. Skipping')
                 continue
 
-            amount = normalized_fval_value_decimals(amount=FVal(raw_amount), decimals=decimals)
-            try:
-                price = Inquirer.find_main_currency_price(asset)
-            except RemoteError as e:
-                self.msg_aggregator.add_error(
-                    f'Error processing {self.name} balance entry due to inability to '
-                    f'query price: {e!s}. Skipping balance entry',
-                )
-                continue
+            amounts[asset] += normalized_fval_value_decimals(amount=FVal(raw_amount), decimals=decimals)  # noqa: E501
 
-            returned_balances[asset] = Balance(amount=amount, value=(value := amount * price))
-            log.debug(
-                'Bitmex balance query result',
-                currency=currency,
-                amount=amount,
-                value=value,
-            )
-
-        return returned_balances, ''
+        return dict(self.balances_from_amounts(amounts)), ''
 
     def query_online_margin_history(
             self,
