@@ -38,6 +38,7 @@ from rotkehlchen.premium.premium import (
     RemoteMetadata,
     SubscriptionStatus,
 )
+from rotkehlchen.premium.sync import PremiumSyncManager
 from rotkehlchen.serialization.deserialize import deserialize_timestamp
 from rotkehlchen.tasks.assets import _find_missing_tokens
 from rotkehlchen.tasks.manager import PREMIUM_STATUS_CHECK, TaskManager
@@ -1629,3 +1630,41 @@ def test_maybe_decode_transactions_checks_all_chains(task_manager: TaskManager) 
         mock_solana_tx.return_value.count_hashes_not_decoded.return_value = 5  # solana has work
         result = task_manager._maybe_decode_transactions()
         assert result is not None and len(result) == 1
+
+
+@pytest.mark.parametrize('max_tasks_num', [5])
+def test_schedule_survives_failing_task_check(task_manager: TaskManager) -> None:
+    """Test that a scheduling function raising during the schedule tick neither
+    propagates out of schedule() nor prevents the remaining tasks from being checked.
+
+    Regression test for the premium capabilities query in check_if_should_sync
+    raising RemoteError through TaskManager.schedule() into the main loop,
+    permanently killing the background task scheduler until app restart.
+    """
+    checked_after_failure = []
+
+    def failing_check() -> None:
+        raise RemoteError('rotki server unreachable')
+
+    def working_check() -> None:
+        checked_after_failure.append(True)
+
+    task_manager.potential_tasks = [failing_check, working_check]
+    with patch('rotkehlchen.tasks.manager.random.shuffle'):  # keep the failing task first
+        task_manager.schedule()
+
+    assert checked_after_failure == [True]
+
+
+def test_check_if_should_sync_survives_premium_errors() -> None:
+    """Test that a remote/auth error when querying premium capabilities makes the
+    db sync check return False instead of raising through the task scheduler.
+
+    Regression test for the main loop greenlet dying on a transient premium
+    server error (see test_schedule_survives_failing_task_check).
+    """
+    sync_manager = object.__new__(PremiumSyncManager)
+    sync_manager.premium = MagicMock()
+    for error in (RemoteError('connection timeout'), PremiumAuthenticationError('key rejected')):
+        sync_manager.premium.get_capabilities.side_effect = error
+        assert sync_manager.check_if_should_sync(force_upload=False) is False

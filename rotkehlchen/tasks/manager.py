@@ -37,6 +37,7 @@ from rotkehlchen.db.utils import table_exists
 from rotkehlchen.errors.api import PremiumAuthenticationError, PremiumPermissionError
 from rotkehlchen.errors.asset import UnknownAsset, WrongAssetType
 from rotkehlchen.errors.misc import RemoteError
+from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.externalapis.google_calendar import GoogleCalendarAPI
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.history.types import HistoricalPriceOracle
@@ -999,7 +1000,16 @@ class TaskManager:
                     break  # no more task slots left
                 if scheduling_fn in self.running_greenlets:
                     continue  # the specified task is already running
-                new_greenlets = scheduling_fn()
+                try:
+                    new_greenlets = scheduling_fn()
+                except (RemoteError, PremiumAuthenticationError, DeserializationError, UnknownAsset) as e:  # noqa: E501
+                    log.error(
+                        'Scheduling function %s failed due to %s. '
+                        'Skipping it for this scheduler tick',
+                        scheduling_fn.__name__,
+                        e,
+                    )
+                    continue
                 if new_greenlets is None:
                     continue  # The scheduling function for the specific task decided to not schedule it  # noqa: E501
                 self.running_greenlets[scheduling_fn] = new_greenlets

@@ -161,8 +161,12 @@ class PremiumSyncManager(LockableQueryMixIn):
         if self.premium is None:
             return False
 
-        if self.premium.get_capabilities()['max_backup_size_mb'] == 0:
-            log.debug('Skipping premium db backup because max size is zero')
+        try:
+            if self.premium.get_capabilities()['max_backup_size_mb'] == 0:
+                log.debug('Skipping premium db backup because max size is zero')
+                return False
+        except (RemoteError, PremiumAuthenticationError) as e:
+            log.error('Could not query premium capabilities during sync check due to %s', e)
             return False
 
         with self.data.db.conn.read_ctx() as cursor:
