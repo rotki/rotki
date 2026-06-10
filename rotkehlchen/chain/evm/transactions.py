@@ -195,17 +195,22 @@ class EvmTransactions(ABC):  # noqa: B024
 
     @contextmanager
     def wait_until_no_query_for(self, addresses: list[ChecksumEvmAddress]) -> Iterator[None]:
-        """Will acquire all locks relevant to an address and yield to the caller"""
+        """Will acquire all locks relevant to an address and yield to the caller
+
+        The locks are released even if the caller's body raises, since leaking an
+        acquired address lock would permanently block all transaction querying for
+        that address (and with it the periodic tx query task) until restart.
+        """
         locks = []
-        for address in addresses:
-            lock = self.address_tx_locks[address]
-            lock.acquire()
-            locks.append(lock)
+        try:
+            for address in addresses:
+                (lock := self.address_tx_locks[address]).acquire()
+                locks.append(lock)
 
-        yield  # yield to caller since all locks are now acquired
-
-        for lock in locks:  # clean up
-            lock.release()
+            yield  # yield to caller since all locks are now acquired
+        finally:  # release even on error, also covering a partially acquired list
+            for lock in locks:
+                lock.release()
 
     @with_tx_status_messaging
     def single_address_query_transactions(
