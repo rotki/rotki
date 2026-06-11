@@ -1,3 +1,4 @@
+import json
 from collections.abc import Mapping
 from typing import Any
 from unittest.mock import patch
@@ -285,6 +286,72 @@ def test_read_write_events_from_db(database):
                         address=data_entry[4],
                     )
                     assert event == expected_event
+
+
+def test_edit_history_event_extra_data_preservation(database: DBHandler) -> None:
+    """Test that editing events does not wipe extra_data the edit schemas cannot provide.
+
+    Plain history events keep their whole extra_data when the edited event has none
+    (their edit schema has no extra_data field), the system-managed
+    matched_asset_movement key survives edits that replace extra_data (the asset
+    movement form rebuilds it from its fields), and the normal overwrite semantics
+    stay intact for evm events whose form round-trips extra_data."""
+    db = DBHistoryEvents(database)
+    matched = {'group_identifier': 'whatever', 'exchange': 'kraken'}
+    plain_event = HistoryEvent(
+        group_identifier='TEST1',
+        sequence_index=1,
+        timestamp=TimestampMS(1),
+        location=Location.BITCOIN,
+        event_type=HistoryEventType.EXCHANGE_TRANSFER,
+        event_subtype=HistoryEventSubType.SPEND,
+        asset=A_BTC,
+        amount=ONE,
+        extra_data={'matched_asset_movement': matched, 'other': 1},
+    )
+    movement_event = AssetMovement(
+        timestamp=TimestampMS(2),
+        location=Location.KRAKEN,
+        event_subtype=HistoryEventSubType.SPEND,
+        asset=A_BTC,
+        amount=ONE,
+        extra_data={'address': 'old_address', 'matched_asset_movement': matched},  # set by the asset movement matching task  # noqa: E501
+    )
+    evm_event = EvmEvent(
+        tx_ref=make_evm_tx_hash(),
+        sequence_index=1,
+        timestamp=TimestampMS(3),
+        location=Location.ETHEREUM,
+        event_type=HistoryEventType.TRADE,
+        event_subtype=HistoryEventSubType.NONE,
+        asset=A_ETH,
+        amount=ONE,
+        extra_data={'airdrop': 'uniswap'},
+    )
+    with db.db.user_write() as write_cursor:
+        for event in (plain_event, movement_event, evm_event):
+            event.identifier = db.add_history_event(write_cursor=write_cursor, event=event)
+
+    def edited_extra_data(event: HistoryBaseEntry) -> dict | None:
+        with db.db.user_write() as write_cursor:
+            db.edit_history_event(write_cursor=write_cursor, event=event, mapping_state=None)
+            raw = write_cursor.execute(
+                'SELECT extra_data FROM history_events WHERE identifier=?',
+                (event.identifier,),
+            ).fetchone()[0]
+        return json.loads(raw) if raw is not None else None
+
+    plain_event.extra_data = None  # the plain event edit schema produces no extra_data
+    assert edited_extra_data(plain_event) == {'matched_asset_movement': matched, 'other': 1}
+
+    movement_event.extra_data = {'address': 'new_address'}  # rebuilt from the form fields
+    assert edited_extra_data(movement_event) == {
+        'address': 'new_address',
+        'matched_asset_movement': matched,
+    }
+
+    evm_event.extra_data = None  # deliberate clearing keeps working for evm events
+    assert edited_extra_data(evm_event) is None
 
 
 def test_history_events_count_with_chain_filters(database: DBHandler) -> None:
