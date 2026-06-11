@@ -8,7 +8,11 @@ from rotkehlchen.constants import ONE, ZERO
 from rotkehlchen.history.events.structures.base import HistoryBaseEntry
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.solana_event import SolanaEvent
-from rotkehlchen.history.events.structures.types import EventDirection, HistoryEventSubType
+from rotkehlchen.history.events.structures.types import (
+    EventDirection,
+    HistoryEventSubType,
+    HistoryEventType,
+)
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import Price, Timestamp
 
@@ -44,9 +48,11 @@ class EventsAccountant:
             evm_aggregators=self.evm_accounting_aggregators,
             pot=self.pot,
         )
+        self.warned_multi_trade_groups: set[str] = set()
 
     def reset(self) -> None:
         self.rules_manager.reset()
+        self.warned_multi_trade_groups.clear()
 
     def process(
             self,
@@ -69,6 +75,15 @@ class EventsAccountant:
         timestamp = event.get_timestamp_in_sec()
         event_settings, event_callback = self.rules_manager.get_event_settings(event)
         if event_settings is None:
+            if (
+                    event.event_type == HistoryEventType.MULTI_TRADE and
+                    (group_id := event.group_identifier) not in self.warned_multi_trade_groups
+            ):  # warn only once per group since each of its events hits this branch
+                self.warned_multi_trade_groups.add(group_id)
+                self.pot.database.msg_aggregator.add_warning(
+                    f'Multi trade events are not supported in accounting yet, so the '
+                    f'multi trade with identifier {group_id} is not included in the report.',
+                )
             log.debug(
                 f'During transaction accounting found history base entry {event} '
                 f'with no mapped event settings. Skipping...',
