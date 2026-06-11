@@ -430,6 +430,74 @@ def test_coinbase_staking_events(
     )]
 
 
+def test_account_failure_does_not_advance_cursors(
+        database: 'DBHandler',
+        function_scope_coinbase: 'Coinbase',
+) -> None:
+    """Test that a failing account query persists no per-account cursors at all.
+
+    Events are only saved by the caller after all accounts have been queried, so
+    persisting a cursor for an already queried account earlier would permanently
+    lose its in-memory events: the retry would query only after the cursor."""
+    coinbase = function_scope_coinbase
+    failing = True
+
+    def mock_api_query(endpoint: str, options: dict | None = None, **kwargs: Any) -> list:
+        if endpoint == 'accounts':
+            return [{'id': 'account_a'}, {'id': 'account_b'}]
+        elif 'account_a/transactions' in endpoint:
+            if options is not None and options.get('starting_after') == 'tx_a_1':
+                return []  # the api honors the cursor: nothing after the last seen tx
+            return [{
+                'amount': {'amount': '5.5', 'currency': 'DOT'},
+                'created_at': '2024-01-01T16:19:24Z',
+                'id': 'tx_a_1',
+                'native_amount': {'amount': '46.68', 'currency': 'USD'},
+                'resource': 'transaction',
+                'resource_path': '/v2/accounts/account_a/transactions/tx_a_1',
+                'status': 'completed',
+                'type': 'staking_reward',
+            }]
+        elif 'account_b/transactions' in endpoint:
+            if failing:
+                raise RemoteError('Coinbase API request failed due to a transient error')
+            return []
+
+        raise AssertionError(f'Unexpected endpoint {endpoint} for test')
+
+    with (
+        patch.object(coinbase, '_api_query', side_effect=mock_api_query),
+        pytest.raises(RemoteError),
+    ):  # account_a succeeds but account_b's remote failure aborts the whole query
+        coinbase.query_history_events()
+
+    events_db = DBHistoryEvents(database)
+    with database.conn.read_ctx() as cursor:
+        assert cursor.execute(  # neither cursors nor query timestamps were persisted
+            "SELECT COUNT(*) FROM key_value_cache WHERE name LIKE '%last_query%'",
+        ).fetchone()[0] == 0
+        assert events_db.get_history_events_internal(
+            cursor=cursor,
+            filter_query=HistoryEventFilterQuery.make(location=Location.COINBASE),
+        ) == []
+
+    failing = False  # retry with the remote error resolved: account_a's event is recovered
+    with patch.object(coinbase, '_api_query', side_effect=mock_api_query):
+        coinbase.query_history_events()
+
+    with database.conn.read_ctx() as cursor:
+        events = events_db.get_history_events_internal(
+            cursor=cursor,
+            filter_query=HistoryEventFilterQuery.make(location=Location.COINBASE),
+        )
+        assert cursor.execute(  # and only now is the cursor persisted
+            'SELECT value FROM key_value_cache WHERE name=?',
+            (f'{coinbase.location}_{coinbase.name}_account_a_last_query_id',),
+        ).fetchone()[0] == 'tx_a_1'
+    assert len(events) == 1
+    assert events[0].group_identifier == 'CBE_tx_a_1'
+
+
 def test_coinbase_query_history_events(
         database,
         function_scope_coinbase,
@@ -1910,7 +1978,7 @@ def test_ignore_updated_at_ts(function_scope_coinbase):
         raise AssertionError(f'Unexpected url {url} for test')
 
     with (
-        patch.object(coinbase, '_query_single_account_transactions', return_value=([], [])) as tx_query_mock,  # noqa: E501
+        patch.object(coinbase, '_query_single_account_transactions', return_value=([], [], None)) as tx_query_mock,  # noqa: E501
         patch.object(coinbase.session, 'get', side_effect=_mock_query),
     ):
         coinbase.query_history_events()
