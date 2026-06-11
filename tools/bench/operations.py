@@ -63,6 +63,16 @@ def _asset_search(backend: 'BackendRunner', _expected: dict[str, Any]) -> None:
     })
 
 
+def _manual_balances(backend: 'BackendRunner', _expected: dict[str, Any]) -> None:
+    # valuation resolves via the manual latest prices seeded by the profiles
+    backend.request('GET', '/balances/manual')
+
+
+def _netvalue_stats(backend: 'BackendRunner', _expected: dict[str, Any]) -> None:
+    # reads the seeded timed_location_data snapshots
+    backend.request('GET', '/statistics/netvalue')
+
+
 OPERATIONS: Final = (
     Operation(
         name='history_events_p1',
@@ -88,5 +98,15 @@ OPERATIONS: Final = (
         name='asset_search',
         profiles=('small', 'whale'),
         run=_asset_search,
+    ),
+    Operation(
+        name='manual_balances',
+        profiles=('small', 'whale'),
+        run=_manual_balances,
+    ),
+    Operation(
+        name='netvalue_stats',
+        profiles=('small', 'whale'),
+        run=_netvalue_stats,
     ),
 )

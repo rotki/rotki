@@ -7,17 +7,22 @@ looks like — adjust them when a real-world bug reveals a shape gap.
 """
 from typing import TYPE_CHECKING, Any, Final
 
+from rotkehlchen.accounting.structures.balance import BalanceType
 from rotkehlchen.assets.asset import Asset
+from rotkehlchen.balances.manual import ManuallyTrackedBalance
 from rotkehlchen.chain.accounts import BlockchainAccountData
-from rotkehlchen.constants.assets import A_ETH
+from rotkehlchen.constants.assets import A_BTC, A_ETH
+from rotkehlchen.fval import FVal
 from rotkehlchen.types import Location, SupportedBlockchain
 from tools.scenarios.deterministic import DeterministicFactory, monthly_ramp_weights
 from tools.scenarios.profiles.common import (
+    USD_PRICES,
     EvmPools,
     erc20,
     make_asset_movement,
     make_evm_tx_group,
     make_exchange_swap,
+    make_snapshots,
     make_staking_reward,
 )
 
@@ -148,6 +153,49 @@ def build(builder: 'ProfileBuilder') -> dict[str, Any] | None:
         )
 
     pools_per_chain = {location: chain_pools(location) for location in CHAINS}
+
+    builder.add_manual_balances([
+        ManuallyTrackedBalance(
+            identifier=-1,
+            asset=Asset('EUR'),
+            label='Bank account',
+            location=Location.BANKS,
+            tags=None,
+            balance_type=BalanceType.ASSET,
+            amount=FVal('100000'),
+        ),
+        ManuallyTrackedBalance(
+            identifier=-1,
+            asset=A_BTC,
+            label='Hardware wallet',
+            location=Location.BLOCKCHAIN,
+            tags=None,
+            balance_type=BalanceType.ASSET,
+            amount=FVal('4.2'),
+        ),
+    ])
+    price_assets = {
+        symbol: asset
+        for pools in pools_per_chain.values()
+        for asset, symbol in pools.assets
+    }
+    builder.add_manual_latest_prices(
+        [(asset, USD_PRICES[symbol]) for symbol, asset in price_assets.items()]
+        + [(Asset('EUR'), USD_PRICES['EUR']), (A_BTC, USD_PRICES['BTC'])],
+    )
+    balance_rows, location_rows, snapshot_count = make_snapshots(
+        factory=factory,
+        assets=pools_per_chain[Location.ETHEREUM].assets,
+        weeks=ACTIVE_MONTHS * 52 // 12,
+        location_weights=(
+            (Location.BLOCKCHAIN, 0.55),
+            (Location.KRAKEN, 0.2),
+            (Location.BINANCE, 0.15),
+            (Location.COINBASE, 0.1),
+        ),
+    )
+    builder.add_balance_snapshots(balance_rows, location_rows, snapshot_count)
+
     month_indices = range(ACTIVE_MONTHS)
     month_weights = monthly_ramp_weights(ACTIVE_MONTHS)
 
