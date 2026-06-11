@@ -16,14 +16,16 @@ concurrency:
 jobs:
   bench-pr:
     name: 'PR benchmark comparison'
-    if: github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'run-benchmarks')
+    # opt-in via the run-benchmarks label or a [bench] tag in the PR title.
+    # This job runs unprivileged (fork PRs get a read-only token); the PR
+    # comment is posted by rotki_benchmarks_comment.yml via workflow_run.
+    if: github.event_name == 'pull_request' && (contains(github.event.pull_request.labels.*.name, 'run-benchmarks') || contains(github.event.pull_request.title, '[bench]'))
     runs-on: ubuntu-22.04
     timeout-minutes: 30
     env:
       CI: true
     permissions:
       contents: read
-      pull-requests: write
     steps:
       - name: Checkout
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
@@ -65,14 +67,10 @@ jobs:
             --output bench-compare.json \
             --markdown bench-compare.md
 
-      - name: Comment results on the PR
-        env:
-          GH_TOKEN: ${{ github.token }}
+      - name: Publish results to the run summary
         run: |
-          gh pr comment "${{ github.event.pull_request.number }}" \
-            --body-file bench-compare.md \
-            --edit-last \
-            --create-if-none
+          cat bench-compare.md >> "$GITHUB_STEP_SUMMARY"
+          echo "${{ github.event.pull_request.number }}" > pr-number.txt
 
       - name: Upload raw results
         if: always()
@@ -82,6 +80,7 @@ jobs:
           path: |
             bench-compare.json
             bench-compare.md
+            pr-number.txt
           if-no-files-found: ignore
 
   bench-nightly:

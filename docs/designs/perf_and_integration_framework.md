@@ -263,10 +263,18 @@ history for "did the last month of changes help?".
 ### 4.3 CI wiring
 
 - Workflow `rotki_benchmarks.yml`:
-  - **PR job** (opt-in via `run-benchmarks` label): cached profile build →
-    `bench compare --base origin/$BASE` → post/update a single PR comment
-    (`gh pr comment --edit-last --create-if-none`, no extra action
-    dependency). Concurrency-cancelled on new pushes.
+  - **PR job** (opt-in via the `run-benchmarks` label or a `[bench]` tag in
+    the PR title): cached profile build → `bench compare --base origin/$BASE`
+    → delta table published to the run's step summary and uploaded as an
+    artifact. The job runs unprivileged because fork PRs (rotki's normal
+    contribution flow) get a read-only token regardless of declared
+    permissions. Concurrency-cancelled on new pushes.
+  - **Comment workflow** (`rotki_benchmarks_comment.yml`): triggered by
+    `workflow_run` on Benchmarks completion, runs in repo context with
+    `pull-requests: write`, downloads the artifact and posts/updates a single
+    PR comment (`gh pr comment --edit-last --create-if-none`). Like the
+    nightly cron, `workflow_run` only fires once the file reaches the default
+    branch; until then the table is visible in the run summary and artifact.
   - **Nightly job**: matrix over the measured rotki branches (`develop`,
     `bugfixes`), each checked out explicitly (the cron only fires from the
     default branch) → `bench run --gha-output` → push datapoint to the
@@ -409,7 +417,8 @@ The CI wiring needs three things only an org admin can create:
 2. **`BENCHMARK_DATA_TOKEN` secret** in the rotki repo: a token with write
    access to `rotki/benchmark-data`.
 3. **`run-benchmarks` label** in the rotki repo, which opts a PR into the
-   comparison job.
+   comparison job (alternatively, contributors can put `[bench]` in the PR
+   title — no label needed).
 
 ## 8. Risks / open questions
 
