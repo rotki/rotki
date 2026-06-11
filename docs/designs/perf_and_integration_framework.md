@@ -267,10 +267,17 @@ history for "did the last month of changes help?".
     `bench compare --base origin/$BASE` → post/update a single PR comment
     (`gh pr comment --edit-last --create-if-none`, no extra action
     dependency). Concurrency-cancelled on new pushes.
-  - **Nightly job**: `bench run --gha-output` → push datapoint to the
+  - **Nightly job**: matrix over the measured rotki branches (`develop`,
+    `bugfixes`), each checked out explicitly (the cron only fires from the
+    default branch) → `bench run --gha-output` → push datapoint to the
     `rotki/benchmark-data` repo via `github-action-benchmark`
     (customSmallerIsBetter, alert threshold 120 %, fail-on-alert) → Discord
-    notification through the existing nightly notifier on failure.
+    notification through the existing nightly notifier on failure. The data
+    repo keeps a **single `main` branch**: rotki source branches are separated
+    as data *series* by directory (`macro/develop`, `macro/bugfixes`) so each
+    gets its own trend chart and alert baseline, and GitHub Pages can serve
+    all of them. Matrix runs are serialized (both push to the same branch),
+    and branches that don't contain the harness yet are skipped gracefully.
 - Profile cache: `~/.cache/rotki-scenarios` via `actions/cache`, keyed on
   `tools/scenarios/**`, the packaged global.db and `db/settings.py` (proxy
   for schema-version bumps; over-busting is harmless).
@@ -397,7 +404,8 @@ The CI wiring needs three things only an org admin can create:
 1. **`rotki/benchmark-data` repository** with a `main` branch (can be empty);
    nightly datapoints and trend charts are pushed there by
    `github-action-benchmark` (same external-repo pattern as
-   `rotki/test-caching`).
+   `rotki/test-caching`). `main` stays the only branch — per-rotki-branch
+   series live in directories (see §4.3), not branches.
 2. **`BENCHMARK_DATA_TOKEN` secret** in the rotki repo: a token with write
    access to `rotki/benchmark-data`.
 3. **`run-benchmarks` label** in the rotki repo, which opts a PR into the
