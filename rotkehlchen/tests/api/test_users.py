@@ -17,7 +17,11 @@ from rotkehlchen.constants.misc import USERDB_NAME, USERSDIR_NAME
 from rotkehlchen.db.cache import DBCacheStatic
 from rotkehlchen.db.drivers.gevent import DBConnection, DBConnectionType
 from rotkehlchen.db.settings import ROTKEHLCHEN_DB_VERSION, DBSettings
-from rotkehlchen.errors.api import PremiumAuthenticationError, PremiumPermissionError
+from rotkehlchen.errors.api import (
+    AuthenticationError,
+    PremiumAuthenticationError,
+    PremiumPermissionError,
+)
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.history.price import PriceHistorian
 from rotkehlchen.inquirer import Inquirer
@@ -85,6 +89,32 @@ def test_loggedin_user_querying(
     assert result[username] == 'loggedin'
     assert result['another_user'] == 'loggedout'
     assert len(result) == 2
+
+
+@pytest.mark.parametrize('start_with_logged_in_user', [False])
+def test_async_login_holds_login_lock(rotkehlchen_api_server: 'APIServer') -> None:
+    """Test that the login lock is held while an async login actually runs the unlock
+    logic, and not just while the async task is dispatched. Otherwise two quick
+    successive login/create-user requests can run the unlock logic concurrently."""
+    rest_api = rotkehlchen_api_server.rest_api
+    lock_states: list[bool] = []
+
+    def mock_unlock(*args: Any, **kwargs: Any) -> None:
+        lock_states.append(rest_api.login_lock.locked())
+        raise AuthenticationError('end the login here')
+
+    with (
+        patch.object(rest_api.rotkehlchen, 'unlock_user', side_effect=mock_unlock),
+        patch.object(rest_api.rotkehlchen, 'reset_after_failed_account_creation_or_login'),
+    ):
+        response = requests.post(
+            api_url_for(rotkehlchen_api_server, 'usersbynameresource', name='someuser'),
+            json={'password': '123', 'sync_approval': 'unknown', 'async_query': True},
+        )
+        task_id = assert_ok_async_response(response)
+        wait_for_async_task(rotkehlchen_api_server, task_id)
+
+    assert lock_states == [True]
 
 
 @pytest.mark.parametrize('start_with_logged_in_user', [False])
