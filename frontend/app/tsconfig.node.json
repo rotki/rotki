@@ -12,6 +12,7 @@
   "include": [
     "vite.config.*",
     "vitest.config.*",
+    "vitest.contract.config.*",
     "playwright.config.*",
     "tailwind.config.*",
     "scripts/**/*",

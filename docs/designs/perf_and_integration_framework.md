@@ -339,21 +339,33 @@ fixture API is used, so `pytest-codspeed` stays a drop-in if we opt in later.
 
 ## 5. Stack B — Integration correctness
 
-### 5.1 API contract suite (phase 3 — cheap, high value)
+### 5.1 API contract suite (phase 5 — cheap, high value)
 
-A vitest suite (`frontend/app/tests/contract/`) pointed at a **live backend**
-booted on a golden profile — no browser:
+A vitest suite pointed at a **live backend** booted on a golden profile — no
+browser. Refined with frontend-maintainer input:
 
-- For every API module the frontend uses, perform the real HTTP call and
-  validate the response with the *frontend's own Zod schemas* (imported from
-  `src/modules/**`). The schemas are the contract; today they are only
-  enforced at user runtime.
-- Boot/teardown reuses `start-backend.ts` + profile builder; one backend per
-  profile, suite runs against `small` first, `whale` for pagination-shaped
-  endpoints.
-- Runs in regular PR CI (it is seconds-fast after boot) — any backend
-  serialization change that would break the frontend fails here, not in a
-  user's hands.
+- **Drive the frontend's API composables, not raw HTTP + `schema.parse()`.**
+  The fetch layer converts snake_case responses to camelCase before the Zod
+  schemas ever see them, so validating raw backend responses against the
+  schemas would test a shape the frontend never sees (and pass while the real
+  pipeline breaks). Invoking the composables (`use-*-api.ts`) against the
+  live backend exercises the whole real client pipeline — URL construction,
+  parameter serialization, the case transform and the schema parse — which is
+  the actual contract.
+- **Build path: port/parametrize the existing MSW-mocked API tests** rather
+  than writing a parallel suite. Those tests already encode, in
+  composable-driven form, what the frontend believes responses look like.
+  They become dual-mode: by default they keep running against their MSW
+  fixtures (fast, isolated, unchanged CI behavior); with a contract-mode
+  environment variable set, the same test bodies hit the profile-booted real
+  backend. A divergence between the two modes is precisely the
+  backend/frontend drift this suite exists to catch. Endpoints without MSW
+  coverage get new contract tests directly.
+- Boot/teardown reuses the profile builder + a backend-runner script; suite
+  runs against `small` first, `whale` for pagination-shaped endpoints.
+- Runs in regular PR CI as a non-required job at first (it is seconds-fast
+  after boot) — any backend serialization change that would break the
+  frontend fails here, not in a user's hands.
 
 ### 5.2 Golden-value e2e specs (phase 5)
 
