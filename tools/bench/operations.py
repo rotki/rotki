@@ -73,6 +73,12 @@ def _netvalue_stats(backend: 'BackendRunner', _expected: dict[str, Any]) -> None
     backend.request('GET', '/statistics/netvalue')
 
 
+def _blockchain_balances_eth(backend: 'BackendRunner', _expected: dict[str, Any]) -> None:
+    # POST = forced refresh: every pass measures the full chain query path
+    # (served by the harness mock rpc node), not the in-memory cache
+    backend.request('POST', '/balances/blockchains/eth')
+
+
 OPERATIONS: Final = (
     Operation(
         name='history_events_p1',
@@ -108,5 +114,10 @@ OPERATIONS: Final = (
         name='netvalue_stats',
         profiles=('small', 'whale'),
         run=_netvalue_stats,
+    ),
+    Operation(
+        name='blockchain_balances_eth',
+        profiles=('small', 'whale'),
+        run=_blockchain_balances_eth,
     ),
 )

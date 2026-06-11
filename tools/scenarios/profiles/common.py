@@ -32,6 +32,7 @@ USD_PRICES: Final = {
     'USDC': '1', 'USDC.e': '1', 'USDT': '1', 'DAI': '1', 'EUR': '1.08',
     'LINK': '15', 'UNI': '9', 'AAVE': '160', 'CRV': '0.5', 'LDO': '1.8',
     'MKR': '1500', 'SNX': '2.5', 'PEPE': '0.00001', 'ARB': '0.8', 'OP': '1.9',
+    'PICKLE': '1.2', 'LQTY': '1.0', 'LRC': '0.15', 'LUSD': '1',
 }
 
 
@@ -78,6 +79,17 @@ def erc20(chain_id: int, address: str) -> str:
     """ERC-20 asset identifier with the address checksummed at build time, so
     profile constants cannot silently carry a wrongly-cased address."""
     return f'eip155:{chain_id}/erc20:{to_checksum_address(address)}'
+
+
+# Tokens that the default-active modules (pickle_finance, liquity, loopring)
+# may price during a balances query even with zero positions. Seeding manual
+# prices keeps those lookups local instead of cascading into remote oracles.
+MODULE_TOKEN_PRICES: Final = (
+    (erc20(1, '0x429881672B9AE42b8EbA0E26cD9C73711b891Ca5'), 'PICKLE'),
+    (erc20(1, '0x6DEA81C8171D0bA574754EF6F8b412F2Ed88c54D'), 'LQTY'),
+    (erc20(1, '0xBBBBCA6A901C926f240B89eAdB51e8818B5b97eF'), 'LRC'),
+    (erc20(1, '0x5f98805A4E8be255a32880FDeC7F6728C6568bA0'), 'LUSD'),
+)
 
 
 # Kinds of non-gas events inside an EVM transaction group and their weights.
