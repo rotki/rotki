@@ -14,6 +14,7 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.types import Location, SupportedBlockchain
 from tools.scenarios.deterministic import DeterministicFactory, monthly_ramp_weights
 from tools.scenarios.profiles.common import (
+    MODULE_TOKEN_PRICES,
     USD_PRICES,
     EvmPools,
     erc20,
@@ -120,7 +121,13 @@ def build(builder: 'ProfileBuilder') -> dict[str, Any] | None:
     )
     builder.add_manual_latest_prices(
         [(asset, USD_PRICES[symbol]) for asset, symbol in pools.assets]
-        + [(Asset('EUR'), USD_PRICES['EUR']), (A_BTC, USD_PRICES['BTC'])],
+        + [(Asset('EUR'), USD_PRICES['EUR']), (A_BTC, USD_PRICES['BTC'])]
+        + [
+            (Asset(identifier), USD_PRICES[symbol])
+            for identifier, symbol in MODULE_TOKEN_PRICES
+            if identifier in set(builder.filter_existing_assets(
+                [x[0] for x in MODULE_TOKEN_PRICES]))
+        ],
     )
     balance_rows, location_rows, snapshot_count = make_snapshots(
         factory=factory,

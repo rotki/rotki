@@ -85,6 +85,7 @@ def run_block(
             'resume_from_backup': False,
         })
         timings['user_unlock'] = (time.perf_counter() - start) * 1000
+        backend.use_mock_rpc_nodes()  # untimed setup: chain queries go to the mock
 
         operations = [op for op in OPERATIONS if profile in op.profiles]
         for operation in operations:  # warmup pass
@@ -96,6 +97,10 @@ def run_block(
                 operation.run(backend, expected)
                 passes.append((time.perf_counter() - start) * 1000)
             timings[operation.name] = min(passes)
+
+    if len(backend.mock.unhandled) != 0:
+        top = ', '.join(f'{k} ({n}x)' for k, n in backend.mock.unhandled.most_common(5))
+        print(f'  WARNING: unmocked external requests this block: {top}')
 
     shutil.rmtree(data_dir)
     return timings

@@ -141,9 +141,19 @@ unmeasured). Consequences:
     query. Historical balance snapshots (`timed_balances`,
     `timed_location_data`) are seeded too, so statistics endpoints serve
     from the DB.
-  - Etherscan/indexers, remote price oracles and data-repo updates: their
-    URLs are hardcoded constants, so a fully additive mock is not possible —
-    see "Deferred operations" in §4.1 for the parked design decision.
+  - Everything else (etherscan/indexers, beacon node, remote oracles,
+    data-repo updates — all with hardcoded URLs): the bench harness launches
+    the backend through `tools/bench/launch_backend.py`, which monkeypatches
+    `requests.adapters.HTTPAdapter.send` to redirect every non-localhost
+    request to a local mock (`tools/bench/mockserver.py`), preserving the
+    original host in a header. Same harness-side pattern as the premium
+    patch (§5.3): zero shipped-code changes. The mock speaks minimal
+    JSON-RPC (including the rotki balance scanner and multicall contracts;
+    unknown calls inside tryAggregate report as reverted so module code
+    handles them through its normal failure paths), answers etherscan-style
+    and beacon APIs with valid empty responses, and counts every unmocked
+    (host, path) so gaps surface as warnings instead of silent network
+    traffic. Net effect: zero egress is enforced, not assumed.
 - Background activity is *realistic noise*: it is part of what users
   experience, so it stays in the measurement. The methodology (k samples,
   median, A/B interleaving — §4.2) absorbs it. If phase 2 calibration shows
@@ -194,16 +204,14 @@ end-to-end including task polling at a tight interval):
 | `manual_balances`    | manual balances query (valued via seeded manual prices)  | small, whale    |
 | `netvalue_stats`     | statistics/net value graph data (seeded snapshots)       | small, whale    |
 | `asset_search`       | levenshtein asset search                                 | any             |
+| `blockchain_balances_eth` | forced ethereum balance refresh: full chain-query path against the harness mock rpc node | small, whale |
 
-**Deferred operations.** `blockchain_balances` (live chain balance query) and
-`task_manager_cycle` need the external-HTTP mock layer to be more than the
-existing rpc-mock can deliver additively: price-oracle, etherscan/indexer and
-data-repo-update URLs are hardcoded constants in `externalapis`, so pointing
-the backend at a mock requires either a small test-environment hook in
-backend code (violates the strictly-additive rule of §6 without explicit
-maintainer sign-off) or transport-level interception. Parked pending that
-design decision; the ops registry gains them the moment the mock layer
-exists.
+**Deferred operations.** `task_manager_cycle` remains parked — not for
+mocking reasons (the mock layer exists, §3.3) but because the task manager
+exposes no observable completion signal: background greenlets aren't visible
+through `/tasks`, so there is nothing deterministic to bracket a timing
+around. Candidates: websocket task notifications or a debug endpoint (a
+backend change needing sign-off). Revisit when a concrete need appears.
 
 PnL/accounting reports are **deliberately excluded**: the accounting engine is
 about to be reworked, so benchmarking the current implementation would create
