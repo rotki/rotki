@@ -46,7 +46,7 @@ export function useDataLoader(): UseDataLoaderReturn {
     ]);
     await seedFromHistoric();
     startPromise(refreshPrices());
-    refreshFromChain();
+    startPromise(refreshFromChain());
     onBalancesLoaded();
     sigilBus.emit('balances:loaded');
   };
