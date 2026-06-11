@@ -415,6 +415,8 @@ class Coinbase(ExchangeInterface):
         self.staking_events = set()
         conversion_pairs: defaultdict[str, list[dict]] = defaultdict(list)
         all_events: list[HistoryBaseEntry] = []
+        cursor_updates: list[tuple[str, str]] = []
+        queried_account_ids: list[str] = []
         for account_id in account_info:
             if force_refresh:
                 last_id = None  # Bypass cache when force_refresh is True
@@ -439,25 +441,18 @@ class Coinbase(ExchangeInterface):
                     )) is not None:
                         last_id = str(result_id)
 
-            history_events, conversions = self._query_single_account_transactions(
+            history_events, conversions, last_queried_tx_id = self._query_single_account_transactions(  # noqa: E501
                 account_id=account_id,
-                account_last_id_name=f'{self.location}_{self.name}_{account_id}_last_query_id',
                 last_tx_id=last_id,
-                force_refresh=force_refresh,
             )
             conversion_pairs = combine_dicts(conversion_pairs, conversions)
             all_events.extend(history_events)
-
-            if not force_refresh:
-                with self.db.user_write() as write_cursor:
-                    self.db.set_dynamic_cache(
-                        write_cursor=write_cursor,
-                        name=DBCacheDynamic.LAST_QUERY_TS,
-                        value=ts_now(),
-                        location=self.location.serialize(),
-                        location_name=self.name,
-                        account_id=account_id,
-                    )
+            if last_queried_tx_id is not None:
+                cursor_updates.append((
+                    f'{self.location}_{self.name}_{account_id}_last_query_id',
+                    last_queried_tx_id,
+                ))
+            queried_account_ids.append(account_id)
 
         # Process conversions only after all accounts have been queried, since the two
         # legs of a conversion live in the wallets of the two involved assets. Processing
@@ -468,20 +463,44 @@ class Coinbase(ExchangeInterface):
                 transaction_pairs=conversion_pairs,
             ))
 
+        if not force_refresh:
+            # Only persist the per-account cursors now that all accounts have been
+            # queried successfully. The caller saves the returned events only after
+            # this function returns, so persisting a cursor earlier would permanently
+            # lose the in-memory events of the already queried accounts (and break
+            # cross-wallet conversion pairing) if a later account's query raises.
+            with self.db.user_write() as write_cursor:
+                write_cursor.executemany(
+                    'INSERT OR REPLACE INTO key_value_cache(name, value) VALUES(?, ?)',
+                    cursor_updates,
+                )
+                for account_id in queried_account_ids:
+                    self.db.set_dynamic_cache(
+                        write_cursor=write_cursor,
+                        name=DBCacheDynamic.LAST_QUERY_TS,
+                        value=ts_now(),
+                        location=self.location.serialize(),
+                        location_name=self.name,
+                        account_id=account_id,
+                    )
+
         return all_events
 
     def _query_single_account_transactions(
             self,
             account_id: str,
-            account_last_id_name: str,
             last_tx_id: str | None,
-            force_refresh: bool = False,
     ) -> tuple[
             list[HistoryEvent | AssetMovement | SwapEvent],
             defaultdict[str, list[dict]],
+            str | None,
         ]:
         """
-        Query all the transactions and save all newly generated events
+        Query all the transactions of an account and generate events from them.
+
+        Also returns the id of the last queried transaction (None if there was none)
+        so the caller can persist it as the account's cursor once the entire query
+        of all accounts has succeeded.
 
         May raise:
         - RemoteError
@@ -494,7 +513,7 @@ class Coinbase(ExchangeInterface):
         transaction_pairs: defaultdict[str, list[dict[str, Any]]] = defaultdict(list)  # Maps every trade id to their two transactions  # noqa: E501
         if len(transactions) == 0:
             log.debug('Coinbase API query returned no transactions')
-            return history_events, transaction_pairs
+            return history_events, transaction_pairs, None
 
         for transaction in transactions:
             log.debug(f'Processing coinbase {transaction=}')
@@ -544,14 +563,7 @@ class Coinbase(ExchangeInterface):
             ):
                 log.warning(f'Found unknown coinbase transaction type: {transaction}')
 
-        if not force_refresh:  # Only update cache when not forcing refresh
-            with self.db.user_write() as write_cursor:  # Remember last transaction id for account
-                write_cursor.execute(
-                    'INSERT OR REPLACE INTO key_value_cache(name, value) VALUES(?, ?) ',
-                    (account_last_id_name, transactions[-1]['id']),  # -1 takes last transaction due to ascending order  # noqa: E501
-                )
-
-        return history_events, transaction_pairs
+        return history_events, transaction_pairs, transactions[-1]['id']  # -1 takes last transaction due to ascending order  # noqa: E501
 
     def _process_trades_from_conversion(
             self,
