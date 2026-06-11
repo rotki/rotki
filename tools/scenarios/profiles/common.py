@@ -1,0 +1,254 @@
+"""Shared event-generation helpers used by the profile modules.
+
+Profiles supply the distribution constants; this module turns them into real
+event-structure objects so all serialization stays in the production classes.
+"""
+from dataclasses import dataclass
+from typing import TYPE_CHECKING, Final
+
+from eth_utils import to_checksum_address
+
+from rotkehlchen.history.events.structures.asset_movement import AssetMovement
+from rotkehlchen.history.events.structures.base import HistoryEvent
+from rotkehlchen.history.events.structures.evm_event import EvmEvent
+from rotkehlchen.history.events.structures.swap import SwapEvent
+from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
+
+if TYPE_CHECKING:
+    from collections.abc import Sequence
+
+    from rotkehlchen.assets.asset import Asset
+    from rotkehlchen.history.events.structures.base import HistoryBaseEntry
+    from rotkehlchen.types import ChecksumEvmAddress, Location, TimestampMS
+    from tools.scenarios.deterministic import DeterministicFactory
+
+GAS_COUNTERPARTY: Final = 'gas'
+
+
+def erc20(chain_id: int, address: str) -> str:
+    """ERC-20 asset identifier with the address checksummed at build time, so
+    profile constants cannot silently carry a wrongly-cased address."""
+    return f'eip155:{chain_id}/erc20:{to_checksum_address(address)}'
+
+
+# Kinds of non-gas events inside an EVM transaction group and their weights.
+# 'swap' emits a spend/receive pair (two sequence slots).
+EVM_EVENT_KINDS: Final = ('receive', 'spend', 'approval', 'deposit', 'withdrawal', 'swap')
+EVM_EVENT_KIND_WEIGHTS: Final = (0.28, 0.22, 0.12, 0.12, 0.08, 0.18)
+
+
+@dataclass(frozen=True)
+class EvmPools:
+    """Distribution pools for generating EVM events on one chain"""
+    dex_counterparties: 'Sequence[str]'
+    dex_weights: 'Sequence[float]'
+    defi_counterparties: 'Sequence[str]'
+    defi_weights: 'Sequence[float]'
+    assets: 'Sequence[tuple[Asset, str]]'  # (asset, symbol-for-notes)
+    asset_weights: 'Sequence[float]'
+    gas_asset: 'Asset'
+
+
+def make_evm_tx_group(
+        factory: 'DeterministicFactory',
+        pools: EvmPools,
+        location: 'Location',
+        account: 'ChecksumEvmAddress',
+        timestamp: 'TimestampMS',
+        size: int,
+) -> list[EvmEvent]:
+    """One transaction's worth of decoded events: a gas fee event plus
+    ``size - 1`` further events sampled from the kind distribution."""
+    tx_hash = factory.evm_tx_hash()
+    gas_amount = factory.amount(0.00004, 0.015, 10)
+    events = [EvmEvent(
+        tx_ref=tx_hash,
+        sequence_index=0,
+        timestamp=timestamp,
+        location=location,
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.FEE,
+        asset=pools.gas_asset,
+        amount=gas_amount,
+        location_label=account,
+        counterparty=GAS_COUNTERPARTY,
+        notes=f'Burn {gas_amount} ETH for gas',
+    )]
+    sequence_index = 1
+    while sequence_index < size:
+        asset, symbol = factory.weighted_choice(pools.assets, pools.asset_weights)
+        amount = factory.amount(0.5, 5000, 8)
+        kind = factory.weighted_choice(EVM_EVENT_KINDS, EVM_EVENT_KIND_WEIGHTS)
+        if kind == 'swap' and sequence_index + 1 >= size:
+            kind = 'receive'  # no room left for a pair
+
+        if kind == 'swap':
+            counterparty = factory.weighted_choice(pools.dex_counterparties, pools.dex_weights)
+            receive_asset, receive_symbol = factory.weighted_choice(
+                pools.assets, pools.asset_weights,
+            )
+            receive_amount = factory.amount(0.5, 5000, 8)
+            events.extend((
+                EvmEvent(
+                    tx_ref=tx_hash,
+                    sequence_index=sequence_index,
+                    timestamp=timestamp,
+                    location=location,
+                    event_type=HistoryEventType.TRADE,
+                    event_subtype=HistoryEventSubType.SPEND,
+                    asset=asset,
+                    amount=amount,
+                    location_label=account,
+                    counterparty=counterparty,
+                    notes=f'Swap {amount} {symbol} in {counterparty}',
+                ),
+                EvmEvent(
+                    tx_ref=tx_hash,
+                    sequence_index=sequence_index + 1,
+                    timestamp=timestamp,
+                    location=location,
+                    event_type=HistoryEventType.TRADE,
+                    event_subtype=HistoryEventSubType.RECEIVE,
+                    asset=receive_asset,
+                    amount=receive_amount,
+                    location_label=account,
+                    counterparty=counterparty,
+                    notes=f'Receive {receive_amount} {receive_symbol} as the result of a swap in {counterparty}',  # noqa: E501
+                ),
+            ))
+            sequence_index += 2
+            continue
+
+        if kind == 'receive':
+            event_type, event_subtype = HistoryEventType.RECEIVE, HistoryEventSubType.NONE
+            counterparty, address = None, factory.evm_address()
+            notes = f'Receive {amount} {symbol} from {address}'
+        elif kind == 'spend':
+            event_type, event_subtype = HistoryEventType.SPEND, HistoryEventSubType.NONE
+            counterparty, address = None, factory.evm_address()
+            notes = f'Send {amount} {symbol} to {address}'
+        elif kind == 'approval':
+            event_type, event_subtype = HistoryEventType.INFORMATIONAL, HistoryEventSubType.APPROVE
+            counterparty, address = None, factory.evm_address()
+            notes = f'Set {symbol} spending approval of {account} by {address} to {amount}'
+        elif kind == 'deposit':
+            event_type, event_subtype = HistoryEventType.DEPOSIT, HistoryEventSubType.DEPOSIT_ASSET
+            counterparty = factory.weighted_choice(pools.defi_counterparties, pools.defi_weights)
+            address = factory.evm_address()
+            notes = f'Deposit {amount} {symbol} into {counterparty}'
+        else:  # withdrawal
+            event_type, event_subtype = HistoryEventType.WITHDRAWAL, HistoryEventSubType.REMOVE_ASSET  # noqa: E501
+            counterparty = factory.weighted_choice(pools.defi_counterparties, pools.defi_weights)
+            address = factory.evm_address()
+            notes = f'Withdraw {amount} {symbol} from {counterparty}'
+
+        events.append(EvmEvent(
+            tx_ref=tx_hash,
+            sequence_index=sequence_index,
+            timestamp=timestamp,
+            location=location,
+            event_type=event_type,
+            event_subtype=event_subtype,
+            asset=asset,
+            amount=amount,
+            location_label=account,
+            counterparty=counterparty,
+            address=address,
+            notes=notes,
+        ))
+        sequence_index += 1
+
+    return events
+
+
+def make_exchange_swap(
+        factory: 'DeterministicFactory',
+        location: 'Location',
+        timestamp: 'TimestampMS',
+        spend: 'tuple[Asset, str]',
+        receive: 'tuple[Asset, str]',
+        unique_suffix: str,
+        fee_asset: 'Asset | None' = None,
+) -> list[SwapEvent]:
+    """An exchange trade: spend/receive pair, optionally with a fee event"""
+    group_identifier = f'{location!s}-swap-{unique_suffix}'
+    events = [
+        SwapEvent(
+            timestamp=timestamp,
+            location=location,
+            event_subtype=HistoryEventSubType.SPEND,
+            asset=spend[0],
+            amount=factory.amount(0.5, 5000, 8),
+            group_identifier=group_identifier,
+        ),
+        SwapEvent(
+            timestamp=timestamp,
+            location=location,
+            event_subtype=HistoryEventSubType.RECEIVE,
+            asset=receive[0],
+            amount=factory.amount(0.5, 5000, 8),
+            group_identifier=group_identifier,
+        ),
+    ]
+    if fee_asset is not None:
+        events.append(SwapEvent(
+            timestamp=timestamp,
+            location=location,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=fee_asset,
+            amount=factory.amount(0.01, 25, 8),
+            group_identifier=group_identifier,
+        ))
+    return events
+
+
+def make_asset_movement(
+        factory: 'DeterministicFactory',
+        location: 'Location',
+        timestamp: 'TimestampMS',
+        asset: 'tuple[Asset, str]',
+        is_deposit: bool,
+        unique_suffix: str,
+        with_fee: bool,
+) -> list[AssetMovement]:
+    """An exchange deposit or withdrawal, optionally with a fee event"""
+    subtype = HistoryEventSubType.RECEIVE if is_deposit else HistoryEventSubType.SPEND
+    movements = [AssetMovement(
+        timestamp=timestamp,
+        location=location,
+        event_subtype=subtype,
+        asset=asset[0],
+        amount=factory.amount(1, 10000, 8),
+        unique_id=unique_suffix,
+    )]
+    if with_fee:
+        movements.append(AssetMovement(
+            timestamp=timestamp,
+            location=location,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=asset[0],
+            amount=factory.amount(0.01, 5, 8),
+            group_identifier=movements[0].group_identifier,
+        ))
+    return movements
+
+
+def make_staking_reward(
+        factory: 'DeterministicFactory',
+        location: 'Location',
+        timestamp: 'TimestampMS',
+        asset: 'tuple[Asset, str]',
+        unique_suffix: str,
+) -> 'HistoryBaseEntry':
+    amount = factory.amount(0.001, 50, 8)
+    return HistoryEvent(
+        group_identifier=f'{location!s}-reward-{unique_suffix}',
+        sequence_index=0,
+        timestamp=timestamp,
+        location=location,
+        event_type=HistoryEventType.STAKING,
+        event_subtype=HistoryEventSubType.REWARD,
+        asset=asset[0],
+        amount=amount,
+        notes=f'Receive {amount} {asset[1]} as staking reward',
+    )
