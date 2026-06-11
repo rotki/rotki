@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`-` Removing an EVM account no longer fails while a transactions refresh of all accounts is running.
 * :bug:`-` Two quick successive login attempts can no longer run the account unlock logic concurrently.
 * :bug:`-` Editing a history event no longer silently erases internal metadata such as its link to a matched asset movement.
 * :bug:`-` A failed Coinbase history query no longer permanently loses the events of already queried accounts.

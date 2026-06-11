@@ -254,8 +254,10 @@ class Rotkehlchen:
                 )
                 if (
                         is_evm_tx_greenlet and
-                        greenlet.kwargs.get('only_cache', False) is False and
-                        account_data in greenlet.kwargs['accounts']
+                        # accounts is None when all tracked accounts are being refreshed,
+                        # which includes the address being removed
+                        ((accounts := greenlet.kwargs['accounts']) is None or
+                         account_data in accounts)
                 ):
                     greenlet.kill(exception=GreenletKilledError('Killed due to request for evm address removal'))  # noqa: E501
 
