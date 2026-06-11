@@ -6,6 +6,7 @@ from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, Literal, Optional, TypeAlias, cast, overload
 
+import gevent
 from solders.solders import Signature
 from sqlcipher3 import dbapi2 as sqlcipher
 
@@ -1791,6 +1792,7 @@ class DBHistoryEvents:
         Also returns how many are the total found for the filter and the total found applying
         the limit if provided. Otherwise count_with_limit and count_without_limit are equal.
         """
+        gevent.sleep(0.25)
         events_result = self._get_history_events_with_ignored_groups(
             cursor=cursor,
             filter_query=filter_query,
