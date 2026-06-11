@@ -1,0 +1,180 @@
+name: Benchmarks
+
+on:
+  pull_request:
+    types: [ opened, synchronize, reopened, labeled ]
+  schedule:
+    - cron: "30 1 * * *"
+  workflow_dispatch:
+
+permissions: { }
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
+
+jobs:
+  bench-pr:
+    name: 'PR benchmark comparison'
+    if: github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'run-benchmarks')
+    runs-on: ubuntu-22.04
+    timeout-minutes: 30
+    env:
+      CI: true
+    permissions:
+      contents: read
+      pull-requests: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
+        with:
+          fetch-depth: 0  # compare needs the merge-base and a worktree of it
+          persist-credentials: false
+
+      - name: Load env
+        uses: rotki/action-env@49f59e650cfdc8796c4ac6533ec044b190d83f9a  # v4.0.0
+        with:
+          env_file: .github/.env.ci
+
+      - name: Setup python
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405  # v6.2.0
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@cec208311dfd045dd5311c1add060b2062131d57  # v8.0.0
+        with:
+          enable-cache: true
+          version: ${{ env.UV_VERSION }}
+          cache-dependency-glob: "uv.lock"
+
+      - name: Cache scenario profiles
+        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae  # v5.0.5
+        with:
+          path: ~/.cache/rotki-scenarios
+          key: scenario-profiles-${{ hashFiles('tools/scenarios/**/*.py', 'rotkehlchen/data/global.db', 'rotkehlchen/db/settings.py') }}
+
+      - name: Install dependencies
+        run: uv sync --locked --group dev
+
+      - name: Run comparison against the merge-base
+        run: |
+          uv run python -m tools.bench compare \
+            --base "origin/${{ github.base_ref }}" \
+            --samples 5 \
+            --output bench-compare.json \
+            --markdown bench-compare.md
+
+      - name: Comment results on the PR
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh pr comment "${{ github.event.pull_request.number }}" \
+            --body-file bench-compare.md \
+            --edit-last \
+            --create-if-none
+
+      - name: Upload raw results
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
+        with:
+          name: bench-compare
+          path: |
+            bench-compare.json
+            bench-compare.md
+          if-no-files-found: ignore
+
+  bench-nightly:
+    name: 'Nightly benchmark trend'
+    if: github.event_name != 'pull_request' && (github.repository == 'rotki/rotki' || github.event_name == 'workflow_dispatch')
+    runs-on: ubuntu-22.04
+    timeout-minutes: 30
+    env:
+      CI: true
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Load env
+        uses: rotki/action-env@49f59e650cfdc8796c4ac6533ec044b190d83f9a  # v4.0.0
+        with:
+          env_file: .github/.env.ci
+
+      - name: Setup python
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405  # v6.2.0
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@cec208311dfd045dd5311c1add060b2062131d57  # v8.0.0
+        with:
+          enable-cache: true
+          version: ${{ env.UV_VERSION }}
+          cache-dependency-glob: "uv.lock"
+
+      - name: Cache scenario profiles
+        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae  # v5.0.5
+        with:
+          path: ~/.cache/rotki-scenarios
+          key: scenario-profiles-${{ hashFiles('tools/scenarios/**/*.py', 'rotkehlchen/data/global.db', 'rotkehlchen/db/settings.py') }}
+
+      - name: Install dependencies
+        run: uv sync --locked --group dev
+
+      - name: Run benchmarks
+        run: |
+          uv run python -m tools.bench run \
+            --samples 5 \
+            --output bench-result.json \
+            --gha-output gha-benchmark.json
+
+      - name: Upload raw results
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
+        with:
+          name: bench-nightly
+          path: |
+            bench-result.json
+            gha-benchmark.json
+          if-no-files-found: ignore
+
+      - name: Push datapoint and check for regression
+        uses: benchmark-action/github-action-benchmark@52576c92bccf6ac60c8223ec7eb2565637cae9ba  # v1.22.1
+        with:
+          name: 'rotki backend macro benchmarks'
+          tool: 'customSmallerIsBetter'
+          output-file-path: gha-benchmark.json
+          gh-repository: 'github.com/rotki/benchmark-data'
+          gh-pages-branch: main
+          benchmark-data-dir-path: 'macro'
+          github-token: ${{ secrets.BENCHMARK_DATA_TOKEN }}
+          auto-push: true
+          alert-threshold: '120%'
+          comment-on-alert: false
+          fail-on-alert: true
+
+  notify:
+    name: 'Notify on nightly regression'
+    if: ${{ always() && github.event_name == 'schedule' && github.repository == 'rotki/rotki' }}
+    needs: [ bench-nightly ]
+    runs-on: ubuntu-latest
+    environment: nightly_notify
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Notify if the benchmark job failed
+        if: needs.bench-nightly.result == 'failure'
+        run: |
+          pip install requests
+          ./.github/scripts/notifier.py --webhook ${{ secrets.DISCORD_WEBHOOK }} --run-id ${{ github.run_id }} --test

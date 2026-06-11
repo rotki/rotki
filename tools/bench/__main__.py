@@ -16,7 +16,12 @@ from pathlib import Path
 
 from tools.bench.compare import run_compare
 from tools.bench.harness import ensure_profile_cached, run_profile
-from tools.bench.output import collect_meta, render_compare_table, render_run_table
+from tools.bench.output import (
+    collect_meta,
+    render_compare_table,
+    render_run_table,
+    to_gha_benchmark,
+)
 from tools.bench.runner import BenchError
 from tools.bench.stats import summarize
 
@@ -42,8 +47,16 @@ def run_command(args: argparse.Namespace) -> None:
 
     payload = {'meta': collect_meta(REPO_ROOT) | {'samples': args.samples}, 'results': results}
     args.output.write_text(json.dumps(payload, indent=2), encoding='utf-8')
+    if args.gha_output is not None:
+        args.gha_output.write_text(
+            json.dumps(to_gha_benchmark(results), indent=2),
+            encoding='utf-8',
+        )
+    table = render_run_table(results)
+    if args.markdown is not None:
+        args.markdown.write_text(table + '\n', encoding='utf-8')
     print(f'\nresults written to {args.output}\n')
-    print(render_run_table(results))
+    print(table)
 
 
 def compare_command(args: argparse.Namespace) -> None:
@@ -61,8 +74,16 @@ def compare_command(args: argparse.Namespace) -> None:
 
     result['meta'] = collect_meta(REPO_ROOT)
     args.output.write_text(json.dumps(result, indent=2), encoding='utf-8')
+    table = render_compare_table(result['profiles'])
+    if args.markdown is not None:
+        header = (
+            f'### Benchmark comparison\n\n'
+            f'base `{result["base_commit"][:10]}` ({args.base}) vs head '
+            f'`{result["head_commit"][:10]}` — {args.samples} interleaved block pairs\n\n'
+        )
+        args.markdown.write_text(header + table + '\n', encoding='utf-8')
     print(f'\nresults written to {args.output}\n')
-    print(render_compare_table(result['profiles']))
+    print(table)
 
 
 def main() -> None:
@@ -76,6 +97,8 @@ def main() -> None:
     run_parser.add_argument('--profile', nargs='+', default=['small', 'whale'])
     run_parser.add_argument('--samples', type=int, default=5, help='Measurement blocks per profile')  # noqa: E501
     run_parser.add_argument('--output', type=Path, default=Path('bench-result.json'))
+    run_parser.add_argument('--markdown', type=Path, default=None, help='Also write the markdown table here')  # noqa: E501
+    run_parser.add_argument('--gha-output', type=Path, default=None, help='Also write github-action-benchmark customSmallerIsBetter JSON here')  # noqa: E501
     run_parser.set_defaults(func=run_command)
 
     compare_parser = subparsers.add_parser('compare', help='A/B against a base ref')
@@ -83,6 +106,7 @@ def main() -> None:
     compare_parser.add_argument('--profile', nargs='+', default=['small', 'whale'])
     compare_parser.add_argument('--samples', type=int, default=5, help='Interleaved block pairs per profile')  # noqa: E501
     compare_parser.add_argument('--output', type=Path, default=Path('bench-compare.json'))
+    compare_parser.add_argument('--markdown', type=Path, default=None, help='Also write the markdown table (with header) here')  # noqa: E501
     compare_parser.set_defaults(func=compare_command)
 
     args = parser.parse_args()

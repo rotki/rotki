@@ -262,14 +262,21 @@ history for "did the last month of changes help?".
 
 ### 4.3 CI wiring
 
-- New reusable workflow `task_bench.yml`:
-  - **PR mode** (opt-in via `run-benchmarks` label): build profile (cached) →
-    `bench compare --base $MERGE_BASE` → post/update a single PR comment with
-    the delta table. Concurrency-cancelled on new pushes.
-  - **Nightly mode**: `bench run` → push datapoint to the `rotki/benchmark-data`
-    repo → alert on regression.
+- Workflow `rotki_benchmarks.yml`:
+  - **PR job** (opt-in via `run-benchmarks` label): cached profile build →
+    `bench compare --base origin/$BASE` → post/update a single PR comment
+    (`gh pr comment --edit-last --create-if-none`, no extra action
+    dependency). Concurrency-cancelled on new pushes.
+  - **Nightly job**: `bench run --gha-output` → push datapoint to the
+    `rotki/benchmark-data` repo via `github-action-benchmark`
+    (customSmallerIsBetter, alert threshold 120 %, fail-on-alert) → Discord
+    notification through the existing nightly notifier on failure.
+- Profile cache: `~/.cache/rotki-scenarios` via `actions/cache`, keyed on
+  `tools/scenarios/**`, the packaged global.db and `db/settings.py` (proxy
+  for schema-version bumps; over-busting is harmless).
 - Runner: `ubuntu-22.04`, same as backend tests. Job budget target: ≤ 15 min
   for PR mode with `small` + `whale` (profile cache hit assumed).
+- See §7.1 for the one-time org setup (data repo, token, label).
 
 ### 4.4 Micro benchmarks (later phase)
 
@@ -371,19 +378,30 @@ Constraints this imposes:
 
 | Phase | Deliverable | Done when |
 |-------|-------------|-----------|
-| 1 | `tools/scenarios` + `small` & `whale` profiles + cache | `uv run python -m tools.scenarios build --profile whale` produces a bootable data dir in ≤ 60 s cold, ≤ 1 s cached; backend boots it (task manager on, no network egress) and unlocks the user; `EXPLAIN QUERY PLAN` of the main history-events queries on the generated DB uses the expected indices |
-| 2 | `tools/bench` run + compare (+ external-HTTP mock as needed by ops) | `bench compare --base develop` prints a stable delta table locally; re-running on an unchanged tree shows all ops within noise (no false deltas > threshold) |
-| 3 | Contract suite | runs locally against a profile-booted backend; intentionally breaking a serializer field fails it |
-| 4 | CI wiring (bench + contract together) | nightly trend datapoints accumulate in `rotki/benchmark-data`; `run-benchmarks` label produces a PR comment; contract suite in regular PR CI |
-| 5 | Golden e2e + premium mode + `defi`/`empty` profiles + snapshots | specs green in e2e CI group; premium mode runs in contract + e2e |
-| 6 | Micro benchmarks | nightly informational; calibration doc for thresholds |
+| 1 ✓ | `tools/scenarios` + `small` & `whale` profiles + cache | `uv run python -m tools.scenarios build --profile whale` produces a bootable data dir in ≤ 60 s cold, ≤ 1 s cached; backend boots it (task manager on, no network egress) and unlocks the user; `EXPLAIN QUERY PLAN` of the main history-events queries on the generated DB uses the expected indices |
+| 2 ✓ | `tools/bench` run + compare | `bench compare` prints a stable delta table locally; re-running on an unchanged tree shows all ops within noise (no false deltas > threshold) |
+| 3 | CI wiring for bench | nightly trend datapoints accumulate in `rotki/benchmark-data`; `run-benchmarks` label produces a PR comment |
+| 4 | Micro benchmarks + remaining bench ops (mock layer, `task_manager_cycle`) | nightly informational; calibration doc for thresholds |
+| 5 | Contract suite (first frontend-touching phase) | runs locally against a profile-booted backend and in PR CI (non-required); intentionally breaking a serializer field fails it |
+| 6 | Golden e2e + premium mode + `defi`/`empty` profiles + snapshots | specs green in e2e CI group; premium mode runs in contract + e2e |
 
-Correctness and performance are equally weighted: the contract suite (phase 3)
-lands before any CI wiring, so both stacks go into CI in one phase (4). Each
-phase is independently useful; phases 1–3 require no CI changes and give
-immediate local value (every perf claim in development becomes a measured
-number, every backend response shape is checkable against the frontend's
-contracts).
+Ordering note: the backend-only stack (profiles → bench → CI → micro) lands
+fully before any frontend-touching phase, by maintainer decision — the
+framework proves itself in CI on the backend first; the contract suite and
+golden e2e follow as the last phases.
+
+### 7.1 One-time setup required by maintainers (phase 3)
+
+The CI wiring needs three things only an org admin can create:
+
+1. **`rotki/benchmark-data` repository** with a `main` branch (can be empty);
+   nightly datapoints and trend charts are pushed there by
+   `github-action-benchmark` (same external-repo pattern as
+   `rotki/test-caching`).
+2. **`BENCHMARK_DATA_TOKEN` secret** in the rotki repo: a token with write
+   access to `rotki/benchmark-data`.
+3. **`run-benchmarks` label** in the rotki repo, which opts a PR into the
+   comparison job.
 
 ## 8. Risks / open questions
 

@@ -45,6 +45,21 @@ def render_run_table(results: dict[str, dict[str, Any]]) -> str:
     return '\n'.join(lines)
 
 
+def to_gha_benchmark(results: dict[str, dict[str, Any]]) -> list[dict[str, Any]]:
+    """Convert a `run` result to github-action-benchmark's
+    customSmallerIsBetter format: one datapoint per profile/operation."""
+    return [
+        {
+            'name': f'{profile}/{op}',
+            'unit': 'ms',
+            'value': summary['median_ms'],
+            'extra': f'min {summary["min_ms"]}ms, stddev {summary["stddev_ms"]}ms',
+        }
+        for profile, ops in results.items()
+        for op, summary in ops.items()
+    ]
+
+
 def render_compare_table(comparison: dict[str, dict[str, Any]]) -> str:
     """Markdown table for a `compare` result: per profile/op deltas"""
     lines = [
