@@ -32,6 +32,7 @@ from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.history.types import HistoricalPriceOracle
+from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.tests.api.test_liquity import make_liquity_proxy_patch
 from rotkehlchen.tests.utils.api import (
     ASYNC_TASK_WAIT_TIMEOUT,
@@ -531,6 +532,39 @@ def test_query_all_balances_errors(rotkehlchen_api_server: 'APIServer') -> None:
         contained_in_msg='Not a valid boolean',
         status_code=HTTPStatus.BAD_REQUEST,
     )
+
+
+def test_query_all_balances_warms_price_cache(rotkehlchen_api_server: 'APIServer') -> None:
+    """Test that query_balances starts by prefetching prices for the assets of the
+    latest balance snapshot in a single batched call, excluding nft identifiers and
+    assets only present in older snapshots."""
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+    with rotki.data.db.user_write() as write_cursor:
+        write_cursor.executemany(
+            'INSERT OR IGNORE INTO assets(identifier) VALUES (?)',
+            [
+                (A_DAI.identifier,),
+                (A_ETH.identifier,),
+                (A_LUSD.identifier,),
+                ((nft_id := '_nft_0xdeadbeef_1'),),
+            ],
+        )
+        write_cursor.executemany(
+            'INSERT INTO timed_balances(category, timestamp, currency, amount, usd_value) '
+            'VALUES (?, ?, ?, ?, ?)',
+            [
+                ((asset_category := BalanceType.ASSET.serialize_for_db()), 1, A_DAI.identifier, '1', '1'),  # older snapshot. Not prefetched  # noqa: E501
+                (asset_category, 2, A_ETH.identifier, '1', '1'),
+                (BalanceType.LIABILITY.serialize_for_db(), 2, A_LUSD.identifier, '1', '1'),  # liabilities also get prefetched  # noqa: E501
+                (asset_category, 2, nft_id, '1', '1'),  # nfts are excluded
+            ],
+        )
+
+    with patch.object(Inquirer, 'find_main_currency_prices', return_value={}) as price_mock:
+        rotki.query_balances(requested_save_data=False)
+
+    assert price_mock.call_count != 0
+    assert set(price_mock.call_args_list[0].args[0]) == {A_ETH, A_LUSD}
 
 
 def test_protocol_balances_all_chains(rotkehlchen_api_server: 'APIServer') -> None:
