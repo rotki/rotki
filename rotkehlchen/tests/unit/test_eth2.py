@@ -6,6 +6,7 @@ import pytest
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.chain.accounts import BlockchainAccountData
 from rotkehlchen.chain.decoding.constants import CPT_GAS
+from rotkehlchen.chain.ethereum.modules.eth2.beacon import BeaconNode
 from rotkehlchen.chain.ethereum.modules.eth2.constants import (
     CONSOLIDATION_REQUEST_CONTRACT,
     CPT_ETH2,
@@ -29,6 +30,7 @@ from rotkehlchen.db.eth2 import DBEth2
 from rotkehlchen.db.evmtx import DBEvmTx
 from rotkehlchen.db.filtering import HistoryEventFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
+from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.externalapis.beaconchain.service import BeaconChainQueryResponse
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.eth2 import (
@@ -1315,3 +1317,15 @@ def test_detect_and_refresh_validators_skips_exited_validators(eth2: 'Eth2') -> 
         eth2.detect_and_refresh_validators([])
 
     assert queried_indices == [active_index]
+
+
+def test_beacon_node_bad_version_response_raises_remote_error():
+    """An unexpected response shape from the beacon node's version endpoint
+    must raise RemoteError (which callers handle by degrading gracefully)
+    instead of an unhandled TypeError that crashes user login"""
+    for bad_response in ([], 'lighthouse', None):
+        with (
+            patch.object(BeaconNode, 'query', return_value=bad_response),
+            pytest.raises(RemoteError),
+        ):
+            BeaconNode(rpc_endpoint='http://localhost:6969')
