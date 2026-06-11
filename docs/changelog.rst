@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`-` Editing a history event no longer silently erases internal metadata such as its link to a matched asset movement.
 * :bug:`-` A failed Coinbase history query no longer permanently loses the events of already queried accounts.
 * :bug:`-` A temporary premium server error no longer permanently stops all background tasks (balance snapshots, transaction querying and decoding, database sync) until the application is restarted.
 * :bug:`-` A failed Binance history query no longer marks the time range as queried, which permanently skipped the deposits and withdrawals of that range.
