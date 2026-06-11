@@ -576,6 +576,46 @@ def test_transfer_updates_sender_and_receiver_buckets(
         ]
 
 
+def test_exchange_transfer_does_not_update_bucket(
+        database: 'DBHandler',
+        messages_aggregator: 'MessagesAggregator',
+) -> None:
+    """Test TRANSFER/NONE events in exchange locations don't affect balance buckets."""
+    with database.user_write() as write_cursor:
+        DBHistoryEvents(database).add_history_events(
+            write_cursor=write_cursor,
+            history=[HistoryEvent(
+                group_identifier='kraken-receive',
+                sequence_index=0,
+                timestamp=TimestampMS(1000),
+                location=Location.KRAKEN,
+                event_type=HistoryEventType.RECEIVE,
+                event_subtype=HistoryEventSubType.NONE,
+                asset=A_BTC,
+                amount=FVal('10'),
+                location_label='kraken',
+            ), HistoryEvent(
+                group_identifier='kraken-transfer',
+                sequence_index=0,
+                timestamp=TimestampMS(2000),
+                location=Location.KRAKEN,
+                event_type=HistoryEventType.TRANSFER,
+                event_subtype=HistoryEventSubType.NONE,
+                asset=A_BTC,
+                amount=FVal('3'),
+                location_label='kraken',
+            )],
+        )
+
+    process_historical_balances(database, messages_aggregator)
+
+    with database.conn.read_ctx() as cursor:
+        assert cursor.execute(
+            'SELECT timestamp, asset, location_label, metric_value FROM event_metrics '
+            'ORDER BY timestamp',
+        ).fetchall() == [(1000, A_BTC.identifier, 'kraken', '10')]
+
+
 def test_deposit_to_protocol_updates_wallet_and_protocol_buckets(
         database: 'DBHandler',
         messages_aggregator: 'MessagesAggregator',

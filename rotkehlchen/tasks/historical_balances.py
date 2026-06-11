@@ -11,6 +11,7 @@ from rotkehlchen.db.constants import HISTORY_MAPPING_KEY_STATE, HistoryMappingSt
 from rotkehlchen.db.filtering import HistoryEventFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.db.settings import CachedSettings
+from rotkehlchen.exchanges.constants import ALL_SUPPORTED_EXCHANGES
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.data_issues.constants import IssueKind
 from rotkehlchen.history.data_issues.manager import DataIssuesManager
@@ -127,6 +128,12 @@ class Bucket(NamedTuple):
         if (
             location == Location.KRAKEN.serialize_for_db() and
             event_key in KRAKEN_INTERNAL_STAKING_EVENTS
+        ):
+            return []
+
+        if (
+            event.event_type == HistoryEventType.TRANSFER and
+            event.location in ALL_SUPPORTED_EXCHANGES
         ):
             return []
 
