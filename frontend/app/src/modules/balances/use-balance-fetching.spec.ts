@@ -2,6 +2,11 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useBalanceFetching } from './use-balance-fetching';
 import '@test/i18n';
 
+const { queryBalancesAsync, refreshBlockchainBalances } = vi.hoisted(() => ({
+  queryBalancesAsync: vi.fn().mockResolvedValue({ taskId: 1 }),
+  refreshBlockchainBalances: vi.fn().mockResolvedValue(undefined),
+}));
+
 vi.mock('@/modules/core/tasks/use-task-handler', async importOriginal => ({
   ...(await importOriginal<Record<string, unknown>>()),
   useTaskHandler: vi.fn().mockReturnValue({
@@ -14,7 +19,13 @@ vi.mock('@/modules/core/tasks/use-task-handler', async importOriginal => ({
 
 vi.mock('@/modules/balances/api/use-balances-api', () => ({
   useBalancesApi: vi.fn().mockReturnValue({
-    queryBalancesAsync: vi.fn().mockResolvedValue({ taskId: 1 }),
+    queryBalancesAsync,
+  }),
+}));
+
+vi.mock('@/modules/balances/use-blockchain-balances', () => ({
+  useBlockchainBalances: vi.fn().mockReturnValue({
+    refreshBlockchainBalances,
   }),
 }));
 
@@ -57,6 +68,8 @@ vi.mock('@/modules/assets/prices/use-price-refresh', () => ({
 describe('useBalanceFetching', () => {
   beforeEach(() => {
     setActivePinia(createPinia());
+    queryBalancesAsync.mockClear();
+    refreshBlockchainBalances.mockClear();
   });
 
   describe('fetchBalances', () => {
@@ -70,6 +83,20 @@ describe('useBalanceFetching', () => {
     it('should coordinate fetching of all balance types', async () => {
       const { fetch } = useBalanceFetching();
       await expect(fetch()).resolves.not.toThrow();
+    });
+  });
+
+  describe('refreshFromChain', () => {
+    it('should query all balances only after the chain refresh completes', async () => {
+      const { refreshFromChain } = useBalanceFetching();
+      await refreshFromChain();
+
+      expect(refreshBlockchainBalances).toHaveBeenCalledOnce();
+      expect(queryBalancesAsync).toHaveBeenCalledOnce();
+      // the all-balances query (which may persist a snapshot) must run strictly
+      // after the per-chain refresh to avoid snapshotting transient cleared state
+      expect(refreshBlockchainBalances.mock.invocationCallOrder[0])
+        .toBeLessThan(queryBalancesAsync.mock.invocationCallOrder[0]);
     });
   });
 

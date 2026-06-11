@@ -46,14 +46,20 @@ export const useBalanceFetching = createSharedComposable(() => {
     await Promise.allSettled([fetchManualBalances(), refreshAccounts(), fetchConnectedExchangeBalances()]);
   };
 
-  const refreshFromChain = (): void => {
-    startPromise(refreshBlockchainBalances());
-    startPromise(fetchBalances());
+  const refreshFromChain = async (): Promise<void> => {
+    // Refresh the blockchain balances fully before triggering the all-balances
+    // query. GET /balances reads the shared in-memory balances and may persist a
+    // snapshot; a per-chain refresh clears a chain's balances before repopulating
+    // them, so running both concurrently can let the snapshot observe the transient
+    // cleared state and save a 0-value snapshot while the balances recover right
+    // after.
+    await refreshBlockchainBalances();
+    await fetchBalances();
   };
 
   const fetch = async (): Promise<void> => {
     await fetchCached();
-    refreshFromChain();
+    startPromise(refreshFromChain());
   };
 
   const autoRefresh = async (): Promise<void> => {
