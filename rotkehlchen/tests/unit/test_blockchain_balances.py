@@ -9,12 +9,22 @@ from rotkehlchen.chain.balances import BlockchainBalances
 from rotkehlchen.chain.ethereum.modules.liquity.constants import CPT_LIQUITY
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.chain.structures import EvmTokenDetectionData
-from rotkehlchen.constants import DEFAULT_BALANCE_LABEL, ONE
-from rotkehlchen.constants.assets import A_BCH, A_BTC, A_DAI, A_ETH, A_LQTY, A_POL
+from rotkehlchen.constants import DEFAULT_BALANCE_LABEL, ONE, ZERO
+from rotkehlchen.constants.assets import A_BCH, A_BTC, A_DAI, A_ETH, A_EUR, A_LQTY, A_POL
+from rotkehlchen.db.cache import DBCacheDynamic
 from rotkehlchen.fval import FVal
+from rotkehlchen.globaldb.handler import GlobalDBHandler
+from rotkehlchen.history.types import HistoricalPrice, HistoricalPriceOracle
 from rotkehlchen.tests.utils.factories import UNIT_BTC_ADDRESS1, make_evm_address
 from rotkehlchen.tests.utils.xpubs import setup_db_for_xpub_tests_impl
-from rotkehlchen.types import ChainID, ChecksumEvmAddress, SupportedBlockchain, TokenKind
+from rotkehlchen.types import (
+    ChainID,
+    ChecksumEvmAddress,
+    Price,
+    SupportedBlockchain,
+    Timestamp,
+    TokenKind,
+)
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.aggregator import ChainsAggregator
@@ -304,3 +314,73 @@ def test_native_token_balance(
             )},
             usdt: {DEFAULT_BALANCE_LABEL: Balance(amount=FVal('0.074222'), value=FVal(0.1113330))},
         }
+
+
+@pytest.mark.parametrize('number_of_eth_accounts', [0])
+@pytest.mark.parametrize('gnosis_accounts', [['0x586AD5760a2fe5847c58deEc2933e11B5f595dBF']])
+def test_cached_gnosis_balance_uses_manual_current_price(
+        blockchain: 'ChainsAggregator',
+        gnosis_accounts: list[ChecksumEvmAddress],
+) -> None:
+    """Regression test for cached GET repricing preferring manual current prices.
+
+    Reproduces issue 1 from the aGnoEURe investigation: when blockchain balances are
+    read from the DB cache, a manual current price must take precedence over any
+    historical price found at ``last_refresh_ts``.
+    """
+    assert len(gnosis_accounts) == 1
+    address = gnosis_accounts[0]
+    manual_price = FVal('5')
+    historical_price = FVal('1')
+    amount = FVal('65.748178097718409869')
+
+    gnosis_token = EvmToken.initialize(
+        address=string_to_evm_address('0xEdBC7449a9b594CA4E053D9737EC5Dc4CbCcBfb2'),
+        chain_id=ChainID.GNOSIS,
+        token_kind=TokenKind.ERC20,
+    )
+    blockchain.balances.gnosis[address] = BalanceSheet()
+    blockchain.balances.gnosis[address].assets[gnosis_token]['aave-v3'] = Balance(
+        amount=amount,
+        value=ZERO,
+    )
+    blockchain._update_blockchain_balances_cache(
+        blockchain=SupportedBlockchain.GNOSIS,
+        addresses=None,
+    )
+
+    refresh_ts = Timestamp(1_700_000_000)
+    with blockchain.database.user_write() as write_cursor:
+        blockchain.database.set_dynamic_cache(
+            write_cursor=write_cursor,
+            name=DBCacheDynamic.LAST_BLOCKCHAIN_BALANCES_QUERY_TS,
+            value=refresh_ts,
+            blockchain=SupportedBlockchain.GNOSIS.serialize(),
+        )
+
+    GlobalDBHandler.add_historical_prices([HistoricalPrice(
+        from_asset=gnosis_token,
+        to_asset=A_EUR,
+        source=HistoricalPriceOracle.MANUAL,
+        timestamp=refresh_ts,
+        price=Price(historical_price),
+    )])
+    GlobalDBHandler.add_manual_latest_price(
+        from_asset=gnosis_token,
+        to_asset=A_EUR,
+        price=Price(manual_price),
+    )
+    blockchain.balances.gnosis.clear()
+
+    with patch.object(
+        GlobalDBHandler,
+        'get_manual_current_price',
+        side_effect=AssertionError('cached balance repricing should prefetch manual prices'),
+    ):
+        balances_update = blockchain.get_balances_update(
+            chain=SupportedBlockchain.GNOSIS,
+            from_cache=True,
+        )
+
+    assert gnosis_token in balances_update.totals.assets
+    assert balances_update.totals.assets[gnosis_token]['aave-v3'].value == amount * manual_price
