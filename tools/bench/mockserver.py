@@ -51,7 +51,7 @@ def _call_result(data: bytes) -> tuple[bool, bytes]:
     """Answer one contract call's data, recursing through multicall.
     Returns (known, payload): unknown selectors report as reverted inside
     tryAggregate so module code skips them through its own failure handling
-    instead of mis-decoding a fabricated value."""
+    instead of wrongly decoding a fabricated value."""
     selector, arguments = data[:4], data[4:]
     if selector == SCANNER_ETHER_BALANCES:
         (addresses,) = abi_decode(['address[]'], arguments)

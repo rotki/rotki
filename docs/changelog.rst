@@ -3,6 +3,7 @@ Changelog
 =========
 
 * :bug:`-` Balance snapshots taken automatically when opening the app are no longer occasionally saved with a zero (or too-low) total while the blockchain balances are still being refreshed.
+* :bug:`-` Login no longer fails if the configured beacon node RPC endpoint returns an unexpected response.
 * :bug:`-` Removing an EVM account no longer fails while a transactions refresh of all accounts is running.
 * :bug:`-` Two quick successive login attempts can no longer run the account unlock logic concurrently.
 * :bug:`-` Editing a history event no longer silently erases internal metadata such as its link to a matched asset movement.
