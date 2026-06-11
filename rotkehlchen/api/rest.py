@@ -315,6 +315,9 @@ def login_lock() -> Callable:
     """
     This is a decorator that uses the login lock at RestAPI to avoid a race condition between
     async tasks using the user unlock logic.
+
+    It has to be applied below async_api_call so that the lock is held while the wrapped
+    function actually runs in the spawned greenlet, and not just while it is dispatched.
     """
     def wrapper(func: Callable[..., Response]) -> Callable[..., Response]:
         def inner(rest_api: 'RestAPI', **kwargs: Any) -> Response:
@@ -899,8 +902,8 @@ class RestAPI:
         result_dict = _wrap_in_ok_result(result)
         return api_response(result_dict, status_code=HTTPStatus.OK)
 
-    @login_lock()
     @async_api_call()
+    @login_lock()
     def create_new_user(
             self,
             name: str,
@@ -983,8 +986,8 @@ class RestAPI:
             'status_code': HTTPStatus.OK,
         }
 
-    @login_lock()
     @async_api_call()
+    @login_lock()
     def user_login(
             self,
             name: str,
