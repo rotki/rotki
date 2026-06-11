@@ -2,19 +2,32 @@
 
 Every block starts from a pristine copy of the cached profile so unlock is
 always measured cold and one block's mutations can't leak into the next.
-Within a block each operation gets one warmup pass and one timed pass.
+
+Within a block each operation gets one warmup pass and then OP_INNER_PASSES
+timed passes of which the MINIMUM is the block's sample. Contention noise
+(background tasks firing mid-measurement, scheduler interference) is strictly
+one-sided additive, so the minimum is robust against it while a real
+regression raises the minimum itself. This was motivated by the synthetic
+regression test on PR #12405, where single-pass sampling produced both a
+false negative (high-variance op absorbing a real +250ms) and a false
+positive (an op bimodal between ~125ms and ~830ms depending on where in the
+block it landed relative to post-unlock background-task activity).
+boot_to_ping and user_unlock are cold-path by definition and contribute one
+sample per block.
 """
 import json
 import shutil
 import subprocess  # noqa: S404
 import time
 from pathlib import Path
-from typing import Any
+from typing import Any, Final
 
 from tools.bench.operations import OPERATIONS
 from tools.bench.runner import BackendRunner, BenchError
 from tools.scenarios.base import USER_PASSWORD
 from tools.scenarios.cache import cached_profile_path, compute_cache_key, materialize
+
+OP_INNER_PASSES: Final = 3
 
 
 def ensure_profile_cached(head_repo_root: Path, profile: str) -> Path:
@@ -76,10 +89,13 @@ def run_block(
         operations = [op for op in OPERATIONS if profile in op.profiles]
         for operation in operations:  # warmup pass
             operation.run(backend, expected)
-        for operation in operations:  # timed pass
-            start = time.perf_counter()
-            operation.run(backend, expected)
-            timings[operation.name] = (time.perf_counter() - start) * 1000
+        for operation in operations:  # timed passes; min is the sample (see module docstring)
+            passes = []
+            for _ in range(OP_INNER_PASSES):
+                start = time.perf_counter()
+                operation.run(backend, expected)
+                passes.append((time.perf_counter() - start) * 1000)
+            timings[operation.name] = min(passes)
 
     shutil.rmtree(data_dir)
     return timings

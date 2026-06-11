@@ -17,6 +17,7 @@ from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.user_messages import MessagesAggregator
 
 if TYPE_CHECKING:
+    from rotkehlchen.assets.asset import Asset
     from rotkehlchen.balances.manual import ManuallyTrackedBalance
     from rotkehlchen.chain.accounts import BlockchainAccountData
     from rotkehlchen.db.settings import ModifiableDBSettings
@@ -76,6 +77,41 @@ class ProfileBuilder:
     def add_manual_balances(self, balances: list['ManuallyTrackedBalance']) -> None:
         with self.db.user_write() as write_cursor:
             self.db.add_manually_tracked_balances(write_cursor, balances)
+
+    def add_manual_latest_prices(self, prices: Sequence[tuple['Asset', str]]) -> None:
+        """Seed manual latest prices (vs USD) into the global DB so balance
+        valuations resolve locally instead of querying remote oracles."""
+        from rotkehlchen.constants.assets import A_USD  # heavy import kept local
+        from rotkehlchen.fval import FVal
+        from rotkehlchen.types import Price
+
+        for asset, usd_price in prices:
+            GlobalDBHandler.add_manual_latest_price(
+                from_asset=asset,
+                to_asset=A_USD,
+                price=Price(FVal(usd_price)),
+            )
+
+    def add_balance_snapshots(
+            self,
+            balance_rows: Sequence[tuple],
+            location_rows: Sequence[tuple],
+            snapshot_count: int,
+    ) -> None:
+        """Bulk-insert historical balance snapshots (timed_balances and
+        timed_location_data rows, as produced by profiles.common.make_snapshots)"""
+        with self.db.user_write() as write_cursor:
+            write_cursor.executemany(
+                'INSERT INTO timed_balances(category, timestamp, currency, amount, usd_value) '
+                'VALUES (?, ?, ?, ?, ?)',
+                balance_rows,
+            )
+            write_cursor.executemany(
+                'INSERT INTO timed_location_data(timestamp, location, usd_value) '
+                'VALUES (?, ?, ?)',
+                location_rows,
+            )
+        self.stats['snapshots'] = snapshot_count
 
     def ignore_assets(self, identifiers: Sequence[str]) -> None:
         with self.db.user_write() as write_cursor:

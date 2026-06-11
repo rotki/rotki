@@ -24,6 +24,55 @@ if TYPE_CHECKING:
 
 GAS_COUNTERPARTY: Final = 'gas'
 
+# Fixed USD prices per symbol, seeded as manual latest prices so that any
+# balance valuation resolves locally instead of asking remote oracles.
+USD_PRICES: Final = {
+    'ETH': '3000', 'WETH': '3000', 'stETH': '2990', 'rETH': '3300',
+    'BTC': '60000', 'WBTC': '60000',
+    'USDC': '1', 'USDC.e': '1', 'USDT': '1', 'DAI': '1', 'EUR': '1.08',
+    'LINK': '15', 'UNI': '9', 'AAVE': '160', 'CRV': '0.5', 'LDO': '1.8',
+    'MKR': '1500', 'SNX': '2.5', 'PEPE': '0.00001', 'ARB': '0.8', 'OP': '1.9',
+}
+
+
+def make_snapshots(
+        factory: 'DeterministicFactory',
+        assets: 'Sequence[tuple[Asset, str]]',
+        weeks: int,
+        location_weights: 'Sequence[tuple[Location, float]]',
+) -> tuple[list[tuple], list[tuple], int]:
+    """Weekly balance snapshots over the profile lifetime.
+
+    Returns (timed_balances rows, timed_location_data rows, snapshot count).
+    Amounts ramp up towards the present with some jitter, mirroring how real
+    portfolios accumulate. Location rows include the 'total' entry that the
+    netvalue statistics endpoint reads.
+    """
+    from rotkehlchen.fval import FVal  # avoid import cycle at module load
+    from tools.scenarios.deterministic import SCENARIO_NOW
+
+    base_amounts = {symbol: factory.amount(0.5, 200, 4) for _, symbol in assets}
+    balance_rows, location_rows = [], []
+    for week in range(weeks):
+        timestamp = SCENARIO_NOW - (weeks - 1 - week) * 7 * 24 * 3600
+        growth = FVal(f'{(week + 1) / weeks * factory.rng.uniform(0.9, 1.1):.6f}')
+        total = FVal(0)
+        for asset, symbol in assets:
+            amount = base_amounts[symbol] * growth
+            usd_value = amount * FVal(USD_PRICES[symbol])
+            total += usd_value
+            balance_rows.append(
+                ('A', timestamp, asset.identifier, str(amount), str(usd_value)),
+            )
+        for location, weight in location_weights:
+            location_rows.append((
+                timestamp,
+                location.serialize_for_db(),
+                str(total * FVal(f'{weight}')),
+            ))
+        location_rows.append((timestamp, 'H', str(total)))  # 'H' = total; netvalue reads it
+    return balance_rows, location_rows, weeks
+
 
 def erc20(chain_id: int, address: str) -> str:
     """ERC-20 asset identifier with the address checksummed at build time, so

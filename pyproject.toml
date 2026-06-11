@@ -103,6 +103,7 @@ dev = [
     "google-auth-httplib2==0.2.0",
     "google-api-core==2.24.2",
     "google-auth-oauthlib==1.2.1",
+    "pytest-benchmark==5.2.3",
 ]
 
 lint = [
@@ -530,6 +531,9 @@ pythonVersion = "3.11"
 
 
 [tool.pytest.ini_options]
+# benchmarks (rotkehlchen/tests/benchmarks) are excluded from normal runs; run
+# them with: pytestgeventwrapper.py -m benchmark --benchmark-only rotkehlchen/tests/benchmarks
+addopts = '-m "not benchmark"'
 markers = [
     "asset_test: tests that check for asset coverage and definitions",
     "vcr: tests that use vcrpy cassettes",

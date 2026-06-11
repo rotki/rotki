@@ -135,13 +135,15 @@ unmeasured). Consequences:
   layer is part of the core substrate, not a later add-on:
   - Chain RPC: reuse the existing rpc-mock server + cassettes
     (`frontend/app/tests/e2e/rpc-mock/`).
-  - Price oracles / etherscan / other `externalapis`: a small HTTP mock server
-    (same record/replay cassette approach, generalized beyond JSON-RPC) that
-    the backend is pointed at. Historical prices are additionally seeded into
-    `price_history` in the global DB (same mechanism `seed-db.py` uses) so
-    most lookups never leave the DB. No backend code is patched; only
-    node/oracle/service URLs are configured through existing settings and
-    test-environment hooks.
+  - Prices: the profiles seed **manual latest prices** for every asset they
+    use (plus historical prices into `price_history` where needed), so
+    valuations resolve through the manual-price oracle without any remote
+    query. Historical balance snapshots (`timed_balances`,
+    `timed_location_data`) are seeded too, so statistics endpoints serve
+    from the DB.
+  - Etherscan/indexers, remote price oracles and data-repo updates: their
+    URLs are hardcoded constants, so a fully additive mock is not possible —
+    see "Deferred operations" in §4.1 for the parked design decision.
 - Background activity is *realistic noise*: it is part of what users
   experience, so it stays in the measurement. The methodology (k samples,
   median, A/B interleaving — §4.2) absorbs it. If phase 2 calibration shows
@@ -189,11 +191,19 @@ end-to-end including task polling at a tight interval):
 | `history_events_p1`  | history events query, first page (default sort/filter)   | small, whale    |
 | `history_events_deep`| history events query, page at offset ~⅔ of dataset       | whale           |
 | `history_events_filtered` | events query with counterparty + asset filter       | whale           |
-| `blockchain_balances_cached` | balances endpoint served from DB cache (`ignore_cache=false`) | small, whale |
-| `manual_balances`    | manual balances query                                    | small           |
-| `netvalue_stats`     | statistics/net value graph data                          | whale           |
+| `manual_balances`    | manual balances query (valued via seeded manual prices)  | small, whale    |
+| `netvalue_stats`     | statistics/net value graph data (seeded snapshots)       | small, whale    |
 | `asset_search`       | levenshtein asset search                                 | any             |
-| `task_manager_cycle` | one full cycle of due background tasks (§3.3)            | whale           |
+
+**Deferred operations.** `blockchain_balances` (live chain balance query) and
+`task_manager_cycle` need the external-HTTP mock layer to be more than the
+existing rpc-mock can deliver additively: price-oracle, etherscan/indexer and
+data-repo-update URLs are hardcoded constants in `externalapis`, so pointing
+the backend at a mock requires either a small test-environment hook in
+backend code (violates the strictly-additive rule of §6 without explicit
+maintainer sign-off) or transport-level interception. Parked pending that
+design decision; the ops registry gains them the moment the mock layer
+exists.
 
 PnL/accounting reports are **deliberately excluded**: the accounting engine is
 about to be reworked, so benchmarking the current implementation would create
@@ -206,13 +216,26 @@ seeded profile, no network.
 
 **Methodology:**
 
-- Per run: 1 warmup iteration, then k samples (default 5, CLI-overridable).
-- Fresh backend process per (profile × repetition-block) so unlock is measured
-  cold and caches don't leak across operations that should be cold.
-  Within a block, read-only operations may share a process (documented per op).
-- Report median, min, max, stddev per op. Median is the headline number
-  (robust to scheduler spikes); min is recorded because it approximates the
-  noise floor.
+- Per run: k measurement blocks (default 5, CLI-overridable). A block = fresh
+  copy of the profile → backend boot (timed) → cold user unlock (timed) → the
+  registry operations.
+- Fresh backend process and pristine profile copy per block so unlock is
+  measured cold and one block's mutations can't leak into the next. Read-only
+  registry operations share the block's process.
+- Within a block each registry operation gets one warmup pass and then three
+  timed passes, of which the **minimum** becomes the block's sample.
+  Contention noise (background tasks firing mid-measurement — the task
+  manager is enabled by design, §3.3 — plus scheduler interference) is
+  strictly one-sided additive: it can only make a pass slower. The minimum is
+  therefore robust against it, while a real regression raises the minimum
+  itself. Empirical motivation from the synthetic-regression test (PR
+  #12405) under single-pass sampling: a high-variance op (~220ms stddev)
+  swallowed a real +250ms slowdown (false negative), and another op was
+  bimodal (~125ms vs ~830ms) purely depending on where in the block it landed
+  relative to post-unlock background-task activity (false positive, flagged
+  at -84.7%).
+- Report median, min, max, stddev per op across blocks. Median of the block
+  samples is the headline number.
 - Output: `bench-result.json`:
 
 ```json
@@ -293,14 +316,18 @@ history for "did the last month of changes help?".
   for PR mode with `small` + `whale` (profile cache hit assumed).
 - See §7.1 for the one-time org setup (data repo, token, label).
 
-### 4.4 Micro benchmarks (later phase)
+### 4.4 Micro benchmarks
 
 `pytest-benchmark` suite under `rotkehlchen/tests/benchmarks/` for known hot
-pure-Python paths (serialization, event aggregation, fval math), run through
-`pytestgeventwrapper.py`, excluded from normal test runs (`-m benchmark`).
-Initially informational in nightly; per-PR once thresholds are calibrated.
-CodSpeed integration was considered and deferred — design keeps the suite
-plugin-compatible (`pytest-codspeed` is a drop-in) if we opt in later.
+pure-Python paths (event DB/API serialization, FVal aggregation math, filter
+query construction). Excluded from all normal test runs via a global
+`-m "not benchmark"` in addopts; run explicitly with:
+
+    uv run python pytestgeventwrapper.py -m benchmark --benchmark-only rotkehlchen/tests/benchmarks
+
+Initially informational; joins nightly once thresholds are calibrated.
+CodSpeed integration was considered and deferred — only the plain `benchmark`
+fixture API is used, so `pytest-codspeed` stays a drop-in if we opt in later.
 
 ## 5. Stack B — Integration correctness
 
@@ -396,7 +423,7 @@ Constraints this imposes:
 | 1 ✓ | `tools/scenarios` + `small` & `whale` profiles + cache | `uv run python -m tools.scenarios build --profile whale` produces a bootable data dir in ≤ 60 s cold, ≤ 1 s cached; backend boots it (task manager on, no network egress) and unlocks the user; `EXPLAIN QUERY PLAN` of the main history-events queries on the generated DB uses the expected indices |
 | 2 ✓ | `tools/bench` run + compare | `bench compare` prints a stable delta table locally; re-running on an unchanged tree shows all ops within noise (no false deltas > threshold) |
 | 3 | CI wiring for bench | nightly trend datapoints accumulate in `rotki/benchmark-data`; `run-benchmarks` label produces a PR comment |
-| 4 | Micro benchmarks + remaining bench ops (mock layer, `task_manager_cycle`) | nightly informational; calibration doc for thresholds |
+| 4 ✓ | Min-of-3 sampling fix, seeded prices/snapshots + `manual_balances`/`netvalue_stats` ops, micro-benchmark suite | benchmarks runnable and fenced off normal runs; new ops deterministic without network; remaining mock-layer ops parked per §4.1 |
 | 5 | Contract suite (first frontend-touching phase) | runs locally against a profile-booted backend and in PR CI (non-required); intentionally breaking a serializer field fails it |
 | 6 | Golden e2e + premium mode + `defi`/`empty` profiles + snapshots | specs green in e2e CI group; premium mode runs in contract + e2e |
 
