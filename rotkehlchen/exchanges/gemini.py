@@ -10,7 +10,6 @@ from typing import TYPE_CHECKING, Any, Literal, overload
 import gevent
 import requests
 
-from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.asset import AssetWithOracles
 from rotkehlchen.assets.converters import asset_from_gemini
 from rotkehlchen.constants import ZERO
@@ -27,6 +26,7 @@ from rotkehlchen.exchanges.utils import (
     deserialize_asset_movement_address,
     get_key_if_has_val,
 )
+from rotkehlchen.fval import FVal
 from rotkehlchen.history.deserialization import deserialize_price
 from rotkehlchen.history.events.structures.asset_movement import AssetMovement
 from rotkehlchen.history.events.structures.swap import (
@@ -36,7 +36,6 @@ from rotkehlchen.history.events.structures.swap import (
     get_swap_spend_receive,
 )
 from rotkehlchen.history.events.utils import create_group_identifier_from_unique_id
-from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import (
     deserialize_asset_movement_event_type,
@@ -328,7 +327,7 @@ class Gemini(ExchangeInterface, SignatureGeneratorMixin):
             log.error(msg)
             return None, msg
 
-        returned_balances: defaultdict[AssetWithOracles, Balance] = defaultdict(Balance)
+        amounts: defaultdict[AssetWithOracles, FVal] = defaultdict(FVal)
         for entry in balances:
             try:
                 balance_type = entry['type']
@@ -340,20 +339,7 @@ class Gemini(ExchangeInterface, SignatureGeneratorMixin):
                 if amount == ZERO:
                     continue
 
-                asset = asset_from_gemini(entry['currency'])
-                try:
-                    price = Inquirer.find_main_currency_price(asset)
-                except RemoteError as e:
-                    self.msg_aggregator.add_error(
-                        f'Error processing gemini {balance_type} balance result due to '
-                        f'inability to query price: {e!s}. Skipping balance entry',
-                    )
-                    continue
-
-                returned_balances[asset] += Balance(
-                    amount=amount,
-                    value=amount * price,
-                )
+                amounts[asset_from_gemini(entry['currency'])] += amount
             except UnknownAsset as e:
                 self.send_unknown_asset_message(
                     asset_identifier=e.identifier,
@@ -371,7 +357,7 @@ class Gemini(ExchangeInterface, SignatureGeneratorMixin):
                 log.error('Error processing a gemini balance', error=msg)
                 continue
 
-        return returned_balances, ''
+        return dict(self.balances_from_amounts(amounts)), ''
 
     def _get_paginated_query(
             self,

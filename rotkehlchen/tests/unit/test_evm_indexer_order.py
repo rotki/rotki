@@ -7,7 +7,7 @@ import pytest
 from rotkehlchen.api.websockets.typedefs import WSMessageType
 from rotkehlchen.chain.evm.constants import GENESIS_HASH, ZERO_ADDRESS
 from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
-from rotkehlchen.chain.evm.types import EvmIndexer
+from rotkehlchen.chain.evm.types import EvmIndexer, string_to_evm_address
 from rotkehlchen.constants import ZERO
 from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.misc import NoAvailableIndexers, RemoteError
@@ -151,3 +151,29 @@ def test_try_indexers_sends_ws_notification_when_no_indexers() -> None:
         message_type=WSMessageType.NO_AVAILABLE_INDEXERS,
         data={'chain': SupportedBlockchain.ETHEREUM.value},
     )
+
+
+def test_call_contract_indexers_forwards_block_identifier() -> None:
+    """Regression test for historical eth_call via indexers executing at the latest block.
+
+    _call_contract used to drop block_identifier when falling back to the indexers, so
+    historical contract queries silently returned state from the latest block instead.
+    """
+    inquirer = DummyEvmNodeInquirer()
+    seen_kwargs: dict[str, Any] = {}
+
+    def eth_call(**kwargs: Any) -> str:
+        seen_kwargs.update(kwargs)
+        return '0x' + '1'.zfill(64)
+
+    for indexer in (inquirer.etherscan, inquirer.blockscout, inquirer.routescan):
+        indexer.eth_call = eth_call  # type: ignore[assignment,method-assign]
+
+    assert inquirer._call_contract(
+        web3=None,
+        contract_address=string_to_evm_address('0x6B175474E89094C44Da98b954EedeAC495271d0F'),
+        abi=[{'inputs': [], 'name': 'totalSupply', 'outputs': [{'name': '', 'type': 'uint256'}], 'stateMutability': 'view', 'type': 'function'}],  # noqa: E501
+        method_name='totalSupply',
+        block_identifier=10000000,
+    ) == 1
+    assert seen_kwargs['block_identifier'] == 10000000

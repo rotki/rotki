@@ -1,5 +1,6 @@
 import logging
 import uuid
+from collections import defaultdict
 from collections.abc import Sequence
 from http import HTTPStatus
 from json.decoder import JSONDecodeError
@@ -9,7 +10,6 @@ from urllib.parse import urlencode
 import requests
 from requests.adapters import Response
 
-from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.asset import AssetWithOracles
 from rotkehlchen.assets.converters import asset_from_bitstamp
 from rotkehlchen.constants import ZERO
@@ -23,6 +23,7 @@ from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.exchanges.data_structures import MarginPosition
 from rotkehlchen.exchanges.exchange import ExchangeInterface, ExchangeQueryBalances
 from rotkehlchen.exchanges.utils import SignatureGeneratorMixin
+from rotkehlchen.fval import FVal
 from rotkehlchen.history.deserialization import deserialize_price
 from rotkehlchen.history.events.structures.asset_movement import (
     AssetMovement,
@@ -36,7 +37,6 @@ from rotkehlchen.history.events.structures.swap import (
 )
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.history.events.utils import create_group_identifier_from_unique_id
-from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import (
     deserialize_fval,
@@ -62,7 +62,6 @@ if TYPE_CHECKING:
     from collections.abc import Callable
 
     from rotkehlchen.db.dbhandler import DBHandler
-    from rotkehlchen.fval import FVal
     from rotkehlchen.history.events.structures.base import HistoryBaseEntry
 
 logger = logging.getLogger(__name__)
@@ -185,7 +184,7 @@ class Bitstamp(ExchangeInterface, SignatureGeneratorMixin):
             log.error(msg)
             raise RemoteError(msg) from e
 
-        assets_balance: dict[AssetWithOracles, Balance] = {}
+        amounts: defaultdict[AssetWithOracles, FVal] = defaultdict(FVal)
         for entry, raw_amount in response_dict.items():
             if not entry.endswith('_balance'):
                 continue
@@ -213,22 +212,9 @@ class Bitstamp(ExchangeInterface, SignatureGeneratorMixin):
                     details='balance query',
                 )
                 continue
-            try:
-                price = Inquirer.find_main_currency_price(asset)
-            except RemoteError as e:
-                log.error(str(e))
-                self.msg_aggregator.add_error(
-                    f'Error processing Bitstamp balance result due to inability to '
-                    f'query price: {e!s}. Skipping balance entry.',
-                )
-                continue
+            amounts[asset] += amount
 
-            assets_balance[asset] = Balance(
-                amount=amount,
-                value=amount * price,
-            )
-
-        return assets_balance, ''
+        return dict(self.balances_from_amounts(amounts)), ''
 
     def _get_since_id_option(
             self,

@@ -9,6 +9,7 @@ import requests
 
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.converters import asset_from_bitstamp
+from rotkehlchen.constants import ONE, ZERO
 from rotkehlchen.constants.assets import A_BTC, A_ETH, A_EUR, A_LINK, A_USD, A_USDC
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.errors.asset import UnknownAsset
@@ -200,21 +201,22 @@ def test_query_balances_skipped_not_asset_entry(mock_bitstamp):
         assert mock_bitstamp.query_balances() == ({}, '')
 
 
-def test_query_balances_skips_inquirer_error(mock_bitstamp):
-    """Test an entry that can't get its USD price because of a remote error is
-    skipped
-    """
+def test_query_balances_includes_unpriceable_entry(mock_bitstamp):
+    """Test an entry whose price can't be found is included with a zero value"""
     def mock_api_query_response(endpoint):  # pylint: disable=unused-argument
         return MockResponse(HTTPStatus.OK, '{"link_balance": "1.00000000"}')
 
     with (
         patch(
-            'rotkehlchen.exchanges.bitstamp.Inquirer.find_price',
-            side_effect=RemoteError('test'),
+            'rotkehlchen.exchanges.exchange.Inquirer.find_main_currency_prices',
+            return_value={},  # no price could be found for any asset
         ),
         patch.object(mock_bitstamp, '_api_query', side_effect=mock_api_query_response),
     ):
-        assert mock_bitstamp.query_balances() == ({}, '')
+        assert mock_bitstamp.query_balances() == (
+            {A_LINK.resolve_to_asset_with_oracles(): Balance(amount=ONE, value=ZERO)},
+            '',
+        )
 
 
 @pytest.mark.parametrize('should_mock_current_price_queries', [True])

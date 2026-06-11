@@ -8,7 +8,6 @@ from typing import TYPE_CHECKING, Any, Literal, NamedTuple, overload
 
 import requests
 
-from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.asset import AssetWithOracles
 from rotkehlchen.assets.converters import asset_from_woo
 from rotkehlchen.constants import ZERO
@@ -20,6 +19,7 @@ from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.exchanges.data_structures import MarginPosition
 from rotkehlchen.exchanges.exchange import ExchangeInterface, ExchangeQueryBalances
 from rotkehlchen.exchanges.utils import SignatureGeneratorMixin
+from rotkehlchen.fval import FVal
 from rotkehlchen.history.deserialization import deserialize_price
 from rotkehlchen.history.events.structures.asset_movement import (
     AssetMovement,
@@ -33,7 +33,6 @@ from rotkehlchen.history.events.structures.swap import (
 )
 from rotkehlchen.history.events.structures.types import HistoryEventSubType
 from rotkehlchen.history.events.utils import create_group_identifier_from_unique_id
-from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import (
     deserialize_fval,
@@ -128,13 +127,12 @@ class Woo(ExchangeInterface, SignatureGeneratorMixin):
             log.error(msg, response)
             raise RemoteError(msg) from e
 
-        assets_balance: defaultdict[AssetWithOracles, Balance] = defaultdict(Balance)
+        amounts: defaultdict[AssetWithOracles, FVal] = defaultdict(FVal)
         for entry in balances:
             try:
                 if (amount := deserialize_fval(entry['holding'] + entry['staked'])) == ZERO:
                     continue
                 asset = asset_from_woo(entry['token'])
-                price = Inquirer.find_main_currency_price(asset)
             except (DeserializationError, KeyError) as e:
                 log.error('Error processing a Woo balance.', entry=entry, error=str(e))
                 self.msg_aggregator.add_error(
@@ -148,18 +146,10 @@ class Woo(ExchangeInterface, SignatureGeneratorMixin):
                     details='balance query',
                 )
                 continue
-            except RemoteError as e:
-                self.msg_aggregator.add_error(
-                    f'Error processing Woo balance result due to inability to '
-                    f'query price: {e}. Skipping balance entry.',
-                )
-                continue
-            assets_balance[asset] += Balance(
-                amount=amount,
-                value=amount * price,
-            )
 
-        return dict(assets_balance), ''
+            amounts[asset] += amount
+
+        return dict(self.balances_from_amounts(amounts)), ''
 
     def _deserialize_trade(self, trade: dict[str, Any]) -> list[SwapEvent]:
         """

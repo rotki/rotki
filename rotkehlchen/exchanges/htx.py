@@ -7,7 +7,6 @@ from typing import TYPE_CHECKING, Any, Final, Literal
 
 import requests
 
-from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.converters import asset_from_htx
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.constants.timing import DAY_IN_SECONDS
@@ -18,6 +17,7 @@ from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.exchanges.exchange import ExchangeInterface, ExchangeQueryBalances
 from rotkehlchen.exchanges.utils import SignatureGeneratorMixin, get_key_if_has_val
+from rotkehlchen.fval import FVal
 from rotkehlchen.history.deserialization import deserialize_price
 from rotkehlchen.history.events.structures.asset_movement import (
     AssetMovement,
@@ -31,7 +31,6 @@ from rotkehlchen.history.events.structures.swap import (
 )
 from rotkehlchen.history.events.structures.types import HistoryEventSubType
 from rotkehlchen.history.events.utils import create_group_identifier_from_unique_id
-from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import (
     deserialize_fval,
@@ -159,7 +158,7 @@ class Htx(ExchangeInterface, SignatureGeneratorMixin):
 
     def query_balances(self, **kwargs: Any) -> ExchangeQueryBalances:
         """Query balances for the accounts linked to the api key"""
-        returned_balances: dict[AssetWithOracles, Balance] = defaultdict(Balance)
+        amounts: defaultdict[AssetWithOracles, FVal] = defaultdict(FVal)
         for account in self.get_accounts():
             account_id = account['id']
             path = f'/v1/account/accounts/{account_id}/balance'
@@ -168,7 +167,7 @@ class Htx(ExchangeInterface, SignatureGeneratorMixin):
             except RemoteError as e:
                 error_prefix = 'Failed to query HTX'
                 log.error(f'{error_prefix} balances due to {e}')
-                return returned_balances, f'{error_prefix} due to a remote error. Check logs for more details'  # noqa: E501
+                return dict(self.balances_from_amounts(amounts)), f'{error_prefix} due to a remote error. Check logs for more details'  # noqa: E501
 
             if (account_balance_type := data['type']) is None:
                 log.error(f'Response for balances does not contain the type key {data}. Skipping')
@@ -211,21 +210,9 @@ class Htx(ExchangeInterface, SignatureGeneratorMixin):
                     log.error(f'HTX balance does not contain the key {e}. Skipping')
                     continue
 
-                try:
-                    price = Inquirer.find_main_currency_price(asset)
-                except RemoteError as e:
-                    self.msg_aggregator.add_error(
-                        f'Error processing HTX balance entry due to inability to '
-                        f'query price: {e!s}. Skipping balance entry',
-                    )
-                    continue
+                amounts[asset] += amount
 
-                returned_balances[asset] += Balance(
-                    amount=amount,
-                    value=amount * price,
-                )
-
-        return returned_balances, ''
+        return dict(self.balances_from_amounts(amounts)), ''
 
     def _paginated_query(
             self,

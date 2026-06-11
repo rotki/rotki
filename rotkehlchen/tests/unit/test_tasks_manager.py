@@ -4,6 +4,7 @@ from unittest.mock import MagicMock, patch
 
 import gevent
 import pytest
+import requests
 from freezegun import freeze_time
 
 from rotkehlchen.assets.asset import EvmToken, UnderlyingToken
@@ -48,6 +49,7 @@ from rotkehlchen.tasks.utils import (
     should_run_periodic_task,
 )
 from rotkehlchen.tests.fixtures.websockets import WebsocketReader
+from rotkehlchen.tests.utils.api import api_url_for, assert_ok_async_response
 from rotkehlchen.tests.utils.ethereum import (
     TEST_ADDR1,
     TEST_ADDR2,
@@ -720,6 +722,41 @@ def test_maybe_kill_running_tx_query_tasks(rotkehlchen_api_server, ethereum_acco
         rotki.task_manager.potential_tasks = []
         rotki.task_manager.schedule()
         assert len(rotki.task_manager.running_greenlets) == 0
+
+
+@pytest.mark.parametrize('ethereum_accounts', [[make_evm_address()]])
+def test_maybe_kill_tx_query_tasks_all_accounts_refresh(
+        rotkehlchen_api_server,
+        ethereum_accounts,
+):
+    """Test that an api transactions refresh task without specific accounts (refresh all)
+    is killed when one of the tracked addresses is removed, instead of raising a
+    TypeError on the None accounts kwarg which made account removal fail."""
+    rest_api = rotkehlchen_api_server.rest_api
+    rotki = rest_api.rotkehlchen
+
+    def blocking_refresh(**kwargs):  # pylint: disable=unused-argument
+        while True:  # busy wait :D just for the test
+            gevent.sleep(1)
+
+    with patch.object(
+        rest_api.transactions_service,
+        'refresh_transactions',
+        side_effect=blocking_refresh,
+    ):
+        response = requests.post(
+            api_url_for(rotkehlchen_api_server, 'blockchaintransactionsresource'),
+            json={'async_query': True},  # no accounts given: refresh all tracked accounts
+        )
+        task_id = assert_ok_async_response(response)
+        greenlet = next(g for g in rotki.api_task_greenlets if g.task_id == task_id)
+        gevent.sleep(.1)  # give the greenlet a chance to start
+        assert greenlet.dead is False
+        rotki.maybe_kill_running_tx_query_tasks(
+            blockchain=SupportedBlockchain.ETHEREUM,
+            addresses=[ethereum_accounts[0]],
+        )
+        assert greenlet.dead is True
 
 
 @pytest.mark.parametrize('ethereum_accounts', [[

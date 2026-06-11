@@ -1,10 +1,10 @@
-import flushPromises from 'flush-promises';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useBalanceFetching } from './use-balance-fetching';
 import '@test/i18n';
 
-const { refreshBlockchainBalances, maybeDetect, skipReason, willDetect } = vi.hoisted(() => ({
+const { refreshBlockchainBalances, maybeDetect, skipReason, willDetect, queryBalancesAsync } = vi.hoisted(() => ({
   maybeDetect: vi.fn().mockResolvedValue(undefined),
+  queryBalancesAsync: vi.fn().mockResolvedValue({ taskId: 1 }),
   refreshBlockchainBalances: vi.fn().mockResolvedValue(undefined),
   skipReason: vi.fn().mockReturnValue('auto-detect-tokens disabled'),
   willDetect: vi.fn().mockReturnValue(false),
@@ -60,7 +60,7 @@ vi.mock('@/modules/core/tasks/use-task-handler', async importOriginal => ({
 
 vi.mock('@/modules/balances/api/use-balances-api', () => ({
   useBalancesApi: vi.fn().mockReturnValue({
-    queryBalancesAsync: vi.fn().mockResolvedValue({ taskId: 1 }),
+    queryBalancesAsync,
   }),
 }));
 
@@ -122,6 +122,7 @@ describe('useBalanceFetching', () => {
   describe('refreshFromChain', () => {
     beforeEach(() => {
       refreshBlockchainBalances.mockClear();
+      queryBalancesAsync.mockClear();
       maybeDetect.mockClear();
       willDetect.mockReset();
     });
@@ -130,8 +131,7 @@ describe('useBalanceFetching', () => {
       willDetect.mockReturnValue(false);
       const { refreshFromChain } = useBalanceFetching();
 
-      refreshFromChain();
-      await flushPromises();
+      await refreshFromChain();
 
       expect(refreshBlockchainBalances).toHaveBeenCalledTimes(1);
       expect(refreshBlockchainBalances).toHaveBeenCalledWith();
@@ -142,12 +142,25 @@ describe('useBalanceFetching', () => {
       willDetect.mockReturnValue(true);
       const { refreshFromChain } = useBalanceFetching();
 
-      refreshFromChain();
-      await flushPromises();
+      await refreshFromChain();
 
       expect(maybeDetect).toHaveBeenCalledTimes(1);
       expect(refreshBlockchainBalances).toHaveBeenCalledTimes(1);
       expect(refreshBlockchainBalances).toHaveBeenCalledWith({ blockchain: ['btc'] });
+    });
+
+    it('should query all balances only after the chain refresh completes', async () => {
+      willDetect.mockReturnValue(false);
+      const { refreshFromChain } = useBalanceFetching();
+
+      await refreshFromChain();
+
+      expect(refreshBlockchainBalances).toHaveBeenCalledOnce();
+      expect(queryBalancesAsync).toHaveBeenCalledOnce();
+      // the all-balances query (which may persist a snapshot) must run strictly
+      // after the per-chain refresh to avoid snapshotting transient cleared state
+      expect(refreshBlockchainBalances.mock.invocationCallOrder[0])
+        .toBeLessThan(queryBalancesAsync.mock.invocationCallOrder[0]);
     });
   });
 

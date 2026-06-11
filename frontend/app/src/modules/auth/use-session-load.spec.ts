@@ -102,7 +102,7 @@ describe('composables::session::load', () => {
     set(mockShouldFetchData, true);
 
     mockFetchCached.mockResolvedValue(undefined);
-    mockRefreshFromChain.mockReturnValue(undefined);
+    mockRefreshFromChain.mockResolvedValue(undefined);
     mockFetchIgnoredAssets.mockResolvedValue(undefined);
     mockFetchWhitelistedAssets.mockResolvedValue(undefined);
     mockFetchNetValue.mockResolvedValue(undefined);

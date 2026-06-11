@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING, Final
 
 from eth_typing.abi import ABI
 
-from rotkehlchen.accounting.structures.balance import Balance, BalanceSheet
+from rotkehlchen.accounting.structures.balance import BalanceSheet
 from rotkehlchen.assets.utils import asset_normalized_value, get_or_create_evm_token
 from rotkehlchen.chain.ethereum.interfaces.balances import BalancesSheetType, ProtocolWithBalance
 from rotkehlchen.chain.ethereum.modules.eigenlayer.utils import get_eigenpods_to_owners_mapping
@@ -15,7 +15,6 @@ from rotkehlchen.db.filtering import EvmEventFilterQuery
 from rotkehlchen.errors.misc import NotERC20Conformant, RemoteError
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
-from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import ChecksumEvmAddress, Location
 from rotkehlchen.utils.misc import ts_now
@@ -100,6 +99,7 @@ class EigenlayerBalances(ProtocolWithBalance):
         if len(deposits) == 0:  # user had no related events
             return balances
 
+        entries = []
         for depositor, strategy in deposits:
             try:
                 amount, token = _read_underlying_assets(
@@ -113,12 +113,9 @@ class EigenlayerBalances(ProtocolWithBalance):
                 )
                 continue
 
-            token_price = Inquirer.find_main_currency_price(token)
-            balances[depositor].assets[token][self.counterparty] += Balance(
-                amount=amount,
-                value=token_price * amount,
-            )
+            entries.append((depositor, token, amount))
 
+        self._add_priced_balances(balances=balances, amounts=entries)
         return balances
 
     def _query_token_pending_withdrawals(self, balances: 'BalancesSheetType') -> 'BalancesSheetType':  # noqa: E501
@@ -155,6 +152,7 @@ class EigenlayerBalances(ProtocolWithBalance):
         addresses_with_withdrawals = self.addresses_with_activity(
             event_types={(HistoryEventType.INFORMATIONAL, HistoryEventSubType.REMOVE_ASSET)},
         )
+        entries = []
         for address, event_list in addresses_with_withdrawals.items():
             for event in event_list:
                 if event.asset == A_ETH:
@@ -175,12 +173,9 @@ class EigenlayerBalances(ProtocolWithBalance):
                     log.error(f'Unexpected eigenlayer withdrawal queueing event {event}. Missing amount from extra data. Skipping.')  # noqa: E501
                     continue
 
-                token_price = Inquirer.find_main_currency_price(event.asset)
-                balances[withdrawer].assets[event.asset][self.counterparty] += Balance(
-                    amount=(amount := FVal(str_amount)),
-                    value=token_price * amount,
-                )
+                entries.append((withdrawer, event.asset, FVal(str_amount)))
 
+        self._add_priced_balances(balances=balances, amounts=entries)
         return balances
 
     def _query_eigenpod_balances(self, balances: 'BalancesSheetType') -> 'BalancesSheetType':
@@ -188,14 +183,11 @@ class EigenlayerBalances(ProtocolWithBalance):
         if len(eigenpod_to_owner := get_eigenpods_to_owners_mapping(self.event_db.db)) == 0:
             return balances
 
-        eth_price = Inquirer.find_main_currency_price(A_ETH)  # now query all eigenpod balances and add it  # noqa: E501
-        for eigenpod_address, amount in self.evm_inquirer.get_multi_balance(accounts=list(eigenpod_to_owner.keys())).items():  # noqa: E501
-            if amount > ZERO:
-                balances[eigenpod_to_owner[eigenpod_address]].assets[A_ETH][self.counterparty] += Balance(  # noqa: E501
-                    amount=amount,
-                    value=eth_price * amount,
-                )
-
+        self._add_priced_balances(balances=balances, amounts=[  # query all eigenpod balances and add them  # noqa: E501
+            (eigenpod_to_owner[eigenpod_address], A_ETH, amount)
+            for eigenpod_address, amount in self.evm_inquirer.get_multi_balance(accounts=list(eigenpod_to_owner.keys())).items()  # noqa: E501
+            if amount > ZERO
+        ])
         return balances
 
     def query_balances(self) -> 'BalancesSheetType':

@@ -9,7 +9,6 @@ from typing import TYPE_CHECKING, Any, Final, Literal
 import gevent
 import requests
 
-from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.asset import AssetWithOracles
 from rotkehlchen.assets.converters import asset_from_bybit
 from rotkehlchen.constants.misc import ZERO
@@ -23,6 +22,7 @@ from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.exchanges.data_structures import MarginPosition
 from rotkehlchen.exchanges.exchange import ExchangeInterface, ExchangeQueryBalances
 from rotkehlchen.exchanges.utils import SignatureGeneratorMixin
+from rotkehlchen.fval import FVal
 from rotkehlchen.history.deserialization import deserialize_price
 from rotkehlchen.history.events.structures.asset_movement import (
     AssetMovement,
@@ -36,7 +36,6 @@ from rotkehlchen.history.events.structures.swap import (
 )
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.history.events.utils import create_group_identifier_from_unique_id
-from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import deserialize_fval
 from rotkehlchen.types import (
@@ -438,12 +437,12 @@ class Bybit(ExchangeInterface, SignatureGeneratorMixin):
     def _process_wallet_balances(
             self,
             entries: Sequence[dict[str, Any]],
-    ) -> dict[AssetWithOracles, Balance]:
-        """Common logic to process balances from the funding and wallet endpoints
+    ) -> dict[AssetWithOracles, FVal]:
+        """Common logic to process balance amounts from the funding and wallet endpoints
         May raise:
         - DeserializationError
         """
-        assets_balance: defaultdict[AssetWithOracles, Balance] = defaultdict(Balance)
+        amounts: defaultdict[AssetWithOracles, FVal] = defaultdict(FVal)
         for coin_data in entries:
             try:
                 asset = asset_from_bybit(coin_data['coin'])
@@ -453,8 +452,6 @@ class Bybit(ExchangeInterface, SignatureGeneratorMixin):
                     location='bybit',
                 )) == ZERO:
                     continue
-
-                value = amount * Inquirer.find_main_currency_price(asset)
 
             except UnknownAsset as e:
                 self.send_unknown_asset_message(
@@ -469,16 +466,16 @@ class Bybit(ExchangeInterface, SignatureGeneratorMixin):
                     msg = f'Missing key entry for {msg}.'
                 raise DeserializationError(f'Error processing Bybit balance entry {coin_data}. {msg}') from e  # noqa: E501
 
-            assets_balance[asset] += Balance(amount=amount, value=value)
+            amounts[asset] += amount
 
-        return assets_balance
+        return amounts
 
-    def _query_account_balances(self) -> tuple[dict[AssetWithOracles, Balance], str | None]:
+    def _query_account_balances(self) -> tuple[dict[AssetWithOracles, FVal], str | None]:
         """
-        Query balances in wallet. It queries the unified and spot accounts.
+        Query balance amounts in wallet. It queries the unified and spot accounts.
         This call assumes that the first connection has been made to identify the account type.
 
-        Returns a tuple of balances and None if there wasn't any error or a string
+        Returns a tuple of balance amounts and None if there wasn't any error or a string
         message with a description of what went wrong.
         """
         asset_balances = {}
@@ -502,15 +499,15 @@ class Bybit(ExchangeInterface, SignatureGeneratorMixin):
 
         return asset_balances, None
 
-    def _query_funding_balances(self) -> tuple[dict[AssetWithOracles, Balance], str | None]:
+    def _query_funding_balances(self) -> tuple[dict[AssetWithOracles, FVal], str | None]:
         """
-        Query balances in the funding wallet.
+        Query balance amounts in the funding wallet.
         This call assumes that the first connection has been made to identify the account type.
 
-        Returns a tuple of balances and None if there wasn't any error or a string
+        Returns a tuple of balance amounts and None if there wasn't any error or a string
         message with a description of what went wrong.
         """
-        asset_balances: dict[AssetWithOracles, Balance] = {}
+        asset_balances: dict[AssetWithOracles, FVal] = {}
         response, error = self._query_balances_or_error(
             path='asset/transfer/query-account-coins-balance',
             options={'accountType': 'FUND'},
@@ -542,7 +539,9 @@ class Bybit(ExchangeInterface, SignatureGeneratorMixin):
         if err is not None:
             return None, err
 
-        return combine_dicts(a=account_assets_balance, b=account_funding_balance), ''
+        return dict(self.balances_from_amounts(
+            combine_dicts(a=account_assets_balance, b=account_funding_balance),
+        )), ''
 
     def _query_deposits_withdrawals(
             self,

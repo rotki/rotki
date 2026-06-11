@@ -1,21 +1,35 @@
 import json
 from collections.abc import Callable
+
 from contextlib import suppress
-from typing import TYPE_CHECKING, Any, Final
-from unittest.mock import patch
+from typing import TYPE_CHECKING, Any, Final, Self
+from unittest.mock import MagicMock, patch
 
 import pytest
 import requests
+from web3.exceptions import TransactionNotFound, Web3Exception
 
 from rotkehlchen.chain.accounts import BlockchainAccountData
 from rotkehlchen.chain.ethereum.constants import EVM_INDEXERS_NODE, EVM_INDEXERS_NODE_NAME
 from rotkehlchen.chain.ethereum.modules.thegraph.constants import CONTRACT_STAKING
-from rotkehlchen.chain.evm.constants import SWAPPED_TOPIC, ZERO_ADDRESS
+from rotkehlchen.chain.evm.constants import (
+    FAKE_GENESIS_TX_RECEIPT,
+    GENESIS_HASH,
+    SWAPPED_TOPIC,
+    ZERO_ADDRESS,
+)
 from rotkehlchen.chain.evm.decoding.constants import ERC20_OR_ERC721_TRANSFER
 from rotkehlchen.chain.evm.decoding.thegraph.constants import GRAPH_DELEGATION_TRANSFER_ABI
 from rotkehlchen.chain.evm.node_inquirer import _query_web3_get_logs
 from rotkehlchen.chain.evm.structures import EvmTxReceipt, EvmTxReceiptLog
-from rotkehlchen.chain.evm.types import EvmIndexer, WeightedNode, string_to_evm_address
+from rotkehlchen.chain.evm.types import (
+    EvmIndexer,
+    NodeName,
+    WeightedNode,
+    string_to_evm_address,
+)
+from rotkehlchen.chain.mixins.rpc_nodes import RPCNode
+from rotkehlchen.constants import ONE
 from rotkehlchen.db.evmtx import DBEvmTx
 from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.misc import EventNotInABI, InputError, RemoteError
@@ -28,7 +42,7 @@ from rotkehlchen.tests.utils.ethereum import (
     INFURA_ETH_NODE,
     wait_until_all_nodes_connected,
 )
-from rotkehlchen.tests.utils.factories import make_evm_address
+from rotkehlchen.tests.utils.factories import make_evm_address, make_evm_tx_hash
 from rotkehlchen.types import (
     ChainID,
     EvmTransaction,
@@ -730,3 +744,107 @@ def test_is_contract_eip7702(ethereum_inquirer):
     assert ethereum_inquirer.is_contract(
         address=string_to_evm_address('0x56a1A34F0d33788ebA53e2706854A37A5F275536'),
     ) is False
+
+
+class _MockBatchRequests:
+    """Mimics web3's batch_requests context manager for a node serving `outcome`"""
+    def __init__(self, outcome: 'list[Any] | Exception') -> None:
+        self.outcome = outcome
+        self.added = 0
+
+    def __enter__(self) -> Self:
+        return self
+
+    def __exit__(self, *args: object) -> None:
+        return None
+
+    def add(self, _call: Any) -> None:
+        self.added += 1
+
+    def execute(self) -> list[Any]:
+        if isinstance(self.outcome, Exception):
+            raise self.outcome
+
+        return self.outcome
+
+
+def test_get_transaction_receipts_batched(ethereum_inquirer: 'EthereumInquirer') -> None:
+    """Test the batched receipt query. Without connected rpc nodes it returns None
+    (indexers don't support batching), with a connected node it returns the receipts
+    in the order of the given hashes special-casing the genesis hash, and a node
+    missing a receipt or failing the batch makes it return None so that callers
+    fall back to per-tx queries."""
+    receipt = {
+        'transactionHash': (tx_hash := make_evm_tx_hash()).hex(),
+        'type': '0x2',
+        'status': 1,
+        'contractAddress': None,
+        'logs': [],
+    }
+    weighted_node = WeightedNode(
+        node_info=NodeName(
+            name='mock node',
+            endpoint='http://mock.node',
+            owned=True,
+            blockchain=SupportedBlockchain.ETHEREUM,
+        ),
+        weight=ONE,
+        active=True,
+    )
+    assert ethereum_inquirer.get_transaction_receipts(tx_hashes=[]) == []
+    assert ethereum_inquirer.get_transaction_receipts(  # node not connected -> None
+        tx_hashes=[tx_hash],
+        call_order=[weighted_node],
+    ) is None
+
+    fake_web3 = MagicMock()
+    fake_web3.batch_requests = lambda: _MockBatchRequests([receipt])
+    ethereum_inquirer.rpc_mapping[weighted_node.node_info] = RPCNode(
+        rpc_client=fake_web3,
+        is_pruned=False,
+        is_archive=True,
+    )
+    assert ethereum_inquirer.get_transaction_receipts(
+        tx_hashes=[GENESIS_HASH, tx_hash],
+        call_order=[weighted_node],
+    ) == [FAKE_GENESIS_TX_RECEIPT, receipt]
+
+    # a node missing one of the receipts -> None
+    fake_web3.batch_requests = lambda: _MockBatchRequests(TransactionNotFound('missing'))
+    assert ethereum_inquirer.get_transaction_receipts(
+        tx_hashes=[tx_hash],
+        call_order=[weighted_node],
+    ) is None
+
+    # nodes erroring on the batch in the various ways nodes without batching
+    # support are known to fail -> None
+    for batch_error in (
+            ValueError('batch not supported'),
+            Web3Exception('the method eth_sendBatch does not exist'),
+            KeyError('result'),
+            requests.HTTPError('400 Client Error: Bad Request'),
+    ):
+        fake_web3.batch_requests = lambda error=batch_error: _MockBatchRequests(error)
+        assert ethereum_inquirer.get_transaction_receipts(
+            tx_hashes=[tx_hash],
+            call_order=[weighted_node],
+        ) is None
+
+    # a node silently returning less results than requested -> None
+    fake_web3.batch_requests = lambda: _MockBatchRequests([])
+    assert ethereum_inquirer.get_transaction_receipts(
+        tx_hashes=[tx_hash],
+        call_order=[weighted_node],
+    ) is None
+
+    # a pruned node is not tried for batches -> None
+    fake_web3.batch_requests = lambda: _MockBatchRequests([receipt])
+    ethereum_inquirer.rpc_mapping[weighted_node.node_info] = RPCNode(
+        rpc_client=fake_web3,
+        is_pruned=True,
+        is_archive=True,
+    )
+    assert ethereum_inquirer.get_transaction_receipts(
+        tx_hashes=[tx_hash],
+        call_order=[weighted_node],
+    ) is None

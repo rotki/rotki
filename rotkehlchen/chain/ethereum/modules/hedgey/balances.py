@@ -1,12 +1,11 @@
 from collections import defaultdict
 from typing import TYPE_CHECKING
 
-from rotkehlchen.accounting.structures.balance import Balance, BalanceSheet
+from rotkehlchen.accounting.structures.balance import BalanceSheet
 from rotkehlchen.assets.utils import token_normalized_value
 from rotkehlchen.chain.ethereum.interfaces.balances import BalancesSheetType, ProtocolWithBalance
 from rotkehlchen.chain.evm.contracts import EvmContract
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
-from rotkehlchen.inquirer import Inquirer
 
 from .constants import (
     CPT_HEDGEY,
@@ -67,10 +66,11 @@ class HedgeyBalances(ProtocolWithBalance):
             method_name='lockedBalances',
             arguments=call_args,
         )
-        for idx, entry in enumerate(result):
-            token = args[idx][1]
-            balances[args[idx][0]].assets[token][self.counterparty] += Balance(
-                amount=(amount := token_normalized_value(token_amount=entry[0], token=token)),
-                value=amount * Inquirer.find_main_currency_price(token),
-            )
+        self._add_priced_balances(balances=balances, amounts=[
+            ((address_and_token := args[idx])[0], address_and_token[1], token_normalized_value(
+                token_amount=entry[0],
+                token=address_and_token[1],
+            ))
+            for idx, entry in enumerate(result)
+        ])
         return balances

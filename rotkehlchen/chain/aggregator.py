@@ -14,7 +14,7 @@ from web3.exceptions import BadFunctionCallOutput, Web3Exception
 
 from rotkehlchen.accounting.structures.balance import Balance, BalanceSheet
 from rotkehlchen.api.websockets.typedefs import WSMessageType
-from rotkehlchen.assets.asset import CryptoAsset
+from rotkehlchen.assets.asset import Asset, CryptoAsset
 from rotkehlchen.chain.accounts import BlockchainAccountData, BlockchainAccounts
 from rotkehlchen.chain.arbitrum_one.modules.gearbox.balances import (
     GearboxBalances as GearboxBalancesArbitrumOne,
@@ -68,7 +68,7 @@ from rotkehlchen.chain.optimism.modules.velodrome.balances import VelodromeBalan
 from rotkehlchen.chain.optimism.modules.walletconnect.balances import WalletconnectBalances
 from rotkehlchen.chain.substrate.manager import wait_until_a_node_is_available
 from rotkehlchen.chain.substrate.utils import SUBSTRATE_NODE_CONNECTION_TIMEOUT
-from rotkehlchen.constants import DEFAULT_BALANCE_LABEL, ZERO
+from rotkehlchen.constants import DEFAULT_BALANCE_LABEL, ONE, ZERO
 from rotkehlchen.constants.assets import A_BCH, A_BTC, A_DAI, A_ETH, A_ETH2
 from rotkehlchen.constants.timing import HOUR_IN_SECONDS
 from rotkehlchen.db.addressbook import DBAddressbook
@@ -88,6 +88,8 @@ from rotkehlchen.externalapis.etherscan_like import HasChainActivity
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.greenlets.manager import GreenletManager
+from rotkehlchen.history.deserialization import deserialize_price
+from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.premium.premium import Premium
 from rotkehlchen.types import (
@@ -110,6 +112,7 @@ from rotkehlchen.types import (
     Eth2PubKey,
     ListOfBlockchainAddresses,
     ModuleName,
+    Price,
     SupportedBlockchain,
     Timestamp,
     TuplesOfBlockchainAddresses,
@@ -562,6 +565,43 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
         with self.database.conn.read_ctx() as read_cursor:
             return self.get_blockchain_balances_last_query_ts(chain=chain, cursor=read_cursor)
 
+    @staticmethod
+    def get_price_for_cached_balances(
+            asset: CryptoAsset,
+            timestamp: Timestamp,
+            main_currency: Asset,
+            price_cache: dict[tuple[str, Timestamp], FVal],
+            manual_current_prices: dict[str, tuple[Asset, Price]],
+    ) -> FVal:
+        cache_key = (asset.identifier, timestamp)
+        if cache_key in price_cache:
+            return price_cache[cache_key]
+
+        if asset == main_currency:
+            price = ONE
+        elif (manual_current_result := manual_current_prices.get(asset.identifier)) is not None:
+            current_to_asset, current_price = manual_current_result
+            if current_to_asset == main_currency:
+                price = FVal(current_price)
+            else:
+                current_to_asset_price = Inquirer.find_price(
+                    from_asset=current_to_asset,
+                    to_asset=main_currency,
+                )
+                price = FVal(current_price * current_to_asset_price)
+        elif (price_entry := GlobalDBHandler.get_historical_price(
+            from_asset=asset,
+            to_asset=main_currency,
+            timestamp=timestamp,
+            max_seconds_distance=HOUR_IN_SECONDS,
+        )) is not None:
+            price = FVal(price_entry.price)
+        else:
+            price = ZERO
+
+        price_cache[cache_key] = price
+        return price
+
     def _populate_cached_balances_values(
             self,
             balances: BlockchainBalances,
@@ -569,26 +609,10 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
     ) -> None:
         main_currency = CachedSettings().main_currency
         price_cache: dict[tuple[str, Timestamp], FVal] = {}
-
-        def get_price(asset: CryptoAsset, timestamp: Timestamp) -> FVal:
-            cache_key = (asset.identifier, timestamp)
-            if cache_key in price_cache:
-                return price_cache[cache_key]
-
-            if asset == main_currency:
-                price = FVal(1)
-            elif (price_entry := GlobalDBHandler.get_historical_price(
-                from_asset=asset,
-                to_asset=main_currency,
-                timestamp=timestamp,
-                max_seconds_distance=HOUR_IN_SECONDS,
-            )) is not None:
-                price = FVal(price_entry.price)
-            else:
-                price = ZERO
-
-            price_cache[cache_key] = price
-            return price
+        manual_current_prices = {
+            from_asset: (Asset(to_asset), deserialize_price(price))
+            for from_asset, to_asset, price in GlobalDBHandler.get_all_manual_latest_prices()
+        }
 
         for chain, chain_balances in balances.chains_with_tokens():
             if (query_ts := last_query_ts.get(chain.serialize())) is None:
@@ -597,7 +621,13 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
             for account_balances in chain_balances.values():
                 for category in (account_balances.assets, account_balances.liabilities):
                     for asset, labeled_balances in category.items():
-                        price = get_price(asset.resolve_to_crypto_asset(), query_ts)
+                        price = self.get_price_for_cached_balances(
+                            asset=asset.resolve_to_crypto_asset(),
+                            timestamp=query_ts,
+                            main_currency=main_currency,
+                            price_cache=price_cache,
+                            manual_current_prices=manual_current_prices,
+                        )
                         for balance in labeled_balances.values():
                             balance.value = balance.amount * price
 
@@ -608,7 +638,13 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
             native_asset = (
                 A_BTC if chain == SupportedBlockchain.BITCOIN else A_BCH
             ).resolve_to_crypto_asset()
-            price = get_price(native_asset, query_ts)
+            price = self.get_price_for_cached_balances(
+                asset=native_asset,
+                timestamp=query_ts,
+                main_currency=main_currency,
+                price_cache=price_cache,
+                manual_current_prices=manual_current_prices,
+            )
 
             for balance in chain_balances.values():
                 balance.value = balance.amount * price

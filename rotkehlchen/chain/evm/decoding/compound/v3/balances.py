@@ -2,18 +2,16 @@ import logging
 from collections import defaultdict
 from typing import TYPE_CHECKING, NamedTuple
 
-from rotkehlchen.accounting.structures.balance import Balance, BalanceSheet
+from rotkehlchen.accounting.structures.balance import BalanceSheet
 from rotkehlchen.assets.asset import EvmToken
 from rotkehlchen.assets.utils import token_normalized_value_decimals
 from rotkehlchen.chain.ethereum.interfaces.balances import BalancesSheetType, ProtocolWithBalance
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
 from rotkehlchen.chain.evm.contracts import EvmContract
-from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.resolver import evm_address_to_identifier
 from rotkehlchen.errors.asset import UnknownAsset, WrongAssetType
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
-from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import ChecksumEvmAddress, TokenKind
 
@@ -175,6 +173,7 @@ class Compoundv3Balances(ProtocolWithBalance):
             log.error(f'Failed to query Compound v3 collateral due to {e!s}')
             return balances
 
+        entries = []
         for idx, result in enumerate(call_output):
             raw_amount = comet_contract.decode(
                 result=result,
@@ -188,23 +187,16 @@ class Compoundv3Balances(ProtocolWithBalance):
                 continue
 
             collateral_asset = calls_arguments[idx].compound_asset
-            collateral_balance = token_normalized_value_decimals(
-                token_amount=raw_amount,
-                token_decimals=collateral_asset.decimals,
-            )
+            entries.append((
+                calls_arguments[idx].user_address,
+                collateral_asset,
+                token_normalized_value_decimals(
+                    token_amount=raw_amount,
+                    token_decimals=collateral_asset.decimals,
+                ),
+            ))
 
-            if (asset_price := Inquirer.find_main_currency_price(collateral_asset)) == ZERO:
-                log.error(
-                    f'Failed to query price of {collateral_asset!s} '
-                    'while fetching the collateral balances of Compound v3',
-                )
-                continue
-
-            balances[calls_arguments[idx].user_address].assets[collateral_asset][self.counterparty] += Balance(  # noqa: E501
-                amount=collateral_balance,
-                value=collateral_balance * asset_price,
-            )
-
+        self._add_priced_balances(balances=balances, amounts=entries)
         return balances
 
     def query_liabilities(self) -> 'BalancesSheetType':
@@ -247,6 +239,7 @@ class Compoundv3Balances(ProtocolWithBalance):
             log.error(f'Failed to query Compound v3 liabilities due to {e!s}')
             return balances
 
+        entries = []
         for idx, result in enumerate(call_output):
             raw_amount = token_contract.decode(
                 result=result,
@@ -256,24 +249,16 @@ class Compoundv3Balances(ProtocolWithBalance):
             if raw_amount <= 0:
                 continue
 
-            borrow_balance = token_normalized_value_decimals(
-                token_amount=raw_amount,
-                token_decimals=calls_arguments[idx].compound_asset.decimals,
-            )
+            entries.append((
+                calls_arguments[idx].user_address,
+                underlying_token[calls[idx][0]],
+                token_normalized_value_decimals(
+                    token_amount=raw_amount,
+                    token_decimals=calls_arguments[idx].compound_asset.decimals,
+                ),
+            ))
 
-            # query the current price of the underlying asset
-            if (asset_price := Inquirer.find_main_currency_price(underlying_token[calls[idx][0]])) == ZERO:  # noqa: E501
-                log.error(
-                    f'Failed to query price of {underlying_token[calls[idx][0]]!s} '
-                    'while fetching the liability balances of Compound v3',
-                )
-                continue
-
-            balances[calls_arguments[idx].user_address].liabilities[underlying_token[calls[idx][0]]][self.counterparty] += Balance(  # noqa: E501
-                amount=borrow_balance,
-                value=borrow_balance * asset_price,
-            )
-
+        self._add_priced_balances(balances=balances, amounts=entries, category='liabilities')
         return balances
 
     def query_balances(self) -> 'BalancesSheetType':

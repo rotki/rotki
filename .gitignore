@@ -34,3 +34,8 @@ colibri/target
 **/.claude/
 out
 .codexbox-out/
+# benchmark harness outputs
+bench-result.json
+bench-compare.json
+bench-compare.md
+gha-benchmark.json

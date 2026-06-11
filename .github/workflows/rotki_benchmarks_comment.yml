@@ -1,0 +1,49 @@
+name: Benchmark PR comment
+
+# Posts the benchmark comparison as a PR comment. Runs separately from the
+# Benchmarks workflow because pull_request jobs from forks only get a
+# read-only token; workflow_run executes in repo context with write access.
+# Note: workflow_run only triggers once this file is on the default branch.
+
+on:
+  workflow_run:
+    workflows: [ Benchmarks ]
+    types: [ completed ]
+
+permissions: { }
+
+jobs:
+  comment:
+    name: 'Comment results on the PR'
+    if: github.event.workflow_run.event == 'pull_request' && github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      actions: read
+      pull-requests: write
+    steps:
+      - name: Download benchmark results
+        id: download
+        continue-on-error: true  # non-labeled PR runs produce no artifact
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c  # v8.0.1
+        with:
+          name: bench-compare
+          run-id: ${{ github.event.workflow_run.id }}
+          github-token: ${{ github.token }}
+
+      - name: Post or update the comment
+        if: steps.download.outcome == 'success'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+        run: |
+          PR_NUMBER=$(tr -cd '0-9' < pr-number.txt)
+          if [ -z "$PR_NUMBER" ]; then
+            echo "No PR number in artifact, skipping"
+            exit 0
+          fi
+          gh pr comment "$PR_NUMBER" \
+            --repo "$REPO" \
+            --body-file bench-compare.md \
+            --edit-last \
+            --create-if-none

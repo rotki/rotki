@@ -9,7 +9,6 @@ from urllib.parse import urlencode
 import gevent
 import requests
 
-from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.converters import asset_from_bitpanda
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import A_BEST
@@ -23,6 +22,7 @@ from rotkehlchen.exchanges.exchange import (
     ExchangeQueryBalances,
     ExchangeWithoutApiSecret,
 )
+from rotkehlchen.fval import FVal
 from rotkehlchen.history.deserialization import deserialize_price
 from rotkehlchen.history.events.structures.asset_movement import (
     AssetMovement,
@@ -35,7 +35,6 @@ from rotkehlchen.history.events.structures.swap import (
     get_swap_spend_receive,
 )
 from rotkehlchen.history.events.utils import create_group_identifier_from_unique_id
-from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import (
     deserialize_asset_movement_event_type,
@@ -452,7 +451,7 @@ class Bitpanda(ExchangeWithoutApiSecret):
             msg = f'Failed to query Bitpanda balances. {e!s}'
             return None, msg
 
-        assets_balance: defaultdict[AssetWithOracles, Balance] = defaultdict(Balance)
+        amounts: defaultdict[AssetWithOracles, FVal] = defaultdict(FVal)
         wallets_len = len(wallets)
         for idx, entry in enumerate(wallets + fiat_wallets):
 
@@ -488,20 +487,9 @@ class Bitpanda(ExchangeWithoutApiSecret):
             if amount == ZERO:
                 continue
 
-            try:
-                price = Inquirer.find_main_currency_price(asset)
-            except RemoteError as e:
-                self.msg_aggregator.add_error(
-                    f'Error processing Bitpanda balance entry due to inability to '
-                    f'query price: {e!s}. Skipping balance entry',
-                )
-                continue
-            assets_balance[asset] += Balance(
-                amount=amount,
-                value=amount * price,
-            )
+            amounts[asset] += amount
 
-        return dict(assets_balance), ''
+        return dict(self.balances_from_amounts(amounts)), ''
 
     def query_online_history_events(
             self,

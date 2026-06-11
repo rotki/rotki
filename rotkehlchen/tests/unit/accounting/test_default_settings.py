@@ -24,6 +24,7 @@ from rotkehlchen.db.settings import ModifiableDBSettings
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.base import HistoryEvent
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
+from rotkehlchen.history.events.structures.evm_swap import EvmSwapEvent
 from rotkehlchen.history.events.structures.solana_swap import SolanaSwapEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.tests.utils.factories import make_evm_address, make_evm_tx_hash
@@ -32,6 +33,7 @@ from rotkehlchen.utils.misc import ts_sec_to_ms
 
 if TYPE_CHECKING:
     from rotkehlchen.accounting.history_base_entries import EventsAccountant
+    from rotkehlchen.accounting.mixins.event import AccountingEventMixin
     from rotkehlchen.accounting.pot import AccountingPot
 
 EXAMPLE_EVM_HASH = make_evm_tx_hash()
@@ -436,6 +438,44 @@ def test_accounting_solana_swap_counterparty_fallback(accounting_pot: 'Accountin
     assert accounting_pot.processed_events[-2].pnl.taxable == ETH_PRICE_TS_2 - ETH_PRICE_TS_1
     assert accounting_pot.processed_events[-1].asset == A_DAI
     assert accounting_pot.processed_events[-1].free_amount == FVal(3000)
+
+
+@pytest.mark.parametrize('mocked_price_queries', [MOCKED_PRICES])
+def test_accounting_multi_trade_skip_warns_user(accounting_pot: 'AccountingPot') -> None:
+    """Test that multi trade events, which have no accounting rule yet, emit a single
+    user-visible warning per swap group instead of being dropped from the report silently.
+    """
+    _gain_one_ether(events_accountant=accounting_pot.events_accountant)
+    legs: tuple[tuple[Literal[HistoryEventSubType.SPEND, HistoryEventSubType.RECEIVE], Asset, FVal], ...] = (  # noqa: E501
+        (HistoryEventSubType.SPEND, A_ETH, FVal('0.5')),
+        (HistoryEventSubType.SPEND, A_WETH, FVal('0.5')),
+        (HistoryEventSubType.RECEIVE, A_DAI, FVal(3000)),
+    )
+    events = [EvmSwapEvent(
+        tx_ref=EXAMPLE_EVM_HASH,
+        sequence_index=idx + 1,
+        timestamp=TIMESTAMP_2_MS,
+        location=Location.ETHEREUM,
+        location_label=EXAMPLE_ADDRESS,
+        asset=asset,
+        amount=amount,
+        event_type=HistoryEventType.MULTI_TRADE,
+        event_subtype=subtype,
+        counterparty='odos-v2',
+    ) for idx, (subtype, asset, amount) in enumerate(legs)]
+    events_iterator: peekable[AccountingEventMixin] = peekable(iter(events))
+    for event in events:
+        next(events_iterator)  # consume the event itself like the accountant main loop does
+        assert accounting_pot.events_accountant.process(
+            event=event,
+            events_iterator=events_iterator,
+        ) == 1
+
+    assert len(accounting_pot.processed_events) == 1  # only the initial ETH gain
+    assert accounting_pot.database.msg_aggregator.consume_warnings() == [(
+        f'Multi trade events are not supported in accounting yet, so the multi '
+        f'trade with identifier {events[0].group_identifier} is not included in the report.'
+    )]
 
 
 # --- BASIS_TRANSFER tests ---

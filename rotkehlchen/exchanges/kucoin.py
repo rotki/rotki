@@ -25,6 +25,7 @@ from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.exchanges.data_structures import MarginPosition
 from rotkehlchen.exchanges.exchange import ExchangeInterface, ExchangeQueryBalances
 from rotkehlchen.exchanges.utils import SignatureGeneratorMixin
+from rotkehlchen.fval import FVal
 from rotkehlchen.history.deserialization import deserialize_price
 from rotkehlchen.history.events.structures.asset_movement import (
     AssetMovement,
@@ -38,7 +39,6 @@ from rotkehlchen.history.events.structures.swap import (
 )
 from rotkehlchen.history.events.structures.types import HistoryEventSubType
 from rotkehlchen.history.events.utils import create_group_identifier_from_unique_id
-from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import (
     deserialize_fval,
@@ -447,7 +447,7 @@ class Kucoin(ExchangeInterface, SignatureGeneratorMixin):
             log.error(msg, response_dict)
             raise RemoteError(msg) from e
 
-        assets_balance: defaultdict[AssetWithOracles, Balance] = defaultdict(Balance)
+        amounts: defaultdict[AssetWithOracles, FVal] = defaultdict(FVal)
         for raw_result in accounts_data:
             try:
                 amount = deserialize_fval(raw_result['balance'])
@@ -488,21 +488,10 @@ class Kucoin(ExchangeInterface, SignatureGeneratorMixin):
                     details='balance deserialization',
                 )
                 continue
-            try:
-                price = Inquirer.find_main_currency_price(asset)
-            except RemoteError:
-                self.msg_aggregator.add_error(
-                    f'Failed to deserialize a kucoin balance after failing to '
-                    f'request the price of {asset.identifier}. Ignoring it.',
-                )
-                continue
 
-            assets_balance[asset] += Balance(
-                amount=amount,
-                value=amount * price,
-            )
+            amounts[asset] += amount
 
-        return dict(assets_balance)
+        return dict(self.balances_from_amounts(amounts))
 
     def _deserialize_asset_movement(
             self,

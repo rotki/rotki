@@ -2,6 +2,7 @@ import base64
 import json
 import logging
 import operator
+from collections import defaultdict
 from collections.abc import Sequence
 from json.decoder import JSONDecodeError
 from typing import TYPE_CHECKING, Any, Final, Literal
@@ -10,7 +11,6 @@ from urllib.parse import urlencode
 import gevent
 import requests
 
-from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.converters import asset_from_poloniex
 from rotkehlchen.constants import DAY_IN_SECONDS, ZERO
 from rotkehlchen.constants.assets import A_LEND
@@ -26,6 +26,7 @@ from rotkehlchen.exchanges.utils import (
     deserialize_asset_movement_address,
     get_key_if_has_val,
 )
+from rotkehlchen.fval import FVal
 from rotkehlchen.history.deserialization import deserialize_price
 from rotkehlchen.history.events.structures.asset_movement import (
     AssetMovement,
@@ -39,7 +40,6 @@ from rotkehlchen.history.events.structures.swap import (
 )
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.history.events.utils import create_group_identifier_from_unique_id
-from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import (
     deserialize_fval,
@@ -376,7 +376,7 @@ class Poloniex(ExchangeInterface, SignatureGeneratorMixin):
             log.error(msg)
             return None, msg
 
-        assets_balance: dict[AssetWithOracles, Balance] = {}
+        amounts: defaultdict[AssetWithOracles, FVal] = defaultdict(FVal)
         for account_info in resp:
             try:
                 balances = account_info['balances']
@@ -422,29 +422,9 @@ class Poloniex(ExchangeInterface, SignatureGeneratorMixin):
                     if asset == A_LEND:  # poloniex mistakenly returns LEND balances
                         continue  # https://github.com/rotki/rotki/issues/2530
 
-                    try:
-                        price = Inquirer.find_main_currency_price(asset)
-                    except RemoteError as e:
-                        self.msg_aggregator.add_error(
-                            f'Error processing poloniex balance entry due to inability to '
-                            f'query price: {e!s}. Skipping balance entry',
-                        )
-                        continue
+                    amounts[asset] += available + on_orders
 
-                    amount = available + on_orders
-                    value = amount * price
-                    assets_balance[asset] = Balance(
-                        amount=amount,
-                        value=value,
-                    )
-                    log.debug(
-                        'Poloniex balance query',
-                        currency=asset,
-                        amount=amount,
-                        value=value,
-                    )
-
-        return assets_balance, ''
+        return dict(self.balances_from_amounts(amounts)), ''
 
     def _deserialize_trade(
             self,

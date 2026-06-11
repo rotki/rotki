@@ -3,18 +3,16 @@ from abc import ABC, abstractmethod
 from collections import defaultdict
 from typing import TYPE_CHECKING
 
-from rotkehlchen.accounting.structures.balance import Balance, BalanceSheet
+from rotkehlchen.accounting.structures.balance import BalanceSheet
 from rotkehlchen.assets.utils import get_or_create_evm_token, token_normalized_value
 from rotkehlchen.chain.ethereum.interfaces.balances import BalancesSheetType, ProtocolWithBalance
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
 from rotkehlchen.chain.evm.contracts import EvmContract
 from rotkehlchen.chain.evm.decoding.curve.constants import CPT_CURVE
 from rotkehlchen.chain.evm.decoding.curve.lend.constants import CURVE_VAULT_CONTROLLER_ABI
-from rotkehlchen.constants import ZERO
 from rotkehlchen.errors.misc import NotERC20Conformant, NotERC721Conformant, RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
-from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import deserialize_evm_address
 from rotkehlchen.types import ChecksumEvmAddress
@@ -23,7 +21,6 @@ if TYPE_CHECKING:
     from rotkehlchen.assets.asset import EvmToken
     from rotkehlchen.chain.evm.decoding.decoder import EVMTransactionDecoder
     from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
-    from rotkehlchen.types import Price
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -71,24 +68,6 @@ class CurveControllerCommonBalances(ProtocolWithBalance, ABC):
                 controllers[event.extra_data['controller_address']].add(address)
 
         return controllers
-
-    @staticmethod
-    def _get_token_balance(
-            token: 'EvmToken',
-            amount: int,
-            token_prices: dict['EvmToken', 'Price'],
-    ) -> Balance | None:
-        """Return a Balance using the specified amount, token, and prices."""
-        if amount == 0 or token not in token_prices:
-            return None
-
-        return Balance(
-            amount=(normalized_amount := token_normalized_value(
-                token_amount=amount,
-                token=token,
-            )),
-            value=normalized_amount * token_prices[token],
-        )
 
     def query_balances(self) -> 'BalancesSheetType':
         """Query balances for Curve lending loans and leveraged positions.
@@ -160,30 +139,16 @@ class CurveControllerCommonBalances(ProtocolWithBalance, ABC):
                 liabilities.append((user_address, borrowed_token, debt_amount))
                 unique_tokens.add(borrowed_token)
 
-        # Fetch prices for tokens
-        token_prices: dict[EvmToken, Price] = {}
-        for token in unique_tokens:
-            if (price := Inquirer.find_main_currency_price(token)) == ZERO:
-                log.error(f'Failed to query price of {token!s} while fetching Curve lending balances.')  # noqa: E501
-
-            token_prices[token] = price
-
-        # Add assets and liabilities balances
-        for user_address, token, amount in assets:
-            if (balance := self._get_token_balance(
-                    token=token,
-                    amount=amount,
-                    token_prices=token_prices,
-            )):
-                balances[user_address].assets[token][self.counterparty] += balance
-
-        for user_address, token, amount in liabilities:
-            if (balance := self._get_token_balance(
-                    token=token,
-                    amount=amount,
-                    token_prices=token_prices,
-            )):
-                balances[user_address].liabilities[token][self.counterparty] += balance
+        # Price all tokens in one batched query and add the asset/liability balances
+        for entries, category in ((assets, 'assets'), (liabilities, 'liabilities')):
+            self._add_priced_balances(
+                balances=balances,
+                amounts=[
+                    (user_address, token, token_normalized_value(token_amount=amount, token=token))
+                    for user_address, token, amount in entries if amount != 0
+                ],
+                category=category,  # type: ignore[arg-type]  # is a valid literal
+            )
 
         return balances
 

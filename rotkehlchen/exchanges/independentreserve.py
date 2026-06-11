@@ -1,7 +1,7 @@
 import json
 import logging
 import time
-from collections import OrderedDict
+from collections import OrderedDict, defaultdict
 from collections.abc import Sequence
 from json.decoder import JSONDecodeError
 from typing import TYPE_CHECKING, Any, Literal
@@ -9,7 +9,6 @@ from typing import TYPE_CHECKING, Any, Literal
 import gevent
 import requests
 
-from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.asset import AssetWithOracles
 from rotkehlchen.assets.utils import symbol_to_asset_or_token
 from rotkehlchen.constants import ZERO
@@ -32,7 +31,6 @@ from rotkehlchen.history.events.structures.swap import (
 )
 from rotkehlchen.history.events.structures.types import HistoryEventSubType
 from rotkehlchen.history.events.utils import create_group_identifier_from_unique_id
-from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import (
     deserialize_asset_movement_event_type,
@@ -242,7 +240,7 @@ class Independentreserve(ExchangeInterface, SignatureGeneratorMixin):
             return True, ''
 
     def query_balances(self, **kwargs: Any) -> ExchangeQueryBalances:
-        assets_balance: dict[AssetWithOracles, Balance] = {}
+        amounts: defaultdict[AssetWithOracles, FVal] = defaultdict(FVal)
         try:
             response = self._api_query(verb='post', method_type='Private', path='GetAccounts')
         except RemoteError as e:
@@ -255,19 +253,12 @@ class Independentreserve(ExchangeInterface, SignatureGeneratorMixin):
         for entry in response:
             try:
                 asset = independentreserve_asset(entry['CurrencyCode'])
-                price = Inquirer.find_main_currency_price(asset)
                 amount = deserialize_fval(entry['TotalBalance'])
                 account_guids.append(entry['AccountGuid'])
             except UnknownAsset as e:
                 self.send_unknown_asset_message(
                     asset_identifier=e.identifier,
                     details='balance query',
-                )
-                continue
-            except RemoteError as e:  # raised only by find_price
-                self.msg_aggregator.add_error(
-                    f'Error processing IndependentReserve balance entry due to inability to '
-                    f'query price: {e!s}. Skipping balance entry',
                 )
                 continue
             except (DeserializationError, KeyError) as e:
@@ -279,13 +270,10 @@ class Independentreserve(ExchangeInterface, SignatureGeneratorMixin):
             if amount == ZERO:
                 continue
 
-            assets_balance[asset] = Balance(
-                amount=amount,
-                value=amount * price,
-            )
+            amounts[asset] += amount
 
         self.account_guids = account_guids
-        return assets_balance, ''
+        return dict(self.balances_from_amounts(amounts)), ''
 
     def _gather_paginated_data(self, path: str, extra_options: dict | None = None) -> list[dict[str, Any]]:  # noqa: E501
         """May raise KeyError"""

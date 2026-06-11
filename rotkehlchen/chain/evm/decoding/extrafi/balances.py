@@ -76,13 +76,10 @@ class ExtrafiCommonBalances(ProtocolWithBalance):
                     )
 
             if len(unique_reserves) != 0:
-                lending_reserves = self.query_lending_reserves(address, list(unique_reserves))
-                for reserve_token, balance_amount in lending_reserves.items():
-                    price = Inquirer.find_main_currency_price(reserve_token)
-                    balances[address].assets[reserve_token][self.counterparty] += Balance(
-                        amount=balance_amount,
-                        value=balance_amount * price,
-                    )
+                self._add_priced_balances(balances=balances, amounts=[
+                    (address, reserve_token, balance_amount)
+                    for reserve_token, balance_amount in self.query_lending_reserves(address, list(unique_reserves)).items()  # noqa: E501
+                ])
 
             if len(farm_positions) != 0:
                 self._query_farm_positions(
@@ -122,6 +119,8 @@ class ExtrafiCommonBalances(ProtocolWithBalance):
             log.error(f'Failed to query {self.evm_inquirer.chain_name} extrafi locked balances due to {e!s}')  # noqa: E501
             return
 
+        asset_entries: list[tuple[ChecksumEvmAddress, EvmToken, FVal]] = []
+        liability_entries: list[tuple[ChecksumEvmAddress, EvmToken, FVal]] = []
         for idx, result in enumerate(results):
             staked_amount_raw = farm_contract.decode(
                 result=result,
@@ -140,23 +139,19 @@ class ExtrafiCommonBalances(ProtocolWithBalance):
                 evm_inquirer=self.evm_inquirer,
             )
 
-            lp_amount = token_normalized_value(lp_amount_raw, lp_token)
-            lp_price = Inquirer.find_main_currency_price(lp_token)
-            balances[address].assets[lp_token][self.counterparty] += Balance(
-                amount=lp_amount,
-                value=lp_amount * lp_price,
+            asset_entries.append((address, lp_token, token_normalized_value(lp_amount_raw, lp_token)))  # noqa: E501
+            liability_entries.extend(
+                (address, debt_token, token_normalized_value(debt_amount, debt_token))
+                for debt_token, debt_amount in ((token_0, debt_0_amount), (token_1, debt_1_amount))
+                if debt_amount != 0
             )
 
-            for debt_token, debt_amount in ((token_0, debt_0_amount), (token_1, debt_1_amount)):
-                if debt_amount == 0:
-                    continue
-
-                amount = token_normalized_value(debt_amount, debt_token)
-                price = Inquirer.find_main_currency_price(debt_token)
-                balances[address].liabilities[debt_token][self.counterparty] += Balance(
-                    amount=amount,
-                    value=amount * price,
-                )
+        self._add_priced_balances(balances=balances, amounts=asset_entries)
+        self._add_priced_balances(
+            balances=balances,
+            amounts=liability_entries,
+            category='liabilities',
+        )
 
     def _query_locked_extra(
             self,

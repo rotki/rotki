@@ -578,7 +578,10 @@ class DBHistoryEvents:
     ) -> None:
         """
         Edit a history entry to the DB with information provided by the user.
-        NOTE: It edits all the fields except the extra_data one.
+        NOTE: extra_data is preserved when the given event has none, since the edit
+        schemas of some entry types provide no control over it. The system-managed
+        matched_asset_movement key is also carried over to edits that do replace
+        extra_data, as only the unlink endpoint may remove it.
         Marks the event with the specified mapping state if provided.
         Only tracks modification for balance cache invalidation if balance-affecting
         fields change (timestamp, asset, amount, type, subtype, location_label).
@@ -587,11 +590,28 @@ class DBHistoryEvents:
             - InputError if an error occurred.
         """
         old_data = write_cursor.execute(
-            'SELECT timestamp, asset, amount, type, subtype, location_label, sequence_index '
-            'FROM history_events WHERE identifier=?',
+            'SELECT timestamp, asset, amount, type, subtype, location_label, sequence_index, '
+            'extra_data FROM history_events WHERE identifier=?',
             (event.identifier,),
         ).fetchone()
         assert event.identifier is not None
+
+        old_extra_data: dict[str, Any] | None = None
+        if old_data is not None:
+            old_extra_data = HistoryBaseEntry.deserialize_extra_data(
+                entry=old_data,
+                extra_data=old_data[7],
+            )
+        if old_extra_data is not None:
+            if event.extra_data is None and event.entry_type == HistoryBaseEntryType.HISTORY_EVENT:
+                # The edit schema of plain history events provides no extra_data control,
+                # so an edit must not wipe it (e.g. events matched to asset movements).
+                event.extra_data = old_extra_data
+            elif (
+                (matched := old_extra_data.get('matched_asset_movement')) is not None and
+                (event.extra_data is None or 'matched_asset_movement' not in event.extra_data)
+            ):  # tied to the history_event_links table, which user edits don't touch
+                event.extra_data = (event.extra_data or {}) | {'matched_asset_movement': matched}
 
         if save_backup:
             self.save_history_event_backup(write_cursor=write_cursor, identifier=event.identifier)

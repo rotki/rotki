@@ -62,7 +62,7 @@ from rotkehlchen.chain.zksync_lite.manager import ZksyncLiteManager
 from rotkehlchen.config import default_data_directory
 from rotkehlchen.constants import ONE, ZERO
 from rotkehlchen.constants.assets import A_USD
-from rotkehlchen.constants.misc import CONTRACT_TAG_NAME
+from rotkehlchen.constants.misc import CONTRACT_TAG_NAME, NFT_DIRECTIVE
 from rotkehlchen.data_handler import DataHandler
 from rotkehlchen.data_import.manager import CSVDataImporter
 from rotkehlchen.data_migrations.manager import DataMigrationManager
@@ -257,8 +257,10 @@ class Rotkehlchen:
                 )
                 if (
                         is_evm_tx_greenlet and
-                        greenlet.kwargs.get('only_cache', False) is False and
-                        account_data in greenlet.kwargs['accounts']
+                        # accounts is None when all tracked accounts are being refreshed,
+                        # which includes the address being removed
+                        ((accounts := greenlet.kwargs['accounts']) is None or
+                         account_data in accounts)
                 ):
                     greenlet.kill(exception=GreenletKilledError('Killed due to request for evm address removal'))  # noqa: E501
 
@@ -1148,6 +1150,25 @@ class Rotkehlchen:
 
         if self.task_manager is not None:
             self.task_manager.last_balance_query_ts = ts_now()
+
+        # Warm the price cache with the assets of the last balance snapshot so that the
+        # per-component price queries below are mostly served from the cache instead of
+        # each component doing its own oracle request. Assets acquired since the last
+        # snapshot are still priced normally by the per-component queries.
+        with self.data.db.conn.read_ctx() as cursor:
+            snapshot_assets = [Asset(row[0]) for row in cursor.execute(
+                'SELECT DISTINCT currency FROM timed_balances WHERE timestamp='
+                '(SELECT MAX(timestamp) FROM timed_balances) AND currency NOT LIKE ?',
+                (f'{NFT_DIRECTIVE}%',),
+            )]
+        if len(snapshot_assets) != 0:
+            try:
+                Inquirer.find_main_currency_prices(snapshot_assets)
+            except RemoteError as e:
+                log.warning(
+                    'Price cache warm-up failed during balance query',
+                    error=str(e),
+                )
 
         balances: dict[str, dict[Asset, Balance]] = {}
         problem_free = True

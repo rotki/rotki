@@ -62,6 +62,8 @@ log = RotkehlchenLogsAdapter(logger)
 class Blockscout(ExternalServiceWithApiKey, EtherscanLikeApi):
     """Blockscout API handler for the Blockscout PRO multichain endpoints."""
 
+    supports_historical_eth_call = True  # the json-rpc endpoint honors the eth_call block tag
+
     def __init__(
             self,
             database: 'DBHandler',

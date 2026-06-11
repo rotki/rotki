@@ -58,24 +58,30 @@ export const useBalanceFetching = createSharedComposable(() => {
     await Promise.allSettled([fetchManualBalances(), refreshAccounts(), fetchConnectedExchangeBalances()]);
   };
 
-  const refreshFromChain = (): void => {
+  const refreshFromChain = async (): Promise<void> => {
+    // Trigger the all-balances query only after the blockchain balances refresh
+    // completes. GET /balances reads the shared in-memory balances and may persist
+    // a snapshot; a per-chain refresh clears a chain's balances before repopulating
+    // them, so running both concurrently can let the snapshot observe the transient
+    // cleared state and save a 0-value snapshot while the balances recover right
+    // after.
     if (willDetect()) {
       const nonEvmChains = getNonEvmTxChains();
       logger.debug(`refreshFromChain: detect-and-refresh-non-evm, non-EVM chains=[${nonEvmChains.join(', ')}]`);
       startPromise(maybeAutoDetectTokens());
       if (nonEvmChains.length > 0)
-        startPromise(refreshBlockchainBalances({ blockchain: nonEvmChains }));
+        await refreshBlockchainBalances({ blockchain: nonEvmChains });
     }
     else {
       logger.debug(`refreshFromChain: refresh-all-no-detection (${autoDetectSkipReason() ?? 'unknown'}), refreshing all chains`);
-      startPromise(refreshBlockchainBalances());
+      await refreshBlockchainBalances();
     }
-    startPromise(fetchBalances());
+    await fetchBalances();
   };
 
   const fetch = async (): Promise<void> => {
     await fetchCached();
-    refreshFromChain();
+    startPromise(refreshFromChain());
   };
 
   const autoRefresh = async (): Promise<void> => {
