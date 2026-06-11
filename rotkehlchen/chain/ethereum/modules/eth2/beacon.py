@@ -67,7 +67,7 @@ class BeaconNode:
         result = self.query(method='GET', endpoint='eth/v1/node/version')
         try:
             version = result['version']
-        except KeyError as e:
+        except (KeyError, TypeError) as e:  # TypeError if the response data is not a mapping
             raise RemoteError(f'Failed to parse the node version response from {rpc_endpoint}') from e  # noqa: E501
 
         log.info(f'Connected to {rpc_endpoint} with beacon node {version}')
