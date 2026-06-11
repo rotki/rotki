@@ -44,6 +44,7 @@ from rotkehlchen.chain.ethereum.modules.octant.balances import OctantBalances
 from rotkehlchen.chain.ethereum.modules.octant.constants import CPT_OCTANT
 from rotkehlchen.chain.ethereum.modules.pendle.balances import PendleBalances
 from rotkehlchen.chain.ethereum.modules.pendle.constants import PENDLE_TOKEN
+from rotkehlchen.chain.ethereum.modules.pickle_finance.main import PickleFinance
 from rotkehlchen.chain.ethereum.modules.safe.balances import SafeBalances
 from rotkehlchen.chain.ethereum.modules.safe.constants import CPT_SAFE, SAFE_TOKEN_ID
 from rotkehlchen.chain.ethereum.utils import should_update_protocol_cache
@@ -96,7 +97,7 @@ from rotkehlchen.constants.assets import (
     A_WETH,
     A_WETH_ARB,
 )
-from rotkehlchen.constants.misc import ONE
+from rotkehlchen.constants.misc import ONE, ZERO
 from rotkehlchen.constants.resolver import evm_address_to_identifier
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.fval import FVal
@@ -122,7 +123,7 @@ from rotkehlchen.tests.utils.ethereum import (
     get_decoded_events_of_transaction,
     wait_until_all_nodes_connected,
 )
-from rotkehlchen.tests.utils.factories import make_evm_tx_hash
+from rotkehlchen.tests.utils.factories import make_evm_address, make_evm_tx_hash
 from rotkehlchen.types import (
     CacheType,
     ChainID,
@@ -1557,3 +1558,42 @@ def test_woofi_stake_vault_token_balances(
         amount=FVal('15923.160753145667983352'),
         value=FVal('1792.506669755680434705721434148408290595113020776336'),
     )
+
+
+def test_pickle_dill_zero_positions_skip_price_query(
+        ethereum_inquirer,
+        database,
+        function_scope_messages_aggregator,
+):
+    """Zero dill positions must not trigger a PICKLE price lookup, since that
+    can cascade into remote oracle queries for every user that simply has the
+    module enabled (the default) without ever having used pickle"""
+    from rotkehlchen.inquirer import Inquirer  # same import style as above
+    pickle_module = PickleFinance(
+        ethereum_inquirer=ethereum_inquirer,
+        database=database,
+        premium=None,
+        msg_aggregator=function_scope_messages_aggregator,
+    )
+    user_address = make_evm_address()
+    zero_claim = (True, (0).to_bytes(32, 'big'))  # claim() -> uint256
+    zero_locked = (True, (0).to_bytes(64, 'big'))  # locked() -> (int128, uint256)
+    with (
+        patch.object(pickle_module.ethereum, 'multicall_2', return_value=[zero_claim, zero_locked]),  # noqa: E501
+        patch.object(Inquirer, 'find_main_currency_price', return_value=FVal(2)) as price_mock,
+    ):
+        result = pickle_module.get_dill_balances(addresses=[user_address])
+
+    assert price_mock.call_count == 0
+    assert result[user_address].dill_amount.balance.amount == ZERO
+
+    nonzero_claim = (True, (5 * 10**18).to_bytes(32, 'big'))
+    with (
+        patch.object(pickle_module.ethereum, 'multicall_2', return_value=[nonzero_claim, zero_locked]),  # noqa: E501
+        patch.object(Inquirer, 'find_main_currency_price', return_value=FVal(2)) as price_mock,
+    ):
+        result = pickle_module.get_dill_balances(addresses=[user_address])
+
+    assert price_mock.call_count == 1
+    assert result[user_address].pending_rewards.balance.amount == FVal(5)
+    assert result[user_address].pending_rewards.balance.value == FVal(10)

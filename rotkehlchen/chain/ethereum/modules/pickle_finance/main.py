@@ -5,7 +5,9 @@ from typing import TYPE_CHECKING, Any, NamedTuple
 from rotkehlchen.accounting.structures.balance import AssetBalance, Balance
 from rotkehlchen.assets.utils import token_normalized_value_decimals
 from rotkehlchen.chain.evm.types import string_to_evm_address
+from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import A_PICKLE
+from rotkehlchen.constants.prices import ZERO_PRICE
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.premium.premium import Premium
@@ -75,7 +77,8 @@ class PickleFinance(EthereumModule):
         )
         reward_outputs, dill_outputs = outputs[:len(addresses)], outputs[len(addresses):]
 
-        pickle_price = Inquirer.find_main_currency_price(A_PICKLE)
+        pickle_price = None  # queried only once an actual position is found, since the
+        # price lookup can hit remote oracles and most users have no dill at all
         for idx, output in enumerate(reward_outputs):
             status_rewards, result = output
             status_dill, result_dill = dill_outputs[idx]
@@ -96,19 +99,22 @@ class PickleFinance(EthereumModule):
                         token_amount=dill_amounts[0],
                         token_decimals=self.pickle.decimals,
                     )
+                    if pickle_price is None and (dill_rewards != ZERO or dill_locked != ZERO):
+                        pickle_price = Inquirer.find_main_currency_price(A_PICKLE)
+                    price = ZERO_PRICE if pickle_price is None else pickle_price
                     balance = DillBalance(
                         dill_amount=AssetBalance(
                             asset=A_PICKLE,
                             balance=Balance(
                                 amount=dill_locked,
-                                value=pickle_price * dill_locked,
+                                value=price * dill_locked,
                             ),
                         ),
                         pending_rewards=AssetBalance(
                             asset=A_PICKLE,
                             balance=Balance(
                                 amount=dill_rewards,
-                                value=pickle_price * dill_rewards,
+                                value=price * dill_rewards,
                             ),
                         ),
                         lock_time=deserialize_timestamp(dill_amounts[1]),
