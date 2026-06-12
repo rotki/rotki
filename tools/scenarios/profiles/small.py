@@ -19,6 +19,7 @@ from tools.scenarios.profiles.common import (
     EvmPools,
     erc20,
     make_asset_movement,
+    make_chain_state,
     make_evm_tx_group,
     make_exchange_swap,
     make_snapshots,
@@ -119,6 +120,11 @@ def build(builder: 'ProfileBuilder') -> dict[str, Any] | None:
         asset_weights=[2.0] + [1.0] * len(asset_pool),
         gas_asset=A_ETH,
     )
+    builder.add_chain_state(*make_chain_state(
+        seed=SEED,
+        accounts=eth_accounts,
+        assets=pools.assets,
+    ))
     builder.add_manual_latest_prices(
         [(asset, USD_PRICES[symbol]) for asset, symbol in pools.assets]
         + [(Asset('EUR'), USD_PRICES['EUR']), (A_BTC, USD_PRICES['BTC'])]

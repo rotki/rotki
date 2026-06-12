@@ -21,6 +21,7 @@ from tools.scenarios.profiles.common import (
     EvmPools,
     erc20,
     make_asset_movement,
+    make_chain_state,
     make_evm_tx_group,
     make_exchange_swap,
     make_snapshots,
@@ -175,6 +176,11 @@ def build(builder: 'ProfileBuilder') -> dict[str, Any] | None:
             amount=FVal('4.2'),
         ),
     ])
+    builder.add_chain_state(*make_chain_state(
+        seed=SEED,
+        accounts=evm_accounts,
+        assets=pools_per_chain[Location.ETHEREUM].assets,
+    ))
     price_assets = {
         symbol: asset
         for pools in pools_per_chain.values()

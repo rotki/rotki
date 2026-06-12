@@ -4,7 +4,7 @@ Profiles supply the distribution constants; this module turns them into real
 event-structure objects so all serialization stays in the production classes.
 """
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Final
+from typing import TYPE_CHECKING, Any, Final
 
 from eth_utils import to_checksum_address
 
@@ -34,6 +34,57 @@ USD_PRICES: Final = {
     'MKR': '1500', 'SNX': '2.5', 'PEPE': '0.00001', 'ARB': '0.8', 'OP': '1.9',
     'PICKLE': '1.2', 'LQTY': '1.0', 'LRC': '0.15', 'LUSD': '1',
 }
+
+CHAIN_STATE_SEED_OFFSET: Final = 0xC0FFEE  # decouple from the profile's event rng stream
+
+
+def make_chain_state(
+        seed: int,
+        accounts: 'Sequence[ChecksumEvmAddress]',
+        assets: 'Sequence[tuple[Asset, str]]',
+        chain_id: int = 1,
+) -> tuple[dict[str, Any], dict[str, Any]]:
+    """Deterministic on-chain holdings (native + ERC-20) for the accounts.
+
+    Returns (mock_state, expected): mock_state holds raw base-unit integers
+    keyed the way the mock rpc layer looks them up (chain id, lowercased
+    addresses) and is written to chain_state.json; expected holds the same
+    balances as human-readable amounts keyed by asset identifier, emitted
+    into expected.json so correctness suites assert the exact values the
+    frontend should end up displaying.
+
+    Uses its own seeded factory (not the profile's) so adding chain state
+    never shifts the rng stream behind already-modeled profile data.
+    """
+    from rotkehlchen.errors.asset import WrongAssetType  # avoid import cycle at module load
+    from tools.scenarios.deterministic import DeterministicFactory
+
+    factory = DeterministicFactory(seed + CHAIN_STATE_SEED_OFFSET)
+    state_accounts: dict[str, Any] = {}
+    expected: dict[str, Any] = {}
+    for account in accounts:
+        native_amount = factory.amount(0.05, 30, 6)
+        holdings = {
+            'native': str((native_amount * 10**18).to_int(exact=True)),
+            'tokens': (tokens := {}),
+        }
+        expected_assets = {'ETH': str(native_amount)}
+        for asset, symbol in assets:
+            try:
+                token = asset.resolve_to_evm_token()
+            except WrongAssetType:
+                continue  # the chain's native asset is handled above
+            if token.decimals is None:
+                continue
+            price = float(USD_PRICES[symbol])
+            amount = factory.amount(10 / price, 20000 / price, min(6, token.decimals))
+            tokens[token.evm_address.lower()] = str(
+                (amount * 10**token.decimals).to_int(exact=True),
+            )
+            expected_assets[token.identifier] = str(amount)
+        state_accounts[account.lower()] = holdings
+        expected[account] = expected_assets
+    return {str(chain_id): state_accounts}, expected
 
 
 def make_snapshots(

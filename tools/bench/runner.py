@@ -9,7 +9,7 @@ from typing import Any, Final, Self
 
 import requests
 
-from tools.bench.mockserver import MockExternalServices
+from tools.bench.mockserver import ChainState, MockExternalServices
 
 PING_POLL_SECONDS: Final = 0.05
 DEFAULT_START_TIMEOUT: Final = 120
@@ -41,7 +41,10 @@ class BackendRunner:
         self.port = free_port()
         self.process: subprocess.Popen | None = None
         self.session = requests.Session()
-        self.mock = MockExternalServices()
+        # serve the profile's on-chain state when present (older base-side
+        # profile builds in compare runs predate it; the mock then falls
+        # back to its address-derived deterministic answers)
+        self.mock = MockExternalServices(chain_state=ChainState.from_profile(self.data_dir))
 
     def url(self, path: str) -> str:
         return f'http://127.0.0.1:{self.port}/api/1{path}'
