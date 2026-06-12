@@ -328,6 +328,7 @@
       "erc20": {
         "error": {
           "description": "There was an error while retrieving token details: {message}",
+          "timeout": "Timed out while retrieving token details. You can enter the token information manually.",
           "title": "Retrieving token details for {address} ({evmChain})"
         },
         "task": {

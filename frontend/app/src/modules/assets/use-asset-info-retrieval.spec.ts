@@ -5,8 +5,10 @@ import { CUSTOM_ASSET } from '@/modules/assets/types';
 import { useAssetInfoCache } from '@/modules/assets/use-asset-info-cache';
 import { useAssetInfoRetrieval } from '@/modules/assets/use-asset-info-retrieval';
 import { useNotificationDispatcher } from '@/modules/core/notifications/use-notification-dispatcher';
+import { TaskType } from '@/modules/core/tasks/task-type';
 
 const runTaskMock = vi.fn();
+const cancelTaskByTaskTypeMock = vi.fn();
 
 vi.mock('@/modules/assets/api/use-asset-info-api', () => ({
   useAssetInfoApi: vi.fn().mockReturnValue({
@@ -22,7 +24,7 @@ vi.mock('@/modules/core/tasks/use-task-handler', async importOriginal => ({
       return runTaskMock(taskFn, ...rest);
     },
     cancelTask: vi.fn(),
-    cancelTaskByTaskType: vi.fn(),
+    cancelTaskByTaskType: async (...args: unknown[]): Promise<unknown> => cancelTaskByTaskTypeMock(...args),
   }),
 }));
 
@@ -86,6 +88,28 @@ describe('useAssetRetrieval', () => {
       expect(result).toEqual({});
 
       expect(useNotificationDispatcher().notify).toHaveBeenCalled();
+    });
+
+    it('should time out and cancel the task when the lookup never resolves', async () => {
+      // Regression: a stalled ERC20 lookup (e.g. no RPC node answers) must not leave the
+      // caller awaiting forever, which would keep the asset form fields disabled indefinitely.
+      vi.useFakeTimers();
+      cancelTaskByTaskTypeMock.mockClear();
+      // Backend task that never settles.
+      runTaskMock.mockReturnValue(new Promise<never>(() => {}));
+
+      try {
+        const resultPromise = assetInfoRetrieval.fetchTokenDetails(payload);
+
+        await vi.advanceTimersByTimeAsync(15_000);
+
+        await expect(resultPromise).resolves.toEqual({});
+        expect(cancelTaskByTaskTypeMock).toHaveBeenCalledWith(TaskType.ERC20_DETAILS);
+        expect(useNotificationDispatcher().notify).toHaveBeenCalled();
+      }
+      finally {
+        vi.useRealTimers();
+      }
     });
   });
 
