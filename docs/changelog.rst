@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`-` Kraken trades where the bought and sold amounts happen to be equal are no longer skipped as failed transfers.
 * :bug:`-` Adding an EVM token no longer leaves the name, symbol and decimals fields disabled indefinitely when the token detail lookup cannot reach a working RPC node; the lookup now times out so you can fill in the details manually.
 * :bug:`-` Balance snapshots taken automatically when opening the app are no longer occasionally saved with a zero (or too-low) total while the blockchain balances are still being refreshed.
 * :bug:`-` Login no longer fails if the configured beacon node RPC endpoint returns an unexpected response.
