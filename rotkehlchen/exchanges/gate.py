@@ -8,12 +8,12 @@ import urllib.parse
 from http import HTTPStatus
 from typing import TYPE_CHECKING, Any, Final, Literal
 
-import gevent
 import requests
 
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.api.websockets.typedefs import HistoryEventsStep
 from rotkehlchen.assets.converters import asset_from_gate
+from rotkehlchen.concurrency import result_of, spawn, wait
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.constants.timing import DAY_IN_SECONDS
 from rotkehlchen.data_import.utils import maybe_set_transaction_extra_data
@@ -578,17 +578,17 @@ class Gate(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
     ) -> tuple[Sequence[HistoryBaseEntry], Timestamp]:
         """Query deposits, withdrawals, and trades from Gate."""
         events: list[AssetMovement | SwapEvent] = []
-        movement_greenlets = [
-            gevent.spawn(
+        movement_tasks = [
+            spawn(
                 self._query_deposits_withdrawals,
                 start_ts=start_ts,
                 end_ts=end_ts,
                 query_for=event_type,
             ) for event_type in (HistoryEventType.DEPOSIT, HistoryEventType.WITHDRAWAL)
         ]
-        gevent.joinall(movement_greenlets)
-        for greenlet in movement_greenlets:
-            events.extend(greenlet.get())
+        wait(movement_tasks)
+        for task in movement_tasks:
+            events.extend(result_of(task))
 
         events.extend(self._query_trades(start_ts=start_ts, end_ts=end_ts))
         return events, end_ts

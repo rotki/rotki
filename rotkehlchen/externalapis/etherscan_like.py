@@ -2,6 +2,7 @@ import abc
 import json
 import logging
 import operator
+import time
 from abc import ABC
 from collections.abc import Iterator
 from contextlib import suppress
@@ -10,7 +11,6 @@ from http import HTTPStatus
 from json.decoder import JSONDecodeError
 from typing import TYPE_CHECKING, Any, Final, Literal, overload
 
-import gevent
 import requests
 from requests import Response
 from web3.types import BlockIdentifier
@@ -192,7 +192,7 @@ class EtherscanLikeApi(ABC):
             f'Got too many requests error from {chain_id} {self.name}. Will '
             f'backoff for {current_backoff} seconds.',
         )
-        gevent.sleep(current_backoff)
+        time.sleep(current_backoff)
         return current_backoff * 2
 
     def _additional_json_response_handling(

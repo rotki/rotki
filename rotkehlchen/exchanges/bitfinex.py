@@ -2,16 +2,16 @@ import hashlib
 import json
 import logging
 import operator
+import time
 from collections import defaultdict
 from collections.abc import Callable, Sequence
 from http import HTTPStatus
 from json.decoder import JSONDecodeError
+from threading import Semaphore
 from typing import TYPE_CHECKING, Any, Final, Literal, NamedTuple, overload
 from urllib.parse import urlencode
 
-import gevent
 import requests
-from gevent.lock import Semaphore
 from requests.adapters import Response
 
 from rotkehlchen.assets.converters import BITFINEX_EXCHANGE_TEST_ASSETS, asset_from_bitfinex
@@ -292,7 +292,7 @@ class Bitfinex(ExchangeInterface, SignatureGeneratorMixin):
                             options=call_options,
                         )
                         retries_left -= 1
-                        gevent.sleep(API_REQUEST_RETRY_AFTER_SECONDS)
+                        time.sleep(API_REQUEST_RETRY_AFTER_SECONDS)
                         continue
 
                     # Unexpected JSON dict case, better to log it

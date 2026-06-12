@@ -2,13 +2,13 @@ import base64
 import json
 import logging
 import operator
+import time
 from collections import defaultdict
 from collections.abc import Sequence
 from json.decoder import JSONDecodeError
 from typing import TYPE_CHECKING, Any, Final, Literal
 from urllib.parse import urlencode
 
-import gevent
 import requests
 
 from rotkehlchen.assets.converters import asset_from_poloniex
@@ -277,7 +277,7 @@ class Poloniex(ExchangeInterface, SignatureGeneratorMixin):
                     f'Got a recoverable poloniex error. '
                     f'Backing off for {backoff_seconds}',
                 )
-                gevent.sleep(backoff_seconds)
+                time.sleep(backoff_seconds)
                 tries -= 1
             else:
                 break

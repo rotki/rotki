@@ -1,10 +1,10 @@
 import json
 import logging
+import time
 from collections.abc import Callable
 from http import HTTPStatus
 from typing import Any, Literal, overload
 
-import gevent
 import requests
 from requests.adapters import HTTPAdapter
 from urllib3.util import Retry
@@ -172,7 +172,7 @@ def retry_calls(
                     f'In retry_call for {location}-{method_name}. Got 429. Backing off for '
                     f'{backoff_in_seconds} seconds',
                 )
-                gevent.sleep(backoff_in_seconds)
+                time.sleep(backoff_in_seconds)
                 tries -= 1
                 continue
 

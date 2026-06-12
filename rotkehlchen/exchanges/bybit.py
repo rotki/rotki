@@ -1,12 +1,12 @@
 import json
 import logging
+import time
 import urllib.parse
 from collections import defaultdict
 from collections.abc import Sequence
 from http import HTTPStatus
 from typing import TYPE_CHECKING, Any, Final, Literal
 
-import gevent
 import requests
 
 from rotkehlchen.assets.asset import AssetWithOracles
@@ -237,7 +237,7 @@ class Bybit(ExchangeInterface, SignatureGeneratorMixin):
                 if tries >= 1:
                     backoff_seconds = 10 / tries
                     log.debug(f'Got a 429 from Bybit. Backing off for {backoff_seconds}')
-                    gevent.sleep(backoff_seconds)
+                    time.sleep(backoff_seconds)
                     tries -= 1
                     continue
 

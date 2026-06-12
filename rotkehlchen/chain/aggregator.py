@@ -5,11 +5,10 @@ from collections.abc import Callable, Iterator, Sequence
 from functools import reduce
 from importlib import import_module
 from pathlib import Path
+from threading import Semaphore
 from typing import TYPE_CHECKING, Any, Literal, Optional, TypeVar, cast, overload
 
-import gevent
 import requests
-from gevent.lock import Semaphore
 from web3.exceptions import BadFunctionCallOutput, Web3Exception
 
 from rotkehlchen.accounting.structures.balance import Balance, BalanceSheet
@@ -68,6 +67,7 @@ from rotkehlchen.chain.optimism.modules.velodrome.balances import VelodromeBalan
 from rotkehlchen.chain.optimism.modules.walletconnect.balances import WalletconnectBalances
 from rotkehlchen.chain.substrate.manager import wait_until_a_node_is_available
 from rotkehlchen.chain.substrate.utils import SUBSTRATE_NODE_CONNECTION_TIMEOUT
+from rotkehlchen.concurrency import exception_of, spawn, wait
 from rotkehlchen.constants import DEFAULT_BALANCE_LABEL, ONE, ZERO
 from rotkehlchen.constants.assets import A_BCH, A_BTC, A_DAI, A_ETH, A_ETH2
 from rotkehlchen.constants.timing import HOUR_IN_SECONDS
@@ -725,20 +725,20 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
         # (per-chain RPC nodes, blockstream, beaconchain) parallelize freely; calls
         # into shared upstreams (etherscan-v2's unified key, price oracles) are gated
         # by the per-client TokenBucket so we don't trip shared rate limits.
-        greenlets = {chain: gevent.spawn(_query_one, chain) for chain in chains_to_query}
-        gevent.joinall(list(greenlets.values()))
+        tasks = {chain: spawn(_query_one, chain) for chain in chains_to_query}
+        wait(list(tasks.values()))
 
         # Persist the cache only for chains that succeeded. Preserve the original
         # contract by reraising the first failure after all chains have settled.
         # Additional failures are logged so they aren't silently swallowed when
         # multiple chains fail in the same refresh.
         first_exception: BaseException | None = None
-        for chain, greenlet in greenlets.items():
-            if greenlet.exception is not None:
+        for chain, task in tasks.items():
+            if (chain_exception := exception_of(task)) is not None:
                 if first_exception is None:
-                    first_exception = greenlet.exception
+                    first_exception = chain_exception
                 else:
-                    log.error(f'Failed to query {chain} balances: {greenlet.exception!s}')
+                    log.error(f'Failed to query {chain} balances: {chain_exception!s}')
                 continue
             self._update_blockchain_balances_cache(blockchain=chain, addresses=addresses)
 

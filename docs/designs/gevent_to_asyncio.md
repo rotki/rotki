@@ -10,7 +10,7 @@ the decision log.
 | Phase | Description | Status |
 |-------|-------------|--------|
 | 0 | Python bump 3.11 → 3.12/3.13 | not started |
-| 1 | Stdlib primitives + spawn seam + gevent import ban | **in progress** |
+| 1 | Stdlib primitives + spawn seam + gevent import ban | **in progress** — business logic done (~45 files); test files remain (phases 2-3 exemption) |
 | 2 | Cooperative cancellation (replaces `greenlet.kill`) | not started |
 | 3 | DB driver dual-mode (gevent / threading backends) | not started |
 | 4 | ASGI server behind a flag (uvicorn + WSGI bridge + native websockets) | not started |

@@ -1,9 +1,9 @@
 import logging
 import sys
+import time
 from json.decoder import JSONDecodeError
 from typing import TYPE_CHECKING, Any, Final, Literal, overload
 
-import gevent
 import requests
 
 from rotkehlchen.chain.evm.l2_with_l1_fees.types import L2ChainIdsWithL1FeesType
@@ -174,7 +174,7 @@ class Blockscout(ExternalServiceWithApiKey, EtherscanLikeApi):
                     f'Blockscout API request {response.url} got rate limited. Sleeping for '
                     f'{sleep_seconds}. We have {times} tries left.',
                 )
-                gevent.sleep(sleep_seconds)
+                time.sleep(sleep_seconds)
                 continue
 
             if response.status_code != 200:

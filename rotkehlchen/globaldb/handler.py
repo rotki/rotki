@@ -2,11 +2,11 @@ import logging
 import shutil
 from collections.abc import Callable, Iterator
 from pathlib import Path
+from threading import Semaphore
 from time import perf_counter
 from typing import TYPE_CHECKING, Any, Final, Literal, Optional, Union, cast, overload
 
 import rsqlite
-from gevent.lock import Semaphore
 
 from rotkehlchen.assets.asset import (
     Asset,
@@ -2637,8 +2637,8 @@ class GlobalDBHandler:
 
         We saw that when killing a greenlet the locks are not released and has to
         be done manually.
-        It won't raise errors if the lock is over-released
-        https://www.gevent.org/api/gevent.lock.html#gevent.lock.Semaphore.release
+        It won't raise errors if the lock is over-released (threading.Semaphore,
+        like the gevent one before it, allows over-releasing)
         The killall that happens in this logic can trigger a greenlet switch as per
         https://github.com/gevent/gevent/issues/1473#issuecomment-548327614
         """

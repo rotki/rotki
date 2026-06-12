@@ -1,7 +1,7 @@
 import logging
+import time
 from typing import TYPE_CHECKING, Any, Final
 
-import gevent
 from requests import Response
 
 from rotkehlchen.chain.evm.l2_with_l1_fees.types import L2ChainIdsWithL1FeesType
@@ -128,7 +128,7 @@ class Routescan(ExternalServiceWithApiKey, EtherscanLikeApi):
                     f'while max backoff is {backoff_limit} seconds.',
                 )
             else:
-                gevent.sleep(time_until_reset)
+                time.sleep(time_until_reset)
                 return time_until_reset
 
         # If the ratelimit headers are missing or still have requests remaining (shouldn't happen),
