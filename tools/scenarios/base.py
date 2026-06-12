@@ -77,6 +77,15 @@ class ProfileBuilder:
     def add_manual_balances(self, balances: list['ManuallyTrackedBalance']) -> None:
         with self.db.user_write() as write_cursor:
             self.db.add_manually_tracked_balances(write_cursor, balances)
+        self.stats.setdefault('manual_balances', []).extend(
+            {
+                'amount': str(balance.amount),
+                'asset': balance.asset.identifier,
+                'label': balance.label,
+                'location': balance.location.serialize(),
+            }
+            for balance in balances
+        )
 
     def add_manual_latest_prices(self, prices: Sequence[tuple['Asset', str]]) -> None:
         """Seed manual latest prices (vs USD) into the global DB so balance

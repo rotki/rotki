@@ -1,8 +1,13 @@
+import { bigNumberify } from '@rotki/common';
 import { describe, expect, it } from 'vitest';
 import { useBlockchainAccountsApi } from '@/modules/accounts/api/use-blockchain-accounts-api';
 import { useUsersApi } from '@/modules/auth/use-users-api';
+import { useManualBalancesApi } from '@/modules/balances/api/use-manual-balances-api';
+import { BalanceType } from '@/modules/balances/types/balances';
+import { ManualBalances } from '@/modules/balances/types/manual-balances';
 import { useHistoryEventsApi } from '@/modules/history/api/events/use-history-events-api';
 import { useSettingsApi } from '@/modules/settings/api/use-settings-api';
+import { awaitTaskOutcome } from './await-task';
 import { contractExpected, contractUsername } from './contract-env';
 
 /**
@@ -59,5 +64,45 @@ describe('history events api contract', () => {
 
     expect(result.entriesTotal).toBe(expected.total_events);
     expect(result.entries.length).toBeGreaterThan(0);
+  });
+});
+
+describe('manual balances api contract', () => {
+  it('should resolve the async balances query with the seeded balances', async () => {
+    const pendingTask = await useManualBalancesApi().queryManualBalances();
+    const { balances } = ManualBalances.parse(await awaitTaskOutcome(pendingTask));
+
+    for (const seeded of contractExpected().manual_balances) {
+      const match = balances.find(balance => balance.label === seeded.label);
+      expect(match, `seeded manual balance '${seeded.label}' missing`).toBeDefined();
+      expect(match?.asset).toBe(seeded.asset);
+      expect(match?.amount.toString()).toBe(seeded.amount);
+      expect(match?.location).toBe(seeded.location);
+      // a positive value proves the valuation resolved from the seeded
+      // manual latest prices without any oracle round-trip
+      expect(match?.value.isPositive()).toBe(true);
+    }
+  });
+
+  it('should add and delete a manual balance through the task flow', async () => {
+    const manualBalancesApi = useManualBalancesApi();
+    const label = 'contract test balance';
+    const pendingTask = await manualBalancesApi.addManualBalances([{
+      amount: bigNumberify(100),
+      asset: 'EUR',
+      balanceType: BalanceType.ASSET,
+      label,
+      location: 'banks',
+      tags: null,
+    }]);
+    const { balances } = ManualBalances.parse(await awaitTaskOutcome(pendingTask));
+    const added = balances.find(balance => balance.label === label);
+    expect(added, 'added manual balance missing from task outcome').toBeDefined();
+    expect(added?.amount.toString()).toBe('100');
+
+    if (added === undefined)
+      return;
+    const remaining = await manualBalancesApi.deleteManualBalances([added.identifier]);
+    expect(remaining.balances.find(balance => balance.label === label)).toBeUndefined();
   });
 });
