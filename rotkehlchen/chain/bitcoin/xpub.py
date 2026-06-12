@@ -1,7 +1,6 @@
 import logging
+from threading import Semaphore
 from typing import TYPE_CHECKING, Any, Literal, NamedTuple
-
-from gevent.lock import Semaphore
 
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.chain.accounts import BlockchainAccountData

@@ -1,9 +1,7 @@
 import time
+from threading import Semaphore
 from types import TracebackType
 from typing import Final, Self
-
-import gevent
-from gevent.lock import Semaphore
 
 # Hysteresis: don't churn the bucket on every response. Only update when the
 # observed rate differs from the current by at least this fraction.
@@ -14,11 +12,11 @@ _MIN_RPS_FLOOR: Final = 0.5
 
 
 class TokenBucket:
-    """Gevent-friendly token-bucket rate limiter.
+    """Token-bucket rate limiter.
 
     Think of it as a bucket holding `capacity` tokens. Each `acquire()` call
-    consumes one token; if the bucket is empty, the caller waits (via
-    gevent.sleep) until a token is available. The bucket refills
+    consumes one token; if the bucket is empty, the caller sleeps until a
+    token is available. The bucket refills
     continuously at `rps` (requests per second) tokens per second, up to
     `capacity`.
 
@@ -63,7 +61,7 @@ class TokenBucket:
         self.last_refill = now
 
     def acquire(self) -> None:
-        """Block (via gevent.sleep) until a token is available, then consume one."""
+        """Block (via time.sleep) until a token is available, then consume one."""
         while True:
             with self._lock:
                 self._refill()
@@ -72,7 +70,7 @@ class TokenBucket:
                     return
                 wait_s = (1 - self.tokens) / self.rps
 
-            gevent.sleep(wait_s)
+            time.sleep(wait_s)
 
     def widen(self, observed_rps: float, observed_capacity: int | None = None) -> bool:
         """Raise rps and (optionally) capacity towards observed values.

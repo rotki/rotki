@@ -6,7 +6,6 @@ from collections.abc import Sequence
 from json.decoder import JSONDecodeError
 from typing import TYPE_CHECKING, Any, Literal
 
-import gevent
 import requests
 
 from rotkehlchen.assets.asset import AssetWithOracles
@@ -211,7 +210,7 @@ class Independentreserve(ExchangeInterface, SignatureGeneratorMixin):
                     backoff_seconds = 10 / tries
                     log.debug(
                         f'Got a 429 from IndependentReserve. Backing off for {backoff_seconds}')
-                    gevent.sleep(backoff_seconds)
+                    time.sleep(backoff_seconds)
                     tries -= 1
                     continue
 

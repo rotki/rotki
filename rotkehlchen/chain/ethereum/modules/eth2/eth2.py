@@ -3,9 +3,8 @@ import logging
 import re
 from collections import defaultdict
 from collections.abc import Sequence
+from threading import Lock
 from typing import TYPE_CHECKING, Any, Final, Literal
-
-from gevent.lock import Semaphore
 
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.chain.ethereum.modules.eth2.beacon import BeaconInquirer
@@ -90,7 +89,7 @@ class Eth2(EthereumModule):
         self.last_stats_query_ts = 0
         self.validator_stats_queried = 0
         self.deposits_re = re.compile(r'.*validator with pubkey (?P<pubkey>.*)\. Deposit.*|.*Deposit.*ETH to validator (?P<index>\d+)$')  # noqa: E501
-        self.withdrawals_query_lock = Semaphore()
+        self.withdrawals_query_lock = Lock()
         # This is a cache that is kept only for the last performance cache address, indices args
         self.performance_cache: LRUCacheWithRemove[tuple[Timestamp, Timestamp], dict[str, dict]] = LRUCacheWithRemove(maxsize=3)  # noqa: E501
         self.performance_cache_args: tuple[list[ChecksumEvmAddress] | None, list[int] | None, PerformanceStatusFilter] = (None, None, PerformanceStatusFilter.ALL)  # noqa: E501

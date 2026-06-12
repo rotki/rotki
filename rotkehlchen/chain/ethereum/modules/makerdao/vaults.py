@@ -1,9 +1,8 @@
 import logging
 from collections import defaultdict
 from enum import Enum
+from threading import Semaphore
 from typing import TYPE_CHECKING, Any, NamedTuple
-
-from gevent.lock import Semaphore
 
 from rotkehlchen.accounting.structures.balance import Balance, BalanceSheet
 from rotkehlchen.assets.asset import CryptoAsset

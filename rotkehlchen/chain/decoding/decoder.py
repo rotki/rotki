@@ -3,9 +3,9 @@ import logging
 import pkgutil
 from abc import ABC, abstractmethod
 from contextlib import suppress
+from threading import Semaphore
 from typing import TYPE_CHECKING, Final, Generic, Literal, TypeVar
 
-from gevent.lock import Semaphore
 from more_itertools import peekable
 
 from rotkehlchen.api.websockets.typedefs import ProgressUpdateSubType, WSMessageType

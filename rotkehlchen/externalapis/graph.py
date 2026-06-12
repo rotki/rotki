@@ -1,9 +1,9 @@
 import json
 import logging
+import time
 from http import HTTPStatus
 from typing import TYPE_CHECKING, Any, Final
 
-import gevent
 import requests
 from gql import Client, gql
 from gql.transport.exceptions import TransportError, TransportQueryError, TransportServerError
@@ -139,7 +139,7 @@ class Graph(ExternalServiceWithApiKey):
                         f'Retries left: {retries_left}.'
                     )
                     log.error(f'{retry_base_msg}. {retry_msg}')
-                    gevent.sleep(sleep_seconds)
+                    time.sleep(sleep_seconds)
                 else:
                     raise RemoteError(f'{base_msg}. No retries left.') from e
 

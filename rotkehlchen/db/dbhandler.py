@@ -8,9 +8,9 @@ from collections import defaultdict
 from collections.abc import Iterator, Mapping, Sequence
 from contextlib import contextmanager, suppress
 from pathlib import Path
+from threading import Semaphore
 from typing import TYPE_CHECKING, Any, Literal, NamedTuple, Optional, Unpack, cast, overload
 
-from gevent.lock import Semaphore
 from sqlcipher3 import dbapi2 as sqlcipher
 
 from rotkehlchen.accounting.structures.balance import Balance, BalanceSheet, BalanceType

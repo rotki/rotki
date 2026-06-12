@@ -1,11 +1,11 @@
 import logging
+import time
 from collections import deque
 from enum import StrEnum
 from itertools import pairwise
 from json.decoder import JSONDecodeError
 from typing import TYPE_CHECKING, Any, Final, Literal, Optional, overload
 
-import gevent
 import requests
 
 from rotkehlchen.assets.asset import Asset, AssetWithOracles
@@ -395,7 +395,7 @@ class Cryptocompare(
                             f'Got rate limited by cryptocompare. '
                             f'Backing off for {backoff_seconds}',
                         )
-                        gevent.sleep(backoff_seconds)
+                        time.sleep(backoff_seconds)
                         tries -= 1
                         continue
 

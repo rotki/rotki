@@ -2,9 +2,8 @@ import logging
 from collections import defaultdict
 from collections.abc import Callable
 from functools import wraps
+from threading import Semaphore
 from typing import Any
-
-from gevent.lock import Semaphore
 
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 

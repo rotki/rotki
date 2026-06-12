@@ -2,11 +2,11 @@ import json
 import logging
 from dataclasses import asdict, dataclass
 from json.decoder import JSONDecodeError
+from threading import Semaphore
 from typing import TYPE_CHECKING, Any, Final, Literal
 from urllib.parse import urljoin
 
 import requests
-from gevent.lock import Semaphore
 from oauthlib.oauth2 import WebApplicationClient
 
 from rotkehlchen.chain.evm.decoding.monerium.constants import CPT_MONERIUM

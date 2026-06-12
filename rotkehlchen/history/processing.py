@@ -1,12 +1,11 @@
 from collections.abc import Iterator
 from contextlib import contextmanager
-
-import gevent.lock
+from threading import Semaphore
 
 
 class HistoryProcessingCoordinator:
     def __init__(self) -> None:
-        self._lock = gevent.lock.Semaphore()
+        self._lock = Semaphore()
         self._active_history_fetches = 0
 
     @contextmanager
