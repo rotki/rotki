@@ -31,6 +31,7 @@
     "test:e2e:debug": "playwright test --debug",
     "test:e2e:coverage": "E2E_COVERAGE=true VITE_COVERAGE=true playwright test",
     "test:e2e:coverage:report": "c8 report",
+    "test:contract": "tsx scripts/contract-tests.ts",
     "test:unit": "vitest --coverage",
     "test:unit:run": "vitest run --coverage",
     "typecheck": "vue-tsc --build --force",

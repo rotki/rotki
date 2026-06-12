@@ -26,6 +26,7 @@
     "dev": "tsx scripts/start-dev.ts",
     "preview": "pnpm run --filter rotki preview",
     "test": "pnpm run test:unit && pnpm run test:e2e",
+    "test:contract": "pnpm run --filter rotki test:contract",
     "test:unit": "pnpm run --filter rotki test:unit:run",
     "test:unit:watch": "pnpm run --filter rotki test:unit",
     "test:e2e": "pnpm run --filter rotki test:e2e",

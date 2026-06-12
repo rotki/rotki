@@ -77,6 +77,25 @@ class ProfileBuilder:
     def add_manual_balances(self, balances: list['ManuallyTrackedBalance']) -> None:
         with self.db.user_write() as write_cursor:
             self.db.add_manually_tracked_balances(write_cursor, balances)
+        self.stats.setdefault('manual_balances', []).extend(
+            {
+                'amount': str(balance.amount),
+                'asset': balance.asset.identifier,
+                'label': balance.label,
+                'location': balance.location.serialize(),
+            }
+            for balance in balances
+        )
+
+    def add_chain_state(self, state: dict[str, Any], expected: dict[str, Any]) -> None:
+        """Write the mock rpc layer's on-chain state (raw base-unit balances)
+        at the profile root and record the human-readable amounts in
+        expected.json (see common.make_chain_state)."""
+        (self.output_dir / 'chain_state.json').write_text(
+            json.dumps(state, indent=2, sort_keys=True),
+            encoding='utf8',
+        )
+        self.stats['blockchain_balances'] = expected
 
     def add_manual_latest_prices(self, prices: Sequence[tuple['Asset', str]]) -> None:
         """Seed manual latest prices (vs USD) into the global DB so balance

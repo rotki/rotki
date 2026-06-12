@@ -2,6 +2,8 @@
 Changelog
 =========
 
+* :bug:`-` Kraken trades where the bought and sold amounts happen to be equal are no longer skipped as failed transfers.
+* :bug:`-` Adding an EVM token no longer leaves the name, symbol and decimals fields disabled indefinitely when the token detail lookup cannot reach a working RPC node; the lookup now times out so you can fill in the details manually.
 * :bug:`12277` If your main currency is not USD, editing a balance snapshot now shows and saves each value converted at the exchange rate from that snapshot's own date. Previously it used today's exchange rate, so the values you saw and saved were off, especially for assets pegged to a fiat currency such as EUR stablecoins.
 * :bug:`12306` Chain locations (e.g. ``ethereum``, ``optimism``) with on-chain balances are now reachable via global search, even when no manual balance is tagged with that label.
 * :bug:`12304` Opening a location breakdown page for a blockchain (e.g. ``/locations/ethereum``) now shows that chain's on-chain assets and total — previously the page rendered as 0 value with an empty/loading table whenever the location identifier was a chain alias.

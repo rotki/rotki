@@ -1,6 +1,7 @@
 import { expect, test } from '@playwright/test';
 import { cleanupContext, createLoggedInContext, type SharedTestContext } from '../../fixtures/test-fixtures';
 import { apiEnsureSymbolsNotIgnored } from '../../helpers/api';
+import { apiConfigureRpcMock } from '../../helpers/rpc-mock';
 import { AssetsManagerPage } from '../../pages/assets-manager-page';
 import { CustomAssetsPage } from '../../pages/custom-assets-page';
 import { LatestPricePage } from '../../pages/price-manager-page';
@@ -73,6 +74,10 @@ test.describe('assets', () => {
       otherAssetSymbol = `OTH${uniqueId}`;
 
       ctx = await createLoggedInContext(browser, request);
+
+      // Point Ethereum at the mock RPC so the ERC20 token-detail lookup resolves locally
+      // instead of querying live public nodes (which rate-limit and stall the dialog).
+      await apiConfigureRpcMock(request, 'ETH');
 
       // Navigate to assets page once
       assetsPage = new AssetsManagerPage(ctx.sharedPage);

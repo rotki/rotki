@@ -608,6 +608,82 @@ def test_kraken_trade_with_spend_receive(kraken):
 
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
+def test_kraken_trade_with_same_spend_receive_amount(kraken):
+    """Test Kraken trade entries with equal spend/receive amounts are not skipped."""
+    test_trades = """{
+        "ledger": {
+            "FAKE1": {
+                "refid": "FAKE-TRADE-0001",
+                "time": 1747274044.753901,
+                "type": "trade",
+                "subtype": "tradespot",
+                "aclass": "currency",
+                "asset": "XETH",
+                "amount": "100.00000",
+                "fee": "0.00000",
+                "balance": "200.00000"
+            },
+            "FAKE2": {
+                "refid": "FAKE-TRADE-0001",
+                "time": 1747274044.753901,
+                "type": "trade",
+                "subtype": "tradespot",
+                "aclass": "currency",
+                "asset": "ZUSD",
+                "amount": "-100.0000",
+                "fee": "0.2500",
+                "balance": "102.2018"
+            }
+        },
+        "count": 2
+    }"""
+
+    with _patch_ledger(kraken, test_trades):
+        kraken.query_history_events()
+
+    with kraken.db.conn.read_ctx() as cursor:
+        assert DBHistoryEvents(kraken.db).get_history_events_internal(
+            cursor=cursor,
+            filter_query=HistoryEventFilterQuery.make(location=Location.KRAKEN),
+        ) == [SwapEvent(
+            identifier=1,
+            timestamp=(timestamp := TimestampMS(1747274044753)),
+            location=Location.KRAKEN,
+            event_subtype=HistoryEventSubType.SPEND,
+            asset=A_USD,
+            amount=FVal('100.0000'),
+            group_identifier=(group_identifier := create_group_identifier_from_unique_id(
+                location=Location.KRAKEN,
+                unique_id='FAKE-TRADE-00011747274044753',
+            )),
+            location_label=kraken.name,
+        ), SwapEvent(
+            identifier=2,
+            timestamp=timestamp,
+            location=Location.KRAKEN,
+            event_subtype=HistoryEventSubType.RECEIVE,
+            asset=A_ETH,
+            amount=FVal('100.00000'),
+            group_identifier=group_identifier,
+            location_label=kraken.name,
+        ), SwapEvent(
+            identifier=3,
+            timestamp=timestamp,
+            location=Location.KRAKEN,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_USD,
+            amount=FVal('0.2500'),
+            group_identifier=group_identifier,
+            location_label=kraken.name,
+        )]
+
+    errors = kraken.msg_aggregator.consume_errors()
+    warnings = kraken.msg_aggregator.consume_warnings()
+    assert len(errors) == 0
+    assert len(warnings) == 0
+
+
+@pytest.mark.parametrize('use_clean_caching_directory', [True])
 def test_kraken_trade_with_adjustment(kraken):
     """Test that trades based on adjustment events are processed"""
 

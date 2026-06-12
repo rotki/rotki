@@ -30,6 +30,13 @@ export interface AssetResolutionOptions {
 
 export const NO_COLLECTION_RESOLVE: AssetResolutionOptions = { collectionParent: false } as const;
 
+/**
+ * Upper bound for the ERC20 token detail lookup. The backend queries live RPC nodes, which
+ * can stall under rate limiting; past this we give up, cancel the task and let the user type
+ * the token information manually.
+ */
+const ERC20_DETAILS_TIMEOUT_MS = 15_000;
+
 interface AssetWithResolutionStatus extends AssetInfoWithId {
   resolved: boolean;
 }
@@ -69,7 +76,7 @@ export function useAssetInfoRetrieval(): UseAssetInfoRetrievalReturn {
   const { assetSearch: assetSearchCaller, erc20details } = useAssetInfoApi();
   const { fetchedAssetCollections, queueIdentifier, resolve: resolveAsset } = useAssetInfoCache();
   const { notify, notifyError } = useNotifications();
-  const { runTask } = useTaskHandler();
+  const { cancelTaskByTaskType, runTask } = useTaskHandler();
 
   const { getChain } = useSupportedChains();
 
@@ -194,20 +201,44 @@ export function useAssetInfoRetrieval(): UseAssetInfoRetrievalReturn {
     computed<string>(() => getTokenAddress(toValue(identifier), toValue(options)));
 
   const fetchTokenDetails = async (payload: EvmChainAddress): Promise<ERC20Token> => {
-    const outcome = await runTask<ERC20Token, TaskMeta>(
+    const timedOut = Symbol('timed-out');
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const timeout = new Promise<typeof timedOut>((resolve) => {
+      // Cleared in the finally block below, so it never outlives this call.
+      // eslint-disable-next-line @rotki/composable-require-cleanup
+      timer = setTimeout(() => resolve(timedOut), ERC20_DETAILS_TIMEOUT_MS);
+    });
+
+    const task = runTask<ERC20Token, TaskMeta>(
       async () => erc20details(payload),
       { type: TaskType.ERC20_DETAILS, meta: { title: t('actions.assets.erc20.task.title', payload) } },
     );
 
-    if (outcome.success) {
-      return outcome.result;
+    try {
+      const outcome = await Promise.race([task, timeout]);
+
+      // The lookup can stall when no RPC node answers (e.g. rate limiting). Bail out
+      // instead of leaving the caller awaiting indefinitely, and cancel the backend task.
+      if (outcome === timedOut) {
+        await cancelTaskByTaskType(TaskType.ERC20_DETAILS);
+        notifyError(t('actions.assets.erc20.error.title', payload), t('actions.assets.erc20.error.timeout'));
+        return {};
+      }
+
+      if (outcome.success) {
+        return outcome.result;
+      }
+      else if (isActionableFailure(outcome)) {
+        notifyError(t('actions.assets.erc20.error.title', payload), t('actions.assets.erc20.error.description', {
+          message: outcome.message,
+        }));
+      }
+      return {};
     }
-    else if (isActionableFailure(outcome)) {
-      notifyError(t('actions.assets.erc20.error.title', payload), t('actions.assets.erc20.error.description', {
-        message: outcome.message,
-      }));
+    finally {
+      if (timer !== undefined)
+        clearTimeout(timer);
     }
-    return {};
   };
 
   const assetSearch = async (params: AssetSearchParams): Promise<AssetsWithId> => {

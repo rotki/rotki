@@ -1023,9 +1023,14 @@ class Kraken(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
                     )
 
                 fee_amount = deserialize_fval(raw_event['fee'])
-                # check for failed events (events that cancel each other out -- like failed
-                if (  # withdrawals). Compare if amounts cancel themselves out (also fee if exists)
+                # Check for failed events that cancel each other out, like failed withdrawals.
+                # Trades are excluded because equal absolute amounts in different assets can be a
+                # valid trade (e.g. buy 100 ONDO for 100 USD). Do not add an asset equality check
+                # here: Kraken staking transfer pairs can cancel out with different asset symbols,
+                # and the skipped-event reprocessing flow relies on keeping that behavior.
+                if (  # Compare if amounts cancel themselves out (also fee if exists)
                         len(events) == 2 and idx == 1 and
+                        event_type != HistoryEventType.TRADE and
                         events[0]['type'] == events[1]['type'] and
                         events[0]['subtype'] == events[1]['subtype'] and
                         abs(raw_amount) == group_events[0][1].amount and (
