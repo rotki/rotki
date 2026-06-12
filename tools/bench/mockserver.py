@@ -1,10 +1,18 @@
 """Local mock for the backend's external HTTP services (design §3.3).
 
-Runs inside the bench runner process. The benchmarked backend is launched
-through launch_backend.py, which redirects every non-localhost HTTP request
-here (with the original host preserved in a header), so no benchmark traffic
-ever leaves the machine and every external dependency answers instantly and
+Runs inside the bench runner process, or standalone for harnesses outside
+python (``python -m tools.bench.mockserver --state <chain_state.json>``
+prints ``MOCK_URL=...`` and serves until terminated — the contract suite
+runner uses this). The backend under test is launched through
+launch_backend.py, which redirects every non-localhost HTTP request here
+(with the original host preserved in a header), so no traffic ever leaves
+the machine and every external dependency answers instantly and
 deterministically.
+
+Chain answers (native + ERC-20 balances) come from the profile's
+chain_state.json when one is given: the scenario generator writes it
+alongside the same balances in expected.json, so what the mock serves and
+what correctness suites expect share one source of truth.
 
 Endpoints:
 - ``/rpc/<chain_id>``: minimal JSON-RPC node. The bench harness registers it
@@ -21,11 +29,14 @@ import json
 import threading
 from collections import Counter
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
-from typing import Any, Final
+from typing import TYPE_CHECKING, Any, Final
 from urllib.parse import parse_qs, urlsplit
 
 from eth_abi import decode as abi_decode, encode as abi_encode
 from eth_utils import function_signature_to_4byte_selector
+
+if TYPE_CHECKING:
+    from pathlib import Path
 
 ORIGINAL_HOST_HEADER: Final = 'X-Bench-Original-Host'
 
@@ -47,7 +58,42 @@ def deterministic_wei_balance(address: str) -> int:
     return (int(address, 16) % 10_000) * 10**15
 
 
-def _call_result(data: bytes) -> tuple[bool, bytes]:
+class ChainState:
+    """On-chain holdings served by the mock, loaded from a profile's
+    chain_state.json (written by the scenario generator, which also emits
+    the same balances into expected.json — one source of truth for both).
+
+    Addresses outside the state fall back to the address-derived
+    deterministic balance so the mock still answers for anything a module
+    probes; unknown tokens are zero."""
+
+    def __init__(self, state: dict[str, Any] | None = None) -> None:
+        self._chains: dict[str, dict[str, Any]] = {
+            chain_id: {address.lower(): holdings for address, holdings in accounts.items()}
+            for chain_id, accounts in (state or {}).items()
+        }
+
+    @classmethod
+    def from_profile(cls, data_dir: 'Path') -> 'ChainState':
+        state_file = data_dir / 'chain_state.json'
+        if not state_file.is_file():
+            return cls()
+        return cls(json.loads(state_file.read_text(encoding='utf8')))
+
+    def native(self, chain_id: int, address: str) -> int:
+        holdings = self._chains.get(str(chain_id), {}).get(address.lower())
+        if holdings is None:
+            return deterministic_wei_balance(address)
+        return int(holdings['native'])
+
+    def token(self, chain_id: int, token_address: str, holder: str) -> int:
+        holdings = self._chains.get(str(chain_id), {}).get(holder.lower())
+        if holdings is None:
+            return 0
+        return int(holdings['tokens'].get(token_address.lower(), 0))
+
+
+def _call_result(data: bytes, state: ChainState, chain_id: int) -> tuple[bool, bytes]:
     """Answer one contract call's data, recursing through multicall.
     Returns (known, payload): unknown selectors report as reverted inside
     tryAggregate so module code skips them through its own failure handling
@@ -57,14 +103,20 @@ def _call_result(data: bytes) -> tuple[bool, bytes]:
         (addresses,) = abi_decode(['address[]'], arguments)
         return True, abi_encode(
             ['uint256[]'],
-            [[deterministic_wei_balance(address) for address in addresses]],
+            [[state.native(chain_id, address) for address in addresses]],
         )
     if selector == SCANNER_TOKENS_BALANCE:
-        _, tokens = abi_decode(['address', 'address[]'], arguments)
-        return True, abi_encode(['uint256[]'], [[0] * len(tokens)])
+        holder, tokens = abi_decode(['address', 'address[]'], arguments)
+        return True, abi_encode(
+            ['uint256[]'],
+            [[state.token(chain_id, token, holder) for token in tokens]],
+        )
     if selector == SCANNER_TOKEN_BALANCES:
-        addresses, _ = abi_decode(['address[]', 'address'], arguments)
-        return True, abi_encode(['uint256[]'], [[0] * len(addresses)])
+        addresses, token = abi_decode(['address[]', 'address'], arguments)
+        return True, abi_encode(
+            ['uint256[]'],
+            [[state.token(chain_id, token, address) for address in addresses]],
+        )
     if selector == MULTICALL_AGGREGATE:
         (calls,) = abi_decode(['(address,bytes)[]'], arguments)
         return True, abi_encode(
@@ -72,12 +124,15 @@ def _call_result(data: bytes) -> tuple[bool, bytes]:
             [
                 MOCK_BLOCK_NUMBER,
                 # aggregate() inner calls must succeed; unknowns get a zero word
-                [_call_result(call_data)[1] or bytes(32) for _, call_data in calls],
+                [
+                    _call_result(call_data, state, chain_id)[1] or bytes(32)
+                    for _, call_data in calls
+                ],
             ],
         )
     if selector in (MULTICALL_TRY_AGGREGATE, MULTICALL_TRY_BLOCK_AGGREGATE):
         _, calls = abi_decode(['bool', '(address,bytes)[]'], arguments)
-        results = [_call_result(call_data) for _, call_data in calls]
+        results = [_call_result(call_data, state, chain_id) for _, call_data in calls]
         if selector == MULTICALL_TRY_AGGREGATE:
             return True, abi_encode(['(bool,bytes)[]'], [results])
         return True, abi_encode(
@@ -87,7 +142,7 @@ def _call_result(data: bytes) -> tuple[bool, bytes]:
     return False, b''  # unknown selector
 
 
-def _rpc_result(payload: dict[str, Any], chain_id: int) -> Any:
+def _rpc_result(payload: dict[str, Any], chain_id: int, state: ChainState) -> Any:
     """Answer one JSON-RPC request body"""
     method = payload.get('method', '')
     params = payload.get('params', [])
@@ -106,7 +161,7 @@ def _rpc_result(payload: dict[str, Any], chain_id: int) -> Any:
     if method == 'eth_getCode':
         return '0x60806040'  # non-empty: contracts exist
     if method == 'eth_getBalance':
-        return hex(deterministic_wei_balance(params[0]))
+        return hex(state.native(chain_id, params[0]))
     if method == 'eth_getBlockByNumber':
         return {
             'number': hex(MOCK_BLOCK_NUMBER),
@@ -128,7 +183,7 @@ def _rpc_result(payload: dict[str, Any], chain_id: int) -> Any:
     if method == 'eth_call':
         data = params[0].get('data', '0x') if params else '0x'
         raw = bytes.fromhex(data[2:]) if data.startswith('0x') else b''
-        known, payload = _call_result(raw)
+        known, payload = _call_result(raw, state, chain_id)
         return '0x' + (payload if known else bytes(32)).hex()
     if method == 'eth_getTransactionByHash':
         # answered so the node-inquirer's pruned-node probe finds its tx
@@ -152,16 +207,17 @@ def _rpc_result(payload: dict[str, Any], chain_id: int) -> Any:
     raise KeyError(method)
 
 
-def _etherscan_response(query: dict[str, list[str]]) -> dict[str, Any]:
+def _etherscan_response(query: dict[str, list[str]], state: ChainState) -> dict[str, Any]:
     """Empty-but-valid etherscan-style answers"""
     action = query.get('action', [''])[0]
+    chain_id = int(query.get('chainid', ['1'])[0])  # etherscan v2 carries the chain in the query
     if action == 'balance':
         address = query.get('address', ['0x0'])[0]
-        return {'status': '1', 'message': 'OK', 'result': str(deterministic_wei_balance(address))}
+        return {'status': '1', 'message': 'OK', 'result': str(state.native(chain_id, address))}
     if action == 'balancemulti':
         addresses = query.get('address', [''])[0].split(',')
         return {'status': '1', 'message': 'OK', 'result': [
-            {'account': address, 'balance': str(deterministic_wei_balance(address))}
+            {'account': address, 'balance': str(state.native(chain_id, address))}
             for address in addresses if address
         ]}
     if action == 'eth_blockNumber':  # proxy module
@@ -169,7 +225,7 @@ def _etherscan_response(query: dict[str, list[str]]) -> dict[str, Any]:
     if action == 'eth_call':  # proxy module: same contract-call logic as the rpc node
         data = query.get('data', ['0x'])[0]
         raw = bytes.fromhex(data[2:]) if data.startswith('0x') else b''
-        known, payload = _call_result(raw)
+        known, payload = _call_result(raw, state, chain_id)
         return {'jsonrpc': '2.0', 'id': 1, 'result': '0x' + (payload if known else bytes(32)).hex()}  # noqa: E501
     if action == 'getblocknobytime':
         return {'status': '1', 'message': 'OK', 'result': str(MOCK_BLOCK_NUMBER)}
@@ -180,7 +236,8 @@ def _etherscan_response(query: dict[str, list[str]]) -> dict[str, Any]:
 class MockExternalServices:
     """Threaded local server answering all redirected external traffic"""
 
-    def __init__(self) -> None:
+    def __init__(self, chain_state: ChainState | None = None) -> None:
+        self.state = chain_state if chain_state is not None else ChainState()
         self.unhandled: Counter[str] = Counter()
         self.served = 0
         self._httpd: ThreadingHTTPServer | None = None
@@ -213,6 +270,13 @@ class MockExternalServices:
                 body = self.rfile.read(length) if length else b''
                 original_host = self.headers.get(ORIGINAL_HOST_HEADER, '')
 
+                if split.path == '/__mock__/stats':  # introspection for the harnesses
+                    self._respond(200, {
+                        'served': mock.served,
+                        'unhandled': dict(mock.unhandled),
+                    })
+                    return
+
                 if split.path.startswith('/rpc/'):  # our registered rpc node
                     chain_id = int(split.path.split('/')[2])
                     payload = json.loads(body)
@@ -220,7 +284,7 @@ class MockExternalServices:
                     answers = []
                     for entry in requests_list:
                         try:
-                            result = _rpc_result(entry, chain_id)
+                            result = _rpc_result(entry, chain_id, mock.state)
                         except (KeyError, IndexError, ValueError):
                             mock.unhandled[f'rpc:{entry.get("method")}'] += 1
                             answers.append({
@@ -236,7 +300,7 @@ class MockExternalServices:
                     return
 
                 if 'etherscan' in original_host or 'blockscout' in original_host or 'routescan' in original_host:  # noqa: E501
-                    self._respond(200, _etherscan_response(parse_qs(split.query)))
+                    self._respond(200, _etherscan_response(parse_qs(split.query), mock.state))
                     return
 
                 if 'beacon' in original_host:
@@ -267,3 +331,35 @@ class MockExternalServices:
             self._httpd.shutdown()
             self._httpd.server_close()
             self._httpd = None
+
+
+def main() -> None:
+    """Standalone entrypoint: serve until terminated, announcing the url on
+    stdout so a spawning harness can pick it up."""
+    import argparse
+    import time
+    from pathlib import Path
+
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument(
+        '--state',
+        type=Path,
+        default=None,
+        help='path to a profile chain_state.json to serve chain answers from',
+    )
+    args = parser.parse_args()
+    chain_state = ChainState() if args.state is None else ChainState(
+        json.loads(args.state.read_text(encoding='utf8')),
+    )
+    mock = MockExternalServices(chain_state=chain_state)
+    mock.start()
+    print(f'MOCK_URL={mock.url}', flush=True)
+    try:
+        while True:
+            time.sleep(3600)
+    except KeyboardInterrupt:
+        mock.stop()
+
+
+if __name__ == '__main__':
+    main()

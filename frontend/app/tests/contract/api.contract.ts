@@ -1,14 +1,24 @@
-import { bigNumberify } from '@rotki/common';
+import { bigNumberify, Zero } from '@rotki/common';
 import { describe, expect, it } from 'vitest';
 import { useBlockchainAccountsApi } from '@/modules/accounts/api/use-blockchain-accounts-api';
 import { useUsersApi } from '@/modules/auth/use-users-api';
+import { useBlockchainBalancesApi } from '@/modules/balances/api/use-blockchain-balances-api';
 import { useManualBalancesApi } from '@/modules/balances/api/use-manual-balances-api';
-import { BalanceType } from '@/modules/balances/types/balances';
+import { BalanceType, EvmTokensRecord } from '@/modules/balances/types/balances';
+import {
+  type BlockchainAssetBalances,
+  BlockchainBalances,
+  type BtcBalances,
+} from '@/modules/balances/types/blockchain-balances';
 import { ManualBalances } from '@/modules/balances/types/manual-balances';
 import { useHistoryEventsApi } from '@/modules/history/api/events/use-history-events-api';
 import { useSettingsApi } from '@/modules/settings/api/use-settings-api';
 import { awaitTaskOutcome } from './await-task';
 import { contractExpected, contractUsername } from './contract-env';
+
+function isEvmAccountBalances(value: BlockchainAssetBalances | BtcBalances): value is BlockchainAssetBalances {
+  return !('standalone' in value || 'xpubs' in value);
+}
 
 /**
  * Contract tests (measurement framework §5.1): the frontend's own api
@@ -104,5 +114,43 @@ describe('manual balances api contract', () => {
       return;
     const remaining = await manualBalancesApi.deleteManualBalances([added.identifier]);
     expect(remaining.balances.find(balance => balance.label === label)).toBeUndefined();
+  });
+});
+
+describe('blockchain balances api contract', () => {
+  // runs before the balances test below: the balance query covers the
+  // tokens this detection discovers
+  it('should detect the seeded erc20 tokens per holder', async () => {
+    const expected: Record<string, Record<string, string>> = contractExpected().blockchain_balances;
+    const addresses = Object.keys(expected);
+    const detectionTask = await useBlockchainBalancesApi().fetchDetectedTokensTask('eth', addresses);
+    const detected = EvmTokensRecord.parse(await awaitTaskOutcome(detectionTask));
+    for (const address of addresses) {
+      const expectedTokens = Object.keys(expected[address]).filter(assetId => assetId !== 'ETH');
+      expect(detected[address]?.tokens ?? [], `detected tokens of ${address}`)
+        .toEqual(expect.arrayContaining(expectedTokens));
+    }
+  });
+
+  it('should return the exact seeded on-chain balances per account', async () => {
+    const expected: Record<string, Record<string, string>> = contractExpected().blockchain_balances;
+    const balancesTask = await useBlockchainBalancesApi().refreshBlockchainBalances({ blockchain: 'eth' });
+    const { perAccount } = BlockchainBalances.parse(await awaitTaskOutcome(balancesTask));
+    const ethBalances = perAccount.eth;
+    expect(ethBalances).toBeDefined();
+    if (ethBalances === undefined || !isEvmAccountBalances(ethBalances))
+      throw new Error('eth per-account balances have an unexpected shape');
+    for (const [address, expectedAssets] of Object.entries(expected)) {
+      const accountAssets = ethBalances[address]?.assets;
+      expect(accountAssets, `balances of ${address}`).toBeDefined();
+      for (const [assetId, expectedAmount] of Object.entries(expectedAssets)) {
+        const amount = Object.values(accountAssets?.[assetId] ?? {})
+          .reduce((sum, balance) => sum.plus(balance.amount), Zero);
+        expect(
+          amount.isEqualTo(bigNumberify(String(expectedAmount))),
+          `${assetId} of ${address}: got ${amount.toString()}, seeded ${String(expectedAmount)}`,
+        ).toBe(true);
+      }
+    }
   });
 });
