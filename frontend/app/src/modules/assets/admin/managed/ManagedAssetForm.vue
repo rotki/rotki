@@ -180,19 +180,23 @@ async function fetchTokenData(address: string, evmChain: string): Promise<void> 
   }
   set(fetching, true);
 
-  const tokenInfo = pick(get(modelValue), ['decimals', 'name', 'symbol']);
-  const tokenDetails = await fetchTokenDetails({ address, evmChain });
+  try {
+    const tokenInfo = pick(get(modelValue), ['decimals', 'name', 'symbol']);
+    const tokenDetails = await fetchTokenDetails({ address, evmChain });
 
-  const updateTokenInfo = {
-    decimals: tokenDetails.decimals ? tokenDetails.decimals : tokenInfo.decimals,
-    name: tokenDetails.name ? tokenDetails.name : tokenInfo.name,
-    symbol: tokenDetails.symbol ? tokenDetails.symbol : tokenInfo.symbol,
-  };
+    const updateTokenInfo = {
+      decimals: tokenDetails.decimals ? tokenDetails.decimals : tokenInfo.decimals,
+      name: tokenDetails.name ? tokenDetails.name : tokenInfo.name,
+      symbol: tokenDetails.symbol ? tokenDetails.symbol : tokenInfo.symbol,
+    };
 
-  set(modelValue, { ...get(modelValue), ...updateTokenInfo });
-
-  set(fetching, false);
-  clearFieldErrors(['decimals', 'name', 'symbol']);
+    set(modelValue, { ...get(modelValue), ...updateTokenInfo });
+    clearFieldErrors(['decimals', 'name', 'symbol']);
+  }
+  finally {
+    // Always re-enable the fields, even if the lookup throws, so the form never stays locked.
+    set(fetching, false);
+  }
 }
 
 async function refreshTokenData() {
