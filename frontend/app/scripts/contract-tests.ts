@@ -127,6 +127,13 @@ async function main(profile: string): Promise<void> {
       if (backend.exitCode === null)
         backend.kill('SIGKILL');
     }
+    if (status !== 0 && fs.existsSync(logDir)) {
+      // keep the backend logs out of the doomed tmpdir so CI can upload them
+      const preservedLogDir = path.join(appDir, '.contract', 'logs');
+      fs.rmSync(preservedLogDir, { force: true, recursive: true });
+      fs.cpSync(logDir, preservedLogDir, { recursive: true });
+      consola.info(`Backend logs preserved at ${preservedLogDir}`);
+    }
     fs.rmSync(workDir, { force: true, recursive: true });
   }
   process.exit(status);
