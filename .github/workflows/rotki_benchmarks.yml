@@ -60,9 +60,11 @@ jobs:
         run: uv sync --locked --group dev
 
       - name: Run comparison against the merge-base
+        env:
+          BASE_REF: ${{ github.base_ref }}
         run: |
           uv run python -m tools.bench compare \
-            --base "origin/${{ github.base_ref }}" \
+            --base "origin/${BASE_REF}" \
             --samples 5 \
             --output bench-compare.json \
             --markdown bench-compare.md
@@ -178,10 +180,100 @@ jobs:
           comment-on-alert: false
           fail-on-alert: true
 
+  micro-nightly:
+    name: 'Nightly micro-benchmark trend'
+    # chained after bench-nightly (instead of running in parallel) because both
+    # jobs push to the same branch of the benchmark-data repo; always() keeps
+    # the micro datapoint flowing even when the macro leg fails on an alert.
+    if: ${{ always() && github.event_name != 'pull_request' && (github.repository == 'rotki/rotki' || github.event_name == 'workflow_dispatch') }}
+    needs: [ bench-nightly ]
+    runs-on: ubuntu-22.04
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      max-parallel: 1  # both series push to the same benchmark-data branch
+      matrix:
+        branch: [ develop, bugfixes ]
+    env:
+      CI: true
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
+        with:
+          ref: ${{ matrix.branch }}
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Check suite availability
+        id: suite
+        # skip gracefully on branches the micro suite has not been merged into yet
+        run: echo "present=$([ -d rotkehlchen/tests/benchmarks ] && echo true || echo false)" >> "$GITHUB_OUTPUT"
+
+      - name: Load env
+        if: steps.suite.outputs.present == 'true'
+        uses: rotki/action-env@49f59e650cfdc8796c4ac6533ec044b190d83f9a  # v4.0.0
+        with:
+          env_file: .github/.env.ci
+
+      - name: Setup python
+        if: steps.suite.outputs.present == 'true'
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405  # v6.2.0
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install uv
+        if: steps.suite.outputs.present == 'true'
+        uses: astral-sh/setup-uv@cec208311dfd045dd5311c1add060b2062131d57  # v8.0.0
+        with:
+          enable-cache: true
+          version: ${{ env.UV_VERSION }}
+          cache-dependency-glob: "uv.lock"
+
+      - name: Install dependencies
+        if: steps.suite.outputs.present == 'true'
+        run: uv sync --locked --group dev
+
+      - name: Run micro-benchmarks
+        if: steps.suite.outputs.present == 'true'
+        run: |
+          uv run python pytestgeventwrapper.py \
+            -m benchmark \
+            --benchmark-only \
+            --benchmark-json=micro-benchmark.json \
+            rotkehlchen/tests/benchmarks
+
+      - name: Upload raw results
+        if: always() && steps.suite.outputs.present == 'true'
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
+        with:
+          name: micro-nightly-${{ matrix.branch }}
+          path: micro-benchmark.json
+          if-no-files-found: ignore
+
+      - name: Push datapoint
+        if: steps.suite.outputs.present == 'true'
+        uses: benchmark-action/github-action-benchmark@52576c92bccf6ac60c8223ec7eb2565637cae9ba  # v1.22.1
+        with:
+          name: 'rotki backend micro benchmarks (${{ matrix.branch }})'
+          tool: 'pytest'
+          output-file-path: micro-benchmark.json
+          gh-repository: 'github.com/rotki/benchmark-data'
+          gh-pages-branch: main
+          benchmark-data-dir-path: micro/${{ matrix.branch }}
+          github-token: ${{ secrets.BENCHMARK_DATA_TOKEN }}
+          auto-push: true
+          # trend-only for now: micro timings on shared runners have unknown
+          # variance; flip fail-on-alert once a few weeks of data establish it
+          alert-threshold: '150%'
+          comment-on-alert: false
+          fail-on-alert: false
+
   notify:
     name: 'Notify on nightly regression'
     if: ${{ always() && github.event_name == 'schedule' && github.repository == 'rotki/rotki' }}
-    needs: [ bench-nightly ]
+    needs: [ bench-nightly, micro-nightly ]
     runs-on: ubuntu-latest
     environment: nightly_notify
     permissions:
@@ -193,8 +285,8 @@ jobs:
           fetch-depth: 1
           persist-credentials: false
 
-      - name: Notify if the benchmark job failed
-        if: needs.bench-nightly.result == 'failure'
+      - name: Notify if a benchmark job failed
+        if: needs.bench-nightly.result == 'failure' || needs.micro-nightly.result == 'failure'
         run: |
           pip install requests
           ./.github/scripts/notifier.py --webhook ${{ secrets.DISCORD_WEBHOOK }} --run-id ${{ github.run_id }} --test

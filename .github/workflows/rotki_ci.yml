@@ -332,6 +332,17 @@ jobs:
     permissions:
       contents: read
 
+  test-contract:
+    # Non-required drift detector: validates live backend responses against the
+    # frontend api composables (full fetch + transform + zod pipeline) on a
+    # golden profile. Deliberately not part of the 'done' success check.
+    name: 'API contract tests'
+    needs: [ 'check-changes' ]
+    if: ${{ github.event_name != 'push' && (needs.check-changes.outputs.backend_tasks || needs.check-changes.outputs.frontend_tasks) }}
+    uses: ./.github/workflows/task_contract_tests.yml
+    permissions:
+      contents: read
+
   test-e2e:
     name: 'Frontend e2e tests'
     needs: check-changes
