@@ -3,6 +3,11 @@ blockExoticSubdeps: true
 minimumReleaseAge: 10080
 minimumReleaseAgeExclude:
   - '@rotki/ui-library'
+  - electron-builder@26.15.2
+  - dmg-builder@26.15.2
+  - app-builder-lib@26.15.2
+  - electron-builder-squirrel-windows@26.15.2
+  - electron-publish@26.15.1
 saveExact: true
 shamefullyHoist: true
 shellEmulator: true
@@ -71,7 +76,7 @@ catalog:
   dotenv-cli: 11.0.0
   echarts: 6.0.0
   electron: 41.2.0
-  electron-builder: 26.9.0
+  electron-builder: 26.15.2
   electron-store: 11.0.2
   electron-updater: 6.8.3
   electron-window-state: 5.0.3
