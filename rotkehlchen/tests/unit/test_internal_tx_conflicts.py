@@ -3,6 +3,8 @@ from typing import TYPE_CHECKING, Any, cast
 from unittest.mock import MagicMock, call, patch
 
 import gevent
+
+from rotkehlchen.concurrency import Task
 import pytest
 
 from rotkehlchen.api.websockets.typedefs import WSMessageType
@@ -526,19 +528,19 @@ def test_repull_internal_tx_conflicts_uses_staggered_launch(database) -> None:
             needs_decode=False,
             error=None,
         )
-        greenlet = MagicMock(spec=gevent.Greenlet)
-        greenlet.exception = None
-        greenlet.value = result
-        return greenlet
+        task = MagicMock(spec=Task)
+        task.exception = None
+        task.get.return_value = result
+        return task
 
     with (
             patch('rotkehlchen.tasks.internal_tx_conflicts.REPULL_LAUNCH_STAGGER_SECONDS', 0.03),
             patch('rotkehlchen.tasks.internal_tx_conflicts.REPULL_BETWEEN_BATCH_DELAY_SECONDS', 0),
             patch(
-                'rotkehlchen.tasks.internal_tx_conflicts.gevent.spawn_later',
+                'rotkehlchen.tasks.internal_tx_conflicts.spawn_later',
                 side_effect=spawn_later,
             ),
-            patch('rotkehlchen.tasks.internal_tx_conflicts.gevent.joinall'),
+            patch('rotkehlchen.tasks.internal_tx_conflicts.wait'),
     ):
         repull_internal_tx_conflicts(
             database=database,

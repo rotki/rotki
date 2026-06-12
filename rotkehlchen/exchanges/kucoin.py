@@ -5,10 +5,10 @@ from enum import Enum, auto
 from functools import partial
 from http import HTTPStatus
 from json.decoder import JSONDecodeError
+from time import sleep
 from typing import TYPE_CHECKING, Any, Literal, overload
 from urllib.parse import urlencode
 
-import gevent
 import requests
 from requests.adapters import Response
 
@@ -266,7 +266,7 @@ class Kucoin(ExchangeInterface, SignatureGeneratorMixin):
                     options=call_options,
                 )
                 retries_left -= 1
-                gevent.sleep(retries_after_seconds)
+                sleep(retries_after_seconds)
                 retries_after_seconds *= 2
                 continue
 

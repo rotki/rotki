@@ -1,10 +1,10 @@
 import logging
+import time
 from collections.abc import Sequence
 from pathlib import Path
 from time import monotonic
 from typing import TYPE_CHECKING
 
-import gevent
 from more_itertools import peekable
 
 from rotkehlchen.accounting.constants import FREE_PNL_EVENTS_LIMIT
@@ -218,10 +218,10 @@ class Accountant:
                 # calls to the API may time out. A positive sleep value is required: it
                 # forces a full event-loop cycle (including the I/O poll) so greenlets
                 # blocked on socket I/O -- like the API server -- actually get to run.
-                # gevent.sleep(0) does NOT guarantee this and starves the API. The
+                # time.sleep(0) does NOT guarantee this and starves the API. The
                 # wall-clock cadence (vs an event count) keeps the overhead a fixed
                 # fraction of report time regardless of how long individual events take.
-                gevent.sleep(0.01)
+                time.sleep(0.01)
                 last_yield = monotonic()
             count += processed_events_num
             if not active_premium and count >= FREE_PNL_EVENTS_LIMIT:

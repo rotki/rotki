@@ -4,9 +4,8 @@ from collections import defaultdict
 from collections.abc import Callable, Iterator, Sequence
 from contextlib import contextmanager
 from functools import wraps
+from threading import Lock
 from typing import TYPE_CHECKING, Any, Final, Literal, Optional, TypeVar, cast, overload
-
-from gevent.lock import Semaphore
 
 from rotkehlchen.api.websockets.typedefs import (
     TransactionStatusStep,
@@ -122,8 +121,8 @@ class EvmTransactions(ABC):  # noqa: B024
         self.evm_inquirer = evm_inquirer
         self.database = database
         self.dbranges = DBQueryRanges(self.database)
-        self.address_tx_locks: dict[ChecksumEvmAddress, Semaphore] = defaultdict(Semaphore)
-        self.missing_receipts_lock = Semaphore()
+        self.address_tx_locks: dict[ChecksumEvmAddress, Lock] = defaultdict(Lock)
+        self.missing_receipts_lock = Lock()
         self.msg_aggregator = database.msg_aggregator
         self.dbevmtx = DBEvmTx(database)
 

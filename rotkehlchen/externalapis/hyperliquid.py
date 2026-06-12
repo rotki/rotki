@@ -1,12 +1,12 @@
 import json
 import logging
+import time
 from collections import defaultdict
 from collections.abc import Iterator
 from dataclasses import dataclass
 from http import HTTPStatus
 from typing import Any, Final, Literal, NotRequired, TypedDict
 
-import gevent
 import requests
 
 from rotkehlchen.assets.asset import Asset
@@ -233,7 +233,7 @@ class HyperliquidAPI:
                     f'Hyperliquid API request {response.url} got rate limited. Sleeping for '
                     f'{sleep_seconds} seconds. We have {retries_left} tries left.',
                 )
-                gevent.sleep(sleep_seconds)
+                time.sleep(sleep_seconds)
                 backoff *= 2
                 continue
 

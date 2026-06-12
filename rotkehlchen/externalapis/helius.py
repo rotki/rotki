@@ -1,9 +1,9 @@
 import logging
+import time
 from http import HTTPStatus
 from json import JSONDecodeError
 from typing import TYPE_CHECKING, Any, Final, Literal, overload
 
-import gevent
 import requests
 from base58 import b58decode
 from solders.solders import Signature
@@ -87,7 +87,7 @@ class Helius(ExternalServiceWithRecommendedApiKey):
                     raise RemoteError('Getting Helius too many requests error even after retrying.')  # noqa: E501
 
                 log.debug(f'Got too many requests error from Helius. Will backoff for {BACKOFF_SECONDS} second.')  # noqa: E501
-                gevent.sleep(BACKOFF_SECONDS)
+                time.sleep(BACKOFF_SECONDS)
                 retry_count += 1
                 continue
 

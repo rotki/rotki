@@ -1,5 +1,6 @@
 import json
 import logging
+import time
 from collections import defaultdict
 from collections.abc import Iterable, Iterator, Sequence
 from http import HTTPStatus
@@ -7,7 +8,6 @@ from json.decoder import JSONDecodeError
 from typing import TYPE_CHECKING, Any, Final, Literal
 from urllib.parse import urlencode
 
-import gevent
 import requests
 from eth_typing.abi import ABI
 from sqlcipher3.dbapi2 import IntegrityError
@@ -146,7 +146,7 @@ class ZksyncLiteManager(ChainManagerWithTransactions[ChecksumEvmAddress], ChainW
                     f'Got too many requests error from zksync lite. Will '
                     f'backoff for {backoff} seconds.',
                 )
-                gevent.sleep(backoff)
+                time.sleep(backoff)
                 backoff *= 2
                 continue
 

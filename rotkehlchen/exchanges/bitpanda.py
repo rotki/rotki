@@ -3,10 +3,10 @@ import logging
 from collections import defaultdict
 from collections.abc import Sequence
 from http import HTTPStatus
+from time import sleep
 from typing import TYPE_CHECKING, Any, Literal, overload
 from urllib.parse import urlencode
 
-import gevent
 import requests
 
 from rotkehlchen.assets.converters import asset_from_bitpanda
@@ -370,7 +370,7 @@ class Bitpanda(ExchangeWithoutApiSecret):
                     f'Got a 429 from Bitpanda query of {request_url}. Will backoff '
                     f'for {backoff_in_seconds} seconds. {retries_left} retries left',
                 )
-                gevent.sleep(backoff_in_seconds)
+                sleep(backoff_in_seconds)
                 continue
 
             if response.status_code != HTTPStatus.OK:

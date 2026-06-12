@@ -1,14 +1,14 @@
 import json
 import logging
 import re
+import time
 from collections.abc import Sequence
 from dataclasses import dataclass
 from json.decoder import JSONDecodeError
+from threading import Lock
 from typing import TYPE_CHECKING, Any, Final, Literal
 
-import gevent
 import requests
-from gevent.lock import Semaphore
 
 from rotkehlchen.chain.ethereum.modules.eth2.constants import (
     BEACONCHAIN_MAX_EPOCH,
@@ -80,7 +80,7 @@ class BeaconChain(ExternalServiceWithRecommendedApiKey):
         self.session = create_session()
         set_user_agent(self.session)
         self.url = f'{BEACONCHAIN_ROOT_URL}/api/v2/ethereum/'
-        self.produced_blocks_lock = Semaphore()
+        self.produced_blocks_lock = Lock()
         self.ratelimited_until = Timestamp(0)
         self.validator_query_chunk_size: int = self._get_cached_validator_query_limit()
 
@@ -186,7 +186,7 @@ class BeaconChain(ExternalServiceWithRecommendedApiKey):
                     f'for {sleep_seconds}. We have {times} tries left. Rate limit info: '
                     f'{rate_limit_info}',
                 )
-                gevent.sleep(sleep_seconds)
+                time.sleep(sleep_seconds)
                 continue
             # else
             break

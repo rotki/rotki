@@ -6,12 +6,12 @@ import itertools
 import json
 import logging
 import operator
+import time
 from collections import defaultdict
 from collections.abc import Sequence
 from typing import TYPE_CHECKING, Any, Literal
 from urllib.parse import urlencode
 
-import gevent
 import requests
 from requests import Response
 
@@ -353,7 +353,7 @@ class Kraken(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
                         call_counter=self.call_counter,
                     )
                     tries -= 1
-                    gevent.sleep(backoff_in_seconds)
+                    time.sleep(backoff_in_seconds)
                     continue
 
             log.debug(
@@ -375,7 +375,7 @@ class Kraken(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
                     f'for {backoff_in_seconds} seconds',
                 )
                 tries -= 1
-                gevent.sleep(backoff_in_seconds)
+                time.sleep(backoff_in_seconds)
                 continue
 
             # else success

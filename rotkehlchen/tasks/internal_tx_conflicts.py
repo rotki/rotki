@@ -1,10 +1,10 @@
 import logging
+import time
 from collections import defaultdict
 from typing import TYPE_CHECKING, Final, NamedTuple
 
-import gevent
-
 from rotkehlchen.api.websockets.typedefs import WSMessageType
+from rotkehlchen.concurrency import Task, exception_of, result_of, spawn_later, wait
 from rotkehlchen.db.cache import DBCacheStatic
 from rotkehlchen.db.internal_tx_conflicts import (
     INTERNAL_TX_CONFLICT_ACTION_REPULL,
@@ -54,7 +54,7 @@ class _ParentTxData(NamedTuple):
     timestamp: int
 
 
-def _error_to_message(error: Exception) -> str:
+def _error_to_message(error: BaseException) -> str:
     """Normalize repull/decode exceptions to a user-facing retry message."""
     if isinstance(error, DataIntegrityError):
         return f'Indexer did not provide valid data: {error!s}'
@@ -235,10 +235,10 @@ def _process_repull_conflicts(
     )
     repull_chunks = list(get_chunks(repull_entries, REPULL_BATCH_SIZE))
     for chunk_idx, chunk in enumerate(repull_chunks):
-        greenlets: list[gevent.Greenlet] = []
+        tasks: list[Task] = []
         for launch_idx, (chain_id, tx_hash) in enumerate(chunk):
-            greenlets.append(
-                gevent.spawn_later(
+            tasks.append(
+                spawn_later(
                     launch_idx * REPULL_LAUNCH_STAGGER_SECONDS,
                     _repull_single_conflict,
                     database=database,
@@ -249,9 +249,9 @@ def _process_repull_conflicts(
                 ),
             )
 
-        gevent.joinall(greenlets, raise_error=False)
-        for (chain_id, tx_hash), greenlet in zip(chunk, greenlets, strict=True):
-            if (exception := greenlet.exception) is not None:
+        wait(tasks)
+        for (chain_id, tx_hash), task in zip(chunk, tasks, strict=True):
+            if (exception := exception_of(task)) is not None:
                 _mark_internal_tx_conflict_error(
                     database=database,
                     chain_id=chain_id,
@@ -265,7 +265,7 @@ def _process_repull_conflicts(
 
                 continue
 
-            if (result := greenlet.value) is None:
+            if (result := result_of(task)) is None:
                 _mark_internal_tx_conflict_error(
                     database=database,
                     chain_id=chain_id,
@@ -294,7 +294,7 @@ def _process_repull_conflicts(
             )
 
         if chunk_idx < len(repull_chunks) - 1:
-            gevent.sleep(REPULL_BETWEEN_BATCH_DELAY_SECONDS)
+            time.sleep(REPULL_BETWEEN_BATCH_DELAY_SECONDS)
 
     return to_decode_by_chain
 

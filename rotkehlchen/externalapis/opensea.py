@@ -1,10 +1,10 @@
 import dataclasses
 import logging
 import re
+import time
 from json.decoder import JSONDecodeError
 from typing import TYPE_CHECKING, Any, Final, Literal, NamedTuple
 
-import gevent
 import requests
 from eth_utils import to_checksum_address
 
@@ -194,7 +194,7 @@ class Opensea(ExternalServiceWithApiKey):
                 log.debug(
                     f'Got {response.status_code} response from opensea. Will backoff for {backoff} seconds',  # noqa: E501
                 )
-                gevent.sleep(backoff)
+                time.sleep(backoff)
                 backoff *= 2
                 if backoff >= backoff_limit:
                     raise RemoteError(
