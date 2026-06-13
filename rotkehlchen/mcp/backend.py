@@ -6,11 +6,9 @@ from typing import Any, Final
 
 import requests
 
-from rotkehlchen.api.server import API_PREFIX
-
 DEFAULT_BACKEND_HOST: Final = '127.0.0.1'
 DEFAULT_BACKEND_PORT: Final = 4242
-DEFAULT_BACKEND_URL: Final = f'http://{DEFAULT_BACKEND_HOST}:{DEFAULT_BACKEND_PORT}{API_PREFIX}'
+DEFAULT_BACKEND_URL: Final = f'http://{DEFAULT_BACKEND_HOST}:{DEFAULT_BACKEND_PORT}/api/1'
 
 
 @dataclass(frozen=True)
