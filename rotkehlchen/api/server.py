@@ -3,7 +3,7 @@ import logging
 import sys
 import traceback
 from http import HTTPStatus
-from typing import Any, Final
+from typing import Any
 
 import werkzeug
 from flask import Blueprint, Flask, Response, abort, jsonify, request
@@ -386,7 +386,6 @@ URLS_V1: URLS = [
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
-API_PREFIX: Final = '/api/1'
 
 
 def setup_urls(
@@ -444,7 +443,7 @@ def handle_request_parsing_error(
 
 class APIServer:
 
-    _api_prefix = API_PREFIX
+    _api_prefix = '/api/1'
 
     def __init__(
             self,
