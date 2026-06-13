@@ -1,6 +1,5 @@
 import json
 from collections.abc import Callable
-
 from contextlib import suppress
 from typing import TYPE_CHECKING, Any, Final, Self
 from unittest.mock import MagicMock, patch
