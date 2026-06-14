@@ -22,6 +22,7 @@ from rotkehlchen.exchanges.binance import (
     API_TIME_INTERVAL_CONSTRAINT_TS,
     BINANCE_ASSETS_STARTING_WITH_LD,
     BINANCE_LAUNCH_TS,
+    BINANCE_SIMPLE_EARN_TIME_INTERVAL_CONSTRAINT_TS,
     Binance,
     trade_from_binance,
 )
@@ -1126,6 +1127,58 @@ def test_binance_query_lending_interests_history(
                 'SELECT COUNT(*) FROM history_events WHERE subtype="reward" AND location=?;',
                 (location.serialize_for_db(),),
             ).fetchone()[0] == count
+
+    assert len(binance.msg_aggregator.consume_errors()) == 0
+    assert len(binance.msg_aggregator.consume_warnings()) == 0
+
+
+@pytest.mark.parametrize('default_mock_price_value', [ONE])
+def test_binance_query_lending_interests_history_chunks_30_days(
+        function_scope_binance: 'Binance',
+        price_historian: 'PriceHistorian',  # pylint: disable=unused-argument
+):
+    """Regression test for https://github.com/rotki/rotki/issues/12416
+
+    The Simple Earn rewards history endpoints (flexible & locked) reject ranges larger than
+    30 days with error -6021 "Query time range too large". A range larger than 30 days must be
+    split into chunks of at most 30 days, otherwise the very first request fails.
+    """
+    binance = function_scope_binance
+    binance.db.add_exchange(
+        name='binance',
+        location=Location.BINANCE,
+        api_key=ApiKey('binance_api_key'),
+        api_secret=ApiSecret(b'binance_api_secret'),
+    )
+    requested_windows: list[tuple[int, int]] = []
+    max_window_ms = BINANCE_SIMPLE_EARN_TIME_INTERVAL_CONSTRAINT_TS * 1000
+
+    def mock_my_lendings(url, params, *args, **kwargs):  # pylint: disable=unused-argument
+        if 'simple-earn' in url and 'rewardsRecord' in url:
+            window = params['endTime'] - params['startTime']
+            requested_windows.append((params['startTime'], params['endTime']))
+            # mimic Binance: reject anything wider than the 30-day limit
+            if window > max_window_ms:
+                return MockResponse(
+                    400,
+                    '{"code": -6021, "msg": "Query time range too large"}',
+                )
+        return MockResponse(200, '{"rows": [], "total": 0}')
+
+    # query a range spanning ~89 days, which previously was sent as a single request
+    with (
+        patch.object(binance.session, 'request', side_effect=mock_my_lendings),
+        binance.db.conn.read_ctx() as cursor,
+    ):
+        assert binance.query_lending_interests_history(
+            cursor=cursor,
+            start_ts=BINANCE_LAUNCH_TS,
+            end_ts=Timestamp(BINANCE_LAUNCH_TS + API_TIME_INTERVAL_CONSTRAINT_TS),
+        ) is False
+
+    assert len(requested_windows) > 1  # the range had to be chunked
+    for start_time, end_time in requested_windows:
+        assert end_time - start_time <= max_window_ms
 
     assert len(binance.msg_aggregator.consume_errors()) == 0
     assert len(binance.msg_aggregator.consume_warnings()) == 0
