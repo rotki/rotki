@@ -44,9 +44,9 @@ export const explorerUrls: AssetExplorerUrls = {
     transaction: 'https://bscscan.com/tx/',
   },
   [Blockchain.BTC]: {
-    address: 'https://www.blockchain.com/explorer/addresses/btc/',
-    block: 'https://www.blockchain.com/explorer/blocks/btc/',
-    transaction: 'https://www.blockchain.com/explorer/transactions/btc/',
+    address: 'https://mempool.space/address/',
+    block: 'https://mempool.space/block/',
+    transaction: 'https://mempool.space/tx/',
   },
   [Blockchain.DOT]: {
     address: 'https://polkadot.subscan.io/account/',

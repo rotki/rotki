@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :feature:`-` Bitcoin transactions, addresses and blocks now open in the mempool.space explorer instead of blockchain.com.
 * :bug:`12416` Binance Simple Earn rewards history no longer fails to sync when the last successful sync was more than a month ago.
 * :bug:`-` Kraken trades where the bought and sold amounts happen to be equal are no longer skipped as failed transfers.
 * :bug:`-` Adding an EVM token no longer leaves the name, symbol and decimals fields disabled indefinitely when the token detail lookup cannot reach a working RPC node; the lookup now times out so you can fill in the details manually.
