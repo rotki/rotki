@@ -911,6 +911,24 @@ class DBHandler:
     def get_dynamic_cache(
             self,
             cursor: 'DBCursor',
+            name: Literal[DBCacheDynamic.ZKSYNC_LITE_BALANCES_CLAIMED],
+            **kwargs: Unpack[AddressArgType],
+    ) -> int | None:
+        ...
+
+    @overload
+    def get_dynamic_cache(
+            self,
+            cursor: 'DBCursor',
+            name: Literal[DBCacheDynamic.ZKSYNC_LITE_ELIGIBILITY],
+            **kwargs: Unpack[AddressArgType],
+    ) -> str | None:
+        ...
+
+    @overload
+    def get_dynamic_cache(
+            self,
+            cursor: 'DBCursor',
             name: Literal[DBCacheDynamic.LAST_BLOCKCHAIN_BALANCES_QUERY_TS],
             **kwargs: Unpack[BlockchainArgType],
     ) -> Timestamp | None:
@@ -1058,6 +1076,26 @@ class DBHandler:
             self,
             write_cursor: 'DBCursor',
             name: Literal[DBCacheDynamic.LINEA_AIRDROP_ALLOCATION],
+            value: str,
+            **kwargs: Unpack[AddressArgType],
+    ) -> None:
+        ...
+
+    @overload
+    def set_dynamic_cache(
+            self,
+            write_cursor: 'DBCursor',
+            name: Literal[DBCacheDynamic.ZKSYNC_LITE_BALANCES_CLAIMED],
+            value: int,
+            **kwargs: Unpack[AddressArgType],
+    ) -> None:
+        ...
+
+    @overload
+    def set_dynamic_cache(
+            self,
+            write_cursor: 'DBCursor',
+            name: Literal[DBCacheDynamic.ZKSYNC_LITE_ELIGIBILITY],
             value: str,
             **kwargs: Unpack[AddressArgType],
     ) -> None:

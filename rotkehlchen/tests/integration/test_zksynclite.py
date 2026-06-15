@@ -1,9 +1,10 @@
 from typing import TYPE_CHECKING
+from unittest.mock import patch
 
 import pytest
 
 from rotkehlchen.accounting.structures.balance import Balance, BalanceSheet
-from rotkehlchen.assets.asset import Asset, EvmToken
+from rotkehlchen.assets.asset import Asset
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.chain.zksync_lite.constants import ZKL_IDENTIFIER
 from rotkehlchen.chain.zksync_lite.structures import (
@@ -12,25 +13,15 @@ from rotkehlchen.chain.zksync_lite.structures import (
     ZKSyncLiteTXType,
 )
 from rotkehlchen.constants import DEFAULT_BALANCE_LABEL
-from rotkehlchen.constants.assets import (
-    A_DAI,
-    A_ETH,
-    A_LINK,
-    A_LRC,
-    A_MANA,
-    A_SNX,
-    A_UNI,
-    A_USDC,
-    A_USDT,
-    A_WBTC,
-)
+from rotkehlchen.constants.assets import A_DAI, A_ETH, A_USDT
 from rotkehlchen.constants.misc import ONE, ZERO
+from rotkehlchen.db.cache import DBCacheDynamic
 from rotkehlchen.db.filtering import EvmEventFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
-from rotkehlchen.tests.utils.constants import A_PAN, CURRENT_PRICE_MOCK
+from rotkehlchen.tests.utils.constants import CURRENT_PRICE_MOCK
 from rotkehlchen.types import Location, Timestamp, deserialize_evm_tx_hash
 from rotkehlchen.utils.misc import ts_sec_to_ms
 
@@ -145,31 +136,34 @@ def test_fetch_transactions(zksync_lite_manager):
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('should_mock_current_price_queries', [True])
 def test_balances(zksync_lite_manager, inquirer):  # pylint: disable=unused-argument
-    lefty, rotki, empty = '0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12', '0x9531C059098e3d194fF87FebB587aB07B30B1306', '0xB638e104563515a917025964ee874a484A489147'  # noqa: E501
-    balances = zksync_lite_manager.query_balances(addresses=[lefty, rotki, empty])
-    lefty_eth_amount = FVal('0.0004100008')
-    eth, mana, uni, wbtc, link, dai, frax, usdc, storj, lrc, snx, pan, usdt = FVal('0.00002036000092'), FVal('16.38'), FVal('2.1409'), FVal('0.00012076'), FVal('0.47523'), FVal('53.83503876'), FVal('2.4306'), FVal('98.233404'), FVal('2.2064'), FVal('0.95'), FVal('0.95'), FVal('9202.65'), FVal('4.1')  # noqa: E501
-    assert balances == {
-        lefty: BalanceSheet(assets={
-            A_ETH: {DEFAULT_BALANCE_LABEL: Balance(amount=lefty_eth_amount, value=lefty_eth_amount * CURRENT_PRICE_MOCK)},  # noqa: E501
-        }),
-        rotki: BalanceSheet(assets={
-            A_ETH: {DEFAULT_BALANCE_LABEL: Balance(amount=eth, value=eth * CURRENT_PRICE_MOCK)},
-            A_MANA: {DEFAULT_BALANCE_LABEL: Balance(amount=mana, value=mana * CURRENT_PRICE_MOCK)},
-            A_UNI: {DEFAULT_BALANCE_LABEL: Balance(amount=uni, value=uni * CURRENT_PRICE_MOCK)},
-            A_WBTC: {DEFAULT_BALANCE_LABEL: Balance(amount=wbtc, value=wbtc * CURRENT_PRICE_MOCK)},
-            A_LINK: {DEFAULT_BALANCE_LABEL: Balance(amount=link, value=link * CURRENT_PRICE_MOCK)},
-            A_DAI: {DEFAULT_BALANCE_LABEL: Balance(amount=dai, value=dai * CURRENT_PRICE_MOCK)},
-            EvmToken('eip155:1/erc20:0x853d955aCEf822Db058eb8505911ED77F175b99e'): {DEFAULT_BALANCE_LABEL: Balance(amount=frax, value=frax * CURRENT_PRICE_MOCK)},  # noqa: E501  # FRAX
-            A_USDC: {DEFAULT_BALANCE_LABEL: Balance(amount=usdc, value=usdc * CURRENT_PRICE_MOCK)},
-            EvmToken('eip155:1/erc20:0xB64ef51C888972c908CFacf59B47C1AfBC0Ab8aC'): {DEFAULT_BALANCE_LABEL: Balance(amount=storj, value=storj * CURRENT_PRICE_MOCK)},  # noqa: E501  # STORJ
-            A_LRC: {DEFAULT_BALANCE_LABEL: Balance(amount=lrc, value=lrc * CURRENT_PRICE_MOCK)},
-            A_SNX: {DEFAULT_BALANCE_LABEL: Balance(amount=snx, value=snx * CURRENT_PRICE_MOCK)},
-            A_PAN: {DEFAULT_BALANCE_LABEL: Balance(amount=pan, value=pan * CURRENT_PRICE_MOCK)},
-            A_USDT: {DEFAULT_BALANCE_LABEL: Balance(amount=usdt, value=usdt * CURRENT_PRICE_MOCK)},
-        }),
-        empty: BalanceSheet(),
-    }
+    address1 = string_to_evm_address('0xFB3A939Cb06eeF36E1ceD48bdba1fcEe177Ac7f4')
+    address2 = string_to_evm_address('0xc37b40ABdB939635068d3c5f13E7faF686F03B65')
+    balances = zksync_lite_manager.query_balances(addresses=[address1, address2])
+    address2_eth_amount = FVal('0.00000112704')
+    assert balances == {address2: BalanceSheet(assets={
+        A_ETH: {DEFAULT_BALANCE_LABEL: Balance(
+            amount=address2_eth_amount,
+            value=address2_eth_amount * CURRENT_PRICE_MOCK,
+        )},
+    })}
+    assert balances.get(address1, BalanceSheet()) == BalanceSheet()
+
+    with zksync_lite_manager.database.conn.read_ctx() as cursor:
+        for address in (address1, address2):
+            assert zksync_lite_manager.database.get_dynamic_cache(
+                cursor=cursor,
+                name=DBCacheDynamic.ZKSYNC_LITE_ELIGIBILITY,
+                address=address,
+            ) is not None
+        assert zksync_lite_manager.database.get_dynamic_cache(
+            cursor=cursor,
+            name=DBCacheDynamic.ZKSYNC_LITE_BALANCES_CLAIMED,
+            address=address1,
+        ) == 1
+
+    with patch.object(zksync_lite_manager, '_query_eligibility_api') as query_mock:
+        zksync_lite_manager.query_balances(addresses=[address1, address2])
+        query_mock.assert_not_called()
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
