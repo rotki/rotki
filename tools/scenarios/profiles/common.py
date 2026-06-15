@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING, Any, Final
 
 from eth_utils import to_checksum_address
 
+from rotkehlchen.chain.evm.decoding.constants import ERC20_OR_ERC721_TRANSFER
 from rotkehlchen.history.events.structures.asset_movement import AssetMovement
 from rotkehlchen.history.events.structures.base import HistoryEvent
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
@@ -19,10 +20,19 @@ if TYPE_CHECKING:
 
     from rotkehlchen.assets.asset import Asset
     from rotkehlchen.history.events.structures.base import HistoryBaseEntry
-    from rotkehlchen.types import ChecksumEvmAddress, Location, TimestampMS
+    from rotkehlchen.types import (
+        ChainID,
+        ChecksumEvmAddress,
+        EvmTransaction,
+        Location,
+        TimestampMS,
+    )
     from tools.scenarios.deterministic import DeterministicFactory
 
 GAS_COUNTERPARTY: Final = 'gas'
+
+# the ERC20 Transfer event topic as a hex string, for raw receipt-log seeding
+ERC20_TRANSFER_TOPIC: Final = '0x' + ERC20_OR_ERC721_TRANSFER.hex()
 
 # Fixed USD prices per symbol, seeded as manual latest prices so that any
 # balance valuation resolves locally instead of asking remote oracles.
@@ -271,6 +281,69 @@ def make_evm_tx_group(
         sequence_index += 1
 
     return events
+
+
+def _address_topic(address: 'ChecksumEvmAddress') -> str:
+    """Left-pad a 20-byte address into a 32-byte log-topic hex string."""
+    return '0x' + '0' * 24 + address[2:].lower()
+
+
+def make_decodable_evm_transactions(
+        factory: 'DeterministicFactory',
+        chain_id: 'ChainID',
+        from_address: 'ChecksumEvmAddress',
+        to_address: 'ChecksumEvmAddress',
+        token_address: str,
+        count: int,
+        logs_per_tx: int = 3,
+) -> tuple[list['EvmTransaction'], list[dict[str, Any]]]:
+    """Build ``count`` ERC20-transfer transactions plus their receipts, decodable offline.
+
+    The bench mock serves no receipts, so a redecode operation can only run if the
+    transactions and their receipts already live in the DB. Each transaction carries a gas
+    fee plus ``logs_per_tx`` Transfer logs between two tracked accounts (the most common
+    shape the decoder processes) so a redecode actually emits transfer events rather than
+    just gas. Returns ``(transactions, raw-receipt dicts)`` ready for
+    ``ProfileBuilder.add_evm_transactions_with_receipts``.
+    """
+    from rotkehlchen.types import EvmTransaction, Timestamp  # local import to avoid load cycle
+    from tools.scenarios.deterministic import SCENARIO_NOW
+
+    from_topic, to_topic = _address_topic(from_address), _address_topic(to_address)
+    transactions, receipts = [], []
+    for idx in range(count):
+        tx_hash = factory.evm_tx_hash()
+        transactions.append(EvmTransaction(
+            tx_hash=tx_hash,
+            chain_id=chain_id,
+            timestamp=Timestamp(SCENARIO_NOW - count + idx),
+            block_number=18000000 + idx,
+            from_address=from_address,
+            to_address=token_address,  # type: ignore[arg-type]  # the token contract
+            value=0,
+            gas=45000,
+            gas_price=10**10,
+            gas_used=45000,
+            input_data=b'',
+            nonce=idx,
+        ))
+        receipts.append({
+            'transactionHash': tx_hash.hex(),  # EVMTxHash.hex() already includes the 0x prefix
+            'type': '0x0',
+            'status': 1,
+            'contractAddress': None,
+            'logs': [
+                {
+                    'logIndex': log_idx,
+                    'data': '0x' + ((idx + log_idx + 1) * 1000000).to_bytes(32, 'big').hex(),
+                    'address': token_address,
+                    'topics': [ERC20_TRANSFER_TOPIC, from_topic, to_topic],
+                }
+                for log_idx in range(logs_per_tx)
+            ],
+        })
+
+    return transactions, receipts
 
 
 def make_exchange_swap(

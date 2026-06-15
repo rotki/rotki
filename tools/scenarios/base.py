@@ -22,6 +22,7 @@ if TYPE_CHECKING:
     from rotkehlchen.chain.accounts import BlockchainAccountData
     from rotkehlchen.db.settings import ModifiableDBSettings
     from rotkehlchen.history.events.structures.base import HistoryBaseEntry
+    from rotkehlchen.types import ChainID, ChecksumEvmAddress, EvmTransaction
 
 # Matches testEnv.PASSWORD in frontend/app/tests/e2e/fixtures/index.ts
 USER_PASSWORD: Final = '1234'
@@ -153,6 +154,38 @@ class ProfileBuilder:
         if len(missing := [x for x in identifiers if x not in existing]) != 0:
             print(f'WARNING: dropping assets missing from global DB: {missing}', file=sys.stderr)
         return [x for x in identifiers if x in existing]
+
+    def add_evm_transactions_with_receipts(
+            self,
+            chain_id: 'ChainID',
+            transactions: 'Sequence[EvmTransaction]',
+            receipts: 'Sequence[dict[str, Any]]',
+            relevant_address: 'ChecksumEvmAddress',
+    ) -> None:
+        """Seed EVM transactions and their receipts so a redecode operation can run fully
+        offline (the bench mock serves no receipts).
+
+        These are the only events with backing evm_transactions rows, so a location-wide
+        redecode only touches them and leaves the distribution events (which have no
+        transaction rows) intact.
+        """
+        from rotkehlchen.db.evmtx import DBEvmTx  # local import to keep base.py light
+        dbevmtx = DBEvmTx(self.db)
+        with self.db.user_write() as write_cursor:
+            dbevmtx.add_transactions(
+                write_cursor=write_cursor,
+                evm_transactions=list(transactions),
+                relevant_address=relevant_address,
+            )
+            for receipt in receipts:
+                dbevmtx.add_or_ignore_receipt_data(
+                    write_cursor=write_cursor,
+                    chain_id=chain_id,
+                    data=receipt,
+                )
+        self.stats['decodable_transactions'] = (
+            self.stats.get('decodable_transactions', 0) + len(transactions)
+        )
 
     def add_history_events(self, events: Iterable['HistoryBaseEntry']) -> None:
         """Bulk-insert history events with explicitly assigned identifiers.
