@@ -183,6 +183,37 @@ def test_history_export_download_csv(
     assert_csv_export_response(response, temp_csv_file, is_download=True)
 
 
+def test_history_export_download_path_traversal(
+        rotkehlchen_api_server_with_exchanges: APIServer,
+) -> None:
+    """The csv download endpoint only serves files from the export (temp) directory.
+
+    A path pointing elsewhere must be rejected as invalid input, and the file it
+    points to must be left untouched (not served and not deleted by the cleanup).
+    """
+    # sentinel lives outside the system temp dir (next to this test file)
+    sentinel = Path(__file__).parent / 'traversal_sentinel_csv.txt'
+    sentinel.write_text('do-not-delete', encoding='utf-8')
+    try:
+        for path in (str(sentinel), '/root/config.json'):
+            response = requests.get(
+                api_url_for(
+                    rotkehlchen_api_server_with_exchanges,
+                    'exporthistorydownloadresource',
+                ),
+                json={'file_path': path},
+            )
+            assert_error_response(
+                response=response,
+                contained_in_msg='Invalid file path',
+                status_code=HTTPStatus.BAD_REQUEST,
+            )
+        # the rejected path must not have been deleted by the cleanup hook
+        assert sentinel.exists()
+    finally:
+        sentinel.unlink(missing_ok=True)
+
+
 @pytest.mark.vcr(filter_query_parameters=['api_key'])
 @pytest.mark.parametrize('db_settings', [{'csv_export_delimiter': ';'}])
 @pytest.mark.freeze_time('2025-04-30')
