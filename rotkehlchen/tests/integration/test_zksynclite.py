@@ -161,9 +161,9 @@ def test_balances(zksync_lite_manager, inquirer):  # pylint: disable=unused-argu
             address=address1,
         ) == 1
 
-    with patch.object(zksync_lite_manager, '_query_eligibility_api') as query_mock:
+    with patch.object(zksync_lite_manager.session, 'post') as post_mock:
         zksync_lite_manager.query_balances(addresses=[address1, address2])
-        query_mock.assert_not_called()
+        post_mock.assert_not_called()
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
