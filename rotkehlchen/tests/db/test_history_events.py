@@ -1586,6 +1586,84 @@ def test_delete_events_by_tx_ref_preserves_customized_transaction(database: DBHa
         assert len(group_ids) == 1  # only tx_a's group_identifier remains
 
 
+def test_delete_events_by_tx_ref_scopes_customized_lookup(database: DBHandler) -> None:
+    """Customized exclusions should only consider events from the deleted tx refs."""
+    tx_hash_a, tx_hash_b = _setup_two_evm_transactions(database)
+    tx_hash_c = make_evm_tx_hash()
+    db = DBHistoryEvents(database)
+    dbevmtx = DBEvmTx(database)
+
+    with database.user_write() as write_cursor:
+        dbevmtx.add_transactions(
+            write_cursor=write_cursor,
+            evm_transactions=[EvmTransaction(
+                tx_hash=tx_hash_c,
+                chain_id=ChainID.ETHEREUM,
+                timestamp=Timestamp(3000),
+                block_number=3,
+                from_address=make_evm_address(),
+                to_address=make_evm_address(),
+                value=0,
+                gas=21000,
+                gas_price=1000000000,
+                gas_used=21000,
+                input_data=b'',
+                nonce=2,
+            )],
+            relevant_address=None,
+        )
+        for tx_hash, timestamp in (
+            (tx_hash_a, 1000000),
+            (tx_hash_b, 2000000),
+            (tx_hash_c, 3000000),
+        ):
+            for seq_idx in range(2):
+                db.add_history_event(
+                    write_cursor=write_cursor,
+                    event=EvmEvent(
+                        tx_ref=tx_hash,
+                        sequence_index=seq_idx,
+                        timestamp=TimestampMS(timestamp),
+                        location=Location.ETHEREUM,
+                        event_type=HistoryEventType.RECEIVE,
+                        event_subtype=HistoryEventSubType.NONE,
+                        asset=A_ETH,
+                        amount=ONE,
+                    ),
+                    mapping_values=(
+                        {HISTORY_MAPPING_KEY_STATE: HistoryMappingState.CUSTOMIZED}
+                        if tx_hash in (tx_hash_a, tx_hash_c) and seq_idx == 0
+                        else None
+                    ),
+                )
+
+        assert write_cursor.execute('SELECT COUNT(*) FROM history_events').fetchone()[0] == 6
+        db.delete_events_by_tx_ref(
+            write_cursor=write_cursor,
+            tx_refs=[tx_hash_b],
+            location=Location.ETHEREUM,
+            customized_handling='preserve_transactions',
+        )
+        assert write_cursor.execute('SELECT COUNT(*) FROM history_events').fetchone()[0] == 4
+        remaining_tx_refs = {
+            row[0] for row in write_cursor.execute(
+                'SELECT DISTINCT tx_ref FROM chain_events_info',
+            )
+        }
+        assert remaining_tx_refs == {tx_hash_a, tx_hash_c}
+        db.delete_events_by_tx_ref(
+            write_cursor=write_cursor,
+            tx_refs=[tx_hash_a],
+            location=Location.ETHEREUM,
+            customized_handling='preserve_events',
+        )
+        assert write_cursor.execute('SELECT COUNT(*) FROM history_events').fetchone()[0] == 3
+        assert write_cursor.execute(
+            'SELECT COUNT(*) FROM history_events_mappings WHERE value=?',
+            (HistoryMappingState.CUSTOMIZED.serialize_for_db(),),
+        ).fetchone()[0] == 2
+
+
 def test_reset_events_for_redecode_preserves_customized_transaction(database: DBHandler) -> None:
     """Verifies that reset_events_for_redecode preserves all events in a transaction when
     any event is customized, and keeps the decoded status for that transaction.
