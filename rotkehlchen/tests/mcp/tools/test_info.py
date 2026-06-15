@@ -1,4 +1,5 @@
 import asyncio
+import selectors
 from http import HTTPStatus
 from typing import Any
 
@@ -39,17 +40,23 @@ def test_info_should_return_backend_info(monkeypatch) -> None:
 
     monkeypatch.setattr(info_tool, 'get_info', mock_get_info)
 
-    assert asyncio.run(info_tool.info()) == {
-        'mcp': {
-            'version': '1.2.3',
-        },
-        'backend': {
-            'connected': True,
-            'unlocked': True,
-            'url': 'http://127.0.0.1:4242/api/1',
-            'message': None,
-        },
-    }
+    # The gevent test wrapper can patch out kqueue on macOS while asyncio's default
+    # selector still tries to use it, so force SelectSelector instead of asyncio.run().
+    loop = asyncio.SelectorEventLoop(selectors.SelectSelector())
+    try:
+        assert loop.run_until_complete(info_tool.info()) == {
+            'mcp': {
+                'version': '1.2.3',
+            },
+            'backend': {
+                'connected': True,
+                'unlocked': True,
+                'url': 'http://127.0.0.1:4242/api/1',
+                'message': None,
+            },
+        }
+    finally:
+        loop.close()
 
 
 def test_get_info_should_report_unlocked_backend(monkeypatch) -> None:
