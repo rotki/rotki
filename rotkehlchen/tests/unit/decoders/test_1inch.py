@@ -835,6 +835,46 @@ def test_half_decoded_1inch_v5_swap(ethereum_inquirer, ethereum_accounts):
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('ethereum_accounts', [['0x4d8E4c0ffA6e173Ed1c975ebE31616D1b29b1427']])
+def test_1inch_v5_fusion_order(ethereum_inquirer, ethereum_accounts):
+    """Test that a 1inch v5 Fusion order (EURS->USDC) is decoded as a swap for the order maker.
+
+    The settlement is submitted by a resolver, so the transaction initiator is not the tracked
+    maker, and the limit order protocol's OrderFilled log is emitted before the maker's token
+    transfers. The swap must still be paired from the maker's spend and receive legs.
+    """
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=ethereum_inquirer,
+        tx_hash=(tx_hash := deserialize_evm_tx_hash('0x47307e4efcb6b8b0a71e3e9b937b4e81235949fde189dd09939767720e356071')),  # noqa: E501
+    )
+    assert events == [EvmSwapEvent(
+        tx_ref=tx_hash,
+        sequence_index=0,
+        timestamp=(timestamp := TimestampMS(1678547243000)),
+        location=Location.ETHEREUM,
+        event_subtype=HistoryEventSubType.SPEND,
+        asset=Asset('eip155:1/erc20:0xdB25f211AB05b1c97D595516F45794528a807ad8'),
+        amount=FVal(spend_amount := '39298.8'),
+        location_label=(user_address := ethereum_accounts[0]),
+        notes=f'Swap {spend_amount} EURS in a 1inch limit order',
+        counterparty=CPT_ONEINCH_V5,
+        address=(settlement_address := string_to_evm_address('0xBd4DBE0CB9136FFb4955ede88EBD5e92222aD09a')),  # noqa: E501
+    ), EvmSwapEvent(
+        tx_ref=tx_hash,
+        sequence_index=1,
+        timestamp=timestamp,
+        location=Location.ETHEREUM,
+        event_subtype=HistoryEventSubType.RECEIVE,
+        asset=A_USDC,
+        amount=FVal(receive_amount := '43520.618993'),
+        location_label=user_address,
+        notes=f'Receive {receive_amount} USDC as the result of a 1inch limit order',
+        counterparty=CPT_ONEINCH_V5,
+        address=settlement_address,
+    )]
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('db_settings', LEGACY_TESTS_INDEXER_ORDER)
 @pytest.mark.parametrize('base_accounts', [['0xc37b40ABdB939635068d3c5f13E7faF686F03B65']])
 def test_1inch_base_v6_swap(base_inquirer, base_accounts):
