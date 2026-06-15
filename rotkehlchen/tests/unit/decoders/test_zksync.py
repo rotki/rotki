@@ -1,7 +1,11 @@
 import pytest
 
 from rotkehlchen.chain.decoding.constants import CPT_GAS
-from rotkehlchen.chain.ethereum.modules.zksync.constants import CPT_ZKSYNC, ZKSYNC_BRIDGE
+from rotkehlchen.chain.ethereum.modules.zksync.constants import (
+    CPT_ZKSYNC,
+    ZKSYNC_BRIDGE,
+    ZKSYNC_LITE_SUNSET_CLAIM,
+)
 from rotkehlchen.constants.assets import A_DAI, A_ETH, A_USDC, A_USDT, Asset
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
@@ -206,5 +210,53 @@ def test_zksync_lite_batched_withdrawal_token(ethereum_inquirer, ethereum_accoun
         notes='Withdraw 2 USDC from zksync',
         counterparty=CPT_ZKSYNC,
         address=ZKSYNC_BRIDGE,
+    )]
+    assert expected_events == events
+
+
+@pytest.mark.parametrize('ethereum_accounts', [['0xFB3A939Cb06eeF36E1ceD48bdba1fcEe177Ac7f4']])
+def test_zksync_lite_sunset_claim(ethereum_inquirer, ethereum_accounts):
+    """Test decoding ZKsync Lite sunset claims."""
+    tx_hash = deserialize_evm_tx_hash('0x8c1cf41de91b0e5fd09db4d15eaf4e95dfa65fd4c385b0b0092a80140b353b7e')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
+    expected_events = [EvmEvent(
+        tx_ref=tx_hash,
+        sequence_index=0,
+        timestamp=(timestamp := TimestampMS(1781512307000)),
+        location=Location.ETHEREUM,
+        event_type=HistoryEventType.WITHDRAWAL,
+        event_subtype=HistoryEventSubType.BRIDGE,
+        asset=A_ETH,
+        amount=FVal(eth_str := '0.00100170986'),
+        location_label=(user_address := ethereum_accounts[0]),
+        notes=f'Claim {eth_str} ETH from the ZKsync Lite sunset',
+        counterparty=CPT_ZKSYNC,
+        address=ZKSYNC_LITE_SUNSET_CLAIM,
+    ), EvmEvent(
+        tx_ref=tx_hash,
+        sequence_index=2119,
+        timestamp=timestamp,
+        location=Location.ETHEREUM,
+        event_type=HistoryEventType.WITHDRAWAL,
+        event_subtype=HistoryEventSubType.BRIDGE,
+        asset=A_USDC,
+        amount=FVal(usdc_str := '0.008282'),
+        location_label=user_address,
+        notes=f'Claim {usdc_str} USDC from the ZKsync Lite sunset',
+        counterparty=CPT_ZKSYNC,
+        address=ZKSYNC_LITE_SUNSET_CLAIM,
+    ), EvmEvent(
+        tx_ref=tx_hash,
+        sequence_index=2121,
+        timestamp=timestamp,
+        location=Location.ETHEREUM,
+        event_type=HistoryEventType.WITHDRAWAL,
+        event_subtype=HistoryEventSubType.BRIDGE,
+        asset=Asset('eip155:1/erc20:0xC91a71A1fFA3d8B22ba615BA1B9c01b2BBBf55ad'),
+        amount=FVal(zz_str := '10'),
+        location_label=user_address,
+        notes=f'Claim {zz_str} ZZ from the ZKsync Lite sunset',
+        counterparty=CPT_ZKSYNC,
+        address=ZKSYNC_LITE_SUNSET_CLAIM,
     )]
     assert expected_events == events
