@@ -48,7 +48,7 @@ def test_evmlike_transactions_refresh(
 ) -> None:
     """Just tests the api part of refreshing evmlike transactions. Since at the moment
     this only concerns zksynclite, actual data check is in
-    integration/test_zksynclite.py::test_get_transactions"""
+    integration/test_zksynclite.py::test_fetch_transactions"""
     now = ts_now()
 
     # Timestamps are optional args here since zksynclite doesn't use them

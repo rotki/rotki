@@ -1,13 +1,15 @@
+import json
 import logging
 from collections import defaultdict
 from collections.abc import Iterable, Iterator, Sequence
 from http import HTTPStatus
 from json.decoder import JSONDecodeError
-from typing import TYPE_CHECKING, Any, Literal
+from typing import TYPE_CHECKING, Any, Final, Literal
 from urllib.parse import urlencode
 
 import gevent
 import requests
+from eth_typing.abi import ABI
 from sqlcipher3.dbapi2 import IntegrityError
 
 from rotkehlchen.accounting.structures.balance import Balance, BalanceSheet
@@ -18,10 +20,13 @@ from rotkehlchen.assets.utils import (
     asset_normalized_value,
     get_or_create_evm_token,
 )
+from rotkehlchen.chain.ethereum.modules.zksync.constants import ZKSYNC_LITE_SUNSET_CLAIM
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
+from rotkehlchen.chain.evm.contracts import EvmContract
 from rotkehlchen.chain.manager import ChainManagerWithTransactions, ChainWithEoA
 from rotkehlchen.constants import DEFAULT_BALANCE_LABEL, ZERO
 from rotkehlchen.constants.assets import A_ETH
+from rotkehlchen.db.cache import DBCacheDynamic
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.asset import UnknownAsset
@@ -54,6 +59,10 @@ if TYPE_CHECKING:
 from .constants import ZKL_IDENTIFIER, ZKSYNCLITE_MAX_LIMIT
 from .structures import ZKSyncLiteSwapData, ZKSyncLiteTransaction, ZKSyncLiteTXType
 
+ZKSYNC_LITE_ELIGIBILITY_URL: Final = 'https://lite.zksync.io/api/eligibility'
+# Minimal ABI for ZKSync Lite sunset claim contract isClaimed(uint256) view call
+ZKSYNC_LITE_SUNSET_CLAIM_ABI: Final[ABI] = [{'inputs': [{'name': 'index', 'type': 'uint256'}], 'name': 'isClaimed', 'outputs': [{'name': '', 'type': 'bool'}], 'stateMutability': 'view', 'type': 'function'}]  # noqa: E501
+
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
@@ -69,7 +78,6 @@ class ZksyncLiteManager(ChainManagerWithTransactions[ChecksumEvmAddress], ChainW
         self.session = create_session()
         set_user_agent(self.session)
         self.id_to_token: dict[int, CryptoAsset] = {}
-        self.symbol_to_token: dict[str, CryptoAsset] = {}
         self.eth = A_ETH.resolve_to_crypto_asset()
         self.ethereum_inquirer = ethereum_inquirer
 
@@ -168,6 +176,115 @@ class ZksyncLiteManager(ChainManagerWithTransactions[ChecksumEvmAddress], ChainW
 
         return result
 
+    def _get_cached_or_query_eligibility(self, address: ChecksumEvmAddress) -> dict[str, Any]:
+        """Return sunset eligibility data from cache or query the eligibility API.
+
+        Valid responses are cached permanently. Malformed API responses are returned but not
+        cached.
+
+        May raise:
+        - RemoteError if there are problems reaching the eligibility API or with the response.
+        """
+        with self.database.conn.read_ctx() as cursor:
+            cached_response = self.database.get_dynamic_cache(
+                cursor=cursor,
+                name=DBCacheDynamic.ZKSYNC_LITE_ELIGIBILITY,
+                address=address,
+            )
+
+        if isinstance(cached_response, str):
+            try:
+                return jsonloads_dict(cached_response)
+            except JSONDecodeError:
+                log.error(
+                    'Invalid cached ZKSync Lite eligibility response for %s: %s',
+                    address,
+                    cached_response,
+                )
+
+        try:
+            response = self.session.post(
+                ZKSYNC_LITE_ELIGIBILITY_URL,
+                json={'address': address},
+                timeout=CachedSettings().get_timeout_tuple(),
+            )
+        except requests.exceptions.RequestException as e:
+            raise RemoteError(f'ZKSync Lite eligibility API request failed due to {e!s}') from e
+
+        if response.status_code != HTTPStatus.OK:
+            raise RemoteError(
+                f'ZKSync Lite eligibility API request {response.url} failed with HTTP status '
+                f'code {response.status_code} and text {response.text}',
+            )
+
+        try:
+            eligibility = jsonloads_dict(response.text)
+        except JSONDecodeError as e:
+            raise RemoteError(
+                f'ZKSync Lite eligibility API request {response.url} returned invalid JSON '
+                f'response: {response.text}',
+            ) from e
+
+        can_cache = True
+        try:
+            if deserialize_evm_address(eligibility['address']) != address:
+                log.error(
+                    'ZKSync Lite eligibility response address mismatch for %s. Response was: %s',
+                    address,
+                    eligibility,
+                )
+                can_cache = False
+            elif not isinstance(tokens := eligibility['tokens'], list):
+                log.error(
+                    'Invalid ZKSync Lite eligibility tokens for %s: %s',
+                    address,
+                    eligibility,
+                )
+                can_cache = False
+            else:
+                for token in tokens:
+                    if not isinstance(token, dict):
+                        log.error(
+                            'Invalid ZKSync Lite eligibility token for %s: %s',
+                            address,
+                            token,
+                        )
+                        can_cache = False
+                        break
+                    if not isinstance(token['claimIndex'], int):
+                        log.error(
+                            'Invalid ZKSync Lite eligibility claimIndex for %s: %s',
+                            address,
+                            token,
+                        )
+                        can_cache = False
+                        break
+                    deserialize_evm_address(token['tokenAddress'])
+                    deserialize_int_from_str(
+                        symbol=token['rawBalance'],
+                        location='zksync lite eligibility balance',
+                    )
+        except (DeserializationError, KeyError) as e:
+            msg = f'missing key {e!s}' if isinstance(e, KeyError) else str(e)
+            log.error(
+                'Invalid ZKSync Lite eligibility response for %s due to %s. Response was: %s',
+                address,
+                msg,
+                eligibility,
+            )
+            can_cache = False
+
+        if can_cache:
+            with self.database.conn.write_ctx() as write_cursor:
+                self.database.set_dynamic_cache(
+                    write_cursor=write_cursor,
+                    name=DBCacheDynamic.ZKSYNC_LITE_ELIGIBILITY,
+                    value=json.dumps(eligibility, separators=(',', ':')),
+                    address=address,
+                )
+
+        return eligibility
+
     def _query_and_save_transactions_from_hash(
             self,
             address: ChecksumEvmAddress,
@@ -223,7 +340,6 @@ class ZksyncLiteManager(ChainManagerWithTransactions[ChecksumEvmAddress], ChainW
             for entry in result[0 if from_idx == 0 else 1:]:
                 try:  # if not first page we skip first since the from_idx repeats first entry
                     token_id = entry['id']
-                    token_symbol = entry['symbol']
                     address = deserialize_evm_address(entry['address'])
                     if address == ZERO_ADDRESS:
                         asset = self.eth
@@ -244,7 +360,6 @@ class ZksyncLiteManager(ChainManagerWithTransactions[ChecksumEvmAddress], ChainW
                             continue
 
                     self.id_to_token[token_id] = asset
-                    self.symbol_to_token[token_symbol] = asset
 
                 except (DeserializationError, KeyError) as e:
                     msg = str(e)
@@ -264,12 +379,6 @@ class ZksyncLiteManager(ChainManagerWithTransactions[ChecksumEvmAddress], ChainW
             self._create_tokens_mapping()
 
         return self.id_to_token.get(token_id, None)
-
-    def _get_token_by_symbol(self, token_symbol: str) -> CryptoAsset | None:
-        if len(self.symbol_to_token) == 0:
-            self._create_tokens_mapping()
-
-        return self.symbol_to_token.get(token_symbol, None)
 
     def _deserialize_zksync_transaction(
             self,
@@ -577,35 +686,114 @@ class ZksyncLiteManager(ChainManagerWithTransactions[ChecksumEvmAddress], ChainW
             self,
             addresses: Sequence[ChecksumEvmAddress],
     ) -> dict[ChecksumEvmAddress, BalanceSheet]:
-        """Get ZKSync Lite balances
+        """Get unclaimed ZKSync Lite sunset balances via the eligibility API and onchain claims.
+
+        Balances come from https://lite.zksync.io/api/eligibility. Only tokens whose sunset
+        claim index is not yet marked as claimed on Ethereum are returned. Addresses with no
+        remaining unclaimed tokens are cached to skip future API and RPC queries.
 
         May raise:
         - RemoteError
         """
         balances: defaultdict[ChecksumEvmAddress, BalanceSheet] = defaultdict(BalanceSheet)
+        claim_contract = EvmContract(
+            address=ZKSYNC_LITE_SUNSET_CLAIM,
+            abi=ZKSYNC_LITE_SUNSET_CLAIM_ABI,
+        )
         for address in addresses:
-            result = self._query_api(url=f'accounts/{address}')
-            if (finalized_result := result.get('finalized', None)) is None:
-                balances[address] = BalanceSheet()
-                continue
+            with self.database.conn.read_ctx() as cursor:
+                balances_claimed = self.database.get_dynamic_cache(
+                    cursor=cursor,
+                    name=DBCacheDynamic.ZKSYNC_LITE_BALANCES_CLAIMED,
+                    address=address,
+                )
+                if isinstance(balances_claimed, int) and balances_claimed == 1:
+                    balances[address] = BalanceSheet()
+                    continue
 
             try:
-                for symbol, raw_amount_str in finalized_result.get('balances', {}).items():
-                    if (asset := self._get_token_by_symbol(symbol)) is None:
-                        log.error(f'Could not find asset for symbol {symbol} in zksync mapping')
+                response = self._get_cached_or_query_eligibility(address=address)
+                if not isinstance(tokens := response.get('tokens'), list):
+                    raise RemoteError(
+                        f'Unexpected zksync lite eligibility response. Missing tokens list. '
+                        f'Response was: {response}',
+                    )
+
+                entries: list[tuple[int, CryptoAsset, FVal]] = []
+                parsing_failed = False
+                for token in tokens:
+                    if not isinstance(token, dict):
+                        parsing_failed = True
+                        log.error('Unexpected zksync lite eligibility token entry %s', token)
+                        continue
+                    if not isinstance(claim_index := token.get('claimIndex'), int):
+                        parsing_failed = True
+                        log.error('Invalid claimIndex in zksync lite eligibility token %s', token)
+                        continue
+                    try:
+                        token_address = deserialize_evm_address(token['tokenAddress'])
+                        if token_address == ZERO_ADDRESS:
+                            asset = self.eth
+                        else:
+                            asset = get_or_create_evm_token(
+                                userdb=self.database,
+                                evm_address=token_address,
+                                chain_id=ChainID.ETHEREUM,
+                                evm_inquirer=self.ethereum_inquirer,
+                                encounter=TokenEncounterInfo(
+                                    description='Querying zksync lite eligibility token',
+                                ),
+                            )
+                        amount = asset_normalized_value(
+                            amount=deserialize_int_from_str(
+                                symbol=token['rawBalance'],
+                                location='zksync lite eligibility balance',
+                            ),
+                            asset=asset,
+                        )
+                    except (DeserializationError, KeyError, NotERC20Conformant, RemoteError) as e:
+                        parsing_failed = True
+                        msg = f'missing key {e!s}' if isinstance(e, KeyError) else str(e)
+                        log.error(
+                            'Failed to parse zksync lite eligibility token %s due to %s',
+                            token,
+                            msg,
+                        )
                         continue
 
-                    raw_amount = deserialize_int_from_str(
-                        symbol=raw_amount_str,
-                        location='zksync balances',
-                    )
-                    amount = asset_normalized_value(raw_amount, asset)
+                    entries.append((claim_index, asset, amount))
+
+                if len(entries) == 0:
+                    if len(tokens) == 0:
+                        with self.database.conn.write_ctx() as write_cursor:
+                            self.database.set_dynamic_cache(
+                                write_cursor=write_cursor,
+                                name=DBCacheDynamic.ZKSYNC_LITE_BALANCES_CLAIMED,
+                                value=1,
+                                address=address,
+                            )
+                    balances[address] = BalanceSheet()
+                    continue
+
+                claimed_results = self.ethereum_inquirer.multicall_specific(
+                    contract=claim_contract,
+                    method_name='isClaimed',
+                    arguments=[[entry[0]] for entry in entries],
+                )
+                all_claimed = True
+                for idx, claimed_result in enumerate(claimed_results):
+                    if claimed_result[0] is True:
+                        continue
+
+                    all_claimed = False
+                    asset, amount = entries[idx][1], entries[idx][2]
                     try:
                         price = Inquirer.find_main_currency_price(asset)
                     except RemoteError as e:
                         log.error(
-                            f'Error processing zksync lite balance entry due to inability to '
-                            f'query price: {e!s}. Skipping balance entry',
+                            'Error processing zksync lite balance entry due to inability to '
+                            'query price: %s. Skipping balance entry',
+                            e,
                         )
                         continue
 
@@ -614,11 +802,17 @@ class ZksyncLiteManager(ChainManagerWithTransactions[ChecksumEvmAddress], ChainW
                         value=price * amount,
                     )
 
-            except (KeyError, DeserializationError, RemoteError) as e:
-                msg = str(e)  # Catching RemoteError here too due to self._get_token_by_symbol
-                if isinstance(e, KeyError):
-                    msg = f'Missing key entry for {msg}.'
-                log.error(f'Failed to query zksync balances for {address} due to {msg}')
+                if all_claimed and parsing_failed is False:
+                    with self.database.conn.write_ctx() as write_cursor:
+                        self.database.set_dynamic_cache(
+                            write_cursor=write_cursor,
+                            name=DBCacheDynamic.ZKSYNC_LITE_BALANCES_CLAIMED,
+                            value=1,
+                            address=address,
+                        )
+
+            except RemoteError as e:
+                log.error('Failed to query zksync balances for %s due to %s', address, e)
 
         return dict(balances)
 

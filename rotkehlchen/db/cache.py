@@ -122,6 +122,8 @@ class DBCacheDynamic(Enum):
     LAST_BTC_TX_BLOCK: Final = 'last_btc_tx_block_{address}', _deserialize_int_from_str
     LAST_BCH_TX_BLOCK: Final = 'last_bch_tx_block_{address}', _deserialize_int_from_str
     LINEA_AIRDROP_ALLOCATION: Final = 'linea_airdrop_allocation_{address}', lambda x: x
+    ZKSYNC_LITE_BALANCES_CLAIMED: Final = 'zksync_lite_balances_claimed_{address}', _deserialize_int_from_str  # noqa: E501
+    ZKSYNC_LITE_ELIGIBILITY: Final = 'zksync_lite_eligibility_{address}', lambda x: x
     SOLANA_TOKEN_ACCOUNT: Final = 'solana_token_account_{address}', _deserialize_solana_token_account_from_str  # noqa: E501
     CUSTOMIZED_EVENT_ORIGINAL_SEQ_IDX: Final = 'customized_event_original_{group_identifier}_{sequence_index}', _deserialize_int_from_str  # noqa: E501
     LAST_BLOCKCHAIN_BALANCES_QUERY_TS: Final = (
