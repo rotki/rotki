@@ -99,6 +99,7 @@ from rotkehlchen.db.filtering import (
     LocationAssetMappingsFilterQuery,
     NFTFilterQuery,
     ReportDataFilterQuery,
+    TimestampProximityOrder,
     UserNotesFilterQuery,
 )
 from rotkehlchen.db.history_events import DBHistoryEvents
@@ -3963,7 +3964,7 @@ class RestAPI:
             other_events = events_db.get_history_events_internal(
                 cursor=cursor,
                 filter_query=HistoryEventFilterQuery.make(
-                    order_by_rules=[(f'ABS(timestamp - {asset_movement.timestamp})', True)],
+                    order_by_rules=[TimestampProximityOrder(anchor=asset_movement.timestamp)],
                     from_ts=Timestamp(asset_movement_timestamp - time_range),
                     to_ts=Timestamp(asset_movement_timestamp + time_range),
                     ignored_ids=close_match_identifiers + [asset_movement.identifier],  # type: ignore[arg-type]  # ids from db will not be none

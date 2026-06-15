@@ -1,4 +1,5 @@
 import logging
+import re
 from abc import ABC, abstractmethod
 from collections.abc import Collection, Iterable, Sequence
 from dataclasses import dataclass, field
@@ -26,6 +27,7 @@ from rotkehlchen.db.constants import (
     HistoryEventLinkType,
     HistoryMappingState,
 )
+from rotkehlchen.errors.misc import InputError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.cache import compute_cache_key
@@ -52,8 +54,11 @@ from rotkehlchen.types import (
 from rotkehlchen.utils.misc import ts_now
 
 
-class InvalidFilter(Exception):
-    """Raised if an invalid filter combination has been given"""
+class InvalidFilter(InputError):
+    """Raised if an invalid filter combination or ordering attribute has been given.
+
+    Subclasses InputError so the API surfaces it as a 400 wherever filter queries are built.
+    """
 
 
 logger = logging.getLogger(__name__)
@@ -71,16 +76,56 @@ ETH_DEPOSIT_EVENT_JOIN = ALL_EVENTS_DATA_JOIN
 T = TypeVar('T')
 V = TypeVar('V')
 
+# A column ordering attribute always names a single (optionally table-qualified) column, so it
+# can only contain identifier characters. Anything else is rejected since a column name is
+# spliced directly into the ORDER BY clause and can't be passed as a bound parameter.
+ORDER_BY_COLUMN_RE: Final = re.compile(r'[A-Za-z_][A-Za-z0-9_.]*')
+
+
+def is_valid_order_by_attribute(attribute: str) -> bool:
+    """Check that an ORDER BY attribute is shaped like a plain column name.
+
+    Non-string input (e.g. a None entry produced from an empty string) is treated as invalid.
+    """
+    return isinstance(attribute, str) and ORDER_BY_COLUMN_RE.fullmatch(attribute) is not None
+
+
+@dataclass(frozen=True)
+class TimestampProximityOrder:
+    """Order rows by how close their timestamp is to a fixed anchor timestamp.
+
+    The anchor is a typed numeric value emitted as a bound query parameter, never spliced into
+    the SQL, so this can only ever express the proximity ordering and not arbitrary SQL. Use it
+    instead of a hand-built ``ABS(timestamp - ...)`` string.
+    """
+    anchor: TimestampMS
+    ascending: bool = True
+
+
+# A single ordering rule is either a (column_name, ascending) pair - validated as a plain column
+# name - or a typed proximity ordering. No other shape can reach the ORDER BY clause.
+OrderByRule = tuple[str, bool] | TimestampProximityOrder
+
 
 class DBFilterOrder(NamedTuple):
-    rules: list[tuple[str, bool]]
+    rules: Sequence[OrderByRule]
     case_sensitive: bool
 
-    def prepare(self) -> str:
+    def prepare(self) -> tuple[str, list[TimestampMS]]:
         querystr = 'ORDER BY '
-        for idx, (attribute, ascending) in enumerate(self.rules):
+        bindings: list[TimestampMS] = []
+        for idx, rule in enumerate(self.rules):
             if idx != 0:
                 querystr += ','
+
+            if isinstance(rule, TimestampProximityOrder):
+                querystr += f"ABS(timestamp - ?) {'ASC' if rule.ascending else 'DESC'}"
+                bindings.append(rule.anchor)
+                continue
+
+            attribute, ascending = rule
+            if not is_valid_order_by_attribute(attribute):
+                raise InvalidFilter(f'Unsupported sort attribute {attribute}')
             if attribute in {'amount', 'fee', 'rate', 'last_price', 'last_price_asset', 'manual_price', 'pnl_taxable', 'pnl_free'}:  # noqa: E501
                 order_by = f'CAST({attribute} AS REAL)'
             else:
@@ -91,7 +136,7 @@ class DBFilterOrder(NamedTuple):
             else:
                 querystr += f"{order_by} {'ASC' if ascending else 'DESC'}"
 
-        return querystr
+        return querystr, bindings
 
 
 class DBFilterPagination(NamedTuple):
@@ -377,8 +422,9 @@ class DBFilterQuery(ABC):
             query_parts.append(groupby_query)
 
         if with_order and self.order_by is not None:
-            orderby_query = self.order_by.prepare()
+            orderby_query, orderby_bindings = self.order_by.prepare()
             query_parts.append(orderby_query)
+            bindings.extend(orderby_bindings)
 
         if with_pagination and self.pagination is not None:
             pagination_query = self.pagination.prepare()
@@ -393,7 +439,7 @@ class DBFilterQuery(ABC):
             limit: int | None,
             offset: int | None,
             order_by_case_sensitive: bool = True,
-            order_by_rules: list[tuple[str, bool]] | None = None,
+            order_by_rules: Sequence[OrderByRule] | None = None,
             group_by_field: str | None = None,
     ) -> Self:
         if limit is None or offset is None:
@@ -477,7 +523,7 @@ class EvmTransactionsFilterQuery(DBFilterQuery, FilterWithTimestamp):
     def make(
             cls: type['EvmTransactionsFilterQuery'],
             and_op: bool = True,
-            order_by_rules: list[tuple[str, bool]] | None = None,
+            order_by_rules: Sequence[OrderByRule] | None = None,
             limit: int | None = None,
             offset: int | None = None,
             accounts: list[EvmAccount] | None = None,
@@ -713,7 +759,7 @@ class ReportDataFilterQuery(DBFilterQuery, FilterWithTimestamp):
     def make(
             cls: type['ReportDataFilterQuery'],
             and_op: bool = True,
-            order_by_rules: list[tuple[str, bool]] | None = None,
+            order_by_rules: Sequence[OrderByRule] | None = None,
             limit: int | None = None,
             offset: int | None = None,
             report_id: int | None = None,
@@ -815,7 +861,7 @@ class HistoryBaseEntryFilterQuery(DBFilterQuery, FilterWithTimestamp, FilterWith
     def make(
             cls,
             and_op: bool = True,
-            order_by_rules: list[tuple[str, bool]] | None = None,
+            order_by_rules: Sequence[OrderByRule] | None = None,
             limit: int | None = None,
             offset: int | None = None,
             from_ts: Timestamp | None = None,
@@ -1029,7 +1075,7 @@ class AssetMovementMatchFilterQuery(HistoryEventFilterQuery):
     def make(
             cls,
             and_op: bool = True,
-            order_by_rules: list[tuple[str, bool]] | None = None,
+            order_by_rules: Sequence[OrderByRule] | None = None,
             limit: int | None = None,
             offset: int | None = None,
             from_ts: Timestamp | None = None,
@@ -1099,7 +1145,7 @@ class HistoryEventWithTxRefFilterQuery(HistoryBaseEntryFilterQuery):
     def make(
             cls,
             and_op: bool = True,
-            order_by_rules: list[tuple[str, bool]] | None = None,
+            order_by_rules: Sequence[OrderByRule] | None = None,
             limit: int | None = None,
             offset: int | None = None,
             from_ts: Timestamp | None = None,
@@ -1226,7 +1272,7 @@ class HistoryEventWithCounterpartyFilterQuery(HistoryEventWithTxRefFilterQuery):
     def make(
             cls,
             and_op: bool = True,
-            order_by_rules: list[tuple[str, bool]] | None = None,
+            order_by_rules: Sequence[OrderByRule] | None = None,
             limit: int | None = None,
             offset: int | None = None,
             from_ts: Timestamp | None = None,
@@ -1315,7 +1361,7 @@ class SolanaEventFilterQuery(HistoryEventWithCounterpartyFilterQuery):
     def make(  # type: ignore[override]
             cls,
             and_op: bool = True,
-            order_by_rules: list[tuple[str, bool]] | None = None,
+            order_by_rules: Sequence[OrderByRule] | None = None,
             limit: int | None = None,
             offset: int | None = None,
             from_ts: Timestamp | None = None,
@@ -1424,7 +1470,7 @@ class EvmEventFilterQuery(HistoryEventWithCounterpartyFilterQuery):
     def make(  # type: ignore[override]
             cls,
             and_op: bool = True,
-            order_by_rules: list[tuple[str, bool]] | None = None,
+            order_by_rules: Sequence[OrderByRule] | None = None,
             limit: int | None = None,
             offset: int | None = None,
             from_ts: Timestamp | None = None,
@@ -1541,7 +1587,7 @@ class EthStakingEventFilterQuery(HistoryBaseEntryFilterQuery, ABC):
     def make(
             cls,
             and_op: bool = True,
-            order_by_rules: list[tuple[str, bool]] | None = None,
+            order_by_rules: Sequence[OrderByRule] | None = None,
             limit: int | None = None,
             offset: int | None = None,
             from_ts: Timestamp | None = None,
@@ -1623,7 +1669,7 @@ class EthWithdrawalFilterQuery(EthStakingEventFilterQuery):
     def make(
             cls: type['EthWithdrawalFilterQuery'],
             and_op: bool = True,
-            order_by_rules: list[tuple[str, bool]] | None = None,
+            order_by_rules: Sequence[OrderByRule] | None = None,
             limit: int | None = None,
             offset: int | None = None,
             from_ts: Timestamp | None = None,
@@ -1695,7 +1741,7 @@ class EthDepositEventFilterQuery(EvmEventFilterQuery, EthStakingEventFilterQuery
     def make(  # type: ignore  # it is expected to be incompatible with supertype
             cls: type['EthDepositEventFilterQuery'],
             and_op: bool = True,
-            order_by_rules: list[tuple[str, bool]] | None = None,
+            order_by_rules: Sequence[OrderByRule] | None = None,
             limit: int | None = None,
             offset: int | None = None,
             from_ts: Timestamp | None = None,
@@ -1799,7 +1845,7 @@ class UserNotesFilterQuery(DBFilterQuery, FilterWithTimestamp):
     def make(
             cls: type['UserNotesFilterQuery'],
             and_op: bool = True,
-            order_by_rules: list[tuple[str, bool]] | None = None,
+            order_by_rules: Sequence[OrderByRule] | None = None,
             limit: int | None = None,
             offset: int | None = None,
             from_ts: Timestamp | None = None,
@@ -1856,7 +1902,7 @@ class AddressbookFilterQuery(DBFilterQuery):
             strict_blockchain: bool = True,
             optional_chain_addresses: list[OptionalChainAddress] | None = None,
             substring_search: str | None = None,
-            order_by_rules: list[tuple[str, bool]] | None = None,
+            order_by_rules: Sequence[OrderByRule] | None = None,
     ) -> 'AddressbookFilterQuery':
         filter_query = cls.create(
             and_op=and_op,
@@ -1901,7 +1947,7 @@ class AssetsFilterQuery(DBFilterQuery):
     def make(
             cls: type['AssetsFilterQuery'],
             and_op: bool = True,
-            order_by_rules: list[tuple[str, bool]] | None = None,
+            order_by_rules: Sequence[OrderByRule] | None = None,
             limit: int | None = None,
             offset: int | None = None,
             name: str | None = None,
@@ -2082,7 +2128,7 @@ class CustomAssetsFilterQuery(DBFilterQuery):
     @classmethod
     def make(
             cls: type['CustomAssetsFilterQuery'],
-            order_by_rules: list[tuple[str, bool]] | None = None,
+            order_by_rules: Sequence[OrderByRule] | None = None,
             limit: int | None = None,
             offset: int | None = None,
             identifier: str | None = None,
@@ -2127,7 +2173,7 @@ class NFTFilterQuery(DBFilterQuery):
     @classmethod
     def make(
             cls: type['NFTFilterQuery'],
-            order_by_rules: list[tuple[str, bool]] | None = None,
+            order_by_rules: Sequence[OrderByRule] | None = None,
             limit: int | None = None,
             offset: int | None = None,
             owner_addresses: Sequence[ChecksumEvmAddress] | None = None,
@@ -2401,7 +2447,7 @@ class AccountingRulesFilterQuery(DBFilterQuery):
     def make(
             cls: type['AccountingRulesFilterQuery'],
             and_op: bool = True,
-            order_by_rules: list[tuple[str, bool]] | None = None,
+            order_by_rules: Sequence[OrderByRule] | None = None,
             limit: int | None = None,
             offset: int | None = None,
             event_types: list[HistoryEventType] | None = None,
@@ -2484,7 +2530,7 @@ class PaginatedFilterQuery(DBFilterQuery):
             and_op: bool = True,
             limit: int | None = None,
             offset: int | None = None,
-            order_by_rules: list[tuple[str, bool]] | None = None,
+            order_by_rules: Sequence[OrderByRule] | None = None,
     ) -> 'PaginatedFilterQuery':
         if order_by_rules is None:
             order_by_rules = [('identifier', False)]
@@ -2509,7 +2555,7 @@ class SolanaTransactionsFilterQuery(DBFilterQuery, FilterWithTimestamp):
     def make(
             cls: type['SolanaTransactionsFilterQuery'],
             and_op: bool = True,
-            order_by_rules: list[tuple[str, bool]] | None = None,
+            order_by_rules: Sequence[OrderByRule] | None = None,
             limit: int | None = None,
             offset: int | None = None,
             from_ts: Timestamp | None = None,
@@ -2720,7 +2766,7 @@ class InternalTxConflictsFilterQuery(DBFilterQuery, FilterWithTimestamp):
             failed: bool = False,
             limit: int | None = None,
             offset: int | None = None,
-            order_by_rules: list[tuple[str, bool]] | None = None,
+            order_by_rules: Sequence[tuple[str, bool]] | None = None,
     ) -> 'InternalTxConflictsFilterQuery':
         if order_by_rules is not None:
             resolved_rules = []
