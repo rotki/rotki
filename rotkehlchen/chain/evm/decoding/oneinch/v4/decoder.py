@@ -1,7 +1,9 @@
+import logging
 from abc import ABC
 from collections.abc import Callable
 from typing import TYPE_CHECKING
 
+from rotkehlchen.chain.decoding.constants import CPT_GAS
 from rotkehlchen.chain.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.decoding.utils import maybe_reshuffle_events
 from rotkehlchen.chain.ethereum.modules.oneinch.constants import CPT_ONEINCH_V4
@@ -18,7 +20,11 @@ from rotkehlchen.chain.evm.decoding.oneinch.v4.constants import (
     PANCAKE_SWAP_TOPIC,
     WOMBATV2_SWAPPED,
 )
-from rotkehlchen.chain.evm.decoding.structures import DecoderContext, EvmDecodingOutput
+from rotkehlchen.chain.evm.decoding.structures import (
+    DEFAULT_EVM_DECODING_OUTPUT,
+    DecoderContext,
+    EvmDecodingOutput,
+)
 from rotkehlchen.chain.evm.decoding.uniswap.v2.constants import UNISWAP_V2_SWAP_SIGNATURE
 from rotkehlchen.chain.evm.decoding.uniswap.v3.constants import (
     SWAP_SIGNATURE as UNISWAP_V3_SWAP_SIGNATURE,
@@ -27,6 +33,7 @@ from rotkehlchen.chain.evm.decoding.velodrome.decoder import SWAP_V2 as VELODROM
 from rotkehlchen.chain.evm.decoding.weth.decoder import WETH_WITHDRAW_TOPIC
 from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import ChecksumEvmAddress, EvmTransaction
 
 if TYPE_CHECKING:
@@ -34,6 +41,9 @@ if TYPE_CHECKING:
     from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
     from rotkehlchen.history.events.structures.evm_event import EvmEvent
     from rotkehlchen.user_messages import MessagesAggregator
+
+logger = logging.getLogger(__name__)
+log = RotkehlchenLogsAdapter(logger)
 
 
 class Oneinchv3n4DecoderBase(OneinchCommonDecoder, ABC):
@@ -46,6 +56,7 @@ class Oneinchv3n4DecoderBase(OneinchCommonDecoder, ABC):
             msg_aggregator: 'MessagesAggregator',
             counterparty: str,
             router_address: ChecksumEvmAddress,
+            limit_order_topics: list[bytes] | None = None,
     ) -> None:
         super().__init__(
             evm_inquirer=evm_inquirer,
@@ -66,7 +77,55 @@ class Oneinchv3n4DecoderBase(OneinchCommonDecoder, ABC):
                 WOMBATV2_SWAPPED,
             ],
             counterparty=counterparty,
+            limit_order_topics=limit_order_topics,
         )
+
+    def _decode_limit_order_swap(self, context: DecoderContext) -> EvmDecodingOutput:
+        """Decode a 1inch limit order / Fusion swap by pairing the maker's spend and receive
+        legs. Unlike _decode_swapped this does not rely on the transaction initiator, since
+        these orders can be settled by a resolver on the maker's behalf.
+
+        TODO: Handle resolver fees.
+        https://github.com/orgs/rotki/projects/11/views/3?pane=issue&itemId=137038891
+        """
+        if context.tx_log.topics[0] not in self.limit_order_topics:
+            return DEFAULT_EVM_DECODING_OUTPUT
+
+        out_event, in_event = None, None
+        for event in context.decoded_events:
+            if (
+                out_event is None and (
+                    (event.event_type == HistoryEventType.SPEND and event.event_subtype == HistoryEventSubType.NONE) or  # noqa: E501
+                    (event.event_type == HistoryEventType.TRADE and event.event_subtype == HistoryEventSubType.SPEND)  # noqa: E501
+                ) and event.counterparty != CPT_GAS
+            ):
+                out_event = event
+            elif (
+                in_event is None and (
+                    (event.event_type == HistoryEventType.RECEIVE and event.event_subtype == HistoryEventSubType.NONE) or  # noqa: E501
+                    (event.event_type == HistoryEventType.TRADE and event.event_subtype == HistoryEventSubType.RECEIVE)  # noqa: E501
+                )
+            ):
+                in_event = event
+
+        if out_event is None or in_event is None:
+            log.warning('Failed to find one leg of 1inch limit order swap in %s', context.transaction)  # noqa: E501
+            return DEFAULT_EVM_DECODING_OUTPUT
+
+        for event, new_event_subtype, notes in [
+            (out_event, HistoryEventSubType.SPEND, 'Swap {amount} {symbol} in a 1inch limit order'),  # noqa: E501
+            (in_event, HistoryEventSubType.RECEIVE, 'Receive {amount} {symbol} as the result of a 1inch limit order'),  # noqa: E501
+        ]:
+            event.notes = notes.format(amount=event.amount, symbol=event.asset.resolve_to_asset_with_symbol().symbol)  # noqa: E501
+            event.counterparty = self.counterparty
+            event.event_subtype = new_event_subtype
+            event.event_type = HistoryEventType.TRADE
+
+        maybe_reshuffle_events(
+            ordered_events=[out_event, in_event],
+            events_list=context.decoded_events,
+        )
+        return EvmDecodingOutput(process_swaps=True)
 
     def _handle_post_decoding(
             self,
@@ -83,6 +142,29 @@ class Oneinchv3n4DecoderBase(OneinchCommonDecoder, ABC):
         addresses_to_decoders mapping because the 1inch v4 router is not in the addresses of the
         logs of the transaction, and consequently it can't be extracted and mapped.
         """
+        for tx_log in all_logs:
+            # Limit order / Fusion settlements need to be handled first and independently of the
+            # transaction initiator, since the OrderFilled log may appear before the transfers
+            # and the order can be settled by a resolver rather than the maker themselves.
+            if tx_log.topics[0] in self.limit_order_topics:
+                if any(
+                    event.event_type == HistoryEventType.TRADE and
+                    event.counterparty == self.counterparty
+                    for event in decoded_events
+                ):
+                    # already paired during decoding (the OrderFilled log was processed after
+                    # the transfers via addresses_to_decoders), so there is nothing left to do.
+                    return decoded_events
+
+                self._decode_limit_order_swap(DecoderContext(
+                    tx_log=tx_log,
+                    transaction=transaction,
+                    decoded_events=decoded_events,
+                    all_logs=all_logs,
+                    action_items=[],
+                ))
+                return decoded_events
+
         tx_has_weth_transfer = False
         weth_transfer_tx_log = None
         for tx_log in all_logs:

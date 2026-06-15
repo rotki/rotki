@@ -1,31 +1,20 @@
-import logging
 from typing import TYPE_CHECKING, Any, Final
 
-from rotkehlchen.accounting.entry_type_mappings import HistoryEventSubType, HistoryEventType
-from rotkehlchen.chain.decoding.constants import CPT_GAS
 from rotkehlchen.chain.decoding.types import CounterpartyDetails
-from rotkehlchen.chain.decoding.utils import maybe_reshuffle_events
 from rotkehlchen.chain.evm.decoding.balancer.v3.constants import (
     SWAP_TOPIC as BALANCER_V3_SWAP_TOPIC,
 )
 from rotkehlchen.chain.evm.decoding.oneinch.constants import CPT_ONEINCH_V6, ONEINCH_V6_ROUTER
 from rotkehlchen.chain.evm.decoding.oneinch.decoder import OneinchCommonDecoder
 from rotkehlchen.chain.evm.decoding.oneinch.v4.decoder import Oneinchv3n4DecoderBase
-from rotkehlchen.chain.evm.decoding.structures import (
-    DEFAULT_EVM_DECODING_OUTPUT,
-    EvmDecodingOutput,
-)
-from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import ChecksumEvmAddress
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.evm.decoding.base import BaseEvmDecoderTools
-    from rotkehlchen.chain.evm.decoding.decoder import DecoderContext
     from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
     from rotkehlchen.user_messages import MessagesAggregator
 
-logger = logging.getLogger(__name__)
-log = RotkehlchenLogsAdapter(logger)
+# OrderFilled(bytes32,uint256) of the limit order protocol v4 embedded in the v6 router.
 ORDER_FILLED_TOPIC: Final = b'\xfe\xc315\x0f\xcex\xbae\x8e\x08*q\xda \xac\x9f\x8dy\x8a\x99\xb3\xc7\x96\x81\xc8D\x0c\xbf\xe7~\x07'  # noqa: E501
 
 
@@ -42,56 +31,14 @@ class Oneinchv6Decoder(Oneinchv3n4DecoderBase):
             msg_aggregator=msg_aggregator,
             router_address=ONEINCH_V6_ROUTER,
             counterparty=CPT_ONEINCH_V6,
+            # The v6 router emits the OrderFilled log after the transfers, so it is paired
+            # during decoding via addresses_to_decoders below. The topic is still registered
+            # here so the post-decoding rule can recognize (and skip) the already-paired swap.
+            limit_order_topics=[ORDER_FILLED_TOPIC],
         )
         # Balancer V3 is reachable through 1inch Fusion routing, so its swap log can be the
         # only pool-side signature emitted in an otherwise opaque v6 swap transaction.
         self.swapped_signatures.append(BALANCER_V3_SWAP_TOPIC)
-
-    def _decode_limit_order_swap(self, context: 'DecoderContext') -> EvmDecodingOutput:
-        """Decode 1inch v6 limit order swap transactions.
-
-        TODO: Handle resolver fees.
-        https://github.com/orgs/rotki/projects/11/views/3?pane=issue&itemId=137038891
-        """
-        if context.tx_log.topics[0] != ORDER_FILLED_TOPIC:
-            return DEFAULT_EVM_DECODING_OUTPUT
-
-        out_event, in_event = None, None
-        for event in context.decoded_events:
-            if (
-                out_event is None and (
-                    (event.event_type == HistoryEventType.SPEND and event.event_subtype == HistoryEventSubType.NONE) or  # noqa: E501
-                    (event.event_type == HistoryEventType.TRADE and event.event_subtype == HistoryEventSubType.SPEND)  # noqa: E501
-                ) and event.counterparty != CPT_GAS
-            ):
-                out_event = event
-            elif (
-                in_event is None and (
-                    (event.event_type == HistoryEventType.RECEIVE and event.event_subtype == HistoryEventSubType.NONE) or  # noqa: E501
-                    (event.event_type == HistoryEventType.TRADE and event.event_subtype == HistoryEventSubType.RECEIVE)  # noqa: E501
-                )
-            ):
-                in_event = event
-
-        if out_event is None or in_event is None:
-            log.warning(f'Failed to find one leg of 1inch limit order swap in {context.transaction}')  # noqa: E501
-            return DEFAULT_EVM_DECODING_OUTPUT
-
-        for event, new_event_subtype, notes in [
-            (out_event, HistoryEventSubType.SPEND, 'Swap {amount} {symbol} in a 1inch limit order'),  # noqa: E501
-            (in_event, HistoryEventSubType.RECEIVE, 'Receive {amount} {symbol} as the result of a 1inch limit order'),  # noqa: E501
-        ]:
-            event.notes = notes.format(amount=event.amount, symbol=event.asset.resolve_to_asset_with_symbol().symbol)  # noqa: E501
-            event.counterparty = self.counterparty
-            event.event_subtype = new_event_subtype
-            event.event_type = HistoryEventType.TRADE
-
-        maybe_reshuffle_events(
-            ordered_events=[out_event, in_event],
-            events_list=context.decoded_events,
-        )
-
-        return EvmDecodingOutput(process_swaps=True)
 
     # -- DecoderInterface methods
 
