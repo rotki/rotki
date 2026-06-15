@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`-` Clicking a dialog's save button several times while it is still saving (for example when editing a history event that is slow to save) no longer sends the same change repeatedly, so you no longer risk creating duplicate entries by double-clicking.
 * :feature:`12420` ZKsync Lite sunset claims are now decoded and balances are shown correctly.
 * :bug:`-` The asset and history-events export download endpoints now validate that the requested file lives in the export directory before serving it.
 * :bug:`-` Sorting on the filter endpoints now only accepts plain column names for the ``order_by_attributes`` parameter.

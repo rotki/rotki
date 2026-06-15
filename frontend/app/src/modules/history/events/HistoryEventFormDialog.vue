@@ -40,6 +40,9 @@ const title = computed<string>(() => {
 });
 
 async function save(): Promise<void> {
+  if (get(loading))
+    return;
+
   set(loading, true);
   const success = await get(form)?.save();
   set(loading, false);
