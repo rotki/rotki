@@ -19,6 +19,7 @@ from tools.bench.harness import ensure_profile_cached, run_profile
 from tools.bench.output import (
     collect_meta,
     render_compare_table,
+    render_micro_compare_table,
     render_run_table,
     to_gha_benchmark,
 )
@@ -68,6 +69,7 @@ def compare_command(args: argparse.Namespace) -> None:
             profiles=args.profile,
             blocks=args.samples,
             work_dir=work_dir,
+            micro=args.micro,
         )
     finally:
         shutil.rmtree(work_dir, ignore_errors=True)
@@ -75,15 +77,21 @@ def compare_command(args: argparse.Namespace) -> None:
     result['meta'] = collect_meta(REPO_ROOT)
     args.output.write_text(json.dumps(result, indent=2), encoding='utf-8')
     table = render_compare_table(result['profiles'])
+    micro_table = render_micro_compare_table(result['micro'])
     if args.markdown is not None:
         header = (
             f'### Benchmark comparison\n\n'
             f'base `{result["base_commit"][:10]}` ({args.base}) vs head '
             f'`{result["head_commit"][:10]}` — {args.samples} interleaved block pairs\n\n'
         )
-        args.markdown.write_text(header + table + '\n', encoding='utf-8')
+        body = header + table + '\n'
+        if micro_table:
+            body += '\n' + micro_table + '\n'
+        args.markdown.write_text(body, encoding='utf-8')
     print(f'\nresults written to {args.output}\n')
     print(table)
+    if micro_table:
+        print('\n' + micro_table)
 
 
 def main() -> None:
@@ -107,7 +115,8 @@ def main() -> None:
     compare_parser.add_argument('--samples', type=int, default=5, help='Interleaved block pairs per profile')  # noqa: E501
     compare_parser.add_argument('--output', type=Path, default=Path('bench-compare.json'))
     compare_parser.add_argument('--markdown', type=Path, default=None, help='Also write the markdown table (with header) here')  # noqa: E501
-    compare_parser.set_defaults(func=compare_command)
+    compare_parser.add_argument('--no-micro', dest='micro', action='store_false', help='Skip the pytest-benchmark micro A/B (macro only)')  # noqa: E501
+    compare_parser.set_defaults(func=compare_command, micro=True)
 
     args = parser.parse_args()
     try:

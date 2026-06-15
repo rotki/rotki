@@ -75,3 +75,32 @@ def render_compare_table(comparison: dict[str, dict[str, Any]]) -> str:
                 f'| {sign}{c["delta_ms"]} | {sign}{c["delta_pct"]}% | {marker} |',
             )
     return '\n'.join(lines)
+
+
+def render_micro_compare_table(micro: dict[str, Any]) -> str:
+    """Markdown section for the micro-benchmark A/B (`compare` result's 'micro' key).
+
+    Falls back to a note when the base side could not run the head benchmarks.
+    """
+    if 'error' in micro:
+        return (
+            '### Micro-benchmark comparison\n\n'
+            '_skipped: the base checkout could not run the head benchmark suite '
+            '(a new benchmark may reference a head-only symbol)._'
+        )
+    if not (benchmarks := micro.get('benchmarks')):
+        return ''
+
+    lines = [
+        '### Micro-benchmark comparison\n',
+        '| benchmark | base median ms | head median ms | Δ ms | Δ % | significant |',
+        '|---|---:|---:|---:|---:|:---:|',
+    ]
+    for name, c in benchmarks.items():
+        marker = '**yes**' if c['significant'] else 'no'
+        sign = '+' if c['delta_ms'] >= 0 else ''
+        lines.append(
+            f'| {name} | {c["base"]["median_ms"]} | {c["head"]["median_ms"]} '
+            f'| {sign}{c["delta_ms"]} | {sign}{c["delta_pct"]}% | {marker} |',
+        )
+    return '\n'.join(lines)
