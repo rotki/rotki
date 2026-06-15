@@ -1095,9 +1095,9 @@ class DBHistoryEvents:
 
         if match_exact_events is False:  # return all group events instead of just the filtered ones.  # noqa: E501
             if include_order is True and filter_query.order_by is not None:
-                order_by = filter_query.order_by.prepare()
+                order_by, order_by_bindings = filter_query.order_by.prepare()
             else:
-                order_by = ''
+                order_by, order_by_bindings = '', []
 
             # The inner GROUP BY query only needs group_identifier for filtering,
             # not the full JOINs and window function that base_suffix provides.
@@ -1119,7 +1119,7 @@ class DBHistoryEvents:
                     f'{prefix} FROM (SELECT {base_suffix} WHERE group_identifier IN '
                     f'(SELECT group_identifier FROM (SELECT {inner_suffix}) {filters}) {order_by})'
                 ),
-                inner_limit + query_bindings,
+                inner_limit + query_bindings + order_by_bindings,
             )
 
         return f'{prefix} FROM (SELECT {suffix}) {filters}', limit + query_bindings

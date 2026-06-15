@@ -120,6 +120,29 @@ def test_add_get_user_notes(rotkehlchen_api_server: 'APIServer') -> None:
     assert result['entries'][1]['title'] == '#3'
     assert result['entries'][2]['title'] == '#2'
 
+    # only plain column names are accepted for ordering. Any other expression is refused.
+    for invalid_attribute in (
+        'CASE WHEN 1=1 THEN 1 ELSE 1 END',
+        '(SELECT 1)',
+        'last_update_timestamp COLLATE NOCASE',
+        '',  # becomes a None entry, which is not a valid column name either
+    ):
+        response = requests.post(
+            api_url_for(
+                rotkehlchen_api_server,
+                'usernotesresource',
+            ),
+            json={
+                'order_by_attributes': [invalid_attribute],
+                'ascending': [True],
+            },
+        )
+        assert_error_response(
+            response=response,
+            contained_in_msg='for order_by_attributes',
+            status_code=HTTPStatus.BAD_REQUEST,
+        )
+
 
 def test_edit_user_notes(rotkehlchen_api_server: 'APIServer') -> None:
     generated_entries = make_user_notes_entries()

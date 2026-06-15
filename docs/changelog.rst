@@ -4,6 +4,7 @@ Changelog
 
 * :feature:`12420` ZKsync Lite sunset claims are now decoded and balances are shown correctly.
 * :bug:`-` The asset and history-events export download endpoints now validate that the requested file lives in the export directory before serving it.
+* :bug:`-` Sorting on the filter endpoints now only accepts plain column names for the ``order_by_attributes`` parameter.
 * :feature:`-` Bitcoin transactions, addresses and blocks now open in the mempool.space explorer instead of blockchain.com.
 * :bug:`12416` Binance Simple Earn rewards history no longer fails to sync when the last successful sync was more than a month ago.
 * :bug:`-` Kraken trades where the bought and sold amounts happen to be equal are no longer skipped as failed transfers.

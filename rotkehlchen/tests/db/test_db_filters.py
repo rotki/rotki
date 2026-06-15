@@ -11,10 +11,13 @@ from rotkehlchen.db.filtering import (
     DBLocationFilter,
     DBTimestampFilter,
     EvmTransactionsFilterQuery,
+    InvalidFilter,
+    TimestampProximityOrder,
 )
+from rotkehlchen.errors.misc import InputError
 from rotkehlchen.tests.utils.database import clean_ignored_assets
 from rotkehlchen.tests.utils.factories import make_evm_address
-from rotkehlchen.types import Location, Timestamp
+from rotkehlchen.types import Location, Timestamp, TimestampMS
 
 
 def test_ethereum_transaction_filter():
@@ -79,6 +82,63 @@ def test_filter_arguments(and_op, order_by, pagination):
         time_filter.to_ts,
         location_filter.location.serialize_for_db(),
     ]
+
+
+def test_column_order_by_only_accepts_column_names():
+    """A column ordering attribute is spliced into ORDER BY as an identifier, so prepare()
+    only accepts plain (optionally table-qualified) column names and refuses anything else."""
+    for attribute in ('name', 'last_update_timestamp', 'accounting_rules.identifier'):
+        assert DBFilterOrder(
+            rules=[(attribute, True)],
+            case_sensitive=True,
+        ).prepare() == (f'ORDER BY {attribute} ASC', [])
+
+    for attribute in (
+        'CASE WHEN 1=1 THEN 1 ELSE 1 END',
+        '(SELECT 1)',
+        'name COLLATE NOCASE',
+        'name;',
+        'ABS(timestamp - 1510000000000)',  # a computed expression must use TimestampProximityOrder
+    ):
+        with pytest.raises(InvalidFilter):
+            DBFilterOrder(rules=[(attribute, True)], case_sensitive=True).prepare()
+
+
+def test_timestamp_proximity_order_binds_anchor():
+    """The proximity ordering emits a fixed expression with the anchor as a bound parameter,
+    so no caller-supplied value is ever spliced into the query."""
+    anchor = TimestampMS(1510000000000)
+    assert DBFilterOrder(
+        rules=[TimestampProximityOrder(anchor=anchor)],
+        case_sensitive=True,
+    ).prepare() == ('ORDER BY ABS(timestamp - ?) ASC', [anchor])
+    assert DBFilterOrder(
+        rules=[TimestampProximityOrder(anchor=anchor, ascending=False)],
+        case_sensitive=False,
+    ).prepare() == ('ORDER BY ABS(timestamp - ?) DESC', [anchor])
+
+
+def test_filter_query_threads_order_bindings_after_filters():
+    """A proximity order routed through DBFilterQuery.prepare contributes its anchor as a
+    bound parameter placed after the WHERE filter bindings, matching the placeholder order."""
+    anchor = TimestampMS(1700000000000)
+    time_filter = DBTimestampFilter(and_op=True, from_ts=Timestamp(1), to_ts=Timestamp(999))
+    filter_query = DBFilterQuery(
+        and_op=True,
+        filters=[time_filter],
+        order_by=DBFilterOrder(
+            rules=[TimestampProximityOrder(anchor=anchor)],
+            case_sensitive=True,
+        ),
+    )
+    query, bindings = filter_query.prepare()
+    assert query.endswith('ORDER BY ABS(timestamp - ?) ASC')
+    assert bindings == [time_filter.from_ts, time_filter.to_ts, anchor]
+
+
+def test_invalid_filter_is_input_error():
+    """InvalidFilter subclasses InputError so the API maps it to a 400, not a 500."""
+    assert issubclass(InvalidFilter, InputError)
 
 
 def test_ignored_assets(database):

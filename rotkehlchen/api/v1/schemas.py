@@ -86,6 +86,7 @@ from rotkehlchen.db.filtering import (
     ReportDataFilterQuery,
     SolanaEventFilterQuery,
     UserNotesFilterQuery,
+    is_valid_order_by_attribute,
 )
 from rotkehlchen.db.settings import ModifiableDBSettings
 from rotkehlchen.db.utils import DBAssetBalance, LocationData, get_query_chunks
@@ -316,14 +317,19 @@ class DBOrderBySchema(Schema):
                 message='order_by_attributes and ascending have to be both null or have a value',
                 field_name='order_by_attributes',
             )
-        if (
-            data['order_by_attributes'] is not None and
-            len(data['order_by_attributes']) != len(data['ascending'])
-        ):
+        if data['order_by_attributes'] is None:
+            return
+        if len(data['order_by_attributes']) != len(data['ascending']):
             raise ValidationError(
                 message="order_by_attributes and ascending don't have the same length",
                 field_name='order_by_attributes',
             )
+        for attribute in data['order_by_attributes']:
+            if not is_valid_order_by_attribute(attribute):
+                raise ValidationError(
+                    message=f'Unsupported value {attribute} for order_by_attributes',
+                    field_name='order_by_attributes',
+                )
 
 
 class RequiredAddressOptionalChainSchema(Schema):
