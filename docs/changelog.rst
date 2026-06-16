@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`-` The net worth graph on the dashboard no longer smooths the line between points, so it now reflects your actual balance changes instead of curving past them.
 * :bug:`-` 1inch v5 Fusion limit orders will now be properly decoded.
 * :bug:`-` Clicking a dialog's save button several times while it is still saving (for example when editing a history event that is slow to save) no longer sends the same change repeatedly, so you no longer risk creating duplicate entries by double-clicking.
 * :feature:`12420` ZKsync Lite sunset claims are now decoded and balances are shown correctly.

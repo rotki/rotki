@@ -87,7 +87,7 @@ export function useNetValueChartConfig(chartData: MaybeRefOrGetter<NetValueChart
     itemStyle: { color: get(baseColor) },
     lineStyle: { color: get(baseColor) },
     showSymbol: false,
-    smooth: true,
+    smooth: false,
     symbol: 'circle',
     symbolSize: 8,
     type: 'line',
