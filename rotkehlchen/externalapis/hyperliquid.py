@@ -605,6 +605,28 @@ class HyperliquidAPI:
 
         self._spot_market_to_base_symbol = market_to_base_symbol
 
+    def _asset_from_hyperliquid_token(
+            self,
+            token: Any,
+            prefer_spot_metadata: bool = False,
+    ) -> Asset:
+        """Resolve a Hyperliquid token name into a rotki asset.
+
+        May raise if rotki does not know how to resolve this token yet. Callers should
+        skip such entries instead of creating history events with unsavable assets.
+        """
+        token_name = str(token)
+        if prefer_spot_metadata:
+            try:
+                return symbol_to_asset_or_token(get_asset_id_by_counterparty(
+                    symbol=token_name,
+                    counterparty=CPT_HYPER,
+                ))
+            except UnknownCounterpartyMapping:
+                pass
+
+        return asset_from_hyperliquid(token_name)
+
     def _get_spot_market_base_symbol(self, market: int) -> str | None:
         """Return a spot market base symbol, populating the metadata cache if needed."""
         self._populate_spot_market_cache()
@@ -784,11 +806,20 @@ class HyperliquidAPI:
         try:
             if (amount := self._deserialize_amount(value=raw_amount, name=f'ledger {entry_type}')) == ZERO:  # noqa: E501
                 return None
-            asset = asset_from_hyperliquid(delta.get('coin') or USDC_SYMBOL)
+            if (token := delta.get('token')) is not None:
+                asset = self._asset_from_hyperliquid_token(token=token, prefer_spot_metadata=True)
+            else:
+                asset = self._asset_from_hyperliquid_token(token=delta.get('coin') or USDC_SYMBOL)
+        except UnknownAsset as e:
+            log.warning(
+                'Failed to parse hyperliquid ledger entry %s due to unknown asset %s. Skipping',
+                context.entry,
+                e.identifier,
+            )
+            return None
         except (
             DeserializationError,
             UnknownCounterpartyMapping,
-            UnknownAsset,
             WrongAssetType,
         ) as e:
             log.error(f'Failed to parse hyperliquid ledger entry {context.entry} due to {e}. Skipping')  # noqa: E501
@@ -965,11 +996,20 @@ class HyperliquidAPI:
                 'internalTransfer',
                 'subAccountTransfer',
             }:
+                delta = parsed.context.entry['delta']
+                event_type = HistoryEventType.TRANSFER
+                if isinstance(delta, dict) and parsed.entry_type == 'spotTransfer':
+                    lower_address = address.lower()
+                    if str(delta.get('destination', '')).lower() == lower_address:
+                        event_type = HistoryEventType.RECEIVE
+                    elif str(delta.get('user', '')).lower() == lower_address:
+                        event_type = HistoryEventType.SPEND
+
                 events.append(
                     self._make_history_event(
                         context=parsed.context,
                         sequence_index=0,
-                        event_type=HistoryEventType.TRANSFER,
+                        event_type=event_type,
                         event_subtype=HistoryEventSubType.NONE,
                         asset=parsed.asset,
                         amount=abs(parsed.amount),
