@@ -1722,6 +1722,14 @@ class RestAPI:
         }
         return api_response(_wrap_in_ok_result(result), status_code=HTTPStatus.OK)
 
+    def get_mcp_info(self, backend_url: str) -> Response:
+        from rotkehlchen.mcp.availability import get_mcp_server_info
+
+        return api_response(
+            _wrap_in_ok_result(get_mcp_server_info(backend_url=backend_url)),
+            status_code=HTTPStatus.OK,
+        )
+
     @staticmethod
     def ping() -> Response:
         return api_response(_wrap_in_ok_result(True), status_code=HTTPStatus.OK)

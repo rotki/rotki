@@ -74,6 +74,8 @@ for exchange_name in SUPPORTED_EXCHANGES:
 for chain in CHAINS_WITH_TRANSACTION_DECODERS:  # load modules from the chains that have decoders
     hiddenimports.extend(collect_submodules(f'rotkehlchen.chain.{chain.name.lower()}.modules'))
 
+hiddenimports.extend(collect_submodules('rotkehlchen.mcp.tools'))
+
 a = Entrypoint(
     'rotkehlchen',
     'console_scripts',

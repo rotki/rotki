@@ -134,6 +134,7 @@ from rotkehlchen.api.v1.resources import (
     LoopringBalancesResource,
     ManuallyTrackedBalancesResource,
     MatchAssetMovementsResource,
+    McpInfoResource,
     MessagesResource,
     ModuleStatsResource,
     MoneriumOAuthResource,
@@ -344,6 +345,7 @@ URLS_V1: URLS = [
     ('/assets/custom/types', CustomAssetsTypesResource),
     ('/actions/ignored', IgnoredActionsResource),
     ('/info', InfoResource),
+    ('/info/mcp', McpInfoResource),
     ('/ping', PingResource),
     ('/import', DataImportResource),
     ('/nfts', NFTSResource),
@@ -567,6 +569,15 @@ class APIServer:
             msg = f'rotki REST API server is running at: {host}:{rest_port} with loglevel {logging.getLevelName(logging.root.level)}'  # noqa: E501
             print(msg)
             log.info(msg)
+
+            from rotkehlchen.mcp.availability import get_mcp_server_info
+
+            mcp_info = get_mcp_server_info(backend_url=f'http://{host}:{rest_port}/api/1')
+            if mcp_info['available'] is True:
+                display_command = mcp_info['display_command']
+                msg = f'rotki MCP server command: {display_command}'
+                print(msg)
+                log.info(msg)
         self.wsgiserver.start()
 
     def stop(self, timeout: int = 5) -> None:

@@ -47,3 +47,18 @@ export const ColibriConfiguration = z.object({
 });
 
 export type ColibriConfiguration = z.infer<typeof ColibriConfiguration>;
+
+export const McpServerInfo = z.discriminatedUnion('available', [
+  z.object({
+    args: z.array(z.string()),
+    available: z.literal(true),
+    command: z.string(),
+    displayCommand: z.string(),
+  }),
+  z.object({
+    available: z.literal(false),
+    reason: z.string(),
+  }),
+]);
+
+export type McpServerInfo = z.infer<typeof McpServerInfo>;

@@ -101,6 +101,7 @@ function getGeneralTab(routes: SettingsRoutes, t: T): TabGroup {
     { categoryId: SettingsCategoryIds.BACKEND, children: [
       { texts: [t('backend_settings.title')], keywords: [t('backend_settings.subtitle')] },
       { texts: [t('backend_settings.title'), t('backend_settings.settings.log_level.label')], keywords: [t('backend_settings.settings.log_level.hint')], highlightId: SettingsHighlightIds.LOG_LEVEL },
+      { texts: [t('backend_settings.title'), t('backend_settings.settings.mcp_command.label')], keywords: [t('backend_settings.settings.mcp_command.hint')], highlightId: SettingsHighlightIds.MCP_SERVER_COMMAND },
     ] },
   ] };
 }

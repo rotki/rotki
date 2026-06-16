@@ -1,18 +1,25 @@
-from gevent import monkey  # isort:skip
-monkey.patch_all()  # isort:skip
-import logging
 import sys
-import traceback
-
-from rotkehlchen.errors.misc import DBSchemaError, SystemPermissionError
-from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.server import RotkehlchenServer
-
-logger = logging.getLogger(__name__)
-log = RotkehlchenLogsAdapter(logger)
 
 
 def main() -> None:
+    if len(sys.argv) > 1 and sys.argv[1] == 'mcp':
+        from rotkehlchen.mcp.__main__ import main as mcp_main
+
+        mcp_main(sys.argv[2:])
+        return
+
+    from gevent import monkey  # isort:skip
+    monkey.patch_all()  # isort:skip
+
+    import logging
+    import traceback
+
+    from rotkehlchen.errors.misc import DBSchemaError, SystemPermissionError
+    from rotkehlchen.logging import RotkehlchenLogsAdapter
+    from rotkehlchen.server import RotkehlchenServer
+
+    log = RotkehlchenLogsAdapter(logging.getLogger(__name__))
+
     try:
         rotkehlchen_server = RotkehlchenServer()
     except (SystemPermissionError, DBSchemaError) as e:
