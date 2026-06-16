@@ -61,6 +61,7 @@ const {
   validatorIndex,
 } = useHistoryEventItem({
   event: () => event,
+  groupEvents: () => completeGroupEvents,
   selection,
 });
 
