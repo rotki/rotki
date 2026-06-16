@@ -10,6 +10,12 @@ import { isEventMissingAccountingRule } from '@/modules/history/event-utils';
 export interface UseHistoryEventItemProps {
   event: MaybeRefOrGetter<HistoryEventEntry>;
   selection?: UseHistoryEventsSelectionModeReturn;
+  /**
+   * The other events that belong to the same group. Used to recover data that
+   * an event does not carry itself but a sibling does (e.g. the block number for
+   * MEV reward transaction events grouped under a block production event).
+   */
+  groupEvents?: MaybeRefOrGetter<HistoryEventEntry[]>;
 }
 
 export interface UseHistoryEventItemReturn {
@@ -36,7 +42,7 @@ export interface UseHistoryEventItemReturn {
 export function useHistoryEventItem(
   props: UseHistoryEventItemProps,
 ): UseHistoryEventItemReturn {
-  const { event, selection } = props;
+  const { event, groupEvents, selection } = props;
   const { getChain } = useSupportedChains();
   const { useAssetInfo } = useAssetInfoRetrieval();
   const { useIsAssetIgnored } = useAssetsStore();
@@ -92,7 +98,15 @@ export function useHistoryEventItem(
 
   const blockNumber = computed<number | undefined>(() => {
     const ev = toValue(event);
-    return 'blockNumber' in ev ? ev.blockNumber : undefined;
+    if ('blockNumber' in ev)
+      return ev.blockNumber;
+
+    // MEV reward transaction events are EVM events that get moved into a block
+    // production group. They don't carry a `blockNumber` field themselves, so
+    // recover it from a sibling block event in the same group to keep the note's
+    // block number linkable.
+    const sibling = toValue(groupEvents)?.find(other => 'blockNumber' in other);
+    return sibling && 'blockNumber' in sibling ? sibling.blockNumber : undefined;
   });
 
   const extraData = computed<Record<string, any> | undefined>(() => {

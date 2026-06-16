@@ -434,6 +434,29 @@ describe('useHistoryEventNotes', () => {
     expect(formatted).toMatchObject(expected);
   });
 
+  it('should link the block number in a combined mev reward transaction note', () => {
+    // Note produced by the backend when a MEV reward transaction event is moved
+    // into a block production group (see db/eth2.py combine_block_with_tx_events).
+    // The event itself is an EVM event without a block number field; the block
+    // number is recovered from the group and passed in here.
+    const blockNumber = 17173975;
+    const txHash = '0xdb11f732bc83d29b52b20506cdd795196d3d0c5c42f9ad15b31bb4257c4990a5';
+    const notes = `Receive 0.05 ETH as mev reward for block ${blockNumber} in ${txHash}`;
+
+    const formatted = get(formatNotes({ notes, blockNumber, amount: bigNumberify(0.05), assetId: 'ETH' }));
+
+    expect(formatted).toContainEqual({
+      type: NoteType.BLOCK,
+      address: `${blockNumber}`,
+      showHashLink: true,
+    });
+    // the transaction hash should still be linked as a tx, not swallowed
+    expect(formatted).toContainEqual(expect.objectContaining({
+      type: NoteType.TX,
+      address: txHash,
+    }));
+  });
+
   it('should parse evm asset identifier', () => {
     const notes = 'Sell eip155:1/erc20:0x514910771AF9Ca656af840dff83E8264EcF986CA';
 
