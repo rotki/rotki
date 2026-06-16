@@ -35,7 +35,7 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
-ETHERSCAN_PAGINATION_LIMIT: Final = 10000
+ETHERSCAN_PAGINATION_LIMIT: Final = 1000
 ETHERSCAN_BASE_URL: Final = 'https://api.etherscan.io/v2/api'
 ROTKI_PACKAGED_KEY: Final = ApiKey('W9CEV6QB9NIPUEHD6KNEYM4PDX6KBPRVVR')
 
