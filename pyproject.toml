@@ -64,7 +64,7 @@ dependencies = [
     "google-api-python-client==2.192.0",
     "google-auth==2.49.1",
     # To build JWT for coinbase exchange key validation
-    "PyJWT==2.12.0",
+    "PyJWT==2.13.0",
     # solana
     "solana==0.36.9",
     "solders==0.26.0",
