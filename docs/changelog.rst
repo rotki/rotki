@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :release:`1.43.2 <2026-06-17>`
 * :bug:`-` The block number shown in a MEV reward transaction event's note is now a clickable link, like it already is for the related block production event.
 * :bug:`-` The net worth graph on the dashboard no longer smooths the line between points, so it now reflects your actual balance changes instead of curving past them.
 * :bug:`-` 1inch v5 Fusion limit orders will now be properly decoded.
