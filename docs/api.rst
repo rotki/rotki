@@ -686,7 +686,7 @@ Querying premium capabilities
      - `enabled` (Boolean): Enables automatic matching of exchange asset movements with onchain events when triggering the matching task.
      - `minimum_tier` (String): The minimum tier required to unlock this capability.
    - `minimum_tier` can be `null` if the key is not present in the unlocks response from the server.
-   - `current_tier`: String. Current user tier name (for example `Free`, `lite`, `Basic`, `Advanced`).
+   - `current_tier`: String. Current user tier name. As of this writing the possible values are `Free` (no active subscription), `Supporter`, `Basic` and `Advanced`. The tier names are defined server-side, not in this repository, so the authoritative and up-to-date list can be fetched with an unauthenticated ``GET`` at ``https://rotki.com/webapi/2/available-tiers`` (the ``tier_name`` field of each entry). Paid tiers are ordered `Supporter` < `Basic` < `Advanced`.
    - `limit_of_devices`: Integer. Maximum number of connected devices.
    - `history_events_limit`: Integer. Maximum number of history events.
    - `pnl_events_limit`: Integer. Maximum number of PnL events.

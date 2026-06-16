@@ -69,7 +69,7 @@ def get_info() -> dict[str, Any]:
     }
 
 
-@register_tool(name='info')
+@register_tool(name='info', premium=False)
 async def info() -> dict[str, Any]:
     """Return rotki version and verify connectivity to the unlocked backend."""
     return await asyncio.to_thread(get_info)

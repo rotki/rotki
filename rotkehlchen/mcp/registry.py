@@ -12,10 +12,17 @@ def register_tool(
         fn: Callable[..., Any] | None = None,
         *,
         name: str | None = None,
+        premium: bool = True,
 ) -> Callable[..., Any]:
-    """Register a decorated function as an MCP tool."""
+    """Register a decorated function as an MCP tool.
+
+    Tools require an active premium subscription by default. Pass ``premium=False`` for
+    tools that must stay available to everyone (e.g. ``info``), so a new tool can never
+    leak data for free by forgetting to opt in.
+    """
     def _decorate(function: Callable[..., Any]) -> Callable[..., Any]:
         function.__mcp_tool_name__ = name or function.__name__  # type: ignore[attr-defined]
+        function.__mcp_premium__ = premium  # type: ignore[attr-defined]
         AVAILABLE_TOOLS.append(function)
         return function
 
