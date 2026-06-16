@@ -55,3 +55,28 @@ def test_request_api_should_return_payload(monkeypatch) -> None:
         'result': True,
         'message': '',
     }
+
+
+def test_request_api_should_post_json_body(monkeypatch) -> None:
+    captured: dict[str, Any] = {}
+
+    def mock_post(url: str, **kwargs: Any) -> MockResponse:
+        captured['url'] = url
+        captured['json'] = kwargs.get('json')
+        return MockResponse({'result': {'entries': []}, 'message': ''})
+
+    def mock_get(url: str, **kwargs: Any) -> MockResponse:
+        raise AssertionError('POST request must not fall back to GET')
+
+    monkeypatch.setattr(requests, 'post', mock_post)
+    monkeypatch.setattr(requests, 'get', mock_get)
+
+    assert request_api(
+        base_url='http://backend/api/1',
+        endpoint='history/events',
+        timeout=5,
+        json_data={'limit': 10},
+        method='POST',
+    ) == {'result': {'entries': []}, 'message': ''}
+    assert captured['url'] == 'http://backend/api/1/history/events'
+    assert captured['json'] == {'limit': 10}

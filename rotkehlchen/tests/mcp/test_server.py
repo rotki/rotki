@@ -37,6 +37,7 @@ def test_setup_server_should_register_discovered_tools(monkeypatch) -> None:
         backend_url='http://backend/api/1',
         timeout=3,
         log_level='DEBUG',
+        privacy_mode='balanced',
     )
 
     assert init_args == {'name': SERVICE_NAME, 'log_level': 'DEBUG'}
@@ -67,7 +68,12 @@ def test_setup_server_should_gate_premium_tools(monkeypatch) -> None:
     gated_tool.__mcp_premium__ = True  # type: ignore[attr-defined]
 
     monkeypatch.setattr(server, 'discover_tools', lambda: [gated_tool])
-    server.setup_server(backend_url='http://backend/api/1', timeout=3, log_level='DEBUG')
+    server.setup_server(
+        backend_url='http://backend/api/1',
+        timeout=3,
+        log_level='DEBUG',
+        privacy_mode='balanced',
+    )
 
     name, description, wrapped = tools[0]
     assert name == 'gated_tool'

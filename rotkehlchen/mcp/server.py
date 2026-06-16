@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING, Any
 from mcp.server.fastmcp import FastMCP
 
 from rotkehlchen.mcp.backend import configure_backend
-from rotkehlchen.mcp.constants import SERVICE_NAME, LogLevel
+from rotkehlchen.mcp.constants import SERVICE_NAME, LogLevel, PrivacyMode
 from rotkehlchen.mcp.premium import premium_gate
 from rotkehlchen.mcp.registry import discover_tools
 
@@ -30,8 +30,19 @@ def _gate_with_premium(tool_function: Callable[..., Any]) -> Callable[..., Any]:
     return wrapper
 
 
-def setup_server(backend_url: str, timeout: int, log_level: LogLevel) -> FastMCP:
-    configure_backend(base_url=backend_url, timeout=timeout)
+def setup_server(
+        backend_url: str,
+        timeout: int,
+        log_level: LogLevel,
+        privacy_mode: PrivacyMode,
+        max_events: int | None = None,
+) -> FastMCP:
+    configure_backend(
+        base_url=backend_url,
+        timeout=timeout,
+        privacy_mode=privacy_mode,
+        max_events=max_events,
+    )
     server = FastMCP(name=SERVICE_NAME, log_level=log_level)
 
     for tool_function in discover_tools():
@@ -47,9 +58,17 @@ def setup_server(backend_url: str, timeout: int, log_level: LogLevel) -> FastMCP
     return server
 
 
-def run_server(backend_url: str, timeout: int, log_level: LogLevel) -> None:
+def run_server(
+        backend_url: str,
+        timeout: int,
+        log_level: LogLevel,
+        privacy_mode: PrivacyMode,
+        max_events: int | None = None,
+) -> None:
     setup_server(
         backend_url=backend_url,
         timeout=timeout,
         log_level=log_level,
+        privacy_mode=privacy_mode,
+        max_events=max_events,
     ).run(transport='stdio')
