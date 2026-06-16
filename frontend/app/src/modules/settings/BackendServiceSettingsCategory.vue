@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import LogLevelSetting from '@/modules/settings/backend/LogLevelSetting.vue';
+import McpServerCommand from '@/modules/settings/backend/McpServerCommand.vue';
 import { SettingsHighlightIds } from '@/modules/settings/setting-highlight-ids';
 import SettingCategory from '@/modules/settings/SettingCategory.vue';
 
@@ -15,5 +16,6 @@ const { t } = useI18n({ useScope: 'global' });
       {{ t('backend_settings.subtitle') }}
     </template>
     <LogLevelSetting :id="SettingsHighlightIds.LOG_LEVEL" />
+    <McpServerCommand :id="SettingsHighlightIds.MCP_SERVER_COMMAND" />
   </SettingCategory>
 </template>

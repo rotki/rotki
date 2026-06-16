@@ -298,6 +298,33 @@ describe('composables/api/settings/settings-api', () => {
     });
   });
 
+  describe('mcpServerInfo', () => {
+    it('should return available MCP server information', async () => {
+      server.use(
+        http.get(`${backendUrl}/api/1/info/mcp`, () =>
+          HttpResponse.json({
+            result: {
+              available: true,
+              command: '/usr/bin/python',
+              args: ['-m', 'rotkehlchen', 'mcp', '--backend-url', backendUrl],
+              display_command: `/usr/bin/python -m rotkehlchen mcp --backend-url ${backendUrl}`,
+            },
+            message: '',
+          })),
+      );
+
+      const { mcpServerInfo } = useSettingsApi();
+      const result = await mcpServerInfo();
+
+      expect(result).toEqual({
+        available: true,
+        command: '/usr/bin/python',
+        args: ['-m', 'rotkehlchen', 'mcp', '--backend-url', backendUrl],
+        displayCommand: `/usr/bin/python -m rotkehlchen mcp --backend-url ${backendUrl}`,
+      });
+    });
+  });
+
   describe('updateBackendConfiguration', () => {
     it('should send PUT request with uppercase loglevel', async () => {
       let capturedBody: unknown = null;

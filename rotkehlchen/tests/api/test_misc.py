@@ -126,6 +126,23 @@ def test_query_ping(rotkehlchen_api_server: 'APIServer') -> None:
     assert response_json['message'] == expected_message
 
 
+def test_query_mcp_info(rotkehlchen_api_server: 'APIServer', monkeypatch) -> None:
+    monkeypatch.setattr('rotkehlchen.mcp.availability._has_mcp_package', lambda: True)
+    monkeypatch.setattr('rotkehlchen.mcp.availability.sys.executable', '/usr/bin/python')
+    monkeypatch.delattr('rotkehlchen.mcp.availability.sys.frozen', raising=False)
+
+    endpoint_url = api_url_for(rotkehlchen_api_server, 'mcpinforesource')
+    response = requests.get(endpoint_url)
+    result = assert_proper_sync_response_with_result(response)
+    backend_url = endpoint_url.removesuffix('/info/mcp')
+    assert result == {
+        'available': True,
+        'command': '/usr/bin/python',
+        'args': ['-m', 'rotkehlchen', 'mcp', '--backend-url', backend_url],
+        'display_command': f'/usr/bin/python -m rotkehlchen mcp --backend-url {backend_url}',
+    }
+
+
 def test_query_version_when_update_required(rotkehlchen_api_server: 'APIServer') -> None:
     """
     Test that endpoint to query app version and available updates works

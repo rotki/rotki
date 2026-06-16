@@ -2,7 +2,7 @@ import { apiUrls } from '@/modules/core/api/api-urls';
 import { api } from '@/modules/core/api/rotki-api';
 import { VALID_WITH_SESSION_STATUS } from '@/modules/core/api/utils';
 import { type SettingsUpdate, UserSettingsModel } from '@/modules/settings/types/user-settings';
-import { BackendConfiguration, ColibriConfiguration } from '@/modules/shell/app/backend';
+import { BackendConfiguration, ColibriConfiguration, McpServerInfo } from '@/modules/shell/app/backend';
 
 interface UseSettingApiReturn {
   setSettings: (settings: SettingsUpdate) => Promise<UserSettingsModel>;
@@ -12,6 +12,7 @@ interface UseSettingApiReturn {
   updateBackendConfiguration: (loglevel: string) => Promise<BackendConfiguration>;
   colibriSettings: () => Promise<ColibriConfiguration>;
   updateColibriConfiguration: (loglevel: string) => Promise<ColibriConfiguration>;
+  mcpServerInfo: () => Promise<McpServerInfo>;
 }
 
 export function useSettingsApi(): UseSettingApiReturn {
@@ -65,11 +66,17 @@ export function useSettingsApi(): UseSettingApiReturn {
     return ColibriConfiguration.parse(response);
   };
 
+  const mcpServerInfo = async (): Promise<McpServerInfo> => {
+    const response = await api.get<McpServerInfo>('/info/mcp');
+    return McpServerInfo.parse(response);
+  };
+
   return {
     backendSettings,
     colibriSettings,
     getRawSettings,
     getSettings,
+    mcpServerInfo,
     setSettings,
     updateBackendConfiguration,
     updateColibriConfiguration,
