@@ -9,6 +9,7 @@ from rotkehlchen.chain.ethereum.modules.safe.constants import (
     CPT_SAFE,
     SAFE_LOCKING,
     SAFE_VESTING,
+    SAFENET_STAKING,
     SAFEPASS_AIRDROP,
 )
 from rotkehlchen.chain.evm.decoding.safe.constants import CPT_SAFE_MULTISIG
@@ -594,6 +595,103 @@ def test_safe_withdraw_unlocked(ethereum_inquirer, ethereum_accounts):
             notes=f'Successfully executed safe transaction 0x1f5ea0fb049fabccf49f2a9e8ccd8ae95db0d32727d5c62ea329b0381a51a698 for multisig {multisig_address}',  # noqa: E501
             counterparty=CPT_SAFE_MULTISIG,
             address=multisig_address,
+        ),
+    ]
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('ethereum_accounts', [['0xdD3B1AA220A65428AB96Db2C8C02890CC513aa07']])
+def test_safenet_stake(ethereum_inquirer, ethereum_accounts):
+    """Test a SafeNet staking deposit done through a Safe multisig"""
+    tx_hash = deserialize_evm_tx_hash('0xe2d848c50e978d10c9079c6468d81c5e427d81e729b91647a596e5aa27420a66')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
+    assert events == [
+        EvmEvent(
+            tx_ref=tx_hash,
+            sequence_index=675,
+            timestamp=(timestamp := TimestampMS(1780208123000)),
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.INFORMATIONAL,
+            event_subtype=HistoryEventSubType.APPROVE,
+            asset=(safe_token := EvmToken('eip155:1/erc20:0x5aFE3855358E112B5647B952709E6165e1c1eEEe')),  # noqa: E501
+            amount=FVal(amount := '27778.122229510079122865'),
+            location_label=(safe_address := ethereum_accounts[0]),
+            notes=f'Set SAFE spending approval of {safe_address} by {SAFENET_STAKING} to {amount}',
+            address=SAFENET_STAKING,
+        ), EvmEvent(
+            tx_ref=tx_hash,
+            sequence_index=677,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.INFORMATIONAL,
+            event_subtype=HistoryEventSubType.APPROVE,
+            asset=safe_token,
+            amount=ZERO,
+            location_label=safe_address,
+            notes=f'Revoke SAFE spending approval of {safe_address} by {SAFENET_STAKING}',
+            address=SAFENET_STAKING,
+        ), EvmEvent(
+            tx_ref=tx_hash,
+            sequence_index=678,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.STAKING,
+            event_subtype=HistoryEventSubType.DEPOSIT_ASSET,
+            asset=safe_token,
+            amount=FVal(amount),
+            location_label=safe_address,
+            notes=f'Stake {amount} SAFE in SafeNet',
+            counterparty=CPT_SAFE,
+            address=SAFENET_STAKING,
+        ), EvmEvent(
+            tx_ref=tx_hash,
+            sequence_index=679,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.INFORMATIONAL,
+            event_subtype=HistoryEventSubType.NONE,
+            asset=A_ETH,
+            amount=ZERO,
+            location_label='0x95d99e49a2F359f5EE245d50Cb23169b73691406',
+            notes=f'Successfully executed safe transaction 0xa0ae0543cf49f162f5b36c5b7c1dd2c5d0b736b3deaccba95e217057885fa622 for multisig {safe_address}',  # noqa: E501
+            counterparty=CPT_SAFE_MULTISIG,
+            address=safe_address,
+        ),
+    ]
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('ethereum_accounts', [['0xe7FBc1925605AdF4fAF09e6614d7eeb9713467f5']])
+def test_safenet_withdrawal_claim(ethereum_inquirer, ethereum_accounts):
+    """Test claiming a SafeNet staking withdrawal directly from the staking contract"""
+    tx_hash = deserialize_evm_tx_hash('0xd24ecc3fdf26e48d66184868e9fb78cbc8271a26dc32d038ba8a082153822331')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
+    assert events == [
+        EvmEvent(
+            tx_ref=tx_hash,
+            sequence_index=0,
+            timestamp=(timestamp := TimestampMS(1780049927000)),
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_ETH,
+            amount=FVal(gas := '0.00001910993018928'),
+            location_label=(user_address := ethereum_accounts[0]),
+            notes=f'Burn {gas} ETH for gas',
+            counterparty=CPT_GAS,
+        ), EvmEvent(
+            tx_ref=tx_hash,
+            sequence_index=205,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.STAKING,
+            event_subtype=HistoryEventSubType.REMOVE_ASSET,
+            asset=EvmToken('eip155:1/erc20:0x5aFE3855358E112B5647B952709E6165e1c1eEEe'),
+            amount=FVal(amount := '11167.406192'),
+            location_label=user_address,
+            notes=f'Unstake {amount} SAFE from SafeNet',
+            counterparty=CPT_SAFE,
+            address=SAFENET_STAKING,
         ),
     ]
 

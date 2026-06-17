@@ -25,8 +25,11 @@ from .constants import (
     LOCKED,
     SAFE_LOCKING,
     SAFE_VESTING,
+    SAFENET_STAKING,
     SAFEPASS_AIRDROP,
+    STAKE_INCREASED,
     UNLOCKED,
+    WITHDRAWAL_CLAIMED,
     WITHDRAWN,
 )
 
@@ -189,6 +192,63 @@ class SafeDecoder(EvmDecoderInterface):
         )
         return EvmDecodingOutput(events=[event])
 
+    def _decode_safenet_stake(self, context: DecoderContext) -> EvmDecodingOutput:
+        """Decode a SafeNet staking deposit (StakeIncreased event). The SAFE token transfer
+        to the staking contract comes in a later log, so transform it via an action item."""
+        if not self.base.is_tracked(staker := bytes_to_address(context.tx_log.topics[1])):
+            return DEFAULT_EVM_DECODING_OUTPUT
+
+        amount = token_normalized_value_decimals(
+            token_amount=int.from_bytes(context.tx_log.data[0:32]),
+            token_decimals=DEFAULT_TOKEN_DECIMALS,
+        )
+        return EvmDecodingOutput(action_items=[ActionItem(
+            action='transform',
+            from_event_type=HistoryEventType.SPEND,
+            from_event_subtype=HistoryEventSubType.NONE,
+            location_label=staker,
+            asset=self.safe_token,
+            amount=amount,
+            to_event_type=HistoryEventType.STAKING,
+            to_event_subtype=HistoryEventSubType.DEPOSIT_ASSET,
+            to_notes=f'Stake {amount} SAFE in SafeNet',
+            to_counterparty=CPT_SAFE,
+            to_address=context.tx_log.address,
+        )])
+
+    def _decode_safenet_withdrawal_claimed(self, context: DecoderContext) -> EvmDecodingOutput:
+        """Decode a SafeNet staking withdrawal claim (WithdrawalClaimed event). The SAFE token
+        transfer from the staking contract comes in a later log, so transform it via an
+        action item."""
+        if not self.base.is_tracked(staker := bytes_to_address(context.tx_log.topics[1])):
+            return DEFAULT_EVM_DECODING_OUTPUT
+
+        amount = token_normalized_value_decimals(
+            token_amount=int.from_bytes(context.tx_log.data[0:32]),
+            token_decimals=DEFAULT_TOKEN_DECIMALS,
+        )
+        return EvmDecodingOutput(action_items=[ActionItem(
+            action='transform',
+            from_event_type=HistoryEventType.RECEIVE,
+            from_event_subtype=HistoryEventSubType.NONE,
+            location_label=staker,
+            asset=self.safe_token,
+            amount=amount,
+            to_event_type=HistoryEventType.STAKING,
+            to_event_subtype=HistoryEventSubType.REMOVE_ASSET,
+            to_notes=f'Unstake {amount} SAFE from SafeNet',
+            to_counterparty=CPT_SAFE,
+            to_address=context.tx_log.address,
+        )])
+
+    def _decode_safenet_staking(self, context: DecoderContext) -> EvmDecodingOutput:
+        if context.tx_log.topics[0] == STAKE_INCREASED:
+            return self._decode_safenet_stake(context)
+        elif context.tx_log.topics[0] == WITHDRAWAL_CLAIMED:
+            return self._decode_safenet_withdrawal_claimed(context)
+
+        return DEFAULT_EVM_DECODING_OUTPUT
+
     # -- DecoderInterface methods
 
     def addresses_to_decoders(self) -> dict[ChecksumEvmAddress, tuple[Any, ...]]:
@@ -196,6 +256,7 @@ class SafeDecoder(EvmDecoderInterface):
             SAFE_VESTING: (self._decode_safe_vesting,),
             SAFE_LOCKING: (self._decode_safe_locker,),
             SAFEPASS_AIRDROP: (self._decode_safpass_claim,),
+            SAFENET_STAKING: (self._decode_safenet_staking,),
         }
 
     @staticmethod
