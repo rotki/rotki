@@ -388,8 +388,10 @@ class DBHistoryEvents:
             self,
             write_cursor: 'DBCursor',
             history: Sequence[HistoryBaseEntry],
-    ) -> None:
+    ) -> int:
         """Insert a list of history events in the database with batched modification tracking.
+
+        Returns the number of newly inserted events, excluding duplicates.
 
         This method batches modification tracking for efficiency:
         - Instead of calling _mark_events_modified() for each event,
@@ -399,8 +401,9 @@ class DBHistoryEvents:
         Check add_history_event() to see possible Exceptions
         """
         if not history:
-            return
+            return 0
 
+        inserted_count = 0
         min_timestamp: TimestampMS | None = None
         # Load the ignored-asset set once for the whole batch (the call is cached) so each event
         # insert avoids a per-event correlated subquery to compute its `ignored` flag.
@@ -408,20 +411,20 @@ class DBHistoryEvents:
 
         # Add all events WITHOUT calling _mark_events_modified for each
         for event in history:
-            if (
-                self.add_history_event(
-                    write_cursor=write_cursor,
-                    event=event,
-                    skip_tracking=True,  # Skip tracking per-event
-                    ignored_assets=ignored_assets,
-                ) is not None  # Only track if event was actually added (not a duplicate)
-                and (min_timestamp is None or event.timestamp < min_timestamp)
-            ):
-                # Track the minimum timestamp
-                min_timestamp = event.timestamp
+            if self.add_history_event(
+                write_cursor=write_cursor,
+                event=event,
+                skip_tracking=True,  # Skip tracking per-event
+                ignored_assets=ignored_assets,
+            ) is not None:  # Only track if event was actually added (not a duplicate)
+                inserted_count += 1
+                if min_timestamp is None or event.timestamp < min_timestamp:
+                    # Track the minimum timestamp
+                    min_timestamp = event.timestamp
 
         # Call tracking ONCE for the entire batch with minimum timestamp
         # TODO (balances): add _mark_events_modified for min_timestamp if min_timestamp is not None
+        return inserted_count
 
     @staticmethod
     def save_history_event_backup(

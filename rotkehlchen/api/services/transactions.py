@@ -71,6 +71,7 @@ if TYPE_CHECKING:
     from rotkehlchen.assets.asset import CryptoAsset, EvmToken
     from rotkehlchen.chain.accounts import OptionalBlockchainAccount
     from rotkehlchen.chain.evm.types import EvmIndexer, WeightedNode
+    from rotkehlchen.chain.hyperliquid.manager import HyperliquidManager
     from rotkehlchen.chain.manager import ChainManagerWithNodesMixin
     from rotkehlchen.db.drivers.gevent import DBCursor
     from rotkehlchen.fval import FVal
@@ -725,6 +726,7 @@ class TransactionsService:
                 ])
 
         new_transactions: set[tuple[str, str]] = set()
+        new_history_events_count = 0
         for query_chain in chains_to_query:
             if query_chain == SupportedBlockchain.SOLANA:
                 new_transactions |= self._query_txs_for_range(
@@ -758,6 +760,12 @@ class TransactionsService:
                         ) or []
                     ),
                 )
+                if query_chain == SupportedBlockchain.HYPERLIQUID:
+                    new_history_events_count += self._refetch_hyperliquid_core_history(
+                        from_timestamp=from_timestamp,
+                        to_timestamp=to_timestamp,
+                        address=address,
+                    )
 
         formatted_new_transactions: defaultdict[str, list[str]] = defaultdict(list)
         for chain_key, tx_hash in new_transactions:
@@ -769,10 +777,62 @@ class TransactionsService:
             'result': {
                 'new_transactions': formatted_new_transactions,
                 'new_transactions_count': new_transactions_count,
+                'new_history_events_count': new_history_events_count,
             },
             'message': '',
             'status_code': HTTPStatus.OK,
         }
+
+    def _refetch_hyperliquid_core_history(
+            self,
+            from_timestamp: Timestamp,
+            to_timestamp: Timestamp,
+            address: ChecksumEvmAddress | SolanaAddress | None,
+    ) -> int:
+        if not (addresses_to_query := self._get_addresses_to_query(
+            blockchain=SupportedBlockchain.HYPERLIQUID,
+            address=address,
+        )):
+            return 0
+
+        manager = cast(
+            'HyperliquidManager',
+            self.rotkehlchen.chains_aggregator.get_chain_manager(
+                blockchain=SupportedBlockchain.HYPERLIQUID,
+            ),
+        )
+        events_count = 0
+        for addr in addresses_to_query:
+            try:
+                events_count += manager.refetch_proprietary_history(
+                    address=cast('ChecksumEvmAddress', addr),
+                    start_ts=from_timestamp,
+                    end_ts=to_timestamp,
+                )
+            except (sqlcipher.IntegrityError, RemoteError, DeserializationError) as e:  # pylint: disable=no-member
+                log.debug(
+                    'Skipping Hyperliquid core history refetching for %s due to: %s',
+                    addr,
+                    e,
+                )
+
+        return events_count
+
+    def _get_addresses_to_query(
+            self,
+            blockchain: CHAINS_WITH_TRANSACTION_DECODERS_TYPE,
+            address: ChecksumEvmAddress | SolanaAddress | None,
+    ) -> tuple[ChecksumEvmAddress | SolanaAddress, ...]:
+        if address:
+            return (address,)
+
+        with self.rotkehlchen.data.db.conn.read_ctx() as cursor:
+            return cast('tuple[ChecksumEvmAddress | SolanaAddress, ...]', tuple(
+                self.rotkehlchen.data.db.get_single_blockchain_addresses(
+                    cursor=cursor,
+                    blockchain=blockchain,
+                ),
+            ))
 
     def _query_txs_for_range(
             self,
@@ -785,18 +845,10 @@ class TransactionsService:
                 Callable[[SolanaAddress, Timestamp, Timestamp], list[Signature]]
             ),
     ) -> set[tuple[str, str]]:
-        if address:
-            addresses_to_query: tuple[ChecksumEvmAddress | SolanaAddress, ...] = (address,)
-        else:
-            with self.rotkehlchen.data.db.conn.read_ctx() as cursor:
-                addresses_to_query = tuple(
-                    self.rotkehlchen.data.db.get_single_blockchain_addresses(
-                        cursor=cursor,
-                        blockchain=blockchain,
-                    ),
-                )
-
-        if len(addresses_to_query) == 0:
+        if not (addresses_to_query := self._get_addresses_to_query(
+            blockchain=blockchain,
+            address=address,
+        )):
             return set()
 
         new_transactions: set[tuple[str, str]] = set()

@@ -3,6 +3,7 @@ Changelog
 =========
 
 * :release:`1.43.2 <2026-06-17>`
+* :bug:`-` Manually refetching Hyperliquid transactions now also refetches Hyperliquid Core history, so missed Core events can be recovered.
 * :bug:`-` EUR pegged assets are now valued correctly for users whose main currency is BTC, instead of causing balance queries to fail.
 * :bug:`-` The block number shown in a MEV reward transaction event's note is now a clickable link, like it already is for the related block production event.
 * :bug:`-` The net worth graph on the dashboard no longer smooths the line between points, so it now reflects your actual balance changes instead of curving past them.

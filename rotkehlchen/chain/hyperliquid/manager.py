@@ -22,6 +22,7 @@ from .tokens import HyperliquidTokens
 from .transactions import HyperliquidTransactions
 
 if TYPE_CHECKING:
+    from rotkehlchen.history.events.structures.base import HistoryBaseEntry
     from rotkehlchen.premium.premium import Premium
 
     from .node_inquirer import HyperliquidInquirer
@@ -118,6 +119,24 @@ class HyperliquidManager(EvmManager):
 
         return balances
 
+    @staticmethod
+    def _query_proprietary_history_range(
+            api: HyperliquidAPI,
+            address: ChecksumEvmAddress,
+            range_start: Timestamp,
+            range_end: Timestamp,
+    ) -> list['HistoryBaseEntry']:
+        """Query Hyperliquid core history for a single address range.
+
+        May raise:
+        - RemoteError
+        """
+        return api.query_history_events(
+            address=address,
+            start_ts=range_start,
+            end_ts=range_end,
+        )
+
     def query_proprietary_history(
             self,
             addresses: Sequence[ChecksumEvmAddress],
@@ -141,10 +160,11 @@ class HyperliquidManager(EvmManager):
 
             for range_start, range_end in ranges_to_query:
                 try:
-                    events = api.query_history_events(
+                    events = self._query_proprietary_history_range(
+                        api=api,
                         address=address,
-                        start_ts=range_start,
-                        end_ts=range_end,
+                        range_start=range_start,
+                        range_end=range_end,
                     )
                 except RemoteError as e:
                     log.error(
@@ -164,6 +184,30 @@ class HyperliquidManager(EvmManager):
                         location_string=location_string,
                         queried_ranges=[(range_start, range_end)],
                     )
+
+    def refetch_proprietary_history(
+            self,
+            address: ChecksumEvmAddress,
+            start_ts: Timestamp,
+            end_ts: Timestamp,
+    ) -> int:
+        """Force refetch Hyperliquid core history without checking/updating query ranges.
+
+        May raise:
+        - RemoteError
+        - sqlcipher.IntegrityError: If the asset of an added history event does not exist.
+        """
+        events = self._query_proprietary_history_range(
+            api=HyperliquidAPI(),
+            address=address,
+            range_start=start_ts,
+            range_end=end_ts,
+        )
+        with self.node_inquirer.database.user_write() as write_cursor:
+            return DBHistoryEvents(self.node_inquirer.database).add_history_events(
+                write_cursor=write_cursor,
+                history=events,
+            )
 
     def query_transactions(
             self,

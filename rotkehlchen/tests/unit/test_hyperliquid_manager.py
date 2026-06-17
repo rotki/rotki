@@ -1,6 +1,7 @@
 from contextlib import contextmanager
 from unittest.mock import MagicMock, patch
 
+from rotkehlchen.api.services.transactions import TransactionsService
 from rotkehlchen.chain.evm.manager import EvmManager
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.chain.hyperliquid.manager import (
@@ -8,7 +9,7 @@ from rotkehlchen.chain.hyperliquid.manager import (
     HyperliquidManager,
 )
 from rotkehlchen.errors.misc import RemoteError
-from rotkehlchen.types import Timestamp
+from rotkehlchen.types import SupportedBlockchain, Timestamp
 
 
 @contextmanager
@@ -103,6 +104,76 @@ def test_query_proprietary_history_uses_core_specific_range_key() -> None:
     assert ranges.get_location_query_ranges.call_args[1]['location_string'] == (
         f'{HYPERLIQUID_CORE_HISTORY_RANGE_PREFIX}_{address}'
     )
+
+
+def test_refetch_proprietary_history_ignores_query_ranges() -> None:
+    manager = HyperliquidManager.__new__(HyperliquidManager)
+
+    address = string_to_evm_address('0x000000000000000000000000000000000000dEaD')
+    db = MagicMock()
+    db.user_write.side_effect = _dummy_ctx
+    manager.node_inquirer = MagicMock(database=db)
+
+    history_db = MagicMock()
+    history_db.add_history_events.return_value = 2
+    fake_events = [MagicMock(), MagicMock()]
+    hyperliquid = MagicMock()
+    hyperliquid.query_history_events.return_value = fake_events
+
+    with (
+        patch('rotkehlchen.chain.hyperliquid.manager.DBQueryRanges') as ranges,
+        patch('rotkehlchen.chain.hyperliquid.manager.DBHistoryEvents', return_value=history_db),
+        patch('rotkehlchen.chain.hyperliquid.manager.HyperliquidAPI', return_value=hyperliquid),
+    ):
+        assert manager.refetch_proprietary_history(
+            address=address,
+            start_ts=Timestamp(0),
+            end_ts=Timestamp(100),
+        ) == 2
+
+    ranges.assert_not_called()
+    hyperliquid.query_history_events.assert_called_once_with(
+        address=address,
+        start_ts=Timestamp(0),
+        end_ts=Timestamp(100),
+    )
+    history_db.add_history_events.assert_called_once()
+
+
+def test_force_refetch_transactions_also_refetches_hyperliquid_core_history() -> None:
+    service = TransactionsService(rotkehlchen=MagicMock())
+    address = string_to_evm_address('0x000000000000000000000000000000000000dEaD')
+
+    with (
+        patch.object(
+            TransactionsService,
+            '_query_txs_for_range',
+            return_value=set(),
+        ) as refetch_evm,
+        patch.object(
+            TransactionsService,
+            '_refetch_hyperliquid_core_history',
+            return_value=1,
+        ) as refetch_core,
+    ):
+        result = service.force_refetch_transactions(
+            chain=SupportedBlockchain.HYPERLIQUID,
+            address=address,
+            from_timestamp=Timestamp(0),
+            to_timestamp=Timestamp(100),
+        )
+
+    refetch_evm.assert_called_once()
+    refetch_core.assert_called_once_with(
+        from_timestamp=Timestamp(0),
+        to_timestamp=Timestamp(100),
+        address=address,
+    )
+    assert result['result'] == {
+        'new_transactions': {},
+        'new_transactions_count': 0,
+        'new_history_events_count': 1,
+    }
 
 
 def test_query_transactions_also_queries_proprietary_history() -> None:
