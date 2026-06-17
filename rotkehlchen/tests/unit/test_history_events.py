@@ -298,6 +298,28 @@ def test_edit_bitcoin_event_updates_counterparty_mappings(database: 'DBHandler')
         ).fetchone()[0] == 0
 
 
+def test_add_history_events_returns_only_inserted_count(database: 'DBHandler') -> None:
+    events_db = DBHistoryEvents(database)
+    event = HistoryEvent(
+        group_identifier='duplicate_batch_insert_test',
+        sequence_index=0,
+        timestamp=TimestampMS(1710000000000),
+        location=Location.KRAKEN,
+        event_type=HistoryEventType.RECEIVE,
+        event_subtype=HistoryEventSubType.NONE,
+        asset=A_ETH,
+        amount=ONE,
+    )
+
+    with database.user_write() as write_cursor:
+        assert events_db.add_history_events(write_cursor=write_cursor, history=[event]) == 1
+        assert events_db.add_history_events(write_cursor=write_cursor, history=[event]) == 0
+        assert write_cursor.execute(
+            'SELECT COUNT(*) FROM history_events WHERE group_identifier=?',
+            ('duplicate_batch_insert_test',),
+        ).fetchone()[0] == 1
+
+
 def test_add_history_events_sets_ignored_flag(database: 'DBHandler') -> None:
     """Batch insert must set the `ignored` flag from the precomputed ignored-asset set: 1 for
     events whose asset is ignored, 0 (the column default) otherwise. Regression test for the
