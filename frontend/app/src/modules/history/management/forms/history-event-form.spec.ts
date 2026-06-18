@@ -68,17 +68,11 @@ describe('component/HistoryEventForm.vue', () => {
 
   it.each(formTypesYouCanAddTo)('changes to proper form %s', async (value: string) => {
     wrapper = await createWrapper();
-    await wrapper.find('[data-cy=entry-type] [data-id=activator]').trigger('click');
+    // RuiMenuSelect virtualizes its options, so the target option button is not
+    // guaranteed to be rendered in the test DOM. Drive the v-model directly to
+    // select the entry type instead of relying on clicking a virtualized button.
+    await wrapper.findComponent({ name: 'RuiMenuSelect' }).setValue(value);
     await vi.advanceTimersToNextTimerAsync();
-
-    const options = wrapper.find('[data-id="content"]').findAll('button');
-    for (const option of options) {
-      if (option.text() === value) {
-        await option.trigger('click');
-        await vi.advanceTimersToNextTimerAsync();
-        break;
-      }
-    }
 
     const id = value.split(/ /g).join('-');
     expect(wrapper.find(`[data-cy=${id}-form]`).exists(), `id: ${id}`).toBe(true);

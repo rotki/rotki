@@ -1,3 +1,7 @@
+@import 'roboto-fontface/css/roboto/roboto-fontface.css';
+@import 'typeface-roboto-mono/index.css';
+@import 'flag-icons/css/flag-icons.min.css';
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
