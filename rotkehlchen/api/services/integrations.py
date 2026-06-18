@@ -2,9 +2,8 @@ import logging
 from http import HTTPStatus
 from typing import TYPE_CHECKING, Any
 
-import gevent
-
 from rotkehlchen.chain.evm.types import ChainID
+from rotkehlchen.concurrency import spawn
 from rotkehlchen.db.calendar import CalendarEntry, CalendarFilterQuery, DBCalendar, ReminderEntry
 from rotkehlchen.errors.misc import InputError, RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
@@ -203,7 +202,7 @@ class IntegrationsService:
         except RemoteError as e:
             return {'result': None, 'message': str(e), 'status_code': HTTPStatus.BAD_REQUEST}
 
-        gevent.spawn(self.rotkehlchen.monerium.get_and_process_orders)
+        spawn(self.rotkehlchen.monerium.get_and_process_orders)
         return {'result': result, 'message': '', 'status_code': HTTPStatus.OK}
 
     def disconnect_monerium(self) -> dict[str, Any]:
@@ -259,7 +258,7 @@ class IntegrationsService:
         if gnosispay_decoder is not None:
             gnosispay_decoder.reload_data()  # type: ignore
             if gnosispay_decoder.gnosispay_api is not None:  # type: ignore
-                gevent.spawn(
+                spawn(
                     gnosispay_decoder.gnosispay_api.backfill_missing_events,  # type: ignore
                 )
 

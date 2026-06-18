@@ -1,7 +1,7 @@
 import logging
+import time
 from typing import TYPE_CHECKING, Any, Final, Literal, NamedTuple
 
-import gevent
 from requests import Response
 from sqlcipher3 import dbapi2 as sqlcipher
 
@@ -228,7 +228,7 @@ class Etherscan(ExternalServiceWithRecommendedApiKey, EtherscanLikeApi):
                         f'querying chain {chain_id}. Will backoff for {current_backoff} seconds.',
                     )
                     self._rate_limiter.shrink_after_429()
-                    gevent.sleep(current_backoff)
+                    time.sleep(current_backoff)
                     return current_backoff * 2
 
                 elif result.startswith('Max daily'):

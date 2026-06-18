@@ -2,10 +2,10 @@ import json
 import logging
 from collections import defaultdict
 from http import HTTPStatus
+from threading import Semaphore
 from typing import TYPE_CHECKING, Any, Final, Literal, NamedTuple
 
 import requests
-from gevent.lock import Semaphore
 from requests.adapters import Response
 
 from rotkehlchen.assets.converters import asset_from_cryptocom

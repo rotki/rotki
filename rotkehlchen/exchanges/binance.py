@@ -2,6 +2,7 @@ import hashlib
 import json
 import logging
 import operator
+import time
 from collections import defaultdict
 from collections.abc import Callable, Sequence
 from contextlib import suppress
@@ -10,7 +11,6 @@ from typing import TYPE_CHECKING, Any, Final, Literal
 from urllib.parse import urlencode
 from uuid import uuid4
 
-import gevent
 import requests
 from rsqlite import IntegrityError
 
@@ -409,7 +409,7 @@ class Binance(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
                 )
                 if tries_left >= 1:
                     backoff_seconds = 10 / tries_left
-                    gevent.sleep(backoff_seconds)
+                    time.sleep(backoff_seconds)
                     tries_left -= 1
                     continue
 

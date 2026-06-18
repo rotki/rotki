@@ -3,11 +3,10 @@ from abc import abstractmethod
 from collections import defaultdict
 from collections.abc import Callable, Sequence
 from http.client import RemoteDisconnected
+from threading import Event, RLock, Semaphore
 from typing import TYPE_CHECKING, Any
 
 import requests
-from gevent.event import Event
-from gevent.lock import RLock, Semaphore
 
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.api.websockets.typedefs import (

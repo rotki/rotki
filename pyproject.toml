@@ -356,6 +356,7 @@ select = [
     # "TD",  # this is just to detect todos
     # "FIX",  # this is just to detect todos
     # "TID",  # tidy-imports -- we use relative imports from parent in some cases. Maybe stop?
+    "TID251",  # banned-api -- gevent is banned outside the migration allowlist. See docs/designs/gevent_to_asyncio.md
     # "ARG",  # flake8-unused-arguments -- pylint already does this and we got ignores where needed
     "PL",  # all pylint rules
     "PIE",
@@ -432,6 +433,14 @@ ignore = [
     "RUF069",  # https://github.com/astral-sh/ruff/issues/23281
 ]
 
+[tool.ruff.lint.flake8-tidy-imports.banned-api]
+# gevent removal migration (docs/designs/gevent_to_asyncio.md): new code must
+# use stdlib threading/time primitives or rotkehlchen.concurrency. The
+# per-file-ignores below form the allowlist that shrinks as phases complete;
+# an empty allowlist (tests aside) is the precondition for the final flip.
+"gevent".msg = "use threading/time primitives or rotkehlchen.concurrency instead; see docs/designs/gevent_to_asyncio.md"
+"geventwebsocket".msg = "geventwebsocket is being removed; see docs/designs/gevent_to_asyncio.md"
+
 [tool.ruff.lint.flake8-quotes]
 avoid-escape = true
 docstring-quotes = "double"
@@ -443,12 +452,34 @@ combine-as-imports = true
 known-third-party = ["packaging"]  # packaging is otherwise detected as first-party due to the ./packaging folder
 
 [tool.ruff.lint.per-file-ignores]
+# TID251 allowlist for the gevent removal migration. Each entry names the
+# phase of docs/designs/gevent_to_asyncio.md that deletes it.
+"rotkehlchen/server.py" = ["TID251"]  # gevent hub signal handling (phase 6)
+"rotkehlchen/logging.py" = ["TID251"]  # greenlet name in log records (phase 5)
+"rotkehlchen/rotkehlchen.py" = ["TID251"]  # main loop spawn/shutdown event (phase 5)
+"rotkehlchen/api/rest.py" = ["TID251"]  # async-query greenlets and killall (phases 2/5)
+"rotkehlchen/api/websockets/notifier.py" = ["TID251"]  # geventwebsocket (phase 4)
+"rotkehlchen/chain/substrate/manager.py" = ["TID251"]  # gevent.Timeout (phase 2)
+"rotkehlchen/db/drivers/gevent.py" = ["TID251"]  # the DB driver itself (phase 3)
+"rotkehlchen/greenlets/*" = ["TID251"]  # greenlet manager (phase 5)
+"rotkehlchen/tasks/manager.py" = ["TID251"]  # greenlet typing/scheduling (phase 5)
+"rotkehlchen/premium/sync.py" = ["TID251"]  # gevent hub threadpool offload (phase 5)
+"rotkehlchen/concurrency/*" = ["TID251"]  # the seam's gevent backend (phase 6)
+"pytestgeventwrapper.py" = ["TID251"]  # deleted at phase 6
 "tools/*" = [
     "T201",  # got prints in tools
     "INP001",  # no need for __init__ in tools
+    "TID251",  # standalone entrypoints monkeypatch until phase 6 of docs/designs/gevent_to_asyncio.md
 ]
-"rotkehlchen/__main__.py" = ["T201"]  # got prints in main
-"rotkehlchen/api/server.py" = ["T201"]  # got prints in server.py
+"rotkehlchen_mock/__main__.py" = ["TID251"]  # standalone entrypoint, monkeypatches until phase 6
+"rotkehlchen/__main__.py" = [
+    "T201",  # got prints in main
+    "TID251",  # monkey patching (phase 6)
+]
+"rotkehlchen/api/server.py" = [
+    "T201",  # got prints in server.py
+    "TID251",  # gevent WSGIServer + geventwebsocket (phase 4)
+]
 "rotkehlchen/args.py" = ["T201"]  # got prints in args.py
 "rotkehlchen/db/minimized_schema.py" = [
     "E501",  # huge lines there
@@ -461,6 +492,7 @@ known-third-party = ["packaging"]  # packaging is otherwise detected as first-pa
 "rotkehlchen/tests/*" = [
     "S113",    # tests have no timeout in requests
     "RUF018",  # We have assignments in assert in tests and that's fine there
+    "TID251",  # test infra migrates from gevent in phases 2-3 of docs/designs/gevent_to_asyncio.md
 ]
 "rotkehlchen/tests/conftest.py" = [
     "S602",  # test setup. No problem with shell=True

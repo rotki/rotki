@@ -1,5 +1,6 @@
 import logging
 import operator
+import time
 from abc import ABC, abstractmethod
 from collections import defaultdict
 from collections.abc import Callable, Sequence
@@ -7,7 +8,6 @@ from contextlib import suppress
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, NamedTuple, Optional, Protocol
 
-import gevent
 from eth_abi.exceptions import DecodingError
 from web3.exceptions import Web3Exception
 
@@ -593,7 +593,7 @@ class EVMTransactionDecoder(TransactionDecoder['EvmTransaction', EvmDecodingRule
 
             if (idx + 1) % MIN_LOGS_PROCESSED_TO_SLEEP == 0:
                 log.debug(f'Context switching out of the log event nr. {idx + 1} of {self.evm_inquirer.chain_name} {transaction}')  # noqa: E501
-                gevent.sleep(0)
+                time.sleep(0)
 
             context = DecoderContext(
                 tx_log=tx_log,
