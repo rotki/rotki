@@ -14,9 +14,6 @@ import { createRuiPlugin } from '@/plugins/rui';
 import { router } from '@/router';
 
 import './main.css';
-import 'roboto-fontface/css/roboto/roboto-fontface.css';
-import 'typeface-roboto-mono';
-import 'flag-icons/css/flag-icons.min.css';
 
 const isDevelopment = checkIfDevelopment() && !import.meta.env.VITE_TEST;
 const IS_CLIENT = typeof window !== 'undefined';

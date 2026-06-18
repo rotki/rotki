@@ -20,9 +20,9 @@ import type {
 
 declare module 'vue-router' {
   interface TypesConfig {
-    ParamParsers:
-      | never
+    _ParamParsers: {}
     RouteNamedMap: import('vue-router/auto-routes').RouteNamedMap
+    _RouteFileInfoMap: import('vue-router/auto-routes')._RouteFileInfoMap
   }
 }
 
@@ -509,11 +509,15 @@ declare module 'vue-router/auto-routes' {
         | '/'
       views:
         | never
+      pathParamNames:
+        | never
     }
     'src/pages/404.vue': {
       routes:
         | '/404'
       views:
+        | never
+      pathParamNames:
         | never
     }
     'src/pages/accounts/index.vue': {
@@ -521,11 +525,15 @@ declare module 'vue-router/auto-routes' {
         | 'accounts'
       views:
         | never
+      pathParamNames:
+        | never
     }
     'src/pages/accounts/bitcoin/index.vue': {
       routes:
         | 'accounts-bitcoin'
       views:
+        | never
+      pathParamNames:
         | never
     }
     'src/pages/accounts/evm/[[tab]].vue': {
@@ -533,11 +541,15 @@ declare module 'vue-router/auto-routes' {
         | 'accounts-evm'
       views:
         | never
+      pathParamNames:
+        | 'tab'
     }
     'src/pages/accounts/solana/index.vue': {
       routes:
         | 'accounts-solana'
       views:
+        | never
+      pathParamNames:
         | never
     }
     'src/pages/accounts/substrate/index.vue': {
@@ -545,11 +557,15 @@ declare module 'vue-router/auto-routes' {
         | 'accounts-substrate'
       views:
         | never
+      pathParamNames:
+        | never
     }
     'src/pages/address-book-manager/index.vue': {
       routes:
         | '/address-book-manager/'
       views:
+        | never
+      pathParamNames:
         | never
     }
     'src/pages/airdrops/index.vue': {
@@ -557,11 +573,15 @@ declare module 'vue-router/auto-routes' {
         | '/airdrops/'
       views:
         | never
+      pathParamNames:
+        | never
     }
     'src/pages/api-keys/index.vue': {
       routes:
         | '/api-keys/'
       views:
+        | never
+      pathParamNames:
         | never
     }
     'src/pages/api-keys/exchanges/index.vue': {
@@ -569,11 +589,15 @@ declare module 'vue-router/auto-routes' {
         | '/api-keys/exchanges/'
       views:
         | never
+      pathParamNames:
+        | never
     }
     'src/pages/api-keys/external/index.vue': {
       routes:
         | '/api-keys/external/'
       views:
+        | never
+      pathParamNames:
         | never
     }
     'src/pages/api-keys/premium/index.vue': {
@@ -581,11 +605,15 @@ declare module 'vue-router/auto-routes' {
         | '/api-keys/premium/'
       views:
         | never
+      pathParamNames:
+        | never
     }
     'src/pages/asset-manager/index.vue': {
       routes:
         | '/asset-manager/'
       views:
+        | never
+      pathParamNames:
         | never
     }
     'src/pages/asset-manager/custom/index.vue': {
@@ -593,11 +621,15 @@ declare module 'vue-router/auto-routes' {
         | 'asset-manager-custom'
       views:
         | never
+      pathParamNames:
+        | never
     }
     'src/pages/asset-manager/managed/index.vue': {
       routes:
         | 'asset-manager-managed'
       views:
+        | never
+      pathParamNames:
         | never
     }
     'src/pages/asset-manager/more.vue': {
@@ -610,11 +642,15 @@ declare module 'vue-router/auto-routes' {
         | 'asset-manager-solana-token-migration'
       views:
         | 'default'
+      pathParamNames:
+        | never
     }
     'src/pages/asset-manager/more/cex-mapping/index.vue': {
       routes:
         | 'asset-manager-cex-mapping'
       views:
+        | never
+      pathParamNames:
         | never
     }
     'src/pages/asset-manager/more/counterparty-mapping/index.vue': {
@@ -622,11 +658,15 @@ declare module 'vue-router/auto-routes' {
         | 'asset-manager-counterparty-mapping'
       views:
         | never
+      pathParamNames:
+        | never
     }
     'src/pages/asset-manager/more/missing-mappings/index.vue': {
       routes:
         | 'asset-manager-missing-mappings'
       views:
+        | never
+      pathParamNames:
         | never
     }
     'src/pages/asset-manager/more/newly-detected/index.vue': {
@@ -634,11 +674,15 @@ declare module 'vue-router/auto-routes' {
         | 'asset-manager-newly-detected'
       views:
         | never
+      pathParamNames:
+        | never
     }
     'src/pages/asset-manager/more/solana-token-migration/index.vue': {
       routes:
         | 'asset-manager-solana-token-migration'
       views:
+        | never
+      pathParamNames:
         | never
     }
     'src/pages/assets/[identifier].vue': {
@@ -646,11 +690,15 @@ declare module 'vue-router/auto-routes' {
         | '/assets/[identifier]'
       views:
         | never
+      pathParamNames:
+        | 'identifier'
     }
     'src/pages/balances/index.vue': {
       routes:
         | 'balances'
       views:
+        | never
+      pathParamNames:
         | never
     }
     'src/pages/balances/blockchain/index.vue': {
@@ -658,23 +706,31 @@ declare module 'vue-router/auto-routes' {
         | 'balances-blockchain'
       views:
         | never
+      pathParamNames:
+        | never
     }
     'src/pages/balances/exchange/[[exchange]].vue': {
       routes:
         | 'balances-exchange'
       views:
         | never
+      pathParamNames:
+        | 'exchange'
     }
     'src/pages/balances/manual/[[tab]].vue': {
       routes:
         | 'balances-manual'
       views:
         | never
+      pathParamNames:
+        | 'tab'
     }
     'src/pages/balances/non-fungible/index.vue': {
       routes:
         | 'balances-non-fungible'
       views:
+        | never
+      pathParamNames:
         | never
     }
     'src/pages/calendar/index.vue': {
@@ -682,11 +738,15 @@ declare module 'vue-router/auto-routes' {
         | '/calendar/'
       views:
         | never
+      pathParamNames:
+        | never
     }
     'src/pages/dashboard/index.vue': {
       routes:
         | 'dashboard'
       views:
+        | never
+      pathParamNames:
         | never
     }
     'src/pages/history/index.vue': {
@@ -694,11 +754,15 @@ declare module 'vue-router/auto-routes' {
         | '/history/'
       views:
         | never
+      pathParamNames:
+        | never
     }
     'src/pages/history/events/index.vue': {
       routes:
         | 'history-events'
       views:
+        | never
+      pathParamNames:
         | never
     }
     'src/pages/import/index.vue': {
@@ -706,17 +770,23 @@ declare module 'vue-router/auto-routes' {
         | 'import'
       views:
         | never
+      pathParamNames:
+        | never
     }
     'src/pages/locations/[identifier].vue': {
       routes:
         | '/locations/[identifier]'
       views:
         | never
+      pathParamNames:
+        | 'identifier'
     }
     'src/pages/nfts/index.vue': {
       routes:
         | 'nfts'
       views:
+        | never
+      pathParamNames:
         | never
     }
     'src/pages/onchain/index.vue': {
@@ -724,11 +794,15 @@ declare module 'vue-router/auto-routes' {
         | '/onchain/'
       views:
         | never
+      pathParamNames:
+        | never
     }
     'src/pages/onchain/send/index.vue': {
       routes:
         | '/onchain/send/'
       views:
+        | never
+      pathParamNames:
         | never
     }
     'src/pages/playground/index.vue': {
@@ -736,11 +810,15 @@ declare module 'vue-router/auto-routes' {
         | 'playground'
       views:
         | never
+      pathParamNames:
+        | never
     }
     'src/pages/price-manager/index.vue': {
       routes:
         | 'price-manager'
       views:
+        | never
+      pathParamNames:
         | never
     }
     'src/pages/price-manager/historic/index.vue': {
@@ -748,11 +826,15 @@ declare module 'vue-router/auto-routes' {
         | 'price-manager-historic'
       views:
         | never
+      pathParamNames:
+        | never
     }
     'src/pages/price-manager/latest/index.vue': {
       routes:
         | 'price-manager-current'
       views:
+        | never
+      pathParamNames:
         | never
     }
     'src/pages/price-manager/oracle/index.vue': {
@@ -760,11 +842,15 @@ declare module 'vue-router/auto-routes' {
         | 'price-manager-oracle'
       views:
         | never
+      pathParamNames:
+        | never
     }
     'src/pages/reports/index.vue': {
       routes:
         | '/reports/'
       views:
+        | never
+      pathParamNames:
         | never
     }
     'src/pages/reports/[id].vue': {
@@ -772,11 +858,15 @@ declare module 'vue-router/auto-routes' {
         | '/reports/[id]'
       views:
         | never
+      pathParamNames:
+        | 'id'
     }
     'src/pages/reports/wrapper.vue': {
       routes:
         | '/reports/wrapper'
       views:
+        | never
+      pathParamNames:
         | never
     }
     'src/pages/settings.vue': {
@@ -793,11 +883,15 @@ declare module 'vue-router/auto-routes' {
         | '/settings/rpc/'
       views:
         | 'default'
+      pathParamNames:
+        | never
     }
     'src/pages/settings/account/index.vue': {
       routes:
         | '/settings/account/'
       views:
+        | never
+      pathParamNames:
         | never
     }
     'src/pages/settings/accounting/index.vue': {
@@ -805,11 +899,15 @@ declare module 'vue-router/auto-routes' {
         | '/settings/accounting/'
       views:
         | never
+      pathParamNames:
+        | never
     }
     'src/pages/settings/database/index.vue': {
       routes:
         | '/settings/database/'
       views:
+        | never
+      pathParamNames:
         | never
     }
     'src/pages/settings/evm/index.vue': {
@@ -817,11 +915,15 @@ declare module 'vue-router/auto-routes' {
         | '/settings/evm/'
       views:
         | never
+      pathParamNames:
+        | never
     }
     'src/pages/settings/general/index.vue': {
       routes:
         | '/settings/general/'
       views:
+        | never
+      pathParamNames:
         | never
     }
     'src/pages/settings/interface/index.vue': {
@@ -829,11 +931,15 @@ declare module 'vue-router/auto-routes' {
         | '/settings/interface/'
       views:
         | never
+      pathParamNames:
+        | never
     }
     'src/pages/settings/modules/index.vue': {
       routes:
         | '/settings/modules/'
       views:
+        | never
+      pathParamNames:
         | never
     }
     'src/pages/settings/oracle/index.vue': {
@@ -841,11 +947,15 @@ declare module 'vue-router/auto-routes' {
         | '/settings/oracle/'
       views:
         | never
+      pathParamNames:
+        | never
     }
     'src/pages/settings/rpc/index.vue': {
       routes:
         | '/settings/rpc/'
       views:
+        | never
+      pathParamNames:
         | never
     }
     'src/pages/staking/[[location]].vue': {
@@ -853,11 +963,15 @@ declare module 'vue-router/auto-routes' {
         | '/staking/[[location]]'
       views:
         | never
+      pathParamNames:
+        | 'location'
     }
     'src/pages/statistics/index.vue': {
       routes:
         | '/statistics/'
       views:
+        | never
+      pathParamNames:
         | never
     }
     'src/pages/statistics/graphs/index.vue': {
@@ -865,11 +979,15 @@ declare module 'vue-router/auto-routes' {
         | 'statistics-graphs'
       views:
         | never
+      pathParamNames:
+        | never
     }
     'src/pages/statistics/history-events/index.vue': {
       routes:
         | 'statistics-history-events'
       views:
+        | never
+      pathParamNames:
         | never
     }
     'src/pages/tag-manager/index.vue': {
@@ -877,11 +995,15 @@ declare module 'vue-router/auto-routes' {
         | 'tag_manager'
       views:
         | never
+      pathParamNames:
+        | never
     }
     'src/pages/user/index.vue': {
       routes:
         | '/user/'
       views:
+        | never
+      pathParamNames:
         | never
     }
     'src/pages/user/create/index.vue': {
@@ -889,17 +1011,23 @@ declare module 'vue-router/auto-routes' {
         | '/user/create/'
       views:
         | never
+      pathParamNames:
+        | never
     }
     'src/pages/user/login/index.vue': {
       routes:
         | '/user/login/'
       views:
         | never
+      pathParamNames:
+        | never
     }
     'src/pages/wallet-bridge/index.vue': {
       routes:
         | '/wallet-bridge/'
       views:
+        | never
+      pathParamNames:
         | never
     }
   }
