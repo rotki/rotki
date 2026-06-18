@@ -937,6 +937,32 @@ def test_safe_locked(
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('ethereum_accounts', [['0xdD3B1AA220A65428AB96Db2C8C02890CC513aa07']])
+def test_safenet_staked(
+        ethereum_inquirer: 'EthereumInquirer',
+        ethereum_accounts: list[ChecksumEvmAddress],
+        inquirer: 'Inquirer',  # pylint: disable=unused-argument
+) -> None:
+    """Check that SAFE staked in SafeNet is properly detected."""
+    tx_hash = deserialize_evm_tx_hash('0xe2d848c50e978d10c9079c6468d81c5e427d81e729b91647a596e5aa27420a66')  # noqa: E501
+    amount = FVal('106361.771209977152494242')
+    _, tx_decoder = get_decoded_events_of_transaction(
+        evm_inquirer=ethereum_inquirer,
+        tx_hash=tx_hash,
+    )
+    protocol_balances_inquirer = SafeBalances(
+        evm_inquirer=ethereum_inquirer,
+        tx_decoder=tx_decoder,
+    )
+    protocol_balances = protocol_balances_inquirer.query_balances()
+    user_balance = protocol_balances[ethereum_accounts[0]]
+    assert user_balance.assets[Asset(SAFE_TOKEN_ID)][CPT_SAFE] == Balance(
+        amount=amount,
+        value=amount * FVal(1.5),
+    )
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('db_settings', LEGACY_TESTS_INDEXER_ORDER)
 @pytest.mark.parametrize('network_mocking', [False])
 @pytest.mark.parametrize('optimism_accounts', [[
