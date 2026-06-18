@@ -31,7 +31,7 @@ function buildAppKit(): AppKit {
     adapters: [new EthersAdapter()],
     allowUnsupportedChain: true,
     features: {
-      analytics: true,
+      analytics: false,
       email: false,
       onramp: false,
       socials: false,
