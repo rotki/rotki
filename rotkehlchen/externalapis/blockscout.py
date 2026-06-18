@@ -41,9 +41,9 @@ if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.types import EvmInternalTransaction, EvmTransaction
 
-# Blockscout returns a maximum of 10000 transactions per request.
-# https://docs.blockscout.com/devs/apis/rpc/account#get-transactions-by-address
-BLOCKSCOUT_PAGINATION_LIMIT = 10000
+# asked in telegram and the default equals to the max and it is 50 entries per page.
+# You can't change it
+BLOCKSCOUT_PAGINATION_LIMIT: Final = 50
 BLOCKSCOUT_PRO_API_BASE_URL = 'https://api.blockscout.com'
 AUTOSCOUT_INSTANCES: Final[dict[ChainID, str]] = {  # self launched instances by chains. Not in the PRO apis  # noqa: E501
     ChainID.HYPERLIQUID: 'https://www.hyperscan.com',

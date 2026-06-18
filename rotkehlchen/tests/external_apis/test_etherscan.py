@@ -12,7 +12,7 @@ from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.db.evmtx import DBEvmTx
 from rotkehlchen.db.filtering import EvmTransactionsFilterQuery
 from rotkehlchen.errors.misc import RemoteError
-from rotkehlchen.externalapis.etherscan import Etherscan
+from rotkehlchen.externalapis.etherscan import ETHERSCAN_PAGINATION_LIMIT, Etherscan
 from rotkehlchen.externalapis.etherscan_like import HasChainActivity
 from rotkehlchen.serialization.deserialize import deserialize_evm_transaction
 from rotkehlchen.tests.utils.mock import MockResponse
@@ -105,6 +105,25 @@ def test_maximum_daily_rate_limit_reached(temp_etherscan, **kwargs):  # pylint: 
             '0x4678f0a6958e4D2Bc4F1BAF7Bc52E8F3564f3fE4',
             '0xc455279100000000000000000000000027a2eaaa8bebea8d23db486fb49627c165baacb5',
         )
+
+
+def test_etherscan_uses_account_pagination_limit(temp_etherscan: 'Etherscan') -> None:
+    assert temp_etherscan._get_account_pagination_options(action='txlist', options={}) == {
+        'page': '1',
+        'offset': str(ETHERSCAN_PAGINATION_LIMIT),
+    }
+    assert temp_etherscan._get_account_pagination_options(action='txlistinternal', options={}) == {
+        'page': '1',
+        'offset': str(ETHERSCAN_PAGINATION_LIMIT),
+    }
+    assert temp_etherscan._get_account_pagination_options(action='tokentx', options={}) == {
+        'page': '1',
+        'offset': str(ETHERSCAN_PAGINATION_LIMIT),
+    }
+    assert temp_etherscan._get_account_pagination_options(
+        action='getminedblocks',
+        options={},
+    ) is None
 
 
 def test_get_logs_dedup_keeps_no_duplicates(temp_etherscan: 'Etherscan') -> None:
