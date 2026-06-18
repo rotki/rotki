@@ -35,6 +35,7 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
+# Etherscan account endpoints are expected to allow at most 1000 entries per page.
 ETHERSCAN_PAGINATION_LIMIT: Final = 1000
 ETHERSCAN_BASE_URL: Final = 'https://api.etherscan.io/v2/api'
 ROTKI_PACKAGED_KEY: Final = ApiKey('W9CEV6QB9NIPUEHD6KNEYM4PDX6KBPRVVR')
@@ -83,6 +84,16 @@ class Etherscan(ExternalServiceWithRecommendedApiKey, EtherscanLikeApi):
             'apikey': api_key,
             'chainid': str(chain_id.serialize()),
         }
+
+    def _get_account_pagination_options(
+            self,
+            action: str,
+            options: dict[str, Any],
+    ) -> dict[str, str] | None:
+        """Request the maximum page size for Etherscan account endpoints."""
+        if action in {'txlist', 'txlistinternal', 'tokentx'}:
+            return {'page': '1', 'offset': str(self.pagination_limit)}
+        return None
 
     def _additional_json_response_handling(
             self,
