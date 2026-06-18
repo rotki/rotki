@@ -13,7 +13,7 @@ type SetupContextAttrsKeys = (keyof SetupContextAttrs)[];
 function getRootKeys(data: SetupContextAttrs): SetupContextAttrsKeys {
   return Object.keys(data).filter(key =>
     key.startsWith('data-'),
-  ) as SetupContextAttrsKeys;
+  );
 }
 
 /**

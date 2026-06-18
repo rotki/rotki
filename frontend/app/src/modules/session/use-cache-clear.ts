@@ -40,7 +40,7 @@ export function useCacheClear<T>(
         error: '',
         success: message(text(source)).success,
       });
-      setTimeout(() => set(status, null), 5000);
+      setTimeout(set, 5000, status, null);
     }
     catch {
       set(status, {

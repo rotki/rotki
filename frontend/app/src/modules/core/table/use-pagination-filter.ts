@@ -146,7 +146,7 @@ export function usePaginationFilters<
 
   const sort = computed<DataTableSortData<TItem>>({
     get() {
-      return get(internalSorting) as DataTableSortData<TItem>;
+      return get(internalSorting);
     },
     set(sort) {
       const defaults = defaultSorting();
@@ -326,7 +326,7 @@ export function usePaginationFilters<
   };
 
   function getSortColumns(sorting: SingleColumnSorting<TItem>): string[] {
-    return sorting.column ? [sorting.column as string] : [];
+    return sorting.column ? [sorting.column] : [];
   }
 
   /**

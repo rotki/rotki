@@ -1,6 +1,13 @@
 import path from 'node:path';
+
 import rotki from '@rotki/eslint-config';
 import { translationKeys } from '@rotki/ui-library';
+
+// Pre-load the ESM-only ESLint parsers before the config factories run.
+// @intlify/eslint-plugin-vue-i18n require()s them while eslint composes configs
+// via Promise.all; warming them here avoids Node's ERR_REQUIRE_ESM_RACE_CONDITION.
+import 'jsonc-eslint-parser';
+import 'yaml-eslint-parser';
 
 export default rotki({
   ignores: ['app/backend-icons.generated.ts', 'app/tests/e2e/test-results/**'],

@@ -141,7 +141,7 @@ const hintText = computed<string>(() => {
 });
 
 const displayedAccounts = computed<AccountWithExtra[]>(() => {
-  const accounts = [...get(selectableAccounts)].map(item => ({
+  const accounts = Array.from(get(selectableAccounts), item => ({
     ...item,
     address: getAccountAddress(item),
     key: getAccountId(item),

@@ -41,7 +41,7 @@ function getWeekday(date: string | Dayjs) {
 const numberOfDaysInMonth = computed<number>(() => dayjs(visibleDate).daysInMonth());
 
 const currentMonthDays = computed(() =>
-  [...new Array(get(numberOfDaysInMonth))].map((_, index) => ({
+  Array.from(new Array(get(numberOfDaysInMonth)), (_, index) => ({
     date: dayjs(`${get(year)}-${get(month)}-${index + 1}`),
     isCurrentMonth: true,
   })),
@@ -58,7 +58,7 @@ const previousMonthDays = computed(() => {
     .subtract(visibleNumberOfDaysFromPreviousMonth, 'day')
     .date();
 
-  return [...new Array(visibleNumberOfDaysFromPreviousMonth)].map((_, index) => ({
+  return Array.from(new Array(visibleNumberOfDaysFromPreviousMonth), (_, index) => ({
     date: dayjs(`${previousMonth.year()}-${previousMonth.month() + 1}-${previousMonthLastMondayDayOfMonth + index}`),
     isCurrentMonth: false,
   }));
@@ -73,7 +73,7 @@ const nextMonthDays = computed(() => {
     ? 7 - lastDayOfTheMonthWeekday
     : lastDayOfTheMonthWeekday;
 
-  return [...new Array(visibleNumberOfDaysFromNextMonth)].map((_, index) => ({
+  return Array.from(new Array(visibleNumberOfDaysFromNextMonth), (_, index) => ({
     date: dayjs(`${nextMonth.year()}-${nextMonth.month() + 1}-${index + 1}`),
     isCurrentMonth: false,
   }));

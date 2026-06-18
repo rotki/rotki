@@ -27,10 +27,10 @@ export class RotkiApi {
     this._baseURL = `${this._serverUrl}/api/1/`;
     this.abortController = new AbortController();
     this._requestQueue = new RequestQueue(
-      async <T>(url: string, options?: Record<string, unknown>) => this.fetchDirect<T>(url, options as Omit<RotkiFetchOptions<'json', T>, 'skipQueue' | 'priority' | 'tags' | 'dedupe' | 'maxQueueTime' | 'queueRetries'>),
+      async <T>(url: string, options?: Record<string, unknown>) => this.fetchDirect<T>(url, options),
     );
     this._colibriRequestQueue = new RequestQueue(
-      async <T>(url: string, options?: Record<string, unknown>) => this.fetchDirect<T>(url, options as Omit<RotkiFetchOptions<'json', T>, 'skipQueue' | 'priority' | 'tags' | 'dedupe' | 'maxQueueTime' | 'queueRetries'>),
+      async <T>(url: string, options?: Record<string, unknown>) => this.fetchDirect<T>(url, options),
     );
   }
 

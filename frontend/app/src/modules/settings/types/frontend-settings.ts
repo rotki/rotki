@@ -245,7 +245,7 @@ export const FrontendSettings = z.object({
   savedFilters: z
     .partialRecord(SavedFilterLocationEnum, z.array(z.array(BaseSuggestion)))
     .default({})
-    // eslint-disable-next-line unicorn/prefer-top-level-await
+
     .catch({}),
   schemaVersion: z.literal(2),
   scrambleData: z.boolean().default(false),

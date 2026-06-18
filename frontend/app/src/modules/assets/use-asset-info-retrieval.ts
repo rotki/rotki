@@ -206,7 +206,7 @@ export function useAssetInfoRetrieval(): UseAssetInfoRetrievalReturn {
     const timeout = new Promise<typeof timedOut>((resolve) => {
       // Cleared in the finally block below, so it never outlives this call.
       // eslint-disable-next-line @rotki/composable-require-cleanup
-      timer = setTimeout(() => resolve(timedOut), ERC20_DETAILS_TIMEOUT_MS);
+      timer = setTimeout(resolve, ERC20_DETAILS_TIMEOUT_MS, timedOut);
     });
 
     const task = runTask<ERC20Token, TaskMeta>(

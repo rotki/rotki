@@ -17,7 +17,7 @@ export function useScrambleSetting(): UseScrambleSettingReturn {
   const scrambleData = shallowRef<boolean>(false);
   const scrambleMultiplier = shallowRef<string>('0');
   const isUpdating = shallowRef<boolean>(false);
-  let timeoutId: ReturnType<typeof setTimeout>;
+  let timeoutId: number;
 
   const frontendStore = useFrontendSettingsStore();
   const { scrambleData: enabled, scrambleMultiplier: multiplier } = storeToRefs(frontendStore);
@@ -44,7 +44,7 @@ export function useScrambleSetting(): UseScrambleSettingReturn {
 
     // Debounce backend update
     startPromise(debouncedBackendUpdate(numValue));
-    timeoutId = setTimeout(() => set(isUpdating, false), 600);
+    timeoutId = setTimeout(set, 600, isUpdating, false);
   }
 
   function initializeData(): void {
