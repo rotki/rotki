@@ -11,7 +11,7 @@ from rotkehlchen.balances.manual import ManuallyTrackedBalance
 from rotkehlchen.chain.accounts import BlockchainAccountData
 from rotkehlchen.constants.assets import A_BTC, A_ETH
 from rotkehlchen.fval import FVal
-from rotkehlchen.types import Location, SupportedBlockchain
+from rotkehlchen.types import ChainID, Location, SupportedBlockchain
 from tools.scenarios.deterministic import DeterministicFactory, monthly_ramp_weights
 from tools.scenarios.profiles.common import (
     MODULE_TOKEN_PRICES,
@@ -20,6 +20,7 @@ from tools.scenarios.profiles.common import (
     erc20,
     make_asset_movement,
     make_chain_state,
+    make_decodable_evm_transactions,
     make_evm_tx_group,
     make_exchange_swap,
     make_snapshots,
@@ -42,6 +43,9 @@ SWAP_FEE_SHARE: Final = 0.3
 N_ASSET_MOVEMENTS: Final = 20
 MOVEMENT_FEE_SHARE: Final = 0.5
 N_STAKING_REWARDS: Final = 80
+# transactions seeded with receipts so the redecode benchmark operation can run offline
+N_DECODABLE_TXS: Final = 50
+USDT_ADDRESS: Final = '0xdAC17F958D2ee523a2206206994597C13D831ec7'
 
 EXCHANGES: Final = (Location.KRAKEN, Location.BINANCE)
 EXCHANGE_WEIGHTS: Final = (0.6, 0.4)
@@ -202,4 +206,18 @@ def build(builder: 'ProfileBuilder') -> dict[str, Any] | None:
         return events
 
     builder.add_history_events(generate())
+    decodable_txs, decodable_receipts = make_decodable_evm_transactions(
+        factory=factory,
+        chain_id=ChainID.ETHEREUM,
+        from_address=eth_accounts[0],
+        to_address=eth_accounts[1],
+        token_address=USDT_ADDRESS,
+        count=N_DECODABLE_TXS,
+    )
+    builder.add_evm_transactions_with_receipts(
+        chain_id=ChainID.ETHEREUM,
+        transactions=decodable_txs,
+        receipts=decodable_receipts,
+        relevant_address=eth_accounts[0],
+    )
     return {'eth_accounts': eth_accounts}

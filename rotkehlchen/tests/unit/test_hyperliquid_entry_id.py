@@ -1,7 +1,9 @@
+import logging
 from typing import Any
 from unittest.mock import patch
 
 from rotkehlchen.chain.evm.types import string_to_evm_address
+from rotkehlchen.errors.asset import UnknownAsset, UnknownCounterpartyMapping
 from rotkehlchen.externalapis.hyperliquid import HyperliquidAPI
 from rotkehlchen.types import Timestamp
 
@@ -88,6 +90,63 @@ def test_iter_entries_dedups_same_tid_across_pages() -> None:
         ))
 
     assert len(contexts) == 1
+
+
+def test_max_spot_transfer_with_unresolvable_asset_is_skipped(globaldb, caplog) -> None:
+    api = HyperliquidAPI()
+    address = string_to_evm_address('0x3Ba6eB0e4327B96aDe6D4f3b578724208a590CEF')
+    entry: dict[str, Any] = {
+        'time': 1781377469380,
+        'hash': '0x1914c6fab113b5861a8e043da5795702031e00e04c16d458bcdd724d70178f70',
+        'delta': {
+            'type': 'spotTransfer',
+            'token': 'MAX',
+            'amount': '320121.396989',
+            'usdcValue': '0.0',
+            'user': '0x207700bd207df757825f9193ef9c648c1c65e06a',
+            'destination': '0x3ba6eb0e4327b96ade6d4f3b578724208a590cef',
+            'fee': '0.0',
+            'nativeTokenFee': '0.0',
+            'nonce': 1781377469004,
+            'feeToken': '',
+        },
+    }
+    spot_meta = {
+        'tokens': [{
+            'name': 'MAX',
+            'szDecimals': 1,
+            'weiDecimals': 6,
+            'index': 734,
+            'tokenId': '0x6781b92b6ea5d8ed37d275eb201f64af',
+            'isCanonical': False,
+            'evmContract': None,
+            'fullName': '$MAX',
+            'deployerTradingFeeShare': '1.0',
+        }],
+        'universe': [],
+    }
+
+    caplog.set_level(logging.WARNING)
+    with (
+        patch(
+            'rotkehlchen.externalapis.hyperliquid.get_asset_id_by_counterparty',
+            side_effect=UnknownCounterpartyMapping(symbol='MAX', counterparty='hyperliquid'),
+        ),
+        patch(
+            'rotkehlchen.externalapis.hyperliquid.asset_from_hyperliquid',
+            side_effect=UnknownAsset('MAX'),
+        ),
+        patch.object(api, '_query_dict', return_value=spot_meta),
+        patch.object(api, '_query_list', side_effect=[[entry], [], [], []]),
+    ):
+        events = api.query_history_events(
+            address=address,
+            start_ts=Timestamp(1781377469),
+            end_ts=Timestamp(1781377470),
+        )
+
+    assert events == []
+    assert 'asset MAX. Skipping' in caplog.text
 
 
 def test_iter_entries_recovers_truncated_boundary_entries() -> None:

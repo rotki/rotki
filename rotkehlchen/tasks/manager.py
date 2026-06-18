@@ -570,7 +570,7 @@ class TaskManager:
             self,
             from_ts: TimestampMS | None,
     ) -> list[gevent.Greenlet]:
-        log.debug(f'Scheduling task to {HISTORICAL_BALANCE_PROCESSING_TASK_NAME}')
+        log.debug('Scheduling task to %s', HISTORICAL_BALANCE_PROCESSING_TASK_NAME)
         return [self.greenlet_manager.spawn_and_track(
             after_seconds=None,
             task_name=HISTORICAL_BALANCE_PROCESSING_TASK_NAME,

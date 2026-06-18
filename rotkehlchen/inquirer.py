@@ -725,6 +725,8 @@ class Inquirer:
                 if eur_to_target != ZERO_PRICE:
                     for from_asset in eur_collection_assets:
                         found_prices[from_asset] = eur_to_target, CurrentPriceOracle.FIAT
+                else:
+                    assets_without_special_price.extend(eur_collection_assets)
 
         # Cache the resolved prices under the actual target currency so a subsequent query
         # short-circuits in _preprocess_assets_to_query. Otherwise non-USD targets always miss

@@ -79,6 +79,17 @@ def _blockchain_balances_eth(backend: 'BackendRunner', _expected: dict[str, Any]
     backend.request('POST', '/balances/blockchains/eth')
 
 
+def _redecode_transactions(backend: 'BackendRunner', _expected: dict[str, Any]) -> None:
+    # ignore_cache forces a full redecode of the profile's seeded ethereum transactions
+    # (the only ones with backing evm_transactions rows and receipts). Decoding runs from
+    # the stored receipts so the whole decode pipeline is measured without any network.
+    backend.request('POST', '/blockchains/transactions/decode', {
+        'async_query': False,
+        'ignore_cache': True,
+        'chain': 'eth',
+    })
+
+
 OPERATIONS: Final = (
     Operation(
         name='history_events_p1',
@@ -119,5 +130,10 @@ OPERATIONS: Final = (
         name='blockchain_balances_eth',
         profiles=('small', 'whale'),
         run=_blockchain_balances_eth,
+    ),
+    Operation(
+        name='redecode_transactions',
+        profiles=('small', 'whale'),
+        run=_redecode_transactions,
     ),
 )

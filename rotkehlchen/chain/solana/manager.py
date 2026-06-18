@@ -178,7 +178,7 @@ class SolanaManager(ChainManagerWithTransactions[SolanaAddress], ChainManagerWit
             for address, asset_balances in jupiter_balances.items():
                 chain_balances[address] += asset_balances
         except RemoteError as e:
-            log.error(f'Failed to query Jupiter Lend balances due to {e!s}')
+            log.error('Failed to query Jupiter Lend balances due to %s', e)
 
         return dict(chain_balances)
 

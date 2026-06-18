@@ -565,14 +565,14 @@ class Coingecko(
                 timeout=CachedSettings().get_timeout_tuple(),
             )
         except requests.exceptions.RequestException as e:
-            log.debug(f'Coingecko tier probe failed at the network layer: {e!s}')
+            log.debug('Coingecko tier probe failed at the network layer: %s', e)
             return
 
         if response.status_code == HTTPStatus.UNAUTHORIZED:
             log.debug('Coingecko Pro probe returned 401; treating as demo/free tier')
             return
         if response.status_code != HTTPStatus.OK:
-            log.debug(f'Coingecko tier probe got HTTP {response.status_code}; ignoring')
+            log.debug('Coingecko tier probe got HTTP %s; ignoring', response.status_code)
             return
 
         try:
@@ -585,7 +585,7 @@ class Coingecko(
         rpm = data.get('rate_limit_request_per_minute') if isinstance(data, dict) else None
         if isinstance(rpm, int) and rpm > 0:
             self._rate_limiter.widen(observed_rps=rpm / 60, observed_capacity=min(rpm, 200))
-            log.debug(f'Coingecko tier probe widened rate to {rpm}/min')
+            log.debug('Coingecko tier probe widened rate to %s/min', rpm)
 
     def on_api_key_changed(self) -> None:
         """Called from the External Services save/delete hook on key change."""

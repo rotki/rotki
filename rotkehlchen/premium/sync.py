@@ -198,7 +198,7 @@ class PremiumSyncManager(LockableQueryMixIn):
         ok, integrity_error = self.data.db.db_integrity_check()
         if not ok:
             message = f'Local database failed the integrity check: {integrity_error}'
-            log.error(f'upload to server aborted -- {message}')
+            log.error('upload to server aborted -- %s', message)
             self.data.msg_aggregator.add_message(
                 message_type=WSMessageType.DATABASE_UPLOAD_RESULT,
                 data={'uploaded': False, 'actionable': True, 'message': message},
@@ -239,7 +239,7 @@ class PremiumSyncManager(LockableQueryMixIn):
             if not exported_ok:
                 tempdbpath.unlink(missing_ok=True)
                 message = f'Exported database failed the integrity check: {exported_error}'
-                log.error(f'upload to server aborted -- {message}')
+                log.error('upload to server aborted -- %s', message)
                 self.data.msg_aggregator.add_message(
                     message_type=WSMessageType.DATABASE_UPLOAD_RESULT,
                     data={'uploaded': False, 'actionable': True, 'message': message},

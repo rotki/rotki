@@ -82,8 +82,11 @@ const displayModel = computed({
   },
 });
 
-function confirm() {
-  return emit('confirm');
+function confirm(): void {
+  if (loading)
+    return;
+
+  emit('confirm');
 }
 
 function cancel() {

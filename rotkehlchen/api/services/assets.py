@@ -7,7 +7,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any, Final, Literal
 from zipfile import BadZipFile, ZipFile
 
-from flask import Response, make_response, send_file
+from flask import Response, make_response
 from marshmallow.exceptions import ValidationError
 from web3.exceptions import BadFunctionCallOutput
 
@@ -18,7 +18,7 @@ from rotkehlchen.accounting.constants import (
     EVENT_CATEGORY_MAPPINGS,
 )
 from rotkehlchen.accounting.entry_type_mappings import ENTRY_TYPE_MAPPINGS
-from rotkehlchen.api.rest_helpers.downloads import register_post_download_cleanup
+from rotkehlchen.api.rest_helpers.downloads import make_download_response
 from rotkehlchen.assets.asset import (
     Asset,
     AssetWithNameAndType,
@@ -350,13 +350,7 @@ class AssetsService:
         }
 
     def download_user_assets(self, file_path: str) -> Response:
-        register_post_download_cleanup(path := Path(file_path))
-        return send_file(
-            path_or_file=file_path,
-            mimetype='application/zip',
-            as_attachment=True,
-            download_name=path.name,
-        )
+        return make_download_response(file_path=file_path, mimetype='application/zip')
 
     def import_user_assets(self, path: Path) -> dict[str, Any]:
         try:

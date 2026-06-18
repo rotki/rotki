@@ -495,7 +495,11 @@ def test_force_refetch_transactions_without_chain(
                     'to_timestamp': now,
                     **extra_params,
                 },
-            )) == {'new_transactions': {}, 'new_transactions_count': 0}
+            )) == {
+                'new_transactions': {},
+                'new_transactions_count': 0,
+                'new_history_events_count': 0,
+            }
             mock_refetch.assert_called_once_with(
                 address=ethereum_accounts[0],
                 start_ts=four_days_ago,

@@ -64,6 +64,7 @@ from rotkehlchen.constants.assets import (
     A_DAI,
     A_ETC,
     A_ETH,
+    A_ETH_EURE,
     A_EUR,
     A_KFEE,
     A_LINK,
@@ -686,8 +687,6 @@ def test_bsq_price_non_usd(inquirer: 'Inquirer') -> None:
 def test_eur_pegged_asset_special_price(inquirer: 'Inquirer') -> None:
     """Test that assets in the EURe collection (collection 240) are priced
     using the EUR exchange rate via _get_special_prices."""
-    from rotkehlchen.constants.assets import A_ETH_EURE
-
     # Verify the asset is loaded in the cached set
     assert A_ETH_EURE.identifier in Inquirer.eur_pegged_assets
 
@@ -713,14 +712,12 @@ def test_eur_pegged_asset_special_price(inquirer: 'Inquirer') -> None:
         )
 
     assert A_ETH_EURE not in found_prices
-    assert len(assets_without_price) == 0  # it's still not in the "without price" list
+    assert A_ETH_EURE in assets_without_price
 
 
 @pytest.mark.parametrize('should_mock_current_price_queries', [False])
 def test_eur_pegged_asset_special_price_non_usd(inquirer: 'Inquirer') -> None:
     """Test that EURe collection assets are correctly priced in non-USD target currencies."""
-    from rotkehlchen.constants.assets import A_ETH_EURE
-
     eur_jpy_rate = Price(FVal('162.5'))
 
     def mock_query_fiat_pair(base, quote):  # pylint: disable=unused-argument
@@ -746,6 +743,39 @@ def test_eur_pegged_asset_special_price_non_usd(inquirer: 'Inquirer') -> None:
     # returning the USD value labeled as JPY, which would corrupt the valuation.
     assert A_KFEE not in found_prices
     assert A_KFEE in assets_without_price
+
+
+@pytest.mark.parametrize('should_mock_current_price_queries', [False])
+def test_eur_pegged_collection_asset_to_crypto_target(inquirer: 'Inquirer') -> None:
+    """EURe collection assets are worth 1 EUR and should be converted to crypto targets."""
+    eur_btc_price = Price(FVal('0.000009'))
+    with patch.object(Inquirer, 'find_price', return_value=eur_btc_price) as find_price_mock:
+        prices = Inquirer.find_prices(from_assets=[A_ETH_EURE], to_asset=A_BTC, ignore_cache=True)
+
+    assert prices[A_ETH_EURE] == eur_btc_price
+    find_price_mock.assert_called_once_with(from_asset=A_EUR, to_asset=A_BTC)
+
+
+@pytest.mark.parametrize('should_mock_current_price_queries', [False])
+def test_eur_pegged_collection_asset_to_crypto_target_unavailable(inquirer: 'Inquirer') -> None:
+    """Regression test for EURe collection assets when the target currency is crypto.
+
+    If the EUR->target rate is unavailable, the collection main asset must remain in the
+    unpriced list so the normal oracle fallback can assign ZERO_PRICE. Otherwise collection
+    replacement later tries to copy a missing main-asset price and raises KeyError.
+    """
+    main_eure = Asset('eip155:1/erc20:0x39b8B6385416f4cA36a20319F70D28621895279D')
+    with (
+        patch.object(Inquirer, 'find_price', return_value=ZERO_PRICE),  # EUR->BTC unavailable
+        patch.object(
+            Inquirer,
+            '_query_oracle_instances',
+            return_value={main_eure: (ZERO_PRICE, CurrentPriceOracle.BLOCKCHAIN)},
+        ),
+    ):
+        prices = Inquirer.find_prices(from_assets=[A_ETH_EURE], to_asset=A_BTC, ignore_cache=True)
+
+    assert prices[A_ETH_EURE] == ZERO_PRICE
 
 
 @pytest.mark.parametrize('should_mock_current_price_queries', [False])

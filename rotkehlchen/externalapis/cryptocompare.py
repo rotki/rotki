@@ -255,11 +255,11 @@ class Cryptocompare(
                 timeout=CachedSettings().get_timeout_tuple(),
             )
         except requests.exceptions.RequestException as e:
-            log.debug(f'Cryptocompare tier probe failed at the network layer: {e!s}')
+            log.debug('Cryptocompare tier probe failed at the network layer: %s', e)
             return
 
         if response.status_code != 200:
-            log.debug(f'Cryptocompare tier probe got HTTP {response.status_code}; ignoring')
+            log.debug('Cryptocompare tier probe got HTTP %s; ignoring', response.status_code)
             return
 
         try:
@@ -282,7 +282,7 @@ class Cryptocompare(
                 observed_rps=second_budget,
                 observed_capacity=min(second_budget * 2, 100),
             )
-            log.debug(f'Cryptocompare tier probe widened rate to {second_budget}/s')
+            log.debug('Cryptocompare tier probe widened rate to %s/s', second_budget)
 
     def on_api_key_changed(self) -> None:
         self._rate_limiter.reset(

@@ -90,6 +90,10 @@ API_TIME_INTERVAL_CONSTRAINT_TS: Final = 7689600  # 89 days
 
 # this determines the length of the data returned, 100 is the maximum value possible.
 BINANCE_SIMPLE_EARN_HISTORY_PAGE_SIZE: Final = 100
+# Simple Earn rewards history endpoints (flexible & locked) only allow a 30-day range between
+# startTime and endTime. A larger range fails with error code -6021 "Query time range too large".
+# https://developers.binance.com/docs/simple_earn/flexible-locked/history/Get-Flexible-Rewards-History
+BINANCE_SIMPLE_EARN_TIME_INTERVAL_CONSTRAINT_TS: Final = 30 * DAY_IN_SECONDS
 
 # Convert API has 30-day max interval constraint
 CONVERT_API_TIME_DELTA: Final = 30 * DAY_IN_SECONDS
@@ -664,8 +668,9 @@ class Binance(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
         "REALTIME" -> Real-time APR.
         "REWARDS" -> Historical rewards.
 
-        `end_ts` - `start_ts` <= 89 days. This is handled using `_api_query_list_within_time_delta`
-        using `API_TIME_INTERVAL_CONSTRAINT_TS` as the timedelta.
+        `end_ts` - `start_ts` <= 30 days. This is handled using `_api_query_list_within_time_delta`
+        using `BINANCE_SIMPLE_EARN_TIME_INTERVAL_CONSTRAINT_TS` as the timedelta, since the rewards
+        history endpoints reject larger ranges with error -6021 "Query time range too large".
 
         Lending Interest History Documentation:
         https://binance-docs.github.io/apidocs/spot/en/#get-flexible-rewards-history-user_data
@@ -698,7 +703,7 @@ class Binance(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
                     response = self._api_query_list_within_time_delta(
                         api_type='sapi',
                         start_ts=query_start_ts,
-                        time_delta=API_TIME_INTERVAL_CONSTRAINT_TS,
+                        time_delta=BINANCE_SIMPLE_EARN_TIME_INTERVAL_CONSTRAINT_TS,
                         end_ts=query_end_ts,
                         method='simple-earn/flexible/history/rewardsRecord',
                         additional_options={
@@ -769,7 +774,7 @@ class Binance(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
                 response = self._api_query_list_within_time_delta(
                     api_type='sapi',
                     start_ts=query_start_ts,
-                    time_delta=API_TIME_INTERVAL_CONSTRAINT_TS,
+                    time_delta=BINANCE_SIMPLE_EARN_TIME_INTERVAL_CONSTRAINT_TS,
                     end_ts=query_end_ts,
                     method='simple-earn/locked/history/rewardsRecord',
                     additional_options={'size': BINANCE_SIMPLE_EARN_HISTORY_PAGE_SIZE},

@@ -31,11 +31,17 @@ class OneinchCommonDecoder(EvmDecoderInterface, ABC):
             router_address: 'ChecksumEvmAddress',
             swapped_signatures: list[bytes],
             counterparty: str = CPT_ONEINCH,
+            limit_order_topics: list[bytes] | None = None,
     ) -> None:
         super().__init__(evm_inquirer, base_tools, msg_aggregator)
         self.router_address = router_address
         self.swapped_signatures = swapped_signatures
         self.counterparty = counterparty
+        # Topics of the limit order protocol's OrderFilled event. These are emitted by the
+        # router when a 1inch limit order / Fusion order is settled. Such settlements may be
+        # submitted by a resolver (so the transaction initiator is not the order maker), which
+        # is why their swaps can't be paired through the initiator-based logic.
+        self.limit_order_topics = limit_order_topics if limit_order_topics is not None else []
 
     def _create_swapped_events(
             self,
@@ -94,6 +100,13 @@ class OneinchCommonDecoder(EvmDecoderInterface, ABC):
         """Decode the swapped log for the particular 1inch version"""
 
     def decode_action(self, context: DecoderContext) -> EvmDecodingOutput:
+        if context.tx_log.topics[0] in self.limit_order_topics:
+            # The OrderFilled log can appear before the token transfers (and the maker's
+            # transfer events don't exist yet at this point), so only flag the counterparty
+            # here to trigger the post-decoding rule which pairs the swap legs once all
+            # transfer events have been created.
+            return EvmDecodingOutput(matched_counterparty=self.counterparty)
+
         if context.tx_log.topics[0] in self.swapped_signatures:
             return self._decode_swapped(context=context)
 

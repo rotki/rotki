@@ -16,7 +16,10 @@ from rotkehlchen.accounting.debugimporter.json import DebugHistoryImporter
 from rotkehlchen.accounting.export.csv import CSVWriteError, dict_to_csv_file
 from rotkehlchen.accounting.export.report import export_pnl_report_csv_from_db
 from rotkehlchen.accounting.pot import AccountingPot
-from rotkehlchen.api.rest_helpers.downloads import register_post_download_cleanup
+from rotkehlchen.api.rest_helpers.downloads import (
+    make_download_response,
+    register_post_download_cleanup,
+)
 from rotkehlchen.chain.ethereum.constants import CPT_KRAKEN
 from rotkehlchen.chain.evm.accounting.aggregator import EVMAccountingAggregators
 from rotkehlchen.chain.structures import TimestampOrBlockRange
@@ -583,13 +586,7 @@ class HistoryService:
         return {'result': True, 'message': '', 'status_code': HTTPStatus.OK}
 
     def download_history_events_csv(self, file_path: str) -> Response:
-        register_post_download_cleanup(path := Path(file_path))
-        return send_file(
-            path_or_file=file_path,
-            mimetype='text/csv',
-            as_attachment=True,
-            download_name=path.name,
-        )
+        return make_download_response(file_path=file_path, mimetype='text/csv')
 
     def _get_exchange_staking_or_savings_history(
             self,

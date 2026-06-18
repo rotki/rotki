@@ -969,7 +969,7 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
         if tx_data is None or tx_data == 'null' or (
             isinstance(tx_data, Mapping) and 'result' in tx_data and tx_data['result'] is None
         ):
-            log.debug(f'{self.chain_name} transaction {tx_hash!s} was not found. Response was {tx_data}')  # noqa: E501
+            log.debug('%s transaction %s was not found. Response was %s', self.chain_name, tx_hash, tx_data)  # noqa: E501
             if must_exist:  # fail, so other nodes can be tried
                 raise TransactionNotFound(f'Transaction {tx_hash!s} was not found on {self.chain_name}')  # noqa: E501
 

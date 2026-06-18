@@ -135,6 +135,25 @@ describe('useHistoryEventItem', () => {
       expect(get(blockNumber)).toBe(18000000);
     });
 
+    it('should recover blockNumber from a sibling group event when the event has none', () => {
+      const event = ref(createMockEvent({ groupIdentifier: 'BP1_18000000' }));
+      const groupEvents = ref<HistoryEventEntry[]>([
+        createMockEvent({ blockNumber: 18000000, groupIdentifier: 'BP1_18000000' }),
+        get(event),
+      ]);
+      const { blockNumber } = useHistoryEventItem({ event, groupEvents });
+
+      expect(get(blockNumber)).toBe(18000000);
+    });
+
+    it('should return undefined blockNumber when no sibling carries one', () => {
+      const event = ref(createMockEvent({ groupIdentifier: 'BP1_18000000' }));
+      const groupEvents = ref<HistoryEventEntry[]>([get(event)]);
+      const { blockNumber } = useHistoryEventItem({ event, groupEvents });
+
+      expect(get(blockNumber)).toBeUndefined();
+    });
+
     it('should return extraData from event', () => {
       const extraData = { key: 'value' };
       const event = ref(createMockEvent({

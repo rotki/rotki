@@ -397,14 +397,25 @@ def vcr_fixture(vcr: 'VCR') -> 'VCR':
         ):
             return False
 
-        # Parse and normalize query parameters (lowercase keys)
-        # Ignore API key params since they can differ per test environment/session.
-        ignored_params = {'apikey', 'api_key'}
-        return {
-            k.lower(): v for k, v in parse_qs(parsed1.query).items() if k.lower() not in ignored_params  # noqa: E501
-        } == {
-            k.lower(): v for k, v in parse_qs(parsed2.query).items() if k.lower() not in ignored_params  # noqa: E501
-        }
+        def normalized_query_params(query: str) -> dict[str, list[str]]:
+            return {
+                k.lower(): v for k, v in parse_qs(query).items()
+                if k.lower() not in {'apikey', 'api_key'}
+            }
+
+        params1 = normalized_query_params(parsed1.query)
+        params2 = normalized_query_params(parsed2.query)
+        # Existing cassettes may not have explicit default pagination params. Allow matching
+        # only when one side omits the param and the other side has the newly-added default.
+        # If both sides specify pagination, compare it normally so non-default pages don't
+        # accidentally match.
+        for key, default_values in (('page', {'1'}), ('offset', {'1000', '10000'})):
+            if key not in params1 and key in params2 and set(params2[key]).issubset(default_values):  # noqa: E501
+                params2.pop(key)
+            elif key not in params2 and key in params1 and set(params1[key]).issubset(default_values):  # noqa: E501
+                params1.pop(key)
+
+        return params1 == params2
 
     vcr.register_matcher('alchemy_api_matcher', alchemy_api_matcher)
     vcr.register_matcher('beaconchain_matcher', beaconchain_matcher)

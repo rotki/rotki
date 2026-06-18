@@ -963,6 +963,33 @@ def test_replace_asset_edge_cases(
             )
 
 
+@pytest.mark.parametrize('start_with_logged_in_user', [True])
+def test_download_user_assets_path_traversal(rotkehlchen_api_server: APIServer) -> None:
+    """The download endpoint only serves files from the export (temp) directory.
+
+    A path pointing elsewhere must be rejected as invalid input, and the file it
+    points to must be left untouched (not served and not deleted by the cleanup).
+    """
+    # sentinel lives outside the system temp dir (next to this test file)
+    sentinel = Path(__file__).parent / 'traversal_sentinel.txt'
+    sentinel.write_text('do-not-delete', encoding='utf-8')
+    try:
+        for path in (str(sentinel), '/root/config.json'):
+            response = requests.get(
+                api_url_for(rotkehlchen_api_server, 'userassetsexportdownloadresource'),
+                json={'file_path': path},
+            )
+            assert_error_response(
+                response=response,
+                contained_in_msg='Invalid file path',
+                status_code=HTTPStatus.BAD_REQUEST,
+            )
+        # the rejected path must not have been deleted by the cleanup hook
+        assert sentinel.exists()
+    finally:
+        sentinel.unlink(missing_ok=True)
+
+
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
 @pytest.mark.parametrize('start_with_logged_in_user', [True])
 @pytest.mark.parametrize('with_custom_path', [False, True])

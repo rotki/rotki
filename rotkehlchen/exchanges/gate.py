@@ -229,7 +229,7 @@ class Gate(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
             return None, msg
 
         if not isinstance(response, list):
-            log.error(f'Gate spot accounts response is not a list: {response}')
+            log.error('Gate spot accounts response is not a list: %s', response)
             return None, 'Unexpected response format from Gate'
 
         returned_balances: dict[AssetWithOracles, Balance] = {}
@@ -243,7 +243,7 @@ class Gate(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
                 )
                 continue
             except KeyError as e:
-                log.error(f'Gate balance entry missing key {e}: {entry}')
+                log.error('Gate balance entry missing key %s: %s', e, entry)
                 continue
 
             try:
@@ -251,7 +251,7 @@ class Gate(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
                 locked = deserialize_fval(entry.get('locked', '0'))
                 amount = available + locked
             except DeserializationError as e:
-                log.error(f'Failed to deserialize Gate balance entry {entry}: {e}')
+                log.error('Failed to deserialize Gate balance entry %s: %s', entry, e)
                 continue
 
             if amount == ZERO:
@@ -298,11 +298,11 @@ class Gate(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
                     },
                 )
             except RemoteError as e:
-                log.error(f'Failed to query Gate trades due to {e!s}')
+                log.error('Failed to query Gate trades due to %s', e)
                 break
 
             if not isinstance(raw_data, list):
-                log.error(f'Gate trades response is not a list: {raw_data}')
+                log.error('Gate trades response is not a list: %s', raw_data)
                 break
 
             if len(raw_data) == 0:
@@ -319,7 +319,7 @@ class Gate(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
                     msg = str(e)
                     if isinstance(e, KeyError):
                         msg = f'Missing key {msg}'
-                    log.error(f'Could not read assets from Gate trade {raw_trade}: {msg}')
+                    log.error('Could not read assets from Gate trade %s: %s', raw_trade, msg)
                     continue
 
                 try:
@@ -334,12 +334,12 @@ class Gate(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
                         rate=price,
                     )
                 except DeserializationError as e:
-                    log.error(f'{e} when reading trade data for Gate trade {raw_trade}')
+                    log.error('%s when reading trade data for Gate trade %s', e, raw_trade)
                     continue
                 except KeyError as e:
                     log.error(
-                        f'Failed to deserialize Gate trade {raw_trade} due to missing key {e}. '
-                        'Skipping...',
+                        'Failed to deserialize Gate trade %s due to missing key %s. Skipping...',
+                        raw_trade, e,
                     )
                     continue
 
@@ -367,12 +367,12 @@ class Gate(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
                             None,
                         ))
                 except (UnknownAsset, DeserializationError) as e:
-                    log.error(f'Failed to process fees for Gate trade {raw_trade}: {e}')
+                    log.error('Failed to process fees for Gate trade %s: %s', raw_trade, e)
 
                 try:
                     timestamp = TimestampMS(deserialize_fval(raw_trade['create_time_ms']).to_int(exact=False))  # noqa: E501
                 except (KeyError, ValueError) as e:
-                    log.error(f'Failed to read timestamp for Gate trade {raw_trade}: {e}')
+                    log.error('Failed to read timestamp for Gate trade %s: %s', raw_trade, e)
                     continue
 
                 try:
@@ -390,8 +390,8 @@ class Gate(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
                     ))
                 except KeyError as e:
                     log.error(
-                        f'Failed to deserialize Gate trade {raw_trade} due to missing key {e}. '
-                        'Skipping...',
+                        'Failed to deserialize Gate trade %s due to missing key %s. Skipping...',
+                        raw_trade, e,
                     )
 
             if len(raw_data) < PAGINATION_LIMIT:
@@ -412,7 +412,9 @@ class Gate(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
         The API returns results in descending order by default. We use from/to parameters
         (unix timestamps in seconds) to filter the time range.
         """
-        log.debug(f'querying Gate online {query_for} with {start_ts=}-{end_ts=}')
+        log.debug(
+            'querying Gate online %s with start_ts=%s-end_ts=%s', query_for, start_ts, end_ts,
+        )
         if query_for == HistoryEventType.DEPOSIT:
             endpoint = '/wallet/deposits'
             movement_subtype: Literal[HistoryEventSubType.RECEIVE, HistoryEventSubType.SPEND] = HistoryEventSubType.RECEIVE  # noqa: E501
@@ -437,11 +439,11 @@ class Gate(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
                         },
                     )
                 except RemoteError as e:
-                    log.error(f'Failed to query Gate {query_for} due to {e!s}')
+                    log.error('Failed to query Gate %s due to %s', query_for, e)
                     break
 
                 if not isinstance(result, list):
-                    log.error(f'Gate {query_for} response is not a list: {result}')
+                    log.error('Gate %s response is not a list: %s', query_for, result)
                     break
 
                 raw_data.extend(result)
@@ -457,7 +459,7 @@ class Gate(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
             try:
                 timestamp = Timestamp(int(movement['timestamp']))
             except (KeyError, ValueError) as e:
-                log.error(f'Failed to read timestamp for Gate movement {movement}: {e}')
+                log.error('Failed to read timestamp for Gate movement %s: %s', movement, e)
                 continue
 
             if not start_ts <= timestamp <= end_ts:
@@ -472,7 +474,7 @@ class Gate(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
                 )
                 continue
             except KeyError as e:
-                log.error(f'Gate movement missing key {e}: {movement}')
+                log.error('Gate movement missing key %s: %s', e, movement)
                 continue
 
             try:
@@ -506,7 +508,7 @@ class Gate(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
                 msg = str(e)
                 if isinstance(e, KeyError):
                     msg = f'Missing key {msg}'
-                log.error(f'{msg} when reading Gate movement {movement}. Skipping...')
+                log.error('%s when reading Gate movement %s. Skipping...', msg, movement)
                 continue
 
         return movements
@@ -534,8 +536,9 @@ class Gate(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
             while chunk_start < query_end_ts:
                 chunk_end = Timestamp(min(chunk_start + GATE_MAX_MOVEMENT_WINDOW, query_end_ts))
                 log.debug(
-                    f'Querying Gate history events chunk for {self.name} with '
-                    f'{chunk_start=}, {chunk_end=}',
+                    'Querying Gate history events chunk for %s with '
+                    'chunk_start=%s, chunk_end=%s',
+                    self.name, chunk_start, chunk_end,
                 )
                 self.send_history_events_status_msg(
                     step=HistoryEventsStep.QUERYING_EVENTS_STATUS_UPDATE,
@@ -554,14 +557,16 @@ class Gate(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
                         queried_ranges=[(chunk_start, actual_end_ts)],
                     )
                 log.debug(
-                    f'Finished querying Gate history events chunk for {self.name} with '
-                    f'{chunk_start=}, {actual_end_ts=}, events_num={len(new_events)}',
+                    'Finished querying Gate history events chunk for %s with '
+                    'chunk_start=%s, actual_end_ts=%s, events_num=%s',
+                    self.name, chunk_start, actual_end_ts, len(new_events),
                 )
 
                 if actual_end_ts != chunk_end:
                     log.error(
-                        f'Failed to query all {self.name} history events between {chunk_start} '
-                        f'and {chunk_end}. Last successfully queried timestamp: {actual_end_ts}',
+                        'Failed to query all %s history events between %s '
+                        'and %s. Last successfully queried timestamp: %s',
+                        self.name, chunk_start, chunk_end, actual_end_ts,
                     )
                     self.send_history_events_status_msg(step=HistoryEventsStep.QUERYING_EVENTS_FINISHED)
                     return

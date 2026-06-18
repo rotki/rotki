@@ -420,8 +420,10 @@ class DBHistoryEvents:
             self,
             write_cursor: 'DBCursor',
             history: Sequence[HistoryBaseEntry],
-    ) -> None:
+    ) -> int:
         """Insert a list of history events in the database with batched modification tracking.
+
+        Returns the number of newly inserted events, excluding duplicates.
 
         This method batches modification tracking for efficiency:
         - Instead of calling _mark_events_modified() for each event,
@@ -431,8 +433,9 @@ class DBHistoryEvents:
         Check add_history_event() to see possible Exceptions
         """
         if not history:
-            return
+            return 0
 
+        inserted_count = 0
         min_timestamp: TimestampMS | None = None
         # Load the ignored-asset set once for the whole batch (the call is cached) so each event
         # insert avoids a per-event correlated subquery to compute its `ignored` flag.
@@ -440,21 +443,22 @@ class DBHistoryEvents:
 
         # Add all events WITHOUT calling _mark_events_modified for each
         for event in history:
-            if (
-                self.add_history_event(
-                    write_cursor=write_cursor,
-                    event=event,
-                    skip_tracking=True,  # Skip tracking per-event
-                    ignored_assets=ignored_assets,
-                ) is not None  # Only track if event was actually added (not a duplicate)
-                and (min_timestamp is None or event.timestamp < min_timestamp)
-            ):
-                # Track the minimum timestamp
-                min_timestamp = event.timestamp
+            if self.add_history_event(
+                write_cursor=write_cursor,
+                event=event,
+                skip_tracking=True,  # Skip tracking per-event
+                ignored_assets=ignored_assets,
+            ) is not None:  # Only track if event was actually added (not a duplicate)
+                inserted_count += 1
+                if min_timestamp is None or event.timestamp < min_timestamp:
+                    # Track the minimum timestamp
+                    min_timestamp = event.timestamp
 
         # Call tracking ONCE for the entire batch with minimum timestamp
         if min_timestamp is not None:
             self._mark_events_modified(write_cursor=write_cursor, timestamp=min_timestamp)
+
+        return inserted_count
 
     @staticmethod
     def save_history_event_backup(
@@ -925,6 +929,55 @@ class DBHistoryEvents:
                 bindings += customized_bindings
             write_cursor.execute(query, bindings)
 
+    @staticmethod
+    def _get_customized_exclusions_for_tx_refs(
+            cursor: 'DBCursor',
+            tx_refs: Sequence[EVMTxHash | BTCTxId | Signature],
+            location: BLOCKCHAIN_LOCATIONS_TYPE,
+            customized_handling: Literal['preserve_events', 'preserve_transactions'],
+    ) -> list[int] | list[str]:
+        """Return customized event identifiers or group identifiers to preserve for tx deletions.
+
+        The lookup is scoped to the provided tx refs only, instead of scanning all customized
+        events for the location.
+        """
+        placeholders = ', '.join(['?'] * len(tx_refs))
+        customized_bindings = (
+            location.serialize_for_db(),
+            HISTORY_MAPPING_KEY_STATE,
+            HistoryMappingState.CUSTOMIZED.serialize_for_db(),
+        )
+        select_field = (
+            'group_identifier'
+            if customized_handling == 'preserve_transactions'
+            else 'identifier'
+        )
+        if location.is_bitcoin():
+            id_prefix = BTC_GROUP_IDENTIFIER_PREFIX if location == Location.BITCOIN else BCH_GROUP_IDENTIFIER_PREFIX  # noqa: E501
+            group_identifiers = [f'{id_prefix}{tx_hash}' for tx_hash in tx_refs]
+            query = (
+                f'SELECT DISTINCT h.{select_field} FROM history_events h '
+                'INNER JOIN history_events_mappings m ON h.identifier = m.parent_identifier '
+                f'WHERE h.group_identifier IN ({placeholders}) AND h.location = ? '
+                'AND m.name = ? AND m.value = ?'
+            )
+            bindings: tuple[Any, ...] = (*group_identifiers, *customized_bindings)
+        else:
+            if location == Location.SOLANA:
+                tx_ref_bindings = [x.to_bytes() for x in tx_refs]  # type: ignore[union-attr]  # solana signatures
+            else:
+                tx_ref_bindings = list(tx_refs)  # evm tx hashes
+            query = (
+                f'SELECT DISTINCT h.{select_field} FROM history_events h '
+                'INNER JOIN chain_events_info c ON h.identifier = c.identifier '
+                'INNER JOIN history_events_mappings m ON h.identifier = m.parent_identifier '
+                f'WHERE c.tx_ref IN ({placeholders}) AND h.location = ? '
+                'AND m.name = ? AND m.value = ?'
+            )
+            bindings = (*tx_ref_bindings, *customized_bindings)
+
+        return [row[0] for row in cursor.execute(query, bindings)]
+
     def delete_events_by_tx_ref(
             self,
             write_cursor: 'DBCursor',
@@ -961,23 +1014,20 @@ class DBHistoryEvents:
             else:
                 bindings = list(tx_refs)  # type: ignore  # different type of elements in the list
 
-        if (
-            customized_handling != 'delete' and
-            (length := len(customized_event_ids := self.get_event_mapping_states(
+        if customized_handling != 'delete' and (
+            length := len(exclusions := self._get_customized_exclusions_for_tx_refs(
                 cursor=write_cursor,
+                tx_refs=tx_refs,
                 location=location,
-                mapping_state=HistoryMappingState.CUSTOMIZED,
-            ))) != 0
-        ):
+                customized_handling=customized_handling,
+            ))
+        ) != 0:
+            exclusion_placeholders = ', '.join(['?'] * length)
             if customized_handling == 'preserve_transactions':
-                where_str += (
-                    ' AND group_identifier NOT IN ('
-                    'SELECT group_identifier FROM history_events WHERE identifier IN ('
-                    + ', '.join(['?'] * length) + '))'
-                )
+                where_str += f' AND group_identifier NOT IN ({exclusion_placeholders})'
             else:  # preserve_events
-                where_str += f' AND identifier NOT IN ({", ".join(["?"] * length)})'
-            bindings.extend(customized_event_ids)  # type: ignore  # different type of elements in the list
+                where_str += f' AND identifier NOT IN ({exclusion_placeholders})'
+            bindings.extend(exclusions)  # type: ignore[arg-type]  # identifiers or group ids
 
         self.delete_events_and_track(
             write_cursor=write_cursor,
@@ -1130,9 +1180,9 @@ class DBHistoryEvents:
 
         if match_exact_events is False:  # return all group events instead of just the filtered ones.  # noqa: E501
             if include_order is True and filter_query.order_by is not None:
-                order_by = filter_query.order_by.prepare()
+                order_by, order_by_bindings = filter_query.order_by.prepare()
             else:
-                order_by = ''
+                order_by, order_by_bindings = '', []
 
             # The inner GROUP BY query only needs group_identifier for filtering,
             # not the full JOINs and window function that base_suffix provides.
@@ -1154,7 +1204,7 @@ class DBHistoryEvents:
                     f'{prefix} FROM (SELECT {base_suffix} WHERE group_identifier IN '
                     f'(SELECT group_identifier FROM (SELECT {inner_suffix}) {filters}) {order_by})'
                 ),
-                inner_limit + query_bindings,
+                inner_limit + query_bindings + order_by_bindings,
             )
 
         return f'{prefix} FROM (SELECT {suffix}) {filters}', limit + query_bindings

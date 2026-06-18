@@ -2,6 +2,20 @@
 Changelog
 =========
 
+* :release:`1.43.2 <2026-06-18>`
+* :bug:`-` Manually refetching Hyperliquid transactions now also refetches Hyperliquid Core history, so missed Core events can be recovered.
+* :bug:`-` EUR pegged assets are now valued correctly for users whose main currency is BTC, instead of causing balance queries to fail.
+* :feature:`-` SafeNet staking deposit and withdrawal events are now properly decoded.
+* :bug:`-` The block number shown in a MEV reward transaction event's note is now a clickable link, like it already is for the related block production event.
+* :bug:`-` The net worth graph on the dashboard no longer smooths the line between points, so it now reflects your actual balance changes instead of curving past them.
+* :bug:`-` 1inch v5 Fusion limit orders will now be properly decoded.
+* :bug:`-` Clicking a dialog's save button several times while it is still saving (for example when editing a history event that is slow to save) no longer sends the same change repeatedly, so you no longer risk creating duplicate entries by double-clicking.
+* :feature:`12420` ZKsync Lite sunset claims are now decoded and balances are shown correctly.
+* :bug:`-` The asset and history-events export download endpoints now validate that the requested file lives in the export directory before serving it.
+* :bug:`-` Sorting on the filter endpoints now only accepts plain column names for the ``order_by_attributes`` parameter.
+* :feature:`-` Bitcoin transactions, addresses and blocks now open in the mempool.space explorer instead of blockchain.com.
+* :bug:`12426` Airdrops in Hyperliquid core are now seen as receive events.
+* :bug:`12416` Binance Simple Earn rewards history no longer fails to sync when the last successful sync was more than a month ago.
 * :bug:`-` Kraken trades where the bought and sold amounts happen to be equal are no longer skipped as failed transfers.
 * :bug:`-` Adding an EVM token no longer leaves the name, symbol and decimals fields disabled indefinitely when the token detail lookup cannot reach a working RPC node; the lookup now times out so you can fill in the details manually.
 * :bug:`12277` If your main currency is not USD, editing a balance snapshot now shows and saves each value converted at the exchange rate from that snapshot's own date. Previously it used today's exchange rate, so the values you saw and saved were off, especially for assets pegged to a fiat currency such as EUR stablecoins.

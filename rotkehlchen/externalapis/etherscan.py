@@ -36,7 +36,8 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
-ETHERSCAN_PAGINATION_LIMIT: Final = 10000
+# Etherscan account endpoints are expected to allow at most 1000 entries per page.
+ETHERSCAN_PAGINATION_LIMIT: Final = 1000
 ETHERSCAN_BASE_URL: Final = 'https://api.etherscan.io/v2/api'
 ROTKI_PACKAGED_KEY: Final = ApiKey('W9CEV6QB9NIPUEHD6KNEYM4PDX6KBPRVVR')
 # Etherscan v2 free tier is 3 req/s on a single API key shared across all
@@ -128,18 +129,18 @@ class Etherscan(ExternalServiceWithRecommendedApiKey, EtherscanLikeApi):
                 action='getapilimit',
             )
         except RemoteError as e:
-            log.debug(f'Failed to query Etherscan API key tier for {api_key} due to {e!s}')
+            log.debug('Failed to query Etherscan API key tier for %s due to %s', api_key, e)
             return None
 
         if not isinstance(result, dict) or not isinstance(
             credit_limit := result.get('creditLimit'),
             int,
         ):
-            log.debug(f'Etherscan API key tier query returned unexpected result: {result}')
+            log.debug('Etherscan API key tier query returned unexpected result: %s', result)
             return None
 
         if (tier := ETHERSCAN_TIER_BY_DAILY_LIMIT.get(credit_limit)) is None:
-            log.debug(f'Etherscan API key has unknown daily credit limit: {credit_limit}')
+            log.debug('Etherscan API key has unknown daily credit limit: %s', credit_limit)
             return None
 
         return tier
@@ -165,7 +166,9 @@ class Etherscan(ExternalServiceWithRecommendedApiKey, EtherscanLikeApi):
             self._cache_api_key_tier(tier=tier)
 
         self._rate_limiter.reset(rps=tier.rps, capacity=tier.burst, minimum_rps=tier.rps)
-        log.debug(f'Detected Etherscan API key tier {tier.name}. Set rate limit to {tier.rps} rps')
+        log.debug(
+            'Detected Etherscan API key tier %s. Set rate limit to %s rps', tier.name, tier.rps,
+        )
 
     def on_api_key_changed(self) -> None:
         self.api_key = None
@@ -196,6 +199,16 @@ class Etherscan(ExternalServiceWithRecommendedApiKey, EtherscanLikeApi):
             'apikey': api_key,
             'chainid': str(chain_id.serialize()),
         }
+
+    def _get_account_pagination_options(
+            self,
+            action: str,
+            options: dict[str, Any],
+    ) -> dict[str, str] | None:
+        """Request the maximum page size for Etherscan account endpoints."""
+        if action in {'txlist', 'txlistinternal', 'tokentx'}:
+            return {'page': '1', 'offset': str(self.pagination_limit)}
+        return None
 
     def _additional_json_response_handling(
             self,

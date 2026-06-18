@@ -42,9 +42,9 @@ if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.types import EvmInternalTransaction, EvmTransaction
 
-# Blockscout returns a maximum of 10000 transactions per request.
-# https://docs.blockscout.com/devs/apis/rpc/account#get-transactions-by-address
-BLOCKSCOUT_PAGINATION_LIMIT = 10000
+# asked in telegram and the default equals to the max and it is 50 entries per page.
+# You can't change it
+BLOCKSCOUT_PAGINATION_LIMIT: Final = 50
 BLOCKSCOUT_PRO_API_BASE_URL = 'https://api.blockscout.com'
 # Blockscout has no documented hard rate limit on the free public endpoints.
 # Pick a conservative shared cap so parallel chain refreshes don't accidentally
@@ -139,8 +139,9 @@ class Blockscout(ExternalServiceWithApiKey, EtherscanLikeApi):
         while True:
             self._rate_limiter.acquire()
             log.debug(
-                f'Querying blockscout API for {query_str} with body {params} '
-                f'and query params {query_params}',
+                'Querying blockscout API for %s with body %s '
+                'and query params %s',
+                query_str, params, query_params,
             )
             try:
                 request_kwargs: dict[str, Any] = {'timeout': timeout}

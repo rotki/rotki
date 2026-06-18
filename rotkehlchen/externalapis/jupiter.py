@@ -131,7 +131,7 @@ class Jupiter(ExternalServiceWithRecommendedApiKey):
                 if len(reserves) != 0:
                     positions.append(JupiterPosition(owner=owner, reserves=reserves))
             except (DeserializationError, KeyError, TypeError, ValueError) as e:
-                log.error(f'Failed to deserialize Jupiter position due to {e!s}. Skipping. Raw data: {raw_element}')  # noqa: E501
+                log.error('Failed to deserialize Jupiter position due to %s. Skipping. Raw data: %s', e, raw_element)  # noqa: E501
                 continue
 
         return positions

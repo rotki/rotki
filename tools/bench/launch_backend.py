@@ -41,6 +41,21 @@ def _redirecting_send(self: Any, request: Any, **kwargs: Any) -> Any:
 
 requests.adapters.HTTPAdapter.send = _redirecting_send
 
+# Protocol on-chain caches (curve pools, gearbox lists, ...) refresh from chain whenever a
+# decode (or balances) runs and a cache looks stale -- which it always does on a fresh
+# profile. The mock serves no real protocol data, so those refreshes are meaningless and, for
+# calls returning complex tuples, the generic zero-word answer even breaks abi decoding. Force
+# every protocol cache "fresh" so decode/balances run entirely on the seeded data. Patched
+# before importing the app so the 14 modules that `from ... import` it bind the no-op version.
+import rotkehlchen.chain.ethereum.utils as _eth_utils
+
+
+def _never_update_protocol_cache(*_args: Any, **_kwargs: Any) -> bool:
+    return False
+
+
+_eth_utils.should_update_protocol_cache = _never_update_protocol_cache
+
 from rotkehlchen.__main__ import main
 
 main()

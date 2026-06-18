@@ -7,7 +7,11 @@ from rotkehlchen.chain.ethereum.modules.spark.constants import (
     SPARK_AIRDROP_DISTRIBUTOR,
     SPARK_STAKE_TOKEN,
 )
-from rotkehlchen.chain.evm.constants import DEFAULT_TOKEN_DECIMALS, DEPOSIT_TOPIC
+from rotkehlchen.chain.evm.constants import (
+    CLAIM_REWARD_TOPIC,
+    DEFAULT_TOKEN_DECIMALS,
+    DEPOSIT_TOPIC,
+)
 from rotkehlchen.chain.evm.decoding.interfaces import MerkleClaimDecoderInterface
 from rotkehlchen.chain.evm.decoding.spark.constants import CPT_SPARK
 from rotkehlchen.chain.evm.decoding.spark.lend.decoder import SparklendCommonDecoder
@@ -27,7 +31,7 @@ if TYPE_CHECKING:
     from rotkehlchen.types import ChecksumEvmAddress
     from rotkehlchen.user_messages import MessagesAggregator
 
-SPARK_CLAIM_SIGNATURE: Final = b'\xce;\xcbn!\x95\x96\xcf&\x00\x7f\xfd\xfa\xae\x89S\xbc?v\xe3\xf3l\ny\xb2>(\x02\r\xa3".'  # noqa: E501
+SPARK_CLAIM_SIGNATURE: Final = CLAIM_REWARD_TOPIC
 
 SPARK_ASSET_ID: Final = 'eip155:1/erc20:0xc20059e0317DE91738d13af027DfC4a50781b066'
 

@@ -15,6 +15,7 @@ from typing import Any
 
 from rotkehlchen.db.settings import ROTKEHLCHEN_DB_VERSION
 from tools.bench.harness import ensure_profile_cached, load_expected, run_block
+from tools.bench.micro_compare import run_micro_compare
 from tools.bench.runner import BenchError
 from tools.bench.stats import compare_samples
 
@@ -54,7 +55,9 @@ def _setup_worktree(repo_root: Path, base_commit: str) -> Path:
 
     env = {k: v for k, v in os.environ.items() if k != 'VIRTUAL_ENV'}
     sync = subprocess.run(
-        ['uv', 'sync'],  # noqa: S607
+        # --all-groups so the worktree gets the full test infra the micro suite needs
+        # (pytest-benchmark, and pylint which the test conftest imports eagerly)
+        ['uv', 'sync', '--all-groups'],  # noqa: S607
         cwd=worktree,
         env=env,
         capture_output=True,
@@ -83,8 +86,9 @@ def run_compare(
         profiles: list[str],
         blocks: int,
         work_dir: Path,
+        micro: bool = True,
 ) -> dict[str, Any]:
-    """Returns {base_commit, head_commit, profiles: {profile: {op: comparison}}}"""
+    """Returns {base_commit, head_commit, profiles: {profile: {op: comparison}}, micro}"""
     head_commit = _git(repo_root, 'rev-parse', 'HEAD')
     base_commit = _git(repo_root, 'merge-base', 'HEAD', base_ref)
     if base_commit == head_commit:
@@ -92,6 +96,7 @@ def run_compare(
 
     cached = {profile: ensure_profile_cached(repo_root, profile) for profile in profiles}
     worktree = _setup_worktree(repo_root, base_commit)
+    micro_comparison: dict[str, Any] = {}
     try:
         comparison: dict[str, Any] = {}
         for profile in profiles:
@@ -113,6 +118,10 @@ def run_compare(
                 op: compare_samples(base=base_samples, head=samples['head'][op])
                 for op, base_samples in samples['base'].items()
             }
+
+        if micro:  # pure-python micro suite, A/B'd against the same base worktree
+            micro_comparison = run_micro_compare(repo_root, worktree, work_dir)
+            print('  micro-benchmark comparison done')
     finally:
         _teardown_worktree(repo_root, worktree)
 
@@ -122,4 +131,5 @@ def run_compare(
         'head_commit': head_commit,
         'blocks': blocks,
         'profiles': comparison,
+        'micro': micro_comparison,
     }

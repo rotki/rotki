@@ -109,8 +109,9 @@ class ClipperCommonDecoder(EvmDecoderInterface):
 
         if out_event is None or in_event is None:
             log.warning(
-                f'Failed to find both out and in events for {CLIPPER_LABEL} swap '
-                f'transaction {context.transaction}',
+                'Failed to find both out and in events for %s swap transaction %s',
+                CLIPPER_LABEL,
+                context.transaction,
             )
         else:
             maybe_reshuffle_events(

@@ -103,7 +103,7 @@ class EthereumInquirer(DSProxyInquirerWithCacheData):
             try:
                 results = self.multicall_2(calls=calls, require_success=False)
             except RemoteError as e:
-                log.error(f'blockchain query for ens_reverse_lookup failed due to {e}')
+                log.error('blockchain query for ens_reverse_lookup failed due to %s', e)
                 human_names.update(dict.fromkeys(chunk, None))
                 continue
 
@@ -116,7 +116,9 @@ class EthereumInquirer(DSProxyInquirerWithCacheData):
                     name, _, _ = web3.codec.decode(['string', 'address', 'address'], result[1])
                 except (DeserializationError, ValueError) as e:
                     log.error(
-                        f'Failed to decode ens reverse lookup result for {address} due to {e!s}',
+                        'Failed to decode ens reverse lookup result for %s due to %s',
+                        address,
+                        e,
                     )
                     human_names[address] = None
                     continue
@@ -220,7 +222,7 @@ class EthereumInquirer(DSProxyInquirerWithCacheData):
             # Universal Resolver reverts for unresolvable names. RPC nodes surface this as
             # BlockchainQueryError while indexers surface it as RemoteError. In both cases
             # the ENS lookup should behave like the old registry flow and return None.
-            log.error(f'blockchain query for ens_lookup failed due to {e}')
+            log.error('blockchain query for ens_lookup failed due to %s', e)
             return None
 
         if result in (None, b''):
@@ -265,7 +267,7 @@ class EthereumInquirer(DSProxyInquirerWithCacheData):
                 arguments=[dns_encode_name(normal_name)],
             )
         except (BlockchainQueryError, RemoteError) as e:
-            log.error(f'blockchain query for get_ens_resolver_addr failed due to {e}')
+            log.error('blockchain query for get_ens_resolver_addr failed due to %s', e)
             return None, None
         if is_none_or_zero_address(resolver_addr):
             return None, None

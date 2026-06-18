@@ -2,6 +2,7 @@ from typing import Any, Final
 
 from rotkehlchen.assets.utils import asset_normalized_value, asset_raw_value
 from rotkehlchen.chain.decoding.types import CounterpartyDetails
+from rotkehlchen.chain.evm.constants import CLAIM_REWARD_TOPIC, ZERO_ADDRESS
 from rotkehlchen.chain.evm.decoding.interfaces import EvmDecoderInterface
 from rotkehlchen.chain.evm.decoding.structures import (
     DEFAULT_EVM_DECODING_OUTPUT,
@@ -14,7 +15,7 @@ from rotkehlchen.history.events.structures.types import HistoryEventSubType, His
 from rotkehlchen.types import ChecksumEvmAddress
 from rotkehlchen.utils.misc import bytes_to_address
 
-from .constants import CPT_ZKSYNC, ZKSYNC_BRIDGE
+from .constants import CPT_ZKSYNC, ZKSYNC_BRIDGE, ZKSYNC_LITE_SUNSET_CLAIM
 
 ONCHAIN_DEPOSIT: Final = b'\xb6\x86k\x02\x9f:\xa2\x9c\xd9\xe2\xbf\xf8\x15\x9a\x8c\xca\xa48\x9fz\x08|q\th\xe0\xb2\x00\xc0\xc7;\x08'  # noqa: E501
 DEPOSIT: Final = b'\x8f_QD\x83\x94i\x9a\xd6\xa3\xb8\x0c\xda\xdfN\xc6\x8c]rL\x8c?\xea\t\xbe\xa5[<-\x0e-\xd0'  # noqa: E501
@@ -41,6 +42,8 @@ class ZksyncDecoder(EvmDecoderInterface):
             return self._decode_withdrawal(context)
         elif context.tx_log.topics[0] == WITHDRAWAL:
             return self._decode_single_withdrawal(context)
+        elif context.tx_log.topics[0] == CLAIM_REWARD_TOPIC:
+            return self._decode_sunset_claim(context)
 
         return DEFAULT_EVM_DECODING_OUTPUT
 
@@ -88,6 +91,66 @@ class ZksyncDecoder(EvmDecoderInterface):
                 event.notes = f'Withdraw {event.amount} {event.asset.symbol_or_name()} from zksync'
 
         return DEFAULT_EVM_DECODING_OUTPUT
+
+    def _decode_sunset_claim(self, context: DecoderContext) -> EvmDecodingOutput:
+        """Decode a ZKsync Lite sunset claim."""
+        if not self.base.is_tracked(user_address := bytes_to_address(context.tx_log.data[32:64])):
+            return DEFAULT_EVM_DECODING_OUTPUT
+
+        token_address = bytes_to_address(context.tx_log.data[64:96])
+        amount = asset_normalized_value(
+            amount=int.from_bytes(context.tx_log.data[96:128]),
+            asset=(asset := self.base.get_token_or_native(token_address)),
+        )
+        for event in context.decoded_events:
+            if (
+                    event.event_type == HistoryEventType.RECEIVE and
+                    event.event_subtype == HistoryEventSubType.NONE and
+                    event.location_label == user_address and
+                    event.address == ZKSYNC_LITE_SUNSET_CLAIM and
+                    event.asset == asset and
+                    (
+                        event.amount == amount or
+                        token_address == ZERO_ADDRESS
+                    )
+            ):
+                event.event_type = HistoryEventType.WITHDRAWAL
+                event.event_subtype = HistoryEventSubType.BRIDGE
+                event.counterparty = CPT_ZKSYNC
+                event.notes = (
+                    f'Claim {event.amount} {event.asset.symbol_or_name()} '
+                    f'from the ZKsync Lite sunset'
+                )
+                event.address = ZKSYNC_LITE_SUNSET_CLAIM
+                return DEFAULT_EVM_DECODING_OUTPUT
+
+        if token_address != ZERO_ADDRESS:
+            return EvmDecodingOutput(action_items=[ActionItem(
+                action='transform',
+                from_event_type=HistoryEventType.RECEIVE,
+                from_event_subtype=HistoryEventSubType.NONE,
+                asset=asset,
+                amount=amount,
+                location_label=user_address,
+                to_event_type=HistoryEventType.WITHDRAWAL,
+                to_event_subtype=HistoryEventSubType.BRIDGE,
+                to_notes='Claim {amount} {symbol} from the ZKsync Lite sunset',
+                to_counterparty=CPT_ZKSYNC,
+                to_address=ZKSYNC_LITE_SUNSET_CLAIM,
+            )])
+
+        return EvmDecodingOutput(events=[self.base.make_event_from_transaction(
+            transaction=context.transaction,
+            tx_log=context.tx_log,
+            event_type=HistoryEventType.WITHDRAWAL,
+            event_subtype=HistoryEventSubType.BRIDGE,
+            asset=asset,
+            amount=amount,
+            location_label=user_address,
+            notes=f'Claim {amount} {asset.symbol} from the ZKsync Lite sunset',
+            counterparty=CPT_ZKSYNC,
+            address=ZKSYNC_LITE_SUNSET_CLAIM,
+        )])
 
     def _decode_single_withdrawal(self, context: DecoderContext) -> EvmDecodingOutput:
         """Decode a single zksync lite withdrawal event from batched withdrawals."""
@@ -148,6 +211,7 @@ class ZksyncDecoder(EvmDecoderInterface):
     def addresses_to_decoders(self) -> dict[ChecksumEvmAddress, tuple[Any, ...]]:
         return {
             ZKSYNC_BRIDGE: (self._decode_event,),
+            ZKSYNC_LITE_SUNSET_CLAIM: (self._decode_event,),
         }
 
     @staticmethod

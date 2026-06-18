@@ -89,7 +89,7 @@ class JupiterLendBalances:
             try:
                 positions = self.jupiter.get_positions(owner=address)
             except RemoteError as e:
-                log.error(f'Failed to query Jupiter Lend positions for {address} due to {e!s}. Skipping.')  # noqa: E501
+                log.error('Failed to query Jupiter Lend positions for %s due to %s. Skipping.', address, e)  # noqa: E501
                 continue
 
             for position in positions:
@@ -113,7 +113,7 @@ class JupiterLendBalances:
                             encounter=TokenEncounterInfo(should_notify=False),
                         )
                     except (NotSPLConformant, RemoteError) as e:
-                        log.error(f'Failed to create Solana token for {reserve.token} due to {e!s}. Skipping.')  # noqa: E501
+                        log.error('Failed to create Solana token for %s due to %s. Skipping.', reserve.token, e)  # noqa: E501
                         continue
 
         if len(token_assets) == 0:
