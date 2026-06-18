@@ -125,7 +125,7 @@ export function useAccountingOverlay(params: AccountingOverlayParams): UseAccoun
     if (!toValue(enabled))
       return AccountingOverlayState.DISABLED;
 
-    const statuses = [...get(cache).values()].map(entry => entry.status);
+    const statuses = Array.from(get(cache).values(), entry => entry.status);
     if (statuses.length > 0 && statuses.every(status => status === PairOverlayStatus.LOADING))
       return AccountingOverlayState.LOADING;
     return AccountingOverlayState.READY;

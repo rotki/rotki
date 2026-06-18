@@ -117,7 +117,7 @@ function readGeneratedIcons(): string[] {
   const match = content.match(/export const backendIcons: string\[] = \[([\S\s]*?)] as const;/);
   if (match) {
     const iconsStr = match[1];
-    return [...iconsStr.matchAll(/'([^']+)'/g)].map(m => m[1]);
+    return Array.from(iconsStr.matchAll(/'([^']+)'/g), m => m[1]);
   }
   return [];
 }

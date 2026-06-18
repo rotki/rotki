@@ -88,7 +88,7 @@ describe('edit-snapshot/EditLocationDataSnapshotForm.vue', () => {
 
     const updates = wrapper.emitted<[LocationDataSnapshotPayload]>('update:modelValue');
     expect(updates).toBeTruthy();
-    const last = updates![updates!.length - 1][0];
+    const last = updates!.at(-1)![0];
     expect(last.usdValue).toBe('6000');
     expect(last.location).toBe('blockchain');
   });

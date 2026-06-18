@@ -59,7 +59,7 @@ export function usePriceSeed(): UsePriceSeedReturn {
 
     try {
       const result = await queryOnlyCacheHistoricalRates({
-        assetsTimestamp: [...newestPerAsset.entries()].map(([asset, ts]) => [asset, String(ts)]),
+        assetsTimestamp: Array.from(newestPerAsset.entries(), ([asset, ts]) => [asset, String(ts)]),
         onlyCachePeriod: SEED_CACHE_WINDOW_SECONDS,
         targetAsset: get(currencySymbol),
       });

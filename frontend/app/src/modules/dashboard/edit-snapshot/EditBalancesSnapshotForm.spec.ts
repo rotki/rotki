@@ -129,7 +129,7 @@ describe('edit-snapshot/EditBalancesSnapshotForm.vue', () => {
 
     const updates = wrapper.emitted<[BalanceSnapshotPayloadAndLocation]>('update:modelValue');
     expect(updates).toBeTruthy();
-    const last = updates![updates!.length - 1][0];
+    const last = updates!.at(-1)![0];
     expect(last.amount).toBe('5');
     expect(last.assetIdentifier).toBe('ETH');
   });

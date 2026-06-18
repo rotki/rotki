@@ -89,7 +89,7 @@ export const useExternalApiKeys = createSharedComposable((): UseExternalApiKeysR
   }
 
   function setStatus(key: string, message: Status): void {
-    setTimeout(() => resetStatus(key), 4500);
+    setTimeout(resetStatus, 4500, key);
 
     set(status, {
       ...get(status),

@@ -65,7 +65,7 @@ describe('usePriceSeed', () => {
             ETH: { amount: bigNumberify(1), value: bigNumberify(1500) },
             DAI: { amount: bigNumberify(100), value: bigNumberify(100) },
           } as any,
-          liabilities: {} as any,
+          liabilities: {},
         },
       },
     });
@@ -104,13 +104,13 @@ describe('usePriceSeed', () => {
       eth: {
         '0xa': {
           assets: { USDC: { amount: bigNumberify(10), value: bigNumberify(10) } } as any,
-          liabilities: {} as any,
+          liabilities: {},
         },
       },
       optimism: {
         '0xb': {
           assets: { USDC: { amount: bigNumberify(20), value: bigNumberify(20) } } as any,
-          liabilities: {} as any,
+          liabilities: {},
         },
       },
     });
@@ -132,7 +132,7 @@ describe('usePriceSeed', () => {
     seedBalances({
       eth: {
         '0xa': {
-          assets: {} as any,
+          assets: {},
           liabilities: { DAI: { amount: bigNumberify(50), value: bigNumberify(50) } } as any,
         },
       },
@@ -156,7 +156,7 @@ describe('usePriceSeed', () => {
       eth: {
         '0xa': {
           assets: { ETH: { amount: bigNumberify(1), value: bigNumberify(1500) } } as any,
-          liabilities: {} as any,
+          liabilities: {},
         },
       },
     });
@@ -177,7 +177,7 @@ describe('usePriceSeed', () => {
       eth: {
         '0xa': {
           assets: { ETH: { amount: bigNumberify(1), value: bigNumberify(1500) } } as any,
-          liabilities: {} as any,
+          liabilities: {},
         },
       },
     });

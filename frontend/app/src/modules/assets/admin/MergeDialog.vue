@@ -96,7 +96,7 @@ async function merge() {
 
 function input(value: boolean) {
   set(display, value);
-  setTimeout(() => reset(), 100);
+  setTimeout(reset, 100);
 }
 
 const excluded = computed(() => {

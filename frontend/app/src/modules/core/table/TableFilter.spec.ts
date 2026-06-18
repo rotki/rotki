@@ -387,8 +387,8 @@ describe('table-filter', () => {
       await wrapper.find('input').trigger('keydown.enter');
       await vi.advanceTimersToNextTimerAsync();
 
-      const emissions = wrapper.emitted('update:matches') ?? [];
-      const hasStart = emissions.some(([m]) => Object.prototype.hasOwnProperty.call(m, 'start'));
+      const emissions = wrapper.emitted<[Record<string, unknown>]>('update:matches') ?? [];
+      const hasStart = emissions.some(([m]) => Object.hasOwn(m, 'start'));
       expect(hasStart).toBe(false);
     });
 
@@ -442,8 +442,8 @@ describe('table-filter', () => {
 
       expect(wrapper.find<HTMLInputElement>('input').element.value).toBe('event_type=');
 
-      const emissions = wrapper.emitted('update:matches') ?? [];
-      const committedAsNote = emissions.some(([m]) => Object.prototype.hasOwnProperty.call(m, 'note'));
+      const emissions = wrapper.emitted<[Record<string, unknown>]>('update:matches') ?? [];
+      const committedAsNote = emissions.some(([m]) => Object.hasOwn(m, 'note'));
       expect(committedAsNote).toBe(false);
     });
 
@@ -468,8 +468,8 @@ describe('table-filter', () => {
 
       expect(wrapper.find<HTMLInputElement>('input').element.value).toBe(`${FilterKeys.TYPE}=`);
 
-      const emissions = wrapper.emitted('update:matches') ?? [];
-      const committedAsStart = emissions.some(([m]) => Object.prototype.hasOwnProperty.call(m, 'start'));
+      const emissions = wrapper.emitted<[Record<string, unknown>]>('update:matches') ?? [];
+      const committedAsStart = emissions.some(([m]) => Object.hasOwn(m, 'start'));
       expect(committedAsStart).toBe(false);
     });
 
@@ -566,8 +566,8 @@ describe('table-filter', () => {
 
       expect(wrapper.find<HTMLInputElement>('input').element.value).toBe(`${FilterKeys.TYPE}=`);
 
-      const emissions = wrapper.emitted('update:matches') ?? [];
-      const committedAsStart = emissions.some(([m]) => Object.prototype.hasOwnProperty.call(m, 'start'));
+      const emissions = wrapper.emitted<[Record<string, unknown>]>('update:matches') ?? [];
+      const committedAsStart = emissions.some(([m]) => Object.hasOwn(m, 'start'));
       expect(committedAsStart).toBe(false);
     });
 
@@ -682,8 +682,8 @@ describe('table-filter', () => {
       await vi.advanceTimersByTimeAsync(500);
 
       // The filter should not be applied - no emission with 'start' key
-      const emissions = wrapper.emitted('update:matches') ?? [];
-      const hasStartFilter = emissions.some(([matches]) => Object.prototype.hasOwnProperty.call(matches, 'start'));
+      const emissions = wrapper.emitted<[Record<string, unknown>]>('update:matches') ?? [];
+      const hasStartFilter = emissions.some(([matches]) => Object.hasOwn(matches, 'start'));
       expect(hasStartFilter).toBe(false);
     });
 

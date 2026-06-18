@@ -3,6 +3,8 @@ blockExoticSubdeps: true
 minimumReleaseAge: 10080
 minimumReleaseAgeExclude:
   - '@rotki/ui-library'
+  - '@rotki/eslint-config'
+  - '@rotki/eslint-plugin'
   - electron-builder@26.15.3
   - dmg-builder@26.15.3
   - app-builder-lib@26.15.3
@@ -27,7 +29,6 @@ packages:
   - 'eslint/*'
 overrides:
   chokidar: 5.0.0
-  yaml-eslint-parser: 1.3.2
 patchedDependencies:
   app-builder-lib: patches/app-builder-lib.patch
   bignumber.js@9.3.1: patches/bignumber.js@9.3.1.patch
@@ -40,8 +41,8 @@ catalog:
   '@playwright/test': 1.60.0
   '@reown/appkit': 1.8.20
   '@reown/appkit-adapter-ethers': 1.8.20
-  '@rotki/eslint-config': 5.0.1
-  '@rotki/eslint-plugin': 1.3.2
+  '@rotki/eslint-config': 6.2.0
+  '@rotki/eslint-plugin': 1.4.0
   '@rotki/ui-library': 2.21.0
   '@tsconfig/node24': 24.0.4
   '@types/body-parser': 1.19.6
@@ -80,7 +81,7 @@ catalog:
   electron-updater: 6.8.9
   electron-window-state: 5.0.3
   es-toolkit: 1.47.0
-  eslint: 9.39.4
+  eslint: 10.4.1
   ethers: 6.16.0
   express: 5.2.1
   fake-indexeddb: 6.2.5
