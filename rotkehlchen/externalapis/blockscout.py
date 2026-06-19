@@ -15,7 +15,7 @@ from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.misc import ChainNotSupported, RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.externalapis.etherscan_like import EtherscanLikeApi, HasChainActivity
-from rotkehlchen.externalapis.interface import ExternalServiceWithApiKey
+from rotkehlchen.externalapis.interface import ExternalServiceWithRecommendedApiKey
 from rotkehlchen.externalapis.utils import get_earliest_ts, maybe_read_integer
 from rotkehlchen.history.events.structures.eth2 import EthWithdrawalEvent
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -53,8 +53,12 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
-class Blockscout(ExternalServiceWithApiKey, EtherscanLikeApi):
-    """Blockscout API handler for the Blockscout PRO multichain endpoints."""
+class Blockscout(ExternalServiceWithRecommendedApiKey, EtherscanLikeApi):
+    """Blockscout API handler for the Blockscout PRO multichain endpoints.
+
+    The PRO endpoints require an API key (they return 401 without one), so we use the
+    recommended-key base to warn the user once via a websocket message when it's missing.
+    """
 
     supports_historical_eth_call = True  # the json-rpc endpoint honors the eth_call block tag
 
@@ -63,7 +67,7 @@ class Blockscout(ExternalServiceWithApiKey, EtherscanLikeApi):
             database: 'DBHandler',
             msg_aggregator: MessagesAggregator,
     ) -> None:
-        ExternalServiceWithApiKey.__init__(
+        ExternalServiceWithRecommendedApiKey.__init__(
             self,
             database=database,
             service_name=ExternalService.BLOCKSCOUT,

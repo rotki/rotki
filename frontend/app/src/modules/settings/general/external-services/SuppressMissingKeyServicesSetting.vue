@@ -13,6 +13,7 @@ const { suppressMissingKeyMsgServices } = storeToRefs(useGeneralSettingsStore())
 
 const SERVICE_ICONS: Record<SuppressibleMissingKeyService, string> = {
   [SuppressibleMissingKeyService.BEACONCHAIN]: getPublicServiceImagePath('beaconchain.svg'),
+  [SuppressibleMissingKeyService.BLOCKSCOUT]: getPublicServiceImagePath('blockscout.svg'),
   [SuppressibleMissingKeyService.ETHERSCAN]: getPublicServiceImagePath('etherscan.svg'),
   [SuppressibleMissingKeyService.HELIUS]: getPublicServiceImagePath('helius.svg'),
   [SuppressibleMissingKeyService.THEGRAPH]: getPublicServiceImagePath('thegraph.svg'),

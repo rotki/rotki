@@ -21,6 +21,7 @@ export type OtherSettings = z.infer<typeof OtherSettings>;
 
 export const SuppressibleMissingKeyService = {
   BEACONCHAIN: 'beaconchain',
+  BLOCKSCOUT: 'blockscout',
   ETHERSCAN: 'etherscan',
   HELIUS: 'helius',
   THEGRAPH: 'thegraph',
@@ -28,6 +29,7 @@ export const SuppressibleMissingKeyService = {
 
 export const SuppressibleMissingKeyServiceEnum = z.enum([
   SuppressibleMissingKeyService.BEACONCHAIN,
+  SuppressibleMissingKeyService.BLOCKSCOUT,
   SuppressibleMissingKeyService.ETHERSCAN,
   SuppressibleMissingKeyService.HELIUS,
   SuppressibleMissingKeyService.THEGRAPH,

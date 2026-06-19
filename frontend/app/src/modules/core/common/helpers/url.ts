@@ -1,5 +1,5 @@
 import type { RouteLocationRaw } from 'vue-router';
-import { etherscanLink, externalLinks } from '@shared/external-links';
+import { blockscoutLink, etherscanLink, externalLinks } from '@shared/external-links';
 import { logger } from '@/modules/core/common/logging/logging';
 import { pslSuffixes } from '@/modules/core/common/psl';
 import { Routes } from '@/router/routes';
@@ -48,6 +48,16 @@ function getEtherScanRegisterUrl(): ExternalUrl | undefined {
   };
 }
 
+function getBlockscoutRegisterUrl(): ExternalUrl {
+  return {
+    external: blockscoutLink,
+    route: {
+      path: Routes.API_KEYS_EXTERNAL_SERVICES.toString(),
+      query: { service: 'blockscout' },
+    },
+  };
+}
+
 function getTheGraphRegisterUrl(): ExternalUrl {
   return {
     external: externalLinks.applyTheGraphApiKey,
@@ -87,6 +97,8 @@ export function getServiceRegisterUrl(service: string): ExternalUrl | undefined 
   switch (service) {
     case 'etherscan':
       return getEtherScanRegisterUrl();
+    case 'blockscout':
+      return getBlockscoutRegisterUrl();
     case 'thegraph':
       return getTheGraphRegisterUrl();
     case 'helius':
