@@ -25,7 +25,9 @@ const { getAssetPrice } = usePriceUtils();
 const { getProtocolStatsPriceQueryStatus } = useHistoricCachePriceStore();
 const krakenHistoricPriceStatus = getProtocolStatsPriceQueryStatus('kraken');
 
-const earnedAssetsData = computed<[boolean, AssetBalance[]]>(() => {
+type EarnedAssetsData = [boolean, AssetBalance[]];
+
+const earnedAssetsData = computed<EarnedAssetsData>(() => {
   const earned = get(events).received;
 
   if (get(selection) === 'historical') {
