@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`-` rotki now notifies you when Blockscout is queried without an API key instead of silently skipping it.
 * :release:`1.43.2 <2026-06-18>`
 * :bug:`-` Manually refetching Hyperliquid transactions now also refetches Hyperliquid Core history, so missed Core events can be recovered.
 * :bug:`-` EUR pegged assets are now valued correctly for users whose main currency is BTC, instead of causing balance queries to fail.
