@@ -88,7 +88,8 @@ catalog:
   flag-icons: 7.5.0
   flush-promises: 1.0.2
   happy-dom: 20.10.2
-  http-proxy-middleware: 3.0.6
+  http-proxy-middleware: 4.1.0
+  httpxy: 0.5.3
   husky: 9.1.7
   imask: 7.6.1
   lint-staged: 17.0.7

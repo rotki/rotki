@@ -64,7 +64,9 @@ export default defineConfig({
       formats: ['es'],
     },
     rolldownOptions: {
-      external: ['electron', ...builtinModules.flatMap(p => [p, `node:${p}`])],
+      // httpxy is only loaded via dynamic import on the dev proxy path
+      // (see AppServer.startDevelopmentProxy); keep it out of the production bundle.
+      external: ['electron', 'httpxy', ...builtinModules.flatMap(p => [p, `node:${p}`])],
       output: {
         entryFileNames: 'main.js',
         manualChunks(id) {

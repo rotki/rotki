@@ -1,10 +1,10 @@
 import type { LogService } from '@electron/main/log-service';
 import fs from 'node:fs/promises';
 import http, { type Server } from 'node:http';
+import net from 'node:net';
 import path from 'node:path';
 import { getMimeType } from '@electron/main/create-protocol';
 import { sanitizePath } from '@electron/main/path-sanitizer';
-import httpProxy from 'http-proxy';
 
 const HttpStatus = {
   OK: 200,
@@ -34,8 +34,12 @@ export class AppServer {
   }
 
   private async startDevelopmentProxy(port: number, devServerUrl: string, initialRoute?: string): Promise<void> {
+    // httpxy is a dev-only dependency, dynamically imported so it stays out of
+    // the production main bundle (it is marked external in vite.config.main.ts).
+    const { createProxyServer } = await import('httpxy');
+
     return new Promise((resolve, reject) => {
-      const proxy = httpProxy.createProxyServer({
+      const proxy = createProxyServer({
         target: devServerUrl,
         changeOrigin: true,
       });
@@ -43,23 +47,25 @@ export class AppServer {
       const server = http.createServer((req, res) => {
         this.logger.debug(`Proxy request: ${req.method} ${req.url}`);
 
-        proxy.web(req, res, {}, (err: Error | null) => {
-          if (err) {
-            this.logger.error('Proxy error:', err);
-            res.writeHead(HttpStatus.INTERNAL_SERVER_ERROR, { 'Content-Type': 'text/plain' });
-            res.end('Proxy error');
-          }
+        proxy.web(req, res).catch((error: Error) => {
+          this.logger.error('Proxy error:', error);
+          res.writeHead(HttpStatus.INTERNAL_SERVER_ERROR, { 'Content-Type': 'text/plain' });
+          res.end('Proxy error');
         });
       });
 
       // Handle WebSocket upgrade requests (for HMR)
       server.on('upgrade', (req, socket, head) => {
         this.logger.debug(`WebSocket upgrade request: ${req.url}`);
-        proxy.ws(req, socket, head, {}, (err: Error | null) => {
-          if (err) {
-            this.logger.error('WebSocket proxy error:', err);
-            socket.destroy();
-          }
+        // Node types the upgrade socket as Duplex, but HTTP/1.1 upgrades are
+        // always net.Socket, which is what httpxy expects.
+        if (!(socket instanceof net.Socket)) {
+          socket.destroy();
+          return;
+        }
+        proxy.ws(req, socket, {}, head).catch((error: Error) => {
+          this.logger.error('WebSocket proxy error:', error);
+          socket.destroy();
         });
       });
 

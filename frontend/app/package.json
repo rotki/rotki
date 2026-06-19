@@ -101,6 +101,7 @@
     "fake-indexeddb": "catalog:",
     "flush-promises": "catalog:",
     "happy-dom": "catalog:",
+    "httpxy": "catalog:",
     "msw": "catalog:",
     "npm-run-all2": "catalog:",
     "postcss": "catalog:",
