@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`-` Odos swaps now show the received amount before the router fee, so the fee no longer makes that asset go negative.
 * :bug:`-` rotki now notifies you when Blockscout is queried without an API key instead of silently skipping it.
 * :release:`1.43.2 <2026-06-18>`
 * :bug:`-` Manually refetching Hyperliquid transactions now also refetches Hyperliquid Core history, so missed Core events can be recovered.

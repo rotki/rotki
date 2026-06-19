@@ -133,6 +133,16 @@ class OdosCommonDecoderBase(EvmDecoderInterface):
             output_tokens: dict[str, FVal],
     ) -> 'EvmDecodingOutput':
         """Decodes swaps done using an Odos v1/v2 router"""
+        fee_events = self._calculate_router_fee(
+            context=context,
+            sender=sender,
+            output_tokens=output_tokens,
+        )
+        # The router skims its fee from the swap output before the user receives it, so each
+        # received transfer holds the net amount. Map each output asset to the skimmed fee so
+        # the receive event below can record the gross amount, keeping the fee a real deduction
+        # instead of spending a portion the user never received (which would go negative).
+        fees_by_asset: dict[Asset, FVal] = {event.asset: event.amount for event in fee_events}
         in_events, out_events = [], []
         for event in context.decoded_events:
             if (
@@ -165,16 +175,13 @@ class OdosCommonDecoderBase(EvmDecoderInterface):
             ):
                 event.event_type = HistoryEventType.TRADE
                 event.event_subtype = HistoryEventSubType.RECEIVE
+                event.amount += fees_by_asset.get(event.asset, ZERO)  # add back the skimmed fee to get the gross received amount  # noqa: E501
                 event.notes = f'Receive {event.amount} {event.asset.symbol_or_name()} as the result of a swap in {self.label}'  # noqa: E501
                 event.address = self.router_address
                 event.counterparty = self.counterparties()[0].identifier
                 in_events.append(event)
 
-        context.decoded_events.extend(fee_events := self._calculate_router_fee(
-            context=context,
-            sender=sender,
-            output_tokens=output_tokens,
-        ))
+        context.decoded_events.extend(fee_events)
         maybe_reshuffle_events(
             ordered_events=out_events + in_events + fee_events,
             events_list=context.decoded_events,

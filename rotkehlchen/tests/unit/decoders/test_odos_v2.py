@@ -262,7 +262,7 @@ def test_swap_multi_to_single(ethereum_inquirer, ethereum_accounts):
         event_type=HistoryEventType.MULTI_TRADE,
         event_subtype=HistoryEventSubType.RECEIVE,
         asset=A_ETH,
-        amount=FVal(received_amount := '0.008056869560090457'),
+        amount=FVal(received_amount := '0.00805767532762322'),
         location_label=ethereum_accounts[0],
         notes=f'Receive {received_amount} ETH as the result of a swap in Odos v2',
         counterparty=CPT_ODOS_V2,
@@ -322,7 +322,7 @@ def test_swap_single_to_multi(ethereum_inquirer, ethereum_accounts):
         event_type=HistoryEventType.MULTI_TRADE,
         event_subtype=HistoryEventSubType.RECEIVE,
         asset=Asset('eip155:1/erc20:0xA663B02CF0a4b149d2aD41910CB81e23e1c41c32'),
-        amount=FVal(received_amount_sfrax := '16.393269664059458706'),
+        amount=FVal(received_amount_sfrax := '16.394909154974956202'),
         location_label=ethereum_accounts[0],
         notes=f'Receive {received_amount_sfrax} sFRAX as the result of a swap in Odos v2',
         counterparty=CPT_ODOS_V2,
@@ -335,7 +335,7 @@ def test_swap_single_to_multi(ethereum_inquirer, ethereum_accounts):
         event_type=HistoryEventType.MULTI_TRADE,
         event_subtype=HistoryEventSubType.RECEIVE,
         asset=Asset('eip155:1/erc20:0x78da5799CF427Fee11e9996982F4150eCe7a99A7'),
-        amount=FVal(received_amount_rgusd := '17.599136295574420014'),
+        amount=FVal(received_amount_rgusd := '17.600896385212941309'),
         location_label=ethereum_accounts[0],
         notes=f'Receive {received_amount_rgusd} rgUSD as the result of a swap in Odos v2',
         counterparty=CPT_ODOS_V2,
@@ -433,7 +433,7 @@ def test_swap_multi_to_multi(ethereum_inquirer, ethereum_accounts):
         event_type=HistoryEventType.MULTI_TRADE,
         event_subtype=HistoryEventSubType.RECEIVE,
         asset=A_ETH,
-        amount=FVal(received_amount_eth := '0.21177820231350276'),
+        amount=FVal(received_amount_eth := '0.211799382251727933'),
         location_label=ethereum_accounts[0],
         notes=f'Receive {received_amount_eth} ETH as the result of a swap in Odos v2',
         counterparty=CPT_ODOS_V2,
@@ -446,7 +446,7 @@ def test_swap_multi_to_multi(ethereum_inquirer, ethereum_accounts):
         event_type=HistoryEventType.MULTI_TRADE,
         event_subtype=HistoryEventSubType.RECEIVE,
         asset=Asset('eip155:1/erc20:0xBe9895146f7AF43049ca1c1AE358B0541Ea49704'),
-        amount=FVal(received_amount_cbeth := '0.101348638838421792'),
+        amount=FVal(received_amount_cbeth := '0.101358774715893382'),
         location_label=ethereum_accounts[0],
         notes=f'Receive {received_amount_cbeth} cbETH as the result of a swap in Odos v2',
         counterparty=CPT_ODOS_V2,
@@ -662,7 +662,7 @@ def test_swap_on_optimism(optimism_inquirer, optimism_accounts):
         event_type=HistoryEventType.MULTI_TRADE,
         event_subtype=HistoryEventSubType.RECEIVE,
         asset=A_ETH,
-        amount=FVal(received_amount := '0.000401886614321588'),
+        amount=FVal(received_amount := '0.000401926807002289'),
         location_label=optimism_accounts[0],
         notes=f'Receive {received_amount} ETH as the result of a swap in Odos v2',
         counterparty=CPT_ODOS_V2,
@@ -796,7 +796,7 @@ def test_swap_on_binance_sc(
 ) -> None:
     tx_hash = deserialize_evm_tx_hash('0x21d24bd239db461b7fe53aef5b82d0d3b7c3a62241a3a3fd3a2ba9434bf4a53d')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=binance_sc_inquirer, tx_hash=tx_hash)  # noqa: E501
-    user_address, timestamp, gas_amount, swap_amount, receive_amount, fee_amount = binance_sc_accounts[0], TimestampMS(1736524750000), '0.000168374', '0.003', '2.07239458068046454', '0.001247178283258054'  # noqa: E501
+    user_address, timestamp, gas_amount, swap_amount, receive_amount, fee_amount = binance_sc_accounts[0], TimestampMS(1736524750000), '0.000168374', '0.003', '2.073641758963722594', '0.001247178283258054'  # noqa: E501
     a_bsc_usdc = Asset('eip155:56/erc20:0x8AC76a51cc950d9822D68b83fE1Ad97B32Cd580d')
     assert events == [EvmEvent(
         tx_ref=tx_hash,
