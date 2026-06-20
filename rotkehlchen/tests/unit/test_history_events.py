@@ -1,4 +1,5 @@
 from typing import TYPE_CHECKING
+from unittest.mock import patch
 
 import pytest
 
@@ -12,7 +13,9 @@ from rotkehlchen.constants.misc import ONE
 from rotkehlchen.db.cache import DBCacheDynamic
 from rotkehlchen.db.constants import HistoryMappingState
 from rotkehlchen.db.evmtx import DBEvmTx
+from rotkehlchen.db.filtering import HistoryEventFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
+from rotkehlchen.db.utils import get_query_chunks
 from rotkehlchen.history.events.structures.base import (
     HistoryEvent,
     HistoryEventSubType,
@@ -353,3 +356,86 @@ def test_add_history_events_sets_ignored_flag(database: 'DBHandler') -> None:
 
     assert ignored_by_asset[A_BTC.identifier] == 1
     assert ignored_by_asset[A_ETH.identifier] == 0
+
+
+def test_get_history_events_internal_skips_ignored_group_lookup(database: 'DBHandler') -> None:
+    """get_history_events_internal discards ignored_group_identifiers, so it must not run the
+    per-group `... IN (...) AND ignored=1` lookup.
+
+    On an unpaginated full-history fetch (the accounting pot) that lookup would otherwise
+    build a single IN(...) over every group the user has, exceeding SQLite's 32766 variable
+    limit - and its result is thrown away anyway.
+    """
+    events_db = DBHistoryEvents(database)
+    with database.user_write() as write_cursor:
+        events_db.add_history_events(write_cursor=write_cursor, history=[HistoryEvent(
+            group_identifier=(gid := 'internal_skip_test'),
+            sequence_index=0,
+            timestamp=TimestampMS(1710000000000),
+            location=Location.KRAKEN,
+            event_type=HistoryEventType.RECEIVE,
+            event_subtype=HistoryEventSubType.NONE,
+            asset=A_ETH,
+            amount=ONE,
+        )])
+
+    with database.conn.read_ctx() as cursor:
+        executed: list[str] = []
+        real_execute = cursor.execute
+
+        def _spy(statement, *args, **kwargs):
+            executed.append(statement)
+            return real_execute(statement, *args, **kwargs)
+
+        with patch.object(cursor, 'execute', side_effect=_spy):
+            events = events_db.get_history_events_internal(
+                cursor=cursor,
+                filter_query=HistoryEventFilterQuery.make(),
+                aggregate_by_group_ids=False,
+            )
+
+    assert {event.group_identifier for event in events} == {gid}
+    assert not any('ignored=1' in statement for statement in executed), \
+        'internal full-history fetch must not run the per-group ignored lookup'
+
+
+def test_ignored_group_lookup_detects_across_chunks(database: 'DBHandler') -> None:
+    """The path that consumes ignored_group_identifiers must still flag ignored groups, and
+    must do so across the chunk boundaries of the (now chunked) IN(...) lookup."""
+    events_db = DBHistoryEvents(database)
+    with database.user_write() as write_cursor:
+        database.add_to_ignored_assets(write_cursor=write_cursor, asset=A_BTC)
+
+    def make_event(group_identifier: str, asset: 'Asset') -> HistoryEvent:
+        return HistoryEvent(
+            group_identifier=group_identifier,
+            sequence_index=0,
+            timestamp=TimestampMS(1710000000000),
+            location=Location.KRAKEN,
+            event_type=HistoryEventType.RECEIVE,
+            event_subtype=HistoryEventSubType.NONE,
+            asset=asset,
+            amount=ONE,
+        )
+
+    with database.user_write() as write_cursor:
+        events_db.add_history_events(write_cursor=write_cursor, history=[
+            make_event('ignored_grp_btc', A_BTC),  # ignored asset -> ignored=1
+            make_event('normal_grp_eth', A_ETH),
+        ])
+
+    # force a chunk size of 1 so the two groups span multiple chunks
+    with (
+        patch(
+            'rotkehlchen.db.history_events.get_query_chunks',
+            side_effect=lambda data, chunk_size=1: get_query_chunks(data, chunk_size=1),
+        ),
+        database.conn.read_ctx() as cursor,
+    ):
+        result = events_db._get_history_events_with_ignored_groups(
+            cursor=cursor,
+            filter_query=HistoryEventFilterQuery.make(),
+            entries_limit=None,
+        )
+
+    assert result.ignored_group_identifiers == {'ignored_grp_btc'}
