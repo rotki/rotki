@@ -222,20 +222,13 @@ class EthWithdrawalEvent(EthStakingEvent):
             accounting: 'AccountingPot',
             events_iterator: Iterator['AccountingEventMixin'],  # pylint: disable=unused-argument
     ) -> int:
-        with accounting.database.conn.read_ctx() as cursor:
-            validators_info = accounting.dbeth2.get_validators_with_status(
-                cursor=cursor,
-                validator_indices={self.validator_index},
-            )
-
-        if len(validators_info) == 0:
+        if (validator_info := accounting.get_validator_with_status(self.validator_index)) is None:
             log.error(
                 f'Could not find validator {self.validator_index} in the DB while processing '
                 f'{self} for accounting. Skipping the event.',
             )
             return 1
 
-        validator_info = validators_info[0]
         event_ts, is_exit = self.get_timestamp_in_sec(), self.is_exit_or_blocknumber != 0
         name = 'Exit' if is_exit else 'Withdrawal'
         if validator_info.validator_type != ValidatorType.ACCUMULATING:

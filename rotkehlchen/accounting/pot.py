@@ -31,6 +31,7 @@ from rotkehlchen.utils.data_structures import LRUCacheWithRemove
 from rotkehlchen.utils.mixins.customizable_date import CustomizableDateMixin
 
 if TYPE_CHECKING:
+    from rotkehlchen.chain.ethereum.modules.eth2.structures import ValidatorDetailsWithStatus
     from rotkehlchen.chain.evm.accounting.aggregator import EVMAccountingAggregators
     from rotkehlchen.db.dbhandler import DBHandler
 
@@ -95,6 +96,26 @@ class AccountingPot(CustomizableDateMixin):
         # duration of a report so keying on (asset identifier, timestamp) is enough.
         # Only successful lookups are cached so error paths keep being retried.
         self._profit_currency_rates: LRUCacheWithRemove[tuple[str, Timestamp], Price] = LRUCacheWithRemove(maxsize=PROFIT_CURRENCY_RATE_CACHE_SIZE)  # noqa: E501
+        # memoize validator statuses per report. Validators don't change while processing a
+        # fixed event set, so we load them once (on first eth2 withdrawal/exit event) instead
+        # of re-scanning the whole eth2_validators table per event. None means not yet loaded.
+        self._validators_with_status: dict[int, ValidatorDetailsWithStatus] | None = None
+
+    def get_validator_with_status(self, validator_index: int) -> 'ValidatorDetailsWithStatus | None':  # noqa: E501
+        """Return the status details for a tracked validator, loading and caching all
+        validators on the first call of a report. Returns None if the index is not tracked."""
+        if self._validators_with_status is None:
+            with self.database.conn.read_ctx() as cursor:
+                self._validators_with_status = {
+                    validator.validator_index: validator
+                    for validator in self.dbeth2.get_validators_with_status(
+                        cursor=cursor,
+                        validator_indices=None,
+                    )
+                    if validator.validator_index is not None
+                }
+
+        return self._validators_with_status.get(validator_index)
 
     def _add_processed_event(self, event: ProcessedAccountingEvent) -> None:
         self.processed_events.append(event)
@@ -172,6 +193,7 @@ class AccountingPot(CustomizableDateMixin):
         self.report_id = report_id
         self.profit_currency = self.settings.main_currency.resolve_to_asset_with_oracles()
         self._profit_currency_rates.clear()
+        self._validators_with_status = None
         self.query_start_ts = start_ts
         self.query_end_ts = end_ts
         self.pnls.reset()

@@ -1,4 +1,6 @@
 
+from unittest.mock import patch
+
 import pytest
 
 from rotkehlchen.accounting.accountant import Accountant
@@ -360,6 +362,66 @@ def test_eth_withdrawal_processing(accountant: Accountant, ethereum_accounts: li
 
     assert processed_events[4].notes == f'Exit of 60 ETH from validator {v_accum_2}. Loss of -4 incurred'  # noqa: E501
     assert processed_events[4].pnl.taxable == FVal(-4) * 3000  # $6000 taxable
+
+
+@pytest.mark.parametrize('ethereum_accounts', [['0x0fdAe061cAE1Ad4Af83b27A96ba5496ca992139b']])
+@pytest.mark.parametrize('should_mock_price_queries', [True])
+@pytest.mark.parametrize('default_mock_price_value', [FVal(3000)])  # ETH price at $3000
+@pytest.mark.parametrize('db_settings', [{
+    'eth_staking_taxable_after_withdrawal_enabled': True,
+}])
+def test_eth_withdrawal_processing_queries_validators_once(
+        accountant: Accountant,
+        ethereum_accounts: list[ChecksumEvmAddress],
+) -> None:
+    """Validators don't change while processing a report, so their statuses must be loaded
+    once and cached on the pot rather than re-queried (a full eth2_validators scan plus a
+    consolidation history scan) for every withdrawal event. Regression test for that N+1:
+    the validators query must run exactly once across N withdrawal events, not N times.
+    """
+    v_1, v_2 = 2001, 2002
+    withdraw_address = ethereum_accounts[0]
+    events = [EthWithdrawalEvent(
+        validator_index=v_1 if idx % 2 == 0 else v_2,
+        timestamp=TimestampMS(1689000000000 + idx * 1000000),
+        amount=FVal(2),
+        withdrawal_address=withdraw_address,
+        is_exit=False,
+    ) for idx in range(4)]
+
+    with accountant.db.conn.write_ctx() as write_cursor:
+        DBEth2(accountant.db).add_or_update_validators(write_cursor, [
+            ValidatorDetails(
+                validator_index=v_1,
+                public_key=Eth2PubKey('0x' + 'a' * 96),
+                validator_type=ValidatorType.DISTRIBUTING,
+            ),
+            ValidatorDetails(
+                validator_index=v_2,
+                public_key=Eth2PubKey('0x' + 'b' * 96),
+                validator_type=ValidatorType.DISTRIBUTING,
+            ),
+        ])
+        DBHistoryEvents(accountant.db).add_history_events(write_cursor, events)
+
+    pot = accountant.pots[0]
+    with patch.object(
+        pot.dbeth2,
+        'get_validators_with_status',
+        wraps=pot.dbeth2.get_validators_with_status,
+    ) as validators_mock:
+        accountant.process_history(
+            start_ts=Timestamp(0),
+            end_ts=ts_now(),
+            events=events,
+        )
+
+    # all withdrawals were processed correctly (behavior preserved) ...
+    processed_events = pot.processed_events
+    assert len(processed_events) == 4
+    assert all(event.pnl.taxable == FVal(2) * 3000 for event in processed_events)
+    # ... but the validators table was queried once, not once per withdrawal event
+    assert validators_mock.call_count == 1
 
 
 @pytest.mark.parametrize('ethereum_accounts', [['0x0fdAe061cAE1Ad4Af83b27A96ba5496ca992139b']])
