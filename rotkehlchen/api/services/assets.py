@@ -982,9 +982,7 @@ class AssetsService:
                     in_liabilities = balances.liabilities.pop(token, None)  # type: ignore
 
                     if in_assets is not None or in_liabilities is not None:
-                        self.rotkehlchen.chains_aggregator.flush_cache('query_balances')
-                        self.rotkehlchen.chains_aggregator.flush_cache(
-                            name='query_balances',
+                        self.rotkehlchen.chains_aggregator.flush_chain_balance_query_cache(
                             blockchain=blockchain,
                         )
 
