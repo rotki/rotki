@@ -362,3 +362,37 @@ def test_detect_spammed_transaction_new_token(
         assert base_manager.transactions.address_has_been_spammed(
             address=base_accounts[0],
         ) is True
+
+
+@pytest.mark.parametrize('ethereum_modules', [[]])
+@pytest.mark.parametrize('ethereum_accounts', [[]])
+def test_modify_blockchain_accounts_flushes_balance_cache(
+        blockchain: 'ChainsAggregator',
+) -> None:
+    """Regression test for balance result-cache invalidation on account changes.
+
+    The cached per-chain balance method was renamed to `_query_chain_balances` in commit
+    8fe3fdd874, but the `flush_cache` calls in `modify_blockchain_accounts` kept using the
+    old `query_balances` name, so the cache key never matched and the entry was never
+    invalidated. A non-ignore-cache balance query within the cache TTL would then return
+    stale balances (e.g. missing a newly added account).
+    """
+    chain = SupportedBlockchain.ETHEREUM
+    keys_before = set(blockchain.results_cache)
+    # Populate the cached full-chain balance query the way a non-ignore-cache query does.
+    # With no accounts the method short-circuits (no network) but still caches its result.
+    blockchain._query_chain_balances(blockchain=chain, ignore_cache=False, addresses=None)
+    cached_keys = set(blockchain.results_cache) - keys_before
+    assert len(cached_keys) == 1, 'the full-chain balance query should have been cached'
+
+    with blockchain.database.user_write() as write_cursor:
+        blockchain.modify_blockchain_accounts(
+            write_cursor=write_cursor,
+            blockchain=chain,
+            accounts=[make_evm_address()],
+            append_or_remove='append',
+        )
+
+    assert cached_keys.isdisjoint(blockchain.results_cache), (
+        'adding an account must invalidate the cached chain balance query'
+    )
