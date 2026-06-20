@@ -713,6 +713,10 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
             if ignore_cache is True and chain.is_bitcoin():
                 xpub_manager.check_for_new_xpub_addresses(blockchain=chain)  # type: ignore[arg-type] # mypy doesn't understand is_bitcoin()
 
+            # on a full query skip chains with no accounts to avoid a needless write tx each
+            if (addresses is None or len(addresses) == 0) and len(self.accounts.get(chain)) == 0:
+                continue
+
             self._query_chain_balances(blockchain=chain, ignore_cache=ignore_cache, addresses=addresses)  # noqa: E501
             self._update_blockchain_balances_cache(blockchain=chain, addresses=addresses)
 
