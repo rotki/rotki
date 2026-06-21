@@ -808,6 +808,7 @@ class Location(DBCharEnumMixIn):
     HYPERLIQUID = 57  # on-chain Hyperliquid events
     MONAD = 58  # on-chain Monad events
     GATE = 59
+    BIT2ME = 60
 
     @staticmethod
     def from_chain_id(chain_id: EVM_CHAIN_IDS_WITH_TRANSACTIONS_TYPE) -> 'EVM_LOCATIONS_TYPE':
