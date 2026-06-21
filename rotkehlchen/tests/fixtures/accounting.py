@@ -22,6 +22,7 @@ from rotkehlchen.externalapis.alchemy import Alchemy
 from rotkehlchen.externalapis.coingecko import Coingecko
 from rotkehlchen.externalapis.cryptocompare import Cryptocompare
 from rotkehlchen.externalapis.defillama import Defillama
+from rotkehlchen.externalapis.moralis import Moralis
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.manual_price_oracles import ManualCurrentOracle
 from rotkehlchen.inquirer import Inquirer
@@ -367,6 +368,7 @@ def _create_inquirer(
         coingecko=Coingecko(database=None),
         defillama=Defillama(database=None),
         alchemy=Alchemy(database=None),
+        moralis=Moralis(database=None),
         manualcurrent=ManualCurrentOracle(),
         msg_aggregator=MessagesAggregator(),
     )

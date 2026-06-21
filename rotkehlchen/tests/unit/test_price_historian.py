@@ -27,6 +27,7 @@ from rotkehlchen.externalapis.alchemy import Alchemy
 from rotkehlchen.externalapis.coingecko import Coingecko
 from rotkehlchen.externalapis.cryptocompare import Cryptocompare
 from rotkehlchen.externalapis.defillama import Defillama
+from rotkehlchen.externalapis.moralis import Moralis
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.handler import _prioritize_manual_balances_query
 from rotkehlchen.history.price import PriceHistorian
@@ -86,6 +87,7 @@ def fixture_fake_price_historian(historical_price_oracles_order):
         coingecko=MagicMock(spec=Coingecko),
         defillama=MagicMock(spec=Defillama),
         alchemy=MagicMock(spec=Alchemy),
+        moralis=MagicMock(spec=Moralis),
         uniswapv2=MagicMock(spec=UniswapV2Oracle),
         uniswapv3=MagicMock(spec=UniswapV3Oracle),
     )

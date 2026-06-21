@@ -61,6 +61,10 @@ const services = [
     component: defineAsyncComponent(() => import('@/modules/settings/api-keys/external/AlchemyApiKey.vue')),
     name: 'alchemy',
   },
+  {
+    component: defineAsyncComponent(() => import('@/modules/settings/api-keys/external/MoralisApiKey.vue')),
+    name: 'moralis',
+  },
 ];
 
 // Update the filteredServices computed property

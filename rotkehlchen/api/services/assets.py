@@ -96,6 +96,7 @@ CURRENT_TO_HISTORICAL_PRICE_ORACLES: Final = {
     CurrentPriceOracle.UNISWAPV2: HistoricalPriceOracle.UNISWAPV2,
     CurrentPriceOracle.UNISWAPV3: HistoricalPriceOracle.UNISWAPV3,
     CurrentPriceOracle.ALCHEMY: HistoricalPriceOracle.ALCHEMY,
+    CurrentPriceOracle.MORALIS: HistoricalPriceOracle.MORALIS,
 }
 
 if TYPE_CHECKING:

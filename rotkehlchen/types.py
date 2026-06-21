@@ -114,6 +114,7 @@ class ExternalService(SerializableEnumNameMixin):
     DEFILLAMA = auto()
     COINGECKO = auto()
     ALCHEMY = auto()
+    MORALIS = auto()
     HELIUS = auto()
     ROUTESCAN = auto()
     JUPITER = auto()

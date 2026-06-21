@@ -9,6 +9,7 @@ export const PriceOracle = {
   FIAT: 'fiat',
   MANUAL: 'manual',
   MANUALCURRENT: 'manualcurrent',
+  MORALIS: 'moralis',
   UNISWAP2: 'uniswapv2',
   UNISWAP3: 'uniswapv3',
 } as const;

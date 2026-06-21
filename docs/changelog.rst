@@ -2,6 +2,8 @@
 Changelog
 =========
 
+* :feature:`12219` Add Moralis as a price Oracle.
+
 * :release:`1.43.2 <2026-06-18>`
 * :bug:`-` Manually refetching Hyperliquid transactions now also refetches Hyperliquid Core history, so missed Core events can be recovered.
 * :bug:`-` EUR pegged assets are now valued correctly for users whose main currency is BTC, instead of causing balance queries to fail.

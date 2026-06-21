@@ -14,6 +14,7 @@ class CurrentPriceOracle(OracleSource):
     FIAT = auto()
     DEFILLAMA = auto()
     ALCHEMY = auto()
+    MORALIS = auto()
 
 
 DEFAULT_CURRENT_PRICE_ORACLES_ORDER = (

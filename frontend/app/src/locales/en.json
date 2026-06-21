@@ -3010,6 +3010,11 @@
       "warning": "Authorize Monerium to allow rotki to enrich your transactions with banking context. Tokens are stored locally and used read-only.",
       "website_url_missing": "Monerium OAuth website URL is not configured."
     },
+    "moralis": {
+      "description": "rotki uses Moralis to obtain price information about EVM tokens in your portfolio. An API key is needed if you want it included in your list of oracles.",
+      "hint": "Enter your Moralis API key",
+      "title": "Moralis"
+    },
     "need_premium": "Upgrade to premium to use this feature.",
     "need_tier": "Requires {tier} tier or higher.",
     "no_services_found": "No services found",
@@ -4661,6 +4666,7 @@
       "defillama": "DeFi Llama",
       "fiat": "Fiat Exchange Rates",
       "manual": "Manual",
+      "moralis": "Moralis",
       "uniswapv2": "Uniswap V2",
       "uniswapv3": "Uniswap V3"
     },

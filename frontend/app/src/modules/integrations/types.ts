@@ -18,6 +18,7 @@ export const ExternalServiceKeys = z.object({
   helius: ApiKey.optional(),
   loopring: ApiKey.optional(),
   monerium: ApiKey.optional(),
+  moralis: ApiKey.optional(),
   opensea: ApiKey.optional(),
   thegraph: ApiKey.optional(),
 });

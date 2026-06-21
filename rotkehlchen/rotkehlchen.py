@@ -92,6 +92,7 @@ from rotkehlchen.externalapis.etherscan import Etherscan
 from rotkehlchen.externalapis.helius import Helius
 from rotkehlchen.externalapis.jupiter import Jupiter
 from rotkehlchen.externalapis.monerium import Monerium
+from rotkehlchen.externalapis.moralis import Moralis
 from rotkehlchen.externalapis.routescan import Routescan
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.asset_updates.manager import AssetsUpdater
@@ -210,6 +211,7 @@ class Rotkehlchen:
         self.coingecko = Coingecko(database=None)
         self.defillama = Defillama(database=None)
         self.alchemy = Alchemy(database=None)
+        self.moralis = Moralis(database=None)
         self.icon_manager = IconManager(
             data_dir=self.data_dir,
             coingecko=self.coingecko,
@@ -227,6 +229,7 @@ class Rotkehlchen:
             coingecko=self.coingecko,
             defillama=self.defillama,
             alchemy=self.alchemy,
+            moralis=self.moralis,
             manualcurrent=ManualCurrentOracle(),
             msg_aggregator=self.msg_aggregator,
         )
@@ -279,7 +282,7 @@ class Rotkehlchen:
         self.exchange_manager.delete_all_exchanges()
         self.data.logout()
         self.monerium = None
-        for instance in (self.cryptocompare, self.defillama, self.coingecko, self.alchemy, Inquirer()._manualcurrent):  # noqa: E501
+        for instance in (self.cryptocompare, self.defillama, self.coingecko, self.alchemy, self.moralis, Inquirer()._manualcurrent):  # noqa: E501
             if instance.db is not None:  # unset DB if needed
                 instance.unset_database()
         CachedSettings().reset()
@@ -351,6 +354,7 @@ class Rotkehlchen:
         self.defillama.set_database(self.data.db)
         self.coingecko.set_database(self.data.db)
         self.alchemy.set_database(self.data.db)
+        self.moralis.set_database(self.data.db)
         Inquirer()._manualcurrent.set_database(database=self.data.db)
 
         # Anything that was set above here has to be cleaned in case of failure in the next step
@@ -576,6 +580,7 @@ class Rotkehlchen:
             coingecko=self.coingecko,
             defillama=self.defillama,
             alchemy=self.alchemy,
+            moralis=self.moralis,
             uniswapv2=(uniswap_v2_oracle := UniswapV2Oracle()),
             uniswapv3=(uniswap_v3_oracle := UniswapV3Oracle()),
         )
@@ -687,6 +692,7 @@ class Rotkehlchen:
         self.defillama.unset_database()
         self.coingecko.unset_database()
         self.alchemy.unset_database()
+        self.moralis.unset_database()
         Inquirer()._manualcurrent.unset_database()
         CachedSettings().reset()
 
@@ -1456,14 +1462,18 @@ class Rotkehlchen:
         if oracles is None:
             return True, ''
 
-        if (
-            oracle_type.ALCHEMY in oracles and
-            self.data.db.get_external_service_credentials(ExternalService.ALCHEMY) is None
+        for oracle_name, external_service in (
+            ('Alchemy', ExternalService.ALCHEMY),
+            ('Moralis', ExternalService.MORALIS),
         ):
-            return False, (
-                'You have enabled the Alchemy price oracle but you do not have an API key '
-                'set. Please go to API Keys -> External Services and add one.'
-            )
+            if (
+                oracle_type[external_service.name] in oracles and
+                self.data.db.get_external_service_credentials(external_service) is None
+            ):
+                return False, (
+                    f'You have enabled the {oracle_name} price oracle but you do not have an '
+                    'API key set. Please go to API Keys -> External Services and add one.'
+                )
 
         set_oracles_order_method(oracles)
         return True, ''

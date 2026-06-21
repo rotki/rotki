@@ -74,6 +74,7 @@ const sourceLabels: Record<string, string> = {
   [PriceOracle.DEFILLAMA]: 'DefiLlama',
   [PriceOracle.FIAT]: 'Fiat',
   [PriceOracle.MANUAL]: 'Manual',
+  [PriceOracle.MORALIS]: 'Moralis',
   [PriceOracle.UNISWAP2]: 'Uniswap V2',
   [PriceOracle.UNISWAP3]: 'Uniswap V3',
 };
@@ -84,6 +85,7 @@ const sourceBrandColors: Record<string, string> = {
   [PriceOracle.CRYPTOCOMPARE]: '#f37021',
   [PriceOracle.DEFILLAMA]: '#2172e5',
   [PriceOracle.FIAT]: '#85bb65',
+  [PriceOracle.MORALIS]: '#1ac6ff',
   [PriceOracle.UNISWAP2]: '#ff007a',
   [PriceOracle.UNISWAP3]: '#e50887',
 };
