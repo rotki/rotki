@@ -26,4 +26,11 @@ def migrate_to_v17(
         it is no longer used. Drop it."""
         write_cursor.execute('DROP TABLE IF EXISTS location_unsupported_assets')
 
+    @progress_step('Adding moralis to price_history_source_types')
+    def _add_moralis_price_source(write_cursor: 'DBCursor') -> None:
+        write_cursor.execute(
+            'INSERT OR IGNORE INTO price_history_source_types(type, seq) VALUES (?, ?)',
+            ('J', 10),
+        )
+
     perform_globaldb_upgrade_steps(connection, progress_handler)
