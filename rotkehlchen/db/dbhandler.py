@@ -67,6 +67,7 @@ from rotkehlchen.db.filtering import UserNotesFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.db.loopring import DBLoopring
 from rotkehlchen.db.misc import detect_sqlcipher_version
+from rotkehlchen.db.pending_transactions import PendingTransactionsTracker
 from rotkehlchen.db.schema import DB_SCRIPT_CREATE_TABLES
 from rotkehlchen.db.schema_transient import DB_SCRIPT_CREATE_TRANSIENT_TABLES
 from rotkehlchen.db.settings import (
@@ -251,6 +252,9 @@ class DBHandler:
         self.get_or_create_token_lock = Semaphore()
         self.match_asset_movements_lock = Semaphore()
         self._ignored_asset_ids_cache: dict[bool, set[str]] = {}
+        # tracks, in memory, which chains may have transactions pending receipt fetching or
+        # decoding so the periodic scheduler can skip its full-table "is there work?" scans
+        self.pending_txs_tracker = PendingTransactionsTracker()
         self.password = password
         self._connect()
         self._check_unfinished_upgrades(resume_from_backup=resume_from_backup)
