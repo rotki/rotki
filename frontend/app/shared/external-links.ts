@@ -62,5 +62,6 @@ export const externalLinks = {
   coingeckoApiKey: 'https://www.coingecko.com/en/api/pricing',
   defillamaApiKey: 'https://defillama.com/pro-api',
   alchemyApiKey: 'https://docs.alchemy.com/reference/api-overview',
+  moralisApiKey: 'https://docs.moralis.com/web3-data-api/evm/get-your-api-key',
   beaconChainApiKey: 'https://beaconcha.in/user/settings',
 };

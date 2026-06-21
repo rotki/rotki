@@ -52,6 +52,11 @@ export const ALCHEMY_PRIO_LIST_ITEM: PrioritizedListItemData<PriceOracle> = {
   identifier: PriceOracle.ALCHEMY,
 };
 
+export const MORALIS_PRIO_LIST_ITEM: PrioritizedListItemData<PriceOracle> = {
+  icon: getPublicServiceImagePath('moralis.png'),
+  identifier: PriceOracle.MORALIS,
+};
+
 export const UNISWAP2_PRIO_LIST_ITEM: PrioritizedListItemData<PriceOracle> = {
   icon: getPublicProtocolImagePath('uniswap.svg'),
   identifier: PriceOracle.UNISWAP2,

@@ -39,6 +39,7 @@ const ORACLE_SOURCES: string[] = [
   PriceOracle.DEFILLAMA,
   PriceOracle.FIAT,
   PriceOracle.MANUAL,
+  PriceOracle.MORALIS,
   PriceOracle.UNISWAP2,
   PriceOracle.UNISWAP3,
 ];

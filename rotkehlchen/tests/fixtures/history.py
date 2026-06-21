@@ -7,6 +7,7 @@ from rotkehlchen.externalapis.alchemy import Alchemy
 from rotkehlchen.externalapis.coingecko import Coingecko
 from rotkehlchen.externalapis.cryptocompare import Cryptocompare
 from rotkehlchen.externalapis.defillama import Defillama
+from rotkehlchen.externalapis.moralis import Moralis
 from rotkehlchen.history.price import PriceHistorian
 from rotkehlchen.history.types import HistoricalPriceOracle
 from rotkehlchen.tests.utils.history import maybe_mock_historical_price_queries
@@ -50,6 +51,19 @@ def fixture_alchemy(database: 'DBHandler'):
             )],
         )
     return Alchemy(database=database)
+
+
+@pytest.fixture(name='moralis')
+def fixture_moralis(database: 'DBHandler'):
+    with database.user_write() as write_cursor:
+        database.add_external_service_credentials(
+            write_cursor=write_cursor,
+            credentials=[ExternalServiceApiCredentials(
+                service=ExternalService.MORALIS,
+                api_key=ApiKey('dummy-api-key'),
+            )],
+        )
+    return Moralis(database=database)
 
 
 @pytest.fixture(scope='session', name='session_defillama')
@@ -113,6 +127,7 @@ def price_historian(
         cryptocompare,
         coingecko,
         alchemy,
+        moralis,
         defillama,
         uniswapv2_inquirer,
         uniswapv3_inquirer,
@@ -129,6 +144,7 @@ def price_historian(
         cryptocompare=cryptocompare,
         coingecko=coingecko,
         alchemy=alchemy,
+        moralis=moralis,
         defillama=defillama,
         uniswapv2=uniswapv2_inquirer,
         uniswapv3=uniswapv3_inquirer,

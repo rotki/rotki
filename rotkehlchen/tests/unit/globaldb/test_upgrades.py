@@ -1808,6 +1808,37 @@ def test_upgrade_v16_v17(
         assert table_exists(cursor=cursor, name='location_unsupported_assets') is False
 
 
+@pytest.mark.parametrize('globaldb_upgrades', [[]])
+@pytest.mark.parametrize('custom_globaldb', ['v14_global.db'])
+@pytest.mark.parametrize('target_globaldb_version', [14])
+@pytest.mark.parametrize('reload_user_assets', [False])
+@pytest.mark.parametrize('use_in_memory_globaldb', [False])
+def test_upgrade_v17_v18(
+        globaldb: GlobalDBHandler,
+        messages_aggregator: MessagesAggregator,
+) -> None:
+    """Test the global DB upgrade from v17 to v18 that adds moralis to the
+    historical price sources table."""
+    with globaldb.conn.read_ctx() as cursor:
+        cursor.execute('SELECT COUNT(*) FROM price_history_source_types WHERE seq = 10')
+        assert cursor.fetchone()[0] == 0
+
+    with ExitStack() as stack:
+        patch_for_globaldb_upgrade_to(stack, 18)
+        maybe_upgrade_globaldb(
+            connection=globaldb.conn,
+            global_dir=globaldb._data_directory / GLOBALDIR_NAME,  # type: ignore
+            db_filename=GLOBALDB_NAME,
+            msg_aggregator=messages_aggregator,
+        )
+
+    assert globaldb.get_setting_value('version', 0) == 18
+    with globaldb.conn.read_ctx() as cursor:
+        assert cursor.execute(
+            "SELECT seq FROM price_history_source_types WHERE type = 'J'",
+        ).fetchone()[0] == 10
+
+
 @pytest.mark.parametrize('custom_globaldb', ['v2_global.db'])
 @pytest.mark.parametrize('target_globaldb_version', [2])
 @pytest.mark.parametrize('reload_user_assets', [False])

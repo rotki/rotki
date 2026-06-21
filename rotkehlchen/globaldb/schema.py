@@ -232,6 +232,8 @@ INSERT OR IGNORE INTO price_history_source_types(type, seq) VALUES ('G', 7);
 INSERT OR IGNORE INTO price_history_source_types(type, seq) VALUES ('H', 8);
 /* ALCHEMY */
 INSERT OR IGNORE INTO price_history_source_types(type, seq) VALUES ('I', 9);
+/* MORALIS */
+INSERT OR IGNORE INTO price_history_source_types(type, seq) VALUES ('J', 10);
 """
 
 DB_CREATE_PRICE_HISTORY = """

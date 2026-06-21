@@ -448,6 +448,8 @@ def vcr_config() -> dict[str, Any]:
         'decode_compressed_response': True,
         'ignore_localhost': True,
         'filter_query_parameters': ['apikey', 'api_key'],
+        # redact api key headers (e.g. Moralis' X-API-Key) so they never enter cassettes
+        'filter_headers': [('X-API-Key', 'DUMMY')],
         'match_on': ['etherscan_matcher'],
     }
 
