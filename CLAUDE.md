@@ -624,6 +624,28 @@ The mapping of these HistoryEvents types, subtypes, and categories is done in [r
 - All byte signatures should be a constant byte literal. Like ```DEPOSIT_TOPIC: Final = b'\xdc\xbc\x1c\x05$\x0f1\xff:\xd0g\xef\x1e\xe3\\\xe4\x99wbu.:\tR\x84uED\xf4\xc7\t\xd7'```
 - Don't put assets as constants. If you need a constant just use the asset identifier as a string and compare against it.
 
+### Database schema changes (user DB and global DB)
+
+rotki has two SQLite databases that each carry a version and an ordered list of upgrade scripts: the **user DB** and the **global DB**. The same rule applies to both — when you need a schema change (add/alter a table, add a settings row, backfill data) **do not blindly create a new upgrade and bump the version**. First check whether the latest existing upgrade has already been released:
+
+1. Find the highest `vN_vN+1.py` upgrade (the one matching the current version constant — see the per-DB table below).
+2. Check whether that upgrade is **already released**. Read its docstring (it says e.g. "This happened in 1.44" / "This upgrade takes place in v1.44.0") and compare against the latest released rotki version (`docs/changelog.rst` / git tags).
+3. **If the latest upgrade is already released** → create a new `vN_vN+1.py`, bump the version constant, register it in the upgrades list, add a test, and (global DB only) extend the `Literal` in `tests/utils/globaldb.py::patch_for_globaldb_upgrade_to`.
+4. **If the latest upgrade is still unreleased** (same upcoming version as your change) → **add your step to that existing upgrade instead** of creating a new one. Do NOT bump the version and do NOT add a new upgrade file. Add an assertion for your change to that upgrade's existing test rather than a separate test.
+
+Per-DB locations:
+
+| | User DB | Global DB |
+|---|---|---|
+| Version constant | `ROTKEHLCHEN_DB_VERSION` in `rotkehlchen/db/settings.py` | `GLOBAL_DB_VERSION` in `rotkehlchen/globaldb/utils.py` |
+| Upgrade scripts | `rotkehlchen/db/upgrades/vN_vN+1.py` | `rotkehlchen/globaldb/upgrades/vN_vN+1.py` |
+| Upgrades list | `UPGRADES_LIST` in `rotkehlchen/db/upgrade_manager.py` | `UPGRADES_LIST` in `rotkehlchen/globaldb/upgrades/manager.py` |
+| Fresh-create schema | `rotkehlchen/db/schema.py` | `rotkehlchen/globaldb/schema.py` |
+
+Always keep the fresh-create schema (`schema.py`) in sync with the upgrade so newly created DBs match the upgraded state.
+
+**Global DB only — extra hazard:** the global DB also ships as a packaged file (`rotkehlchen/data/global.db`) in the `rotki/data` submodule, which is only regenerated/bumped per release. Bumping `GLOBAL_DB_VERSION` ahead of that packaged DB makes its version (e.g. 17) mismatch the code (e.g. 18), which breaks `soft_reset_assets_list`/`hard_reset_assets_list` (version-equality guard) and the packaged-DB consistency tests — exactly the kind of "tests fail on develop" caused by an unmerged data-repo change. This is the strongest reason to fold into the unreleased upgrade rather than create a premature new version.
+
 ## Testing Strategy
 
 ### Backend Testing

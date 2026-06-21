@@ -81,7 +81,7 @@ USER_TOKEN3 = EvmToken.initialize(
 
 def patch_for_globaldb_upgrade_to(
         stack: ExitStack,
-        version: Literal[2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
+        version: Literal[2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17],
 ) -> ExitStack:
     stack.enter_context(
         patch(
