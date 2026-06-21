@@ -122,6 +122,8 @@ INSERT OR IGNORE INTO location(location, seq) VALUES ('y', 57);
 INSERT OR IGNORE INTO location(location, seq) VALUES ('z', 58);
 /* Gate */
 INSERT OR IGNORE INTO location(location, seq) VALUES ('{', 59);
+/* Bit2me */
+INSERT OR IGNORE INTO location(location, seq) VALUES ('|', 60);
 """
 
 # Custom enum table for Balance categories (asset/liability)
