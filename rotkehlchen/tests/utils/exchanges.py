@@ -11,6 +11,7 @@ from rotkehlchen.constants.assets import A_BTC, A_ETH, A_EUR
 from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.exchanges.binance import BINANCE_BASE_URL, BINANCEUS_BASE_URL, Binance
+from rotkehlchen.exchanges.bit2me import Bit2me
 from rotkehlchen.exchanges.bitcoinde import Bitcoinde
 from rotkehlchen.exchanges.bitfinex import Bitfinex
 from rotkehlchen.exchanges.bitmex import Bitmex
@@ -768,6 +769,26 @@ def create_test_bitfinex(
 
     return Bitfinex(
         name='bitfinex',
+        api_key=api_key,
+        secret=secret,
+        database=database,
+        msg_aggregator=msg_aggregator,
+    )
+
+
+def create_test_bit2me(
+        database: DBHandler,
+        msg_aggregator: MessagesAggregator,
+        api_key: ApiKey | None = None,
+        secret: ApiSecret | None = None,
+) -> Bit2me:
+    if api_key is None:
+        api_key = make_api_key()
+    if secret is None:
+        secret = make_api_secret()
+
+    return Bit2me(
+        name='bit2me',
         api_key=api_key,
         secret=secret,
         database=database,

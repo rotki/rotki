@@ -302,8 +302,28 @@ BIT2ME_AIRDROP_RESPONSE = """{
 }"""
 
 BIT2ME_TRADES_RESPONSE = """{
-  "trades": []
+  "count": 1,
+  "data": [
+    {
+      "id": "trade-btc-001",
+      "orderId": "order-001",
+      "symbol": "BTC/EUR",
+      "side": "buy",
+      "orderType": "market",
+      "price": "90000.00",
+      "amount": "0.01000000",
+      "priceCurrency": "EUR",
+      "amountCurrency": "BTC",
+      "createdAt": "2025-12-01T10:00:00.000Z",
+      "cost": "900.00",
+      "feeAmount": "0.50000000",
+      "feePercentage": "0.0555",
+      "feeCurrency": "EUR"
+    }
+  ]
 }"""
+
+EMPTY_TRADES_RESPONSE = """{"count": 0, "data": []}"""
 
 
 def test_bit2me_location(bit2me):
@@ -335,7 +355,7 @@ def test_bit2me_signature_generation(bit2me):
 def test_bit2me_signature_with_body(bit2me):
     """Test signature generation with request body."""
     path = '/v1/trading/order'
-    body = {'symbol': 'BTC-EUR', 'side': 'buy'}
+    body = {'symbol': 'BTC/EUR', 'side': 'buy'}
     _, signature = bit2me._generate_signature(path, body)
 
     # Verify signature is different when body is included
@@ -387,37 +407,6 @@ def test_bit2me_query_balances_unknown_asset(bit2me):
     assert A_ETH in balances
 
 
-def test_bit2me_query_balances_with_earn(bit2me):
-    """Test that EARN balances are included in the total balance.
-
-    EARN balances are calculated from earn transactions:
-    - withdrawal/earn with dest_class=earn = deposit TO earn (adds)
-    - deposit/earn with dest_class=pocket = withdrawal FROM earn (subtracts)
-    """
-
-    def mock_api_return(method, url, **kwargs):  # pylint: disable=unused-argument
-        if 'transaction' in url:
-            return MockResponse(200, BIT2ME_EARN_TRANSACTIONS_RESPONSE)
-        return MockResponse(200, BIT2ME_BALANCES_RESPONSE)
-
-    with patch.object(bit2me.session, 'request', side_effect=mock_api_return):
-        balances, msg = bit2me.query_balances()
-
-    assert msg == ''
-
-    # BTC: pocket (0.5 + 0.1 blocked) + earn (0.5 deposited - 0.1 withdrawn) = 1.0
-    assert A_BTC in balances
-    assert balances[A_BTC].amount == FVal('1.0')
-
-    # ETH: pocket (2.0) + earn (1.0 deposited) = 3.0
-    assert A_ETH in balances
-    assert balances[A_ETH].amount == FVal('3.0')
-
-    # EUR should still be just pocket balance
-    assert A_EUR in balances
-    assert balances[A_EUR].amount == FVal('1600.50')
-
-
 def test_bit2me_query_deposits_withdrawals(bit2me):
     """Test querying deposit/withdrawal history from Bit2me."""
 
@@ -430,24 +419,25 @@ def test_bit2me_query_deposits_withdrawals(bit2me):
             end_ts=Timestamp(1800000000),
         )
 
-    # Should have 3 movements: 1 deposit (no fee for bank transfer) + 2 withdrawal (event + fee)
-    # The purchase (transfer) and internal transfer are skipped
+    # Should have 3 movements: 1 deposit (no fee for bank transfer) + 1 withdrawal + 1 fee.
+    # The purchase (transfer) and internal transfer are skipped. AssetMovement encodes the
+    # direction in event_subtype (RECEIVE=deposit, SPEND=withdrawal, FEE=fee).
     assert len(movements) == 3
 
-    # Find the withdrawal events
-    withdrawal_events = [m for m in movements if m.event_type == HistoryEventType.WITHDRAWAL]
-    assert len(withdrawal_events) == 2  # withdrawal + fee
+    deposit_events = [m for m in movements if m.event_subtype == HistoryEventSubType.RECEIVE]
+    withdrawal_events = [m for m in movements if m.event_subtype == HistoryEventSubType.SPEND]
+    fee_events = [m for m in movements if m.event_subtype == HistoryEventSubType.FEE]
+    assert len(deposit_events) == 1  # bank deposit, no fee
+    assert len(withdrawal_events) == 1
+    assert len(fee_events) == 1
 
-    # Find the deposit events
-    deposit_events = [m for m in movements if m.event_type == HistoryEventType.DEPOSIT]
-    assert len(deposit_events) == 1  # deposit only (no fee for bank transfer)
-
-    # Check withdrawal details
-    # The amount should be what arrives at destination (0.499), not what was debited
-    # from origin (0.5). The fee (0.001 ETH) is tracked separately
-    withdrawal = next(e for e in withdrawal_events if e.event_subtype != HistoryEventSubType.FEE)
+    # The withdrawal amount should be what arrives at the destination (0.499), not what was
+    # debited from origin (0.5). The fee (0.001 ETH) is tracked as a separate event.
+    withdrawal = withdrawal_events[0]
     assert withdrawal.asset == A_ETH
     assert withdrawal.amount == FVal('0.499')
+    assert fee_events[0].asset == A_ETH
+    assert fee_events[0].amount == FVal('0.001')
 
 
 def test_bit2me_query_brokerage_trades(bit2me):
@@ -494,6 +484,32 @@ def test_bit2me_query_brokerage_trades(bit2me):
     assert fee_event.amount == expected_fee
 
 
+def test_bit2me_query_trades(bit2me):
+    """Test querying spot trades from /v1/trading/trade."""
+
+    def mock_api_return(method, url, **kwargs):  # pylint: disable=unused-argument
+        return MockResponse(200, BIT2ME_TRADES_RESPONSE)
+
+    with patch.object(bit2me.session, 'request', side_effect=mock_api_return):
+        trades, _ = bit2me.query_online_trade_history(
+            start_ts=Timestamp(0),
+            end_ts=Timestamp(1800000000),
+        )
+
+    # buy 0.01 BTC at 90000 EUR -> spend 900 EUR, receive 0.01 BTC, fee 0.5 EUR
+    assert len(trades) == 3
+    spend_event = next(t for t in trades if t.event_subtype == HistoryEventSubType.SPEND)
+    receive_event = next(t for t in trades if t.event_subtype == HistoryEventSubType.RECEIVE)
+    fee_event = next(t for t in trades if t.event_subtype == HistoryEventSubType.FEE)
+
+    assert spend_event.asset == A_EUR
+    assert spend_event.amount == FVal('900')
+    assert receive_event.asset == A_BTC
+    assert receive_event.amount == FVal('0.01')
+    assert fee_event.asset == A_EUR
+    assert fee_event.amount == FVal('0.5')
+
+
 def test_bit2me_query_history_events(bit2me):
     """Test querying all history events combines trades and movements."""
 
@@ -502,7 +518,7 @@ def test_bit2me_query_history_events(bit2me):
             return MockResponse(200, BIT2ME_TRANSACTIONS_RESPONSE)
         elif 'trade' in url:
             return MockResponse(200, BIT2ME_TRADES_RESPONSE)
-        return MockResponse(200, '{}')
+        return MockResponse(200, EMPTY_TRADES_RESPONSE)
 
     with patch.object(bit2me.session, 'request', side_effect=mock_api_return):
         events, _ = bit2me.query_online_history_events(

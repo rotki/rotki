@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :feature:`-` Add support for Bit2me exchange.
 * :feature:`12219` Add Moralis as a price Oracle.
 
 * :release:`1.43.2 <2026-06-18>`
