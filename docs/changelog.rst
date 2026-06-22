@@ -3,6 +3,7 @@ Changelog
 =========
 
 * :feature:`-` Add support for Bit2me exchange.
+* :feature:`9316` Searching for an asset in the asset manager now shows the closest matches first, so the asset you are looking for appears at the top instead of being buried under similarly-named or spam tokens.
 * :feature:`12219` Add Moralis as a price Oracle.
 * :bug:`12277` If your main currency is not USD, editing a balance snapshot now shows and saves each value converted at the exchange rate from that snapshot's own date. Previously it used today's exchange rate, so the values you saw and saved were off, especially for assets pegged to a fiat currency such as EUR stablecoins.
 * :bug:`12306` Chain locations (e.g. ``ethereum``, ``optimism``) with on-chain balances are now reachable via global search, even when no manual balance is tagged with that label.

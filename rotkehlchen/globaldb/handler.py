@@ -440,7 +440,9 @@ class GlobalDBHandler:
             # get `entries_found`. In the case of handling the ignored assets we need to manually
             # count the assets found since the information needed is both in the
             # userdb (ignored assets) and the globaldb (filtered identifiers)
-            query, bindings = filter_query.prepare(with_pagination=False)
+            # skip ORDER BY for the count: sorting (and the per-row levenshtein calls it may add)
+            # is pointless for COUNT(*)/identifier collection and would only add cost + bindings.
+            query, bindings = filter_query.prepare(with_pagination=False, with_order=False)
             if filter_query.ignored_assets_handling == IgnoredAssetsHandling.NONE:
                 total_found_query = f'SELECT COUNT(*) FROM ({parent_query}) ' + query
                 entries_found = cursor.execute(total_found_query, bindings).fetchone()[0]

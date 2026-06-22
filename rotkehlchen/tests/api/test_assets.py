@@ -82,6 +82,16 @@ def assert_asset_at_top_position(
             assert index <= max_position_index
 
 
+def _min_levenshtein(entry: dict[str, Any], term: str) -> int:
+    """Mirror the backend's min-over-name/symbol levenshtein scoring for an asset entry."""
+    distances = [100]
+    if entry.get('name') is not None:
+        distances.append(levenshtein(term, entry['name'].casefold()))
+    if entry.get('symbol') is not None:
+        distances.append(levenshtein(term, entry['symbol'].casefold()))
+    return min(distances)
+
+
 @pytest.mark.freeze_time('2026-06-05 04:27:20 GMT', tick=True)
 @pytest.mark.vcr
 @pytest.mark.parametrize('number_of_eth_accounts', [2])
@@ -344,7 +354,10 @@ def test_get_all_assets(rotkehlchen_api_server: 'APIServer') -> None:
         assert 'uniswap' in entry['name'].lower()
         if entry['asset_type'] == AssetType.EVM_TOKEN.serialize():
             assert entry['evm_chain'] in [x.to_name() for x in ChainID]
-    assert_asset_result_order(data=result['entries'], is_ascending=False, order_field='symbol')
+    # a name/symbol search is now relevance-ranked (levenshtein), so the page is ordered by
+    # non-decreasing distance to the term, with the requested symbol sort only as tiebreaker
+    distances = [_min_levenshtein(entry, 'uniswap') for entry in result['entries']]
+    assert distances == sorted(distances)
 
     # test that ignored assets filter works
     with rotkehlchen_api_server.rest_api.rotkehlchen.data.db.user_write() as write_cursor:
@@ -581,6 +594,81 @@ def test_get_all_assets(rotkehlchen_api_server: 'APIServer') -> None:
         contained_in_msg='Given value xxxxxxxxx is not a valid EVM or Solana address',
         status_code=HTTPStatus.BAD_REQUEST,
     )
+
+
+def test_get_all_assets_levenshtein_ranking(rotkehlchen_api_server: 'APIServer') -> None:
+    """Test that the paginated assets endpoint ranks name/symbol searches by levenshtein
+    closeness (like the asset search dropdown) instead of an alphabetical LIKE match, while
+    keeping pagination correct. Regression test for https://github.com/rotki/rotki/issues/9316
+    """
+    globaldb = GlobalDBHandler()
+    # seed deterministic assets whose symbols all contain the search term `zztop` (so they pass
+    # the LIKE prefilter) but at increasing levenshtein distance. Names are kept far from the
+    # term so the symbol distance drives the ranking.
+    exact_id, coin_id, spam_id = str(uuid4()), str(uuid4()), str(uuid4())
+    globaldb.add_asset(CryptoAsset.initialize(
+        identifier=spam_id,
+        asset_type=AssetType.OWN_CHAIN,
+        name='Asset Gamma',
+        symbol='MYZZTOPSPAM',  # alphabetically first, but the furthest match
+    ))
+    globaldb.add_asset(CryptoAsset.initialize(
+        identifier=coin_id,
+        asset_type=AssetType.OWN_CHAIN,
+        name='Asset Beta',
+        symbol='ZZTOPCOIN',
+    ))
+    globaldb.add_asset(CryptoAsset.initialize(
+        identifier=exact_id,
+        asset_type=AssetType.OWN_CHAIN,
+        name='Asset Alpha',
+        symbol='ZZTOP',  # exact match, must rank first
+    ))
+
+    # search by symbol without an explicit sort -> results ranked by levenshtein closeness
+    result = assert_proper_sync_response_with_result(requests.post(
+        api_url_for(rotkehlchen_api_server, 'allassetsresource'),
+        json={'limit': 50, 'offset': 0, 'symbol': 'zztop'},
+    ))
+    entries = result['entries']
+    assert {e['identifier'] for e in entries} == {exact_id, coin_id, spam_id}
+    # the exact symbol match must be first, despite being alphabetically last
+    assert entries[0]['identifier'] == exact_id
+    # the whole page is ordered by non-decreasing levenshtein distance
+    distances = [_min_levenshtein(e, 'zztop') for e in entries]
+    assert distances == sorted(distances)
+    assert distances[0] == 0
+
+    # pagination must stay correct (disjoint, contiguous) under the levenshtein ordering
+    page1 = assert_proper_sync_response_with_result(requests.post(
+        api_url_for(rotkehlchen_api_server, 'allassetsresource'),
+        json={'limit': 2, 'offset': 0, 'symbol': 'zztop'},
+    ))
+    page2 = assert_proper_sync_response_with_result(requests.post(
+        api_url_for(rotkehlchen_api_server, 'allassetsresource'),
+        json={'limit': 2, 'offset': 2, 'symbol': 'zztop'},
+    ))
+    assert page1['entries_found'] == 3
+    paged_ids = [e['identifier'] for e in page1['entries']] + [e['identifier'] for e in page2['entries']]  # noqa: E501
+    assert paged_ids == [e['identifier'] for e in entries]  # same order, no dupes/gaps
+    assert len(set(paged_ids)) == 3
+
+    # an explicit column sort does NOT opt out of relevance ranking: the closest match still
+    # leads, with the requested column only acting as the tiebreaker between equal distances
+    result = assert_proper_sync_response_with_result(requests.post(
+        api_url_for(rotkehlchen_api_server, 'allassetsresource'),
+        json={
+            'limit': 50,
+            'offset': 0,
+            'symbol': 'zztop',
+            'order_by_attributes': ['symbol'],
+            'ascending': [False],
+        },
+    ))
+    # exact match still first despite the explicit symbol sort, and overall still by distance
+    assert result['entries'][0]['identifier'] == exact_id
+    distances = [_min_levenshtein(e, 'zztop') for e in result['entries']]
+    assert distances == sorted(distances)
 
 
 def test_get_assets_mappings(rotkehlchen_api_server: 'APIServer') -> None:

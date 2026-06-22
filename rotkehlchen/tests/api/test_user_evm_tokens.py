@@ -765,8 +765,10 @@ def test_adding_evm_token_with_underlying_token(
     )
     result = assert_proper_sync_response_with_result(response)
     assert result['entries_found'] == 2
-    assert result['entries'][1]['underlying_tokens'] == underlying_tokens
-    assert len(result['entries'][0]['underlying_tokens']) == 2
+    # the search is now relevance-ranked, so the exact match 'my balancer token' leads and
+    # 'my balancer token b' follows
+    assert result['entries'][0]['underlying_tokens'] == underlying_tokens
+    assert len(result['entries'][1]['underlying_tokens']) == 2
 
     response = requests.post(
         api_url_for(
