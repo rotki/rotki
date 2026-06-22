@@ -13,6 +13,7 @@ from uuid import uuid4
 
 import gevent
 import rsqlite
+from polyleven import levenshtein
 from sqlcipher3 import dbapi2 as sqlcipher
 
 from rotkehlchen.db.checks import sanity_check_impl
@@ -277,6 +278,10 @@ class DBConnection:
                 isolation_level=None,
             )
         self._set_progress_handler()
+        if connection_type == DBConnectionType.GLOBAL:
+            # Register a fuzzy-match helper so asset search/ranking can ORDER BY Levenshtein
+            # distance directly in SQL instead of pulling every matching row into memory.
+            self._conn.create_function('levenshtein', 2, levenshtein, deterministic=True)
         self.minimized_schema = None
         self.minimized_indexes = None
         if connection_type == DBConnectionType.USER:

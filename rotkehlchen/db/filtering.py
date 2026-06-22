@@ -102,18 +102,33 @@ class TimestampProximityOrder:
     ascending: bool = True
 
 
+@dataclass(frozen=True)
+class LevenshteinOrder:
+    """Order rows by the Levenshtein distance of their name/symbol to a search term.
+
+    The term is emitted as bound query parameters, never spliced into the SQL, so this can only
+    ever express the fuzzy ordering and not arbitrary SQL. Requires the ``levenshtein`` scalar
+    function to be registered on the connection (done for the global DB connection in
+    rotkehlchen/db/drivers/gevent.py).
+    """
+    term: str
+    name_field: str = 'name'
+    symbol_field: str = 'symbol'
+    ascending: bool = True
+
+
 # A single ordering rule is either a (column_name, ascending) pair - validated as a plain column
-# name - or a typed proximity ordering. No other shape can reach the ORDER BY clause.
-OrderByRule = tuple[str, bool] | TimestampProximityOrder
+# name - or a typed proximity/levenshtein ordering. No other shape can reach the ORDER BY clause.
+OrderByRule = tuple[str, bool] | TimestampProximityOrder | LevenshteinOrder
 
 
 class DBFilterOrder(NamedTuple):
     rules: Sequence[OrderByRule]
     case_sensitive: bool
 
-    def prepare(self) -> tuple[str, list[TimestampMS]]:
+    def prepare(self) -> tuple[str, list[Any]]:
         querystr = 'ORDER BY '
-        bindings: list[TimestampMS] = []
+        bindings: list[Any] = []
         for idx, rule in enumerate(self.rules):
             if idx != 0:
                 querystr += ','
@@ -121,6 +136,21 @@ class DBFilterOrder(NamedTuple):
             if isinstance(rule, TimestampProximityOrder):
                 querystr += f"ABS(timestamp - ?) {'ASC' if rule.ascending else 'DESC'}"
                 bindings.append(rule.anchor)
+                continue
+
+            if isinstance(rule, LevenshteinOrder):
+                if not (
+                    is_valid_order_by_attribute(rule.name_field) and
+                    is_valid_order_by_attribute(rule.symbol_field)
+                ):
+                    raise InvalidFilter(f'Invalid levenshtein order fields {rule.name_field}, {rule.symbol_field}')  # noqa: E501
+                querystr += (
+                    'MIN('
+                    f"levenshtein(?, lower(COALESCE({rule.name_field}, ''))), "
+                    f"levenshtein(?, lower(COALESCE({rule.symbol_field}, '')))"
+                    f") {'ASC' if rule.ascending else 'DESC'}"
+                )
+                bindings.extend((rule.term, rule.term))
                 continue
 
             attribute, ascending = rule
@@ -1963,9 +1993,16 @@ class AssetsFilterQuery(DBFilterQuery):
             chain_id: ChainID | None = None,
             identifier_column_name: str = 'identifier',
             ignored_assets_handling: IgnoredAssetsHandling = IgnoredAssetsHandling.NONE,
+            rank_by_levenshtein: bool = False,
     ) -> 'AssetsFilterQuery':
         if order_by_rules is None:
             order_by_rules = [('name', True)]
+
+        # When a name/symbol search is active, rank the (already LIKE-prefiltered) matches by
+        # levenshtein closeness so the best matches lead, mirroring the assets search dropdown.
+        # The requested/default column sort is kept as the tiebreaker.
+        if rank_by_levenshtein and (term := name if name is not None else symbol) is not None:
+            order_by_rules = [LevenshteinOrder(term=term.casefold()), *order_by_rules]
 
         filter_query = cls.create(
             and_op=and_op,

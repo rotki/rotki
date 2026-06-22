@@ -2790,6 +2790,10 @@ class AssetsPostSchema(DBPaginationSchema, DBOrderBySchema):
             show_user_owned_assets_only=data['show_user_owned_assets_only'],
             show_whitelisted_assets_only=data['show_whitelisted_assets_only'],
             ignored_assets_handling=data['ignored_assets_handling'],
+            # when a name/symbol search is active, always rank by fuzzy closeness first so the
+            # best matches lead (like the asset search dropdown). The requested/default column
+            # sort is kept as the tiebreaker. Only takes effect when name or symbol is set.
+            rank_by_levenshtein=True,
         )
         return {'filter_query': filter_query}
 
