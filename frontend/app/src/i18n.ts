@@ -29,3 +29,12 @@ export async function loadLocaleMessages(locale: string): Promise<void> {
   loadedLocales.add(locale);
   return nextTick();
 }
+
+// Hot-reload the base (en) locale: the JSON is registered once at startup, so
+// without this an edit to en.json only takes effect after a full dev restart.
+if (import.meta.hot) {
+  import.meta.hot.accept('./locales/en.json', (updated) => {
+    if (updated?.default)
+      i18n.global.setLocaleMessage('en', updated.default);
+  });
+}

@@ -1,8 +1,8 @@
 import { bigNumberify, One } from '@rotki/common';
 import { describe, expect, it } from 'vitest';
-import { convertFiatToUsd, convertUsdToFiat } from '@/modules/dashboard/snapshots/lib/snapshot-fx';
+import { convertFiatToUsd, convertUsdToFiat } from '@/modules/dashboard/snapshots/utils/snapshot-fx';
 
-describe('modules/dashboard/snapshots/lib/snapshot-fx', () => {
+describe('modules/dashboard/snapshots/utils/snapshot-fx', () => {
   describe('convertUsdToFiat', () => {
     it('should multiply the USD value by the rate', () => {
       expect(convertUsdToFiat(bigNumberify(100), bigNumberify(0.85)).toNumber()).toBe(85);

@@ -1,8 +1,8 @@
 import { expect, type Page } from '@playwright/test';
 import { type BigNumber, Zero } from '@rotki/common';
 import { parseBigNumber, updateLocationBalance } from '../helpers/utils';
-import { ExportSnapshotDialog } from './export-snapshot-dialog';
 import { RotkiApp } from './rotki-app';
+import { SnapshotEditorPage } from './snapshot-editor-page';
 import { SnapshotImportDialog } from './snapshot-import-dialog';
 
 export class DashboardPage {
@@ -111,13 +111,13 @@ export class DashboardPage {
   }
 
   /**
-   * Clicks the rendered data point on the net-worth chart to open the export
-   * snapshot dialog. With a single seeded snapshot 7 days back the chart
-   * draws a marker at the left edge (the snapshot) and a synthetic "current
-   * balance" point on the right. The click sweeps a few x positions near the
-   * left edge to handle small layout shifts (axis label widths, padding).
+   * Clicks the rendered data point on the net-worth chart to open the snapshot
+   * editor page. With a single seeded snapshot 7 days back the chart draws a
+   * marker at the left edge (the snapshot) and a synthetic "current balance"
+   * point on the right. The click sweeps a few x positions near the left edge
+   * to handle small layout shifts (axis label widths, padding).
    */
-  async openSnapshotDialogAt(): Promise<ExportSnapshotDialog> {
+  async openSnapshotEditorAt(): Promise<SnapshotEditorPage> {
     const chart = this.page.locator('[data-testid=net-worth-chart]');
     await chart.waitFor({ state: 'visible' });
     const canvas = chart.locator('canvas').first();
@@ -125,22 +125,22 @@ export class DashboardPage {
     if (!box) {
       throw new Error('net-worth chart canvas has no bounding box');
     }
-    const dialog = new ExportSnapshotDialog(this.page);
-    const dialogLocator = this.page.locator('[data-testid=export-snapshot-dialog]');
+    const editor = new SnapshotEditorPage(this.page);
     // Echarts plots the leftmost data point a bit inside the axis margin;
-    // sweep through a handful of x positions until the dialog appears.
+    // sweep through a handful of x positions until the page navigates.
     for (const xRatio of [0.06, 0.08, 0.04, 0.1, 0.02]) {
       await canvas.click({
         position: { x: box.width * xRatio, y: box.height * 0.4 },
       });
       try {
-        await dialogLocator.waitFor({ state: 'visible', timeout: 2_000 });
-        return dialog;
+        await this.page.waitForURL(/\/statistics\/snapshots\/\d+/, { timeout: 2_000 });
+        await editor.waitForLoaded();
+        return editor;
       }
       catch {
         // Try the next x offset.
       }
     }
-    throw new Error('Failed to open export snapshot dialog by clicking the chart');
+    throw new Error('Failed to open the snapshot editor by clicking the chart');
   }
 }

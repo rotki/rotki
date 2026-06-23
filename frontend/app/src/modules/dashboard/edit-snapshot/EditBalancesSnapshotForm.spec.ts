@@ -60,13 +60,15 @@ describe('edit-snapshot/EditBalancesSnapshotForm.vue', () => {
     vi.useRealTimers();
   });
 
-  function createWrapper(modelValue: BalanceSnapshotPayloadAndLocation = baseModel()): VueWrapper<FormInstance> {
+  function createWrapper(modelValue: BalanceSnapshotPayloadAndLocation = baseModel(), hideLocation = false, disabledLocations: string[] = []): VueWrapper<FormInstance> {
     const model = ref<BalanceSnapshotPayloadAndLocation>(modelValue);
     return mount(EditBalancesSnapshotForm, {
       global: {
         plugins: [pinia],
       },
       props: {
+        disabledLocations,
+        hideLocation,
         'locations': ['blockchain', 'kraken'],
         'modelValue': model.value,
         timestamp,
@@ -105,6 +107,36 @@ describe('edit-snapshot/EditBalancesSnapshotForm.vue', () => {
 
     const valid = await wrapper.vm.validate();
     expect(valid).toBe(true);
+  });
+
+  it('should fail validation when the location is missing', async () => {
+    const model = baseModel();
+    model.location = '';
+    wrapper = createWrapper(model);
+    await vi.advanceTimersToNextTimerAsync();
+
+    const valid = await wrapper.vm.validate();
+    expect(valid).toBe(false);
+  });
+
+  it('should not require a location while the selector is hidden (split mode)', async () => {
+    const model = baseModel();
+    model.location = '';
+    wrapper = createWrapper(model, true);
+    await vi.advanceTimersToNextTimerAsync();
+
+    const valid = await wrapper.vm.validate();
+    expect(valid).toBe(true);
+  });
+
+  it('should fail validation when the chosen location cannot absorb the value', async () => {
+    const model = baseModel();
+    model.location = 'blockchain';
+    wrapper = createWrapper(model, false, ['blockchain']);
+    await vi.advanceTimersToNextTimerAsync();
+
+    const valid = await wrapper.vm.validate();
+    expect(valid).toBe(false);
   });
 
   it('should forward update:asset emitted by the inner price form', async () => {

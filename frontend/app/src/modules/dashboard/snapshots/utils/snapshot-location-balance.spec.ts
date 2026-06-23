@@ -1,12 +1,13 @@
-import type { BalanceSnapshot as BalanceSnapshotType, LocationDataSnapshot as LocationDataSnapshotType, Snapshot } from '@/modules/dashboard/snapshots';
 import { bigNumberify } from '@rotki/common';
 import { describe, expect, it } from 'vitest';
 import { BalanceType } from '@/modules/balances/types/balances';
-import { BalanceSnapshot, LocationDataSnapshot } from '@/modules/dashboard/snapshots';
+import { type BalanceSnapshot, BalanceSnapshotSchema, type LocationDataSnapshot, LocationDataSnapshotSchema, type Snapshot } from '@/modules/dashboard/snapshots';
 import {
   locationBalanceAfterDelete,
   locationBalanceAfterEdit,
-} from '@/modules/dashboard/snapshots/lib/snapshot-location-balance';
+  overdrawnLocationIds,
+  soleEligibleLocation,
+} from '@/modules/dashboard/snapshots/utils/snapshot-location-balance';
 
 interface BalanceOptions {
   usdValue: string;
@@ -15,8 +16,8 @@ interface BalanceOptions {
   amount?: string;
 }
 
-function balance(options: BalanceOptions): BalanceSnapshotType {
-  return BalanceSnapshot.parse({
+function balance(options: BalanceOptions): BalanceSnapshot {
+  return BalanceSnapshotSchema.parse({
     amount: options.amount ?? '1',
     assetIdentifier: options.assetIdentifier ?? 'ETH',
     category: options.category ?? BalanceType.ASSET,
@@ -25,15 +26,15 @@ function balance(options: BalanceOptions): BalanceSnapshotType {
   });
 }
 
-function location(loc: string, usdValue: string): LocationDataSnapshotType {
-  return LocationDataSnapshot.parse({ location: loc, timestamp: 1700000000, usdValue });
+function location(loc: string, usdValue: string): LocationDataSnapshot {
+  return LocationDataSnapshotSchema.parse({ location: loc, timestamp: 1700000000, usdValue });
 }
 
-function snapshot(balances: BalanceSnapshotType[], locations: LocationDataSnapshotType[]): Snapshot {
+function snapshot(balances: BalanceSnapshot[], locations: LocationDataSnapshot[]): Snapshot {
   return { balancesSnapshot: balances, locationDataSnapshot: locations };
 }
 
-describe('modules/dashboard/snapshots/lib/snapshot-location-balance', () => {
+describe('modules/dashboard/snapshots/utils/snapshot-location-balance', () => {
   describe('locationBalanceAfterEdit', () => {
     it('should add a new asset to the existing subtotal', () => {
       const snap = snapshot([], [location('kraken', '100')]);
@@ -135,6 +136,58 @@ describe('modules/dashboard/snapshots/lib/snapshot-location-balance', () => {
     it('should return null when the balance is missing', () => {
       const snap = snapshot([], [location('kraken', '100')]);
       expect(locationBalanceAfterDelete({ index: 5, location: 'kraken', snapshot: snap })).toBeNull();
+    });
+  });
+
+  describe('overdrawnLocationIds', () => {
+    const snap = snapshot(
+      [balance({ category: BalanceType.ASSET, usdValue: '60' })],
+      [location('kraken', '100'), location('ledger', '40'), location('total', '140')],
+    );
+
+    it('should flag locations that cannot absorb an asset removal', () => {
+      // Removing 60: kraken (100) survives, ledger (40) would go to -20.
+      const ids = overdrawnLocationIds(snap, BalanceType.ASSET, location =>
+        locationBalanceAfterDelete({ index: 0, location, snapshot: snap })?.after ?? null);
+      expect(ids).toEqual(['ledger']);
+    });
+
+    it('should never flag locations for a liability operation', () => {
+      const ids = overdrawnLocationIds(snap, BalanceType.LIABILITY, () => bigNumberify(-999));
+      expect(ids).toEqual([]);
+    });
+
+    it('should ignore the synthetic total row', () => {
+      const ids = overdrawnLocationIds(snap, BalanceType.ASSET, () => bigNumberify(-1));
+      expect(ids).not.toContain('total');
+      expect(ids).toEqual(['kraken', 'ledger']);
+    });
+
+    it('should return no ids when every location can absorb the change', () => {
+      const ids = overdrawnLocationIds(snap, BalanceType.ASSET, () => bigNumberify(10));
+      expect(ids).toEqual([]);
+    });
+  });
+
+  describe('soleEligibleLocation', () => {
+    it('should preselect the lone candidate', () => {
+      expect(soleEligibleLocation(['kraken'], [])).toBe('kraken');
+    });
+
+    it('should preselect the only candidate that is eligible among several', () => {
+      expect(soleEligibleLocation(['kraken', 'ledger', 'bybit'], ['kraken', 'bybit'])).toBe('ledger');
+    });
+
+    it('should not preselect when several candidates are eligible', () => {
+      expect(soleEligibleLocation(['kraken', 'ledger'], [])).toBeUndefined();
+    });
+
+    it('should not preselect when none are eligible', () => {
+      expect(soleEligibleLocation(['kraken'], ['kraken'])).toBeUndefined();
+    });
+
+    it('should not preselect for an empty candidate list', () => {
+      expect(soleEligibleLocation([], [])).toBeUndefined();
     });
   });
 });

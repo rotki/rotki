@@ -4,24 +4,21 @@ import dayjs from 'dayjs';
 import { FiatDisplay } from '@/modules/assets/amount-display/components';
 import { downloadFileByBlob } from '@/modules/core/common/file/download';
 import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
-import { useConfirmStore } from '@/modules/core/common/use-confirm-store';
 import { useMessageStore } from '@/modules/core/common/use-message-store';
-import EditSnapshotDialog from '@/modules/dashboard/edit-snapshot/EditSnapshotDialog.vue';
 import { useSnapshotApi } from '@/modules/settings/api/use-snapshot-api';
 import { useInterop } from '@/modules/shell/app/use-electron-interop';
 import DateDisplay from '@/modules/shell/components/display/DateDisplay.vue';
-import { useStatisticsDataFetching } from '@/modules/statistics/use-statistics-data-fetching';
 
 const display = defineModel<boolean>({ default: false, required: true });
 
-const { balance, timestamp = 0 } = defineProps<{
+const { balance, loading = false, timestamp = 0 } = defineProps<{
   balance: BigNumber;
+  loading?: boolean;
   timestamp?: number;
 }>();
 
 const { t } = useI18n({ useScope: 'global' });
 
-const editMode = ref<boolean>(false);
 const { setMessage } = useMessageStore();
 const snapshotApi = useSnapshotApi();
 const { appSession, openDirectory } = useInterop();
@@ -83,55 +80,6 @@ async function exportSnapshot() {
     await exportSnapshotCSV();
   else await downloadSnapshot();
 }
-
-const { fetchNetValue } = useStatisticsDataFetching();
-
-async function deleteSnapshot() {
-  let message: Message | null;
-
-  try {
-    const success = await snapshotApi.deleteSnapshot({
-      timestamp,
-    });
-
-    message = {
-      description: success
-        ? t('dashboard.snapshot.delete.message.success')
-        : t('dashboard.snapshot.delete.message.failure'),
-      success,
-      title: t('dashboard.snapshot.delete.message.title'),
-    };
-
-    set(display, false);
-    await fetchNetValue();
-  }
-  catch (error: unknown) {
-    message = {
-      description: getErrorMessage(error),
-      success: false,
-      title: t('dashboard.snapshot.download.message.title'),
-    };
-  }
-
-  setMessage(message);
-}
-
-function finish() {
-  set(display, false);
-  set(editMode, false);
-}
-
-const { show } = useConfirmStore();
-
-function showDeleteConfirmation() {
-  show(
-    {
-      message: t('dashboard.snapshot.delete.dialog.message'),
-      title: t('dashboard.snapshot.delete.dialog.title'),
-    },
-    deleteSnapshot,
-  );
-}
 </script>
 
 <template>
@@ -146,47 +94,37 @@ function showDeleteConfirmation() {
       <template #subheader>
         {{ t('dashboard.snapshot.subtitle') }}
       </template>
-      <div>
+      <div class="grid grid-cols-[auto_1fr] gap-x-6 gap-y-2">
         <div class="text-rui-text-secondary">
-          {{ t('common.datetime') }}:
+          {{ t('common.datetime') }}
         </div>
         <DateDisplay
           :timestamp="timestamp"
           class="font-bold"
         />
-      </div>
-      <div class="pt-2">
         <div class="text-rui-text-secondary">
-          {{ t('common.balance') }}:
+          {{ t('common.balance') }}
         </div>
+        <RuiSkeletonLoader
+          v-if="loading"
+          class="w-24 h-5"
+        />
         <FiatDisplay
-          v-if="balance"
+          v-else-if="balance"
           :value="balance"
           class="font-bold"
         />
       </div>
       <template #footer>
-        <RuiButton
-          color="primary"
-          data-testid="export-snapshot-edit"
-          @click="editMode = true"
-        >
-          <template #prepend>
-            <RuiIcon name="lu-pencil-line" />
-          </template>
-          {{ t('common.actions.edit') }}
-        </RuiButton>
-        <RuiButton
-          color="error"
-          data-testid="export-snapshot-delete"
-          @click="showDeleteConfirmation()"
-        >
-          <template #prepend>
-            <RuiIcon name="lu-trash-2" />
-          </template>
-          {{ t('common.actions.delete') }}
-        </RuiButton>
         <div class="grow" />
+        <RuiButton
+          variant="text"
+          color="primary"
+          data-testid="export-snapshot-cancel"
+          @click="display = false"
+        >
+          {{ t('common.actions.cancel') }}
+        </RuiButton>
         <RuiButton
           color="primary"
           data-testid="export-snapshot-download"
@@ -199,11 +137,5 @@ function showDeleteConfirmation() {
         </RuiButton>
       </template>
     </RuiCard>
-    <EditSnapshotDialog
-      v-if="editMode"
-      :timestamp="timestamp"
-      @close="editMode = false"
-      @finish="finish()"
-    />
   </RuiDialog>
 </template>

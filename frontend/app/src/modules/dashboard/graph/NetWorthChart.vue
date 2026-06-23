@@ -1,10 +1,10 @@
 <script setup lang="ts">
+import type { BigNumber } from '@rotki/common';
 import type { NetValueZoomRange } from '@/modules/dashboard/graph/net-value-stats';
 import type { NetValueChartData } from '@/modules/dashboard/graph/types';
-import { type BigNumber, Zero } from '@rotki/common';
+import { startPromise } from '@shared/utils';
 import VChart from 'vue-echarts';
 import { FiatDisplay } from '@/modules/assets/amount-display/components';
-import ExportSnapshotDialog from '@/modules/dashboard/ExportSnapshotDialog.vue';
 import { useNetValueChartConfig } from '@/modules/dashboard/graph/use-net-value-chart-config';
 import { useNetValueEventHandlers } from '@/modules/dashboard/graph/use-net-value-event-handlers';
 import DateDisplay from '@/modules/shell/components/display/DateDisplay.vue';
@@ -17,13 +17,10 @@ const { chartData } = defineProps<{
 }>();
 
 const { t } = useI18n({ useScope: 'global' });
+const router = useRouter();
 
 const chartContainer = useTemplateRef<HTMLElement>('chartContainer');
 const chartInstance = useTemplateRef<InstanceType<typeof VChart>>('chartInstance');
-
-const selectedTimestamp = ref<number>(0);
-const selectedBalance = ref<BigNumber>(Zero);
-const showExportSnapshotDialog = ref<boolean>(false);
 
 const { isDark } = useRotkiTheme();
 
@@ -39,10 +36,9 @@ const { setupChartEventHandlers, setupZoomToolHandler, tooltipData } = useNetVal
   chartContainer,
   chartData: () => chartData,
   chartInstance,
-  onHover: (timestamp: number, balance: BigNumber) => {
-    set(selectedTimestamp, timestamp);
-    set(selectedBalance, balance);
-    set(showExportSnapshotDialog, true);
+  // Clicking a snapshot point opens the snapshot editor page for that timestamp.
+  onHover: (timestamp: number, _balance: BigNumber) => {
+    startPromise(router.push({ name: 'statistics-snapshot-detail', params: { timestamp: timestamp.toString() } }));
   },
   onZoomChange: (range: NetValueZoomRange | undefined) => {
     updateZoomRange(range);
@@ -95,11 +91,4 @@ defineExpose({ resetZoom });
       :value="tooltipData.value"
     />
   </NewGraphTooltipWrapper>
-
-  <ExportSnapshotDialog
-    v-if="selectedTimestamp && selectedBalance"
-    v-model="showExportSnapshotDialog"
-    :timestamp="selectedTimestamp"
-    :balance="selectedBalance"
-  />
 </template>

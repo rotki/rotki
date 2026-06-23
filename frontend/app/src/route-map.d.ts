@@ -456,6 +456,20 @@ declare module 'vue-router/auto-routes' {
       Record<never, never>,
       | never
     >,
+    'statistics-snapshots': RouteRecordInfo<
+      'statistics-snapshots',
+      '/statistics/snapshots',
+      Record<never, never>,
+      Record<never, never>,
+      | never
+    >,
+    'statistics-snapshot-detail': RouteRecordInfo<
+      'statistics-snapshot-detail',
+      '/statistics/snapshots/:timestamp',
+      { timestamp: ParamValue<true> },
+      { timestamp: ParamValue<false> },
+      | never
+    >,
     'tag_manager': RouteRecordInfo<
       'tag_manager',
       '/tag-manager',
@@ -989,6 +1003,22 @@ declare module 'vue-router/auto-routes' {
         | never
       pathParamNames:
         | never
+    }
+    'src/pages/statistics/snapshots/index.vue': {
+      routes:
+        | 'statistics-snapshots'
+      views:
+        | never
+      pathParamNames:
+        | never
+    }
+    'src/pages/statistics/snapshots/[timestamp].vue': {
+      routes:
+        | 'statistics-snapshot-detail'
+      views:
+        | never
+      pathParamNames:
+        | 'timestamp'
     }
     'src/pages/tag-manager/index.vue': {
       routes:

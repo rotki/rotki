@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { BalanceType } from '@/modules/balances/types/balances';
-import { BalanceSnapshot, LocationDataSnapshot } from '@/modules/dashboard/snapshots';
+import { type BalanceSnapshot, BalanceSnapshotSchema, type LocationDataSnapshot, LocationDataSnapshotSchema } from '@/modules/dashboard/snapshots';
 import {
   assetsTotal,
   getTotalEntry,
@@ -9,7 +9,7 @@ import {
   nftsTotal,
   signedUsdValue,
   TOTAL_LOCATION,
-} from '@/modules/dashboard/snapshots/lib/snapshot-totals';
+} from '@/modules/dashboard/snapshots/utils/snapshot-totals';
 
 interface BalanceOptions {
   usdValue: string;
@@ -19,7 +19,7 @@ interface BalanceOptions {
 }
 
 function balance(options: BalanceOptions): BalanceSnapshot {
-  return BalanceSnapshot.parse({
+  return BalanceSnapshotSchema.parse({
     amount: options.amount ?? '1',
     assetIdentifier: options.assetIdentifier ?? 'ETH',
     category: options.category ?? BalanceType.ASSET,
@@ -29,10 +29,10 @@ function balance(options: BalanceOptions): BalanceSnapshot {
 }
 
 function location(loc: string, usdValue: string): LocationDataSnapshot {
-  return LocationDataSnapshot.parse({ location: loc, timestamp: 1700000000, usdValue });
+  return LocationDataSnapshotSchema.parse({ location: loc, timestamp: 1700000000, usdValue });
 }
 
-describe('modules/dashboard/snapshots/lib/snapshot-totals', () => {
+describe('modules/dashboard/snapshots/utils/snapshot-totals', () => {
   it('should add assets and subtract liabilities in signedUsdValue', () => {
     expect(signedUsdValue(balance({ category: BalanceType.ASSET, usdValue: '100' })).toNumber()).toBe(100);
     expect(signedUsdValue(balance({ category: BalanceType.LIABILITY, usdValue: '30' })).toNumber()).toBe(-30);

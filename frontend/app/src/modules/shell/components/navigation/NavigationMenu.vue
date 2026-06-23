@@ -134,6 +134,11 @@ const navItems = computed<MenuItem[]>(() => {
           type: 'item',
           ...Routes.STATISTICS_HISTORY_EVENTS,
         },
+        {
+          class: 'statistics-snapshots',
+          type: 'item',
+          ...Routes.STATISTICS_SNAPSHOTS,
+        },
       ],
     },
     {
