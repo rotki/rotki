@@ -592,7 +592,13 @@ class Inquirer:
         # Resolve assets to AssetWithOracles and set
         # the price of any assets without oracles to ZERO_PRICE
         found_prices, unpriced_assets = {}, []
-        to_asset = to_asset.resolve_to_asset_with_oracles()
+        try:
+            to_asset = to_asset.resolve_to_asset_with_oracles()
+        except WrongAssetType:
+            # The target currency has no oracles (e.g. a custom asset). Any from_asset that
+            # could be priced against it via a manual price was already handled earlier in
+            # _find_prices, so the remaining ones are unpriceable by the oracles here.
+            return dict.fromkeys(from_assets, (ZERO_PRICE, CurrentPriceOracle.BLOCKCHAIN))
         for from_asset in from_assets:
             if from_asset.is_asset_with_oracles():
                 unpriced_assets.append(from_asset.resolve_to_asset_with_oracles())
