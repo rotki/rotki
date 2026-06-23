@@ -4,23 +4,6 @@ Changelog
 
 * :feature:`-` Add support for Bit2me exchange.
 * :feature:`12219` Add Moralis as a price Oracle.
-
-* :release:`1.43.2 <2026-06-18>`
-* :bug:`-` Manually refetching Hyperliquid transactions now also refetches Hyperliquid Core history, so missed Core events can be recovered.
-* :bug:`-` EUR pegged assets are now valued correctly for users whose main currency is BTC, instead of causing balance queries to fail.
-* :feature:`-` SafeNet staking deposit and withdrawal events are now properly decoded.
-* :bug:`-` The block number shown in a MEV reward transaction event's note is now a clickable link, like it already is for the related block production event.
-* :bug:`-` The net worth graph on the dashboard no longer smooths the line between points, so it now reflects your actual balance changes instead of curving past them.
-* :bug:`-` 1inch v5 Fusion limit orders will now be properly decoded.
-* :bug:`-` Clicking a dialog's save button several times while it is still saving (for example when editing a history event that is slow to save) no longer sends the same change repeatedly, so you no longer risk creating duplicate entries by double-clicking.
-* :feature:`12420` ZKsync Lite sunset claims are now decoded and balances are shown correctly.
-* :bug:`-` The asset and history-events export download endpoints now validate that the requested file lives in the export directory before serving it.
-* :bug:`-` Sorting on the filter endpoints now only accepts plain column names for the ``order_by_attributes`` parameter.
-* :feature:`-` Bitcoin transactions, addresses and blocks now open in the mempool.space explorer instead of blockchain.com.
-* :bug:`12426` Airdrops in Hyperliquid core are now seen as receive events.
-* :bug:`12416` Binance Simple Earn rewards history no longer fails to sync when the last successful sync was more than a month ago.
-* :bug:`-` Kraken trades where the bought and sold amounts happen to be equal are no longer skipped as failed transfers.
-* :bug:`-` Adding an EVM token no longer leaves the name, symbol and decimals fields disabled indefinitely when the token detail lookup cannot reach a working RPC node; the lookup now times out so you can fill in the details manually.
 * :bug:`12277` If your main currency is not USD, editing a balance snapshot now shows and saves each value converted at the exchange rate from that snapshot's own date. Previously it used today's exchange rate, so the values you saw and saved were off, especially for assets pegged to a fiat currency such as EUR stablecoins.
 * :bug:`12306` Chain locations (e.g. ``ethereum``, ``optimism``) with on-chain balances are now reachable via global search, even when no manual balance is tagged with that label.
 * :bug:`12304` Opening a location breakdown page for a blockchain (e.g. ``/locations/ethereum``) now shows that chain's on-chain assets and total — previously the page rendered as 0 value with an empty/loading table whenever the location identifier was a chain alias.
@@ -41,6 +24,23 @@ Changelog
 * :bug:`-` The login screen no longer pre-fills the username field with a remembered account that no longer exists.
 * :feature:`12002` Adding or editing a history event now uses a plain-language "Action" picker grouped by intent (Trade, Transfer, DeFi, Staking, etc.) with search and keyboard navigation, replacing the raw event-type and subtype dropdowns.
 * :feature:`12086` The "Create account" flow now starts with a mode chooser so creating a new local profile and restoring a database synced from rotki cloud are separate, focused paths.
+
+* :release:`1.43.2 <2026-06-18>`
+* :bug:`-` Manually refetching Hyperliquid transactions now also refetches Hyperliquid Core history, so missed Core events can be recovered.
+* :bug:`-` EUR pegged assets are now valued correctly for users whose main currency is BTC, instead of causing balance queries to fail.
+* :feature:`-` SafeNet staking deposit and withdrawal events are now properly decoded.
+* :bug:`-` The block number shown in a MEV reward transaction event's note is now a clickable link, like it already is for the related block production event.
+* :bug:`-` The net worth graph on the dashboard no longer smooths the line between points, so it now reflects your actual balance changes instead of curving past them.
+* :bug:`-` 1inch v5 Fusion limit orders will now be properly decoded.
+* :bug:`-` Clicking a dialog's save button several times while it is still saving (for example when editing a history event that is slow to save) no longer sends the same change repeatedly, so you no longer risk creating duplicate entries by double-clicking.
+* :feature:`12420` ZKsync Lite sunset claims are now decoded and balances are shown correctly.
+* :bug:`-` The asset and history-events export download endpoints now validate that the requested file lives in the export directory before serving it.
+* :bug:`-` Sorting on the filter endpoints now only accepts plain column names for the ``order_by_attributes`` parameter.
+* :feature:`-` Bitcoin transactions, addresses and blocks now open in the mempool.space explorer instead of blockchain.com.
+* :bug:`12426` Airdrops in Hyperliquid core are now seen as receive events.
+* :bug:`12416` Binance Simple Earn rewards history no longer fails to sync when the last successful sync was more than a month ago.
+* :bug:`-` Kraken trades where the bought and sold amounts happen to be equal are no longer skipped as failed transfers.
+* :bug:`-` Adding an EVM token no longer leaves the name, symbol and decimals fields disabled indefinitely when the token detail lookup cannot reach a working RPC node; the lookup now times out so you can fill in the details manually.
 * :bug:`-` Balance snapshots taken automatically when opening the app are no longer occasionally saved with a zero (or too-low) total while the blockchain balances are still being refreshed.
 * :bug:`-` Login no longer fails if the configured beacon node RPC endpoint returns an unexpected response.
 * :bug:`-` Removing an EVM account no longer fails while a transactions refresh of all accounts is running.
