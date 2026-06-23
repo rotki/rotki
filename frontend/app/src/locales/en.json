@@ -1929,8 +1929,10 @@
     "account": "Account",
     "actions": {
       "add": "Add",
+      "apply": "Apply",
       "back": "Back",
       "cancel": "Cancel",
+      "clear": "Clear",
       "clear_selection": "Clear Selection",
       "close": "Close",
       "collapse": "Collapse",
@@ -1940,11 +1942,13 @@
       "copy_to_clipboard": "Copy to clipboard",
       "create": "Create",
       "delete": "Delete",
+      "discard": "Discard",
       "dismiss": "Dismiss",
       "download": "Download",
       "download_csv": "Download CSV",
       "edit": "Edit",
       "expand": "Expand",
+      "export": "Export",
       "export_csv": "Export CSV",
       "filter": "Filter",
       "finish": "Finish",
@@ -1964,6 +1968,7 @@
       "show_more_num": "Show {count} more",
       "skip": "Skip",
       "terminate": "Terminate",
+      "undo": "Undo",
       "update": "Update",
       "yes": "Yes"
     },
@@ -2328,6 +2333,131 @@
           "title": "Delete snapshot"
         }
       },
+      "detail": {
+        "balances": {
+          "add": "Add balance",
+          "all": "All",
+          "asset": "Assets",
+          "bulk_delete": {
+            "action": "Remove zero-value | Remove {count} zero-value | Remove {count} zero-value",
+            "message": "This removes {count} balance with no value. | This removes {count} balances with no value. They contribute nothing to net worth and can be safely cleared. | This removes {count} balances with no value. They contribute nothing to net worth and can be safely cleared.",
+            "title": "Remove zero-value balances"
+          },
+          "category": "Category",
+          "empty": "No balances in this snapshot",
+          "empty_filtered": "All rows are hidden by the active filters. Adjust the filters to see them.",
+          "flag_reasons": {
+            "duplicate": "Appears more than once",
+            "negative": "Negative value",
+            "nft_amount": "NFT amount isn't 1"
+          },
+          "flagged": "This entry may need attention",
+          "hidden": "no rows hidden | {count} hidden | {count} hidden",
+          "hide_ignored": "Hide ignored | Hide ignored ({count}) | Hide ignored ({count})",
+          "hide_spam": "Hide spam | Hide spam ({count}) | Hide spam ({count})",
+          "hide_title": "Hide rows",
+          "hide_zero_value": "Hide zero-value | Hide zero-value ({count}) | Hide zero-value ({count})",
+          "liability": "Liabilities",
+          "locked": "This snapshot's totals don't reconcile. Use the reconcile options above to align them before editing balances.",
+          "nft": "NFTs",
+          "search": "Search asset",
+          "share": "% Net worth",
+          "share_percent": "{percent}%",
+          "title": "Balances"
+        },
+        "changes": {
+          "added": "Added",
+          "changed": "Changed",
+          "empty": "No changes yet",
+          "net_worth": "Net worth",
+          "removed": "Removed",
+          "title": "Unsaved changes"
+        },
+        "fx_override": {
+          "bleed_warning": "Heads up: this also affects any price lookup for {symbol} within an hour of this snapshot.",
+          "error": {
+            "title": "Failed to update exchange rate"
+          },
+          "label": "USD → {symbol} rate",
+          "loading": "Checking for a USD → {symbol} rate…",
+          "manual": "Manual",
+          "missing": {
+            "description": "rotki has no historic USD → {symbol} rate for this snapshot's date, so values can't be converted. Set one to continue editing.",
+            "title": "No exchange rate for this date"
+          },
+          "override": "Override",
+          "rate_label": "USD → {symbol}",
+          "set_rate": "Set exchange rate"
+        },
+        "leave": {
+          "message": "You have unsaved changes. Are you sure you want to leave? Your changes will be lost.",
+          "title": "Discard unsaved changes?"
+        },
+        "load_error": "Failed to load snapshot: {message}",
+        "loading": "Loading snapshot…",
+        "locations": {
+          "add": "Add location",
+          "allocated": "Allocated",
+          "balanced": "Allocation matches net worth",
+          "empty": "No locations in this snapshot",
+          "net_worth": "Net worth",
+          "reconcile": {
+            "description": "Locations are off by {amount} from the stored net worth. Distribute the difference across your locations to realign the allocation.",
+            "distribute": "Distribute across locations",
+            "title": "Allocation doesn't match net worth"
+          },
+          "share": "% net worth",
+          "share_percent": "{percent}%",
+          "title": "Locations"
+        },
+        "mismatch": {
+          "balances_sum": "Sum of balances",
+          "description": "The balances, locations and stored total don't agree. The balances are the source of truth — reconcile to the balances sum by absorbing the difference into a location, or just set the total to the balances sum.",
+          "locations_sum": "Sum of locations",
+          "reconcile_apply": "Reconcile locations",
+          "reconcile_into": "Absorb difference into",
+          "stored_total": "Stored net worth",
+          "title": "Totals do not match"
+        },
+        "navigation": {
+          "next": "Next snapshot",
+          "previous": "Previous snapshot"
+        },
+        "not_found": "Snapshot not found",
+        "save": {
+          "failure": "Failed to save snapshot",
+          "success": "Snapshot saved successfully",
+          "title": "Save snapshot"
+        },
+        "split": {
+          "add_row": "Add location",
+          "available": "Available:",
+          "distribute": "Distribute evenly",
+          "hint": "Distribute this balance's value across locations. The split must add up to the full value.",
+          "location_after": "After:",
+          "remaining": "Remaining",
+          "title": "Split across locations"
+        },
+        "summary": {
+          "allocation": "Allocation",
+          "allocation_other": "Other",
+          "allocation_percent": "{percent}%",
+          "delta_percent": "({percent}%)",
+          "edit_locations": "Edit locations",
+          "exclude_nfts": "Exclude NFTs from net worth",
+          "net_worth": "Net worth",
+          "since": "since"
+        },
+        "unsaved_changes": "{count} unsaved change | {count} unsaved changes",
+        "warnings": {
+          "duplicate_asset": "{asset} appears more than once",
+          "negative_balance": "{asset} has a negative value",
+          "net_worth_swing": "Net worth changed by {percent}% versus the previous snapshot",
+          "nft_amount": "{asset} is an NFT but its amount is not 1",
+          "title": "Check these entries",
+          "zero_value": "no balances have value | {count} balance has no value | {count} balances have no value"
+        }
+      },
       "download": {
         "message": {
           "failure": "Snapshot CSV export failed",
@@ -2338,7 +2468,6 @@
       "edit": {
         "dialog": {
           "actions": {
-            "add_new_entry": "Add New Entry",
             "delete_item": "Delete item",
             "edit_item": "Edit item"
           },
@@ -2348,7 +2477,8 @@
             "delete_title": "Delete balance snapshot item",
             "edit_title": "Update balance snapshot data",
             "hints": {
-              "location": "This is optional. If specified, the location balance data will be adjusted automatically. If not, you have to update location balance data manually."
+              "insufficient_location": "Greyed-out locations don't hold enough value to cover this change. Split across locations to draw from several.",
+              "location": "The location's balance data is adjusted automatically to keep its subtotal reconciled with the total."
             },
             "nft": "NFT",
             "nft_hint": "Accepted format: \"_nft_{'ETH address'}_{'collection number'}\"",
@@ -2362,13 +2492,11 @@
               "amount": "The amount field cannot be empty",
               "asset": "The asset field cannot be empty",
               "category": "The category field cannot be empty",
+              "location": "The location field cannot be empty",
+              "location_insufficient": "This location doesn't hold enough value to cover the change",
               "value": "The value field cannot be empty"
             },
-            "title": "Balances Snapshot",
             "token": "Token"
-          },
-          "fetch": {
-            "loading": "Fetching snapshot data"
           },
           "location_data": {
             "add_title": "Add location data snapshot data",
@@ -2378,30 +2506,35 @@
             "rules": {
               "location": "The location field cannot be empty",
               "value": "The value field cannot be empty"
-            },
-            "title": "Location Data Snapshot"
-          },
-          "message": {
-            "error": "Failed to update snapshot data: {message}",
-            "success": "Data was successfully updated",
-            "title": "Update snapshot data"
-          },
-          "title": "Edit snapshot data at {date}",
-          "total": {
-            "hint": "You have different amount between assets total and locations total. You can choose which amount to use.",
-            "rules": {
-              "total": "The value field cannot be empty"
-            },
-            "use_calculated_asset": "Use total from {length} asset(s) value: ",
-            "use_calculated_location": "Use total from {length} location(s) value: ",
-            "use_calculated_total": "Use calculated total value: ",
-            "warning": "This is total value that includes NFTs value. If you turn off setting \"Include NFTs in graphs and total amounts\", it will show value {amount} on the chart"
+            }
           }
         }
       },
       "export_database_snapshot": "Export database snapshot",
+      "list": {
+        "actions": {
+          "delete": "Delete",
+          "export": "Export",
+          "open": "Open"
+        },
+        "empty": "No snapshots found",
+        "empty_filtered": "No snapshots match the selected date range",
+        "headers": {
+          "delta": "Change"
+        },
+        "range": {
+          "from": "From",
+          "to": "To"
+        },
+        "take_snapshot": "Take snapshot",
+        "take_snapshot_confirm": {
+          "message": "This refetches all your balances ignoring the cache and saves a new snapshot. It can be slow and may hit API rate limits. Continue?",
+          "title": "Take snapshot"
+        },
+        "title": "Snapshots"
+      },
       "search_asset": "Search asset",
-      "subtitle": "Click the button below to download snapshot for"
+      "subtitle": "Download this snapshot's data."
     }
   },
   "dashboard_asset_table": {
@@ -4348,7 +4481,8 @@
     "statistics": "Statistics",
     "statistics_sub": {
       "graphs": "Graphs",
-      "history_events": "Events Analysis"
+      "history_events": "Events Analysis",
+      "snapshots": "Snapshots"
     },
     "tag_manager": "Tag Manager",
     "wallet_bridge": "Wallet Bridge"

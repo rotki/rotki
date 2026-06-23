@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :feature:`12277` The balance snapshot manager has been redesigned: snapshots now open in a dedicated editor reached from the net worth chart, with a clearer balances table, a locations drawer, sum-mismatch reconciliation, per-date exchange-rate overrides and undoable edits.
 * :feature:`-` Add support for Bit2me exchange.
 * :feature:`9316` Searching for an asset in the asset manager now shows the closest matches first, so the asset you are looking for appears at the top instead of being buried under similarly-named or spam tokens.
 * :feature:`12219` Add Moralis as a price Oracle.

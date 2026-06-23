@@ -1,6 +1,6 @@
 import { api } from '@/modules/core/api/rotki-api';
 import { VALID_WITH_SESSION_AND_EXTERNAL_SERVICE, VALID_WITHOUT_SESSION_STATUS } from '@/modules/core/api/utils';
-import { Snapshot, type SnapshotPayload } from '@/modules/dashboard/snapshots';
+import { type Snapshot, type SnapshotPayload, SnapshotSchema } from '@/modules/dashboard/snapshots';
 
 interface UseSnapshotApiReturn {
   getSnapshotData: (timestamp: number) => Promise<Snapshot>;
@@ -18,7 +18,7 @@ export function useSnapshotApi(): UseSnapshotApiReturn {
       validStatuses: VALID_WITHOUT_SESSION_STATUS,
     });
 
-    return Snapshot.parse(response);
+    return SnapshotSchema.parse(response);
   };
 
   const updateSnapshotData = async (timestamp: number, payload: SnapshotPayload): Promise<boolean> => api.patch<boolean>(`/snapshots/${timestamp}`, payload);

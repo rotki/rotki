@@ -1,107 +1,30 @@
 <script setup lang="ts">
-import type { Writeable } from '@rotki/common';
-import type { AllBalancePayload } from '@/modules/accounts/blockchain-accounts';
-import { startPromise } from '@shared/utils';
-import { useLogout } from '@/modules/auth/use-logout';
-import { useBalanceFetching } from '@/modules/balances/use-balance-fetching';
-import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
-import { useMessageStore } from '@/modules/core/common/use-message-store';
 import SnapshotImportDialog from '@/modules/dashboard/SnapshotImportDialog.vue';
+import { useSnapshotActions } from '@/modules/dashboard/snapshots/composables/use-snapshot-actions';
 import { usePremium } from '@/modules/premium/use-premium';
 import { useSessionMetadataStore } from '@/modules/session/use-session-metadata-store';
-import { useSnapshotApi } from '@/modules/settings/api/use-snapshot-api';
 import SettingsOption from '@/modules/settings/controls/SettingsOption.vue';
 import { useFrontendSettingsStore } from '@/modules/settings/use-frontend-settings-store';
-import { useInterop } from '@/modules/shell/app/use-electron-interop';
 import DateDisplay from '@/modules/shell/components/display/DateDisplay.vue';
 import MenuTooltipButton from '@/modules/shell/components/MenuTooltipButton.vue';
-import { useStatisticsDataFetching } from '@/modules/statistics/use-statistics-data-fetching';
 
 const ignoreErrors = ref<boolean>(false);
 const visible = ref<boolean>(false);
-const balanceSnapshotFile = ref<File>();
-const locationDataSnapshotFile = ref<File>();
-const importSnapshotLoading = ref<boolean>(false);
 const importSnapshotDialog = ref<boolean>(false);
 
 const { t } = useI18n({ useScope: 'global' });
 const premium = usePremium();
-const { logout } = useLogout();
 const { lastBalanceSave } = storeToRefs(useSessionMetadataStore());
-const { fetchBalances } = useBalanceFetching();
-const { getPath } = useInterop();
-const { fetchNetValue } = useStatisticsDataFetching();
-const { setMessage } = useMessageStore();
-const { importBalancesSnapshot, uploadBalancesSnapshot } = useSnapshotApi();
 const { ignoreSnapshotError } = storeToRefs(useFrontendSettingsStore());
+const { forceSave, forceSaving, importing, importSnapshot, modelBalanceFile, modelLocationFile } = useSnapshotActions();
 
-async function refreshAllAndSave() {
+async function forceSaveAndClose(): Promise<void> {
   set(visible, false);
-  const payload: Writeable<Partial<AllBalancePayload>> = {
-    ignoreCache: true,
-    saveData: true,
-  };
-  if (get(ignoreErrors))
-    payload.ignoreErrors = true;
-
-  await fetchBalances(payload);
-  await fetchNetValue();
+  await forceSave();
 }
 
-async function importSnapshot() {
-  if (!(isDefined(balanceSnapshotFile) && isDefined(locationDataSnapshotFile)))
-    return;
-
-  set(importSnapshotLoading, true);
-
-  const balanceFile = get(balanceSnapshotFile);
-  const locationFile = get(locationDataSnapshotFile);
-
-  let success = false;
-  let message = '';
-  try {
-    const balanceFilePath = getPath(balanceFile);
-    const locationFilePath = getPath(locationFile);
-    if (balanceFilePath && locationFilePath)
-      await importBalancesSnapshot(balanceFilePath, locationFilePath);
-    else
-      await uploadBalancesSnapshot(balanceFile, locationFile);
-
-    success = true;
-  }
-  catch (error: unknown) {
-    message = getErrorMessage(error);
-  }
-
-  if (!success) {
-    setMessage({
-      description: t('snapshot_action_button.messages.failed_description', {
-        message,
-      }),
-      title: t('snapshot_action_button.messages.title'),
-    });
-  }
-  else {
-    setMessage({
-      description: t('snapshot_action_button.messages.success_description', {
-        message,
-      }),
-      success: true,
-      title: t('snapshot_action_button.messages.title'),
-    });
-
-    setTimeout(() => {
-      startPromise(logout());
-    }, 3000);
-  }
-
-  set(importSnapshotLoading, false);
-  set(balanceSnapshotFile, null);
-  set(locationDataSnapshotFile, null);
-}
-
-watchImmediate(ignoreSnapshotError, (ignoreSnapshotError) => {
-  set(ignoreErrors, ignoreSnapshotError);
+watchImmediate(ignoreSnapshotError, (value) => {
+  set(ignoreErrors, value);
 });
 </script>
 
@@ -147,7 +70,8 @@ watchImmediate(ignoreSnapshotError, (ignoreSnapshotError) => {
         <RuiButton
           color="primary"
           variant="outlined"
-          @click="refreshAllAndSave()"
+          :loading="forceSaving"
+          @click="forceSaveAndClose()"
         >
           <template #prepend>
             <RuiIcon name="lu-save" />
@@ -204,9 +128,9 @@ watchImmediate(ignoreSnapshotError, (ignoreSnapshotError) => {
         </div>
         <SnapshotImportDialog
           v-model="importSnapshotDialog"
-          v-model:balance-file="balanceSnapshotFile"
-          v-model:location-file="locationDataSnapshotFile"
-          :loading="importSnapshotLoading"
+          v-model:balance-file="modelBalanceFile"
+          v-model:location-file="modelLocationFile"
+          :loading="importing"
           @import="importSnapshot()"
         />
       </div>

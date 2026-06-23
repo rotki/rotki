@@ -1,7 +1,7 @@
+import type { BalanceType } from '@/modules/balances/types/balances';
 import type { Snapshot } from '@/modules/dashboard/snapshots';
 import { type BigNumber, bigNumberify, Zero } from '@rotki/common';
-import { BalanceType } from '@/modules/balances/types/balances';
-import { isLiability } from '@/modules/dashboard/snapshots/lib/snapshot-totals';
+import { isLiability, TOTAL_LOCATION } from '@/modules/dashboard/snapshots/utils/snapshot-totals';
 
 /**
  * Snapshot location-balance preview helpers.
@@ -79,4 +79,44 @@ export function locationBalanceAfterDelete(params: {
     after: locationData.usdValue.plus(usdValueDiff),
     before: locationData.usdValue,
   };
+}
+
+/**
+ * Location names that can't absorb an asset operation without their subtotal
+ * going negative — i.e. you'd remove more value than the location holds.
+ *
+ * Only assets are capped: removing or shrinking a **liability** adds value back
+ * to a location (the inverse), and a location may legitimately be net-negative
+ * when it carries liabilities, so liability operations are never restricted.
+ *
+ * `after(location)` returns the previewed subtotal for that location (or `null`
+ * when it can't be computed); a location is overdrawn when that result is
+ * negative. Used to disable invalid single-location choices in the edit/delete
+ * dialogs and to cap each split portion.
+ */
+export function overdrawnLocationIds(
+  snapshot: Snapshot,
+  category: BalanceType,
+  after: (location: string) => BigNumber | null,
+): string[] {
+  if (isLiability(category))
+    return [];
+  return snapshot.locationDataSnapshot
+    .filter(item => item.location !== TOTAL_LOCATION)
+    .filter((item) => {
+      const result = after(item.location);
+      return result !== null && result.isNegative();
+    })
+    .map(item => item.location);
+}
+
+/**
+ * The location to preselect for an operation: the sole eligible venue, i.e. the
+ * only one not in `ineligible` (typically the overdrawn set). Returns `undefined`
+ * when several qualify (the user must choose) or none can. Covers both the
+ * lone-location case and "only one of several holds enough value".
+ */
+export function soleEligibleLocation(candidates: string[], ineligible: string[]): string | undefined {
+  const eligible = candidates.filter(location => !ineligible.includes(location));
+  return eligible.length === 1 ? eligible[0] : undefined;
 }

@@ -64,6 +64,7 @@ export const Routes = {
   STATISTICS: ensureRoute('/statistics'),
   STATISTICS_GRAPHS: ensureRoute('/statistics/graphs'),
   STATISTICS_HISTORY_EVENTS: ensureRoute('/statistics/history-events'),
+  STATISTICS_SNAPSHOTS: ensureRoute('/statistics/snapshots'),
   TAG_MANAGER: ensureRoute('/tag-manager'),
   USER_CREATE: ensureRoute('/user/create'),
   USER_LOGIN: ensureRoute('/user/login'),
@@ -345,6 +346,11 @@ export const useAppRoutes = createSharedComposable(() => {
       icon: 'lu-chart-bar' as const,
       route: Routes.STATISTICS_HISTORY_EVENTS,
       text: t('navigation_menu.statistics_sub.history_events'),
+    },
+    STATISTICS_SNAPSHOTS: {
+      icon: 'lu-camera' as const,
+      route: Routes.STATISTICS_SNAPSHOTS,
+      text: t('navigation_menu.statistics_sub.snapshots'),
     },
     TAG_MANAGER: {
       icon: 'lu-tag-manager' as const,

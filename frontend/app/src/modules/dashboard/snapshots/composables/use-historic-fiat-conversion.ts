@@ -49,6 +49,16 @@ export function useHistoricFiatConversion(timestamp: MaybeRefOrGetter<number>): 
 
   const rateReady = computed<boolean>(() => get(isUsd) || get(rate).isPositive());
 
+  // Eagerly kick the lazy historic-rate fetch on mount and whenever the
+  // timestamp changes. `resolve()` marks the key pending synchronously, so this
+  // makes `loading` true before the first paint — without it, consumers briefly
+  // render a not-yet-fetched rate as "no rate" (the #12277 dead-end) during
+  // navigation, before the fetch registers as pending.
+  watchImmediate([(): number => toValue(timestamp), isUsd], () => {
+    if (!get(isUsd))
+      getHistoricPrice(CURRENCY_USD, toValue(timestamp));
+  });
+
   return {
     isUsd,
     loading,

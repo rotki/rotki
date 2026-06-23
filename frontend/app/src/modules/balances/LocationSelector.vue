@@ -47,10 +47,11 @@ watch([locations, model], ([locations, value], [prevLocations, prevValue]) => {
     auto-select-first
     v-bind="$attrs"
   >
-    <template #item="{ item }">
+    <template #item="{ disabled, item }">
       <LocationIcon
         :id="`balance-location__${item.identifier}`"
         class="!justify-start"
+        :class="{ 'opacity-40': disabled }"
         horizontal
         :item="item.identifier"
       />
