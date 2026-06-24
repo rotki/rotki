@@ -202,11 +202,12 @@ function closePinnedSidebar() {
 <template>
   <RuiCard
     no-padding
-    class="overflow-hidden"
-    :class="{ '!rounded-none': isPinned }"
+    class="overflow-hidden flex flex-col"
+    :class="isPinned ? 'h-full !rounded-none' : 'max-h-[90vh]'"
+    content-class="flex flex-col flex-1 min-h-0 overflow-hidden"
     variant="flat"
   >
-    <div class="flex bg-rui-primary text-white p-2">
+    <div class="flex bg-rui-primary text-white p-2 shrink-0">
       <RuiButton
         v-if="!isPinned"
         variant="text"
@@ -284,75 +285,74 @@ function closePinnedSidebar() {
     <RuiStepper
       :steps="stepperContents"
       :step="step"
-      class="border-b-2 border-default"
+      class="border-b-2 border-default shrink-0"
       :class="{ 'py-2': isPinned, 'py-4': !isPinned }"
     />
 
-    <div
-      v-for="(content, index) of stepperContents"
-      :key="content.key"
-    >
-      <Component
-        :is="content.selector"
-        v-if="step === index + 1"
-        :items="content.items"
-        :is-pinned="isPinned"
-        @pin="pinSection()"
+    <div class="flex-1 min-h-0 flex flex-col">
+      <template
+        v-for="(content, index) of stepperContents"
+        :key="content.key"
       >
-        <template
+        <Component
+          :is="content.selector"
           v-if="step === index + 1"
-          #actions="{ items }"
+          :items="content.items"
+          :is-pinned="isPinned"
+          @pin="pinSection()"
         >
-          <div
-            class="border-t-2 border-rui-grey-300 dark:border-rui-grey-800 relative z-[2] flex items-center justify-between gap-4"
-            :class="isPinned ? 'p-2' : 'p-4'"
-          >
+          <template #actions="{ items }">
             <div
-              v-if="content.hint"
-              class="text-caption"
+              class="border-t-2 border-rui-grey-300 dark:border-rui-grey-800 relative z-[2] flex items-center justify-between gap-4"
+              :class="isPinned ? 'p-2' : 'p-4'"
             >
-              {{ content.hint }}
-            </div>
+              <div
+                v-if="content.hint"
+                class="text-caption"
+              >
+                {{ content.hint }}
+              </div>
 
-            <div class="flex gap-2">
-              <RuiButton
-                v-if="step > 1"
-                :size="isPinned ? 'sm' : undefined"
-                variant="text"
-                @click="step = step - 1"
-              >
-                {{ t('common.actions.back') }}
-              </RuiButton>
-              <RuiButton
-                v-if="step < stepperContents.length"
-                color="primary"
-                :size="isPinned ? 'sm' : undefined"
-                @click="step = step + 1"
-              >
-                {{ t('common.actions.next') }}
-              </RuiButton>
-              <template v-if="step === stepperContents.length">
+              <div class="flex gap-2">
                 <RuiButton
-                  v-if="!isPinned && content.key === 'missingAcquisitions'"
-                  color="primary"
+                  v-if="step > 1"
                   :size="isPinned ? 'sm' : undefined"
-                  @click="setDialog(false)"
+                  variant="text"
+                  @click="step = step - 1"
                 >
-                  {{ t('common.actions.close') }}
+                  {{ t('common.actions.back') }}
                 </RuiButton>
                 <RuiButton
-                  v-else-if="content.key !== 'missingAcquisitions'"
+                  v-if="step < stepperContents.length"
                   color="primary"
                   :size="isPinned ? 'sm' : undefined"
-                  @click="submitActionableItems(items)"
+                  @click="step = step + 1"
                 >
-                  {{ t('common.actions.finish') }}
+                  {{ t('common.actions.next') }}
                 </RuiButton>
-              </template>
+                <template v-if="step === stepperContents.length">
+                  <RuiButton
+                    v-if="!isPinned && content.key === 'missingAcquisitions'"
+                    color="primary"
+                    :size="isPinned ? 'sm' : undefined"
+                    @click="setDialog(false)"
+                  >
+                    {{ t('common.actions.close') }}
+                  </RuiButton>
+                  <RuiButton
+                    v-else-if="content.key !== 'missingAcquisitions'"
+                    color="primary"
+                    :size="isPinned ? 'sm' : undefined"
+                    @click="submitActionableItems(items)"
+                  >
+                    {{ t('common.actions.finish') }}
+                  </RuiButton>
+                </template>
+              </div>
             </div>
-          </div>
-        </template>
-      </Component>
+          </template>
+        </Component>
+      </template>
     </div>
   </RuiCard>
 </template>

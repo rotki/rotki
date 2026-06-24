@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { DataTableColumn } from '@rotki/ui-library';
 import type { DuplicateRow } from '@/modules/history/events/use-customized-event-duplicates';
+import ScrollableDialogContent from '@/modules/core/table/ScrollableDialogContent.vue';
 import HistoryEventAccount from '@/modules/history/events/HistoryEventAccount.vue';
 import HistoryEventsIdentifier from '@/modules/history/events/HistoryEventsIdentifier.vue';
 import LocationDisplay from '@/modules/history/LocationDisplay.vue';
@@ -67,48 +68,49 @@ const columns = computed<DataTableColumn<DuplicateRow>[]>(() => [
         {{ t('customized_event_duplicates.actions.show_in_history') }}
       </RuiButton>
     </div>
-    <RuiDataTable
-      v-model="selected"
-      :cols="columns"
-      :rows="rows"
-      row-attr="groupIdentifier"
-      outlined
-      dense
-      multi-page-select
-      :loading="loading"
-      class="max-h-[calc(100vh-23rem)] table-inside-dialog"
-      :empty="{ description: t('customized_event_duplicates.no_items') }"
-    >
-      <template #item.timestamp="{ row }">
-        <DateDisplay
-          :timestamp="row.timestamp"
-          milliseconds
-        />
-      </template>
-      <template #item.txHash="{ row }">
-        <div class="flex flex-col gap-1">
-          <HistoryEventsIdentifier :event="row.entry" />
-          <HistoryEventAccount
-            v-if="row.locationLabel"
-            :location="row.location"
-            :location-label="row.locationLabel"
-            class="text-sm min-w-0"
+    <ScrollableDialogContent max-height="calc(100vh - 23rem)">
+      <RuiDataTable
+        v-model="selected"
+        :cols="columns"
+        :rows="rows"
+        row-attr="groupIdentifier"
+        outlined
+        dense
+        multi-page-select
+        :loading="loading"
+        :empty="{ description: t('customized_event_duplicates.no_items') }"
+      >
+        <template #item.timestamp="{ row }">
+          <DateDisplay
+            :timestamp="row.timestamp"
+            milliseconds
           />
-        </div>
-      </template>
-      <template #item.location="{ row }">
-        <LocationDisplay
-          size="24px"
-          horizontal
-          :identifier="row.location"
-        />
-      </template>
-      <template #item.actions="{ row }">
-        <slot
-          name="actions"
-          :row="row"
-        />
-      </template>
-    </RuiDataTable>
+        </template>
+        <template #item.txHash="{ row }">
+          <div class="flex flex-col gap-1">
+            <HistoryEventsIdentifier :event="row.entry" />
+            <HistoryEventAccount
+              v-if="row.locationLabel"
+              :location="row.location"
+              :location-label="row.locationLabel"
+              class="text-sm min-w-0"
+            />
+          </div>
+        </template>
+        <template #item.location="{ row }">
+          <LocationDisplay
+            size="24px"
+            horizontal
+            :identifier="row.location"
+          />
+        </template>
+        <template #item.actions="{ row }">
+          <slot
+            name="actions"
+            :row="row"
+          />
+        </template>
+      </RuiDataTable>
+    </ScrollableDialogContent>
   </div>
 </template>

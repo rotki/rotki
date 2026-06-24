@@ -3,6 +3,7 @@ import type { DataTableColumn } from '@rotki/ui-library';
 import type { NegativeBalanceDetectedData } from '@/modules/core/messaging/types/status-types';
 import { AssetAmountDisplay } from '@/modules/assets/amount-display/components';
 import AssetDetails from '@/modules/assets/AssetDetails.vue';
+import ScrollableDialogContent from '@/modules/core/table/ScrollableDialogContent.vue';
 import CardTitle from '@/modules/shell/components/CardTitle.vue';
 import DateDisplay from '@/modules/shell/components/display/DateDisplay.vue';
 import { Routes } from '@/router/routes';
@@ -78,52 +79,53 @@ async function navigateToEvent(row: NegativeBalanceDetectedData): Promise<void> 
         <DateDisplay :timestamp="lastRunTs" />
       </div>
 
-      <RuiDataTable
-        :cols="headers"
-        :rows="negativeBalances"
-        row-attr="eventIdentifier"
-        outlined
-        dense
-        class="table-inside-dialog"
-      >
-        <template #item.asset="{ row }">
-          <AssetDetails
-            :asset="row.asset"
-            :dense="true"
-          />
-        </template>
-        <template #item.balanceBefore="{ row }">
-          <AssetAmountDisplay
-            :amount="row.balanceBefore"
-            :asset="row.asset"
-          />
-        </template>
-        <template #item.actions="{ row }">
-          <RuiTooltip
-            :popper="{ placement: 'top' }"
-            :open-delay="400"
-            tooltip-class="max-w-80"
-          >
-            <template #activator>
-              <RuiButton
-                variant="text"
-                size="sm"
-                color="primary"
-                @click="navigateToEvent(row)"
-              >
-                <template #prepend>
-                  <RuiIcon
-                    name="lu-external-link"
-                    size="16"
-                  />
-                </template>
-                {{ t('historical_balances.negative_balances.view_event') }}
-              </RuiButton>
-            </template>
-            {{ t('historical_balances.negative_balances.view_event_tooltip') }}
-          </RuiTooltip>
-        </template>
-      </RuiDataTable>
+      <ScrollableDialogContent max-height="calc(100vh - 21.25rem)">
+        <RuiDataTable
+          :cols="headers"
+          :rows="negativeBalances"
+          row-attr="eventIdentifier"
+          outlined
+          dense
+        >
+          <template #item.asset="{ row }">
+            <AssetDetails
+              :asset="row.asset"
+              :dense="true"
+            />
+          </template>
+          <template #item.balanceBefore="{ row }">
+            <AssetAmountDisplay
+              :amount="row.balanceBefore"
+              :asset="row.asset"
+            />
+          </template>
+          <template #item.actions="{ row }">
+            <RuiTooltip
+              :popper="{ placement: 'top' }"
+              :open-delay="400"
+              tooltip-class="max-w-80"
+            >
+              <template #activator>
+                <RuiButton
+                  variant="text"
+                  size="sm"
+                  color="primary"
+                  @click="navigateToEvent(row)"
+                >
+                  <template #prepend>
+                    <RuiIcon
+                      name="lu-external-link"
+                      size="16"
+                    />
+                  </template>
+                  {{ t('historical_balances.negative_balances.view_event') }}
+                </RuiButton>
+              </template>
+              {{ t('historical_balances.negative_balances.view_event_tooltip') }}
+            </RuiTooltip>
+          </template>
+        </RuiDataTable>
+      </ScrollableDialogContent>
     </RuiCard>
   </RuiDialog>
 </template>

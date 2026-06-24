@@ -7,6 +7,7 @@ import AssetDetails from '@/modules/assets/AssetDetails.vue';
 import { useAssetsStore } from '@/modules/assets/use-assets-store';
 import { useIgnoredAssetOperations } from '@/modules/assets/use-ignored-asset-operations';
 import { bigNumberSum } from '@/modules/core/common/data/calculation';
+import ScrollableDialogContent from '@/modules/core/table/ScrollableDialogContent.vue';
 import { TableId, useRememberTableSorting } from '@/modules/core/table/use-remember-table-sorting';
 import BadgeDisplay from '@/modules/history/BadgeDisplay.vue';
 import DateDisplay from '@/modules/shell/components/display/DateDisplay.vue';
@@ -162,14 +163,10 @@ async function showInHistoryEvent(identifier: number) {
       <DateDisplay :timestamp="row.endDate" />
     </template>
   </CreateDate>
-  <div>
+  <ScrollableDialogContent fill>
     <RuiDataTable
       v-model:sort="sort"
       v-model:expanded="expanded"
-      class="table-inside-dialog"
-      :class="{
-        'max-h-full h-[calc(100vh-245px)]': isPinned,
-      }"
       :cols="headers"
       :rows="groupedMissingAcquisitions"
       row-attr="asset"
@@ -287,6 +284,8 @@ async function showInHistoryEvent(identifier: number) {
         </RuiDataTable>
       </template>
     </RuiDataTable>
-    <slot name="actions" />
-  </div>
+    <template #footer>
+      <slot name="actions" />
+    </template>
+  </ScrollableDialogContent>
 </template>

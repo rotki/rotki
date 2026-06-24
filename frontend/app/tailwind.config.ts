@@ -49,10 +49,6 @@ const componentsPlugin = plugin((pluginAPI: PluginAPI) => {
       '@apply px-4': {},
       'maxWidth': '1500px',
     },
-    '.table-inside-dialog': {
-      '@apply scroll-smooth overflow-auto': {},
-      'maxHeight': 'calc(100vh - 21.25rem)',
-    },
   });
   pluginAPI.addUtilities({
     '.blur': {
