@@ -1,18 +1,18 @@
-import type { BrowserProvider } from 'ethers';
 import type { Ref } from 'vue';
 import type { TaskResult } from '@/modules/core/tasks/use-task-handler';
 import { beforeEach, describe, expect, it, type Mock, vi } from 'vitest';
 import { GnosisPayError, type GnosisPayErrorContext } from './types';
 import { useGnosisPaySigning } from './use-gnosis-pay-signing';
 
+const CONNECTED_ADDRESS = '0x1234567890123456789012345678901234567890';
+
 const fetchNonce = vi.fn();
 const verifySiweSignature = vi.fn();
 const runTask = vi.fn();
 const showErrorMessage = vi.fn();
 const signMessage = vi.fn();
-const getSigner = vi.fn();
-const injectedGetBrowserProvider = vi.fn();
-const wcGetBrowserProvider = vi.fn();
+const injectedGetWalletClient = vi.fn();
+const wcGetWalletClient = vi.fn();
 const walletMode = ref<string>('local-bridge');
 
 vi.mock('@/modules/integrations/gnosis-pay/use-gnosis-pay-api', () => ({
@@ -38,13 +38,13 @@ vi.mock('@/modules/core/notifications/use-notifications', () => ({
 
 vi.mock('@/modules/wallet/bridge/use-injected-wallet', () => ({
   useInjectedWallet: vi.fn().mockImplementation(() => ({
-    getBrowserProvider: injectedGetBrowserProvider,
+    getWalletClient: injectedGetWalletClient,
   })),
 }));
 
 vi.mock('@/modules/wallet/use-wallet-connect', () => ({
   useWalletConnect: vi.fn().mockImplementation(() => ({
-    getBrowserProvider: wcGetBrowserProvider,
+    getWalletClient: wcGetWalletClient,
   })),
 }));
 
@@ -88,7 +88,7 @@ interface Harness {
 function makeHarness(overrides: Partial<Harness> = {}): Harness {
   return {
     clearError: vi.fn(),
-    connectedAddress: ref<string | undefined>('0xConnected'),
+    connectedAddress: ref<string | undefined>(CONNECTED_ADDRESS),
     errorType: ref<GnosisPayError | null>(null),
     setError: vi.fn(),
     signingInProgress: ref<boolean>(false),
@@ -104,10 +104,9 @@ describe('useGnosisPaySigning', () => {
     runTask.mockReset();
     showErrorMessage.mockReset();
     signMessage.mockReset().mockResolvedValue('0xSignature');
-    getSigner.mockReset().mockResolvedValue({ signMessage });
-    const fakeProvider: Pick<BrowserProvider, 'getSigner'> = { getSigner };
-    injectedGetBrowserProvider.mockReset().mockReturnValue(fakeProvider);
-    wcGetBrowserProvider.mockReset().mockReturnValue(fakeProvider);
+    const fakeClient = { signMessage };
+    injectedGetWalletClient.mockReset().mockReturnValue(fakeClient);
+    wcGetWalletClient.mockReset().mockReturnValue(fakeClient);
     set(walletMode, 'local-bridge');
   });
 
@@ -160,8 +159,8 @@ describe('useGnosisPaySigning', () => {
     expect(fetchNonce).not.toHaveBeenCalled();
     expect(runTask).toHaveBeenCalledTimes(2);
     expect(signMessage).toHaveBeenCalledTimes(1);
-    const signedMessage = String(signMessage.mock.calls[0][0]);
-    expect(signedMessage).toContain('0xConnected');
+    const signedMessage = String(signMessage.mock.calls[0][0].message);
+    expect(signedMessage).toContain(CONNECTED_ADDRESS);
     expect(signedMessage).toContain('Nonce: nonce-123');
     expect(get(harness.signInSuccess)).toBe(true);
     expect(onSignInComplete).toHaveBeenCalled();
@@ -248,8 +247,8 @@ describe('useGnosisPaySigning', () => {
     const { signInWithEthereum } = useGnosisPaySigning(harness);
     await signInWithEthereum();
 
-    expect(wcGetBrowserProvider).toHaveBeenCalled();
-    expect(injectedGetBrowserProvider).not.toHaveBeenCalled();
+    expect(wcGetWalletClient).toHaveBeenCalled();
+    expect(injectedGetWalletClient).not.toHaveBeenCalled();
   });
 
   it('should always reset signingInProgress when finished', async () => {
@@ -281,7 +280,7 @@ describe('useGnosisPaySigning', () => {
     expect(fetchNonce).toHaveBeenCalled();
     expect(verifySiweSignature).toHaveBeenCalled();
     const verifyArgs = verifySiweSignature.mock.calls[0];
-    expect(verifyArgs[0]).toContain('0xConnected');
+    expect(verifyArgs[0]).toContain(CONNECTED_ADDRESS);
     expect(verifyArgs[1]).toBe('0xSignature');
   });
 });

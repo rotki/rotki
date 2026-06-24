@@ -2,11 +2,11 @@ import type { Ref } from 'vue';
 import type { EIP1193Provider } from '@/types';
 import { assert } from '@rotki/common';
 import { createSharedComposable } from '@vueuse/core';
-import { BrowserProvider, getAddress } from 'ethers';
 import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
 import { logger } from '@/modules/core/common/logging/logging';
 import { useInterop } from '@/modules/shell/app/use-electron-interop';
 import { useUnifiedProviders } from '../providers/use-unified-providers';
+import { createViemWalletClient, getAddress, type ViemWalletClient } from '../viem-client';
 import { useWalletProxy } from './use-wallet-proxy';
 
 interface UseInjectedWalletReturn {
@@ -16,7 +16,7 @@ interface UseInjectedWalletReturn {
   isConnecting: Ref<boolean>;
   connectToSelectedProvider: () => Promise<void>;
   disconnect: () => Promise<void>;
-  getBrowserProvider: () => BrowserProvider;
+  getWalletClient: () => ViemWalletClient;
   switchNetwork: (chainId: bigint) => Promise<void>;
 }
 
@@ -228,11 +228,11 @@ function _useInjectedWallet(): UseInjectedWalletReturn {
     set(connectedChainId, undefined);
   };
 
-  const getBrowserProvider = (): BrowserProvider => {
+  const getWalletClient = (): ViemWalletClient => {
     if (!injectedProvider) {
       throw new Error('Injected provider not initialized');
     }
-    return new BrowserProvider(injectedProvider);
+    return createViemWalletClient(injectedProvider);
   };
 
   async function updateChainId(): Promise<void> {
@@ -254,8 +254,8 @@ function _useInjectedWallet(): UseInjectedWalletReturn {
       catch (error: unknown) {
         // If the chain doesn't exist, try to add it
         if (error instanceof Object && 'code' in error && error.code === 4902) {
-          const { supportedNetworks } = await import('../use-wallet-connect');
-          const network = supportedNetworks.find(item => BigInt(item.id) === chainId);
+          const { getWalletNetwork } = await import('../chains-viem');
+          const network = getWalletNetwork(chainId);
           if (network) {
             await injectedProvider.request({
               method: 'wallet_addEthereumChain',
@@ -264,7 +264,7 @@ function _useInjectedWallet(): UseInjectedWalletReturn {
                 chainId: `0x${chainId.toString(16)}`,
                 chainName: network.name,
                 nativeCurrency: network.nativeCurrency,
-                rpcUrls: network.rpcUrls?.http || [],
+                rpcUrls: network.rpcUrls.default.http,
               }],
             });
           }
@@ -282,7 +282,7 @@ function _useInjectedWallet(): UseInjectedWalletReturn {
     connectedChainId,
     connectToSelectedProvider,
     disconnect,
-    getBrowserProvider,
+    getWalletClient,
     isConnecting,
     switchNetwork,
   };

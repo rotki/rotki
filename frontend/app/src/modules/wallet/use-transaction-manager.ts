@@ -1,6 +1,6 @@
-import type { TransactionResponse } from 'ethers';
 import type { Ref } from 'vue';
 import type { RecentTransaction, TransactionParams } from '@/modules/wallet/types';
+import type { Hash, ViemWalletClient } from '@/modules/wallet/viem-client';
 import { bigNumberify } from '@rotki/common';
 import { startPromise } from '@shared/utils';
 import { useAssetInfoCache } from '@/modules/assets/use-asset-info-cache';
@@ -12,7 +12,7 @@ import { useWalletHelper } from '@/modules/wallet/use-wallet-helper';
 export function useTransactionManager(): {
   addRecentTransaction: (hash: string, chain: string, params: TransactionParams, initiatorAddress: string | undefined) => Promise<void>;
   getRecentTransactionByTxHash: (hash: string) => RecentTransaction | undefined;
-  handleTransactionSuccess: (tx: TransactionResponse, chainId: number, params: TransactionParams, initiatorAddress: string | undefined, getChainFromChainId: (chainId: number) => string) => Promise<void>;
+  handleTransactionSuccess: (client: ViemWalletClient, hash: Hash, chainId: number, params: TransactionParams, initiatorAddress: string | undefined, getChainFromChainId: (chainId: number) => string) => Promise<void>;
   recentTransactions: Readonly<Ref<RecentTransaction[]>>;
   updateTransactionStatus: (hash: string, status: 'completed' | 'failed') => void;
 } {
@@ -80,16 +80,17 @@ export function useTransactionManager(): {
     get(recentTransactions).find(item => item.hash === hash);
 
   const handleTransactionSuccess = async (
-    tx: TransactionResponse,
+    client: ViemWalletClient,
+    hash: Hash,
     chainId: number,
     params: TransactionParams,
     initiatorAddress: string | undefined,
     getChainFromChainId: (chainId: number) => string,
   ): Promise<void> => {
-    startPromise(addRecentTransaction(tx.hash, getChainFromChainId(chainId), params, initiatorAddress));
-    await tx.wait();
-    updateTransactionStatus(tx.hash, 'completed');
-    startPromise(updateStatePostTransaction(getRecentTransactionByTxHash(tx.hash)));
+    startPromise(addRecentTransaction(hash, getChainFromChainId(chainId), params, initiatorAddress));
+    await client.waitForTransactionReceipt({ hash });
+    updateTransactionStatus(hash, 'completed');
+    startPromise(updateStatePostTransaction(getRecentTransactionByTxHash(hash)));
   };
 
   return {

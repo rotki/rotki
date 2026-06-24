@@ -4,7 +4,7 @@ import type { GasFeeEstimation, GetAssetBalancePayload } from '@/modules/wallet/
 import { type BigNumber, bigNumberify, Blockchain, isValidEthAddress } from '@rotki/common';
 import { logger } from '@/modules/core/common/logging/logging';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
-import { isUserRejectedError, WALLET_MODES } from '@/modules/wallet/constants';
+import { getWalletErrorMessage, isUserRejectedError, WALLET_MODES } from '@/modules/wallet/constants';
 import { useProviderSelection } from '@/modules/wallet/providers/use-provider-selection';
 import { useUnifiedProviders } from '@/modules/wallet/providers/use-unified-providers';
 import ProviderSelectionDialog from '@/modules/wallet/ProviderSelectionDialog.vue';
@@ -19,12 +19,6 @@ import { useWalletHelper } from '@/modules/wallet/use-wallet-helper';
 import { useWalletStore } from '@/modules/wallet/use-wallet-store';
 import WalletConnectionButton from '@/modules/wallet/WalletConnectionButton.vue';
 import { useTradeApi } from './use-trade-api';
-
-function getErrorMessage(error: unknown): string {
-  if (error instanceof Error)
-    return error.message;
-  return String(error);
-}
 
 const { t } = useI18n({ useScope: 'global' });
 
@@ -207,7 +201,7 @@ async function send() {
       set(errorMessage, 'Request is rejected by user');
     }
     else {
-      set(errorMessage, getErrorMessage(error));
+      set(errorMessage, getWalletErrorMessage(error));
     }
   }
 }
@@ -263,7 +257,7 @@ async function connect() {
   }
   catch (error: unknown) {
     logger.error(error);
-    set(errorMessage, getErrorMessage(error));
+    set(errorMessage, getWalletErrorMessage(error));
   }
 }
 
@@ -274,7 +268,7 @@ async function disconnect() {
   }
   catch (error: unknown) {
     logger.error(error);
-    set(errorMessage, getErrorMessage(error));
+    set(errorMessage, getWalletErrorMessage(error));
   }
 }
 
@@ -339,7 +333,7 @@ watchImmediate([
     set(estimatedGasFee, '0');
   }
   catch (error: unknown) {
-    if (getErrorMessage(error) !== 'Gas estimation cancelled') {
+    if (getWalletErrorMessage(error) !== 'Gas estimation cancelled') {
       set(estimatedGasFee, '0');
       logger.error(error);
     }

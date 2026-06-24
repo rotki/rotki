@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { gnosis } from '@reown/appkit/networks';
 import { getPublicServiceImagePath } from '@/modules/core/common/file/file';
 import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
 import { logger } from '@/modules/core/common/logging/logging';
@@ -22,6 +21,7 @@ import GnosisPayWalletConnection from './GnosisPayWalletConnection.vue';
 const { t } = useI18n({ useScope: 'global' });
 
 const name = 'gnosis_pay';
+const GNOSIS_CHAIN_ID = 100;
 const { useApiKey, confirmDelete, load, loading } = useExternalApiKeys();
 const key = useApiKey(name);
 
@@ -111,7 +111,7 @@ const walletStore = useWalletStore();
 const { connectedChainId, isDisconnecting, preparing } = storeToRefs(walletStore);
 const { switchNetwork } = walletStore;
 
-const isOnGnosisChain = computed<boolean>(() => get(connectedChainId) === gnosis.id);
+const isOnGnosisChain = computed<boolean>(() => get(connectedChainId) === GNOSIS_CHAIN_ID);
 const switchingNetwork = ref<boolean>(false);
 
 const unifiedProviders = useUnifiedProviders();
@@ -166,7 +166,7 @@ const primaryActionDisabled = logicOr(signingInProgress, logicNot(connectedAddre
 async function switchToGnosis(): Promise<void> {
   try {
     set(switchingNetwork, true);
-    await switchNetwork(BigInt(gnosis.id));
+    await switchNetwork(BigInt(GNOSIS_CHAIN_ID));
   }
   catch (error: unknown) {
     logger.error('Failed to switch to Gnosis network:', error);

@@ -1,5 +1,4 @@
 import type { MaybePromise } from '@rotki/common';
-import type { BrowserProvider } from 'ethers';
 import type { Ref } from 'vue';
 import type { TaskMeta } from '@/modules/core/tasks/types';
 import { logger } from '@/modules/core/common/logging/logging';
@@ -10,6 +9,7 @@ import { useInjectedWallet } from '@/modules/wallet/bridge/use-injected-wallet';
 import { isUserRejectedError, WALLET_MODES } from '@/modules/wallet/constants';
 import { useWalletConnect } from '@/modules/wallet/use-wallet-connect';
 import { useWalletStore } from '@/modules/wallet/use-wallet-store';
+import { getAddress, type ViemWalletClient } from '@/modules/wallet/viem-client';
 import { GnosisPayError, type GnosisPayErrorContext } from './types';
 import { useGnosisPaySiweApi } from './use-gnosis-pay-api';
 
@@ -66,16 +66,15 @@ Nonce: ${nonce}
 Issued At: ${issuedAt}`;
   }
 
-  async function signMessage(provider: BrowserProvider, message: string): Promise<string> {
-    const signer = await provider.getSigner();
-    return signer.signMessage(message);
+  async function signMessage(client: ViemWalletClient, account: string, message: string): Promise<string> {
+    return client.signMessage({ account: getAddress(account), message });
   }
 
-  function getBrowserProvider(): BrowserProvider {
+  function getWalletClient(): ViemWalletClient {
     if (get(walletMode) === WALLET_MODES.LOCAL_BRIDGE)
-      return injectedWallet.getBrowserProvider();
+      return injectedWallet.getWalletClient();
 
-    return walletConnect.getBrowserProvider();
+    return walletConnect.getWalletClient();
   }
 
   async function signInWithEthereum(): Promise<void> {
@@ -108,8 +107,8 @@ Issued At: ${issuedAt}`;
       }
 
       const message = createSiweMessage(address, nonceOutcome.result);
-      const provider = getBrowserProvider();
-      const signature = await signMessage(provider, message);
+      const client = getWalletClient();
+      const signature = await signMessage(client, address, message);
 
       // Verify signature with async task
       const verifyOutcome = await runTask<boolean, TaskMeta>(
