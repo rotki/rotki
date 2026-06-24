@@ -154,6 +154,29 @@ jobs:
             --output bench-result.json \
             --gha-output gha-benchmark.json
 
+      - name: Checkout benchmark data
+        if: steps.harness.outputs.present == 'true'
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd  # v6.0.2
+        with:
+          repository: rotki/benchmark-data
+          ref: main
+          path: benchmark-data
+          token: ${{ secrets.BENCHMARK_DATA_TOKEN }}
+          persist-credentials: false
+
+      - name: Check for benchmark regressions
+        if: steps.harness.outputs.present == 'true'
+        id: benchmark-alerts
+        run: |
+          ./.github/scripts/benchmark_alerts.py \
+            --current gha-benchmark.json \
+            --data-js benchmark-data/macro/${{ matrix.branch }}/data.js \
+            --bench-name 'rotki backend macro benchmarks (${{ matrix.branch }})' \
+            --threshold 1.2 \
+            --branch '${{ matrix.branch }}' \
+            --run-id '${{ github.run_id }}' \
+            --output bench-alert.md
+
       - name: Upload raw results
         if: always() && steps.harness.outputs.present == 'true'
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
@@ -162,9 +185,10 @@ jobs:
           path: |
             bench-result.json
             gha-benchmark.json
+            bench-alert.md
           if-no-files-found: ignore
 
-      - name: Push datapoint and check for regression
+      - name: Push datapoint
         if: steps.harness.outputs.present == 'true'
         uses: benchmark-action/github-action-benchmark@52576c92bccf6ac60c8223ec7eb2565637cae9ba  # v1.22.1
         with:
@@ -178,13 +202,13 @@ jobs:
           auto-push: true
           alert-threshold: '120%'
           comment-on-alert: false
-          fail-on-alert: true
+          fail-on-alert: false
 
   micro-nightly:
     name: 'Nightly micro-benchmark trend'
     # chained after bench-nightly (instead of running in parallel) because both
     # jobs push to the same branch of the benchmark-data repo; always() keeps
-    # the micro datapoint flowing even when the macro leg fails on an alert.
+    # the micro datapoint flowing even when the macro leg fails.
     if: ${{ always() && github.event_name != 'pull_request' && (github.repository == 'rotki/rotki' || github.event_name == 'workflow_dispatch') }}
     needs: [ bench-nightly ]
     runs-on: ubuntu-22.04
@@ -284,6 +308,36 @@ jobs:
         with:
           fetch-depth: 1
           persist-credentials: false
+
+      - name: Download benchmark artifacts
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c  # v8.0.1
+        with:
+          path: benchmark-artifacts
+          merge-multiple: false
+
+      - name: Collect benchmark regression alerts
+        id: benchmark-alerts
+        run: |
+          find benchmark-artifacts -name bench-alert.md -size +0 -print | sort | while read -r file; do
+            cat "$file" >> benchmark-alerts.md
+            printf '\n' >> benchmark-alerts.md
+          done
+          if [ -s benchmark-alerts.md ]; then
+            echo "has_alerts=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "has_alerts=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Notify if a benchmark regression was detected
+        if: steps.benchmark-alerts.outputs.has_alerts == 'true'
+        run: |
+          pip install requests
+          ./.github/scripts/notifier.py \
+            --webhook ${{ secrets.DISCORD_WEBHOOK }} \
+            --run-id ${{ github.run_id }} \
+            --test \
+            --message-title 'benchmark regressions detected' \
+            --message-file benchmark-alerts.md
 
       - name: Notify if a benchmark job failed
         if: needs.bench-nightly.result == 'failure' || needs.micro-nightly.result == 'failure'
