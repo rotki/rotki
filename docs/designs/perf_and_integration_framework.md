@@ -310,8 +310,8 @@ history for "did the last month of changes help?".
     `bugfixes`), each checked out explicitly (the cron only fires from the
     default branch) → `bench run --gha-output` → push datapoint to the
     `rotki/benchmark-data` repo via `github-action-benchmark`
-    (customSmallerIsBetter, alert threshold 120 %, fail-on-alert) → Discord
-    notification through the existing nightly notifier on failure. The data
+    (customSmallerIsBetter, alert threshold 120 %, non-failing alerts) → Discord
+    notification with the regressed benchmarks through the existing nightly notifier. The data
     repo keeps a **single `main` branch**: rotki source branches are separated
     as data *series* by directory (`macro/develop`, `macro/bugfixes`) so each
     gets its own trend chart and alert baseline, and GitHub Pages can serve
