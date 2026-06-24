@@ -33,7 +33,9 @@ interface UseHistoricPriceCacheReturn {
 
 export const useHistoricPriceCache = createSharedComposable((): UseHistoricPriceCacheReturn => {
   const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
-  const { failedDailyPrices, historicalDailyPriceStatus, resolvedFailedDailyPrices } = storeToRefs(useHistoricCachePriceStore());
+  const historicCachePriceStore = useHistoricCachePriceStore();
+  const { historicStorage } = historicCachePriceStore;
+  const { failedDailyPrices, historicalDailyPriceStatus, resolvedFailedDailyPrices } = storeToRefs(historicCachePriceStore);
   const { queryHistoricalRates } = usePriceApi();
   const { cancelTaskByTaskType, runTask } = useTaskHandler();
   const { t } = useI18n({ useScope: 'global' });
@@ -107,7 +109,7 @@ export const useHistoricPriceCache = createSharedComposable((): UseHistoricPrice
     reset,
     resolve,
     unknown,
-  } = createItemCache<BigNumber>(async keys => fetchHistoricPrices(keys));
+  } = createItemCache<BigNumber>(async keys => fetchHistoricPrices(keys), { storage: historicStorage });
 
   function getHistoricPrice(fromAsset: string, timestamp: number): BigNumber {
     const key = createKey(fromAsset, timestamp);

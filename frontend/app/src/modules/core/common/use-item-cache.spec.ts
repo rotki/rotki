@@ -1,6 +1,6 @@
 import flushPromises from 'flush-promises';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { createItemCache } from '@/modules/core/common/use-item-cache';
+import { createItemCache, createItemCacheStorage } from '@/modules/core/common/use-item-cache';
 
 interface TestEntry {
   key: string;
@@ -242,6 +242,98 @@ describe('createItemCache', () => {
       expect(calls).toHaveLength(1);
       expect(calls[0]).toEqual(expect.arrayContaining(['A', 'B', 'C']));
       expect(calls[0]).toHaveLength(3);
+    });
+  });
+
+  describe('storage injection', () => {
+    it('should create an empty storage container', () => {
+      const storage = createItemCacheStorage<string>();
+
+      expect(get(storage.cache)).toEqual({});
+      expect(storage.recent.size).toBe(0);
+      expect(storage.unknown.size).toBe(0);
+    });
+
+    it('should keep resolved values when a new cache binds to the same storage', async () => {
+      const storage = createItemCacheStorage<string>();
+      const { calls, fetch } = createMockFetch({ KEY: 'value' });
+
+      // First cache instance resolves and populates the shared storage.
+      const first = createItemCache(fetch, { storage });
+      first.resolve('KEY');
+      vi.advanceTimersByTime(1000);
+      await flushPromises();
+
+      expect(first.resolve('KEY')).toBe('value');
+      expect(calls).toHaveLength(1);
+
+      // Simulate composable teardown + re-init: a brand new cache instance binds
+      // to the SAME storage. The value must already be there with no refetch.
+      const second = createItemCache(fetch, { storage });
+      expect(second.resolve('KEY')).toBe('value');
+
+      vi.advanceTimersByTime(1000);
+      await flushPromises();
+
+      expect(calls).toHaveLength(1);
+    });
+
+    it('should preserve the unknown (negative) cache across re-init', async () => {
+      const storage = createItemCacheStorage<string>();
+      const { calls, fetch } = createMockFetch({ KEY: null });
+
+      const first = createItemCache(fetch, { storage });
+      first.resolve('KEY');
+      vi.advanceTimersByTime(1000);
+      await flushPromises();
+
+      expect(storage.unknown.has('KEY')).toBe(true);
+      expect(calls).toHaveLength(1);
+
+      // New instance on the same storage must not re-fetch a known-unknown key.
+      const second = createItemCache(fetch, { storage });
+      expect(second.resolve('KEY')).toBeNull();
+      vi.advanceTimersByTime(1000);
+      await flushPromises();
+
+      expect(calls).toHaveLength(1);
+    });
+
+    it('should start empty (and refetch) when no shared storage is provided', async () => {
+      const { calls, fetch } = createMockFetch({ KEY: 'value' });
+
+      const first = createItemCache(fetch);
+      first.resolve('KEY');
+      vi.advanceTimersByTime(1000);
+      await flushPromises();
+      expect(calls).toHaveLength(1);
+
+      // Without injected storage each instance owns its own cache, so a fresh
+      // instance has nothing and must fetch again.
+      const second = createItemCache(fetch);
+      expect(second.resolve('KEY')).toBeNull();
+      vi.advanceTimersByTime(1000);
+      await flushPromises();
+
+      expect(calls).toHaveLength(2);
+    });
+
+    it('should reset shared storage when reset is called', async () => {
+      const storage = createItemCacheStorage<string>();
+      const { fetch } = createMockFetch({ KEY: 'value' });
+
+      const first = createItemCache(fetch, { storage });
+      first.resolve('KEY');
+      vi.advanceTimersByTime(1000);
+      await flushPromises();
+
+      expect(get(storage.cache).KEY).toBe('value');
+
+      first.reset();
+
+      expect(Object.keys(get(storage.cache))).toHaveLength(0);
+      expect(storage.recent.size).toBe(0);
+      expect(storage.unknown.size).toBe(0);
     });
   });
 

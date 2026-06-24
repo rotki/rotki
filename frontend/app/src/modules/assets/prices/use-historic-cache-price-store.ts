@@ -1,7 +1,12 @@
-import type { CommonQueryStatusData, FailedHistoricalAssetPriceResponse } from '@rotki/common';
+import type { BigNumber, CommonQueryStatusData, FailedHistoricalAssetPriceResponse } from '@rotki/common';
 import type { StatsPriceQueryData } from '@/modules/core/messaging/types';
+import { createItemCacheStorage } from '@/modules/core/common/use-item-cache';
 
 export const useHistoricCachePriceStore = defineStore('prices/historic-cache', () => {
+  // App-lifetime cache storage for historic prices; the fetch/debounce/LRU logic
+  // lives in useHistoricPriceCache, which binds to this so the cache survives
+  // navigation (composable teardown) instead of being wiped at zero subscribers.
+  const historicStorage = createItemCacheStorage<BigNumber>();
   const statsPriceQueryStatus = shallowRef<Record<string, StatsPriceQueryData>>({});
   const historicalPriceStatus = shallowRef<CommonQueryStatusData>();
   const historicalDailyPriceStatus = shallowRef<CommonQueryStatusData>();
@@ -41,6 +46,7 @@ export const useHistoricCachePriceStore = defineStore('prices/historic-cache', (
   return {
     failedDailyPrices,
     getProtocolStatsPriceQueryStatus,
+    historicStorage,
     historicalDailyPriceStatus,
     historicalPriceStatus,
     resetProtocolStatsPriceQueryStatus,
