@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`-` The desktop app no longer accesses the OS keyring (triggering a keychain/keyring unlock prompt) when you create or open an account, unless you have chosen to save your password.
 * :bug:`-` PnL reports no longer fail for accounts with a very very large history.
 * :bug:`-` Adding or removing a blockchain account (or removing a spam token) now correctly invalidates the cached balances, so you no longer briefly see stale balances afterwards.
 * :bug:`-` Odos swaps now show the received amount before the router fee, so the fee no longer makes that asset go negative.
