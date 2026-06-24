@@ -243,4 +243,26 @@ describe('useAddressNameResolution', () => {
       expect(get(result)).toStrictEqual([]);
     });
   });
+
+  describe('store-backed cache', () => {
+    it('should store resolved names in the shared store storage', async () => {
+      enableAliasNames(true);
+      const address = '0x4585FE77225b41b697C938B01232131231231233';
+      vi.mocked(api.getAddressesNames).mockResolvedValue([
+        { address, blockchain: Blockchain.ETH, name: 'stored_name' },
+      ]);
+
+      const name = resolution.useAddressName(() => address, () => Blockchain.ETH);
+      expect(get(name)).toBeUndefined();
+
+      vi.advanceTimersByTime(2500);
+      await flushPromises();
+
+      expect(get(name)).toBe('stored_name');
+
+      // The cache lives in the app-lifetime store, not a composable-scoped map.
+      const { addressNameStorage } = useAddressNamesStore();
+      expect(get(addressNameStorage.cache)[`${address}#${Blockchain.ETH}`]?.name).toBe('stored_name');
+    });
+  });
 });
