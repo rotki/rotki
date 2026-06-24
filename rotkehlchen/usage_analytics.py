@@ -15,7 +15,7 @@ from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import deserialize_timestamp_from_date
-from rotkehlchen.utils.misc import get_system_spec, is_production
+from rotkehlchen.utils.misc import ROTKI_USER_AGENT, get_system_spec, is_production
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -144,7 +144,7 @@ def maybe_submit_usage_analytics(data_dir: Path, should_submit: bool) -> None:
         response = requests.put(
             url='https://rotki.com/api/1/usage_analytics',
             json=analytics,
-            headers={'User-Agent': f'rotki/{analytics["rotki_version"]}'},
+            headers={'User-Agent': ROTKI_USER_AGENT},
             timeout=CachedSettings().get_timeout_tuple(),
         )
     except requests.exceptions.RequestException:

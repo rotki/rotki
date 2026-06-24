@@ -10,7 +10,7 @@ from binascii import unhexlify
 from collections import defaultdict
 from collections.abc import Callable, Iterable, Iterator, Sequence
 from itertools import zip_longest
-from typing import TYPE_CHECKING, Any, TypeVar, overload
+from typing import TYPE_CHECKING, Any, Final, TypeVar, overload
 
 from eth_utils import is_hexstr
 from eth_utils.address import to_checksum_address
@@ -25,6 +25,8 @@ if TYPE_CHECKING:
     from requests import Session
 
 log = logging.getLogger(__name__)
+
+ROTKI_USER_AGENT: Final = f'rotki/{get_system_spec()["rotkehlchen"]}'
 
 
 def ts_now() -> Timestamp:
@@ -248,7 +250,7 @@ def convert_to_int(
 
 def set_user_agent(session: 'Session') -> None:
     """update the given session headers by adding our user agent string"""
-    session.headers.update({'User-Agent': f'rotki/{get_system_spec()["rotkehlchen"]}'})
+    session.headers.update({'User-Agent': ROTKI_USER_AGENT})
 
 
 def hexstr_to_int(value: str) -> int:

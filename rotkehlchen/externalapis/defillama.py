@@ -22,7 +22,7 @@ from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.interfaces import HistoricalPriceOracleInterface
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import ChainID, ExternalService, Price, Timestamp
-from rotkehlchen.utils.misc import get_chunks, ts_now
+from rotkehlchen.utils.misc import get_chunks, set_user_agent, ts_now
 from rotkehlchen.utils.mixins.penalizable_oracle import PenalizablePriceOracleMixin
 from rotkehlchen.utils.network import create_session
 from rotkehlchen.utils.rate_limiter import TokenBucket
@@ -64,7 +64,7 @@ class Defillama(
         HistoricalPriceOracleInterface.__init__(self, oracle_name='defillama')
         PenalizablePriceOracleMixin.__init__(self)
         self.session = create_session()
-        self.session.headers.update({'User-Agent': 'rotkehlchen'})
+        set_user_agent(self.session)
         self.db: DBHandler | None  # type: ignore  # "solve" the self.db discrepancy
         self._rate_limiter = TokenBucket(
             rps=DEFILLAMA_RATE_LIMIT_RPS,
