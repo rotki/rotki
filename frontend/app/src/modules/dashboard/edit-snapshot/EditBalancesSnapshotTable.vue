@@ -1,4 +1,5 @@
 <script setup lang="ts">
+/* eslint-disable @rotki/max-dependencies -- already at the dependency cap; the shared scroll layout pushes it over. The edit-snapshot tables are slated for a rewrite, so suppress rather than churn imports about to change. */
 import type { DataTableColumn, DataTableSortData } from '@rotki/ui-library';
 import type { BalanceSnapshot, BalanceSnapshotPayload, Snapshot } from '@/modules/dashboard/snapshots';
 import { assert, type BigNumber, bigNumberify, One, toSentenceCase, Zero } from '@rotki/common';
@@ -10,6 +11,7 @@ import { usePriceUtils } from '@/modules/assets/prices/use-price-utils';
 import NftDetails from '@/modules/balances/nft/NftDetails.vue';
 import { BalanceType } from '@/modules/balances/types/balances';
 import { bigNumberSum } from '@/modules/core/common/data/calculation';
+import ScrollableDialogContent from '@/modules/core/table/ScrollableDialogContent.vue';
 import { TableId, useRememberTableSorting } from '@/modules/core/table/use-remember-table-sorting';
 import ConfirmSnapshotConflictReplacementDialog
   from '@/modules/dashboard/ConfirmSnapshotConflictReplacementDialog.vue';
@@ -21,6 +23,8 @@ import BigDialog from '@/modules/shell/components/dialogs/BigDialog.vue';
 import ConfirmDialog from '@/modules/shell/components/dialogs/ConfirmDialog.vue';
 import AssetSelect from '@/modules/shell/components/inputs/AssetSelect.vue';
 import RowActions from '@/modules/shell/components/RowActions.vue';
+
+/* eslint-enable @rotki/max-dependencies */
 
 const modelValue = defineModel<Snapshot>({ required: true });
 
@@ -381,53 +385,54 @@ function confirmDelete(): void {
         :label="t('dashboard.snapshot.search_asset')"
       />
     </div>
-    <RuiDataTable
-      v-model:sort="sort"
-      class="table-inside-dialog !max-h-[calc(100vh-26.25rem)]"
-      :cols="tableHeaders"
-      :rows="filteredData"
-      row-attr="assetIdentifier"
-      dense
-    >
-      <template #item.categoryLabel="{ row }">
-        <span>{{ toSentenceCase(row.categoryLabel) }}</span>
-      </template>
+    <ScrollableDialogContent max-height="calc(100vh - 26.25rem)">
+      <RuiDataTable
+        v-model:sort="sort"
+        :cols="tableHeaders"
+        :rows="filteredData"
+        row-attr="assetIdentifier"
+        dense
+      >
+        <template #item.categoryLabel="{ row }">
+          <span>{{ toSentenceCase(row.categoryLabel) }}</span>
+        </template>
 
-      <template #item.assetIdentifier="{ row }">
-        <AssetDetails
-          v-if="!isNft(row.assetIdentifier)"
-          class="[&_.avatar]:ml-1.5 [&_.avatar]:mr-2"
-          :asset="row.assetIdentifier"
-          :enable-association="false"
-        />
-        <NftDetails
-          v-else
-          :identifier="row.assetIdentifier"
-        />
-      </template>
+        <template #item.assetIdentifier="{ row }">
+          <AssetDetails
+            v-if="!isNft(row.assetIdentifier)"
+            class="[&_.avatar]:ml-1.5 [&_.avatar]:mr-2"
+            :asset="row.assetIdentifier"
+            :enable-association="false"
+          />
+          <NftDetails
+            v-else
+            :identifier="row.assetIdentifier"
+          />
+        </template>
 
-      <template #item.amount="{ row }">
-        <ValueDisplay :value="row.amount" />
-      </template>
+        <template #item.amount="{ row }">
+          <ValueDisplay :value="row.amount" />
+        </template>
 
-      <template #item.usdValue="{ row }">
-        <AssetValueDisplay
-          :asset="row.assetIdentifier"
-          :amount="row.amount"
-          :value="row.usdValue"
-          :timestamp="{ ms: timestamp }"
-        />
-      </template>
+        <template #item.usdValue="{ row }">
+          <AssetValueDisplay
+            :asset="row.assetIdentifier"
+            :amount="row.amount"
+            :value="row.usdValue"
+            :timestamp="{ ms: timestamp }"
+          />
+        </template>
 
-      <template #item.action="{ row }">
-        <RowActions
-          :edit-tooltip="t('dashboard.snapshot.edit.dialog.actions.edit_item')"
-          :delete-tooltip="t('dashboard.snapshot.edit.dialog.actions.delete_item')"
-          @edit-click="editClick(row)"
-          @delete-click="deleteClick(row)"
-        />
-      </template>
-    </RuiDataTable>
+        <template #item.action="{ row }">
+          <RowActions
+            :edit-tooltip="t('dashboard.snapshot.edit.dialog.actions.edit_item')"
+            :delete-tooltip="t('dashboard.snapshot.edit.dialog.actions.delete_item')"
+            @edit-click="editClick(row)"
+            @delete-click="deleteClick(row)"
+          />
+        </template>
+      </RuiDataTable>
+    </ScrollableDialogContent>
     <div
       class="border-t-2 border-rui-grey-300 dark:border-rui-grey-800 relative z-[2] flex items-center justify-between gap-4 p-2"
     >

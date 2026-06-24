@@ -3,6 +3,7 @@ Changelog
 =========
 
 * :bug:`12463` Querying price for custom asset under certain conditions no longer fails the task.
+* :bug:`-` Tables shown inside dialogs (such as the PnL report "issues found" dialog with missing acquisitions/prices, and the snapshot editor) are scrollable again, so rows past the visible area are no longer cut off.
 * :bug:`-` The desktop app no longer accesses the OS keyring (triggering a keychain/keyring unlock prompt) when you create or open an account, unless you have chosen to save your password.
 * :bug:`-` PnL reports no longer fail for accounts with a very very large history.
 * :bug:`-` Adding or removing a blockchain account (or removing a spam token) now correctly invalidates the cached balances, so you no longer briefly see stale balances afterwards.
