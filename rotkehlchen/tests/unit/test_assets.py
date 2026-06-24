@@ -14,11 +14,12 @@ from rotkehlchen.accounting.structures.balance import BalanceType
 from rotkehlchen.assets.asset import Asset, CryptoAsset, CustomAsset, EvmToken, FiatAsset, Nft
 from rotkehlchen.assets.converters import asset_from_nexo
 from rotkehlchen.assets.ignored_assets_handling import IgnoredAssetsHandling
-from rotkehlchen.assets.types import AssetType
+from rotkehlchen.assets.types import AssetData, AssetType
 from rotkehlchen.assets.utils import (
     get_crypto_asset_by_symbol,
     get_or_create_evm_token,
 )
+from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.assets import A_DAI, A_USDT
 from rotkehlchen.constants.misc import GLOBALDB_NAME
 from rotkehlchen.constants.resolver import evm_address_to_identifier, strethaddress_to_identifier
@@ -34,10 +35,69 @@ from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.tasks.assets import autodetect_spam_assets_in_db
 from rotkehlchen.tasks.manager import should_run_periodic_task
 from rotkehlchen.tests.utils.factories import make_evm_address
-from rotkehlchen.types import SPAM_PROTOCOL, CacheType, ChainID, TokenKind
+from rotkehlchen.types import (
+    SPAM_PROTOCOL,
+    CacheType,
+    ChainID,
+    ChecksumEvmAddress,
+    SolanaAddress,
+    TokenKind,
+)
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
+
+
+def query_all_asset_data() -> list[AssetData]:
+    """Return all asset data from the global DB in a single bulk query.
+
+    Test-only helper used by the checks that need to iterate over every asset.
+    Doing it in one query avoids a per-asset roundtrip to the DB.
+    """
+    result: list[AssetData] = []
+    querystr = f"""
+    SELECT A.identifier, A.type, B.address, B.decimals, A.name, C.symbol, C.started, null, C.swapped_for, C.coingecko, C.cryptocompare, B.protocol, B.chain, B.token_kind FROM assets as A JOIN evm_tokens as B
+    ON B.identifier = A.identifier JOIN common_asset_details AS C ON C.identifier = B.identifier WHERE A.type = '{AssetType.EVM_TOKEN.serialize_for_db()}'
+    UNION ALL
+    SELECT A.identifier, A.type, S.address, S.decimals, A.name, C.symbol, C.started, null, C.swapped_for, C.coingecko, C.cryptocompare, S.protocol, null, S.token_kind FROM assets as A JOIN solana_tokens as S
+    ON S.identifier = A.identifier JOIN common_asset_details AS C ON C.identifier = S.identifier WHERE A.type = '{AssetType.SOLANA_TOKEN.serialize_for_db()}'
+    UNION ALL
+    SELECT A.identifier, A.type, null, null, A.name, B.symbol, B.started, B.forked, B.swapped_for, B.coingecko, B.cryptocompare, null, null, null from assets as A JOIN common_asset_details as B
+    ON B.identifier = A.identifier WHERE A.type NOT IN ('{AssetType.EVM_TOKEN.serialize_for_db()}', '{AssetType.SOLANA_TOKEN.serialize_for_db()}');
+    """  # noqa: E501
+    with GlobalDBHandler().conn.read_ctx() as cursor:
+        for entry in cursor.execute(querystr):
+            asset_type = AssetType.deserialize_from_db(entry[1])
+            address: ChecksumEvmAddress | SolanaAddress | None
+            token_kind: TokenKind | None
+            if asset_type == AssetType.EVM_TOKEN:
+                address = string_to_evm_address(entry[2])
+                chain_id = ChainID.deserialize_from_db(entry[12])
+                token_kind = TokenKind.deserialize_evm_from_db(entry[13])
+            elif asset_type == AssetType.SOLANA_TOKEN:
+                address = SolanaAddress(entry[2])
+                chain_id = None
+                token_kind = TokenKind.deserialize_solana_from_db(entry[13])
+            else:
+                address, chain_id, token_kind = None, None, None
+            result.append(AssetData(
+                identifier=entry[0],
+                asset_type=asset_type,
+                address=address,
+                chain_id=chain_id,
+                token_kind=token_kind,
+                decimals=entry[3],
+                name=entry[4],
+                symbol=entry[5],
+                started=entry[6],
+                forked=entry[7],
+                swapped_for=entry[8],
+                coingecko=entry[9],
+                cryptocompare=entry[10],
+                protocol=entry[11],
+            ))
+
+    return result
 
 
 def test_unknown_asset():
@@ -585,7 +645,7 @@ def test_cryptocompare_asset_support(cryptocompare):
         'solana/token:8XVXzmsMMw7ufa8RC21fHcDP6TGti5y3ZidQinnYurqr',  # Laughing shoe but ShoeFy in CC  # noqa: E501
         'solana/token:8Nd3TZJfxt9yYKiPmYp6S5DhLftG3bwSqdW3KJwArb',  # Spodermen but Spoody Man in CC  # noqa: E501
     )
-    for asset_data in GlobalDBHandler.get_all_asset_data(mapping=False):
+    for asset_data in query_all_asset_data():
         potential_support = (
             asset_data.cryptocompare == '' and
             asset_data.symbol in cc_assets and
@@ -604,7 +664,7 @@ def test_cryptocompare_asset_support(cryptocompare):
 
 def test_assets_tokens_addresses_are_checksummed():
     """Test that all ethereum saved token asset addresses are checksummed"""
-    for asset_data in GlobalDBHandler().get_all_asset_data(mapping=False):
+    for asset_data in query_all_asset_data():
         if asset_data.asset_type != AssetType.EVM_TOKEN:
             continue
 
@@ -961,7 +1021,7 @@ def test_coingecko_identifiers_are_reachable(socket_enabled):  # pylint: disable
         # monfter but coingecko doesn't match any
         evm_address_to_identifier(address='0xcaCc19C5Ca77E06D6578dEcaC80408Cc036e0499', chain_id=ChainID.ETHEREUM, token_type=TokenKind.ERC20),  # noqa: E501
     )
-    for asset_data in GlobalDBHandler().get_all_asset_data(mapping=False):
+    for asset_data in query_all_asset_data():
         identifier = asset_data.identifier
         if (
             identifier in DELISTED_ASSETS or  # delisted assets won't be in the mapping

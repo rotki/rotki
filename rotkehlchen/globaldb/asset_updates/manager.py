@@ -374,12 +374,11 @@ class AssetsUpdater:
                 return  # fail or succeed continue to next entry
 
             # else can't resolve. Mark it for the user to resolve.
-            # TODO: When assets refactor is finished, remove the usage of AssetData here
-            local_data = self.globaldb.get_all_asset_data(
-                mapping=False,
-                serialized=False,
-                specific_ids=[local_asset.identifier],
-            )[0]
+            if (local_data := self.globaldb.get_asset_data(
+                identifier=local_asset.identifier,
+                form_with_incomplete_data=True,
+            )) is None:
+                return  # asset can't be read from the DB, skip this conflict
             # always take the last one, if there is multiple conflicts for a single asset
             self.conflicts[local_asset.identifier] = (local_data, remote_asset_data)
 
