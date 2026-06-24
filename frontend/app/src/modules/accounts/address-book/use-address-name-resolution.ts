@@ -43,6 +43,7 @@ interface UseAddressNameResolutionReturn {
 export const useAddressNameResolution = createSharedComposable((): UseAddressNameResolutionReturn => {
   const { enableAliasNames } = storeToRefs(useFrontendSettingsStore());
   const store = useAddressNamesStore();
+  const { addressNameStorage } = store;
   const { ensNames } = storeToRefs(store);
   const lastRefreshedAvatar = shallowRef<number>(Date.now());
   const { supportedChains } = useSupportedChains();
@@ -132,7 +133,7 @@ export const useAddressNameResolution = createSharedComposable((): UseAddressNam
     reset: resetAddressesNames,
     resolve,
     unknown,
-  } = createItemCache<AddressBookEntry | undefined>(async keys => fetchAddressesNames(keys));
+  } = createItemCache<AddressBookEntry | undefined>(async keys => fetchAddressesNames(keys), { storage: addressNameStorage });
 
   // Address name selectors
 
