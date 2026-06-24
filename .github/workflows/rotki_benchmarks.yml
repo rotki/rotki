@@ -331,7 +331,6 @@ jobs:
       - name: Notify if a benchmark regression was detected
         if: steps.benchmark-alerts.outputs.has_alerts == 'true'
         run: |
-          pip install requests
           ./.github/scripts/notifier.py \
             --webhook ${{ secrets.DISCORD_WEBHOOK }} \
             --run-id ${{ github.run_id }} \
@@ -342,5 +341,4 @@ jobs:
       - name: Notify if a benchmark job failed
         if: needs.bench-nightly.result == 'failure' || needs.micro-nightly.result == 'failure'
         run: |
-          pip install requests
           ./.github/scripts/notifier.py --webhook ${{ secrets.DISCORD_WEBHOOK }} --run-id ${{ github.run_id }} --test

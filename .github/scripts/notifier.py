@@ -5,8 +5,9 @@ import logging
 import sys
 from http import HTTPStatus
 from pathlib import Path
-
-import requests
+from urllib.error import HTTPError, URLError
+from urllib.parse import urlencode, urlparse
+from urllib.request import Request, urlopen
 
 ALL_DEVS = '1105142033590526052'
 BACKEND_DEVS = '983289520000737330'
@@ -81,11 +82,29 @@ def main() -> None:
         'content': msg,
     }
 
-    response = requests.post(url=url, data=data, timeout=30)
-    if response.status_code not in {HTTPStatus.OK, HTTPStatus.NO_CONTENT}:
+    if urlparse(url).scheme not in {'http', 'https'}:
+        logger.error(f'Invalid webhook URL scheme for {group_key} group {job_type} job')
+        sys.exit(1)
+
+    request = Request(  # noqa: S310  # scheme validated above
+        url=url,
+        data=urlencode(data).encode(),
+        headers={'Content-Type': 'application/x-www-form-urlencoded'},
+        method='POST',
+    )
+    try:
+        with urlopen(request, timeout=30) as response:  # noqa: S310  # scheme validated above
+            response_status = response.status
+    except HTTPError as e:
+        response_status = e.code
+    except URLError as e:
+        logger.error(f'Failed to notify {group_key} group for {job_type} job: {e.reason}')
+        sys.exit(1)
+
+    if response_status not in {HTTPStatus.OK, HTTPStatus.NO_CONTENT}:
         logger.error(
             f'Failed to notify {group_key} group for {job_type} job. '
-            f'Status code: {response.status_code}',
+            f'Status code: {response_status}',
         )
         sys.exit(1)
 

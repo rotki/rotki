@@ -140,8 +140,6 @@ jobs:
 
       - name: Check if any task failed
         run: |
-          pip install requests
-
           data=($(echo "${RESULT}" | sed 's/[][,"]//g'))
           echo "Processing ${#data[@]} entries"
           for idx in "${!data[@]}"
