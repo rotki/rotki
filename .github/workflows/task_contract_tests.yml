@@ -43,7 +43,7 @@ jobs:
         uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae  # v5.0.5
         with:
           path: ~/.cache/rotki-scenarios
-          key: scenario-profiles-${{ hashFiles('tools/scenarios/**/*.py', 'rotkehlchen/data/global.db', 'rotkehlchen/db/settings.py') }}
+          key: scenario-profiles-${{ hashFiles('tools/scenarios/**/*.py', 'rotkehlchen/data/global.db', 'rotkehlchen/db/settings.py', 'rotkehlchen/db/schema.py', 'rotkehlchen/db/minimized_schema.py') }}
 
       - name: Setup backend
         run: uv sync --locked
