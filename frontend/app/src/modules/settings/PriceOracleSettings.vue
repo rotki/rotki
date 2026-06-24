@@ -9,6 +9,7 @@ import {
   COINGECKO_PRIO_LIST_ITEM,
   CRYPTOCOMPARE_PRIO_LIST_ITEM,
   DEFILAMA_PRIO_LIST_ITEM,
+  KRAKEN_PRIO_LIST_ITEM,
   MORALIS_PRIO_LIST_ITEM,
   type PrioritizedListId,
   UNISWAP2_PRIO_LIST_ITEM,
@@ -22,11 +23,11 @@ const historicOracles = ref<PrioritizedListId[]>([]);
 
 const { currentPriceOracles, historicalPriceOracles } = storeToRefs(useGeneralSettingsStore());
 
-function resetCurrentPriceOracles() {
+function resetCurrentPriceOracles(): void {
   set(currentOracles, get(currentPriceOracles));
 }
 
-const baseAvailableOraclesTyped: Array<PrioritizedListItemData<PrioritizedListId>> = [
+const historicalAvailableOraclesTyped: Array<PrioritizedListItemData<PrioritizedListId>> = [
   CRYPTOCOMPARE_PRIO_LIST_ITEM,
   COINGECKO_PRIO_LIST_ITEM,
   DEFILAMA_PRIO_LIST_ITEM,
@@ -36,13 +37,22 @@ const baseAvailableOraclesTyped: Array<PrioritizedListItemData<PrioritizedListId
   UNISWAP3_PRIO_LIST_ITEM,
 ];
 
-function availableOracles(): PrioritizedListData<PrioritizedListId> {
-  return new PrioritizedListData([...baseAvailableOraclesTyped]);
+const currentAvailableOraclesTyped: Array<PrioritizedListItemData<PrioritizedListId>> = [
+  ...historicalAvailableOraclesTyped,
+  KRAKEN_PRIO_LIST_ITEM,
+];
+
+function availableCurrentOracles(): PrioritizedListData<PrioritizedListId> {
+  return new PrioritizedListData([...currentAvailableOraclesTyped]);
+}
+
+function availableHistoricalOracles(): PrioritizedListData<PrioritizedListId> {
+  return new PrioritizedListData([...historicalAvailableOraclesTyped]);
 }
 
 const { reset: resetCachedHistoricalPrices } = useHistoricPriceCache();
 
-function resetHistoricalPriceOracles(resetPrices: boolean = false) {
+function resetHistoricalPriceOracles(resetPrices: boolean = false): void {
   set(historicOracles, get(historicalPriceOracles));
 
   if (resetPrices)
@@ -87,7 +97,7 @@ const { t } = useI18n({ useScope: 'global' });
       >
         <PrioritizedList
           :model-value="currentOracles"
-          :all-items="availableOracles()"
+          :all-items="availableCurrentOracles()"
           :status="{ error, success }"
           :item-data-name="t('price_oracle_settings.data_name')"
           @update:model-value="updateImmediate($event)"
@@ -105,7 +115,7 @@ const { t } = useI18n({ useScope: 'global' });
       >
         <PrioritizedList
           :model-value="historicOracles"
-          :all-items="availableOracles()"
+          :all-items="availableHistoricalOracles()"
           :status="{ error, success }"
           :item-data-name="t('price_oracle_settings.data_name')"
           @update:model-value="updateImmediate($event)"

@@ -7,6 +7,7 @@ export const PriceOracle = {
   CRYPTOCOMPARE: 'cryptocompare',
   DEFILLAMA: 'defillama',
   FIAT: 'fiat',
+  KRAKEN: 'kraken',
   MANUAL: 'manual',
   MANUALCURRENT: 'manualcurrent',
   MORALIS: 'moralis',

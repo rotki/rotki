@@ -91,6 +91,7 @@ from rotkehlchen.externalapis.defillama import Defillama
 from rotkehlchen.externalapis.etherscan import Etherscan
 from rotkehlchen.externalapis.helius import Helius
 from rotkehlchen.externalapis.jupiter import Jupiter
+from rotkehlchen.externalapis.kraken import Kraken
 from rotkehlchen.externalapis.monerium import Monerium
 from rotkehlchen.externalapis.moralis import Moralis
 from rotkehlchen.externalapis.routescan import Routescan
@@ -210,6 +211,7 @@ class Rotkehlchen:
         self.cryptocompare = Cryptocompare(database=None)
         self.coingecko = Coingecko(database=None)
         self.defillama = Defillama(database=None)
+        self.kraken = Kraken()
         self.alchemy = Alchemy(database=None)
         self.moralis = Moralis(database=None)
         self.icon_manager = IconManager(
@@ -228,6 +230,7 @@ class Rotkehlchen:
             cryptocompare=self.cryptocompare,
             coingecko=self.coingecko,
             defillama=self.defillama,
+            kraken=self.kraken,
             alchemy=self.alchemy,
             moralis=self.moralis,
             manualcurrent=ManualCurrentOracle(),
