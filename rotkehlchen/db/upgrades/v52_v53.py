@@ -55,7 +55,7 @@ CREATE TABLE IF NOT EXISTS data_issues (
     location_label TEXT NOT NULL DEFAULT '',
     protocol TEXT NOT NULL DEFAULT '',
     asset TEXT NOT NULL DEFAULT '',
-    event_identifier INTEGER NOT NULL,
+    event_identifier INTEGER,
     ts_start INTEGER NOT NULL,
     ts_end INTEGER NOT NULL,
     severity TEXT NOT NULL,
@@ -63,14 +63,18 @@ CREATE TABLE IF NOT EXISTS data_issues (
     auto_remediation_attempts_json TEXT NOT NULL DEFAULT '[]',
     payload_json TEXT NOT NULL,
     created_at INTEGER NOT NULL,
-    resolved_at INTEGER,
-    UNIQUE(kind, location, location_label, protocol, asset, event_identifier)
+    resolved_at INTEGER
 );
 """)
         write_cursor.executescript("""
 CREATE INDEX IF NOT EXISTS idx_data_issues_state ON data_issues(state);
 CREATE INDEX IF NOT EXISTS idx_data_issues_kind_state ON data_issues(kind, state);
 CREATE INDEX IF NOT EXISTS idx_data_issues_location_label_asset ON data_issues(location, location_label, asset);
+-- `event_identifier` is nullable because some issues are scoped to an event while others are
+-- scoped to a bucket. SQLite treats NULL values as distinct in normal UNIQUE constraints, so
+-- partial unique indexes are required to enforce one natural key row for both scopes.
+CREATE UNIQUE INDEX IF NOT EXISTS unique_data_issues_event_scope ON data_issues(kind, location, location_label, protocol, asset, event_identifier) WHERE event_identifier IS NOT NULL;
+CREATE UNIQUE INDEX IF NOT EXISTS unique_data_issues_bucket_scope ON data_issues(kind, location, location_label, protocol, asset) WHERE event_identifier IS NULL;
 """)  # noqa: E501
 
     @progress_step(description='Add Gate location.')

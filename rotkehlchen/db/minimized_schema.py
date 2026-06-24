@@ -71,7 +71,7 @@ MINIMIZED_USER_DB_SCHEMA = {
     "lido_csm_node_operator_metrics": "node_operator_idintegernotnullprimarykey,operator_type_idinteger,bond_currenttext,bond_requiredtext,bond_claimabletext,total_deposited_validatorsinteger,rewards_pendingtext,updated_tsinteger,foreignkey(node_operator_id)referenceslido_csm_node_operators(node_operator_id)onupdatecascadeondeletecascade",
     "historical_balance_cache": "idintegernotnullprimarykey,blockchaintextnotnull,addresstextnotnull,assettextnotnull,amounttextnotnull,timestampintegernotnull,block_numberintegernotnull,foreignkey(asset)referencesassets(identifier)onupdatecascade,unique(blockchain,address,asset,block_number)",
     "blockchain_balances_cache": "blockchaintextnotnull,addresstextnotnull,assettextnotnull,labeltextnotnulldefault'',categorychar(1)notnulldefault('a'),amounttextnotnull,foreignkey(asset)referencesassets(identifier)onupdatecascade,primarykey(blockchain,address,asset,label,category)",
-    "data_issues": "idintegernotnullprimarykey,kindtextnotnull,locationtextnotnull,location_labeltextnotnulldefault'',protocoltextnotnulldefault'',assettextnotnulldefault'',event_identifierintegernotnull,ts_startintegernotnull,ts_endintegernotnull,severitytextnotnull,statetextnotnull,auto_remediation_attempts_jsontextnotnulldefault'[]',payload_jsontextnotnull,created_atintegernotnull,resolved_atinteger,unique(kind,location,location_label,protocol,asset,event_identifier)",
+    "data_issues": "idintegernotnullprimarykey,kindtextnotnull,locationtextnotnull,location_labeltextnotnulldefault'',protocoltextnotnulldefault'',assettextnotnulldefault'',event_identifierinteger,ts_startintegernotnull,ts_endintegernotnull,severitytextnotnull,statetextnotnull,auto_remediation_attempts_jsontextnotnulldefault'[]',payload_jsontextnotnull,created_atintegernotnull,resolved_atinteger",
     "event_metrics": "idintegernotnullprimarykey,event_identifierintegernotnullreferenceshistory_events(identifier)ondeletecascade,locationchar(1)notnull,location_labeltext,protocoltext,metric_keytextnotnull,metric_valuetextnotnull,assettextnotnull,timestampintegernotnull,sequence_indexintegernotnull,sort_keyintegernotnull,unique(event_identifier,location_label,protocol,metric_key,asset)",
 }
 
@@ -101,4 +101,6 @@ MINIMIZED_USER_DB_INDEXES = {
     "idx_data_issues_state": "createindexifnotexistsidx_data_issues_stateondata_issues(state)",
     "idx_data_issues_kind_state": "createindexifnotexistsidx_data_issues_kind_stateondata_issues(kind,state)",
     "idx_data_issues_location_label_asset": "createindexifnotexistsidx_data_issues_location_label_assetondata_issues(location,location_label,asset)",
+    "unique_data_issues_event_scope": "createuniqueindexifnotexistsunique_data_issues_event_scopeondata_issues(kind,location,location_label,protocol,asset,event_identifier)whereevent_identifierisnotnull",
+    "unique_data_issues_bucket_scope": "createuniqueindexifnotexistsunique_data_issues_bucket_scopeondata_issues(kind,location,location_label,protocol,asset)whereevent_identifierisnull",
 }

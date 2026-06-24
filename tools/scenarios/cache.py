@@ -20,13 +20,18 @@ CACHE_ROOT: Final = Path('~/.cache/rotki-scenarios').expanduser()
 BUILD_MARKER: Final = 'BUILD_OK'
 
 _PACKAGE_DIR: Final = Path(__file__).resolve().parent
-_PACKAGED_GLOBALDB: Final = _PACKAGE_DIR.parents[1] / 'rotkehlchen' / 'data' / 'global.db'
+_REPO_ROOT: Final = _PACKAGE_DIR.parents[1]
+_PACKAGED_GLOBALDB: Final = _REPO_ROOT / 'rotkehlchen' / 'data' / 'global.db'
+_USER_DB_SCHEMA_FILES: Final = (
+    _REPO_ROOT / 'rotkehlchen' / 'db' / 'schema.py',
+    _REPO_ROOT / 'rotkehlchen' / 'db' / 'minimized_schema.py',
+)
 
 
 def compute_cache_key(profile: str) -> str:
     hasher = hashlib.sha256()
-    for path in sorted(_PACKAGE_DIR.rglob('*.py')):
-        hasher.update(path.relative_to(_PACKAGE_DIR).as_posix().encode())
+    for path in sorted((*_PACKAGE_DIR.rglob('*.py'), *_USER_DB_SCHEMA_FILES)):
+        hasher.update(path.relative_to(_REPO_ROOT).as_posix().encode())
         hasher.update(path.read_bytes())
     hasher.update(_PACKAGED_GLOBALDB.read_bytes())
     return f'{profile}-v{ROTKEHLCHEN_DB_VERSION}-{hasher.hexdigest()[:12]}'
