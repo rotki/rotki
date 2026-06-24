@@ -16,7 +16,7 @@ from rotkehlchen.assets.asset import (
     UnderlyingToken,
 )
 from rotkehlchen.assets.resolver import AssetResolver
-from rotkehlchen.assets.types import AssetData, AssetType
+from rotkehlchen.assets.types import AssetType
 from rotkehlchen.assets.utils import (
     check_if_spam_token,
     get_or_create_evm_token,
@@ -79,7 +79,6 @@ if TYPE_CHECKING:
 
 
 selfkey_address = string_to_evm_address('0x4CC19356f2D37338b9802aa8E8fc58B0373296E7')
-selfkey_id = ethaddress_to_identifier(selfkey_address)
 selfkey_asset = EvmToken.initialize(
     name='Selfkey',
     symbol='KEY',
@@ -92,38 +91,6 @@ selfkey_asset = EvmToken.initialize(
     decimals=18,
     cryptocompare=None,
     coingecko='selfkey',
-    protocol=None,
-)
-selfkey_asset_data = AssetData(
-    identifier=selfkey_id,
-    name='Selfkey',
-    symbol='KEY',
-    asset_type=AssetType.EVM_TOKEN,
-    started=Timestamp(1508803200),
-    forked=None,
-    swapped_for=None,
-    address=selfkey_address,
-    chain_id=ChainID.ETHEREUM,
-    token_kind=TokenKind.ERC20,
-    decimals=18,
-    cryptocompare='KEY',
-    coingecko='selfkey',
-    protocol=None,
-)
-mobi_asset_data = AssetData(
-    identifier='MOBI',
-    name='Mobius',
-    symbol='MOBI',
-    asset_type=AssetType.STELLAR_TOKEN,
-    started=Timestamp(1501632000),
-    forked=None,
-    swapped_for=None,
-    address=None,
-    chain_id=None,
-    token_kind=None,
-    decimals=None,
-    cryptocompare=None,
-    coingecko='mobius',
     protocol=None,
 )
 mobi_asset = CryptoAsset.initialize(
@@ -386,96 +353,6 @@ def test_enum_values_are_present_in_global_db(globaldb, enum_class, table_name):
     for enum_class_entry in enum_class:
         r = cursor.execute(query, (enum_class_entry.value,))
         assert r.fetchone() == (1,), f'Did not find {table_name} entry for value {enum_class_entry.value}'  # noqa: E501
-
-
-@pytest.mark.parametrize('use_clean_caching_directory', [True])
-def test_get_all_asset_data_specific_ids(globaldb):
-    btc_asset_data = AssetData(
-        identifier='BTC',
-        name='Bitcoin',
-        symbol='BTC',
-        asset_type=AssetType.OWN_CHAIN,
-        started=Timestamp(1231006505),
-        forked=None,
-        swapped_for=None,
-        address=None,
-        chain_id=None,
-        token_kind=None,
-        decimals=None,
-        cryptocompare='BTC',
-        coingecko='bitcoin',
-        protocol=None,
-    )
-    eth_asset_data = AssetData(
-        identifier='ETH',
-        name='Ethereum',
-        symbol='ETH',
-        asset_type=AssetType.OWN_CHAIN,
-        started=Timestamp(1438214400),
-        forked=None,
-        swapped_for=None,
-        address=None,
-        chain_id=None,
-        token_kind=None,
-        decimals=None,
-        cryptocompare='ETH',
-        coingecko='ethereum',
-        protocol=None,
-    )
-
-    asset_data = globaldb.get_all_asset_data(
-        mapping=False,
-        specific_ids=['BTC', 'ETH', selfkey_id, 'MOBI'],
-    )
-    assert asset_data == [
-        selfkey_asset_data,
-        btc_asset_data,
-        eth_asset_data,
-        mobi_asset_data,
-    ]
-
-    asset_data = globaldb.get_all_asset_data(
-        mapping=True,
-        serialized=True,
-        specific_ids=['BTC', 'ETH', selfkey_id, 'MOBI'],
-    )
-    assert asset_data == {
-        selfkey_id: selfkey_asset_data.serialize(),
-        'MOBI': mobi_asset_data.serialize(),
-        'BTC': btc_asset_data.serialize(),
-        'ETH': eth_asset_data.serialize(),
-    }
-    asset_data = globaldb.get_all_asset_data(
-        mapping=True,
-        serialized=False,
-        specific_ids=['BTC', 'ETH', selfkey_id, 'MOBI'],
-    )
-    assert asset_data == {
-        selfkey_id: selfkey_asset_data,
-        'MOBI': mobi_asset_data,
-        'BTC': btc_asset_data,
-        'ETH': eth_asset_data,
-    }
-
-    # unknown ids
-    assert globaldb.get_all_asset_data(
-        mapping=False,
-        specific_ids=['INVALIDIDSS!@!1', 'DSAD#@$DSAD@EAS'],
-    ) == []
-    assert globaldb.get_all_asset_data(
-        mapping=True,
-        specific_ids=['INVALIDIDSS!@!1', 'DSAD#@$DSAD@EAS'],
-    ) == {}
-
-    # empty list
-    assert globaldb.get_all_asset_data(
-        mapping=False,
-        specific_ids=[],
-    ) == []
-    assert globaldb.get_all_asset_data(
-        mapping=True,
-        specific_ids=[],
-    ) == {}
 
 
 def test_globaldb_pragma_foreign_keys(globaldb):
