@@ -1,4 +1,3 @@
-import type { BrowserProvider, TransactionResponse } from 'ethers';
 import type {
   GasFeeEstimation,
   PrepareERC20TransferResponse,
@@ -10,6 +9,7 @@ import { logger } from '@/modules/core/common/logging/logging';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
 import { useInterop } from '@/modules/shell/app/use-electron-interop';
 import { useWalletHelper } from '@/modules/wallet/use-wallet-helper';
+import { getAddress, type Hash, isHex, type ViemWalletClient } from '@/modules/wallet/viem-client';
 import { useWalletProxy } from './bridge/use-wallet-proxy';
 import { calculateGasFee, SUPPORTED_WALLET_CHAIN_IDS, WALLET_ERRORS, WALLET_MODES, type WalletMode } from './constants';
 import { useUnifiedProviders } from './providers/use-unified-providers';
@@ -139,13 +139,13 @@ export const useWalletStore = defineStore('wallet', () => {
 
   const supportedChainsForConnectedAccount = computed<string[]>(() => get(supportedChainsIdForConnectedAccount).map(item => getChainFromChainId(item)));
 
-  const getBrowserProvider = (): BrowserProvider => {
+  const getWalletClient = (): ViemWalletClient => {
     if (get(walletMode) === WALLET_MODES.LOCAL_BRIDGE) {
       assert(injectedWalletInstance, 'Injected wallet not initialized');
-      return injectedWalletInstance.getBrowserProvider();
+      return injectedWalletInstance.getWalletClient();
     }
     assert(walletConnectInstance, 'WalletConnect not initialized');
-    return walletConnectInstance.getBrowserProvider();
+    return walletConnectInstance.getWalletClient();
   };
 
   const connect = async (): Promise<void> => {
@@ -235,7 +235,7 @@ export const useWalletStore = defineStore('wallet', () => {
 
   const getGasFeeForChain = async (): Promise<GasFeeEstimation> => {
     try {
-      const provider = getBrowserProvider();
+      const client = getWalletClient();
       const address = get(connectedAddress);
 
       if (!address) {
@@ -245,12 +245,10 @@ export const useWalletStore = defineStore('wallet', () => {
         };
       }
 
-      const [feeData, balance] = await Promise.all([
-        provider.getFeeData(),
-        provider.getBalance(address),
+      const [gasPrice, balance] = await Promise.all([
+        client.getGasPrice(),
+        client.getBalance({ address: getAddress(address) }),
       ]);
-
-      const gasPrice = feeData.gasPrice ?? feeData.maxFeePerGas ?? 0n;
 
       return calculateGasFee(gasPrice, balance);
     }
@@ -260,19 +258,26 @@ export const useWalletStore = defineStore('wallet', () => {
     }
   };
 
-  const executeTransaction = async (backendPayload: PrepareERC20TransferResponse | PrepareNativeTransferResponse): Promise<TransactionResponse> => {
+  const executeTransaction = async (client: ViemWalletClient, backendPayload: PrepareERC20TransferResponse | PrepareNativeTransferResponse): Promise<Hash> => {
     set(waitingForWalletConfirmation, true);
-    const provider = getBrowserProvider();
-    const signer = await provider.getSigner();
-    const tx = await signer.sendTransaction({
-      ...backendPayload,
-      type: 0,
+    const data = 'data' in backendPayload ? backendPayload.data : '0x';
+    if (!isHex(data)) {
+      throw new Error('Invalid transaction data');
+    }
+    const hash = await client.sendTransaction({
+      account: getAddress(backendPayload.from),
+      chain: null,
+      data,
+      nonce: backendPayload.nonce,
+      to: getAddress(backendPayload.to),
+      type: 'legacy',
+      value: backendPayload.value,
     });
     set(waitingForWalletConfirmation, false);
-    return tx;
+    return hash;
   };
 
-  const sendTransaction = async (params: TransactionParams): Promise<TransactionResponse> => {
+  const sendTransaction = async (params: TransactionParams): Promise<Hash> => {
     // Check WalletConnect connection if in WalletConnect mode
     if (get(walletMode) === WALLET_MODES.WALLET_CONNECT) {
       const wc = await getWalletConnect();
@@ -299,16 +304,18 @@ export const useWalletStore = defineStore('wallet', () => {
       );
       set(preparing, false);
 
-      const tx = await executeTransaction(backendPayload);
+      const client = getWalletClient();
+      const hash = await executeTransaction(client, backendPayload);
       await transactionManager.handleTransactionSuccess(
-        tx,
+        client,
+        hash,
         chainId,
         params,
         get(connectedAddress),
         getChainFromChainId,
       );
 
-      return tx;
+      return hash;
     }
     catch (error) {
       handleTransactionError(error, {

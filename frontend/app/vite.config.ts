@@ -60,7 +60,7 @@ if (!hmrEnabled)
 const enableChecker = !(process.env.CI || isTest || process.env.VITEST);
 
 /**
- * These modules are required by walletconnect/appkit
+ * These modules are required by walletconnect
  */
 const requiredModules = ['buffer', 'events', 'crypto'] as const;
 
@@ -85,14 +85,9 @@ export default defineConfig({
     include: [
       'imask',
       'vanilla-jsoneditor',
-      '@reown/appkit',
-      '@reown/appkit/vue',
-      '@reown/appkit/networks',
-      '@reown/appkit-adapter-ethers',
       '@walletconnect/core',
-      '@walletconnect/jsonrpc-utils',
-      '@walletconnect/utils',
-      'ethers',
+      '@walletconnect/universal-provider',
+      'viem',
     ],
   },
   plugins: [
@@ -228,9 +223,9 @@ export default defineConfig({
               'zod',
             ],
             'wallet-connect': [
-              '@reown/appkit',
-              '@reown/appkit-adapter-ethers',
               '@walletconnect/core',
+              '@walletconnect/universal-provider',
+              'viem',
             ],
           };
           for (const [chunk, packages] of Object.entries(chunkGroups)) {

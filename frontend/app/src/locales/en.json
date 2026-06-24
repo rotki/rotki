@@ -6226,6 +6226,12 @@
   "validator_filter_input": {
     "label": "Select validator"
   },
+  "wallet_connect_qr": {
+    "copied": "Copied!",
+    "copy": "Copy link",
+    "scan": "Scan the QR code with your wallet app to connect.",
+    "title": "Connect with WalletConnect"
+  },
   "wallet_provider_selection": {
     "description": "Choose a wallet provider to connect with rotki",
     "no_providers": {

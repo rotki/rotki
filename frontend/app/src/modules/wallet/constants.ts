@@ -1,4 +1,5 @@
 import type { GasFeeEstimation } from '@/modules/wallet/types';
+import { getViemErrorMessage, isUserRejectedRequestError } from '@/modules/wallet/viem-client';
 
 /**
  * Wallet mode constants
@@ -13,6 +14,26 @@ export type WalletMode = typeof WALLET_MODES[keyof typeof WALLET_MODES];
 export const EIP155 = 'eip155';
 
 export const SUPPORTED_WALLET_CHAIN_IDS = [1, 8453, 42161, 10, 56, 100, 137, 534352] as const;
+
+/**
+ * EIP-155 methods requested in the WalletConnect session namespace.
+ */
+export const EIP155_METHODS = [
+  'eth_sendTransaction',
+  'personal_sign',
+  'eth_signTypedData',
+  'eth_signTypedData_v4',
+  'eth_sign',
+  'wallet_switchEthereumChain',
+  'wallet_addEthereumChain',
+  'eth_accounts',
+  'eth_chainId',
+] as const;
+
+/**
+ * EIP-155 events subscribed to in the WalletConnect session namespace.
+ */
+export const EIP155_EVENTS = ['chainChanged', 'accountsChanged'] as const;
 
 /**
  * Transaction constants
@@ -32,18 +53,48 @@ export const WALLET_ERRORS = {
  * Keywords that indicate a user rejected a wallet action
  */
 const REJECTED_KEYWORDS = [
-  'ACTION_REJECTED',
-  'User cancelled',
-  'User canceled',
-  'User rejected',
+  'action_rejected',
+  'user cancelled',
+  'user canceled',
+  'user rejected',
+  'user denied',
+  'denied transaction signature',
+  'denied message signature',
+  'rejected the request',
 ] as const;
 
 /**
- * Check if an error indicates user rejection
+ * Check if an error indicates user rejection.
+ *
+ * Prefers viem's structured detection (typed error / EIP-1193 `4001` code in
+ * the cause chain) and falls back to case-insensitive keyword matching for
+ * non-viem error paths (e.g. WalletConnect or the local bridge).
  */
 export function isUserRejectedError(error: Error | unknown): boolean {
-  const errorString = error instanceof Error ? error.toString() : String(error);
+  if (isUserRejectedRequestError(error))
+    return true;
+
+  const errorString = (error instanceof Error ? error.toString() : String(error)).toLowerCase();
   return REJECTED_KEYWORDS.some(keyword => errorString.includes(keyword));
+}
+
+/**
+ * Extracts a concise, user-facing message from an unknown wallet error.
+ *
+ * Prefers viem's structured short message/details over its verbose developer
+ * dump, then handles plain `Error`s, strings and objects with a `message`.
+ */
+export function getWalletErrorMessage(error: unknown): string {
+  const viemMessage = getViemErrorMessage(error);
+  if (viemMessage)
+    return viemMessage;
+  if (error instanceof Error)
+    return error.message;
+  if (typeof error === 'string')
+    return error;
+  if (error && typeof error === 'object' && 'message' in error)
+    return String(error.message);
+  return 'Unknown error occurred';
 }
 
 /**

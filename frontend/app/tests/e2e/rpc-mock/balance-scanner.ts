@@ -1,9 +1,18 @@
 import { createConsola } from 'consola';
-import { AbiCoder, type Result } from 'ethers';
+import { type AbiParameter, decodeAbiParameters, type DecodeAbiParametersReturnType, encodeAbiParameters, type Hex, isHex, parseAbiParameters } from 'viem';
 
 const logger = createConsola({ defaults: { tag: 'balance-scanner' } });
 
-const abiCoder = AbiCoder.defaultAbiCoder();
+/**
+ * Pre-parsed ABI parameter sets. Declared as constants so viem can infer the
+ * precise decoded tuple types (addresses, bigints, nested tuples) at each call
+ * site instead of widening to `unknown[]`.
+ */
+const ARGS_TOKENS_BALANCE = parseAbiParameters('address, address[]');
+const ARGS_ETHER_BALANCES = parseAbiParameters('address[]');
+const ARGS_AGGREGATE = parseAbiParameters('(address, bytes)[]');
+const RESULT_UINT256_ARRAY = parseAbiParameters('uint256[]');
+const RESULT_AGGREGATE = parseAbiParameters('uint256, bytes[]');
 
 /**
  * Known contract addresses (checksummed).
@@ -32,7 +41,7 @@ type EtherBalanceMap = Map<string, bigint>;
  * Stored results for non-balance-scanner sub-calls within aggregates.
  * Key: `${target.toLowerCase()}:${calldata}` → encoded result bytes
  */
-type SubCallResultMap = Map<string, string>;
+type SubCallResultMap = Map<string, Hex>;
 
 export interface BalanceMaps {
   tokenBalances: TokenBalanceMap;
@@ -71,24 +80,23 @@ function getSelector(calldata: string): string {
 /**
  * Decodes the ABI-encoded arguments (everything after the 4-byte selector).
  */
-function decodeArgs(calldata: string, types: string[]): Result {
-  const argsHex = `0x${calldata.slice(10)}`;
-  return abiCoder.decode(types, argsHex);
+function decodeArgs<const T extends readonly AbiParameter[]>(calldata: string, params: T): DecodeAbiParametersReturnType<T> {
+  const argsHex: Hex = `0x${calldata.slice(10)}`;
+  return decodeAbiParameters(params, argsHex);
 }
 
 /**
  * Decodes an ABI-encoded result.
  */
-function decodeResult(data: string, types: string[]): Result {
-  return abiCoder.decode(types, data);
+function decodeResult<const T extends readonly AbiParameter[]>(data: Hex, params: T): DecodeAbiParametersReturnType<T> {
+  return decodeAbiParameters(params, data);
 }
 
 /**
  * Checks whether an aggregate call contains any balance scanner sub-calls.
  */
 function hasBalanceScannerSubCalls(calldata: string): boolean {
-  const args = decodeArgs(calldata, ['(address,bytes)[]']);
-  const calls: [string, string][] = args[0];
+  const [calls] = decodeArgs(calldata, ARGS_AGGREGATE);
   return calls.some(([target]) => target.toLowerCase() === BALANCE_SCANNER.toLowerCase());
 }
 
@@ -107,22 +115,23 @@ export function buildBalanceMaps(cassette: Record<string, { method: string; para
   let aggregateBlockNumber = 0n;
 
   for (const entry of Object.values(cassette)) {
-    if (entry.method !== 'eth_call' || !entry.params || !entry.result)
+    if (entry.method !== 'eth_call' || !entry.params || !isHex(entry.result))
       continue;
 
+    const result = entry.result;
     const calldata = getCalldata(entry.params);
     const selector = getSelector(calldata);
 
     if (isCallTo(entry.params, BALANCE_SCANNER)) {
       if (selector === SEL_TOKENS_BALANCE) {
-        parseTokensBalance(calldata, entry.result as string, tokenBalances);
+        parseTokensBalance(calldata, result, tokenBalances);
       }
       else if (selector === SEL_ETHER_BALANCES) {
-        parseEtherBalances(calldata, entry.result as string, etherBalances);
+        parseEtherBalances(calldata, result, etherBalances);
       }
     }
     else if (isCallTo(entry.params, MULTICALL) && selector === SEL_AGGREGATE) {
-      const aggBlockNumber = parseAggregate(calldata, entry.result as string, tokenBalances, etherBalances, subCallResults);
+      const aggBlockNumber = parseAggregate(calldata, result, tokenBalances, etherBalances, subCallResults);
       if (hasBalanceScannerSubCalls(calldata)) {
         aggregateBlockNumber = aggBlockNumber;
       }
@@ -152,12 +161,9 @@ function countTokenEntries(map: TokenBalanceMap): number {
  * Parses a tokens_balance(address, address[]) call and its result,
  * storing non-zero balances into the map.
  */
-function parseTokensBalance(calldata: string, result: string, map: TokenBalanceMap): void {
-  const args = decodeArgs(calldata, ['address', 'address[]']);
-  const account: string = args[0];
-  const tokens: string[] = args[1];
-  const decoded = decodeResult(result, ['uint256[]']);
-  const balances: bigint[] = decoded[0];
+function parseTokensBalance(calldata: string, result: Hex, map: TokenBalanceMap): void {
+  const [account, tokens] = decodeArgs(calldata, ARGS_TOKENS_BALANCE);
+  const [balances] = decodeResult(result, RESULT_UINT256_ARRAY);
 
   const accountKey = account.toLowerCase();
   let accountMap = map.get(accountKey);
@@ -177,11 +183,9 @@ function parseTokensBalance(calldata: string, result: string, map: TokenBalanceM
 /**
  * Parses an ether_balances(address[]) call and its result.
  */
-function parseEtherBalances(calldata: string, result: string, map: EtherBalanceMap): void {
-  const args = decodeArgs(calldata, ['address[]']);
-  const addresses: string[] = args[0];
-  const decoded = decodeResult(result, ['uint256[]']);
-  const balances: bigint[] = decoded[0];
+function parseEtherBalances(calldata: string, result: Hex, map: EtherBalanceMap): void {
+  const [addresses] = decodeArgs(calldata, ARGS_ETHER_BALANCES);
+  const [balances] = decodeResult(result, RESULT_UINT256_ARRAY);
 
   for (const [i, address] of addresses.entries()) {
     const balance = balances[i];
@@ -197,16 +201,13 @@ function parseEtherBalances(calldata: string, result: string, map: EtherBalanceM
  */
 function parseAggregate(
   calldata: string,
-  result: string,
+  result: Hex,
   tokenMap: TokenBalanceMap,
   etherMap: EtherBalanceMap,
   subCallMap: SubCallResultMap,
 ): bigint {
-  const args = decodeArgs(calldata, ['(address,bytes)[]']);
-  const calls: [string, string][] = args[0];
-  const decoded = decodeResult(result, ['uint256', 'bytes[]']);
-  const aggBlockNumber: bigint = decoded[0];
-  const returnData: string[] = decoded[1];
+  const [calls] = decodeArgs(calldata, ARGS_AGGREGATE);
+  const [aggBlockNumber, returnData] = decodeResult(result, RESULT_AGGREGATE);
 
   for (const [i, [target, subCalldata]] of calls.entries()) {
     const subResult = returnData[i];
@@ -277,28 +278,25 @@ export function tryResolveBalanceCall(
 /**
  * Constructs a tokens_balance response for the given calldata using the balance map.
  */
-function resolveTokensBalance(calldata: string, map: TokenBalanceMap): string {
-  const args = decodeArgs(calldata, ['address', 'address[]']);
-  const account: string = args[0];
-  const tokens: string[] = args[1];
+function resolveTokensBalance(calldata: string, map: TokenBalanceMap): Hex {
+  const [account, tokens] = decodeArgs(calldata, ARGS_TOKENS_BALANCE);
   const accountKey = account.toLowerCase();
   const accountMap = map.get(accountKey);
 
   const balances: bigint[] = tokens.map(token => accountMap?.get(token.toLowerCase()) ?? 0n);
 
-  return abiCoder.encode(['uint256[]'], [balances]);
+  return encodeAbiParameters(RESULT_UINT256_ARRAY, [balances]);
 }
 
 /**
  * Constructs an ether_balances response for the given calldata using the balance map.
  */
-function resolveEtherBalances(calldata: string, map: EtherBalanceMap): string {
-  const args = decodeArgs(calldata, ['address[]']);
-  const addresses: string[] = args[0];
+function resolveEtherBalances(calldata: string, map: EtherBalanceMap): Hex {
+  const [addresses] = decodeArgs(calldata, ARGS_ETHER_BALANCES);
 
   const balances: bigint[] = addresses.map(addr => map.get(addr.toLowerCase()) ?? 0n);
 
-  return abiCoder.encode(['uint256[]'], [balances]);
+  return encodeAbiParameters(RESULT_UINT256_ARRAY, [balances]);
 }
 
 /**
@@ -306,11 +304,10 @@ function resolveEtherBalances(calldata: string, map: EtherBalanceMap): string {
  * Sub-calls targeting the balance scanner are resolved semantically.
  * Other sub-calls are looked up from stored results.
  */
-function resolveAggregate(calldata: string, maps: BalanceMaps): string {
-  const args = decodeArgs(calldata, ['(address,bytes)[]']);
-  const calls: [string, string][] = args[0];
+function resolveAggregate(calldata: string, maps: BalanceMaps): Hex {
+  const [calls] = decodeArgs(calldata, ARGS_AGGREGATE);
 
-  const returnData: string[] = calls.map(([target, subCalldata]) => {
+  const returnData: Hex[] = calls.map(([target, subCalldata]) => {
     if (target.toLowerCase() === BALANCE_SCANNER.toLowerCase()) {
       const subSelector = getSelector(subCalldata);
 
@@ -333,5 +330,5 @@ function resolveAggregate(calldata: string, maps: BalanceMaps): string {
     return '0x';
   });
 
-  return abiCoder.encode(['uint256', 'bytes[]'], [maps.aggregateBlockNumber, returnData]);
+  return encodeAbiParameters(RESULT_AGGREGATE, [maps.aggregateBlockNumber, returnData]);
 }
