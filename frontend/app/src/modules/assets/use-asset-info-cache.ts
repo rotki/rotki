@@ -2,6 +2,7 @@ import type { ShallowRef } from 'vue';
 import type { AssetMap } from '@/modules/assets/types';
 import { type AssetCollection, type AssetInfo, transformCase } from '@rotki/common';
 import { useAssetInfoApi } from '@/modules/assets/api/use-asset-info-api';
+import { useAssetInfoCacheStore } from '@/modules/assets/use-asset-info-cache-store';
 import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
 import { logger } from '@/modules/core/common/logging/logging';
 import { createItemCache } from '@/modules/core/common/use-item-cache';
@@ -19,7 +20,9 @@ interface UseAssetInfoCacheReturn {
 }
 
 export const useAssetInfoCache = createSharedComposable((): UseAssetInfoCacheReturn => {
-  const fetchedAssetCollections = shallowRef<Record<string, AssetCollection>>({});
+  const assetInfoCacheStore = useAssetInfoCacheStore();
+  const { storage } = assetInfoCacheStore;
+  const { fetchedAssetCollections } = storeToRefs(assetInfoCacheStore);
 
   const { assetMapping } = useAssetInfoApi();
   const { t } = useI18n({ useScope: 'global' });
@@ -65,6 +68,7 @@ export const useAssetInfoCache = createSharedComposable((): UseAssetInfoCacheRet
     },
     {
       debounceInMs: 100,
+      storage,
     },
   );
 
