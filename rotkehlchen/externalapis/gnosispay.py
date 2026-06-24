@@ -23,7 +23,7 @@ from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import deserialize_fval
 from rotkehlchen.types import EVMTxHash, Location, Timestamp, TimestampMS, deserialize_evm_tx_hash
 from rotkehlchen.utils.misc import (
-    get_system_spec,
+    ROTKI_USER_AGENT,
     iso8601ts_to_timestamp,
     set_user_agent,
     timestamp_to_iso8601,
@@ -522,12 +522,11 @@ def fetch_gnosis_pay_siwe_nonce() -> str:
     """
     timeout = CachedSettings().get_timeout_tuple()
     url = f'{GNOSIS_PAY_API_BASE_URL}/{GNOSIS_PAY_AUTH_NONCE_ENDPOINT}'
-    user_agent = f'rotki/{get_system_spec()["rotkehlchen"]}'
     try:
         response = requests.get(
             url=url,
             timeout=timeout,
-            headers={'User-Agent': user_agent},
+            headers={'User-Agent': ROTKI_USER_AGENT},
         )
     except requests.RequestException as e:
         raise RemoteError(f'Failed to fetch Gnosis Pay nonce: {e!s}') from e
@@ -557,7 +556,7 @@ def verify_gnosis_pay_siwe_signature(message: str, signature: str) -> str:
             url=f'{GNOSIS_PAY_API_BASE_URL}/{GNOSIS_PAY_AUTH_CHALLENGE_ENDPOINT}',
             json={'message': message, 'signature': signature, 'ttlInSeconds': DAY_IN_SECONDS},
             timeout=timeout,
-            headers={'User-Agent': (user_agent := f'rotki/{get_system_spec()["rotkehlchen"]}')},
+            headers={'User-Agent': ROTKI_USER_AGENT},
         )
     except requests.RequestException as e:
         raise RemoteError(f'Failed to verify Gnosis Pay SIWE signature: {e!s}') from e
@@ -584,7 +583,7 @@ def verify_gnosis_pay_siwe_signature(message: str, signature: str) -> str:
         balances_response = requests.get(
             url=f'{GNOSIS_PAY_API_BASE_URL}/account-balances',
             timeout=timeout,
-            headers={'User-Agent': user_agent, 'Authorization': f'Bearer {token}'},
+            headers={'User-Agent': ROTKI_USER_AGENT, 'Authorization': f'Bearer {token}'},
         )
     except requests.RequestException as e:
         raise RemoteError(f'Failed to verify Gnosis Pay token against account balances: {e!s}') from e  # noqa: E501

@@ -15,7 +15,7 @@ from rotkehlchen.history.deserialization import deserialize_price
 from rotkehlchen.interfaces import CurrentPriceOracleInterface
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import Location, Price, Timestamp
-from rotkehlchen.utils.misc import ts_now
+from rotkehlchen.utils.misc import set_user_agent, ts_now
 from rotkehlchen.utils.network import create_session
 
 logger = logging.getLogger(__name__)
@@ -31,7 +31,7 @@ class Kraken(CurrentPriceOracleInterface):
     def __init__(self) -> None:
         super().__init__(oracle_name='kraken')
         self.session = create_session()
-        self.session.headers.update({'User-Agent': 'rotkehlchen'})
+        set_user_agent(self.session)
         self._tickers_cache: dict[str, Any] = {}
         self._tickers_cache_ts: Timestamp = Timestamp(0)
 
