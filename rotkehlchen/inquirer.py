@@ -170,6 +170,7 @@ if TYPE_CHECKING:
     from rotkehlchen.externalapis.coingecko import Coingecko
     from rotkehlchen.externalapis.cryptocompare import Cryptocompare
     from rotkehlchen.externalapis.defillama import Defillama
+    from rotkehlchen.externalapis.kraken import Kraken
     from rotkehlchen.externalapis.moralis import Moralis
     from rotkehlchen.globaldb.manual_price_oracles import ManualCurrentOracle
     from rotkehlchen.user_messages import MessagesAggregator
@@ -196,6 +197,7 @@ CurrentPriceOracleInstance = Union[
     'Coingecko',
     'Cryptocompare',
     'Defillama',
+    'Kraken',
     'UniswapV3Oracle',
     'UniswapV2Oracle',
     'ManualCurrentOracle',
@@ -359,6 +361,7 @@ class Inquirer:
     _alchemy: 'Alchemy'
     _moralis: 'Moralis'
     _defillama: 'Defillama'
+    _kraken: 'Kraken'
     _manualcurrent: 'ManualCurrentOracle'
     _uniswapv2: Optional['UniswapV2Oracle'] = None
     _uniswapv3: Optional['UniswapV3Oracle'] = None
@@ -381,6 +384,7 @@ class Inquirer:
             cryptocompare: Optional['Cryptocompare'] = None,
             coingecko: Optional['Coingecko'] = None,
             defillama: Optional['Defillama'] = None,
+            kraken: Optional['Kraken'] = None,
             alchemy: Optional['Alchemy'] = None,
             moralis: Optional['Moralis'] = None,
             manualcurrent: Optional['ManualCurrentOracle'] = None,
@@ -394,6 +398,7 @@ class Inquirer:
         assert cryptocompare, error_msg
         assert coingecko, error_msg
         assert defillama, error_msg
+        assert kraken, error_msg
         assert alchemy, error_msg
         assert moralis, error_msg
         assert manualcurrent, error_msg
@@ -405,6 +410,7 @@ class Inquirer:
         Inquirer._cryptocompare = cryptocompare
         Inquirer._coingecko = coingecko
         Inquirer._defillama = defillama
+        Inquirer._kraken = kraken
         Inquirer._alchemy = alchemy
         Inquirer._moralis = moralis
         Inquirer._manualcurrent = manualcurrent
