@@ -1,6 +1,7 @@
 import type { AssetMap } from '@/modules/assets/types';
 import flushPromises from 'flush-promises';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { effectScope } from 'vue';
 import { useAssetInfoApi } from '@/modules/assets/api/use-asset-info-api';
 
 describe('modules/assets/use-asset-info-cache', () => {
@@ -35,6 +36,51 @@ describe('modules/assets/use-asset-info-cache', () => {
     await flushPromises();
     expect(useAssetInfoApi().assetMapping).toHaveBeenCalledOnce();
     expect(cache.resolve('KEY')).toEqual(asset);
+  });
+
+  it('should retain cached assets after the composable is torn down and re-created', async () => {
+    const { useAssetInfoCache } = await import('./use-asset-info-cache');
+    const key = 'KEY';
+    const asset = {
+      isCustomAsset: false,
+      name: 'KEY Asset',
+      symbol: 'KEY',
+    };
+    vi.mocked(useAssetInfoApi().assetMapping).mockResolvedValue({
+      assetCollections: {},
+      assets: { [key]: asset },
+    });
+
+    // First subscriber resolves and populates the store-backed cache.
+    const scope1 = effectScope();
+    let first!: ReturnType<typeof useAssetInfoCache>;
+    scope1.run(() => {
+      first = useAssetInfoCache();
+    });
+    first.resolve(key);
+    vi.advanceTimersByTime(2500);
+    await flushPromises();
+    expect(first.resolve(key)).toEqual(asset);
+    expect(useAssetInfoApi().assetMapping).toHaveBeenCalledOnce();
+
+    // Last subscriber unmounts -> createSharedComposable disposes the instance.
+    scope1.stop();
+
+    // A new subscriber re-creates the composable; the cache must come back from
+    // the store with no refetch.
+    const scope2 = effectScope();
+    let second!: ReturnType<typeof useAssetInfoCache>;
+    scope2.run(() => {
+      second = useAssetInfoCache();
+    });
+    // Confirm the shared instance was actually disposed and re-created.
+    expect(second).not.toBe(first);
+    expect(get(second.cache)[key]).toEqual(asset);
+    expect(second.resolve(key)).toEqual(asset);
+    vi.advanceTimersByTime(2500);
+    await flushPromises();
+    expect(useAssetInfoApi().assetMapping).toHaveBeenCalledOnce();
+    scope2.stop();
   });
 
   it('should not request failed assets twice unless they expire', async () => {
