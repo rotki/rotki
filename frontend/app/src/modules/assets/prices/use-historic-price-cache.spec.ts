@@ -1,6 +1,7 @@
 import { bigNumberify } from '@rotki/common';
 import flushPromises from 'flush-promises';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { effectScope } from 'vue';
 import { usePriceApi } from '@/modules/balances/api/use-price-api';
 
 const runTaskMock = vi.fn();
@@ -114,6 +115,71 @@ describe('useHistoricPriceCache', () => {
     await flushPromises();
     expect(usePriceApi().queryHistoricalRates).toHaveBeenCalledTimes(2);
     expect(resolve(key)).toEqual(bigNumberify(mockPrice));
+  });
+
+  it('should store resolved prices in the shared store storage', async () => {
+    const { createKey, resolve } = useHistoricPriceCache();
+    const { useHistoricCachePriceStore } = await import('@/modules/assets/prices/use-historic-cache-price-store');
+    const { historicStorage } = useHistoricCachePriceStore();
+    const key = createKey(mockAsset, mockTimestamp);
+
+    runTaskMock.mockResolvedValue({
+      success: true,
+      result: {
+        targetAsset: 'USD',
+        assets: { [mockAsset]: { [mockTimestamp]: mockPrice } },
+      },
+    });
+
+    resolve(key);
+    vi.advanceTimersByTime(2500);
+    await flushPromises();
+
+    // The cache lives in the app-lifetime store, not a composable-scoped map, so
+    // the store's storage must hold the resolved value.
+    expect(get(historicStorage.cache)[key]).toEqual(bigNumberify(mockPrice));
+  });
+
+  it('should retain cached prices after the composable is torn down and re-created', async () => {
+    const key = `${mockAsset}#${mockTimestamp}`;
+    runTaskMock.mockResolvedValue({
+      success: true,
+      result: {
+        targetAsset: 'USD',
+        assets: { [mockAsset]: { [mockTimestamp]: mockPrice } },
+      },
+    });
+
+    // First subscriber resolves and populates the store-backed cache.
+    const scope1 = effectScope();
+    let first!: ReturnType<typeof useHistoricPriceCache>;
+    scope1.run(() => {
+      first = useHistoricPriceCache();
+    });
+    first.resolve(key);
+    vi.advanceTimersByTime(2500);
+    await flushPromises();
+    expect(first.resolve(key)).toEqual(bigNumberify(mockPrice));
+    expect(usePriceApi().queryHistoricalRates).toHaveBeenCalledOnce();
+
+    // Last subscriber unmounts -> createSharedComposable disposes the instance.
+    scope1.stop();
+
+    // A new subscriber re-creates the composable; the cache must come back from
+    // the store with no refetch.
+    const scope2 = effectScope();
+    let second!: ReturnType<typeof useHistoricPriceCache>;
+    scope2.run(() => {
+      second = useHistoricPriceCache();
+    });
+    // Confirm the shared instance was actually disposed and re-created.
+    expect(second).not.toBe(first);
+    expect(get(second.cache)[key]).toEqual(bigNumberify(mockPrice));
+    expect(second.resolve(key)).toEqual(bigNumberify(mockPrice));
+    vi.advanceTimersByTime(2500);
+    await flushPromises();
+    expect(usePriceApi().queryHistoricalRates).toHaveBeenCalledOnce();
+    scope2.stop();
   });
 
   it('should reset historical prices data', async () => {

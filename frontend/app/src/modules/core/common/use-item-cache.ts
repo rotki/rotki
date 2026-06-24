@@ -1,4 +1,4 @@
-import type { ComputedRef, DeepReadonly, MaybeRefOrGetter, Ref } from 'vue';
+import type { ComputedRef, DeepReadonly, MaybeRefOrGetter, Raw, Ref } from 'vue';
 import { assert } from '@rotki/common';
 import { startPromise } from '@shared/utils';
 import { logger } from '@/modules/core/common/logging/logging';
@@ -13,19 +13,57 @@ interface CacheEntry<T> {
 }
 
 /**
+ * The persistent storage of an item cache: the resolved values plus the
+ * bookkeeping required to decide validity. Decoupled from the cache logic so it
+ * can live in an app-lifetime Pinia store and survive composable teardown.
+ */
+export interface ItemCacheStorage<T> {
+  /** Resolved values keyed by identifier. */
+  cache: Ref<Record<string, T | null>>;
+  /** Per-key expiry timestamps backing the LRU + staleness checks. */
+  recent: Map<string, number>;
+  /** Identifiers that could not be resolved, with their expiry timestamps. */
+  unknown: Map<string, number>;
+}
+
+/**
+ * Creates a fresh {@link ItemCacheStorage} container.
+ *
+ * `markRaw` keeps it usable as plain state inside a Pinia store: the `cache` ref
+ * and the `Map`s are returned untouched (no reactive proxy that would unwrap the
+ * ref or wrap the maps). Reactivity for consumers flows through the `shallowRef`.
+ */
+export function createItemCacheStorage<T>(): Raw<ItemCacheStorage<T>> {
+  // Return the markRaw-branded type so a Pinia store holding this does not
+  // deeply unwrap `cache` (Ref) into a plain value — annotating it as the bare
+  // ItemCacheStorage<T> would strip the brand and reintroduce the unwrap.
+  return markRaw<ItemCacheStorage<T>>({
+    cache: shallowRef<Record<string, T | null>>({}),
+    recent: new Map<string, number>(),
+    unknown: new Map<string, number>(),
+  });
+}
+
+/**
  * A batch-fetch function that resolves multiple keys at once.
  * Returns a factory that yields {@link CacheEntry} items via an iterator,
  * allowing lazy consumption of potentially large result sets.
  */
 type CacheFetch<T> = (keys: string[]) => Promise<() => IterableIterator<CacheEntry<T>>>;
 
-interface CacheOptions {
+interface CacheOptions<T = unknown> {
   /** Debounce interval (ms) before a queued batch is fetched. @default 800 */
   debounceInMs?: number;
   /** Time-to-live (ms) for cached entries before they become stale. @default 600_000 (10 min) */
   expiry?: number;
   /** Maximum number of entries kept in the LRU cache. @default 500 */
   size?: number;
+  /**
+   * Persistent storage to bind to. When omitted a fresh in-scope storage is
+   * created (legacy behaviour). Pass a store-owned {@link ItemCacheStorage} to
+   * keep the cache alive across composable teardown.
+   */
+  storage?: ItemCacheStorage<T>;
 }
 
 interface ItemCacheReturn<T> {
@@ -67,12 +105,13 @@ interface ItemCacheReturn<T> {
  */
 export function createItemCache<T>(
   fetch: CacheFetch<T>,
-  options: CacheOptions = {},
+  options: CacheOptions<T> = {},
 ): ItemCacheReturn<T> {
   const { debounceInMs = DEBOUNCE_TIME, expiry = CACHE_EXPIRY, size = CACHE_SIZE } = options;
-  const recent: Map<string, number> = new Map();
-  const unknown: Map<string, number> = new Map();
-  const cache = shallowRef<Record<string, T | null>>({});
+  // Persistent storage is injected so it can outlive this factory instance
+  // (e.g. a Pinia store); when absent it falls back to in-scope storage.
+  const { cache, recent, unknown } = options.storage ?? createItemCacheStorage<T>();
+  // Transient in-flight state — intentionally factory-local, reset on re-init.
   const pending = shallowRef<Record<string, boolean>>({});
   const batch = new Set<string>();
 
