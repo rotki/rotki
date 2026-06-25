@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`-` Trying to add an ETH staking validator on a plan that doesn't include staking now shows a clear message saying your plan has no staking access, instead of a confusing "ETH staking limit of 0 ETH" error.
 * :bug:`12463` Querying price for custom asset under certain conditions no longer fails the task.
 * :bug:`-` Tables shown inside dialogs (such as the PnL report "issues found" dialog with missing acquisitions/prices, and the snapshot editor) are scrollable again, so rows past the visible area are no longer cut off.
 * :bug:`-` The desktop app no longer accesses the OS keyring (triggering a keychain/keyring unlock prompt) when you create or open an account, unless you have chosen to save your password.

@@ -1729,7 +1729,8 @@
     "add_account": "Add Account",
     "add_validator_premium": "Adding ETH staking validators is a premium feature. Upgrade to rotki Premium to add validators.",
     "binance_warning": "Binance Smart Chain accounts can only be detected with a paid Etherscan key.",
-    "eth_staking_limit_error": "Adding this validator would exceed your {currentTier} plan's ETH staking limit of {limit} ETH. Upgrade your plan via {link} or contact us for a custom plan to increase your limit.",
+    "eth_staking_limit_error": "Adding this validator would put you over your {currentTier} plan's ETH staking limit of {limit} ETH. Upgrade your plan via {link} or contact us for a custom plan to raise your limit.",
+    "eth_staking_no_access": "Your {currentTier} plan doesn't include ETH staking. Upgrade your plan via {link} or contact us for a custom plan to get access.",
     "evm_detection": {
       "title": "Detect EVM accounts",
       "tooltip": "Detect activities of all registered EVM accounts in other EVM chains, and register them."
