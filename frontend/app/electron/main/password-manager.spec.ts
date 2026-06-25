@@ -4,12 +4,15 @@ import { PasswordManager } from './password-manager';
 
 const ENCODING = 'latin1';
 
-const { isEncryptionAvailable, encryptString, decryptString, backing } = vi.hoisted(() => ({
-  isEncryptionAvailable: vi.fn<() => boolean>(),
-  encryptString: vi.fn<(value: string) => Buffer>(),
-  decryptString: vi.fn<(buffer: Buffer) => string>(),
-  backing: { data: {} as Record<string, string> },
-}));
+const { isEncryptionAvailable, encryptString, decryptString, backing } = vi.hoisted(() => {
+  const backing: { data: Record<string, string> } = { data: {} };
+  return {
+    isEncryptionAvailable: vi.fn<() => boolean>(),
+    encryptString: vi.fn<(value: string) => Buffer>(),
+    decryptString: vi.fn<(buffer: Buffer) => string>(),
+    backing,
+  };
+});
 
 vi.mock('electron', () => ({
   safeStorage: { isEncryptionAvailable, encryptString, decryptString },
