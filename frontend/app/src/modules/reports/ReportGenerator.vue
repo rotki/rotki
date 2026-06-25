@@ -1,10 +1,13 @@
 <script setup lang="ts">
 import type { ProfitLossReportPeriod } from '@/modules/reports/report-types';
+import { startPromise } from '@shared/utils';
 import { useExchangeApi } from '@/modules/balances/api/use-exchange-api';
 import { useTransactionStatusCheck } from '@/modules/dashboard/progress/use-transaction-status-check';
+import { useHistoryTransactions } from '@/modules/history/events/tx/use-history-transactions';
 import RangeSelector from '@/modules/reports/RangeSelector.vue';
 import { useSessionSettingsStore } from '@/modules/settings/use-session-settings-store';
 import CardTitle from '@/modules/shell/components/CardTitle.vue';
+import { useSyncProgress } from '@/modules/shell/sync-progress/use-sync-progress';
 import { Routes } from '@/router/routes';
 
 const emit = defineEmits<{
@@ -15,7 +18,9 @@ const emit = defineEmits<{
 
 const { t } = useI18n({ useScope: 'global' });
 
-const { isOutOfSync, navigateToHistory, processing } = useTransactionStatusCheck();
+const { isOutOfSync, processing } = useTransactionStatusCheck();
+const { overallProgress } = useSyncProgress();
+const { refreshTransactions } = useHistoryTransactions();
 const { queryBinanceUserMarkets } = useExchangeApi();
 const { connectedExchanges } = storeToRefs(useSessionSettingsStore());
 
@@ -57,6 +62,10 @@ function toReportPeriod(): ProfitLossReportPeriod {
 
 function generate(): void {
   emit('generate', toReportPeriod());
+}
+
+function syncHistory(): void {
+  startPromise(refreshTransactions());
 }
 
 function exportReportData(): void {
@@ -110,22 +119,21 @@ onMounted(async () => {
       type="warning"
       class="mt-6"
     >
-      <template v-if="processing">
-        {{ t('profit_loss_report.processing_alert') }}
-      </template>
-      <template v-else>
-        <div class="flex flex-col items-start gap-2">
-          <div>{{ t('profit_loss_report.out_of_sync_alert') }}</div>
-          <RuiButton
-            size="sm"
-            color="primary"
-            variant="outlined"
-            @click="navigateToHistory()"
-          >
-            {{ t('profit_loss_report.go_to_history') }}
-          </RuiButton>
+      <div class="flex flex-col items-start gap-2">
+        <div>
+          {{ processing ? t('profit_loss_report.processing_alert', { percentage: overallProgress }) : t('profit_loss_report.out_of_sync_alert') }}
         </div>
-      </template>
+        <RuiButton
+          size="sm"
+          color="primary"
+          variant="outlined"
+          :loading="processing"
+          :disabled="processing"
+          @click="syncHistory()"
+        >
+          {{ t('profit_loss_report.sync_history') }}
+        </RuiButton>
+      </div>
     </RuiAlert>
     <RuiAlert
       v-if="hasBinanceWithoutMarkets"

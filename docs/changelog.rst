@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`-` The "history out of sync" warning shown before generating a PnL report now lets you start the history sync right there, instead of only sending you to the history page.
 * :bug:`-` Trying to add an ETH staking validator on a plan that doesn't include staking now shows a clear message saying your plan has no staking access, instead of a confusing "ETH staking limit of 0 ETH" error.
 * :bug:`12463` Querying price for custom asset under certain conditions no longer fails the task.
 * :bug:`-` Tables shown inside dialogs (such as the PnL report "issues found" dialog with missing acquisitions/prices, and the snapshot editor) are scrollable again, so rows past the visible area are no longer cut off.
