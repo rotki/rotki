@@ -330,15 +330,20 @@ jobs:
 
       - name: Notify if a benchmark regression was detected
         if: steps.benchmark-alerts.outputs.has_alerts == 'true'
+        # Keep the webhook quoted so shell-special URL chars are preserved.
         run: |
           ./.github/scripts/notifier.py \
-            --webhook ${{ secrets.DISCORD_WEBHOOK }} \
-            --run-id ${{ github.run_id }} \
+            --webhook "$DISCORD_WEBHOOK" \
+            --run-id "$GITHUB_RUN_ID" \
             --test \
             --message-title 'benchmark regressions detected' \
             --message-file benchmark-alerts.md
+        env:
+          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
 
       - name: Notify if a benchmark job failed
         if: needs.bench-nightly.result == 'failure' || needs.micro-nightly.result == 'failure'
         run: |
-          ./.github/scripts/notifier.py --webhook ${{ secrets.DISCORD_WEBHOOK }} --run-id ${{ github.run_id }} --test
+          ./.github/scripts/notifier.py --webhook "$DISCORD_WEBHOOK" --run-id "$GITHUB_RUN_ID" --test
+        env:
+          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
