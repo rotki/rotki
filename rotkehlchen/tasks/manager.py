@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING, Final, NamedTuple
 
 import gevent
 
-from rotkehlchen.api.websockets.typedefs import WSMessageType
+from rotkehlchen.api.websockets.typedefs import ProgressUpdateSubType, WSMessageType
 from rotkehlchen.assets.asset import AssetWithOracles
 from rotkehlchen.chain.bitcoin.xpub import XpubManager
 from rotkehlchen.chain.ethereum.modules.makerdao.cache import (
@@ -41,6 +41,13 @@ from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.externalapis.google_calendar import GoogleCalendarAPI
 from rotkehlchen.feature_flags import is_accounting_update_enabled
 from rotkehlchen.globaldb.handler import GlobalDBHandler
+from rotkehlchen.history.data_issues.constants import IssueState
+from rotkehlchen.history.data_issues.manager import DataIssuesManager
+from rotkehlchen.history.data_issues.remediation.base import RemediationPipeline
+from rotkehlchen.history.data_issues.remediation.owned_account import (
+    OwnedAccountCounterpartyStrategy,
+)
+from rotkehlchen.history.data_issues.types import DataIssueFilters
 from rotkehlchen.history.types import HistoricalPriceOracle
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.premium.premium import Premium, premium_create_and_verify
@@ -82,6 +89,8 @@ from .events import process_eth2_events
 
 HISTORICAL_BALANCE_PROCESSING_REFRESH: Final = DAY_IN_SECONDS
 HISTORICAL_BALANCE_PROCESSING_TASK_NAME: Final = 'Process historical balances'
+DATA_ISSUE_REMEDIATION_REFRESH: Final = HOUR_IN_SECONDS
+DATA_ISSUE_REMEDIATION_TASK_NAME: Final = 'Auto-remediate data issues'
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.aggregator import ChainsAggregator
@@ -181,7 +190,10 @@ class TaskManager:
             self._maybe_check_premium_status,
             self._maybe_check_data_updates,
             self._maybe_update_snapshot_balances,
-            *([self._maybe_process_historical_balances] if is_accounting_update_enabled() else []),
+            *(
+                [self._maybe_process_historical_balances, self._maybe_run_data_issue_remediation]
+                if is_accounting_update_enabled() else []
+            ),
             self._maybe_detect_evm_accounts,
             self._maybe_update_ilk_cache,
             self._maybe_query_produced_blocks,
@@ -624,6 +636,68 @@ class TaskManager:
         return self._spawn_historical_balance_processing(
             from_ts=TimestampMS(int(stale_from_ts)) if stale_from_ts is not None else None,
         )
+
+    def _run_data_issue_remediation(self) -> None:
+        manager = DataIssuesManager(self.database)
+        issues = manager.list_issues(DataIssueFilters(state=IssueState.OPEN))
+        if (total := len(issues)) == 0:
+            return
+
+        pipeline = RemediationPipeline(
+            manager=manager,
+            strategies=(OwnedAccountCounterpartyStrategy(
+                database=self.database,
+                chains_aggregator=self.chains_aggregator,
+                msg_aggregator=self.msg_aggregator,
+            ),),
+        )
+        for idx, issue in enumerate(issues, start=1):
+            self.msg_aggregator.add_message(
+                message_type=WSMessageType.PROGRESS_UPDATES,
+                data={
+                    'subtype': str(ProgressUpdateSubType.DATA_ISSUE_REMEDIATION),
+                    'total': total,
+                    'processed': idx - 1,
+                },
+            )
+            pipeline.run(manager.update_state(issue.id, IssueState.AUTO_REMEDIATING))
+            gevent.sleep(0)
+
+        with self.database.user_write() as write_cursor:
+            self.database.set_static_cache(
+                write_cursor=write_cursor,
+                name=DBCacheStatic.LAST_DATA_ISSUE_REMEDIATION_TS,
+                value=ts_now(),
+            )
+        self.msg_aggregator.add_message(
+            message_type=WSMessageType.PROGRESS_UPDATES,
+            data={
+                'subtype': str(ProgressUpdateSubType.DATA_ISSUE_REMEDIATION),
+                'total': total,
+                'processed': total,
+            },
+        )
+
+    def _maybe_run_data_issue_remediation(self) -> list[gevent.Greenlet] | None:
+        if self.history_processing_coordinator.is_history_fetching() or should_run_periodic_task(
+            database=self.database,
+            key_name=DBCacheStatic.LAST_DATA_ISSUE_REMEDIATION_TS,
+            refresh_period=DATA_ISSUE_REMEDIATION_REFRESH,
+            cached_timestamps=self._scheduler_task_timestamps,
+        ) is False:
+            return None
+
+        if len(DataIssuesManager(self.database).list_issues(
+            DataIssueFilters(state=IssueState.OPEN),
+        )) == 0:
+            return None
+
+        return [self.greenlet_manager.spawn_and_track(
+            after_seconds=None,
+            task_name=DATA_ISSUE_REMEDIATION_TASK_NAME,
+            exception_is_error=True,
+            method=self._run_data_issue_remediation,
+        )]
 
     def _maybe_update_snapshot_balances(self) -> list[gevent.Greenlet] | None:
         """
