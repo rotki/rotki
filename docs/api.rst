@@ -14821,6 +14821,269 @@ Managing calendar reminders
   :statuscode 401: No user is currently logged in.
   :statuscode 500: Internal rotki error.
 
+Data Issues
+==============================
+
+  .. http:get:: /api/(version)/data_issues
+
+    Lists issues from the data issues inbox. By default only non-terminal states are returned
+    (``open``, ``auto_remediating`` and ``unresolved``).
+
+    **Example Request**:
+
+    .. sourcecode:: http
+
+      GET /api/1/data_issues?state=open,unresolved&kind=negative_balance&location=ethereum&asset=ETH&limit=10&offset=0 HTTP/1.1
+      Host: localhost:5042
+      Accept: application/json
+
+    **Example Response**:
+
+    .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+        "result": {
+          "entries": [{
+            "id": 1,
+            "kind": "negative_balance",
+            "location": "ethereum",
+            "location_label": "0x0000000000000000000000000000000000000001",
+            "protocol": null,
+            "asset": "ETH",
+            "ts_start": 1710000000,
+            "ts_end": 1710000000,
+            "severity": "warning",
+            "state": "open",
+            "auto_remediation_attempts": [],
+            "payload": {
+              "event_identifier": 42,
+              "in_memory_negative_amount": "-1",
+              "derived_balance_before_event": "0"
+            },
+            "created_at": 1710000100,
+            "resolved_at": null
+          }],
+          "entries_found": 1,
+          "entries_limit": 10
+        },
+        "message": ""
+      }
+
+    :query state: Optional comma separated or repeated list of states.
+    :query kind: Optional comma separated or repeated list of issue kinds.
+    :query location: Optional location filter.
+    :query location_label: Optional account/location label filter.
+    :query asset: Optional asset identifier filter.
+    :query from_timestamp: Optional lower bound for issue time range overlap.
+    :query to_timestamp: Optional upper bound for issue time range overlap.
+    :query limit: Optional pagination limit.
+    :query offset: Optional pagination offset.
+    :resjson list entries: Matching data issues, with parsed ``payload`` and expanded ``auto_remediation_attempts``.
+    :resjson int entries_found: Total matching entries before pagination.
+    :resjson int entries_limit: Pagination limit, or ``-1`` when not paginated.
+    :statuscode 200: Query was successful.
+    :statuscode 400: Validation error.
+    :statuscode 401: No user is currently logged in.
+
+  .. http:get:: /api/(version)/data_issues/(issue_id)
+
+    Returns a single data issue with parsed ``payload`` and expanded ``auto_remediation_attempts``.
+
+    **Example Request**:
+
+    .. sourcecode:: http
+
+      GET /api/1/data_issues/1 HTTP/1.1
+      Host: localhost:5042
+      Accept: application/json
+
+    **Example Response**:
+
+    .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+        "result": {
+          "id": 1,
+          "kind": "negative_balance",
+          "location": "ethereum",
+          "location_label": "0x0000000000000000000000000000000000000001",
+          "protocol": null,
+          "asset": "ETH",
+          "ts_start": 1710000000,
+          "ts_end": 1710000000,
+          "severity": "warning",
+          "state": "auto_remediating",
+          "auto_remediation_attempts": [{"strategy": "reprocess_event", "success": false}],
+          "payload": {
+            "event_identifier": 42,
+            "in_memory_negative_amount": "-1",
+            "derived_balance_before_event": "0"
+          },
+          "created_at": 1710000100,
+          "resolved_at": null
+        },
+        "message": ""
+      }
+
+    :statuscode 200: Query was successful.
+    :statuscode 401: No user is currently logged in.
+    :statuscode 404: The issue id does not exist.
+
+  .. http:patch:: /api/(version)/data_issues/(issue_id)/dismiss
+
+    Dismisses a data issue.
+
+    **Example Request**:
+
+    .. sourcecode:: http
+
+      PATCH /api/1/data_issues/1/dismiss HTTP/1.1
+      Host: localhost:5042
+      Accept: application/json
+
+    **Example Response**:
+
+    .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+        "result": {
+          "id": 1,
+          "state": "dismissed",
+          "kind": "negative_balance",
+          "location": "ethereum",
+          "location_label": "0x0000000000000000000000000000000000000001",
+          "protocol": null,
+          "asset": "ETH",
+          "ts_start": 1710000000,
+          "ts_end": 1710000000,
+          "severity": "warning",
+          "auto_remediation_attempts": [],
+          "payload": {
+            "event_identifier": 42,
+            "in_memory_negative_amount": "-1",
+            "derived_balance_before_event": "0"
+          },
+          "created_at": 1710000100,
+          "resolved_at": null
+        },
+        "message": ""
+      }
+
+    :statuscode 200: Issue was dismissed.
+    :statuscode 401: No user is currently logged in.
+    :statuscode 404: The issue id does not exist.
+
+  .. http:patch:: /api/(version)/data_issues/(issue_id)/resolve_manually
+
+    Marks a data issue as manually resolved.
+
+    **Example Request**:
+
+    .. sourcecode:: http
+
+      PATCH /api/1/data_issues/1/resolve_manually HTTP/1.1
+      Host: localhost:5042
+      Content-Type: application/json;charset=UTF-8
+
+      {"note": "Fixed the source event manually"}
+
+    **Example Response**:
+
+    .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+        "result": {
+          "id": 1,
+          "state": "resolved",
+          "kind": "negative_balance",
+          "location": "ethereum",
+          "location_label": "0x0000000000000000000000000000000000000001",
+          "protocol": null,
+          "asset": "ETH",
+          "ts_start": 1710000000,
+          "ts_end": 1710000000,
+          "severity": "warning",
+          "auto_remediation_attempts": [],
+          "payload": {
+            "event_identifier": 42,
+            "in_memory_negative_amount": "-1",
+            "derived_balance_before_event": "0",
+            "resolution": {"manual": true, "note": "Fixed the source event manually"}
+          },
+          "created_at": 1710000100,
+          "resolved_at": 1710000200
+        },
+        "message": ""
+      }
+
+    :reqjson string note: Optional resolution note.
+    :statuscode 200: Issue was manually resolved.
+    :statuscode 400: Validation error.
+    :statuscode 401: No user is currently logged in.
+    :statuscode 404: The issue id does not exist.
+    :statuscode 409: The issue cannot be resolved from its current state.
+
+  .. http:post:: /api/(version)/data_issues/(issue_id)/retry_auto_remediation
+
+    Transitions a data issue back to ``open`` so the remediation pipeline can retry it. This is
+    idempotent for issues that are already ``open`` or ``auto_remediating``.
+
+    **Example Request**:
+
+    .. sourcecode:: http
+
+      POST /api/1/data_issues/1/retry_auto_remediation HTTP/1.1
+      Host: localhost:5042
+      Accept: application/json
+
+    **Example Response**:
+
+    .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+        "result": {
+          "id": 1,
+          "state": "open",
+          "kind": "negative_balance",
+          "location": "ethereum",
+          "location_label": "0x0000000000000000000000000000000000000001",
+          "protocol": null,
+          "asset": "ETH",
+          "ts_start": 1710000000,
+          "ts_end": 1710000000,
+          "severity": "warning",
+          "auto_remediation_attempts": [],
+          "payload": {
+            "event_identifier": 42,
+            "in_memory_negative_amount": "-1",
+            "derived_balance_before_event": "0"
+          },
+          "created_at": 1710000100,
+          "resolved_at": null
+        },
+        "message": ""
+      }
+
+    :statuscode 200: Retry was queued or was already pending.
+    :statuscode 401: No user is currently logged in.
+    :statuscode 404: The issue id does not exist.
+    :statuscode 409: The issue cannot be retried from its current state.
+
 Historical Balance Queries
 ==============================
 

@@ -94,6 +94,7 @@ from rotkehlchen.db.filtering import (
     AssetsFilterQuery,
     CounterpartyAssetMappingsFilterQuery,
     CustomAssetsFilterQuery,
+    DataIssuesFilterQuery,
     DBFilterQuery,
     HistoricalBalancesFilterQuery,
     HistoryBaseEntryFilterQuery,
@@ -140,6 +141,8 @@ from rotkehlchen.feature_flags import is_accounting_update_enabled
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.asset_updates.manager import ASSETS_VERSION_KEY
 from rotkehlchen.globaldb.handler import GlobalDBHandler
+from rotkehlchen.history.data_issues.manager import DataIssuesManager
+from rotkehlchen.history.data_issues.types import DataIssue
 from rotkehlchen.history.events.structures.asset_movement import AssetMovement
 from rotkehlchen.history.events.structures.base import (
     HistoryBaseEntryType,
@@ -3221,6 +3224,83 @@ class RestAPI:
         )
         stats['score'] = score
         return api_response(_wrap_in_ok_result(result=stats, status_code=HTTPStatus.OK))
+
+    @staticmethod
+    def _serialize_data_issue(issue: DataIssue) -> dict[str, Any]:
+        return {
+            'id': issue.id,
+            'kind': issue.kind,
+            'location': Location.deserialize_from_db(issue.location).serialize(),
+            'location_label': issue.location_label or None,
+            'protocol': issue.protocol or None,
+            'asset': issue.asset or None,
+            'ts_start': issue.ts_start,
+            'ts_end': issue.ts_end,
+            'severity': issue.severity,
+            'state': issue.state,
+            'auto_remediation_attempts': issue.auto_remediation_attempts,
+            'payload': issue.payload,
+            'created_at': issue.created_at,
+            'resolved_at': issue.resolved_at,
+        }
+
+    @accounting_update_required('Data issues are disabled', response=True)
+    def get_data_issues(self, filter_query: DataIssuesFilterQuery) -> Response:
+        manager = DataIssuesManager(self.rotkehlchen.data.db)
+        entries = manager.list_issues(filter_query)
+        return api_response(_wrap_in_ok_result(result={
+            'entries': [self._serialize_data_issue(issue) for issue in entries],
+            'entries_found': manager.count_issues(filter_query),
+            'entries_limit': filter_query.pagination.limit if filter_query.pagination else -1,
+        }, status_code=HTTPStatus.OK))
+
+    @accounting_update_required('Data issues are disabled', response=True)
+    def get_data_issue(self, issue_id: int) -> Response:
+        try:
+            result = self._serialize_data_issue(DataIssuesManager(
+                self.rotkehlchen.data.db,
+            ).get_issue(issue_id))
+        except NotFoundError as e:
+            return api_response(wrap_in_fail_result(str(e)), status_code=HTTPStatus.NOT_FOUND)
+
+        return api_response(_wrap_in_ok_result(result=result, status_code=HTTPStatus.OK))
+
+    @accounting_update_required('Data issues are disabled', response=True)
+    def dismiss_data_issue(self, issue_id: int) -> Response:
+        try:
+            result = self._serialize_data_issue(DataIssuesManager(
+                self.rotkehlchen.data.db,
+            ).dismiss(issue_id))
+        except NotFoundError as e:
+            return api_response(wrap_in_fail_result(str(e)), status_code=HTTPStatus.NOT_FOUND)
+
+        return api_response(_wrap_in_ok_result(result=result, status_code=HTTPStatus.OK))
+
+    @accounting_update_required('Data issues are disabled', response=True)
+    def resolve_data_issue_manually(self, issue_id: int, note: str | None = None) -> Response:
+        try:
+            result = self._serialize_data_issue(DataIssuesManager(
+                self.rotkehlchen.data.db,
+            ).resolve_manually(issue_id=issue_id, note=note))
+        except NotFoundError as e:
+            return api_response(wrap_in_fail_result(str(e)), status_code=HTTPStatus.NOT_FOUND)
+        except InputError as e:
+            return api_response(wrap_in_fail_result(str(e)), status_code=HTTPStatus.CONFLICT)
+
+        return api_response(_wrap_in_ok_result(result=result, status_code=HTTPStatus.OK))
+
+    @accounting_update_required('Data issues are disabled', response=True)
+    def retry_data_issue_auto_remediation(self, issue_id: int) -> Response:
+        try:
+            result = self._serialize_data_issue(DataIssuesManager(
+                self.rotkehlchen.data.db,
+            ).retry_auto_remediation(issue_id))
+        except NotFoundError as e:
+            return api_response(wrap_in_fail_result(str(e)), status_code=HTTPStatus.NOT_FOUND)
+        except InputError as e:
+            return api_response(wrap_in_fail_result(str(e)), status_code=HTTPStatus.CONFLICT)
+
+        return api_response(_wrap_in_ok_result(result=result, status_code=HTTPStatus.OK))
 
     @async_api_call()
     @accounting_update_required('Historical balances are disabled')

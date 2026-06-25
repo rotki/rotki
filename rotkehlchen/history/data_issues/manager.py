@@ -2,6 +2,7 @@ import json
 import logging
 from typing import TYPE_CHECKING, Any, cast
 
+from rotkehlchen.db.filtering import DataIssuesFilterQuery
 from rotkehlchen.errors.misc import InputError, NotFoundError
 from rotkehlchen.history.data_issues.constants import (
     ALLOWED_STATE_TRANSITIONS,
@@ -160,30 +161,45 @@ class DataIssuesManager:
                 )
         return issue_id
 
-    def list_issues(self, filters: DataIssueFilters | None = None) -> list[DataIssue]:
+    def list_issues(
+            self,
+            filters: DataIssueFilters | DataIssuesFilterQuery | None = None,
+    ) -> list[DataIssue]:
         query = f'SELECT {DATA_ISSUE_SELECT_COLUMNS} FROM data_issues'
         where_parts: list[str] = []
         bindings: list[Any] = []
-        if filters is not None:
-            for column, value in (
-                ('kind', filters.kind),
-                ('state', filters.state),
-                ('location', filters.location),
-                ('location_label', filters.location_label),
-                ('protocol', filters.protocol),
-                ('asset', filters.asset),
-            ):
-                if value is not None:
-                    where_parts.append(f'{column} = ?')
-                    bindings.append(value)
+        if isinstance(filters, DataIssuesFilterQuery):
+            filterstr, bindings = filters.prepare()
+            query += f' {filterstr}'
+        else:
+            if filters is not None:
+                for column, value in (
+                    ('kind', filters.kind),
+                    ('state', filters.state),
+                    ('location', filters.location),
+                    ('location_label', filters.location_label),
+                    ('protocol', filters.protocol),
+                    ('asset', filters.asset),
+                ):
+                    if value is not None:
+                        where_parts.append(f'{column} = ?')
+                        bindings.append(value)
 
-        if len(where_parts) != 0:
-            query += ' WHERE ' + ' AND '.join(where_parts)
-        query += ' ORDER BY ts_start DESC, id DESC'
+            if len(where_parts) != 0:
+                query += ' WHERE ' + ' AND '.join(where_parts)
+            query += ' ORDER BY ts_start DESC, id DESC'
 
         with self.db.conn.read_ctx() as cursor:
             cursor.execute(query, bindings)
             return [_row_to_data_issue(row) for row in cursor]
+
+    def count_issues(self, filter_query: DataIssuesFilterQuery) -> int:
+        filterstr, bindings = filter_query.prepare(with_pagination=False, with_order=False)
+        with self.db.conn.read_ctx() as cursor:
+            return cursor.execute(
+                f'SELECT COUNT(*) FROM data_issues {filterstr}',
+                bindings,
+            ).fetchone()[0]
 
     def get_issue(self, issue_id: int) -> DataIssue:
         with self.db.conn.read_ctx() as cursor:
@@ -236,11 +252,14 @@ class DataIssuesManager:
         return _row_to_data_issue(row)
 
     def dismiss(self, issue_id: int) -> DataIssue:
+        issue = self.get_issue(issue_id)
+        payload = dict(issue.payload)
+        payload.pop('resolution', None)
         with self.db.user_write() as write_cursor:
             row = write_cursor.execute(
-                'UPDATE data_issues SET state = ? WHERE id = ? RETURNING '
-                f'{DATA_ISSUE_SELECT_COLUMNS}',
-                (IssueState.DISMISSED, issue_id),
+                'UPDATE data_issues SET state = ?, payload_json = ?, resolved_at = NULL '
+                f'WHERE id = ? RETURNING {DATA_ISSUE_SELECT_COLUMNS}',
+                (IssueState.DISMISSED, json.dumps(payload, separators=(',', ':')), issue_id),
             ).fetchone()
         if row is None:
             raise NotFoundError(f'Data issue with id {issue_id} not found')
@@ -249,9 +268,13 @@ class DataIssuesManager:
     def resolve_manually(self, issue_id: int, note: str | None = None) -> DataIssue:
         issue = self.get_issue(issue_id)
         if issue.state == IssueState.DISMISSED:
-            raise InputError('Cannot resolve a dismissed data issue')
+            raise InputError(
+                f'Cannot resolve a dismissed data issue. Current state is {issue.state}',
+            )
         if issue.state == IssueState.RESOLVED:
-            return issue
+            raise InputError(
+                f'Cannot resolve an already resolved data issue. Current state is {issue.state}',
+            )
 
         payload = issue.payload
         resolution: dict[str, Any] = {'manual': True}
@@ -269,6 +292,25 @@ class DataIssuesManager:
                     ts_now(),
                     issue_id,
                 ),
+            ).fetchone()
+        if row is None:
+            raise NotFoundError(f'Data issue with id {issue_id} not found')
+        return _row_to_data_issue(row)
+
+    def retry_auto_remediation(self, issue_id: int) -> DataIssue:
+        issue = self.get_issue(issue_id)
+        if issue.state in {IssueState.OPEN, IssueState.AUTO_REMEDIATING}:
+            return issue
+        if issue.state == IssueState.DISMISSED:
+            raise InputError(f'Cannot retry auto-remediation for dismissed data issue. Current state is {issue.state}')  # noqa: E501
+
+        payload = dict(issue.payload)
+        payload.pop('resolution', None)
+        with self.db.user_write() as write_cursor:
+            row = write_cursor.execute(
+                'UPDATE data_issues SET state = ?, payload_json = ?, resolved_at = NULL '
+                f'WHERE id = ? RETURNING {DATA_ISSUE_SELECT_COLUMNS}',
+                (IssueState.OPEN, json.dumps(payload, separators=(',', ':')), issue_id),
             ).fetchone()
         if row is None:
             raise NotFoundError(f'Data issue with id {issue_id} not found')

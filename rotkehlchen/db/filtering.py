@@ -2558,6 +2558,70 @@ class AccountingRulesFilterQuery(DBFilterQuery):
         return filter_query
 
 
+@dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
+class DataIssuesFilterQuery(DBFilterQuery):
+    """Filter query for data issues inbox rows."""
+
+    @classmethod
+    def make(
+            cls,
+            and_op: bool = True,
+            limit: int | None = None,
+            offset: int | None = None,
+            from_ts: Timestamp | None = None,
+            to_ts: Timestamp | None = None,
+            states: Sequence[str] | None = None,
+            kinds: Sequence[str] | None = None,
+            location: Location | None = None,
+            location_label: str | None = None,
+            asset: 'Asset | None' = None,
+    ) -> Self:
+        filter_query = cls.create(
+            and_op=and_op,
+            limit=limit,
+            offset=offset,
+            order_by_rules=(('ts_start', False), ('id', False)),
+        )
+        filters: list[DBFilter] = []
+        if states is not None and len(states) != 0:
+            filters.append(DBMultiStringFilter(and_op=True, column='state', values=states))
+        if kinds is not None and len(kinds) != 0:
+            filters.append(DBMultiStringFilter(and_op=True, column='kind', values=kinds))
+        if location is not None:
+            filters.append(DBEqualsFilter(
+                and_op=True,
+                column='location',
+                value=location.serialize_for_db(),
+            ))
+        if location_label is not None:
+            filters.append(DBEqualsFilter(
+                and_op=True,
+                column='location_label',
+                value=location_label,
+            ))
+        if asset is not None:
+            filters.append(DBEqualsFilter(
+                and_op=True,
+                column='asset',
+                value=asset.resolve_swapped_for().identifier,
+            ))
+        if from_ts is not None:
+            filters.append(DBTimestampFilter(
+                and_op=True,
+                from_ts=from_ts,
+                timestamp_field='ts_end',
+            ))
+        if to_ts is not None:
+            filters.append(DBTimestampFilter(
+                and_op=True,
+                to_ts=to_ts,
+                timestamp_field='ts_start',
+            ))
+
+        filter_query.filters = filters
+        return filter_query
+
+
 class PaginatedFilterQuery(DBFilterQuery):
     """Filter for queries that only require pagination"""
 

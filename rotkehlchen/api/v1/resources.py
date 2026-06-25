@@ -78,6 +78,8 @@ from rotkehlchen.api.v1.schemas import (
     CustomizedEventDuplicatesFixSchema,
     CustomizedEventDuplicatesIgnoreSchema,
     DataImportSchema,
+    DataIssueManualResolveSchema,
+    DataIssuesFilterSchema,
     DeletePremiumDeviceSchema,
     DetectTokensSchema,
     EditAccountingRuleSchema,
@@ -239,6 +241,7 @@ from rotkehlchen.db.filtering import (
     AssetsFilterQuery,
     CounterpartyAssetMappingsFilterQuery,
     CustomAssetsFilterQuery,
+    DataIssuesFilterQuery,
     DBFilterQuery,
     HistoricalBalancesFilterQuery,
     HistoryBaseEntryFilterQuery,
@@ -3628,6 +3631,47 @@ class EventsAnalysisResource(BaseMethodView):
             from_ts=from_timestamp,
             to_ts=to_timestamp,
         )
+
+
+class DataIssuesResource(BaseMethodView):
+
+    get_schema = DataIssuesFilterSchema()
+
+    @require_loggedin_user()
+    @use_kwargs(get_schema, location='json_and_query')
+    def get(self, filter_query: DataIssuesFilterQuery) -> Response:
+        return self.rest_api.get_data_issues(filter_query=filter_query)
+
+
+class DataIssueResource(BaseMethodView):
+
+    @require_loggedin_user()
+    def get(self, issue_id: int) -> Response:
+        return self.rest_api.get_data_issue(issue_id=issue_id)
+
+
+class DataIssueDismissResource(BaseMethodView):
+
+    @require_loggedin_user()
+    def patch(self, issue_id: int) -> Response:
+        return self.rest_api.dismiss_data_issue(issue_id=issue_id)
+
+
+class DataIssueResolveManuallyResource(BaseMethodView):
+
+    patch_schema = DataIssueManualResolveSchema()
+
+    @require_loggedin_user()
+    @use_kwargs(patch_schema, location='json')
+    def patch(self, issue_id: int, note: str | None) -> Response:
+        return self.rest_api.resolve_data_issue_manually(issue_id=issue_id, note=note)
+
+
+class DataIssueRetryAutoRemediationResource(BaseMethodView):
+
+    @require_loggedin_user()
+    def post(self, issue_id: int) -> Response:
+        return self.rest_api.retry_data_issue_auto_remediation(issue_id=issue_id)
 
 
 class TimestampHistoricalBalanceResource(BaseMethodView):
