@@ -9,6 +9,7 @@ import { useHistoricPriceCache } from '@/modules/assets/prices/use-historic-pric
 import { usePriceTaskManager } from '@/modules/assets/prices/use-price-task-manager';
 import { ApiValidationError } from '@/modules/core/api/types/errors';
 import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
+import ScrollableDialogContent from '@/modules/core/table/ScrollableDialogContent.vue';
 import { TableId, useRememberTableSorting } from '@/modules/core/table/use-remember-table-sorting';
 import { PriceOracle } from '@/modules/settings/types/price-oracle';
 import DateDisplay from '@/modules/shell/components/display/DateDisplay.vue';
@@ -172,13 +173,9 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div>
+  <ScrollableDialogContent fill>
     <RuiDataTable
       v-model:sort="sort"
-      class="table-inside-dialog"
-      :class="{
-        'max-h-full h-[calc(100vh-245px)]': isPinned,
-      }"
       :cols="headers"
       :rows="formattedItems"
       :dense="isPinned"
@@ -266,9 +263,11 @@ onMounted(async () => {
         </AmountInput>
       </template>
     </RuiDataTable>
-    <slot
-      name="actions"
-      :items="formattedItems"
-    />
-  </div>
+    <template #footer>
+      <slot
+        name="actions"
+        :items="formattedItems"
+      />
+    </template>
+  </ScrollableDialogContent>
 </template>

@@ -2,6 +2,7 @@
 import type { DataTableColumn } from '@rotki/ui-library';
 import type { HistoryEventEntry } from '@/modules/history/events/schemas';
 import type { UnmatchedAssetMovement } from '@/modules/history/events/use-unmatched-asset-movements';
+import ScrollableDialogContent from '@/modules/core/table/ScrollableDialogContent.vue';
 import BadgeDisplay from '@/modules/history/BadgeDisplay.vue';
 import { getEventEntryFromCollection } from '@/modules/history/event-utils';
 import HistoryEventAsset from '@/modules/history/events/HistoryEventAsset.vue';
@@ -129,11 +130,11 @@ const emptyDescription = computed<string>(() =>
 const descriptionEl = useTemplateRef<HTMLElement>('description');
 const { height: descriptionHeight } = useElementSize(descriptionEl);
 
-const pinnedTableStyle = computed<Record<string, string> | undefined>(() => {
-  if (!isPinned)
-    return undefined;
-  return { height: `calc(100vh - 15.4rem - ${get(descriptionHeight)}px)` };
-});
+const tableMaxHeight = computed<string>(() =>
+  isPinned
+    ? `calc(100vh - 15.4rem - ${get(descriptionHeight)}px)`
+    : 'calc(100vh - 23rem)',
+);
 
 function getRowClass(row: UnmatchedMovementRow): string {
   const classes = ['transition-all'];
@@ -169,184 +170,129 @@ function getRowClass(row: UnmatchedMovementRow): string {
         {{ t('asset_movement_matching.actions_pin.pin_section') }}
       </RuiButton>
     </div>
-    <RuiDataTable
-      v-model="selected"
-      :cols="columns"
-      :rows="rows"
-      row-attr="groupIdentifier"
-      :item-class="getRowClass"
-      outlined
-      dense
-      multi-page-select
-      :loading="loading"
-      :style="pinnedTableStyle"
-      :class="!isPinned ? 'max-h-[calc(100vh-23rem)]' : '!max-h-none'"
-      class="table-inside-dialog"
-      :empty="{ description: emptyDescription }"
-    >
-      <template
-        v-if="matchDisabled"
-        #body.prepend
+    <ScrollableDialogContent :max-height="tableMaxHeight">
+      <RuiDataTable
+        v-model="selected"
+        :cols="columns"
+        :rows="rows"
+        row-attr="groupIdentifier"
+        :item-class="getRowClass"
+        outlined
+        dense
+        multi-page-select
+        :loading="loading"
+        :empty="{ description: emptyDescription }"
       >
-        <tr>
-          <td :colspan="columns.length + 1">
-            <RuiAlert
-              type="warning"
-              size="sm"
-              class="whitespace-break-spaces !py-0.5 !rounded-none"
-            >
-              <i18n-t
-                v-if="premium"
-                scope="global"
-                keypath="asset_movement_matching.premium.premium_tooltip"
-              >
-                <template #tier>
-                  <strong>{{ matchMinimumTier }}</strong>
-                </template>
-                <template #currentTier>
-                  <strong>{{ currentTier }}</strong>
-                </template>
-                <template #link>
-                  <ExternalLink
-                    premium
-                    color="primary"
-                  >
-                    {{ t('asset_movement_matching.premium.link') }}
-                  </ExternalLink>
-                </template>
-              </i18n-t>
-              <i18n-t
-                v-else
-                scope="global"
-                keypath="asset_movement_matching.premium.free_tooltip"
-              >
-                <template #tier>
-                  <strong>{{ matchMinimumTier }}</strong>
-                </template>
-                <template #link>
-                  <ExternalLink
-                    premium
-                    color="primary"
-                  >
-                    {{ t('asset_movement_matching.premium.link') }}
-                  </ExternalLink>
-                </template>
-              </i18n-t>
-            </RuiAlert>
-          </td>
-        </tr>
-      </template>
-      <template #item.asset="{ row }">
-        <div class="flex items-center gap-2">
-          <HistoryEventAsset
-            :dense="isPinned"
-            disable-options
-            :event="row.entry"
-          />
-          <RuiTooltip
-            v-if="row.isFiat"
-            :open-delay="400"
-            :popper="{ placement: 'top' }"
-            tooltip-class="max-w-80"
-          >
-            <template #activator>
-              <RuiChip
-                size="sm"
-                color="warning"
-              >
-                {{ t('asset_movement_matching.fiat_hint.label') }}
-              </RuiChip>
-            </template>
-            {{ t('asset_movement_matching.fiat_hint.tooltip') }}
-          </RuiTooltip>
-        </div>
-      </template>
-      <template #item.eventSubtype="{ row }">
-        <BadgeDisplay>
-          {{ getAssetMovementsType(row.eventSubtype) }}
-        </BadgeDisplay>
-      </template>
-      <template #item.location="{ row }">
-        <LocationDisplay
-          size="24px"
-          :identifier="row.location"
-        />
-      </template>
-      <template #item.timestamp="{ row }">
-        <DateDisplay
-          :timestamp="row.timestamp"
-          milliseconds
-        />
-        <div
-          v-if="isPinned"
-          class="flex flex-wrap items-center gap-x-1.5"
+        <template
+          v-if="matchDisabled"
+          #body.prepend
         >
-          <BadgeDisplay class="!leading-6 my-1">
-            {{ getAssetMovementsType(row.eventSubtype) }}
-          </BadgeDisplay>
-          <LocationDisplay
-            class="[&_div]:!justify-start"
-            size="16px"
-            :identifier="row.location"
-            horizontal
-          />
-        </div>
-      </template>
-      <template #item.actions="{ row }">
-        <div class="flex items-center gap-2">
-          <RuiTooltip
-            :open-delay="400"
-            :popper="{ placement: 'top' }"
-          >
-            <template #activator>
-              <RuiButton
+          <tr>
+            <td :colspan="columns.length + 1">
+              <RuiAlert
+                type="warning"
                 size="sm"
-                variant="outlined"
-                icon
-                color="primary"
-                class="!px-2 h-[30px]"
-                @click="emit('show-in-events', row.original)"
+                class="whitespace-break-spaces !py-0.5 !rounded-none"
               >
-                <RuiIcon
-                  size="16"
-                  name="lu-external-link"
-                />
-              </RuiButton>
-            </template>
-            {{ t('asset_movement_matching.dialog.show_in_events') }}
-          </RuiTooltip>
-          <template v-if="showRestore">
+                <i18n-t
+                  v-if="premium"
+                  scope="global"
+                  keypath="asset_movement_matching.premium.premium_tooltip"
+                >
+                  <template #tier>
+                    <strong>{{ matchMinimumTier }}</strong>
+                  </template>
+                  <template #currentTier>
+                    <strong>{{ currentTier }}</strong>
+                  </template>
+                  <template #link>
+                    <ExternalLink
+                      premium
+                      color="primary"
+                    >
+                      {{ t('asset_movement_matching.premium.link') }}
+                    </ExternalLink>
+                  </template>
+                </i18n-t>
+                <i18n-t
+                  v-else
+                  scope="global"
+                  keypath="asset_movement_matching.premium.free_tooltip"
+                >
+                  <template #tier>
+                    <strong>{{ matchMinimumTier }}</strong>
+                  </template>
+                  <template #link>
+                    <ExternalLink
+                      premium
+                      color="primary"
+                    >
+                      {{ t('asset_movement_matching.premium.link') }}
+                    </ExternalLink>
+                  </template>
+                </i18n-t>
+              </RuiAlert>
+            </td>
+          </tr>
+        </template>
+        <template #item.asset="{ row }">
+          <div class="flex items-center gap-2">
+            <HistoryEventAsset
+              :dense="isPinned"
+              disable-options
+              :event="row.entry"
+            />
             <RuiTooltip
+              v-if="row.isFiat"
               :open-delay="400"
               :popper="{ placement: 'top' }"
+              tooltip-class="max-w-80"
             >
               <template #activator>
-                <RuiButton
+                <RuiChip
                   size="sm"
-                  color="primary"
-                  :loading="ignoreLoading"
-                  @click="emit('restore', row.original)"
+                  color="warning"
                 >
-                  {{ t('asset_movement_matching.dialog.restore') }}
-                </RuiButton>
+                  {{ t('asset_movement_matching.fiat_hint.label') }}
+                </RuiChip>
               </template>
-              {{ t('asset_movement_matching.dialog.restore_tooltip') }}
+              {{ t('asset_movement_matching.fiat_hint.tooltip') }}
             </RuiTooltip>
-          </template>
+          </div>
+        </template>
+        <template #item.eventSubtype="{ row }">
+          <BadgeDisplay>
+            {{ getAssetMovementsType(row.eventSubtype) }}
+          </BadgeDisplay>
+        </template>
+        <template #item.location="{ row }">
+          <LocationDisplay
+            size="24px"
+            :identifier="row.location"
+          />
+        </template>
+        <template #item.timestamp="{ row }">
+          <DateDisplay
+            :timestamp="row.timestamp"
+            milliseconds
+          />
           <div
-            v-else
-            class="flex"
-            :class="isPinned ? 'flex-wrap gap-1' : 'gap-2'"
+            v-if="isPinned"
+            class="flex flex-wrap items-center gap-x-1.5"
           >
-            <RuiButton
-              size="sm"
-              color="primary"
-              :class="{ '!py-0.5': isPinned }"
-              :disabled="matchDisabled"
-              @click="emit('select', row.original)"
-            >
-              {{ t('asset_movement_matching.dialog.find_match') }}
-            </RuiButton>
+            <BadgeDisplay class="!leading-6 my-1">
+              {{ getAssetMovementsType(row.eventSubtype) }}
+            </BadgeDisplay>
+            <LocationDisplay
+              class="[&_div]:!justify-start"
+              size="16px"
+              :identifier="row.location"
+              horizontal
+            />
+          </div>
+        </template>
+        <template #item.actions="{ row }">
+          <div class="flex items-center gap-2">
             <RuiTooltip
               :open-delay="400"
               :popper="{ placement: 'top' }"
@@ -355,18 +301,72 @@ function getRowClass(row: UnmatchedMovementRow): string {
                 <RuiButton
                   size="sm"
                   variant="outlined"
-                  :class="{ '!py-0.5': isPinned }"
-                  :loading="ignoreLoading"
-                  @click="emit('ignore', row.original)"
+                  icon
+                  color="primary"
+                  class="!px-2 h-[30px]"
+                  @click="emit('show-in-events', row.original)"
                 >
-                  {{ t('asset_movement_matching.dialog.ignore') }}
+                  <RuiIcon
+                    size="16"
+                    name="lu-external-link"
+                  />
                 </RuiButton>
               </template>
-              {{ t('asset_movement_matching.dialog.ignore_tooltip') }}
+              {{ t('asset_movement_matching.dialog.show_in_events') }}
             </RuiTooltip>
+            <template v-if="showRestore">
+              <RuiTooltip
+                :open-delay="400"
+                :popper="{ placement: 'top' }"
+              >
+                <template #activator>
+                  <RuiButton
+                    size="sm"
+                    color="primary"
+                    :loading="ignoreLoading"
+                    @click="emit('restore', row.original)"
+                  >
+                    {{ t('asset_movement_matching.dialog.restore') }}
+                  </RuiButton>
+                </template>
+                {{ t('asset_movement_matching.dialog.restore_tooltip') }}
+              </RuiTooltip>
+            </template>
+            <div
+              v-else
+              class="flex"
+              :class="isPinned ? 'flex-wrap gap-1' : 'gap-2'"
+            >
+              <RuiButton
+                size="sm"
+                color="primary"
+                :class="{ '!py-0.5': isPinned }"
+                :disabled="matchDisabled"
+                @click="emit('select', row.original)"
+              >
+                {{ t('asset_movement_matching.dialog.find_match') }}
+              </RuiButton>
+              <RuiTooltip
+                :open-delay="400"
+                :popper="{ placement: 'top' }"
+              >
+                <template #activator>
+                  <RuiButton
+                    size="sm"
+                    variant="outlined"
+                    :class="{ '!py-0.5': isPinned }"
+                    :loading="ignoreLoading"
+                    @click="emit('ignore', row.original)"
+                  >
+                    {{ t('asset_movement_matching.dialog.ignore') }}
+                  </RuiButton>
+                </template>
+                {{ t('asset_movement_matching.dialog.ignore_tooltip') }}
+              </RuiTooltip>
+            </div>
           </div>
-        </div>
-      </template>
-    </RuiDataTable>
+        </template>
+      </RuiDataTable>
+    </ScrollableDialogContent>
   </div>
 </template>

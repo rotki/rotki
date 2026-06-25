@@ -19,6 +19,10 @@ export class PasswordManager {
     this.store.clear();
   };
 
+  private readonly hasStoredPassword = (key: string): boolean => Boolean(this.store.store?.[key]);
+
+  private readonly hasAnyStoredPassword = (): boolean => Object.keys(this.store.store ?? {}).length > 0;
+
   private readonly getPassword = (key: string) => {
     const buffer = this.store.store?.[key];
     if (buffer)
@@ -37,15 +41,22 @@ export class PasswordManager {
   }
 
   async retrievePassword(username: string): Promise<string> {
-    let password = '';
-    if (this.getEncryptionAvailability())
-      password = this.getPassword(username);
+    // Never touch safeStorage (which triggers an OS keyring prompt) unless a
+    // password was actually saved for this user. If nothing is stored, the user
+    // never opted in to saving the password, so there is nothing to decrypt.
+    if (!this.hasStoredPassword(username))
+      return '';
 
-    return password;
+    if (!this.getEncryptionAvailability())
+      return '';
+
+    return this.getPassword(username);
   }
 
   async clearPasswords(): Promise<void> {
-    if (this.getEncryptionAvailability())
+    // Clearing the on-disk store does not require safeStorage; only access the
+    // keyring when there is actually a saved password to clear.
+    if (this.hasAnyStoredPassword())
       this.clearPassword();
   }
 }

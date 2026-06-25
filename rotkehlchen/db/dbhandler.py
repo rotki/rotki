@@ -68,6 +68,7 @@ from rotkehlchen.db.filtering import UserNotesFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.db.loopring import DBLoopring
 from rotkehlchen.db.misc import detect_sqlcipher_version, evaluate_integrity_check_rows
+from rotkehlchen.db.pending_transactions import PendingTransactionsTracker
 from rotkehlchen.db.schema import DB_SCRIPT_CREATE_TABLES
 from rotkehlchen.db.schema_transient import DB_SCRIPT_CREATE_TRANSIENT_TABLES
 from rotkehlchen.db.settings import (
@@ -253,6 +254,9 @@ class DBHandler:
         self.get_or_create_token_lock = Semaphore()
         self.match_asset_movements_lock = Semaphore()
         self._ignored_asset_ids_cache: dict[bool, set[str]] = {}
+        # tracks, in memory, which chains may have transactions pending receipt fetching or
+        # decoding so the periodic scheduler can skip its full-table "is there work?" scans
+        self.pending_txs_tracker = PendingTransactionsTracker()
         self.password = password
         self._connect()
         self._check_unfinished_upgrades(resume_from_backup=resume_from_backup)
@@ -3212,7 +3216,9 @@ class DBHandler:
             to_ts = ts_now()
 
         if settings is None:
-            settings = self.get_settings(cursor)
+            # cached settings are kept in sync on write, so avoid a full settings DB
+            # read + deserialization on every per-asset timed-balances query
+            settings = CachedSettings().get_settings()
         querystr = (
             'SELECT timestamp, amount, usd_value, category FROM timed_balances '
             'WHERE timestamp BETWEEN ? AND ? AND currency=?'
@@ -3542,7 +3548,7 @@ class DBHandler:
         """
         with self.conn.read_ctx() as cursor:
             ignored_asset_ids = self.get_ignored_asset_ids(cursor)
-            treat_eth2_as_eth = self.get_settings(cursor).treat_eth2_as_eth
+            treat_eth2_as_eth = CachedSettings().get_settings().treat_eth2_as_eth
             cursor.execute(
                 'SELECT timestamp, currency, amount, usd_value, category FROM timed_balances '
                 'WHERE timestamp=(SELECT MAX(timestamp) from timed_balances) AND category = ? '
@@ -4423,8 +4429,9 @@ class DBHandler:
     def get_chains_to_detect_evm_accounts(self) -> list[SUPPORTED_EVM_EVMLIKE_CHAINS_TYPE]:
         """Reads the DB for the excluding chains and calculate which chains to
         perform EVM account detection on"""
-        with self.conn.read_ctx() as cursor:
-            excluded_chains = self.get_settings(cursor).evmchains_to_skip_detection
+        # cached settings are kept in sync on write, so read the excluded chains from there
+        # to avoid a full settings DB read + deserialization (and an extra read_ctx)
+        excluded_chains = CachedSettings().get_settings().evmchains_to_skip_detection
         return list(set(SUPPORTED_EVM_EVMLIKE_CHAINS) - set(excluded_chains))
 
     def _insert_into_credentials_mappings(

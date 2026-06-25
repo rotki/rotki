@@ -397,14 +397,20 @@ class TaskManager:
         lock acquired.
         """
         dbevmtx = DBEvmTx(self.database)
+        tracker = self.database.pending_txs_tracker
+        now = ts_now()
         shuffled_chains = list(EVM_CHAINS_WITH_TRANSACTIONS)
         random.shuffle(shuffled_chains)
         for blockchain in shuffled_chains:
+            if tracker.should_scan_receipts(blockchain, now) is False:
+                continue  # recently scanned with no missing receipts, untouched since -> skip scan
+
             hash_results = dbevmtx.get_transaction_hashes_no_receipt(
                 tx_filter_query=EvmTransactionsFilterQuery.make(chain_id=blockchain.to_chain_id()),
                 limit=TX_RECEIPTS_QUERY_LIMIT,
             )
             if len(hash_results) == 0:
+                tracker.mark_receipts_clean(blockchain, now)
                 continue
 
             evm_inquirer = self.chains_aggregator.get_chain_manager(blockchain)
@@ -459,9 +465,14 @@ class TaskManager:
         lock acquired.
         """
 
+        tracker = self.database.pending_txs_tracker
+        now = ts_now()
         shuffled_chains = list(CHAINS_WITH_TRANSACTION_DECODERS)
         random.shuffle(shuffled_chains)
         for blockchain in shuffled_chains:
+            if tracker.should_scan_decoding(blockchain, now) is False:
+                continue  # recently scanned with nothing to decode, untouched since -> skip scan
+
             if blockchain == SupportedBlockchain.SOLANA:
                 number_of_tx_to_decode = DBSolanaTx(self.database).count_hashes_not_decoded(
                     filter_query=SolanaTransactionsNotDecodedFilterQuery.make(),
@@ -472,6 +483,7 @@ class TaskManager:
                 )
 
             if number_of_tx_to_decode == 0:
+                tracker.mark_decoding_clean(blockchain, now)
                 continue
 
             chain_inquirer = self.chains_aggregator.get_chain_manager(blockchain)

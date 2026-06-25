@@ -56,7 +56,11 @@ from rotkehlchen.tests.utils.ethereum import (
     get_decoded_events_of_transaction,
     setup_ethereum_transactions_test,
 )
-from rotkehlchen.tests.utils.factories import make_evm_address, make_evm_tx_hash
+from rotkehlchen.tests.utils.factories import (
+    make_ethereum_transaction,
+    make_evm_address,
+    make_evm_tx_hash,
+)
 from rotkehlchen.tests.utils.mock import mock_evm_chains_with_transactions
 from rotkehlchen.tests.utils.premium import VALID_PREMIUM_KEY, VALID_PREMIUM_SECRET
 from rotkehlchen.types import (
@@ -315,6 +319,35 @@ def test_maybe_schedule_txreceipts_checks_all_chains(task_manager: TaskManager) 
         ]
         result = task_manager._maybe_schedule_evm_txreceipts()
         assert result is not None and len(result) == 1
+
+
+@pytest.mark.parametrize('max_tasks_num', [5])
+def test_maybe_schedule_txreceipts_skips_recently_clean_chain(task_manager: TaskManager) -> None:
+    """A chain found to have no transactions missing receipts must not be re-scanned on the
+    next tick, and must be scanned again once an insert invalidates it.
+
+    Guards the per-tick full-table scan from running every scheduler tick on an idle wallet.
+    """
+    with (
+        patch(
+            'rotkehlchen.tasks.manager.EVM_CHAINS_WITH_TRANSACTIONS',
+            new=(SupportedBlockchain.ETHEREUM,),
+        ),
+        patch('rotkehlchen.tasks.manager.DBEvmTx') as mock_evm_tx,
+    ):
+        scan = mock_evm_tx.return_value.get_transaction_hashes_no_receipt
+        scan.return_value = []  # no transactions missing receipts
+
+        assert task_manager._maybe_schedule_evm_txreceipts() is None
+        assert scan.call_count == 1  # scanned once, then marked clean
+
+        assert task_manager._maybe_schedule_evm_txreceipts() is None
+        assert scan.call_count == 1, 'recently-clean chain should not be scanned again'
+
+        # a newly added transaction invalidates the chain -> next tick scans again
+        task_manager.database.pending_txs_tracker.mark_receipts_dirty(SupportedBlockchain.ETHEREUM)
+        assert task_manager._maybe_schedule_evm_txreceipts() is None
+        assert scan.call_count == 2
 
 
 @pytest.mark.parametrize('max_tasks_num', [7])
@@ -1648,6 +1681,9 @@ def test_maybe_decode_transactions(task_manager: TaskManager) -> None:
             new=(SupportedBlockchain.SOLANA,),
         ),
     ):
+        # the previous block marked solana clean; new work appearing in production always
+        # goes through an invalidating DB write, so simulate that here
+        task_manager.database.pending_txs_tracker.mark_decoding_dirty(SupportedBlockchain.SOLANA)
         mock_solana_tx.return_value.count_hashes_not_decoded.return_value = 5
         result = task_manager._maybe_decode_transactions()
         assert result is not None and len(result) == 1
@@ -1676,6 +1712,64 @@ def test_maybe_decode_transactions_checks_all_chains(task_manager: TaskManager) 
         mock_solana_tx.return_value.count_hashes_not_decoded.return_value = 5  # solana has work
         result = task_manager._maybe_decode_transactions()
         assert result is not None and len(result) == 1
+
+
+@pytest.mark.parametrize('max_tasks_num', [5])
+def test_maybe_decode_transactions_skips_recently_clean_chain(task_manager: TaskManager) -> None:
+    """A chain found to have nothing to decode must not be re-scanned on the next tick, and
+    must be scanned again once an insert/redecode invalidates it.
+
+    Guards the per-tick COUNT(DISTINCT) join scan from running every scheduler tick.
+    """
+    task_manager.should_schedule = True
+    with (
+        patch(
+            'rotkehlchen.tasks.manager.CHAINS_WITH_TRANSACTION_DECODERS',
+            new=(SupportedBlockchain.ETHEREUM,),
+        ),
+        patch('rotkehlchen.tasks.manager.DBEvmTx') as mock_evm_tx,
+    ):
+        count = mock_evm_tx.return_value.count_hashes_not_decoded
+        count.return_value = 0  # nothing to decode
+
+        assert task_manager._maybe_decode_transactions() is None
+        assert count.call_count == 1  # scanned once, then marked clean
+
+        assert task_manager._maybe_decode_transactions() is None
+        assert count.call_count == 1, 'recently-clean chain should not be scanned again'
+
+        # a new receipt / redecode invalidates the chain -> next tick scans again
+        task_manager.database.pending_txs_tracker.mark_decoding_dirty(SupportedBlockchain.ETHEREUM)
+        assert task_manager._maybe_decode_transactions() is None
+        assert count.call_count == 2
+
+
+def test_pending_txs_tracker_invalidated_on_db_writes(database: 'DBHandler') -> None:
+    """The DB write paths that create pending work must invalidate the tracker, so the
+    scheduler picks the work up on the next tick rather than only after the safety-net TTL.
+    """
+    tracker = database.pending_txs_tracker
+    dbevmtx = DBEvmTx(database)
+    now = ts_now()
+
+    # adding a transaction (which has no receipt yet) marks the chain pending receipts
+    tracker.mark_receipts_clean(SupportedBlockchain.ETHEREUM, now)
+    tx = make_ethereum_transaction()
+    with database.user_write() as write_cursor:
+        dbevmtx.add_transactions(write_cursor, [tx], relevant_address=None)
+    assert tracker.should_scan_receipts(SupportedBlockchain.ETHEREUM, now) is True
+
+    # adding its receipt marks the chain pending decoding
+    tracker.mark_decoding_clean(SupportedBlockchain.ETHEREUM, now)
+    with database.user_write() as write_cursor:
+        dbevmtx.add_or_ignore_receipt_data(write_cursor, ChainID.ETHEREUM, {
+            'transactionHash': tx.tx_hash.hex(),
+            'type': '0x0',
+            'status': 1,
+            'contractAddress': None,
+            'logs': [],
+        })
+    assert tracker.should_scan_decoding(SupportedBlockchain.ETHEREUM, now) is True
 
 
 @pytest.mark.parametrize('max_tasks_num', [5])

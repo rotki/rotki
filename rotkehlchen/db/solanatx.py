@@ -14,7 +14,7 @@ from rotkehlchen.db.filtering import (
 )
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.db.utils import get_query_chunks
-from rotkehlchen.types import Location, SolanaAddress, Timestamp
+from rotkehlchen.types import Location, SolanaAddress, SupportedBlockchain, Timestamp
 
 if TYPE_CHECKING:
     from rotkehlchen.db.drivers.gevent import DBCursor
@@ -109,6 +109,8 @@ class DBSolanaTx(DBCommonTx[SolanaAddress, SolanaTransaction, Signature, SolanaT
                         ],
                     )
 
+        if len(newly_inserted) != 0:  # new solana txs are not decoded yet -> pending decoding
+            self.db.pending_txs_tracker.mark_decoding_dirty(SupportedBlockchain.SOLANA)
         return newly_inserted
 
     @staticmethod

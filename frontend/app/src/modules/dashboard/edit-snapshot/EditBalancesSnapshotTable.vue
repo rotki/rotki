@@ -6,6 +6,7 @@ import { ValueDisplay } from '@/modules/assets/amount-display/components';
 import AssetDetails from '@/modules/assets/AssetDetails.vue';
 import { isNft } from '@/modules/assets/nft-utils';
 import NftDetails from '@/modules/balances/nft/NftDetails.vue';
+import ScrollableDialogContent from '@/modules/core/table/ScrollableDialogContent.vue';
 import { TableId, useRememberTableSorting } from '@/modules/core/table/use-remember-table-sorting';
 import EditBalancesSnapshotDeleteDialog from '@/modules/dashboard/edit-snapshot/EditBalancesSnapshotDeleteDialog.vue';
 import EditBalancesSnapshotEntryDialog from '@/modules/dashboard/edit-snapshot/EditBalancesSnapshotEntryDialog.vue';
@@ -127,51 +128,52 @@ function add(): void {
         :label="t('dashboard.snapshot.search_asset')"
       />
     </div>
-    <RuiDataTable
-      v-model:sort="sort"
-      class="table-inside-dialog !max-h-[calc(100vh-26.25rem)]"
-      :cols="tableHeaders"
-      :rows="filteredData"
-      row-attr="assetIdentifier"
-      dense
-    >
-      <template #item.categoryLabel="{ row }">
-        <span>{{ toSentenceCase(row.categoryLabel) }}</span>
-      </template>
+    <ScrollableDialogContent max-height="calc(100vh - 26.25rem)">
+      <RuiDataTable
+        v-model:sort="sort"
+        :cols="tableHeaders"
+        :rows="filteredData"
+        row-attr="assetIdentifier"
+        dense
+      >
+        <template #item.categoryLabel="{ row }">
+          <span>{{ toSentenceCase(row.categoryLabel) }}</span>
+        </template>
 
-      <template #item.assetIdentifier="{ row }">
-        <AssetDetails
-          v-if="!isNft(row.assetIdentifier)"
-          class="[&_.avatar]:ml-1.5 [&_.avatar]:mr-2"
-          :asset="row.assetIdentifier"
-          :enable-association="false"
-        />
-        <NftDetails
-          v-else
-          :identifier="row.assetIdentifier"
-        />
-      </template>
+        <template #item.assetIdentifier="{ row }">
+          <AssetDetails
+            v-if="!isNft(row.assetIdentifier)"
+            class="[&_.avatar]:ml-1.5 [&_.avatar]:mr-2"
+            :asset="row.assetIdentifier"
+            :enable-association="false"
+          />
+          <NftDetails
+            v-else
+            :identifier="row.assetIdentifier"
+          />
+        </template>
 
-      <template #item.amount="{ row }">
-        <ValueDisplay :value="row.amount" />
-      </template>
+        <template #item.amount="{ row }">
+          <ValueDisplay :value="row.amount" />
+        </template>
 
-      <template #item.usdValue="{ row }">
-        <SnapshotFiatDisplay
-          :value="row.usdValue"
-          :timestamp="timestamp"
-        />
-      </template>
+        <template #item.usdValue="{ row }">
+          <SnapshotFiatDisplay
+            :value="row.usdValue"
+            :timestamp="timestamp"
+          />
+        </template>
 
-      <template #item.action="{ row }">
-        <RowActions
-          :edit-tooltip="t('dashboard.snapshot.edit.dialog.actions.edit_item')"
-          :delete-tooltip="t('dashboard.snapshot.edit.dialog.actions.delete_item')"
-          @edit-click="editClick(row)"
-          @delete-click="deleteClick(row)"
-        />
-      </template>
-    </RuiDataTable>
+        <template #item.action="{ row }">
+          <RowActions
+            :edit-tooltip="t('dashboard.snapshot.edit.dialog.actions.edit_item')"
+            :delete-tooltip="t('dashboard.snapshot.edit.dialog.actions.delete_item')"
+            @edit-click="editClick(row)"
+            @delete-click="deleteClick(row)"
+          />
+        </template>
+      </RuiDataTable>
+    </ScrollableDialogContent>
     <div
       class="border-t-2 border-rui-grey-300 dark:border-rui-grey-800 relative z-[2] flex items-center justify-between gap-4 p-2"
     >

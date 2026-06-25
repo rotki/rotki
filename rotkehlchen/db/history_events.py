@@ -1494,6 +1494,7 @@ class DBHistoryEvents:
             entries_limit=entries_limit,
             aggregate_by_group_ids=aggregate_by_group_ids,
             match_exact_events=match_exact_events,
+            include_ignored_group_identifiers=False,  # this method only returns result.events
         )
         return result.events
 
@@ -1505,6 +1506,7 @@ class DBHistoryEvents:
             aggregate_by_group_ids: bool = False,
             match_exact_events: bool = True,
             include_entries_with_limit_count: bool = False,
+            include_ignored_group_identifiers: bool = True,
     ) -> HistoryEventsResult:
         base_query, filters_bindings = self._create_history_events_query(
             filter_query=filter_query,
@@ -1617,20 +1619,25 @@ class DBHistoryEvents:
         # Determine which of the returned groups have any ignored assets. We do this as
         # a targeted lookup on only the current-page group_identifiers rather than via a
         # window function over all rows, allowing LIMIT early-termination in the data query.
-        if aggregate_by_group_ids:
-            page_group_ids = {event.group_identifier for _, event in output_grouped}
-        else:
-            page_group_ids = {event.group_identifier for event in output_flat}
+        # Callers that don't consume ignored_group_identifiers (get_history_events and thus
+        # get_history_events_internal) skip it entirely: on an unpaginated full-history fetch
+        # (e.g. the accounting pot) page_group_ids would otherwise be every group the user
+        # has, building a single IN(...) that exceeds SQLite's variable limit (32766) and is
+        # discarded anyway. Chunk the lookup for the callers that do need it.
         ignored_group_identifiers: set[str] = set()
-        if page_group_ids:
-            placeholders = ','.join('?' * len(page_group_ids))
-            ignored_group_identifiers = {
-                row[0] for row in cursor.execute(
-                    f'SELECT DISTINCT group_identifier FROM history_events '
-                    f'WHERE group_identifier IN ({placeholders}) AND ignored=1',
-                    list(page_group_ids),
+        if include_ignored_group_identifiers:
+            if aggregate_by_group_ids:
+                page_group_ids = [event.group_identifier for _, event in output_grouped]
+            else:
+                page_group_ids = [event.group_identifier for event in output_flat]
+            for chunk, placeholders in get_query_chunks(page_group_ids):
+                ignored_group_identifiers.update(
+                    row[0] for row in cursor.execute(
+                        f'SELECT DISTINCT group_identifier FROM history_events '
+                        f'WHERE group_identifier IN ({placeholders}) AND ignored=1',
+                        chunk,
+                    )
                 )
-            }
 
         if aggregate_by_group_ids is True:
             return HistoryEventsResult(

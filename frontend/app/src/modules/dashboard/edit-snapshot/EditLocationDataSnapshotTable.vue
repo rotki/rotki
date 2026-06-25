@@ -3,6 +3,7 @@ import type { DataTableColumn, DataTableSortData } from '@rotki/ui-library';
 import type { LocationDataSnapshot, LocationDataSnapshotPayload } from '@/modules/dashboard/snapshots';
 import { type BigNumber, bigNumberify } from '@rotki/common';
 import { useConfirmStore } from '@/modules/core/common/use-confirm-store';
+import ScrollableDialogContent from '@/modules/core/table/ScrollableDialogContent.vue';
 import { TableId, useRememberTableSorting } from '@/modules/core/table/use-remember-table-sorting';
 import EditLocationDataSnapshotForm from '@/modules/dashboard/edit-snapshot/EditLocationDataSnapshotForm.vue';
 import SnapshotFiatDisplay from '@/modules/dashboard/snapshots/components/SnapshotFiatDisplay.vue';
@@ -189,38 +190,39 @@ function showDeleteConfirmation(item: IndexedLocationDataSnapshot) {
 
 <template>
   <div>
-    <RuiDataTable
-      v-model:sort="sort"
-      class="table-inside-dialog !max-h-[calc(100vh-26.25rem)]"
-      :cols="tableHeaders"
-      :rows="data"
-      row-attr="location"
-      dense
-    >
-      <template #item.location="{ row }">
-        <LocationDisplay
-          :opens-details="false"
-          :identifier="row.location"
-        />
-      </template>
+    <ScrollableDialogContent max-height="calc(100vh - 26.25rem)">
+      <RuiDataTable
+        v-model:sort="sort"
+        :cols="tableHeaders"
+        :rows="data"
+        row-attr="location"
+        dense
+      >
+        <template #item.location="{ row }">
+          <LocationDisplay
+            :opens-details="false"
+            :identifier="row.location"
+          />
+        </template>
 
-      <template #item.usdValue="{ row }">
-        <SnapshotFiatDisplay
-          :value="row.usdValue"
-          :timestamp="timestamp"
-        />
-      </template>
+        <template #item.usdValue="{ row }">
+          <SnapshotFiatDisplay
+            :value="row.usdValue"
+            :timestamp="timestamp"
+          />
+        </template>
 
-      <template #item.action="{ row }">
-        <RowActions
-          :edit-disabled="!rateReady"
-          :edit-tooltip="t('dashboard.snapshot.edit.dialog.actions.edit_item')"
-          :delete-tooltip="t('dashboard.snapshot.edit.dialog.actions.delete_item')"
-          @edit-click="editClick(row)"
-          @delete-click="showDeleteConfirmation(row)"
-        />
-      </template>
-    </RuiDataTable>
+        <template #item.action="{ row }">
+          <RowActions
+            :edit-disabled="!rateReady"
+            :edit-tooltip="t('dashboard.snapshot.edit.dialog.actions.edit_item')"
+            :delete-tooltip="t('dashboard.snapshot.edit.dialog.actions.delete_item')"
+            @edit-click="editClick(row)"
+            @delete-click="showDeleteConfirmation(row)"
+          />
+        </template>
+      </RuiDataTable>
+    </ScrollableDialogContent>
     <div
       class="border-t-2 border-rui-grey-300 dark:border-rui-grey-800 relative z-[2] flex items-center justify-between gap-4 p-2"
     >

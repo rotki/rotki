@@ -397,3 +397,64 @@ def test_get_active_addresses(blockchain: 'ChainsAggregator') -> None:
 
     # Reset for other tests in the same session
     CachedSettings().update_entry('disabled_chain_queries', {})
+
+
+@pytest.mark.parametrize('ethereum_modules', [[]])
+@pytest.mark.parametrize('ethereum_accounts', [[]])
+def test_modify_blockchain_accounts_flushes_balance_cache(
+        blockchain: 'ChainsAggregator',
+) -> None:
+    """Regression test for balance result-cache invalidation on account changes.
+
+    The cached per-chain balance method was renamed to `_query_chain_balances` in commit
+    8fe3fdd874, but the `flush_cache` calls in `modify_blockchain_accounts` kept using the
+    old `query_balances` name, so the cache key never matched and the entry was never
+    invalidated. A non-ignore-cache balance query within the cache TTL would then return
+    stale balances (e.g. missing a newly added account).
+    """
+    chain = SupportedBlockchain.ETHEREUM
+    keys_before = set(blockchain.results_cache)
+    # Populate the cached full-chain balance query the way a non-ignore-cache query does.
+    # With no accounts the method short-circuits (no network) but still caches its result.
+    blockchain._query_chain_balances(blockchain=chain, ignore_cache=False, addresses=None)
+    cached_keys = set(blockchain.results_cache) - keys_before
+    assert len(cached_keys) == 1, 'the full-chain balance query should have been cached'
+
+    with blockchain.database.user_write() as write_cursor:
+        blockchain.modify_blockchain_accounts(
+            write_cursor=write_cursor,
+            blockchain=chain,
+            accounts=[make_evm_address()],
+            append_or_remove='append',
+        )
+
+    assert cached_keys.isdisjoint(blockchain.results_cache), (
+        'adding an account must invalidate the cached chain balance query'
+    )
+
+
+@pytest.mark.parametrize('ethereum_modules', [[]])
+@pytest.mark.parametrize('ethereum_accounts', [[]])
+def test_query_balances_skips_chains_without_accounts(
+        blockchain: 'ChainsAggregator',
+) -> None:
+    """Regression test: a full balance refresh must not touch the balances cache for
+    chains that have no tracked accounts.
+
+    Previously the refresh loop called `_update_blockchain_balances_cache` (which opens a
+    committed write transaction) for every supported chain on each refresh, even the ~14 a
+    typical user has no accounts on, deleting nothing each time.
+    """
+    with patch.object(
+        blockchain,
+        '_update_blockchain_balances_cache',
+        wraps=blockchain._update_blockchain_balances_cache,
+    ) as update_mock:
+        blockchain.query_balances(blockchain=None, ignore_cache=False)
+
+    updated_chains = {call.kwargs['blockchain'] for call in update_mock.call_args_list}
+    # with no accounts anywhere, only the beaconchain branch (handled before the guard)
+    # may update the cache; no account-less evm/bitcoin chain should.
+    assert updated_chains <= {SupportedBlockchain.ETHEREUM_BEACONCHAIN}, (
+        f'cache update ran for account-less chains: {updated_chains}'
+    )

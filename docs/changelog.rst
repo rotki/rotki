@@ -25,6 +25,15 @@ Changelog
 * :bug:`-` The login screen no longer pre-fills the username field with a remembered account that no longer exists.
 * :feature:`12002` Adding or editing a history event now uses a plain-language "Action" picker grouped by intent (Trade, Transfer, DeFi, Staking, etc.) with search and keyboard navigation, replacing the raw event-type and subtype dropdowns.
 * :feature:`12086` The "Create account" flow now starts with a mode chooser so creating a new local profile and restoring a database synced from rotki cloud are separate, focused paths.
+* :bug:`-` The "history out of sync" warning shown before generating a PnL report now lets you start the history sync right there, instead of only sending you to the history page.
+* :bug:`-` Trying to add an ETH staking validator on a plan that doesn't include staking now shows a clear message saying your plan has no staking access, instead of a confusing "ETH staking limit of 0 ETH" error.
+* :bug:`12463` Querying price for custom asset under certain conditions no longer fails the task.
+* :bug:`-` Tables shown inside dialogs (such as the PnL report "issues found" dialog with missing acquisitions/prices, and the snapshot editor) are scrollable again, so rows past the visible area are no longer cut off.
+* :bug:`-` The desktop app no longer accesses the OS keyring (triggering a keychain/keyring unlock prompt) when you create or open an account, unless you have chosen to save your password.
+* :bug:`-` PnL reports no longer fail for accounts with a very very large history.
+* :bug:`-` Adding or removing a blockchain account (or removing a spam token) now correctly invalidates the cached balances, so you no longer briefly see stale balances afterwards.
+* :bug:`-` Odos swaps now show the received amount before the router fee, so the fee no longer makes that asset go negative.
+* :bug:`-` rotki now notifies you when Blockscout is queried without an API key instead of silently skipping it.
 
 * :release:`1.43.2 <2026-06-18>`
 * :bug:`-` Manually refetching Hyperliquid transactions now also refetches Hyperliquid Core history, so missed Core events can be recovered.

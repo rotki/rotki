@@ -18,7 +18,7 @@ export const etherscanLink = 'https://etherscan.io/myapikey';
 
 export const heliusLink = 'https://dev.helius.xyz/dashboard/app';
 
-export const blockscoutLink = 'https://api.blockscout.com/account/api-key';
+export const blockscoutLink = 'https://dev.blockscout.com/';
 
 export const externalLinks = {
   premium: `${BASE_URL}products${UTM_PARAMS}`,

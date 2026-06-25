@@ -390,12 +390,9 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
                 chain_manager.transactions_decoder.premium = None
 
         # Also flush the cache of anything that is touched by eth2 validators since
-        # without premium we have a limit
+        # without premium we have a limit. eth2 validator balances live in balances.eth2
+        # and are cached via query_eth2_balances (not _query_chain_balances).
         self.flush_cache('query_eth2_balances')
-        self.flush_cache('query_balances')
-        self.flush_cache('query_balances', blockchain=SupportedBlockchain.ETHEREUM_BEACONCHAIN)
-        self.flush_cache('query_balances', blockchain=None, ignore_cache=False, addresses=None)
-        self.flush_cache('query_balances', blockchain=SupportedBlockchain.ETHEREUM_BEACONCHAIN, ignore_cache=False, addresses=None)  # noqa: E501
 
     def process_new_modules_list(self, module_names: list[ModuleName]) -> None:
         """Processes a new list of active modules
@@ -710,6 +707,12 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
         """
         xpub_manager = XpubManager(chains_aggregator=self)
         chains_to_query: list[SupportedBlockchain] = list(SupportedBlockchain) if blockchain is None else [blockchain]  # noqa: E501
+        # on a full query skip chains with no accounts to avoid a needless write tx each
+        if addresses is None or len(addresses) == 0:
+            chains_to_query = [
+                chain for chain in chains_to_query
+                if chain == SupportedBlockchain.ETHEREUM_BEACONCHAIN or len(self.accounts.get(chain)) > 0  # noqa: E501
+            ]
 
         def _query_one(chain: SupportedBlockchain) -> None:
             if chain == SupportedBlockchain.ETHEREUM_BEACONCHAIN:
@@ -803,6 +806,26 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
             # other accounts' full balance sheets don't get replaced by protocol-only data.
             new_balances = {address: balance for address, balance in new_balances.items() if address in accounts}  # type: ignore[assignment]  # per-chain key/value types are preserved  # noqa: E501
         existing_balances.update(new_balances)  # type: ignore[arg-type]  # chain/balance types match per chain
+
+    def flush_chain_balance_query_cache(self, blockchain: SupportedBlockchain) -> None:
+        """Invalidate the cached full-chain balance query result for the given chain.
+
+        Must be called whenever a chain's tracked balances change out of band (e.g. an
+        account is added/removed or a spam token is removed) so that the next
+        non-ignore-cache balance query re-queries the chain instead of serving stale data.
+
+        The cached method is `_query_chain_balances`, which is always called per-chain with
+        addresses=None for a full query, so (blockchain, addresses=None) is the only key
+        that the cache-honoring read path consults. Referencing the method's `__name__`
+        (instead of a hardcoded string) keeps this correct if it is ever renamed - a rename
+        turns the attribute access into a loud AttributeError rather than a silent no-op,
+        which is exactly the failure mode this method exists to prevent.
+        """
+        self.flush_cache(
+            self._query_chain_balances.__name__,
+            blockchain=blockchain,
+            addresses=None,
+        )
 
     def _update_blockchain_balances_cache(
             self,
@@ -974,7 +997,6 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
         lock = getattr(self, f'{chain_key}_lock')
         balances = self.balances.get(chain=blockchain)
         with lock:
-            self.flush_cache(f'query_{chain_key}_balances')
             chain_modify_init = self.chain_modify_init.get(blockchain)
             if chain_modify_init is not None:
                 chain_modify_init(blockchain, append_or_remove)
@@ -991,12 +1013,8 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
                     if chain_modify_remove is not None:
                         chain_modify_remove(blockchain, account)
 
-        # we are adding/removing accounts, make sure query cache is flushed
-        self.flush_cache('query_balances')
-        self.flush_cache('query_balances', blockchain=blockchain)
-        self.flush_cache('query_balances', blockchain=None, ignore_cache=False, addresses=None)
-        self.flush_cache('query_balances', blockchain=blockchain, ignore_cache=False, addresses=None)  # noqa: E501
-        self.flush_cache(f'query_{chain_key}_balances')
+        # we are adding/removing accounts, so invalidate the cached chain balance query
+        self.flush_chain_balance_query_cache(blockchain)
 
         # recalculate totals
         if append_or_remove == 'remove':  # at addition no balances are queried so no need
@@ -1175,10 +1193,6 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
                 ownership_proportion=ownership_proportion,
             )
         self.flush_cache('query_eth2_balances')
-        self.flush_cache('query_balances')
-        self.flush_cache('query_balances', blockchain=SupportedBlockchain.ETHEREUM_BEACONCHAIN)
-        self.flush_cache('query_balances', blockchain=None, ignore_cache=False, addresses=None)
-        self.flush_cache('query_balances', blockchain=SupportedBlockchain.ETHEREUM_BEACONCHAIN, ignore_cache=False, addresses=None)  # noqa: E501
 
     def add_eth2_validator(
             self,
@@ -1558,11 +1572,6 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
         validators since it affects the balances and stats"""
         self.flush_cache('get_eth2_staking_details')
         self.flush_cache('query_eth2_balances')
-        self.flush_cache('query_balances')
-        self.flush_cache('query_balances', blockchain=None, ignore_cache=False, addresses=None)
-        self.flush_cache('query_balances', blockchain=None, ignore_cache=True, addresses=None)
-        self.flush_cache('query_balances', blockchain=SupportedBlockchain.ETHEREUM_BEACONCHAIN, ignore_cache=False, addresses=None)  # noqa: E501
-        self.flush_cache('query_balances', blockchain=SupportedBlockchain.ETHEREUM_BEACONCHAIN, ignore_cache=True, addresses=None)  # noqa: E501
         with self.database.user_write() as write_cursor:
             self.database.delete_blockchain_balances_cache(
                 write_cursor=write_cursor,

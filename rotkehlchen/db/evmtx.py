@@ -90,6 +90,7 @@ class DBEvmTx(DBCommonTx[ChecksumEvmAddress, EvmTransaction, EVMTxHash, EvmTrans
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """
         newly_inserted: list[EVMTxHash] = []
+        dirty_chains: set[ChainID] = set()
         for tx in evm_transactions:
             row_id, is_new = self.db.write_single_tuple(
                 write_cursor=write_cursor,
@@ -113,6 +114,7 @@ class DBEvmTx(DBCommonTx[ChecksumEvmAddress, EvmTransaction, EVMTxHash, EvmTrans
             )
             if is_new:
                 newly_inserted.append(tx.tx_hash)
+                dirty_chains.add(tx.chain_id)
             if row_id is not None and tx.authorization_list is not None:
                 self.db.write_tuples(
                     write_cursor=write_cursor,
@@ -123,6 +125,8 @@ class DBEvmTx(DBCommonTx[ChecksumEvmAddress, EvmTransaction, EVMTxHash, EvmTrans
                         for auth in tx.authorization_list
                     ],
                 )
+        for chain_id in dirty_chains:  # newly added txs have no receipt yet -> pending receipts
+            self.db.pending_txs_tracker.mark_receipts_dirty(chain_id.to_blockchain())
         return newly_inserted
 
     def add_evm_internal_transactions(
@@ -393,6 +397,8 @@ class DBEvmTx(DBCommonTx[ChecksumEvmAddress, EvmTransaction, EVMTxHash, EvmTrans
                 raise
             return tx_id  # otherwise something else added the receipt so we continue
 
+        # a new receipt was just added, so this tx is now pending decoding
+        self.db.pending_txs_tracker.mark_decoding_dirty(chain_id.to_blockchain())
         for log_entry in data['logs']:
             write_cursor.execute(
                 'INSERT INTO evmtx_receipt_logs (tx_id, log_index, data, address) '
@@ -568,6 +574,8 @@ class DBEvmTx(DBCommonTx[ChecksumEvmAddress, EvmTransaction, EVMTxHash, EvmTrans
             'DELETE FROM evm_tx_mappings WHERE tx_id=? AND value IN (?, ?, ?)',
             [(x, TX_DECODED, TX_SPAM, TX_INTERNALS_QUERIED) for x in tx_ids],
         )
+        # remaining txs had their decoded marker removed -> pending decoding again
+        self.db.pending_txs_tracker.mark_decoding_dirty(chain)
         # Delete any key_value_cache entries
         write_cursor.executemany(
             'DELETE FROM key_value_cache WHERE name LIKE ?',

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { DataTableColumn } from '@rotki/ui-library';
 import { startPromise } from '@shared/utils';
+import ScrollableDialogContent from '@/modules/core/table/ScrollableDialogContent.vue';
 import TableFilter from '@/modules/core/table/TableFilter.vue';
 import CopyButton from '@/modules/shell/components/CopyButton.vue';
 import DateDisplay from '@/modules/shell/components/display/DateDisplay.vue';
@@ -236,9 +237,9 @@ defineExpose({
       />
     </div>
 
-    <div
-      class="flex-1 overflow-auto"
-      :class="compact && 'px-1'"
+    <ScrollableDialogContent
+      fill
+      :class="{ 'px-1': compact }"
     >
       <RuiDataTable
         v-model:sort.external="sort"
@@ -249,7 +250,6 @@ defineExpose({
         row-attr="txHash"
         outlined
         dense
-        class="table-inside-dialog"
       >
         <template #header.selection>
           <RuiCheckbox
@@ -388,6 +388,6 @@ defineExpose({
           </div>
         </template>
       </RuiDataTable>
-    </div>
+    </ScrollableDialogContent>
   </div>
 </template>

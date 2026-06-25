@@ -1787,7 +1787,8 @@
     "add_account": "Add Account",
     "add_validator_premium": "Adding ETH staking validators is a premium feature. Upgrade to rotki Premium to add validators.",
     "binance_warning": "Binance Smart Chain accounts can only be detected with a paid Etherscan key.",
-    "eth_staking_limit_error": "Adding this validator would exceed your {currentTier} plan's ETH staking limit of {limit} ETH. Upgrade your plan via {link} or contact us for a custom plan to increase your limit.",
+    "eth_staking_limit_error": "Adding this validator would put you over your {currentTier} plan's ETH staking limit of {limit} ETH. Upgrade your plan via {link} or contact us for a custom plan to raise your limit.",
+    "eth_staking_no_access": "Your {currentTier} plan doesn't include ETH staking. Upgrade your plan via {link} or contact us for a custom plan to get access.",
     "evm_detection": {
       "title": "Detect EVM accounts",
       "tooltip": "Detect activities of all registered EVM accounts in other EVM chains, and register them."
@@ -4464,6 +4465,10 @@
         "message": "If you have a Beaconcha.in API key, you can add it to retrieve block production history and improved staking analytics. Press @.quote:notification_messages.missing_api_key.action to add it in the app.",
         "title": "{service} API key"
       },
+      "blockscout": {
+        "message": "rotki is using {service} as a transaction indexer but it requires an API key, so its queries are being skipped. Add an API key for {service}, or adjust the indexer order to prioritize a different service.",
+        "title": "{service} API key"
+      },
       "change_indexer_order": "Change indexer order",
       "do_not_show_again": "Do not show again",
       "etherscan": {
@@ -5204,14 +5209,14 @@
       "title": "Profit and Loss Report Generation"
     },
     "go_to_exchanges": "Go to Exchange Settings",
-    "go_to_history": "Go to History Events",
     "loading": "Please wait while your PnL report is loading",
     "loading_hint": "Your report generation might take a while depending on the amount of trades and actions you performed during the selected period.",
     "loading_message": "Please wait while your report is generated...",
     "out_of_sync_alert": "Your history events data is out of sync. Please update your history events before generating a report.",
-    "processing_alert": "History events are currently being processed. Please wait until processing is complete.",
+    "processing_alert": "History events are currently being processed ({percentage}%). Please wait until processing is complete.",
     "report_period": "Report starting from {start} to {end}",
-    "settings_tooltip": "Open the accounting settings"
+    "settings_tooltip": "Open the accounting settings",
+    "sync_history": "Sync history now"
   },
   "profit_loss_reports": {
     "columns": {

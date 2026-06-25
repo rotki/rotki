@@ -902,6 +902,28 @@ def test_price_for_custom_assets(inquirer, database, globaldb):
 
 
 @pytest.mark.parametrize('should_mock_current_price_queries', [False])
+def test_price_with_custom_asset_as_target(inquirer, database):
+    """Regression test for a custom asset used as the price target (to_asset).
+
+    A custom asset has no oracles, so resolving the target to an AssetWithOracles inside
+    _query_oracle_instances used to raise WrongAssetType and crash the query task. The
+    leftover from_assets (which already missed the manual price layer) should instead be
+    reported as unpriced (ZERO_PRICE) without raising.
+    """
+    DBCustomAssets(database).add_custom_asset(CustomAsset.initialize(
+        identifier='custom-target-id',
+        name='my custom target',
+        custom_asset_type='oh my type',
+    ))
+    custom_target = Asset('custom-target-id')
+    # BTC has no manual price into the custom asset, so it reaches _query_oracle_instances
+    inquirer._oracle_instances = [MagicMock() for _ in inquirer._oracles]
+    assert inquirer.find_price(from_asset=A_BTC, to_asset=custom_target) == ZERO_PRICE
+    for oracle_instance in inquirer._oracle_instances:
+        assert oracle_instance.query_current_price.call_count == 0
+
+
+@pytest.mark.parametrize('should_mock_current_price_queries', [False])
 def test_coingecko_handles_rate_limit(inquirer):
     """
     Test that the mechanism to ignore coingecko when the user gets rate limited works as expected

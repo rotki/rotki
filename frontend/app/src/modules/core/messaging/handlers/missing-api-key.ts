@@ -29,6 +29,7 @@ export function createMissingApiKeyHandler(t: ReturnType<typeof useI18n>['t'], r
     const actions: NotificationAction[] = [];
 
     const isEtherscan = service === SuppressibleMissingKeyService.ETHERSCAN;
+    const isBlockscout = service === SuppressibleMissingKeyService.BLOCKSCOUT;
 
     if (route) {
       actions.push({
@@ -38,7 +39,8 @@ export function createMissingApiKeyHandler(t: ReturnType<typeof useI18n>['t'], r
       });
     }
 
-    if (isEtherscan) {
+    // Both etherscan and blockscout are transaction indexers, so offer to change the order.
+    if (isEtherscan || isBlockscout) {
       actions.push({
         action: async () => router.push({ path: Routes.SETTINGS_EVM.toString(), hash: '#indexer' }),
         icon: 'lu-settings',
@@ -46,7 +48,10 @@ export function createMissingApiKeyHandler(t: ReturnType<typeof useI18n>['t'], r
         persist: true,
       });
     }
-    else if (external) {
+
+    // Unlike etherscan (which ships with a packaged fallback key), blockscout has no
+    // default key and its PRO endpoints reject keyless queries, so also offer to get one.
+    if (external && !isEtherscan) {
       actions.push({
         action: async () => openUrl(external),
         icon: 'lu-external-link',
@@ -93,6 +98,11 @@ export function createMissingApiKeyHandler(t: ReturnType<typeof useI18n>['t'], r
         category: NotificationCategory.BEACONCHAIN,
         messageKey: 'notification_messages.missing_api_key.beaconchain.message',
         titleKey: 'notification_messages.missing_api_key.beaconchain.title',
+      },
+      [SuppressibleMissingKeyService.BLOCKSCOUT]: {
+        category: NotificationCategory.BLOCKSCOUT,
+        messageKey: 'notification_messages.missing_api_key.blockscout.message',
+        titleKey: 'notification_messages.missing_api_key.blockscout.title',
       },
       [SuppressibleMissingKeyService.ETHERSCAN]: {
         category: NotificationCategory.ETHERSCAN,

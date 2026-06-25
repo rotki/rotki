@@ -3,6 +3,7 @@ from unittest.mock import ANY, patch
 
 import pytest
 
+from rotkehlchen.api.websockets.typedefs import WSMessageType
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.chain.optimism.constants import OP_BEDROCK_BLOCK, OP_BEDROCK_UPGRADE
 from rotkehlchen.chain.structures import TimestampOrBlockRange
@@ -15,9 +16,10 @@ from rotkehlchen.externalapis.blockscout import Blockscout
 from rotkehlchen.externalapis.etherscan_like import HasChainActivity
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.eth2 import EthWithdrawalEvent
+from rotkehlchen.tests.fixtures.messages import MockRotkiNotifier
 from rotkehlchen.tests.utils.factories import make_evm_address, make_evm_tx_hash
 from rotkehlchen.tests.utils.mock import MockResponse
-from rotkehlchen.types import ApiKey, ChainID, Timestamp, TimestampMS
+from rotkehlchen.types import ApiKey, ChainID, ExternalService, Timestamp, TimestampMS
 
 
 @pytest.fixture(name='blockscout')
@@ -363,3 +365,17 @@ def test_eth_call_historical_block_passes_tag(blockscout: Blockscout) -> None:
         method='eth_call',
         options={'to': dai, 'data': '0x18160ddd', 'tag': '0x989680'},
     )
+
+
+@pytest.mark.parametrize('include_blockscout_key', [False])
+def test_missing_api_key_warns_once(blockscout: Blockscout) -> None:
+    """Blockscout's PRO endpoints require an api key, so a missing one should emit a
+    MISSING_API_KEY websocket message (once) instead of silently skipping the query."""
+    blockscout.db.msg_aggregator.rotki_notifier = (notifier := MockRotkiNotifier())  # type: ignore[assignment]
+    assert blockscout._get_api_key_for_chain(ChainID.ETHEREUM) is None
+    assert (message := notifier.pop_message()) is not None
+    assert message.message_type == WSMessageType.MISSING_API_KEY
+    assert message.data == {'service': ExternalService.BLOCKSCOUT.serialize()}
+    # querying again must not re-warn, as the warning is given only once per session
+    assert blockscout._get_api_key_for_chain(ChainID.ETHEREUM) is None
+    assert notifier.pop_message() is None

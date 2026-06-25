@@ -134,6 +134,7 @@ watch(model, (model, oldModel) => {
     >
       <template v-if="saveErrorIsPremium">
         <i18n-t
+          v-if="ethStakedLimit > 0"
           scope="global"
           keypath="blockchain_balances.eth_staking_limit_error"
           tag="span"
@@ -141,6 +142,24 @@ watch(model, (model, oldModel) => {
           <template #limit>
             {{ ethStakedLimit }}
           </template>
+          <template #currentTier>
+            {{ currentTier }}
+          </template>
+          <template #link>
+            <ExternalLink
+              :text="upgradeLinkText"
+              :url="upgradeLinkUrl"
+              premium
+              color="primary"
+            />
+          </template>
+        </i18n-t>
+        <i18n-t
+          v-else
+          scope="global"
+          keypath="blockchain_balances.eth_staking_no_access"
+          tag="span"
+        >
           <template #currentTier>
             {{ currentTier }}
           </template>
