@@ -251,6 +251,22 @@ class DataIssuesManager:
             raise NotFoundError(f'Data issue with id {issue_id} not found')
         return _row_to_data_issue(row)
 
+    def append_auto_remediation_attempt(
+            self,
+            issue_id: int,
+            attempt: dict[str, Any],
+    ) -> DataIssue:
+        attempts = [*self.get_issue(issue_id).auto_remediation_attempts, attempt]
+        with self.db.user_write() as write_cursor:
+            row = write_cursor.execute(
+                'UPDATE data_issues SET auto_remediation_attempts_json = ? WHERE id = ? '
+                f'RETURNING {DATA_ISSUE_SELECT_COLUMNS}',
+                (json.dumps(attempts, separators=(',', ':')), issue_id),
+            ).fetchone()
+        if row is None:
+            raise NotFoundError(f'Data issue with id {issue_id} not found')
+        return _row_to_data_issue(row)
+
     def dismiss(self, issue_id: int) -> DataIssue:
         issue = self.get_issue(issue_id)
         payload = dict(issue.payload)

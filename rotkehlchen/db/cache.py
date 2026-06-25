@@ -38,6 +38,7 @@ class DBCacheStatic(Enum):
     # during historical balance processing.
     STALE_BALANCES_MODIFICATION_TS: Final = 'stale_balances_modification_ts'
     LAST_HISTORICAL_BALANCE_PROCESSING_TS: Final = 'last_historical_balance_processing_ts'
+    LAST_DATA_ISSUE_REMEDIATION_TS: Final = 'last_data_issue_remediation_ts'
     LAST_INTERNAL_TX_CONFLICTS_REPULL_TS: Final = 'last_internal_tx_conflicts_repull_ts'
     BEACONCHAIN_VALIDATOR_QUERY_LIMIT: Final = 'beaconchain_validator_query_limit'
     ETHERSCAN_API_KEY_TIER: Final = 'etherscan_api_key_tier'
