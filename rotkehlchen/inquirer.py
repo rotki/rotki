@@ -525,10 +525,15 @@ class Inquirer:
 
     @staticmethod
     def set_cached_price(cache_key: tuple[Asset, Asset], cached_price: CachedPriceEntry) -> None:
-        """Save cached price for the key provided and all the assets in the same collection"""
-        related_assets = AssetResolver.get_assets_in_same_collection(cache_key[0].identifier)
-        for related_asset in related_assets:
-            Inquirer._cached_current_price.add((related_asset, cache_key[1]), cached_price)
+        """Save cached price for the key provided.
+
+        The price hot path (_preprocess_assets_to_query) always normalizes a collection member
+        to its collection main asset via _maybe_replace_asset before reading the cache, and every
+        set_cached_price call site is downstream of that normalization, so cache_key[0] is already
+        the collection main asset. Storing extra entries for the other collection members would
+        therefore never be read and only evict useful entries from the LRU.
+        """
+        Inquirer._cached_current_price.add(cache_key, cached_price)
 
     @staticmethod
     def _try_oracle_price_query(

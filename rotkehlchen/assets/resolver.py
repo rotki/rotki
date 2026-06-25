@@ -39,8 +39,6 @@ class AssetResolver:
     # Maps asset identifier -> collection main_asset identifier (or None if not in a collection).
     # None is a valid cached value so presence must be tested with `identifier.lower() in cache`.
     collection_main_asset_cache: LRUCacheLowerKey[str | None] = LRUCacheLowerKey(maxsize=512)
-    # Maps asset identifier -> all assets in its collection (or just itself if in no collection).
-    collection_assets_cache: LRUCacheLowerKey[tuple['Asset', ...]] = LRUCacheLowerKey(maxsize=512)
 
     def __new__(  # noqa: PYI034 # singleton pattern should not get Self
             cls,
@@ -69,12 +67,10 @@ class AssetResolver:
             AssetResolver.__instance.assets_cache.remove(identifier)
             AssetResolver.__instance.types_cache.remove(identifier)
             AssetResolver.__instance.collection_main_asset_cache.remove(identifier)
-            AssetResolver.__instance.collection_assets_cache.remove(identifier)
         else:
             AssetResolver.__instance.assets_cache.clear()
             AssetResolver.__instance.types_cache.clear()
             AssetResolver.__instance.collection_main_asset_cache.clear()
-            AssetResolver.__instance.collection_assets_cache.clear()
 
     @staticmethod
     def get_collection_main_asset(identifier: str) -> str | None:
@@ -91,23 +87,6 @@ class AssetResolver:
         main_asset = AssetResolver._globaldb.get_collection_main_asset(identifier)
         cache.add(identifier, main_asset)
         return main_asset
-
-    @staticmethod
-    def get_assets_in_same_collection(identifier: str) -> tuple['Asset', ...]:
-        """Return all assets in the same collection as identifier, memoized.
-
-        Mirrors GlobalDBHandler.get_assets_in_same_collection but caches the result to avoid
-        re-running the collection JOIN on hot paths (e.g. Inquirer.set_cached_price, called once
-        per priced asset on every balance refresh). Returns (Asset(identifier),) when the asset
-        is in no collection. The value is never None, so a None get() result means a cache miss.
-        """
-        cache = AssetResolver.collection_assets_cache
-        if (cached := cache.get(identifier)) is not None:
-            return cached
-
-        result = AssetResolver._globaldb.get_assets_in_same_collection(identifier)
-        cache.add(identifier, result)
-        return result
 
     @staticmethod
     def resolve_asset(identifier: str) -> 'AssetWithNameAndType':
