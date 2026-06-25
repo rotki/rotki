@@ -72,6 +72,7 @@ from rotkehlchen.db.filtering import (
     AssetsFilterQuery,
     CounterpartyAssetMappingsFilterQuery,
     CustomAssetsFilterQuery,
+    DataIssuesFilterQuery,
     EthStakingEventFilterQuery,
     EvmEventFilterQuery,
     HistoricalBalancesFilterQuery,
@@ -103,6 +104,7 @@ from rotkehlchen.exchanges.gate import GateLocation
 from rotkehlchen.exchanges.kraken import KrakenAccountType
 from rotkehlchen.exchanges.okx import OkxLocation
 from rotkehlchen.fval import FVal
+from rotkehlchen.history.data_issues.constants import IssueKind, IssueState
 from rotkehlchen.history.events.structures.asset_movement import (
     AssetMovement,
     AssetMovementExtraData,
@@ -4639,6 +4641,57 @@ class UpdateCalendarReminderSchema(NewCalendarReminderSchema, IntegerIdentifierS
     @post_load
     def make_calendar_entry(self, data: dict[str, Any], **_kwargs: dict[str, Any]) -> dict[str, Any]:  # noqa: E501
         return {'reminder': self._process_reminder(data)}
+
+
+class DataIssuesFilterSchema(DBPaginationSchema):
+    from_timestamp = TimestampField(load_default=None)
+    to_timestamp = TimestampField(load_default=None)
+    state = DelimitedOrNormalList(
+        StrEnumField(enum_class=IssueState),
+        load_default=lambda: [IssueState.OPEN, IssueState.AUTO_REMEDIATING, IssueState.UNRESOLVED],
+    )
+    kind = DelimitedOrNormalList(StrEnumField(enum_class=IssueKind), load_default=None)
+    location = LocationField(load_default=None)
+    location_label = EmptyAsNoneStringField(load_default=None)
+    asset = AssetField(expected_type=Asset, load_default=None)
+
+    @validates_schema
+    def validate_schema(
+            self,
+            data: dict[str, Any],
+            **_kwargs: Any,
+    ) -> None:
+        if (
+                data['from_timestamp'] is not None and
+                data['to_timestamp'] is not None and
+                data['from_timestamp'] > data['to_timestamp']
+        ):
+            raise ValidationError(
+                message='from_timestamp must be less than or equal to to_timestamp',
+                field_name='to_timestamp',
+            )
+
+    @post_load
+    def make_data_issues_filter_query(
+            self,
+            data: dict[str, Any],
+            **_kwargs: Any,
+    ) -> dict[str, Any]:
+        return {'filter_query': DataIssuesFilterQuery.make(
+            limit=data['limit'],
+            offset=data['offset'],
+            from_ts=data['from_timestamp'],
+            to_ts=data['to_timestamp'],
+            states=data['state'],
+            kinds=data['kind'],
+            location=data['location'],
+            location_label=data['location_label'],
+            asset=data['asset'],
+        )}
+
+
+class DataIssueManualResolveSchema(Schema):
+    note = EmptyAsNoneStringField(load_default=None)
 
 
 class HistoricalPerAssetBalanceSchema(SnapshotTimestampQuerySchema, AsyncQueryArgumentSchema):

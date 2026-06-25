@@ -149,6 +149,14 @@ def test_dismiss_and_resolve_manually(database: 'DBHandler') -> None:
     assert issue.state == IssueState.RESOLVED
     assert issue.payload['resolution'] == {'manual': True, 'note': 'fixed manually'}
 
+    with pytest.raises(InputError):
+        manager.resolve_manually(issue_id, note='updated')
+
+    issue = manager.dismiss(issue_id)
+    assert issue.state == IssueState.DISMISSED
+    assert issue.resolved_at is None
+    assert 'resolution' not in issue.payload
+
 
 def test_write_issue_idempotency(database: 'DBHandler') -> None:
     manager = DataIssuesManager(database)
