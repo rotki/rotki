@@ -3,6 +3,7 @@ Changelog
 =========
 
 * :bug:`-` The rate-limit hint in the PnL report's missing prices dialog is now a warning icon next to the refresh button, so its tooltip no longer covers the price input or the buttons of nearby rows.
+* :bug:`-` The pending task shown while balances are queried now makes clear that a balance snapshot is being saved for statistics, and notes when query errors are being ignored.
 * :bug:`-` The "history out of sync" warning shown before generating a PnL report now lets you start the history sync right there, instead of only sending you to the history page.
 * :bug:`-` Trying to add an ETH staking validator on a plan that doesn't include staking now shows a clear message saying your plan has no staking access, instead of a confusing "ETH staking limit of 0 ETH" error.
 * :bug:`12463` Querying price for custom asset under certain conditions no longer fails the task.

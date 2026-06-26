@@ -172,11 +172,13 @@
     "balances": {
       "all_balances": {
         "error": {
-          "message": "Error al recuperar todos los balances: {message}",
-          "title": "Consultar todos los balances"
+          "message": "No se pudieron consultar los balances ni guardar la instantánea: {message}",
+          "title": "Error al guardar la instantánea de balances"
         },
         "task": {
-          "title": "Consultar todos los balances"
+          "description": "Consultando todos los balances y guardando una instantánea para las estadísticas.",
+          "ignore_errors_note": "Se ignorarán los errores durante la consulta.",
+          "title": "Guardando instantánea de balances"
         }
       },
       "blockchain": {

@@ -237,11 +237,13 @@
     "balances": {
       "all_balances": {
         "error": {
-          "message": "Échec de la récupération de tous les soldes : {message}",
-          "title": "Requête de tous les soldes"
+          "message": "Échec de la requête des soldes et de l'enregistrement de l'instantané : {message}",
+          "title": "Échec de l'enregistrement de l'instantané des soldes"
         },
         "task": {
-          "title": "Requête de tous les soldes"
+          "description": "Requête de tous les soldes et enregistrement d'un instantané pour les statistiques.",
+          "ignore_errors_note": "Les erreurs survenues pendant la requête seront ignorées.",
+          "title": "Enregistrement de l'instantané des soldes"
         }
       },
       "blockchain": {

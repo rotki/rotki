@@ -26,9 +26,19 @@ export const useBalanceFetching = createSharedComposable(() => {
   const { refreshBlockchainBalances } = useBlockchainBalances();
 
   const fetchBalances = async (payload: Partial<AllBalancePayload> = {}): Promise<void> => {
+    const description = payload.ignoreErrors
+      ? `${t('actions.balances.all_balances.task.description')} ${t('actions.balances.all_balances.task.ignore_errors_note')}`
+      : t('actions.balances.all_balances.task.description');
+
     const outcome = await runTask(
       async () => queryBalancesAsync(payload),
-      { type: TaskType.QUERY_BALANCES, meta: { title: t('actions.balances.all_balances.task.title') } },
+      {
+        type: TaskType.QUERY_BALANCES,
+        meta: {
+          description,
+          title: t('actions.balances.all_balances.task.title'),
+        },
+      },
     );
 
     if (isActionableFailure(outcome)) {
