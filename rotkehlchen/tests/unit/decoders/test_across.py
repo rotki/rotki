@@ -69,6 +69,48 @@ def test_across_bridge_receive_on_base(
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('ethereum_accounts', [['0xF5d90Ac6747CB3352F05BF61f48b991ACeaE28eB']])
+def test_across_relayed_bridge_receive_on_ethereum(ethereum_inquirer, ethereum_accounts):
+    tx_hash = deserialize_evm_tx_hash('0x742fbbe405ea7a547e30895719e3de09b852f5540a67b6bbd0cc8546131c6318')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
+    assert events == [EvmEvent(
+        tx_ref=tx_hash,
+        sequence_index=0,
+        timestamp=TimestampMS(1771136963000),
+        location=Location.ETHEREUM,
+        event_type=HistoryEventType.WITHDRAWAL,
+        event_subtype=HistoryEventSubType.BRIDGE,
+        asset=A_ETH,
+        amount=FVal(bridge_amount := '0.041982585504559745'),
+        location_label=ethereum_accounts[0],
+        notes=f'Bridge {bridge_amount} ETH from Arbitrum One to Ethereum via Across',
+        counterparty=CPT_ACROSS,
+        address=string_to_evm_address('0x5c7BCd6E7De5423a257D81B442095A1a6ced35C5'),
+    )]
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('ethereum_accounts', [['0xf70da97812CB96acDF810712Aa562db8dfA3dbEF']])
+def test_across_relayed_bridge_receive_usdc_on_ethereum(ethereum_inquirer, ethereum_accounts):
+    tx_hash = deserialize_evm_tx_hash('0xee7641ad46d4367a371a7320767323a0a7cb1f5301b27235e884551d715b2e0f')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
+    assert events == [EvmEvent(
+        tx_ref=tx_hash,
+        sequence_index=150,
+        timestamp=TimestampMS(1782487955000),
+        location=Location.ETHEREUM,
+        event_type=HistoryEventType.WITHDRAWAL,
+        event_subtype=HistoryEventSubType.BRIDGE,
+        asset=A_USDC,
+        amount=FVal(bridge_amount := '99970.446325'),
+        location_label=ethereum_accounts[0],
+        notes=f'Bridge {bridge_amount} USDC from Binance Smart Chain to Ethereum via Across',
+        counterparty=CPT_ACROSS,
+        address=string_to_evm_address('0x07aE8551Be970cB1cCa11Dd7a11F47Ae82e70E67'),
+    )]
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0x6b21bb0D79C543B13DEE153700788D2c008633E5']])
 def test_across_bridge_deposit_on_ethereum(ethereum_inquirer, ethereum_accounts):
     tx_hash = deserialize_evm_tx_hash('0x01456be6d500a21b91941e569df54ec4760868d4b51ba9ef2ddab59d33d3c21f')  # noqa: E501

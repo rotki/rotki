@@ -35,6 +35,7 @@ from rotkehlchen.chain.bitcoin.bch.utils import force_address_to_legacy_address
 from rotkehlchen.chain.bitcoin.xpub import XpubManager
 from rotkehlchen.chain.ethereum.modules import MODULE_NAME_TO_PATH
 from rotkehlchen.chain.ethereum.modules.aave.balances import AaveBalances
+from rotkehlchen.chain.ethereum.modules.across.balances import AcrossBalances
 from rotkehlchen.chain.ethereum.modules.blur.balances import BlurBalances
 from rotkehlchen.chain.ethereum.modules.convex.balances import ConvexBalances
 from rotkehlchen.chain.ethereum.modules.curve.balances import CurveBalances
@@ -190,6 +191,7 @@ def _module_name_to_class(module_name: ModuleName) -> type[EthereumModule]:
 CHAIN_TO_BALANCE_PROTOCOLS = {
     ChainID.ETHEREUM: (
         Compoundv3Balances,
+        AcrossBalances,
         CurveBalances,  # only needed in ethereum, because other chains have new gauge contracts
         ConvexBalances,
         OctantBalances,
