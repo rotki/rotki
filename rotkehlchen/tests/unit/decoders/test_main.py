@@ -431,6 +431,71 @@ def test_simple_erc20_transfer(
 
 
 @pytest.mark.parametrize('ethereum_accounts', [['0x4bBa290826C253BD854121346c370a9886d1bC26']])
+def test_decode_skips_db_query_for_known_tx_id(
+        database,
+        ethereum_accounts,
+        ethereum_transaction_decoder,
+):
+    """When the transaction's db_id is already resolved (the normal path, since the caller
+    resolves it before decoding), _decode_transaction must not open a read transaction to
+    re-query it. Regression test for the db_id==-1 guard.
+    """
+    user_address = ethereum_accounts[0]
+    tether_address = string_to_evm_address('0xdAC17F958D2ee523a2206206994597C13D831ec7')
+    transaction = EvmTransaction(
+        tx_hash=(tx_hash := deserialize_evm_tx_hash('0xbb58b36ddc027a1070131e68b915e5f0dca37767b020ed164eda681725b5ca4e')),  # noqa: E501
+        chain_id=ChainID.ETHEREUM,
+        timestamp=Timestamp(0),
+        block_number=0,
+        from_address=user_address,
+        to_address=tether_address,
+        value=0,
+        gas=45000,
+        gas_price=10000000000,
+        gas_used=45000,
+        input_data=b'',
+        nonce=0,
+    )
+    receipt = EvmTxReceipt(
+        tx_hash=tx_hash,
+        chain_id=ChainID.ETHEREUM,
+        contract_address=None,
+        status=True,
+        tx_type=0,
+        logs=[
+            EvmTxReceiptLog(
+                log_index=73,
+                data=hexstring_to_bytes('0x000000000000000000000000000000000000000000000000000000000243de35'),
+                address=tether_address,
+                topics=[
+                    hexstring_to_bytes('0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef'),
+                    hexstring_to_bytes('0x000000000000000000000000d8da6bf26964af9d7eed9e03e53415d37aa96045'),
+                    hexstring_to_bytes('0x000000000000000000000000' + user_address[2:].lower()),
+                ],
+            ),
+        ],
+    )
+    with database.user_write() as cursor:
+        DBEvmTx(database).add_transactions(cursor, [transaction], relevant_address=None)
+
+    with database.conn.read_ctx() as cursor:  # resolve & cache db_id, as the real caller does
+        transaction.get_or_query_db_id(cursor)
+
+    with patch.object(
+        EvmTransaction,
+        'get_or_query_db_id',
+        autospec=True,
+        side_effect=lambda self, cursor: self.db_id,
+    ) as db_id_mock:
+        ethereum_transaction_decoder._decode_transaction(
+            transaction=transaction,
+            tx_receipt=receipt,
+        )
+
+    db_id_mock.assert_not_called()  # db_id was already known, so no re-query happens
+
+
+@pytest.mark.parametrize('ethereum_accounts', [['0x4bBa290826C253BD854121346c370a9886d1bC26']])
 def test_token_resolved_only_for_transfer_logs(
         database,
         ethereum_accounts,

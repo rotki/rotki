@@ -561,8 +561,14 @@ class EVMTransactionDecoder(TransactionDecoder['EvmTransaction', EvmDecodingRule
         - A list of decoders to reload or None if no need
         """
         log.debug(f'Starting decoding of transaction {transaction.tx_hash!s} logs at {self.evm_inquirer.chain_name}')  # noqa: E501
-        with self.database.conn.read_ctx() as read_cursor:
-            tx_id = transaction.get_or_query_db_id(read_cursor)
+        # The caller (_get_or_decode_transaction_events -> _maybe_load_or_purge_events_from_db)
+        # already resolved and cached the db_id on the transaction, so avoid opening a read
+        # transaction just to read it back. Only query if it is somehow still unknown.
+        if transaction.db_id == -1:
+            with self.database.conn.read_ctx() as read_cursor:
+                tx_id = transaction.get_or_query_db_id(read_cursor)
+        else:
+            tx_id = transaction.db_id
 
         self.base.reset_sequence_counter(tx_receipt)
         # check if any eth transfer happened in the transaction, including in internal transactions
