@@ -3,6 +3,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
+from rotkehlchen.assets.utils import get_evm_token
 from rotkehlchen.chain.decoding.constants import CPT_GAS
 from rotkehlchen.chain.decoding.utils import maybe_reshuffle_events
 from rotkehlchen.chain.ethereum.constants import CPT_KRAKEN
@@ -427,6 +428,78 @@ def test_simple_erc20_transfer(
             extra_data=None,
         ),
     ]
+
+
+@pytest.mark.parametrize('ethereum_accounts', [['0x4bBa290826C253BD854121346c370a9886d1bC26']])
+def test_token_resolved_only_for_transfer_logs(
+        database,
+        ethereum_accounts,
+        ethereum_transaction_decoder,
+):
+    """Only transfer/approval logs should trigger the per-log token resolution (get_evm_token).
+    Other logs (e.g. a pool Swap event) must not, since their decoding rules never use the token
+    and the lookup would be a wasted uncached global-DB miss for the non-token emitter.
+
+    Regression test for the topic-gate on the get_evm_token call in the per-log decoding loop.
+    """
+    user_address = ethereum_accounts[0]
+    tether_address = string_to_evm_address('0xdAC17F958D2ee523a2206206994597C13D831ec7')
+    # a non-token emitter (stands in for a pool/router emitting a Swap/Sync/etc. event)
+    non_token_emitter = string_to_evm_address('0xED2f12B896d0C7BFf4050d3D8c4f95Bd61aAa12d')
+    transaction = EvmTransaction(
+        tx_hash=(tx_hash := deserialize_evm_tx_hash('0xbb58b36ddc027a1070131e68b915e5f0dca37767b020ed164eda681725b5ca4e')),  # noqa: E501
+        chain_id=ChainID.ETHEREUM,
+        timestamp=Timestamp(0),
+        block_number=0,
+        from_address=user_address,
+        to_address=non_token_emitter,
+        value=0,
+        gas=45000,
+        gas_price=10000000000,
+        gas_used=45000,
+        input_data=b'',
+        nonce=0,
+    )
+    receipt = EvmTxReceipt(
+        tx_hash=tx_hash,
+        chain_id=ChainID.ETHEREUM,
+        contract_address=None,
+        status=True,
+        tx_type=0,
+        logs=[
+            EvmTxReceiptLog(  # a non-transfer log (e.g. a Swap event) -> must not resolve a token
+                log_index=72,
+                data=b'',
+                address=non_token_emitter,
+                topics=[hexstring_to_bytes('0x' + 'ab' * 32)],
+            ),
+            EvmTxReceiptLog(  # a transfer to the tracked user -> must resolve its token
+                log_index=73,
+                data=hexstring_to_bytes('0x000000000000000000000000000000000000000000000000000000000243de35'),
+                address=tether_address,
+                topics=[
+                    hexstring_to_bytes('0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef'),
+                    hexstring_to_bytes('0x000000000000000000000000d8da6bf26964af9d7eed9e03e53415d37aa96045'),
+                    hexstring_to_bytes('0x000000000000000000000000' + user_address[2:].lower()),
+                ],
+            ),
+        ],
+    )
+    with database.user_write() as cursor:
+        DBEvmTx(database).add_transactions(cursor, [transaction], relevant_address=None)
+
+    with patch(
+        'rotkehlchen.chain.evm.decoding.decoder.get_evm_token',
+        wraps=get_evm_token,
+    ) as get_token_mock:
+        ethereum_transaction_decoder._decode_transaction(
+            transaction=transaction,
+            tx_receipt=receipt,
+        )
+
+    resolved_addresses = {call.kwargs['evm_address'] for call in get_token_mock.call_args_list}
+    assert tether_address in resolved_addresses  # transfer log resolved its token
+    assert non_token_emitter not in resolved_addresses  # non-transfer log did not
 
 
 @pytest.mark.parametrize(('ethereum_accounts', 'optimism_accounts', 'chain'), [
