@@ -174,11 +174,13 @@
     "balances": {
       "all_balances": {
         "error": {
-          "message": "获取所有余额失败：{message}",
-          "title": "查询所有余额"
+          "message": "查询余额并保存快照失败：{message}",
+          "title": "余额快照保存失败"
         },
         "task": {
-          "title": "查询所有余额"
+          "description": "正在查询所有余额并保存统计快照。",
+          "ignore_errors_note": "查询过程中的错误将被忽略。",
+          "title": "保存余额快照"
         }
       },
       "blockchain": {

@@ -370,11 +370,13 @@
     "balances": {
       "all_balances": {
         "error": {
-          "message": "Failed to fetch all balances: {message}",
-          "title": "Querying all Balances"
+          "message": "Failed to query balances and save the snapshot: {message}",
+          "title": "Balance Snapshot Failed"
         },
         "task": {
-          "title": "Query All Balances"
+          "description": "Querying all balances and saving a snapshot for statistics.",
+          "ignore_errors_note": "Errors during the query will be ignored.",
+          "title": "Saving Balance Snapshot"
         }
       },
       "blockchain": {

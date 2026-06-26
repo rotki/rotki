@@ -168,11 +168,13 @@
     "balances": {
       "all_balances": {
         "error": {
-          "message": "Failed to fetch all balances: {message}",
-          "title": "Querying all Balances"
+          "message": "Αποτυχία ερωτήματος υπολοίπων και αποθήκευσης του στιγμιότυπου: {message}",
+          "title": "Αποτυχία στιγμιότυπου υπολοίπων"
         },
         "task": {
-          "title": "Query All Balances"
+          "description": "Ερώτημα όλων των υπολοίπων και αποθήκευση στιγμιότυπου για τα στατιστικά.",
+          "ignore_errors_note": "Τα σφάλματα κατά τη διάρκεια του ερωτήματος θα αγνοηθούν.",
+          "title": "Αποθήκευση στιγμιότυπου υπολοίπων"
         }
       },
       "blockchain": {
