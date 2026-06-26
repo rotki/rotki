@@ -581,6 +581,11 @@ It needs to contain a class that inherits from the `DecoderInterface` and is nam
 
 Note: If your new decoder decodes an airdrop's claiming event and this airdrop is present in the [data repo airdrop index](https://github.com/rotki/data/blob/develop/airdrops/index_v2.json) with `has_decoder` as `false`, please update that also.
 
+When you need to check a contract ABI, use Sourcify's repository URL format:
+`https://repo.sourcify.dev/<chainID>/<contract_address>`.
+For example, for address `0x3337286E850cf01B8A8B6094574f0dd6a2108B16` on chain ID `1`, check `https://repo.sourcify.dev/1/0x3337286E850cf01B8A8B6094574f0dd6a2108B16`.
+For raw ABI data, read the verified metadata JSON at `https://repo.sourcify.dev/contracts/full_match/<chainID>/<contract_address>/metadata.json` and use `output.abi`.
+
 ### Decoder scope policy (performance-critical)
 
 - Prefer `addresses_to_decoders()` over generic `decoding_rules()` whenever a protocol emits identifiable logs from known contract addresses.
