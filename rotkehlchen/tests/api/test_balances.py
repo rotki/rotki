@@ -393,7 +393,7 @@ def test_query_all_balances_ignore_cache(
                 assert fn.call_count == 4, msg
             # addresses are derived from xpubs when `ignore_cache` is True
             elif fn._mock_name == 'check_for_new_xpub_addresses':
-                assert fn.call_count == 2, msg  # 2 is for btc + bch
+                assert fn.call_count == 1, msg  # only BTC has accounts in this test
             else:
                 assert fn.call_count == 2, msg
 
