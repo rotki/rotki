@@ -31,6 +31,7 @@ from rotkehlchen.types import ChecksumEvmAddress
 from rotkehlchen.utils.misc import bytes_to_address
 
 if TYPE_CHECKING:
+    from rotkehlchen.assets.asset import Asset
     from rotkehlchen.chain.evm.decoding.base import BaseEvmDecoderTools
     from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
     from rotkehlchen.user_messages import MessagesAggregator
@@ -103,7 +104,8 @@ class AcrossCommonDecoder(EvmDecoderInterface):
 
     def _decode_fill(self, context: DecoderContext) -> EvmDecodingOutput:
         """Handle FilledRelay — user receives tokens from SpokePool on the destination chain."""
-        expected_assets, expected_amount = (), None
+        expected_assets: tuple[Asset, ...] = ()
+        expected_amount = None
         # In the relayExecutionInfo variant the actual receiver is the updatedRecipient.
         if context.tx_log.topics[0] == FILLED_RELAY_WITH_RELAY_EXECUTION_INFO:
             recipient = bytes_to_address(context.tx_log.data[352:384])

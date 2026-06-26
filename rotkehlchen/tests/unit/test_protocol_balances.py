@@ -28,6 +28,7 @@ from rotkehlchen.chain.base.modules.runmoney.balances import RunmoneyBalances
 from rotkehlchen.chain.base.modules.runmoney.constants import CPT_RUNMONEY
 from rotkehlchen.chain.ethereum.interfaces.balances import ProtocolWithBalance
 from rotkehlchen.chain.ethereum.modules.aave.balances import AaveBalances
+from rotkehlchen.chain.ethereum.modules.across.balances import AcrossBalances
 from rotkehlchen.chain.ethereum.modules.blur.balances import BlurBalances
 from rotkehlchen.chain.ethereum.modules.blur.constants import BLUR_IDENTIFIER, CPT_BLUR
 from rotkehlchen.chain.ethereum.modules.convex.balances import CPT_CONVEX, ConvexBalances
@@ -48,7 +49,9 @@ from rotkehlchen.chain.ethereum.modules.pickle_finance.main import PickleFinance
 from rotkehlchen.chain.ethereum.modules.safe.balances import SafeBalances
 from rotkehlchen.chain.ethereum.modules.safe.constants import CPT_SAFE, SAFE_TOKEN_ID
 from rotkehlchen.chain.ethereum.utils import should_update_protocol_cache
+from rotkehlchen.chain.evm.contracts import WEB3
 from rotkehlchen.chain.evm.decoding.aave.constants import CPT_AAVE, CPT_AAVE_V3
+from rotkehlchen.chain.evm.decoding.across.constants import CPT_ACROSS
 from rotkehlchen.chain.evm.decoding.compound.v3.balances import Compoundv3Balances
 from rotkehlchen.chain.evm.decoding.compound.v3.constants import CPT_COMPOUND_V3
 from rotkehlchen.chain.evm.decoding.curve.constants import CPT_CURVE
@@ -215,6 +218,54 @@ def test_curve_locked_crv_balances(
             amount=locked_crv_amount,
             value=locked_crv_amount * CURRENT_PRICE_MOCK,
         )
+
+
+@pytest.mark.parametrize('ethereum_accounts', [['0xfBe970e455a52acCa2A86265202da711Ac7A99dd']])
+def test_across_staked_lp_balances(
+        ethereum_inquirer: 'EthereumInquirer',
+        ethereum_transaction_decoder: 'EthereumTransactionDecoder',
+        ethereum_accounts: list[ChecksumEvmAddress],
+        inquirer: 'Inquirer',  # pylint: disable=unused-argument
+) -> None:
+    token = get_or_create_evm_token(
+        userdb=ethereum_inquirer.database,
+        evm_address=string_to_evm_address('0xC9b09405959f63F72725828b5d449488b02be1cA'),
+        chain_id=ChainID.ETHEREUM,
+        token_kind=TokenKind.ERC20,
+        symbol='Av2-USDC-LP',
+        decimals=9,
+        protocol=CPT_ACROSS,
+    )
+    events_db = DBHistoryEvents(ethereum_inquirer.database)
+    with ethereum_inquirer.database.conn.write_ctx() as write_cursor:
+        events_db.add_history_event(write_cursor=write_cursor, event=EvmEvent(
+            tx_ref=deserialize_evm_tx_hash('0xba03ae3521fb051d2f2c11355401f13f004978cc2b6af3d936a7333d8c5ce01f'),
+            sequence_index=178,
+            timestamp=TimestampMS(1782476591000),
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.DEPOSIT,
+            event_subtype=HistoryEventSubType.DEPOSIT_TO_PROTOCOL,
+            asset=token,
+            amount=FVal('0.941791733'),
+            location_label=(user_address := ethereum_accounts[0]),
+            counterparty=CPT_ACROSS,
+            address=string_to_evm_address('0x9040e41eF5E8b281535a96D9a48aCb8cfaBD9a48'),
+        ))
+
+    with patch.object(ethereum_inquirer, 'multicall', return_value=[WEB3.codec.encode(
+        ['(uint256,uint256,uint256,uint256)'],
+        [(941791733, 1782476591, 2208435768107840498940736998091, 0)],
+    )]):
+        across_balances = AcrossBalances(
+            evm_inquirer=ethereum_inquirer,
+            tx_decoder=ethereum_transaction_decoder,
+        ).query_balances()
+
+    staked_amount = FVal('0.941791733')
+    assert across_balances[user_address].assets[token][CPT_ACROSS] == Balance(
+        amount=staked_amount,
+        value=staked_amount * CURRENT_PRICE_MOCK,
+    )
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])

@@ -31,6 +31,7 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 PROTOCOLS_WITH_BALANCES = Literal[
+    'across',
     'aerodrome',
     'curve',
     'convex',
