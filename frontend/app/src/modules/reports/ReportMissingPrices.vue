@@ -233,32 +233,41 @@ onMounted(async () => {
           @blur="updatePrice(row)"
         >
           <template #append>
-            <RuiTooltip
+            <div
               v-if="row.rateLimited"
-              :popper="{ placement: 'top' }"
-              :open-delay="400"
-              tooltip-class="max-w-[16rem]"
-              :disabled="refreshing"
+              class="flex items-center gap-1"
             >
-              <template #activator>
-                <RuiButton
-                  :disabled="!!row.price || refreshing"
-                  :loading="refreshing"
-                  class="-mr-3 !py-[0.625rem] rounded-l-none"
-                  size="sm"
-                  color="primary"
-                  @click="refreshHistoricalPrice(row)"
-                >
+              <RuiTooltip
+                :popper="{ placement: 'right' }"
+                :open-delay="700"
+                tooltip-class="max-w-[16rem]"
+              >
+                <template #activator>
                   <RuiIcon
+                    class="mr-1"
                     size="20"
-                    name="lu-refresh-ccw"
+                    name="lu-triangle-alert"
+                    color="warning"
                   />
-                </RuiButton>
-              </template>
-              <span>
-                {{ t('profit_loss_report.actionable.missing_prices.refresh_price_hint') }}
-              </span>
-            </RuiTooltip>
+                </template>
+                <span>
+                  {{ t('profit_loss_report.actionable.missing_prices.refresh_price_hint') }}
+                </span>
+              </RuiTooltip>
+              <RuiButton
+                :disabled="!!row.price || refreshing"
+                :loading="refreshing"
+                class="-mr-3 !py-[0.625rem] rounded-l-none"
+                size="sm"
+                color="primary"
+                @click="refreshHistoricalPrice(row)"
+              >
+                <RuiIcon
+                  size="20"
+                  name="lu-refresh-ccw"
+                />
+              </RuiButton>
+            </div>
           </template>
         </AmountInput>
       </template>

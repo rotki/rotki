@@ -5062,7 +5062,7 @@
         "no_filled_prices": "No prices are filled",
         "price_is_saved": "Price is saved",
         "price_not_found": "Price not found",
-        "refresh_price_hint": "Rate limiting detected when rokti tried to fetch the historical price. You can either fetch the historical price again manually, or input manual price.",
+        "refresh_price_hint": "Rate limiting detected when rotki tried to fetch the historical price. You can either fetch the historical price again manually, or input manual price.",
         "regenerate_report_nudge": "click button below to re-generate the report.",
         "skipped_all_events_confirmation": "Are you sure you want to skip all events whose asset price is missing?",
         "title": "Missing Prices ({total})",
