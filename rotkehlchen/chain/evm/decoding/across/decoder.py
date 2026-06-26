@@ -1,6 +1,7 @@
 import logging
 from typing import TYPE_CHECKING, Any
 
+from rotkehlchen.assets.utils import asset_normalized_value
 from rotkehlchen.chain.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.decoding.utils import maybe_reshuffle_events
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
@@ -10,6 +11,7 @@ from rotkehlchen.chain.evm.decoding.across.constants import (
     CPT_ACROSS,
     DEPOSIT_TOPICS,
     FILL_TOPICS,
+    FILLED_RELAY_WITH_RELAY_EXECUTION_INFO,
     LIQUIDITY_ADDED,
     LIQUIDITY_REMOVED,
     LP_TOKEN_STAKED,
@@ -22,6 +24,7 @@ from rotkehlchen.chain.evm.decoding.structures import (
     DecoderContext,
     EvmDecodingOutput,
 )
+from rotkehlchen.chain.evm.decoding.weth.constants import CHAIN_ID_TO_WETH_MAPPING
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import ChecksumEvmAddress
@@ -99,15 +102,30 @@ class AcrossCommonDecoder(EvmDecoderInterface):
         return DEFAULT_EVM_DECODING_OUTPUT
 
     def _decode_fill(self, context: DecoderContext) -> EvmDecodingOutput:
-        """Handle FilledRelay — user receives tokens from SpokePool on the destination chain.
-
-        The recipient address is at word 9 (bytes 288:320) of the non-indexed
-        event data across all versions of the FilledRelay event.
-        """
-        if not self.base.is_tracked(recipient := bytes_to_address(context.tx_log.data[288:320])):
-            return DEFAULT_EVM_DECODING_OUTPUT
+        """Handle FilledRelay — user receives tokens from SpokePool on the destination chain."""
+        expected_assets, expected_amount = (), None
+        # In the relayExecutionInfo variant the actual receiver is the updatedRecipient.
+        if context.tx_log.topics[0] == FILLED_RELAY_WITH_RELAY_EXECUTION_INFO:
+            recipient = bytes_to_address(context.tx_log.data[352:384])
+            if recipient == ZERO_ADDRESS:
+                recipient = bytes_to_address(context.tx_log.data[288:320])
+            output_token = self.base.get_or_create_evm_token(
+                address=bytes_to_address(context.tx_log.data[32:64]),
+            )
+            expected_assets = (output_token,)
+            if output_token == CHAIN_ID_TO_WETH_MAPPING.get(self.node_inquirer.chain_id):
+                expected_assets = (self.node_inquirer.native_token, output_token)
+            expected_amount = asset_normalized_value(
+                amount=int.from_bytes(context.tx_log.data[416:448]) or int.from_bytes(context.tx_log.data[96:128]),  # noqa: E501
+                asset=output_token,
+            )
+        else:
+            recipient = bytes_to_address(context.tx_log.data[288:320])
 
         origin_chain_id = int.from_bytes(context.tx_log.topics[1])
+
+        if not self.base.is_tracked(recipient):
+            return DEFAULT_EVM_DECODING_OUTPUT
         if (from_chain := ACROSS_CHAIN_MAPPING.get(origin_chain_id)) is not None:
             chain_info = f' from {from_chain.label()} to {self.node_inquirer.chain_id.label()}'
         else:
@@ -118,7 +136,9 @@ class AcrossCommonDecoder(EvmDecoderInterface):
                 event.event_type == HistoryEventType.RECEIVE and
                 event.event_subtype == HistoryEventSubType.NONE and
                 event.location_label == recipient and
-                event.counterparty is None
+                event.counterparty is None and
+                (len(expected_assets) == 0 or event.asset in expected_assets) and
+                (expected_amount is None or event.amount == expected_amount)
             ):
                 event.event_type = HistoryEventType.WITHDRAWAL
                 event.event_subtype = HistoryEventSubType.BRIDGE
@@ -133,6 +153,8 @@ class AcrossCommonDecoder(EvmDecoderInterface):
                 action='transform',
                 from_event_type=HistoryEventType.RECEIVE,
                 from_event_subtype=HistoryEventSubType.NONE,
+                asset=expected_asset,
+                amount=expected_amount,
                 location_label=recipient,
                 to_event_type=HistoryEventType.WITHDRAWAL,
                 to_event_subtype=HistoryEventSubType.BRIDGE,
@@ -141,7 +163,7 @@ class AcrossCommonDecoder(EvmDecoderInterface):
                     f'Bridge {{amount}} {{symbol}}'
                     f'{chain_info} via Across'
                 ),
-            )])
+            ) for expected_asset in expected_assets or (None,)])
 
         return DEFAULT_EVM_DECODING_OUTPUT
 
