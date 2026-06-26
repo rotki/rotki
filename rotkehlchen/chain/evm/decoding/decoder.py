@@ -632,11 +632,20 @@ class EVMTransactionDecoder(TransactionDecoder['EvmTransaction', EvmDecodingRule
                 events.extend(decoding_output.events)
                 continue
 
-            rules_decoding_output = self.try_all_rules(
-                token=get_evm_token(
+            # Only resolve the token for transfer/approval logs, since the erc20/721 transfer and
+            # approve built-ins are the only event rules that consume it (all other rules mark it
+            # unused). For any other log the lookup would be wasted: misses are not cached
+            # (resolver re-raises UnknownAsset), so a non-token emitter (pool/router/vault) would
+            # trigger an uncached global-DB query on every decode.
+            token = None
+            if len(tx_log.topics) != 0 and tx_log.topics[0] in (ERC20_OR_ERC721_TRANSFER, ERC20_OR_ERC721_APPROVE):  # noqa: E501
+                token = get_evm_token(
                     evm_address=tx_log.address,
                     chain_id=self.evm_inquirer.chain_id,
-                ),
+                )
+
+            rules_decoding_output = self.try_all_rules(
+                token=token,
                 tx_log=tx_log,
                 transaction=transaction,
                 decoded_events=events,
@@ -1098,6 +1107,11 @@ class EVMTransactionDecoder(TransactionDecoder['EvmTransaction', EvmDecodingRule
             return DEFAULT_EVM_DECODING_OUTPUT
 
         token_kind, collectible_id = token_kind_and_id
+        # NOTE: We resolve/create the token here for *every* ERC20/721 transfer log, even ones
+        # where neither side is a tracked address (e.g. a pool->router or pool-internal hop in
+        # the user's swap). This must not be gated on tracked addresses: protocol decoders
+        # (AMM/aggregator swaps such as Uniswap V4) rely on these intermediate tokens existing
+        # in the global DB to read their metadata and reconstruct the swap's amounts and fees.
         if token is None:
             try:
                 found_token = get_or_create_evm_token(
