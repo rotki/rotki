@@ -64,14 +64,33 @@ class DBEnumMixIn(SerializableEnumMixin, metaclass=ABCEnumMeta):
         -May raise a DeserializationError if something is wrong with the DB data"""
 
 
+# Caches for the serialized string of each enum member. Members are immortal singletons,
+# so memoizing avoids recomputing the same split/lower/join on every call - these run
+# multiple times per history event while serializing them for the api.
+_name_words_cache: dict[Enum, str] = {}
+_value_words_cache: dict[Enum, str] = {}
+
+
+def _name_to_words(member: Enum) -> str:
+    if (cached := _name_words_cache.get(member)) is None:
+        _name_words_cache[member] = cached = ' '.join(word.lower() for word in member.name.split('_'))  # noqa: E501
+    return cached
+
+
+def _value_to_words(member: Enum) -> str:
+    if (cached := _value_words_cache.get(member)) is None:
+        _value_words_cache[member] = cached = ' '.join(word.lower() for word in member.value.split('_'))  # noqa: E501
+    return cached
+
+
 class SerializableEnumNameMixin(SerializableEnumMixin):
     """An enum that uses the name of the enum to serialize/deserialize"""
 
     def __str__(self) -> str:
-        return ' '.join(word.lower() for word in self.name.split('_'))  # pylint: disable=no-member
+        return _name_to_words(self)
 
     def serialize(self) -> str:
-        return str(self)
+        return _name_to_words(self)
 
     @classmethod
     def deserialize(cls, value: str) -> Self:
@@ -92,10 +111,10 @@ class SerializableEnumValueMixin(SerializableEnumMixin):
     """An enum that uses lowercase value for serialization but uses name for __str__"""
 
     def __str__(self) -> str:
-        return ' '.join(word.lower() for word in self.name.split('_'))  # pylint: disable=no-member
+        return _name_to_words(self)
 
     def serialize(self) -> str:
-        return ' '.join(word.lower() for word in self.value.split('_'))  # pylint: disable=no-member
+        return _value_to_words(self)
 
     @classmethod
     def deserialize(cls, value: str) -> Self:
@@ -117,10 +136,10 @@ class SerializableEnumIntValueMixin(SerializableEnumMixin):
     For serialization to/from DB the int value is used"""
 
     def __str__(self) -> str:
-        return ' '.join(word.lower() for word in self.name.split('_'))  # pylint: disable=no-member
+        return _name_to_words(self)
 
     def serialize(self) -> str:
-        return ' '.join(word.lower() for word in self.value.split('_'))  # pylint: disable=no-member
+        return _value_to_words(self)
 
     @classmethod
     def deserialize(cls, value: str) -> Self:

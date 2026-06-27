@@ -2,6 +2,7 @@ import itertools
 from pathlib import Path
 from shutil import copyfile
 from typing import TYPE_CHECKING
+from unittest.mock import patch
 from uuid import uuid4
 
 import pytest
@@ -269,6 +270,28 @@ def test_check_asset_exists(globaldb):
         symbol='EUR',
     ))
     assert globaldb.check_asset_exists(FiatAsset.initialize(identifier='mieur', name='Euro', symbol='EUR')) == ['EUR', '4']  # noqa: E501
+
+
+def test_check_existence_caches_db_lookups(globaldb):
+    """check_existence should hit the globaldb only once per asset and reuse the
+    cache afterwards. This is the per-event-row hot path during deserialization, so
+    repeated/identical identifiers must not re-query the globaldb."""
+    AssetResolver.clean_memory_cache()
+    with patch.object(
+            GlobalDBHandler,
+            'asset_id_exists',
+            wraps=GlobalDBHandler.asset_id_exists,
+    ) as mock_exists:
+        # case-insensitive variants of the same asset should all normalize and only query once
+        assert AssetResolver.check_existence('eTh') == 'ETH'
+        assert AssetResolver.check_existence('ETH') == 'ETH'
+        assert AssetResolver.check_existence('eth') == 'ETH'
+        assert mock_exists.call_count == 1
+
+        # invalidating the cache for that asset forces exactly one fresh lookup
+        AssetResolver.clean_memory_cache('ETH')
+        assert AssetResolver.check_existence('ETH') == 'ETH'
+        assert mock_exists.call_count == 2
 
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
