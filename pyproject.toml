@@ -99,7 +99,7 @@ dev = [
     "pytest-deadfixtures @ git+https://github.com/rotki/pytest-deadfixtures@87d2be8#egg=pytest-deadfixtures", # temporarily due to false positive
     "pytest-socket==0.7.0",
     "pytest-vcr==1.0.2",
-    "vcrpy==8.1.1",
+    "vcrpy==8.2.1",
     "freezegun==1.5.5",
     # To test google spreadsheet uploading
     "google-auth-httplib2==0.2.0",
