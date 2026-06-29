@@ -460,15 +460,6 @@
           "title": "Получение курса конвертации"
         }
       },
-      "loopring": {
-        "error": {
-          "description": "Не удалось запросить балансы Loopring: {error}",
-          "title": "Запрос балансов Loopring"
-        },
-        "task": {
-          "title": "Запрос балансов Loopring"
-        }
-      },
       "manual_balances": {
         "error": {
           "message": "Ошибка: {message}",
@@ -2625,13 +2616,6 @@
       "description": "Рекомендуется для Solana для запроса данных транзакций без жестких ограничений скорости публичных RPC.",
       "hint": "Введите ваш Helius API ключ",
       "title": "Helius"
-    },
-    "loopring": {
-      "description": "Используется для запроса балансов в Loopring. Этот API ключ сможет запрашивать только тот аккаунт, который сгенерировал этот ключ.",
-      "hint": "Введите ваш Loopring API ключ",
-      "not_enabled": "Модуль Loopring не включен. Ваши балансы не будут получены, пока вы не включите модуль Loopring",
-      "settings": "Настройки",
-      "title": "Loopring"
     },
     "monerium": {
       "access_token": "Токен доступа",

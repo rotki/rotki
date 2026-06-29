@@ -255,15 +255,6 @@
           "title": "获取转化率"
         }
       },
-      "loopring": {
-        "error": {
-          "description": "查询路印协议余额失败：{error}",
-          "title": "查询路印协议余额"
-        },
-        "task": {
-          "title": "查询路印协议余额"
-        }
-      },
       "manual_balances": {
         "error": {
           "message": "失败： {message}",
@@ -1721,13 +1712,6 @@
       "title": "Etherscan"
     },
     "get_api_key": "您可以申请 an API key {link}",
-    "loopring": {
-      "description": "用于查询路印协议中的余额。此API密钥只能查询生成此密钥的账户。",
-      "hint": "输入您的 Loopring API 密钥",
-      "not_enabled": "路印协议模块未启用。除非您启用路印协议模块，否则您的余额将不会被检索",
-      "settings": "设置",
-      "title": "Loopring"
-    },
     "opensea": {
       "description": "用于查询OpenSea的NFT信息和余额。",
       "hint": "输入您的 OpenSea API key",

@@ -16,7 +16,6 @@ export const ExternalServiceKeys = z.object({
   etherscan: ApiKey.optional(),
   gnosis_pay: ApiKey.optional(),
   helius: ApiKey.optional(),
-  loopring: ApiKey.optional(),
   monerium: ApiKey.optional(),
   opensea: ApiKey.optional(),
   thegraph: ApiKey.optional(),

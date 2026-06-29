@@ -2279,16 +2279,6 @@ class EthereumModuleResource(BaseMethodView):
         return self.rest_api.supported_modules()
 
 
-class LoopringBalancesResource(BaseMethodView):
-
-    get_schema = AsyncQueryArgumentSchema()
-
-    @require_loggedin_user()
-    @use_kwargs(get_schema, location='json_and_query')
-    def get(self, async_query: bool) -> Response:
-        return self.rest_api.get_loopring_balances(async_query=async_query)
-
-
 class LiquityTrovesResource(BaseMethodView):
 
     get_schema = AsyncQueryArgumentSchema()

@@ -26,19 +26,10 @@ export type Filters = MatchedKeywordWithBehaviour<BlockchainAccountFilterValueKe
 export function useBlockchainAccountFilter(t: ReturnType<typeof useI18n>['t'], category: MaybeRefOrGetter<string>): FilterSchema<Filters, Matcher> {
   const filters = ref<Filters>({});
 
-  const { chainIds, isEvm } = useAccountCategoryHelper(category);
+  const { chainIds } = useAccountCategoryHelper(category);
   const { getAddressName } = useAddressNameResolution();
 
-  const filterableChains = computed<string[]>(() => {
-    const evm = get(isEvm);
-    const ids = get(chainIds);
-    if (!evm)
-      return ids;
-    return [
-      ...ids,
-      'loopring',
-    ];
-  });
+  const filterableChains = computed<string[]>(() => get(chainIds));
 
   const { getAccountsByCategory } = useBlockchainAccountData();
   const accountsByCategory = getAccountsByCategory(category);

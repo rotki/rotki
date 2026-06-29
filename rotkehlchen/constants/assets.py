@@ -149,7 +149,7 @@ A_ELFI: Final = Asset('eip155:1/erc20:0x5c6D51ecBA4D8E4F20373e3ce96a62342B125D6d
 # Needed by iconomi
 A_AUST: Final = Asset('AUST')
 
-# Needed by loopring.py
+# Legacy Ethereum assets
 A_HT: Final = Asset('eip155:1/erc20:0x6f259637dcD74C767781E37Bc6133cd6A68aa161')
 A_OKB: Final = Asset('eip155:1/erc20:0x75231F58b43240C9718Dd58B4967c5114342a86c')
 A_KEEP: Final = Asset('eip155:1/erc20:0x85Eee30c52B0b379b046Fb0F85F4f3Dc3009aFEC')

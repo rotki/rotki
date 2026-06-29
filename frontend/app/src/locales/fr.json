@@ -344,15 +344,6 @@
           "title": "Récupération du taux de conversion"
         }
       },
-      "loopring": {
-        "error": {
-          "description": "Échec de la requête des soldes Loopring : {error}",
-          "title": "Requête des soldes Loopring"
-        },
-        "task": {
-          "title": "Requête des soldes Loopring"
-        }
-      },
       "manual_balances": {
         "error": {
           "message": "Échec : {message}",
@@ -1891,13 +1882,6 @@
       "title": "Etherscan"
     },
     "get_api_key": "Vous pouvez demander une clé API {link}",
-    "loopring": {
-      "description": "Utilisé pour interroger les soldes Loopring. Cette clé API ne pourra interroger que le compte qui a généré cette clé.",
-      "hint": "Entrer votre clé API Loopring",
-      "not_enabled": "Le module Loopring n'est pas activé. Vos soldes ne seront pas récupérés à moins que vous n'activiez le module Loopring",
-      "settings": "Paramètres",
-      "title": "Loopring"
-    },
     "monerium": {
       "access_token": "Jeton d'accès",
       "auth_failed": "Échec de l'autorisation avec Monerium",

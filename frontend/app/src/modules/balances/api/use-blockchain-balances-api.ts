@@ -3,31 +3,19 @@ import type { FetchBlockchainBalancePayload } from '@/modules/balances/types/blo
 import type { PurgeableModule } from '@/modules/core/common/modules';
 import { EvmTokensRecord } from '@/modules/balances/types/balances';
 import { api } from '@/modules/core/api/rotki-api';
-import {
-  VALID_WITH_PARAMS_SESSION_AND_EXTERNAL_SERVICE,
-  VALID_WITH_SESSION_AND_EXTERNAL_SERVICE,
-} from '@/modules/core/api/utils';
+import { VALID_WITH_PARAMS_SESSION_AND_EXTERNAL_SERVICE } from '@/modules/core/api/utils';
 import { type PendingTask, PendingTaskSchema } from '@/modules/core/tasks/types';
 
 interface UseBlockchainBalancesApiReturn {
   queryBlockchainBalances: (payload: FetchBlockchainBalancePayload, valueThreshold?: string) => Promise<PendingTask>;
   refreshBlockchainBalances: (payload: FetchBlockchainBalancePayload) => Promise<PendingTask>;
   queryXpubBalances: (payload: FetchBlockchainBalancePayload) => Promise<PendingTask>;
-  queryLoopringBalances: () => Promise<PendingTask>;
   fetchDetectedTokens: (chain: string, addresses: string[] | null) => Promise<EvmTokensRecord>;
   fetchDetectedTokensTask: (chain: string, addresses: string[]) => Promise<PendingTask>;
   deleteModuleData: (module?: Nullable<PurgeableModule>) => Promise<boolean>;
 }
 
 export function useBlockchainBalancesApi(): UseBlockchainBalancesApiReturn {
-  const queryLoopringBalances = async (): Promise<PendingTask> => {
-    const response = await api.get<PendingTask>('blockchains/eth/modules/loopring/balances', {
-      query: { asyncQuery: true },
-      validStatuses: VALID_WITH_SESSION_AND_EXTERNAL_SERVICE,
-    });
-    return PendingTaskSchema.parse(response);
-  };
-
   const queryBlockchainBalances = async ({ addresses, blockchain }: FetchBlockchainBalancePayload, valueThreshold?: string): Promise<PendingTask> => {
     let url = '/balances/blockchains';
     if (blockchain)
@@ -107,7 +95,6 @@ export function useBlockchainBalancesApi(): UseBlockchainBalancesApiReturn {
     fetchDetectedTokens,
     fetchDetectedTokensTask,
     queryBlockchainBalances,
-    queryLoopringBalances,
     queryXpubBalances,
     refreshBlockchainBalances,
   };

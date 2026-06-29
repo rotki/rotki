@@ -5,7 +5,6 @@ import type { BlockchainAccountBalance } from '@/modules/accounts/blockchain-acc
 import type { Collection } from '@/modules/core/common/collection';
 import { isEmpty } from 'es-toolkit/compat';
 import { getAccountId, getGroupId } from '@/modules/accounts/account-utils';
-import { LOOPRING_CHAIN } from '@/modules/balances/blockchain-types';
 import { sum } from '@/modules/core/common/display/balances';
 
 interface UseAccountTableDataReturn<T extends BlockchainAccountBalance> {
@@ -16,7 +15,6 @@ interface UseAccountTableDataReturn<T extends BlockchainAccountBalance> {
   getCategoryTotal: (category: string) => BigNumber;
   getChains: (row: AccountDataRow<T>) => string[];
   isExpanded: (row: AccountDataRow<T>) => boolean;
-  isOnlyShowingLoopringChain: (row: AccountDataRow<T>) => boolean;
   isVirtual: (row: AccountDataRow<T>) => boolean;
   rows: ComputedRef<AccountDataRow<T>[]>;
   totalValue: ComputedRef<BigNumber | undefined>;
@@ -89,10 +87,6 @@ export function useAccountTableData<T extends BlockchainAccountBalance>(
     return !!(('virtual' in row) && row.virtual);
   }
 
-  function isOnlyShowingLoopringChain(row: AccountDataRow<T>): boolean {
-    return ('chains' in row) && (row.chains.length === 1 && row.chains[0] === LOOPRING_CHAIN);
-  }
-
   return {
     anyExpansion,
     collapsed,
@@ -101,7 +95,6 @@ export function useAccountTableData<T extends BlockchainAccountBalance>(
     getCategoryTotal,
     getChains,
     isExpanded,
-    isOnlyShowingLoopringChain,
     isVirtual,
     rows,
     totalValue,

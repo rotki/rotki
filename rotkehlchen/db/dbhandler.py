@@ -65,7 +65,6 @@ from rotkehlchen.db.drivers.gevent import DBConnection, DBConnectionType, DBCurs
 from rotkehlchen.db.evmtx import DBEvmTx
 from rotkehlchen.db.filtering import UserNotesFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
-from rotkehlchen.db.loopring import DBLoopring
 from rotkehlchen.db.misc import detect_sqlcipher_version
 from rotkehlchen.db.pending_transactions import PendingTransactionsTracker
 from rotkehlchen.db.schema import DB_SCRIPT_CREATE_TABLES
@@ -1552,6 +1551,13 @@ class DBHandler:
         )
         write_cursor.execute('DELETE FROM gnosispay_data;')
 
+    def delete_loopring_data(self, write_cursor: 'DBCursor') -> None:
+        """Delete all legacy loopring related data"""
+        write_cursor.execute(
+            'DELETE FROM multisettings WHERE name LIKE ? ESCAPE ?',
+            ('loopring\\_%', '\\'),
+        )
+
     def purge_module_data(self, module_name: PurgeableModuleName | None) -> None:
         with self.user_write() as cursor:
             if module_name is None:
@@ -1571,13 +1577,6 @@ class DBHandler:
                 return
 
             log.debug(f'Purged {module_name} data from the DB')
-
-    def delete_loopring_data(self, write_cursor: 'DBCursor') -> None:
-        """Delete all loopring related data"""
-        write_cursor.execute(
-            'DELETE FROM multisettings WHERE name LIKE ? ESCAPE ?',
-            ('loopring\\_%', '\\'),
-        )
 
     def get_used_query_range(self, cursor: 'DBCursor', name: str) -> tuple[Timestamp, Timestamp] | None:  # noqa: E501
         """Get the last start/end timestamp range that has been queried for name
@@ -2838,8 +2837,6 @@ class DBHandler:
                 'DELETE FROM multisettings WHERE name LIKE ? ESCAPE ? AND value = ?',
                 ('queried\\_address\\_%', '\\', address),
             )
-            loopring = DBLoopring(self)
-            loopring.remove_accountid_mapping(write_cursor, address)
             # Delete withdrawals related data
             self.delete_dynamic_cache(write_cursor=write_cursor, name=DBCacheDynamic.WITHDRAWALS_TS, address=address)  # noqa: E501
             self.delete_dynamic_cache(write_cursor=write_cursor, name=DBCacheDynamic.WITHDRAWALS_IDX, address=address)  # noqa: E501

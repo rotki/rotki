@@ -250,15 +250,6 @@
           "title": "Recuperando el tipo de intercambio"
         }
       },
-      "loopring": {
-        "error": {
-          "description": "La consulta de balances de Loopring falló: {error}",
-          "title": "Consultando balances de Loopring"
-        },
-        "task": {
-          "title": "Consultando balances de Loopring"
-        }
-      },
       "manual_balances": {
         "error": {
           "message": "Falló: {message}",
@@ -1661,13 +1652,6 @@
       "title": "Etherscan"
     },
     "get_api_key": "You can apply for an API key {link}",
-    "loopring": {
-      "description": "Used to query balances in Loopring. This API key will only be able to query the account that generated this key.",
-      "hint": "Enter your Loopring API key",
-      "not_enabled": "The Loopring module is not enabled. Your balances won't be retrieved unless you enable the loopring module",
-      "settings": "Ajustes",
-      "title": "Loopring"
-    },
     "opensea": {
       "description": "Used to query NFT information and balances from OpenSea.",
       "hint": "Enter your OpenSea API key",

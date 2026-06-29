@@ -30,10 +30,6 @@ const services = [
     name: 'beaconchain',
   },
   {
-    component: defineAsyncComponent(() => import('@/modules/settings/api-keys/external/LoopringApiKey.vue')),
-    name: 'loopring',
-  },
-  {
     component: defineAsyncComponent(() => import('@/modules/settings/api-keys/external/OpenSeaApiKey.vue')),
     name: 'opensea',
   },

@@ -498,15 +498,6 @@
           "title": "Fetching conversion rate"
         }
       },
-      "loopring": {
-        "error": {
-          "description": "Querying Loopring balances failed: {error}",
-          "title": "Querying Loopring balances"
-        },
-        "task": {
-          "title": "Querying Loopring balances"
-        }
-      },
       "manual_balances": {
         "error": {
           "message": "Failed: {message}",
@@ -2891,13 +2882,6 @@
       "description": "Recommended for Solana to query transaction data without the heavy rate limits of public RPCs.",
       "hint": "Enter your Helius API key",
       "title": "Helius"
-    },
-    "loopring": {
-      "description": "Used to query balances in Loopring. This API key will only be able to query the account that generated this key.",
-      "hint": "Enter your Loopring API key",
-      "not_enabled": "The Loopring module is not enabled. Your balances won't be retrieved unless you enable the loopring module",
-      "settings": "Settings",
-      "title": "Loopring"
     },
     "monerium": {
       "access_token": "Access token",

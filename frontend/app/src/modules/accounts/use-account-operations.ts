@@ -34,7 +34,7 @@ interface UseAccountOperationsReturn {
 
 export function useAccountOperations(): UseAccountOperationsReturn {
   const { fetch } = useBlockchainAccounts();
-  const { fetchBlockchainBalances, fetchLoopringBalances, refreshBlockchainBalances } = useBlockchainBalances();
+  const { fetchBlockchainBalances, refreshBlockchainBalances } = useBlockchainBalances();
   const { fetchEnsNames } = useEnsOperations();
   const { detectEvmAccounts: detectEvmAccountsCaller } = useBlockchainAccountsApi();
   const { isEvm, supportedChains, supportsTransactions } = useSupportedChains();
@@ -88,12 +88,8 @@ export function useAccountOperations(): UseAccountOperationsReturn {
         : fetchBlockchainBalances({ addresses: uniqueAddresses, blockchain: chain, isXpub }),
     ];
 
-    if (isEth || !chain) {
-      pending.push(fetchLoopringBalances(false));
-
-      if (isEth && getAddresses(Blockchain.ETH2).length > 0)
-        startPromise(refreshAccounts({ blockchain: Blockchain.ETH2 }));
-    }
+    if (isEth && getAddresses(Blockchain.ETH2).length > 0)
+      startPromise(refreshAccounts({ blockchain: Blockchain.ETH2 }));
 
     await Promise.allSettled(pending);
   };

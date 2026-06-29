@@ -5,7 +5,6 @@ export enum Module {
   MAKERDAO_VAULTS = 'makerdao_vaults',
   MAKERDAO_DSR = 'makerdao_dsr',
   UNISWAP = 'uniswap',
-  LOOPRING = 'loopring',
   ETH2 = 'eth2',
   SUSHISWAP = 'sushiswap',
   NFTS = 'nfts',
@@ -16,6 +15,7 @@ export enum Module {
 export enum PurgeableOnlyModule {
   COWSWAP = 'cowswap',
   GNOSIS_PAY = 'gnosis_pay',
+  LOOPRING = 'loopring',
 }
 
 export type PurgeableModule = Module | PurgeableOnlyModule;
@@ -47,11 +47,6 @@ export const SUPPORTED_MODULES: SupportedModule[] = [
     icon: getPublicProtocolImagePath('uniswap.svg'),
     identifier: Module.UNISWAP,
     name: 'Uniswap',
-  },
-  {
-    icon: getPublicProtocolImagePath('loopring.svg'),
-    identifier: Module.LOOPRING,
-    name: 'Loopring',
   },
   {
     icon: getPublicProtocolImagePath('ethereum.svg'),
