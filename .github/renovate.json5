@@ -9,6 +9,26 @@
   "dependencyDashboardAutoclose": false,
   "minimumReleaseAge": "7 days",
   "packageRules": [
+    // Group non-major (minor/patch) updates per subproject so the dependency
+    // dashboard reads as a few per-stack buckets instead of a flat list.
+    // Majors are intentionally left ungrouped (own PR each), and so are
+    // GitHub Actions, the Dockerfile, git submodules and the tools/ Rust
+    // crate, since they are not matched by these paths.
+    {
+      "matchFileNames": ["frontend/**"],
+      "matchUpdateTypes": ["minor", "patch"],
+      "groupName": "frontend (non-major)"
+    },
+    {
+      "matchFileNames": ["pyproject.toml", "uv.lock"],
+      "matchUpdateTypes": ["minor", "patch"],
+      "groupName": "core (non-major)"
+    },
+    {
+      "matchFileNames": ["colibri/**"],
+      "matchUpdateTypes": ["minor", "patch"],
+      "groupName": "colibri (non-major)"
+    },
     {
       "allowedVersions": "/^(24)\\./",
       "groupName": "Node.js",
