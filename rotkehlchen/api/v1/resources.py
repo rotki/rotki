@@ -2113,6 +2113,14 @@ class InfoResource(BaseMethodView):
         return self.rest_api.get_info(check_for_updates=check_for_updates)
 
 
+class McpInfoResource(BaseMethodView):
+
+    def get(self) -> Response:
+        return self.rest_api.get_mcp_info(
+            backend_url=f'{flask_request.host_url.rstrip("/")}/api/1',
+        )
+
+
 class PingResource(BaseMethodView):
 
     def get(self) -> Response:

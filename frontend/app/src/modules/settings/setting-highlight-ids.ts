@@ -30,6 +30,7 @@ export const SettingsHighlightIds = {
   INTERNAL_TX_CONFLICT_REPULL: 'setting-internal-tx-conflict-repull',
   LANGUAGE: 'setting-language',
   LOG_LEVEL: 'setting-log-level',
+  MCP_SERVER_COMMAND: 'setting-mcp-server-command',
   MIN_OUT_OF_SYNC_PERIOD: 'setting-min-out-of-sync-period',
   MODULES: 'setting-modules',
   NEWLY_DETECTED_TOKENS_MAX_COUNT: 'setting-newly-detected-tokens-max-count',

@@ -1740,6 +1740,13 @@
       "log_level": {
         "hint": "Specify minimum severity level for recorded log messages.",
         "label": "Log Level"
+      },
+      "mcp_command": {
+        "hint": "Use this command in an AI agent MCP server configuration.",
+        "label": "MCP Server Command",
+        "load_error": "Failed to load MCP server information: {message}",
+        "loading": "Loading MCP server command...",
+        "unavailable": "MCP server is not available in this environment."
       }
     },
     "sqlite_instructions": {

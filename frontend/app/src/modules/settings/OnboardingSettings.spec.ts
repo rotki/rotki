@@ -22,6 +22,7 @@ vi.mock('@/modules/shell/app/use-electron-interop', (): Record<string, unknown> 
   useInterop: vi.fn().mockReturnValue({
     isPackaged: true,
     restartBackend: vi.fn(),
+    mcpServerInfo: vi.fn().mockResolvedValue({ available: false, reason: '' }),
     setLogLevel: setLogLevelMock,
     config: vi.fn().mockReturnValue({
       logDirectory: '/Users/home/rotki/logs',
@@ -83,6 +84,7 @@ vi.mock('@/modules/settings/api/use-settings-api', (): Record<string, unknown> =
       return { ...backendConfig };
     }),
     colibriSettings: vi.fn().mockResolvedValue({ loglevel: { value: 'info', isDefault: true } }),
+    mcpServerInfo: vi.fn().mockResolvedValue({ available: false, reason: '' }),
     updateColibriConfiguration: updateColibriConfigurationMock,
   }),
 }));
@@ -232,6 +234,7 @@ describe('onboarding-settings', () => {
       vi.mocked(useSettingsApi).mockReturnValueOnce({
         backendSettings: vi.fn().mockReturnValue(deferred),
         colibriSettings: vi.fn().mockResolvedValue({ loglevel: { value: 'info', isDefault: true } }),
+        mcpServerInfo: vi.fn().mockResolvedValue({ available: false, reason: '' }),
         updateBackendConfiguration: vi.fn(),
         updateColibriConfiguration: updateColibriConfigurationMock,
         setSettings: vi.fn(),
