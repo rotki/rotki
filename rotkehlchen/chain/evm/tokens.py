@@ -355,13 +355,14 @@ class EvmTokens(ABC):  # noqa: B024
         either a list of tokens or the timestamp of the last tokens query for that address.
         """
         addresses_info = {}
+        token_exceptions = self._per_chain_token_exceptions()
         with self.db.conn.read_ctx() as cursor:
             for address in addresses:
                 addresses_info[address] = self.db.get_tokens_for_address(
                     cursor=cursor,
                     address=address,
                     blockchain=self.evm_inquirer.blockchain,
-                    token_exceptions=self._per_chain_token_exceptions(),
+                    token_exceptions=token_exceptions,
                 )
 
         return addresses_info
@@ -582,6 +583,7 @@ class EvmTokens(ABC):  # noqa: B024
         all_tokens: set[EvmToken] = set()
         addresses_to_tokens: dict[ChecksumEvmAddress, list[EvmToken]] = {}
         chunk_size, call_order = self._get_token_detection_chunk_size_call_order()
+        token_exceptions = self._per_chain_token_exceptions()
 
         with self.db.conn.read_ctx() as cursor:
             for address in addresses:
@@ -589,7 +591,7 @@ class EvmTokens(ABC):  # noqa: B024
                     cursor=cursor,
                     address=address,
                     blockchain=self.evm_inquirer.blockchain,
-                    token_exceptions=self._per_chain_token_exceptions(),
+                    token_exceptions=token_exceptions,
                 )
                 if saved_list is None:
                     continue  # Do not query if we know the address has no tokens
@@ -690,6 +692,7 @@ class EvmTokensWithProxies(EvmTokens, ABC):
         proxies_mapping = self.evm_inquirer.proxies_inquirer.get_accounts_having_proxy()
 
         addresses_info = {}
+        token_exceptions = self._per_chain_token_exceptions()
         with self.db.conn.read_ctx() as cursor:
             for (
                 address,
@@ -707,7 +710,7 @@ class EvmTokensWithProxies(EvmTokens, ABC):
                                 cursor=cursor,
                                 address=proxy_address,
                                 blockchain=self.evm_inquirer.blockchain,
-                                token_exceptions=self._per_chain_token_exceptions(),
+                                token_exceptions=token_exceptions,
                             )
                             if single_proxy_detected_tokens:
                                 proxy_detected_tokens |= set(single_proxy_detected_tokens)
