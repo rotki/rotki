@@ -68,6 +68,11 @@ if TYPE_CHECKING:
     from rotkehlchen.exchanges.exchange import ExchangeInterface
 
 
+def maybe_clear_priority_tasks(rotki: Rotkehlchen) -> None:
+    if (task_manager := rotki.task_manager) is not None:
+        task_manager.priority_tasks_queue.clear()
+
+
 @pytest.fixture(name='should_mock_settings')
 def fixture_should_mock_settings():
     return True
@@ -632,6 +637,7 @@ def fixture_rotkehlchen_api_server(
         latest_accounting_rules_data,
         initialize_accounting_rules,
         should_mock_settings,
+        enable_priority_tasks,
 ):
     """A partially mocked rotkehlchen server instance"""
 
@@ -688,6 +694,9 @@ def fixture_rotkehlchen_api_server(
         initialize_accounting_rules=initialize_accounting_rules,
         should_mock_settings=should_mock_settings,
     )
+    if enable_priority_tasks is False:
+        maybe_clear_priority_tasks(api_server.rest_api.rotkehlchen)
+
     with ExitStack() as stack:
         if start_with_logged_in_user is True:
             if network_mocking is True:
@@ -779,6 +788,7 @@ def rotkehlchen_instance(
         latest_accounting_rules,
         latest_accounting_rules_data,
         initialize_accounting_rules,
+        enable_priority_tasks,
 ) -> Rotkehlchen:
     """A partially mocked rotkehlchen instance"""
 
@@ -829,6 +839,9 @@ def rotkehlchen_instance(
         latest_accounting_rules_data=latest_accounting_rules_data,
         initialize_accounting_rules=initialize_accounting_rules,
     )
+    if enable_priority_tasks is False:
+        maybe_clear_priority_tasks(uninitialized_rotkehlchen)
+
     return uninitialized_rotkehlchen
 
 

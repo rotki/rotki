@@ -89,6 +89,7 @@ if TYPE_CHECKING:
     from rotkehlchen.rotkehlchen import Rotkehlchen
 
 
+@pytest.mark.parametrize('enable_priority_tasks', [True])
 def test_potential_maybe_schedule_task(task_manager: TaskManager):
     """Check that all the _maybe_... tasks are included in the potential tasks."""
     tasks = {function.__name__ for function in task_manager.potential_tasks}
@@ -99,6 +100,9 @@ def test_potential_maybe_schedule_task(task_manager: TaskManager):
         expected_tasks.remove('_maybe_process_historical_balances')
 
     assert expected_tasks == tasks
+    assert [function.__name__ for function in task_manager.priority_tasks_queue] == [
+        '_maybe_trigger_calendar_reminder',
+    ]
 
 
 @pytest.mark.parametrize('max_tasks_num', [5])
@@ -1223,6 +1227,69 @@ def test_send_ws_calendar_reminder(
     # ensure that we still have two reminders since they never got acknowledged
     with database.conn.read_ctx() as cursor:
         assert cursor.execute('SELECT COUNT(*) FROM calendar_reminders').fetchone()[0] == 2
+
+
+@pytest.mark.parametrize('max_tasks_num', [0])
+@pytest.mark.parametrize('enable_priority_tasks', [True])
+@pytest.mark.parametrize('function_scope_initialize_mock_rotki_notifier', [True])
+@pytest.mark.parametrize('use_function_scope_msg_aggregator', [True])
+def test_priority_queue_runs_calendar_reminders_when_task_slots_full(
+        task_manager: 'TaskManager',
+) -> None:
+    """Test that the calendar reminder check runs once from the priority queue even when
+    the regular scheduler has no free task slots."""
+    db_calendar = DBCalendar(task_manager.database)
+    event_id = db_calendar.create_calendar_entry(CalendarEntry(
+        name='Due reminder',
+        description='Triggered from the priority queue',
+        timestamp=ts_now(),
+        counterparty=None,
+        address=None,
+        blockchain=None,
+        color=None,
+        auto_delete=False,
+    ))
+    with task_manager.database.conn.write_ctx() as write_cursor:
+        write_cursor.execute(
+            'INSERT INTO calendar_reminders(event_id, secs_before) VALUES (?, ?)',
+            (event_id, DAY_IN_SECONDS),
+        )
+
+    regular_task = MagicMock(return_value=None)
+    task_manager.potential_tasks = [regular_task]
+    task_manager.should_schedule = True
+    task_manager.schedule()
+    gevent.joinall(task_manager.running_greenlets[task_manager._maybe_trigger_calendar_reminder])
+
+    assert regular_task.call_count == 0
+    assert len(task_manager.priority_tasks_queue) == 0
+    messages = task_manager.msg_aggregator.rotki_notifier.messages  # type: ignore[union-attr]  # rotki_notifier is MockRotkiNotifier
+    assert len(messages) == 1
+    assert messages[0].message_type == 'calendar_reminder'
+    assert messages[0].data['identifier'] == event_id
+
+
+@pytest.mark.parametrize('enable_priority_tasks', [True])
+def test_priority_queue_respects_disabled_scheduling(task_manager: 'TaskManager') -> None:
+    task_manager.should_schedule = False
+    task_manager.schedule()
+
+    assert [function.__name__ for function in task_manager.priority_tasks_queue] == [
+        '_maybe_trigger_calendar_reminder',
+    ]
+    assert task_manager.running_greenlets == {}
+
+
+@pytest.mark.parametrize('max_tasks_num', [1])
+def test_scheduler_runs_when_priority_queue_is_empty(task_manager: 'TaskManager') -> None:
+    regular_task = MagicMock(return_value=None)
+    task_manager.priority_tasks_queue.clear()
+    task_manager.potential_tasks = [regular_task]
+    task_manager.should_schedule = True
+
+    task_manager.schedule()
+
+    assert regular_task.call_count == 1
 
 
 @pytest.mark.parametrize('max_tasks_num', [5])
