@@ -5,6 +5,7 @@ minimumReleaseAgeExclude:
   - '@rotki/ui-library'
   - '@rotki/eslint-config'
   - '@rotki/eslint-plugin'
+  - plainfp
   - electron-builder@26.15.3
   - dmg-builder@26.15.3
   - app-builder-lib@26.15.3
@@ -97,6 +98,7 @@ catalog:
   npm-run-all2: 9.0.1
   ofetch: 1.5.1
   pinia: 3.0.4
+  plainfp: 0.1.1
   postcss: 8.5.15
   postcss-html: 1.8.1
   ps-list: 9.0.0

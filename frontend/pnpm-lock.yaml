@@ -198,6 +198,9 @@ catalogs:
     pinia:
       specifier: 3.0.4
       version: 3.0.4
+    plainfp:
+      specifier: 0.1.1
+      version: 0.1.1
     postcss:
       specifier: 8.5.15
       version: 8.5.15
@@ -429,6 +432,9 @@ importers:
       pinia:
         specifier: 'catalog:'
         version: 3.0.4(typescript@6.0.3)(vue@3.5.38(typescript@6.0.3))
+      plainfp:
+        specifier: 'catalog:'
+        version: 0.1.1(zod@3.25.76)
       ps-list:
         specifier: 'catalog:'
         version: 9.0.0
@@ -5111,6 +5117,15 @@ packages:
   pkijs@3.4.0:
     resolution: {integrity: sha512-emEcLuomt2j03vxD54giVB4SxTjnsqkU692xZOZXHDVoYyypEm+b3jpiTcc+Cf+myooc+/Ly0z01jqeNHVgJGw==}
     engines: {node: '>=16.0.0'}
+
+  plainfp@0.1.1:
+    resolution: {integrity: sha512-SJgcI74QS5/A28CQQ8NLhu3rjEWldNMD6d3JszV9WS3VqHbcHO4cA0WSIDYTLg2WtmHQtOVWPnO0YrjwnR0huw==}
+    engines: {node: '>=24.18.0', pnpm: '>=11.8.0'}
+    peerDependencies:
+      zod: ^3.22.0 || ^4.0.0
+    peerDependenciesMeta:
+      zod:
+        optional: true
 
   playwright-core@1.60.0:
     resolution: {integrity: sha512-9bW6zvX/m0lEbgTKJ6YppOKx8H3VOPBMOCFh2irXFOT4BbHgrx5hPjwJYLT40Lu+4qtD36qKc/Hn56StUW57IA==}
@@ -11608,6 +11623,10 @@ snapshots:
       pvtsutils: 1.3.6
       pvutils: 1.1.5
       tslib: 2.8.1
+
+  plainfp@0.1.1(zod@3.25.76):
+    optionalDependencies:
+      zod: 3.25.76
 
   playwright-core@1.60.0: {}
 
