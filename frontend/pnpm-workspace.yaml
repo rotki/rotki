@@ -30,6 +30,7 @@ packages:
   - 'eslint/*'
 overrides:
   chokidar: 5.0.0
+  ws: 8.21.0
 patchedDependencies:
   app-builder-lib: patches/app-builder-lib.patch
   bignumber.js@9.3.1: patches/bignumber.js@9.3.1.patch
