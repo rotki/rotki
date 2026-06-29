@@ -135,7 +135,6 @@ if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.modules.eth2.structures import (
         ValidatorDetailsWithStatus,
     )
-    from rotkehlchen.chain.ethereum.modules.l2.loopring import Loopring
     from rotkehlchen.chain.ethereum.modules.liquity.trove import Liquity
     from rotkehlchen.chain.ethereum.modules.makerdao.dsr import MakerdaoDsr
     from rotkehlchen.chain.ethereum.modules.makerdao.vaults import MakerdaoVaults
@@ -464,10 +463,6 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
 
     @overload
     def get_module(self, module_name: Literal['eth2']) -> 'Eth2 | None':
-        ...
-
-    @overload
-    def get_module(self, module_name: Literal['loopring']) -> 'Loopring | None':
         ...
 
     @overload
@@ -1174,30 +1169,6 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
 
         DBEth2(self.database).delete_validators(validator_indices)
         self.flush_eth2_cache()
-
-    @cache_response_timewise()
-    def get_loopring_balances(self) -> dict[CryptoAsset, Balance]:
-        """Query loopring balances if the module is activated
-
-        May raise:
-        - RemoteError if there is problems querying loopring api
-        """
-        # Check if the loopring module is activated
-        loopring_module = self.get_module('loopring')
-        if loopring_module is None:
-            return {}
-
-        addresses = self.queried_addresses_for_module('loopring')
-        balances = loopring_module.get_balances(addresses=addresses)
-
-        # Now that we have balances for the addresses we need to aggregate the
-        # assets in the different addresses
-        aggregated_balances: dict[CryptoAsset, Balance] = defaultdict(Balance)
-        for assets in balances.values():
-            for asset, balance in assets.items():
-                aggregated_balances[asset] += balance
-
-        return dict(aggregated_balances)
 
     @overload
     def get_chain_manager(self, blockchain: SUPPORTED_EVM_CHAINS_TYPE) -> 'EvmManager':

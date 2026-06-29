@@ -1981,15 +1981,6 @@ class RestAPI:
         )
 
     @async_api_call()
-    def get_loopring_balances(self) -> dict[str, Any]:
-        return self._eth_module_query(
-            module_name='loopring',
-            method='get_balances',
-            query_specific_balances_before=None,
-            addresses=self.rotkehlchen.chains_aggregator.queried_addresses_for_module('loopring'),
-        )
-
-    @async_api_call()
     def get_liquity_troves(self) -> dict[str, Any]:
         return self._eth_module_query(
             module_name='liquity',

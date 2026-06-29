@@ -52,7 +52,6 @@ const {
   getCategoryTotal,
   getChains,
   isExpanded,
-  isOnlyShowingLoopringChain,
   isVirtual,
   rows,
   totalValue,
@@ -135,7 +134,6 @@ defineExpose({
         :account-operation="accountOperation"
         :is-section-loading="isSectionLoading"
         :is-virtual="isVirtual(row)"
-        :is-only-showing-loopring-chain="isOnlyShowingLoopringChain(row)"
         @edit="edit(group, row)"
         @delete="confirmDelete($event)"
       />

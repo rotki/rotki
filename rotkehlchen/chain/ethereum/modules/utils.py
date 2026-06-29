@@ -5,7 +5,6 @@ MODULE_NAME_TO_PATH = {
     'compound': '.compound.compound',
     'sushiswap': '.sushiswap.sushiswap',
     'uniswap': '.uniswap.uniswap',
-    'loopring': '.l2.loopring',
     'liquity': '.liquity.trove',
     'makerdao_dsr': '.makerdao.dsr',
     'makerdao_vaults': '.makerdao.vaults',

@@ -12,47 +12,6 @@ describe('composables/api/balances/blockchain', () => {
     vi.clearAllMocks();
   });
 
-  describe('queryLoopringBalances', () => {
-    it('should fetch loopring balances with async_query param', async () => {
-      let capturedParams: URLSearchParams | null = null;
-
-      server.use(
-        http.get(`${backendUrl}/api/1/blockchains/eth/modules/loopring/balances`, ({ request }) => {
-          const url = new URL(request.url);
-          capturedParams = url.searchParams;
-          return HttpResponse.json({
-            result: {
-              task_id: 123,
-            },
-            message: '',
-          });
-        }),
-      );
-
-      const { queryLoopringBalances } = useBlockchainBalancesApi();
-      const result = await queryLoopringBalances();
-
-      expect(capturedParams!.get('async_query')).toBe('true');
-      expect(result.taskId).toBe(123);
-    });
-
-    it('should throw error on failure', async () => {
-      server.use(
-        http.get(`${backendUrl}/api/1/blockchains/eth/modules/loopring/balances`, () =>
-          HttpResponse.json({
-            result: null,
-            message: 'Loopring query failed',
-          })),
-      );
-
-      const { queryLoopringBalances } = useBlockchainBalancesApi();
-
-      await expect(queryLoopringBalances())
-        .rejects
-        .toThrow('Loopring query failed');
-    });
-  });
-
   describe('queryBlockchainBalances', () => {
     it('should fetch all blockchain balances without specific blockchain', async () => {
       let capturedUrl = '';
@@ -419,7 +378,7 @@ describe('composables/api/balances/blockchain', () => {
       let capturedUrl = '';
 
       server.use(
-        http.delete(`${backendUrl}/api/1/blockchains/eth/modules/loopring/data`, ({ request }) => {
+        http.delete(`${backendUrl}/api/1/blockchains/eth/modules/uniswap/data`, ({ request }) => {
           capturedUrl = request.url;
           return HttpResponse.json({
             result: true,
@@ -429,9 +388,9 @@ describe('composables/api/balances/blockchain', () => {
       );
 
       const { deleteModuleData } = useBlockchainBalancesApi();
-      const result = await deleteModuleData(Module.LOOPRING);
+      const result = await deleteModuleData(Module.UNISWAP);
 
-      expect(capturedUrl).toContain('/blockchains/eth/modules/loopring/data');
+      expect(capturedUrl).toContain('/blockchains/eth/modules/uniswap/data');
       expect(result).toBe(true);
     });
 

@@ -15,7 +15,6 @@ export function useBalancesLoading(): UseBalancesLoadingReturn {
     useIsTaskRunning(TaskType.QUERY_BLOCKCHAIN_BALANCES),
     useIsTaskRunning(TaskType.QUERY_EXCHANGE_BALANCES),
     useIsTaskRunning(TaskType.MANUAL_BALANCES),
-    useIsTaskRunning(TaskType.L2_LOOPRING),
   );
 
   const loadingBalancesAndDetection = logicOr(

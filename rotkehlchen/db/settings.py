@@ -467,7 +467,10 @@ def db_settings_from_dict(
         elif key == 'last_write_ts':
             specified_args[key] = Timestamp(int(value))
         elif key == 'active_modules':
-            specified_args[key] = json.loads(value)
+            specified_args[key] = [
+                module for module in json.loads(value)
+                if module in AVAILABLE_MODULES_MAP
+            ]
         elif key == 'current_price_oracles':
             oracles = json.loads(value)
             specified_args[key] = [CurrentPriceOracle.deserialize(oracle) for oracle in oracles]

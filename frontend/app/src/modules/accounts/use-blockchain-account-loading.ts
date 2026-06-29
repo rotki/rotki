@@ -25,15 +25,10 @@ export function useBlockchainAccountLoading(category: MaybeRefOrGetter<string> =
   const { chainIds, isEvm } = useAccountCategoryHelper(category);
 
   const isAnyBalancesFetching = computed<boolean>(() => {
-    if (!toValue(category)) {
-      return isTaskRunning(TaskType.QUERY_BLOCKCHAIN_BALANCES)
-        || isTaskRunning(TaskType.L2_LOOPRING);
-    }
+    if (!toValue(category))
+      return isTaskRunning(TaskType.QUERY_BLOCKCHAIN_BALANCES);
 
-    if (get(chainIds).some(chain => isTaskRunning(TaskType.QUERY_BLOCKCHAIN_BALANCES, { blockchain: chain })))
-      return true;
-
-    return get(isEvm) && isTaskRunning(TaskType.L2_LOOPRING);
+    return get(chainIds).some(chain => isTaskRunning(TaskType.QUERY_BLOCKCHAIN_BALANCES, { blockchain: chain }));
   });
 
   const isSectionLoading = computed<boolean>(() => {

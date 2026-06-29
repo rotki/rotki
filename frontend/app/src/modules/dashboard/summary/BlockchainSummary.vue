@@ -19,8 +19,7 @@ const { isRefreshing } = useBalanceStatus();
 const { t } = useI18n({ useScope: 'global' });
 
 const isTokenDetecting = useIsTaskRunning(TaskType.FETCH_DETECTED_TOKENS);
-const isLoopringLoading = useIsTaskRunning(TaskType.L2_LOOPRING);
-const isLoading = logicOr(isRefreshing, isLoopringLoading, isTokenDetecting);
+const isLoading = logicOr(isRefreshing, isTokenDetecting);
 </script>
 
 <template>

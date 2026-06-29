@@ -1223,20 +1223,6 @@ class Rotkehlchen:
             manual_liabilities_as_dict[manual_liability.asset] += manual_liability.value
 
         liabilities = combine_dicts(liabilities, manual_liabilities_as_dict)
-        # retrieve loopring balances if module is activated
-        if self.chains_aggregator.get_module('loopring'):
-            try:
-                loopring_balances = self.chains_aggregator.get_loopring_balances()
-            except RemoteError as e:
-                problem_free = False
-                self.msg_aggregator.add_message(
-                    message_type=WSMessageType.BALANCE_SNAPSHOT_ERROR,
-                    data={'location': 'loopring', 'error': str(e)},
-                )
-            else:
-                if len(loopring_balances) != 0:
-                    balances[str(Location.LOOPRING)] = loopring_balances
-
         # retrieve nft balances if module is activated
         nfts = self.chains_aggregator.get_module('nfts')
         if nfts is not None:

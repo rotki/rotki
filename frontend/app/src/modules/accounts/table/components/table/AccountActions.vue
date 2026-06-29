@@ -9,7 +9,6 @@ import RowActions from '@/modules/shell/components/RowActions.vue';
 export interface Props<T extends BlockchainAccountBalance> {
   accountOperation: boolean;
   group?: 'evm' | 'xpub';
-  isOnlyShowingLoopringChain: boolean;
   isSectionLoading: boolean;
   isVirtual: boolean;
   row: AccountDataRow<T>;
@@ -50,7 +49,7 @@ function getTokenDetectionChains(row: AccountDataRow<T>): string[] {
       :chains="getTokenDetectionChains(row)"
     />
     <RowActions
-      v-if="!isVirtual && !isOnlyShowingLoopringChain"
+      v-if="!isVirtual"
       class="account-balance-table__actions"
       :edit-tooltip="t('account_balances.edit_tooltip')"
       :disabled="accountOperation"

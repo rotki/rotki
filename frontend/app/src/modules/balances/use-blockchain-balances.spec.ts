@@ -1,25 +1,12 @@
 import type { EvmChainInfo, SupportedChains } from '@/modules/core/api/types/chains';
 import { Blockchain } from '@rotki/common';
 import { startPromise } from '@shared/utils';
-import { createTestBalance, createTestBalanceResponse } from '@test/utils/create-data';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createAccount } from '@/modules/accounts/create-account';
 import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
 import { useBlockchainBalancesApi } from '@/modules/balances/api/use-blockchain-balances-api';
 import { useBalanceRefreshState } from '@/modules/balances/use-balance-refresh-state';
-import { useBalancesStore } from '@/modules/balances/use-balances-store';
 import { useBlockchainBalances } from '@/modules/balances/use-blockchain-balances';
-import { useGeneralSettingsStore } from '@/modules/settings/use-general-settings-store';
-
-vi.mock('@/modules/settings/use-general-settings-store', async () => {
-  const { ref } = await import('vue');
-  const { Module } = await import('@/modules/core/common/modules');
-  return ({
-    useGeneralSettingsStore: vi.fn().mockReturnValue({
-      activeModules: ref([Module.LOOPRING]),
-    }),
-  });
-});
 
 vi.mock('@/modules/core/notifications/use-notifications-store', () => ({
   useNotificationsStore: vi.fn().mockReturnValue({}),
@@ -31,15 +18,10 @@ vi.mock('@/modules/balances/use-balances-store', () => ({
   }),
 }));
 
-vi.mock('@/modules/assets/use-resolve-asset-identifier', () => ({
-  useResolveAssetIdentifier: vi.fn(() => (asset: string): string => asset),
-}));
-
 vi.mock('@/modules/balances/api/use-blockchain-balances-api', () => ({
   useBlockchainBalancesApi: vi.fn().mockReturnValue({
     queryBlockchainBalances: vi.fn().mockResolvedValue({ taskId: 1 }),
     refreshBlockchainBalances: vi.fn().mockResolvedValue({ taskId: 4 }),
-    queryLoopringBalances: vi.fn().mockResolvedValue({ taskId: 2 }),
     queryXpubBalances: vi.fn().mockResolvedValue({ taskId: 3 }),
   }),
 }));
@@ -47,20 +29,8 @@ vi.mock('@/modules/balances/api/use-blockchain-balances-api', () => ({
 vi.mock('@/modules/core/tasks/use-task-handler', async importOriginal => ({
   ...(await importOriginal<Record<string, unknown>>()),
   useTaskHandler: vi.fn().mockReturnValue({
-    runTask: vi.fn().mockImplementation(async (taskFn: () => Promise<unknown>, options: { type: number }) => {
+    runTask: vi.fn().mockImplementation(async (taskFn: () => Promise<unknown>) => {
       await taskFn();
-      const { TaskType } = await import('@/modules/core/tasks/task-type');
-      if (options.type === TaskType.L2_LOOPRING) {
-        return {
-          success: true,
-          result: {
-            '0x1234567890abcdef1234567890abcdef12345678': {
-              ETH: createTestBalanceResponse(1.5, 3000),
-              LRC: createTestBalanceResponse(100, 50),
-            },
-          },
-        };
-      }
       return {
         success: true,
         result: {
@@ -264,52 +234,6 @@ describe('useBlockchainBalances', () => {
         blockchain: Blockchain.BTC,
         isXpub: true,
       });
-    });
-  });
-
-  describe('fetchLoopringBalances', () => {
-    it('should fetch loopring balances when module is active', async () => {
-      const { updateBalances } = useBalancesStore();
-      await blockchainBalances.fetchLoopringBalances(false);
-
-      expect(api.queryLoopringBalances).toHaveBeenCalledTimes(1);
-      expect(updateBalances).toHaveBeenCalledWith('loopring', {
-        perAccount: {
-          loopring: {
-            '0x1234567890abcdef1234567890abcdef12345678': {
-              assets: {
-                ETH: {
-                  address: createTestBalance(1.5, 3000),
-                },
-                LRC: {
-                  address: createTestBalance(100, 50),
-                },
-              },
-              liabilities: {},
-            },
-          },
-        },
-        totals: {
-          assets: {
-            ETH: {
-              address: createTestBalance(1.5, 3000),
-            },
-            LRC: {
-              address: createTestBalance(100, 50),
-            },
-          },
-          liabilities: {},
-        },
-      });
-    });
-
-    it('should not fetch loopring balances when module is not active', async () => {
-      const { activeModules } = storeToRefs(useGeneralSettingsStore());
-      set(activeModules, []);
-
-      await blockchainBalances.fetchLoopringBalances(false);
-
-      expect(api.queryLoopringBalances).not.toHaveBeenCalled();
     });
   });
 });

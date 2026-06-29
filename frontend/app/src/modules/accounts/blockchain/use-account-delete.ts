@@ -70,7 +70,7 @@ function toPayload(params: ShowConfirmationParams): Payload {
 
     const { allChains, chains } = account;
 
-    // Only allow Blockchain values, used to filter out virtual chains such as Loopring.
+    // Only allow Blockchain values, filtering out virtual chains.
     const allFilteredChains = allChains?.filter(isBlockchain);
     const filteredChains = chains.filter(isBlockchain);
 
@@ -240,7 +240,7 @@ export function useAccountDelete(): UseAccountDeleteReturn {
 
       const { allChains, chains } = account;
 
-      // Only allow Blockchain values, used to filter out virtual chains such as Loopring.
+      // Only allow Blockchain values, filtering out virtual chains.
       const allFilteredChains = allChains?.filter(isBlockchain);
       const filteredChains = chains.filter(isBlockchain);
 
