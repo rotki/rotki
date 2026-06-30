@@ -32,13 +32,14 @@ export function useHistoryEventNavigationConsumer(
 
   // Watch for route-based navigation from external packages
   watchImmediate(route, ({ query }) => {
-    const { targetGroupIdentifier, highlightedNegativeBalanceEvent } = query;
+    const { targetGroupIdentifier, highlightedNegativeBalanceEvent, asset } = query;
     if (targetGroupIdentifier && highlightedNegativeBalanceEvent) {
       setHighlightTarget(HighlightTargetTypes.NEGATIVE_BALANCE, {
         groupIdentifier: targetGroupIdentifier.toString(),
         identifier: Number(highlightedNegativeBalanceEvent),
       });
       requestNavigation({
+        assetFilter: typeof asset === 'string' ? asset : undefined,
         highlightedNegativeBalanceEvent: Number(highlightedNegativeBalanceEvent),
         targetGroupIdentifier: targetGroupIdentifier.toString(),
       });
@@ -73,6 +74,9 @@ export function useHistoryEventNavigationConsumer(
     if (request.highlightedInternalTxConflict)
       query.highlightedInternalTxConflict = request.highlightedInternalTxConflict;
 
+    if (request.assetFilter)
+      query.asset = request.assetFilter;
+
     return query;
   }
 
@@ -85,7 +89,12 @@ export function useHistoryEventNavigationConsumer(
 
     try {
       while (currentRequest) {
-        const filterPayload = currentRequest.preserveFilters && pageParams ? get(pageParams) : undefined;
+        const basePayload = currentRequest.preserveFilters && pageParams ? get(pageParams) : undefined;
+        // Compute the target's position within the asset-filtered view so the page number
+        // matches the filter that will be applied on arrival.
+        const filterPayload = currentRequest.assetFilter
+          ? { ...basePayload, asset: currentRequest.assetFilter }
+          : basePayload;
         const position = await getHistoryEventGroupPosition(currentRequest.targetGroupIdentifier, filterPayload);
 
         // Check if this request is still current after the await
@@ -108,7 +117,11 @@ export function useHistoryEventNavigationConsumer(
         const page = Math.floor(position / limit) + 1;
         const highlightQuery = buildHighlightQuery(currentRequest, page);
 
-        if (currentRequest.preserveFilters && groupLoading) {
+        // An asset filter navigation changes a real filter, so it must wait for the
+        // pagination system's refetch to settle before pushing (the same coordination
+        // preserveFilters uses). Without this the highlight push races the filter refetch
+        // and the "clear highlights on filter change" watcher can wipe the highlight.
+        if ((currentRequest.preserveFilters || currentRequest.assetFilter) && groupLoading) {
           /**
            * Wait for the pagination system's loading cycle to complete.
            * The loading may not have started yet (fetchDebounce), so wait for it to start first.

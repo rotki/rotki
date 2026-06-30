@@ -501,6 +501,75 @@ describe('use-history-event-navigation-consumer', () => {
       });
     });
 
+    it('should keep the asset filter and compute the page within the filtered view', async () => {
+      setupMockRoute('/history/events', {
+        asset: 'ETH',
+        highlightedNegativeBalanceEvent: '500',
+        targetGroupIdentifier: 'group-route',
+      });
+      mockGetHistoryEventGroupPosition.mockResolvedValue(10);
+
+      const { useHistoryEventNavigationConsumer } = await importFresh();
+      const pagination = createPagination(10);
+
+      scope.run(() => {
+        useHistoryEventNavigationConsumer(pagination);
+      });
+
+      await flushPromises();
+
+      expect(mockGetHistoryEventGroupPosition).toHaveBeenCalledWith('group-route', { asset: 'ETH' });
+      expect(mockRouterPush).toHaveBeenCalledWith({
+        force: true,
+        path: '/history/events',
+        query: {
+          asset: 'ETH',
+          highlightedNegativeBalanceEvent: '500',
+          limit: '10',
+          page: '2',
+        },
+      });
+    });
+
+    it('should wait for the loading cycle and preserve the asset filter when navigating with an asset', async () => {
+      setupMockRoute('/history/events', {
+        asset: 'ETH',
+        highlightedNegativeBalanceEvent: '500',
+        targetGroupIdentifier: 'group-route',
+      });
+      mockGetHistoryEventGroupPosition.mockResolvedValue(10);
+
+      const { useHistoryEventNavigationConsumer } = await importFresh();
+      const pagination = createPagination(10);
+      const loading = ref<boolean>(false);
+
+      scope.run(() => {
+        useHistoryEventNavigationConsumer(pagination, undefined, loading);
+      });
+
+      await nextTick();
+      // Position is computed within the asset-filtered view.
+      expect(mockGetHistoryEventGroupPosition).toHaveBeenCalledWith('group-route', { asset: 'ETH' });
+      // The push is deferred until the pagination refetch settles.
+      expect(mockRouterPush).not.toHaveBeenCalled();
+
+      // Simulate the pagination system loading cycle.
+      set(loading, true);
+      await nextTick();
+      set(loading, false);
+      await flushPromises();
+
+      expect(mockRouterPush).toHaveBeenCalledWith({
+        force: true,
+        path: '/history/events',
+        query: expect.objectContaining({
+          asset: 'ETH',
+          highlightedNegativeBalanceEvent: '500',
+          page: '2',
+        }),
+      });
+    });
+
     it('should not trigger navigation when targetGroupIdentifier is missing', async () => {
       setupMockRoute('/history/events', {
         highlightedNegativeBalanceEvent: '500',

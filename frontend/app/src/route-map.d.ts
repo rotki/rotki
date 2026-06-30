@@ -252,6 +252,13 @@ declare module 'vue-router/auto-routes' {
       Record<never, never>,
       | never
     >,
+    'history-data-issues': RouteRecordInfo<
+      'history-data-issues',
+      '/history/data-issues',
+      Record<never, never>,
+      Record<never, never>,
+      | never
+    >,
     'history-events': RouteRecordInfo<
       'history-events',
       '/history/events',
@@ -766,6 +773,14 @@ declare module 'vue-router/auto-routes' {
     'src/pages/history/index.vue': {
       routes:
         | '/history/'
+      views:
+        | never
+      pathParamNames:
+        | never
+    }
+    'src/pages/history/data-issues/index.vue': {
+      routes:
+        | 'history-data-issues'
       views:
         | never
       pathParamNames:

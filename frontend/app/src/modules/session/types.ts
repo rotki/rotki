@@ -26,6 +26,7 @@ export enum PrivacyMode {
 }
 
 export const PinnedNames = {
+  DATA_ISSUES: 'data-issues-pinned',
   INTERNAL_TX_CONFLICTS: 'internal-tx-conflicts-pinned',
   MATCH_ASSET_MOVEMENTS: 'match-asset-movements-pinned',
   REPORT_ACTIONABLE_CARD: 'report-actionable-card',

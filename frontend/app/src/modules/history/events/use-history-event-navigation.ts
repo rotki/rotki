@@ -33,6 +33,10 @@ export interface HistoryEventNavigationRequest {
   highlightedNegativeBalanceEvent?: number;
   /** Tx hash for internal tx conflict highlight (warning/yellow, group-based) */
   highlightedInternalTxConflict?: string;
+  /** Asset identifier to keep as a filter on the events page. The target's page is
+   *  computed within this asset-filtered view and the param is preserved in the final
+   *  route query, so the highlight and the asset filter coexist. */
+  assetFilter?: string;
   /** When true, preserve current route filters and calculate position within filtered view */
   preserveFilters?: boolean;
   /** Fallback requests to try when the target is not found in filtered results */

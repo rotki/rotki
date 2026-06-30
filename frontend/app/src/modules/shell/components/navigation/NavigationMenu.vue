@@ -33,8 +33,41 @@ const { isMini = false } = defineProps<{
 }>();
 
 const { appRoutes } = useAppRoutes();
+
+// The data-issues inbox is part of the accounting refactor and only served in builds where the
+// backend exposes it (ROTKI_ACCOUNTING_UPDATE, mirrored into VITE_ACCOUNTING_UPDATE in
+// vite.config.ts). When enabled, History becomes a group [Events, Data Issues]; otherwise it stays
+// a single item linking straight to Events.
+const dataIssuesEnabled = !!import.meta.env.VITE_ACCOUNTING_UPDATE;
+
 const navItems = computed<MenuItem[]>(() => {
   const Routes = get(appRoutes);
+
+  const history: MenuItem = dataIssuesEnabled
+    ? {
+        class: 'history',
+        type: 'group',
+        ...Routes.HISTORY,
+        items: [
+          {
+            class: 'history-events',
+            type: 'item',
+            ...Routes.HISTORY_EVENTS,
+          },
+          {
+            class: 'history-data-issues',
+            type: 'item',
+            ...Routes.HISTORY_DATA_ISSUES,
+          },
+        ],
+      }
+    : {
+        class: 'history',
+        type: 'item',
+        ...Routes.HISTORY,
+        route: Routes.HISTORY_EVENTS.route,
+      };
+
   return [
     {
       class: 'dashboard',
@@ -95,12 +128,7 @@ const navItems = computed<MenuItem[]>(() => {
         },
       ],
     },
-    {
-      class: 'history',
-      type: 'item',
-      ...Routes.HISTORY,
-      route: Routes.HISTORY_EVENTS.route,
-    },
+    history,
     {
       class: 'onchain',
       type: 'group',
