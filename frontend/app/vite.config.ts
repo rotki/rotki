@@ -90,6 +90,8 @@ export default defineConfig({
       'viem',
       'plainfp',
       'plainfp/result-async',
+      'plainfp/option',
+      'plainfp/pipe',
       '@rotki/ui-library/components',
       'vue-echarts',
     ],

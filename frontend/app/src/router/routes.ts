@@ -38,6 +38,7 @@ export const Routes = {
   CALENDAR: ensureRoute('/calendar'),
   DASHBOARD: ensureRoute('/dashboard'),
   HISTORY: ensureRoute('/history'),
+  HISTORY_DATA_ISSUES: ensureRoute('/history/data-issues'),
   HISTORY_EVENTS: ensureRoute('/history/events'),
   IMPORT: ensureRoute('/import'),
   LOCATIONS: ensureRoute('/locations/:identifier'),

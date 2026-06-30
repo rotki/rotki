@@ -6,6 +6,7 @@ import AccountingOverlayToggle from '@/modules/history/balances/AccountingOverla
 import { OverlayMode, type OverlayPair, useAccountingOverlay } from '@/modules/history/balances/use-accounting-overlay';
 import { provideAccountingOverlay } from '@/modules/history/balances/use-accounting-overlay-context';
 import { useHistoricalBalancesStore } from '@/modules/history/balances/use-historical-balances-store';
+import { DataIssuesPanel, DataIssuesToggle } from '@/modules/history/data-issues/components/inbox';
 import { HISTORY_EVENT_ACTIONS, type HistoryEventAction } from '@/modules/history/events/action-types';
 import HistoryEventsVirtualTable from '@/modules/history/events/components/HistoryEventsVirtualTable.vue';
 import {
@@ -323,75 +324,79 @@ watchDebounced(route, async () => {
           @open:internal-tx-conflicts="dialogContainer?.show({ type: DIALOG_TYPES.INTERNAL_TX_CONFLICTS })"
         />
 
-        <RuiCard>
-          <template
-            v-if="!mainPage"
-            #header
-          >
-            <div class="flex items-center gap-x-1">
-              <RefreshButton
-                :disabled="refreshing"
-                :tooltip="t('transactions.refresh_tooltip')"
-                @refresh="actions.refresh.all(true)"
-              />
-              {{ usedTitle }}
+        <div class="flex gap-4 items-start">
+          <RuiCard class="flex-1 min-w-0">
+            <template
+              v-if="!mainPage"
+              #header
+            >
+              <div class="flex items-center gap-x-1">
+                <RefreshButton
+                  :disabled="refreshing"
+                  :tooltip="t('transactions.refresh_tooltip')"
+                  @refresh="actions.refresh.all(true)"
+                />
+                {{ usedTitle }}
+              </div>
+            </template>
+
+            <HistoryEventsTableActions
+              ref="tableActions"
+              v-model:filters="filters"
+              v-model:toggles="toggles"
+              :location-labels="locationLabels"
+              :processing="processing"
+              :matchers="matchers"
+              :export-params="pageParams"
+              :hide-redecode-buttons="!mainPage"
+              :hide-account-selector="useExternalAccountFilter"
+              :selection="selectionMode.state.value"
+              :ignore-status="ignoreStatus"
+              @update:location-labels="onLocationLabelsChanged($event)"
+              @redecode="actions.redecode.by($event)"
+              @selection:action="handleSelectionAction($event)"
+            />
+
+            <div
+              v-if="overlayAvailable"
+              class="flex items-center justify-end gap-2 px-2 pt-2 mb-1"
+            >
+              <DataIssuesToggle />
+              <AccountingOverlayToggle v-model="overlayMode" />
             </div>
-          </template>
 
-          <HistoryEventsTableActions
-            ref="tableActions"
-            v-model:filters="filters"
-            v-model:toggles="toggles"
-            :location-labels="locationLabels"
-            :processing="processing"
-            :matchers="matchers"
-            :export-params="pageParams"
-            :hide-redecode-buttons="!mainPage"
-            :hide-account-selector="useExternalAccountFilter"
-            :selection="selectionMode.state.value"
-            :ignore-status="ignoreStatus"
-            @update:location-labels="onLocationLabelsChanged($event)"
-            @redecode="actions.redecode.by($event)"
-            @selection:action="handleSelectionAction($event)"
-          />
+            <HistoryEventsFiltersChips
+              ref="filtersChips"
+              :group-identifiers="groupIdentifiers"
+              :duplicate-handling-status="duplicateHandlingStatus"
+              @refresh="actions.fetch.dataAndLocations()"
+            />
 
-          <div
-            v-if="overlayAvailable"
-            class="flex items-center justify-end px-2 pt-2 mb-1"
-          >
-            <AccountingOverlayToggle v-model="overlayMode" />
-          </div>
-
-          <HistoryEventsFiltersChips
-            ref="filtersChips"
-            :group-identifiers="groupIdentifiers"
-            :duplicate-handling-status="duplicateHandlingStatus"
-            @refresh="actions.fetch.dataAndLocations()"
-          />
-
-          <HistoryEventsVirtualTable
-            v-model:sort="sort"
-            v-model:pagination="pagination"
-            :table-height-offset="tableHeightOffset"
-            :group-loading="groupLoading"
-            :groups="groups"
-            :page-params="toggles.matchExactEvents ? pageParams : undefined"
-            :exclude-ignored="!toggles.showIgnoredAssets"
-            :has-active-filters="hasActiveFilters"
-            :identifiers="identifiers"
-            :highlighted-group-identifier="highlightedGroupIdentifier"
-            :highlighted-identifiers="highlightedIdentifiers"
-            :highlight-types="highlightTypes"
-            :selection="selectionMode"
-            :duplicate-handling-status="duplicateHandlingStatus"
-            @clear-filters="clearFilters()"
-            @show:dialog="dialogContainer?.show($event)"
-            @refresh="handleRedecode($event)"
-            @refresh:block-event="actions.redecode.blocks($event)"
-            @set-page="setPage($event)"
-            @update-event-ids="handleUpdateEventIds($event)"
-          />
-        </RuiCard>
+            <HistoryEventsVirtualTable
+              v-model:sort="sort"
+              v-model:pagination="pagination"
+              :table-height-offset="tableHeightOffset"
+              :group-loading="groupLoading"
+              :groups="groups"
+              :page-params="toggles.matchExactEvents ? pageParams : undefined"
+              :exclude-ignored="!toggles.showIgnoredAssets"
+              :has-active-filters="hasActiveFilters"
+              :identifiers="identifiers"
+              :highlighted-group-identifier="highlightedGroupIdentifier"
+              :highlighted-identifiers="highlightedIdentifiers"
+              :highlight-types="highlightTypes"
+              :selection="selectionMode"
+              :duplicate-handling-status="duplicateHandlingStatus"
+              @clear-filters="clearFilters()"
+              @show:dialog="dialogContainer?.show($event)"
+              @refresh="handleRedecode($event)"
+              @refresh:block-event="actions.redecode.blocks($event)"
+              @set-page="setPage($event)"
+              @update-event-ids="handleUpdateEventIds($event)"
+            />
+          </RuiCard>
+          <DataIssuesPanel v-if="overlayAvailable" />
+        </div>
 
         <HistoryEventsDialogContainer
           ref="dialogContainer"
