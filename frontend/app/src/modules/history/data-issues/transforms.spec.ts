@@ -1,0 +1,164 @@
+import type { DataIssue } from '@/modules/history/data-issues/schemas';
+import { describe, expect, it } from 'vitest';
+import { IssueKind, IssueSeverity, IssueState } from '@/modules/history/data-issues/constants';
+import { describeIssue, humanizeStrategy, relatedEventRoute, toTimelineItems } from '@/modules/history/data-issues/transforms';
+import { Routes } from '@/router/routes';
+
+function createIssue(overrides: Partial<DataIssue> = {}): DataIssue {
+  return {
+    asset: 'ETH',
+    autoRemediationAttempts: [],
+    createdAt: 1710000100,
+    groupIdentifier: null,
+    id: 1,
+    kind: IssueKind.NEGATIVE_BALANCE,
+    location: 'ethereum',
+    locationLabel: '0x0000000000000000000000000000000000000001',
+    payload: {},
+    protocol: null,
+    resolvedAt: null,
+    severity: IssueSeverity.WARNING,
+    state: IssueState.OPEN,
+    tsEnd: 1710000000,
+    tsStart: 1710000000,
+    ...overrides,
+  };
+}
+
+describe('data-issues transforms', () => {
+  describe('humanizeStrategy', () => {
+    it('should turn a snake_case strategy into a readable label', () => {
+      expect(humanizeStrategy('reprocess_event')).toBe('Reprocess event');
+    });
+
+    it('should leave an empty string untouched', () => {
+      expect(humanizeStrategy('')).toBe('');
+    });
+  });
+
+  describe('describeIssue', () => {
+    it('should describe a negative balance issue and expose the event identifier', () => {
+      const issue = createIssue({
+        asset: 'ETH',
+        kind: IssueKind.NEGATIVE_BALANCE,
+        payload: {
+          derivedBalanceBeforeEvent: '0',
+          eventIdentifier: 42,
+          inMemoryNegativeAmount: '-1',
+        },
+      });
+
+      const result = describeIssue(issue);
+
+      expect(result.messageKey).toBe('data_issues.description.negative_balance');
+      expect(result.eventIdentifier).toBe(42);
+      expect(result.asset).toBe('ETH');
+      // amount keeps its sign; the i18n string no longer prepends a literal "-".
+      expect(result.amounts.amount?.toString()).toBe('-1');
+      expect(result.amounts.before?.toString()).toBe('0');
+    });
+
+    it('should describe a balance mismatch and link to the latest event when present', () => {
+      const issue = createIssue({
+        kind: IssueKind.CURRENT_BALANCE_MISMATCH,
+        payload: {
+          delta: '5',
+          derivedBalance: '10',
+          latestEventIdentifier: 7,
+          observedBalance: '15',
+          queriedAtTs: 1710000000,
+        },
+      });
+
+      const result = describeIssue(issue);
+
+      expect(result.messageKey).toBe('data_issues.description.current_balance_mismatch');
+      expect(result.eventIdentifier).toBe(7);
+      expect(result.amounts.delta?.toString()).toBe('5');
+    });
+
+    it('should leave the event identifier undefined when the mismatch has no latest event', () => {
+      const issue = createIssue({
+        kind: IssueKind.CURRENT_BALANCE_MISMATCH,
+        payload: {
+          delta: '5',
+          derivedBalance: '10',
+          latestEventIdentifier: null,
+          observedBalance: '15',
+          queriedAtTs: 1710000000,
+        },
+      });
+
+      expect(describeIssue(issue).eventIdentifier).toBeUndefined();
+    });
+
+    it('should fall back to an unknown description when the payload does not match the kind', () => {
+      const issue = createIssue({ kind: IssueKind.NEGATIVE_BALANCE, payload: { garbage: true } });
+
+      const result = describeIssue(issue);
+
+      expect(result.messageKey).toBe('data_issues.description.unknown');
+      expect(result.eventIdentifier).toBeUndefined();
+      expect(result.amounts).toEqual({});
+    });
+  });
+
+  describe('relatedEventRoute', () => {
+    it('should deep-link a negative balance to its highlighted event', () => {
+      expect(relatedEventRoute(IssueKind.NEGATIVE_BALANCE, 42)).toEqual({
+        path: Routes.HISTORY_EVENTS.toString(),
+        query: { highlightedNegativeBalanceEvent: '42' },
+      });
+    });
+
+    it('should also pass the group identifier so the events view can page to the event', () => {
+      expect(relatedEventRoute(IssueKind.NEGATIVE_BALANCE, 42, '0xabc')).toEqual({
+        path: Routes.HISTORY_EVENTS.toString(),
+        query: { highlightedNegativeBalanceEvent: '42', targetGroupIdentifier: '0xabc' },
+      });
+    });
+
+    it('should link a non negative-balance kind to the events page without a highlight', () => {
+      expect(relatedEventRoute(IssueKind.CURRENT_BALANCE_MISMATCH, 7)).toEqual({
+        path: Routes.HISTORY_EVENTS.toString(),
+      });
+    });
+
+    it('should also filter by asset when the issue carries one', () => {
+      expect(relatedEventRoute(IssueKind.NEGATIVE_BALANCE, 42, '0xabc', 'ETH')).toEqual({
+        path: Routes.HISTORY_EVENTS.toString(),
+        query: { asset: 'ETH', highlightedNegativeBalanceEvent: '42', targetGroupIdentifier: '0xabc' },
+      });
+    });
+
+    it('should filter a non negative-balance kind by asset alone', () => {
+      expect(relatedEventRoute(IssueKind.CURRENT_BALANCE_MISMATCH, 7, undefined, 'BTC')).toEqual({
+        path: Routes.HISTORY_EVENTS.toString(),
+        query: { asset: 'BTC' },
+      });
+    });
+
+    it('should return undefined when there is no event identifier', () => {
+      expect(relatedEventRoute(IssueKind.NEGATIVE_BALANCE, undefined)).toBeUndefined();
+    });
+  });
+
+  describe('toTimelineItems', () => {
+    it('should order attempts oldest-first by timestamp', () => {
+      const issue = createIssue({
+        autoRemediationAttempts: [
+          { strategy: 'second', success: true, timestamp: 200 },
+          { strategy: 'first', success: false, timestamp: 100 },
+        ],
+      });
+
+      const items = toTimelineItems(issue);
+
+      expect(items.map(item => item.strategy)).toEqual(['first', 'second']);
+    });
+
+    it('should return an empty array when there are no attempts', () => {
+      expect(toTimelineItems(createIssue())).toEqual([]);
+    });
+  });
+});

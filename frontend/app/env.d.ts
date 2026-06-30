@@ -9,4 +9,5 @@ interface ImportMetaEnv {
   readonly VITE_BACKEND_URL: string;
   readonly VITE_COLIBRI_URL: string;
   readonly VITE_ROTKI_WEBSITE_URL: string | undefined;
+  readonly VITE_ACCOUNTING_UPDATE: string | undefined;
 }

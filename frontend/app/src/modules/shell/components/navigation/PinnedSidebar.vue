@@ -6,12 +6,13 @@ import { useSidebarResize } from '@/modules/shell/layout/use-sidebar-resize';
 const ReportActionableCard = defineAsyncComponent(() => import('@/modules/reports/ReportActionableCard.vue'));
 const MatchAssetMovementsPinned = defineAsyncComponent(() => import('@/modules/history/events/MatchAssetMovementsPinned.vue'));
 const InternalTxConflictsPinned = defineAsyncComponent(() => import('@/modules/history/internal-tx-conflicts/InternalTxConflictsPinned.vue'));
+const DataIssuesPinned = defineAsyncComponent(() => import('@/modules/history/data-issues/components/DataIssuesPinned.vue'));
 
 const { pinned, showPinned } = storeToRefs(useAreaVisibilityStore());
 
 const { isLgAndDown } = useBreakpoint();
 
-const component = computed<typeof ReportActionableCard | typeof MatchAssetMovementsPinned | typeof InternalTxConflictsPinned | undefined>(() => {
+const component = computed<typeof ReportActionableCard | typeof MatchAssetMovementsPinned | typeof InternalTxConflictsPinned | typeof DataIssuesPinned | undefined>(() => {
   const pinnedValue = get(pinned);
   if (pinnedValue && pinnedValue.name === PinnedNames.REPORT_ACTIONABLE_CARD)
     return ReportActionableCard;
@@ -21,6 +22,9 @@ const component = computed<typeof ReportActionableCard | typeof MatchAssetMoveme
 
   if (pinnedValue && pinnedValue.name === PinnedNames.INTERNAL_TX_CONFLICTS)
     return InternalTxConflictsPinned;
+
+  if (pinnedValue && pinnedValue.name === PinnedNames.DATA_ISSUES)
+    return DataIssuesPinned;
 
   return undefined;
 });
