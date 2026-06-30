@@ -6,14 +6,14 @@ const { remoteVersion, status } = defineProps<{
 
 const { t } = useI18n({ useScope: 'global' });
 
-const title = computed(() => {
+const title = computed<string>(() => {
   if (status === 'checking')
     return t('asset_update_status.checking.title');
 
   return t('asset_update_status.applying.title');
 });
 
-const message = computed(() => {
+const message = computed<string>(() => {
   if (status === 'checking')
     return t('asset_update_status.checking.message');
 
@@ -24,22 +24,20 @@ const message = computed(() => {
 </script>
 
 <template>
-  <RuiCard
-    variant="flat"
-    class="max-w-[27.5rem] mx-auto !bg-transparent"
-  >
-    <template #header>
-      {{ title }}
-    </template>
-    <div class="flex items-center space-x-10">
-      <RuiProgress
-        color="primary"
-        variant="indeterminate"
-        circular
-      />
+  <div class="max-w-[27.5rem] mx-auto flex flex-col items-center gap-4 py-12 text-center">
+    <RuiProgress
+      color="primary"
+      variant="indeterminate"
+      circular
+      size="48"
+    />
+    <div>
+      <h5 class="text-h6 mb-1">
+        {{ title }}
+      </h5>
       <p class="mb-0 text-rui-text-secondary">
         {{ message }}
       </p>
     </div>
-  </RuiCard>
+  </div>
 </template>

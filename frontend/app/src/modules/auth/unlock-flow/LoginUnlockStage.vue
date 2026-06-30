@@ -66,7 +66,7 @@ watch(() => state, (current) => {
   <AssetUpdateMessage
     v-if="phase === UnlockPhase.updatePrompt"
     v-model:versions="versions"
-    class="max-w-[32rem] mx-auto"
+    class="max-w-[27.5rem] mx-auto"
     headless
     @confirm="emit('confirm', versions.upToVersion)"
     @dismiss="dismiss($event)"
@@ -92,7 +92,7 @@ watch(() => state, (current) => {
   <UpgradeProgressDisplay v-else-if="phase === UnlockPhase.unlocking && upgradeVisible" />
   <div
     v-else-if="busy"
-    class="flex flex-col gap-4 justify-center items-center py-12"
+    class="max-w-[27.5rem] mx-auto flex flex-col gap-4 justify-center items-center py-12"
   >
     <RuiProgress
       color="primary"
@@ -102,7 +102,7 @@ watch(() => state, (current) => {
     />
     <p
       v-if="busyMessage"
-      class="mb-0 text-rui-text-secondary"
+      class="mb-0 text-rui-text-secondary text-center"
     >
       {{ busyMessage }}
     </p>
