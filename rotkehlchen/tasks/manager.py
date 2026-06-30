@@ -1,6 +1,6 @@
 import logging
 import random
-from collections import defaultdict
+from collections import defaultdict, deque
 from collections.abc import Callable, Mapping
 from typing import TYPE_CHECKING, Final, NamedTuple
 
@@ -94,6 +94,8 @@ if TYPE_CHECKING:
     from rotkehlchen.premium.sync import PremiumSyncManager
     from rotkehlchen.user_messages import MessagesAggregator
 
+    SchedulerTask = Callable[[], list[gevent.Greenlet] | None]
+
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
@@ -152,7 +154,7 @@ class TaskManager:
         self.last_evm_tx_query_ts: defaultdict[tuple[ChecksumEvmAddress, SupportedBlockchain], int] = defaultdict(int)  # noqa: E501
         self.last_exchange_query_ts: defaultdict[ExchangeLocationID, int] = defaultdict(int)
         self.prepared_cryptocompare_query = False
-        self.running_greenlets: dict[Callable, list[gevent.Greenlet]] = {}
+        self.running_greenlets: dict[SchedulerTask, list[gevent.Greenlet]] = {}
         # Per-tick snapshot of periodic-task last-run timestamps, set for the duration of a
         # _schedule pass so each task's should_run check reads from memory instead of the DB.
         self._scheduler_task_timestamps: Mapping[str, str] | None = None
@@ -170,7 +172,7 @@ class TaskManager:
         self.username = username
         self.history_processing_coordinator = history_processing_coordinator
 
-        self.potential_tasks: list[Callable[[], list[gevent.Greenlet] | None]] = [
+        self.potential_tasks: list[SchedulerTask] = [
             self._maybe_schedule_cryptocompare_query,
             self._maybe_schedule_xpub_derivation,
             self._maybe_query_evm_transactions,
@@ -200,6 +202,12 @@ class TaskManager:
         ]
         if self.premium_sync_manager is not None:
             self.potential_tasks.append(self._maybe_schedule_db_upload)
+        # Priority tasks are lightweight allow-listed scheduler checks that should run at
+        # least once when scheduling is allowed, even when the normal background-task capacity
+        # gate is closed. Keep this list small: every entry bypasses the normal capacity check.
+        self.priority_tasks_queue: deque[SchedulerTask] = deque((
+            self._maybe_trigger_calendar_reminder,
+        ))
         self.schedule_lock = gevent.lock.Semaphore()
 
     def _maybe_schedule_db_upload(self) -> list[gevent.Greenlet] | None:
@@ -1037,15 +1045,51 @@ class TaskManager:
             addresses=self.chains_aggregator.accounts.eth,
         )]
 
-    def _schedule(self) -> None:
-        """Schedules background tasks"""
+    def _clear_finished_task_references(self) -> None:
         self.greenlet_manager.clear_finished()
-        # Also clear methods mapping in the task manager
         self.running_greenlets = {
             method: greenlets
             for method, greenlets in self.running_greenlets.items()
             if not all(greenlet.dead for greenlet in greenlets)
         }
+
+    def _run_scheduler_check(self, scheduling_fn: 'SchedulerTask') -> bool:
+        if scheduling_fn in self.running_greenlets:
+            return False  # the specified task is already running
+        try:
+            new_greenlets = scheduling_fn()
+        except (RemoteError, PremiumAuthenticationError, DeserializationError, UnknownAsset) as e:
+            log.error(
+                'Scheduling function %s failed due to %s. '
+                'Skipping it for this scheduler tick',
+                scheduling_fn.__name__,
+                e,
+            )
+            return False
+        if new_greenlets is None:
+            return False
+
+        self.running_greenlets[scheduling_fn] = new_greenlets
+        return True
+
+    def _drain_priority_tasks_queue(self) -> None:
+        """Run each queued priority check once, bypassing the normal task capacity gate.
+
+        This queue is reserved for small, bounded scheduler checks. It intentionally ignores
+        max_tasks_num so important lightweight checks are not starved by long-running work.
+        """
+        if len(self.priority_tasks_queue) == 0:
+            return
+
+        self._scheduler_task_timestamps = prefetch_scheduler_task_timestamps(self.database)
+        try:
+            while len(self.priority_tasks_queue) != 0:
+                self._run_scheduler_check(self.priority_tasks_queue.popleft())
+        finally:
+            self._scheduler_task_timestamps = None
+
+    def _schedule(self) -> None:
+        """Schedules background tasks"""
         current_greenlets = len(self.greenlet_manager.greenlets) + len(self.api_task_greenlets)
         not_proceed = current_greenlets >= self.max_tasks_num
         log.debug(
@@ -1067,22 +1111,8 @@ class TaskManager:
             for scheduling_fn in self.potential_tasks:
                 if spawned_new >= max_tasks:
                     break  # no more task slots left
-                if scheduling_fn in self.running_greenlets:
-                    continue  # the specified task is already running
-                try:
-                    new_greenlets = scheduling_fn()
-                except (RemoteError, PremiumAuthenticationError, DeserializationError, UnknownAsset) as e:  # noqa: E501
-                    log.error(
-                        'Scheduling function %s failed due to %s. '
-                        'Skipping it for this scheduler tick',
-                        scheduling_fn.__name__,
-                        e,
-                    )
-                    continue
-                if new_greenlets is None:
-                    continue  # The scheduling function for the specific task decided to not schedule it  # noqa: E501
-                self.running_greenlets[scheduling_fn] = new_greenlets
-                spawned_new += 1
+                if self._run_scheduler_check(scheduling_fn):
+                    spawned_new += 1
         finally:
             self._scheduler_task_timestamps = None
 
@@ -1092,6 +1122,8 @@ class TaskManager:
         Only if should_schedule has been set to True, which happens after the first
         time the user loads up the dashboard. This is to avoid any background tasks running
         during user migrations, db upgrades and asset upgrades.
+        Tasks in the priority queue bypass the regular task capacity gate, but only after
+        should_schedule has been set.
 
         Used during logout to make sure no task is being scheduled at the same time
         as logging out
@@ -1101,6 +1133,8 @@ class TaskManager:
 
         with self.schedule_lock:
             if self.should_schedule:  # adding this check here to protect against going to schedule during logout/shutdown once task manager has been cleared and DB has been deleted  # noqa: E501
+                self._clear_finished_task_references()
+                self._drain_priority_tasks_queue()
                 self._schedule()
 
     def clear(self) -> None:
@@ -1109,4 +1143,5 @@ class TaskManager:
             gevent.killall(task_list)
 
         self.running_greenlets.clear()
+        self.priority_tasks_queue.clear()
         self.should_schedule = False

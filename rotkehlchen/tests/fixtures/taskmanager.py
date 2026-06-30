@@ -29,6 +29,11 @@ def fixture_api_task_greenlets() -> list:
     return []
 
 
+@pytest.fixture(name='enable_priority_tasks')
+def fixture_enable_priority_tasks() -> bool:
+    return False
+
+
 @pytest.fixture(name='task_manager')
 def fixture_task_manager(
         database,
@@ -42,6 +47,7 @@ def fixture_task_manager(
         use_function_scope_msg_aggregator,
         function_scope_messages_aggregator,
         username,
+        enable_priority_tasks,
 ) -> TaskManager:
     msg_aggregator = function_scope_messages_aggregator if use_function_scope_msg_aggregator else messages_aggregator  # noqa: E501
     task_manager = TaskManager(
@@ -62,4 +68,6 @@ def fixture_task_manager(
         history_processing_coordinator=HistoryProcessingCoordinator(),
     )
     task_manager.should_schedule = True
+    if enable_priority_tasks is False:
+        task_manager.priority_tasks_queue.clear()
     return task_manager

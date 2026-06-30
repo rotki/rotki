@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :feature:`-` Calendar reminders are always checked after the initial balance query to ensure notifications are sent.
 * :feature:`12277` The balance snapshot manager has been redesigned: snapshots now open in a dedicated editor reached from the net worth chart, with a clearer balances table, a locations drawer, sum-mismatch reconciliation, per-date exchange-rate overrides and undoable edits.
 * :feature:`4963` Across Protocol activity is now decoded, including bridging, liquidity deposits and withdrawals, and LP staking. Staked Across LP deposits on Ethereum are also included in your on-chain balances.
 * :feature:`-` Add support for Bit2me exchange.
