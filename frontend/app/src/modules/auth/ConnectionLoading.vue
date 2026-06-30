@@ -1,6 +1,13 @@
 <script setup lang="ts">
-defineProps<{ connected: boolean }>();
+const { connected, restarting = false } = defineProps<{
+  connected: boolean;
+  restarting?: boolean;
+}>();
 const { t } = useI18n({ useScope: 'global' });
+
+const message = computed<string>(() =>
+  restarting ? t('connection_loading.restarting') : t('connection_loading.message'),
+);
 </script>
 
 <template>
@@ -19,7 +26,7 @@ const { t } = useI18n({ useScope: 'global' });
         class="text-rui-text-secondary text-h5"
         data-cy="connection-loading__content"
       >
-        {{ t('connection_loading.message') }}
+        {{ message }}
       </h5>
     </div>
   </RuiCard>

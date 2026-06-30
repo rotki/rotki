@@ -88,6 +88,10 @@ export default defineConfig({
       '@walletconnect/core',
       '@walletconnect/universal-provider',
       'viem',
+      'plainfp',
+      'plainfp/result-async',
+      '@rotki/ui-library/components',
+      'vue-echarts',
     ],
   },
   plugins: [

@@ -2,17 +2,36 @@ import dayjs from 'dayjs';
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useAccountManagement } from '@/modules/auth/use-account-management';
 import { useAutoLogin } from '@/modules/auth/use-auto-login';
-import { useLogin } from '@/modules/auth/use-login';
-import { useRememberSettings } from '@/modules/auth/use-remember-settings';
 import { useSessionAuthStore } from '@/modules/auth/use-session-auth-store';
 import { Constraints } from '@/modules/core/common/constraints';
 import { useFrontendSettingsStore } from '@/modules/settings/use-frontend-settings-store';
 
-vi.mock('@/modules/auth/use-login', () => ({
-  useLogin: vi.fn().mockReturnValue({
-    login: vi.fn(),
-    createAccount: vi.fn(),
-  }),
+const { controllerErrors, controllerLoading, controllerState, reset, startCreate, startLogin, startResume } = vi.hoisted(() => {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const { ref: vueRef } = require('vue');
+  return {
+    controllerErrors: vueRef([]),
+    controllerLoading: vueRef(false),
+    controllerState: vueRef({ kind: 'idle' }),
+    reset: vi.fn(),
+    startCreate: vi.fn(),
+    startLogin: vi.fn(),
+    startResume: vi.fn(),
+  };
+});
+
+vi.mock('@/modules/auth/unlock-flow/use-unlock-flow-controller', () => ({
+  useUnlockFlowController: vi.fn(() => ({
+    applyUpdate: vi.fn(),
+    errors: controllerErrors,
+    loading: controllerLoading,
+    reset,
+    skipUpdate: vi.fn(),
+    startCreate,
+    startLogin,
+    startResume,
+    state: controllerState,
+  })),
 }));
 
 const mockInterop = vi.hoisted(() => ({
@@ -32,12 +51,6 @@ vi.mock('@/modules/shell/app/use-backend-management', () => ({
   }),
 }));
 
-vi.mock('@/modules/wallet/use-wallet-store', () => ({
-  useWalletStore: vi.fn().mockReturnValue({
-    disconnect: vi.fn(),
-  }),
-}));
-
 const REMEMBER_PASSWORD_KEY = 'rotki.remember_password';
 
 describe('useAccount', () => {
@@ -46,144 +59,66 @@ describe('useAccount', () => {
     setActivePinia(pinia);
   });
 
-  describe('existing account', () => {
-    const { login } = useLogin();
+  beforeEach(() => {
+    set(controllerErrors, []);
+    set(controllerState, { kind: 'idle' });
+    startLogin.mockReset();
+    startCreate.mockReset();
+    startResume.mockReset();
+  });
 
-    it('should not show error message on login success', async () => {
-      const { userLogin, errors } = useAccountManagement();
+  describe('login', () => {
+    it('should delegate to the controller with normalized credentials and surface no error on success', async () => {
+      const { errors, userLogin } = useAccountManagement();
 
-      vi.mocked(login).mockResolvedValue({
-        success: true,
-      });
+      await userLogin({ password: '1234', username: 'test' });
 
-      await userLogin({ username: 'test', password: '1234' });
-
+      expect(startLogin).toHaveBeenCalledWith({ password: '1234', resumeFromBackup: false, syncApproval: 'unknown', username: 'test' });
       expect(get(errors)).toStrictEqual([]);
     });
 
-    it('should show error message on login failure', async () => {
-      const { userLogin, errors } = useAccountManagement();
+    it('should surface controller errors on failure', async () => {
+      const { errors, userLogin } = useAccountManagement();
+      set(controllerErrors, ['errors']);
 
-      vi.mocked(login).mockResolvedValue({
-        success: false,
-        message: 'errors',
-      });
-
-      await userLogin({ username: 'test', password: '1234' });
+      await userLogin({ password: '1234', username: 'test' });
 
       expect(get(errors)).toStrictEqual(['errors']);
     });
+
+    it('should preserve the conflict-resolution fields when re-logging in', async () => {
+      const { userLogin } = useAccountManagement();
+
+      await userLogin({ password: '1234', resumeFromBackup: true, syncApproval: 'yes', username: 'test' });
+
+      expect(startLogin).toHaveBeenCalledWith({ password: '1234', resumeFromBackup: true, syncApproval: 'yes', username: 'test' });
+    });
   });
 
-  describe('new account', () => {
-    const { createAccount } = useLogin();
-
-    it('should not show error message on account creation success', async () => {
+  describe('createAccount', () => {
+    it('should forward the payload to the controller and not set an error on success', async () => {
       const { createNewAccount, error } = useAccountManagement();
+      const payload = { credentials: { password: '1234', username: 'test' }, initialSettings: { submitUsageAnalytics: false } };
 
-      vi.mocked(createAccount).mockResolvedValue({
-        success: true,
-      });
+      await createNewAccount(payload);
 
-      await createNewAccount({
-        credentials: { username: 'test', password: '1234' },
-        initialSettings: { submitUsageAnalytics: false },
-      });
-
+      expect(startCreate).toHaveBeenCalledWith(payload);
       expect(get(error)).toBe('');
     });
 
-    it('should show error message on account creation failure', async () => {
+    it('should set the error from the controller on failure', async () => {
       const { createNewAccount, error } = useAccountManagement();
-
-      vi.mocked(createAccount).mockResolvedValue({
-        success: false,
-        message: 'errors',
+      startCreate.mockImplementation(async () => {
+        set(controllerState, { kind: 'error' });
+        set(controllerErrors, ['errors']);
       });
 
       await createNewAccount({
-        credentials: { username: 'test', password: '1234' },
+        credentials: { password: '1234', username: 'test' },
         initialSettings: { submitUsageAnalytics: true },
       });
 
       expect(get(error)).toBe('errors');
-    });
-
-    it('should create account with submitUsageAnalytics enabled', async () => {
-      const { createNewAccount } = useAccountManagement();
-      vi.clearAllMocks();
-      vi.mocked(createAccount).mockResolvedValue({
-        success: false,
-        message: 'errors',
-      });
-
-      await createNewAccount({
-        credentials: { username: 'test', password: '1234' },
-        initialSettings: { submitUsageAnalytics: true },
-      });
-
-      expect(createAccount).toHaveBeenCalledWith({
-        credentials: { username: 'test', password: '1234' },
-        initialSettings: { submitUsageAnalytics: true },
-      });
-    });
-
-    it('should create account with submitUsageAnalytics disabled', async () => {
-      const { createNewAccount } = useAccountManagement();
-      vi.clearAllMocks();
-      vi.mocked(createAccount).mockResolvedValue({
-        success: false,
-        message: 'errors',
-      });
-
-      await createNewAccount({
-        credentials: { username: 'test', password: '1234' },
-        initialSettings: { submitUsageAnalytics: false },
-      });
-
-      expect(createAccount).toHaveBeenCalledWith({
-        credentials: { username: 'test', password: '1234' },
-        initialSettings: { submitUsageAnalytics: false },
-      });
-    });
-
-    it('should persist the new account as the last-used username on successful creation', async () => {
-      const authStore = useSessionAuthStore();
-      const { logged } = storeToRefs(authStore);
-      const { savedUsername } = useRememberSettings();
-
-      set(savedUsername, '');
-      set(logged, true);
-
-      vi.mocked(createAccount).mockResolvedValue({ success: true });
-
-      const { createNewAccount } = useAccountManagement();
-      await createNewAccount({
-        credentials: { username: 'fresh_user', password: '1234' },
-        initialSettings: { submitUsageAnalytics: false },
-      });
-
-      expect(get(savedUsername)).toBe('fresh_user');
-
-      set(savedUsername, '');
-      set(logged, false);
-    });
-
-    it('should not persist the username when account creation fails', async () => {
-      const { savedUsername } = useRememberSettings();
-      set(savedUsername, 'previous_user');
-
-      vi.mocked(createAccount).mockResolvedValue({ success: false, message: 'boom' });
-
-      const { createNewAccount } = useAccountManagement();
-      await createNewAccount({
-        credentials: { username: 'failed_user', password: '1234' },
-        initialSettings: { submitUsageAnalytics: false },
-      });
-
-      expect(get(savedUsername)).toBe('previous_user');
-
-      set(savedUsername, '');
     });
   });
 

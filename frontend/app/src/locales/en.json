@@ -2073,7 +2073,8 @@
     "title": "Connection failure"
   },
   "connection_loading": {
-    "message": "Connecting to rotki backend"
+    "message": "Connecting to rotki backend",
+    "restarting": "Restarting the rotki backend"
   },
   "cost_basis_table": {
     "complete": "Complete",
@@ -6308,6 +6309,15 @@
       "not_valid": "The specified weight does not seem like a valid value",
       "out_of_range": "Weight can be from 1-100%",
       "valid": "Please input valid ETH address"
+    }
+  },
+  "unlock_flow": {
+    "errors": {
+      "restart_failed": "Restarting the backend after the asset update failed. Please restart rotki and try again."
+    },
+    "status": {
+      "restarting": "Restarting the backend to apply the update…",
+      "unlocking": "Unlocking your account…"
     }
   },
   "update_indicator": {

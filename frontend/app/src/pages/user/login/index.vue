@@ -1,18 +1,20 @@
 <script setup lang="ts">
+import type { ConflictResolution } from '@/modules/assets/types';
 import type { LoginCredentials } from '@/modules/auth/login';
+import { startPromise } from '@shared/utils';
 import AccountManagementAside from '@/modules/auth/AccountManagementAside.vue';
 import AccountManagementFooterText from '@/modules/auth/AccountManagementFooterText.vue';
 import AdaptiveFooterButton from '@/modules/auth/AdaptiveFooterButton.vue';
 import LoginForm from '@/modules/auth/login/LoginForm.vue';
 import NewReleaseChangelog from '@/modules/auth/login/NewReleaseChangelog.vue';
 import WelcomeMessageDisplay from '@/modules/auth/login/WelcomeMessageDisplay.vue';
-import UpgradeProgressDisplay from '@/modules/auth/upgrade/UpgradeProgressDisplay.vue';
+import LoginUnlockStage from '@/modules/auth/unlock-flow/LoginUnlockStage.vue';
+import { UnlockPhase } from '@/modules/auth/unlock-flow/use-unlock-flow';
+import { useUnlockFlowController } from '@/modules/auth/unlock-flow/use-unlock-flow-controller';
 import { useAccountManagement } from '@/modules/auth/use-account-management';
-import { useSessionAuthStore } from '@/modules/auth/use-session-auth-store';
 import UserHost from '@/modules/auth/UserHost.vue';
 import { useDynamicMessages } from '@/modules/core/messaging/use-dynamic-messages';
 import { useUpdateMessage } from '@/modules/core/messaging/use-update-message';
-import AssetUpdate from '@/modules/shell/app/AssetUpdate.vue';
 import { useBackendManagement } from '@/modules/shell/app/use-backend-management';
 import RotkiLogo from '@/modules/shell/components/RotkiLogo.vue';
 import { useAppNavigation } from '@/modules/shell/layout/use-navigation';
@@ -25,53 +27,58 @@ definePage({
 });
 
 const { t } = useI18n({ useScope: 'global' });
-const { navigateToDashboard, navigateToUserCreation } = useAppNavigation();
-const { canRequestData } = storeToRefs(useSessionAuthStore());
+const { navigateToUserCreation } = useAppNavigation();
 const { backendChanged } = useBackendManagement();
-const { errors, loading, userLogin, clearErrors } = useAccountManagement();
-
-const {
-  checkForAssetUpdate,
-  performingInitialChecks,
-  performInitialChecks,
-  showUpgradeProgress,
-} = useLoginInitialChecks(errors);
-
-const isDocker = import.meta.env.VITE_DOCKER;
-
+const { clearErrors, errors, loading, userLogin } = useAccountManagement();
+const { applyUpdate, reset, skipUpdate, state, upgradeVisible } = useUnlockFlowController();
+const { performInitialChecks } = useLoginInitialChecks();
 const { activeWelcomeMessages, fetchMessages, welcomeHeader, welcomeMessage } = useDynamicMessages();
 const { showReleaseNotes } = useUpdateMessage();
 
-const header = computed(() => {
-  const header = get(welcomeHeader);
+const isDocker = import.meta.env.VITE_DOCKER;
 
+// The stage only takes over for phases that need their own UI (asset update + a DB upgrade
+// during unlock). The login form stays mounted (with its loading state) through the transient
+// authenticate/connect/unlock phases — so a wrong-password error and the typed password survive
+// instead of remounting empty on the way back to the form.
+const showStage = computed<boolean>(() => {
+  const kind = get(state).kind;
+  return kind === UnlockPhase.updatePrompt
+    || kind === UnlockPhase.conflicts
+    || kind === UnlockPhase.applyingUpdate
+    || kind === UnlockPhase.restarting
+    || (kind === UnlockPhase.unlocking && get(upgradeVisible));
+});
+
+const header = computed<{ header: string; text: string }>(() => {
+  const header = get(welcomeHeader);
   return {
     header: header?.header || t('login.welcome_title'),
     text: header?.text || t('login.welcome_description'),
   };
 });
 
-async function handleLogin(credentials: LoginCredentials) {
+async function handleLogin(credentials: LoginCredentials): Promise<void> {
   clearErrors();
   await userLogin(credentials);
 }
 
-function skipInitialAssetUpdate(): void {
-  set(checkForAssetUpdate, false);
+function onConfirmUpdate(upToVersion: number): void {
+  startPromise(applyUpdate(undefined, upToVersion));
 }
 
-const { logged } = storeToRefs(useSessionAuthStore());
+function onResolveConflicts(resolution: ConflictResolution): void {
+  startPromise(applyUpdate(resolution));
+}
 
-// Navigate to dashboard after successful login
-watch(logged, async (isLogged) => {
-  if (isLogged) {
-    set(canRequestData, true);
-    await navigateToDashboard();
-    set(showReleaseNotes, false);
-  }
-});
+function onSkipUpdate(): void {
+  startPromise(skipUpdate());
+}
 
 onMounted(async () => {
+  // The flow is a shared singleton that survives logout; clear any terminal state from a
+  // previous session so the form starts idle (not stuck in `ready`/loading or blocked by canStart).
+  reset();
   fetchMessages();
   await performInitialChecks();
 });
@@ -87,25 +94,8 @@ onMounted(async () => {
       <div class="flex flex-col justify-start lg:justify-center max-w-full grow px-4 pt-10 pb-6">
         <div data-cy="account-management">
           <UserHost>
-            <div v-if="performingInitialChecks">
-              <div class="flex justify-center items-center py-12">
-                <RuiProgress
-                  color="primary"
-                  variant="indeterminate"
-                  circular
-                  size="48"
-                />
-              </div>
-            </div>
-            <div v-else-if="checkForAssetUpdate">
-              <AssetUpdate
-                headless
-                @skip="skipInitialAssetUpdate()"
-              />
-            </div>
-            <UpgradeProgressDisplay v-else-if="showUpgradeProgress" />
             <LoginForm
-              v-else
+              v-if="!showStage"
               :loading="loading"
               :is-docker="isDocker"
               :errors="errors"
@@ -113,6 +103,13 @@ onMounted(async () => {
               @login="handleLogin($event)"
               @backend-changed="backendChanged($event)"
               @new-account="navigateToUserCreation()"
+            />
+            <LoginUnlockStage
+              v-else
+              :state="state"
+              @confirm="onConfirmUpdate($event)"
+              @resolve="onResolveConflicts($event)"
+              @skip="onSkipUpdate()"
             />
           </UserHost>
         </div>

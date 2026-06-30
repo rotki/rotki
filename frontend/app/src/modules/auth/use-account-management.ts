@@ -1,120 +1,63 @@
-import type { Ref } from 'vue';
+import type { ComputedRef } from 'vue';
 import type { CreateAccountPayload, LoginCredentials } from '@/modules/auth/login';
-import { wait } from '@shared/utils';
-import dayjs from 'dayjs';
-import { lastLogin } from '@/modules/auth/account-management';
+import { UnlockPhase } from '@/modules/auth/unlock-flow/use-unlock-flow';
+import { useUnlockFlowController } from '@/modules/auth/unlock-flow/use-unlock-flow-controller';
 import { useLoggedUserIdentifier } from '@/modules/auth/use-logged-user-identifier';
-import { useLogin } from '@/modules/auth/use-login';
-import { useRememberSettings } from '@/modules/auth/use-remember-settings';
-import { useSessionAuthStore } from '@/modules/auth/use-session-auth-store';
 import { useMainStore } from '@/modules/core/common/use-main-store';
-import { useHistoryDataFetching } from '@/modules/history/use-history-data-fetching';
-import { usePremiumHelper } from '@/modules/premium/use-premium-helper';
-import { useSettingsOperations } from '@/modules/settings/use-settings-operations';
-import { useWebsocketConnection } from '@/modules/shell/app/use-websocket-connection';
-import { useAppNavigation } from '@/modules/shell/layout/use-navigation';
-import { useWalletStore } from '@/modules/wallet/use-wallet-store';
 
 interface UseAccountManagementReturn {
-  loading: Readonly<Ref<boolean>>;
-  error: Readonly<Ref<string>>;
-  errors: Ref<string[]>;
+  loading: ComputedRef<boolean>;
+  error: ComputedRef<string>;
+  errors: ComputedRef<string[]>;
   createNewAccount: (payload: CreateAccountPayload) => Promise<void>;
-  userLogin: ({ password, resumeFromBackup, syncApproval, username }: LoginCredentials) => Promise<void>;
+  userLogin: (credentials: LoginCredentials) => Promise<void>;
   clearErrors: () => void;
 }
 
+/**
+ * Page-facing facade over the shared unlock-flow controller. Both pages drive the same
+ * flow machine; this only adapts the controller to the small surface the login/create
+ * pages already consume. `error`/`errors`/`loading` are pure projections of the flow
+ * state, and the post-unlock side-effects + navigation live in the controller, not here.
+ */
 export function useAccountManagement(): UseAccountManagementReturn {
   const { t } = useI18n({ useScope: 'global' });
-  const loading = shallowRef<boolean>(false);
-  const error = shallowRef<string>('');
-  const errors = ref<string[]>([]);
 
-  const { showGetPremiumButton } = usePremiumHelper();
-  const { navigateToDashboard } = useAppNavigation();
-  const { createAccount, login } = useLogin();
-  const { connect } = useWebsocketConnection();
-  const authStore = useSessionAuthStore();
-  const { canRequestData, logged, upgradeVisible } = storeToRefs(authStore);
-  const { clearUpgradeMessages } = authStore;
   const { isDevelop } = storeToRefs(useMainStore());
   const loggedUserIdentifier = useLoggedUserIdentifier();
-  const { savedUsername } = useRememberSettings();
-  const { disconnect: disconnectWallet } = useWalletStore();
-  const { fetchTransactionStatusSummary } = useHistoryDataFetching();
-  const { updateFrontendSetting } = useSettingsOperations();
+  const controller = useUnlockFlowController();
 
-  const createNewAccount = async (payload: CreateAccountPayload): Promise<void> => {
-    set(loading, true);
-    set(error, '');
-    const username = payload.credentials.username;
-    const userIdentifier = `${username}${get(isDevelop) ? '.dev' : ''}`;
-    set(loggedUserIdentifier, userIdentifier);
+  // Single-string error for the create wizard (the login form uses the `errors` array).
+  const error = computed<string>(() => {
+    if (get(controller.state).kind !== UnlockPhase.error)
+      return '';
+    return get(controller.errors)[0] ?? t('account_management.creation.error');
+  });
 
-    await connect();
-    const start = Date.now();
-    const result = await createAccount(payload);
-    const duration = (Date.now() - start) / 1000;
-
-    if (result.success) {
-      if (get(upgradeVisible) && duration < 10)
-        await wait(3000);
-
-      if (get(logged)) {
-        clearUpgradeMessages();
-        set(lastLogin, username);
-        set(savedUsername, username);
-        showGetPremiumButton();
-        set(canRequestData, true);
-        await fetchTransactionStatusSummary();
-        await navigateToDashboard();
-      }
-    }
-    else {
-      set(error, result.message ?? t('account_management.creation.error'));
-    }
-
-    set(loading, false);
-  };
-
-  const userLogin = async ({ password, resumeFromBackup, syncApproval, username }: LoginCredentials): Promise<void> => {
-    set(loading, true);
-    const userIdentifier = `${username}${get(isDevelop) ? '.dev' : ''}`;
-    set(loggedUserIdentifier, userIdentifier);
-    await connect();
-
-    const result = await login({
-      password,
-      resumeFromBackup: resumeFromBackup || false,
-      syncApproval: syncApproval || 'unknown',
-      username,
-    });
-
-    if (!result.success && result.message)
-      set(errors, [result.message]);
-
-    set(loading, false);
-    if (get(logged)) {
-      clearUpgradeMessages();
-      set(lastLogin, username);
-      // Manual login counts as password confirmation
-      await updateFrontendSetting({ lastPasswordConfirmed: dayjs().unix() });
-      showGetPremiumButton();
-      await fetchTransactionStatusSummary();
-      await disconnectWallet();
-    }
-  };
-
-  function clearErrors(): void {
-    set(errors, []);
+  function trackIdentifier(username: string): void {
+    set(loggedUserIdentifier, `${username}${get(isDevelop) ? '.dev' : ''}`);
   }
 
+  const createNewAccount = async (payload: CreateAccountPayload): Promise<void> => {
+    trackIdentifier(payload.credentials.username);
+    await controller.startCreate(payload);
+  };
+
+  const userLogin = async (credentials: LoginCredentials): Promise<void> => {
+    trackIdentifier(credentials.username);
+    await controller.startLogin({
+      ...credentials,
+      resumeFromBackup: credentials.resumeFromBackup ?? false,
+      syncApproval: credentials.syncApproval ?? 'unknown',
+    });
+  };
+
   return {
+    clearErrors: controller.reset,
     createNewAccount,
-    clearErrors,
-    error: readonly(error),
-    errors,
-    loading: readonly(loading),
+    error,
+    errors: controller.errors,
+    loading: controller.loading,
     userLogin,
   };
 }

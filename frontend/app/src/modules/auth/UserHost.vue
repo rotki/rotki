@@ -10,6 +10,7 @@ defineSlots<{
   default: () => any;
 }>();
 
+const { t } = useI18n({ useScope: 'global' });
 const { autolog } = useAutoLogin();
 const { restarting } = useRestartingStatus();
 
@@ -24,6 +25,7 @@ const displayRouter = logicAnd(connected, logicNot(showDockerWarning), logicNot(
   <ConnectionLoading
     v-if="!connectionFailure"
     :connected="connected && !autolog"
+    :restarting="restarting"
   />
   <ConnectionFailureMessage v-else />
 
@@ -38,7 +40,7 @@ const displayRouter = logicAnd(connected, logicNot(showDockerWarning), logicNot(
   <DockerWarning v-else-if="showDockerWarning" />
   <div
     v-else-if="connected"
-    class="w-full h-full flex items-center justify-center"
+    class="w-full h-full flex flex-col gap-4 items-center justify-center"
   >
     <RuiProgress
       thickness="2"
@@ -46,5 +48,11 @@ const displayRouter = logicAnd(connected, logicNot(showDockerWarning), logicNot(
       variant="indeterminate"
       circular
     />
+    <p
+      v-if="restarting"
+      class="mb-0 text-rui-text-secondary"
+    >
+      {{ t('connection_loading.restarting') }}
+    </p>
   </div>
 </template>
