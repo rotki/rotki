@@ -11,12 +11,14 @@ import requests
 from rotkehlchen.db.filtering import HistoryEventFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.fval import FVal
+from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.tests.utils.api import (
     api_url_for,
     assert_error_response,
     assert_proper_sync_response_with_result,
     wait_for_async_task,
 )
+from rotkehlchen.tests.utils.constants import A_CRO
 from rotkehlchen.tests.utils.dataimport import (
     CRYPTOCOM_FIRST_TIMESTAMP,
     CRYPTOCOM_LAST_TIMESTAMP,
@@ -42,6 +44,7 @@ from rotkehlchen.tests.utils.dataimport import (
     assert_shapeshift_trades_import_results,
     assert_uphold_transactions_import_results,
 )
+from rotkehlchen.types import Location, TimestampMS
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -181,6 +184,55 @@ def test_data_import_cryptocom_with_timezone(rotkehlchen_api_server: 'APIServer'
         CRYPTOCOM_LAST_TIMESTAMP - timezone_shift,
         CRYPTOCOM_LAST_TIMESTAMP - timezone_shift,
     ]
+    assert_all_events_have_csv_marker(rotki)
+
+
+@pytest.mark.parametrize('number_of_eth_accounts', [0])
+def test_data_import_cryptocom_dpos_interest(rotkehlchen_api_server: 'APIServer') -> None:
+    """Test that Crypto.com DPoS interest rows are imported and related locks are skipped."""
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+    with TemporaryDirectory() as tempdir:
+        filepath = Path(tempdir) / 'cryptocom_dpos_interest.csv'
+        filepath.write_text(
+            'Timestamp (UTC),Transaction Description,Currency,Amount,To Currency,To Amount,Native Currency,Native Amount,Native Amount (in USD),Transaction Kind,Transaction Hash\n'  # noqa: E501
+            '2024-04-12 08:15:21,Cardholder CRO Stake Reward,CRO,6.12345,,,EUR,0.31,0.35,finance.lockup.dpos_compound_interest.crypto_wallet,\n'  # noqa: E501
+            '2024-05-19 17:42:08,CRO Stake Reward,CRO,2.5,,,EUR,0.13,0.15,finance.dpos.non_compound_interest.crypto_wallet,\n'  # noqa: E501
+            '2024-05-19 17:43:08,CRO Lockup,CRO,-100,,,EUR,-5.2,-6.0,finance.lockup.dpos_lock.crypto_wallet,\n',  # noqa: E501
+            encoding='utf-8',
+        )
+
+        response = requests.put(
+            api_url_for(rotkehlchen_api_server, 'dataimportresource'),
+            json={'source': 'cryptocom', 'file': str(filepath)},
+        )
+
+    assert assert_proper_sync_response_with_result(response) is True
+    with rotki.data.db.conn.read_ctx() as cursor:
+        events = DBHistoryEvents(rotki.data.db).get_history_events_internal(
+            cursor=cursor,
+            filter_query=HistoryEventFilterQuery.make(order_by_rules=[
+                ('timestamp', True),
+                ('history_events_identifier', True),
+            ]),
+        )
+
+    assert len(events) == 2
+    for event, timestamp, amount, description in zip(
+            events,
+            (TimestampMS(1712909721000), TimestampMS(1716140528000)),
+            (FVal('6.12345'), FVal('2.5')),
+            ('Cardholder CRO Stake Reward', 'CRO Stake Reward'),
+            strict=True,
+    ):
+        assert event.timestamp == timestamp
+        assert event.location == Location.CRYPTOCOM
+        assert event.location_label == 'Crypto.com App'
+        assert event.event_type == HistoryEventType.RECEIVE
+        assert event.event_subtype == HistoryEventSubType.NONE
+        assert event.asset == A_CRO
+        assert event.amount == amount
+        assert event.notes == f'{description}\nSource: crypto.com (CSV import)'
+
     assert_all_events_have_csv_marker(rotki)
 
 
