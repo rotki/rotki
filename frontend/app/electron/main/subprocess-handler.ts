@@ -43,6 +43,15 @@ export class SubprocessHandler {
     );
   }
 
+  /**
+   * Whether the managed rotki-core process is currently running. Used to decide
+   * whether a renderer (re)load should attach to the existing backend instead of
+   * tearing it down and spawning a new one (e.g. on a page refresh).
+   */
+  get isCoreRunning(): boolean {
+    return this.coreManager.isRunning;
+  }
+
   private matchProcess(processName?: string): boolean {
     if (this.config.isDev) {
       return processName?.includes('-m rotkehlchen') ?? false;

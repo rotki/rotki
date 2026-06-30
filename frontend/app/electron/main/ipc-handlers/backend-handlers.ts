@@ -6,6 +6,7 @@ import { assert } from '@rotki/common';
 interface BackendHandlersCallbacks {
   restartSubprocesses: (options: Partial<BackendOptions>) => Promise<void>;
   getRunningCorePIDs: () => Promise<number[]>;
+  isCoreRunning: () => boolean;
   sendIpcMessage: (channel: string, ...args: any[]) => void;
 }
 
@@ -26,8 +27,12 @@ export class BackendHandlers {
     this.callbacks = callbacks;
   }
 
-  restartBackend = async (options: Partial<BackendOptions>, event?: Electron.IpcMainInvokeEvent): Promise<boolean> => {
-    this.logger.info(`Restarting backend with options: ${JSON.stringify(options)}`);
+  restartBackend = async (
+    options: Partial<BackendOptions>,
+    forceRestart: boolean = false,
+    event?: Electron.IpcMainInvokeEvent,
+  ): Promise<boolean> => {
+    this.logger.info(`Restarting backend with options: ${JSON.stringify(options)} (forceRestart: ${forceRestart})`);
 
     if (this.firstStart) {
       this.firstStart = false;
@@ -41,6 +46,14 @@ export class BackendHandlers {
       else {
         this.logger.debug('No existing backend process detected');
       }
+    }
+
+    // On a plain renderer (re)load the request is not a forced restart. If the
+    // managed backend is already running (e.g. the page was just refreshed),
+    // attach to it instead of tearing it down and spawning a new process.
+    if (!forceRestart && this.requireCallbacks.isCoreRunning()) {
+      this.logger.info('Backend already running; attaching instead of restarting');
+      return true;
     }
 
     let success = false;

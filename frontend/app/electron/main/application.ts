@@ -168,6 +168,7 @@ export class Application {
       },
       updateDownloadProgress: progress => this.window.updateProgress(progress),
       getRunningCorePIDs: async () => this.processHandler.checkForBackendProcess(),
+      isCoreRunning: () => this.processHandler.isCoreRunning,
       getProtocolRegistrationFailed: () => this.protocolRegistrationFailed,
       openOAuthInWindow: async (url: string) => this.window.openOAuthWindow(url),
       sendIpcMessage: (channel: string, ...args: any[]) => this.window.sendIpcMessage(channel, ...args),

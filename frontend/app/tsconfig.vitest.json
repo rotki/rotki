@@ -18,6 +18,7 @@
     "src/**/*",
     "src/**/*.vue",
     "src/**/*.spec.ts",
+    "electron/**/*",
     "tests/unit/**/*",
     "tests/contract/**/*",
     "shared/**/*"

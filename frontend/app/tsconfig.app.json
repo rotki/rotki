@@ -33,6 +33,7 @@
     "**/.*",
     "tests/**/*",
     "src/**/__tests__/*",
-    "src/**/*.spec.ts"
+    "src/**/*.spec.ts",
+    "electron/**/*.spec.ts"
   ]
 }

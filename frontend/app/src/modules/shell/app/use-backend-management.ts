@@ -18,7 +18,7 @@ interface UseBackendManagementReturn {
   fileConfig: Ref<Partial<BackendOptions>>;
   saveOptions: (opts: Partial<BackendOptions>) => Promise<void>;
   resetOptions: () => Promise<void>;
-  restartBackend: () => Promise<void>;
+  restartBackend: (forceRestart?: boolean) => Promise<void>;
   resetSessionBackend: () => Promise<void>;
   setupBackend: () => Promise<void>;
   backendChanged: (url: string | null) => Promise<void>;
@@ -42,9 +42,9 @@ export function useBackendManagement(loaded: () => void = () => {}): UseBackendM
     ...get(fileConfig),
   }));
 
-  const restartBackendWithOptions = async (options: Partial<BackendOptions>): Promise<void> => {
+  const restartBackendWithOptions = async (options: Partial<BackendOptions>, forceRestart = false): Promise<void> => {
     setConnected(false);
-    await interop.restartBackend(options);
+    await interop.restartBackend(options, forceRestart);
     // Re-enable connections in case a prior process termination disabled them
     // (e.g. on Windows, taskkill exits the core process with a non-zero code, which
     // is reported as a TERMINATED startup error and disables connection attempts).
@@ -73,7 +73,7 @@ export function useBackendManagement(loaded: () => void = () => {}): UseBackendM
       interop.setLogLevel(resolvedLevel);
     }
     if (!skipRestart) {
-      await restartBackendWithOptions(get(options));
+      await restartBackendWithOptions(get(options), true);
     }
   };
 
@@ -91,29 +91,29 @@ export function useBackendManagement(loaded: () => void = () => {}): UseBackendM
   const resetOptions = async (): Promise<void> => {
     clearUserOptions();
     set(userOptions, {});
-    await restartBackendWithOptions(get(options));
+    await restartBackendWithOptions(get(options), true);
   };
 
-  const restartBackend = async (): Promise<void> => {
+  const restartBackend = async (forceRestart = false): Promise<void> => {
     if (!interop.isPackaged)
       return;
 
     await load();
-    await restartBackendWithOptions(get(options));
+    await restartBackendWithOptions(get(options), forceRestart);
   };
 
   const resetSessionBackend = async (): Promise<void> => {
     const { sessionOnly } = getBackendUrl();
     if (sessionOnly) {
       deleteBackendUrl();
-      await restartBackend();
+      await restartBackend(true);
     }
   };
 
   const backendChanged = async (url: string | null): Promise<void> => {
     setConnected(false);
     if (!url)
-      await restartBackend();
+      await restartBackend(true);
 
     connect(url);
   };

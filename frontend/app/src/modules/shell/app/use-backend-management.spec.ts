@@ -141,6 +141,33 @@ describe('useBackendManagement', () => {
     });
   });
 
+  describe('forceRestart intent', () => {
+    it('should attach (forceRestart=false) when setupBackend runs on a page refresh', async () => {
+      const { useBackendManagement } = await importModule();
+      const { setupBackend } = scope.run(() => useBackendManagement())!;
+      await setupBackend();
+
+      expect(mockRestartBackend).toHaveBeenCalledWith(expect.anything(), false);
+    });
+
+    it('should force a restart when applying changed user options', async () => {
+      const config = { dataDirectory: '/tmp/rotki-data' };
+      const { useBackendManagement } = await importModule();
+      const { applyUserOptions } = scope.run(() => useBackendManagement())!;
+      await applyUserOptions(config, false);
+
+      expect(mockRestartBackend).toHaveBeenCalledWith(config, true);
+    });
+
+    it('should force a restart when resetting options', async () => {
+      const { useBackendManagement } = await importModule();
+      const { resetOptions } = scope.run(() => useBackendManagement())!;
+      await resetOptions();
+
+      expect(mockRestartBackend).toHaveBeenCalledWith(expect.anything(), true);
+    });
+  });
+
   describe('backendChanged', () => {
     it('should re-enable connections when restarting due to a null url', async () => {
       const store = useMainStore();
