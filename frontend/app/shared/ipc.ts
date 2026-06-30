@@ -119,7 +119,7 @@ export interface Interop {
   checkForUpdates: () => Promise<boolean>;
   downloadUpdate: (progress: (percentage: number) => void) => Promise<boolean>;
   installUpdate: () => Promise<boolean | Error>;
-  restartBackend: (options: Partial<BackendOptions>) => Promise<boolean>;
+  restartBackend: (options: Partial<BackendOptions>, forceRestart?: boolean) => Promise<boolean>;
   setSelectedTheme: (selectedTheme: number) => Promise<boolean>;
   version: () => Promise<SystemVersion>;
   isMac: () => Promise<boolean>;

@@ -25,6 +25,7 @@ interface Callbacks {
   restartSubprocesses: (options: Partial<BackendOptions>) => Promise<void>;
   terminateSubprocesses: (update?: boolean) => Promise<void>;
   getRunningCorePIDs: () => Promise<number[]>;
+  isCoreRunning: () => boolean;
   updateDownloadProgress: (progress: number) => void;
   getProtocolRegistrationFailed: () => boolean;
   openOAuthInWindow: (url: string) => Promise<void>;
@@ -94,6 +95,7 @@ export class IpcManager {
     this.backendHandlers.initialize({
       restartSubprocesses: callbacks.restartSubprocesses,
       getRunningCorePIDs: callbacks.getRunningCorePIDs,
+      isCoreRunning: callbacks.isCoreRunning,
       sendIpcMessage: callbacks.sendIpcMessage,
     });
 
@@ -135,7 +137,7 @@ export class IpcManager {
     });
 
     // Backend handlers
-    ipcMain.handle(IpcCommands.INVOKE_SUBPROCESS_START, async (event, options) => this.backendHandlers.restartBackend(options, event));
+    ipcMain.handle(IpcCommands.INVOKE_SUBPROCESS_START, async (event, options, forceRestart) => this.backendHandlers.restartBackend(options, forceRestart, event));
 
     // Update handlers
     ipcMain.handle(IpcCommands.INVOKE_UPDATE_CHECK, this.updateHandlers.checkForUpdates);

@@ -19,7 +19,7 @@ interface UseInteropReturn {
   premiumUserLoggedIn: (premiumUser: boolean) => void;
   closeApp: () => Promise<void>;
   metamaskImport: () => Promise<string[]>;
-  restartBackend: (options: Partial<BackendOptions>) => Promise<boolean>;
+  restartBackend: (options: Partial<BackendOptions>, forceRestart?: boolean) => Promise<boolean>;
   config: (defaults: boolean) => Promise<Partial<BackendOptions>>;
   version: () => Promise<SystemVersion | WebVersion>;
   isMac: () => Promise<boolean>;
@@ -167,9 +167,9 @@ const interop: UseInteropReturn = {
     window.interop?.updateTray({});
   },
 
-  restartBackend: async (options: Partial<BackendOptions>): Promise<boolean> => {
+  restartBackend: async (options: Partial<BackendOptions>, forceRestart = false): Promise<boolean> => {
     assert(window.interop);
-    return window.interop.restartBackend(options);
+    return window.interop.restartBackend(options, forceRestart);
   },
 
   setSelectedTheme: async (selectedTheme: Theme): Promise<void> => {
