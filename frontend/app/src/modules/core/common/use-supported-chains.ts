@@ -10,8 +10,8 @@ import {
 } from '@/modules/core/api/types/chains';
 import { isBlockchain } from '@/modules/core/common/chains';
 import { getPublicProtocolImagePath } from '@/modules/core/common/file/file';
-import { useMainStore } from '@/modules/core/common/use-main-store';
 import { useSupportedChainsApi } from '@/modules/core/common/use-supported-chains-api';
+import { useSupportedChainsStore } from '@/modules/core/common/use-supported-chains-store';
 import { Routes } from '@/router/routes';
 
 function isEvmChain(info: ChainInfo): info is EvmChainInfo {
@@ -62,15 +62,13 @@ interface UseSupportedChainsReturn {
   useBlockchainRedirectLink: (blockchain: MaybeRefOrGetter<string>) => ComputedRef<string>;
   useChainImageUrl: (chain: MaybeRefOrGetter<string>) => ComputedRef<string>;
   useChainName: (location: MaybeRefOrGetter<string | undefined>) => ComputedRef<string>;
+  refreshSupportedChains: () => Promise<void>;
 }
 
 export const useSupportedChains = createSharedComposable((): UseSupportedChainsReturn => {
   const { fetchAllEvmChains, fetchSupportedChains } = useSupportedChainsApi();
 
-  const { connected } = storeToRefs(useMainStore());
-
-  const supportedChains = shallowRef<SupportedChains>([]);
-  const allEvmChains = shallowRef<EvmChainEntries>([]);
+  const { allEvmChains, supportedChains } = storeToRefs(useSupportedChainsStore());
 
   // Derived filtered views
   const evmChainsData = computed<EvmChainInfo[]>(() =>
@@ -272,20 +270,16 @@ export const useSupportedChains = createSharedComposable((): UseSupportedChainsR
   const useBlockchainRedirectLink = (blockchain: MaybeRefOrGetter<string>): ComputedRef<string> =>
     computed<string>(() => getBlockchainRedirectLink(toValue(blockchain)));
 
-  watch(connected, async (isConnected) => {
-    if (isConnected) {
-      const [chains, evmChains] = await Promise.all([
-        fetchSupportedChains(),
-        fetchAllEvmChains(),
-      ]);
-      set(supportedChains, chains);
-      set(allEvmChains, evmChains);
-    }
-    else {
-      set(supportedChains, []);
-      set(allEvmChains, []);
-    }
-  }, { immediate: true });
+  // Loaded imperatively from the unlock flow (post-login), so the calls never fire
+  // on the login screen. The store state is cleared on logout by `resetState()`.
+  const refreshSupportedChains = async (): Promise<void> => {
+    const [chains, evmChains] = await Promise.all([
+      fetchSupportedChains(),
+      fetchAllEvmChains(),
+    ]);
+    set(supportedChains, chains);
+    set(allEvmChains, evmChains);
+  };
 
   return {
     allEvmChains,
@@ -311,6 +305,7 @@ export const useSupportedChains = createSharedComposable((): UseSupportedChainsR
     isEvmLikeChains,
     isSolanaChains,
     matchChain,
+    refreshSupportedChains,
     solanaChainsData,
     supportedChains,
     supportsTransactions,
