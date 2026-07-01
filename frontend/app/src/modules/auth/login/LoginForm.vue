@@ -99,7 +99,7 @@ const v$ = useVuelidate(
   },
 );
 
-const { clearPassword, getPassword, isPackaged, storePassword } = useInterop();
+const { clearPassword, isPackaged, storePassword } = useInterop();
 
 watch([username, password], ([username, password], [oldUsername, oldPassword]) => {
   // touched should not be emitted when restoring from local storage
@@ -197,7 +197,11 @@ function checkRememberUsername() {
   set(rememberUsername, !!get(savedRememberUsername) || !!get(savedRememberPassword) || !isDocker);
 }
 
-async function loadSettings() {
+// Pre-fills the form and remember toggles for a manual login. The saved-password
+// auto-unlock is NOT driven from here anymore — it is a single flow started by
+// `useAutoLogin` on backend connect (see use-auto-login.ts / startAuto), so this
+// component can never race that flow.
+function loadSettings(): void {
   set(rememberPassword, !!get(savedRememberPassword));
   checkRememberUsername();
   if (!get(username))
@@ -207,18 +211,6 @@ async function loadSettings() {
   set(customBackendUrl, url);
   set(customBackendSessionOnly, sessionOnly);
   set(customBackendSaved, !!url);
-
-  if (errors.length > 0)
-    return;
-
-  if (isPackaged && get(rememberPassword) && get(username)) {
-    const savedPassword = await getPassword(get(username));
-
-    if (savedPassword) {
-      set(password, savedPassword);
-      await login();
-    }
-  }
 }
 
 onBeforeMount(async () => {
@@ -227,7 +219,7 @@ onBeforeMount(async () => {
     newAccount();
     return;
   }
-  await loadSettings();
+  loadSettings();
 });
 
 onMounted(() => {

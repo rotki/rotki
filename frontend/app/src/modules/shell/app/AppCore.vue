@@ -13,6 +13,8 @@ import { useCoreScroll } from '@/modules/shell/layout/use-core-scroll';
 import { initGraph } from '@/modules/statistics/init-graph';
 import { useStatisticsStore } from '@/modules/statistics/use-statistics-store';
 
+const { t } = useI18n({ useScope: 'global' });
+
 const visibilityStore = useAreaVisibilityStore();
 const { expanded, isMini, pinnedDragging, pinnedWidth, showPinned } = storeToRefs(visibilityStore);
 const { overall } = storeToRefs(useStatisticsStore());
@@ -96,12 +98,17 @@ onBeforeMount(() => {
               v-if="!logged"
               class="fixed top-0 left-0 w-full h-full bg-white dark:bg-rui-grey-900 z-[999] flex items-center justify-center"
             >
-              <RuiProgress
-                thickness="2"
-                color="primary"
-                variant="indeterminate"
-                circular
-              />
+              <div class="flex flex-col gap-4 justify-center items-center">
+                <RuiProgress
+                  color="primary"
+                  variant="indeterminate"
+                  circular
+                  size="48"
+                />
+                <p class="mb-0 text-rui-text-secondary text-center">
+                  {{ t('connection_loading.logging_out') }}
+                </p>
+              </div>
             </div>
             <component
               :is="Component"

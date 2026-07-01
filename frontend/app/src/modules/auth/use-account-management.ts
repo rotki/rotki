@@ -52,8 +52,17 @@ export function useAccountManagement(): UseAccountManagementReturn {
     });
   };
 
+  // Dismissing the form's error alert (fired on field `touched`, and before each login attempt)
+  // must only clear a terminal error — never reset an in-flight unlock. A background auto-unlock
+  // can be running while the form is interactive; a full `controller.reset()` here would drop the
+  // flow's credentials and abort it with "unlock without an active flow".
+  const clearErrors = (): void => {
+    if (get(controller.state).kind === UnlockPhase.error)
+      controller.reset();
+  };
+
   return {
-    clearErrors: controller.reset,
+    clearErrors,
     createNewAccount,
     error,
     errors: controller.errors,

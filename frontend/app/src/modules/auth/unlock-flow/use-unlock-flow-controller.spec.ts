@@ -24,12 +24,15 @@ const h = vi.hoisted(() => ({
   checkUpdate: vi.fn(),
   connect: vi.fn(),
   createCheckUpdate: vi.fn(),
-  createUnlock: vi.fn(),
+  createLogin: vi.fn(),
   disconnectWallet: vi.fn(),
   handleSessionReady: vi.fn(),
   loadSession: vi.fn(),
+  login: vi.fn(),
+  probeSession: vi.fn(),
   requestRestart: vi.fn(),
-  unlock: vi.fn(),
+  resolveCredentials: vi.fn(),
+  resume: vi.fn(),
   updateFrontendSetting: vi.fn(),
   waitReady: vi.fn(),
 }));
@@ -42,8 +45,11 @@ vi.mock('./use-unlock-steps', () => ({
       checkUpdate: h.createCheckUpdate,
       connect: h.connect,
       loadSession: h.loadSession,
+      login: h.createLogin,
+      probeSession: async () => ok(false),
       requestRestart: h.requestRestart,
-      unlock: h.createUnlock,
+      resolveCredentials: async () => ok(none),
+      resume: async () => ok(undefined),
       waitReady: h.waitReady,
     })),
     loginSteps: {
@@ -52,8 +58,11 @@ vi.mock('./use-unlock-steps', () => ({
       checkUpdate: h.checkUpdate,
       connect: h.connect,
       loadSession: h.loadSession,
+      login: h.login,
+      probeSession: h.probeSession,
       requestRestart: h.requestRestart,
-      unlock: h.unlock,
+      resolveCredentials: h.resolveCredentials,
+      resume: h.resume,
       waitReady: h.waitReady,
     },
   }),
@@ -96,13 +105,16 @@ describe('useUnlockFlowController', () => {
     vi.clearAllMocks();
     h.authenticate.mockResolvedValue(ok(undefined));
     h.connect.mockResolvedValue(ok(undefined));
+    h.probeSession.mockResolvedValue(ok(false)); // default: no live session ⇒ fresh-login branch
     h.checkUpdate.mockResolvedValue(ok(none));
     h.createCheckUpdate.mockResolvedValue(ok(none));
     h.applyUpdate.mockResolvedValue(ok({ kind: 'done' }));
     h.requestRestart.mockResolvedValue(ok(undefined));
     h.waitReady.mockResolvedValue(ok(undefined));
-    h.unlock.mockResolvedValue(ok(undefined));
-    h.createUnlock.mockResolvedValue(ok(undefined));
+    h.resume.mockResolvedValue(ok(undefined));
+    h.login.mockResolvedValue(ok(undefined));
+    h.createLogin.mockResolvedValue(ok(undefined));
+    h.resolveCredentials.mockResolvedValue(ok(some({ password: 'p', username: 'alice' })));
     setUsernameOnLoad('alice');
 
     scope = effectScope();
@@ -116,11 +128,12 @@ describe('useUnlockFlowController', () => {
     scope.stop();
   });
 
-  it('should drive a fresh login to ready and run login-mode side-effects', async () => {
+  it('should drive a fresh login to ready and run fresh-login side-effects', async () => {
     await controller.startLogin({ password: 'p', username: 'alice' });
     await flushPromises();
 
     expect(get(controller.state).kind).toBe(UnlockPhase.ready);
+    expect(h.login).toHaveBeenCalled();
     expect(h.handleSessionReady).toHaveBeenCalled();
     expect(h.updateFrontendSetting).toHaveBeenCalled();
     expect(h.disconnectWallet).toHaveBeenCalled();
@@ -133,29 +146,72 @@ describe('useUnlockFlowController', () => {
     await flushPromises();
 
     expect(get(controller.state).kind).toBe(UnlockPhase.ready);
-    expect(h.createUnlock).toHaveBeenCalled();
+    expect(h.createLogin).toHaveBeenCalled();
     expect(h.handleSessionReady).toHaveBeenCalled();
     expect(h.updateFrontendSetting).not.toHaveBeenCalled();
     expect(h.disconnectWallet).not.toHaveBeenCalled();
   });
 
-  it('should fall back to idle when a resume finds no live session', async () => {
-    h.unlock.mockResolvedValue({ error: { kind: UnlockErrorKind.unknown, message: '' }, ok: false });
+  it('should resume a live session on auto-unlock and run resume-only effects', async () => {
+    h.probeSession.mockResolvedValue(ok(true));
 
-    await controller.startResume();
-    await flushPromises();
-
-    // a failed background resume must not park the flow in error — it returns to a clean form
-    expect(get(controller.state).kind).toBe(UnlockPhase.idle);
-  });
-
-  it('should skip the asset-update prompt on resume even when an update exists', async () => {
-    h.checkUpdate.mockResolvedValue(ok(some({ upToVersion: 9 })));
-
-    await controller.startResume();
+    await controller.startAuto();
     await flushPromises();
 
     expect(get(controller.state).kind).toBe(UnlockPhase.ready);
+    expect(h.resume).toHaveBeenCalled();
+    expect(h.login).not.toHaveBeenCalled();
+    // resume effects: password confirmation, but no lastPasswordConfirmed write / wallet disconnect
+    expect(h.checkIfPasswordConfirmationNeeded).toHaveBeenCalled();
+    expect(h.updateFrontendSetting).not.toHaveBeenCalled();
+    expect(h.disconnectWallet).not.toHaveBeenCalled();
+  });
+
+  it('should fresh-login with the saved password on auto-unlock when no live session exists', async () => {
+    h.probeSession.mockResolvedValue(ok(false));
+    h.resolveCredentials.mockResolvedValue(ok(some({ password: 'saved', username: 'alice' })));
+
+    await controller.startAuto();
+    await flushPromises();
+
+    expect(get(controller.state).kind).toBe(UnlockPhase.ready);
+    expect(h.login).toHaveBeenCalled();
+    expect(h.updateFrontendSetting).toHaveBeenCalled();
+    expect(h.disconnectWallet).toHaveBeenCalled();
+    expect(h.checkIfPasswordConfirmationNeeded).not.toHaveBeenCalled();
+  });
+
+  it('should return to idle on auto-unlock with no live session and no saved password', async () => {
+    h.probeSession.mockResolvedValue(ok(false));
+    h.resolveCredentials.mockResolvedValue(ok(some({ password: '', username: 'alice' })));
+
+    await controller.startAuto();
+    await flushPromises();
+
+    // deterministic: no doomed empty-password login, just back to the form
+    expect(get(controller.state).kind).toBe(UnlockPhase.idle);
+    expect(h.login).not.toHaveBeenCalled();
+  });
+
+  it('should return to idle on auto-unlock when nothing is stored', async () => {
+    h.resolveCredentials.mockResolvedValue(ok(none));
+
+    await controller.startAuto();
+    await flushPromises();
+
+    expect(get(controller.state).kind).toBe(UnlockPhase.idle);
+    expect(h.probeSession).not.toHaveBeenCalled();
+  });
+
+  it('should skip the asset-update prompt when auto-unlock resumes a live session', async () => {
+    h.probeSession.mockResolvedValue(ok(true));
+    h.checkUpdate.mockResolvedValue(ok(some({ upToVersion: 9 })));
+
+    await controller.startAuto();
+    await flushPromises();
+
+    expect(get(controller.state).kind).toBe(UnlockPhase.ready);
+    expect(h.checkUpdate).not.toHaveBeenCalled(); // resume branch never reaches checkUpdate
     expect(h.checkIfPasswordConfirmationNeeded).toHaveBeenCalled();
     expect(h.updateFrontendSetting).not.toHaveBeenCalled();
   });
@@ -181,8 +237,8 @@ describe('useUnlockFlowController', () => {
     await flushPromises();
     expect(get(controller.state).kind).toBe(UnlockPhase.updatePrompt);
 
-    // a resume firing mid-flow (e.g. an auto-login watcher) must be ignored
-    await controller.startResume();
+    // an auto-unlock firing mid-flow (e.g. the connected watcher) must be ignored
+    await controller.startAuto();
     await flushPromises();
 
     expect(get(controller.state).kind).toBe(UnlockPhase.updatePrompt);
@@ -190,7 +246,7 @@ describe('useUnlockFlowController', () => {
   });
 
   it('should expose an unknown unlock error as a message in errors', async () => {
-    h.unlock.mockResolvedValue({ error: { kind: UnlockErrorKind.unknown, message: 'boom' }, ok: false });
+    h.login.mockResolvedValue({ error: { kind: UnlockErrorKind.unknown, message: 'boom' }, ok: false });
 
     await controller.startLogin({ password: 'p', username: 'alice' });
     await flushPromises();
@@ -199,6 +255,16 @@ describe('useUnlockFlowController', () => {
     expect(get(controller.errors)).toEqual(['boom']);
     expect(get(controller.loading)).toBe(false);
     expect(logger.error).toHaveBeenCalledWith(expect.stringContaining('boom'));
+  });
+
+  it('should not park an auto-unlock in error (falls back to idle)', async () => {
+    h.login.mockResolvedValue({ error: { kind: UnlockErrorKind.wrongPassword }, ok: false });
+
+    await controller.startAuto();
+    await flushPromises();
+
+    // a stale saved password shouldn't leave the login screen stuck in error
+    expect(get(controller.state).kind).toBe(UnlockPhase.idle);
   });
 
   it('should wire a session-gated 401 handler on the api', () => {
@@ -214,7 +280,7 @@ describe('useUnlockFlowController', () => {
   });
 
   it('should keep errors empty for a sync conflict (the alert is store-driven)', async () => {
-    h.unlock.mockResolvedValue({ error: { kind: UnlockErrorKind.syncConflict, payload: {} }, ok: false });
+    h.login.mockResolvedValue({ error: { kind: UnlockErrorKind.syncConflict, payload: {} }, ok: false });
 
     await controller.startLogin({ password: 'p', username: 'alice' });
     await flushPromises();
@@ -261,6 +327,6 @@ describe('useUnlockFlowController', () => {
 
     expect(get(controller.state).kind).toBe(UnlockPhase.ready);
     expect(h.applyUpdate).not.toHaveBeenCalled();
-    expect(h.unlock).toHaveBeenCalled();
+    expect(h.login).toHaveBeenCalled();
   });
 });
