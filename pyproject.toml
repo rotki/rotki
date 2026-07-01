@@ -70,11 +70,11 @@ dependencies = [
     "solders==0.26.0",
     "tzdata==2025.2 ; sys_platform == 'win32'",
     # enfore transitive deps versions
-    "aiohttp>=3.13.4",  # dependency of web3.py that has security issues before this version
-    "urllib3>=2.7.0",  # enforced due to dependabot reports
+    "aiohttp==3.14.1",  # dependency of web3.py that has security issues before this version
+    "urllib3==2.7.0",  # enforced due to dependabot reports
     "idna==3.15",  # enforced due to dependabot reports
-    "cbor2>=5.9.0",  # enforced due to dependabot reports
-    "protobuf>6.33.5",  # enforced due to dependabot reports
+    "cbor2==5.9.0",  # enforced due to dependabot reports
+    "protobuf==6.33.6",  # enforced due to dependabot reports
 ]
 
 [project.urls]
@@ -99,7 +99,7 @@ dev = [
     "pytest-deadfixtures @ git+https://github.com/rotki/pytest-deadfixtures@87d2be8#egg=pytest-deadfixtures", # temporarily due to false positive
     "pytest-socket==0.7.0",
     "pytest-vcr==1.0.2",
-    "vcrpy==8.1.1",
+    "vcrpy==8.2.1",
     "freezegun==1.5.5",
     # To test google spreadsheet uploading
     "google-auth-httplib2==0.2.0",
@@ -137,7 +137,7 @@ docs = [
     "sphinxcontrib-httpdomain==1.8.1",
     "sphinxcontrib-httpexample==1.1",
     # This is our fork of releases in order to handle https://github.com/rotki/rotki/issues/704
-    "rotki-releases",
+    "rotki-releases==2.0.1",
 ]
 
 packaging = [
@@ -156,7 +156,7 @@ profiling = [
 ]
 
 ci = [
-    "pytest-github-actions-annotate-failures",
+    "pytest-github-actions-annotate-failures==0.3.0",
 ]
 
 [tool.setuptools.packages.find]
