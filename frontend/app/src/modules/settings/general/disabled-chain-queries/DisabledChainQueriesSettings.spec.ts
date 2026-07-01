@@ -4,6 +4,7 @@ import { mount, type VueWrapper } from '@vue/test-utils';
 import flushPromises from 'flush-promises';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useMainStore } from '@/modules/core/common/use-main-store';
+import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
 import DisabledChainQueriesSettings from '@/modules/settings/general/disabled-chain-queries/DisabledChainQueriesSettings.vue';
 import { useGeneralSettingsStore } from '@/modules/settings/use-general-settings-store';
 
@@ -56,7 +57,11 @@ describe('disabled-chain-queries-settings', () => {
   beforeEach(async (): Promise<void> => {
     setSettingsMock.mockClear();
     wrapper = createWrapper();
+    // The supported chains are no longer fetched from a `connected` watcher; the
+    // unlock flow loads them post-login. Populate them explicitly for the component.
+    await useSupportedChains().refreshSupportedChains();
     await flushPromises();
+    await nextTick();
   });
 
   it('should render the empty state when there are no rules', () => {

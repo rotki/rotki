@@ -7,6 +7,7 @@ const {
   fetchTransactionStatusSummary,
   lastLoginRef,
   navigateToDashboard,
+  refreshSupportedChains,
   showGetPremiumButton,
   showReleaseNotesRef,
 } = vi.hoisted(() => {
@@ -16,10 +17,15 @@ const {
     fetchTransactionStatusSummary: vi.fn(),
     lastLoginRef: vueRef(''),
     navigateToDashboard: vi.fn(),
+    refreshSupportedChains: vi.fn(),
     showGetPremiumButton: vi.fn(),
     showReleaseNotesRef: vueRef(true),
   };
 });
+
+vi.mock('@/modules/core/common/use-supported-chains', () => ({
+  useSupportedChains: vi.fn(() => ({ refreshSupportedChains })),
+}));
 
 vi.mock('@/modules/auth/account-management', () => ({
   lastLogin: lastLoginRef,
@@ -62,5 +68,14 @@ describe('useSessionReady', () => {
     expect(fetchTransactionStatusSummary).toHaveBeenCalled();
     expect(navigateToDashboard).toHaveBeenCalled();
     expect(get(showReleaseNotesRef)).toBe(false);
+  });
+
+  it('should load the supported chains before navigating to the dashboard', async () => {
+    await useSessionReady().handleSessionReady();
+
+    expect(refreshSupportedChains).toHaveBeenCalledOnce();
+    // chains must be populated before the dashboard (and its consumers) mount
+    expect(refreshSupportedChains.mock.invocationCallOrder[0])
+      .toBeLessThan(navigateToDashboard.mock.invocationCallOrder[0]);
   });
 });

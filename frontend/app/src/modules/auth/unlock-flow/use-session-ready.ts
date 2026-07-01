@@ -1,5 +1,6 @@
 import { lastLogin } from '@/modules/auth/account-management';
 import { useSessionAuthStore } from '@/modules/auth/use-session-auth-store';
+import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
 import { useUpdateMessage } from '@/modules/core/messaging/use-update-message';
 import { useHistoryDataFetching } from '@/modules/history/use-history-data-fetching';
 import { usePremiumHelper } from '@/modules/premium/use-premium-helper';
@@ -25,12 +26,17 @@ export function useSessionReady(): UseSessionReadyReturn {
   const { fetchTransactionStatusSummary } = useHistoryDataFetching();
   const { navigateToDashboard } = useAppNavigation();
   const { showReleaseNotes } = useUpdateMessage();
+  const { refreshSupportedChains } = useSupportedChains();
 
   async function handleSessionReady(): Promise<void> {
     clearUpgradeMessages();
     set(canRequestData, true);
     set(lastLogin, get(username));
     showGetPremiumButton();
+    // Load the supported chains before navigating: dashboard/accounts consumers read
+    // the chain list imperatively, so it must be populated before the destination mounts.
+    // Runs here (post-unlock) so the calls never fire on the login screen.
+    await refreshSupportedChains();
     await fetchTransactionStatusSummary();
     await navigateToDashboard();
     set(showReleaseNotes, false);
