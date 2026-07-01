@@ -3678,6 +3678,10 @@ class RestAPI:
         return self.integrations_service.get_gnosis_pay_safe_admin_addresses()
 
     @async_api_call()
+    def get_gnosis_pay_safe_migration(self) -> dict[str, Any]:
+        return self.integrations_service.get_gnosis_pay_safe_migration()
+
+    @async_api_call()
     def fetch_gnosis_pay_nonce(self) -> dict[str, Any]:
         return self.integrations_service.fetch_gnosis_pay_nonce()
 

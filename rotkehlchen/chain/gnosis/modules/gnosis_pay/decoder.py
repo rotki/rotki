@@ -2,8 +2,6 @@ import logging
 from collections.abc import Callable, Mapping
 from typing import TYPE_CHECKING, Any
 
-import gevent
-
 from rotkehlchen.assets.utils import token_normalized_value
 from rotkehlchen.chain.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.evm.decoding.interfaces import EvmDecoderInterface, ReloadableDecoderMixin
@@ -52,14 +50,10 @@ class GnosisPayDecoder(EvmDecoderInterface, ReloadableDecoderMixin):
             msg_aggregator=msg_aggregator,
         )
         self.gnosispay_api = init_gnosis_pay(self.base.database)
-        if self.gnosispay_api is not None:
-            gevent.spawn(self.gnosispay_api.check_safe_migration)
 
     def reload_data(self) -> Mapping[ChecksumEvmAddress, tuple[Any, ...]] | None:
         """Reload the gnosis pay api from the DB with the credentials"""
         self.gnosispay_api = init_gnosis_pay(self.base.database)
-        if self.gnosispay_api is not None:
-            gevent.spawn(self.gnosispay_api.check_safe_migration)
         return self.addresses_to_decoders()
 
     def decode_cashback_events(self, context: DecoderContext) -> EvmDecodingOutput:

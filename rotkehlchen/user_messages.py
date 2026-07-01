@@ -26,7 +26,6 @@ class MessagesAggregator:
     def __init__(self) -> None:
         self.warnings: deque = deque()
         self.errors: deque = deque()
-        self.seen_message_keys: set[str] = set()
         self.rotki_notifier: RotkiNotifier | None = None
 
     def _append_warning(self, msg: str) -> None:
@@ -72,7 +71,6 @@ class MessagesAggregator:
             self,
             message_type: WSMessageType,
             data: dict[str, Any] | list[Any],
-            deduplication_key: str | None = None,
     ) -> None:
         """Sends a websocket message
 
@@ -81,11 +79,6 @@ class MessagesAggregator:
         `wait_on_send` is used to determine if the message should be sent asynchronously
         by spawning a greenlet or if it should just do it synchronously.
         """
-        if deduplication_key is not None:
-            if deduplication_key in self.seen_message_keys:
-                return
-            self.seen_message_keys.add(deduplication_key)
-
         fallback_msg = json.dumps(process_result({'type': message_type, 'data': data}))  # kind of silly to repeat it here. Same code in broadcast  # noqa: E501
 
         if self.rotki_notifier is not None:

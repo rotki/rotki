@@ -1,6 +1,6 @@
 from http import HTTPStatus
 from json import dumps, loads
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 from unittest.mock import patch
 
 import pytest
@@ -10,6 +10,7 @@ from requests.models import Response
 from rotkehlchen.api.websockets.typedefs import WSMessageType
 from rotkehlchen.chain.accounts import BlockchainAccountData
 from rotkehlchen.db.cache import DBCacheStatic
+from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.externalapis.gnosispay import GNOSIS_PAY_SAFE_MIGRATION_ID, init_gnosis_pay
 from rotkehlchen.serialization.deserialize import deserialize_evm_address
 from rotkehlchen.tests.fixtures.messages import MockedWsMessage
@@ -88,7 +89,6 @@ def test_gnosis_pay_unauthorized(database, gnosispay_credentials):
     )
 
 
-@pytest.mark.parametrize('function_scope_initialize_mock_rotki_notifier', [True])
 @pytest.mark.parametrize(('tracked_safe', 'missing_type'), [
     ('old', 'new'),
     ('new', 'old'),
@@ -101,7 +101,7 @@ def test_gnosis_pay_safe_migration(
         tracked_safe: str,
         missing_type: str | None,
 ) -> None:
-    """Test migration data is cached and only a missing Safe produces one suggestion."""
+    """Test migration data is cached and only an untracked paired Safe is returned."""
     gnosispay = init_gnosis_pay(database)
     assert gnosispay is not None
     old_safe = deserialize_evm_address('0x1111111111111111111111111111111111111111')
@@ -140,13 +140,13 @@ def test_gnosis_pay_safe_migration(
         'get',
         return_value=MockResponse(HTTPStatus.OK, dumps(response_data)),
     ) as mock_get:
-        gnosispay.check_safe_migration()
-        gnosispay.check_safe_migration()
+        result = gnosispay.get_safe_migration_data()
+        assert gnosispay.get_safe_migration_data() == result
 
     assert mock_get.call_count == 1
     second_gnosispay = init_gnosis_pay(database)
     assert second_gnosispay is not None
-    second_gnosispay.check_safe_migration()  # cached data and session-wide message deduplication
+    assert second_gnosispay.get_safe_migration_data() == result
     with database.conn.read_ctx() as cursor:
         cached_data = cursor.execute(
             'SELECT value FROM key_value_cache WHERE name=?',
@@ -159,27 +159,23 @@ def test_gnosis_pay_safe_migration(
         'new_safe': new_safe,
     }
 
-    notifier: Any = database.msg_aggregator.rotki_notifier
-    assert notifier is not None
     if missing_type is None:
-        assert notifier.pop_message() is None
+        assert result == {
+            'migration_id': GNOSIS_PAY_SAFE_MIGRATION_ID,
+            'untracked_addresses': [],
+        }
         return
 
     old_is_tracked = tracked_safe == 'old'
-    assert notifier.pop_message() == MockedWsMessage(
-        message_type=WSMessageType.GNOSIS_PAY_SAFE_MIGRATION,
-        data={
-            'migration_id': GNOSIS_PAY_SAFE_MIGRATION_ID,
-            'tracked_address': old_safe if old_is_tracked else new_safe,
-            'missing_address': new_safe if old_is_tracked else old_safe,
-            'missing_address_type': missing_type,
-            'chain': 'gnosis',
-        },
-    )
-    assert notifier.pop_message() is None
+    assert result == {
+        'migration_id': GNOSIS_PAY_SAFE_MIGRATION_ID,
+        'untracked_addresses': [{
+            'address': new_safe if old_is_tracked else old_safe,
+            'type': missing_type,
+        }],
+    }
 
 
-@pytest.mark.parametrize('function_scope_initialize_mock_rotki_notifier', [True])
 @pytest.mark.parametrize('response_data', [
     {
         'migrationId': GNOSIS_PAY_SAFE_MIGRATION_ID,
@@ -227,11 +223,10 @@ def test_gnosis_pay_safe_migration_ignored_responses(
         'get',
         return_value=MockResponse(HTTPStatus.OK, dumps(response_data)),
     ):
-        gnosispay.check_safe_migration()
-
-    notifier: Any = database.msg_aggregator.rotki_notifier
-    assert notifier is not None
-    assert notifier.pop_message() is None
+        assert gnosispay.get_safe_migration_data() == {
+            'migration_id': GNOSIS_PAY_SAFE_MIGRATION_ID,
+            'untracked_addresses': [],
+        }
 
 
 def test_gnosis_pay_safe_migration_api_failure(
@@ -245,5 +240,5 @@ def test_gnosis_pay_safe_migration_api_failure(
         gnosispay.session,
         'get',
         side_effect=requests.ConnectionError('test failure'),
-    ):
-        gnosispay.check_safe_migration()
+    ), pytest.raises(RemoteError, match='test failure'):
+        gnosispay.get_safe_migration_data()

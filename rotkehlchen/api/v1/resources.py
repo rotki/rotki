@@ -1884,6 +1884,16 @@ class GnosisPaySafeAdminsResource(BaseMethodView):
         return self.rest_api.get_gnosis_pay_safe_admin_addresses(async_query=async_query)
 
 
+class GnosisPaySafeMigrationResource(BaseMethodView):
+
+    get_schema = AsyncQueryArgumentSchema()
+
+    @require_premium_capability(capability_name=GNOSIS_PAY_CAPABILITY, pretty_name='Gnosis Pay')
+    @use_kwargs(get_schema, location='json_and_query')
+    def get(self, async_query: bool) -> Response:
+        return self.rest_api.get_gnosis_pay_safe_migration(async_query=async_query)
+
+
 class ChainTypeAccountResource(BaseMethodView):
 
     @require_loggedin_user()

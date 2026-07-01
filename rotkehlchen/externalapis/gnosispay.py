@@ -6,7 +6,6 @@ from typing import TYPE_CHECKING, Any, Final, Literal, cast
 
 import requests
 
-from rotkehlchen.api.websockets.typedefs import WSMessageType
 from rotkehlchen.assets.asset import AssetWithSymbol
 from rotkehlchen.chain.evm.constants import EVM_ADDRESS_REGEX
 from rotkehlchen.chain.gnosis.modules.gnosis_pay.constants import CPT_GNOSIS_PAY
@@ -310,16 +309,15 @@ class GnosisPay:
             )
             return None
 
-    def check_safe_migration(self) -> None:
-        """Suggest the other Safe when exactly one side of the migration is tracked."""
-        try:
-            migration = self._get_safe_migration()
-        except RemoteError as e:
-            log.error('Could not query Gnosis Pay Safe migration due to %s', e)
-            return
-
+    def get_safe_migration_data(self) -> dict[str, Any]:
+        """Return the migration's untracked Safe when exactly one Safe is tracked."""
+        result: dict[str, Any] = {
+            'migration_id': GNOSIS_PAY_SAFE_MIGRATION_ID,
+            'untracked_addresses': [],
+        }
+        migration = self._get_safe_migration()
         if migration is None or migration.old_safe is None:
-            return
+            return result
 
         with self.database.conn.read_ctx() as cursor:
             tracked_addresses = {
@@ -332,21 +330,13 @@ class GnosisPay:
         old_is_tracked = migration.old_safe in tracked_addresses
         new_is_tracked = migration.new_safe in tracked_addresses
         if old_is_tracked == new_is_tracked:
-            return
+            return result
 
-        tracked_address = migration.old_safe if old_is_tracked else migration.new_safe
-        missing_address = migration.new_safe if old_is_tracked else migration.old_safe
-        self.database.msg_aggregator.add_message(
-            message_type=WSMessageType.GNOSIS_PAY_SAFE_MIGRATION,
-            data={
-                'migration_id': migration.migration_id,
-                'tracked_address': tracked_address,
-                'missing_address': missing_address,
-                'missing_address_type': 'new' if old_is_tracked else 'old',
-                'chain': SupportedBlockchain.GNOSIS.serialize(),
-            },
-            deduplication_key=f'gnosis_pay_safe_migration_{migration.migration_id}',
-        )
+        result['untracked_addresses'] = [{
+            'address': migration.new_safe if old_is_tracked else migration.old_safe,
+            'type': 'new' if old_is_tracked else 'old',
+        }]
+        return result
 
     def maybe_deserialize_transaction(self, data: dict[str, Any]) -> GnosisPayTransaction | None:
         try:
