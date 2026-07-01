@@ -2549,6 +2549,93 @@
     "no_search_result": "Your search for \"{search}\" yielded no results.",
     "select_visible_columns": "Select visible columns"
   },
+  "data_issues": {
+    "action": {
+      "dismiss": {
+        "error": "Could not dismiss issue",
+        "label": "Dismiss"
+      },
+      "resolve": {
+        "error": "Could not resolve issue",
+        "label": "Resolve manually"
+      },
+      "retry": {
+        "error": "Could not retry auto-remediation",
+        "label": "Retry auto-remediation"
+      }
+    },
+    "description": {
+      "current_balance_mismatch": "Your derived {asset} balance ({derived}) doesn't match the observed on-chain balance ({observed}) — a difference of {delta}.",
+      "negative_balance": "Processing an event drove your {asset} balance to -{amount} (it was {before} before this event).",
+      "unknown": "The accounting engine flagged a data issue. See the payload for details."
+    },
+    "detail": {
+      "detected": "Detected",
+      "no_attempts": "No automatic fixes have been attempted yet.",
+      "related_event": "Related history event: #{id}",
+      "remediation_history": "Auto-remediation history",
+      "resolution_note": "Resolution note",
+      "title": "Issue details",
+      "whats_wrong": "What's wrong"
+    },
+    "empty": {
+      "all_clear_subtitle": "Your accounting data looks healthy. rotki checks continuously and will flag anything here.",
+      "all_clear_title": "No data issues detected",
+      "clear_filters": "Clear filters",
+      "filtered": "No issues match these filters.",
+      "none": "No open issues — everything the engine flagged has been handled."
+    },
+    "fetch": {
+      "error": {
+        "message": "Could not load data issues: {message}",
+        "title": "Data issues"
+      }
+    },
+    "filter": {
+      "account": "Account",
+      "asset": "Asset",
+      "end_date": "End date",
+      "kind": "Kind",
+      "start_date": "Start date",
+      "state": "State"
+    },
+    "headers": {
+      "detected": "Detected",
+      "kind": "Kind",
+      "state": "State"
+    },
+    "kind": {
+      "current_balance_mismatch": "Balance mismatch",
+      "negative_balance": "Negative balance"
+    },
+    "panel": {
+      "pin": "Pin to sidebar",
+      "title": "Data issues",
+      "unpin": "Unpin",
+      "view_all": "View all"
+    },
+    "refresh_tooltip": "Reload the issues list.",
+    "resolve_dialog": {
+      "confirm": "Resolve",
+      "note_hint": "Visible later in the issue's resolution details.",
+      "note_label": "Note (optional)",
+      "notice": "Richer guided fixes are coming. Use this only if you've already corrected the underlying data yourself (for example, by adding a missing transaction). This marks the issue as resolved and records your note.",
+      "title": "Resolve manually"
+    },
+    "state": {
+      "auto_remediating": "Auto-remediating",
+      "dismissed": "Dismissed",
+      "open": "Open",
+      "resolved": "Resolved",
+      "unresolved": "Needs attention"
+    },
+    "summary": {
+      "all_clear": "All clear — no issues need your attention."
+    },
+    "toggle": {
+      "tooltip": "Data issues"
+    }
+  },
   "data_management": {
     "purge_data": {
       "confirm": {
@@ -4440,6 +4527,7 @@
     },
     "history": "History",
     "history_sub": {
+      "data_issues": "Data Issues",
       "events": "Events"
     },
     "import_data": "Import Data",
