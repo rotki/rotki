@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING, Any, Final, Literal, cast
 
 import requests
 
+from rotkehlchen.api.websockets.typedefs import WSMessageType
 from rotkehlchen.assets.asset import AssetWithSymbol
 from rotkehlchen.chain.evm.constants import EVM_ADDRESS_REGEX
 from rotkehlchen.chain.gnosis.modules.gnosis_pay.constants import CPT_GNOSIS_PAY
@@ -20,8 +21,17 @@ from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.externalapis.utils import notify_reauthentication_required
 from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.serialization.deserialize import deserialize_fval
-from rotkehlchen.types import EVMTxHash, Location, Timestamp, TimestampMS, deserialize_evm_tx_hash
+from rotkehlchen.serialization.deserialize import deserialize_evm_address, deserialize_fval
+from rotkehlchen.types import (
+    ChainID,
+    ChecksumEvmAddress,
+    EVMTxHash,
+    Location,
+    SupportedBlockchain,
+    Timestamp,
+    TimestampMS,
+    deserialize_evm_tx_hash,
+)
 from rotkehlchen.utils.misc import (
     ROTKI_USER_AGENT,
     iso8601ts_to_timestamp,
@@ -31,7 +41,7 @@ from rotkehlchen.utils.misc import (
     ts_now,
 )
 from rotkehlchen.utils.network import create_session
-from rotkehlchen.utils.serialization import jsonloads_dict
+from rotkehlchen.utils.serialization import jsonloads_dict, rlk_jsondumps
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
@@ -48,6 +58,8 @@ GNOSIS_PAY_PAGE_SIZE: Final = 100
 GNOSIS_PAY_API_BASE_URL: Final = 'https://api.gnosispay.com/api/v1'
 GNOSIS_PAY_AUTH_NONCE_ENDPOINT: Final = 'auth/nonce'
 GNOSIS_PAY_AUTH_CHALLENGE_ENDPOINT: Final = 'auth/challenge'
+GNOSIS_PAY_SAFE_MIGRATION_ENDPOINT: Final = 'safe/migration'
+GNOSIS_PAY_SAFE_MIGRATION_ID: Final = 'safe-replacement-2026-06'
 
 
 @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
@@ -65,6 +77,20 @@ class GnosisPayTransaction:
     billing_amount: FVal | None  # only if different to the transaction one
     reversal_symbol: str | None  # only if there is a refund
     reversal_amount: FVal | None  # only if there is a refund
+
+
+@dataclass(frozen=True)
+class GnosisPaySafeMigration:
+    migration_id: str
+    old_safe: ChecksumEvmAddress | None
+    new_safe: ChecksumEvmAddress
+
+    def serialize(self) -> dict[str, str | None]:
+        return {
+            'migration_id': self.migration_id,
+            'old_safe': self.old_safe,
+            'new_safe': self.new_safe,
+        }
 
 
 class GnosisPay:
@@ -102,9 +128,9 @@ class GnosisPay:
 
     def _query(
             self,
-            endpoint: Literal['cards/transactions'],
+            endpoint: Literal['cards/transactions', 'safe/migration'],
             params: dict[str, Any] | None = None,
-    ) -> list[dict[str, Any]]:
+    ) -> dict[str, Any]:
         """Query a gnosis pay API endpoint.
 
         May raise:
@@ -148,11 +174,7 @@ class GnosisPay:
                 f'Gnosis Pay API returned invalid JSON response: {response.text}',
             ) from e
 
-        if 'results' not in data:
-            log.error(f'Missing key results in gnosis pay response: {response.text}')
-            raise RemoteError('results key missing from paginated endpoint')
-
-        return cast('list[dict[str, Any]]', data['results'])
+        return data
 
     def _query_paginated(
             self,
@@ -177,7 +199,12 @@ class GnosisPay:
         while True:
             page_params['limit'] = limit
             page_params['offset'] = offset
-            if len(page := self._query(endpoint='cards/transactions', params=page_params)) == 0:
+            data = self._query(endpoint='cards/transactions', params=page_params)
+            if not isinstance(page := data.get('results'), list):
+                log.error('Missing or invalid results in gnosis pay response: %s', data)
+                raise RemoteError('results key missing from paginated endpoint')
+
+            if len(page) == 0:
                 # from the docs: The final number might differ a little bit, as one thread might contain multiple transactions.  # noqa: E501
                 # GnosisPay has the concept of threads that are unique payments made with card
                 # and each thread contains one or two transactions, the payment and the reversal.
@@ -186,10 +213,140 @@ class GnosisPay:
                 # is why the len of the page might not match the limit.
                 break
 
-            collected.extend(page)
+            collected.extend(cast('list[dict[str, Any]]', page))
             offset += limit
 
         return collected
+
+    @staticmethod
+    def _deserialize_safe_migration(data: dict[str, Any]) -> GnosisPaySafeMigration | None:
+        """Validate and deserialize a Gnosis Pay Safe migration response."""
+        try:
+            old_safe_data = data.get('oldSafe') if data.get('hasOldSafe') is True else None
+            gnosis_chain_id = str(ChainID.GNOSIS.serialize())
+            if (
+                data['migrationId'] != GNOSIS_PAY_SAFE_MIGRATION_ID or
+                data['newSafe']['chainId'] != gnosis_chain_id or
+                (
+                    old_safe_data is not None and
+                    old_safe_data['chainId'] != gnosis_chain_id
+                )
+            ):
+                log.error('Ignoring unsupported Gnosis Pay Safe migration data: %s', data)
+                return None
+
+            return GnosisPaySafeMigration(
+                migration_id=data['migrationId'],
+                old_safe=(
+                    deserialize_evm_address(old_safe_data['address'])
+                    if old_safe_data is not None
+                    else None
+                ),
+                new_safe=deserialize_evm_address(data['newSafe']['address']),
+            )
+        except (DeserializationError, KeyError, TypeError) as e:
+            log.error(
+                'Failed to deserialize Gnosis Pay Safe migration data %s due to %s',
+                data,
+                e,
+            )
+            return None
+
+    def _get_safe_migration(self) -> GnosisPaySafeMigration | None:
+        with self.database.conn.read_ctx() as cursor:
+            cached_data = self.database.get_static_cache(
+                cursor=cursor,
+                name=DBCacheStatic.GNOSIS_PAY_SAFE_MIGRATION,
+            )
+
+        if isinstance(cached_data, str):
+            try:
+                migration = self._deserialize_safe_migration_from_cache(
+                    data=jsonloads_dict(cached_data),
+                )
+            except JSONDecodeError as e:
+                log.error('Failed to deserialize cached Gnosis Pay Safe migration due to %s', e)
+            else:
+                if migration is not None:
+                    return migration
+
+        data = self._query(
+            endpoint=GNOSIS_PAY_SAFE_MIGRATION_ENDPOINT,
+            params={'migrationId': GNOSIS_PAY_SAFE_MIGRATION_ID},
+        )
+        if (migration := self._deserialize_safe_migration(data)) is None:
+            return None
+
+        with self.database.user_write() as write_cursor:
+            self.database.set_static_cache(
+                write_cursor=write_cursor,
+                name=DBCacheStatic.GNOSIS_PAY_SAFE_MIGRATION,
+                value=rlk_jsondumps(migration.serialize()),
+            )
+        return migration
+
+    @staticmethod
+    def _deserialize_safe_migration_from_cache(
+            data: dict[str, Any],
+    ) -> GnosisPaySafeMigration | None:
+        try:
+            if data['migration_id'] != GNOSIS_PAY_SAFE_MIGRATION_ID:
+                return None
+
+            return GnosisPaySafeMigration(
+                migration_id=data['migration_id'],
+                old_safe=(
+                    deserialize_evm_address(data['old_safe'])
+                    if data['old_safe'] is not None
+                    else None
+                ),
+                new_safe=deserialize_evm_address(data['new_safe']),
+            )
+        except (DeserializationError, KeyError, TypeError) as e:
+            log.error(
+                'Failed to deserialize cached Gnosis Pay Safe migration %s due to %s',
+                data,
+                e,
+            )
+            return None
+
+    def check_safe_migration(self) -> None:
+        """Suggest the other Safe when exactly one side of the migration is tracked."""
+        try:
+            migration = self._get_safe_migration()
+        except RemoteError as e:
+            log.error('Could not query Gnosis Pay Safe migration due to %s', e)
+            return
+
+        if migration is None or migration.old_safe is None:
+            return
+
+        with self.database.conn.read_ctx() as cursor:
+            tracked_addresses = {
+                address for (address,) in cursor.execute(
+                    'SELECT account FROM blockchain_accounts WHERE blockchain=?',
+                    (SupportedBlockchain.GNOSIS.value,),
+                )
+            }
+
+        old_is_tracked = migration.old_safe in tracked_addresses
+        new_is_tracked = migration.new_safe in tracked_addresses
+        if old_is_tracked == new_is_tracked:
+            return
+
+        tracked_address = migration.old_safe if old_is_tracked else migration.new_safe
+        missing_address = migration.new_safe if old_is_tracked else migration.old_safe
+        self.database.msg_aggregator.add_message(
+            message_type=WSMessageType.GNOSIS_PAY_SAFE_MIGRATION,
+            data={
+                'migration_id': migration.migration_id,
+                'tracked_address': tracked_address,
+                'missing_address': missing_address,
+                'missing_address_type': 'new' if old_is_tracked else 'old',
+                'chain': SupportedBlockchain.GNOSIS.serialize(),
+            },
+            deduplication_key=f'gnosis_pay_safe_migration_{migration.migration_id}',
+        )
 
     def maybe_deserialize_transaction(self, data: dict[str, Any]) -> GnosisPayTransaction | None:
         try:

@@ -1,15 +1,20 @@
 from http import HTTPStatus
-from typing import TYPE_CHECKING
+from json import dumps, loads
+from typing import TYPE_CHECKING, Any
 from unittest.mock import patch
 
 import pytest
+import requests
 from requests.models import Response
 
 from rotkehlchen.api.websockets.typedefs import WSMessageType
-from rotkehlchen.externalapis.gnosispay import init_gnosis_pay
+from rotkehlchen.chain.accounts import BlockchainAccountData
+from rotkehlchen.db.cache import DBCacheStatic
+from rotkehlchen.externalapis.gnosispay import GNOSIS_PAY_SAFE_MIGRATION_ID, init_gnosis_pay
+from rotkehlchen.serialization.deserialize import deserialize_evm_address
 from rotkehlchen.tests.fixtures.messages import MockedWsMessage
 from rotkehlchen.tests.utils.mock import MockResponse
-from rotkehlchen.types import Timestamp
+from rotkehlchen.types import SupportedBlockchain, Timestamp
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
@@ -81,3 +86,164 @@ def test_gnosis_pay_unauthorized(database, gnosispay_credentials):
         message_type=WSMessageType.GNOSISPAY_SESSIONKEY_EXPIRED,
         data={'error': 'Please sign in with GnosisPay again to refresh your data'},
     )
+
+
+@pytest.mark.parametrize('function_scope_initialize_mock_rotki_notifier', [True])
+@pytest.mark.parametrize(('tracked_safe', 'missing_type'), [
+    ('old', 'new'),
+    ('new', 'old'),
+    ('both', None),
+    ('neither', None),
+])
+def test_gnosis_pay_safe_migration(
+        database: 'DBHandler',
+        gnosispay_credentials: None,
+        tracked_safe: str,
+        missing_type: str | None,
+) -> None:
+    """Test migration data is cached and only a missing Safe produces one suggestion."""
+    gnosispay = init_gnosis_pay(database)
+    assert gnosispay is not None
+    old_safe = deserialize_evm_address('0x1111111111111111111111111111111111111111')
+    new_safe = deserialize_evm_address('0x2222222222222222222222222222222222222222')
+    tracked_addresses = {
+        'old': [old_safe],
+        'new': [new_safe],
+        'both': [old_safe, new_safe],
+        'neither': [],
+    }[tracked_safe]
+    with database.user_write() as write_cursor:
+        database.add_blockchain_accounts(
+            write_cursor=write_cursor,
+            account_data=[
+                BlockchainAccountData(
+                    chain=SupportedBlockchain.GNOSIS,
+                    address=address,
+                )
+                for address in tracked_addresses
+            ],
+        )
+
+    response_data = {
+        'migrationId': GNOSIS_PAY_SAFE_MIGRATION_ID,
+        'status': 'COMPLETED',
+        'hasOldSafe': True,
+        'newSafe': {'address': new_safe, 'chainId': '100', 'tokenSymbol': 'EURe'},
+        'oldSafe': {
+            'address': old_safe,
+            'chainId': '100',
+            'recordedAt': '2026-06-03T12:00:00.000Z',
+        },
+    }
+    with patch.object(
+        gnosispay.session,
+        'get',
+        return_value=MockResponse(HTTPStatus.OK, dumps(response_data)),
+    ) as mock_get:
+        gnosispay.check_safe_migration()
+        gnosispay.check_safe_migration()
+
+    assert mock_get.call_count == 1
+    second_gnosispay = init_gnosis_pay(database)
+    assert second_gnosispay is not None
+    second_gnosispay.check_safe_migration()  # cached data and session-wide message deduplication
+    with database.conn.read_ctx() as cursor:
+        cached_data = cursor.execute(
+            'SELECT value FROM key_value_cache WHERE name=?',
+            (DBCacheStatic.GNOSIS_PAY_SAFE_MIGRATION.value,),
+        ).fetchone()
+    assert cached_data is not None
+    assert loads(cached_data[0]) == {
+        'migration_id': GNOSIS_PAY_SAFE_MIGRATION_ID,
+        'old_safe': old_safe,
+        'new_safe': new_safe,
+    }
+
+    notifier: Any = database.msg_aggregator.rotki_notifier
+    assert notifier is not None
+    if missing_type is None:
+        assert notifier.pop_message() is None
+        return
+
+    old_is_tracked = tracked_safe == 'old'
+    assert notifier.pop_message() == MockedWsMessage(
+        message_type=WSMessageType.GNOSIS_PAY_SAFE_MIGRATION,
+        data={
+            'migration_id': GNOSIS_PAY_SAFE_MIGRATION_ID,
+            'tracked_address': old_safe if old_is_tracked else new_safe,
+            'missing_address': new_safe if old_is_tracked else old_safe,
+            'missing_address_type': missing_type,
+            'chain': 'gnosis',
+        },
+    )
+    assert notifier.pop_message() is None
+
+
+@pytest.mark.parametrize('function_scope_initialize_mock_rotki_notifier', [True])
+@pytest.mark.parametrize('response_data', [
+    {
+        'migrationId': GNOSIS_PAY_SAFE_MIGRATION_ID,
+        'status': 'COMPLETED',
+        'hasOldSafe': False,
+        'newSafe': {
+            'address': '0x2222222222222222222222222222222222222222',
+            'chainId': '100',
+        },
+    },
+    {
+        'migrationId': GNOSIS_PAY_SAFE_MIGRATION_ID,
+        'status': 'COMPLETED',
+        'hasOldSafe': True,
+        'newSafe': {'address': 'invalid', 'chainId': '100'},
+        'oldSafe': {
+            'address': '0x1111111111111111111111111111111111111111',
+            'chainId': '100',
+        },
+    },
+    {
+        'migrationId': GNOSIS_PAY_SAFE_MIGRATION_ID,
+        'status': 'COMPLETED',
+        'hasOldSafe': True,
+        'newSafe': {
+            'address': '0x2222222222222222222222222222222222222222',
+            'chainId': '1',
+        },
+        'oldSafe': {
+            'address': '0x1111111111111111111111111111111111111111',
+            'chainId': '100',
+        },
+    },
+])
+def test_gnosis_pay_safe_migration_ignored_responses(
+        database: 'DBHandler',
+        gnosispay_credentials: None,
+        response_data: dict,
+) -> None:
+    """Test absent old Safes, malformed addresses and unsupported chains are ignored."""
+    gnosispay = init_gnosis_pay(database)
+    assert gnosispay is not None
+    with patch.object(
+        gnosispay.session,
+        'get',
+        return_value=MockResponse(HTTPStatus.OK, dumps(response_data)),
+    ):
+        gnosispay.check_safe_migration()
+
+    notifier: Any = database.msg_aggregator.rotki_notifier
+    assert notifier is not None
+    assert notifier.pop_message() is None
+
+
+def test_gnosis_pay_safe_migration_api_failure(
+        database: 'DBHandler',
+        gnosispay_credentials: None,
+) -> None:
+    """Test migration API failures do not escape into callers such as scheduled tasks."""
+    gnosispay = init_gnosis_pay(database)
+    assert gnosispay is not None
+    with patch.object(
+        gnosispay.session,
+        'get',
+        side_effect=requests.ConnectionError('test failure'),
+    ):
+        gnosispay.check_safe_migration()
