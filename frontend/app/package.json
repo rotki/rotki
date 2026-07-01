@@ -38,6 +38,8 @@
     "traces": "vue-tsc --build --force --generateTrace traces"
   },
   "dependencies": {
+    "@fontsource/roboto": "catalog:",
+    "@fontsource/roboto-mono": "catalog:",
     "@rotki/common": "workspace:*",
     "@rotki/ui-library": "catalog:",
     "@types/ws": "catalog:",
@@ -64,9 +66,7 @@
     "plainfp": "catalog:",
     "ps-list": "catalog:",
     "qrcode": "catalog:",
-    "roboto-fontface": "catalog:",
     "theme-colors": "catalog:",
-    "typeface-roboto-mono": "catalog:",
     "utf-8-validate": "catalog:",
     "vanilla-jsoneditor": "catalog:",
     "viem": "catalog:",
