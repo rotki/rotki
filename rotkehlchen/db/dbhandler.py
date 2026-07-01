@@ -738,6 +738,7 @@ class DBHandler:
     def _deserialize_static_cache_value(name: DBCacheStatic, value: str) -> Timestamp | str:
         if name in (  # Return string for these cache entries, timestamp for all others
             DBCacheStatic.DOCKER_DEVICE_INFO,
+            DBCacheStatic.GNOSIS_PAY_SAFE_MIGRATION,
             DBCacheStatic.MONERIUM_OAUTH_CREDENTIALS,
             DBCacheStatic.ETHERSCAN_API_KEY_TIER,
             DBCacheStatic.STALE_BALANCES_FROM_TS,
@@ -755,6 +756,7 @@ class DBHandler:
             name: Literal[
                 DBCacheStatic.DOCKER_DEVICE_INFO,
                 DBCacheStatic.ETHERSCAN_API_KEY_TIER,
+                DBCacheStatic.GNOSIS_PAY_SAFE_MIGRATION,
                 DBCacheStatic.MONERIUM_OAUTH_CREDENTIALS,
                 DBCacheStatic.STALE_BALANCES_FROM_TS,
                 DBCacheStatic.STALE_BALANCES_MODIFICATION_TS,

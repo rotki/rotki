@@ -16322,6 +16322,47 @@ GnosisPay admins
    :statuscode 409: Error querying the on chain information.
    :statuscode 502: Failed to query the external contract.
 
+GnosisPay Safe migration
+=========================
+
+.. http:get:: /api/(version)/services/gnosispay/migration
+
+   Retrieve the Gnosis Pay Safe migration address that is not yet tracked by rotki. An address is
+   returned only when exactly one of the previous and new Safes is tracked. The
+   ``untracked_addresses`` list is empty when both or neither Safe is tracked, or when there is no
+   previous Safe.
+
+   .. note::
+      This endpoint can also be queried asynchronously by using ``"async_query": true``.
+
+   **Example Response**
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+          "result": {
+              "migration_id": "safe-replacement-2026-06",
+              "untracked_addresses": [
+                  {
+                      "address": "0x2222222222222222222222222222222222222222",
+                      "type": "new"
+                  }
+              ]
+          },
+          "message": ""
+      }
+
+   :resjson string result.migration_id: Identifier of the Gnosis Pay Safe migration.
+   :resjson array result.untracked_addresses: Safe addresses that should be offered for tracking.
+   :resjson string result.untracked_addresses[].address: Untracked Gnosis Chain Safe address.
+   :resjson string result.untracked_addresses[].type: Whether the address is the ``old`` or ``new`` Safe.
+   :statuscode 200: The request was successful.
+   :statuscode 401: No user is currently logged in.
+   :statuscode 409: Gnosis Pay credentials are missing or the Gnosis Pay API query failed.
+
 GnosisPay nonce
 ================
 

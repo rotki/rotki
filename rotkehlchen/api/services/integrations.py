@@ -10,6 +10,7 @@ from rotkehlchen.errors.misc import InputError, RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.externalapis.gnosispay import (
     fetch_gnosis_pay_siwe_nonce,
+    init_gnosis_pay,
     verify_gnosis_pay_siwe_signature as external_verify_gnosis_pay_siwe_signature,
 )
 from rotkehlchen.externalapis.google_calendar import GoogleCalendarAPI
@@ -222,6 +223,21 @@ class IntegrationsService:
             return {'result': None, 'message': str(e), 'status_code': HTTPStatus.CONFLICT}
 
         return {'result': addresses_with_admins, 'message': '', 'status_code': HTTPStatus.OK}
+
+    def get_gnosis_pay_safe_migration(self) -> dict[str, Any]:
+        if (gnosis_pay := init_gnosis_pay(self.rotkehlchen.data.db)) is None:
+            return {
+                'result': None,
+                'message': 'Gnosis Pay credentials are not configured',
+                'status_code': HTTPStatus.CONFLICT,
+            }
+
+        try:
+            result = gnosis_pay.get_safe_migration_data()
+        except RemoteError as e:
+            return {'result': None, 'message': str(e), 'status_code': HTTPStatus.CONFLICT}
+
+        return {'result': result, 'message': '', 'status_code': HTTPStatus.OK}
 
     def fetch_gnosis_pay_nonce(self) -> dict[str, Any]:
         try:
