@@ -1,12 +1,12 @@
 import dayjs from 'dayjs';
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useAccountManagement } from '@/modules/auth/use-account-management';
-import { useAutoLogin } from '@/modules/auth/use-auto-login';
+import { createAutoLogin } from '@/modules/auth/use-auto-login';
 import { useSessionAuthStore } from '@/modules/auth/use-session-auth-store';
 import { Constraints } from '@/modules/core/common/constraints';
 import { useFrontendSettingsStore } from '@/modules/settings/use-frontend-settings-store';
 
-const { controllerErrors, controllerLoading, controllerState, reset, startCreate, startLogin, startResume } = vi.hoisted(() => {
+const { controllerErrors, controllerLoading, controllerState, reset, startCreate, startLogin, startAuto } = vi.hoisted(() => {
   // eslint-disable-next-line @typescript-eslint/no-require-imports
   const { ref: vueRef } = require('vue');
   return {
@@ -16,7 +16,7 @@ const { controllerErrors, controllerLoading, controllerState, reset, startCreate
     reset: vi.fn(),
     startCreate: vi.fn(),
     startLogin: vi.fn(),
-    startResume: vi.fn(),
+    startAuto: vi.fn(),
   };
 });
 
@@ -29,7 +29,7 @@ vi.mock('@/modules/auth/unlock-flow/use-unlock-flow-controller', () => ({
     skipUpdate: vi.fn(),
     startCreate,
     startLogin,
-    startResume,
+    startAuto,
     state: controllerState,
   })),
 }));
@@ -64,7 +64,8 @@ describe('useAccount', () => {
     set(controllerState, { kind: 'idle' });
     startLogin.mockReset();
     startCreate.mockReset();
-    startResume.mockReset();
+    startAuto.mockReset();
+    reset.mockReset();
   });
 
   describe('login', () => {
@@ -92,6 +93,31 @@ describe('useAccount', () => {
       await userLogin({ password: '1234', resumeFromBackup: true, syncApproval: 'yes', username: 'test' });
 
       expect(startLogin).toHaveBeenCalledWith({ password: '1234', resumeFromBackup: true, syncApproval: 'yes', username: 'test' });
+    });
+  });
+
+  describe('clearErrors', () => {
+    it('should reset the flow to dismiss a terminal error', () => {
+      const { clearErrors } = useAccountManagement();
+      set(controllerState, { kind: 'error' });
+
+      clearErrors();
+
+      expect(reset).toHaveBeenCalled();
+    });
+
+    it('should not reset an in-flight flow (a background auto-unlock must survive `touched`)', () => {
+      // A background auto-unlock can be in flight while the form is interactive; `touched` →
+      // clearErrors must not reset it, or it would drop the flow's credentials and abort with
+      // "unlock without an active flow".
+      const { clearErrors } = useAccountManagement();
+
+      for (const kind of ['authenticating', 'connecting', 'checking-update', 'unlocking', 'idle'] as const) {
+        set(controllerState, { kind });
+        clearErrors();
+      }
+
+      expect(reset).not.toHaveBeenCalled();
     });
   });
 
@@ -150,7 +176,7 @@ describe('useAccount', () => {
         passwordConfirmationInterval: Constraints.PASSWORD_CONFIRMATION_MIN_SECONDS,
       });
 
-      const { checkIfPasswordConfirmationNeeded } = useAutoLogin();
+      const { checkIfPasswordConfirmationNeeded } = createAutoLogin();
       await checkIfPasswordConfirmationNeeded('testUser');
 
       expect(get(needsPasswordConfirmation)).toBe(false);
@@ -173,7 +199,7 @@ describe('useAccount', () => {
         passwordConfirmationInterval: Constraints.PASSWORD_CONFIRMATION_MIN_SECONDS,
       });
 
-      const { checkIfPasswordConfirmationNeeded } = useAutoLogin();
+      const { checkIfPasswordConfirmationNeeded } = createAutoLogin();
       await checkIfPasswordConfirmationNeeded('testUser');
 
       expect(get(needsPasswordConfirmation)).toBe(false);
@@ -195,7 +221,7 @@ describe('useAccount', () => {
         passwordConfirmationInterval: Constraints.PASSWORD_CONFIRMATION_MIN_SECONDS,
       });
 
-      const { checkIfPasswordConfirmationNeeded } = useAutoLogin();
+      const { checkIfPasswordConfirmationNeeded } = createAutoLogin();
       await checkIfPasswordConfirmationNeeded('testUser');
 
       expect(get(needsPasswordConfirmation)).toBe(true);
@@ -216,7 +242,7 @@ describe('useAccount', () => {
         passwordConfirmationInterval: Constraints.PASSWORD_CONFIRMATION_MIN_SECONDS,
       });
 
-      const { checkIfPasswordConfirmationNeeded } = useAutoLogin();
+      const { checkIfPasswordConfirmationNeeded } = createAutoLogin();
       await checkIfPasswordConfirmationNeeded('testUser');
 
       expect(get(needsPasswordConfirmation)).toBe(false);
@@ -238,7 +264,7 @@ describe('useAccount', () => {
         passwordConfirmationInterval: Constraints.PASSWORD_CONFIRMATION_MIN_SECONDS,
       });
 
-      const { checkIfPasswordConfirmationNeeded } = useAutoLogin();
+      const { checkIfPasswordConfirmationNeeded } = createAutoLogin();
       await checkIfPasswordConfirmationNeeded('testUser');
 
       // Should not set needsPasswordConfirmation because no stored password
@@ -259,7 +285,7 @@ describe('useAccount', () => {
         passwordConfirmationInterval: Constraints.PASSWORD_CONFIRMATION_MIN_SECONDS,
       });
 
-      const { checkIfPasswordConfirmationNeeded } = useAutoLogin();
+      const { checkIfPasswordConfirmationNeeded } = createAutoLogin();
       await checkIfPasswordConfirmationNeeded('testUser');
 
       expect(get(needsPasswordConfirmation)).toBe(false);
@@ -282,7 +308,7 @@ describe('useAccount', () => {
         passwordConfirmationInterval: Constraints.PASSWORD_CONFIRMATION_MIN_SECONDS,
       });
 
-      const { checkIfPasswordConfirmationNeeded } = useAutoLogin();
+      const { checkIfPasswordConfirmationNeeded } = createAutoLogin();
       await checkIfPasswordConfirmationNeeded('testUser');
 
       expect(get(needsPasswordConfirmation)).toBe(true);
@@ -304,7 +330,7 @@ describe('useAccount', () => {
         passwordConfirmationInterval: interval,
       });
 
-      const { checkIfPasswordConfirmationNeeded } = useAutoLogin();
+      const { checkIfPasswordConfirmationNeeded } = createAutoLogin();
       await checkIfPasswordConfirmationNeeded('testUser');
 
       expect(get(needsPasswordConfirmation)).toBe(true);
@@ -326,7 +352,7 @@ describe('useAccount', () => {
         passwordConfirmationInterval: interval,
       });
 
-      const { checkIfPasswordConfirmationNeeded } = useAutoLogin();
+      const { checkIfPasswordConfirmationNeeded } = createAutoLogin();
       await checkIfPasswordConfirmationNeeded('testUser');
 
       expect(get(needsPasswordConfirmation)).toBe(false);
@@ -348,7 +374,7 @@ describe('useAccount', () => {
         passwordConfirmationInterval: sevenDaysInSeconds,
       });
 
-      const { checkIfPasswordConfirmationNeeded } = useAutoLogin();
+      const { checkIfPasswordConfirmationNeeded } = createAutoLogin();
       await checkIfPasswordConfirmationNeeded('testUser');
 
       expect(get(needsPasswordConfirmation)).toBe(true);
@@ -369,7 +395,7 @@ describe('useAccount', () => {
         passwordConfirmationInterval: Constraints.PASSWORD_CONFIRMATION_MAX_SECONDS,
       });
 
-      const { checkIfPasswordConfirmationNeeded } = useAutoLogin();
+      const { checkIfPasswordConfirmationNeeded } = createAutoLogin();
       await checkIfPasswordConfirmationNeeded('testUser');
 
       expect(get(needsPasswordConfirmation)).toBe(true);
@@ -390,7 +416,7 @@ describe('useAccount', () => {
         passwordConfirmationInterval: Constraints.PASSWORD_CONFIRMATION_MIN_SECONDS,
       });
 
-      const { checkIfPasswordConfirmationNeeded } = useAutoLogin();
+      const { checkIfPasswordConfirmationNeeded } = createAutoLogin();
       await checkIfPasswordConfirmationNeeded('testUser');
 
       expect(get(needsPasswordConfirmation)).toBe(false);
@@ -412,7 +438,7 @@ describe('useAccount', () => {
         passwordConfirmationInterval: Constraints.PASSWORD_CONFIRMATION_MIN_SECONDS,
       });
 
-      const { checkIfPasswordConfirmationNeeded } = useAutoLogin();
+      const { checkIfPasswordConfirmationNeeded } = createAutoLogin();
       await checkIfPasswordConfirmationNeeded('testUser');
       const afterTime = dayjs().unix();
 
@@ -424,7 +450,7 @@ describe('useAccount', () => {
     });
 
     it('should return true when password is correct', async () => {
-      const { confirmPassword } = useAutoLogin();
+      const { confirmPassword } = createAutoLogin();
       const correctPassword = 'mySecurePassword123';
 
       vi.mocked(mockInterop.getPassword).mockResolvedValue(correctPassword);
@@ -436,7 +462,7 @@ describe('useAccount', () => {
     });
 
     it('should return false when password is incorrect', async () => {
-      const { confirmPassword } = useAutoLogin();
+      const { confirmPassword } = createAutoLogin();
 
       vi.mocked(mockInterop.getPassword).mockResolvedValue('correctPassword');
 
@@ -446,7 +472,7 @@ describe('useAccount', () => {
     });
 
     it('should return false when password is empty', async () => {
-      const { confirmPassword } = useAutoLogin();
+      const { confirmPassword } = createAutoLogin();
 
       vi.mocked(mockInterop.getPassword).mockResolvedValue('somePassword');
 
@@ -457,7 +483,7 @@ describe('useAccount', () => {
 
     it('should update lastPasswordConfirmed timestamp when password is correct', async () => {
       const frontendStore = useFrontendSettingsStore();
-      const { confirmPassword } = useAutoLogin();
+      const { confirmPassword } = createAutoLogin();
       const correctPassword = 'testPassword';
 
       vi.mocked(mockInterop.getPassword).mockResolvedValue(correctPassword);
@@ -473,7 +499,7 @@ describe('useAccount', () => {
 
     it('should not update timestamp when password is incorrect', async () => {
       const frontendStore = useFrontendSettingsStore();
-      const { confirmPassword } = useAutoLogin();
+      const { confirmPassword } = createAutoLogin();
 
       const initialTimestamp = frontendStore.lastPasswordConfirmed;
       vi.mocked(mockInterop.getPassword).mockResolvedValue('correctPassword');
@@ -486,7 +512,7 @@ describe('useAccount', () => {
     it('should set needsPasswordConfirmation to false when password is correct', async () => {
       const authStore = useSessionAuthStore();
       const { needsPasswordConfirmation } = storeToRefs(authStore);
-      const { confirmPassword } = useAutoLogin();
+      const { confirmPassword } = createAutoLogin();
       const correctPassword = 'test123';
 
       set(needsPasswordConfirmation, true);
@@ -498,7 +524,7 @@ describe('useAccount', () => {
     });
 
     it('should handle special characters in password', async () => {
-      const { confirmPassword } = useAutoLogin();
+      const { confirmPassword } = createAutoLogin();
       const specialPassword = 'p@$$w0rd!#$%^&*()';
 
       vi.mocked(mockInterop.getPassword).mockResolvedValue(specialPassword);
@@ -509,7 +535,7 @@ describe('useAccount', () => {
     });
 
     it('should compare passwords case-sensitively', async () => {
-      const { confirmPassword } = useAutoLogin();
+      const { confirmPassword } = createAutoLogin();
 
       vi.mocked(mockInterop.getPassword).mockResolvedValue('Password123');
 
@@ -521,7 +547,7 @@ describe('useAccount', () => {
     });
 
     it('should handle getPassword rejection', async () => {
-      const { confirmPassword } = useAutoLogin();
+      const { confirmPassword } = createAutoLogin();
 
       vi.mocked(mockInterop.getPassword).mockRejectedValue(new Error('Failed to get password'));
 

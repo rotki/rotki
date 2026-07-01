@@ -18,13 +18,16 @@ const { connected, connectionFailure, dockerRiskAccepted } = storeToRefs(useMain
 
 const isDocker = import.meta.env.VITE_DOCKER;
 const showDockerWarning = logicAnd(isDocker, logicNot(dockerRiskAccepted));
-const displayRouter = logicAnd(connected, logicNot(showDockerWarning), logicNot(restarting));
+// Hide the login form while an auto-unlock is running — the ConnectionLoading card is the
+// single loading state for the whole attempt, so the empty form never shows behind it.
+const displayRouter = logicAnd(connected, logicNot(autolog), logicNot(showDockerWarning), logicNot(restarting));
 </script>
 
 <template>
   <ConnectionLoading
     v-if="!connectionFailure"
     :connected="connected && !autolog"
+    :logging-in="autolog"
     :restarting="restarting"
   />
   <ConnectionFailureMessage v-else />
@@ -39,18 +42,18 @@ const displayRouter = logicAnd(connected, logicNot(showDockerWarning), logicNot(
 
   <DockerWarning v-else-if="showDockerWarning" />
   <div
-    v-else-if="connected"
-    class="w-full h-full flex flex-col gap-4 items-center justify-center"
+    v-else-if="connected && !autolog"
+    class="max-w-[27.5rem] mx-auto flex flex-col gap-4 justify-center items-center py-12"
   >
     <RuiProgress
-      thickness="2"
       color="primary"
       variant="indeterminate"
       circular
+      size="48"
     />
     <p
       v-if="restarting"
-      class="mb-0 text-rui-text-secondary"
+      class="mb-0 text-rui-text-secondary text-center"
     >
       {{ t('connection_loading.restarting') }}
     </p>

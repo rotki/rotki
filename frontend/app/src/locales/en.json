@@ -2073,6 +2073,8 @@
     "title": "Connection failure"
   },
   "connection_loading": {
+    "logging_in": "Signing in…",
+    "logging_out": "Signing out…",
     "message": "Connecting to rotki backend",
     "restarting": "Restarting the rotki backend"
   },

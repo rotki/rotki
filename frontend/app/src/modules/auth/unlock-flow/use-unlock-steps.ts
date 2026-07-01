@@ -1,7 +1,6 @@
 import type { Exchange } from '@/modules/balances/types/exchanges';
 import type { TaskMeta } from '@/modules/core/tasks/types';
-import { objectPick } from '@vueuse/shared';
-import { err, none, ok, pipe, type ResultType as Result, ResultAsync } from 'plainfp';
+import { err, none, ok, type OptionType as Option, type ResultType as Result } from 'plainfp';
 import { lastLogin } from '@/modules/auth/account-management';
 import { type CreateAccountPayload, IncompleteUpgradeError, SyncConflictError } from '@/modules/auth/login';
 import { useSessionAuthStore } from '@/modules/auth/use-session-auth-store';
@@ -17,6 +16,7 @@ import { migrateSettingsIfNeeded } from '@/modules/settings/types/frontend-setti
 import { type SettingsUpdate, UserAccount, UserSettingsModel } from '@/modules/settings/types/user-settings';
 import { useMonitorService } from '@/modules/shell/app/use-monitor-service';
 import { useAssetUpdateSteps } from './use-asset-update-steps';
+import { useStoredCredentials } from './use-stored-credentials';
 import {
   type SessionModel,
   type UnlockCredentials,
@@ -51,6 +51,7 @@ export function useUnlockSteps(): UseUnlockStepsReturn {
   const { checkIfLogged, colibriLogin, createAccount: callCreateAccount, login: callLogin } = useUsersApi();
   const { getRawSettings, setSettings } = useSettingsApi();
   const { getExchanges } = useExchangeApi();
+  const { resolveStoredCredentials } = useStoredCredentials();
   const assetSteps = useAssetUpdateSteps();
 
   // the account produced by `unlock`, consumed by `loadSession` (one flow at a time)
@@ -124,7 +125,7 @@ export function useUnlockSteps(): UseUnlockStepsReturn {
       return err({ kind: UnlockErrorKind.wrongPassword });
     }
 
-    await colibriLogin(objectPick(credentials, ['username', 'password']));
+    await colibriLogin({ password: credentials.password, username: credentials.username });
     outcome.result.settings.frontendSettings = await migrateAndSaveSettings(outcome.result.settings.frontendSettings);
     const account = UserAccount.parse(outcome.result);
     return ok({ exchanges: account.exchanges, fetchData: true, settings: account.settings, username: name });
@@ -157,26 +158,45 @@ export function useUnlockSteps(): UseUnlockStepsReturn {
     }
   };
 
-  // checkIfLogged → (resume | freshLogin) → stash the loaded account. Every async op is
-  // behind `fromPromise`/`guarded`, so a throw from any stage is mapped to a typed `err`
+  // Resolve the stored credentials for a background auto-unlock (delegated to
+  // useStoredCredentials); `none` ⇒ nothing to auto-unlock with, so the flow drops back to
+  // the manual login form. `guarded` maps any throw to a typed err.
+  const resolveCredentials = async (): Promise<Result<Option<UnlockCredentials>, UnlockError>> =>
+    guarded<Option<UnlockCredentials>>(async () => ok(await resolveStoredCredentials()));
+
+  // The "auto-login check": does the backend already hold a live session for this user
+  // (and no conflict is pending)? Decided up front so the resume branch skips the
+  // asset-update prompt and the fresh-login branch keeps it.
+  const probeSession = async (credentials: UnlockCredentials): Promise<Result<boolean, UnlockError>> =>
+    guarded(async () => {
+      const name = credentials.username || get<string>(lastLogin);
+      const alreadyLogged = await checkIfLogged(name);
+      return ok(alreadyLogged && !get(conflictExist));
+    });
+
+  // Resume an already-live server-side session — no login task, no colibri login.
+  const resumeUnlock = async (credentials: UnlockCredentials): Promise<Result<void, UnlockError>> =>
+    guarded(async () => {
+      const name = credentials.username || get<string>(lastLogin);
+      const account = await resumeSession(name);
+      if (!account.ok)
+        return account;
+      loaded = account.value;
+      return ok(undefined);
+    });
+
+  // Fresh login with credentials (manual or saved-password auto-unlock). Every async op is
+  // behind `guarded`, so a throw from any stage is mapped to a typed `err`
   // (single-boundary safety) instead of rejecting the flow.
-  const loginUnlock = async (credentials: UnlockCredentials): Promise<Result<void, UnlockError>> => {
-    const name = credentials.username || get<string>(lastLogin);
-    return pipe(
-      ResultAsync.fromPromise(checkIfLogged(name), failWith),
-      ResultAsync.flatMap(async (alreadyLogged): Promise<Result<void, UnlockError>> =>
-        guarded(async () => {
-          const account = alreadyLogged && !get(conflictExist)
-            ? await resumeSession(name)
-            : await freshLogin(credentials, name);
-          if (!account.ok)
-            return account;
-          loaded = account.value;
-          return ok(undefined);
-        }),
-      ),
-    );
-  };
+  const loginUnlock = async (credentials: UnlockCredentials): Promise<Result<void, UnlockError>> =>
+    guarded(async () => {
+      const name = credentials.username || get<string>(lastLogin);
+      const account = await freshLogin(credentials, name);
+      if (!account.ok)
+        return account;
+      loaded = account.value;
+      return ok(undefined);
+    });
 
   const createUnlock = (payload: CreateAccountPayload) => async (): Promise<Result<void, UnlockError>> =>
     guarded(async () => {
@@ -188,7 +208,7 @@ export function useUnlockSteps(): UseUnlockStepsReturn {
         return err({ kind: UnlockErrorKind.unknown, message: outcome.message });
 
       const { exchanges, settings } = UserAccount.parse(outcome.result);
-      await colibriLogin(objectPick(payload.credentials, ['username', 'password']));
+      await colibriLogin({ password: payload.credentials.password, username: payload.credentials.username });
       loaded = {
         exchanges,
         fetchData: payload.premiumSetup?.syncDatabase ?? false,
@@ -211,13 +231,19 @@ export function useUnlockSteps(): UseUnlockStepsReturn {
       ...shared,
       applyUpdate: assetSteps.applyUpdate,
       checkUpdate: async () => ok(none), // a fresh account is always current
-      unlock: createUnlock(payload),
+      login: createUnlock(payload),
+      probeSession: async () => ok(false), // a new account is never resumable
+      resolveCredentials: async () => ok(none), // create is never a background auto-unlock
+      resume: async () => ok(undefined), // never reached for create
     }),
     loginSteps: {
       ...shared,
       applyUpdate: assetSteps.applyUpdate,
       checkUpdate: assetSteps.checkUpdate,
-      unlock: loginUnlock,
+      login: loginUnlock,
+      probeSession,
+      resolveCredentials,
+      resume: resumeUnlock,
     },
   };
 }

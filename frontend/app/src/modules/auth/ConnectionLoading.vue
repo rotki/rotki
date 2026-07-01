@@ -1,33 +1,36 @@
 <script setup lang="ts">
-const { connected, restarting = false } = defineProps<{
+const { connected, loggingIn = false, restarting = false } = defineProps<{
   connected: boolean;
   restarting?: boolean;
+  loggingIn?: boolean;
 }>();
 const { t } = useI18n({ useScope: 'global' });
 
-const message = computed<string>(() =>
-  restarting ? t('connection_loading.restarting') : t('connection_loading.message'),
-);
+const message = computed<string>(() => {
+  if (restarting)
+    return t('connection_loading.restarting');
+  if (loggingIn)
+    return t('connection_loading.logging_in');
+  return t('connection_loading.message');
+});
 </script>
 
 <template>
-  <RuiCard
+  <div
     v-if="!connected"
-    variant="flat"
-    class="max-w-[27.5rem] mx-auto !bg-transparent"
+    class="max-w-[27.5rem] mx-auto flex flex-col gap-4 justify-center items-center py-12"
   >
-    <div class="flex items-center space-x-10">
-      <RuiProgress
-        color="primary"
-        variant="indeterminate"
-        circular
-      />
-      <h5
-        class="text-rui-text-secondary text-h5"
-        data-cy="connection-loading__content"
-      >
-        {{ message }}
-      </h5>
-    </div>
-  </RuiCard>
+    <RuiProgress
+      color="primary"
+      variant="indeterminate"
+      circular
+      size="48"
+    />
+    <p
+      class="mb-0 text-rui-text-secondary text-center"
+      data-cy="connection-loading__content"
+    >
+      {{ message }}
+    </p>
+  </div>
 </template>

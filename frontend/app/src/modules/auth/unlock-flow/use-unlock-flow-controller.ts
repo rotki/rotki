@@ -2,7 +2,6 @@ import type { ComputedRef, Ref } from 'vue';
 import type { CreateAccountPayload } from '@/modules/auth/login';
 import { startPromise, wait } from '@shared/utils';
 import dayjs from 'dayjs';
-import { none, ok } from 'plainfp';
 import { usePasswordConfirmation } from '@/modules/auth/use-password-confirmation';
 import { useRememberSettings } from '@/modules/auth/use-remember-settings';
 import { useRestartingStatus } from '@/modules/auth/use-restarting-status';
@@ -23,13 +22,15 @@ import {
 } from './use-unlock-flow';
 import { useUnlockSteps } from './use-unlock-steps';
 
-type UnlockMode = 'login' | 'create' | 'resume';
+type UnlockMode = 'login' | 'create' | 'auto';
 
 // Phases where the form must show a busy state (the asset-update prompt/conflict phases
 // are excluded — they wait on the user, not on us).
 const IN_FLIGHT: ReadonlySet<string> = new Set([
+  UnlockPhase.resolving,
   UnlockPhase.authenticating,
   UnlockPhase.connecting,
+  UnlockPhase.probing,
   UnlockPhase.checkingUpdate,
   UnlockPhase.applyingUpdate,
   UnlockPhase.restarting,
@@ -45,7 +46,7 @@ export interface UseUnlockFlowControllerReturn {
   upgradeVisible: Readonly<Ref<boolean>>;
   startLogin: (credentials: UnlockCredentials) => Promise<void>;
   startCreate: (payload: CreateAccountPayload) => Promise<void>;
-  startResume: () => Promise<void>;
+  startAuto: () => Promise<void>;
   applyUpdate: (resolution?: Resolution, version?: number) => Promise<void>;
   skipUpdate: () => Promise<void>;
   reset: () => void;
@@ -77,10 +78,6 @@ export function createUnlockFlowController(): UseUnlockFlowControllerReturn {
   const { checkIfPasswordConfirmationNeeded } = usePasswordConfirmation();
   const { restarting } = useRestartingStatus();
 
-  // Resume (auto-login/reload) must NOT pop an asset-update prompt — applying it would
-  // restart the backend and kill the live session it just re-attached to.
-  const resumeSteps: UnlockSteps = { ...loginSteps, checkUpdate: async () => ok(none) };
-
   const mode = ref<UnlockMode>('login');
   // The step-set the proxy currently delegates to; swapped synchronously before each start.
   let active: UnlockSteps = loginSteps;
@@ -93,17 +90,20 @@ export function createUnlockFlowController(): UseUnlockFlowControllerReturn {
     checkUpdate: async () => active.checkUpdate(),
     connect: async () => active.connect(),
     loadSession: async () => active.loadSession(),
+    login: async credentials => active.login(credentials),
+    probeSession: async credentials => active.probeSession(credentials),
     requestRestart: async () => active.requestRestart(),
-    unlock: async credentials => active.unlock(credentials),
+    resolveCredentials: async () => active.resolveCredentials(),
+    resume: async credentials => active.resume(credentials),
     waitReady: async () => active.waitReady(),
   };
 
   const flow = useUnlockFlow(proxy);
 
-  // Auto-login/resume runs in the background — it must not flip the login form into its
-  // disabled "loading" state (the disable→enable toggle on the autocomplete would otherwise
-  // fire a spurious empty-username validation on first open).
-  const loading = computed<boolean>(() => get(mode) !== 'resume' && IN_FLIGHT.has(get(flow.state).kind));
+  // Auto-unlock runs in the background — it must not flip the login form into its disabled
+  // "loading" state (the disable→enable toggle on the autocomplete would otherwise fire a
+  // spurious empty-username validation on first open).
+  const loading = computed<boolean>(() => get(mode) !== 'auto' && IN_FLIGHT.has(get(flow.state).kind));
 
   const errors = computed<string[]>(() => {
     const current = get(flow.state);
@@ -128,23 +128,32 @@ export function createUnlockFlowController(): UseUnlockFlowControllerReturn {
 
   async function onReady(): Promise<void> {
     const current = get(mode);
+    const state = get(flow.state);
+    // The flow owns the resume-vs-fresh-login branch, so `ready.resumed` — not the caller's
+    // mode — decides which post-unlock effects apply (a saved-password auto-unlock can end
+    // in either branch).
+    const resumed = state.kind === UnlockPhase.ready && state.resumed;
 
     // Pad only a *fast* create+upgrade so the progress bar is actually seen — a long upgrade
     // is already visible long enough and shouldn't tack on a needless delay before navigating.
     if (current === 'create' && get(upgradeVisible) && (dayjs().valueOf() - createStartedAt) / 1000 < 10)
       await wait(3000);
-    // A manual login proves the password; record the confirmation timestamp.
-    if (current === 'login')
+    // A fresh login (manual or saved-password auto-unlock) proves the password; record it.
+    if (!resumed && current !== 'create')
       await updateFrontendSetting({ lastPasswordConfirmed: dayjs().unix() });
     if (current === 'create')
       set(savedUsername, get(username));
 
     await handleSessionReady();
 
-    if (current === 'login')
-      await disconnectWallet();
-    else if (current === 'resume')
+    if (current === 'create')
+      return;
+    // A resumed session hasn't re-proven the password, so it may still need confirmation; a
+    // fresh login just did, and disconnects any wallet lingering from the previous session.
+    if (resumed)
       await checkIfPasswordConfirmationNeeded(get(username));
+    else
+      await disconnectWallet();
   }
 
   watch(flow.state, (current) => {
@@ -183,15 +192,15 @@ export function createUnlockFlowController(): UseUnlockFlowControllerReturn {
     await flow.start(payload.credentials);
   }
 
-  async function startResume(): Promise<void> {
+  async function startAuto(): Promise<void> {
     if (!canStart())
       return;
-    set(mode, 'resume');
-    active = resumeSteps;
-    await flow.start({ password: '', username: '' });
-    // A resume that found no live session ends in `error` with no message — fall back to a
-    // clean idle form. Guarded by the canStart() check above so it can never clear another
-    // in-flight flow (e.g. an asset-update restart that briefly drops the connection).
+    set(mode, 'auto');
+    active = loginSteps;
+    await flow.startAuto();
+    // A background auto-unlock that hit a real failure (e.g. a stale saved password) ends in
+    // `error` — fall back to a clean idle form rather than parking the login screen in error.
+    // Guarded by the canStart() check above so it can never clear another in-flight flow.
     if (get(flow.state).kind === UnlockPhase.error)
       flow.reset();
   }
@@ -202,9 +211,9 @@ export function createUnlockFlowController(): UseUnlockFlowControllerReturn {
     loading,
     reset: flow.reset,
     skipUpdate: flow.skipUpdate,
+    startAuto,
     startCreate,
     startLogin,
-    startResume,
     state: flow.state,
     upgradeVisible,
   };
