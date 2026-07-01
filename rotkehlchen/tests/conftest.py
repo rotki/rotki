@@ -48,6 +48,11 @@ SUBPROCESS_TIMEOUT: Final = 30
 DB_SETTINGS_REGEX: Final = re.compile(r'-db_settings[^]]*|\[db_settings[^]]*\]')
 
 
+def _normalize_solana_rpc_uri(uri: str) -> str:
+    """Ignore the root slash that VCR.py 8.2's HTTPX transport no longer preserves."""
+    return uri.removesuffix('/')
+
+
 class TestEnvironment(SerializableEnumNameMixin):
     __test__ = False  # tell pytest not to collect this class
 
@@ -359,7 +364,10 @@ def vcr_fixture(vcr: 'VCR') -> 'VCR':
         """Match Solana JSON-RPC calls by method/params while ignoring request id."""
         if 'solana' not in r1.uri and 'solana' not in r2.uri:
             return etherscan_matcher(r1, r2)
-        if r1.uri != r2.uri or r1.method != r2.method:
+        if (
+            _normalize_solana_rpc_uri(r1.uri) != _normalize_solana_rpc_uri(r2.uri) or
+            r1.method != r2.method
+        ):
             return False
 
         def strip_jsonrpc_id(payload: Any) -> Any:
@@ -384,6 +392,11 @@ def vcr_fixture(vcr: 'VCR') -> 'VCR':
         properly with Blockscout.
         """
         uri_pair = f'{r1.uri} {r2.uri}'
+        if 'solana' in uri_pair:
+            return (
+                _normalize_solana_rpc_uri(r1.uri) == _normalize_solana_rpc_uri(r2.uri) and
+                r1.method == r2.method
+            )
         if 'etherscan.io' not in uri_pair and 'blockscout.com' not in uri_pair:
             return r1.uri == r2.uri and r1.method == r2.method
 
