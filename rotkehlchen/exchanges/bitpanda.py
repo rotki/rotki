@@ -3,13 +3,13 @@ import logging
 from collections import defaultdict
 from collections.abc import Sequence
 from http import HTTPStatus
-from time import sleep
 from typing import TYPE_CHECKING, Any, Literal, overload
 from urllib.parse import urlencode
 
 import requests
 
 from rotkehlchen.assets.converters import asset_from_bitpanda
+from rotkehlchen.concurrency import cancellable_sleep
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import A_BEST
 from rotkehlchen.data_import.utils import maybe_set_transaction_extra_data
@@ -370,7 +370,7 @@ class Bitpanda(ExchangeWithoutApiSecret):
                     f'Got a 429 from Bitpanda query of {request_url}. Will backoff '
                     f'for {backoff_in_seconds} seconds. {retries_left} retries left',
                 )
-                sleep(backoff_in_seconds)
+                cancellable_sleep(backoff_in_seconds)
                 continue
 
             if response.status_code != HTTPStatus.OK:

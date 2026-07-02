@@ -230,7 +230,7 @@ def test_querying_rate_limit_exhaustion(kraken, database):
     patch_kraken = patch.object(kraken.session, 'post', side_effect=mock_response)
     patch_retries = patch('rotkehlchen.exchanges.kraken.KRAKEN_QUERY_TRIES', new=2)
     patch_dividend = patch('rotkehlchen.exchanges.kraken.KRAKEN_BACKOFF_DIVIDEND', new=1)
-    patch_sleep = patch('rotkehlchen.exchanges.kraken.gevent.sleep')
+    patch_sleep = patch('rotkehlchen.exchanges.kraken.cancellable_sleep')
 
     with ExitStack() as stack:
         stack.enter_context(gevent.Timeout(8))
@@ -272,7 +272,7 @@ def test_kraken_retries_after_remote_disconnect(kraken) -> None:
                 MockResponse(200, response_text),
             ],
         ) as post_patch,
-        patch('rotkehlchen.exchanges.kraken.gevent.sleep') as sleep_patch,
+        patch('rotkehlchen.exchanges.kraken.cancellable_sleep') as sleep_patch,
     ):
         response = kraken.api_query('Ledgers', {'start': 1, 'end': 2})
 
@@ -321,7 +321,7 @@ def test_kraken_retries_after_wrapped_remote_disconnect(kraken) -> None:
             )),
             MockResponse(200, response_text),
         ],
-    ) as post_patch, patch('rotkehlchen.exchanges.kraken.gevent.sleep') as sleep_patch:
+    ) as post_patch, patch('rotkehlchen.exchanges.kraken.cancellable_sleep') as sleep_patch:
         response = kraken.api_query('Ledgers', {'start': 1, 'end': 2})
 
     assert response['count'] == 1

@@ -2,7 +2,6 @@ import hashlib
 import json
 import logging
 import operator
-import time
 from collections import defaultdict
 from collections.abc import Callable, Sequence
 from contextlib import suppress
@@ -17,6 +16,7 @@ from rsqlite import IntegrityError
 from rotkehlchen.api.websockets.typedefs import WSMessageType
 from rotkehlchen.assets.asset import AssetWithOracles
 from rotkehlchen.assets.converters import asset_from_binance
+from rotkehlchen.concurrency import cancellable_sleep
 from rotkehlchen.constants import DAY_IN_SECONDS, ZERO
 from rotkehlchen.data_import.utils import maybe_set_transaction_extra_data
 from rotkehlchen.db.cache import DBCacheDynamic
@@ -413,7 +413,7 @@ class Binance(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
                 )
                 if tries_left >= 1:
                     backoff_seconds = 10 / tries_left
-                    time.sleep(backoff_seconds)
+                    cancellable_sleep(backoff_seconds)
                     tries_left -= 1
                     continue
 

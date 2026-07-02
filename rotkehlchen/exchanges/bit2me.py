@@ -5,11 +5,11 @@ import logging
 from collections import defaultdict
 from http import HTTPStatus
 from json.decoder import JSONDecodeError
+from threading import Semaphore
 from typing import TYPE_CHECKING, Any, Final, Literal
 from urllib.parse import urlencode
 
 import requests
-from gevent.lock import Semaphore
 
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.converters import asset_from_bit2me

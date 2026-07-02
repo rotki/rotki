@@ -2,7 +2,6 @@ import base64
 import json
 import logging
 import operator
-import time
 from collections import defaultdict
 from collections.abc import Sequence
 from json.decoder import JSONDecodeError
@@ -12,6 +11,7 @@ from urllib.parse import urlencode
 import requests
 
 from rotkehlchen.assets.converters import asset_from_poloniex
+from rotkehlchen.concurrency import cancellable_sleep
 from rotkehlchen.constants import DAY_IN_SECONDS, ZERO
 from rotkehlchen.constants.assets import A_LEND
 from rotkehlchen.data_import.utils import maybe_set_transaction_extra_data
@@ -277,7 +277,7 @@ class Poloniex(ExchangeInterface, SignatureGeneratorMixin):
                     f'Got a recoverable poloniex error. '
                     f'Backing off for {backoff_seconds}',
                 )
-                time.sleep(backoff_seconds)
+                cancellable_sleep(backoff_seconds)
                 tries -= 1
             else:
                 break

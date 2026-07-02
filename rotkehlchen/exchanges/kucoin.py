@@ -5,7 +5,6 @@ from enum import Enum, auto
 from functools import partial
 from http import HTTPStatus
 from json.decoder import JSONDecodeError
-from time import sleep
 from typing import TYPE_CHECKING, Any, Literal, overload
 from urllib.parse import urlencode
 
@@ -15,6 +14,7 @@ from requests.adapters import Response
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.asset import AssetWithOracles
 from rotkehlchen.assets.converters import asset_from_kucoin
+from rotkehlchen.concurrency import cancellable_sleep
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.timing import MONTH_IN_SECONDS, WEEK_IN_SECONDS
 from rotkehlchen.data_import.utils import maybe_set_transaction_extra_data
@@ -266,7 +266,7 @@ class Kucoin(ExchangeInterface, SignatureGeneratorMixin):
                     options=call_options,
                 )
                 retries_left -= 1
-                sleep(retries_after_seconds)
+                cancellable_sleep(retries_after_seconds)
                 retries_after_seconds *= 2
                 continue
 

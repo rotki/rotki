@@ -1,6 +1,5 @@
 import json
 import logging
-import time
 from collections import defaultdict
 from collections.abc import Iterator
 from dataclasses import dataclass
@@ -12,6 +11,7 @@ import requests
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.utils import symbol_to_asset_or_token
 from rotkehlchen.chain.hyperliquid.constants import CPT_HYPER
+from rotkehlchen.concurrency import cancellable_sleep
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.asset import UnknownAsset, UnknownCounterpartyMapping, WrongAssetType
@@ -233,7 +233,7 @@ class HyperliquidAPI:
                     f'Hyperliquid API request {response.url} got rate limited. Sleeping for '
                     f'{sleep_seconds} seconds. We have {retries_left} tries left.',
                 )
-                time.sleep(sleep_seconds)
+                cancellable_sleep(sleep_seconds)
                 backoff *= 2
                 continue
 

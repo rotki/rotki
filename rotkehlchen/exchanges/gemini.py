@@ -1,7 +1,6 @@
 import hashlib
 import json
 import logging
-import time
 from base64 import b64encode
 from collections import defaultdict
 from http import HTTPStatus
@@ -12,6 +11,7 @@ import requests
 
 from rotkehlchen.assets.asset import AssetWithOracles
 from rotkehlchen.assets.converters import asset_from_gemini
+from rotkehlchen.concurrency import cancellable_sleep
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.timing import GLOBAL_REQUESTS_TIMEOUT
 from rotkehlchen.data_import.utils import maybe_set_transaction_extra_data
@@ -223,7 +223,7 @@ class Gemini(ExchangeInterface, SignatureGeneratorMixin):
 
             if response.status_code == HTTPStatus.TOO_MANY_REQUESTS:
                 # Backoff a bit by sleeping. Sleep more, the more retries have been made
-                time.sleep(retry_limit / retries_left)
+                cancellable_sleep(retry_limit / retries_left)
                 retries_left -= 1
             else:
                 # get out of the retry loop, we did not get 429 complaint

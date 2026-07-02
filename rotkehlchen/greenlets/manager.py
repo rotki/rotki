@@ -5,7 +5,7 @@ from typing import Any
 
 import gevent
 
-from rotkehlchen.errors.misc import GreenletKilledError
+from rotkehlchen.concurrency import CancellationToken, TaskCancelledError, run_cancellable
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.user_messages import MessagesAggregator
 
@@ -29,7 +29,7 @@ class GreenletManager:
 
     def clear(self) -> None:
         """Clears all tracked greenlets. To be called when logging out or shutting down"""
-        gevent.killall(self.greenlets)
+        gevent.killall(self.greenlets)  # hard stop until phase 5 of the migration
         self.greenlets.clear()
 
     def clear_finished(self) -> None:
@@ -45,10 +45,12 @@ class GreenletManager:
             **kwargs: Any,
     ) -> gevent.Greenlet:
         log.debug('Spawning task manager task "%s"', task_name)
+        token = CancellationToken()
         if after_seconds is None:
-            greenlet = gevent.spawn(method, **kwargs)
+            greenlet = gevent.spawn(run_cancellable, token, method, **kwargs)
         else:
-            greenlet = gevent.spawn_later(after_seconds, method, **kwargs)
+            greenlet = gevent.spawn_later(after_seconds, run_cancellable, token, method, **kwargs)
+        greenlet.cancellation_token = token
         self.add(task_name, greenlet, exception_is_error)
         return greenlet
 
@@ -70,8 +72,8 @@ class GreenletManager:
             return
 
         task_name = getattr(greenlet, 'task_name', 'Unknown task')
-        if isinstance(greenlet.exception, GreenletKilledError):
-            log.debug(f'Greenlet for task {task_name} was killed')
+        if isinstance(greenlet.exception, TaskCancelledError):
+            log.debug(f'Task {task_name} was cancelled')
             return
 
         exception_is_error = getattr(greenlet, 'exception_is_error', True)

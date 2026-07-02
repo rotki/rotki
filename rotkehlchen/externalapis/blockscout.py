@@ -1,6 +1,5 @@
 import logging
 import sys
-import time
 from json.decoder import JSONDecodeError
 from typing import TYPE_CHECKING, Any, Final, Literal, overload
 
@@ -9,6 +8,7 @@ import requests
 from rotkehlchen.chain.evm.l2_with_l1_fees.types import L2ChainIdsWithL1FeesType
 from rotkehlchen.chain.optimism.constants import OP_BEDROCK_BLOCK, OP_BEDROCK_UPGRADE
 from rotkehlchen.chain.structures import TimestampOrBlockRange
+from rotkehlchen.concurrency import cancellable_sleep
 from rotkehlchen.db.cache import DBCacheDynamic
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.db.settings import CachedSettings
@@ -179,7 +179,7 @@ class Blockscout(ExternalServiceWithRecommendedApiKey, EtherscanLikeApi):
                     f'Blockscout API request {response.url} got rate limited. Sleeping for '
                     f'{sleep_seconds}. We have {times} tries left.',
                 )
-                time.sleep(sleep_seconds)
+                cancellable_sleep(sleep_seconds)
                 continue
 
             if response.status_code != 200:

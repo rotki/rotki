@@ -2,7 +2,6 @@ import abc
 import json
 import logging
 import operator
-import time
 from abc import ABC
 from collections.abc import Iterator
 from contextlib import suppress
@@ -18,6 +17,7 @@ from web3.types import BlockIdentifier
 from rotkehlchen.chain.evm.constants import GENESIS_HASH, ZERO_ADDRESS
 from rotkehlchen.chain.evm.l2_with_l1_fees.types import L2ChainIdsWithL1FeesType
 from rotkehlchen.chain.structures import TimestampOrBlockRange
+from rotkehlchen.concurrency import cancellable_sleep
 from rotkehlchen.db.constants import TX_DECODED
 from rotkehlchen.db.evmtx import DBEvmTx
 from rotkehlchen.db.history_events import DBHistoryEvents
@@ -192,7 +192,7 @@ class EtherscanLikeApi(ABC):
             f'Got too many requests error from {chain_id} {self.name}. Will '
             f'backoff for {current_backoff} seconds.',
         )
-        time.sleep(current_backoff)
+        cancellable_sleep(current_backoff)
         return current_backoff * 2
 
     def _additional_json_response_handling(

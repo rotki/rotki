@@ -1,5 +1,4 @@
 import logging
-import time
 from collections import deque
 from enum import StrEnum
 from itertools import pairwise
@@ -9,6 +8,7 @@ from typing import TYPE_CHECKING, Any, Final, Literal, Optional, overload
 import requests
 
 from rotkehlchen.assets.asset import Asset, AssetWithOracles
+from rotkehlchen.concurrency import cancellable_sleep
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import (
     A_BAT,
@@ -395,7 +395,7 @@ class Cryptocompare(
                             f'Got rate limited by cryptocompare. '
                             f'Backing off for {backoff_seconds}',
                         )
-                        time.sleep(backoff_seconds)
+                        cancellable_sleep(backoff_seconds)
                         tries -= 1
                         continue
 

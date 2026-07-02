@@ -17,6 +17,7 @@ from rotkehlchen.chain.evm.constants import GENESIS_HASH, LAST_SPAM_TXS_CACHE
 from rotkehlchen.chain.evm.decoding.constants import ERC20_OR_ERC721_TRANSFER
 from rotkehlchen.chain.evm.types import EvmAccount, EvmIndexer
 from rotkehlchen.chain.structures import TimestampOrBlockRange
+from rotkehlchen.concurrency import checkpoint
 from rotkehlchen.constants.resolver import evm_address_to_identifier
 from rotkehlchen.db.cache import DBCacheDynamic
 from rotkehlchen.db.constants import TX_INTERNALS_QUERIED, InternalTxSource
@@ -323,6 +324,7 @@ class EvmTransactions(ABC):  # noqa: B024
                 action='txlist',
                 period_or_hash=period_as_blocks,
         ):
+            checkpoint()  # cancellation checkpoint at each pagination boundary
             # add new transactions to the DB
             if len(new_transactions) == 0:
                 continue
@@ -474,6 +476,7 @@ class EvmTransactions(ABC):  # noqa: B024
         # insertion time rather than onto each row
         internal_source = indexer_source.to_internal_tx_source()
         for new_internal_txs in internal_txs_iterator:
+            checkpoint()  # cancellation checkpoint at each pagination boundary
             if len(internal_txs_with_timestamps := self._process_internal_transactions_batch(
                 new_internal_txs=new_internal_txs,
                 address=address,
@@ -636,6 +639,7 @@ class EvmTransactions(ABC):  # noqa: B024
                 tx_timestamp=tx_timestamp,
         )
         for new_internal_txs in internal_txs_iterator:
+            checkpoint()  # cancellation checkpoint at each pagination boundary
             internal_txs_with_timestamps.extend(self._process_internal_transactions_batch(
                 new_internal_txs=new_internal_txs,
                 address=address,
@@ -961,6 +965,7 @@ class EvmTransactions(ABC):  # noqa: B024
             from_block=from_block,
             to_block=to_block,
         ):
+            checkpoint()  # cancellation checkpoint at each pagination boundary
             if not erc20_tx_hashes:
                 continue
 
@@ -1029,6 +1034,7 @@ class EvmTransactions(ABC):  # noqa: B024
                 from_block=from_block,
                 to_block=to_block,
             ):
+                checkpoint()  # cancellation checkpoint at each pagination boundary
                 for tx_hash in erc20_tx_hashes:
                     raw_receipt_data = self.evm_inquirer.get_transaction_receipt(tx_hash)
                     detected_transfers = 0

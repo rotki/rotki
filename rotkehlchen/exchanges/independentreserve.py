@@ -10,6 +10,7 @@ import requests
 
 from rotkehlchen.assets.asset import AssetWithOracles
 from rotkehlchen.assets.utils import symbol_to_asset_or_token
+from rotkehlchen.concurrency import cancellable_sleep
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import A_BTC
 from rotkehlchen.data_import.utils import maybe_set_transaction_extra_data
@@ -209,8 +210,10 @@ class Independentreserve(ExchangeInterface, SignatureGeneratorMixin):
                 if tries >= 1:
                     backoff_seconds = 10 / tries
                     log.debug(
-                        f'Got a 429 from IndependentReserve. Backing off for {backoff_seconds}')
-                    time.sleep(backoff_seconds)
+                        'Got a 429 from IndependentReserve. Backing off for %s',
+                        backoff_seconds,
+                    )
+                    cancellable_sleep(backoff_seconds)
                     tries -= 1
                     continue
 
