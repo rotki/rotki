@@ -3,8 +3,10 @@ import logging
 import sys
 import traceback
 from http import HTTPStatus
-from typing import Any
+from typing import Any, Literal
 
+import gevent
+import uvicorn
 import werkzeug
 from flask import Blueprint, Flask, Response, abort, jsonify, request
 from flask.views import MethodView
@@ -17,6 +19,7 @@ from marshmallow.exceptions import ValidationError
 from webargs.flaskparser import parser
 from werkzeug.exceptions import NotFound
 
+from rotkehlchen.api.asgi import create_asgi_app
 from rotkehlchen.api.rest import RestAPI, api_response, wrap_in_fail_result
 from rotkehlchen.api.v1.parser import ignore_kwarg_parser, resource_parser
 from rotkehlchen.api.v1.resources import (
@@ -477,6 +480,8 @@ class APIServer:
         self.blueprint = blueprint
 
         self.wsgiserver: WSGIServer | None = None
+        self.uvicorn_server: uvicorn.Server | None = None
+        self.uvicorn_greenlet: gevent.Greenlet | None = None
         self.flask_app.register_blueprint(self.blueprint)
 
         self.flask_app.errorhandler(HTTPStatus.NOT_FOUND)(endpoint_not_found)
@@ -541,8 +546,30 @@ class APIServer:
             self,
             host: str = '127.0.0.1',
             rest_port: int = 5042,
+            backend: Literal['gevent', 'asgi'] = 'gevent',
     ) -> None:
-        """This is used to start the API server in production"""
+        """This is used to start the API server in production
+
+        The gevent WSGI server is the default; the asyncio (uvicorn) server is
+        the transitional opt-in of phase 4 of the gevent removal migration and
+        becomes the only backend at the flip (docs/designs/gevent_to_asyncio.md).
+        """
+        if backend == 'asgi':
+            self._start_asgi_server(host=host, rest_port=rest_port)
+        else:
+            self._start_gevent_server(host=host, rest_port=rest_port)
+
+        if 'pytest' not in sys.modules:  # do not check
+            if __debug__:
+                msg = 'rotki is running in __debug__ mode'
+                print(msg)
+                log.info(msg)
+            log.info(f'Starting rotki {get_current_version().our_version}')
+            msg = f'rotki REST API server ({backend}) is running at: {host}:{rest_port} with loglevel {logging.getLevelName(logging.root.level)}'  # noqa: E501
+            print(msg)
+            log.info(msg)
+
+    def _start_gevent_server(self, host: str, rest_port: int) -> None:
         wsgi_logger = logging.getLogger(__name__ + '.pywsgi')
         self.wsgiserver = WSGIServer(
             listener=(host, rest_port),
@@ -557,22 +584,44 @@ class APIServer:
         )
         # this is to prevent littering logs with geventwebsocket upgrade messages
         logging.getLogger('geventwebsocket.handler').setLevel(logging.ERROR)
-
-        if 'pytest' not in sys.modules:  # do not check
-            if __debug__:
-                msg = 'rotki is running in __debug__ mode'
-                print(msg)
-                log.info(msg)
-            log.info(f'Starting rotki {get_current_version().our_version}')
-            msg = f'rotki REST API server is running at: {host}:{rest_port} with loglevel {logging.getLevelName(logging.root.level)}'  # noqa: E501
-            print(msg)
-            log.info(msg)
         self.wsgiserver.start()
+
+    def _start_asgi_server(self, host: str, rest_port: int) -> None:
+        """Serve REST (via the WSGI bridge) and /ws websockets from one uvicorn server.
+
+        uvicorn's asyncio event loop runs in a dedicated greenlet: while the
+        gevent monkeypatching is still active the loop's selector is cooperative,
+        so all other greenlets keep running while it serves.
+        """
+        config = uvicorn.Config(
+            app=create_asgi_app(flask_app=self.flask_app, rotki_notifier=self.rotki_notifier),
+            host=host,
+            port=rest_port,
+            log_config=None,  # inherit rotki's logging configuration
+            access_log=False,  # the flask before/after request callbacks already log
+            ws='websockets',
+        )
+        self.uvicorn_server = uvicorn.Server(config)
+        self.uvicorn_greenlet = gevent.spawn(self.uvicorn_server.run)
+        while not self.uvicorn_server.started:  # wait for the listening socket
+            if self.uvicorn_greenlet.dead:  # died at startup (e.g. port already bound)
+                raise OSError(
+                    f'The rotki asgi API server failed to start at {host}:{rest_port}. '
+                    f'Check the logs for more details',
+                ) from self.uvicorn_greenlet.exception
+            gevent.sleep(0.01)
 
     def stop(self, timeout: int = 5) -> None:
         """Stops the API server. If handlers are running after timeout they are killed"""
         if self.wsgiserver is not None:
             self.wsgiserver.stop(timeout)
             self.wsgiserver = None
+
+        if self.uvicorn_server is not None:
+            self.uvicorn_server.should_exit = True
+            if self.uvicorn_greenlet is not None:
+                self.uvicorn_greenlet.join(timeout=timeout)
+            self.uvicorn_server = None
+            self.uvicorn_greenlet = None
 
         self.rest_api.stop()

@@ -33,7 +33,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        test-group: [ api, decoders, others ]
+        test-group: [ api, api-asgi, decoders, others ]
     permissions:
       contents: read
     steps:
@@ -152,6 +152,11 @@ jobs:
           if [ "${{ matrix.test-group }}" == 'api' ]
           then
             uv run pytestgeventwrapper.py $PYTEST_ARGS $COVERAGE_ARGS -n 6 -v rotkehlchen/tests/api
+          elif [ "${{ matrix.test-group }}" == 'api-asgi' ]
+          then
+            # the api test group against the asyncio (uvicorn) api server of the
+            # gevent removal migration. See docs/designs/gevent_to_asyncio.md
+            ROTKI_API_SERVER_BACKEND=asgi uv run pytestgeventwrapper.py $PYTEST_ARGS $COVERAGE_ARGS -n 6 -v rotkehlchen/tests/api
           elif [ "${{ matrix.test-group }}" == 'decoders' ]
           then
             uv run pytestgeventwrapper.py $PYTEST_ARGS $COVERAGE_ARGS -n 6 -v rotkehlchen/tests/unit/decoders rotkehlchen/tests/unit/solana_decoders

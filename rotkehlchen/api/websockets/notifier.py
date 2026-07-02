@@ -3,25 +3,33 @@ import json
 import logging
 from collections.abc import Callable
 from contextlib import suppress
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, TypeAlias
 
 from gevent.lock import Semaphore
 from geventwebsocket import WebSocketApplication
 from geventwebsocket.exceptions import WebSocketError
-from geventwebsocket.websocket import WebSocket
 
+from rotkehlchen.api.websockets.typedefs import WebsocketSendError
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.serialize import process_result
 
 if TYPE_CHECKING:
+    from geventwebsocket.websocket import WebSocket
+
+    from rotkehlchen.api.asgi import AsgiWebsocketSubscriber
     from rotkehlchen.api.websockets.typedefs import WSMessageType
+
+# What the notifier accepts as a websocket client: a geventwebsocket socket from
+# the gevent server or its duck-typed equivalent from the asyncio server. The
+# WebSocket leg goes away at phase 6 of the gevent removal migration.
+WebsocketSubscriber: TypeAlias = 'WebSocket | AsgiWebsocketSubscriber'
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
 def _ws_send_impl(
-        websocket: WebSocket,
+        websocket: 'WebsocketSubscriber',
         lock: Semaphore,
         to_send_msg: str,
         success_callback: Callable | None = None,
@@ -32,7 +40,7 @@ def _ws_send_impl(
     try:
         with lock:
             websocket.send(to_send_msg)
-    except WebSocketError as e:
+    except (WebSocketError, WebsocketSendError) as e:
         log.error(f'Websocket send with message {to_send_msg} failed due to {e!s}')
 
         if failure_callback:
@@ -48,15 +56,15 @@ def _ws_send_impl(
 class RotkiNotifier:
 
     def __init__(self) -> None:
-        self.subscribers: list[WebSocket] = []
-        self.locks: dict[WebSocket, Semaphore] = {}
+        self.subscribers: list[WebsocketSubscriber] = []
+        self.locks: dict[WebsocketSubscriber, Semaphore] = {}
 
-    def subscribe(self, websocket: WebSocket) -> None:
+    def subscribe(self, websocket: 'WebsocketSubscriber') -> None:
         log.info(f'Websocket with hash id {hash(websocket)} subscribed to rotki notifier')
         self.subscribers.append(websocket)
         self.locks[websocket] = Semaphore()
 
-    def unsubscribe(self, websocket: WebSocket) -> None:
+    def unsubscribe(self, websocket: 'WebsocketSubscriber') -> None:
         self.locks.pop(websocket, None)
         with suppress(ValueError):
             self.subscribers.remove(websocket)
