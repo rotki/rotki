@@ -27,6 +27,7 @@ interface ServeOptions {
   remoteDebuggingPort?: number;
   mode: string;
   port: number;
+  open: boolean;
 }
 
 async function getWatcher({ name, configFile, writeBundle }: WatcherConfig, mode: string): Promise<BuildOutput> {
@@ -113,15 +114,21 @@ async function setupPreloadPackageWatcher({ ws }: ViteDevServer, mode: string): 
 }
 
 async function serve(options: ServeOptions): Promise<void> {
-  const { web, remoteDebuggingPort, mode, port } = options;
+  const { web, remoteDebuggingPort, mode, port, open } = options;
 
   try {
+    // Only auto-open a browser tab in web mode: in electron mode the renderer is
+    // loaded inside the electron window, so a browser tab would be spurious. `open`
+    // is a plain boolean here (Vite opens the resolved server URL, honouring the
+    // instance's port), and CI never opens.
+    const openBrowser = web && open && !process.env.CI;
     const viteDevServer = await createServer({
       ...sharedConfig,
       mode: process.env.CI && process.env.VITE_TEST ? 'production' : mode,
       configFile: 'vite.config.ts',
       server: {
         port,
+        open: openBrowser,
       },
     });
 
@@ -163,12 +170,14 @@ cli.command('', 'Rotki frontend development server')
   .option('--remote-debugging-port <port>', 'Chrome remote debugging port')
   .option('--mode <mode>', 'Development mode', { default: 'development' })
   .option('--port <port>', 'Listening port', { default: 8080 })
+  .option('--open', 'Open the web app in the browser on start (web mode only, default: on; use --no-open to disable)', { default: true })
   .action(async (options) => {
     await serve({
       web: options.web ?? false,
       remoteDebuggingPort: options.remoteDebuggingPort ? Number(options.remoteDebuggingPort) : undefined,
       mode: options.mode,
       port: Number(options.port),
+      open: options.open ?? true,
     });
   });
 

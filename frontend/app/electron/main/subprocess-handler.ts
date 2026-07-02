@@ -60,6 +60,14 @@ export class SubprocessHandler {
   }
 
   async checkForBackendProcess(): Promise<number[]> {
+    // In dev instance mode the backend runs against an isolated data dir on a
+    // reserved port, so a sibling rotki-core (the default dev backend or another
+    // instance) is a legitimately separate process, not a conflict. Skip the
+    // scan so it doesn't trip the "another backend is running" startup error.
+    if (process.env.ROTKI_INSTANCE_DATA_DIR) {
+      this.logger.info('Instance mode: skipping rotki-core process detection (isolated data dir)');
+      return [];
+    }
     try {
       this.logger.info('Checking for running rotki-core processes');
       const runningProcesses = await psList({ all: true });
@@ -103,6 +111,14 @@ export class SubprocessHandler {
     this.logger.info('Preparing to start processes');
     this.logger.updateLogDirectory(options.logDirectory);
     this.startupErrorReported = false;
+
+    // In dev instance mode the isolated data dir wins over any configured one so
+    // the backend + colibri run against the instance's seeded data.
+    const instanceDataDir = process.env.ROTKI_INSTANCE_DATA_DIR;
+    if (instanceDataDir) {
+      this.logger.info(`Instance mode: using data dir ${instanceDataDir}`);
+      options = { ...options, dataDirectory: instanceDataDir };
+    }
 
     // Wrap listener to track when errors are reported (so we can abort ping loop)
     const wrappedListener: SubprocessHandlerErrorListener = {

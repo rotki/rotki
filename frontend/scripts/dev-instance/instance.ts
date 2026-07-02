@@ -1,7 +1,7 @@
 import fs from 'node:fs';
 import process from 'node:process';
 import consola from 'consola';
-import { loadEnvFile, MANAGED_ENV_KEYS, writeEnvFile } from './env-file';
+import { loadEnvFile, MANAGED_ENV_KEYS, writeManagedEnv } from './env-file';
 import { formatHostPort, formatPort, humanBytes } from './format';
 import { estimateSeedSize, freeDiskBytes, seedInstance } from './fs-walk';
 import { getCurrentGitBranch, getCurrentGitWorktree } from './git';
@@ -187,7 +187,7 @@ export async function prepareInstance(opts: PrepareInstanceOptions): Promise<Ins
   }
 
   ensureInstanceData(name, dir, opts.seed, opts.includeBackups === true);
-  writeEnvFile(opts.envFile, desiredEnv, { managed: MANAGED_ENV_KEYS });
+  writeManagedEnv(opts.envFile, desiredEnv);
 
   const meta = buildMeta(name, slot, existingMeta, alreadyConsented || opts.acceptManagedEnv || divergingKeys.length === 0);
   writeMetadata(dir, meta);
