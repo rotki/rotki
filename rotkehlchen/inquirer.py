@@ -505,7 +505,7 @@ class Inquirer:
     @staticmethod
     def remove_cache_prices_for_asset(assets_to_invalidate: set[Asset]) -> None:
         """Deletes all prices cache that contains any asset in the possible pairs."""
-        for asset_pair in list(Inquirer._cached_current_price.cache):  # create a list to avoid mutating the map while iterating it  # noqa: E501
+        for asset_pair in Inquirer._cached_current_price.snapshot_keys():  # snapshot to avoid mutating the map while iterating it  # noqa: E501
             if asset_pair[0] in assets_to_invalidate or asset_pair[1] in assets_to_invalidate:
                 Inquirer._cached_current_price.remove(asset_pair)
 
@@ -515,23 +515,28 @@ class Inquirer:
             "Oracles can't be empty or have repeated items"
         )
         instance = Inquirer()
-        instance._oracles = []
-        instance._oracle_instances = []
+        # Build the new lists locally and rebind at the end: concurrent price queries
+        # iterate these attributes, so they must never observe a half-built list
+        new_oracles, new_oracle_instances = [], []
         for oracle in oracles:
             if oracle == CurrentPriceOracle.CRYPTOCOMPARE and instance._cryptocompare.has_api_key() is False:  # noqa: E501
                 continue
             if (oracle_instance := getattr(instance, f'_{oracle!s}')) is None:
                 continue
 
-            instance._oracles.append(oracle)
-            instance._oracle_instances.append(oracle_instance)
+            new_oracles.append(oracle)
+            new_oracle_instances.append(oracle_instance)
 
-        instance._oracles_not_onchain = []
-        instance._oracle_instances_not_onchain = []
-        for oracle, oracle_instance in zip(instance._oracles, instance._oracle_instances, strict=True):  # noqa: E501
+        new_oracles_not_onchain, new_oracle_instances_not_onchain = [], []
+        for oracle, oracle_instance in zip(new_oracles, new_oracle_instances, strict=True):
             if oracle not in (CurrentPriceOracle.UNISWAPV2, CurrentPriceOracle.UNISWAPV3):
-                instance._oracles_not_onchain.append(oracle)
-                instance._oracle_instances_not_onchain.append(oracle_instance)
+                new_oracles_not_onchain.append(oracle)
+                new_oracle_instances_not_onchain.append(oracle_instance)
+
+        instance._oracles = new_oracles
+        instance._oracle_instances = new_oracle_instances
+        instance._oracles_not_onchain = new_oracles_not_onchain
+        instance._oracle_instances_not_onchain = new_oracle_instances_not_onchain
 
     @staticmethod
     def set_cached_price(cache_key: tuple[Asset, Asset], cached_price: CachedPriceEntry) -> None:

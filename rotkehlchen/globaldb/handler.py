@@ -2548,11 +2548,19 @@ class GlobalDBHandler:
 
         We saw that when killing a greenlet the locks are not released and has to
         be done manually.
-        It won't raise errors if the lock is over-released (threading.Semaphore,
-        like the gevent one before it, allows over-releasing)
         The killall that happens in this logic can trigger a greenlet switch as per
         https://github.com/gevent/gevent/issues/1473#issuecomment-548327614
+
+        packaged_db_lock is a Semaphore which tolerates over-releasing. The driver
+        locks are threading.Lock (bounded), so they are released only if held, and
+        the savepoint-slot bookkeeping is reset along with them so that a later
+        savepoint release does not release the forcibly-freed lock a second time.
         """
         self.packaged_db_lock.release()
-        self.conn.transaction_lock.release()
-        self.conn.in_callback.release()
+        self.conn.savepoints.clear()
+        self.conn.savepoint_task_ident = None
+        self.conn.write_task_ident = None
+        self.conn._savepoint_holds_transaction_lock = False
+        for lock in (self.conn.transaction_lock, self.conn.in_callback):
+            if lock.locked():
+                lock.release()

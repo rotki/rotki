@@ -122,16 +122,18 @@ class PriceHistorian:
             "Oracles can't be empty or have repeated items"
         )
         instance = PriceHistorian()
-        instance._oracles = tuple(
+        # Build both locally and rebind adjacently so concurrent readers of the pair
+        # never observe a new oracle list alongside instances still being built
+        new_oracles = tuple(
             oracle for oracle in oracles
             if (
                 oracle != HistoricalPriceOracle.CRYPTOCOMPARE or
                 instance._cryptocompare.has_api_key()
             )
         )
-        instance._oracle_instances = [
-            getattr(instance, f'_{oracle!s}') for oracle in instance._oracles
-        ]
+        new_oracle_instances = [getattr(instance, f'_{oracle!s}') for oracle in new_oracles]
+        instance._oracles = new_oracles
+        instance._oracle_instances = new_oracle_instances
 
     @staticmethod
     def _get_cached_price_or_query(

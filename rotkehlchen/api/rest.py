@@ -406,8 +406,10 @@ class RestAPI:
 
         if isinstance(greenlet.exception, TaskCancelledError):
             log.debug(
-                f'Greenlet for task id {task_id} with name {task_str} was cancelled. '
-                f'{greenlet.exception!s}',
+                'Greenlet for task id %s with name %s was cancelled. %s',
+                task_id,
+                task_str,
+                greenlet.exception,
             )
             # Setting empty message to signify that the death of the greenlet is expected.
             self._write_task_result(task_id, {'result': None, 'message': ''})
@@ -541,7 +543,7 @@ class RestAPI:
                         greenlet.dead is False and
                         getattr(greenlet, 'task_id', None) == task_id
                 ):
-                    log.debug(f'Cancelling api task with {task_id=}')
+                    log.debug('Cancelling api task with task_id=%s', task_id)
                     request_cancellation(greenlet, 'Cancelled due to api request')
                     break
             else:  # greenlet not found

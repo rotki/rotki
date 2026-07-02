@@ -73,7 +73,7 @@ class GreenletManager:
 
         task_name = getattr(greenlet, 'task_name', 'Unknown task')
         if isinstance(greenlet.exception, TaskCancelledError):
-            log.debug(f'Task {task_name} was cancelled')
+            log.debug('Task %s was cancelled', task_name)
             return
 
         exception_is_error = getattr(greenlet, 'exception_is_error', True)

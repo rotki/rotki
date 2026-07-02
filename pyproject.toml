@@ -453,7 +453,6 @@ known-third-party = ["packaging"]  # packaging is otherwise detected as first-pa
 "rotkehlchen/rotkehlchen.py" = ["TID251"]  # main loop spawn/shutdown event (phase 5)
 "rotkehlchen/api/rest.py" = ["TID251"]  # async-query greenlets and killall (phase 5)
 "rotkehlchen/api/websockets/notifier.py" = ["TID251"]  # geventwebsocket (phase 4)
-"rotkehlchen/db/drivers/gevent.py" = ["TID251"]  # the DB driver itself (phase 3)
 "rotkehlchen/greenlets/*" = ["TID251"]  # greenlet manager (phase 5)
 "rotkehlchen/tasks/manager.py" = ["TID251"]  # greenlet typing/scheduling (phase 5)
 "rotkehlchen/premium/sync.py" = ["TID251"]  # gevent hub threadpool offload (phase 5)
