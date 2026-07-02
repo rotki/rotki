@@ -3251,7 +3251,7 @@ class RestAPI:
         return api_response(_wrap_in_ok_result(result={
             'entries': [self._serialize_data_issue(issue) for issue in entries],
             'entries_found': manager.count_issues(filter_query),
-            'entries_limit': filter_query.pagination.limit if filter_query.pagination else -1,
+            'entries_limit': -1,
         }, status_code=HTTPStatus.OK))
 
     @accounting_update_required('Data issues are disabled', response=True)

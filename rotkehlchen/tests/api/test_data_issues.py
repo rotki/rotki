@@ -87,7 +87,7 @@ def test_data_issues_list_detail_and_pagination(rotkehlchen_api_server: 'APIServ
         json={'limit': 1, 'offset': 1},
     ))
     assert result['entries_found'] == 2
-    assert result['entries_limit'] == 1
+    assert result['entries_limit'] == -1
     assert [entry['id'] for entry in result['entries']] == [first_id]
 
     result = assert_proper_sync_response_with_result(requests.get(
