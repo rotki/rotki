@@ -266,6 +266,9 @@
       "import": "Import accounting rules",
       "labels": {
         "accounting_treatment": "Accounting Treatment",
+        "accounting_treatment_basis_transfer": "Basis transfer",
+        "accounting_treatment_subtitle": "How rotki processes this event during accounting.",
+        "accounting_treatment_swap": "Swap",
         "count_cost_basis_pnl": "Count cost basis PnL",
         "count_cost_basis_pnl_subtitle": "Whether we have to count any profit/loss the asset may have had compared to when it was acquired.",
         "count_entire_amount_spend": "Count entire amount spend",
@@ -276,6 +279,7 @@
         "taxable": "Taxable",
         "taxable_subtitle": "Whether the event will be considered as taxable"
       },
+      "learn_more": "Learn more",
       "overwrite_by_setting": "Overwrite by value from other accounting setting",
       "refresh_tooltip": "Refresh accounting rules",
       "reset": "Reset to defaults",
@@ -3821,6 +3825,7 @@
       },
       "keyboard_hint": "↑↓ navigate · ↵ select · esc close",
       "label": "Action",
+      "learn_more": "Learn more",
       "placeholder": "Choose an action",
       "recent": "Recent"
     }

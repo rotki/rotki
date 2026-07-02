@@ -1,10 +1,12 @@
 <script setup lang="ts">
 import type { HistoryEventEntryType } from '@rotki/common';
+import { externalLinks } from '@shared/external-links';
 import { type HighlightSegment, splitHighlight } from '@/modules/history/events/action-picker/highlight-match';
 import HistoryEventActionDirectionBadge from '@/modules/history/events/action-picker/HistoryEventActionDirectionBadge.vue';
 import { type EventActionRow, useEventActionPicker } from '@/modules/history/events/action-picker/use-event-action-picker';
 import { useRecentActions } from '@/modules/history/events/action-picker/use-recent-actions';
 import { useHistoryEventMappings } from '@/modules/history/events/mapping/use-history-event-mappings';
+import ExternalLink from '@/modules/shell/components/ExternalLink.vue';
 
 interface ModelValue {
   eventType: string;
@@ -263,7 +265,19 @@ function onUpdate(verbKey: string | undefined): void {
       </div>
     </template>
     <template #footer>
-      <div class="px-3 py-1.5 text-[10px] text-rui-text-secondary flex justify-end">
+      <div class="px-3 py-1.5 text-[10px] text-rui-text-secondary flex justify-between items-center gap-2">
+        <ExternalLink
+          :url="externalLinks.usageGuideSection.eventTypes"
+          color="primary"
+          class="inline-flex items-center gap-1"
+          data-testid="event-action-picker-learn-more"
+        >
+          <RuiIcon
+            name="lu-book-open"
+            size="12"
+          />
+          {{ t('history_event_action.picker.learn_more') }}
+        </ExternalLink>
         <span>{{ t('history_event_action.picker.keyboard_hint') }}</span>
       </div>
     </template>
