@@ -3,13 +3,15 @@ import type { AccountingRuleWithLinkedProperty } from '@/modules/settings/types/
 import { useRefPropVModel } from '@/modules/core/common/validation/model';
 import { useAccountingRuleMappings } from '@/modules/settings/accounting/use-accounting-rule-mappings';
 import SuccessDisplay from '@/modules/shell/components/display/SuccessDisplay.vue';
+import ExternalLink from '@/modules/shell/components/ExternalLink.vue';
 
 const modelValue = defineModel<AccountingRuleWithLinkedProperty>({ required: true });
 
-const { identifier, label, hint } = defineProps<{
+const { identifier, label, hint, learnMoreUrl } = defineProps<{
   identifier: string;
   label: string;
   hint: string;
+  learnMoreUrl?: string;
 }>();
 
 const { t } = useI18n({ useScope: 'global' });
@@ -89,6 +91,19 @@ const elemID = computed(() => `${identifier}-switch`);
         </div>
         <div class="text-rui-text-secondary text-body-2">
           {{ hint }}
+          <ExternalLink
+            v-if="learnMoreUrl"
+            :url="learnMoreUrl"
+            color="primary"
+            class="inline-flex items-center gap-1 text-body-2"
+            @click.stop
+          >
+            <RuiIcon
+              name="lu-book-open"
+              size="14"
+            />
+            {{ t('accounting_settings.rule.learn_more') }}
+          </ExternalLink>
         </div>
       </label>
       <RuiCheckbox

@@ -175,6 +175,16 @@ describe('historyEventActionPicker', () => {
     expect(wrapper.find('[data-testid="footer-slot"]').exists()).toBe(true);
   });
 
+  it('should render a learn more link to the event types docs in the footer', async () => {
+    findRowByTypeSubtype.mockReturnValue(undefined);
+    const wrapper = mountPicker();
+    await flushPromises();
+
+    const link = wrapper.find('[data-testid="event-action-picker-learn-more"]');
+    expect(link.exists()).toBe(true);
+    expect(link.attributes('href')).toContain('tax-accounting/event-types');
+  });
+
   it('should not highlight any part of the label when the search is empty', async () => {
     findRowByTypeSubtype.mockReturnValue(undefined);
     const wrapper = mountPicker();

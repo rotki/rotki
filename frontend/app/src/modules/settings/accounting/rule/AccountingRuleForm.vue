@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { ValidationErrors } from '@/modules/core/api/types/errors';
 import { toSentenceCase } from '@rotki/common';
+import { externalLinks } from '@shared/external-links';
 import useVuelidate from '@vuelidate/core';
 import { required } from '@vuelidate/validators';
 import { useFormStateWatcher } from '@/modules/core/common/use-form';
@@ -10,6 +11,7 @@ import CounterpartyInput from '@/modules/history/events/mapping/CounterpartyInpu
 import HistoryEventTypeForm from '@/modules/history/management/forms/HistoryEventTypeForm.vue';
 import AccountingRuleWithLinkedSetting from '@/modules/settings/accounting/rule/AccountingRuleWithLinkedSetting.vue';
 import { type AccountingRuleEntry, AccountingTreatment } from '@/modules/settings/types/accounting';
+import ExternalLink from '@/modules/shell/components/ExternalLink.vue';
 
 const modelValue = defineModel<AccountingRuleEntry>({ required: true });
 const errors = defineModel<ValidationErrors>('errorMessages', { required: true });
@@ -109,6 +111,7 @@ defineExpose({
     identifier="countCostBasisPnl"
     :label="t('accounting_settings.rule.labels.count_cost_basis_pnl')"
     :hint="t('accounting_settings.rule.labels.count_cost_basis_pnl_subtitle')"
+    :learn-more-url="externalLinks.usageGuideSection.accountingRuleCountCostBasisPnl"
   />
 
   <RuiDivider class="mb-6" />
@@ -122,7 +125,27 @@ defineExpose({
     text-attr="label"
     clearable
     :label="t('accounting_settings.rule.labels.accounting_treatment')"
+    :hint="t('accounting_settings.rule.labels.accounting_treatment_subtitle')"
     :error-messages="toMessages(v$.accountingTreatment)"
     @blur="v$.accountingTreatment.$touch()"
   />
+  <div class="text-rui-text-secondary text-caption flex items-center gap-3 md:w-1/2 mt-1">
+    <span class="inline-flex items-center gap-1">
+      <RuiIcon
+        name="lu-book-open"
+        size="14"
+      />
+      {{ t('accounting_settings.rule.learn_more') }}:
+    </span>
+    <ExternalLink
+      :url="externalLinks.usageGuideSection.accountingTreatmentSwap"
+      color="primary"
+      :text="t('accounting_settings.rule.labels.accounting_treatment_swap')"
+    />
+    <ExternalLink
+      :url="externalLinks.usageGuideSection.accountingTreatmentBasisTransfer"
+      color="primary"
+      :text="t('accounting_settings.rule.labels.accounting_treatment_basis_transfer')"
+    />
+  </div>
 </template>
