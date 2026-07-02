@@ -3,6 +3,7 @@ import time
 from typing import TYPE_CHECKING, Final, Literal, NamedTuple, TypeAlias
 
 from rotkehlchen.api.websockets.typedefs import ProgressUpdateSubType, WSMessageType
+from rotkehlchen.concurrency import checkpoint
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import A_ETH, A_ETH2
 from rotkehlchen.db.cache import DBCacheStatic
@@ -321,6 +322,7 @@ def process_historical_balances(
                     first_batch_written=first_batch_written,
                 )
             first_batch_written, metrics_batch = True, []
+            checkpoint()  # cancellation checkpoint of the balance processing loop
             time.sleep(0)
 
     if len(metrics_batch) != 0:

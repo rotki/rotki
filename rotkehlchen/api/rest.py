@@ -69,6 +69,7 @@ from rotkehlchen.chain.evm.types import (
     EvmIndexer,
     WeightedNode,
 )
+from rotkehlchen.concurrency import CancellationToken, TaskCancelledError, run_cancellable
 from rotkehlchen.constants.misc import (
     AIRDROPS_TOLERANCE,
     DEFAULT_LOGLEVEL,
@@ -125,7 +126,6 @@ from rotkehlchen.errors.misc import (
     DBSchemaError,
     DBUpgradeError,
     EthSyncError,
-    GreenletKilledError,
     InputError,
     ModuleInactive,
     NotFoundError,
@@ -141,6 +141,7 @@ from rotkehlchen.feature_flags import is_accounting_update_enabled
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.asset_updates.manager import ASSETS_VERSION_KEY
 from rotkehlchen.globaldb.handler import GlobalDBHandler
+from rotkehlchen.greenlets.utils import request_cancellation
 from rotkehlchen.history.data_issues.manager import DataIssuesManager
 from rotkehlchen.history.data_issues.types import DataIssue
 from rotkehlchen.history.events.structures.asset_movement import AssetMovement
@@ -403,9 +404,9 @@ class RestAPI:
             task_id = None
             task_str = 'Main greenlet'
 
-        if isinstance(greenlet.exception, GreenletKilledError):
+        if isinstance(greenlet.exception, TaskCancelledError):
             log.debug(
-                f'Greenlet for task id {task_id} with name {task_str} was killed. '
+                f'Greenlet for task id {task_id} with name {task_str} was cancelled. '
                 f'{greenlet.exception!s}',
             )
             # Setting empty message to signify that the death of the greenlet is expected.
@@ -433,13 +434,18 @@ class RestAPI:
 
     def _query_async(self, command: Callable, **kwargs: Any) -> Response:
         task_id = self._new_task_id()
+        token = CancellationToken()
         greenlet = gevent.spawn(
+            run_cancellable,
+            token,
             self._do_query_async,
             command,
             task_id,
             **kwargs,
         )
         greenlet.task_id = task_id
+        greenlet.cancellation_token = token
+        greenlet.api_command = command  # inspected by maybe_cancel_running_tx_query_tasks
         greenlet.link_exception(self._handle_killed_greenlets)
         self.rotkehlchen.api_task_greenlets.append(greenlet)
         return api_response(_wrap_in_ok_result({'task_id': task_id}), status_code=HTTPStatus.OK)
@@ -450,7 +456,7 @@ class RestAPI:
         log.debug('Waiting for greenlets')
         gevent.wait(self.waited_greenlets)
         log.debug('Waited for greenlets. Killing all other greenlets')
-        gevent.killall(self.rotkehlchen.api_task_greenlets)
+        gevent.killall(self.rotkehlchen.api_task_greenlets)  # hard stop until phase 5 of the migration  # noqa: E501
         self.rotkehlchen.api_task_greenlets.clear()
         log.debug('Cleaning up global DB')
         GlobalDBHandler().cleanup()
@@ -535,8 +541,8 @@ class RestAPI:
                         greenlet.dead is False and
                         getattr(greenlet, 'task_id', None) == task_id
                 ):
-                    log.debug(f'Killing api task greenlet with {task_id=}')
-                    greenlet.kill(exception=GreenletKilledError('Killed due to api request'))
+                    log.debug(f'Cancelling api task with {task_id=}')
+                    request_cancellation(greenlet, 'Cancelled due to api request')
                     break
             else:  # greenlet not found
                 return api_response(wrap_in_fail_result(f'Did not cancel task with id {task_id} because it could not be found'), status_code=HTTPStatus.NOT_FOUND)  # noqa: E501
@@ -1096,7 +1102,7 @@ class RestAPI:
         #    All results would be discarded anyway since we are logging out.
         # 2. Have an intricate stop() notification system for each greenlet, but
         #   that is going to get complicated fast.
-        gevent.killall(self.rotkehlchen.api_task_greenlets)
+        gevent.killall(self.rotkehlchen.api_task_greenlets)  # hard stop until phase 5 of the migration  # noqa: E501
         self.rotkehlchen.api_task_greenlets.clear()
         with self.task_lock:
             self.task_results = {}

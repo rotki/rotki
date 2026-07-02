@@ -1,6 +1,5 @@
 import json
 import logging
-import time
 from collections.abc import Callable
 from http import HTTPStatus
 from typing import Any, Literal, overload
@@ -9,6 +8,7 @@ import requests
 from requests.adapters import HTTPAdapter
 from urllib3.util import Retry
 
+from rotkehlchen.concurrency import cancellable_sleep
 from rotkehlchen.constants import GLOBAL_REQUESTS_TIMEOUT
 from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.misc import RemoteError, UnableToDecryptRemoteData
@@ -172,7 +172,7 @@ def retry_calls(
                     f'In retry_call for {location}-{method_name}. Got 429. Backing off for '
                     f'{backoff_in_seconds} seconds',
                 )
-                time.sleep(backoff_in_seconds)
+                cancellable_sleep(backoff_in_seconds)
                 tries -= 1
                 continue
 

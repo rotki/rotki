@@ -1,6 +1,5 @@
 import json
 import logging
-import time
 import urllib.parse
 from collections import defaultdict
 from collections.abc import Sequence
@@ -11,6 +10,7 @@ import requests
 
 from rotkehlchen.assets.asset import AssetWithOracles
 from rotkehlchen.assets.converters import asset_from_bybit
+from rotkehlchen.concurrency import cancellable_sleep
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.constants.timing import DAY_IN_SECONDS, WEEK_IN_SECONDS
 from rotkehlchen.data_import.utils import maybe_set_transaction_extra_data
@@ -237,7 +237,7 @@ class Bybit(ExchangeInterface, SignatureGeneratorMixin):
                 if tries >= 1:
                     backoff_seconds = 10 / tries
                     log.debug(f'Got a 429 from Bybit. Backing off for {backoff_seconds}')
-                    time.sleep(backoff_seconds)
+                    cancellable_sleep(backoff_seconds)
                     tries -= 1
                     continue
 

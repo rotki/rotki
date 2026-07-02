@@ -1,10 +1,10 @@
 import logging
-import time
 from typing import TYPE_CHECKING, Any, Final
 
 from requests import Response
 
 from rotkehlchen.chain.evm.l2_with_l1_fees.types import L2ChainIdsWithL1FeesType
+from rotkehlchen.concurrency import cancellable_sleep
 from rotkehlchen.errors.misc import ChainNotSupported, RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.externalapis.etherscan_like import EtherscanLikeApi
@@ -128,7 +128,7 @@ class Routescan(ExternalServiceWithApiKey, EtherscanLikeApi):
                     f'while max backoff is {backoff_limit} seconds.',
                 )
             else:
-                time.sleep(time_until_reset)
+                cancellable_sleep(time_until_reset)
                 return time_until_reset
 
         # If the ratelimit headers are missing or still have requests remaining (shouldn't happen),

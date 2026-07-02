@@ -2,7 +2,6 @@ import hashlib
 import json
 import logging
 import operator
-import time
 from collections import defaultdict
 from collections.abc import Callable, Sequence
 from http import HTTPStatus
@@ -16,6 +15,7 @@ from requests.adapters import Response
 
 from rotkehlchen.assets.converters import BITFINEX_EXCHANGE_TEST_ASSETS, asset_from_bitfinex
 from rotkehlchen.assets.utils import symbol_to_asset_or_token
+from rotkehlchen.concurrency import cancellable_sleep
 from rotkehlchen.constants import ZERO
 from rotkehlchen.data_import.utils import maybe_set_transaction_extra_data
 from rotkehlchen.db.settings import CachedSettings
@@ -292,7 +292,7 @@ class Bitfinex(ExchangeInterface, SignatureGeneratorMixin):
                             options=call_options,
                         )
                         retries_left -= 1
-                        time.sleep(API_REQUEST_RETRY_AFTER_SECONDS)
+                        cancellable_sleep(API_REQUEST_RETRY_AFTER_SECONDS)
                         continue
 
                     # Unexpected JSON dict case, better to log it

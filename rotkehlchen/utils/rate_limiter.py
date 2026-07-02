@@ -3,6 +3,8 @@ from threading import Semaphore
 from types import TracebackType
 from typing import Final, Self
 
+from rotkehlchen.concurrency import cancellable_sleep
+
 # Hysteresis: don't churn the bucket on every response. Only update when the
 # observed rate differs from the current by at least this fraction.
 _UPDATE_THRESHOLD: Final = 0.10
@@ -61,7 +63,8 @@ class TokenBucket:
         self.last_refill = now
 
     def acquire(self) -> None:
-        """Block (via time.sleep) until a token is available, then consume one."""
+        """Block until a token is available, then consume one. Sleeping is a
+        cancellation checkpoint, so a cancelled task does not wait for a token."""
         while True:
             with self._lock:
                 self._refill()
@@ -70,7 +73,7 @@ class TokenBucket:
                     return
                 wait_s = (1 - self.tokens) / self.rps
 
-            time.sleep(wait_s)
+            cancellable_sleep(wait_s)
 
     def widen(self, observed_rps: float, observed_capacity: int | None = None) -> bool:
         """Raise rps and (optionally) capacity towards observed values.

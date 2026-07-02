@@ -1,7 +1,6 @@
 import json
 import logging
 import re
-import time
 from collections.abc import Sequence
 from dataclasses import dataclass
 from json.decoder import JSONDecodeError
@@ -16,6 +15,7 @@ from rotkehlchen.chain.ethereum.modules.eth2.constants import (
 )
 from rotkehlchen.chain.ethereum.modules.eth2.structures import ValidatorID
 from rotkehlchen.chain.ethereum.modules.eth2.utils import calculate_query_chunks
+from rotkehlchen.concurrency import cancellable_sleep
 from rotkehlchen.constants.timing import DAY_IN_SECONDS
 from rotkehlchen.db.cache import DBCacheDynamic, DBCacheStatic
 from rotkehlchen.db.history_events import DBHistoryEvents
@@ -186,7 +186,7 @@ class BeaconChain(ExternalServiceWithRecommendedApiKey):
                     f'for {sleep_seconds}. We have {times} tries left. Rate limit info: '
                     f'{rate_limit_info}',
                 )
-                time.sleep(sleep_seconds)
+                cancellable_sleep(sleep_seconds)
                 continue
             # else
             break

@@ -1,10 +1,16 @@
 import logging
-import time
 from collections import defaultdict
 from typing import TYPE_CHECKING, Final, NamedTuple
 
 from rotkehlchen.api.websockets.typedefs import WSMessageType
-from rotkehlchen.concurrency import Task, exception_of, result_of, spawn_later, wait
+from rotkehlchen.concurrency import (
+    Task,
+    cancellable_sleep,
+    exception_of,
+    result_of,
+    spawn_later,
+    wait,
+)
 from rotkehlchen.db.cache import DBCacheStatic
 from rotkehlchen.db.internal_tx_conflicts import (
     INTERNAL_TX_CONFLICT_ACTION_REPULL,
@@ -259,8 +265,8 @@ def _process_repull_conflicts(
                     error_msg=(error_msg := _error_to_message(exception)),
                 )
                 log.error(
-                    f'Unexpected failure in repull worker for internal tx conflict '
-                    f'{tx_hash!s} on {chain_id.to_name()} due to {error_msg}',
+                    'Unexpected failure in repull worker for internal tx conflict '
+                    '%s on %s due to %s', tx_hash, chain_id.to_name(), error_msg,
                 )
 
                 continue
@@ -294,7 +300,7 @@ def _process_repull_conflicts(
             )
 
         if chunk_idx < len(repull_chunks) - 1:
-            time.sleep(REPULL_BETWEEN_BATCH_DELAY_SECONDS)
+            cancellable_sleep(REPULL_BETWEEN_BATCH_DELAY_SECONDS)
 
     return to_decode_by_chain
 

@@ -6,7 +6,6 @@ import itertools
 import json
 import logging
 import operator
-import time
 from collections import defaultdict
 from collections.abc import Sequence
 from typing import TYPE_CHECKING, Any, Literal
@@ -17,6 +16,7 @@ from requests import Response
 
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.converters import asset_from_kraken
+from rotkehlchen.concurrency import cancellable_sleep
 from rotkehlchen.constants import (
     KRAKEN_API_VERSION,
     KRAKEN_BASE_URL,
@@ -353,7 +353,7 @@ class Kraken(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
                         call_counter=self.call_counter,
                     )
                     tries -= 1
-                    time.sleep(backoff_in_seconds)
+                    cancellable_sleep(backoff_in_seconds)
                     continue
 
             log.debug(
@@ -375,7 +375,7 @@ class Kraken(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
                     f'for {backoff_in_seconds} seconds',
                 )
                 tries -= 1
-                time.sleep(backoff_in_seconds)
+                cancellable_sleep(backoff_in_seconds)
                 continue
 
             # else success

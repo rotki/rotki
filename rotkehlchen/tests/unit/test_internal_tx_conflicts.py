@@ -3,11 +3,10 @@ from typing import TYPE_CHECKING, Any, cast
 from unittest.mock import MagicMock, call, patch
 
 import gevent
-
-from rotkehlchen.concurrency import Task
 import pytest
 
 from rotkehlchen.api.websockets.typedefs import WSMessageType
+from rotkehlchen.concurrency import Task
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.db.cache import DBCacheStatic
 from rotkehlchen.db.constants import HISTORY_MAPPING_KEY_STATE, HistoryMappingState

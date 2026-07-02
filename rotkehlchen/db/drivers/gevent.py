@@ -16,6 +16,7 @@ import rsqlite
 from polyleven import levenshtein
 from sqlcipher3 import dbapi2 as sqlcipher
 
+from rotkehlchen.concurrency import TaskCancelledError, checkpoint, current_token
 from rotkehlchen.db.checks import sanity_check_impl
 from rotkehlchen.db.minimized_schema import MINIMIZED_USER_DB_INDEXES, MINIMIZED_USER_DB_SCHEMA
 from rotkehlchen.globaldb.minimized_schema import (
@@ -41,6 +42,18 @@ class ContextError(Exception):
     """Intended to be raised when something is wrong with db context management"""
 
 
+def _maybe_raise_cancelled(error: Exception) -> None:
+    """Translate a statement abort triggered by the cancellation checkpoint in the
+    progress callback into TaskCancelledError. No-op for any other error, so callers
+    must re-raise afterwards."""
+    if (
+            str(error) == 'interrupted' and
+            (token := current_token()) is not None and
+            token.cancelled
+    ):
+        raise TaskCancelledError(token.reason) from error
+
+
 class DBCursor:
 
     def __init__(self, connection: 'DBConnection', cursor: UnderlyingCursor) -> None:
@@ -60,7 +73,11 @@ class DBCursor:
         """
         if __debug__:
             logger.trace(f'Get next item for cursor {id(self)}')
-        result = next(self._cursor, None)
+        try:
+            result = next(self._cursor, None)
+        except (sqlcipher.OperationalError, rsqlite.OperationalError) as e:  # pylint: disable=no-member
+            _maybe_raise_cancelled(e)
+            raise
         if result is None:
             if __debug__:
                 logger.trace(f'Stopping iteration for cursor {id(self)}')
@@ -95,6 +112,9 @@ class DBCursor:
             # Long story. Don't judge me. https://github.com/rotki/rotki/issues/5432
             logger.debug(f'{statement} with {bindings} failed due to {e!s}. Probably https://github.com/rotki/rotki/issues/5432. Retrying')  # noqa: E501
             self._cursor.execute(statement, *bindings)
+        except (sqlcipher.OperationalError, rsqlite.OperationalError) as e:  # pylint: disable=no-member
+            _maybe_raise_cancelled(e)
+            raise
 
         if __debug__:
             logger.trace(f'FINISH EXECUTE {statement} with bindings {bindings} for cursor {id(self)}')  # noqa: E501
@@ -107,7 +127,11 @@ class DBCursor:
     ) -> 'DBCursor':
         if __debug__:
             logger.trace(f'EXECUTEMANY {statement} with bindings {bindings} for cursor {id(self)}')
-        self._cursor.executemany(statement, *bindings)
+        try:
+            self._cursor.executemany(statement, *bindings)
+        except (sqlcipher.OperationalError, rsqlite.OperationalError) as e:  # pylint: disable=no-member
+            _maybe_raise_cancelled(e)
+            raise
         if __debug__:
             logger.trace(f'FINISH EXECUTEMANY {statement} with bindings {bindings} for cursor {id(self)}')  # noqa: E501
         return self
@@ -118,7 +142,11 @@ class DBCursor:
         """
         if __debug__:
             logger.trace(f'EXECUTESCRIPT {script} for cursor {id(self)}')
-        self._cursor.executescript(script)
+        try:
+            self._cursor.executescript(script)
+        except (sqlcipher.OperationalError, rsqlite.OperationalError) as e:  # pylint: disable=no-member
+            _maybe_raise_cancelled(e)
+            raise
         if __debug__:
             logger.trace(f'FINISH EXECUTESCRIPT {script} for cursor {id(self)}')
         return self
@@ -140,7 +168,11 @@ class DBCursor:
     def fetchone(self) -> Any:
         if __debug__:
             logger.trace(f'CURSOR FETCHONE  for cursor {id(self)}')
-        result = self._cursor.fetchone()
+        try:
+            result = self._cursor.fetchone()
+        except (sqlcipher.OperationalError, rsqlite.OperationalError) as e:  # pylint: disable=no-member
+            _maybe_raise_cancelled(e)
+            raise
         if __debug__:
             logger.trace(f'FINISH CURSOR FETCHONE for cursor {id(self)}')
         return result
@@ -150,7 +182,11 @@ class DBCursor:
             logger.trace(f'CURSOR FETCHMANY with {size=} for cursor {id(self)}')
         if size is None:
             size = self._cursor.arraysize
-        result = self._cursor.fetchmany(size)
+        try:
+            result = self._cursor.fetchmany(size)
+        except (sqlcipher.OperationalError, rsqlite.OperationalError) as e:  # pylint: disable=no-member
+            _maybe_raise_cancelled(e)
+            raise
         if __debug__:
             logger.trace(f'FINISH CURSOR FETCHMANY for cursor {id(self)}')
         return result
@@ -158,7 +194,11 @@ class DBCursor:
     def fetchall(self) -> list[Any]:
         if __debug__:
             logger.trace(f'CURSOR FETCHALL for cursor {id(self)}')
-        result = self._cursor.fetchall()
+        try:
+            result = self._cursor.fetchall()
+        except (sqlcipher.OperationalError, rsqlite.OperationalError) as e:  # pylint: disable=no-member
+            _maybe_raise_cancelled(e)
+            raise
         if __debug__:
             logger.trace(f'FINISH CURSOR FETCHALL for cursor {id(self)}')
         return result
@@ -201,6 +241,13 @@ def _progress_callback(connection: Optional['DBConnection']) -> int:
         # modified before we exit the callback. So we immediately exit the callback
         # without any sleep that would lead to context switching
         return 0
+
+    if (token := current_token()) is not None and token.cancelled:
+        # cancellation checkpoint: abort the running statement of a cancelled task.
+        # sqlite raises OperationalError('interrupted') which the cursor translates
+        # to TaskCancelledError. Never hit during commits/critical sections due to
+        # the guard above, so driver-internal bookkeeping cannot be aborted.
+        return 1
 
     if __debug__:
         identifier = random.random()
@@ -345,6 +392,7 @@ class DBConnection:
             if current_id != self.savepoint_greenlet_id:
                 # savepoint exists but in other greenlet. Wait till it's done.
                 while self.savepoint_greenlet_id is not None:
+                    checkpoint()  # cancelled tasks should not keep waiting for the DB
                     gevent.sleep(CONTEXT_SWITCH_WAIT)
                 # and now continue with the normal write context logic
             else:  # open another savepoint instead of a write transaction
@@ -358,7 +406,7 @@ class DBConnection:
             cursor.execute('BEGIN TRANSACTION')
             try:
                 yield cursor
-            except Exception:
+            except BaseException:  # also TaskCancelledError/GreenletExit must roll back
                 self._conn.rollback()
                 raise
             else:
@@ -388,7 +436,7 @@ class DBConnection:
         cursor, savepoint_name = self._enter_savepoint(savepoint_name)
         try:
             yield cursor
-        except Exception:
+        except BaseException:  # also TaskCancelledError/GreenletExit must roll back
             self.rollback_savepoint(savepoint_name)
             raise
         finally:
@@ -409,15 +457,18 @@ class DBConnection:
         if savepoint_name is None:
             savepoint_name = str(uuid4())
 
+        checkpoint()  # a cancelled task should not open new savepoints
         current_id = get_greenlet_name(gevent.getcurrent())
         if self._conn.in_transaction is True and self.write_greenlet_id != current_id:
             # a transaction is open in a different greenlet
             while self.write_greenlet_id is not None:
+                checkpoint()  # cancelled tasks should not keep waiting for the DB
                 gevent.sleep(CONTEXT_SWITCH_WAIT)  # wait until that transaction ends
 
         if self.savepoint_greenlet_id is not None:
             # savepoints exist but in other greenlet
             while self.savepoint_greenlet_id is not None and current_id != self.savepoint_greenlet_id:  # noqa: E501  # pyright: ignore[reportUnnecessaryComparison]  # Another greenlet can clear it.
+                checkpoint()  # cancelled tasks should not keep waiting for the DB
                 gevent.sleep(CONTEXT_SWITCH_WAIT)  # wait until no other savepoint exists
         if savepoint_name in self.savepoints:
             raise ContextError(
@@ -449,7 +500,10 @@ class DBConnection:
                 f'{savepoint_name}, but it is not present in the stack: {list_savepoints}',
             )
 
-        with self.cursor() as cursor:  # this should not be a write_ctx as it's inside savepoint logic and would block  # noqa: E501
+        # Hold in_callback so the progress callback exits immediately: no context
+        # switches and no cancellation aborts while modifying savepoint state, since
+        # this also runs during cleanup of an already-cancelled task.
+        with self.in_callback, self.cursor() as cursor:  # this should not be a write_ctx as it's inside savepoint logic and would block  # noqa: E501
             cursor.execute(f"{rollback_or_release} SAVEPOINT '{savepoint_name}'")
 
         # Release all savepoints until, and including, the one with name `savepoint_name`.

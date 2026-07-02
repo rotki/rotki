@@ -1,5 +1,4 @@
 import logging
-import time
 from http import HTTPStatus
 from json import JSONDecodeError
 from typing import TYPE_CHECKING, Any, Final, Literal, overload
@@ -10,6 +9,7 @@ from solders.solders import Signature
 
 from rotkehlchen.chain.evm.types import NodeName, WeightedNode
 from rotkehlchen.chain.solana.types import SolanaInstruction, SolanaTransaction
+from rotkehlchen.concurrency import cancellable_sleep
 from rotkehlchen.constants.misc import ONE
 from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.db.solanatx import DBSolanaTx
@@ -87,7 +87,7 @@ class Helius(ExternalServiceWithRecommendedApiKey):
                     raise RemoteError('Getting Helius too many requests error even after retrying.')  # noqa: E501
 
                 log.debug(f'Got too many requests error from Helius. Will backoff for {BACKOFF_SECONDS} second.')  # noqa: E501
-                time.sleep(BACKOFF_SECONDS)
+                cancellable_sleep(BACKOFF_SECONDS)
                 retry_count += 1
                 continue
 

@@ -1140,7 +1140,7 @@ class TaskManager:
     def clear(self) -> None:
         """Ensure that no task is kept referenced. Used when removing the task manager"""
         for task_list in self.running_greenlets.values():
-            gevent.killall(task_list)
+            gevent.killall(task_list)  # hard stop until phase 5 of the migration
 
         self.running_greenlets.clear()
         self.priority_tasks_queue.clear()

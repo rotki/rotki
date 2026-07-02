@@ -1,5 +1,4 @@
 import logging
-import time
 from typing import TYPE_CHECKING, Any, Final, Literal, NamedTuple
 
 from requests import Response
@@ -7,6 +6,7 @@ from sqlcipher3 import dbapi2 as sqlcipher
 
 from rotkehlchen.chain.evm.l2_with_l1_fees.types import L2ChainIdsWithL1FeesType
 from rotkehlchen.chain.structures import TimestampOrBlockRange
+from rotkehlchen.concurrency import cancellable_sleep
 from rotkehlchen.db.cache import DBCacheDynamic, DBCacheStatic
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.errors.misc import ChainNotSupported, RemoteError
@@ -241,7 +241,7 @@ class Etherscan(ExternalServiceWithRecommendedApiKey, EtherscanLikeApi):
                         f'querying chain {chain_id}. Will backoff for {current_backoff} seconds.',
                     )
                     self._rate_limiter.shrink_after_429()
-                    time.sleep(current_backoff)
+                    cancellable_sleep(current_backoff)
                     return current_backoff * 2
 
                 elif result.startswith('Max daily'):

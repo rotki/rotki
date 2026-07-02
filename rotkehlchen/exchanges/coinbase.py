@@ -16,6 +16,7 @@ from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric import ed25519
 
 from rotkehlchen.assets.converters import asset_from_coinbase
+from rotkehlchen.concurrency import cancellable_sleep
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.timing import HOUR_IN_SECONDS
 from rotkehlchen.data_import.utils import maybe_set_transaction_extra_data
@@ -304,7 +305,7 @@ class Coinbase(ExchangeInterface):
 
             if response.status_code in (401, 429) and had_4xx is False:
                 had_4xx = True
-                time.sleep(.5)
+                cancellable_sleep(.5)
                 continue  # do a single retry since they don't have info on retries
 
             if response.status_code == 403:

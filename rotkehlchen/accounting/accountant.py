@@ -1,5 +1,4 @@
 import logging
-import time
 from collections.abc import Sequence
 from pathlib import Path
 from time import monotonic
@@ -12,6 +11,7 @@ from rotkehlchen.accounting.export.csv import CSVExporter
 from rotkehlchen.accounting.pot import AccountingPot
 from rotkehlchen.accounting.types import EventAccountingRuleStatus, MissingPrice
 from rotkehlchen.chain.evm.accounting.aggregator import EVMAccountingAggregators
+from rotkehlchen.concurrency import cancellable_sleep
 from rotkehlchen.db.reports import DBAccountingReports
 from rotkehlchen.db.settings import DBSettings
 from rotkehlchen.errors.asset import UnknownAsset, UnprocessableTradePair
@@ -218,10 +218,11 @@ class Accountant:
                 # calls to the API may time out. A positive sleep value is required: it
                 # forces a full event-loop cycle (including the I/O poll) so greenlets
                 # blocked on socket I/O -- like the API server -- actually get to run.
-                # time.sleep(0) does NOT guarantee this and starves the API. The
+                # A zero sleep does NOT guarantee this and starves the API. The
                 # wall-clock cadence (vs an event count) keeps the overhead a fixed
                 # fraction of report time regardless of how long individual events take.
-                time.sleep(0.01)
+                # This is also the cancellation checkpoint of report processing.
+                cancellable_sleep(0.01)
                 last_yield = monotonic()
             count += processed_events_num
             if not active_premium and count >= FREE_PNL_EVENTS_LIMIT:

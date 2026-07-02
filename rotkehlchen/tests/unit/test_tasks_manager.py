@@ -17,6 +17,7 @@ from rotkehlchen.chain.evm.decoding.aave.constants import CPT_AAVE_V3
 from rotkehlchen.chain.evm.decoding.spark.constants import CPT_SPARK
 from rotkehlchen.chain.evm.decoding.thegraph.constants import CPT_THEGRAPH
 from rotkehlchen.chain.evm.types import NodeName, WeightedNode, string_to_evm_address
+from rotkehlchen.concurrency import cancellable_sleep
 from rotkehlchen.constants import HOUR_IN_SECONDS
 from rotkehlchen.constants.assets import A_COMP, A_DAI, A_GRT, A_LUSD, A_USDC, A_USDT
 from rotkehlchen.constants.misc import ONE, ZERO
@@ -722,8 +723,8 @@ def test_should_run_periodic_task_cached_timestamps(database: 'DBHandler') -> No
 
 @pytest.mark.parametrize('ethereum_accounts', [[make_evm_address()]])
 @pytest.mark.parametrize('max_tasks_num', [5])
-def test_maybe_kill_running_tx_query_tasks(rotkehlchen_api_server, ethereum_accounts):
-    """Test that using maybe_kill_running_tx_query_tasks deletes greenlet from the running tasks
+def test_maybe_cancel_running_tx_query_tasks(rotkehlchen_api_server, ethereum_accounts):
+    """Test that using maybe_cancel_running_tx_query_tasks cooperatively stops the running tasks
 
     Also test that if called two times without a schedule() in between, no KeyErrors happen.
     These used to happen before a fix was introduced since the killed greenlet
@@ -736,7 +737,7 @@ def test_maybe_kill_running_tx_query_tasks(rotkehlchen_api_server, ethereum_acco
 
     def patched_address_query_transactions(self, address, start_ts, end_ts):  # pylint: disable=unused-argument
         while True:  # busy wait :D just for the test
-            gevent.sleep(1)
+            cancellable_sleep(1)  # dies here with TaskCancelledError when cancelled
 
     query_patch = patch.object(
         eth_manager.transactions,
@@ -750,9 +751,9 @@ def test_maybe_kill_running_tx_query_tasks(rotkehlchen_api_server, ethereum_acco
         assert greenlet.dead is False
         assert 'Query ethereum transaction' in greenlet.task_name
         # Running it twice to see it's handled properly and dead greenlet does not raise KeyErrors
-        rotki.maybe_kill_running_tx_query_tasks(SupportedBlockchain.ETHEREUM, [address])
+        rotki.maybe_cancel_running_tx_query_tasks(SupportedBlockchain.ETHEREUM, [address])
         assert greenlet.dead is True
-        rotki.maybe_kill_running_tx_query_tasks(SupportedBlockchain.ETHEREUM, [address])
+        rotki.maybe_cancel_running_tx_query_tasks(SupportedBlockchain.ETHEREUM, [address])
         assert greenlet.dead is True
 
         # Do a reschedule to see that this clears running greenlets
@@ -762,19 +763,19 @@ def test_maybe_kill_running_tx_query_tasks(rotkehlchen_api_server, ethereum_acco
 
 
 @pytest.mark.parametrize('ethereum_accounts', [[make_evm_address()]])
-def test_maybe_kill_tx_query_tasks_all_accounts_refresh(
+def test_maybe_cancel_tx_query_tasks_all_accounts_refresh(
         rotkehlchen_api_server,
         ethereum_accounts,
 ):
     """Test that an api transactions refresh task without specific accounts (refresh all)
-    is killed when one of the tracked addresses is removed, instead of raising a
+    is cancelled when one of the tracked addresses is removed, instead of raising a
     TypeError on the None accounts kwarg which made account removal fail."""
     rest_api = rotkehlchen_api_server.rest_api
     rotki = rest_api.rotkehlchen
 
     def blocking_refresh(**kwargs):  # pylint: disable=unused-argument
         while True:  # busy wait :D just for the test
-            gevent.sleep(1)
+            cancellable_sleep(1)  # dies here with TaskCancelledError when cancelled
 
     with patch.object(
         rest_api.transactions_service,
@@ -789,7 +790,7 @@ def test_maybe_kill_tx_query_tasks_all_accounts_refresh(
         greenlet = next(g for g in rotki.api_task_greenlets if g.task_id == task_id)
         gevent.sleep(.1)  # give the greenlet a chance to start
         assert greenlet.dead is False
-        rotki.maybe_kill_running_tx_query_tasks(
+        rotki.maybe_cancel_running_tx_query_tasks(
             blockchain=SupportedBlockchain.ETHEREUM,
             addresses=[ethereum_accounts[0]],
         )

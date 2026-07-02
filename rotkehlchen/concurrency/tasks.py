@@ -14,16 +14,27 @@ from typing import Any, TypeAlias
 
 import gevent
 
+from rotkehlchen.concurrency.cancellation import current_token, run_cancellable
+
 Task: TypeAlias = gevent.Greenlet
 
 
 def spawn(func: Callable[..., Any], *args: Any, **kwargs: Any) -> Task:
-    """Run func concurrently and return an opaque handle to the running task"""
+    """Run func concurrently and return an opaque handle to the running task.
+
+    If the spawning task is cancellable, the child shares its cancellation
+    token: cancelling the parent cancels the whole task tree. The token has to
+    be propagated explicitly since greenlets do not inherit contextvars.
+    """
+    if (token := current_token()) is not None:
+        return gevent.spawn(run_cancellable, token, func, *args, **kwargs)
     return gevent.spawn(func, *args, **kwargs)
 
 
 def spawn_later(seconds: float, func: Callable[..., Any], *args: Any, **kwargs: Any) -> Task:
     """Like spawn, but the task starts only after the given delay in seconds"""
+    if (token := current_token()) is not None:
+        return gevent.spawn_later(seconds, run_cancellable, token, func, *args, **kwargs)
     return gevent.spawn_later(seconds, func, *args, **kwargs)
 
 

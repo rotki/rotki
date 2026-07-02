@@ -1,20 +1,22 @@
 import logging
 from collections.abc import Callable, Iterable, Sequence
-from functools import wraps
+from functools import partial, wraps
 from http import HTTPStatus
 from json.decoder import JSONDecodeError
+from time import monotonic
 from typing import Any, NamedTuple, cast
 from urllib.parse import urlparse
 
-import gevent
 import requests
 from substrateinterface import SubstrateInterface
 from substrateinterface.exceptions import BlockNotFound, SubstrateRequestException
+from substrateinterface.transport import HttpTransport
 from websocket import WebSocketException
 
 from rotkehlchen.accounting.structures.balance import Balance, BalanceSheet
 from rotkehlchen.assets.asset import CryptoAsset
 from rotkehlchen.chain.manager import ChainManager
+from rotkehlchen.concurrency import cancellable_sleep
 from rotkehlchen.constants import DEFAULT_BALANCE_LABEL
 from rotkehlchen.constants.assets import A_DOT, A_KSM
 from rotkehlchen.db.settings import CachedSettings
@@ -294,27 +296,23 @@ class SubstrateManager(ChainManager[SubstrateAddress]):
             account=account,
         )
         try:
-            with gevent.Timeout(SUBSTRATE_NODE_CONNECTION_TIMEOUT):
-                result = node_interface.query(
-                    module='System',
-                    storage_function='Account',
-                    params=[account],
-                )
+            # timeouts are enforced at the transport level, set in _get_node_interface
+            result = node_interface.query(
+                module='System',
+                storage_function='Account',
+                params=[account],
+            )
         except (
                 requests.exceptions.RequestException,
                 SubstrateRequestException,
                 ValueError,
                 WebSocketException,
-                gevent.Timeout,
                 BlockNotFound,
                 AttributeError,  # happens in substrate library when timeout occurs some times
         ) as e:
-            msg = str(e)
-            if isinstance(e, gevent.Timeout):
-                msg = f'a timeout of {msg}'
             message = (
                 f'{self.chain} failed to request {self.chain_properties.token.identifier} account '
-                f'balance at endpoint {node_interface.url} due to: {msg}'
+                f'balance at endpoint {node_interface.url} due to: {e!s}'
             )
             log.error(message, account=account)
             raise RemoteError(message) from e
@@ -438,7 +436,16 @@ class SubstrateManager(ChainManager[SubstrateAddress]):
                 url=endpoint,
                 type_registry_preset=self.chain.name.lower(),
                 use_remote_preset=True,
+                # applies to ws(s) endpoints: connect and recv timeout of the websocket
+                ws_options={'timeout': SUBSTRATE_NODE_CONNECTION_TIMEOUT},
             )
+            if isinstance(node_interface.transport, HttpTransport):
+                # http(s) endpoints use a requests session with no timeout support in
+                # the library, so give its request method a default timeout instead
+                node_interface.transport.session.request = partial(
+                    node_interface.transport.session.request,
+                    timeout=SUBSTRATE_NODE_CONNECTION_TIMEOUT,
+                )
         except (requests.exceptions.RequestException, WebSocketException, SubstrateRequestException) as e:  # noqa: E501
             message = (
                 f'{self.chain} could not connect to node at endpoint: {endpoint}. '
@@ -670,14 +677,17 @@ def wait_until_a_node_is_available(
 ) -> None:
     """Temporarily suspends the caller execution until a node is available or
     this function timeouts.
+
+    May raise:
+    - RemoteError if no node became available within the given seconds
+    - TaskCancelledError if the running task gets cancelled while waiting
     """
-    try:
-        with gevent.Timeout(seconds):
-            while len(substrate_manager.available_nodes_call_order) == 0:
-                gevent.sleep(0.1)
-    except gevent.Timeout as e:
-        chain = substrate_manager.chain
-        raise RemoteError(
-            f'{chain} manager does not have nodes availables after waiting '
-            f"{seconds} seconds. {chain} balances won't be queried.",
-        ) from e
+    deadline = monotonic() + seconds
+    while len(substrate_manager.available_nodes_call_order) == 0:
+        if monotonic() >= deadline:
+            chain = substrate_manager.chain
+            raise RemoteError(
+                f'{chain} manager does not have nodes availables after waiting '
+                f"{seconds} seconds. {chain} balances won't be queried.",
+            )
+        cancellable_sleep(0.1)

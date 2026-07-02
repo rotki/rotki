@@ -102,10 +102,6 @@ class DataIntegrityError(Exception):
     """Raised when an operation would corrupt or destroy data that is already stored in the DB."""
 
 
-class GreenletKilledError(Exception):
-    """Raised when a greenlet is killed"""
-
-
 class AccountingError(Exception):
     """Fatal error while processing accounting events during a PnL report"""
 

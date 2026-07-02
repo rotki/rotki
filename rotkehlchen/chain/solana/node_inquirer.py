@@ -1,5 +1,4 @@
 import logging
-import time
 from collections.abc import Callable, Sequence
 from functools import partial
 from typing import TYPE_CHECKING, Final, TypeVar
@@ -39,6 +38,7 @@ from rotkehlchen.chain.solana.utils import (
     get_extension_data,
     get_metadata_account,
 )
+from rotkehlchen.concurrency import cancellable_sleep
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.externalapis.helius import HELIUS_RPC_NODE_NAME, HELIUS_RPC_URL
@@ -152,7 +152,7 @@ class SolanaInquirer(SolanaRPCMixin):
                 )
                 backoff_end_ts, _, _ = self.node_backoff_info[call_order[0].node_info.name]
                 if (wait_time := (backoff_end_ts or 0) - ts_now()) > 0:
-                    time.sleep(wait_time)
+                    cancellable_sleep(wait_time)
 
             is_retry = True  # Any iteration of the main loop is a retry after the first run.
             for weighted_node in call_order:

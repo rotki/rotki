@@ -6,6 +6,7 @@ import gevent
 import pytest
 import requests
 
+from rotkehlchen.concurrency import cancellable_sleep
 from rotkehlchen.tests.utils.api import (
     api_url_for,
     assert_error_response,
@@ -161,7 +162,7 @@ def test_cancel_async_task(rotkehlchen_api_server_with_exchanges: 'APIServer') -
 
     def mock_binance_asset_return(*args: Any, **kwargs: Any) -> None:  # pylint: disable=unused-argument
         while True:  # infinite loop so we can cancel it
-            gevent.sleep(1)
+            cancellable_sleep(1)  # dies here with TaskCancelledError when cancelled
 
     binance_patch = patch.object(binance.session, 'request', side_effect=mock_binance_asset_return)
 

@@ -738,7 +738,7 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
                 if first_exception is None:
                     first_exception = chain_exception
                 else:
-                    log.error('Failed to query %s balances: %s', chain, greenlet.exception)
+                    log.error('Failed to query %s balances: %s', chain, chain_exception)
                 continue
             self._update_blockchain_balances_cache(blockchain=chain, addresses=addresses)
 

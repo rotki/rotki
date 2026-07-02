@@ -11,7 +11,7 @@ the decision log.
 |-------|-------------|--------|
 | 0 | Python bump 3.11 → 3.12/3.13 | not started |
 | 1 | Stdlib primitives + spawn seam + gevent import ban | **in progress** — business logic done (~45 files); test files remain (phases 2-3 exemption) |
-| 2 | Cooperative cancellation (replaces `greenlet.kill`) | not started |
+| 2 | Cooperative cancellation (replaces `greenlet.kill`) | **done** — CancellationToken + checkpoints landed, `greenlet.kill`/`GreenletKilledError` removed, substrate `gevent.Timeout` replaced |
 | 3 | DB driver dual-mode (gevent / threading backends) | not started |
 | 4 | ASGI server behind a flag (uvicorn + WSGI bridge + native websockets) | not started |
 | 5 | Task orchestration on the asyncio loop | not started |
@@ -135,6 +135,41 @@ greenlet liveness/death (`tests/api/blockchain/test_evm.py`, `tests/api/test_err
 Doing this under gevent isolates "did cancellation behavior regress" from "did the
 runtime swap break things". Also: redesign the `substrate/manager.py` `gevent.Timeout`
 usage onto library-level timeouts.
+
+As implemented:
+
+- `rotkehlchen/concurrency/cancellation.py`: `CancellationToken` (a `threading.Event`,
+  gevent-cooperative today, unchanged after the flip), `TaskCancelledError`
+  (inherits **BaseException**, like `asyncio.CancelledError`, so broad
+  `except Exception` handlers cannot swallow a cancellation), `checkpoint()`,
+  `cancellable_sleep()` and `run_cancellable()`. The current task's token lives in a
+  `ContextVar`; greenlets do **not** inherit contextvars (verified), so every spawn
+  path establishes the token explicitly and the seam's `spawn`/`spawn_later`
+  propagate the spawner's token to children — cancelling a task cancels its tree.
+- Token holders: `GreenletManager.spawn_and_track` and the REST `_query_async` attach
+  a fresh token per task (`greenlet.cancellation_token`);
+  `greenlets/utils.py::request_cancellation` is how kill paths request it.
+- Kill paths converted: `RestAPI.delete_async_task` and
+  `Rotkehlchen.maybe_cancel_running_tx_query_tasks` (ex `maybe_kill_...`). The latter
+  cancels matching tasks then waits a short grace (`DEFAULT_CANCEL_GRACE_SECONDS`) so
+  account removal does not race their DB writes; a task stuck in a remote query is
+  left to die at its next checkpoint. `GreenletKilledError` is gone. Logout/shutdown
+  keep `gevent.killall` until phase 5.
+- Checkpoints: the DB progress callback returns 1 for a cancelled task, aborting the
+  running statement (native sqlite interrupt); the cursor translates the resulting
+  `OperationalError('interrupted')` into `TaskCancelledError`. Since `write_ctx` runs
+  inside `critical_section` (progress handler disabled), DB aborts hit only reads and
+  savepoint bodies; savepoint bookkeeping statements are shielded by holding
+  `in_callback`. The driver's transaction/savepoint cleanup now catches
+  `BaseException` so cancellation (and `GreenletExit`) rolls back properly, and its
+  writer/savepoint wait loops are checkpoints too. All retry/backoff `time.sleep`
+  calls became `cancellable_sleep` (~27 files, incl. the token-bucket rate limiter),
+  and explicit `checkpoint()` calls sit at the evm tx-query pagination boundaries,
+  the decoding loop and the historical-balance processing loop.
+- Substrate: `SubstrateInterface` gets `ws_options={'timeout': ...}` for ws(s)
+  endpoints and a default-timeout patch on the http transport's requests session;
+  `wait_until_a_node_is_available` is a monotonic-deadline loop over
+  `cancellable_sleep`. `substrate/manager.py` left the TID251 allowlist.
 
 ### Phase 3 — DB driver dual-mode
 

@@ -14,6 +14,7 @@ from rotkehlchen.chain.accounts import BlockchainAccountData
 from rotkehlchen.chain.evm.structures import EvmTxReceipt
 from rotkehlchen.chain.evm.transactions import EvmTransaction
 from rotkehlchen.chain.evm.types import string_to_evm_address
+from rotkehlchen.concurrency import cancellable_sleep
 from rotkehlchen.constants import DEFAULT_BALANCE_LABEL, ZERO
 from rotkehlchen.constants.assets import A_AVAX, A_ETH
 from rotkehlchen.db.addressbook import DBAddressbook
@@ -480,8 +481,8 @@ def test_evm_account_deletion_does_not_wait_for_pending_txn_queries(
 ) -> None:
     """
     Test that if transactions for an address are being queried and removal is
-    requested for that address, the transactions querying greenlets are killed
-    and the account is subsequently deleted.
+    requested for that address, the transactions querying tasks are cancelled
+    at their next checkpoint and the account is subsequently deleted.
     """
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     task_manager = rotki.task_manager
@@ -497,7 +498,7 @@ def test_evm_account_deletion_does_not_wait_for_pending_txn_queries(
 
     def patch_single_query(**kwargs: Any) -> None:  # pylint: disable=unused-argument
         while True:
-            gevent.sleep(2)
+            cancellable_sleep(2)  # dies here with TaskCancelledError when cancelled
 
     patch_obj = patch('rotkehlchen.chain.evm.transactions.EvmTransactions._get_transactions_for_range', side_effect=patch_single_query)  # noqa: E501
     with patch_obj:
@@ -538,7 +539,7 @@ def test_evm_account_deletion_does_not_wait_for_pending_txn_queries(
             )
             assert_proper_response(response)
 
-    # Check that the 1 api greenlet and 1 task manager greenlet got killed
+    # Check that the 1 api greenlet and 1 task manager greenlet got cancelled and died
     assert len(api_task_greenlets) == 2
     assert api_task_greenlets[0].dead
     assert len(task_manager.running_greenlets) == 1

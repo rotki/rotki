@@ -1,6 +1,5 @@
 import json
 import logging
-import time
 from http import HTTPStatus
 from typing import TYPE_CHECKING, Any, Final
 
@@ -11,6 +10,7 @@ from gql.transport.requests import RequestsHTTPTransport
 from graphql.error import GraphQLError
 
 from rotkehlchen.chain.ethereum.modules.ens.constants import CPT_ENS
+from rotkehlchen.concurrency import cancellable_sleep
 from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.api import APIKeyNotConfigured
 from rotkehlchen.errors.misc import RemoteError
@@ -139,7 +139,7 @@ class Graph(ExternalServiceWithApiKey):
                         f'Retries left: {retries_left}.'
                     )
                     log.error(f'{retry_base_msg}. {retry_msg}')
-                    time.sleep(sleep_seconds)
+                    cancellable_sleep(sleep_seconds)
                 else:
                     raise RemoteError(f'{base_msg}. No retries left.') from e
 

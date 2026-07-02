@@ -59,6 +59,7 @@ from rotkehlchen.chain.substrate.utils import (
     POLKADOT_NODES_TO_CONNECT_AT_START,
 )
 from rotkehlchen.chain.zksync_lite.manager import ZksyncLiteManager
+from rotkehlchen.concurrency import DEFAULT_CANCEL_GRACE_SECONDS, wait
 from rotkehlchen.config import default_data_directory
 from rotkehlchen.constants import ONE, ZERO
 from rotkehlchen.constants.assets import A_USD
@@ -76,7 +77,6 @@ from rotkehlchen.errors.api import PremiumAuthenticationError, PremiumPermission
 from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.misc import (
     EthSyncError,
-    GreenletKilledError,
     InputError,
     RemoteError,
     SystemPermissionError,
@@ -100,6 +100,7 @@ from rotkehlchen.globaldb.asset_updates.manager import AssetsUpdater
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.globaldb.manual_price_oracles import ManualCurrentOracle
 from rotkehlchen.greenlets.manager import GreenletManager
+from rotkehlchen.greenlets.utils import request_cancellation
 from rotkehlchen.history.manager import HistoryQueryingManager
 from rotkehlchen.history.price import Price, PriceHistorian
 from rotkehlchen.history.processing import HistoryProcessingCoordinator
@@ -242,37 +243,55 @@ class Rotkehlchen:
         self.shutdown_event = gevent.event.Event()
         self.migration_manager = DataMigrationManager(self)
 
-    def maybe_kill_running_tx_query_tasks(
+    def maybe_cancel_running_tx_query_tasks(
             self,
             blockchain: SupportedBlockchain,
             addresses: list[ChecksumEvmAddress],
     ) -> None:
-        """Checks for running greenlets related to transactions query for the given
-        addresses and kills them if they exist"""
+        """Checks for running tasks related to transactions query for the given addresses,
+        cancels them if they exist and gives them a short grace period to wind down so
+        that the subsequent account removal does not race with their DB writes. A task
+        that does not exit within the grace period (e.g. stuck in a remote query) is
+        left to die at its next cancellation checkpoint."""
         assert self.task_manager is not None, 'task manager should have been initialized at this point'  # noqa: E501
 
+        cancelled_greenlets = []
         for address in addresses:
             account_data = OptionalBlockchainAccount(address=address, chain=blockchain)
             for greenlet in self.api_task_greenlets:
                 is_evm_tx_greenlet = (
                     greenlet.dead is False and
-                    len(greenlet.args) >= 1 and
-                    isinstance(greenlet.args[0], FunctionType) and
-                    greenlet.args[0].__qualname__ == 'RestAPI.refresh_transactions'
+                    isinstance(command := getattr(greenlet, 'api_command', None), FunctionType) and
+                    command.__qualname__ == 'RestAPI.refresh_transactions'
                 )
                 if (
                         is_evm_tx_greenlet and
                         # accounts is None when all tracked accounts are being refreshed,
                         # which includes the address being removed
                         ((accounts := greenlet.kwargs['accounts']) is None or
-                         account_data in accounts)
+                         account_data in accounts) and
+                        request_cancellation(greenlet, 'Cancelled due to request for evm address removal')  # noqa: E501
                 ):
-                    greenlet.kill(exception=GreenletKilledError('Killed due to request for evm address removal'))  # noqa: E501
+                    cancelled_greenlets.append(greenlet)
 
-            tx_query_task_greenlets = self.task_manager.running_greenlets.get(self.task_manager._maybe_query_evm_transactions, [])  # noqa: E501
-            for greenlet in tx_query_task_greenlets:
-                if greenlet.dead is False and greenlet.kwargs['address'] in addresses:
-                    greenlet.kill(exception=GreenletKilledError('Killed due to request for evm address removal'))  # noqa: E501
+        cancelled_greenlets.extend(
+            greenlet
+            for greenlet in self.task_manager.running_greenlets.get(self.task_manager._maybe_query_evm_transactions, [])  # noqa: E501
+            if (
+                greenlet.dead is False and
+                greenlet.kwargs['address'] in addresses and
+                request_cancellation(greenlet, 'Cancelled due to request for evm address removal')
+            )
+        )
+        if len(cancelled_greenlets) == 0:
+            return
+
+        wait(cancelled_greenlets, timeout=DEFAULT_CANCEL_GRACE_SECONDS)
+        if len(survivors := [x for x in cancelled_greenlets if not x.dead]) != 0:
+            log.warning(
+                f'{len(survivors)} cancelled transaction query tasks did not exit within '
+                f'{DEFAULT_CANCEL_GRACE_SECONDS} seconds and will die at their next checkpoint',
+            )
 
     def reset_after_failed_account_creation_or_login(self) -> None:
         """If the account creation or login failed make sure that the rotki instance is clear
@@ -1076,7 +1095,7 @@ class Rotkehlchen:
             if blockchain in EVM_CHAINS_WITH_TRANSACTIONS:
                 evm_manager = self.chains_aggregator.get_chain_manager(blockchain)
                 evm_addresses: list[ChecksumEvmAddress] = cast('list[ChecksumEvmAddress]', accounts)  # noqa: E501
-                self.maybe_kill_running_tx_query_tasks(blockchain, evm_addresses)
+                self.maybe_cancel_running_tx_query_tasks(blockchain, evm_addresses)
                 stack.enter_context(evm_manager.transactions.wait_until_no_query_for(evm_addresses))
                 stack.enter_context(evm_manager.transactions.missing_receipts_lock)
                 if hasattr(evm_manager.transactions_decoder, 'undecoded_tx_query_lock'):

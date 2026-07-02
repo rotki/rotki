@@ -1,6 +1,5 @@
 import json
 import logging
-import time
 from collections import defaultdict
 from collections.abc import Iterable, Iterator, Sequence
 from http import HTTPStatus
@@ -24,6 +23,7 @@ from rotkehlchen.chain.ethereum.modules.zksync.constants import ZKSYNC_LITE_SUNS
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
 from rotkehlchen.chain.evm.contracts import EvmContract
 from rotkehlchen.chain.manager import ChainManagerWithTransactions, ChainWithEoA
+from rotkehlchen.concurrency import cancellable_sleep
 from rotkehlchen.constants import DEFAULT_BALANCE_LABEL, ZERO
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.db.cache import DBCacheDynamic
@@ -146,7 +146,7 @@ class ZksyncLiteManager(ChainManagerWithTransactions[ChecksumEvmAddress], ChainW
                     f'Got too many requests error from zksync lite. Will '
                     f'backoff for {backoff} seconds.',
                 )
-                time.sleep(backoff)
+                cancellable_sleep(backoff)
                 backoff *= 2
                 continue
 
