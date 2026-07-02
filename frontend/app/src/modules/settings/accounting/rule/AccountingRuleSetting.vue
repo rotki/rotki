@@ -17,6 +17,7 @@ import AccountingRuleConflictsDialog from '@/modules/settings/accounting/rule/Ac
 import AccountingRuleFormDialog from '@/modules/settings/accounting/rule/AccountingRuleFormDialog.vue';
 import AccountingRuleImportDialog from '@/modules/settings/accounting/rule/AccountingRuleImportDialog.vue';
 import AccountingRuleTable from '@/modules/settings/accounting/rule/AccountingRuleTable.vue';
+import { useRuleEventsLink } from '@/modules/settings/accounting/rule/use-rule-events-link';
 import { useAccountingSettings } from '@/modules/settings/accounting/use-accounting-settings';
 import { useAccountingApi } from '@/modules/settings/api/use-accounting-api';
 import { SettingsHighlightIds } from '@/modules/settings/setting-highlight-ids';
@@ -132,6 +133,8 @@ function edit(rule: AccountingRuleEntry, eventIds?: number[]) {
   set(editMode, true);
   set(eventIdsForRule, eventIds);
 }
+
+const { viewEvents } = useRuleEventsLink();
 
 const { show } = useConfirmStore();
 const { setMessage } = useMessageStore();
@@ -474,6 +477,7 @@ const importFileDialog = ref<boolean>(false);
         :is-custom="customRuleHandling === CustomRuleHandling.ONLY"
         @delete-click="showDeleteConfirmation($event)"
         @edit-click="edit($event)"
+        @view-events-click="viewEvents($event)"
       />
 
       <AccountingRuleFormDialog
