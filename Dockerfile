@@ -1,5 +1,5 @@
 # build stage
-FROM --platform=$BUILDPLATFORM node:24-bookworm AS frontend-build-stage
+FROM --platform=$BUILDPLATFORM node:24.18.0-bookworm AS frontend-build-stage
 
 ARG BUILDARCH
 ENV CYPRESS_INSTALL_BINARY=0
@@ -16,7 +16,7 @@ RUN if [ "$BUILDARCH" != "amd64" ]; then \
     pnpm install --frozen-lockfile && \
     pnpm run docker:build
 
-FROM rust:1-bookworm AS colibri-build-stage
+FROM rust:1.91-bookworm AS colibri-build-stage
 
 WORKDIR /app
 COPY colibri/ ./colibri
