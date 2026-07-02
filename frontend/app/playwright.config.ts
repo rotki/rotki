@@ -146,7 +146,9 @@ export default defineConfig({
     {
       command: process.env.CI
         ? `vite preview --port ${FRONTEND_PORT}`
-        : `tsx scripts/serve.ts --web --port ${FRONTEND_PORT}`,
+        // --no-open: this is a test harness, don't pop a browser tab (serve.ts
+        // auto-opens in web mode by default) — Playwright drives its own browser.
+        : `tsx scripts/serve.ts --web --no-open --port ${FRONTEND_PORT}`,
       url: frontendUrl,
       reuseExistingServer: !process.env.CI,
       timeout: 180_000,

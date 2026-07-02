@@ -179,7 +179,9 @@ async function startColibriService(opts: ColibriSpawnOptions): Promise<number> {
 
   startProcess('cargo run --locked -- ', colors.red(COLIBRI), COLIBRI, colibriArgs, {
     cwd: colibriCwd,
-    env: buildColibriEnv(),
+    // null (win32, Strawberry missing) and undefined both mean "inherit
+    // process.env" in startProcess; normalise so the env type matches.
+    env: buildColibriEnv() ?? undefined,
   });
   return chosenPort;
 }
@@ -260,6 +262,8 @@ export interface DevServerOptions {
   noElectron: boolean;
   devPort?: number;
   backendEnv?: BackendEnv;
+  /** Extra env forwarded to the serve child (electron instance ports/data dir). */
+  extraEnv?: Record<string, string>;
   onExit?: () => void;
 }
 
@@ -277,13 +281,17 @@ export function startDevServer(opts: DevServerOptions): void {
   const baseServeCmd = opts.noElectron ? 'pnpm run --filter rotki serve' : 'pnpm run --filter rotki electron:serve';
   // Forward `--port` to the serve script directly — no `--` separator. With
   // `--` cac inside serve.ts treats following flags as positional and ignores
-  // `--port`, so the dev server keeps listening on its default 8080.
-  const serveCmd = opts.noElectron && opts.devPort !== undefined
+  // `--port`, so the dev server keeps listening on its default 8080. Applies to
+  // both modes: in electron mode this runs the instance's Vite dev server on the
+  // instance `dev` port (serve.ts sets VITE_DEV_SERVER_URL from it, so electron
+  // loads the right origin); plain `pnpm dev` leaves devPort undefined → 8080.
+  const serveCmd = opts.devPort !== undefined
     ? `${baseServeCmd} --port ${opts.devPort}`
     : baseServeCmd;
 
+  const env = { ...opts.backendEnv, ...opts.extraEnv };
   const child = startProcess(`${serveCmd}${debuggerArgs}`, colors.magenta(ROTKI), ROTKI, [], {
-    env: opts.backendEnv ? { ...opts.backendEnv } : undefined,
+    env: Object.keys(env).length > 0 ? env : undefined,
   });
 
   child.on('exit', () => {
@@ -354,16 +362,35 @@ function spawnProxyForBackend(instance: InstanceRuntime | null, backendEnv: Back
   startDevProxy({ PORT: String(proxyPort), BACKEND: backendEnv.VITE_BACKEND_URL });
 }
 
-function spawnProxyForElectron(): void {
-  // Electron mode — electron's main process spawns its own backend; start-dev
-  // doesn't know the chosen port. Match the long-standing convention:
-  // backend defaults to DEFAULT_PORTS.restApi, proxy listens on DEFAULT_PORTS.proxy
-  // and forwards. Set VITE_BACKEND_URL so the Vite-served renderer hits the proxy.
-  process.env.VITE_BACKEND_URL = `http://127.0.0.1:${DEFAULT_PORTS.proxy}`;
+function spawnProxyForElectron(instance: InstanceRuntime | null): void {
+  // Electron mode — electron's main process spawns its own backend. In instance
+  // mode we tell electron which ports to bind (via instanceEnvForElectron), so
+  // the proxy fronts those same ports; otherwise fall back to the defaults
+  // (backend on restApi, proxy on proxy). Set VITE_BACKEND_URL so the
+  // Vite-served renderer hits the proxy.
+  const proxyPort = instance?.ports.proxy ?? DEFAULT_PORTS.proxy;
+  const backendPort = instance?.ports.restApi ?? DEFAULT_PORTS.restApi;
+  process.env.VITE_BACKEND_URL = `http://127.0.0.1:${proxyPort}`;
   startDevProxy({
-    PORT: String(DEFAULT_PORTS.proxy),
-    BACKEND: `http://127.0.0.1:${DEFAULT_PORTS.restApi}`,
+    PORT: String(proxyPort),
+    BACKEND: `http://127.0.0.1:${backendPort}`,
   });
+}
+
+/**
+ * Env handed to the electron child in instance mode. Electron spawns its own
+ * backend + colibri, so it needs the instance's reserved ports and data dir to
+ * bind there instead of the shared defaults. Returns undefined outside instance
+ * mode, leaving electron on its default ports / configured data dir.
+ */
+function instanceEnvForElectron(instance: InstanceRuntime | null): Record<string, string> | undefined {
+  if (!instance)
+    return undefined;
+  return {
+    ROTKI_INSTANCE_CORE_PORT: String(instance.ports.restApi),
+    ROTKI_INSTANCE_COLIBRI_PORT: String(instance.ports.colibri),
+    ROTKI_INSTANCE_DATA_DIR: instance.dir,
+  };
 }
 
 function pointFrontendAtBackend(backendEnv: BackendEnv): void {
@@ -377,25 +404,28 @@ export async function startDevelopmentEnvironment(opts: DevEnvironmentOptions): 
 
   let backendEnv: BackendEnv | undefined;
   let devPort: number | undefined;
+  let extraEnv: Record<string, string> | undefined;
 
   if (noElectron) {
     ({ backendEnv, devPort } = await startBackendForMode(instance, opts));
-  }
-
-  if (backendEnv) {
     if (useProxy)
       spawnProxyForBackend(instance, backendEnv);
     else
       pointFrontendAtBackend(backendEnv);
   }
-  else if (useProxy) {
-    // Electron mode + proxy: spawn it with defaults (electron's backend lands
-    // at 4242, proxy fronts it at 4243). This matches the pre-refactor
-    // behaviour triggered by VITE_BACKEND_URL being present in .env.
-    spawnProxyForElectron();
+  else {
+    // Electron mode: electron's main process spawns its own backend + colibri.
+    // In instance mode hand it the instance's reserved ports + data dir so it
+    // binds there rather than on the shared defaults, and run the Vite dev
+    // server on the instance's dev port (electron loads that origin). Plain
+    // `pnpm dev` leaves devPort undefined, keeping the default 8080.
+    extraEnv = instanceEnvForElectron(instance);
+    devPort = instance?.ports.dev;
+    if (useProxy)
+      spawnProxyForElectron(instance);
   }
 
-  startDevServer({ noElectron, devPort, backendEnv, onExit: onChildExit });
+  startDevServer({ noElectron, devPort, backendEnv, extraEnv, onExit: onChildExit });
 
   // win32 historically had no readiness wait — give hot-reload subscribers a
   // moment to attach before the first Vite compile.

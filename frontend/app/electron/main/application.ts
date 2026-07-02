@@ -14,6 +14,20 @@ import { WindowManager } from '@electron/main/window-manager';
 import { checkIfDevelopment, startPromise } from '@shared/utils';
 import { app, protocol } from 'electron';
 
+/**
+ * Reads a dev-instance port override from the environment. `start-dev` sets
+ * these only when running an isolated instance so electron binds its backend +
+ * colibri on the instance's reserved ports instead of the shared defaults.
+ * Falls back to the default when unset or malformed.
+ */
+function instancePort(envKey: string, fallback: number): number {
+  const raw = process.env[envKey];
+  if (!raw)
+    return fallback;
+  const port = Number.parseInt(raw, 10);
+  return Number.isFinite(port) && port > 0 ? port : fallback;
+}
+
 export class Application {
   private readonly window: WindowManager;
   private readonly tray: TrayManager;
@@ -31,8 +45,8 @@ export class Application {
       colibriApiUrl: import.meta.env.VITE_COLIBRI_URL as string,
     },
     ports: {
-      colibriPort: DEFAULT_COLIBRI_PORT,
-      corePort: DEFAULT_PORT,
+      colibriPort: instancePort('ROTKI_INSTANCE_COLIBRI_PORT', DEFAULT_COLIBRI_PORT),
+      corePort: instancePort('ROTKI_INSTANCE_CORE_PORT', DEFAULT_PORT),
     },
   };
 

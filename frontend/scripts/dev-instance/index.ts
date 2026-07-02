@@ -4,10 +4,11 @@
 
 export {
   clearManagedEnvBlock,
+  devFlagUpdates,
   loadEnvFile,
   MANAGED_ENV_KEYS,
   readManagedInstanceName,
-  writeEnvFile,
+  writeManagedEnv,
 } from './env-file';
 
 export {

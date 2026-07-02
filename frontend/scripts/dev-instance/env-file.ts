@@ -12,6 +12,21 @@ export const MANAGED_ENV_KEYS = [
 ] as const;
 
 /**
+ * Dev toggles that `pnpm dev` / `dev:web` keeps on by default. They live in the
+ * managed block so a fresh checkout gets them without hand-editing, but a value
+ * a developer has already set (in the env file or the shell) is preserved — see
+ * `devFlagUpdates`. Never written for production builds (start-dev is dev-only).
+ */
+export const MANAGED_DEV_FLAG_KEYS = [
+  'ENABLE_DEV_TOOLS',
+  'VITE_DEV_LOGS',
+  'VITE_PERSIST_STORE',
+] as const;
+
+/** Every key start-dev owns inside the managed block (instance + dev flags). */
+export const ALL_MANAGED_KEYS = [...MANAGED_ENV_KEYS, ...MANAGED_DEV_FLAG_KEYS] as const;
+
+/**
  * Sentinel comments wrapping the dev:web-managed block. The exact string is
  * load-bearing: writeEnvFile and clearManagedEnvBlock locate the block by
  * matching these lines. Changing the wording later would orphan blocks written
@@ -150,7 +165,7 @@ export function readManagedInstanceName(file: string): string | undefined {
  * Leaves every unmanaged line untouched. Useful when an instance is cleaned and
  * we want to remove the env trail it wrote.
  */
-export function clearManagedEnvBlock(file: string, opts: { managed: readonly string[] } = { managed: MANAGED_ENV_KEYS }): void {
+export function clearManagedEnvBlock(file: string, opts: { managed: readonly string[] } = { managed: ALL_MANAGED_KEYS }): void {
   if (!fs.existsSync(file))
     return;
   const managed = new Set(opts.managed);
@@ -160,4 +175,73 @@ export function clearManagedEnvBlock(file: string, opts: { managed: readonly str
   while (kept.length > 0 && kept.at(-1) === '')
     kept.pop();
   writeAtomic(file, kept.join('\n'));
+}
+
+/** Splits an env file's KEY=VAL lines into those inside vs outside the managed block. */
+function readManagedSplit(file: string): { inBlock: Record<string, string>; outOfBlock: Record<string, string> } {
+  const inBlock: Record<string, string> = {};
+  const outOfBlock: Record<string, string> = {};
+  if (!fs.existsSync(file))
+    return { inBlock, outOfBlock };
+  let within = false;
+  for (const rawLine of fs.readFileSync(file, 'utf-8').split('\n')) {
+    const line = rawLine.endsWith('\r') ? rawLine.slice(0, -1) : rawLine;
+    if (line === BLOCK_START) {
+      within = true;
+      continue;
+    }
+    if (line === BLOCK_END) {
+      within = false;
+      continue;
+    }
+    const key = envLineKey(line);
+    if (key === undefined)
+      continue;
+    const trimmed = line.trim();
+    const value = trimmed.slice(trimmed.indexOf('=') + 1).trim();
+    (within ? inBlock : outOfBlock)[key] = value;
+  }
+  return { inBlock, outOfBlock };
+}
+
+/** Values a developer might write to mean "off". */
+const OFF_VALUES = new Set(['', 'false', '0', 'no', 'off']);
+
+/**
+ * Normalises a dev-flag value to `'true'` (on) or `''` (off). The flags are read
+ * by their consumers as truthy strings (e.g. `if (import.meta.env.VITE_DEV_LOGS)`),
+ * so a literal `false` would otherwise still be on — we map any off-word to an
+ * empty (falsy) value that every consumer style reads as disabled. Absent = on.
+ */
+function resolveDevFlag(existing: string | undefined): string {
+  if (existing === undefined)
+    return 'true';
+  return OFF_VALUES.has(existing.trim().toLowerCase()) ? '' : 'true';
+}
+
+/**
+ * Resolved values for the always-on dev flags. Each defaults to on, but an
+ * existing value is preserved so a developer who turns a flag off keeps it off
+ * (`=false`, `=0`, `=off`, or empty all disable it). A value the developer wrote
+ * OUTSIDE the managed block wins (their override, no matter where they put it —
+ * it gets consolidated back into the block); else the current in-block value
+ * carries over; else the flag defaults on.
+ */
+export function devFlagUpdates(file: string): Record<string, string> {
+  const { inBlock, outOfBlock } = readManagedSplit(file);
+  const updates: Record<string, string> = {};
+  for (const key of MANAGED_DEV_FLAG_KEYS)
+    updates[key] = resolveDevFlag(outOfBlock[key] ?? inBlock[key]);
+  return updates;
+}
+
+/**
+ * Writes the dev:web-managed block. The default-on dev flags are always
+ * included; the instance keys only when running an instance (pass its computed
+ * env as `instanceUpdates`, or omit for a non-instance run, which also strips
+ * any stale instance keys). Call on every `pnpm dev` run so a fresh checkout
+ * still gets the dev flags.
+ */
+export function writeManagedEnv(file: string, instanceUpdates: Record<string, string> = {}): void {
+  writeEnvFile(file, { ...instanceUpdates, ...devFlagUpdates(file) }, { managed: ALL_MANAGED_KEYS });
 }

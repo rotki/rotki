@@ -6,8 +6,8 @@ import { config } from 'dotenv';
 import {
   cleanAll,
   cleanInstance,
-  clearManagedEnvBlock,
   DEFAULT_PORTS,
+  devFlagUpdates,
   type InstanceRuntime,
   PortSlotAllocationError,
   prepareInstance,
@@ -15,6 +15,7 @@ import {
   pruneInstances,
   readManagedInstanceName,
   repairRegistry,
+  writeManagedEnv,
 } from './dev-instance';
 import { errorMessage, formatPort } from './dev-instance/format';
 import { getCurrentGitBranch } from './dev-instance/git';
@@ -23,6 +24,7 @@ import { registerShutdownHandlers, terminateSubprocesses } from './dev/process-p
 import { startDevelopmentEnvironment } from './dev/services';
 
 const ENV_FILE_RELATIVE = 'app/.env.development.local';
+const APP_ENV_RELATIVE = 'app/.env';
 
 const logger = consola.withTag('[36mdev[0m');
 
@@ -81,8 +83,16 @@ async function dispatchManagementSubcommand(options: DevCliOptions): Promise<boo
 }
 
 function loadDevEnv(): void {
+  // `.env.development.local` (instance/dev overrides) wins; `app/.env` is the
+  // base. dotenv never overrides an already-set var, so load the override
+  // first. This makes PREMIUM_COMPONENT_DIR — configured once in `app/.env` —
+  // visible to start-dev and the children it spawns (electron, proxy), so the
+  // dev-proxy no longer needs its own `frontend/dev-proxy/.env`.
   if (fs.existsSync(ENV_FILE_RELATIVE)) {
     config({ path: ENV_FILE_RELATIVE });
+  }
+  if (fs.existsSync(APP_ENV_RELATIVE)) {
+    config({ path: APP_ENV_RELATIVE });
   }
 }
 
@@ -164,14 +174,13 @@ function readSlotHint(resolvedName: string): number | undefined {
 
 async function resolveInstance(options: DevCliOptions, useProxy: boolean): Promise<InstanceRuntime | null> {
   if (options.instance === false) {
-    // Explicit --no-instance: erase any stale managed block from a prior
-    // instance run so Vite doesn't read INSTANCE_PORT_SLOT / VITE_BACKEND_URL
-    // pointing at a slot we're no longer using.
+    // Explicit --no-instance: drop any stale instance keys from a prior instance
+    // run so Vite doesn't read INSTANCE_PORT_SLOT / VITE_BACKEND_URL pointing at
+    // a slot we're no longer using. The dev-flags block is still (re)written
+    // afterwards by writeManagedEnv, so this only strips the instance keys.
     const staleOwner = readManagedInstanceName(ENV_FILE_RELATIVE);
-    if (staleOwner !== undefined) {
-      clearManagedEnvBlock(ENV_FILE_RELATIVE);
-      logger.info(`--no-instance: cleared managed env block left over from "${staleOwner}"`);
-    }
+    if (staleOwner !== undefined)
+      logger.info(`--no-instance: dropping managed instance keys left over from "${staleOwner}"`);
     return null;
   }
   const name = pickInstanceName(options.instance);
@@ -243,6 +252,19 @@ async function runDevAction(options: DevCliOptions): Promise<void> {
       + `colibri=${formatPort(instance.ports.colibri)} dev=${formatPort(instance.ports.dev)}`,
     );
   }
+  else {
+    // Non-instance run: prepareInstance never ran, so write the managed block
+    // ourselves. It carries only the always-on dev flags (default on, existing
+    // values preserved) and strips any stale instance keys from a prior run.
+    writeManagedEnv(ENV_FILE_RELATIVE);
+  }
+
+  // Propagate the resolved dev flags to this run's children (electron reads
+  // ENABLE_DEV_TOOLS from process.env; vite the VITE_* ones) so they take effect
+  // on the first run too, before the env file is re-read next time. Read after
+  // the managed block was (re)written above so we pick up the consolidated values.
+  for (const [key, value] of Object.entries(devFlagUpdates(ENV_FILE_RELATIVE)))
+    process.env[key] = value;
 
   registerShutdownHandlers();
   setupProfilingEnvironment(options);
