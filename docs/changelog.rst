@@ -2,6 +2,8 @@
 Changelog
 =========
 
+* :feature:`12002` You can now jump straight from a history event to the accounting rule that governs it, and from an accounting rule to the events it matches, with the event type, subtype and counterparty filter applied automatically.
+* :feature:`12002` The history event editor and the accounting rules settings now link out to documentation explaining each event type, subtype and accounting rule option, so it is clearer what options like "Count cost basis PnL" or the Swap and Basis transfer treatments do.
 * :feature:`-` Calendar reminders are always checked after the initial balance query to ensure notifications are sent.
 * :feature:`12505` If Gnosis Pay replaced your Safe during its security migration, rotki now detects when you track only the previous or new Safe and offers to add the missing address.
 * :feature:`12277` The balance snapshot manager has been redesigned: snapshots now open in a dedicated editor reached from the net worth chart, with a clearer balances table, a locations drawer, sum-mismatch reconciliation, per-date exchange-rate overrides and undoable edits.
