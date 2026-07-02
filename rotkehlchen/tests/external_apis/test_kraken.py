@@ -2,7 +2,7 @@ from typing import TYPE_CHECKING
 
 import pytest
 
-from rotkehlchen.constants.assets import A_BTC, A_ETH, A_EUR, A_GNO, A_INDEX, A_USD
+from rotkehlchen.constants.assets import A_3CRV, A_BTC, A_ETH, A_EUR, A_GNO, A_USD
 from rotkehlchen.constants.prices import ZERO_PRICE
 from rotkehlchen.externalapis.kraken import Kraken
 from rotkehlchen.fval import FVal
@@ -39,7 +39,7 @@ def test_kraken_query_multiple_current_prices():
             A_BTC.resolve_to_asset_with_oracles(),
             A_ETH.resolve_to_asset_with_oracles(),
             A_GNO.resolve_to_asset_with_oracles(),
-            A_INDEX.resolve_to_asset_with_oracles(),
+            A_3CRV.resolve_to_asset_with_oracles(),
         ],
         to_asset=A_USD.resolve_to_asset_with_oracles(),
     )
@@ -51,7 +51,7 @@ def test_kraken_query_multiple_current_prices():
     assert A_GNO in prices
     assert prices[A_GNO] == Price(FVal('106.340000'))
     # INDEX is not listed on Kraken, so no price is returned for it
-    assert A_INDEX not in prices
+    assert A_3CRV not in prices
 
 
 @pytest.mark.vcr
@@ -80,7 +80,7 @@ def test_kraken_unsupported_asset_returns_zero_price():
     """An asset not listed on Kraken yields no price (ZERO_PRICE) without raising."""
     kraken = Kraken()
     price = kraken.query_current_price(
-        from_asset=A_INDEX.resolve_to_asset_with_oracles(),
+        from_asset=A_3CRV.resolve_to_asset_with_oracles(),
         to_asset=A_USD.resolve_to_asset_with_oracles(),
     )
     assert price == ZERO_PRICE

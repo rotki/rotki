@@ -535,7 +535,7 @@ def test_purge_module_data(rotkehlchen_api_server: 'APIServer') -> None:
     def check_data(name: str | None, before: bool) -> None:
         with rotki.data.db.conn.read_ctx() as cursor:
             if not name or name == 'loopring':
-                assert cursor.execute('SELECT COUNT(*) FROM multisettings').fetchone()[0] == (221 if before else 220)  # noqa: E501
+                assert cursor.execute("SELECT COUNT(*) FROM multisettings WHERE name='loopring_0xfoo_account_id'").fetchone()[0] == (1 if before else 0)  # noqa: E501
             if not name or name == 'cowswap':
                 assert cursor.execute('SELECT COUNT(*) FROM cowswap_orders').fetchone()[0] == (1 if before else 0)  # noqa: E501
             if not name or name == 'gnosis_pay':

@@ -48,7 +48,6 @@ ModuleName = Literal[
     'makerdao_dsr',
     'makerdao_vaults',
     'uniswap',
-    'loopring',
     'eth2',
     'sushiswap',
     'liquity',
@@ -59,6 +58,7 @@ ModuleName = Literal[
 OnlyPurgeableModuleName = Literal[
     'gnosis_pay',  # only to purge DB table
     'cowswap',     # only to purge DB table
+    'loopring',    # only to purge legacy DB data
 ]
 
 PurgeableModuleName = ModuleName | OnlyPurgeableModuleName
@@ -69,7 +69,6 @@ AVAILABLE_MODULES_MAP = {
     'makerdao_dsr': 'MakerDAO DSR',
     'makerdao_vaults': 'MakerDAO Vaults',
     'uniswap': 'Uniswap',
-    'loopring': 'Loopring',
     'eth2': 'Eth2',
     'sushiswap': 'Sushiswap',
     'liquity': 'Liquity',
@@ -105,7 +104,6 @@ class ExternalService(SerializableEnumNameMixin):
     ETHERSCAN = auto()
     CRYPTOCOMPARE = auto()
     BEACONCHAIN = auto()
-    LOOPRING = auto()
     OPENSEA = auto()
     BLOCKSCOUT = auto()
     THEGRAPH = auto()
@@ -773,7 +771,7 @@ class Location(DBCharEnumMixIn):
     ICONOMI = 22
     KUCOIN = 23
     BALANCER = 24
-    LOOPRING = 25
+    LOOPRING = 25  # Loopring is shut down but we keep the location for historical data
     FTX = 26  # FTX is dead but we keep the location for historical reasons
     NEXO = 27
     BLOCKFI = 28

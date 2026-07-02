@@ -150,7 +150,6 @@
     "submit_usage_analytics": true,
     "active_modules": [
       "liquity",
-      "loopring",
       "uniswap",
       "nfts",
       "pickle_finance",

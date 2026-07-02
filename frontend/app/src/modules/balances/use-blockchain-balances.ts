@@ -8,12 +8,10 @@ import { useStatusStore } from '@/modules/core/common/use-status-store';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
 import { BalanceSource } from '@/modules/settings/types/frontend-settings';
 import { useBalanceProcessingService } from './services/use-balance-processing-service';
-import { useLoopringBalanceService } from './services/use-loopring-balance-service';
 
 interface UseBlockchainBalancesReturn {
   fetchBlockchainBalances: (payload?: BlockchainBalancePayload) => Promise<void>;
   refreshBlockchainBalances: (payload?: BlockchainBalancePayload, periodic?: boolean) => Promise<void>;
-  fetchLoopringBalances: (refresh: boolean) => Promise<void>;
 }
 
 export function useBlockchainBalances(): UseBlockchainBalancesReturn {
@@ -22,7 +20,6 @@ export function useBlockchainBalances(): UseBlockchainBalancesReturn {
   const valueThreshold = useValueThreshold(BalanceSource.BLOCKCHAIN);
 
   const { handleCachedFetch, handleRefresh } = useBalanceProcessingService();
-  const { fetchLoopringBalances } = useLoopringBalanceService();
   const { queueBalanceQueries } = useBalanceQueue();
   const refreshState = useBalanceRefreshState();
 
@@ -61,7 +58,6 @@ export function useBlockchainBalances(): UseBlockchainBalancesReturn {
 
   return {
     fetchBlockchainBalances,
-    fetchLoopringBalances,
     refreshBlockchainBalances,
   };
 }

@@ -237,11 +237,13 @@
     "balances": {
       "all_balances": {
         "error": {
-          "message": "Échec de la récupération de tous les soldes : {message}",
-          "title": "Requête de tous les soldes"
+          "message": "Échec de la requête des soldes et de l'enregistrement de l'instantané : {message}",
+          "title": "Échec de l'enregistrement de l'instantané des soldes"
         },
         "task": {
-          "title": "Requête de tous les soldes"
+          "description": "Requête de tous les soldes et enregistrement d'un instantané pour les statistiques.",
+          "ignore_errors_note": "Les erreurs survenues pendant la requête seront ignorées.",
+          "title": "Enregistrement de l'instantané des soldes"
         }
       },
       "blockchain": {
@@ -342,15 +344,6 @@
         "task": {
           "description": "Récupération du taux de {fromAsset} à {toAsset} à la date {date} | Récupération des taux pour {count} paires à {toAsset}",
           "title": "Récupération du taux de conversion"
-        }
-      },
-      "loopring": {
-        "error": {
-          "description": "Échec de la requête des soldes Loopring : {error}",
-          "title": "Requête des soldes Loopring"
-        },
-        "task": {
-          "title": "Requête des soldes Loopring"
         }
       },
       "manual_balances": {
@@ -1891,13 +1884,6 @@
       "title": "Etherscan"
     },
     "get_api_key": "Vous pouvez demander une clé API {link}",
-    "loopring": {
-      "description": "Utilisé pour interroger les soldes Loopring. Cette clé API ne pourra interroger que le compte qui a généré cette clé.",
-      "hint": "Entrer votre clé API Loopring",
-      "not_enabled": "Le module Loopring n'est pas activé. Vos soldes ne seront pas récupérés à moins que vous n'activiez le module Loopring",
-      "settings": "Paramètres",
-      "title": "Loopring"
-    },
     "monerium": {
       "access_token": "Jeton d'accès",
       "auth_failed": "Échec de l'autorisation avec Monerium",

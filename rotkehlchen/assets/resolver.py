@@ -39,8 +39,9 @@ class AssetResolver:
     # Maps asset identifier -> collection main_asset identifier (or None if not in a collection).
     # None is a valid cached value so presence must be tested with `identifier.lower() in cache`.
     collection_main_asset_cache: LRUCacheLowerKey[str | None] = LRUCacheLowerKey(maxsize=512)
-    # Maps asset identifier -> all assets in its collection (or just itself if in no collection).
-    collection_assets_cache: LRUCacheLowerKey[tuple['Asset', ...]] = LRUCacheLowerKey(maxsize=512)
+    # Maps asset identifier -> its normalized identifier for existence checks. Lets
+    # check_existence avoid a globaldb query for every event row during deserialization.
+    existence_cache: LRUCacheLowerKey[str] = LRUCacheLowerKey(maxsize=512)
 
     def __new__(  # noqa: PYI034 # singleton pattern should not get Self
             cls,
@@ -69,12 +70,12 @@ class AssetResolver:
             AssetResolver.__instance.assets_cache.remove(identifier)
             AssetResolver.__instance.types_cache.remove(identifier)
             AssetResolver.__instance.collection_main_asset_cache.remove(identifier)
-            AssetResolver.__instance.collection_assets_cache.remove(identifier)
+            AssetResolver.__instance.existence_cache.remove(identifier)
         else:
             AssetResolver.__instance.assets_cache.clear()
             AssetResolver.__instance.types_cache.clear()
             AssetResolver.__instance.collection_main_asset_cache.clear()
-            AssetResolver.__instance.collection_assets_cache.clear()
+            AssetResolver.__instance.existence_cache.clear()
 
     @staticmethod
     def get_collection_main_asset(identifier: str) -> str | None:
@@ -91,23 +92,6 @@ class AssetResolver:
         main_asset = AssetResolver._globaldb.get_collection_main_asset(identifier)
         cache.add(identifier, main_asset)
         return main_asset
-
-    @staticmethod
-    def get_assets_in_same_collection(identifier: str) -> tuple['Asset', ...]:
-        """Return all assets in the same collection as identifier, memoized.
-
-        Mirrors GlobalDBHandler.get_assets_in_same_collection but caches the result to avoid
-        re-running the collection JOIN on hot paths (e.g. Inquirer.set_cached_price, called once
-        per priced asset on every balance refresh). Returns (Asset(identifier),) when the asset
-        is in no collection. The value is never None, so a None get() result means a cache miss.
-        """
-        cache = AssetResolver.collection_assets_cache
-        if (cached := cache.get(identifier)) is not None:
-            return cached
-
-        result = AssetResolver._globaldb.get_assets_in_same_collection(identifier)
-        cache.add(identifier, result)
-        return result
 
     @staticmethod
     def resolve_asset(identifier: str) -> 'AssetWithNameAndType':
@@ -146,6 +130,12 @@ class AssetResolver:
         if (cached_data := AssetResolver.types_cache.get(identifier)) is not None:
             return cached_data
 
+        # If the asset was already fully resolved its type is known, so reuse it
+        # instead of issuing a fresh `SELECT type` query against the globaldb.
+        if (resolved := AssetResolver.assets_cache.get(identifier)) is not None:
+            AssetResolver.types_cache.add(identifier, resolved.asset_type)
+            return resolved.asset_type
+
         try:
             asset_type = AssetResolver._globaldb.get_asset_type(identifier)
         except UnknownAsset:
@@ -171,6 +161,8 @@ class AssetResolver:
         """
         if (cached_data := AssetResolver.assets_cache.get(identifier)) is not None:
             return cached_data.identifier
+        if (normalized_id := AssetResolver.existence_cache.get(identifier)) is not None:
+            return normalized_id
 
         try:
             normalized_id = AssetResolver._globaldb.asset_id_exists(identifier)
@@ -184,6 +176,7 @@ class AssetResolver:
                 use_packaged_db=True,
             )
 
+        AssetResolver.existence_cache.add(identifier, normalized_id)
         return normalized_id
 
     @staticmethod
@@ -204,6 +197,9 @@ class AssetResolver:
             if (cached_data := AssetResolver.assets_cache.get(identifier)) is not None:
                 normalized_map[identifier] = cached_data.identifier
                 continue
+            if (normalized_id := AssetResolver.existence_cache.get(identifier)) is not None:
+                normalized_map[identifier] = normalized_id
+                continue
             to_check.add(identifier)
 
         found_ids: set[str] = set()
@@ -218,6 +214,8 @@ class AssetResolver:
                     found_ids.update(row[0] for row in cursor)
 
         normalized_map.update({identifier: identifier for identifier in found_ids})
+        for identifier in found_ids:
+            AssetResolver.existence_cache.add(identifier, identifier)
 
         if len(missing_ids := to_check - found_ids) == 0:
             return normalized_map, set()
@@ -239,6 +237,8 @@ class AssetResolver:
                     packaged_found.update(row[0] for row in cursor)
 
         normalized_map.update({identifier: identifier for identifier in packaged_found})
+        for identifier in packaged_found:
+            AssetResolver.existence_cache.add(identifier, identifier)
         unknown_ids = missing_non_constant | (missing_constant - packaged_found)
         return normalized_map, unknown_ids
 

@@ -108,9 +108,17 @@ def load_config_from_file() -> dict[str, Any] | None:
             return data
 
 
+def env_flag_is_set(value: str | None) -> bool:
+    """Interpret a string environment variable as a boolean flag.
+
+    Treats common truthy spellings (true/1/yes/on) as True, everything else as False.
+    """
+    return value is not None and value.strip().lower() in {'1', 'true', 'yes', 'on'}
+
+
 def load_config_from_env() -> dict[str, Any]:
     loglevel = os.environ.get('LOGLEVEL')
-    logfromothermodules = os.environ.get('LOGFROMOTHERMODDULES')
+    logfromothermodules = env_flag_is_set(os.environ.get('LOGFROMOTHERMODULES'))
     max_size_in_mb_all_logs = os.environ.get('MAX_SIZE_IN_MB_ALL_LOGS')
     max_logfiles_num = os.environ.get('MAX_LOGFILES_NUM')
     sqlite_instructions = os.environ.get('SQLITE_INSTRUCTIONS')

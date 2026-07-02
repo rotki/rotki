@@ -29,6 +29,10 @@ Changelog
 * :bug:`-` The login screen no longer pre-fills the username field with a remembered account that no longer exists.
 * :feature:`12002` Adding or editing a history event now uses a plain-language "Action" picker grouped by intent (Trade, Transfer, DeFi, Staking, etc.) with search and keyboard navigation, replacing the raw event-type and subtype dropdowns.
 * :feature:`12086` The "Create account" flow now starts with a mode chooser so creating a new local profile and restoring a database synced from rotki cloud are separate, focused paths.
+* :feature:`12499` Additional crypto.com CSV import transaction kinds such as van purchases, fiat wallet limit orders, and extra earn interest payments will now be properly imported.
+* :bug:`12507` The documented ``LOGFROMOTHERMODULES`` Docker environment variable is now honored again (it was misspelled internally) and accepts truthy string values such as ``true``, ``1``, ``yes`` and ``on``.
+* :bug:`-` The rate-limit hint in the PnL report's missing prices dialog is now a warning icon next to the refresh button, so its tooltip no longer covers the price input or the buttons of nearby rows.
+* :bug:`-` The pending task shown while balances are queried now makes clear that a balance snapshot is being saved for statistics, and notes when query errors are being ignored.
 * :bug:`-` The "history out of sync" warning shown before generating a PnL report now lets you start the history sync right there, instead of only sending you to the history page.
 * :bug:`-` Trying to add an ETH staking validator on a plan that doesn't include staking now shows a clear message saying your plan has no staking access, instead of a confusing "ETH staking limit of 0 ETH" error.
 * :bug:`12463` Querying price for custom asset under certain conditions no longer fails the task.
@@ -38,6 +42,7 @@ Changelog
 * :bug:`-` Adding or removing a blockchain account (or removing a spam token) now correctly invalidates the cached balances, so you no longer briefly see stale balances afterwards.
 * :bug:`-` Odos swaps now show the received amount before the router fee, so the fee no longer makes that asset go negative.
 * :bug:`-` rotki now notifies you when Blockscout is queried without an API key instead of silently skipping it.
+* :feature:`-` Loopring tracking has been removed since the Loopring API has shut down. Existing historical Loopring data is preserved.
 
 * :release:`1.43.2 <2026-06-18>`
 * :bug:`-` Manually refetching Hyperliquid transactions now also refetches Hyperliquid Core history, so missed Core events can be recovered.

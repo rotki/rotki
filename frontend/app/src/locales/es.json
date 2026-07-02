@@ -172,11 +172,13 @@
     "balances": {
       "all_balances": {
         "error": {
-          "message": "Error al recuperar todos los balances: {message}",
-          "title": "Consultar todos los balances"
+          "message": "No se pudieron consultar los balances ni guardar la instantánea: {message}",
+          "title": "Error al guardar la instantánea de balances"
         },
         "task": {
-          "title": "Consultar todos los balances"
+          "description": "Consultando todos los balances y guardando una instantánea para las estadísticas.",
+          "ignore_errors_note": "Se ignorarán los errores durante la consulta.",
+          "title": "Guardando instantánea de balances"
         }
       },
       "blockchain": {
@@ -248,15 +250,6 @@
         "task": {
           "description": "Recuperando tipos de {fromAsset} a {toAsset} en {date} | Recuperando tasas para {count} pares a {toAsset}",
           "title": "Recuperando el tipo de intercambio"
-        }
-      },
-      "loopring": {
-        "error": {
-          "description": "La consulta de balances de Loopring falló: {error}",
-          "title": "Consultando balances de Loopring"
-        },
-        "task": {
-          "title": "Consultando balances de Loopring"
         }
       },
       "manual_balances": {
@@ -1661,13 +1654,6 @@
       "title": "Etherscan"
     },
     "get_api_key": "You can apply for an API key {link}",
-    "loopring": {
-      "description": "Used to query balances in Loopring. This API key will only be able to query the account that generated this key.",
-      "hint": "Enter your Loopring API key",
-      "not_enabled": "The Loopring module is not enabled. Your balances won't be retrieved unless you enable the loopring module",
-      "settings": "Ajustes",
-      "title": "Loopring"
-    },
     "opensea": {
       "description": "Used to query NFT information and balances from OpenSea.",
       "hint": "Enter your OpenSea API key",

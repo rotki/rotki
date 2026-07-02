@@ -74,7 +74,6 @@ describe('modules/accounts/table/components/table/AccountActions', () => {
   function createWrapper(props: {
     accountOperation: boolean;
     group?: 'evm' | 'xpub';
-    isOnlyShowingLoopringChain: boolean;
     isSectionLoading: boolean;
     isVirtual: boolean;
     row: AccountDataRow<BlockchainAccountWithBalance> | AccountDataRow<BlockchainAccountGroupWithBalance>;
@@ -101,7 +100,6 @@ describe('modules/accounts/table/components/table/AccountActions', () => {
       wrapper = createWrapper({
         accountOperation: false,
         group: 'evm',
-        isOnlyShowingLoopringChain: false,
         isSectionLoading: false,
         isVirtual: false,
         row: createAccountRow('eth'),
@@ -118,7 +116,6 @@ describe('modules/accounts/table/components/table/AccountActions', () => {
       wrapper = createWrapper({
         accountOperation: false,
         group: 'evm',
-        isOnlyShowingLoopringChain: false,
         isSectionLoading: false,
         isVirtual: false,
         row: createAccountRow('eth'),
@@ -134,7 +131,6 @@ describe('modules/accounts/table/components/table/AccountActions', () => {
       wrapper = createWrapper({
         accountOperation: false,
         group: 'evm',
-        isOnlyShowingLoopringChain: false,
         isSectionLoading: false,
         isVirtual: false,
         row: createAccountRow('btc'),
@@ -149,7 +145,6 @@ describe('modules/accounts/table/components/table/AccountActions', () => {
       wrapper = createWrapper({
         accountOperation: false,
         group: 'evm',
-        isOnlyShowingLoopringChain: false,
         isSectionLoading: false,
         isVirtual: false,
         row: createGroupRow(['eth']),
@@ -165,7 +160,6 @@ describe('modules/accounts/table/components/table/AccountActions', () => {
       wrapper = createWrapper({
         accountOperation: false,
         group: 'evm',
-        isOnlyShowingLoopringChain: false,
         isSectionLoading: false,
         isVirtual: false,
         row: createGroupRow(['eth', 'optimism']),
@@ -180,7 +174,6 @@ describe('modules/accounts/table/components/table/AccountActions', () => {
       wrapper = createWrapper({
         accountOperation: false,
         group: 'evm',
-        isOnlyShowingLoopringChain: false,
         isSectionLoading: false,
         isVirtual: false,
         row: createGroupRow(['btc', 'bch']),
@@ -191,13 +184,12 @@ describe('modules/accounts/table/components/table/AccountActions', () => {
   });
 
   describe('rowActions visibility', () => {
-    it('should show RowActions when not virtual and not only showing Loopring chain', () => {
+    it('should show RowActions when not virtual', () => {
       supportsTransactionsMock.mockReturnValue(true);
 
       wrapper = createWrapper({
         accountOperation: false,
         group: 'evm',
-        isOnlyShowingLoopringChain: false,
         isSectionLoading: false,
         isVirtual: false,
         row: createAccountRow('eth'),
@@ -212,24 +204,8 @@ describe('modules/accounts/table/components/table/AccountActions', () => {
       wrapper = createWrapper({
         accountOperation: false,
         group: 'evm',
-        isOnlyShowingLoopringChain: false,
         isSectionLoading: false,
         isVirtual: true,
-        row: createAccountRow('eth'),
-      });
-
-      expect(wrapper.findComponent({ name: 'RowActions' }).exists()).toBe(false);
-    });
-
-    it('should hide RowActions when isOnlyShowingLoopringChain is true', () => {
-      supportsTransactionsMock.mockReturnValue(true);
-
-      wrapper = createWrapper({
-        accountOperation: false,
-        group: 'evm',
-        isOnlyShowingLoopringChain: true,
-        isSectionLoading: false,
-        isVirtual: false,
         row: createAccountRow('eth'),
       });
 
@@ -244,7 +220,6 @@ describe('modules/accounts/table/components/table/AccountActions', () => {
       wrapper = createWrapper({
         accountOperation: false,
         group: 'evm',
-        isOnlyShowingLoopringChain: false,
         isSectionLoading: false,
         isVirtual: false,
         row: createAccountRow('eth'),
@@ -260,7 +235,6 @@ describe('modules/accounts/table/components/table/AccountActions', () => {
       wrapper = createWrapper({
         accountOperation: false,
         group: 'xpub',
-        isOnlyShowingLoopringChain: false,
         isSectionLoading: false,
         isVirtual: false,
         row: createAccountRow('btc'),
@@ -276,7 +250,6 @@ describe('modules/accounts/table/components/table/AccountActions', () => {
       wrapper = createWrapper({
         accountOperation: false,
         group: undefined,
-        isOnlyShowingLoopringChain: false,
         isSectionLoading: false,
         isVirtual: false,
         row: createAccountRow('eth'),
@@ -295,7 +268,6 @@ describe('modules/accounts/table/components/table/AccountActions', () => {
       wrapper = createWrapper({
         accountOperation: false,
         group: 'evm',
-        isOnlyShowingLoopringChain: false,
         isSectionLoading: false,
         isVirtual: false,
         row,
@@ -317,7 +289,6 @@ describe('modules/accounts/table/components/table/AccountActions', () => {
       wrapper = createWrapper({
         accountOperation: false,
         group: 'evm',
-        isOnlyShowingLoopringChain: false,
         isSectionLoading: false,
         isVirtual: false,
         row,
@@ -340,7 +311,6 @@ describe('modules/accounts/table/components/table/AccountActions', () => {
       wrapper = createWrapper({
         accountOperation: true,
         group: 'evm',
-        isOnlyShowingLoopringChain: false,
         isSectionLoading: false,
         isVirtual: false,
         row: createAccountRow('eth'),
@@ -356,7 +326,6 @@ describe('modules/accounts/table/components/table/AccountActions', () => {
       wrapper = createWrapper({
         accountOperation: false,
         group: 'evm',
-        isOnlyShowingLoopringChain: false,
         isSectionLoading: false,
         isVirtual: false,
         row: createAccountRow('eth'),
@@ -374,7 +343,6 @@ describe('modules/accounts/table/components/table/AccountActions', () => {
       wrapper = createWrapper({
         accountOperation: false,
         group: 'evm',
-        isOnlyShowingLoopringChain: false,
         isSectionLoading: true,
         isVirtual: false,
         row: createAccountRow('eth'),
@@ -392,7 +360,6 @@ describe('modules/accounts/table/components/table/AccountActions', () => {
       wrapper = createWrapper({
         accountOperation: false,
         group: 'evm',
-        isOnlyShowingLoopringChain: false,
         isSectionLoading: false,
         isVirtual: false,
         row: createGroupRow(['optimism']),
@@ -408,7 +375,6 @@ describe('modules/accounts/table/components/table/AccountActions', () => {
       wrapper = createWrapper({
         accountOperation: false,
         group: 'evm',
-        isOnlyShowingLoopringChain: false,
         isSectionLoading: false,
         isVirtual: false,
         row: createGroupRow(['eth', 'optimism', 'btc']),

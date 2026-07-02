@@ -174,11 +174,13 @@
     "balances": {
       "all_balances": {
         "error": {
-          "message": "获取所有余额失败：{message}",
-          "title": "查询所有余额"
+          "message": "查询余额并保存快照失败：{message}",
+          "title": "余额快照保存失败"
         },
         "task": {
-          "title": "查询所有余额"
+          "description": "正在查询所有余额并保存统计快照。",
+          "ignore_errors_note": "查询过程中的错误将被忽略。",
+          "title": "保存余额快照"
         }
       },
       "blockchain": {
@@ -253,15 +255,6 @@
         "task": {
           "description": "在 {date} 从 {fromAsset} 获取利率到 {toAsset} | 获取 {count} 对到 {toAsset} 的速率",
           "title": "获取转化率"
-        }
-      },
-      "loopring": {
-        "error": {
-          "description": "查询路印协议余额失败：{error}",
-          "title": "查询路印协议余额"
-        },
-        "task": {
-          "title": "查询路印协议余额"
         }
       },
       "manual_balances": {
@@ -1721,13 +1714,6 @@
       "title": "Etherscan"
     },
     "get_api_key": "您可以申请 an API key {link}",
-    "loopring": {
-      "description": "用于查询路印协议中的余额。此API密钥只能查询生成此密钥的账户。",
-      "hint": "输入您的 Loopring API 密钥",
-      "not_enabled": "路印协议模块未启用。除非您启用路印协议模块，否则您的余额将不会被检索",
-      "settings": "设置",
-      "title": "Loopring"
-    },
     "opensea": {
       "description": "用于查询OpenSea的NFT信息和余额。",
       "hint": "输入您的 OpenSea API key",

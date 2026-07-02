@@ -1,5 +1,4 @@
 import type { MaybeRef } from 'vue';
-import { Blockchain } from '@rotki/common';
 import { useTokenDetectionOrchestrator } from '@/modules/balances/blockchain/use-token-detection-orchestrator';
 import { useExchanges } from '@/modules/balances/exchanges/use-exchanges';
 import { useBlockchainBalances } from '@/modules/balances/use-blockchain-balances';
@@ -8,22 +7,15 @@ import { BlockchainRefreshButtonBehaviour } from '@/modules/settings/types/front
 import { useFrontendSettingsStore } from '@/modules/settings/use-frontend-settings-store';
 
 export const useBalanceRefresh = createSharedComposable(() => {
-  const { fetchLoopringBalances, refreshBlockchainBalances } = useBlockchainBalances();
+  const { refreshBlockchainBalances } = useBlockchainBalances();
   const { fetchConnectedExchangeBalances, fetchSelectedExchangeBalances } = useExchanges();
   const { blockchainRefreshButtonBehaviour } = storeToRefs(useFrontendSettingsStore());
 
   const refreshBlockchainBalancesFn = async (blockchain?: string | string[]): Promise<void> => {
     const chain = blockchain ? arrayify(blockchain) : undefined;
-    const pending: Promise<any>[] = [
-      refreshBlockchainBalances({
-        blockchain: chain,
-      }),
-    ];
-
-    if (!chain || chain.includes(Blockchain.ETH))
-      pending.push(fetchLoopringBalances(true));
-
-    await Promise.allSettled(pending);
+    await refreshBlockchainBalances({
+      blockchain: chain,
+    });
   };
 
   const { detectAllTokens } = useTokenDetectionOrchestrator();

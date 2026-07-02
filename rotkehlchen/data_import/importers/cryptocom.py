@@ -87,10 +87,13 @@ class CryptocomImporter(BaseExchangeImporter):
             'crypto_purchase',
             'crypto_exchange',
             'viban_purchase',
+            'van_purchase',
             'crypto_viban_exchange',
+            'crypto_to_van_sell_order',
             'recurring_buy_order',
             'card_top_up',
             'trading.limit_order.cash_account.purchase_commit',  # a fulfilled limit order
+            'trading.limit_order.fiat_wallet.sell_commit',  # a fulfilled limit order
         }:
             # variable mapping to raw data
             currency = csv_row['Currency']
@@ -103,9 +106,12 @@ class CryptocomImporter(BaseExchangeImporter):
             if row_type in {
                 'crypto_exchange',
                 'crypto_viban_exchange',
+                'crypto_to_van_sell_order',
                 'recurring_buy_order',
                 'viban_purchase',
+                'van_purchase',
                 'trading.limit_order.cash_account.purchase_commit',  # a fulfilled limit order
+                'trading.limit_order.fiat_wallet.sell_commit',  # a fulfilled limit order
             }:
                 # trades (fiat, crypto) to (crypto, fiat)
                 base_asset = asset_from_cryptocom(to_currency)
@@ -174,7 +180,14 @@ class CryptocomImporter(BaseExchangeImporter):
             'referral_gift',
             'referral_bonus',
             'crypto_earn_interest_paid',
+            'crypto_earn_extra_interest_paid',
+            'finance.lockup.dpos_compound_interest.crypto_wallet',
+            'finance.dpos.non_compound_interest.crypto_wallet',
             'reimbursement',
+            'gift_card_reward',
+            'admin_wallet_credited',
+            'campaign_reward',
+            'reward.loyalty_program.trading_rebate.crypto_wallet',
         }:
             asset = asset_from_cryptocom(csv_row['Currency'])
             amount = deserialize_fval(csv_row['Amount'])
@@ -256,6 +269,7 @@ class CryptocomImporter(BaseExchangeImporter):
             'crypto_earn_program_withdrawn',
             'lockup_lock',
             'lockup_unlock',
+            'lockup_upgrade',
             'dynamic_coin_swap_bonus_exchange_deposit',
             'crypto_wallet_swap_debited',
             'crypto_wallet_swap_credited',
@@ -272,6 +286,12 @@ class CryptocomImporter(BaseExchangeImporter):
             'airdrop_locked',
             'trading.limit_order.cash_account.purchase_lock',
             'trading.limit_order.cash_account.purchase_unlock',
+            'trading.limit_order.fiat_wallet.purchase_lock',
+            'trading.limit_order.fiat_wallet.purchase_unlock',
+            'trading.limit_order.fiat_wallet.sell_lock',
+            'trading.limit_order.crypto_wallet.fund_lock',
+            'finance.lockup.dpos_lock.crypto_wallet',
+            'finance.dpos.staking.crypto_wallet',
         }:
             raise SkippedCSVEntry("Entry doesn't affect wallet balance")
         elif row_type in {

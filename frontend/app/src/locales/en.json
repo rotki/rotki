@@ -392,11 +392,13 @@
     "balances": {
       "all_balances": {
         "error": {
-          "message": "Failed to fetch all balances: {message}",
-          "title": "Querying all Balances"
+          "message": "Failed to query balances and save the snapshot: {message}",
+          "title": "Balance Snapshot Failed"
         },
         "task": {
-          "title": "Query All Balances"
+          "description": "Querying all balances and saving a snapshot for statistics.",
+          "ignore_errors_note": "Errors during the query will be ignored.",
+          "title": "Saving Balance Snapshot"
         }
       },
       "blockchain": {
@@ -518,15 +520,6 @@
         "task": {
           "description": "Fetching rate from {fromAsset} to {toAsset} on {date} | Fetching rates for {count} pairs to {toAsset}",
           "title": "Fetching conversion rate"
-        }
-      },
-      "loopring": {
-        "error": {
-          "description": "Querying Loopring balances failed: {error}",
-          "title": "Querying Loopring balances"
-        },
-        "task": {
-          "title": "Querying Loopring balances"
         }
       },
       "manual_balances": {
@@ -3119,13 +3112,6 @@
       "hint": "Enter your Helius API key",
       "title": "Helius"
     },
-    "loopring": {
-      "description": "Used to query balances in Loopring. This API key will only be able to query the account that generated this key.",
-      "hint": "Enter your Loopring API key",
-      "not_enabled": "The Loopring module is not enabled. Your balances won't be retrieved unless you enable the loopring module",
-      "settings": "Settings",
-      "title": "Loopring"
-    },
     "monerium": {
       "access_token": "Access token",
       "auth_failed": "Failed to authorize with Monerium",
@@ -5332,7 +5318,7 @@
         "no_filled_prices": "No prices are filled",
         "price_is_saved": "Price is saved",
         "price_not_found": "Price not found",
-        "refresh_price_hint": "Rate limiting detected when rokti tried to fetch the historical price. You can either fetch the historical price again manually, or input manual price.",
+        "refresh_price_hint": "Rate limiting detected when rotki tried to fetch the historical price. You can either fetch the historical price again manually, or input manual price.",
         "regenerate_report_nudge": "click button below to re-generate the report.",
         "skipped_all_events_confirmation": "Are you sure you want to skip all events whose asset price is missing?",
         "title": "Missing Prices ({total})",

@@ -29,6 +29,10 @@ const modules = computed<PurgeableModuleEntry[]>(() => {
     icon: getPublicProtocolImagePath('gnosis_pay.png'),
     identifier: PurgeableOnlyModule.GNOSIS_PAY,
     name: 'Gnosis Pay',
+  }, {
+    icon: getPublicProtocolImagePath('loopring.svg'),
+    identifier: PurgeableOnlyModule.LOOPRING,
+    name: 'Loopring',
   }];
 
   return modules.filter(item => (items && items.length > 0 ? items.includes(item.identifier) : true));

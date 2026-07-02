@@ -168,11 +168,13 @@
     "balances": {
       "all_balances": {
         "error": {
-          "message": "Failed to fetch all balances: {message}",
-          "title": "Querying all Balances"
+          "message": "Αποτυχία ερωτήματος υπολοίπων και αποθήκευσης του στιγμιότυπου: {message}",
+          "title": "Αποτυχία στιγμιότυπου υπολοίπων"
         },
         "task": {
-          "title": "Query All Balances"
+          "description": "Ερώτημα όλων των υπολοίπων και αποθήκευση στιγμιότυπου για τα στατιστικά.",
+          "ignore_errors_note": "Τα σφάλματα κατά τη διάρκεια του ερωτήματος θα αγνοηθούν.",
+          "title": "Αποθήκευση στιγμιότυπου υπολοίπων"
         }
       },
       "blockchain": {
@@ -247,15 +249,6 @@
         "task": {
           "description": "Fetching rate from {fromAsset} to {toAsset} on {date} | Fetching rates for {count} pairs to {toAsset}",
           "title": "Fetching conversion rate"
-        }
-      },
-      "loopring": {
-        "error": {
-          "description": "Querying Loopring balances failed: {error}",
-          "title": "Querying Loopring balances"
-        },
-        "task": {
-          "title": "Querying Loopring balances"
         }
       },
       "manual_balances": {
@@ -1677,13 +1670,6 @@
       "title": "Etherscan"
     },
     "get_api_key": "You can apply for an API key {link}",
-    "loopring": {
-      "description": "Used to query balances in Loopring. This API key will only be able to query the account that generated this key.",
-      "hint": "Enter your Loopring API key",
-      "not_enabled": "The Loopring module is not enabled. Your balances won't be retrieved unless you enable the loopring module",
-      "settings": "Settings",
-      "title": "Loopring"
-    },
     "opensea": {
       "description": "Used to query NFT information and balances from OpenSea.",
       "hint": "Enter your OpenSea API key",

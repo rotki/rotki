@@ -1104,7 +1104,12 @@ def test_find_yearn_v1_vault_token_price(inquirer_defi):
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('should_mock_current_price_queries', [False])
 def test_cache_is_hit_for_collection(inquirer: Inquirer):
-    """Test that the price for a collection is saved to cache and not query for every asset"""
+    """Test that the price for a collection is saved to cache and not queried for every asset.
+
+    Querying one member of a multi-chain collection (wstETH on mainnet) and then another member
+    (wstETH on optimism) must return the same price with only a single oracle query, since every
+    member normalizes to the collection main asset on cache lookup.
+    """
     wsteth = Asset('eip155:1/erc20:0x7f39C581F595B53c5cb19bD0b3f8dA6c935E2Ca0')
     wsteth_op = Asset('eip155:10/erc20:0x1F32b1c2345538c0c6f582fCB022739c4A194Ebb')
     with mock.patch.object(
@@ -1112,30 +1117,12 @@ def test_cache_is_hit_for_collection(inquirer: Inquirer):
         '_query_oracle_instances',
         wraps=inquirer._query_oracle_instances,
     ) as oracle_query:
-        inquirer.find_usd_price(wsteth)
-        assert (wsteth_op, A_USD) in inquirer._cached_current_price.cache
-        inquirer.find_usd_price(wsteth_op)
+        wsteth_price = inquirer.find_usd_price(wsteth)
+        wsteth_op_price = inquirer.find_usd_price(wsteth_op)
 
+    assert wsteth_price != ZERO_PRICE
+    assert wsteth_op_price == wsteth_price
     assert oracle_query.call_count == 1
-
-
-@pytest.mark.parametrize('should_mock_current_price_queries', [False])
-def test_collection_assets_query_is_memoized(inquirer: Inquirer):
-    """Test that get_assets_in_same_collection is memoized so set_cached_price (called once per
-    priced asset on every balance refresh) does not re-run the collection JOIN every time."""
-    wsteth = Asset('eip155:1/erc20:0x7f39C581F595B53c5cb19bD0b3f8dA6c935E2Ca0')
-    AssetResolver.clean_memory_cache(wsteth.identifier)
-    with mock.patch.object(
-        GlobalDBHandler,
-        'get_assets_in_same_collection',
-        wraps=GlobalDBHandler.get_assets_in_same_collection,
-    ) as collection_query:
-        first = AssetResolver.get_assets_in_same_collection(wsteth.identifier)
-        second = AssetResolver.get_assets_in_same_collection(wsteth.identifier)
-
-    assert collection_query.call_count == 1, 'collection JOIN must be memoized across calls'
-    assert first == second
-    assert wsteth in first  # sanity: wstETH belongs to a multi-chain collection
 
 
 @pytest.mark.parametrize('should_mock_current_price_queries', [False])
