@@ -2,7 +2,7 @@ import type { ApiUrls } from '@shared/ipc';
 
 function getDefaultCoreUrl(): string {
   if (import.meta.env.VITE_BACKEND_URL)
-    return import.meta.env.VITE_BACKEND_URL as string;
+    return import.meta.env.VITE_BACKEND_URL;
 
   if (import.meta.env.VITE_PUBLIC_PATH) {
     const pathname = window.location.pathname;
@@ -14,7 +14,7 @@ function getDefaultCoreUrl(): string {
 
 function getDefaultColibriUrl(): string {
   if (import.meta.env.VITE_COLIBRI_URL)
-    return import.meta.env.VITE_COLIBRI_URL as string;
+    return import.meta.env.VITE_COLIBRI_URL;
 
   if (import.meta.env.VITE_PUBLIC_PATH) {
     const pathname = window.location.pathname;

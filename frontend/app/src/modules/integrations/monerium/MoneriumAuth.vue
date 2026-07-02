@@ -24,7 +24,7 @@ const featureGate = computed<FeatureGate>(() => {
   return { allowed: get(allowed), message };
 });
 
-const websiteUrl = import.meta.env.VITE_ROTKI_WEBSITE_URL as string | undefined;
+const websiteUrl = import.meta.env.VITE_ROTKI_WEBSITE_URL;
 
 const isAuthorizing = ref<boolean>(false);
 const showTokenInput = ref<boolean>(false);

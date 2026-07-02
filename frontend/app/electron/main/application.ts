@@ -41,8 +41,8 @@ export class Application {
     isDev: checkIfDevelopment(),
     isMac: process.platform === 'darwin',
     urls: {
-      coreApiUrl: import.meta.env.VITE_BACKEND_URL as string,
-      colibriApiUrl: import.meta.env.VITE_COLIBRI_URL as string,
+      coreApiUrl: import.meta.env.VITE_BACKEND_URL,
+      colibriApiUrl: import.meta.env.VITE_COLIBRI_URL,
     },
     ports: {
       colibriPort: instancePort('ROTKI_INSTANCE_COLIBRI_PORT', DEFAULT_COLIBRI_PORT),
