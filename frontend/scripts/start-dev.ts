@@ -6,6 +6,7 @@ import { config } from 'dotenv';
 import {
   cleanAll,
   cleanInstance,
+  clearManagedEnvBlock,
   DEFAULT_PORTS,
   devFlagUpdates,
   type InstanceRuntime,
@@ -15,7 +16,6 @@ import {
   pruneInstances,
   readManagedInstanceName,
   repairRegistry,
-  writeManagedEnv,
 } from './dev-instance';
 import { errorMessage, formatPort } from './dev-instance/format';
 import { getCurrentGitBranch } from './dev-instance/git';
@@ -174,13 +174,9 @@ function readSlotHint(resolvedName: string): number | undefined {
 
 async function resolveInstance(options: DevCliOptions, useProxy: boolean): Promise<InstanceRuntime | null> {
   if (options.instance === false) {
-    // Explicit --no-instance: drop any stale instance keys from a prior instance
-    // run so Vite doesn't read INSTANCE_PORT_SLOT / VITE_BACKEND_URL pointing at
-    // a slot we're no longer using. The dev-flags block is still (re)written
-    // afterwards by writeManagedEnv, so this only strips the instance keys.
-    const staleOwner = readManagedInstanceName(ENV_FILE_RELATIVE);
-    if (staleOwner !== undefined)
-      logger.info(`--no-instance: dropping managed instance keys left over from "${staleOwner}"`);
+    // Explicit --no-instance: force default mode. runDevAction already stripped
+    // the managed block (via useDefaultDevEnv) before loading env, so there's
+    // nothing to do here beyond signalling default mode.
     return null;
   }
   const name = pickInstanceName(options.instance);
@@ -223,6 +219,50 @@ async function tearDownAndExit(error: unknown, exitCode: number): Promise<never>
   process.exit(exitCode);
 }
 
+/**
+ * Whether this run enters instance mode. True for an explicit `--instance [name]`,
+ * or when a wrapper has exported INSTANCE_NAME in the shell (the wt-managed case).
+ * `--no-instance` always forces default mode.
+ *
+ * MUST be evaluated BEFORE loadDevEnv, so process.env.INSTANCE_NAME reflects only
+ * a real shell export and not a stale managed block in the env file: plain
+ * `pnpm dev` / `dev:web` ignores a leftover file block rather than silently
+ * resuming the instance it names.
+ */
+function wantsInstanceMode(option: DevCliOptions['instance']): boolean {
+  if (option === false)
+    return false;
+  if (option === true || (typeof option === 'string' && option.length > 0))
+    return true;
+  return !!process.env.INSTANCE_NAME;
+}
+
+/**
+ * Plain `pnpm dev` / `dev:web`: ignore the managed block entirely. Strip it from
+ * `.env.development.local` BEFORE the env files are loaded, so the instance keys
+ * (ports, data dir, INSTANCE_NAME) never reach process.env. Otherwise Vite —
+ * which gives process.env VITE_* vars priority over .env files — would point the
+ * renderer at the instance backend, and resolveInstance would resume the
+ * instance. A dev flag a developer set outside the block is left in place.
+ */
+function useDefaultDevEnv(): void {
+  const staleOwner = readManagedInstanceName(ENV_FILE_RELATIVE);
+  clearManagedEnvBlock(ENV_FILE_RELATIVE);
+  if (staleOwner !== undefined)
+    logger.info(`Ignoring managed env block left over from "${staleOwner}"; using default dev env`);
+}
+
+/**
+ * Instance mode: propagate the resolved dev flags to this run's children
+ * (electron reads ENABLE_DEV_TOOLS from process.env; vite the VITE_* ones) so
+ * they take effect on the first run too, before the env file is re-read next
+ * time.
+ */
+function propagateInstanceEnv(): void {
+  for (const [key, value] of Object.entries(devFlagUpdates(ENV_FILE_RELATIVE)))
+    process.env[key] = value;
+}
+
 async function runDevAction(options: DevCliOptions): Promise<void> {
   try {
     if (await dispatchManagementSubcommand(options))
@@ -233,6 +273,11 @@ async function runDevAction(options: DevCliOptions): Promise<void> {
   }
 
   ensurePrerequisites();
+
+  // Decide instance vs default from CLI/shell before loading env, then for a
+  // default run strip the managed block first so it can't leak into process.env.
+  if (!wantsInstanceMode(options.instance))
+    useDefaultDevEnv();
   loadDevEnv();
 
   const useProxy = shouldUseProxy(options);
@@ -251,20 +296,8 @@ async function runDevAction(options: DevCliOptions): Promise<void> {
       `  ports: backend=${formatPort(instance.ports.restApi)} proxy=${formatPort(instance.ports.proxy)} `
       + `colibri=${formatPort(instance.ports.colibri)} dev=${formatPort(instance.ports.dev)}`,
     );
+    propagateInstanceEnv();
   }
-  else {
-    // Non-instance run: prepareInstance never ran, so write the managed block
-    // ourselves. It carries only the always-on dev flags (default on, existing
-    // values preserved) and strips any stale instance keys from a prior run.
-    writeManagedEnv(ENV_FILE_RELATIVE);
-  }
-
-  // Propagate the resolved dev flags to this run's children (electron reads
-  // ENABLE_DEV_TOOLS from process.env; vite the VITE_* ones) so they take effect
-  // on the first run too, before the env file is re-read next time. Read after
-  // the managed block was (re)written above so we pick up the consolidated values.
-  for (const [key, value] of Object.entries(devFlagUpdates(ENV_FILE_RELATIVE)))
-    process.env[key] = value;
 
   registerShutdownHandlers();
   setupProfilingEnvironment(options);

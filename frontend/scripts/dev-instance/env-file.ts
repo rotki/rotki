@@ -12,10 +12,12 @@ export const MANAGED_ENV_KEYS = [
 ] as const;
 
 /**
- * Dev toggles that `pnpm dev` / `dev:web` keeps on by default. They live in the
- * managed block so a fresh checkout gets them without hand-editing, but a value
- * a developer has already set (in the env file or the shell) is preserved — see
- * `devFlagUpdates`. Never written for production builds (start-dev is dev-only).
+ * Dev toggles that instance runs (`pnpm dev --instance`) keep on by default.
+ * They live in the managed block so a fresh instance gets them without
+ * hand-editing, but a value a developer has already set (in the env file or the
+ * shell) is preserved (see `devFlagUpdates`). Plain `pnpm dev` / `dev:web` does
+ * NOT enable them; it strips the managed block and runs on the defaults. Never
+ * written for production builds (start-dev is dev-only).
  */
 export const MANAGED_DEV_FLAG_KEYS = [
   'ENABLE_DEV_TOOLS',
@@ -162,10 +164,12 @@ export function readManagedInstanceName(file: string): string | undefined {
 
 /**
  * Removes the dev:web-managed block (and any orphan managed keys) from `file`.
- * Leaves every unmanaged line untouched. Useful when an instance is cleaned and
- * we want to remove the env trail it wrote.
+ * Leaves every unmanaged line untouched. Useful when an instance is cleaned or a
+ * plain `pnpm dev` run wants the env trail gone. Defaults to stripping only the
+ * instance keys as orphans: a dev flag the developer set outside the block is
+ * their own line and is left in place (we don't touch or manage it).
  */
-export function clearManagedEnvBlock(file: string, opts: { managed: readonly string[] } = { managed: ALL_MANAGED_KEYS }): void {
+export function clearManagedEnvBlock(file: string, opts: { managed: readonly string[] } = { managed: MANAGED_ENV_KEYS }): void {
   if (!fs.existsSync(file))
     return;
   const managed = new Set(opts.managed);
@@ -220,28 +224,37 @@ function resolveDevFlag(existing: string | undefined): string {
 }
 
 /**
- * Resolved values for the always-on dev flags. Each defaults to on, but an
- * existing value is preserved so a developer who turns a flag off keeps it off
- * (`=false`, `=0`, `=off`, or empty all disable it). A value the developer wrote
- * OUTSIDE the managed block wins (their override, no matter where they put it —
- * it gets consolidated back into the block); else the current in-block value
- * carries over; else the flag defaults on.
+ * Resolved values for the default-on dev flags, to be written into the managed
+ * block. Each defaults to on, but an existing in-block value is preserved so a
+ * developer who turns a flag off keeps it off (`=false`, `=0`, `=off`, or empty
+ * all disable it). A flag the developer set OUTSIDE the managed block is their
+ * own line: we don't touch or manage it, so it's skipped here (never defaulted,
+ * never consolidated into the block).
  */
 export function devFlagUpdates(file: string): Record<string, string> {
   const { inBlock, outOfBlock } = readManagedSplit(file);
   const updates: Record<string, string> = {};
-  for (const key of MANAGED_DEV_FLAG_KEYS)
-    updates[key] = resolveDevFlag(outOfBlock[key] ?? inBlock[key]);
+  for (const key of MANAGED_DEV_FLAG_KEYS) {
+    if (key in outOfBlock)
+      continue;
+    updates[key] = resolveDevFlag(inBlock[key]);
+  }
   return updates;
 }
 
 /**
- * Writes the dev:web-managed block. The default-on dev flags are always
- * included; the instance keys only when running an instance (pass its computed
- * env as `instanceUpdates`, or omit for a non-instance run, which also strips
- * any stale instance keys). Call on every `pnpm dev` run so a fresh checkout
- * still gets the dev flags.
+ * Writes the dev:web-managed block for an instance run: the instance keys (pass
+ * its computed env as `instanceUpdates`) plus the default-on dev flags. Plain
+ * `pnpm dev` / `dev:web` does not call this: it strips the managed block via
+ * `clearManagedEnvBlock` and runs on the defaults.
+ *
+ * A dev flag the developer set outside the block is left in place: it's excluded
+ * from both the block content (via `devFlagUpdates`) and the managed key set, so
+ * writeEnvFile's orphan-strip doesn't remove their line.
  */
 export function writeManagedEnv(file: string, instanceUpdates: Record<string, string> = {}): void {
-  writeEnvFile(file, { ...instanceUpdates, ...devFlagUpdates(file) }, { managed: ALL_MANAGED_KEYS });
+  const { outOfBlock } = readManagedSplit(file);
+  const externalFlags = new Set(MANAGED_DEV_FLAG_KEYS.filter(key => key in outOfBlock));
+  const managed = ALL_MANAGED_KEYS.filter(key => !externalFlags.has(key));
+  writeEnvFile(file, { ...instanceUpdates, ...devFlagUpdates(file) }, { managed });
 }
