@@ -79,6 +79,16 @@ def app_args(prog: str, description: str) -> argparse.ArgumentParser:
         default=5043,
     )
     p.add_argument(
+        '--api-server-backend',
+        help=(
+            'The server implementation serving the rest and websockets API. The '
+            'asgi (asyncio) server is the transitional opt-in of the gevent removal '
+            'migration; see docs/designs/gevent_to_asyncio.md'
+        ),
+        choices=('gevent', 'asgi'),
+        default='gevent',
+    )
+    p.add_argument(
         '--api-cors',
         help='Comma separated list of domains for the API to accept cross origin requests.',
         default='http://localhost:*/*',

@@ -13,7 +13,7 @@ the decision log.
 | 1 | Stdlib primitives + spawn seam + gevent import ban | **in progress** — business logic done (~45 files); test files remain (phases 2-3 exemption) |
 | 2 | Cooperative cancellation (replaces `greenlet.kill`) | **done** — CancellationToken + checkpoints landed, `greenlet.kill`/`GreenletKilledError` removed, substrate `gevent.Timeout` replaced |
 | 3 | DB driver dual-mode (gevent / threading backends) | **done** — gevent-free driver with SchedulingMode, transaction-slot locking replaces poll loops, both-modes tests + stress test, atomicity audit done (crash-class findings fixed) |
-| 4 | ASGI server behind a flag (uvicorn + WSGI bridge + native websockets) | not started |
+| 4 | ASGI server behind a flag (uvicorn + WSGI bridge + native websockets) | **done** — `--api-server-backend asgi` serves REST+`/ws` via uvicorn on one port; gevent stays default; `api-asgi` CI leg |
 | 5 | Task orchestration on the asyncio loop | not started |
 | 6 | The flip: remove monkey patching and gevent | not started |
 | 7 | Harvest: native-async hot paths, free-threading experiments | not started |
@@ -248,6 +248,34 @@ uvicorn serving: WSGI bridge (a2wsgi-style) for the unchanged Flask app + a nati
 websocket route at `/ws` on the same port + `RotkiNotifier` rewrite. Selectable via
 CLI flag; gevent server remains the default. CI gets a matrix leg running api and
 websocket test groups in the new mode.
+
+As implemented:
+
+- Verified experimentally that uvicorn's asyncio event loop coexists with the still
+  active monkeypatching: the loop runs in a dedicated greenlet and its selector is
+  gevent's cooperative one, so all other greenlets keep running while it serves;
+  a2wsgi's bridge dispatches each request into a "thread" that is a greenlet under
+  the patching, so concurrent requests interleave exactly as before (measured: five
+  0.5s-sleeping requests complete in ~0.5s through the bridge).
+- New `rotkehlchen/api/asgi.py`: `create_asgi_app()` routes `/ws` to a native
+  websocket handler and everything else to the Flask app through
+  `a2wsgi.WSGIMiddleware`. One port serves both, as with the gevent server.
+- `RotkiNotifier` did not need a rewrite after all: `AsgiWebsocketSubscriber`
+  duck-types the small surface the notifier uses (`closed` + `send()`). Its `send()`
+  enqueues onto a per-client `asyncio.Queue` via `loop.call_soon_threadsafe` and a
+  per-connection sender coroutine drains it — the per-client-queue design from the
+  plan, hidden behind the existing notifier so both serving modes share one
+  implementation. Send failures raise the new `WebsocketSendError`, which the
+  notifier handles like `WebSocketError`.
+- `APIServer.start(backend=...)` selects the server; `--api-server-backend
+  {gevent,asgi}` (default gevent) wires it from the CLI. uvicorn runs with
+  `log_config=None` (inherits rotki logging) and `access_log=False` (the Flask
+  before/after request hooks already log).
+- Tests: `create_api_server` honors `ROTKI_API_SERVER_BACKEND=asgi`, and CI got an
+  `api-asgi` matrix leg running the whole api test group (which includes the
+  websocket fixture tests) in the new mode.
+- Dependencies added: `uvicorn`, `a2wsgi` (and `websockets` promoted from
+  transitive to direct as uvicorn's ws protocol backend).
 
 ### Phase 5 — Task orchestration on the loop
 

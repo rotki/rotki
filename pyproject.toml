@@ -55,6 +55,10 @@ dependencies = [
     "marshmallow==4.2.2",
     "webargs==8.7.0",
     "werkzeug==3.1.8",
+    # the asyncio api server of the gevent removal migration (docs/designs/gevent_to_asyncio.md)
+    "uvicorn==0.47.0",
+    "a2wsgi==1.10.10",
+    "websockets==15.0.1",  # uvicorn's websocket protocol backend (also a solana dep)
     # for fuzzy search of assets
     "polyleven==0.9",
     # We used to only use this for packaging, but now use it for the version comparison functionality
@@ -452,7 +456,7 @@ known-third-party = ["packaging"]  # packaging is otherwise detected as first-pa
 "rotkehlchen/logging.py" = ["TID251"]  # greenlet name in log records (phase 5)
 "rotkehlchen/rotkehlchen.py" = ["TID251"]  # main loop spawn/shutdown event (phase 5)
 "rotkehlchen/api/rest.py" = ["TID251"]  # async-query greenlets and killall (phase 5)
-"rotkehlchen/api/websockets/notifier.py" = ["TID251"]  # geventwebsocket (phase 4)
+"rotkehlchen/api/websockets/notifier.py" = ["TID251"]  # geventwebsocket, until the gevent server is removed (phase 6)
 "rotkehlchen/greenlets/*" = ["TID251"]  # greenlet manager (phase 5)
 "rotkehlchen/tasks/manager.py" = ["TID251"]  # greenlet typing/scheduling (phase 5)
 "rotkehlchen/premium/sync.py" = ["TID251"]  # gevent hub threadpool offload (phase 5)
@@ -470,7 +474,7 @@ known-third-party = ["packaging"]  # packaging is otherwise detected as first-pa
 ]
 "rotkehlchen/api/server.py" = [
     "T201",  # got prints in server.py
-    "TID251",  # gevent WSGIServer + geventwebsocket (phase 4)
+    "TID251",  # gevent WSGIServer + geventwebsocket, until the gevent server is removed (phase 6)
 ]
 "rotkehlchen/args.py" = ["T201"]  # got prints in args.py
 "rotkehlchen/db/minimized_schema.py" = [

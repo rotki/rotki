@@ -79,3 +79,7 @@ class DBUploadStatusStep(StrEnum):
     COMPRESSING = auto()
     ENCRYPTING = auto()
     UPLOADING = auto()
+
+
+class WebsocketSendError(Exception):
+    """Raised when sending a message to a websocket subscriber fails"""

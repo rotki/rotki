@@ -41,9 +41,12 @@ def create_api_server(
 ) -> APIServer:
     api_server = APIServer(RestAPI(rotkehlchen=rotki), rotki.rotki_notifier)
     api_server.flask_app.config['SERVER_NAME'] = f'127.0.0.1:{rest_port_number}'
+    # the asgi CI leg of the gevent removal migration sets this env var to asgi
+    backend = os.environ.get('ROTKI_API_SERVER_BACKEND', 'gevent')
     api_server.start(
         host='127.0.0.1',
         rest_port=rest_port_number,
+        backend='asgi' if backend == 'asgi' else 'gevent',
     )
 
     # Fixes flaky test, where requests are done prior to the server initializing

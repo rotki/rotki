@@ -7,6 +7,15 @@ exclude-newer = "0001-01-01T00:00:00Z" # This has no effect and is included for 
 exclude-newer-span = "P1W"
 
 [[package]]
+name = "a2wsgi"
+version = "1.10.10"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/9a/cb/822c56fbea97e9eee201a2e434a80437f6750ebcb1ed307ee3a0a7505b14/a2wsgi-1.10.10.tar.gz", hash = "sha256:a5bcffb52081ba39df0d5e9a884fc6f819d92e3a42389343ba77cbf809fe1f45", size = 18799, upload-time = "2025-06-18T09:00:10.843Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/02/d5/349aba3dc421e73cbd4958c0ce0a4f1aa3a738bc0d7de75d2f40ed43a535/a2wsgi-1.10.10-py3-none-any.whl", hash = "sha256:d2b21379479718539dc15fce53b876251a0efe7615352dfe49f6ad1bc507848d", size = 17389, upload-time = "2025-06-18T09:00:09.676Z" },
+]
+
+[[package]]
 name = "aiohappyeyeballs"
 version = "2.6.1"
 source = { registry = "https://pypi.org/simple" }
@@ -2150,6 +2159,7 @@ wheels = [
 name = "rotkehlchen"
 source = { editable = "." }
 dependencies = [
+    { name = "a2wsgi" },
     { name = "aiohttp" },
     { name = "beautifulsoup4" },
     { name = "bech32" },
@@ -2195,8 +2205,10 @@ dependencies = [
     { name = "substrate-interface" },
     { name = "tzdata", marker = "sys_platform == 'win32'" },
     { name = "urllib3" },
+    { name = "uvicorn" },
     { name = "web3" },
     { name = "webargs" },
+    { name = "websockets" },
     { name = "werkzeug" },
     { name = "wsaccel" },
 ]
@@ -2269,6 +2281,7 @@ profiling = [
 
 [package.metadata]
 requires-dist = [
+    { name = "a2wsgi", specifier = "==1.10.10" },
     { name = "aiohttp", specifier = "==3.14.1" },
     { name = "beautifulsoup4", specifier = "==4.14.2" },
     { name = "bech32", specifier = "==1.2.0" },
@@ -2315,8 +2328,10 @@ requires-dist = [
     { name = "substrate-interface", specifier = "==1.8.1" },
     { name = "tzdata", marker = "sys_platform == 'win32'", specifier = "==2025.2" },
     { name = "urllib3", specifier = "==2.7.0" },
+    { name = "uvicorn", specifier = "==0.47.0" },
     { name = "web3", specifier = "==7.16.0" },
     { name = "webargs", specifier = "==8.7.0" },
+    { name = "websockets", specifier = "==15.0.1" },
     { name = "werkzeug", specifier = "==3.1.8" },
     { name = "wsaccel", specifier = "==0.6.7" },
 ]
