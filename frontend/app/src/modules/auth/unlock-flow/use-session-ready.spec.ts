@@ -47,6 +47,10 @@ vi.mock('@/modules/core/messaging/use-update-message', () => ({
   useUpdateMessage: vi.fn(() => ({ showReleaseNotes: showReleaseNotesRef })),
 }));
 
+vi.mock('@/modules/integrations/gnosis-pay/use-gnosis-pay-safe-migration', () => ({
+  useGnosisPaySafeMigration: vi.fn(() => ({ checkAndNotify: vi.fn().mockResolvedValue(undefined) })),
+}));
+
 describe('useSessionReady', () => {
   beforeEach(() => {
     setActivePinia(createPinia());

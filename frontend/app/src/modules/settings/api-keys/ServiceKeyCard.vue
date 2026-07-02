@@ -43,6 +43,7 @@ const emit = defineEmits<{
 defineSlots<{
   'default': () => any;
   'left-buttons': () => any;
+  'banner': () => any;
 }>();
 
 const { t } = useI18n({ useScope: 'global' });
@@ -113,6 +114,12 @@ defineExpose({
           {{ subtitle }}
         </template>
       </RuiCardHeader>
+      <div
+        v-if="$slots.banner"
+        class="px-6 pb-2"
+      >
+        <slot name="banner" />
+      </div>
     </div>
     <div
       v-if="featureBlocked"

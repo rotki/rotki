@@ -100,6 +100,8 @@ describe('user-types', () => {
       autoDetectTokensCooldownHours: 24,
       autoDetectTokensOnLogin: false,
       lastAutoDetectAt: 0,
+      gnosisPaySafeMigrationLastNotified: 0,
+      gnosisPaySafeMigrationNeverNotify: false,
     };
 
     const raw = {
