@@ -202,6 +202,8 @@ defineExpose({
       :location="location"
       :entry-type="HistoryEventEntryType.HISTORY_EVENT"
       :v$="v$"
+      show-accounting-rule-link
+      :dirty="stateUpdated"
       class="mb-4"
     />
 

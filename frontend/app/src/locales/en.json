@@ -6111,6 +6111,7 @@
             "non_empty": "The validator index field cannot be empty."
           }
         },
+        "view_accounting_rule": "View accounting rule",
         "withdrawal_address": {
           "label": "Withdrawal Address",
           "validation": {
