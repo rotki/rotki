@@ -25,3 +25,17 @@ export interface GnosisPayErrorContext {
 export const GnosisPayAdminsMappingSchema = z.record(z.string(), z.array(z.string()));
 
 export type GnosisPayAdminsMapping = z.infer<typeof GnosisPayAdminsMappingSchema>;
+
+export const GnosisPayUntrackedSafeSchema = z.object({
+  address: z.string(),
+  type: z.enum(['new', 'old']),
+});
+
+export type GnosisPayUntrackedSafe = z.infer<typeof GnosisPayUntrackedSafeSchema>;
+
+export const GnosisPaySafeMigrationSchema = z.object({
+  migrationId: z.string(),
+  untrackedAddresses: z.array(GnosisPayUntrackedSafeSchema),
+});
+
+export type GnosisPaySafeMigration = z.infer<typeof GnosisPaySafeMigrationSchema>;

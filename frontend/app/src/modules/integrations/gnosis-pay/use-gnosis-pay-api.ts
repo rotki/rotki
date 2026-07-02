@@ -1,9 +1,15 @@
 import { api } from '@/modules/core/api/rotki-api';
 import { type PendingTask, PendingTaskSchema } from '@/modules/core/tasks/types';
-import { type GnosisPayAdminsMapping, GnosisPayAdminsMappingSchema } from '@/modules/integrations/gnosis-pay/types';
+import {
+  type GnosisPayAdminsMapping,
+  GnosisPayAdminsMappingSchema,
+  type GnosisPaySafeMigration,
+  GnosisPaySafeMigrationSchema,
+} from '@/modules/integrations/gnosis-pay/types';
 
 interface GnosisPaySiweApiReturn {
   fetchGnosisPayAdmins: () => Promise<GnosisPayAdminsMapping>;
+  fetchGnosisPaySafeMigration: () => Promise<GnosisPaySafeMigration>;
   fetchNonce: () => Promise<PendingTask>;
   verifySiweSignature: (message: string, signature: string) => Promise<PendingTask>;
 }
@@ -12,6 +18,11 @@ export function useGnosisPaySiweApi(): GnosisPaySiweApiReturn {
   const fetchGnosisPayAdmins = async (): Promise<GnosisPayAdminsMapping> => {
     const response = await api.get<GnosisPayAdminsMapping>('/services/gnosispay/admins');
     return GnosisPayAdminsMappingSchema.parse(response);
+  };
+
+  const fetchGnosisPaySafeMigration = async (): Promise<GnosisPaySafeMigration> => {
+    const response = await api.get<GnosisPaySafeMigration>('/services/gnosispay/migration');
+    return GnosisPaySafeMigrationSchema.parse(response);
   };
 
   const fetchNonce = async (): Promise<PendingTask> => {
@@ -42,6 +53,7 @@ export function useGnosisPaySiweApi(): GnosisPaySiweApiReturn {
 
   return {
     fetchGnosisPayAdmins,
+    fetchGnosisPaySafeMigration,
     fetchNonce,
     verifySiweSignature,
   };

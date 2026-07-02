@@ -200,6 +200,8 @@ export const FrontendSettings = z.object({
     Defaults.DEFAULT_EVM_QUERY_INDICATOR_MIN_OUT_OF_SYNC_PERIOD,
   ),
   explorers: ExplorersSettings.default({}),
+  gnosisPaySafeMigrationLastNotified: z.number().int().nonnegative().default(0),
+  gnosisPaySafeMigrationNeverNotify: z.boolean().default(false),
   graphZeroBased: z.boolean().default(false),
   ignoreSnapshotError: z.boolean().default(false),
   itemsPerPage: z.number().positive().int().default(10),

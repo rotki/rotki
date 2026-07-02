@@ -46,6 +46,53 @@ describe('useGnosisPaySiweApi', () => {
     });
   });
 
+  describe('fetchGnosisPaySafeMigration', () => {
+    it('should GET the migration and camelCase the untracked address', async () => {
+      server.use(
+        http.get(`${backendUrl}/api/1/services/gnosispay/migration`, () =>
+          HttpResponse.json({
+            result: {
+              migration_id: 'safe-replacement-2026-06',
+              untracked_addresses: [{
+                address: '0xabcdef1234567890abcdef1234567890abcdef12',
+                type: 'new',
+              }],
+            },
+            message: '',
+          })),
+      );
+
+      const { fetchGnosisPaySafeMigration } = useGnosisPaySiweApi();
+      const result = await fetchGnosisPaySafeMigration();
+
+      expect(result).toEqual({
+        migrationId: 'safe-replacement-2026-06',
+        untrackedAddresses: [{
+          address: '0xabcdef1234567890abcdef1234567890abcdef12',
+          type: 'new',
+        }],
+      });
+    });
+
+    it('should return an empty untracked list when nothing is missing', async () => {
+      server.use(
+        http.get(`${backendUrl}/api/1/services/gnosispay/migration`, () =>
+          HttpResponse.json({
+            result: {
+              migration_id: 'safe-replacement-2026-06',
+              untracked_addresses: [],
+            },
+            message: '',
+          })),
+      );
+
+      const { fetchGnosisPaySafeMigration } = useGnosisPaySiweApi();
+      const result = await fetchGnosisPaySafeMigration();
+
+      expect(result.untrackedAddresses).toEqual([]);
+    });
+  });
+
   describe('fetchNonce', () => {
     it('should send GET request with async_query param and returns pending task', async () => {
       let capturedUrl: URL | undefined;

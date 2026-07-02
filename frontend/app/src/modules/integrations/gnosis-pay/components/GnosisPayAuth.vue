@@ -6,11 +6,13 @@ import { useMessageStore } from '@/modules/core/common/use-message-store';
 import { PremiumFeature, useFeatureAccess } from '@/modules/premium/use-feature-access';
 import { useExternalApiKeys } from '@/modules/settings/api-keys/external/use-external-api-keys';
 import ServiceKeyCard, { type FeatureGate } from '@/modules/settings/api-keys/ServiceKeyCard.vue';
+import AccountDisplay from '@/modules/shell/components/display/AccountDisplay.vue';
 import { useUnifiedProviders } from '@/modules/wallet/providers/use-unified-providers';
 import ProviderSelectionDialog from '@/modules/wallet/ProviderSelectionDialog.vue';
 import { useWalletStore } from '@/modules/wallet/use-wallet-store';
 import { AuthStep, GnosisPayError } from '../types';
 import { useGnosisPayAuthState, useGnosisPayAuthSteps } from '../use-gnosis-pay-auth-state';
+import { useGnosisPaySafeMigration } from '../use-gnosis-pay-safe-migration';
 import { useGnosisPaySigning } from '../use-gnosis-pay-signing';
 import { useGnosisPayWallet } from '../use-gnosis-pay-wallet';
 import GnosisPayAddressValidation from './GnosisPayAddressValidation.vue';
@@ -24,6 +26,12 @@ const name = 'gnosis_pay';
 const GNOSIS_CHAIN_ID = 100;
 const { useApiKey, confirmDelete, load, loading } = useExternalApiKeys();
 const key = useApiKey(name);
+
+const { addMissingSafe, adding, checkMigration, hasUntrackedSafe, untrackedAccount, untrackedSafe } = useGnosisPaySafeMigration();
+
+const safeMigrationKeypath = computed<string>(() => get(untrackedSafe)?.type === 'new'
+  ? 'external_services.gnosispay.safe_migration.missing_new'
+  : 'external_services.gnosispay.safe_migration.missing_old');
 
 const { allowed, minimumTier, premium } = useFeatureAccess(PremiumFeature.GNOSIS_PAY);
 const featureGate = computed<FeatureGate>(() => {
@@ -90,6 +98,7 @@ const signing = useGnosisPaySigning({
   errorType,
   onSignInComplete: async () => {
     await load();
+    await checkMigration();
   },
   setError,
   signingInProgress,
@@ -232,6 +241,14 @@ watch(connectedAddress, async (address) => {
   }
 });
 
+// Check for a Safe left untracked by the Gnosis Pay migration whenever the token changes.
+watchImmediate(key, async (apiKey) => {
+  if (apiKey)
+    await checkMigration();
+  else
+    set(untrackedSafe, undefined);
+});
+
 // When authentication is complete, close dialog and show success message
 watch(() => isStepComplete(AuthStep.SIGN_MESSAGE), (complete) => {
   if (!complete) {
@@ -261,6 +278,48 @@ watch(() => isStepComplete(AuthStep.SIGN_MESSAGE), (complete) => {
       :image-src="getPublicServiceImagePath('gnosispay.png')"
       hide-action
     >
+      <template
+        v-if="key && hasUntrackedSafe"
+        #banner
+      >
+        <RuiAlert
+          type="warning"
+          :title="t('external_services.gnosispay.safe_migration.title')"
+        >
+          <div class="flex flex-col items-start gap-2">
+            <i18n-t
+              v-if="untrackedAccount"
+              scope="global"
+              tag="div"
+              class="text-body-2 break-words"
+              :keypath="safeMigrationKeypath"
+            >
+              <template #address>
+                <AccountDisplay
+                  class="inline-flex align-middle max-w-full"
+                  hide-chain-icon
+                  :account="untrackedAccount"
+                />
+              </template>
+            </i18n-t>
+            <RuiButton
+              size="sm"
+              color="primary"
+              :loading="adding"
+              @click="addMissingSafe()"
+            >
+              <template #prepend>
+                <RuiIcon
+                  name="lu-plus"
+                  size="16"
+                />
+              </template>
+              {{ t('external_services.gnosispay.safe_migration.add_action') }}
+            </RuiButton>
+          </div>
+        </RuiAlert>
+      </template>
+
       <template
         v-if="key"
         #left-buttons

@@ -31,6 +31,8 @@ export const useFrontendSettingsStore = defineStore('settings/frontend', () => {
   const newlyDetectedTokensTtlDays = useComputedRef(settings, 'newlyDetectedTokensTtlDays');
   const refreshPeriod = useComputedRef(settings, 'refreshPeriod');
   const explorers = useComputedRef(settings, 'explorers');
+  const gnosisPaySafeMigrationLastNotified = useComputedRef(settings, 'gnosisPaySafeMigrationLastNotified');
+  const gnosisPaySafeMigrationNeverNotify = useComputedRef(settings, 'gnosisPaySafeMigrationNeverNotify');
   const itemsPerPage = useComputedRef(settings, 'itemsPerPage');
   const amountRoundingMode = useComputedRef(settings, 'amountRoundingMode');
   const valueRoundingMode = useComputedRef(settings, 'valueRoundingMode');
@@ -111,6 +113,8 @@ export const useFrontendSettingsStore = defineStore('settings/frontend', () => {
     evmQueryIndicatorDismissalThreshold,
     evmQueryIndicatorMinOutOfSyncPeriod,
     explorers,
+    gnosisPaySafeMigrationLastNotified,
+    gnosisPaySafeMigrationNeverNotify,
     graphZeroBased,
     ignoreSnapshotError,
     itemsPerPage,

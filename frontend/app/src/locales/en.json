@@ -3063,6 +3063,16 @@
         "signature_rejected": "Signature request was rejected by user",
         "unknown": "An unknown error occurred"
       },
+      "safe_migration": {
+        "account_label": "Gnosis Pay Safe",
+        "add_action": "Add to rotki",
+        "add_error": "Failed to add the Safe: {error}",
+        "add_success": "Added {address} as a Gnosis Chain account.",
+        "missing_new": "Gnosis Pay replaced your Safe. You track only the previous one; add the new active Safe {address} to track future activity.",
+        "missing_old": "Gnosis Pay replaced your Safe. You track only the new one; add the previous Safe {address} to keep its historical activity.",
+        "never_action": "Never show again",
+        "title": "Gnosis Pay Safe migration"
+      },
       "siwe": {
         "checking_accounts": "Checking for registered Gnosis Pay accounts...",
         "connected_address": "Connected Address",
@@ -4579,6 +4589,11 @@
       "title": "CSV Import Result: {sourceName}"
     },
     "deserialization_error": "We could not deserialize {count} assets for your accounts, please check the application logs for more information.",
+    "gnosis_pay_safe_migration": {
+      "message_new": "Gnosis Pay replaced your Safe in its security migration. You track only the previous Safe. Add the new active Safe {address} to track future activity.",
+      "message_old": "Gnosis Pay replaced your Safe in its security migration. You track only the new Safe. Add the previous Safe {address} to keep its historical activity.",
+      "title": "Gnosis Pay Safe migration"
+    },
     "gnosis_pay_session_key_expired": {
       "title": "Gnosis Pay session key expired"
     },
