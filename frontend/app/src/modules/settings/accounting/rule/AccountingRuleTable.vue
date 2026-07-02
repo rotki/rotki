@@ -24,6 +24,7 @@ const { isCustom } = defineProps<AccountingRuleTableProps>();
 const emit = defineEmits<{
   'delete-click': [item: AccountingRuleEntry];
   'edit-click': [item: AccountingRuleEntry];
+  'view-events-click': [item: AccountingRuleEntry];
 }>();
 
 const { t } = useI18n({ useScope: 'global' });
@@ -256,7 +257,21 @@ function openEventsDialog(eventIds: number[]) {
         :edit-tooltip="t('accounting_settings.rule.edit')"
         @delete-click="emit('delete-click', row)"
         @edit-click="emit('edit-click', row)"
-      />
+      >
+        <RuiButton
+          v-if="!isCustom && row.eventType"
+          variant="text"
+          icon
+          :title="t('accounting_settings.rule.view_events')"
+          data-testid="view-events"
+          @click="emit('view-events-click', row)"
+        >
+          <RuiIcon
+            size="16"
+            name="lu-list-filter"
+          />
+        </RuiButton>
+      </RowActions>
     </template>
   </RuiDataTable>
 

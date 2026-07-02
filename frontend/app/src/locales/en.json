@@ -289,7 +289,8 @@
         "regular": "Regular Rules"
       },
       "title": "Accounting Rules",
-      "value_overwritten": "The value is overwritten by this setting:"
+      "value_overwritten": "The value is overwritten by this setting:",
+      "view_events": "View events matching this rule"
     },
     "trade": {
       "labels": {
