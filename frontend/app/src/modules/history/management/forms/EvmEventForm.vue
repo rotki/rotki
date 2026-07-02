@@ -256,6 +256,8 @@ defineExpose({
       :counterparty="counterparty"
       :entry-type="HistoryEventEntryType.EVM_EVENT"
       :v$="v$"
+      show-accounting-rule-link
+      :dirty="stateUpdated"
       class="mb-4"
     />
 

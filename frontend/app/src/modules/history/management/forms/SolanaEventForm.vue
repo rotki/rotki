@@ -227,6 +227,8 @@ defineExpose({
       :counterparty="counterparty"
       :entry-type="HistoryEventEntryType.SOLANA_EVENT"
       :v$="v$"
+      show-accounting-rule-link
+      :dirty="stateUpdated"
       class="mb-4"
     />
 
