@@ -4,16 +4,33 @@ import gevent
 import pytest
 import rsqlite
 
-from rotkehlchen.db.drivers.gevent import ContextError, DBConnection, DBConnectionType
+from rotkehlchen.db.drivers.gevent import (
+    ContextError,
+    DBConnection,
+    DBConnectionType,
+    SchedulingMode,
+)
 from rotkehlchen.errors.asset import UnknownAsset
 
 
-def test_unnamed_savepoints():
+@pytest.fixture(
+    name='conn',
+    params=[SchedulingMode.GEVENT, SchedulingMode.THREADING],
+    ids=['gevent', 'threading'],
+)
+def fixture_conn(request):
+    """A connection to test the driver in both scheduling modes of the migration"""
     conn = DBConnection(
         path=':memory:',
         connection_type=DBConnectionType.GLOBAL,
         sql_vm_instructions_cb=0,
+        scheduling_mode=request.param,
     )
+    yield conn
+    conn.close()
+
+
+def test_unnamed_savepoints(conn: DBConnection):
     with conn.write_ctx() as write_cursor:
         write_cursor.execute('CREATE TABLE a(b INTEGER PRIMARY KEY)')
 
@@ -37,31 +54,21 @@ def test_unnamed_savepoints():
         assert cursor.execute('SELECT b FROM a').fetchall() == [(1,), (3,)]
 
 
-def test_savepoint_errors():
-    conn = DBConnection(
-        path=':memory:',
-        connection_type=DBConnectionType.GLOBAL,
-        sql_vm_instructions_cb=0,
-    )
+def test_savepoint_errors(conn: DBConnection):
     with pytest.raises(ContextError):
         conn.release_savepoint()
 
     conn._enter_savepoint('point')
-    with pytest.raises(ContextError), conn._enter_savepoint('point'):
-        ...
+    with pytest.raises(ContextError):
+        conn._enter_savepoint('point')
 
     with pytest.raises(ContextError):
         conn.rollback_savepoint('abc')
 
 
-def test_write_transaction_with_savepoint():
+def test_write_transaction_with_savepoint(conn: DBConnection):
     """Test that opening a savepoint within a write transaction in the
     same greenlet is okay"""
-    conn = DBConnection(
-        path=':memory:',
-        connection_type=DBConnectionType.GLOBAL,
-        sql_vm_instructions_cb=0,
-    )
     with conn.write_ctx() as write_cursor:
         write_cursor.execute('CREATE TABLE a(b INTEGER PRIMARY KEY)')
         write_cursor.execute('INSERT INTO a VALUES (1)')
@@ -72,7 +79,7 @@ def test_write_transaction_with_savepoint():
         assert cursor.execute('SELECT b from a').fetchall() == [(1,), (2,)]
 
 
-def test_write_transaction_with_savepoint_other_context():
+def test_write_transaction_with_savepoint_other_context(conn: DBConnection):
     """Test that opening a savepoint from a different greenlet while a write
     transaction is already open from another greenlet waits for the original to finish"""
     def other_context(conn: 'DBConnection', first_run: bool) -> None:
@@ -85,11 +92,6 @@ def test_write_transaction_with_savepoint_other_context():
                 savepoint2_cursor.execute('INSERT INTO a VALUES (5)')
                 raise ValueError('Test rollback')
 
-    conn = DBConnection(
-        path=':memory:',
-        connection_type=DBConnectionType.GLOBAL,
-        sql_vm_instructions_cb=0,
-    )
     with conn.write_ctx() as write_cursor:
         write_cursor.execute('CREATE TABLE a(b INTEGER PRIMARY KEY)')
         write_cursor.execute('INSERT INTO a VALUES (1)')
@@ -121,14 +123,9 @@ def test_write_transaction_with_savepoint_other_context():
         assert cursor.execute('SELECT b from a').fetchall() == [(1,), (2,), (3,), (4,)], 'other greenlet should write to the DB'  # noqa: E501
 
 
-def test_savepoint_with_write_transaction():
+def test_savepoint_with_write_transaction(conn: DBConnection):
     """Test that a write transaction under a savepoint can still happen by
     switching to a savepoint instead"""
-    conn = DBConnection(
-        path=':memory:',
-        connection_type=DBConnectionType.GLOBAL,
-        sql_vm_instructions_cb=0,
-    )
     with conn.write_ctx() as write_cursor:
         write_cursor.execute('CREATE TABLE a(b INTEGER PRIMARY KEY)')
 
@@ -150,18 +147,13 @@ def test_savepoint_with_write_transaction():
         assert cursor.execute('SELECT b from a').fetchall() == [(1,), (2,)]
 
 
-def test_savepoint_with_write_transaction_other_context():
+def test_savepoint_with_write_transaction_other_context(conn: DBConnection):
     """Test that a write transaction after a savepoint but in a different greenlet
     does not continue the savepoint but instead waits"""
     def other_context(conn) -> None:
         with conn.write_ctx() as write_cursor:
             write_cursor.execute('INSERT INTO a VALUES (4)')
 
-    conn = DBConnection(
-        path=':memory:',
-        connection_type=DBConnectionType.GLOBAL,
-        sql_vm_instructions_cb=0,
-    )
     with conn.write_ctx() as write_cursor:
         write_cursor.execute('CREATE TABLE a(b INTEGER PRIMARY KEY)')
 
@@ -180,7 +172,7 @@ def test_savepoint_with_write_transaction_other_context():
         assert cursor.execute('SELECT b from a').fetchall() == [(1,), (4,)], 'other greenlet should write to the DB'  # noqa: E501
 
 
-def test_open_savepoint_with_savepoint_other_context():
+def test_open_savepoint_with_savepoint_other_context(conn: DBConnection):
     """Test that opening a savepoint while a savepoint queue is already open in
     another greenlet waits until the first one is completely done"""
     def other_context(conn, first_run) -> None:
@@ -193,11 +185,6 @@ def test_open_savepoint_with_savepoint_other_context():
                 savepoint2_cursor.execute('INSERT INTO a VALUES (5)')
                 raise ValueError('Test rollback')
 
-    conn = DBConnection(
-        path=':memory:',
-        connection_type=DBConnectionType.GLOBAL,
-        sql_vm_instructions_cb=0,
-    )
     with conn.write_ctx() as write_cursor:
         write_cursor.execute('CREATE TABLE a(b INTEGER PRIMARY KEY)')
 
@@ -231,16 +218,11 @@ def test_open_savepoint_with_savepoint_other_context():
         assert cursor.execute('SELECT b from a').fetchall() == [(1,), (2,), (3,), (4,)], 'other greenlet should write to the DB'  # noqa: E501
 
 
-def test_rollback_in_savepoints():
+def test_rollback_in_savepoints(conn: DBConnection):
     """
     Test that savepoints are released when an error is raised. This verifies
     that a rollback is always followed up by a release since that is required.
     """
-    conn = DBConnection(
-        path=':memory:',
-        connection_type=DBConnectionType.GLOBAL,
-        sql_vm_instructions_cb=0,
-    )
 
     with (
         suppress(UnknownAsset),

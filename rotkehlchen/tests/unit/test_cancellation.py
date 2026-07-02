@@ -14,15 +14,25 @@ from rotkehlchen.concurrency import (
     spawn,
     wait,
 )
-from rotkehlchen.db.drivers.gevent import DBConnection, DBConnectionType
+from rotkehlchen.db.drivers.gevent import DBConnection, DBConnectionType, SchedulingMode
+
+LONG_QUERY = (  # a recursive CTE that runs long enough to guarantee progress callbacks
+    'WITH RECURSIVE r(i) AS (VALUES(1) UNION ALL SELECT i+1 FROM r '
+    'WHERE i < 10000000) SELECT MAX(i) FROM r'
+)
 
 
-@pytest.fixture(name='transient_conn')
-def fixture_transient_conn():
+@pytest.fixture(
+    name='transient_conn',
+    params=[SchedulingMode.GEVENT, SchedulingMode.THREADING],
+    ids=['gevent', 'threading'],
+)
+def fixture_transient_conn(request):
     conn = DBConnection(
         path=':memory:',
         connection_type=DBConnectionType.TRANSIENT,
         sql_vm_instructions_cb=100,
+        scheduling_mode=request.param,
     )
     yield conn
     conn.close()
@@ -88,24 +98,52 @@ def test_spawn_propagates_token_to_children():
 def test_db_statement_aborts_at_cancellation(transient_conn):
     """A long running statement of a cancelled task is aborted by the progress
     callback checkpoint and surfaces as TaskCancelledError, leaving the
-    connection usable."""
+    connection usable. The task cancels its own token right before executing so
+    the test works in both scheduling modes (in THREADING mode the statement
+    never yields, so an outside canceller would not get to run mid-query while
+    the tests themselves run under gevent)."""
     token = CancellationToken()
 
     def long_query():
+        token.cancel('abort the query')
         with transient_conn.read_ctx() as cursor:
-            cursor.execute(  # a recursive CTE that runs for a very long time
-                'WITH RECURSIVE r(i) AS (VALUES(1) UNION ALL SELECT i+1 FROM r '
-                'WHERE i < 10000000) SELECT MAX(i) FROM r',
-            ).fetchone()
+            cursor.execute(LONG_QUERY).fetchone()
 
     greenlet = gevent.spawn(run_cancellable, token, long_query)
-    gevent.sleep(0.1)  # give the query a chance to start
-    token.cancel('abort the query')
     greenlet.join(timeout=10)
     assert greenlet.dead is True
     assert isinstance(greenlet.exception, TaskCancelledError)
     with transient_conn.read_ctx() as cursor:  # connection still works
         assert cursor.execute('SELECT 1').fetchone() == (1,)
+
+
+def test_db_statement_aborts_when_cancelled_mid_query():
+    """In GEVENT scheduling mode the progress callback yields, so another greenlet
+    can cancel a task while its statement is running and the abort fires at the
+    statement's next progress callback"""
+    conn = DBConnection(
+        path=':memory:',
+        connection_type=DBConnectionType.TRANSIENT,
+        sql_vm_instructions_cb=100,
+        scheduling_mode=SchedulingMode.GEVENT,
+    )
+    try:
+        token = CancellationToken()
+
+        def long_query():
+            with conn.read_ctx() as cursor:
+                cursor.execute(LONG_QUERY).fetchone()
+
+        greenlet = gevent.spawn(run_cancellable, token, long_query)
+        gevent.sleep(0.1)  # give the query a chance to start
+        token.cancel('abort the query')
+        greenlet.join(timeout=10)
+        assert greenlet.dead is True
+        assert isinstance(greenlet.exception, TaskCancelledError)
+        with conn.read_ctx() as cursor:  # connection still works
+            assert cursor.execute('SELECT 1').fetchone() == (1,)
+    finally:
+        conn.close()
 
 
 def test_write_tx_rolls_back_at_cancellation(transient_conn):
@@ -148,7 +186,7 @@ def test_savepoint_rolls_back_at_cancellation(transient_conn):
     greenlet.join(timeout=2)
     assert isinstance(greenlet.exception, TaskCancelledError)
     assert len(transient_conn.savepoints) == 0
-    assert transient_conn.savepoint_greenlet_id is None
+    assert transient_conn.savepoint_task_ident is None
     with transient_conn.read_ctx() as cursor:  # only the committed row remains
         assert cursor.execute('SELECT a FROM t').fetchall() == [(1,)]
 

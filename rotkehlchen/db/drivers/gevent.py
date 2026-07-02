@@ -1,17 +1,27 @@
 """Original code taken from here:
  https://github.com/gilesbrown/gsqlite3/blob/fef400f1c5bcbc546772c827d3992e578ea5f905/gsqlite3.py
-but heavily modified"""
+but heavily modified
 
+The driver is dual-mode (SchedulingMode) as part of the gevent removal migration
+(docs/designs/gevent_to_asyncio.md). It intentionally has no gevent import: under
+monkeypatching the stdlib primitives used here (threading.Lock, threading.get_ident,
+time.sleep) are already gevent-cooperative, and after the flip they are simply the
+real thing. The only behavioral difference between the modes is whether the sqlite
+progress handler yields control to other greenlets.
+"""
+
+import logging
 import random
+import threading
+import time
 from collections.abc import Generator, Sequence
 from contextlib import contextmanager
 from enum import Enum, auto
 from pathlib import Path
 from types import TracebackType
-from typing import TYPE_CHECKING, Any, Literal, Optional, Self, TypeAlias
+from typing import TYPE_CHECKING, Any, Final, Literal, Optional, Self, TypeAlias
 from uuid import uuid4
 
-import gevent
 import rsqlite
 from polyleven import levenshtein
 from sqlcipher3 import dbapi2 as sqlcipher
@@ -23,7 +33,6 @@ from rotkehlchen.globaldb.minimized_schema import (
     MINIMIZED_GLOBAL_DB_INDEXES,
     MINIMIZED_GLOBAL_DB_SCHEMA,
 )
-from rotkehlchen.greenlets.utils import get_greenlet_name
 from rotkehlchen.utils.misc import ts_now
 
 if TYPE_CHECKING:
@@ -32,10 +41,26 @@ if TYPE_CHECKING:
 UnderlyingCursor: TypeAlias = rsqlite.Cursor | sqlcipher.Cursor  # pylint: disable=no-member
 UnderlyingConnection: TypeAlias = rsqlite.Connection | sqlcipher.Connection  # pylint: disable=no-member
 
-CONTEXT_SWITCH_WAIT = 0.025  # seconds to wait for a status change in a DB context switch
-import logging
+CONTEXT_SWITCH_WAIT = 0.025  # seconds between cancellation checks while waiting for the transaction slot  # noqa: E501
 
 logger: 'RotkehlchenLogger' = logging.getLogger(__name__)  # type: ignore
+
+
+class SchedulingMode(Enum):
+    """How the connection cooperates with the app's concurrency runtime.
+
+    GEVENT: the sqlite progress handler yields to other greenlets so that long
+    statements don't monopolize the event loop.
+    THREADING: threads preempt on their own, so the progress handler does not
+    yield and remains solely as a cancellation checkpoint.
+    """
+    GEVENT = auto()
+    THREADING = auto()
+
+
+# Read at DBConnection construction time (not at def time) so tests and the
+# phase-6 flip of the migration can change it process-wide in one place.
+DEFAULT_SCHEDULING_MODE: Final = SchedulingMode.GEVENT
 
 
 class ContextError(Exception):
@@ -235,10 +260,10 @@ def _progress_callback(connection: Optional['DBConnection']) -> int:
     if connection is None:
         return 0
 
-    if connection.in_callback.ready() is False or connection.in_critical_section.ready() is False:
-        # we are single threaded and if we get here and it's locked or in critical section
-        # we should not wait since this is an edge case that can hit us if the connection gets
-        # modified before we exit the callback. So we immediately exit the callback
+    if connection.in_callback.locked() or connection.in_critical_section.locked():
+        # if we get here and the connection is locked or in critical section its state
+        # must not be modified nor its running statement aborted from within the
+        # callback (e.g. a commit is in progress). So we immediately exit the callback
         # without any sleep that would lead to context switching
         return 0
 
@@ -249,6 +274,10 @@ def _progress_callback(connection: Optional['DBConnection']) -> int:
         # the guard above, so driver-internal bookkeeping cannot be aborted.
         return 1
 
+    if connection.scheduling_mode is SchedulingMode.THREADING:
+        # threads preempt on their own -- the callback is only a cancellation checkpoint
+        return 0
+
     if __debug__:
         identifier = random.random()
         conn_type = connection.connection_type if connection else 'no connection'
@@ -258,7 +287,7 @@ def _progress_callback(connection: Optional['DBConnection']) -> int:
         if __debug__:
             logger.trace(f'Got in locked section of the progress callback for {connection.connection_type} with id {identifier}')  # noqa: E501  # pyright: ignore  # if debug identifier is set
 
-        gevent.sleep(0)
+        time.sleep(0)  # gevent-cooperative yield: monkeypatched to gevent.sleep(0)
         if __debug__:
             logger.trace(f'Going out of the progress callback for {connection.connection_type} with id {identifier}')  # noqa: E501  # pyright: ignore  # if debug identifier is set
         return 0
@@ -297,21 +326,28 @@ class DBConnection:
             path: str | Path,
             connection_type: DBConnectionType,
             sql_vm_instructions_cb: int,
+            scheduling_mode: SchedulingMode | None = None,
     ) -> None:
         CONNECTION_MAP[connection_type] = self
         self._conn: UnderlyingConnection
-        self.in_callback = gevent.lock.Semaphore()
-        self.transaction_lock = gevent.lock.Semaphore()
-        self.in_critical_section = gevent.lock.Semaphore()
+        self.scheduling_mode = DEFAULT_SCHEDULING_MODE if scheduling_mode is None else scheduling_mode  # noqa: E501
+        # threading.Lock is gevent-cooperative under monkeypatching and exposes
+        # locked(), which the progress callback needs to inspect held state
+        self.in_callback = threading.Lock()
+        self.transaction_lock = threading.Lock()
+        self.in_critical_section = threading.Lock()
         self.connection_type = connection_type
         self.sql_vm_instructions_cb = sql_vm_instructions_cb
         # We need an ordered set. Python doesn't have such thing as a standalone object, but has
         # `dict` which preserves the order of its keys. So we use dict with None values.
         self.savepoints: dict[str, None] = {}
-        # These will hold the id of the greenlet where write tx/savepoints are active
-        # https://www.gevent.org/api/gevent.greenlet.html#gevent.Greenlet.minimal_ident
-        self.savepoint_greenlet_id: str | None = None
-        self.write_greenlet_id: str | None = None
+        # These hold threading.get_ident() of the task where write tx/savepoints are
+        # active (under gevent monkeypatching each greenlet gets a distinct ident)
+        self.savepoint_task_ident: int | None = None
+        self.write_task_ident: int | None = None
+        # whether the current savepoint stack claimed transaction_lock itself
+        # (False when the savepoints nest inside this task's own write transaction)
+        self._savepoint_holds_transaction_lock = False
         if connection_type == DBConnectionType.GLOBAL:
             self._conn = rsqlite.connect(
                 database=path,
@@ -373,6 +409,18 @@ class DBConnection:
         finally:
             cursor.close()
 
+    def _acquire_transaction_lock(self) -> None:
+        """Blocking acquire of the transaction slot that stays responsive to task
+        cancellation. The slot serializes write transactions and savepoint stacks
+        of different tasks against each other, replacing the previous poll-a-field
+        wait loops whose check-then-act windows were only race-free thanks to
+        cooperative gevent scheduling.
+
+        May raise TaskCancelledError.
+        """
+        while not self.transaction_lock.acquire(timeout=CONTEXT_SWITCH_WAIT):
+            checkpoint()  # cancelled tasks should not keep waiting for the DB
+
     @contextmanager
     def write_ctx(self, commit_ts: bool = False) -> Generator['DBCursor', None, None]:
         """Opens a transaction to the database. This should be used kept open for
@@ -382,27 +430,18 @@ class DBConnection:
         In order for savepoints to work then, we will need to open a savepoint instead of a write
         transaction in that case. This should be used sparingly.
         """
-        current_id = get_greenlet_name(gevent.getcurrent())
-        if self._conn.in_transaction is True and self.write_greenlet_id == current_id:
+        current_id = threading.get_ident()
+        if (
+                (self._conn.in_transaction is True and self.write_task_ident == current_id) or
+                self.savepoint_task_ident == current_id
+        ):  # this task already owns the transaction slot: nest via a savepoint
             with self.savepoint_ctx() as cursor:
                 yield cursor
                 return
 
-        if len(self.savepoints) != 0:
-            if current_id != self.savepoint_greenlet_id:
-                # savepoint exists but in other greenlet. Wait till it's done.
-                while self.savepoint_greenlet_id is not None:
-                    checkpoint()  # cancelled tasks should not keep waiting for the DB
-                    gevent.sleep(CONTEXT_SWITCH_WAIT)
-                # and now continue with the normal write context logic
-            else:  # open another savepoint instead of a write transaction
-                with self.savepoint_ctx() as cursor:
-                    yield cursor
-                    return
-        # else
-        with self.critical_section(), self.transaction_lock:
+        with self._transaction_slot(), self.critical_section():
             cursor = self.cursor()
-            self.write_greenlet_id = get_greenlet_name(gevent.getcurrent())
+            self.write_task_ident = current_id
             cursor.execute('BEGIN TRANSACTION')
             try:
                 yield cursor
@@ -421,7 +460,7 @@ class DBConnection:
                 self._conn.commit()
             finally:
                 cursor.close()
-                self.write_greenlet_id = None
+                self.write_task_ident = None
 
     @contextmanager
     def savepoint_ctx(
@@ -458,27 +497,33 @@ class DBConnection:
             savepoint_name = str(uuid4())
 
         checkpoint()  # a cancelled task should not open new savepoints
-        current_id = get_greenlet_name(gevent.getcurrent())
-        if self._conn.in_transaction is True and self.write_greenlet_id != current_id:
-            # a transaction is open in a different greenlet
-            while self.write_greenlet_id is not None:
-                checkpoint()  # cancelled tasks should not keep waiting for the DB
-                gevent.sleep(CONTEXT_SWITCH_WAIT)  # wait until that transaction ends
+        current_id = threading.get_ident()
+        if (
+                (self._conn.in_transaction is True and self.write_task_ident == current_id) or
+                self.savepoint_task_ident == current_id
+        ):  # nesting inside this task's own write transaction or savepoint stack
+            if savepoint_name in self.savepoints:
+                raise ContextError(
+                    f'Wanted to enter savepoint {savepoint_name} but a savepoint with the same '
+                    f'name already exists. Current savepoints: {list(self.savepoints)}',
+                )
+        else:  # claim the transaction slot, waiting for other writers/savepoint stacks.
+            # The previous holder always leaves an empty savepoint stack, so no
+            # duplicate-name check is needed on this path.
+            self._acquire_transaction_lock()
+            self._savepoint_holds_transaction_lock = True
 
-        if self.savepoint_greenlet_id is not None:
-            # savepoints exist but in other greenlet
-            while self.savepoint_greenlet_id is not None and current_id != self.savepoint_greenlet_id:  # noqa: E501  # pyright: ignore[reportUnnecessaryComparison]  # Another greenlet can clear it.
-                checkpoint()  # cancelled tasks should not keep waiting for the DB
-                gevent.sleep(CONTEXT_SWITCH_WAIT)  # wait until no other savepoint exists
-        if savepoint_name in self.savepoints:
-            raise ContextError(
-                f'Wanted to enter savepoint {savepoint_name} but a savepoint with the same name '
-                f'already exists. Current savepoints: {list(self.savepoints)}',
-            )
-        cursor = self.cursor()
-        cursor.execute(f"SAVEPOINT '{savepoint_name}'")
+        try:
+            cursor = self.cursor()
+            cursor.execute(f"SAVEPOINT '{savepoint_name}'")
+        except BaseException:
+            if len(self.savepoints) == 0 and self._savepoint_holds_transaction_lock is True:
+                self._savepoint_holds_transaction_lock = False
+                self.transaction_lock.release()
+            raise
+
         self.savepoints[savepoint_name] = None
-        self.savepoint_greenlet_id = current_id
+        self.savepoint_task_ident = current_id
         return cursor, savepoint_name
 
     def _modify_savepoint(
@@ -510,8 +555,11 @@ class DBConnection:
         # For rollback we don't remove the savepoints since they are not released yet.
         if rollback_or_release == 'RELEASE':
             self.savepoints = dict.fromkeys(list_savepoints[:list_savepoints.index(savepoint_name)])  # noqa: E501
-            if len(self.savepoints) == 0:  # mark if we are out of all savepoints
-                self.savepoint_greenlet_id = None
+            if len(self.savepoints) == 0:  # we are out of all savepoints
+                self.savepoint_task_ident = None
+                if self._savepoint_holds_transaction_lock is True:  # free the transaction slot
+                    self._savepoint_holds_transaction_lock = False
+                    self.transaction_lock.release()
 
     def rollback_savepoint(self, savepoint_name: str | None = None) -> None:
         """
@@ -550,15 +598,28 @@ class DBConnection:
                     self._set_progress_handler()
 
     @contextmanager
+    def _transaction_slot(self) -> Generator[None, None, None]:
+        """Holds the transaction slot for the duration of the context.
+
+        Always acquire the slot BEFORE entering a critical section: write_ctx does the
+        same, so any other ordering would create a deadlock cycle between the two locks.
+        """
+        self._acquire_transaction_lock()
+        try:
+            yield
+        finally:
+            self.transaction_lock.release()
+
+    @contextmanager
     def critical_section_and_transaction_lock(self) -> Generator[None, None, None]:
-        with self.critical_section(), self.transaction_lock:
+        with self._transaction_slot(), self.critical_section():
             yield
 
     def vacuum(self) -> None:
         """Helper function to vacuum the DB. Abstracted into its own function since
         incorrect usage of the PRAGMA can result in errors. For example should not do it
         while there is an open transaction"""
-        with self.critical_section(), self.transaction_lock:  # make sure no writing happens while vacuuming  # noqa: E501
+        with self._transaction_slot(), self.critical_section():  # make sure no writing happens while vacuuming  # noqa: E501
             cursor = self.cursor()
             cursor.execute('VACUUM')
             cursor.close()

@@ -12,6 +12,7 @@ from rotkehlchen.balances.manual import ManuallyTrackedBalance
 from rotkehlchen.chain.accounts import BlockchainAccounts
 from rotkehlchen.constants.misc import DEFAULT_SQL_VM_INSTRUCTIONS_CB, USERSDIR_NAME
 from rotkehlchen.db.dbhandler import DBHandler
+from rotkehlchen.db.drivers.gevent import DEFAULT_SCHEDULING_MODE, SchedulingMode
 from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.tests.utils.database import (
     _use_prepared_db,
@@ -84,6 +85,13 @@ def fixture_manually_tracked_balances() -> list[ManuallyTrackedBalance]:
 @pytest.fixture(name='sql_vm_instructions_cb')
 def fixture_sql_vm_instructions_cb() -> int:
     return DEFAULT_SQL_VM_INSTRUCTIONS_CB
+
+
+@pytest.fixture(name='db_scheduling_mode')
+def fixture_db_scheduling_mode() -> SchedulingMode:
+    """Parametrize to run a test's DB connections in a specific scheduling mode
+    of the dual-mode driver (docs/designs/gevent_to_asyncio.md phase 3)"""
+    return DEFAULT_SCHEDULING_MODE
 
 
 def _init_database(
@@ -163,10 +171,13 @@ def database(
         sql_vm_instructions_cb,
         perform_upgrades_at_unlock,
         skip_sync_globaldb_assets,
+        db_scheduling_mode,
 ) -> Generator[DBHandler | None, None, None]:
     if not start_with_logged_in_user:
         yield None
-    else:
+        return
+
+    with patch('rotkehlchen.db.drivers.gevent.DEFAULT_SCHEDULING_MODE', db_scheduling_mode):
         db_handler = _init_database(
             user_data_dir=user_data_dir,
             msg_aggregator=function_scope_messages_aggregator,

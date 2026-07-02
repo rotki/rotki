@@ -289,8 +289,10 @@ class Rotkehlchen:
         wait(cancelled_greenlets, timeout=DEFAULT_CANCEL_GRACE_SECONDS)
         if len(survivors := [x for x in cancelled_greenlets if not x.dead]) != 0:
             log.warning(
-                f'{len(survivors)} cancelled transaction query tasks did not exit within '
-                f'{DEFAULT_CANCEL_GRACE_SECONDS} seconds and will die at their next checkpoint',
+                '%s cancelled transaction query tasks did not exit within %s seconds '
+                'and will die at their next checkpoint',
+                len(survivors),
+                DEFAULT_CANCEL_GRACE_SECONDS,
             )
 
     def reset_after_failed_account_creation_or_login(self) -> None:

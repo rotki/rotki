@@ -5,6 +5,7 @@ import gevent
 import pytest
 
 from rotkehlchen.constants.assets import A_ETH
+from rotkehlchen.db.drivers.gevent import SchedulingMode
 from rotkehlchen.db.filtering import HistoryEventFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.fval import FVal
@@ -67,6 +68,7 @@ def read_events(database, limit):
 
 
 @pytest.mark.parametrize('sql_vm_instructions_cb', [100])
+@pytest.mark.parametrize('db_scheduling_mode', [SchedulingMode.GEVENT, SchedulingMode.THREADING], ids=['gevent', 'threading'])  # noqa: E501
 def test_callback_segfault_simple(database):
     """Test that the async and sqlite progress handler segfault yielding bug does not hit us
     This one is protected against by having the lock inside the callback.
@@ -95,6 +97,7 @@ def test_callback_segfault_simple(database):
 
 
 @pytest.mark.parametrize('sql_vm_instructions_cb', [100])
+@pytest.mark.parametrize('db_scheduling_mode', [SchedulingMode.GEVENT, SchedulingMode.THREADING], ids=['gevent', 'threading'])  # noqa: E501
 def test_callback_segfault_complex(database):
     """Test that we protect against the yielding segfault bug that happens when lots
     of complicated actions happen at the same time.

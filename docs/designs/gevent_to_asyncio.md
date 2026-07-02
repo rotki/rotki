@@ -12,7 +12,7 @@ the decision log.
 | 0 | Python bump 3.11 → 3.12/3.13 | not started |
 | 1 | Stdlib primitives + spawn seam + gevent import ban | **in progress** — business logic done (~45 files); test files remain (phases 2-3 exemption) |
 | 2 | Cooperative cancellation (replaces `greenlet.kill`) | **done** — CancellationToken + checkpoints landed, `greenlet.kill`/`GreenletKilledError` removed, substrate `gevent.Timeout` replaced |
-| 3 | DB driver dual-mode (gevent / threading backends) | not started |
+| 3 | DB driver dual-mode (gevent / threading backends) | **done** — gevent-free driver with SchedulingMode, transaction-slot locking replaces poll loops, both-modes tests + stress test, atomicity audit done (crash-class findings fixed) |
 | 4 | ASGI server behind a flag (uvicorn + WSGI bridge + native websockets) | not started |
 | 5 | Task orchestration on the asyncio loop | not started |
 | 6 | The flip: remove monkey patching and gevent | not started |
@@ -181,6 +181,66 @@ handler solely as a cancellation checkpoint, writer identity via
 concurrency stress/soak test. Codebase-wide audit for implicit atomicity assumptions
 (code that is race-free only because gevent never switches between non-yielding
 statements — e.g. the exchange session-reset machinery).
+
+As implemented:
+
+- The driver has **no gevent import** anymore. Under monkeypatching the stdlib
+  primitives it now uses are already gevent-cooperative (`threading.Lock` with
+  `.locked()` replacing the semaphores' `.ready()`, `threading.get_ident()` giving a
+  distinct ident per greenlet for writer/savepoint identity, `time.sleep`), so
+  instead of an injectable backend object the dual mode collapsed to a single
+  `SchedulingMode` enum: in GEVENT mode the progress callback yields
+  (`time.sleep(0)` → monkeypatched `gevent.sleep(0)`); in THREADING mode it returns
+  immediately and remains solely a cancellation checkpoint. The mode comes from the
+  `DBConnection(scheduling_mode=...)` param, defaulting to the module's
+  `DEFAULT_SCHEDULING_MODE` read at construction time — the phase-6 flip changes
+  that one constant.
+- **The wait machinery was redesigned, not just translated.** The old poll-a-field
+  loops (`while savepoint_greenlet_id is not None: sleep(0.025)`) were check-then-act
+  races that only worked because savepoint bookkeeping statements are too small to
+  trigger a progress-handler yield — under preemptive threads two tasks could pass
+  the check together and interleave SAVEPOINT/BEGIN statements. Now a write
+  transaction and the outermost savepoint of a task both claim `transaction_lock`
+  ("the transaction slot") via a cancellation-responsive acquire loop
+  (`acquire(timeout=0.025)` + `checkpoint()`), and the last savepoint release frees
+  it. Nesting within the owning task (write→savepoint, savepoint→write,
+  savepoint→savepoint) is detected by ident and takes no lock. Lock order is
+  transaction slot BEFORE critical section everywhere (`write_ctx`, `vacuum`,
+  `critical_section_and_transaction_lock`) so no deadlock cycle exists, and a waiting
+  writer no longer disables the progress handler while it waits.
+- Tests: `test_savepoints.py`, `test_async.py` and the cancellation DB tests are
+  parametrized over both modes (new `db_scheduling_mode` fixture patches the default
+  for `database`-fixture tests), plus a new stress test
+  (`tests/db/test_driver_concurrency.py`) mixing writers, rolling-back savepoint
+  stacks, savepoint-nested writes and readers on one connection in both modes.
+
+Atomicity audit results (2026-07-02, fixed in phase 3):
+
+- `utils/data_structures.py` LRU caches (`LRUCacheWithRemove`, `DefaultLRUCache`,
+  `LRUSetCache`) — every op was a multi-step check-then-act on shared state; these
+  back the Inquirer price cache and the AssetResolver caches touched by every task
+  (KeyError/corruption class under threads). All operations now hold a per-instance
+  lock; `DefaultLRUCache.get` creates defaults atomically; iteration snapshots via
+  `snapshot_keys()`.
+- `Inquirer.set_oracles_order` appended into live lists that concurrent price
+  queries iterate with `zip(strict=True)` (ValueError/wrong-oracle class). Now
+  builds locally and rebinds. Same local-build fix in
+  `PriceHistorian.set_oracles_order`.
+
+Audit findings accepted/deferred (stale-read severity, revisit before free-threading):
+
+- Exchange auth signing is safe everywhere (all 20 exchanges build per-request
+  header dicts; verified). Residual: `edit_exchange_credentials` mutates
+  `session.headers` of a session with possibly in-flight requests (user-triggered,
+  rare), and the `RecoveringExchangeSession` swap already has its own locking.
+- `CachedSettings.get_settings()` returns the live settings object, so a
+  multi-field update can be observed partially applied.
+- Oracle penalty counters (`utils/mixins/penalizable_oracle.py`) lose increments
+  under concurrent failures (penalty just kicks in late).
+- Module-level lazy caches (`chain/evm/contracts.py`, `assets/spam_assets.py`,
+  `dbhandler._ignored_asset_ids_cache`) can do redundant duplicate work.
+- `@cache_response_timewise` is only safe because every use site sits under
+  `@protect_with_lock` — do not use it without that.
 
 ### Phase 4 — ASGI server behind a flag
 

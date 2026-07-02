@@ -1,6 +1,7 @@
 import collections
 from collections import OrderedDict
 from collections.abc import Callable, Iterator
+from threading import Lock
 from typing import Generic, TypeVar
 
 KT = TypeVar('KT')  # key type
@@ -8,36 +9,54 @@ VT = TypeVar('VT')  # value type
 
 
 class LRUCacheWithRemove(Generic[KT, VT]):
-    """Create a LRU cache with the option to remove keys from the cache"""
+    """Create a LRU cache with the option to remove keys from the cache.
+
+    Instances are shared process-wide (e.g. the Inquirer price cache and the
+    AssetResolver caches are used by every task), and every operation is a
+    multi-step mutation of the underlying OrderedDict, so all operations hold a
+    lock. Under gevent monkeypatching the lock is cooperative and uncontended
+    acquisition is cheap; after the migration to real threads it is what keeps
+    concurrent get/add/remove from corrupting the LRU order or raising KeyError.
+    """
 
     def __init__(self, maxsize: int = 512):
         self.cache: OrderedDict[KT, VT] = collections.OrderedDict()
         self.maxsize: int = maxsize
+        self.lock = Lock()
 
     def get(self, key: KT) -> VT | None:
-        if key in self.cache:
-            self.cache.move_to_end(key)
-            return self.cache[key]
-        return None
+        with self.lock:
+            if key in self.cache:
+                self.cache.move_to_end(key)
+                return self.cache[key]
+            return None
 
     def add(self, key: KT, value: VT) -> None:
-        self.cache[key] = value
-        if len(self.cache) > self.maxsize:
-            self.cache.popitem(last=False)
+        with self.lock:
+            self.cache[key] = value
+            if len(self.cache) > self.maxsize:
+                self.cache.popitem(last=False)
 
     def remove(self, key: KT) -> None:
-        if key in self.cache:
-            self.cache.pop(key)
+        with self.lock:
+            if key in self.cache:
+                self.cache.pop(key)
 
     def clear(self) -> None:
         """Delete all entries in the cache"""
-        self.cache.clear()
+        with self.lock:
+            self.cache.clear()
 
     def __iter__(self) -> Iterator[KT]:
         return self.cache.__iter__()
 
     def __contains__(self, key: KT) -> bool:
         return key in self.cache
+
+    def snapshot_keys(self) -> list[KT]:
+        """A point-in-time copy of the keys, safe to iterate while others mutate"""
+        with self.lock:
+            return list(self.cache)
 
 
 class DefaultLRUCache(LRUCacheWithRemove[KT, VT]):
@@ -48,12 +67,18 @@ class DefaultLRUCache(LRUCacheWithRemove[KT, VT]):
         self.default_factory = default_factory
 
     def get(self, key: KT) -> VT:
-        value = super().get(key)
-        if value is None:
-            value = self.default_factory()
-            self.add(key, value)
+        with self.lock:  # membership check and default creation must be one atomic step,
+            # otherwise two concurrent gets create two defaults and the one that loses
+            # the overwrite race keeps mutating an object no longer in the cache
+            if key in self.cache:
+                self.cache.move_to_end(key)
+                return self.cache[key]
 
-        return value
+            value = self.default_factory()
+            self.cache[key] = value
+            if len(self.cache) > self.maxsize:
+                self.cache.popitem(last=False)
+            return value
 
 
 class LRUCacheLowerKey(LRUCacheWithRemove[str, VT]):
@@ -74,22 +99,27 @@ class LRUSetCache(Generic[VT]):
     Internally it uses an OrderedDict In order to be able to keep the order of insertion
     so that the LRU mechanism can function. None used as value since is constant in python
     and it uses the minimum space possible.
+
+    Locked for the same reason as LRUCacheWithRemove.
     """
 
     def __init__(self, maxsize: int = 512):
         self.cache: OrderedDict[VT, None] = collections.OrderedDict()
         self.maxsize: int = maxsize
+        self.lock = Lock()
 
     def __contains__(self, key: VT) -> bool:
         return key in self.cache
 
     def add(self, key: VT) -> None:
         """Add an item to the cache"""
-        self.cache[key] = None
-        if len(self.cache) > self.maxsize:
-            self.cache.popitem(last=False)
+        with self.lock:
+            self.cache[key] = None
+            if len(self.cache) > self.maxsize:
+                self.cache.popitem(last=False)
 
     def remove(self, key: VT) -> None:
         """Remove an item from the cache"""
-        if key in self.cache:
-            self.cache.pop(key)
+        with self.lock:
+            if key in self.cache:
+                self.cache.pop(key)
