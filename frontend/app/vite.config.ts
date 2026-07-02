@@ -1,6 +1,7 @@
 import type { ComponentResolver } from 'unplugin-vue-components';
+import type { Plugin } from 'vite';
 import { builtinModules } from 'node:module';
-import { join, resolve } from 'node:path';
+import { join, relative, resolve } from 'node:path';
 import process from 'node:process';
 import VueI18nPlugin from '@intlify/unplugin-vue-i18n/vite';
 import { ruiIconsPlugin } from '@rotki/ui-library/vite-plugin';
@@ -32,6 +33,30 @@ const hmrEnabled = isDevelopment && !(process.env.CI && isTest);
 // the raw value would let e.g. `=1` enable the frontend while the backend stays off.
 if (process.env.ROTKI_ACCOUNTING_UPDATE === 'True')
   process.env.VITE_ACCOUNTING_UPDATE = 'true';
+
+/**
+ * Force a full page reload when a locale JSON changes. @intlify/unplugin-vue-i18n
+ * precompiles the messages and self-accepts the compiled module, so edits to
+ * src/locales are silently swallowed (no reload, stale text) and an
+ * `import.meta.hot.accept` + `setLocaleMessage` fallback no-ops. A full reload
+ * re-fetches the recompiled messages and re-initialises i18n from scratch.
+ */
+function reloadOnLocaleChange(): Plugin {
+  const localeDir = resolve(PACKAGE_ROOT, './src/locales');
+  return {
+    name: 'rotki:reload-on-locale-change',
+    handleHotUpdate({ file, server }) {
+      if (file.startsWith(localeDir) && file.endsWith('.json')) {
+        server.config.logger.info(
+          `[locale] ${relative(PACKAGE_ROOT, file)} changed, reloading page...`,
+          { clear: true, timestamp: true },
+        );
+        server.ws.send({ path: '*', type: 'full-reload' });
+        return [];
+      }
+    },
+  };
+}
 
 function RuiComponentResolver(): ComponentResolver {
   return {
@@ -167,6 +192,7 @@ export default defineConfig({
     VueI18nPlugin({
       include: [resolve(PACKAGE_ROOT, './src/locales/**')],
     }),
+    reloadOnLocaleChange(),
     ...(!isTest && process.env.ENABLE_DEV_TOOLS ? [vueDevTools()] : []),
   ],
   server: {
