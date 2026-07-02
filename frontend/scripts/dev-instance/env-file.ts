@@ -243,6 +243,26 @@ export function devFlagUpdates(file: string): Record<string, string> {
 }
 
 /**
+ * All managed KEY=VAL pairs currently INSIDE the block (instance keys + dev
+ * flags), for propagating into `process.env`. start-dev loads the env files into
+ * process.env before the instance block is (re)written, so a stale value from
+ * `app/.env` — e.g. the default `VITE_BACKEND_URL=...:4242` — can shadow the
+ * instance's real port. Vite gives process.env VITE_* vars priority over .env
+ * files, so the block must be pushed onto process.env to win. Dev flags a
+ * developer set outside the block are intentionally absent (not in-block), so
+ * their process.env value from the env-file load is left untouched.
+ */
+export function readManagedBlockEnv(file: string): Record<string, string> {
+  const { inBlock } = readManagedSplit(file);
+  const result: Record<string, string> = {};
+  for (const key of ALL_MANAGED_KEYS) {
+    if (key in inBlock)
+      result[key] = inBlock[key];
+  }
+  return result;
+}
+
+/**
  * Writes the dev:web-managed block for an instance run: the instance keys (pass
  * its computed env as `instanceUpdates`) plus the default-on dev flags. Plain
  * `pnpm dev` / `dev:web` does not call this: it strips the managed block via

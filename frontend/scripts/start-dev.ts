@@ -8,12 +8,12 @@ import {
   cleanInstance,
   clearManagedEnvBlock,
   DEFAULT_PORTS,
-  devFlagUpdates,
   type InstanceRuntime,
   PortSlotAllocationError,
   prepareInstance,
   printInstanceList,
   pruneInstances,
+  readManagedBlockEnv,
   readManagedInstanceName,
   repairRegistry,
 } from './dev-instance';
@@ -253,13 +253,17 @@ function useDefaultDevEnv(): void {
 }
 
 /**
- * Instance mode: propagate the resolved dev flags to this run's children
- * (electron reads ENABLE_DEV_TOOLS from process.env; vite the VITE_* ones) so
- * they take effect on the first run too, before the env file is re-read next
- * time.
+ * Instance mode: prepareInstance wrote the managed block with this instance's
+ * ports, data-dir pointers and dev flags. Push the whole block onto process.env
+ * so it OVERRIDES what loadDevEnv seeded from `app/.env` — that load runs before
+ * the block is written, so on a fresh instance run the default `VITE_BACKEND_URL`
+ * (:4242) is already in process.env, and Vite prioritises process.env VITE_*
+ * over .env files. Without this the renderer would talk to 4242 instead of the
+ * instance's backend. Electron reads ENABLE_DEV_TOOLS / ROTKI_* from process.env;
+ * vite the VITE_* ones.
  */
 function propagateInstanceEnv(): void {
-  for (const [key, value] of Object.entries(devFlagUpdates(ENV_FILE_RELATIVE)))
+  for (const [key, value] of Object.entries(readManagedBlockEnv(ENV_FILE_RELATIVE)))
     process.env[key] = value;
 }
 

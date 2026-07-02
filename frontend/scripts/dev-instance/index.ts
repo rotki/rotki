@@ -7,6 +7,7 @@ export {
   devFlagUpdates,
   loadEnvFile,
   MANAGED_ENV_KEYS,
+  readManagedBlockEnv,
   readManagedInstanceName,
   writeManagedEnv,
 } from './env-file';
