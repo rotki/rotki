@@ -4,6 +4,7 @@ from typing import TYPE_CHECKING, Final
 from rotkehlchen.chain.solana.rpc import Pubkey, Signature
 from rotkehlchen.chain.solana.types import SolanaInstruction, SolanaTransaction
 from rotkehlchen.db.cache import DBCacheDynamic
+from rotkehlchen.db.constants import HISTORY_MAPPING_KEY_STATE, TX_DECODED, HistoryMappingState
 from rotkehlchen.db.dbtx import DBCommonTx
 from rotkehlchen.db.filtering import (
     SolanaTransactionsFilterQuery,
@@ -62,7 +63,7 @@ class DBSolanaTx(DBCommonTx[SolanaAddress, SolanaTransaction, Signature, SolanaT
         query = """INSERT OR IGNORE INTO solana_transactions(slot, fee, block_time, success, signature) VALUES (?, ?, ?, ?, ?)"""  # noqa: E501
         newly_inserted: list[Signature] = []
         for tx in solana_transactions:
-            tx_id, is_new = self.db.write_single_tuple(
+            tx_id, is_new, is_new_mapping = self.db.write_single_tuple(
                 write_cursor=write_cursor,
                 tuple_type='solana_transaction',
                 query=query,
@@ -73,6 +74,12 @@ class DBSolanaTx(DBCommonTx[SolanaAddress, SolanaTransaction, Signature, SolanaT
                 newly_inserted.append(tx.signature)
             if tx_id is None:
                 continue
+            if is_new_mapping and is_new is False:
+                self.flag_transaction_for_redecoding(
+                    write_cursor=write_cursor,
+                    tx_id=tx_id,
+                    signature=tx.signature,
+                )
 
             self.db.write_tuples(
                 write_cursor=write_cursor,
@@ -84,7 +91,7 @@ class DBSolanaTx(DBCommonTx[SolanaAddress, SolanaTransaction, Signature, SolanaT
                 ],
             )
             for instruction in tx.instructions:  # insert instructions
-                instruction_id, _ = self.db.write_single_tuple(
+                instruction_id, _, _ = self.db.write_single_tuple(
                     write_cursor=write_cursor,
                     tuple_type='solana_instruction',
                     query='INSERT OR IGNORE INTO solana_tx_instructions(tx_id, execution_index, parent_execution_index, program_id_index, data) VALUES (?, ?, ?, ?, ?)',  # noqa: E501
@@ -111,6 +118,42 @@ class DBSolanaTx(DBCommonTx[SolanaAddress, SolanaTransaction, Signature, SolanaT
         if len(newly_inserted) != 0:  # new solana txs are not decoded yet -> pending decoding
             self.db.pending_txs_tracker.mark_decoding_dirty(SupportedBlockchain.SOLANA)
         return newly_inserted
+
+    def flag_transaction_for_redecoding(
+            self,
+            write_cursor: DBCursor,
+            tx_id: int,
+            signature: Signature,
+    ) -> None:
+        """Clear a decoded Solana transaction unless it has customized events."""
+        if write_cursor.execute(
+            'SELECT 1 FROM solana_tx_mappings WHERE tx_id=? AND value=?',
+            (tx_id, TX_DECODED),
+        ).fetchone() is None or write_cursor.execute(
+            'SELECT 1 FROM history_events h '
+            'INNER JOIN chain_events_info c ON h.identifier=c.identifier '
+            'INNER JOIN history_events_mappings m ON h.identifier=m.parent_identifier '
+            'WHERE c.tx_ref=? AND h.location=? AND m.name=? AND m.value=?',
+            (
+                signature.to_bytes(),
+                Location.SOLANA.serialize_for_db(),
+                HISTORY_MAPPING_KEY_STATE,
+                HistoryMappingState.CUSTOMIZED.serialize_for_db(),
+            ),
+        ).fetchone() is not None:
+            return
+
+        DBHistoryEvents(self.db).delete_events_by_tx_ref(
+            write_cursor=write_cursor,
+            tx_refs=[signature],
+            location=Location.SOLANA,
+            customized_handling='delete',
+        )
+        write_cursor.execute(
+            'DELETE FROM solana_tx_mappings WHERE tx_id=? AND value=?',
+            (tx_id, TX_DECODED),
+        )
+        self.db.pending_txs_tracker.mark_decoding_dirty(SupportedBlockchain.SOLANA)
 
     @staticmethod
     def add_token_account_mappings(
