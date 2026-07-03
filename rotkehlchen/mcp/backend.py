@@ -138,3 +138,60 @@ def query_all_balances(refresh: bool, timeout: int) -> dict[str, Any]:
         params={'ignore_cache': 'true'} if refresh else None,
     )
     return payload['result']
+
+
+def query_asset_details(identifiers: list[str]) -> dict[str, Any]:
+    """Return GlobalDB details for the requested asset identifiers."""
+    if len(identifiers) == 0:
+        raise ValueError('At least one asset identifier is required')
+
+    backend_config = get_backend_config()
+    payload = request_api(
+        base_url=backend_config.base_url,
+        endpoint='assets/all',
+        timeout=backend_config.timeout,
+        json_data={'identifiers': identifiers},
+        method='POST',
+    )
+    if not isinstance(result := payload['result'], dict) or not isinstance(
+            result.get('entries'),
+            list,
+    ):
+        raise BackendQueryError('rotki backend returned an unexpected assets response')
+
+    return result
+
+
+def query_historical_prices(
+        asset_timestamps: list[tuple[str, int]],
+        target_asset: str,
+        max_seconds_distance: int,
+) -> dict[str, Any]:
+    """Return prices stored in GlobalDB near the requested timestamps."""
+    if len(asset_timestamps) == 0:
+        raise ValueError('At least one asset and timestamp pair is required')
+    if max_seconds_distance <= 0:
+        raise ValueError('Maximum seconds distance must be positive')
+
+    backend_config = get_backend_config()
+    payload = request_api(
+        base_url=backend_config.base_url,
+        endpoint='assets/prices/historical',
+        timeout=backend_config.timeout,
+        json_data={
+            'assets_timestamp': asset_timestamps,
+            'target_asset': target_asset,
+            'only_cache_period': max_seconds_distance,
+        },
+        method='POST',
+    )
+    if (
+        not isinstance(result := payload['result'], dict) or
+        not isinstance(result.get('assets'), dict) or
+        not isinstance(result.get('target_asset'), str)
+    ):
+        raise BackendQueryError(
+            'rotki backend returned an unexpected historical prices response',
+        )
+
+    return result
