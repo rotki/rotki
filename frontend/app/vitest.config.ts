@@ -9,6 +9,7 @@ export default mergeConfig(
     resolve: {
       alias: {
         '@test': `${path.join(__dirname, 'tests', 'unit')}/`,
+        '@electron': path.join(__dirname, 'electron'),
       },
     },
   }),
