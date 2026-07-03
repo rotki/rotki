@@ -31,6 +31,7 @@ from rotkehlchen.premium.premium import (
     UNKNOWN_CONTAINER_FALLBACK_ID_PREFIX,
     Premium,
     PremiumCredentials,
+    UserLimits,
     check_docker_container,
     extended_get_machine_id,
     get_kubernetes_pod_name,
@@ -880,10 +881,21 @@ def test_limits_caching(rotkehlchen_instance: 'Rotkehlchen') -> None:
     premium._cached_limits = None
     assert premium._cached_limits is None
 
-    limits_data = {  # mock server response for limits endpoint
-        'history_events': 10000,
-        'pnl_reports': 50,
-        'devices': 3,
+    limits_data: UserLimits = {  # mock server response for limits endpoint
+        'asset_movement_matching': True,
+        'current_tier': 'Pro',
+        'eth_staked_limit': 32,
+        'eth_staking_view': True,
+        'event_analysis_view': True,
+        'gnosispay': True,
+        'graphs_view': True,
+        'history_events_limit': 10000,
+        'limit_of_devices': 3,
+        'max_backup_size_mb': 100,
+        'monerium': True,
+        'pnl_events_limit': 10000,
+        'reports_lookup_limit': 50,
+        'unlocks': {},
     }
     with patch.object(  # mock the external request
         premium.session,
@@ -891,9 +903,7 @@ def test_limits_caching(rotkehlchen_instance: 'Rotkehlchen') -> None:
         return_value=MockResponse(200, json.dumps(limits_data)),
     ) as mock_get:  # multiple calls should use cache after first API hit
         for _i in range(3):
-            limits = premium.fetch_limits()
-            assert limits == limits_data
-            assert premium._cached_limits == limits_data
+            assert premium.fetch_limits() == limits_data
             assert mock_get.call_count == 1  # should always be 1 after first call
 
     # check that cache is cleared when credentials are reset
@@ -905,9 +915,7 @@ def test_limits_caching(rotkehlchen_instance: 'Rotkehlchen') -> None:
         'get',
         return_value=MockResponse(200, json.dumps(limits_data)),
     ) as mock_get:
-        limits4 = premium.fetch_limits()
-        assert limits4 == limits_data
-        assert premium._cached_limits == limits_data
+        assert premium.fetch_limits() == limits_data
         assert mock_get.call_count == 1
 
 

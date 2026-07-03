@@ -1305,7 +1305,7 @@ class TokenKind(DBCharEnumMixIn):
         if (result := cls.deserialize_from_db(value)) not in (TokenKind.ERC20, TokenKind.ERC721):
             raise DeserializationError(f'Expected EVM token kind, got {result}')
 
-        return result  # type: ignore[return-value]  # the check above ensures it's an evm token kind.
+        return result
 
     @classmethod
     def deserialize_solana_from_db(cls, value: Any) -> 'SOLANA_TOKEN_KINDS_TYPE':
@@ -1313,7 +1313,7 @@ class TokenKind(DBCharEnumMixIn):
         if (result := cls.deserialize_from_db(value)) not in (TokenKind.SPL_TOKEN, TokenKind.SPL_NFT):  # noqa: E501
             raise DeserializationError(f'Expected solana token kind, got {result}')
 
-        return result  # type: ignore[return-value]  # the check above ensures it's solana token kind.
+        return result
 
 
 EVM_TOKEN_KINDS_TYPE = Literal[TokenKind.ERC20, TokenKind.ERC721]

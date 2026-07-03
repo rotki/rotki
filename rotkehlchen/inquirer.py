@@ -11,7 +11,6 @@ from typing import (
     Optional,
     TypeVar,
     Union,
-    cast,
     overload,
 )
 
@@ -1072,8 +1071,7 @@ class Inquirer:
         - RemoteError
         """
         assert lp_token.chain_id in CURVE_CHAIN_IDS, f'{lp_token} is not on a curve supported chain'  # noqa: E501
-        chain_id = cast('CURVE_CHAIN_ID_TYPE', lp_token.chain_id)
-        evm_manager = self.get_evm_manager(chain_id=chain_id)
+        evm_manager = self.get_evm_manager(chain_id=lp_token.chain_id)
         evm_manager.assure_curve_cache_is_queried_and_decoder_updated(
             node_inquirer=evm_manager.node_inquirer,
             transactions_decoder=evm_manager.transactions_decoder,
@@ -1082,7 +1080,7 @@ class Inquirer:
         with GlobalDBHandler().conn.read_ctx() as cursor:
             pool_address_in_cache = globaldb_get_unique_cache_value(
                 cursor=cursor,
-                key_parts=(CacheType.CURVE_POOL_ADDRESS, str(chain_id.serialize_for_db()), lp_token.evm_address),  # noqa: E501
+                key_parts=(CacheType.CURVE_POOL_ADDRESS, str(lp_token.chain_id.serialize_for_db()), lp_token.evm_address),  # noqa: E501
             )
             if pool_address_in_cache is None:
                 return None
@@ -1091,7 +1089,7 @@ class Inquirer:
             pool_tokens_addresses = read_curve_pool_tokens(
                 cursor=cursor,
                 pool_address=pool_address,
-                chain_id=chain_id,
+                chain_id=lp_token.chain_id,
             )
 
         tokens: list[EvmToken] = []
@@ -1103,7 +1101,7 @@ class Inquirer:
                 else:
                     tokens.append(EvmToken(evm_address_to_identifier(
                         address=token_address,
-                        chain_id=chain_id,
+                        chain_id=lp_token.chain_id,
                         token_type=TokenKind.ERC20,
                     )))
         except UnknownAsset:

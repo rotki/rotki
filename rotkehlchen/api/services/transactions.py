@@ -77,7 +77,6 @@ if TYPE_CHECKING:
     from rotkehlchen.fval import FVal
     from rotkehlchen.rotkehlchen import Rotkehlchen
     from rotkehlchen.types import (
-        CHAINS_WITH_NODES_TYPE,
         BlockchainAddress,
         BTCTxId,
         ChecksumEvmAddress,
@@ -199,8 +198,8 @@ class TransactionsService:
         inquirer = None
         archive_status: dict[str, bool] = {}
         if blockchain in CHAINS_WITH_NODES:
-            manager = self.rotkehlchen.chains_aggregator.get_chain_manager(blockchain=blockchain)  # type: ignore[call-overload]
-            inquirer = manager.node_inquirer
+            manager = self.rotkehlchen.chains_aggregator.get_chain_manager(blockchain=blockchain)
+            inquirer = manager.node_inquirer  # type: ignore[attr-defined]  # all CHAINS_WITH_NODES managers have a node inquirer
             for node_info, rpc_node in inquirer.rpc_mapping.items():
                 archive_status[node_info.endpoint] = rpc_node.is_archive
 
@@ -299,7 +298,7 @@ class TransactionsService:
                         name=row[0],
                         endpoint=row[1],
                         owned=bool(row[2]),
-                        blockchain=blockchain,  # type: ignore[arg-type]
+                        blockchain=blockchain,
                     )
 
         try:
@@ -353,11 +352,10 @@ class TransactionsService:
                     'status_code': HTTPStatus.BAD_REQUEST,
                 }
 
-        blockchain_with_nodes = cast('CHAINS_WITH_NODES_TYPE', blockchain)
         manager = cast(
             'ChainManagerWithNodesMixin',
             self.rotkehlchen.chains_aggregator.get_chain_manager(
-                blockchain=blockchain_with_nodes,
+                blockchain=blockchain,
             ),
         )
         errors = []
@@ -366,7 +364,7 @@ class TransactionsService:
                 name=row[0],
                 endpoint=row[1],
                 owned=bool(row[2]),
-                blockchain=blockchain_with_nodes,
+                blockchain=blockchain,
             )))
             if success is False:
                 errors.append({'name': node.name, 'error': msg})
@@ -790,7 +788,7 @@ class TransactionsService:
 
             with self.rotkehlchen.data.db.conn.read_ctx() as cursor:
                 chains_to_query.extend([
-                    blockchain  # type: ignore[misc]  # the check guarantees valid types
+                    blockchain
                     for row in cursor.execute(query_str, bindings)
                     if (blockchain := SupportedBlockchain.deserialize(row[0])) in CHAINS_WITH_TRANSACTION_DECODERS  # noqa: E501
                 ])

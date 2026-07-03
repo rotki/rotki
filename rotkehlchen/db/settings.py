@@ -587,14 +587,14 @@ class CachedSettings:
 
     def _refresh_indexers_cache(self) -> None:
         """Normalize indexer order once for quick lookups."""
-        chain_to_indexers = {}
+        chain_to_indexers: dict[ChainID, tuple[EvmIndexer, ...]] = {}
         for chain in EVM_CHAIN_IDS_WITH_TRANSACTIONS:
-            chain_to_indexers[chain] = self._settings.evm_indexers_order.get(
+            chain_to_indexers[chain] = tuple(self._settings.evm_indexers_order.get(
                 chain,
                 self._settings.default_evm_indexer_order,
-            )
+            ))
 
-        self.__class__._evm_indexers_order_per_chain = chain_to_indexers  # type: ignore
+        self.__class__._evm_indexers_order_per_chain = chain_to_indexers
 
     def initialize(self, settings: DBSettings) -> None:
         """Initialize with saved DB settings

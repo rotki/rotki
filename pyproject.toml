@@ -42,7 +42,7 @@ dependencies = [
     "maxminddb==2.6.3",
     "pywin32==311; sys_platform == 'win32'",
     "miniupnpc==2.3.3",
-    "cryptography==46.0.7",
+    "cryptography==48.0.1",
     "py-machineid==0.8.0",
     "more-itertools==10.6.0",  # for peekable iterators
     "regex==2025.11.3",  # used for unicode information in detection of spam tokens
@@ -64,7 +64,7 @@ dependencies = [
     "google-api-python-client==2.192.0",
     "google-auth==2.49.1",
     # To build JWT for coinbase exchange key validation
-    "PyJWT==2.12.0",
+    "PyJWT==2.13.0",
     # solana
     "solana==0.36.9",
     "solders==0.26.0",
@@ -109,13 +109,13 @@ dev = [
 ]
 
 lint = [
-    "mypy==1.19.1",
+    "mypy==2.1.0",
     "mypy-extensions==1.1.0",
-    "pylint==4.0.5",
+    "pylint==4.0.6",
     "astroid==4.0.2",  # engine of pylint, upgrade them together
     "ruff==0.15.10",
     "double-indent-rotki==0.1.7",  # our fork of double indent
-    "pyright==1.1.408",
+    "pyright==1.1.411",
     # type packages used by mypy
     # pinned here so that we can have reproducible mypy runs
     "types-chardet==5.0.4.6",
@@ -209,24 +209,20 @@ disallow_untyped_decorators = false
 [[tool.mypy.overrides]]
 module = [
     "rotkehlchen.tests.api.blockchain.*",
-    "rotkehlchen.tests.api.test_aave",
     "rotkehlchen.tests.api.test_accounting_rules",
     "rotkehlchen.tests.api.test_addressbook",
     "rotkehlchen.tests.api.test_assets",
     "rotkehlchen.tests.api.test_assets_updates",
     "rotkehlchen.tests.api.test_async",
-    "rotkehlchen.tests.api.test_balancer",
     "rotkehlchen.tests.api.test_balances",
     "rotkehlchen.tests.api.test_bitcoin",
     "rotkehlchen.tests.api.test_caching",
     "rotkehlchen.tests.api.test_calendar",
-    "rotkehlchen.tests.api.test_compound",
     "rotkehlchen.tests.api.test_current_assets_price",
     "rotkehlchen.tests.api.test_custom_assets",
     "rotkehlchen.tests.api.test_data_import",
     "rotkehlchen.tests.api.test_data_purging",
     "rotkehlchen.tests.api.test_database",
-    "rotkehlchen.tests.api.test_defi",
     "rotkehlchen.tests.api.test_ens",
     "rotkehlchen.tests.api.test_erc20_info",
     "rotkehlchen.tests.api.test_errors",
@@ -247,7 +243,6 @@ module = [
     "rotkehlchen.tests.api.test_location_asset_mappings",
     "rotkehlchen.tests.api.test_locations",
     "rotkehlchen.tests.api.test_periodic",
-    "rotkehlchen.tests.api.test_pickle",
     "rotkehlchen.tests.api.test_pnl_csv",
     "rotkehlchen.tests.api.test_premium",
     "rotkehlchen.tests.api.test_settings",
@@ -258,13 +253,11 @@ module = [
     "rotkehlchen.tests.api.test_sushiswap",
     "rotkehlchen.tests.data_migrations.test_migrations",
     "rotkehlchen.tests.api.test_tags",
-    "rotkehlchen.tests.api.test_trades",
     "rotkehlchen.tests.api.test_uniswap",
     "rotkehlchen.tests.api.test_user_assets",
     "rotkehlchen.tests.api.test_user_evm_tokens",
     "rotkehlchen.tests.api.test_user_notes",
     "rotkehlchen.tests.api.test_users",
-    "rotkehlchen.tests.api.test_yearn_vaults",
 ]
 check_untyped_defs = true
 disallow_untyped_defs = true

@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Final, cast
+from typing import TYPE_CHECKING, Final
 
 from rotkehlchen.db.constants import HISTORY_MAPPING_KEY_STATE, TX_DECODED, HistoryMappingState
 from rotkehlchen.db.filtering import INTERNAL_TX_CONFLICTS_JOIN
@@ -213,7 +213,7 @@ def get_internal_tx_conflicts(
     for chain, tx_hash, row_action in cursor.execute(query, bindings):
         chain_id = ChainID.deserialize_from_db(chain)
         assert chain_id in EVM_CHAIN_IDS_WITH_TRANSACTIONS
-        entries.append((cast('EVM_CHAIN_IDS_WITH_TRANSACTIONS_TYPE', chain_id), deserialize_evm_tx_hash(tx_hash), row_action))  # noqa: E501
+        entries.append((chain_id, deserialize_evm_tx_hash(tx_hash), row_action))
 
     return entries
 
@@ -240,7 +240,7 @@ def get_pending_internal_tx_repull_conflicts(
         assert chain_id in EVM_CHAIN_IDS_WITH_TRANSACTIONS
         tx_hash = deserialize_evm_tx_hash(row_tx_hash)
         rows.append((
-            cast('EVM_CHAIN_IDS_WITH_TRANSACTIONS_TYPE', chain_id),
+            chain_id,
             tx_hash,
             tx_timestamp,
             action,

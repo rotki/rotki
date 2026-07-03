@@ -456,7 +456,7 @@ def maybe_detect_new_tokens(database: 'DBHandler') -> None:
             ):
                 continue
 
-            chain: SUPPORTED_EVM_EVMLIKE_CHAINS_TYPE = SupportedBlockchain.from_location(event.location)  # type: ignore[arg-type,assignment]  # event.location is one of EVM_LOCATIONS  # noqa: E501
+            chain: SUPPORTED_EVM_EVMLIKE_CHAINS_TYPE = SupportedBlockchain.from_location(event.location)  # type: ignore[assignment]  # event.location is one of EVM_LOCATIONS  # noqa: E501
             if (
                 event.location_label is None or
                 EVM_ADDRESS_REGEX.fullmatch(event.location_label) is None or
