@@ -3225,6 +3225,7 @@ class RestAPI:
             'location_label': issue.location_label or None,
             'protocol': issue.protocol or None,
             'asset': issue.asset or None,
+            'group_identifier': issue.group_identifier,
             'ts_start': issue.ts_start,
             'ts_end': issue.ts_end,
             'severity': issue.severity,

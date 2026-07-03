@@ -14773,6 +14773,10 @@ Managing calendar reminders
 Data Issues
 ==============================
 
+  Data issue response objects include a ``group_identifier`` for navigating to the history event
+  group associated with the issue. It is ``null`` only for ``current_balance_mismatch`` issues,
+  which are bucket-scoped and do not reference a history event.
+
   .. http:get:: /api/(version)/data_issues
 
     Lists issues from the data issues inbox. By default only non-terminal states are returned
@@ -14802,6 +14806,7 @@ Data Issues
             "location_label": "0x0000000000000000000000000000000000000001",
             "protocol": null,
             "asset": "ETH",
+            "group_identifier": "10x64f1982504ab714037467fdd45d3ecf5a6356361403fc97dd325101d8c038c4e",
             "ts_start": 1710000000,
             "ts_end": 1710000000,
             "severity": "warning",
@@ -14816,7 +14821,7 @@ Data Issues
             "resolved_at": null
           }],
           "entries_found": 1,
-          "entries_limit": 10
+          "entries_limit": -1
         },
         "message": ""
       }
@@ -14831,8 +14836,9 @@ Data Issues
     :query limit: Optional pagination limit.
     :query offset: Optional pagination offset.
     :resjson list entries: Matching data issues, with parsed ``payload`` and expanded ``auto_remediation_attempts``.
+    :resjson string entries.group_identifier: Group identifier of the history event referenced by the issue. ``null`` for ``current_balance_mismatch`` issues.
     :resjson int entries_found: Total matching entries before pagination.
-    :resjson int entries_limit: Pagination limit, or ``-1`` when not paginated.
+    :resjson int entries_limit: The number of entries the user is allowed to query. Always ``-1`` because this endpoint is unlimited.
     :statuscode 200: Query was successful.
     :statuscode 400: Validation error.
     :statuscode 401: No user is currently logged in.
@@ -14864,6 +14870,7 @@ Data Issues
           "location_label": "0x0000000000000000000000000000000000000001",
           "protocol": null,
           "asset": "ETH",
+          "group_identifier": "10x64f1982504ab714037467fdd45d3ecf5a6356361403fc97dd325101d8c038c4e",
           "ts_start": 1710000000,
           "ts_end": 1710000000,
           "severity": "warning",
@@ -14912,6 +14919,7 @@ Data Issues
           "location_label": "0x0000000000000000000000000000000000000001",
           "protocol": null,
           "asset": "ETH",
+          "group_identifier": "10x64f1982504ab714037467fdd45d3ecf5a6356361403fc97dd325101d8c038c4e",
           "ts_start": 1710000000,
           "ts_end": 1710000000,
           "severity": "warning",
@@ -14961,6 +14969,7 @@ Data Issues
           "location_label": "0x0000000000000000000000000000000000000001",
           "protocol": null,
           "asset": "ETH",
+          "group_identifier": "10x64f1982504ab714037467fdd45d3ecf5a6356361403fc97dd325101d8c038c4e",
           "ts_start": 1710000000,
           "ts_end": 1710000000,
           "severity": "warning",
@@ -15013,6 +15022,7 @@ Data Issues
           "location_label": "0x0000000000000000000000000000000000000001",
           "protocol": null,
           "asset": "ETH",
+          "group_identifier": "10x64f1982504ab714037467fdd45d3ecf5a6356361403fc97dd325101d8c038c4e",
           "ts_start": 1710000000,
           "ts_end": 1710000000,
           "severity": "warning",
