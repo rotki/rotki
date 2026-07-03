@@ -5,6 +5,7 @@ Changelog
 * :bug:`-` fix order of aave v3 token interest earnings for a specific subset of events.
 * :feature:`12499` Additional crypto.com CSV import transaction kinds such as van purchases, fiat wallet limit orders, and extra earn interest payments will now be properly imported.
 * :bug:`12507` The documented ``LOGFROMOTHERMODULES`` Docker environment variable is now honored again (it was misspelled internally) and accepts truthy string values such as ``true``, ``1``, ``yes`` and ``on``.
+* :bug:`-` Quitting the desktop app now stops it from querying the backend as it shuts down, so closing the app no longer logs spurious connection errors from requests that raced the backend termination.
 * :bug:`-` The rate-limit hint in the PnL report's missing prices dialog is now a warning icon next to the refresh button, so its tooltip no longer covers the price input or the buttons of nearby rows.
 * :bug:`-` The pending task shown while balances are queried now makes clear that a balance snapshot is being saved for statistics, and notes when query errors are being ignored.
 * :bug:`-` The "history out of sync" warning shown before generating a PnL report now lets you start the history sync right there, instead of only sending you to the history page.
