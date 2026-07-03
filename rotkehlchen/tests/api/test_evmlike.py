@@ -208,7 +208,7 @@ def test_evmlike_add_accounts(rotkehlchen_api_server: 'APIServer') -> None:
     assert {'address': addy_1, 'label': 'addy 1 label', 'tags': None} in result
     assert {'address': addy_0, 'label': None, 'tags': None} in result
 
-    assert rotki.chains_aggregator.accounts.zksync_lite == (addy_0, addy_1)
+    assert list(rotki.chains_aggregator.accounts.zksync_lite) == [addy_0, addy_1]
 
     response = requests.delete(api_url_for(
         rotkehlchen_api_server,

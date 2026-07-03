@@ -295,7 +295,7 @@ class StakedaoCommonDecoder(EvmDecoderInterface, ReloadableDecoderMixin):
                             method_name='token',
                         )))),
                     )),
-                    asset=received_token,  # type: ignore[has-type]
+                    asset=received_token,
                     from_event_type=HistoryEventType.RECEIVE,
                     from_event_subtype=HistoryEventSubType.NONE,
                     to_event_type=HistoryEventType.WITHDRAWAL,

@@ -366,10 +366,8 @@ def load_json_query_viewargs_data(request: Request, schema: Schema) -> dict[str,
     # Get data either from json or from querystring
     data = parser.load_json(request, schema)
     if data is missing:
+        # load_querystring always returns a MultiDictProxy, even for an empty query string.
         data = parser.load_querystring(request, schema)
-
-    if data is missing:
-        return data
 
     return _combine_parser_data(data, view_args, schema)  # type: ignore  # MultiDictproxy is dict
 

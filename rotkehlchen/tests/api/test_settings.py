@@ -709,7 +709,7 @@ def test_set_evm_indexers_order(rotkehlchen_api_server: 'APIServer') -> None:
 
     # cached settings should be updated
     indexers = CachedSettings().get_evm_indexers_order_for_chain(ChainID.ETHEREUM)
-    assert indexers == [EvmIndexer.BLOCKSCOUT, EvmIndexer.ETHERSCAN]
+    assert indexers == (EvmIndexer.BLOCKSCOUT, EvmIndexer.ETHERSCAN)
     # and also settings endpoint
     settings = assert_proper_response_with_result(
         response=requests.get(settings_url),

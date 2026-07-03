@@ -118,7 +118,6 @@ from rotkehlchen.premium.sync import PremiumSyncManager
 from rotkehlchen.tasks.manager import DEFAULT_MAX_TASKS_NUM, TaskManager
 from rotkehlchen.types import (
     EVM_CHAINS_WITH_TRANSACTIONS,
-    EVM_CHAINS_WITH_TRANSACTIONS_TYPE,
     SUPPORTED_BITCOIN_CHAINS_TYPE,
     SUPPORTED_EVM_CHAINS_TYPE,
     SUPPORTED_EVM_EVMLIKE_CHAINS_TYPE,
@@ -795,12 +794,12 @@ class Rotkehlchen:
 
         xpub_data = self.data.db.get_bitcoin_xpub_data(
             cursor=cursor,
-            blockchain=blockchain,  # type: ignore
+            blockchain=blockchain,
         )
         addresses_to_account_data = {x.address: x for x in account_data}
         address_to_xpub_mappings = self.data.db.get_addresses_to_xpub_mapping(
             cursor=cursor,
-            blockchain=blockchain,  # type: ignore
+            blockchain=blockchain,
             addresses=list(addresses_to_account_data.keys()),
         )
 
@@ -1075,7 +1074,6 @@ class Rotkehlchen:
         )
         with contextlib.ExitStack() as stack:
             if blockchain in EVM_CHAINS_WITH_TRANSACTIONS:
-                blockchain = cast('EVM_CHAINS_WITH_TRANSACTIONS_TYPE', blockchain)  # by default mypy doesn't narrow the type  # noqa: E501
                 evm_manager = self.chains_aggregator.get_chain_manager(blockchain)
                 evm_addresses: list[ChecksumEvmAddress] = cast('list[ChecksumEvmAddress]', accounts)  # noqa: E501
                 self.maybe_kill_running_tx_query_tasks(blockchain, evm_addresses)

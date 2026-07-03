@@ -1448,7 +1448,7 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
             chains_with_valid_addresses = []
             for chain in chains_to_check:
                 chains_with_valid_addresses.append(chain)
-                if chain in EVM_CHAINS_WITH_TRANSACTIONS and self.get_chain_manager(chain).node_inquirer.is_contract(address=account):  # type: ignore  # mypy doesn't detect this as SUPPORTED_EVM_EVMLIKE_CHAINS  # noqa: E501
+                if chain in EVM_CHAINS_WITH_TRANSACTIONS and self.get_chain_manager(chain).node_inquirer.is_contract(address=account):  # noqa: E501
                     evm_contract_addresses.add(account)
 
             new_accounts, new_failed_accounts, had_activity = self.check_chains_and_add_accounts(

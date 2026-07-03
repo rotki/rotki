@@ -357,7 +357,7 @@ class Binance(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
             )
             log.debug(f'{self.name} API request', request_url=request_url)
             try:
-                response = self.session.request(  # type: ignore[misc]  # keyword is a string as typed above
+                response = self.session.request(
                     method=request_method,
                     url=request_url,
                     timeout=timeout,
@@ -369,7 +369,7 @@ class Binance(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
                 ) from e
 
             if response.status_code not in {200, 418, 429}:
-                code = 'no code found'
+                code: str | int = 'no code found'
                 msg = 'no message found'
                 with suppress(JSONDecodeError):
                     result = json.loads(response.text)

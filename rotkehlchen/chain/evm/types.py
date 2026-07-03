@@ -151,7 +151,11 @@ EVM_INDEXER_TO_INTERNAL_TX_SOURCE: Final[dict[EvmIndexer, InternalTxSource]] = {
 class SerializableChainIndexerOrder(NamedTuple):
     order: Mapping[ChainID, Sequence[EvmIndexer]]
 
-    def get(self, key: ChainID, default: Any) -> Sequence[EvmIndexer] | None:
+    def get(
+            self,
+            key: ChainID,
+            default: Sequence[EvmIndexer],
+    ) -> Sequence[EvmIndexer]:
         return self.order.get(key, default)
 
     def serialize(self) -> dict[str, list[str]]:
