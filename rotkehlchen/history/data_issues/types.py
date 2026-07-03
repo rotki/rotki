@@ -36,6 +36,7 @@ class DataIssue:
     location_label: str
     protocol: str
     asset: str
+    group_identifier: str | None
     ts_start: int
     ts_end: int
     severity: str

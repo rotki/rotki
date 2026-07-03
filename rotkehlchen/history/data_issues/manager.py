@@ -26,9 +26,27 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
-DATA_ISSUE_SELECT_COLUMNS = (
-    'id, kind, location, location_label, protocol, asset, ts_start, ts_end, severity, state, '
-    'auto_remediation_attempts_json, payload_json, created_at, resolved_at'
+DATA_ISSUE_COLUMN_NAMES = (
+    'id',
+    'kind',
+    'location',
+    'location_label',
+    'protocol',
+    'asset',
+    'ts_start',
+    'ts_end',
+    'severity',
+    'state',
+    'auto_remediation_attempts_json',
+    'payload_json',
+    'created_at',
+    'resolved_at',
+)
+DATA_ISSUE_COLUMNS = ', '.join(DATA_ISSUE_COLUMN_NAMES)
+DATA_ISSUE_SELECT_QUERY = (
+    f'SELECT {", ".join(f"data_issues.{column}" for column in DATA_ISSUE_COLUMN_NAMES)}, '
+    'history_events.group_identifier FROM data_issues LEFT JOIN history_events ON '
+    'data_issues.event_identifier = history_events.identifier'
 )
 
 DATA_ISSUE_INSERT_QUERY = """
@@ -50,7 +68,10 @@ INSERT OR IGNORE INTO data_issues (
 """
 
 
-def _row_to_data_issue(row: tuple[Any, ...]) -> DataIssue:
+def _row_to_data_issue(
+        row: tuple[Any, ...],
+        group_identifier: str | None = None,
+) -> DataIssue:
     return DataIssue(
         id=row[0],
         kind=row[1],
@@ -58,6 +79,7 @@ def _row_to_data_issue(row: tuple[Any, ...]) -> DataIssue:
         location_label=row[3],
         protocol=row[4],
         asset=row[5],
+        group_identifier=row[14] if len(row) > 14 else group_identifier,
         ts_start=row[6],
         ts_end=row[7],
         severity=row[8],
@@ -165,7 +187,7 @@ class DataIssuesManager:
             self,
             filters: DataIssueFilters | DataIssuesFilterQuery | None = None,
     ) -> list[DataIssue]:
-        query = f'SELECT {DATA_ISSUE_SELECT_COLUMNS} FROM data_issues'
+        query = f'SELECT * FROM ({DATA_ISSUE_SELECT_QUERY})'
         where_parts: list[str] = []
         bindings: list[Any] = []
         if isinstance(filters, DataIssuesFilterQuery):
@@ -204,7 +226,7 @@ class DataIssuesManager:
     def get_issue(self, issue_id: int) -> DataIssue:
         with self.db.conn.read_ctx() as cursor:
             row = cursor.execute(
-                f'SELECT {DATA_ISSUE_SELECT_COLUMNS} FROM data_issues WHERE id = ?',
+                f'SELECT * FROM ({DATA_ISSUE_SELECT_QUERY}) WHERE id = ?',
                 (issue_id,),
             ).fetchone()
         if row is None:
@@ -238,7 +260,7 @@ class DataIssuesManager:
             row = write_cursor.execute(
                 'UPDATE data_issues SET state = ?, auto_remediation_attempts_json = ?, '
                 'payload_json = ?, resolved_at = ? WHERE id = ? RETURNING '
-                f'{DATA_ISSUE_SELECT_COLUMNS}',
+                f'{DATA_ISSUE_COLUMNS}',
                 (
                     state,
                     json.dumps(attempts, separators=(',', ':')),
@@ -249,7 +271,7 @@ class DataIssuesManager:
             ).fetchone()
         if row is None:
             raise NotFoundError(f'Data issue with id {issue_id} not found')
-        return _row_to_data_issue(row)
+        return _row_to_data_issue(row, group_identifier=issue.group_identifier)
 
     def dismiss(self, issue_id: int) -> DataIssue:
         issue = self.get_issue(issue_id)
@@ -258,12 +280,12 @@ class DataIssuesManager:
         with self.db.user_write() as write_cursor:
             row = write_cursor.execute(
                 'UPDATE data_issues SET state = ?, payload_json = ?, resolved_at = NULL '
-                f'WHERE id = ? RETURNING {DATA_ISSUE_SELECT_COLUMNS}',
+                f'WHERE id = ? RETURNING {DATA_ISSUE_COLUMNS}',
                 (IssueState.DISMISSED, json.dumps(payload, separators=(',', ':')), issue_id),
             ).fetchone()
         if row is None:
             raise NotFoundError(f'Data issue with id {issue_id} not found')
-        return _row_to_data_issue(row)
+        return _row_to_data_issue(row, group_identifier=issue.group_identifier)
 
     def resolve_manually(self, issue_id: int, note: str | None = None) -> DataIssue:
         issue = self.get_issue(issue_id)
@@ -285,7 +307,7 @@ class DataIssuesManager:
         with self.db.user_write() as write_cursor:
             row = write_cursor.execute(
                 'UPDATE data_issues SET state = ?, payload_json = ?, resolved_at = ? '
-                f'WHERE id = ? RETURNING {DATA_ISSUE_SELECT_COLUMNS}',
+                f'WHERE id = ? RETURNING {DATA_ISSUE_COLUMNS}',
                 (
                     IssueState.RESOLVED,
                     json.dumps(payload, separators=(',', ':')),
@@ -295,7 +317,7 @@ class DataIssuesManager:
             ).fetchone()
         if row is None:
             raise NotFoundError(f'Data issue with id {issue_id} not found')
-        return _row_to_data_issue(row)
+        return _row_to_data_issue(row, group_identifier=issue.group_identifier)
 
     def retry_auto_remediation(self, issue_id: int) -> DataIssue:
         issue = self.get_issue(issue_id)
@@ -309,12 +331,12 @@ class DataIssuesManager:
         with self.db.user_write() as write_cursor:
             row = write_cursor.execute(
                 'UPDATE data_issues SET state = ?, payload_json = ?, resolved_at = NULL '
-                f'WHERE id = ? RETURNING {DATA_ISSUE_SELECT_COLUMNS}',
+                f'WHERE id = ? RETURNING {DATA_ISSUE_COLUMNS}',
                 (IssueState.OPEN, json.dumps(payload, separators=(',', ':')), issue_id),
             ).fetchone()
         if row is None:
             raise NotFoundError(f'Data issue with id {issue_id} not found')
-        return _row_to_data_issue(row)
+        return _row_to_data_issue(row, group_identifier=issue.group_identifier)
 
     def _get_issue_id_and_state_by_natural_key(
             self,

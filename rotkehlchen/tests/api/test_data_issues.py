@@ -4,14 +4,19 @@ from typing import TYPE_CHECKING
 import pytest
 import requests
 
+from rotkehlchen.constants import ONE
+from rotkehlchen.constants.assets import A_ETH
+from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.history.data_issues.constants import IssueKind, IssueState
 from rotkehlchen.history.data_issues.manager import DataIssuesManager
+from rotkehlchen.history.events.structures.base import HistoryEvent
+from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.tests.utils.api import (
     api_url_for,
     assert_error_response,
     assert_proper_sync_response_with_result,
 )
-from rotkehlchen.types import Location
+from rotkehlchen.types import Location, TimestampMS
 
 pytestmark = pytest.mark.accounting_update
 
@@ -58,7 +63,29 @@ def _write_issue(
 
 
 def test_data_issues_list_detail_and_pagination(rotkehlchen_api_server: 'APIServer') -> None:
-    first_id = _write_issue(rotkehlchen_api_server, event_identifier=1, ts_start=1000)
+    database = rotkehlchen_api_server.rest_api.rotkehlchen.data.db
+    group_identifier = 'negative-balance-group'
+    with database.user_write() as write_cursor:
+        event_identifier = DBHistoryEvents(database).add_history_event(
+            write_cursor=write_cursor,
+            event=HistoryEvent(
+                group_identifier=group_identifier,
+                sequence_index=0,
+                timestamp=TimestampMS(1_000_000),
+                location=Location.ETHEREUM,
+                event_type=HistoryEventType.RECEIVE,
+                event_subtype=HistoryEventSubType.NONE,
+                asset=A_ETH,
+                amount=ONE,
+            ),
+        )
+    assert event_identifier is not None
+
+    first_id = _write_issue(
+        rotkehlchen_api_server,
+        event_identifier=event_identifier,
+        ts_start=1000,
+    )
     _write_issue(
         rotkehlchen_api_server,
         event_identifier=2,
@@ -81,6 +108,10 @@ def test_data_issues_list_detail_and_pagination(rotkehlchen_api_server: 'APIServ
     assert result['entries_found'] == 2  # resolved is terminal and filtered out by default
     assert result['entries_limit'] == -1
     assert [entry['id'] for entry in result['entries']] == [third_id, first_id]
+    assert [entry['group_identifier'] for entry in result['entries']] == [
+        None,
+        group_identifier,
+    ]
 
     result = assert_proper_sync_response_with_result(requests.get(
         api_url_for(rotkehlchen_api_server, 'dataissuesresource'),
@@ -89,6 +120,7 @@ def test_data_issues_list_detail_and_pagination(rotkehlchen_api_server: 'APIServ
     assert result['entries_found'] == 2
     assert result['entries_limit'] == -1
     assert [entry['id'] for entry in result['entries']] == [first_id]
+    assert result['entries'][0]['group_identifier'] == group_identifier
 
     result = assert_proper_sync_response_with_result(requests.get(
         api_url_for(rotkehlchen_api_server, 'dataissuesresource'),
@@ -124,7 +156,8 @@ def test_data_issues_list_detail_and_pagination(rotkehlchen_api_server: 'APIServ
     result = assert_proper_sync_response_with_result(requests.get(
         api_url_for(rotkehlchen_api_server, 'dataissueresource', issue_id=first_id),
     ))
-    assert result['payload']['event_identifier'] == 1
+    assert result['payload']['event_identifier'] == event_identifier
+    assert result['group_identifier'] == group_identifier
     assert result['protocol'] is None
     assert result['auto_remediation_attempts'] == []
 
