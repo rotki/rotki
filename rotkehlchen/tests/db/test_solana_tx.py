@@ -86,6 +86,52 @@ def test_add_get_solana_transactions(database: DBHandler) -> None:
         assert len(returned_transactions) == 3
 
 
+def test_existing_solana_transaction_is_redecoded_for_new_address(
+        database: DBHandler,
+) -> None:
+    txs, first_address, new_address, _ = create_test_solana_transactions()
+    transaction = txs[0]
+    dbsolanatx = DBSolanaTx(database)
+    with database.user_write() as write_cursor:
+        dbsolanatx.add_transactions(
+            write_cursor=write_cursor,
+            solana_transactions=[transaction],
+            relevant_address=first_address,
+        )
+        tx_id = transaction.get_or_query_db_id(write_cursor)
+        write_cursor.execute(
+            'INSERT INTO solana_tx_mappings(tx_id, value) VALUES(?, ?)',
+            (tx_id, TX_DECODED),
+        )
+        dbsolanatx.add_transactions(
+            write_cursor=write_cursor,
+            solana_transactions=[transaction],
+            relevant_address=new_address,
+        )
+        assert write_cursor.execute(
+            'SELECT COUNT(*) FROM solana_tx_mappings WHERE tx_id=? AND value=?',
+            (tx_id, TX_DECODED),
+        ).fetchone()[0] == 0
+        assert write_cursor.execute(
+            'SELECT COUNT(*) FROM solanatx_address_mappings WHERE tx_id=?',
+            (tx_id,),
+        ).fetchone()[0] == 2
+
+        write_cursor.execute(
+            'INSERT INTO solana_tx_mappings(tx_id, value) VALUES(?, ?)',
+            (tx_id, TX_DECODED),
+        )
+        dbsolanatx.add_transactions(
+            write_cursor=write_cursor,
+            solana_transactions=[transaction],
+            relevant_address=new_address,
+        )
+        assert write_cursor.execute(
+            'SELECT COUNT(*) FROM solana_tx_mappings WHERE tx_id=? AND value=?',
+            (tx_id, TX_DECODED),
+        ).fetchone()[0] == 1
+
+
 def test_solana_transactions_filtering(database: DBHandler) -> None:
     """Test filtering solana transactions by various criteria"""
     txs, sol_address1, _, _ = create_test_solana_transactions()

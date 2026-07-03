@@ -32,6 +32,7 @@ from rotkehlchen.db.filtering import (
     EvmTransactionsNotDecodedFilterQuery,
 )
 from rotkehlchen.db.history_events import DBHistoryEvents
+from rotkehlchen.db.internal_tx_conflicts import is_tx_customized
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import (
@@ -40,6 +41,7 @@ from rotkehlchen.serialization.deserialize import (
     deserialize_timestamp,
 )
 from rotkehlchen.types import (
+    EVM_CHAIN_IDS_WITH_TRANSACTIONS,
     SUPPORTED_CHAIN_IDS,
     SUPPORTED_EVM_CHAINS_TYPE,
     ChainID,
@@ -92,7 +94,7 @@ class DBEvmTx(DBCommonTx[ChecksumEvmAddress, EvmTransaction, EVMTxHash, EvmTrans
         newly_inserted: list[EVMTxHash] = []
         dirty_chains: set[ChainID] = set()
         for tx in evm_transactions:
-            row_id, is_new = self.db.write_single_tuple(
+            row_id, is_new, is_new_mapping = self.db.write_single_tuple(
                 write_cursor=write_cursor,
                 tuple_type='evm_transaction',
                 query=query,
@@ -115,6 +117,18 @@ class DBEvmTx(DBCommonTx[ChecksumEvmAddress, EvmTransaction, EVMTxHash, EvmTrans
             if is_new:
                 newly_inserted.append(tx.tx_hash)
                 dirty_chains.add(tx.chain_id)
+            elif (
+                row_id is not None and
+                is_new_mapping and
+                tx.chain_id in EVM_CHAIN_IDS_WITH_TRANSACTIONS
+            ):
+                self.flag_transaction_for_redecoding(
+                    write_cursor=write_cursor,
+                    tx_id=row_id,
+                    tx_hash=tx.tx_hash,
+                    chain_id=tx.chain_id,  # type: ignore[arg-type]  # checked above
+                )
+
             if row_id is not None and tx.authorization_list is not None:
                 self.db.write_tuples(
                     write_cursor=write_cursor,
@@ -125,9 +139,40 @@ class DBEvmTx(DBCommonTx[ChecksumEvmAddress, EvmTransaction, EVMTxHash, EvmTrans
                         for auth in tx.authorization_list
                     ],
                 )
+
         for chain_id in dirty_chains:  # newly added txs have no receipt yet -> pending receipts
             self.db.pending_txs_tracker.mark_receipts_dirty(chain_id.to_blockchain())
         return newly_inserted
+
+    def flag_transaction_for_redecoding(
+            self,
+            write_cursor: DBCursor,
+            tx_id: int,
+            tx_hash: EVMTxHash,
+            chain_id: SUPPORTED_CHAIN_IDS,
+    ) -> None:
+        """Clear an existing transaction's decoded state unless it has customized events."""
+        if write_cursor.execute(
+            'SELECT 1 FROM evm_tx_mappings WHERE tx_id=? AND value=?',
+            (tx_id, TX_DECODED),
+        ).fetchone() is None or is_tx_customized(
+            cursor=write_cursor,
+            tx_hash=tx_hash,
+            chain_id=chain_id,
+        ):
+            return
+
+        DBHistoryEvents(self.db).delete_events_by_tx_ref(
+            write_cursor=write_cursor,
+            tx_refs=[tx_hash],
+            location=Location.from_chain_id(chain_id),
+            customized_handling='delete',
+        )
+        write_cursor.execute(
+            'DELETE FROM evm_tx_mappings WHERE tx_id=? AND value IN (?, ?)',
+            (tx_id, TX_DECODED, TX_SPAM),
+        )
+        self.db.pending_txs_tracker.mark_decoding_dirty(chain_id.to_blockchain())
 
     def add_evm_internal_transactions(
             self,

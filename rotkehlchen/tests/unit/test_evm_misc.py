@@ -26,6 +26,7 @@ from rotkehlchen.tests.utils.ethereum import (
 )
 from rotkehlchen.tests.utils.factories import make_evm_address, make_evm_tx_hash
 from rotkehlchen.types import (
+    EVM_CHAIN_IDS_WITH_TRANSACTIONS,
     SUPPORTED_CHAIN_IDS,
     ChainID,
     EvmTransaction,
@@ -84,6 +85,10 @@ def test_weth_is_supported():
         set(CHAIN_ID_TO_WETH_MAPPING.keys()) ==
         set(typing.get_args(SUPPORTED_CHAIN_IDS)) - CHAINS_WITHOUT_NATIVE_ETH
     )
+
+
+def test_evm_transaction_chain_ids_match_supported_chain_ids() -> None:
+    assert set(EVM_CHAIN_IDS_WITH_TRANSACTIONS) == set(typing.get_args(SUPPORTED_CHAIN_IDS))
 
 
 @pytest.mark.parametrize('number_of_eth_accounts', [1])

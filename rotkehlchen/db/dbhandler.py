@@ -2825,14 +2825,16 @@ class DBHandler:
             query: str,
             entry: tuple[Any, ...],
             relevant_address: SolanaAddress | ChecksumEvmAddress | None,
-    ) -> tuple[int | None, bool]:
+    ) -> tuple[int | None, bool, bool]:
         """Helper to write an entry of a tuple type and handle address mapping.
 
-        Returns (row_id, is_new) where is_new is True if the row was freshly inserted.
+        Returns (row_id, is_new, is_new_mapping), where is_new is True if the row was
+        freshly inserted and is_new_mapping is True if its address mapping was freshly inserted.
         row_id is None only when a non-UNIQUE constraint error (or InterfaceError) occurs.
         """
         tx_id = None
         is_new = False
+        is_new_mapping = False
         try:
             write_cursor.execute(query, entry)
             if tuple_type == 'evm_transaction':
@@ -2851,9 +2853,9 @@ class DBHandler:
                 mapping_table = 'solanatx_address_mappings'
             elif tuple_type == 'solana_instruction':
                 is_new = write_cursor.rowcount == 1
-                return write_cursor.lastrowid if is_new else None, is_new
+                return write_cursor.lastrowid if is_new else None, is_new, is_new_mapping
             else:
-                return tx_id, is_new
+                return tx_id, is_new, is_new_mapping
 
             # add address mapping if relevant_address is provided and transaction exists
             if relevant_address is not None and tx_id is not None:
@@ -2861,6 +2863,7 @@ class DBHandler:
                     f'INSERT OR IGNORE INTO {mapping_table}(tx_id, address) VALUES (?, ?)',
                     (tx_id, relevant_address),
                 )
+                is_new_mapping = write_cursor.rowcount == 1
         except sqlcipher.IntegrityError as e:  # pylint: disable=no-member
             string_repr = db_tuple_to_str(entry, tuple_type)
             log.warning(
@@ -2870,7 +2873,7 @@ class DBHandler:
         except sqlcipher.InterfaceError:  # pylint: disable=no-member
             log.critical(f'Interface error with tuple: {entry}')
 
-        return tx_id, is_new  # row_id (new or existing or None on error), and is_new flag
+        return tx_id, is_new, is_new_mapping
 
     def add_margin_positions(self, write_cursor: DBCursor, margin_positions: list[MarginPosition]) -> None:  # noqa: E501
         margin_tuples: list[tuple[Any, ...]] = []

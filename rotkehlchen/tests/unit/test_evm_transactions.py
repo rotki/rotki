@@ -4,6 +4,8 @@ from unittest.mock import patch
 
 import pytest
 
+from rotkehlchen.assets.asset import Asset
+from rotkehlchen.chain.accounts import BlockchainAccountData
 from rotkehlchen.chain.evm.types import (
     EvmIndexer,
     NodeName,
@@ -12,12 +14,22 @@ from rotkehlchen.chain.evm.types import (
     string_to_evm_address,
 )
 from rotkehlchen.chain.structures import TimestampOrBlockRange
+from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.constants.misc import ONE
-from rotkehlchen.db.constants import InternalTxSource
+from rotkehlchen.db.constants import (
+    HISTORY_MAPPING_KEY_STATE,
+    TX_DECODED,
+    HistoryMappingState,
+    InternalTxSource,
+)
 from rotkehlchen.db.evmtx import DBEvmTx
 from rotkehlchen.db.filtering import EvmEventFilterQuery, EvmTransactionsFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.errors.misc import DataIntegrityError, RemoteError
+from rotkehlchen.fval import FVal
+from rotkehlchen.history.events.structures.evm_event import EvmEvent
+from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.tests.utils.decoders import patch_decoder_reload_data
 from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
 from rotkehlchen.tests.utils.factories import make_ethereum_transaction, make_evm_address
 from rotkehlchen.types import (
@@ -28,6 +40,7 @@ from rotkehlchen.types import (
     Location,
     SupportedBlockchain,
     Timestamp,
+    TimestampMS,
     deserialize_evm_tx_hash,
 )
 
@@ -35,6 +48,7 @@ if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.manager import EthereumManager
     from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
     from rotkehlchen.chain.ethereum.transactions import EthereumTransactions
+    from rotkehlchen.chain.gnosis.node_inquirer import GnosisInquirer
     from rotkehlchen.chain.optimism.manager import OptimismManager
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.types import ChecksumEvmAddress
@@ -165,6 +179,203 @@ def test_query_and_save_transactions_returns_only_new_hashes(
         )
 
     assert {tx.tx_hash for tx in txs} == {existing_tx.tx_hash, new_tx.tx_hash}
+
+
+@pytest.mark.parametrize('customized', [False, True])
+@pytest.mark.parametrize('has_existing_mapping', [False, True])
+def test_existing_decoded_transaction_is_redecoded_for_new_address(
+        database: DBHandler,
+        ethereum_manager: EthereumManager,
+        customized: bool,
+        has_existing_mapping: bool,
+) -> None:
+    """A newly discovered address association invalidates stale decoded events."""
+    dbevmtx = DBEvmTx(database)
+    dbevents = DBHistoryEvents(database)
+    transaction = make_ethereum_transaction()
+    first_address, new_address = make_evm_address(), make_evm_address()
+    with database.user_write() as write_cursor:
+        dbevmtx.add_transactions(
+            write_cursor=write_cursor,
+            evm_transactions=[transaction],
+            relevant_address=first_address if has_existing_mapping else None,
+        )
+        dbevmtx.add_or_ignore_receipt_data(
+            write_cursor=write_cursor,
+            chain_id=ChainID.ETHEREUM,
+            data=_make_receipt_data(transaction.tx_hash),
+        )
+        dbevents.add_history_event(
+            write_cursor=write_cursor,
+            event=EvmEvent(
+                tx_ref=transaction.tx_hash,
+                sequence_index=0,
+                timestamp=TimestampMS(transaction.timestamp * 1000),
+                location=Location.ETHEREUM,
+                event_type=HistoryEventType.RECEIVE,
+                event_subtype=HistoryEventSubType.NONE,
+                asset=A_ETH,
+                amount=ONE,
+                location_label=first_address,
+            ),
+            mapping_values=(
+                {HISTORY_MAPPING_KEY_STATE: HistoryMappingState.CUSTOMIZED}
+                if customized else None
+            ),
+        )
+        tx_id = write_cursor.execute(
+            'SELECT identifier FROM evm_transactions WHERE tx_hash=? AND chain_id=?',
+            (transaction.tx_hash, ChainID.ETHEREUM.serialize_for_db()),
+        ).fetchone()[0]
+        write_cursor.execute(
+            'INSERT INTO evm_tx_mappings(tx_id, value) VALUES(?, ?)',
+            (tx_id, TX_DECODED),
+        )
+        if customized is False:
+            database.add_to_ignored_action_ids(
+                write_cursor=write_cursor,
+                identifiers=[transaction.identifier],
+            )
+
+    database.pending_txs_tracker.mark_decoding_clean(
+        SupportedBlockchain.ETHEREUM,
+        Timestamp(1000),
+    )
+    timestamps, newly_inserted = ethereum_manager.transactions._batch_ensure_evm_txns_in_db(
+        tx_hashes=[transaction.tx_hash],
+        relevant_address=new_address,
+    )
+
+    assert timestamps == {transaction.tx_hash: transaction.timestamp}
+    assert newly_inserted == []
+    with database.conn.read_ctx() as cursor:
+        assert cursor.execute(
+            'SELECT COUNT(*) FROM evm_tx_mappings WHERE tx_id=? AND value=?',
+            (tx_id, TX_DECODED),
+        ).fetchone()[0] == int(customized)
+        assert cursor.execute(
+            'SELECT COUNT(*) FROM chain_events_info WHERE tx_ref=?',
+            (transaction.tx_hash,),
+        ).fetchone()[0] == int(customized)
+        assert cursor.execute(
+            'SELECT COUNT(*) FROM evmtx_address_mappings WHERE tx_id=? AND address=?',
+            (tx_id, new_address),
+        ).fetchone()[0] == 1
+        ignored_ids = database.get_ignored_action_ids(cursor)
+        if customized:
+            assert transaction.identifier not in ignored_ids
+        else:
+            # Auto-ignored zero-event transactions remain ignored because they cannot be
+            # distinguished from transactions the user explicitly ignored.
+            assert transaction.identifier in ignored_ids
+
+    assert database.pending_txs_tracker.should_scan_decoding(
+        blockchain=SupportedBlockchain.ETHEREUM,
+        now=Timestamp(1000),
+    ) is not customized
+    if customized is False:
+        with database.user_write() as write_cursor:
+            write_cursor.execute(
+                'INSERT INTO evm_tx_mappings(tx_id, value) VALUES(?, ?)',
+                (tx_id, TX_DECODED),
+            )
+        ethereum_manager.transactions._batch_ensure_evm_txns_in_db(
+            tx_hashes=[transaction.tx_hash],
+            relevant_address=new_address,
+        )
+        with database.conn.read_ctx() as cursor:
+            assert cursor.execute(
+                'SELECT COUNT(*) FROM evm_tx_mappings WHERE tx_id=? AND value=?',
+                (tx_id, TX_DECODED),
+            ).fetchone()[0] == 1
+            assert cursor.execute(
+                'SELECT COUNT(*) FROM evmtx_address_mappings WHERE tx_id=? AND address=?',
+                (tx_id, new_address),
+            ).fetchone()[0] == 1
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('gnosis_accounts', [[
+    '0xBD6F210A624a792e7d30A2F7591Dc7Abce2F3C48',
+]])
+def test_shared_transaction_is_redecoded_for_new_address(
+        database: DBHandler,
+        gnosis_inquirer: GnosisInquirer,
+        gnosis_accounts: list[ChecksumEvmAddress],
+) -> None:
+    first_address = gnosis_accounts[0]
+    new_address = string_to_evm_address('0xCDF16E42b6740D906858f37e9be495A59DAadE9E')
+    tx_hash = deserialize_evm_tx_hash('0x69b568b97434807430a2f9eb5cbbbeaab701a32df76746a4e357386e5c431bab')  # noqa: E501
+    initial_events, decoder = get_decoded_events_of_transaction(
+        evm_inquirer=gnosis_inquirer,
+        tx_hash=tx_hash,
+        relevant_address=first_address,
+    )
+    assert len(initial_events) == 3
+    assert all(event.location_label != new_address for event in initial_events)
+
+    dbevmtx = DBEvmTx(database)
+    with database.user_write() as write_cursor:
+        database.add_blockchain_accounts(
+            write_cursor=write_cursor,
+            account_data=[BlockchainAccountData(
+                chain=SupportedBlockchain.GNOSIS,
+                address=new_address,
+            )],
+        )
+        transaction = dbevmtx.get_transactions(
+            cursor=write_cursor,
+            filter_=EvmTransactionsFilterQuery.make(
+                tx_hash=tx_hash,
+                chain_id=ChainID.GNOSIS,
+            ),
+        )[0]
+        dbevmtx.add_transactions(
+            write_cursor=write_cursor,
+            evm_transactions=[transaction],
+            relevant_address=new_address,
+        )
+        tx_id = transaction.get_or_query_db_id(write_cursor)
+        assert write_cursor.execute(
+            'SELECT COUNT(*) FROM evmtx_address_mappings WHERE tx_id=?',
+            (tx_id,),
+        ).fetchone()[0] == 2
+        assert write_cursor.execute(
+            'SELECT COUNT(*) FROM evm_tx_mappings WHERE tx_id=? AND value=?',
+            (tx_id, TX_DECODED),
+        ).fetchone()[0] == 0
+        assert write_cursor.execute(
+            'SELECT COUNT(*) FROM chain_events_info WHERE tx_ref=?',
+            (tx_hash,),
+        ).fetchone()[0] == 0
+
+    with patch_decoder_reload_data():
+        decoder.get_and_decode_undecoded_transactions(limit=None)
+
+    with database.conn.read_ctx() as cursor:
+        events = DBHistoryEvents(database).get_history_events_internal(
+            cursor=cursor,
+            filter_query=EvmEventFilterQuery.make(tx_hashes=[tx_hash]),
+        )
+
+    assert len(events) == 4
+    assert len(receive_events := [
+        event for event in events if event.location_label == new_address
+    ]) == 1
+    receive_events[0].identifier = None
+    assert receive_events[0] == EvmEvent(
+        tx_ref=tx_hash,
+        sequence_index=117,
+        timestamp=TimestampMS(1733307235000),
+        location=Location.GNOSIS,
+        event_type=HistoryEventType.RECEIVE,
+        event_subtype=HistoryEventSubType.NONE,
+        asset=Asset('eip155:100/erc20:0x420CA0f9B9b604cE0fd9C18EF134C705e5Fa3430'),
+        amount=FVal('4292.336430016873387617'),
+        location_label=new_address,
+        notes='Receive 4292.336430016873387617 EURe from 0x1231DEB6f5749EF6cE6943a275A1D3E7486F4EaE to 0xCDF16E42b6740D906858f37e9be495A59DAadE9E',  # noqa: E501
+        address=string_to_evm_address('0x1231DEB6f5749EF6cE6943a275A1D3E7486F4EaE'),
+    )
 
 
 def test_query_and_save_internal_transactions_returns_only_new_hashes(

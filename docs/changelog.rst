@@ -39,6 +39,7 @@ Changelog
 * :bug:`-` The login screen no longer pre-fills the username field with a remembered account that no longer exists.
 * :feature:`12002` Adding or editing a history event now uses a plain-language "Action" picker grouped by intent (Trade, Transfer, DeFi, Staking, etc.) with search and keyboard navigation, replacing the raw event-type and subtype dropdowns.
 * :feature:`12086` The "Create account" flow now starts with a mode chooser so creating a new local profile and restoring a database synced from rotki cloud are separate, focused paths.
+* :bug:`12503` Transactions shared by multiple tracked EVM addresses are now decoded again when a newly added address is discovered in them, preventing events involving that address from being omitted.
 * :feature:`12499` Additional crypto.com CSV import transaction kinds such as van purchases, fiat wallet limit orders, and extra earn interest payments will now be properly imported.
 * :bug:`12507` The documented ``LOGFROMOTHERMODULES`` Docker environment variable is now honored again (it was misspelled internally) and accepts truthy string values such as ``true``, ``1``, ``yes`` and ``on``.
 * :bug:`-` The rate-limit hint in the PnL report's missing prices dialog is now a warning icon next to the refresh button, so its tooltip no longer covers the price input or the buttons of nearby rows.

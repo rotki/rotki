@@ -822,6 +822,7 @@ class DBHistoryEvents:
         - 'preserve_events': only the individual customized/matched events are kept.
         - 'preserve_transactions': all events in a transaction are kept when any event
           in that transaction is customized or matched.
+        Custom events without an associated blockchain transaction are unaffected.
         """
         events_to_keep_num = write_cursor.execute(
             'SELECT COUNT(*) FROM history_events_mappings WHERE name=? AND value IN (?, ?)',
@@ -996,6 +997,7 @@ class DBHistoryEvents:
         - 'preserve_events': keep only individual customized events, delete siblings.
         - 'preserve_transactions': keep all events in a transaction when any event
           in that transaction is customized.
+        Custom events without an associated blockchain transaction are unaffected.
 
         If you want to reset all decoded events better use the _reset_decoded_events
         code in v37 -> v38 upgrade as that is not limited to the number of transactions

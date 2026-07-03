@@ -157,20 +157,23 @@ class EvmTransactions(ABC):  # noqa: B024
             return timestamps, []
 
         chain_id_db = self.evm_inquirer.chain_id.serialize_for_db()
+        unmapped_tx_ids: dict[EVMTxHash, int] = {}
         with self.database.conn.read_ctx() as cursor:
             for chunk, placeholders in get_query_chunks(list(non_genesis)):
-                for row in cursor.execute(
-                    f'SELECT et.tx_hash, et.timestamp FROM evm_transactions et '
+                for tx_id, tx_hash, timestamp, has_mapping in cursor.execute(
+                    f'SELECT et.identifier, et.tx_hash, et.timestamp, EXISTS('
+                    f'SELECT 1 FROM evmtx_address_mappings WHERE tx_id=et.identifier AND address=?'
+                    f') FROM evm_transactions et '
                     f'JOIN evmtx_receipts etr ON et.identifier = etr.tx_id '
                     f'WHERE et.chain_id=? AND et.tx_hash IN ({placeholders})',
-                    (chain_id_db, *chunk),
+                    (relevant_address, chain_id_db, *chunk),
                 ):
-                    timestamps[deserialize_evm_tx_hash(row[0])] = Timestamp(row[1])
+                    deserialized_hash = deserialize_evm_tx_hash(tx_hash)
+                    timestamps[deserialized_hash] = Timestamp(timestamp)
+                    if has_mapping == 0:
+                        unmapped_tx_ids[deserialized_hash] = tx_id
 
         missing: set[EVMTxHash] = non_genesis - timestamps.keys()
-        if not missing:
-            return timestamps, []
-
         new_txs: list[Any] = []
         receipt_data_list: list[dict[str, Any]] = []
         for tx_hash in missing:
@@ -180,18 +183,37 @@ class EvmTransactions(ABC):  # noqa: B024
             timestamps[tx_hash] = transaction.timestamp
 
         newly_inserted: list[EVMTxHash] = []
+        if len(new_txs) == 0 and (relevant_address is None or len(unmapped_tx_ids) == 0):
+            return timestamps, newly_inserted
+
         with self.database.user_write() as write_cursor:
-            newly_inserted = self.dbevmtx.add_transactions(
-                write_cursor=write_cursor,
-                evm_transactions=new_txs,
-                relevant_address=relevant_address,
-            )
-            for receipt_data in receipt_data_list:
-                self.dbevmtx.add_or_ignore_receipt_data(
+            if len(new_txs) != 0:
+                newly_inserted = self.dbevmtx.add_transactions(
                     write_cursor=write_cursor,
-                    chain_id=self.evm_inquirer.chain_id,
-                    data=receipt_data,
+                    evm_transactions=new_txs,
+                    relevant_address=relevant_address,
                 )
+                for receipt_data in receipt_data_list:
+                    self.dbevmtx.add_or_ignore_receipt_data(
+                        write_cursor=write_cursor,
+                        chain_id=self.evm_inquirer.chain_id,
+                        data=receipt_data,
+                    )
+
+            if relevant_address is not None:
+                for tx_hash, tx_id in unmapped_tx_ids.items():
+                    write_cursor.execute(
+                        'INSERT OR IGNORE INTO evmtx_address_mappings(tx_id, address) '
+                        'VALUES (?, ?)',
+                        (tx_id, relevant_address),
+                    )
+                    if write_cursor.rowcount == 1:
+                        self.dbevmtx.flag_transaction_for_redecoding(
+                            write_cursor=write_cursor,
+                            tx_id=tx_id,
+                            tx_hash=tx_hash,
+                            chain_id=self.evm_inquirer.chain_id,
+                        )
 
         return timestamps, newly_inserted
 
