@@ -2,6 +2,7 @@ import { server } from '@test/setup-files/server';
 import { http, HttpResponse } from 'msw';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { defaultApiUrls } from '@/modules/core/api/api-urls';
+import { RequestCancelledError } from '@/modules/core/api/request-queue/errors';
 import { RotkiApi } from '@/modules/core/api/rotki-api';
 import { ApiValidationError } from '@/modules/core/api/types/errors';
 import { HTTPStatus } from '@/modules/core/api/types/http';
@@ -888,6 +889,48 @@ describe('modules/api/rotki-api', () => {
       );
 
       await expect(api.get('test')).rejects.toThrow();
+    });
+  });
+
+  describe('stopRequests', () => {
+    it('should reject new fetches with RequestCancelledError once stopped', async () => {
+      let hit = false;
+      server.use(
+        http.get(`${backendUrl}/api/1/test`, () => {
+          hit = true;
+          return HttpResponse.json({ result: true, message: '' });
+        }),
+      );
+
+      api.stopRequests();
+
+      await expect(api.get('test')).rejects.toThrow(RequestCancelledError);
+      expect(hit).toBe(false);
+    });
+
+    it('should reject skipQueue fetches once stopped', async () => {
+      api.stopRequests();
+      await expect(api.get('test', { skipQueue: true })).rejects.toThrow(RequestCancelledError);
+    });
+
+    it('should reject headStatus and fetchBlob once stopped', async () => {
+      api.stopRequests();
+      await expect(api.headStatus('test')).rejects.toThrow(RequestCancelledError);
+      await expect(api.fetchBlob('test')).rejects.toThrow(RequestCancelledError);
+    });
+
+    it('should accept requests again after setup re-enables the api', async () => {
+      server.use(
+        http.get(`${backendUrl}/api/1/test`, () =>
+          HttpResponse.json({ result: { ok: true }, message: '' })),
+      );
+
+      api.stopRequests();
+      await expect(api.get('test')).rejects.toThrow(RequestCancelledError);
+
+      api.setup(backendUrl!);
+      const result = await api.get<{ ok: boolean }>('test');
+      expect(result).toEqual({ ok: true });
     });
   });
 });

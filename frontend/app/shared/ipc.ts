@@ -104,6 +104,12 @@ export interface Listeners {
   onRestart: () => void;
   onProcessDetected: (pids: string[]) => void;
   onOAuthCallback?: (oAuthResult: OAuthResult) => void;
+  /**
+   * Invoked when the main process is about to quit, before the backend
+   * subprocesses are terminated. Gives the renderer a chance to stop polling
+   * and cancel in-flight requests so they don't hit a dying backend.
+   */
+  onAppClosing?: () => void;
 }
 
 export interface Interop {

@@ -1,18 +1,20 @@
 import type { AppConfig } from '@electron/main/app-config';
 import process from 'node:process';
+import { IpcCommands } from '@electron/ipc-commands';
 import { protectHtmlAssociation } from '@electron/main/html-mime-protection';
 import { IpcManager } from '@electron/main/ipc-setup';
 import { LogService } from '@electron/main/log-service';
 import { MenuManager } from '@electron/main/menu';
 import { parseToken } from '@electron/main/oauth-utils';
 import { DEFAULT_COLIBRI_PORT, DEFAULT_PORT } from '@electron/main/port-utils';
+import { notifyRendererOfShutdown } from '@electron/main/renderer-shutdown';
 import { resolveLogLevel } from '@electron/main/resolve-log-level';
 import { SettingsManager } from '@electron/main/settings-manager';
 import { SubprocessHandler } from '@electron/main/subprocess-handler';
 import { TrayManager } from '@electron/main/tray-manager';
 import { WindowManager } from '@electron/main/window-manager';
 import { checkIfDevelopment, startPromise } from '@shared/utils';
-import { app, protocol } from 'electron';
+import { app, ipcMain, protocol } from 'electron';
 
 export class Application {
   private readonly window: WindowManager;
@@ -23,6 +25,7 @@ export class Application {
   private readonly menu: MenuManager;
   private readonly settings: SettingsManager;
   private protocolRegistrationFailed: boolean = false;
+  private shuttingDown: boolean = false;
   private readonly appConfig: AppConfig = {
     isDev: checkIfDevelopment(),
     isMac: process.platform === 'darwin',
@@ -217,25 +220,62 @@ export class Application {
     app.removeAllListeners('before-quit');
   }
 
+  /**
+   * Notifies the renderer that we are quitting so it can stop polling and
+   * cancel in-flight requests before the backend goes down. Bounded: it can
+   * never block quit for more than the internal timeout.
+   */
+  private async notifyRendererShutdown(): Promise<void> {
+    await notifyRendererOfShutdown({
+      send: () => this.window.notifyClosing(),
+      waitForAck: (onAck) => {
+        ipcMain.once(IpcCommands.APP_CLOSING_ACK, onAck);
+        return () => ipcMain.removeListener(IpcCommands.APP_CLOSING_ACK, onAck);
+      },
+      logger: this.logger,
+    });
+  }
+
   private async quit() {
-    this.cleanup();
-    this.menu.cleanup();
-    this.window.cleanup();
-    this.tray.cleanup();
-    this.ipc.cleanup();
+    // Absolute backstop: whatever happens below, force the process to exit so a
+    // hung renderer, subprocess, or socket can never wedge the quit indefinitely.
+    const failsafe = setTimeout(() => {
+      this.logger.warn('Quit watchdog fired; forcing exit');
+      app.exit();
+    }, 5000);
+    failsafe.unref?.();
+
     try {
-      await this.processHandler.terminateProcesses();
+      // Give the renderer a bounded chance to halt outbound traffic. Must run
+      // before window.cleanup() nulls the webContents. Guarded so the multiple
+      // quit entry points only notify once.
+      if (!this.shuttingDown) {
+        this.shuttingDown = true;
+        await this.notifyRendererShutdown();
+      }
+
+      this.cleanup();
+      this.menu.cleanup();
+      this.window.cleanup();
+      this.tray.cleanup();
+      this.ipc.cleanup();
+      try {
+        await this.processHandler.terminateProcesses();
+      }
+      finally {
+        // In some cases the app object might be already disposed
+        try {
+          if (process.platform !== 'win32')
+            app.exit();
+        }
+        catch (error: any) {
+          if (error.message !== 'Object has been destroyed')
+            console.error(error);
+        }
+      }
     }
     finally {
-      // In some cases the app object might be already disposed
-      try {
-        if (process.platform !== 'win32')
-          app.exit();
-      }
-      catch (error: any) {
-        if (error.message !== 'Object has been destroyed')
-          console.error(error);
-      }
+      clearTimeout(failsafe);
     }
   }
 }

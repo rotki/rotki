@@ -4,6 +4,7 @@ import type { RotkiFetchOptions } from '@/modules/core/api/types';
 import { ofetch } from 'ofetch';
 import { defaultApiUrls } from '@/modules/core/api/api-urls';
 import { DEFAULT_TIMEOUT } from '@/modules/core/api/constants';
+import { RequestCancelledError } from '@/modules/core/api/request-queue/errors';
 import { RequestQueue } from '@/modules/core/api/request-queue/queue';
 import { RequestPriority } from '@/modules/core/api/request-queue/request-priority';
 import { transformRequestBody, transformRequestQuery } from '@/modules/core/api/request-transformers';
@@ -21,6 +22,7 @@ export class RotkiApi {
   private authFailureAction?: () => void;
   private _requestQueue: RequestQueue;
   private _colibriRequestQueue: RequestQueue;
+  private _stopped: boolean = false;
 
   constructor() {
     this._serverUrl = defaultApiUrls.coreApiUrl;
@@ -64,6 +66,18 @@ export class RotkiApi {
     this._colibriRequestQueue.cancelAll();
   }
 
+  /**
+   * Puts the api into a quitting state: rejects any new request, cancels
+   * everything queued, and aborts in-flight direct requests. Used on app
+   * shutdown so nothing keeps hitting a backend that is going down. Reset by
+   * {@link setup} if the backend is later restarted.
+   */
+  stopRequests(): void {
+    this._stopped = true;
+    this.cancelAllQueued();
+    this.cancel();
+  }
+
   getQueueMetrics(): QueueState {
     return this._requestQueue.getMetrics();
   }
@@ -96,6 +110,8 @@ export class RotkiApi {
     this._serverUrl = serverUrl;
     this._baseURL = `${serverUrl}/api/1/`;
     this.abortController = new AbortController();
+    // A fresh backend (e.g. after a restart) can accept requests again.
+    this._stopped = false;
   }
 
   setOnAuthFailure(action: () => void): void {
@@ -114,6 +130,9 @@ export class RotkiApi {
   }
 
   async fetch<T>(url: string, options: RotkiFetchOptions<'json', T> = {}): Promise<T> {
+    if (this._stopped)
+      throw new RequestCancelledError('Application is quitting');
+
     const {
       skipQueue,
       priority,
@@ -242,6 +261,9 @@ export class RotkiApi {
     url: string,
     options: Omit<RotkiFetchOptions, 'method' | 'retry'> = {},
   ): Promise<number> {
+    if (this._stopped)
+      throw new RequestCancelledError('Application is quitting');
+
     const { validStatuses, skipSnakeCase, query: rawQuery, baseURL, timeout } = options;
     const query = transformRequestQuery(rawQuery as Record<string, unknown> | undefined, { skipSnakeCase });
 
@@ -270,6 +292,9 @@ export class RotkiApi {
     url: string,
     options: Omit<RotkiFetchOptions, 'skipCamelCase' | 'skipRootCamelCase' | 'skipResultUnwrap'> = {},
   ): Promise<Blob> {
+    if (this._stopped)
+      throw new RequestCancelledError('Application is quitting');
+
     const { validStatuses, skipSnakeCase, ...fetchOptions } = options;
     const body = transformRequestBody(fetchOptions.body, { skipSnakeCase });
     const query = transformRequestQuery(fetchOptions.query as Record<string, unknown> | undefined, { skipSnakeCase });

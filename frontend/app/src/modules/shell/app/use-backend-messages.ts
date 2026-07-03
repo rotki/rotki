@@ -2,6 +2,7 @@ import type { Ref } from 'vue';
 import { BackendCode, type OAuthResult } from '@shared/ipc';
 import { checkIfDevelopment, startPromise } from '@shared/utils';
 import { useSessionAuthStore } from '@/modules/auth/use-session-auth-store';
+import { api } from '@/modules/core/api';
 import { logger } from '@/modules/core/common/logging/logging';
 import { useAreaVisibilityStore } from '@/modules/core/common/use-area-visibility-store';
 import { useMainStore } from '@/modules/core/common/use-main-store';
@@ -40,17 +41,24 @@ function useBackendMessagesInternal(): UseBackendMessagesInternalReturn {
   const { connectionEnabled } = storeToRefs(useMainStore());
 
   /**
+   * Halts all outbound activity against the backend: stops the connection ping
+   * loop and disables future attempts, stops all monitoring (periodic tasks,
+   * websocket, etc.), and disables websocket reconnection. Used whenever the
+   * backend is unavailable or about to become unavailable.
+   */
+  function haltBackendActivity(): void {
+    stopConnectionAttempts();
+    stopMonitoring();
+    setWsConnectionEnabled(false);
+  }
+
+  /**
    * Handle a startup error by logging it and updating the appropriate state.
    * Also stops all monitoring, connection attempts, and WebSocket connections since the backend is unavailable.
    */
   function handleStartupError(message: string, code: BackendCode): void {
     logger.error(message, code);
-    // Stop connection ping loop and disable future connection attempts
-    stopConnectionAttempts();
-    // Stop all monitoring (periodic tasks, websocket, etc.) - backend is not available
-    stopMonitoring();
-    // Also explicitly disable websocket reconnection
-    setWsConnectionEnabled(false);
+    haltBackendActivity();
 
     if (code === BackendCode.TERMINATED) {
       set(startupErrorMessage, message);
@@ -99,11 +107,15 @@ function useBackendMessagesInternal(): UseBackendMessagesInternalReturn {
           handler(oAuthResult);
         });
       },
+      onAppClosing: () => {
+        // The app is quitting: stop polling and cancel in-flight requests so
+        // nothing hits the backend while it is being torn down.
+        haltBackendActivity();
+        api.stopRequests();
+      },
       onProcessDetected: (pids) => {
         // Stop all connection attempts and monitoring - another backend process is running
-        stopConnectionAttempts();
-        stopMonitoring();
-        setWsConnectionEnabled(false);
+        haltBackendActivity();
         set(
           startupErrorMessage,
           t('error.process_running', {

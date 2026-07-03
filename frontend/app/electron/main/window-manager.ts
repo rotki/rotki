@@ -316,6 +316,26 @@ export class WindowManager {
     }
   }
 
+  /**
+   * Sends the "app closing" notice to the renderer.
+   * @returns true if the message was dispatched to a live renderer, false if
+   * there is no window/webContents to notify (nothing to wait for).
+   */
+  notifyClosing(): boolean {
+    const webContents = this.window?.webContents;
+    if (!webContents || webContents.isDestroyed())
+      return false;
+
+    try {
+      webContents.send(IpcCommands.APP_CLOSING);
+      return true;
+    }
+    catch (error) {
+      this.logger.error('Failed to notify renderer of shutdown:', error);
+      return false;
+    }
+  }
+
   async openOAuthWindow(url: string): Promise<void> {
     try {
       const oauthWindow = new BrowserWindow({

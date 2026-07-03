@@ -49,6 +49,17 @@ contextBridge.exposeInMainWorld('interop', {
       });
     }
 
+    // Graceful shutdown: let the renderer halt outbound traffic, then always
+    // acknowledge so the main process is never blocked, even if the handler throws.
+    ipcRenderer.on(IpcCommands.APP_CLOSING, () => {
+      try {
+        listeners.onAppClosing?.();
+      }
+      finally {
+        ipcRenderer.send(IpcCommands.APP_CLOSING_ACK);
+      }
+    });
+
     // Signal to main process that renderer is ready for async messages
     ipcRenderer.send(IpcCommands.RENDERER_READY);
   },
