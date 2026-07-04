@@ -1137,6 +1137,7 @@
           "ens_names": "ENS names",
           "ethereum_tokens": "Ethereum tokens",
           "global_address_book": "Global address book",
+          "gns_names": "GNS names (.gwei)",
           "hardcoded_mappings": "Hardcoded mappings",
           "private_address_book": "Private address book"
         }

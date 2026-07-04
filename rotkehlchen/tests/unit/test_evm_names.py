@@ -7,10 +7,20 @@ from unittest.mock import Mock
 import pytest
 from freezegun import freeze_time
 
+import rotkehlchen.chain.evm.names
 from rotkehlchen.chain.accounts import BlockchainAccountData
+from rotkehlchen.chain.ethereum.modules.gwei_names.naming import gns_resolve, gns_reverse_lookup
 from rotkehlchen.chain.ethereum.utils import try_download_ens_avatar
-from rotkehlchen.chain.evm.names import FetcherFunc, NamePrioritizer, search_for_addresses_names
+from rotkehlchen.chain.evm.names import (
+    FetcherFunc,
+    NamePrioritizer,
+    NamingSystem,
+    find_ens_mappings,
+    search_for_addresses_names,
+)
+from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.db.ens import DBEns
+from rotkehlchen.db.settings import ModifiableDBSettings
 from rotkehlchen.tests.utils.factories import make_evm_address
 from rotkehlchen.types import (
     AddressbookEntryWithSource,
@@ -112,6 +122,100 @@ def test_uses_sources_only_when_needed(evm_address, database: 'DBHandler'):
         chain_addresses=[ChainAddress(address=evm_address, blockchain=None)],
     )
     assert names == [], 'No names should have been returned since the blockchain was None'
+
+
+def test_naming_system_names_priority(evm_address, database: 'DBHandler'):
+    """Test that an address can have a cached name per naming system and that
+    the priority between them is applied at read time by the prioritizer"""
+    dbens = DBEns(database)
+    with database.user_write() as write_cursor:
+        dbens.add_ens_mapping(write_cursor, address=evm_address, name='someone.eth', now=ts_now())
+        dbens.add_ens_mapping(write_cursor, address=evm_address, name='someone.gwei', now=ts_now(), source='gns')  # noqa: E501
+
+    cases: tuple[tuple[list[AddressNameSource], str], ...] = (
+        (['ens_names', 'gns_names'], 'someone.eth'),
+        (['gns_names', 'ens_names'], 'someone.gwei'),
+    )
+    for priority, expected_name in cases:
+        assert NamePrioritizer(database).get_prioritized_names(
+            prioritized_name_source=priority,
+            chain_addresses=[OptionalChainAddress(evm_address, SupportedBlockchain.ETHEREUM)],
+        ) == [AddressbookEntryWithSource(
+            name=expected_name,
+            address=evm_address,
+            blockchain=SupportedBlockchain.ETHEREUM,
+            source=priority[0],
+        )]
+
+
+def test_find_ens_mappings_naming_systems(evm_address, database: 'DBHandler', monkeypatch):
+    """Test that additional naming systems are only queried when they are in the
+    address_name_priority setting and that the highest priority name wins the merge"""
+    queried_systems = []
+
+    def make_reverse_lookup(identifier: str, suffix: str):
+        def reverse_lookup(inquirer, addresses):
+            queried_systems.append(identifier)
+            return dict.fromkeys(addresses, f'someone{suffix}')
+        return reverse_lookup
+
+    monkeypatch.setattr(rotkehlchen.chain.evm.names, 'ETHEREUM_NAMING_SYSTEMS', (
+        NamingSystem(
+            identifier='ens',
+            source='ens_names',
+            suffix='',
+            reverse_lookup=make_reverse_lookup('ens', '.eth'),
+            resolve=lambda inquirer, name: None,
+        ), NamingSystem(
+            identifier='gns',
+            source='gns_names',
+            suffix='.gwei',
+            reverse_lookup=make_reverse_lookup('gns', '.gwei'),
+            resolve=lambda inquirer, name: None,
+        ),
+    ))
+    ethereum_inquirer = Mock(database=database)
+
+    # with the default settings gns_names is not in the priority list, so only ENS is queried
+    assert find_ens_mappings(
+        ethereum_inquirer=ethereum_inquirer,
+        addresses=[evm_address],
+        ignore_cache=True,
+    ) == {evm_address: 'someone.eth'}
+    assert queried_systems == ['ens']
+
+    cases: tuple[tuple[list[AddressNameSource], str], ...] = (
+        (['gns_names', 'ens_names'], 'someone.gwei'),
+        (['ens_names', 'gns_names'], 'someone.eth'),
+    )
+    for priority, expected_name in cases:
+        with database.user_write() as write_cursor:
+            database.set_settings(
+                write_cursor=write_cursor,
+                settings=ModifiableDBSettings(address_name_priority=priority),
+            )
+        queried_systems.clear()
+        assert find_ens_mappings(
+            ethereum_inquirer=ethereum_inquirer,
+            addresses=[evm_address],
+            ignore_cache=True,
+        ) == {evm_address: expected_name}
+        assert sorted(queried_systems) == ['ens', 'gns']
+
+
+def test_gns_reverse_lookup(ethereum_inquirer):
+    """Test that reverse resolution of gwei names works properly"""
+    assert gns_reverse_lookup(ethereum_inquirer, [
+        (donnoh := string_to_evm_address('0xC04689227Fa24785609B1174698DBe481437f1A3')),  # has donnoh.gwei set as primary name  # noqa: E501
+        (yabir := string_to_evm_address('0x9531C059098e3d194fF87FebB587aB07B30B1306')),  # has no gwei primary name  # noqa: E501
+    ]) == {donnoh: 'donnoh.gwei', yabir: None}
+
+
+def test_gns_resolve(ethereum_inquirer):
+    """Test that forward resolution of gwei names works properly. lefteris.gwei has no
+    explicit address set, so it resolves to the owner of the name"""
+    assert gns_resolve(ethereum_inquirer, 'lefteris.gwei') == string_to_evm_address('0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12')  # noqa: E501
+    assert gns_resolve(ethereum_inquirer, 'surely-not-registered-a1b2c3.gwei') is None
 
 
 @pytest.mark.vcr

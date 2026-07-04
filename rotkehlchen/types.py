@@ -1498,6 +1498,7 @@ AddressNameSource = Literal[
     'ens_names',
     'ethereum_tokens',
     'global_addressbook',
+    'gns_names',
     'hardcoded_mappings',
     'private_addressbook',
 ]
