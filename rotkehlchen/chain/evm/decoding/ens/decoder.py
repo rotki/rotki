@@ -183,11 +183,12 @@ class EnsCommonDecoder(EvmDecoderInterface, CustomizableDateMixin, ABC):
 
         return DEFAULT_EVM_DECODING_OUTPUT
 
-    def _decode_ens_public_resolver_content_hash(self, context: DecoderContext) -> EvmDecodingOutput:  # noqa: E501
-        """Decode an event that modifies a content hash for the public ENS resolver"""
-        if not self.base.is_tracked(context.transaction.from_address):
-            return DEFAULT_EVM_DECODING_OUTPUT
-        node = context.tx_log.topics[1]  # node is a hash of the name used by ens internals
+    def _get_new_contenthash(self, context: DecoderContext) -> str | None:
+        """Extract the new content hash hex string from a ContenthashChanged log.
+
+        Subclasses whose resolver contract is not in the contracts DB override this.
+        Returns None if the hash can't be extracted.
+        """
         contract = self.node_inquirer.contracts.contract_by_address(address=context.tx_log.address)
         if contract is None:
             self.msg_aggregator.add_error(
@@ -196,10 +197,19 @@ class EnsCommonDecoder(EvmDecoderInterface, CustomizableDateMixin, ABC):
                 f'This should never happen. Please, '
                 f"open an issue in rotki's github repository.",
             )
-            return DEFAULT_EVM_DECODING_OUTPUT
+            return None
 
         result = contract.decode_event(context.tx_log, 'ContenthashChanged', argument_names=None)
-        new_hash = result[1][0].hex()
+        return result[1][0].hex()
+
+    def _decode_ens_public_resolver_content_hash(self, context: DecoderContext) -> EvmDecodingOutput:  # noqa: E501
+        """Decode an event that modifies a content hash for the public ENS resolver"""
+        if not self.base.is_tracked(context.transaction.from_address):
+            return DEFAULT_EVM_DECODING_OUTPUT
+        if (new_hash := self._get_new_contenthash(context=context)) is None:
+            return DEFAULT_EVM_DECODING_OUTPUT
+
+        node = context.tx_log.topics[1]  # node is a hash of the name used by ens internals
         name_to_show = self._get_name_to_show(node=node, context=context)
 
         try:
