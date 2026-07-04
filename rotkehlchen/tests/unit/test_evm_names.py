@@ -203,6 +203,7 @@ def test_find_ens_mappings_naming_systems(evm_address, database: 'DBHandler', mo
         assert sorted(queried_systems) == ['ens', 'gns']
 
 
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 def test_gns_reverse_lookup(ethereum_inquirer):
     """Test that reverse resolution of gwei names works properly"""
     assert gns_reverse_lookup(ethereum_inquirer, [
@@ -211,6 +212,7 @@ def test_gns_reverse_lookup(ethereum_inquirer):
     ]) == {donnoh: 'donnoh.gwei', yabir: None}
 
 
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 def test_gns_resolve(ethereum_inquirer):
     """Test that forward resolution of gwei names works properly. lefteris.gwei has no
     explicit address set, so it resolves to the owner of the name"""

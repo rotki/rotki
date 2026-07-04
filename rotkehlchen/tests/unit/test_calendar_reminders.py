@@ -196,6 +196,7 @@ def test_ens_expiry_calendar_reminders(
         assert reminders[1].secs_before == WEEK_IN_SECONDS
 
 
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.freeze_time('2026-07-04 18:00:00 GMT')  # keep current_ts before the name expiries
 @pytest.mark.parametrize('ethereum_accounts', [[
     '0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12',  # registered lefteris.gwei
