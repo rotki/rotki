@@ -10,7 +10,6 @@ from rotkehlchen.chain.ethereum.modules.stakedao.constants import (
     STAKEDAO_CLAIMER2,
     STAKEDAO_CLAIMER_OLD,
 )
-from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
 from rotkehlchen.chain.evm.decoding.stakedao.constants import CPT_STAKEDAO
 from rotkehlchen.chain.evm.types import WeightedNode, string_to_evm_address

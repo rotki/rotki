@@ -27,7 +27,6 @@ from rotkehlchen.chain.evm.decoding.uniswap.v2.utils import (
 from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
 from rotkehlchen.chain.evm.types import ChecksumEvmAddress, string_to_evm_address
 from rotkehlchen.db.evmtx import DBEvmTx
-from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import ZERO, EvmTransaction
