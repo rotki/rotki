@@ -151,6 +151,7 @@ from rotkehlchen.types import (
     SUPPORTED_SUBSTRATE_CHAINS_TYPE,
     AddressbookEntry,
     AddressbookType,
+    AddressNameSource,
     AssetAmount,
     BlockchainAddress,
     BTCAddress,
@@ -1714,7 +1715,9 @@ class ModifiableSettingsSchema(Schema):
     cost_basis_method = SerializableEnumField(enum_class=CostBasisMethod, load_default=None)
     eth_staking_taxable_after_withdrawal_enabled = fields.Boolean(load_default=None)
     address_name_priority = fields.List(fields.String(
-        validate=webargs.validate.OneOf(choices=DEFAULT_ADDRESS_NAME_PRIORITY),
+        # validate against all sources and not the defaults, since some sources
+        # (e.g. gns_names) are valid but not part of the default priority list
+        validate=webargs.validate.OneOf(choices=get_args(AddressNameSource)),
     ), load_default=DEFAULT_ADDRESS_NAME_PRIORITY)
     include_fees_in_cost_basis = fields.Boolean(load_default=None)
     infer_zero_timed_balances = fields.Boolean(load_default=None)

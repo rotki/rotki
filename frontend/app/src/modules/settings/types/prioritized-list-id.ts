@@ -24,6 +24,10 @@ export const GLOBAL_ADDRESSBOOK_PRIO_LIST_ITEM: PrioritizedListItemData<AddressN
   identifier: AddressNamePriority.GLOBAL_ADDRESSBOOK,
 };
 
+export const GNS_NAMES_PRIO_LIST_ITEM: PrioritizedListItemData<AddressNamePriority> = {
+  identifier: AddressNamePriority.GNS_NAMES,
+};
+
 export const HARDCODED_MAPPINGS_PRIO_LIST_ITEM: PrioritizedListItemData<AddressNamePriority> = {
   identifier: AddressNamePriority.HARDCODED_MAPPINGS,
 };

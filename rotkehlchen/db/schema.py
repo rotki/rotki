@@ -653,10 +653,12 @@ CREATE TABLE IF NOT EXISTS nfts (
 
 DB_CREATE_ENS_MAPPINGS = """
 CREATE TABLE IF NOT EXISTS ens_mappings (
-    address TEXT NOT NULL PRIMARY KEY,
+    address TEXT NOT NULL,
     ens_name TEXT UNIQUE,
     last_update INTEGER NOT NULL,
-    last_avatar_update INTEGER NOT NULL DEFAULT 0
+    last_avatar_update INTEGER NOT NULL DEFAULT 0,
+    source TEXT NOT NULL DEFAULT 'ens',
+    PRIMARY KEY(address, source)
 );
 """
 

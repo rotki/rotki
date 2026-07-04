@@ -164,4 +164,29 @@ CREATE UNIQUE INDEX IF NOT EXISTS unique_data_issues_bucket_scope ON data_issues
                 'ADD COLUMN source INTEGER NOT NULL DEFAULT 0',
             )
 
+    @progress_step(description='Add naming system source to ens mappings.')
+    def _add_source_to_ens_mappings(write_cursor: 'DBCursor') -> None:
+        """Store one name per naming system (ENS, GNS, ...) for an address in the
+        ens_mappings cache, so that name priority can be applied at read time.
+        Existing rows are backfilled as ENS names since that was the only system."""
+        if 'source' in {
+            row[1] for row in write_cursor.execute('PRAGMA table_info(ens_mappings)')
+        }:
+            return
+
+        write_cursor.executescript("""
+ALTER TABLE ens_mappings RENAME TO ens_mappings_old;
+CREATE TABLE ens_mappings (
+    address TEXT NOT NULL,
+    ens_name TEXT UNIQUE,
+    last_update INTEGER NOT NULL,
+    last_avatar_update INTEGER NOT NULL DEFAULT 0,
+    source TEXT NOT NULL DEFAULT 'ens',
+    PRIMARY KEY(address, source)
+);
+INSERT INTO ens_mappings(address, ens_name, last_update, last_avatar_update)
+SELECT address, ens_name, last_update, last_avatar_update FROM ens_mappings_old;
+DROP TABLE ens_mappings_old;
+""")
+
     perform_userdb_upgrade_steps(db=db, progress_handler=progress_handler)

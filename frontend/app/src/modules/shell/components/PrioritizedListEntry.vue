@@ -19,6 +19,7 @@ const labels: { [keys in PrioritizedListId]: string } = {
   [AddressNamePriority.ENS_NAMES]: t('address_book.hint.priority.list.ens_names'),
   [AddressNamePriority.ETHEREUM_TOKENS]: t('address_book.hint.priority.list.ethereum_tokens'),
   [AddressNamePriority.GLOBAL_ADDRESSBOOK]: t('address_book.hint.priority.list.global_address_book'),
+  [AddressNamePriority.GNS_NAMES]: t('address_book.hint.priority.list.gns_names'),
   [AddressNamePriority.HARDCODED_MAPPINGS]: t('address_book.hint.priority.list.hardcoded_mappings'),
   [AddressNamePriority.PRIVATE_ADDRESSBOOK]: t('address_book.hint.priority.list.private_address_book'),
   empty_list_id: '',

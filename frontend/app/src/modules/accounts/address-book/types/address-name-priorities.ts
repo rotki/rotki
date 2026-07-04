@@ -5,6 +5,7 @@ export enum AddressNamePriority {
   ENS_NAMES = 'ens_names',
   ETHEREUM_TOKENS = 'ethereum_tokens',
   GLOBAL_ADDRESSBOOK = 'global_addressbook',
+  GNS_NAMES = 'gns_names',
   HARDCODED_MAPPINGS = 'hardcoded_mappings',
   PRIVATE_ADDRESSBOOK = 'private_addressbook',
 }

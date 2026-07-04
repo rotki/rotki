@@ -4273,6 +4273,16 @@ def test_upgrade_db_52_to_53(user_data_dir, messages_aggregator):
             (Location.COINBASE.serialize_for_db(),),
         ).fetchone()[0] == 2
 
+        # ens_mappings has no source column yet at v52
+        assert 'source' not in {
+            row[1] for row in write_cursor.execute('PRAGMA table_info(ens_mappings)')
+        }
+        write_cursor.execute(
+            'INSERT INTO ens_mappings(address, ens_name, last_update, last_avatar_update) '
+            'VALUES (?, ?, ?, ?)',
+            ('0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12', 'rotki.eth', 1730000000, 42),
+        )
+
     db_v52.logout()
     db = _init_db_with_target_version(
         target_version=53,
@@ -4362,6 +4372,28 @@ def test_upgrade_db_52_to_53(user_data_dir, messages_aggregator):
         assert actual_location_labels.pop('LOCATION_LABEL_UPGRADE_POLONIEX_NULL_2') == 'poloniex-main'  # noqa: E501
         assert expected_location_labels.pop('LOCATION_LABEL_UPGRADE_POLONIEX_NULL_2') is None
         assert actual_location_labels == expected_location_labels
+
+        # ens_mappings now has a source column, existing rows were backfilled as ens
+        # names and an address can have one name per naming system
+        assert 'source' in {
+            row[1] for row in cursor.execute('PRAGMA table_info(ens_mappings)')
+        }
+        assert cursor.execute(
+            'SELECT ens_name, last_update, last_avatar_update, source FROM ens_mappings '
+            'WHERE address=?',
+            ('0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12',),
+        ).fetchall() == [('rotki.eth', 1730000000, 42, 'ens')]
+        cursor.execute(  # same address with another naming system source is allowed
+            'INSERT INTO ens_mappings(address, ens_name, last_update, source) '
+            'VALUES (?, ?, ?, ?)',
+            ('0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12', 'lefteris.gwei', 1730000000, 'gns'),
+        )
+        with pytest.raises(sqlcipher.IntegrityError):  # pylint: disable=no-member
+            cursor.execute(  # but the same address/source pair is not
+                'INSERT INTO ens_mappings(address, ens_name, last_update, source) '
+                'VALUES (?, ?, ?, ?)',
+                ('0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12', 'other.gwei', 1730000000, 'gns'),
+            )
 
         assert db.get_setting(cursor, 'version') == 53
 

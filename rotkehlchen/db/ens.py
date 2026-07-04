@@ -22,8 +22,9 @@ class DBEns:
             address: ChecksumEvmAddress,
             name: str | None,
             now: Timestamp,
+            source: str = 'ens',
     ) -> None:
-        """Adds an ens mapping to the DB for an address
+        """Adds a name mapping of the given naming system to the DB for an address
 
         If the name is None then it sets it as an empty name to the DB, signifying we checked it
         If the mapping already exists, but name is updated then we update the name + time
@@ -31,26 +32,28 @@ class DBEns:
         May raise:
         """
         write_cursor.execute(
-            'INSERT INTO ens_mappings (ens_name, address, last_update) '
-            'VALUES (?, ?, ?) ON CONFLICT(address) '
+            'INSERT INTO ens_mappings (ens_name, address, last_update, source) '
+            'VALUES (?, ?, ?, ?) ON CONFLICT(address, source) '
             'DO UPDATE SET ens_name=excluded.ens_name, last_update=excluded.last_update; ',
-            (name, address, now),
+            (name, address, now, source),
         )
 
     def get_reverse_ens(
             self,
             cursor: 'DBCursor',
             addresses: list[ChecksumEvmAddress],
+            source: str = 'ens',
     ) -> dict[ChecksumEvmAddress, EnsMapping | Timestamp]:
-        """Returns a mapping of addresses to ens mappings if found in the DB
+        """Returns a mapping of addresses to name mappings of the given naming
+        system if found in the DB
 
         - If the address has a name mapping in the DB it is returned as part of the dict
         - If the address maps to None in the DB then address maps to last update in return dict
         - If address is not found in the DB it's not in the result
         """
         cursor.execute(
-            f'SELECT ens_name, address, last_update FROM ens_mappings WHERE address IN ({",".join("?" * len(addresses))})',  # noqa: E501
-            addresses,
+            f'SELECT ens_name, address, last_update FROM ens_mappings WHERE source=? AND address IN ({",".join("?" * len(addresses))})',  # noqa: E501
+            [source, *addresses],
         )
         result = {}
         for ens_name, raw_address, last_update in cursor:
@@ -82,17 +85,18 @@ class DBEns:
             write_cursor: 'DBCursor',
             ens_lookup_results: dict[ChecksumEvmAddress, str | None],
             mappings_to_send: dict[ChecksumEvmAddress, str],
+            source: str = 'ens',
     ) -> dict[ChecksumEvmAddress, str]:
-        """Update the ENS mapping values in the DB and return updates mappings to return via api"""
+        """Update the name mapping values in the DB and return updates mappings to return via api"""  # noqa: E501
         now = ts_now()
         for address, name in ens_lookup_results.items():
             try:
-                self.add_ens_mapping(write_cursor, address=address, name=name, now=now)
+                self.add_ens_mapping(write_cursor, address=address, name=name, now=now, source=source)  # noqa: E501
             except sqlcipher.IntegrityError:  # pylint: disable=no-member
                 # Means that we have an old name mapping in the DB which has by now expired
                 cursor = self.db.conn.cursor()
                 cursor.execute('DELETE FROM ens_mappings WHERE ens_name=?', (name,))
-                self.add_ens_mapping(write_cursor, address=address, name=name, now=now)
+                self.add_ens_mapping(write_cursor, address=address, name=name, now=now, source=source)  # noqa: E501
 
             if name is not None:
                 mappings_to_send[address] = name

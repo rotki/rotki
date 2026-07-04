@@ -22,8 +22,10 @@ SUBDOMAIN_REGISTERED: Final = b'8\x08\x97\xee\x97R\xef\xc3\xf5\xbdB\xb9\xd3\x05\
 PRIMARY_NAME_SET: Final = b'A\xf2\xb8\x0e\xdam\xe6\xf2<\xab.\x86yQ\xd0T\xa4\x8dg\x94\xdbG\x9c\x1d%+\xb8@\xa3t\xb6,'  # noqa: E501
 
 SET_TEXT_METHOD: Final = b'?\xb2G\x82'  # setText(uint256,string,string)
+REVERSE_RESOLVE_METHOD: Final = b'\x9a\xf8\xb7\xaa'  # reverseResolve(address)
 
 GET_FULL_NAME_ABI: ABI = [{'inputs': [{'name': 'tokenId', 'type': 'uint256'}], 'name': 'getFullName', 'outputs': [{'name': '', 'type': 'string'}], 'stateMutability': 'view', 'type': 'function'}]  # noqa: E501
+ADDR_ABI: ABI = [{'inputs': [{'name': 'node', 'type': 'bytes32'}], 'name': 'addr', 'outputs': [{'name': '', 'type': 'address'}], 'stateMutability': 'view', 'type': 'function'}]  # noqa: E501
 
 # keccak hashes of the common ENSIP-5 text record keys. Needed since the key
 # of the TextChanged event is an indexed string, so only its hash is logged.
