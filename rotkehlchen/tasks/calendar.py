@@ -11,6 +11,7 @@ from rotkehlchen.chain.base.constants import CPT_BASE
 from rotkehlchen.chain.base.modules.basenames.constants import CPT_BASENAMES
 from rotkehlchen.chain.ethereum.airdrops import check_airdrops
 from rotkehlchen.chain.ethereum.modules.ens.constants import CPT_ENS
+from rotkehlchen.chain.ethereum.modules.gwei_names.constants import CPT_GNS
 from rotkehlchen.chain.evm.decoding.curve.constants import CPT_CURVE
 from rotkehlchen.chain.evm.decoding.velodrome.constants import CPT_AERODROME, CPT_VELODROME
 from rotkehlchen.chain.evm.types import string_to_evm_address
@@ -297,14 +298,15 @@ class CalendarReminderCreator(CustomizableDateMixin):
         )
 
     def maybe_create_ens_reminders(self) -> None:
-        """Check ENS registration and renewal history events and create reminders if needed."""
+        """Check name service (ENS, Basenames, GNS) registration and renewal
+        history events and create reminders if needed."""
         if len(ens_events := self.get_history_events(
             event_types=[
                 (HistoryEventType.SPEND, HistoryEventSubType.NONE),
                 (HistoryEventType.TRADE, HistoryEventSubType.SPEND),
                 (HistoryEventType.RENEW, HistoryEventSubType.NONE),
             ],
-            counterparties=[CPT_ENS, CPT_BASENAMES],
+            counterparties=[CPT_ENS, CPT_BASENAMES, CPT_GNS],
         )) == 0:
             return
 

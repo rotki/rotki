@@ -10,6 +10,7 @@ from freezegun import freeze_time
 from rotkehlchen.chain.base.modules.basenames.constants import CPT_BASENAMES
 from rotkehlchen.chain.ethereum.airdrops import AIRDROPS_REPO_BASE
 from rotkehlchen.chain.ethereum.modules.ens.constants import CPT_ENS
+from rotkehlchen.chain.ethereum.modules.gwei_names.constants import CPT_GNS
 from rotkehlchen.chain.evm.decoding.curve.constants import CPT_CURVE
 from rotkehlchen.chain.evm.decoding.velodrome.constants import CPT_VELODROME
 from rotkehlchen.constants import AIRDROPSDIR_NAME, APPDIR_NAME
@@ -183,6 +184,56 @@ def test_ens_expiry_calendar_reminders(
             counterparty=counterparty,
             address=ens_events[idx].location_label,  # type: ignore[arg-type]  # location_label is not None, checked above
             blockchain=ChainID.deserialize(ens_events[idx].location.to_chain_id()).to_blockchain(),
+            color=ENS_CALENDAR_COLOR,
+            auto_delete=True,
+        )
+
+        # reminders are created 1 week and 1 day before the expiry calendar entry
+        reminders = calendar_db.query_reminder_entry(event_id=calendar_entry.identifier)['entries']
+        assert len(reminders) == 2
+        assert reminders[0].event_id == reminders[1].event_id == calendar_entry.identifier
+        assert reminders[0].secs_before == DAY_IN_SECONDS
+        assert reminders[1].secs_before == WEEK_IN_SECONDS
+
+
+@pytest.mark.parametrize('ethereum_accounts', [[
+    '0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12',  # registered lefteris.gwei
+    '0x9398084E888CB5B5c126240439054b57C10138E7',  # renewed aiiiden.gwei
+]])
+def test_gns_expiry_calendar_reminders(
+        database: 'DBHandler',
+        ethereum_inquirer: 'EthereumInquirer',
+        ethereum_accounts: list['ChecksumEvmAddress'],
+) -> None:
+    """Test that reminders are created at the expiry time of gwei name
+    registrations and renewals."""
+    calendar_db = DBCalendar(database)
+    assert calendar_db.query_calendar_entry(CalendarFilterQuery.make())['entries_total'] == 0
+    for tx_hash in (
+        deserialize_evm_tx_hash('0x8dbce5bb53b5a058ae38504202e025ddad273d24336014af2e10d9ed226e1b3b'),  # register lefteris.gwei  # noqa: E501
+        deserialize_evm_tx_hash('0x36d7e292fe72905d240399cd90728a2fae916fc11d29a8fdddfef78d3d4f5a9f'),  # renew aiiiden.gwei  # noqa: E501
+    ):
+        get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
+
+    reminder_creator = CalendarReminderCreator(database=database, current_ts=ts_now())
+    reminder_creator.maybe_create_ens_reminders()
+
+    entries = calendar_db.query_calendar_entry(CalendarFilterQuery.make())['entries']
+    expected = {
+        'lefteris.gwei': (Timestamp(1814717843), ethereum_accounts[0]),
+        'aiiiden.gwei': (Timestamp(1846009919), ethereum_accounts[1]),
+    }
+    assert len(entries) == len(expected)
+    for calendar_entry in entries:
+        expires, user_address = expected[gwei_name := calendar_entry.name.removesuffix(' expiry')]
+        assert calendar_entry == CalendarEntry(
+            identifier=calendar_entry.identifier,
+            name=f'{gwei_name} expiry',
+            timestamp=expires,
+            description=f'{gwei_name} expires on {reminder_creator.timestamp_to_date(expires)}',
+            counterparty=CPT_GNS,
+            address=user_address,
+            blockchain=SupportedBlockchain.ETHEREUM,
             color=ENS_CALENDAR_COLOR,
             auto_delete=True,
         )
