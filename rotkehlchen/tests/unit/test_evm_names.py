@@ -1,14 +1,16 @@
 import tempfile
 from collections.abc import Mapping
+from http import HTTPStatus
 from pathlib import Path
 from typing import TYPE_CHECKING
-from unittest.mock import Mock
+from unittest.mock import Mock, patch
 
 import pytest
 from freezegun import freeze_time
 
 import rotkehlchen.chain.evm.names
 from rotkehlchen.chain.accounts import BlockchainAccountData
+from rotkehlchen.chain.ethereum.modules.gwei_names.constants import GWEI_NAMES_ADDRESS
 from rotkehlchen.chain.ethereum.modules.gwei_names.naming import gns_resolve, gns_reverse_lookup
 from rotkehlchen.chain.ethereum.utils import try_download_ens_avatar
 from rotkehlchen.chain.evm.names import (
@@ -291,3 +293,45 @@ def test_download_ens_avatar(ethereum_inquirer, opensea):
             tempdir / 'tewshi.eth.png',
             tempdir / 'yabir.eth.png',
         }
+
+
+def test_download_gwei_name_avatar(ethereum_inquirer):
+    """Test that avatars of gwei names are queried from the GNS contract, which acts as
+    an ENS-compatible resolver for all .gwei names, and downloaded properly"""
+    dbens = DBEns(ethereum_inquirer.database)
+    with dbens.db.user_write() as write_cursor:
+        dbens.add_ens_mapping(
+            write_cursor=write_cursor,
+            address=make_evm_address(),
+            name='skas.gwei',
+            now=ts_now(),
+            source='gns',
+        )
+
+    def mock_call_contract(contract_address, abi, method_name, arguments):
+        assert contract_address == GWEI_NAMES_ADDRESS
+        assert method_name == 'text'
+        assert arguments[1] == 'avatar'
+        return 'https://example.com/avatar.png'
+
+    with (
+        patch.object(ethereum_inquirer, 'call_contract', side_effect=mock_call_contract),
+        patch(
+            target='rotkehlchen.chain.ethereum.utils.requests.get',
+            return_value=Mock(
+                status_code=HTTPStatus.OK,
+                headers={'Content-Type': 'image/png'},
+                content=(image_bytes := b'\x89PNG fake avatar image'),
+            ),
+        ),
+        tempfile.TemporaryDirectory() as tempdir_str,
+    ):
+        try_download_ens_avatar(
+            eth_inquirer=ethereum_inquirer,
+            opensea=None,
+            avatars_dir=(tempdir := Path(tempdir_str)),
+            ens_name='skas.gwei',
+        )
+        assert (tempdir / 'skas.gwei.png').read_bytes() == image_bytes
+
+    assert dbens.get_last_avatar_update('skas.gwei') <= ts_now(), 'Last update timestamp should have been set'  # noqa: E501

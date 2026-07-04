@@ -14,6 +14,7 @@ GNS_CPT_DETAILS: Final = CounterpartyDetails(
 )
 
 GWEI_NAMES_ADDRESS: Final = string_to_evm_address('0x9D51D507BC7264d4fE8Ad1cf7Fe191933A0a81d6')
+GWEI_NAME_SUFFIX: Final = '.gwei'
 
 COMMITTED: Final = b'\xfd\xa8\x86\xb5\xd3\x8d]a\xe42\xb3\xac\xc9\xf1\x96@\xa2\xb8\xc8<\x87\xa9\xc5\x84\xa7\x80\xd3\x85K0\x9b\x9c'  # noqa: E501
 NAME_REGISTERED: Final = b'\xe9\xb8)\xb8gl\x14?F\xf4X\xc5J\xb9\xee\xde\xa8\r\xc5\x8e\xae\xc9\xc3\xdf~\x014\xaa\xbf\x7f\x9d('  # noqa: E501
