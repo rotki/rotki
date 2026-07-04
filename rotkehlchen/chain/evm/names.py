@@ -212,7 +212,7 @@ def maybe_resolve_name(
     try:
         resolved_address = system.resolve(ethereum_inquirer, name)
     except (RemoteError, InputError) as e:
-        log.debug(f'Could not resolve {system.identifier} name {name} to an address due to {e}')
+        log.debug('Could not resolve %s name %s to an address due to %s', system.identifier, name, e)  # noqa: E501
         resolved_address = None
 
     if resolved_address is None:
