@@ -113,7 +113,7 @@ lint = [
     "mypy-extensions==1.1.0",
     "pylint==4.0.6",
     "astroid==4.0.2",  # engine of pylint, upgrade them together
-    "ruff==0.15.10",
+    "ruff==0.15.20",
     "double-indent-rotki==0.1.7",  # our fork of double indent
     "pyright==1.1.411",
     # type packages used by mypy
@@ -406,6 +406,7 @@ ignore = [
     "PLC1901", # we prefer direct comparison to empty string for explicitness
     "PLC2701", # unfortunately we do import private methods/vars from web3.py and webargs
     "PLC2801", # false positive complain for dunder set (though we use it in a hacky way)
+    "PLW0717", # too many statements in try clause -- too strict for our error handling style
     # Some bandit rules we don't check for
     "S101",  # asserts are fine
     "S103",  # permissive mask on file/directory
