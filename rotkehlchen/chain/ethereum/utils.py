@@ -11,6 +11,10 @@ from eth_utils import to_checksum_address
 from requests.exceptions import RequestException
 from web3 import Web3
 
+from rotkehlchen.chain.ethereum.modules.gwei_names.constants import (
+    GWEI_NAME_SUFFIX,
+    GWEI_NAMES_ADDRESS,
+)
 from rotkehlchen.constants.resolver import EVM_CHAIN_DIRECTIVE
 from rotkehlchen.constants.timing import ETH_PROTOCOLS_CACHE_REFRESH, HOUR_IN_SECONDS
 from rotkehlchen.db.cache import DBCacheStatic
@@ -135,17 +139,22 @@ def try_download_ens_avatar(
         ens_name: str,
 ) -> None:
     """
-    Handles ens avatar downloading.
-    1. Checks whether given ens name has an avatar set
+    Handles avatar downloading for ENS and other ENS-compatible naming systems (GNS).
+    1. Checks whether given name has an avatar set
     2. If it does, downloads the avatar and saves it in `avatars_dir`
-    3. Updates last avatar and checks timestamp for the given ens name
+    3. Updates last avatar and checks timestamp for the given name
 
     May raise:
     - RemoteError if failed to query chain
     """
-    resolver_addr, _ = eth_inquirer.get_ens_resolver_addr(ens_name)
+    if (is_gwei_name := ens_name.endswith(GWEI_NAME_SUFFIX)):
+        # the GNS contract is an ENS-compatible resolver for all .gwei names
+        resolver_addr: ChecksumEvmAddress | None = GWEI_NAMES_ADDRESS
+    else:
+        resolver_addr, _ = eth_inquirer.get_ens_resolver_addr(ens_name)
+
     if resolver_addr is None:
-        log.error(f'Could not find ENS resolver address for {ens_name}')
+        log.error('Could not find ENS resolver address for %s', ens_name)
         return
 
     avatar_url = eth_inquirer.call_contract(
@@ -164,11 +173,14 @@ def try_download_ens_avatar(
 
     avatar = None
     if avatar_url.startswith(EVM_CHAIN_DIRECTIVE):  # an NFT is set
-        try:  # Let's try first ENS app's own metadata
-            response = requests.get(f'{ENS_METADATA_URL}/avatar/{ens_name}', timeout=CachedSettings().get_timeout_tuple())  # noqa: E501
-            avatar = _get_response_image(response)
-        except (RequestException, RemoteError) as e:  # Try opensea -- if we got it
-            log.error(f'Got error {e!s} during querying ENS app for NFT avatar for {ens_name}. May fall back to opensea')  # noqa: E501
+        if not is_gwei_name:  # the ENS app metadata service only knows ENS names
+            try:  # Let's try first ENS app's own metadata
+                response = requests.get(f'{ENS_METADATA_URL}/avatar/{ens_name}', timeout=CachedSettings().get_timeout_tuple())  # noqa: E501
+                avatar = _get_response_image(response)
+            except (RequestException, RemoteError) as e:
+                log.error('Got error %s during querying ENS app for NFT avatar for %s. May fall back to opensea', e, ens_name)  # noqa: E501
+
+        if avatar is None:  # gwei name NFT avatar, or the ENS app failed. Try opensea
             if opensea is None:
                 return  # no opensea
             avatar_url = opensea.get_nft_image(avatar_url)

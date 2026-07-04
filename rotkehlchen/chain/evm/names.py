@@ -7,6 +7,7 @@ from rotkehlchen.chain.ethereum.decoding.constants import (
     POLONIEX_ADDRESS,
     UPHOLD_ADDRESS,
 )
+from rotkehlchen.chain.ethereum.modules.gwei_names.constants import GWEI_NAME_SUFFIX
 from rotkehlchen.chain.ethereum.modules.gwei_names.naming import gns_resolve, gns_reverse_lookup
 from rotkehlchen.constants import ENS_UPDATE_INTERVAL
 from rotkehlchen.db.addressbook import DBAddressbook
@@ -71,7 +72,7 @@ ENS_NAMING_SYSTEM: Final = NamingSystem(
 GNS_NAMING_SYSTEM: Final = NamingSystem(
     identifier='gns',
     source='gns_names',
-    suffix='.gwei',
+    suffix=GWEI_NAME_SUFFIX,
     reverse_lookup=gns_reverse_lookup,
     resolve=gns_resolve,
 )
