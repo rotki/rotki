@@ -487,12 +487,13 @@ class DBConnection:
                     logger.trace(f'entering critical section for {self.connection_type} and id: {identifier}')  # noqa: E501  # pyright: ignore  # if debug identifier is set
 
                 self._conn.set_progress_handler(None, 0)
-            yield
-
-            with self.in_callback:
-                if __debug__:
-                    logger.trace(f'exiting critical section for {self.connection_type} and id {identifier}')  # noqa: E501  # pyright: ignore  # if debug identifier is set
-                self._set_progress_handler()
+            try:
+                yield
+            finally:
+                with self.in_callback:
+                    if __debug__:
+                        logger.trace(f'exiting critical section for {self.connection_type} and id {identifier}')  # noqa: E501  # pyright: ignore  # if debug identifier is set
+                    self._set_progress_handler()
 
     @contextmanager
     def critical_section_and_transaction_lock(self) -> Generator[None, None, None]:
