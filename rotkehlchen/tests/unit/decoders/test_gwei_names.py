@@ -15,6 +15,7 @@ from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
 from rotkehlchen.types import Location, Timestamp, TimestampMS, deserialize_evm_tx_hash
 
 
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12']])
 def test_gwei_names_commit(ethereum_inquirer, ethereum_accounts):
     events, _ = get_decoded_events_of_transaction(
@@ -51,6 +52,7 @@ def test_gwei_names_commit(ethereum_inquirer, ethereum_accounts):
     ]
 
 
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12']])
 def test_gwei_names_register(ethereum_inquirer, ethereum_accounts):
     events, decoder = get_decoded_events_of_transaction(
@@ -100,6 +102,7 @@ def test_gwei_names_register(ethereum_inquirer, ethereum_accounts):
     ]
 
 
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0xf1B42cc7c1609445620dE4352CD7e58353C3FA74']])
 def test_gwei_names_set_address(ethereum_inquirer, ethereum_accounts):
     events, _ = get_decoded_events_of_transaction(
@@ -136,6 +139,7 @@ def test_gwei_names_set_address(ethereum_inquirer, ethereum_accounts):
     ]
 
 
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0xaB583a9E164CDd1B10e474a83DF3D0F2bdF99c95']])
 def test_gwei_names_set_contenthash(ethereum_inquirer, ethereum_accounts):
     """Test that setting the contenthash (website) of a gwei name is decoded properly"""
@@ -173,6 +177,7 @@ def test_gwei_names_set_contenthash(ethereum_inquirer, ethereum_accounts):
     ]
 
 
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0x20309Eb9080288e31AB1161366Af6639f04d593e']])
 def test_gwei_names_set_text(ethereum_inquirer, ethereum_accounts):
     events, _ = get_decoded_events_of_transaction(
@@ -209,6 +214,7 @@ def test_gwei_names_set_text(ethereum_inquirer, ethereum_accounts):
     ]
 
 
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0x9398084E888CB5B5c126240439054b57C10138E7']])
 def test_gwei_names_renew(ethereum_inquirer, ethereum_accounts):
     events, decoder = get_decoded_events_of_transaction(
@@ -247,6 +253,7 @@ def test_gwei_names_renew(ethereum_inquirer, ethereum_accounts):
     ]
 
 
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0xC04689227Fa24785609B1174698DBe481437f1A3']])
 def test_gwei_names_set_primary_name(ethereum_inquirer, ethereum_accounts):
     events, _ = get_decoded_events_of_transaction(
@@ -283,6 +290,7 @@ def test_gwei_names_set_primary_name(ethereum_inquirer, ethereum_accounts):
     ]
 
 
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0xf1B42cc7c1609445620dE4352CD7e58353C3FA74']])
 def test_gwei_names_register_subdomain(ethereum_inquirer, ethereum_accounts):
     events, _ = get_decoded_events_of_transaction(
