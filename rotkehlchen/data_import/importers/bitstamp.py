@@ -6,7 +6,7 @@ from uuid import uuid4
 from rotkehlchen.assets.converters import asset_from_bitstamp
 from rotkehlchen.data_import.importers.constants import BITSTAMP_EVENT_PREFIX
 from rotkehlchen.data_import.utils import BaseExchangeImporter
-from rotkehlchen.db.drivers.gevent import DBCursor
+from rotkehlchen.db.drivers.sqlite import DBCursor
 from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.misc import InputError
 from rotkehlchen.errors.serialization import DeserializationError

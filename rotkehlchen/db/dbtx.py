@@ -11,7 +11,7 @@ if TYPE_CHECKING:
 
     from rotkehlchen.chain.solana.types import SolanaTransaction
     from rotkehlchen.db.dbhandler import DBHandler
-    from rotkehlchen.db.drivers.gevent import DBCursor
+    from rotkehlchen.db.drivers.sqlite import DBCursor
     from rotkehlchen.types import EvmTransaction, EVMTxHash
 
 T_Address = TypeVar('T_Address')

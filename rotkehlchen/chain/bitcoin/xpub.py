@@ -15,7 +15,7 @@ from rotkehlchen.types import BTCAddress, SupportedBlockchain
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.aggregator import ChainsAggregator
-    from rotkehlchen.db.drivers.gevent import DBCursor
+    from rotkehlchen.db.drivers.sqlite import DBCursor
 
 
 logger = logging.getLogger(__name__)

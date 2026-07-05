@@ -23,7 +23,7 @@ from rotkehlchen.types import Location, TimestampMS
 
 if TYPE_CHECKING:
     from rotkehlchen.api.server import APIServer
-    from rotkehlchen.db.drivers.gevent import DBCursor
+    from rotkehlchen.db.drivers.sqlite import DBCursor
 
 
 def duplicated_events_setup(

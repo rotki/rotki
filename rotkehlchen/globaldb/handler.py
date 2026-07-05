@@ -37,7 +37,7 @@ from rotkehlchen.constants.misc import (
     NFT_DIRECTIVE,
 )
 from rotkehlchen.constants.resolver import evm_address_to_identifier, tokenid_to_collectible_id
-from rotkehlchen.db.drivers.gevent import DBConnection, DBConnectionType, DBCursor
+from rotkehlchen.db.drivers.sqlite import DBConnection, DBConnectionType, DBCursor
 from rotkehlchen.db.utils import get_query_chunks
 from rotkehlchen.errors.asset import UnknownAsset, WrongAssetType
 from rotkehlchen.errors.misc import InputError

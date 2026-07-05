@@ -35,7 +35,7 @@ if TYPE_CHECKING:
     from rotkehlchen.accounting.accountant import Accountant
     from rotkehlchen.accounting.pot import AccountingPot
     from rotkehlchen.db.dbhandler import DBHandler
-    from rotkehlchen.db.drivers.gevent import DBCursor
+    from rotkehlchen.db.drivers.sqlite import DBCursor
 
 
 logger = logging.getLogger(__name__)

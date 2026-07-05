@@ -74,7 +74,7 @@ if TYPE_CHECKING:
     from rotkehlchen.assets.asset import Asset
     from rotkehlchen.chain.ethereum.modules.eth2.eth2 import Eth2
     from rotkehlchen.db.constants import HistoryMappingState
-    from rotkehlchen.db.drivers.gevent import DBCursor
+    from rotkehlchen.db.drivers.sqlite import DBCursor
     from rotkehlchen.db.filtering import HistoryBaseEntryFilterQuery
     from rotkehlchen.db.history_events import HistoryEventsWithCountResult
     from rotkehlchen.fval import FVal

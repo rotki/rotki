@@ -3,7 +3,7 @@ from typing import TYPE_CHECKING
 from rotkehlchen.data_migrations.common import migrate_addressbook_none_to_ecosystem_key
 
 if TYPE_CHECKING:
-    from rotkehlchen.db.drivers.gevent import DBConnection
+    from rotkehlchen.db.drivers.sqlite import DBConnection
 
 
 def globaldb_data_migration_3(conn: 'DBConnection') -> None:

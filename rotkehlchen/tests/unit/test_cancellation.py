@@ -15,7 +15,7 @@ from rotkehlchen.concurrency import (
     spawn,
     wait,
 )
-from rotkehlchen.db.drivers.gevent import DBConnection, DBConnectionType
+from rotkehlchen.db.drivers.sqlite import DBConnection, DBConnectionType
 
 LONG_QUERY = (  # a recursive CTE that runs long enough to guarantee progress callbacks
     'WITH RECURSIVE r(i) AS (VALUES(1) UNION ALL SELECT i+1 FROM r '

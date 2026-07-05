@@ -19,7 +19,7 @@ from rotkehlchen.constants.prices import (
     BITCOIN_GENESIS_BLOCK_TS,
     CRYPTOCOMPARE_INVALID_PRICE_TS_CUTOFF,
 )
-from rotkehlchen.db.drivers.gevent import DBConnection, DBConnectionType
+from rotkehlchen.db.drivers.sqlite import DBConnection, DBConnectionType
 from rotkehlchen.db.utils import table_exists
 from rotkehlchen.errors.misc import DBUpgradeError
 from rotkehlchen.globaldb.cache import (

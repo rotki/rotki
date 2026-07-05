@@ -16,7 +16,7 @@ from sqlcipher3 import dbapi2 as sqlcipher
 from rotkehlchen.concurrency import cancellable_sleep
 from rotkehlchen.constants.misc import USERDB_NAME, USERSDIR_NAME
 from rotkehlchen.db.cache import DBCacheStatic
-from rotkehlchen.db.drivers.gevent import DBConnection, DBConnectionType
+from rotkehlchen.db.drivers.sqlite import DBConnection, DBConnectionType
 from rotkehlchen.db.settings import ROTKEHLCHEN_DB_VERSION, DBSettings
 from rotkehlchen.errors.api import (
     AuthenticationError,

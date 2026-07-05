@@ -62,7 +62,7 @@ from rotkehlchen.db.constants import (
     OKX_LOCATION_KEY,
     USER_CREDENTIAL_MAPPING_KEYS,
 )
-from rotkehlchen.db.drivers.gevent import DBConnection, DBConnectionType, DBCursor
+from rotkehlchen.db.drivers.sqlite import DBConnection, DBConnectionType, DBCursor
 from rotkehlchen.db.evmtx import DBEvmTx
 from rotkehlchen.db.filtering import UserNotesFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents

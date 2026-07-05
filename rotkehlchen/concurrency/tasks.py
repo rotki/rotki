@@ -198,11 +198,3 @@ def exception_of(task: Task) -> BaseException | None:
 def result_of(task: Task) -> Any:
     """Return the result of a finished task, raising the exception it died with"""
     return task.get()
-
-
-def run_in_native_thread(func: Callable[..., Any], *args: Any, **kwargs: Any) -> Any:
-    """Run func and return its result. A direct call since the gevent flip:
-    the caller already runs on a real OS thread, so CPU-bound work (e.g. DB
-    compression/encryption) no longer freezes a cooperative scheduler. Kept as
-    a seam so call sites document the offload intent; removed in phase 7."""
-    return func(*args, **kwargs)

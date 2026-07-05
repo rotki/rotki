@@ -1,4 +1,4 @@
-"""A module with miscellaneous functions that do not depend on db/drivers/gevent.py
+"""A module with miscellaneous functions that do not depend on db/drivers/sqlite.py
 due. Needed in packaging since that code has log.trace and should only be
 imported if trace level has been setup"""
 

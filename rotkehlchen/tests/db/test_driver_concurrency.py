@@ -10,7 +10,7 @@ import time
 import pytest
 
 from rotkehlchen.concurrency import Task, spawn, wait
-from rotkehlchen.db.drivers.gevent import DBConnection, DBConnectionType
+from rotkehlchen.db.drivers.sqlite import DBConnection, DBConnectionType
 
 WORKERS = 5
 ITERATIONS = 20

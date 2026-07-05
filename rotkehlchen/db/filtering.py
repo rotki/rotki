@@ -109,7 +109,7 @@ class LevenshteinOrder:
     The term is emitted as bound query parameters, never spliced into the SQL, so this can only
     ever express the fuzzy ordering and not arbitrary SQL. Requires the ``levenshtein`` scalar
     function to be registered on the connection (done for the global DB connection in
-    rotkehlchen/db/drivers/gevent.py).
+    rotkehlchen/db/drivers/sqlite.py).
     """
     term: str
     name_field: str = 'name'

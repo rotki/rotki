@@ -5,7 +5,7 @@ import pytest
 import rsqlite
 
 from rotkehlchen.concurrency import spawn, wait
-from rotkehlchen.db.drivers.gevent import (
+from rotkehlchen.db.drivers.sqlite import (
     ContextError,
     DBConnection,
     DBConnectionType,

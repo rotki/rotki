@@ -12,7 +12,7 @@ from rotkehlchen.types import (
 )
 
 if TYPE_CHECKING:
-    from rotkehlchen.db.drivers.gevent import DBCursor
+    from rotkehlchen.db.drivers.sqlite import DBCursor
     from rotkehlchen.db.filtering import InternalTxConflictsFilterQuery
 
 INTERNAL_TX_CONFLICT_ACTION_FIX_REDECODE: Final = 'fix_redecode'

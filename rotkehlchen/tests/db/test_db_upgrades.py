@@ -34,7 +34,7 @@ from rotkehlchen.db.constants import (
     InternalTxSource,
 )
 from rotkehlchen.db.dbhandler import DBHandler
-from rotkehlchen.db.drivers.gevent import DBConnection, DBConnectionType
+from rotkehlchen.db.drivers.sqlite import DBConnection, DBConnectionType
 from rotkehlchen.db.schema import DB_SCRIPT_CREATE_TABLES
 from rotkehlchen.db.settings import ROTKEHLCHEN_DB_VERSION
 from rotkehlchen.db.upgrade_manager import (
@@ -76,7 +76,7 @@ from rotkehlchen.utils.hexbytes import HexBytes
 from rotkehlchen.utils.misc import ts_now
 
 if TYPE_CHECKING:
-    from rotkehlchen.db.drivers.gevent import DBCursor
+    from rotkehlchen.db.drivers.sqlite import DBCursor
 
 
 def make_serialized_group_identifier(location: Location, raw_group_identifier: bytes) -> str:

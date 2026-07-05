@@ -12,7 +12,6 @@ from rotkehlchen.balances.manual import ManuallyTrackedBalance
 from rotkehlchen.chain.accounts import BlockchainAccounts
 from rotkehlchen.constants.misc import DEFAULT_SQL_VM_INSTRUCTIONS_CB, USERSDIR_NAME
 from rotkehlchen.db.dbhandler import DBHandler
-from rotkehlchen.db.drivers.gevent import DEFAULT_SCHEDULING_MODE, SchedulingMode
 from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.tests.utils.database import (
     _use_prepared_db,
@@ -85,14 +84,6 @@ def fixture_manually_tracked_balances() -> list[ManuallyTrackedBalance]:
 @pytest.fixture(name='sql_vm_instructions_cb')
 def fixture_sql_vm_instructions_cb() -> int:
     return DEFAULT_SQL_VM_INSTRUCTIONS_CB
-
-
-@pytest.fixture(name='db_scheduling_mode')
-def fixture_db_scheduling_mode() -> SchedulingMode:
-    """Parametrize to run a test's DB connections in a specific scheduling mode.
-    THREADING is the only production mode since the phase-6 flip; the fixture
-    goes away with the enum in phase 7 (docs/designs/gevent_to_asyncio.md)"""
-    return DEFAULT_SCHEDULING_MODE
 
 
 def _init_database(
@@ -172,38 +163,36 @@ def database(
         sql_vm_instructions_cb,
         perform_upgrades_at_unlock,
         skip_sync_globaldb_assets,
-        db_scheduling_mode,
 ) -> Generator[DBHandler | None, None, None]:
     if not start_with_logged_in_user:
         yield None
         return
 
-    with patch('rotkehlchen.db.drivers.gevent.DEFAULT_SCHEDULING_MODE', db_scheduling_mode):
-        db_handler = _init_database(
-            user_data_dir=user_data_dir,
-            msg_aggregator=function_scope_messages_aggregator,
-            password=db_password,
-            db_settings=db_settings,
-            ignored_assets=ignored_assets,
-            blockchain_accounts=blockchain_accounts,
-            include_etherscan_key=include_etherscan_key,
-            include_blockscout_key=include_blockscout_key,
-            include_beaconchain_key=include_beaconchain_key,
-            include_cryptocompare_key=include_cryptocompare_key,
-            tags=tags,
-            manually_tracked_balances=manually_tracked_balances,
-            data_migration_version=data_migration_version,
-            use_custom_database=use_custom_database,
-            sql_vm_instructions_cb=sql_vm_instructions_cb,
-            perform_upgrades_at_unlock=perform_upgrades_at_unlock,
-            skip_sync_globaldb_assets=skip_sync_globaldb_assets,
-        )
-        if new_db_unlock_actions is not None:
-            perform_new_db_unlock_actions(db=db_handler, new_db_unlock_actions=new_db_unlock_actions)  # noqa: E501
-        yield db_handler
+    db_handler = _init_database(
+        user_data_dir=user_data_dir,
+        msg_aggregator=function_scope_messages_aggregator,
+        password=db_password,
+        db_settings=db_settings,
+        ignored_assets=ignored_assets,
+        blockchain_accounts=blockchain_accounts,
+        include_etherscan_key=include_etherscan_key,
+        include_blockscout_key=include_blockscout_key,
+        include_beaconchain_key=include_beaconchain_key,
+        include_cryptocompare_key=include_cryptocompare_key,
+        tags=tags,
+        manually_tracked_balances=manually_tracked_balances,
+        data_migration_version=data_migration_version,
+        use_custom_database=use_custom_database,
+        sql_vm_instructions_cb=sql_vm_instructions_cb,
+        perform_upgrades_at_unlock=perform_upgrades_at_unlock,
+        skip_sync_globaldb_assets=skip_sync_globaldb_assets,
+    )
+    if new_db_unlock_actions is not None:
+        perform_new_db_unlock_actions(db=db_handler, new_db_unlock_actions=new_db_unlock_actions)
+    yield db_handler
 
-        db_handler.logout()
-        CachedSettings().reset()
+    db_handler.logout()
+    CachedSettings().reset()
 
 
 @pytest.fixture(name='db_settings')

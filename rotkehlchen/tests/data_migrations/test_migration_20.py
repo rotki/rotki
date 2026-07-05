@@ -9,7 +9,7 @@ from rotkehlchen.constants import ONE
 from rotkehlchen.constants.assets import A_BTC, A_ETH, A_USD
 from rotkehlchen.data_migrations.manager import MIGRATION_LIST, DataMigrationManager
 from rotkehlchen.db.dbhandler import DBHandler
-from rotkehlchen.db.drivers.gevent import DBConnection, DBConnectionType
+from rotkehlchen.db.drivers.sqlite import DBConnection, DBConnectionType
 from rotkehlchen.db.utils import unlock_database
 from rotkehlchen.exchanges.data_structures import hash_id
 from rotkehlchen.history.events.structures.base import HistoryBaseEntryType

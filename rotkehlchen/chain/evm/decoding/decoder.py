@@ -107,7 +107,7 @@ if TYPE_CHECKING:
     from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer, EvmNodeInquirerWithProxies
     from rotkehlchen.chain.evm.transactions import EvmTransactions
     from rotkehlchen.db.dbhandler import DBHandler
-    from rotkehlchen.db.drivers.gevent import DBCursor
+    from rotkehlchen.db.drivers.sqlite import DBCursor
     from rotkehlchen.externalapis.beaconchain.service import BeaconChain
     from rotkehlchen.externalapis.monerium import Monerium
     from rotkehlchen.history.events.structures.evm_event import EvmEvent

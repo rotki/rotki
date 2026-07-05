@@ -35,7 +35,7 @@ from rotkehlchen.utils.version_check import VersionCheckResult
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
-    from rotkehlchen.db.drivers.gevent import DBCursor
+    from rotkehlchen.db.drivers.sqlite import DBCursor
 
 ETHEREUM_SPAM_ASSET_ADDRESS = make_evm_address()
 OPTIMISM_SPAM_ASSET_ADDRESS = make_evm_address()

@@ -3,7 +3,7 @@ from typing import TYPE_CHECKING
 from rotkehlchen.db.utils import update_table_schema
 
 if TYPE_CHECKING:
-    from rotkehlchen.db.drivers.gevent import DBCursor
+    from rotkehlchen.db.drivers.sqlite import DBCursor
 
 
 def fix_address_book_duplications(write_cursor: 'DBCursor') -> None:
