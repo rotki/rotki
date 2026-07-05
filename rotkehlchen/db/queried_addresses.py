@@ -7,7 +7,7 @@ from rotkehlchen.errors.misc import InputError
 from rotkehlchen.types import AVAILABLE_MODULES_MAP, ChecksumAddress, ModuleName
 
 if TYPE_CHECKING:
-    from rotkehlchen.db.drivers.gevent import DBCursor
+    from rotkehlchen.db.drivers.sqlite import DBCursor
 
 
 class QueriedAddresses:

@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING, NamedTuple
 from sqlcipher3 import dbapi2 as sqlcipher
 
 from rotkehlchen.assets.asset import Asset
-from rotkehlchen.db.drivers.gevent import DBConnection, DBConnectionType
+from rotkehlchen.db.drivers.sqlite import DBConnection, DBConnectionType
 from rotkehlchen.db.migration_utils import (
     create_swap_events_v47_v48,
     get_swap_spend_receive_v47_48,

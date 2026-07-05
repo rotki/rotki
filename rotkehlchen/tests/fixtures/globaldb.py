@@ -13,7 +13,7 @@ from rotkehlchen.assets.asset import EvmToken
 from rotkehlchen.assets.resolver import AssetResolver
 from rotkehlchen.constants.assets import A_BTC, A_ETH, A_EUR
 from rotkehlchen.constants.misc import GLOBALDB_NAME, GLOBALDIR_NAME
-from rotkehlchen.db.drivers.gevent import DBConnection, DBConnectionType
+from rotkehlchen.db.drivers.sqlite import DBConnection, DBConnectionType
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.globaldb.upgrades.manager import UPGRADES_LIST

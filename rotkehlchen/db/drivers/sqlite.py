@@ -2,12 +2,10 @@
  https://github.com/gilesbrown/gsqlite3/blob/fef400f1c5bcbc546772c827d3992e578ea5f905/gsqlite3.py
 but heavily modified
 
-The driver is dual-mode (SchedulingMode) as part of the gevent removal migration
-(docs/designs/gevent_to_asyncio.md). It intentionally has no gevent import: under
-monkeypatching the stdlib primitives used here (threading.Lock, threading.get_ident,
-time.sleep) are already gevent-cooperative, and after the flip they are simply the
-real thing. The only behavioral difference between the modes is whether the sqlite
-progress handler yields control to other greenlets.
+A thread-safe driver over one sqlite/sqlcipher connection shared by concurrent
+tasks (the gevent yield machinery it grew out of was removed by the migration
+of docs/designs/gevent_to_asyncio.md). The sqlite progress handler serves as
+the cancellation checkpoint that aborts running statements of cancelled tasks.
 """
 
 import logging
@@ -19,7 +17,7 @@ from contextlib import contextmanager
 from enum import Enum, auto
 from pathlib import Path
 from types import TracebackType
-from typing import TYPE_CHECKING, Any, Final, Literal, Optional, Self, TypeAlias
+from typing import TYPE_CHECKING, Any, Literal, Optional, Self, TypeAlias
 from uuid import uuid4
 
 import rsqlite
@@ -44,24 +42,6 @@ UnderlyingConnection: TypeAlias = rsqlite.Connection | sqlcipher.Connection  # p
 CONTEXT_SWITCH_WAIT = 0.025  # seconds between cancellation checks while waiting for the transaction slot  # noqa: E501
 
 logger: 'RotkehlchenLogger' = logging.getLogger(__name__)  # type: ignore
-
-
-class SchedulingMode(Enum):
-    """How the connection cooperates with the app's concurrency runtime.
-
-    GEVENT: the sqlite progress handler yields to other greenlets so that long
-    statements don't monopolize the event loop.
-    THREADING: threads preempt on their own, so the progress handler does not
-    yield and remains solely as a cancellation checkpoint.
-    """
-    GEVENT = auto()
-    THREADING = auto()
-
-
-# Read at DBConnection construction time (not at def time) so tests can
-# change it process-wide in one place. THREADING since phase 6 of the gevent
-# removal migration; the GEVENT mode is dead code removed in phase 7.
-DEFAULT_SCHEDULING_MODE: Final = SchedulingMode.THREADING
 
 
 class ContextError(Exception):
@@ -284,23 +264,7 @@ def _progress_callback(connection: Optional['DBConnection']) -> int:
         # the guard above, so driver-internal bookkeeping cannot be aborted.
         return 1
 
-    if connection.scheduling_mode is SchedulingMode.THREADING:
-        # threads preempt on their own -- the callback is only a cancellation checkpoint
-        return 0
-
-    if __debug__:
-        identifier = random.random()
-        conn_type = connection.connection_type if connection else 'no connection'
-        logger.trace(f'START progress callback for {conn_type} with id {identifier}')
-
-    with connection.in_callback:
-        if __debug__:
-            logger.trace(f'Got in locked section of the progress callback for {connection.connection_type} with id {identifier}')  # noqa: E501  # pyright: ignore  # if debug identifier is set
-
-        time.sleep(0)  # gevent-cooperative yield: monkeypatched to gevent.sleep(0)
-        if __debug__:
-            logger.trace(f'Going out of the progress callback for {connection.connection_type} with id {identifier}')  # noqa: E501  # pyright: ignore  # if debug identifier is set
-        return 0
+    return 0  # not cancelled: the callback is only a cancellation checkpoint
 
 
 def user_callback() -> int:
@@ -336,13 +300,11 @@ class DBConnection:
             path: str | Path,
             connection_type: DBConnectionType,
             sql_vm_instructions_cb: int,
-            scheduling_mode: SchedulingMode | None = None,
     ) -> None:
         CONNECTION_MAP[connection_type] = self
         self._conn: UnderlyingConnection
-        self.scheduling_mode = DEFAULT_SCHEDULING_MODE if scheduling_mode is None else scheduling_mode  # noqa: E501
-        # threading.Lock is gevent-cooperative under monkeypatching and exposes
-        # locked(), which the progress callback needs to inspect held state
+        # Lock and not Semaphore since the progress callback inspects held
+        # state through locked()
         self.in_callback = threading.Lock()
         self.transaction_lock = threading.Lock()
         self.in_critical_section = threading.Lock()
@@ -361,8 +323,7 @@ class DBConnection:
         # We need an ordered set. Python doesn't have such thing as a standalone object, but has
         # `dict` which preserves the order of its keys. So we use dict with None values.
         self.savepoints: dict[str, None] = {}
-        # These hold threading.get_ident() of the task where write tx/savepoints are
-        # active (under gevent monkeypatching each greenlet gets a distinct ident)
+        # These hold threading.get_ident() of the task where write tx/savepoints are active
         self.savepoint_task_ident: int | None = None
         self.write_task_ident: int | None = None
         # whether the current savepoint stack claimed transaction_lock itself
@@ -608,7 +569,7 @@ class DBConnection:
     def critical_section(self) -> Generator[None, None, None]:
         """Disable the progress callback's effects for the duration of the context.
 
-        In THREADING mode the sqlite progress handler must NOT be toggled here:
+        The sqlite progress handler must NOT be toggled here:
         set_progress_handler() blocks on sqlite's connection mutex while holding
         the GIL, and another thread mid-statement holds that mutex while its
         progress callback waits for the GIL -- a deadlock. Holding
@@ -623,17 +584,12 @@ class DBConnection:
             with self.in_callback:
                 if __debug__:
                     logger.trace(f'entering critical section for {self.connection_type} and id: {identifier}')  # noqa: E501  # pyright: ignore  # if debug identifier is set
-
-                if self.scheduling_mode is SchedulingMode.GEVENT:
-                    self._conn.set_progress_handler(None, 0)
             try:
                 yield
             finally:
                 with self.in_callback:
                     if __debug__:
                         logger.trace(f'exiting critical section for {self.connection_type} and id {identifier}')  # noqa: E501  # pyright: ignore  # if debug identifier is set
-                    if self.scheduling_mode is SchedulingMode.GEVENT:
-                        self._set_progress_handler()
 
     @contextmanager
     def _transaction_slot(self) -> Generator[None, None, None]:

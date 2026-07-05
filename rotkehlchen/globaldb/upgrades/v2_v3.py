@@ -14,7 +14,7 @@ from rotkehlchen.constants.resolver import (
 from rotkehlchen.logging import enter_exit_debug_log
 
 if TYPE_CHECKING:
-    from rotkehlchen.db.drivers.gevent import DBConnection, DBCursor
+    from rotkehlchen.db.drivers.sqlite import DBConnection, DBCursor
     from rotkehlchen.db.upgrade_manager import DBUpgradeProgressHandler
 
 log = logging.getLogger(__name__)

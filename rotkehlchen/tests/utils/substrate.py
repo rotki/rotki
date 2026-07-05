@@ -134,9 +134,10 @@ def wait_until_all_substrate_nodes_connected(
         if time.monotonic() >= deadline:
             not_connected_nodes = all_nodes - connected
             log.info(
-                f'{substrate_manager.chain} manager failed to connect to '
-                f'nodes: {",".join([str(node) for node in not_connected_nodes])} '
-                f'due to timeout of {NODE_CONNECTION_TIMEOUT}',
+                '%s manager failed to connect to nodes: %s due to timeout of %s',
+                substrate_manager.chain,
+                ','.join(str(node) for node in not_connected_nodes),
+                NODE_CONNECTION_TIMEOUT,
             )
             return
 

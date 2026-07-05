@@ -28,7 +28,7 @@ from rotkehlchen.utils.mixins.lockable import skip_if_running
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
-    from rotkehlchen.db.drivers.gevent import DBCursor
+    from rotkehlchen.db.drivers.sqlite import DBCursor
     from rotkehlchen.history.events.structures.base import HistoryBaseEntry
     from rotkehlchen.user_messages import MessagesAggregator
 

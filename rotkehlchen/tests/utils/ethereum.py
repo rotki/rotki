@@ -173,8 +173,10 @@ def wait_until_all_nodes_connected(
                 str(x) for idx, x in enumerate(connect_at_start) if not connected[idx]
             ]
             log.warning(
-                f'Did not connect to nodes: {",".join(names)} due to '
-                f'timeout of {NODE_CONNECTION_TIMEOUT}. Connected to {connected}',
+                'Did not connect to nodes: %s due to timeout of %s. Connected to %s',
+                ','.join(names),
+                NODE_CONNECTION_TIMEOUT,
+                connected,
             )
             return
 

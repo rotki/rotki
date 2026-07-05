@@ -17,7 +17,7 @@ from rotkehlchen.db.utils import get_query_chunks
 from rotkehlchen.types import Location, SolanaAddress, SupportedBlockchain, Timestamp
 
 if TYPE_CHECKING:
-    from rotkehlchen.db.drivers.gevent import DBCursor
+    from rotkehlchen.db.drivers.sqlite import DBCursor
 
 
 # Top-level instructions use -1 as parent_execution_index (instead of NULL)

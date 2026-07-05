@@ -23,7 +23,7 @@ if TYPE_CHECKING:
     from collections.abc import Sequence
 
     from rotkehlchen.db.dbhandler import DBHandler
-    from rotkehlchen.db.drivers.gevent import DBCursor
+    from rotkehlchen.db.drivers.sqlite import DBCursor
     from rotkehlchen.db.upgrade_manager import DBUpgradeProgressHandler
 
 logger = logging.getLogger(__name__)

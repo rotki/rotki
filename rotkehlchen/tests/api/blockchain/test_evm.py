@@ -53,7 +53,7 @@ from rotkehlchen.utils.misc import ts_now
 
 if TYPE_CHECKING:
     from rotkehlchen.api.server import APIServer
-    from rotkehlchen.db.drivers.gevent import DBCursor
+    from rotkehlchen.db.drivers.sqlite import DBCursor
     from rotkehlchen.tests.fixtures.websockets import WebsocketReader
 
 ADDY = string_to_evm_address('0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045')

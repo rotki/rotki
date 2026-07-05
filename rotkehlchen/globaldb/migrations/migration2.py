@@ -4,7 +4,7 @@ from rotkehlchen.globaldb.cache import compute_cache_key
 from rotkehlchen.types import CacheType, ChainID
 
 if TYPE_CHECKING:
-    from rotkehlchen.db.drivers.gevent import DBConnection
+    from rotkehlchen.db.drivers.sqlite import DBConnection
 
 
 def globaldb_data_migration_2(conn: 'DBConnection') -> None:

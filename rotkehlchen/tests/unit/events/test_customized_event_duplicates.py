@@ -8,7 +8,7 @@ from rotkehlchen.constants.assets import A_1INCH, A_ETH
 from rotkehlchen.constants.misc import ONE
 from rotkehlchen.db.cache import IGNORED_CUSTOMIZED_EVENT_DUPLICATE_PREFIX
 from rotkehlchen.db.constants import HISTORY_MAPPING_KEY_STATE, HistoryMappingState
-from rotkehlchen.db.drivers.gevent import DBCursor
+from rotkehlchen.db.drivers.sqlite import DBCursor
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmEvent

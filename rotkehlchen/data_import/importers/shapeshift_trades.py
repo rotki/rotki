@@ -7,7 +7,7 @@ from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import A_DAI, A_SAI
 from rotkehlchen.constants.timing import SAI_DAI_MIGRATION_TS
 from rotkehlchen.data_import.utils import BaseExchangeImporter, SkippedCSVEntry, hash_csv_row
-from rotkehlchen.db.drivers.gevent import DBCursor
+from rotkehlchen.db.drivers.sqlite import DBCursor
 from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.misc import InputError
 from rotkehlchen.errors.serialization import DeserializationError

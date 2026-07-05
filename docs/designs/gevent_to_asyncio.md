@@ -9,14 +9,14 @@ the decision log.
 
 | Phase | Description | Status |
 |-------|-------------|--------|
-| 0 | Python bump 3.11 → 3.12/3.13 | not started |
+| 0 | Python bump 3.11 → 3.12/3.13 | **retired** (2026-07-05) — its purpose was to separate interpreter risk from concurrency risk, but the migration completed on 3.11; a single hop to 3.13 moves into phase 7 as the free-threading prerequisite |
 | 1 | Stdlib primitives + spawn seam + gevent import ban | **done** — business logic in phase 1 (~45 files); test files finished in phase 6 |
 | 2 | Cooperative cancellation (replaces `greenlet.kill`) | **done** — CancellationToken + checkpoints landed, `greenlet.kill`/`GreenletKilledError` removed, substrate `gevent.Timeout` replaced |
 | 3 | DB driver dual-mode (gevent / threading backends) | **done** — gevent-free driver with SchedulingMode, transaction-slot locking replaces poll loops, both-modes tests + stress test, atomicity audit done (crash-class findings fixed) |
 | 4 | ASGI server behind a flag (uvicorn + WSGI bridge + native websockets) | **done** — `--api-server-backend asgi` serves REST+`/ws` via uvicorn on one port; gevent stays default; `api-asgi` CI leg |
 | 5 | Task orchestration off greenlets (thread-backed Task/TaskSupervisor) | **done** — thread-backed `Task` handles everywhere, `GreenletManager`→`TaskSupervisor`, all `killall` paths now cancel+grace, gevent imports confined to the phase-6 files |
 | 6 | The flip: remove monkey patching and gevent | **done** — monkeypatching gone, uvicorn is the only server, THREADING the only DB scheduling default, gevent/geventwebsocket/wsaccel deps deleted, plain pytest |
-| 7 | Harvest: native-async hot paths, free-threading experiments | not started |
+| 7 | Harvest: native-async hot paths, free-threading experiments | **in progress** — transitional dual-mode code removed; interpreter bump (3.13), convoy measurements and native-async conversions pending wheels/benchmarks |
 
 ## Why
 
@@ -430,7 +430,28 @@ As implemented:
 
 Convert genuinely hot network layers to native async where measured to pay (first
 candidate: EVM multi-node RPC fan-out). Free-threaded CPython (3.13t/3.14)
-experiments. Remove transitional dual-mode code.
+experiments. Remove transitional dual-mode code. Absorbs the retired phase 0 as
+one interpreter hop 3.11 → 3.13 (prerequisite for the free-threading work).
+
+As implemented so far:
+
+- Transitional dual-mode code removed: the `SchedulingMode` enum, the GEVENT
+  branch of the progress callback (the sleep(0) yield machinery), the runtime
+  progress-handler toggling in `critical_section`, the `scheduling_mode`
+  constructor parameter and the `db_scheduling_mode` test fixture are gone.
+  The progress callback is now purely a cancellation checkpoint. The driver
+  module was renamed `rotkehlchen/db/drivers/gevent.py` →
+  `rotkehlchen/db/drivers/sqlite.py`. The seam's `run_in_native_thread()`
+  (a direct call since the flip) was inlined away.
+
+Remaining, gated on wheels/benchmarks/platform access:
+
+- Interpreter hop to 3.13 (sqlcipher3/rotki-sqlite wheel rebuilds).
+- Measure the GIL convoy (risk #6) on realistic mixed workloads; evaluate
+  per-read connections and `sys.setswitchinterval` tuning.
+- Native-async conversion of measured-hot network layers (EVM multi-node RPC
+  fan-out first).
+- Free-threaded CPython experiments once on 3.13t/3.14.
 
 ## Risks
 

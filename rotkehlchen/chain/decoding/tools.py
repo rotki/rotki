@@ -13,7 +13,7 @@ from .utils import decode_transfer_direction
 if TYPE_CHECKING:
     from rotkehlchen.assets.asset import Asset
     from rotkehlchen.db.dbhandler import DBHandler
-    from rotkehlchen.db.drivers.gevent import DBCursor
+    from rotkehlchen.db.drivers.sqlite import DBCursor
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)

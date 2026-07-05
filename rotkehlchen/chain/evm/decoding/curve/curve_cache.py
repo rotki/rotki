@@ -45,7 +45,7 @@ from rotkehlchen.utils.network import request_get_dict
 if TYPE_CHECKING:
 
     from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
-    from rotkehlchen.db.drivers.gevent import DBCursor
+    from rotkehlchen.db.drivers.sqlite import DBCursor
     from rotkehlchen.user_messages import MessagesAggregator
 
 logger = logging.getLogger(__name__)

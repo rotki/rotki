@@ -39,7 +39,7 @@ from .v15_v16 import migrate_to_v16
 from .v16_v17 import migrate_to_v17
 
 if TYPE_CHECKING:
-    from rotkehlchen.db.drivers.gevent import DBConnection
+    from rotkehlchen.db.drivers.sqlite import DBConnection
     from rotkehlchen.globaldb.handler import GlobalDBHandler
     from rotkehlchen.user_messages import MessagesAggregator
 

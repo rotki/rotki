@@ -6,7 +6,7 @@ from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import AddressbookEntry
 
 if TYPE_CHECKING:
-    from rotkehlchen.db.drivers.gevent import DBConnection
+    from rotkehlchen.db.drivers.sqlite import DBConnection
     from rotkehlchen.user_messages import MessagesAggregator
 
 

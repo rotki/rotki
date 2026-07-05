@@ -42,7 +42,7 @@ from rotkehlchen.chain.bitcoin.validation import is_valid_btc_address
 
 if TYPE_CHECKING:
     from rotkehlchen.assets.asset import Asset
-    from rotkehlchen.db.drivers.gevent import DBCursor
+    from rotkehlchen.db.drivers.sqlite import DBCursor
 
 ModuleName = Literal[
     'makerdao_dsr',

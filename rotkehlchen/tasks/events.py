@@ -60,7 +60,7 @@ if TYPE_CHECKING:
 
     from rotkehlchen.chain.aggregator import ChainsAggregator
     from rotkehlchen.db.dbhandler import DBHandler
-    from rotkehlchen.db.drivers.gevent import DBCursor
+    from rotkehlchen.db.drivers.sqlite import DBCursor
     from rotkehlchen.db.settings import DBSettings
 
 logger = logging.getLogger(__name__)

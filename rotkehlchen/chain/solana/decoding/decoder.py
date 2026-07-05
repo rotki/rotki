@@ -64,7 +64,7 @@ if TYPE_CHECKING:
     from rotkehlchen.chain.solana.node_inquirer import SolanaInquirer
     from rotkehlchen.chain.solana.transactions import SolanaTransactions
     from rotkehlchen.db.dbhandler import DBHandler
-    from rotkehlchen.db.drivers.gevent import DBCursor
+    from rotkehlchen.db.drivers.sqlite import DBCursor
     from rotkehlchen.premium.premium import Premium
 
 logger = logging.getLogger(__name__)

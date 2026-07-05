@@ -37,7 +37,7 @@ from rotkehlchen.utils.misc import ts_now
 if TYPE_CHECKING:
     from rotkehlchen.api.server import APIServer
     from rotkehlchen.db.dbhandler import DBHandler
-    from rotkehlchen.db.drivers.gevent import DBCursor
+    from rotkehlchen.db.drivers.sqlite import DBCursor
 
 BALANCES_IMPORT_HEADERS = ['timestamp', 'category', 'asset_identifier', 'amount', 'usd_value']
 BALANCES_IMPORT_INVALID_HEADERS = ['timestamp', 'category', 'asset', 'amount', 'value']

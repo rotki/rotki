@@ -64,7 +64,7 @@ from rotkehlchen.utils.misc import ts_sec_to_ms
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
-    from rotkehlchen.db.drivers.gevent import DBCursor
+    from rotkehlchen.db.drivers.sqlite import DBCursor
 
 
 def _match_and_check(database: 'DBHandler', expected_matches: list[tuple[int, int]]) -> None:

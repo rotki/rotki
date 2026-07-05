@@ -6,7 +6,7 @@ from solders.solders import Pubkey, Signature
 from rotkehlchen.types import SolanaAddress, Timestamp
 
 if TYPE_CHECKING:
-    from rotkehlchen.db.drivers.gevent import DBCursor
+    from rotkehlchen.db.drivers.sqlite import DBCursor
 
 
 @dataclass(frozen=True)

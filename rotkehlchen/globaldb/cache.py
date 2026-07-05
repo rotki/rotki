@@ -4,7 +4,7 @@ from collections.abc import Iterable
 
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
 from rotkehlchen.chain.evm.types import string_to_evm_address
-from rotkehlchen.db.drivers.gevent import DBCursor
+from rotkehlchen.db.drivers.sqlite import DBCursor
 from rotkehlchen.types import (
     UNIQUE_CACHE_KEYS,
     CacheType,
