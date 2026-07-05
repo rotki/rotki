@@ -1,11 +1,11 @@
 import operator
+import time
 from collections.abc import Callable
 from contextlib import ExitStack
 from http import HTTPStatus
 from typing import TYPE_CHECKING, Any, Literal
 from unittest.mock import patch
 
-import gevent
 import pytest
 import requests
 from eth_utils import to_checksum_address
@@ -526,23 +526,26 @@ def test_evm_account_deletion_does_not_wait_for_pending_txn_queries(
             assert not api_tasks[idx].dead
 
     # now delete one address from api task and 1 from periodic task manager and see it's immediate
-    with gevent.Timeout(5):
-        for address in (api_addies[0], task_manager_addy):
-            response = requests.delete(
-                api_url_for(
-                    rotkehlchen_api_server,
-                    'blockchainsaccountsresource',
-                    blockchain='eth',
-                ), json={
-                    'accounts': [address],
-                },
-            )
-            assert_proper_response(response)
+    start = time.monotonic()
+    for address in (api_addies[0], task_manager_addy):
+        response = requests.delete(
+            api_url_for(
+                rotkehlchen_api_server,
+                'blockchainsaccountsresource',
+                blockchain='eth',
+            ), json={
+                'accounts': [address],
+            },
+        )
+        assert_proper_response(response)
+    assert time.monotonic() - start < 5, 'account deletion waited for pending txn queries'
 
-    # Check that the 1 api greenlet and 1 task manager greenlet got cancelled and died
+    # Check that the 1 api task and 1 task manager task got cancelled and died
     assert len(api_tasks) == 2
+    api_tasks[0].join(timeout=5)
     assert api_tasks[0].dead
     assert len(task_manager.running_tasks) == 1
+    task_manager.running_tasks[task_manager._maybe_query_evm_transactions][0].join(timeout=5)
     assert task_manager.running_tasks[task_manager._maybe_query_evm_transactions][0].dead
     assert not api_tasks[1].dead, 'The other address api greenlet should still run'
 

@@ -1,12 +1,8 @@
-from gevent import monkey
-
-monkey.patch_all()  # isort:skip
-
 import logging
+import threading
 from http import HTTPStatus
 from typing import Any
 
-import gevent
 from flask import Response
 
 from rotkehlchen.api.rest import RestAPI, api_response
@@ -49,7 +45,7 @@ class RotkehlchenServerMock(RotkehlchenServer):
 
         self.args = args
         self.rotkehlchen = rotkehlchen
-        self.stop_event = gevent.event.Event()
+        self.stop_event = threading.Event()
 
         self.api_server = APIServer(
             rest_api=rest_api,

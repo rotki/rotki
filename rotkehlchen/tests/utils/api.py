@@ -1,10 +1,10 @@
 import os
 import platform
+import time
 from collections.abc import Sequence
 from http import HTTPStatus
 from typing import Any
 
-import gevent
 import psutil
 import requests
 from flask import url_for
@@ -24,7 +24,7 @@ def _wait_for_listening_port(
     if pid is None:
         pid = os.getpid()
     for _ in range(tries):
-        gevent.sleep(sleep)
+        time.sleep(sleep)
         # macOS requires root access for the connections api to work
         # so get connections of the current process only
         connections = psutil.Process(pid).net_connections()
@@ -41,12 +41,9 @@ def create_api_server(
 ) -> APIServer:
     api_server = APIServer(RestAPI(rotkehlchen=rotki), rotki.rotki_notifier)
     api_server.flask_app.config['SERVER_NAME'] = f'127.0.0.1:{rest_port_number}'
-    # the asgi CI leg of the gevent removal migration sets this env var to asgi
-    backend = os.environ.get('ROTKI_API_SERVER_BACKEND', 'gevent')
     api_server.start(
         host='127.0.0.1',
         rest_port=rest_port_number,
-        backend='asgi' if backend == 'asgi' else 'gevent',
     )
 
     # Fixes flaky test, where requests are done prior to the server initializing
@@ -179,34 +176,35 @@ def wait_for_async_task(
     """Waits until an async task is ready and when it is returns the response's outcome
 
     If the task's outcome is not ready within timeout seconds then the test fails"""
-    with gevent.Timeout(timeout):
-        while True:
-            response = requests.get(
-                api_url_for(server, 'specific_async_tasks_resource', task_id=task_id),
+    deadline = time.monotonic() + timeout
+    while True:
+        assert time.monotonic() < deadline, f'Timed out waiting for task id {task_id}'
+        response = requests.get(
+            api_url_for(server, 'specific_async_tasks_resource', task_id=task_id),
+        )
+        json_data = response.json()
+        data = json_data['result']
+        if data is None:
+            error_msg = json_data.get('message')
+            if error_msg:
+                error_msg = f'Error message: {error_msg}'
+            raise AssertionError(
+                f'Tried to wait for task id {task_id} but got no result. {error_msg}',
             )
-            json_data = response.json()
-            data = json_data['result']
-            if data is None:
-                error_msg = json_data.get('message')
-                if error_msg:
-                    error_msg = f'Error message: {error_msg}'
-                raise AssertionError(
-                    f'Tried to wait for task id {task_id} but got no result. {error_msg}',
-                )
-            status = json_data['result']['status']
-            if status == 'completed':
-                # Move status code to the outcome dict for easier checking
-                status_code = json_data['result'].get('status_code')
-                json_data['result']['outcome']['status_code'] = status_code
-                return json_data['result']['outcome']
-            if status == 'not-found':
-                raise AssertionError(f'Tried to wait for task id {task_id} but it is not found')
-            if status == 'pending':
-                gevent.sleep(1)
-            else:
-                raise AssertionError(
-                    f'Waiting for task id {task_id} returned unexpected status {status}',
-                )
+        status = json_data['result']['status']
+        if status == 'completed':
+            # Move status code to the outcome dict for easier checking
+            status_code = json_data['result'].get('status_code')
+            json_data['result']['outcome']['status_code'] = status_code
+            return json_data['result']['outcome']
+        if status == 'not-found':
+            raise AssertionError(f'Tried to wait for task id {task_id} but it is not found')
+        if status == 'pending':
+            time.sleep(1)
+        else:
+            raise AssertionError(
+                f'Waiting for task id {task_id} returned unexpected status {status}',
+            )
 
 
 def wait_for_async_tasks(
@@ -216,17 +214,17 @@ def wait_for_async_tasks(
 ) -> None:
     """Waits until a number of async tasks are ready"""
     searching_set = set(task_ids)
-    with gevent.Timeout(timeout):
-        while True:
-            response = requests.get(
-                api_url_for(server, 'asynctasksresource', task_id=None),
-            )
-            json_data = response.json()
-            data = json_data['result']
-            if searching_set - set(data['completed']) == set():
-                break
-            else:
-                gevent.sleep(1)
+    deadline = time.monotonic() + timeout
+    while True:
+        assert time.monotonic() < deadline, f'Timed out waiting for task ids {task_ids}'
+        response = requests.get(
+            api_url_for(server, 'asynctasksresource', task_id=None),
+        )
+        json_data = response.json()
+        data = json_data['result']
+        if searching_set - set(data['completed']) == set():
+            break
+        time.sleep(1)
 
 
 def wait_for_async_task_with_result(

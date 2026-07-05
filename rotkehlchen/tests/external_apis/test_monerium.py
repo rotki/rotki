@@ -1,10 +1,11 @@
 import json
+import threading
+import time
 from dataclasses import replace
 from http import HTTPStatus
 from typing import Any
 from unittest.mock import patch
 
-import gevent
 import pytest
 import requests
 
@@ -12,6 +13,7 @@ from rotkehlchen.api.server import APIServer
 from rotkehlchen.api.websockets.typedefs import WSMessageType
 from rotkehlchen.chain.evm.decoding.monerium.constants import CPT_MONERIUM
 from rotkehlchen.chain.evm.structures import EvmTxReceipt
+from rotkehlchen.concurrency import spawn, wait
 from rotkehlchen.constants.assets import A_ETH_EURE
 from rotkehlchen.constants.misc import ONE
 from rotkehlchen.db.cache import DBCacheStatic
@@ -330,10 +332,12 @@ def test_concurrent_refresh_is_serialized(database: DBHandler, monerium_credenti
 
     client = MoneriumOAuthClient(database=database, session=requests.Session())
     refresh_calls: list[int] = []
+    refresh_started = threading.Event()
 
     def fake_refresh(self: MoneriumOAuthClient) -> None:
         refresh_calls.append(ts_now())
-        gevent.sleep(0.1)  # give time for the second greenlet to reach the lock
+        refresh_started.set()
+        time.sleep(0.1)  # give time for the second task to reach the lock
         assert self._credentials is not None
         self._credentials.expires_at = ts_now() + 3600
 
@@ -343,10 +347,10 @@ def test_concurrent_refresh_is_serialized(database: DBHandler, monerium_credenti
         autospec=True,
         side_effect=fake_refresh,
     ):
-        first = gevent.spawn(client.ensure_access_token)
-        gevent.sleep(0)
-        second = gevent.spawn(client.ensure_access_token)
-        gevent.joinall([first, second])
+        first = spawn(client.ensure_access_token)
+        assert refresh_started.wait(timeout=5), 'first task never started refreshing'
+        second = spawn(client.ensure_access_token)
+        wait([first, second])
 
     assert len(refresh_calls) == 1
     assert client._credentials is not None
@@ -377,11 +381,13 @@ def test_concurrent_refresh_with_single_monerium_instance_keeps_credentials(
 
     monerium = Monerium(database)
     post_calls = 0
+    post_started = threading.Event()
 
     def mock_post(*args: Any, **kwargs: Any) -> MockResponse:  # pylint: disable=unused-argument
         nonlocal post_calls
         post_calls += 1
-        gevent.sleep(0.1)  # give the second greenlet time to wait on the instance lock
+        post_started.set()
+        time.sleep(0.1)  # give the second task time to wait on the instance lock
         return MockResponse(
             status_code=HTTPStatus.OK,
             text=json.dumps({
@@ -393,10 +399,10 @@ def test_concurrent_refresh_with_single_monerium_instance_keeps_credentials(
         )
 
     with patch.object(requests.Session, 'post', side_effect=mock_post):
-        first = gevent.spawn(monerium.oauth_client.ensure_access_token)
-        gevent.sleep(0)
-        second = gevent.spawn(monerium.oauth_client.ensure_access_token)
-        gevent.joinall([first, second])
+        first = spawn(monerium.oauth_client.ensure_access_token)
+        assert post_started.wait(timeout=5), 'first task never started the token refresh post'
+        second = spawn(monerium.oauth_client.ensure_access_token)
+        wait([first, second])
 
     assert first.exception is None
     assert second.exception is None

@@ -1230,13 +1230,14 @@ def test_exchange_events_range_query(
             'skipped_events': 2,
             'actual_end_ts': 10,
         }
-        # verify that websocket messages are sent during range query
-        websocket_connection.wait_until_messages_num(num=3, timeout=2)
+        # verify that websocket messages are sent during both the range query
+        # and the requery of the already queried range
+        websocket_connection.wait_until_messages_num(num=6, timeout=2)
         assert [msg['data']['status'] for msg in websocket_connection.messages] == [
             'querying_events_finished',
             'querying_events_status_update',
             'querying_events_started',
-        ]
+        ] * 2
 
     assert mock_query.call_count == 2
     for call in mock_query.call_args_list:

@@ -1,10 +1,10 @@
 import logging
 import subprocess  # noqa: S404  # is only used to execute rotki code here
 
-import gevent
 import pytest
 
 from rotkehlchen.assets.asset import Asset
+from rotkehlchen.concurrency import spawn, wait
 from rotkehlchen.config import default_data_directory
 from rotkehlchen.constants.assets import A_USD
 from rotkehlchen.db.filtering import LevenshteinFilterQuery
@@ -30,14 +30,14 @@ def test_search_assets_levenshtein_multiple(globaldb, database):  # pylint: disa
             search_nfts=False,
         )
 
-    greenlets = [
-        gevent.spawn(do_search),
-        gevent.spawn(do_search),
-        gevent.spawn(do_search),
+    tasks = [
+        spawn(do_search),
+        spawn(do_search),
+        spawn(do_search),
     ]
 
-    gevent.joinall(greenlets)
-    assert all(x.exception is None for x in greenlets)
+    wait(tasks)
+    assert all(x.exception is None for x in tasks)
 
 
 def get_identifier_from_stdout(stdout: str) -> str | None:

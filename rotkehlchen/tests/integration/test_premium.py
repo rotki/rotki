@@ -3,17 +3,18 @@ import hmac
 import json
 import os
 import tempfile
+import time
 from base64 import b64decode
 from http import HTTPStatus
 from pathlib import Path
 from typing import TYPE_CHECKING
 from unittest.mock import call, patch
 
-import gevent
 import machineid
 import pytest
 
 from rotkehlchen.api.websockets.typedefs import DBUploadStatusStep, WSMessageType
+from rotkehlchen.concurrency import spawn, wait
 from rotkehlchen.constants.assets import A_EUR
 from rotkehlchen.db.cache import DBCacheStatic
 from rotkehlchen.db.settings import ModifiableDBSettings
@@ -148,7 +149,7 @@ def test_upload_data_to_server(
     with patched_get, chunk_size_patch, patched_post as mocked_post, ws_patch as ws_mock:
         tasks = rotkehlchen_instance.task_manager._maybe_schedule_db_upload()  # type: ignore[union-attr]  # task_manager can't be none here
         if tasks is not None:
-            gevent.wait(tasks)
+            wait(tasks)
 
         if db_settings['premium_should_sync'] is False:
             assert mocked_post.call_count == 0
@@ -668,7 +669,7 @@ def test_upload_data_to_server_db_already_in_use(rotkehlchen_instance):
             for _ in range(3):
                 cursor.execute('SELECT * FROM settings').fetchall()
 
-        gevent.sleep(.5)
+        time.sleep(.5)
         return []
 
     patched_get_hashes_not_decoded = patch.object(
@@ -677,19 +678,19 @@ def test_upload_data_to_server_db_already_in_use(rotkehlchen_instance):
         wraps=mock_stuff,
     )  # Mix in calls to decoding and calls to maybe_upload to emulate the deadlock of different threadpool greenlet that's mentioned in the docstring  # noqa: E501
     with patched_get_hashes_not_decoded, patch_decoder_reload_data(), patched_get, patched_post as post_mock:  # noqa: E501
-        greenlets = [
-            gevent.spawn(rotkehlchen_instance.premium_sync_manager.maybe_upload_data_to_server),
-            gevent.spawn(chain_manager.transactions_decoder.get_and_decode_undecoded_transactions, True),  # noqa: E501
-            gevent.spawn(rotkehlchen_instance.premium_sync_manager.maybe_upload_data_to_server),
-            gevent.spawn(chain_manager.transactions_decoder.get_and_decode_undecoded_transactions, True),  # noqa: E501
-            gevent.spawn(rotkehlchen_instance.premium_sync_manager.maybe_upload_data_to_server),
-            gevent.spawn(chain_manager.transactions_decoder.get_and_decode_undecoded_transactions, True),  # noqa: E501
-            gevent.spawn(rotkehlchen_instance.premium_sync_manager.maybe_upload_data_to_server),
-            gevent.spawn(chain_manager.transactions_decoder.get_and_decode_undecoded_transactions, True),  # noqa: E501
+        tasks = [
+            spawn(rotkehlchen_instance.premium_sync_manager.maybe_upload_data_to_server),
+            spawn(chain_manager.transactions_decoder.get_and_decode_undecoded_transactions, True),
+            spawn(rotkehlchen_instance.premium_sync_manager.maybe_upload_data_to_server),
+            spawn(chain_manager.transactions_decoder.get_and_decode_undecoded_transactions, True),
+            spawn(rotkehlchen_instance.premium_sync_manager.maybe_upload_data_to_server),
+            spawn(chain_manager.transactions_decoder.get_and_decode_undecoded_transactions, True),
+            spawn(rotkehlchen_instance.premium_sync_manager.maybe_upload_data_to_server),
+            spawn(chain_manager.transactions_decoder.get_and_decode_undecoded_transactions, True),
         ]
-        gevent.joinall(greenlets)
-        for g in greenlets:
-            assert g.exception is None, f'One of the greenlets had an exception: {g.exception}'
+        wait(tasks)
+        for g in tasks:
+            assert g.exception is None, f'One of the tasks had an exception: {g.exception}'
         # The upload mock should not have been called since the hash is the same
         assert not post_mock.called
 
@@ -750,14 +751,14 @@ def test_upload_data_to_server_db_locked(rotkehlchen_instance):
         saved_data='foo',
     )
 
-    greenlets = []
+    tasks = []
     with patched_get, patched_post as post_mock:
-        greenlets.extend((
-            gevent.spawn(rotkehlchen_instance.premium_sync_manager.maybe_upload_data_to_server),
-            gevent.spawn(function_to_context_switch_to)))
-        gevent.joinall(greenlets)
-        for g in greenlets:
-            assert g.exception is None, f'One of the greenlets had an exception: {g.exception}'
+        tasks.extend((
+            spawn(rotkehlchen_instance.premium_sync_manager.maybe_upload_data_to_server),
+            spawn(function_to_context_switch_to)))
+        wait(tasks)
+        for g in tasks:
+            assert g.exception is None, f'One of the tasks had an exception: {g.exception}'
         # The upload mock should not have been called since the hash is the same
         assert not post_mock.called
 

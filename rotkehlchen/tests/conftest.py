@@ -28,7 +28,6 @@ from rotkehlchen.externalapis.defillama import Defillama
 from rotkehlchen.feature_flags import is_accounting_update_enabled
 from rotkehlchen.logging import TRACE, RotkehlchenLogsAdapter, add_logging_level, configure_logging
 from rotkehlchen.tests.utils.args import default_args
-from rotkehlchen.tests.utils.gevent import ensure_gevent_patches
 from rotkehlchen.utils.mixins.enums import SerializableEnumNameMixin
 from rotkehlchen.utils.network import create_session
 from rotkehlchen.utils.rate_limiter import TokenBucket
@@ -107,18 +106,12 @@ def pytest_addoption(parser):
     parser.addoption('--profiler', default=None, choices=['flamegraph-trace'])
 
 
-@pytest.hookimpl(tryfirst=True)
-def pytest_runtest_setup() -> None:
-    """Keep gevent socket patch active even if other plugins restore stdlib sockets."""
-    ensure_gevent_patches()
-
-
 @pytest.fixture(autouse=True)
 def _bypass_rate_limiter(monkeypatch: pytest.MonkeyPatch) -> None:
     """Disable rate-limit machinery in tests:
     1. TokenBucket.acquire() — production pacing exists to throttle real HTTP
        calls against free-tier ceilings. Mocked tests respond instantly so
-       the bucket's gevent.sleep becomes pure overhead.
+       the bucket's sleep becomes pure overhead.
     2. The per-client _maybe_probe() tier-discovery HTTP requests on
        Coingecko / Cryptocompare / Defillama. Cryptocompare in particular
        hits /stats/rate/limit unconditionally on first use; in CI that

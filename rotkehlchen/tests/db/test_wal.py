@@ -1,5 +1,8 @@
-import gevent
+import time
+
 import pytest
+
+from rotkehlchen.concurrency import spawn, wait
 
 
 @pytest.mark.parametrize('sql_vm_instructions_cb', [1])
@@ -23,7 +26,7 @@ def test_wal_checkpoint_lock(database):
                 cursor.execute('SELECT COUNT(*) FROM assets')
                 cursor.fetchone()
 
-            gevent.sleep(0)
+            time.sleep(0)
 
     def checkpoint_worker():
         """Perform WAL checkpoint operations that should trigger the bug without the fix"""
@@ -48,12 +51,12 @@ def test_wal_checkpoint_lock(database):
                 if 'locked' in str(e).lower():
                     errors.append(e)
 
-    greenlets = [
-        gevent.spawn(db_reader),
-        gevent.spawn(db_reader),  # Multiple readers for more callbacks
-        gevent.spawn(checkpoint_worker),
+    tasks = [
+        spawn(db_reader),
+        spawn(db_reader),  # Multiple readers for more callbacks
+        spawn(checkpoint_worker),
     ]
-    gevent.joinall(greenlets, timeout=30)
+    wait(tasks, timeout=30)
 
     # With the fix (using wal_checkpoint method with in_callback lock),
     # there should be no 'database table is locked' errors

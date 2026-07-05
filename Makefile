@@ -28,13 +28,13 @@ docker-image:
 
 
 test-assets:
-	uv run pytestgeventwrapper.py -m asset_test rotkehlchen/tests
+	uv run pytest -m asset_test rotkehlchen/tests
 
 create-cassettes:
-	RECORD_CASSETTES=true uv run pytestgeventwrapper.py -m vcr rotkehlchen/tests
+	RECORD_CASSETTES=true uv run pytest -m vcr rotkehlchen/tests
 
 create-cassette:
-	RECORD_CASSETTES=true uv run pytestgeventwrapper.py -m vcr $(filter-out $@,$(MAKECMDGOALS))
+	RECORD_CASSETTES=true uv run pytest -m vcr $(filter-out $@,$(MAKECMDGOALS))
 
 
 

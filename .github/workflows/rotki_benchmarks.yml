@@ -262,7 +262,7 @@ jobs:
       - name: Run micro-benchmarks
         if: steps.suite.outputs.present == 'true'
         run: |
-          uv run python pytestgeventwrapper.py \
+          uv run pytest \
             -m benchmark \
             --benchmark-only \
             --benchmark-json=micro-benchmark.json \

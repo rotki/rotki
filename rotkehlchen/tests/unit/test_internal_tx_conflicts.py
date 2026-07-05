@@ -1,8 +1,8 @@
+import time
 from collections.abc import Callable
 from typing import TYPE_CHECKING, Any, cast
 from unittest.mock import MagicMock, call, patch
 
-import gevent
 import pytest
 
 from rotkehlchen.api.websockets.typedefs import WSMessageType
@@ -473,7 +473,7 @@ def test_repull_internal_tx_conflicts_limits_concurrency_to_batch_size(database)
         started_workers += 1
         active_workers += 1
         max_workers = max(max_workers, active_workers)
-        gevent.sleep(0.01)
+        time.sleep(0.01)
         completion_count += 1
         if completion_count == 5:
             started_at_fifth_completion = started_workers

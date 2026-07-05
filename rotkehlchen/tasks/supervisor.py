@@ -102,7 +102,7 @@ class TaskSupervisor:
 
         first_line = f'{task.task_name} died with exception: {task.exception}'
         if not task.exception_is_error:
-            log.warning(f'{first_line} but that is not treated as an error')
+            log.warning('%s but that is not treated as an error', first_line)
             return
 
         msg = (

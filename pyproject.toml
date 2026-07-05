@@ -19,10 +19,6 @@ license = {file = "LICENSE.md"}
 dynamic = ["version"]
 
 dependencies = [
-    "gevent==26.4.0",
-    "greenlet==3.2.3",
-    "gevent-websocket==0.10.1",  # like the below is abandoned
-    "wsaccel==0.6.7",  # recommended for acceleration of gevent-websocket. But abandoned.
     "web3==7.16.0",
     "eth-account==0.13.7",
     "eth-typing==5.2.1",
@@ -55,7 +51,7 @@ dependencies = [
     "marshmallow==4.2.2",
     "webargs==8.7.0",
     "werkzeug==3.1.8",
-    # the asyncio api server of the gevent removal migration (docs/designs/gevent_to_asyncio.md)
+    # the asyncio api server (uvicorn serving REST via the a2wsgi bridge + native /ws)
     "uvicorn==0.47.0",
     "a2wsgi==1.10.10",
     "websockets==15.0.1",  # uvicorn's websocket protocol backend (also a solana dep)
@@ -353,7 +349,7 @@ select = [
     # "TD",  # this is just to detect todos
     # "FIX",  # this is just to detect todos
     # "TID",  # tidy-imports -- we use relative imports from parent in some cases. Maybe stop?
-    "TID251",  # banned-api -- gevent is banned outside the migration allowlist. See docs/designs/gevent_to_asyncio.md
+    "TID251",  # banned-api -- gevent was removed and must not creep back. See docs/designs/gevent_to_asyncio.md
     # "ARG",  # flake8-unused-arguments -- pylint already does this and we got ignores where needed
     "PL",  # all pylint rules
     "PIE",
@@ -432,12 +428,10 @@ ignore = [
 ]
 
 [tool.ruff.lint.flake8-tidy-imports.banned-api]
-# gevent removal migration (docs/designs/gevent_to_asyncio.md): new code must
-# use stdlib threading/time primitives or rotkehlchen.concurrency. The
-# per-file-ignores below form the allowlist that shrinks as phases complete;
-# an empty allowlist (tests aside) is the precondition for the final flip.
-"gevent".msg = "use threading/time primitives or rotkehlchen.concurrency instead; see docs/designs/gevent_to_asyncio.md"
-"geventwebsocket".msg = "geventwebsocket is being removed; see docs/designs/gevent_to_asyncio.md"
+# gevent was removed (docs/designs/gevent_to_asyncio.md) and must not creep
+# back: use stdlib threading/time primitives or rotkehlchen.concurrency.
+"gevent".msg = "gevent was removed; use threading/time primitives or rotkehlchen.concurrency instead"
+"geventwebsocket".msg = "geventwebsocket was removed; the uvicorn server serves /ws natively"
 
 [tool.ruff.lint.flake8-quotes]
 avoid-escape = true
@@ -450,25 +444,15 @@ combine-as-imports = true
 known-third-party = ["packaging"]  # packaging is otherwise detected as first-party due to the ./packaging folder
 
 [tool.ruff.lint.per-file-ignores]
-# TID251 allowlist for the gevent removal migration. Each entry names the
-# phase of docs/designs/gevent_to_asyncio.md that deletes it.
-"rotkehlchen/server.py" = ["TID251"]  # gevent hub signal handling (phase 6)
-"rotkehlchen/api/websockets/notifier.py" = ["TID251"]  # geventwebsocket, until the gevent server is removed (phase 6)
-"rotkehlchen/concurrency/*" = ["TID251"]  # run_in_native_thread gevent threadpool backend (phase 6)
-"pytestgeventwrapper.py" = ["TID251"]  # deleted at phase 6
 "tools/*" = [
     "T201",  # got prints in tools
     "INP001",  # no need for __init__ in tools
-    "TID251",  # standalone entrypoints monkeypatch until phase 6 of docs/designs/gevent_to_asyncio.md
 ]
-"rotkehlchen_mock/__main__.py" = ["TID251"]  # standalone entrypoint, monkeypatches until phase 6
 "rotkehlchen/__main__.py" = [
     "T201",  # got prints in main
-    "TID251",  # monkey patching (phase 6)
 ]
 "rotkehlchen/api/server.py" = [
     "T201",  # got prints in server.py
-    "TID251",  # gevent WSGIServer + geventwebsocket, until the gevent server is removed (phase 6)
 ]
 "rotkehlchen/args.py" = ["T201"]  # got prints in args.py
 "rotkehlchen/db/minimized_schema.py" = [
@@ -482,7 +466,6 @@ known-third-party = ["packaging"]  # packaging is otherwise detected as first-pa
 "rotkehlchen/tests/*" = [
     "S113",    # tests have no timeout in requests
     "RUF018",  # We have assignments in assert in tests and that's fine there
-    "TID251",  # test infra migrates from gevent in phases 2-3 of docs/designs/gevent_to_asyncio.md
 ]
 "rotkehlchen/tests/conftest.py" = [
     "S602",  # test setup. No problem with shell=True
@@ -556,7 +539,7 @@ pythonVersion = "3.11"
 
 [tool.pytest.ini_options]
 # benchmarks (rotkehlchen/tests/benchmarks) are excluded from normal runs; run
-# them with: pytestgeventwrapper.py -m benchmark --benchmark-only rotkehlchen/tests/benchmarks
+# them with: pytest -m benchmark --benchmark-only rotkehlchen/tests/benchmarks
 addopts = '-m "not benchmark"'
 markers = [
     "accounting_update: tests for the experimental accounting update",

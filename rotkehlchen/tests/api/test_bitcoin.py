@@ -2,10 +2,10 @@ from http import HTTPStatus
 from typing import TYPE_CHECKING, Any
 from unittest.mock import patch
 
-import gevent
 import pytest
 import requests
 
+from rotkehlchen.concurrency import wait
 from rotkehlchen.constants import DEFAULT_BALANCE_LABEL, ONE
 from rotkehlchen.constants.assets import A_BTC
 from rotkehlchen.db.cache import DBCacheDynamic
@@ -327,8 +327,9 @@ def test_add_delete_xpub_multiple_chains(rotkehlchen_api_server: 'APIServer') ->
     # Testing here since test_tasks_manager.py only tests scheduling
     rotki.task_manager.last_xpub_derivation_ts = 0   # to be sure that the task will be scheduled
     with patch('rotkehlchen.tasks.manager.XpubManager.check_for_new_xpub_addresses') as patch_method:  # noqa: E501
-        rotki.task_manager._maybe_schedule_xpub_derivation()
-        gevent.sleep(0)
+        tasks = rotki.task_manager._maybe_schedule_xpub_derivation()
+        assert tasks is not None
+        wait(tasks, timeout=10)  # wait for the spawned derivation task to run
         assert patch_method.call_count == 1
 
     # Check that bch accounts were detected while btc accounts were not affected

@@ -55,6 +55,7 @@ from rotkehlchen.tests.utils.api import (
     assert_proper_response,
     assert_proper_sync_response_with_result,
     assert_simple_ok_response,
+    wait_for_async_task,
 )
 from rotkehlchen.tests.utils.factories import (
     generate_events_response,
@@ -833,7 +834,7 @@ def test_query_new_events(rotkehlchen_api_server_with_exchanges: 'APIServer') ->
     )
 
     if async_query is True:
-        assert_ok_async_response(response)
+        wait_for_async_task(rotkehlchen_api_server_with_exchanges, assert_ok_async_response(response))  # noqa: E501
     else:
         assert_proper_response(response)
 

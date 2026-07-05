@@ -1,12 +1,10 @@
 """Concurrency seam for the gevent removal migration.
 
 Business-logic code that needs to run work concurrently must go through this
-module instead of importing gevent directly (enforced via ruff TID251). Since
-phase 5 of the migration tasks are backed by threads: under the still-active
-monkeypatching a threading.Thread runs as a cooperative greenlet, so behavior
-is identical to the old gevent backend today, and it is already correct for
-real threads when the patching is removed at the flip. Call sites must only
-interact with task handles through the Task API defined here.
+module (gevent imports stay banned via ruff TID251 so it cannot creep back).
+Since phase 5 of the migration tasks are backed by threads -- real ones since
+the phase-6 flip removed the monkeypatching. Call sites must only interact
+with task handles through the Task API defined here.
 
 Threads cannot be killed: a task that must stop early is cancelled through its
 CancellationToken (see rotkehlchen.concurrency.cancellation) and exits at its
@@ -21,8 +19,6 @@ import time
 from collections.abc import Callable, Sequence
 from types import TracebackType
 from typing import Any
-
-import gevent
 
 from rotkehlchen.concurrency.cancellation import (
     CancellationToken,
@@ -205,11 +201,8 @@ def result_of(task: Task) -> Any:
 
 
 def run_in_native_thread(func: Callable[..., Any], *args: Any, **kwargs: Any) -> Any:
-    """Run func on a real OS thread, block until it returns and return its result.
-
-    For CPU-bound work (e.g. DB compression/encryption) that would freeze the
-    cooperative scheduler: under the monkeypatching this offloads to gevent's
-    native threadpool; at the flip the caller already runs on a real thread
-    and this becomes a direct call.
-    """
-    return gevent.get_hub().threadpool.apply(func, args, kwargs)
+    """Run func and return its result. A direct call since the gevent flip:
+    the caller already runs on a real OS thread, so CPU-bound work (e.g. DB
+    compression/encryption) no longer freezes a cooperative scheduler. Kept as
+    a seam so call sites document the offload intent; removed in phase 7."""
+    return func(*args, **kwargs)

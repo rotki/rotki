@@ -10,12 +10,12 @@ the decision log.
 | Phase | Description | Status |
 |-------|-------------|--------|
 | 0 | Python bump 3.11 → 3.12/3.13 | not started |
-| 1 | Stdlib primitives + spawn seam + gevent import ban | **in progress** — business logic done (~45 files); test files remain (phases 2-3 exemption) |
+| 1 | Stdlib primitives + spawn seam + gevent import ban | **done** — business logic in phase 1 (~45 files); test files finished in phase 6 |
 | 2 | Cooperative cancellation (replaces `greenlet.kill`) | **done** — CancellationToken + checkpoints landed, `greenlet.kill`/`GreenletKilledError` removed, substrate `gevent.Timeout` replaced |
 | 3 | DB driver dual-mode (gevent / threading backends) | **done** — gevent-free driver with SchedulingMode, transaction-slot locking replaces poll loops, both-modes tests + stress test, atomicity audit done (crash-class findings fixed) |
 | 4 | ASGI server behind a flag (uvicorn + WSGI bridge + native websockets) | **done** — `--api-server-backend asgi` serves REST+`/ws` via uvicorn on one port; gevent stays default; `api-asgi` CI leg |
 | 5 | Task orchestration off greenlets (thread-backed Task/TaskSupervisor) | **done** — thread-backed `Task` handles everywhere, `GreenletManager`→`TaskSupervisor`, all `killall` paths now cancel+grace, gevent imports confined to the phase-6 files |
-| 6 | The flip: remove monkey patching and gevent | not started |
+| 6 | The flip: remove monkey patching and gevent | **done** — monkeypatching gone, uvicorn is the only server, THREADING the only DB scheduling default, gevent/geventwebsocket/wsaccel deps deleted, plain pytest |
 | 7 | Harvest: native-async hot paths, free-threading experiments | not started |
 
 ## Why
@@ -354,6 +354,78 @@ the urllib3 hack. Validation: full suite, benchmark comparison against the
 mocked-HTTP benchmark infra, manual QA on Linux/macOS/Windows, at least one release
 cycle of nightlies before deleting fallback code.
 
+As implemented:
+
+- Entrypoints: `monkey.patch_all()` removed from `__main__.py`,
+  `rotkehlchen_mock`, the bench/assets-db tools; `pytestgeventwrapper.py` (and
+  its urllib3 LifoQueue hack) deleted — plain `uv run pytest` everywhere
+  (Makefile, CI workflows, CLAUDE.md).
+- Server: the gevent `WSGIServer`/geventwebsocket path is gone from
+  `api/server.py`; the phase-4 uvicorn server is the only one, its loop on a
+  dedicated `Task` thread, `--api-server-backend` deleted. `RotkiWSApp` and
+  the `WebsocketSubscriber` union are gone: `AsgiWebsocketSubscriber` is the
+  only client type and the notifier's per-client locks are `threading.Lock`.
+  `server.py` uses stdlib `signal.signal` (main thread waits on a
+  `threading.Event`, which stdlib makes signal-interruptible) and the gevent
+  hub/DNS-threadpool configuration is gone.
+- DB driver: `DEFAULT_SCHEDULING_MODE = THREADING`. The `SchedulingMode` enum
+  and the GEVENT branch are dead code for phase 7 to delete; test
+  parametrization over GEVENT mode was dropped.
+- Seam: `run_in_native_thread()` is a direct call (the caller already runs on
+  a real thread); it stays as documentation of offload intent until phase 7.
+- Dependencies: gevent, greenlet, gevent-websocket and wsaccel deleted.
+  The TID251 gevent import ban stays with an EMPTY allowlist so it cannot
+  creep back.
+- Tests: all 32 gevent-importing test files converted — `gevent.spawn/joinall`
+  → seam `spawn`/`wait`, `gevent.sleep` → `time.sleep` (yield-style `sleep(0)`
+  sites became real waits on the actual condition where load-bearing),
+  `gevent.Timeout` watchdogs → `time.monotonic()` deadline asserts inside the
+  polling loops (threads cannot be interrupted), the websocket test reader
+  unblocks its `recv()` by closing the socket, and the notifier-locking
+  regression test asserts no task exception instead of the gevent-specific
+  `ConcurrentObjectUseError`. The greenlet-switch tracer left the profiling
+  tools (`sampler.py` keeps the thread profiler).
+- The mid-query DB cancellation test became mode-independent: with preemptive
+  threads a canceller thread can fire while a statement runs, so the abort at
+  the next progress callback is testable in THREADING mode.
+- **Driver fixes the flip exposed** (the dual-mode tests of phase 3 always ran
+  under cooperative gevent, so THREADING mode had never been truly preemptive
+  until now):
+  - A GIL/db-mutex deadlock: pysqlite takes sqlite's connection mutex while
+    holding the GIL on several paths (`sqlite3_reset` & co, and
+    `set_progress_handler`), while another thread mid-`sqlite3_step` holds
+    that mutex with the GIL released and its Python progress callback waits
+    for the GIL. Fixed twice over: a per-connection `statement_lock` now
+    ensures only one thread is inside sqlite C code per connection at a time
+    (sqlite serializes per-step on one connection anyway, so nothing real is
+    lost), and `critical_section()` no longer toggles the progress handler in
+    THREADING mode (pointless there: the callback already exits early while
+    `in_critical_section` is held).
+  - `wal_checkpoint()` can hit 'database table is locked' whenever a
+    concurrent reader's statement is active between its Python calls --
+    a window gevent's cooperative scheduling made unobservable. Checkpoints
+    are opportunistic, so it now retries within a 2s deadline and gives up
+    with a warning; must-succeed callers (DB upgrades) run without
+    concurrency.
+- uvicorn runs with `ws_ping_interval/ws_ping_timeout=None`: the `websockets`
+  backend otherwise pings clients every 20s and drops them when the pong is
+  late (observed flakily in CI-like load: a GIL-starved client answered late,
+  got disconnected and its test hung). The old geventwebsocket server never
+  pinged; dead clients are already noticed and dropped on failed sends.
+- Four latent test races surfaced (all "passed" pre-flip only through
+  scheduling accidents): the async-task listing in `test_async` polled right
+  after spawning a task and relied on gevent running it to completion within
+  the request cycle (same class: `test_query_new_events` asserting DB writes
+  right after `assert_ok_async_response`); `test_exchange_events_range_query`
+  asserted exactly 3 websocket messages while 6 were in flight -- the old
+  reader fixture's 0.2s-per-message throttle hid the other 3; and
+  `test_stability_pool` exited its etherscan-mock context before the async
+  task that needed the mock ran. All now wait on the actual condition inside
+  the right scope. WATCH FOR THIS CLASS in CI: any test that mocks a remote
+  and triggers an `async_query` must keep the mock active until the task
+  result is fetched, and must not assert side effects before waiting on the
+  task.
+
 ### Phase 7 — Harvest
 
 Convert genuinely hot network layers to native async where measured to pay (first
@@ -375,6 +447,15 @@ experiments. Remove transitional dual-mode code.
    until its socket timeout. Mitigation: aggressive request timeouts (mostly present).
 5. **`requests.Session` mutation under real threads** (exchange session resets).
    urllib3 pools are thread-safe; the session-swap paths get audited in phase 3.
+6. **GIL convoy on DB row fetches** (found at the phase-6 flip): each
+   `sqlite3_step` releases and reacquires the GIL, so a big fetch running
+   next to CPU-bound pure-Python threads waits out the 5ms switch interval
+   per step (measured: 20k rows go from 0.02s to 300s+ next to two spin
+   loops). gevent had the inverse shape: a CPU-bound greenlet blocked
+   everyone entirely. Realistic tasks interleave IO/DB (which release the
+   GIL), so the adversarial case should not occur, but phase 7 should
+   measure mixed workloads and consider per-read connections and
+   `sys.setswitchinterval` tuning.
 
 ## Open questions
 

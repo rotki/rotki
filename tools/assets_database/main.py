@@ -25,15 +25,10 @@ Args:
 Example command:
 python -m tools.assets_database.main --start-db-path /<path to last release's db>/global.db --target-version 28 --assets-branch develop --update-mode all
 """  # noqa: E501
-from typing import TYPE_CHECKING
-
-from gevent import monkey
-
-monkey.patch_all()  # isort:skip
-
 import argparse
 from pathlib import Path
 from tempfile import TemporaryDirectory
+from typing import TYPE_CHECKING
 
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.db.constants import UpdateType

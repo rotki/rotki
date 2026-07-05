@@ -308,12 +308,13 @@ def test_stability_pool(rotkehlchen_api_server: APIServer) -> None:
             rotkehlchen_api_server,
             'liquitystabilitypoolresource',
         ), json={'async_query': async_query})
-
-    result = assert_proper_response_with_result(
-        response=response,
-        rotkehlchen_api_server=rotkehlchen_api_server,
-        async_query=async_query,
-    )
+        # wait for the result inside the mock: an async task runs on its own
+        # thread and must still see the mocked etherscan while it works
+        result = assert_proper_response_with_result(
+            response=response,
+            rotkehlchen_api_server=rotkehlchen_api_server,
+            async_query=async_query,
+        )
 
     assert JUSTIN in result
     assert LIQUITY_POOL_DEPOSITOR in result

@@ -1,7 +1,7 @@
 import logging
+import time
 from collections.abc import Sequence
 
-import gevent
 import requests
 from substrateinterface import SubstrateInterface
 from substrateinterface.exceptions import SubstrateRequestException
@@ -14,6 +14,7 @@ from rotkehlchen.chain.substrate.types import (
     NodeName,
     NodeNameAttributes,
 )
+from rotkehlchen.concurrency import spawn, wait
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import SupportedBlockchain
 
@@ -92,13 +93,16 @@ def attempt_connect_test_nodes(
         raise AssertionError(f'Unexpected substrate chain type: {chain} at test')
 
     for attempt in range(retries):
-        greenlets = [gevent.spawn(attempt_connect_node, node) for node in node_names]
-        jobs = gevent.joinall(greenlets, timeout=timeout)
+        tasks = [spawn(attempt_connect_node, node) for node in node_names]
+        wait(tasks, timeout=timeout)
 
         # Populate available node attributes map
         available_node_attributes_map: DictNodeNameNodeAttributes = {}
-        for job in jobs:
-            node, node_attributes = job.value
+        for task in tasks:
+            if task.dead is False or task.exception is not None:
+                continue  # skip tasks that timed out or died with an exception
+
+            node, node_attributes = task.get()
             if node_attributes:
                 available_node_attributes_map[node] = node_attributes
 
@@ -112,7 +116,7 @@ def attempt_connect_test_nodes(
             f'Attempt {attempt + 1}/{retries}',
         )
         if attempt != retries - 1:
-            gevent.sleep(1)
+            time.sleep(1)
 
     return {}
 
@@ -125,18 +129,19 @@ def wait_until_all_substrate_nodes_connected(
     """Wait until all substrate nodes are connected or until a timeout is hit"""
     all_nodes: set[NodeName] = set(substrate_manager_connect_at_start)
     connected: set[NodeName] = set()
-    try:
-        with gevent.Timeout(timeout):
-            while connected != all_nodes:
-                for node in substrate_manager_connect_at_start:
-                    if node in substrate_manager.available_node_attributes_map:
-                        connected.add(node)
+    deadline = time.monotonic() + timeout
+    while connected != all_nodes:
+        if time.monotonic() >= deadline:
+            not_connected_nodes = all_nodes - connected
+            log.info(
+                f'{substrate_manager.chain} manager failed to connect to '
+                f'nodes: {",".join([str(node) for node in not_connected_nodes])} '
+                f'due to timeout of {NODE_CONNECTION_TIMEOUT}',
+            )
+            return
 
-                gevent.sleep(0.1)
-    except gevent.Timeout:
-        not_connected_nodes = all_nodes - connected
-        log.info(
-            f'{substrate_manager.chain} manager failed to connect to '
-            f'nodes: {",".join([str(node) for node in not_connected_nodes])} '
-            f'due to timeout of {NODE_CONNECTION_TIMEOUT}',
-        )
+        for node in substrate_manager_connect_at_start:
+            if node in substrate_manager.available_node_attributes_map:
+                connected.add(node)
+
+        time.sleep(0.1)

@@ -414,10 +414,13 @@ class RestAPI:
             return
 
         log.error(
-            f'{task_str} dies with exception: {task.exception}.\n'
-            f'Exception Name: {task.exc_info[0]}\n'  # type: ignore[index]  # exc_info is set whenever exception is
-            f'Exception Info: {task.exc_info[1]}\n'
-            f'Traceback:\n {"".join(traceback.format_tb(task.exc_info[2]))}',  # type: ignore[index]
+            '%s dies with exception: %s.\nException Name: %s\nException Info: %s\n'
+            'Traceback:\n %s',
+            task_str,
+            task.exception,
+            task.exc_info[0],  # type: ignore[index]  # exc_info is set whenever exception is
+            task.exc_info[1],  # type: ignore[index]
+            ''.join(traceback.format_tb(task.exc_info[2])),  # type: ignore[index]
         )
         # also write an error for the task result if it's not the main loop
         if task_id is not None:

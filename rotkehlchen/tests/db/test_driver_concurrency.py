@@ -1,33 +1,27 @@
-"""Stress test for the dual-mode DB driver: many concurrent tasks mixing write
+"""Stress test for the DB driver: many concurrent tasks mixing write
 transactions, savepoint stacks (with rollbacks) and readers on one connection.
 
 Exercises the transaction-slot locking that replaced the poll-a-field wait loops
-in phase 3 of the gevent removal migration (docs/designs/gevent_to_asyncio.md).
-The tests run under gevent (as the whole suite does until the flip), but the
-THREADING parametrization exercises the exact code paths that stay after it.
+in phase 3 of the gevent removal migration (docs/designs/gevent_to_asyncio.md),
+running on real preemptive threads since the phase-6 flip.
 """
 import time
 
-import gevent
 import pytest
 
-from rotkehlchen.db.drivers.gevent import DBConnection, DBConnectionType, SchedulingMode
+from rotkehlchen.concurrency import Task, spawn, wait
+from rotkehlchen.db.drivers.gevent import DBConnection, DBConnectionType
 
 WORKERS = 5
 ITERATIONS = 20
 
 
-@pytest.fixture(
-    name='conn',
-    params=[SchedulingMode.GEVENT, SchedulingMode.THREADING],
-    ids=['gevent', 'threading'],
-)
-def fixture_conn(request):
+@pytest.fixture(name='conn')
+def fixture_conn():
     conn = DBConnection(
         path=':memory:',
         connection_type=DBConnectionType.GLOBAL,
         sql_vm_instructions_cb=100,
-        scheduling_mode=request.param,
     )
     with conn.write_ctx() as cursor:
         cursor.execute('CREATE TABLE t(id INTEGER PRIMARY KEY AUTOINCREMENT, worker INTEGER)')
@@ -73,15 +67,15 @@ def test_concurrent_writers_savepoints_and_readers(conn: DBConnection):
                 assert count >= 0
             time.sleep(0)
 
-    tasks: list[gevent.Greenlet] = []
+    tasks: list[Task] = []
     for worker in range(WORKERS):
         tasks.extend((
-            gevent.spawn(writer, worker),
-            gevent.spawn(savepointer, WORKERS + worker),
-            gevent.spawn(mixer, 2 * WORKERS + worker),
-            gevent.spawn(reader),
+            spawn(writer, worker),
+            spawn(savepointer, WORKERS + worker),
+            spawn(mixer, 2 * WORKERS + worker),
+            spawn(reader),
         ))
-    gevent.joinall(tasks)
+    wait(tasks)
     assert [task.exception for task in tasks] == [None] * len(tasks)
 
     # every worker's committed rows must all be there:

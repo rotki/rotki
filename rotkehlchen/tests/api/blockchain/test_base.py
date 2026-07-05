@@ -1,16 +1,17 @@
 import logging
 import random
+import time
 from contextlib import ExitStack
 from http import HTTPStatus
 from typing import TYPE_CHECKING, Any
 from unittest.mock import patch
 
-import gevent
 import pytest
 import requests
 
 from rotkehlchen.chain.accounts import BlockchainAccountData, SingleBlockchainAccountData
 from rotkehlchen.chain.gnosis.constants import BRIDGE_QUERIED_ADDRESS_PREFIX
+from rotkehlchen.concurrency import spawn_later
 from rotkehlchen.constants import ONE
 from rotkehlchen.constants.assets import A_DAI, A_SOL
 from rotkehlchen.db.addressbook import DBAddressbook
@@ -725,7 +726,7 @@ def test_add_blockchain_accounts_concurrent(rotkehlchen_api_server: 'APIServer')
         query_accounts.extend(ethereum_accounts)
     # Fire all requests almost concurrently. And don't wait for them
     for idx, account in enumerate(query_accounts):
-        gevent.spawn_later(
+        spawn_later(
             0.01 * idx,
             requests.put,
             api_url_for(
@@ -740,35 +741,36 @@ def test_add_blockchain_accounts_concurrent(rotkehlchen_api_server: 'APIServer')
     # if this happens. Can't think of a better way to do this at the moment
     task_ids = dict(enumerate(query_accounts))
 
-    with gevent.Timeout(ASYNC_TASK_WAIT_TIMEOUT):
-        while len(task_ids) != 0:
-            task_id, account = random.choice(list(task_ids.items()))
-            response = requests.get(
-                api_url_for(
-                    rotkehlchen_api_server,
-                    'specific_async_tasks_resource',
-                    task_id=task_id,
-                ),
-            )
-            if response.status_code == HTTPStatus.NOT_FOUND:
-                gevent.sleep(.1)  # not started yet
-                continue
+    deadline = time.monotonic() + ASYNC_TASK_WAIT_TIMEOUT
+    while len(task_ids) != 0:
+        assert time.monotonic() < deadline, 'waiting for account addition tasks timed out'
+        task_id, account = random.choice(list(task_ids.items()))
+        response = requests.get(
+            api_url_for(
+                rotkehlchen_api_server,
+                'specific_async_tasks_resource',
+                task_id=task_id,
+            ),
+        )
+        if response.status_code == HTTPStatus.NOT_FOUND:
+            time.sleep(.1)  # not started yet
+            continue
 
-            assert_proper_response(response, status_code=None)  # do not check status code here
-            result = response.json()['result']
-            status = result['status']
-            if status == 'pending':
-                gevent.sleep(.1)
-                continue
-            if status == 'completed':
-                result = result['outcome']
-            else:
-                raise AssertionError('Should not happen at this point')
+        assert_proper_response(response, status_code=None)  # do not check status code here
+        result = response.json()['result']
+        status = result['status']
+        if status == 'pending':
+            time.sleep(.1)
+            continue
+        if status == 'completed':
+            result = result['outcome']
+        else:
+            raise AssertionError('Should not happen at this point')
 
-            task_ids.pop(task_id)
-            if result['result'] is None:
-                assert 'already exist' in result['message']
-                continue
+        task_ids.pop(task_id)
+        if result['result'] is None:
+            assert 'already exist' in result['message']
+            continue
 
     assert set(rotki.chains_aggregator.accounts.eth) == set(ethereum_accounts)
 

@@ -1,19 +1,19 @@
 import binascii
 import json
+import time
 import warnings as test_warnings
 from collections import defaultdict
 from contextlib import ExitStack
 from http import HTTPStatus
 from http.client import RemoteDisconnected
 from pathlib import Path
+from threading import Event
 from typing import TYPE_CHECKING, cast
 from unittest.mock import _patch, patch
 from uuid import uuid4
 
-import gevent
 import pytest
 import requests
-from gevent.event import Event
 from urllib3.exceptions import ProtocolError
 
 from rotkehlchen.accounting.mixins.event import AccountingEventType
@@ -22,6 +22,7 @@ from rotkehlchen.api.v1.types import IncludeExcludeFilterData
 from rotkehlchen.api.websockets.typedefs import WSMessageType
 from rotkehlchen.assets.asset import Asset, CustomAsset
 from rotkehlchen.assets.converters import asset_from_kraken
+from rotkehlchen.concurrency import spawn, wait
 from rotkehlchen.constants import ONE, ZERO
 from rotkehlchen.constants.assets import (
     A_BCH,
@@ -233,12 +234,16 @@ def test_querying_rate_limit_exhaustion(kraken, database):
     patch_sleep = patch('rotkehlchen.exchanges.kraken.cancellable_sleep')
 
     with ExitStack() as stack:
-        stack.enter_context(gevent.Timeout(8))
         stack.enter_context(patch_retries)
         stack.enter_context(patch_dividend)
         stack.enter_context(patch_sleep)
         stack.enter_context(patch_kraken)
-        kraken.query_history_events()
+        # run in a task so we can bound it -- getting stuck in an infinite
+        # loop is exactly the regression this test guards against
+        query_task = spawn(kraken.query_history_events)
+        query_task.join(timeout=8)
+        assert query_task.dead, 'kraken.query_history_events did not finish within 8 seconds'
+        query_task.get()  # raise if it died with an exception
 
     with database.conn.read_ctx() as cursor:
         assert len(DBHistoryEvents(database).get_history_events_internal(
@@ -345,6 +350,7 @@ def test_kraken_waits_before_resetting_session_if_another_request_is_in_flight(k
     slow_started = Event()
     allow_slow_finish = Event()
     slow_finished = Event()
+    recover_started = Event()
     close_while_slow = False
     recover_attempt = 0
     initial_session = kraken.session
@@ -361,6 +367,7 @@ def test_kraken_waits_before_resetting_session_if_another_request_is_in_flight(k
         if request.url.endswith('/recover'):
             if recover_attempt == 0:
                 recover_attempt += 1
+                recover_started.set()
                 # First recover request fails with the wrapped disconnect variant.
                 # Recovery code should catch this and reset the session.
                 raise requests.exceptions.ConnectionError(ProtocolError(
@@ -384,14 +391,18 @@ def test_kraken_waits_before_resetting_session_if_another_request_is_in_flight(k
         patch('requests.sessions.Session.send', side_effect=mock_send),
         patch.object(initial_session, 'close', side_effect=tracked_close),
     ):
-        slow_greenlet = gevent.spawn(kraken.session.get, 'https://rotki.test/slow')
+        slow_task = spawn(kraken.session.get, 'https://rotki.test/slow')
         assert slow_started.wait(timeout=2) is True
 
-        recover_greenlet = gevent.spawn(kraken.session.get, 'https://rotki.test/recover')
-        gevent.sleep(0)
+        recover_task = spawn(kraken.session.get, 'https://rotki.test/recover')
+        assert recover_started.wait(timeout=2) is True
+        time.sleep(0.1)  # let the recover task reach the session reset/close wait
 
         allow_slow_finish.set()
-        gevent.joinall([slow_greenlet, recover_greenlet], timeout=2, raise_error=True)
+        wait([slow_task, recover_task], timeout=2)
+        assert slow_task.dead and recover_task.dead, 'session requests did not finish in time'
+        slow_task.get()
+        recover_task.get()
 
     assert recover_attempt == 1
     assert close_while_slow is False
