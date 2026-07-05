@@ -1,9 +1,9 @@
 import logging
 import os
+import time
 from typing import TYPE_CHECKING, Any, overload
 from unittest.mock import patch
 
-import gevent
 from eth_typing import ChecksumAddress
 
 from rotkehlchen.chain.arbitrum_one.decoding.decoder import ArbitrumOneTransactionDecoder
@@ -166,22 +166,23 @@ def wait_until_all_nodes_connected(
 ):
     """Wait until all ethereum nodes are connected or until a timeout is hit"""
     connected = [False] * len(connect_at_start)
-    try:
-        with gevent.Timeout(timeout):
-            while not all(connected):
-                for idx, weighted_node in enumerate(connect_at_start):
-                    if weighted_node.node_info in evm_inquirer.rpc_mapping:
-                        connected[idx] = True
+    deadline = time.monotonic() + timeout
+    while not all(connected):
+        if time.monotonic() >= deadline:
+            names = [
+                str(x) for idx, x in enumerate(connect_at_start) if not connected[idx]
+            ]
+            log.warning(
+                f'Did not connect to nodes: {",".join(names)} due to '
+                f'timeout of {NODE_CONNECTION_TIMEOUT}. Connected to {connected}',
+            )
+            return
 
-                gevent.sleep(0.1)
-    except gevent.Timeout:
-        names = [
-            str(x) for idx, x in enumerate(connect_at_start) if not connected[idx]
-        ]
-        log.warning(
-            f'Did not connect to nodes: {",".join(names)} due to '
-            f'timeout of {NODE_CONNECTION_TIMEOUT}. Connected to {connected}',
-        )
+        for idx, weighted_node in enumerate(connect_at_start):
+            if weighted_node.node_info in evm_inquirer.rpc_mapping:
+                connected[idx] = True
+
+        time.sleep(0.1)
 
 
 def txreceipt_to_data(receipt: EvmTxReceipt) -> dict[str, Any]:

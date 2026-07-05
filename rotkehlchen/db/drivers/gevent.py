@@ -58,9 +58,10 @@ class SchedulingMode(Enum):
     THREADING = auto()
 
 
-# Read at DBConnection construction time (not at def time) so tests and the
-# phase-6 flip of the migration can change it process-wide in one place.
-DEFAULT_SCHEDULING_MODE: Final = SchedulingMode.GEVENT
+# Read at DBConnection construction time (not at def time) so tests can
+# change it process-wide in one place. THREADING since phase 6 of the gevent
+# removal migration; the GEVENT mode is dead code removed in phase 7.
+DEFAULT_SCHEDULING_MODE: Final = SchedulingMode.THREADING
 
 
 class ContextError(Exception):
@@ -99,7 +100,8 @@ class DBCursor:
         if __debug__:
             logger.trace(f'Get next item for cursor {id(self)}')
         try:
-            result = next(self._cursor, None)
+            with self.connection.statement_lock:
+                result = next(self._cursor, None)
         except (sqlcipher.OperationalError, rsqlite.OperationalError) as e:  # pylint: disable=no-member
             _maybe_raise_cancelled(e)
             raise
@@ -132,11 +134,13 @@ class DBCursor:
         if __debug__:
             logger.trace(f'EXECUTE {statement} with bindings {bindings} for cursor {id(self)}')
         try:
-            self._cursor.execute(statement, *bindings)
-        except (sqlcipher.InterfaceError, rsqlite.InterfaceError) as e:  # pylint: disable=no-member
-            # Long story. Don't judge me. https://github.com/rotki/rotki/issues/5432
-            logger.debug(f'{statement} with {bindings} failed due to {e!s}. Probably https://github.com/rotki/rotki/issues/5432. Retrying')  # noqa: E501
-            self._cursor.execute(statement, *bindings)
+            with self.connection.statement_lock:
+                try:
+                    self._cursor.execute(statement, *bindings)
+                except (sqlcipher.InterfaceError, rsqlite.InterfaceError) as e:  # pylint: disable=no-member
+                    # Long story. Don't judge me. https://github.com/rotki/rotki/issues/5432
+                    logger.debug('%s with %s failed due to %s. Probably https://github.com/rotki/rotki/issues/5432. Retrying', statement, bindings, e)  # noqa: E501
+                    self._cursor.execute(statement, *bindings)
         except (sqlcipher.OperationalError, rsqlite.OperationalError) as e:  # pylint: disable=no-member
             _maybe_raise_cancelled(e)
             raise
@@ -153,7 +157,8 @@ class DBCursor:
         if __debug__:
             logger.trace(f'EXECUTEMANY {statement} with bindings {bindings} for cursor {id(self)}')
         try:
-            self._cursor.executemany(statement, *bindings)
+            with self.connection.statement_lock:
+                self._cursor.executemany(statement, *bindings)
         except (sqlcipher.OperationalError, rsqlite.OperationalError) as e:  # pylint: disable=no-member
             _maybe_raise_cancelled(e)
             raise
@@ -168,7 +173,8 @@ class DBCursor:
         if __debug__:
             logger.trace(f'EXECUTESCRIPT {script} for cursor {id(self)}')
         try:
-            self._cursor.executescript(script)
+            with self.connection.statement_lock:
+                self._cursor.executescript(script)
         except (sqlcipher.OperationalError, rsqlite.OperationalError) as e:  # pylint: disable=no-member
             _maybe_raise_cancelled(e)
             raise
@@ -194,7 +200,8 @@ class DBCursor:
         if __debug__:
             logger.trace(f'CURSOR FETCHONE  for cursor {id(self)}')
         try:
-            result = self._cursor.fetchone()
+            with self.connection.statement_lock:
+                result = self._cursor.fetchone()
         except (sqlcipher.OperationalError, rsqlite.OperationalError) as e:  # pylint: disable=no-member
             _maybe_raise_cancelled(e)
             raise
@@ -208,7 +215,8 @@ class DBCursor:
         if size is None:
             size = self._cursor.arraysize
         try:
-            result = self._cursor.fetchmany(size)
+            with self.connection.statement_lock:
+                result = self._cursor.fetchmany(size)
         except (sqlcipher.OperationalError, rsqlite.OperationalError) as e:  # pylint: disable=no-member
             _maybe_raise_cancelled(e)
             raise
@@ -220,7 +228,8 @@ class DBCursor:
         if __debug__:
             logger.trace(f'CURSOR FETCHALL for cursor {id(self)}')
         try:
-            result = self._cursor.fetchall()
+            with self.connection.statement_lock:
+                result = self._cursor.fetchall()
         except (sqlcipher.OperationalError, rsqlite.OperationalError) as e:  # pylint: disable=no-member
             _maybe_raise_cancelled(e)
             raise
@@ -237,7 +246,8 @@ class DBCursor:
         return self._cursor.lastrowid
 
     def close(self) -> None:
-        self._cursor.close()
+        with self.connection.statement_lock:
+            self._cursor.close()
 
 
 class DBConnectionType(Enum):
@@ -336,6 +346,16 @@ class DBConnection:
         self.in_callback = threading.Lock()
         self.transaction_lock = threading.Lock()
         self.in_critical_section = threading.Lock()
+        # Only one thread may be inside sqlite C code for this connection at a
+        # time. pysqlite takes sqlite's connection mutex while holding the GIL
+        # on several paths (sqlite3_reset & co), while a concurrent statement
+        # step holds that mutex with the GIL released and its progress callback
+        # waiting for the GIL -- without this lock two threads deadlock on the
+        # GIL/db-mutex pair. sqlite serializes per-step on one connection
+        # anyway, so no real concurrency is given up. RLock so that Python
+        # functions registered on the connection (e.g. levenshtein) could
+        # nest DB access on the same thread without deadlocking.
+        self.statement_lock = threading.RLock()
         self.connection_type = connection_type
         self.sql_vm_instructions_cb = sql_vm_instructions_cb
         # We need an ordered set. Python doesn't have such thing as a standalone object, but has
@@ -364,7 +384,8 @@ class DBConnection:
         if connection_type == DBConnectionType.GLOBAL:
             # Register a fuzzy-match helper so asset search/ranking can ORDER BY Levenshtein
             # distance directly in SQL instead of pulling every matching row into memory.
-            self._conn.create_function('levenshtein', 2, levenshtein, deterministic=True)
+            with self.statement_lock:
+                self._conn.create_function('levenshtein', 2, levenshtein, deterministic=True)
         self.minimized_schema = None
         self.minimized_indexes = None
         if connection_type == DBConnectionType.USER:
@@ -379,7 +400,8 @@ class DBConnection:
             if __debug__:
                 logger.trace('START DB CONNECTION COMMIT')
             try:
-                self._conn.commit()
+                with self.statement_lock:
+                    self._conn.commit()
             finally:
                 if __debug__:
                     logger.trace('FINISH DB CONNECTION COMMIT')
@@ -389,16 +411,19 @@ class DBConnection:
             if __debug__:
                 logger.trace('START DB CONNECTION ROLLBACK')
             try:
-                self._conn.rollback()
+                with self.statement_lock:
+                    self._conn.rollback()
             finally:
                 if __debug__:
                     logger.trace('FINISH DB CONNECTION ROLLBACK')
 
     def cursor(self) -> DBCursor:
-        return DBCursor(connection=self, cursor=self._conn.cursor())
+        with self.statement_lock:
+            return DBCursor(connection=self, cursor=self._conn.cursor())
 
     def close(self) -> None:
-        self._conn.close()
+        with self.statement_lock:
+            self._conn.close()
         CONNECTION_MAP.pop(self.connection_type, None)
 
     @contextmanager
@@ -445,8 +470,9 @@ class DBConnection:
             cursor.execute('BEGIN TRANSACTION')
             try:
                 yield cursor
-            except BaseException:  # also TaskCancelledError/GreenletExit must roll back
-                self._conn.rollback()
+            except BaseException:  # also TaskCancelledError must roll back
+                with self.statement_lock:
+                    self._conn.rollback()
                 raise
             else:
                 if commit_ts is True:
@@ -457,7 +483,8 @@ class DBConnection:
                     # last_write_ts in not cached to cached settings. This is a critical section
                     # and adding even one more function call can have very ugly and
                     # detrimental effects in the entire codebase as everything calls this.
-                self._conn.commit()
+                with self.statement_lock:
+                    self._conn.commit()
             finally:
                 cursor.close()
                 self.write_task_ident = None
@@ -579,6 +606,15 @@ class DBConnection:
 
     @contextmanager
     def critical_section(self) -> Generator[None, None, None]:
+        """Disable the progress callback's effects for the duration of the context.
+
+        In THREADING mode the sqlite progress handler must NOT be toggled here:
+        set_progress_handler() blocks on sqlite's connection mutex while holding
+        the GIL, and another thread mid-statement holds that mutex while its
+        progress callback waits for the GIL -- a deadlock. Holding
+        in_critical_section is enough, since the callback exits immediately
+        (without aborting cancelled statements) while it is locked.
+        """
         with self.in_critical_section:
             if __debug__:
                 identifier = random.random()
@@ -588,14 +624,16 @@ class DBConnection:
                 if __debug__:
                     logger.trace(f'entering critical section for {self.connection_type} and id: {identifier}')  # noqa: E501  # pyright: ignore  # if debug identifier is set
 
-                self._conn.set_progress_handler(None, 0)
+                if self.scheduling_mode is SchedulingMode.GEVENT:
+                    self._conn.set_progress_handler(None, 0)
             try:
                 yield
             finally:
                 with self.in_callback:
                     if __debug__:
                         logger.trace(f'exiting critical section for {self.connection_type} and id {identifier}')  # noqa: E501  # pyright: ignore  # if debug identifier is set
-                    self._set_progress_handler()
+                    if self.scheduling_mode is SchedulingMode.GEVENT:
+                        self._set_progress_handler()
 
     @contextmanager
     def _transaction_slot(self) -> Generator[None, None, None]:
@@ -638,19 +676,42 @@ class DBConnection:
 
         This method acquires the callback lock to prevent progress callbacks from
         interfering with the checkpoint operation, which can cause 'database table is locked'
-        errors due to context switches during the checkpoint.
+        errors due to context switches during the checkpoint. See issue #5038 for details.
 
-        See issue #5038 for details.
+        A concurrent reader on this connection whose statement is still active
+        (started but not exhausted/reset) also makes the checkpoint raise
+        'database table is locked'. Statement-active windows are short and a
+        checkpoint is opportunistic (sqlite auto-checkpoints and flushes at
+        close), so retry for a bit and give up with a warning instead of
+        raising -- must-succeed callers (DB upgrades) run without concurrency
+        and succeed on the first try.
         """
         pragma_sql = f'PRAGMA wal_checkpoint{mode};'
         # Acquire the callback lock to prevent progress callbacks from causing
         # context switches during the checkpoint operation
+        deadline = time.monotonic() + 2
         with self.in_callback:
             if __debug__:
                 logger.trace(f'START {pragma_sql}')
 
             with self.cursor() as cursor:
-                result = cursor.execute(pragma_sql).fetchone()
+                while True:
+                    try:
+                        result = cursor.execute(pragma_sql).fetchone()
+                    except (sqlcipher.OperationalError, rsqlite.OperationalError) as e:  # pylint: disable=no-member
+                        if 'locked' not in str(e):
+                            raise
+                        if time.monotonic() >= deadline:
+                            logger.warning(
+                                f'Skipped {pragma_sql} since a reader kept a statement '
+                                f'active during all attempts. The WAL file stays until '
+                                f'a later checkpoint.',
+                            )
+                            return
+                        time.sleep(0.05)  # a reader mid-statement: let it finish
+                        continue
+                    break
+
                 if __debug__:
                     if len(result) != 3:  # should never happen, PRAGMA wal checkpoint returns 3 ints # noqa: E501
                         result_text = ''
@@ -663,7 +724,8 @@ class DBConnection:
     def total_changes(self) -> int:
         """total number of database rows that have been modified, inserted,
         or deleted since the database connection was opened"""
-        return self._conn.total_changes
+        with self.statement_lock:
+            return self._conn.total_changes
 
     def schema_sanity_check(self) -> None:
         """Ensures that database schema is not broken.

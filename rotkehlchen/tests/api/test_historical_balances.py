@@ -1,8 +1,8 @@
+import time
 from http import HTTPStatus
 from typing import TYPE_CHECKING
 from unittest.mock import patch
 
-import gevent
 import pytest
 import requests
 
@@ -943,7 +943,7 @@ def test_get_historical_netvalue_with_negative_balance_events(
             history=events,
         )
 
-    gevent.sleep(0.01)  # allow db write to complete before processing
+    time.sleep(0.1)  # allow db write to complete before processing
     process_historical_balances(database=db, msg_aggregator=db.msg_aggregator)
 
     # Verify negative balance was detected via WS message

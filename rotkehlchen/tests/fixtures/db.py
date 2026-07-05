@@ -89,8 +89,9 @@ def fixture_sql_vm_instructions_cb() -> int:
 
 @pytest.fixture(name='db_scheduling_mode')
 def fixture_db_scheduling_mode() -> SchedulingMode:
-    """Parametrize to run a test's DB connections in a specific scheduling mode
-    of the dual-mode driver (docs/designs/gevent_to_asyncio.md phase 3)"""
+    """Parametrize to run a test's DB connections in a specific scheduling mode.
+    THREADING is the only production mode since the phase-6 flip; the fixture
+    goes away with the enum in phase 7 (docs/designs/gevent_to_asyncio.md)"""
     return DEFAULT_SCHEDULING_MODE
 
 

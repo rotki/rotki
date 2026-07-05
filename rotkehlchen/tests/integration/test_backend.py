@@ -1,9 +1,9 @@
 import re
 import subprocess  # noqa: S404
 import sys
+import time
 from http import HTTPStatus
 
-import gevent
 import requests
 
 
@@ -21,44 +21,42 @@ def test_backend():
     timeout = 10
     if sys.platform == 'darwin':
         timeout = 45  # in macos the backend may take a long time to start
-    with gevent.Timeout(timeout):
-        try:
-            while True:
-                output = proc.stdout.readline().decode('utf-8')
-                if 'rotki is running in __debug__ mode' in output:
-                    continue
+    deadline = time.monotonic() + timeout
+    try:
+        while True:
+            assert time.monotonic() < deadline, f'Did not get all expected output in the stdout after {timeout} seconds'  # noqa: E501
+            output = proc.stdout.readline().decode('utf-8')
+            if 'rotki is running in __debug__ mode' in output:
+                continue
 
-                if 'rotki REST API server is running at' in output:
-                    break
+            if 'rotki REST API server is running at' in output:
+                break
 
-            if (match := re.search(r'(\d+\.\d+\.\d+\.\d+:\d+)', output)) is None:
-                raise AssertionError(f'Could not parse API endpoint from output: {output!r}')
+        if (match := re.search(r'(\d+\.\d+\.\d+\.\d+:\d+)', output)) is None:
+            raise AssertionError(f'Could not parse API endpoint from output: {output!r}')
 
-            url = f'http://{match.group(1)}/api/1/info'
-            response = None
-            # API startup log is emitted before `WSGIServer.start()` is called, so
-            # seeing "server is running at ..." does not guarantee the socket is
-            # already accepting connections. Poll until `/api/1/info` succeeds to
-            # avoid connection-refused flakes in slower/contended CI workers.
-            while True:
-                try:
-                    response = requests.get(url, timeout=2)
-                except requests.RequestException:
-                    gevent.sleep(0.1)
-                    continue
+        url = f'http://{match.group(1)}/api/1/info'
+        response = None
+        # API startup log is emitted before `WSGIServer.start()` is called, so
+        # seeing "server is running at ..." does not guarantee the socket is
+        # already accepting connections. Poll until `/api/1/info` succeeds to
+        # avoid connection-refused flakes in slower/contended CI workers.
+        while True:
+            assert time.monotonic() < deadline, f'The API did not respond with OK within {timeout} seconds'  # noqa: E501
+            try:
+                response = requests.get(url, timeout=2)
+            except requests.RequestException:
+                time.sleep(0.1)
+                continue
 
-                if response.status_code == HTTPStatus.OK:
-                    break
+            if response.status_code == HTTPStatus.OK:
+                break
 
-                gevent.sleep(0.1)
+            time.sleep(0.1)
 
-            assert response is not None
-            assert 'data_directory' in response.json()['result']
+        assert response is not None
+        assert 'data_directory' in response.json()['result']
 
-        except gevent.Timeout as e:
-            raise AssertionError(
-                f'Did not get all expected output in the stdout after {timeout} seconds',
-            ) from e
-        finally:
-            proc.terminate()
-            proc.wait()
+    finally:
+        proc.terminate()
+        proc.wait()

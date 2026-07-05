@@ -1,12 +1,12 @@
 import json
 import operator
 import sys
+import threading
 from collections import defaultdict
 from datetime import datetime
 from json.decoder import JSONDecodeError
 from unittest.mock import patch
 
-import gevent
 import pytest
 from eth_typing import HexAddress, HexStr
 from eth_utils import to_checksum_address
@@ -15,6 +15,7 @@ from packaging.version import Version
 
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.chain.ethereum.utils import generate_address_via_create2
+from rotkehlchen.concurrency import spawn, wait
 from rotkehlchen.constants.assets import A_USDC, A_WBTC
 from rotkehlchen.constants.resolver import identifier_to_evm_address, identifier_to_evm_chain
 from rotkehlchen.errors.serialization import ConversionError
@@ -562,7 +563,8 @@ def test_skip_if_running():
     """Test that skip_if_running decorator skips concurrent calls"""
     call_count = 0
     execution_order = []
-    lock_acquired = gevent.event.Event()
+    lock_acquired = threading.Event()
+    allow_finish = threading.Event()
 
     @skip_if_running
     def slow_function():
@@ -570,19 +572,20 @@ def test_skip_if_running():
         call_count += 1
         execution_order.append(f'start_{call_count}')
         lock_acquired.set()
-        gevent.sleep(0.05)
+        assert allow_finish.wait(timeout=5) is True
         execution_order.append(f'end_{call_count}')
         return call_count
 
-    greenlet1 = gevent.spawn(slow_function)
-    lock_acquired.wait()  # wait until greenlet1 has acquired the lock
-    greenlet2 = gevent.spawn(slow_function)
-    greenlet3 = gevent.spawn(slow_function)
+    task1 = spawn(slow_function)
+    lock_acquired.wait()  # wait until task1 has acquired the lock
+    task2 = spawn(slow_function)
+    task3 = spawn(slow_function)
+    wait([task2, task3])  # both get skipped since task1 is guaranteed to still run
+    allow_finish.set()
+    wait([task1])
 
-    gevent.joinall([greenlet1, greenlet2, greenlet3])
-
-    assert greenlet1.value == 1
-    assert greenlet2.value is None  # skipped - already running
-    assert greenlet3.value is None  # skipped - already running
+    assert task1.get() == 1
+    assert task2.get() is None  # skipped - already running
+    assert task3.get() is None  # skipped - already running
     assert call_count == 1
     assert execution_order == ['start_1', 'end_1']

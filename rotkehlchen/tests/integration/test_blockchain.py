@@ -1,11 +1,12 @@
+import time
 from unittest.mock import patch
 
-import gevent
 import pytest
 import requests
 
 from rotkehlchen.chain.ethereum.tokens import EthereumTokens
 from rotkehlchen.chain.evm.types import string_to_evm_address
+from rotkehlchen.concurrency import spawn_later, wait
 from rotkehlchen.constants import DEFAULT_BALANCE_LABEL, ONE
 from rotkehlchen.constants.assets import A_BTC, A_DAI, A_ETH
 from rotkehlchen.tests.utils.blockchain import mock_beaconchain, mock_etherscan_query
@@ -57,10 +58,10 @@ def test_multiple_concurrent_ethereum_blockchain_queries(blockchain):
     )
 
     def mock_add_defi_balances_to_account():
-        """This function will make sure all greenlets end up hitting the balance addition
+        """This function will make sure all tasks end up hitting the balance addition
         at the same time thus double +++ counting balance ... in the way the code
         was written before"""
-        gevent.sleep(2)  # make sure all greenlets stop here
+        time.sleep(2)  # make sure all tasks stop here
         # and then let them all go in the same time in the adding
         for account, defi_balances in blockchain.defi_balances.items():
             blockchain._add_account_defi_balances_to_token(
@@ -85,12 +86,12 @@ def test_multiple_concurrent_ethereum_blockchain_queries(blockchain):
     assert addr1 in blockchain.accounts.eth
 
     with etherscan_patch, evmtokens_max_chunks_patch, beaconchain_patch:
-        greenlets = [
+        tasks = [
             # can't call query_eth_balances directly since we have to update totals
-            gevent.spawn_later(0.01 * x, blockchain.query_balances, blockchain=SupportedBlockchain.ETHEREUM)  # noqa: E501
+            spawn_later(0.01 * x, blockchain.query_balances, blockchain=SupportedBlockchain.ETHEREUM)  # noqa: E501
             for x in range(5)
         ]
-        gevent.joinall(greenlets)
+        wait(tasks)
 
     assert blockchain.totals.assets[A_DAI][DEFAULT_BALANCE_LABEL].amount == ONE
     assert blockchain.balances.eth[addr1].assets[A_DAI][DEFAULT_BALANCE_LABEL].amount == ONE

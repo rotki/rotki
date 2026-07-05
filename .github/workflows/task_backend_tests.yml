@@ -33,7 +33,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        test-group: [ api, api-asgi, decoders, others ]
+        test-group: [ api, decoders, others ]
     permissions:
       contents: read
     steps:
@@ -151,23 +151,18 @@ jobs:
 
           if [ "${{ matrix.test-group }}" == 'api' ]
           then
-            uv run pytestgeventwrapper.py $PYTEST_ARGS $COVERAGE_ARGS -n 6 -v rotkehlchen/tests/api
-          elif [ "${{ matrix.test-group }}" == 'api-asgi' ]
-          then
-            # the api test group against the asyncio (uvicorn) api server of the
-            # gevent removal migration. See docs/designs/gevent_to_asyncio.md
-            ROTKI_API_SERVER_BACKEND=asgi uv run pytestgeventwrapper.py $PYTEST_ARGS $COVERAGE_ARGS -n 6 -v rotkehlchen/tests/api
+            uv run pytest $PYTEST_ARGS $COVERAGE_ARGS -n 6 -v rotkehlchen/tests/api
           elif [ "${{ matrix.test-group }}" == 'decoders' ]
           then
-            uv run pytestgeventwrapper.py $PYTEST_ARGS $COVERAGE_ARGS -n 6 -v rotkehlchen/tests/unit/decoders rotkehlchen/tests/unit/solana_decoders
+            uv run pytest $PYTEST_ARGS $COVERAGE_ARGS -n 6 -v rotkehlchen/tests/unit/decoders rotkehlchen/tests/unit/solana_decoders
           else
-            uv run pytestgeventwrapper.py $PYTEST_ARGS $COVERAGE_ARGS -n 6 -v --ignore=rotkehlchen/tests/api --ignore=rotkehlchen/tests/unit/decoders --ignore=rotkehlchen/tests/unit/solana_decoders rotkehlchen/tests/
+            uv run pytest $PYTEST_ARGS $COVERAGE_ARGS -n 6 -v --ignore=rotkehlchen/tests/api --ignore=rotkehlchen/tests/unit/decoders --ignore=rotkehlchen/tests/unit/solana_decoders rotkehlchen/tests/
           fi
 
           if [ "${{ matrix.test-group }}" == 'others' ]
           then
             # dead-fixtures needs only one full collection, so run it once in this leg
-            uv run pytestgeventwrapper.py --dead-fixtures
+            uv run pytest --dead-fixtures
           fi
         shell: bash
 

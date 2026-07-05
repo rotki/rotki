@@ -1,9 +1,9 @@
 import json
+import time
 from collections.abc import Mapping
 from typing import Any
 from unittest.mock import patch
 
-import gevent
 import pytest
 
 from rotkehlchen.api.v1.types import IncludeExcludeFilterData
@@ -1085,7 +1085,7 @@ def test_modification_ts_updated_on_each_modification(database: 'DBHandler') -> 
             'SELECT value FROM key_value_cache WHERE name=?', (modification_ts_key,),
         ).fetchone()[0])
 
-    gevent.sleep(0.01)  # ensure different modification_ts between events
+    time.sleep(0.01)  # ensure different modification_ts between events
 
     with database.user_write() as write_cursor:
         db.add_history_event(

@@ -1,8 +1,8 @@
 import time
 
-import gevent
 import pytest
 
+from rotkehlchen.concurrency import spawn, wait
 from rotkehlchen.utils.rate_limiter import TokenBucket
 
 
@@ -22,12 +22,12 @@ def test_burst_then_steady_rate() -> None:
 
     Upper bounds are deliberately loose: the lower bounds prove pacing
     actually happened; the upper bounds only need to catch egregious bugs
-    (infinite waits, off-by-orders-of-magnitude), not normal gevent
+    (infinite waits, off-by-orders-of-magnitude), not normal
     scheduler drift on a loaded CI runner.
     """
     bucket = TokenBucket(rps=10, capacity=5)
     start = time.monotonic()
-    for _ in range(5):  # burst should be near-instant (no gevent.sleep)
+    for _ in range(5):  # burst should be near-instant (no sleep)
         bucket.acquire()
     burst_elapsed = time.monotonic() - start
     assert burst_elapsed < 0.5, f'burst should be instant, took {burst_elapsed:.3f}s'
@@ -38,11 +38,11 @@ def test_burst_then_steady_rate() -> None:
 
 
 def test_concurrent_greenlets_share_rate() -> None:
-    """Multiple greenlets sharing a bucket are gated together, not independently."""
+    """Multiple tasks sharing a bucket are gated together, not independently."""
     bucket = TokenBucket(rps=5, capacity=2)
     start = time.monotonic()
-    greenlets = [gevent.spawn(bucket.acquire) for _ in range(7)]
-    gevent.joinall(greenlets)
+    tasks = [spawn(bucket.acquire) for _ in range(7)]
+    wait(tasks)
     elapsed = time.monotonic() - start
     # 7 requests through rps=5, burst=2: first 2 instant, remaining 5 cost ~1s
     # total. Upper bound is loose to absorb scheduler drift on loaded CI; the

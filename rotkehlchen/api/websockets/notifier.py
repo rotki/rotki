@@ -1,36 +1,25 @@
-import contextlib
 import json
 import logging
+import threading
 from collections.abc import Callable
 from contextlib import suppress
-from typing import TYPE_CHECKING, Any, TypeAlias
-
-from gevent.lock import Semaphore
-from geventwebsocket import WebSocketApplication
-from geventwebsocket.exceptions import WebSocketError
+from typing import TYPE_CHECKING, Any
 
 from rotkehlchen.api.websockets.typedefs import WebsocketSendError
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.serialize import process_result
 
 if TYPE_CHECKING:
-    from geventwebsocket.websocket import WebSocket
-
     from rotkehlchen.api.asgi import AsgiWebsocketSubscriber
     from rotkehlchen.api.websockets.typedefs import WSMessageType
-
-# What the notifier accepts as a websocket client: a geventwebsocket socket from
-# the gevent server or its duck-typed equivalent from the asyncio server. The
-# WebSocket leg goes away at phase 6 of the gevent removal migration.
-WebsocketSubscriber: TypeAlias = 'WebSocket | AsgiWebsocketSubscriber'
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
 def _ws_send_impl(
-        websocket: 'WebsocketSubscriber',
-        lock: Semaphore,
+        websocket: 'AsgiWebsocketSubscriber',
+        lock: threading.Lock,
         to_send_msg: str,
         success_callback: Callable | None = None,
         success_callback_args: dict[str, Any] | None = None,
@@ -40,7 +29,7 @@ def _ws_send_impl(
     try:
         with lock:
             websocket.send(to_send_msg)
-    except (WebSocketError, WebsocketSendError) as e:
+    except WebsocketSendError as e:
         log.error(f'Websocket send with message {to_send_msg} failed due to {e!s}')
 
         if failure_callback:
@@ -56,19 +45,19 @@ def _ws_send_impl(
 class RotkiNotifier:
 
     def __init__(self) -> None:
-        self.subscribers: list[WebsocketSubscriber] = []
-        self.locks: dict[WebsocketSubscriber, Semaphore] = {}
+        self.subscribers: list[AsgiWebsocketSubscriber] = []
+        self.locks: dict[AsgiWebsocketSubscriber, threading.Lock] = {}
 
-    def subscribe(self, websocket: 'WebsocketSubscriber') -> None:
-        log.info(f'Websocket with hash id {hash(websocket)} subscribed to rotki notifier')
+    def subscribe(self, websocket: 'AsgiWebsocketSubscriber') -> None:
+        log.info('Websocket with hash id %s subscribed to rotki notifier', hash(websocket))
         self.subscribers.append(websocket)
-        self.locks[websocket] = Semaphore()
+        self.locks[websocket] = threading.Lock()
 
-    def unsubscribe(self, websocket: 'WebsocketSubscriber') -> None:
+    def unsubscribe(self, websocket: 'AsgiWebsocketSubscriber') -> None:
         self.locks.pop(websocket, None)
         with suppress(ValueError):
             self.subscribers.remove(websocket)
-            log.info(f'Websocket with hash id {hash(websocket)} unsubscribed from rotki notifier')
+            log.info('Websocket with hash id %s unsubscribed from rotki notifier', hash(websocket))
 
     def broadcast(
             self,
@@ -120,36 +109,3 @@ class RotkiNotifier:
         if spawned_one_broadcast is False and failure_callback is not None:
             failure_callback_args = {} if failure_callback_args is None else failure_callback_args
             failure_callback(**failure_callback_args)
-
-
-class RotkiWSApp(WebSocketApplication):
-    """The WebSocket app that's instantiated for every message as it seems from the code
-
-    Only way to pass it extra arguments is through "environ" which is why we have
-    a different class "RotkiNotifier" handling the bulk of the work
-    """
-
-    def on_open(self, *args: Any, **kwargs: Any) -> None:
-        rotki_notifier: RotkiNotifier = self.ws.environ['rotki_notifier']
-        rotki_notifier.subscribe(self.ws)
-
-    def on_message(self, message: str | None, *args: Any, **kwargs: Any) -> None:
-        if self.ws.environ is not None and (rotki_notifier := self.ws.environ.get('rotki_notifier')) and self.ws in rotki_notifier.locks:  # noqa: E501
-            lock = rotki_notifier.locks[self.ws]
-        else:  # can happen only when shutting down
-            lock = contextlib.nullcontext()
-
-        with lock:  # we need a lock here too as this part and the _ws_send_impl happen in different greenlets and both need to be protected  # noqa: E501
-            if self.ws.closed:
-                return
-            try:
-                self.ws.send(message, **kwargs)
-            except WebSocketError as e:
-                log.warning(
-                    f'Got WebSocketError {e!s} for sending message {message} to a websocket',
-                )
-
-    def on_close(self, *args: Any, **kwargs: Any) -> None:
-        if self.ws.environ is not None:
-            rotki_notifier: RotkiNotifier = self.ws.environ['rotki_notifier']
-            rotki_notifier.unsubscribe(self.ws)

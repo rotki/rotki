@@ -1,9 +1,9 @@
 import datetime
 import threading
+import time
 from typing import TYPE_CHECKING, Any, cast
 from unittest.mock import MagicMock, patch
 
-import gevent
 import pytest
 import requests
 from freezegun import freeze_time
@@ -140,20 +140,18 @@ def test_maybe_query_ethereum_transactions(task_manager, ethereum_accounts):
         wraps=tx_query_mock,
     )
     timeout = 8
-    try:
-        with gevent.Timeout(timeout), tx_query_patch as tx_mock:
-            # First two calls to schedule should handle the addresses
-            for i in range(2):
-                task_manager.schedule()
-                while tx_mock.call_count != i + 1:
-                    gevent.sleep(.2)
-
+    deadline = time.monotonic() + timeout
+    with tx_query_patch as tx_mock:
+        # First two calls to schedule should handle the addresses
+        for i in range(2):
             task_manager.schedule()
-            gevent.sleep(.5)
-            assert tx_mock.call_count == 2, '3rd schedule should do nothing'
+            while tx_mock.call_count != i + 1:
+                assert time.monotonic() < deadline, f'The transaction query was not scheduled within {timeout} seconds'  # noqa: E501
+                time.sleep(.2)
 
-    except gevent.Timeout as e:
-        raise AssertionError(f'The transaction query was not scheduled within {timeout} seconds') from e  # noqa: E501
+        task_manager.schedule()
+        time.sleep(.5)
+        assert tx_mock.call_count == 2, '3rd schedule should do nothing'
 
 
 @pytest.mark.parametrize('number_of_eth_accounts', [1])
@@ -170,12 +168,12 @@ def test_maybe_query_evm_transactions_skips_repeat_range_reads(task_manager, eth
     )
     with range_patch as range_mock:
         task_manager.schedule()
-        gevent.sleep(.2)
+        time.sleep(.2)
         first_tick_reads = range_mock.call_count
         assert first_tick_reads >= 1, 'first tick reads the queried range from the DB'
 
         task_manager.schedule()
-        gevent.sleep(.2)
+        time.sleep(.2)
         assert range_mock.call_count == first_tick_reads, 'later ticks skip the read (memoized)'
 
 
@@ -203,14 +201,12 @@ def test_maybe_schedule_xpub_derivation(task_manager, database):
     )
 
     timeout = 4
-    try:
-        with gevent.Timeout(timeout), xpub_derive_patch as xpub_mock:
-            task_manager.schedule()
-            while xpub_mock.call_count != 2:
-                gevent.sleep(.2)
-
-    except gevent.Timeout as e:
-        raise AssertionError(f'xpub derivation query was not scheduled within {timeout} seconds') from e  # noqa: E501
+    deadline = time.monotonic() + timeout
+    with xpub_derive_patch as xpub_mock:
+        task_manager.schedule()
+        while xpub_mock.call_count != 2:
+            assert time.monotonic() < deadline, f'xpub derivation query was not scheduled within {timeout} seconds'  # noqa: E501
+            time.sleep(.2)
 
 
 @pytest.mark.parametrize('max_tasks_num', [5])
@@ -226,18 +222,16 @@ def test_maybe_schedule_exchange_query(task_manager, exchange_manager, poloniex)
     poloniex_patch = patch.object(poloniex, 'query_online_history_events', wraps=mock_query_history)  # noqa: E501
 
     timeout = 5
-    try:
-        with gevent.Timeout(timeout), poloniex_patch as poloniex_mock:
-            task_manager.schedule()
-            while poloniex_mock.call_count != 1:
-                gevent.sleep(.2)
+    deadline = time.monotonic() + timeout
+    with poloniex_patch as poloniex_mock:
+        task_manager.schedule()
+        while poloniex_mock.call_count != 1:
+            assert time.monotonic() < deadline, f'exchange query was not scheduled within {timeout} seconds'  # noqa: E501
+            time.sleep(.2)
 
-            task_manager.schedule()
-            gevent.sleep(.5)
-            assert poloniex_mock.call_count == 1, '2nd schedule should do nothing'
-
-    except gevent.Timeout as e:
-        raise AssertionError(f'exchange query was not scheduled within {timeout} seconds') from e
+        task_manager.schedule()
+        time.sleep(.5)
+        assert poloniex_mock.call_count == 1, '2nd schedule should do nothing'
 
 
 def test_maybe_schedule_exchange_query_ignore_exchanges(
@@ -279,23 +273,21 @@ def test_maybe_schedule_ethereum_txreceipts(
     tx_hash_2 = deserialize_evm_tx_hash('0x6beab9409a8f3bd11f82081e99e856466a7daf5f04cca173192f79e78ed53a77')  # noqa: E501
     receipt_get_patch = patch.object(ethereum_manager.node_inquirer, 'get_transaction_receipt', wraps=ethereum_manager.node_inquirer.get_transaction_receipt)  # noqa: E501
     queried_receipts = set()
-    try:
-        with gevent.Timeout(timeout), receipt_get_patch as receipt_task_mock, mock_evm_chains_with_transactions():  # noqa: E501
-            task_manager.schedule()
-            with database.conn.read_ctx() as cursor:
-                while len(queried_receipts) != 2:
-                    for txhash in (tx_hash_1, tx_hash_2):
-                        if dbevmtx.get_receipt(cursor, txhash, ChainID.ETHEREUM) is not None:
-                            queried_receipts.add(txhash)
+    deadline = time.monotonic() + timeout
+    with receipt_get_patch as receipt_task_mock, mock_evm_chains_with_transactions():
+        task_manager.schedule()
+        with database.conn.read_ctx() as cursor:
+            while len(queried_receipts) != 2:
+                assert time.monotonic() < deadline, f'receipts query was not completed within {timeout} seconds'  # noqa: E501
+                for txhash in (tx_hash_1, tx_hash_2):
+                    if dbevmtx.get_receipt(cursor, txhash, ChainID.ETHEREUM) is not None:
+                        queried_receipts.add(txhash)
 
-                    gevent.sleep(.3)
+                time.sleep(.3)
 
-            task_manager.schedule()
-            gevent.sleep(.5)
-            assert receipt_task_mock.call_count == 1 if one_receipt_in_db else 2, '2nd schedule should do nothing'  # noqa: E501
-
-    except gevent.Timeout as e:
-        raise AssertionError(f'receipts query was not completed within {timeout} seconds') from e
+        task_manager.schedule()
+        time.sleep(.5)
+        assert receipt_task_mock.call_count == 1 if one_receipt_in_db else 2, '2nd schedule should do nothing'  # noqa: E501
 
     receipt1 = eth_transactions.get_or_query_transaction_receipt(tx_hash_1)
     assert receipt1 == receipts[0]
@@ -559,36 +551,34 @@ def test_update_snapshot_balances(rotkehlchen_instance: 'Rotkehlchen'):
     assert task_manager is not None
     task_manager.potential_tasks = [task_manager._maybe_update_snapshot_balances]
     timeout = 5
-    try:
-        with (
-            gevent.Timeout(timeout),
-            patch.object(task_manager, 'query_balances') as query_mock,
-            patch.object(
-                task_manager.database,
-                'save_tokens_for_address',
-                side_effect=database.save_tokens_for_address,
-            ) as save_tokens_mock,
-        ):
-            task_manager.schedule()
-            while query_mock.call_count != 1:
-                gevent.sleep(.2)
+    deadline = time.monotonic() + timeout
+    with (
+        patch.object(task_manager, 'query_balances') as query_mock,
+        patch.object(
+            task_manager.database,
+            'save_tokens_for_address',
+            side_effect=database.save_tokens_for_address,
+        ) as save_tokens_mock,
+    ):
+        task_manager.schedule()
+        while query_mock.call_count != 1:
+            assert time.monotonic() < deadline, f'Update snapshot balances was not completed within {timeout} seconds'  # noqa: E501
+            time.sleep(.2)
 
-            query_mock.assert_called_once_with(
-                requested_save_data=True,
-                save_despite_errors=False,
-                timestamp=None,
-                ignore_cache=True,
-            )
+        query_mock.assert_called_once_with(
+            requested_save_data=True,
+            save_despite_errors=False,
+            timestamp=None,
+            ignore_cache=True,
+        )
 
-            assert save_tokens_mock.call_count == 3
-            assert save_tokens_mock.call_args_list[0].kwargs['address'] == accounts[1]
-            assert save_tokens_mock.call_args_list[0].kwargs['blockchain'] == SupportedBlockchain.ETHEREUM  # noqa: E501
-            assert set(save_tokens_mock.call_args_list[0].kwargs['tokens']) == {A_COMP, A_LUSD, A_DAI}  # noqa: E501
-            assert save_tokens_mock.call_args_list[1].kwargs['address'] == accounts[2]
-            assert save_tokens_mock.call_args_list[1].kwargs['blockchain'] == SupportedBlockchain.OPTIMISM  # noqa: E501
-            assert save_tokens_mock.call_args_list[1].kwargs['tokens'] == [A_USDC]
-    except gevent.Timeout as e:
-        raise AssertionError(f'Update snapshot balances was not completed within {timeout} seconds') from e  # noqa: E501
+        assert save_tokens_mock.call_count == 3
+        assert save_tokens_mock.call_args_list[0].kwargs['address'] == accounts[1]
+        assert save_tokens_mock.call_args_list[0].kwargs['blockchain'] == SupportedBlockchain.ETHEREUM  # noqa: E501
+        assert set(save_tokens_mock.call_args_list[0].kwargs['tokens']) == {A_COMP, A_LUSD, A_DAI}
+        assert save_tokens_mock.call_args_list[1].kwargs['address'] == accounts[2]
+        assert save_tokens_mock.call_args_list[1].kwargs['blockchain'] == SupportedBlockchain.OPTIMISM  # noqa: E501
+        assert save_tokens_mock.call_args_list[1].kwargs['tokens'] == [A_USDC]
 
     # verify that newly saved tokens respects the list of already existing tokens
     with database.conn.read_ctx() as cursor:
@@ -618,7 +608,7 @@ def test_try_start_same_task(rotkehlchen_api_server):
 
     def simple_task():
         return [rotki.task_supervisor.spawn_and_track(
-            method=lambda: gevent.sleep(0.1),
+            method=lambda: time.sleep(0.1),
             after_seconds=None,
             task_name='Lol kek',
             exception_is_error=True,
@@ -791,7 +781,7 @@ def test_maybe_cancel_tx_query_tasks_all_accounts_refresh(
         )
         task_id = assert_ok_async_response(response)
         greenlet = next(g for g in rotki.api_tasks if g.task_id == task_id)
-        gevent.sleep(.1)  # give the greenlet a chance to start
+        time.sleep(.1)  # give the task a chance to start
         assert greenlet.dead is False
         rotki.maybe_cancel_running_tx_query_tasks(
             blockchain=SupportedBlockchain.ETHEREUM,
@@ -894,7 +884,7 @@ def test_maybe_query_produced_blocks(task_manager, ethereum_accounts):
             ),
         ):
             task_manager.schedule()
-            gevent.sleep(0)
+            wait(task_manager.task_supervisor.tasks)  # wait for any scheduled task to finish
             assert get_blocks_mock.call_count == expected_call_count
 
     # Both validators should be queried initially
@@ -943,16 +933,18 @@ def test_maybe_detect_new_spam_tokens(
 @pytest.mark.parametrize('number_of_eth_accounts', [0])
 def test_tasks_dont_schedule_if_no_eth_address(task_manager: TaskManager) -> None:
     """Test that we don't execute extra logic in tasks if no ethereum address is tracked"""
-    with gevent.Timeout(5):  # this should not take long. Otherwise a long running task ran
-        task_manager.should_schedule = True
-        with (  # if we get to should_update_protocol_cache it means check did not work
-            patch('rotkehlchen.chain.ethereum.utils.should_update_protocol_cache') as mocked_func,
-        ):
-            task_manager.potential_tasks = [task_manager._maybe_update_ilk_cache]
-            task_manager.schedule()
-            if len(task_manager.running_tasks) != 0:
-                wait(task_manager.running_tasks[task_manager._maybe_update_ilk_cache])
-            assert mocked_func.call_count == 0
+    task_manager.should_schedule = True
+    with (  # if we get to should_update_protocol_cache it means check did not work
+        patch('rotkehlchen.chain.ethereum.utils.should_update_protocol_cache') as mocked_func,
+    ):
+        task_manager.potential_tasks = [task_manager._maybe_update_ilk_cache]
+        task_manager.schedule()
+        if len(task_manager.running_tasks) != 0:
+            # this should not take long. Otherwise a long running task ran
+            tasks = task_manager.running_tasks[task_manager._maybe_update_ilk_cache]
+            wait(tasks, timeout=5)
+            assert all(x.dead for x in tasks), 'a long running task ran'
+        assert mocked_func.call_count == 0
 
 
 @pytest.mark.parametrize('vcr_cassette_name', ['test_update_lending_protocol_tokens'])
@@ -1579,7 +1571,7 @@ def test_snapshots_dont_happen_always(rotkehlchen_api_server: 'APIServer') -> No
             'rotkehlchen.db.dbhandler.DBHandler.get_last_balance_save_time',
             return_value=Timestamp(0),
         ):
-            gevent.sleep(1)  # wait for 1 second to save the next timestamp
+            time.sleep(1)  # wait for 1 second to save the next timestamp
             task_manager.last_balance_query_ts = Timestamp(0)  # reset last query timestamp
             task_manager.schedule()
             wait(rotki.task_supervisor.tasks)

@@ -1,8 +1,8 @@
+import time
 from http import HTTPStatus
 from typing import TYPE_CHECKING, Any
 from unittest.mock import patch
 
-import gevent
 import pytest
 import requests
 
@@ -76,7 +76,7 @@ def test_query_async_tasks(rotkehlchen_api_server_with_exchanges: 'APIServer') -
             json_data = response.json()
             if json_data['result']['status'] == 'pending':
                 # context switch so that the greenlet to query balances can operate
-                gevent.sleep(1)
+                time.sleep(1)
             elif json_data['result']['status'] == 'completed':
                 break
             else:
@@ -126,10 +126,15 @@ def test_query_async_task_that_died(rotkehlchen_api_server_with_exchanges: 'APIS
         ), json={'async_query': True})
     task_id = assert_ok_async_response(response)
 
-    # now check that there is a task
-    response = requests.get(api_url_for(server, 'asynctasksresource'))
-    result = assert_proper_sync_response_with_result(response)
-    assert result == {'completed': [task_id], 'pending': []}
+    # now check that there is a task, waiting out the moment it is still running
+    deadline = time.monotonic() + 10
+    while True:
+        response = requests.get(api_url_for(server, 'asynctasksresource'))
+        result = assert_proper_sync_response_with_result(response)
+        if result == {'completed': [task_id], 'pending': []}:
+            break
+        assert time.monotonic() < deadline, f'the task did not complete in time. Last state: {result}'  # noqa: E501
+        time.sleep(0.1)
 
     while True:
         # and now query for the task result and assert on it
@@ -139,7 +144,7 @@ def test_query_async_task_that_died(rotkehlchen_api_server_with_exchanges: 'APIS
         result = assert_proper_sync_response_with_result(response)
         if result['status'] == 'pending':
             # context switch so that the greenlet to query balances can operate
-            gevent.sleep(1)
+            time.sleep(1)
         elif result['status'] == 'completed':
             break
         else:

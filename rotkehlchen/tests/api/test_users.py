@@ -1,6 +1,7 @@
 import dataclasses
 import random
 import shutil
+import time
 from contextlib import ExitStack
 from http import HTTPStatus
 from pathlib import Path
@@ -8,11 +9,11 @@ from typing import TYPE_CHECKING, Any
 from unittest import mock
 from unittest.mock import patch
 
-import gevent
 import pytest
 import requests
 from sqlcipher3 import dbapi2 as sqlcipher
 
+from rotkehlchen.concurrency import cancellable_sleep
 from rotkehlchen.constants.misc import USERDB_NAME, USERSDIR_NAME
 from rotkehlchen.db.cache import DBCacheStatic
 from rotkehlchen.db.drivers.gevent import DBConnection, DBConnectionType
@@ -358,7 +359,7 @@ def test_user_creation_with_invalid_premium_credentials(
 
         # ensure the timestamp used in the autobackup name is different in the next iteration of
         # the loop, since the second backup was overwriting the first one sometimes otherwise.
-        gevent.sleep(1)
+        time.sleep(1)
 
     # Check that the directory was NOT created
     assert not Path(users_dir / username).exists(), 'The directory should not have been created'
@@ -669,7 +670,7 @@ def test_user_logout(
     with mock.patch.object(
         target=rotkehlchen_api_server.rest_api.rotkehlchen,
         attribute='query_balances',
-        side_effect=lambda *args, **kwargs: gevent.sleep(10),
+        side_effect=lambda *args, **kwargs: cancellable_sleep(10),
     ):
         response = requests.get(
             api_url_for(rotkehlchen_api_server, 'allbalancesresource', name=username),

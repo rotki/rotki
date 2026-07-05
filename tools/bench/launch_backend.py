@@ -11,8 +11,6 @@ refusal instead of silent nondeterministic network traffic.
 The same pattern as the premium monkeypatch idea (design §5.3): the patch
 lives in the harness, never in shipped backend code.
 """
-from gevent import monkey  # isort:skip
-monkey.patch_all()  # isort:skip
 
 import os
 from typing import Any

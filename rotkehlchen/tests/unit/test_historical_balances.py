@@ -1,8 +1,8 @@
 import json
+import time
 from typing import TYPE_CHECKING
 from unittest.mock import patch
 
-import gevent
 import pytest
 
 from rotkehlchen.api.websockets.typedefs import WSMessageType
@@ -129,7 +129,7 @@ def test_process_historical_balances_clears_stale_marker(
             (cache_key,),
         ).fetchone() is not None
 
-    gevent.sleep(0.01)
+    time.sleep(0.01)
     process_historical_balances(database, messages_aggregator)
 
     with database.conn.read_ctx() as cursor:
@@ -344,7 +344,7 @@ def test_has_unprocessed_events(
 
     # 2. All processed, no modifications (stale=None) -> False
     add_event(1000)
-    gevent.sleep(0.01)
+    time.sleep(0.01)
     process_historical_balances(database, messages_aggregator)
     assert manager._has_unprocessed_events('timestamp <= ?', [TimestampMS(9999)]) is False
 
@@ -364,7 +364,7 @@ def test_has_unprocessed_events(
     assert manager._has_unprocessed_events('asset = ?', ['BTC']) is False
 
     # 6. New events after processing, matches new events -> True
-    gevent.sleep(0.01)
+    time.sleep(0.01)
     process_historical_balances(database, messages_aggregator)
     add_event(5000)
     assert manager._has_unprocessed_events('timestamp <= ?', [TimestampMS(9999)]) is True

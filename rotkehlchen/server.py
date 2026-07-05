@@ -2,8 +2,9 @@ import importlib.metadata
 import logging
 import os
 import signal
+import threading
+from typing import Any
 
-import gevent
 import rsqlite
 
 from rotkehlchen.api.server import APIServer, RestAPI
@@ -33,7 +34,7 @@ class RotkehlchenServer:
         add_logging_level('TRACE', TRACE)
         configure_logging(self.args)
         self.rotkehlchen = Rotkehlchen(self.args)
-        self.stop_event = gevent.event.Event()
+        self.stop_event = threading.Event()
         if ',' in self.args.api_cors:
             domain_list = [str(domain) for domain in self.args.api_cors.split(',')]
         else:
@@ -44,7 +45,9 @@ class RotkehlchenServer:
             cors_domain_list=domain_list,
         )
 
-    def shutdown(self) -> None:
+    def shutdown(self, *args: Any) -> None:
+        """Shut the server down. Also used as a signal/console-ctrl handler,
+        hence the unused extra arguments."""
         log.debug('Shutdown initiated')
         self.api_server.stop()
         self.stop_event.set()
@@ -52,21 +55,11 @@ class RotkehlchenServer:
     def main(self) -> None:
         # log version of some special dependencies
         log.info(f'sqlite version: {rsqlite.sqlite_version}')
-        log.info(f'gevent version: {gevent.__version__}')
         log.info(f'rotki-pysqlcipher version: {importlib.metadata.version("sqlcipher3")}')
         log.info(f'SQLCipher version: {get_sqlcipher_version_string()}')
-        # disable printing hub exceptions in stderr. With using the hub to do various
-        # tasks that should raise exceptions and have them handled outside the hub
-        # printing them in stdout is now too much spam (and would worry users too)
-        hub = gevent.hub.get_hub()
-        hub.exception_stream = None
-        # threadpool is used by default in gevent for DNS resolution
-        # https://www.gevent.org/dns.html#configuration
-        hub.threadpool_size = 6  # set 6 thinking that concurrently we conneect to RPC nodes on different chains  # noqa: E501
-        hub.threadpool.maxsize = 10  # up to 10 threads can be created
         if os.name != 'nt':
-            gevent.hub.signal(signal.SIGQUIT, self.shutdown)
-            gevent.hub.signal(signal.SIGTERM, self.shutdown)
+            signal.signal(signal.SIGQUIT, self.shutdown)
+            signal.signal(signal.SIGTERM, self.shutdown)
         else:
             # Handle the windows control signal as stated here: https://pyinstaller.org/en/stable/feature-notes.html#signal-handling-in-console-windows-applications-and-onefile-application-cleanup
             # This logic handles the signal sent from the bootloader equivalent to sigterm in
@@ -75,11 +68,10 @@ class RotkehlchenServer:
             import win32api  # pylint: disable=import-outside-toplevel  # isort:skip
             win32api.SetConsoleCtrlHandler(self.shutdown, True)
 
-        gevent.hub.signal(signal.SIGINT, self.shutdown)
+        signal.signal(signal.SIGINT, self.shutdown)
         # The api server's RestAPI starts rotki main loop
         self.api_server.start(
             host=self.args.api_host,
             rest_port=self.args.rest_api_port,
-            backend=self.args.api_server_backend,
         )
         self.stop_event.wait()

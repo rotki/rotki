@@ -1,9 +1,10 @@
 import datetime
+import threading
+import time
 from contextlib import suppress
 from typing import TYPE_CHECKING, Any, get_args
 from unittest.mock import MagicMock, call, patch
 
-import gevent
 import pytest
 
 from rotkehlchen.accounting.structures.balance import BalanceType
@@ -20,6 +21,7 @@ from rotkehlchen.chain.evm.tokens import (
 )
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.chain.structures import EvmTokenDetectionData
+from rotkehlchen.concurrency import spawn
 from rotkehlchen.constants import ONE, ZERO
 from rotkehlchen.constants.assets import A_CRV, A_DAI, A_ETH, A_OMG, A_WETH
 from rotkehlchen.constants.resolver import evm_address_to_identifier
@@ -727,12 +729,12 @@ def _do_read(database):
         database.get_blockchain_accounts(cursor)
 
 
-def _do_spawn(database):
-    while True:
-        gevent.spawn(_do_read, database)
+def _do_spawn(database, stop_event):
+    while not stop_event.is_set():
+        spawn(_do_read, database)
         with database.user_write() as write_cursor:
             database.set_setting(write_cursor, 'last_write_ts', 15)
-            gevent.sleep(0.1)
+            time.sleep(0.1)
             database.set_setting(write_cursor, 'last_write_ts', 15)
 
 
@@ -773,16 +775,21 @@ def test_flaky_binding_parameter_zero(
         )
 
     # Create the conditions for the bug to hit. Can verify by removing the retry in dbhandler.py
-    gevent.spawn(_do_spawn, database)
-    gevent.sleep(.1)
-    with database.conn.read_ctx() as cursor:
-        for address in ethereum_accounts:
-            database.get_tokens_for_address(
-                cursor=cursor,
-                address=address,
-                blockchain=SupportedBlockchain.ETHEREUM,
-                token_exceptions=set(),
-            )
+    stop_event = threading.Event()
+    spawner_task = spawn(_do_spawn, database, stop_event)
+    time.sleep(.1)  # give the writer task time to start writing
+    try:
+        with database.conn.read_ctx() as cursor:
+            for address in ethereum_accounts:
+                database.get_tokens_for_address(
+                    cursor=cursor,
+                    address=address,
+                    blockchain=SupportedBlockchain.ETHEREUM,
+                    token_exceptions=set(),
+                )
+    finally:  # stop the writer so it does not keep using the db after the test ends
+        stop_event.set()
+        spawner_task.join(timeout=5)
 
 
 @pytest.mark.parametrize('number_of_eth_accounts', [1])

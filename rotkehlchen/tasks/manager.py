@@ -1093,9 +1093,10 @@ class TaskManager:
         current_tasks = len(self.task_supervisor.tasks) + len(self.api_tasks)
         not_proceed = current_tasks >= self.max_tasks_num
         log.debug(
-            f'At task scheduling. Current tasks: {current_tasks} '
-            f'Max tasks: {self.max_tasks_num}. '
-            f'{"Will not schedule" if not_proceed else "Will schedule"}.',
+            'At task scheduling. Current tasks: %s Max tasks: %s. %s.',
+            current_tasks,
+            self.max_tasks_num,
+            'Will not schedule' if not_proceed else 'Will schedule',
         )
         if not_proceed:
             return  # too busy

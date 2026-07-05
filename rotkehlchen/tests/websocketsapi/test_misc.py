@@ -1,7 +1,8 @@
 import platform
 
-import gevent
 import pytest
+
+from rotkehlchen.concurrency import spawn, wait
 
 
 def _send_stuff(msg_aggregator, websocket_connection, string_len):
@@ -27,12 +28,13 @@ def test_websockets_concurrent_use(rotkehlchen_api_server, websocket_connection)
     """
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     string_len = 27000 if platform.system() == 'Darwin' else 100000
-    with gevent.Timeout(20):  # This runs a bit slowly on Windows and needs a generous timeout.
-        g1 = gevent.spawn(_send_stuff, rotki.msg_aggregator, websocket_connection, string_len)
-        _send_stuff(rotki.msg_aggregator, websocket_connection, string_len)
-        g2 = gevent.spawn(_send_stuff, rotki.msg_aggregator, websocket_connection, string_len)
-        gevent.joinall([g1, g2])
-        assert all(
-            isinstance(x.exception, gevent.exceptions.ConcurrentObjectUseError) is False
-            for x in [g1, g2] + rotki.task_supervisor.tasks
-        ), 'At least one ConcurrentObjectUseError exception happened'
+    g1 = spawn(_send_stuff, rotki.msg_aggregator, websocket_connection, string_len)
+    _send_stuff(rotki.msg_aggregator, websocket_connection, string_len)
+    g2 = spawn(_send_stuff, rotki.msg_aggregator, websocket_connection, string_len)
+    # This runs a bit slowly on Windows and needs a generous timeout.
+    wait([g1, g2], timeout=20)
+    assert g1.dead and g2.dead, 'websocket sender tasks timed out'
+    assert all(
+        x.exception is None
+        for x in [g1, g2] + rotki.task_supervisor.tasks
+    ), 'At least one exception happened in a websocket sender or supervised task'
