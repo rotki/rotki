@@ -445,7 +445,7 @@ def maybe_detect_new_tokens(database: 'DBHandler') -> None:
             f'SELECT {HISTORY_BASE_ENTRY_FIELDS}, {CHAIN_EVENT_FIELDS} '
             f'{EVENTS_WITH_COUNTERPARTY_JOIN} LEFT JOIN multisettings ms ON '
             'asset = ms.value AND ms.name = "ignored_asset" '
-            'AND timestamp >= ? GROUP BY asset, location_label;',
+            'WHERE ms.value IS NULL AND timestamp >= ? GROUP BY asset, location_label;',
             (ts_sec_to_ms(last_save_time),),
         ):
             event = EvmEvent.deserialize_from_db(event_data[1:])
