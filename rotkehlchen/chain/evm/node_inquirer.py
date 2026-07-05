@@ -60,13 +60,13 @@ from rotkehlchen.externalapis.etherscan_like import EtherscanLikeApi, HasChainAc
 from rotkehlchen.externalapis.routescan import Routescan
 from rotkehlchen.externalapis.utils import read_integer
 from rotkehlchen.fval import FVal
-from rotkehlchen.greenlets.manager import GreenletManager
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import (
     deserialize_evm_transaction,
     deserialize_int_from_hex,
 )
 from rotkehlchen.serialization.serialize import process_result
+from rotkehlchen.tasks.supervisor import TaskSupervisor
 from rotkehlchen.types import (
     SUPPORTED_CHAIN_IDS,
     SUPPORTED_EVM_CHAINS_TYPE,
@@ -216,7 +216,7 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
 
     def __init__(
             self,
-            greenlet_manager: GreenletManager,
+            task_supervisor: TaskSupervisor,
             database: 'DBHandler',
             etherscan: Etherscan,
             blockscout: Blockscout,
@@ -228,7 +228,7 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
             native_token: CryptoAsset,
             rpc_timeout: int = DEFAULT_RPC_TIMEOUT,
     ) -> None:
-        self.greenlet_manager = greenlet_manager
+        self.task_supervisor = task_supervisor
         self.database = database
         self.blockchain = blockchain
         self.etherscan = etherscan
@@ -1895,7 +1895,7 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
 class EvmNodeInquirerWithProxies(EvmNodeInquirer):
     def __init__(
             self,
-            greenlet_manager: GreenletManager,
+            task_supervisor: TaskSupervisor,
             database: 'DBHandler',
             etherscan: Etherscan,
             blockscout: Blockscout,
@@ -1909,7 +1909,7 @@ class EvmNodeInquirerWithProxies(EvmNodeInquirer):
             rpc_timeout: int = DEFAULT_RPC_TIMEOUT,
     ) -> None:
         super().__init__(
-            greenlet_manager=greenlet_manager,
+            task_supervisor=task_supervisor,
             database=database,
             etherscan=etherscan,
             blockscout=blockscout,
@@ -1934,7 +1934,7 @@ class DSProxyInquirerWithCacheData(EvmNodeInquirerWithProxies):
 
     def __init__(
             self,
-            greenlet_manager: GreenletManager,
+            task_supervisor: TaskSupervisor,
             database: 'DBHandler',
             etherscan: Etherscan,
             blockscout: Blockscout,
@@ -1948,7 +1948,7 @@ class DSProxyInquirerWithCacheData(EvmNodeInquirerWithProxies):
             rpc_timeout: int = DEFAULT_RPC_TIMEOUT,
     ) -> None:
         super().__init__(
-            greenlet_manager=greenlet_manager,
+            task_supervisor=task_supervisor,
             database=database,
             etherscan=etherscan,
             blockscout=blockscout,

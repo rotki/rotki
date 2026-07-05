@@ -2546,10 +2546,8 @@ class GlobalDBHandler:
     def clear_locks(self) -> None:
         """release the locks in the globaldb.
 
-        We saw that when killing a greenlet the locks are not released and has to
-        be done manually.
-        The killall that happens in this logic can trigger a greenlet switch as per
-        https://github.com/gevent/gevent/issues/1473#issuecomment-548327614
+        A task abandoned at logout (cancelled but not yet at its next
+        checkpoint) may still hold locks, so they have to be released manually.
 
         packaged_db_lock is a Semaphore which tolerates over-releasing. The driver
         locks are threading.Lock (bounded), so they are released only if held, and

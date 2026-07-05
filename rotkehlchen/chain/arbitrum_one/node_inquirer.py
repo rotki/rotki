@@ -11,8 +11,8 @@ from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.fval import FVal
-from rotkehlchen.greenlets.manager import GreenletManager
 from rotkehlchen.logging import RotkehlchenLogsAdapter
+from rotkehlchen.tasks.supervisor import TaskSupervisor
 from rotkehlchen.types import ChainID, ChecksumEvmAddress, EVMTxHash, SupportedBlockchain
 
 from .constants import (
@@ -37,7 +37,7 @@ class ArbitrumOneInquirer(EvmNodeInquirer):
 
     def __init__(
             self,
-            greenlet_manager: GreenletManager,
+            task_supervisor: TaskSupervisor,
             database: 'DBHandler',
             etherscan: 'Etherscan',
             blockscout: 'Blockscout',
@@ -46,7 +46,7 @@ class ArbitrumOneInquirer(EvmNodeInquirer):
     ) -> None:
         contracts = EvmContracts[Literal[ChainID.ARBITRUM_ONE]](chain_id=ChainID.ARBITRUM_ONE)
         super().__init__(
-            greenlet_manager=greenlet_manager,
+            task_supervisor=task_supervisor,
             database=database,
             etherscan=etherscan,
             blockscout=blockscout,

@@ -4,14 +4,13 @@ import argparse
 import contextlib
 import logging
 import os
+import threading
 import time
 from collections import defaultdict
 from collections.abc import Callable, Sequence
 from pathlib import Path
 from types import FunctionType
 from typing import TYPE_CHECKING, Any, Literal, Optional, cast, overload
-
-import gevent
 
 from rotkehlchen.accounting.accountant import Accountant
 from rotkehlchen.accounting.structures.balance import Balance, BalanceType
@@ -59,7 +58,7 @@ from rotkehlchen.chain.substrate.utils import (
     POLKADOT_NODES_TO_CONNECT_AT_START,
 )
 from rotkehlchen.chain.zksync_lite.manager import ZksyncLiteManager
-from rotkehlchen.concurrency import DEFAULT_CANCEL_GRACE_SECONDS, wait
+from rotkehlchen.concurrency import DEFAULT_CANCEL_GRACE_SECONDS, Task, wait
 from rotkehlchen.config import default_data_directory
 from rotkehlchen.constants import ONE, ZERO
 from rotkehlchen.constants.assets import A_USD
@@ -99,8 +98,6 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.asset_updates.manager import AssetsUpdater
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.globaldb.manual_price_oracles import ManualCurrentOracle
-from rotkehlchen.greenlets.manager import GreenletManager
-from rotkehlchen.greenlets.utils import request_cancellation
 from rotkehlchen.history.manager import HistoryQueryingManager
 from rotkehlchen.history.price import Price, PriceHistorian
 from rotkehlchen.history.processing import HistoryProcessingCoordinator
@@ -117,6 +114,7 @@ from rotkehlchen.premium.premium import (
 )
 from rotkehlchen.premium.sync import PremiumSyncManager
 from rotkehlchen.tasks.manager import DEFAULT_MAX_TASKS_NUM, TaskManager
+from rotkehlchen.tasks.supervisor import TaskSupervisor
 from rotkehlchen.types import (
     EVM_CHAINS_WITH_TRANSACTIONS,
     SUPPORTED_BITCOIN_CHAINS_TYPE,
@@ -185,9 +183,9 @@ class Rotkehlchen:
                 f'The given data directory {self.data_dir} is not readable or writable',
             )
         self.main_loop_spawned = False
-        self.api_task_greenlets: list[gevent.Greenlet] = []
+        self.api_tasks: list[Task] = []
         self.msg_aggregator = MessagesAggregator()
-        self.greenlet_manager = GreenletManager(msg_aggregator=self.msg_aggregator)
+        self.task_supervisor = TaskSupervisor(msg_aggregator=self.msg_aggregator)
         self.rotki_notifier = RotkiNotifier()
         self.msg_aggregator.rotki_notifier = self.rotki_notifier
         self.exchange_manager = ExchangeManager(msg_aggregator=self.msg_aggregator)
@@ -217,7 +215,7 @@ class Rotkehlchen:
         self.icon_manager = IconManager(
             data_dir=self.data_dir,
             coingecko=self.coingecko,
-            greenlet_manager=self.greenlet_manager,
+            task_supervisor=self.task_supervisor,
         )
         self.assets_updater = AssetsUpdater(
             msg_aggregator=self.msg_aggregator,
@@ -240,7 +238,7 @@ class Rotkehlchen:
         EvmContracts.initialize_common_abis()
         self.task_manager: TaskManager | None = None
         self.monerium: Monerium | None = None
-        self.shutdown_event = gevent.event.Event()
+        self.shutdown_event = threading.Event()
         self.migration_manager = DataMigrationManager(self)
 
     def maybe_cancel_running_tx_query_tasks(
@@ -255,39 +253,39 @@ class Rotkehlchen:
         left to die at its next cancellation checkpoint."""
         assert self.task_manager is not None, 'task manager should have been initialized at this point'  # noqa: E501
 
-        cancelled_greenlets = []
+        cancelled_tasks = []
         for address in addresses:
             account_data = OptionalBlockchainAccount(address=address, chain=blockchain)
-            for greenlet in self.api_task_greenlets:
-                is_evm_tx_greenlet = (
-                    greenlet.dead is False and
-                    isinstance(command := getattr(greenlet, 'api_command', None), FunctionType) and
+            for task in self.api_tasks:
+                is_evm_tx_task = (
+                    task.dead is False and
+                    isinstance(command := getattr(task, 'api_command', None), FunctionType) and
                     command.__qualname__ == 'RestAPI.refresh_transactions'
                 )
                 if (
-                        is_evm_tx_greenlet and
+                        is_evm_tx_task and
                         # accounts is None when all tracked accounts are being refreshed,
                         # which includes the address being removed
-                        ((accounts := greenlet.kwargs['accounts']) is None or
+                        ((accounts := task.kwargs['accounts']) is None or
                          account_data in accounts) and
-                        request_cancellation(greenlet, 'Cancelled due to request for evm address removal')  # noqa: E501
+                        task.request_cancellation('Cancelled due to request for evm address removal')  # noqa: E501
                 ):
-                    cancelled_greenlets.append(greenlet)
+                    cancelled_tasks.append(task)
 
-        cancelled_greenlets.extend(
-            greenlet
-            for greenlet in self.task_manager.running_greenlets.get(self.task_manager._maybe_query_evm_transactions, [])  # noqa: E501
+        cancelled_tasks.extend(
+            task
+            for task in self.task_manager.running_tasks.get(self.task_manager._maybe_query_evm_transactions, [])  # noqa: E501
             if (
-                greenlet.dead is False and
-                greenlet.kwargs['address'] in addresses and
-                request_cancellation(greenlet, 'Cancelled due to request for evm address removal')
+                task.dead is False and
+                task.kwargs['address'] in addresses and
+                task.request_cancellation('Cancelled due to request for evm address removal')
             )
         )
-        if len(cancelled_greenlets) == 0:
+        if len(cancelled_tasks) == 0:
             return
 
-        wait(cancelled_greenlets, timeout=DEFAULT_CANCEL_GRACE_SECONDS)
-        if len(survivors := [x for x in cancelled_greenlets if not x.dead]) != 0:
+        wait(cancelled_tasks, timeout=DEFAULT_CANCEL_GRACE_SECONDS)
+        if len(survivors := [x for x in cancelled_tasks if not x.dead]) != 0:
             log.warning(
                 '%s cancelled transaction query tasks did not exit within %s seconds '
                 'and will die at their next checkpoint',
@@ -405,7 +403,7 @@ class Rotkehlchen:
         with self.data.db.conn.read_ctx() as cursor:
             settings = self.get_settings(cursor)
             CachedSettings().initialize(settings)  # initialize with saved DB settings
-            self.greenlet_manager.spawn_and_track(
+            self.task_supervisor.spawn_and_track(
                 after_seconds=None,
                 task_name='submit_usage_analytics',
                 exception_is_error=False,
@@ -429,7 +427,7 @@ class Rotkehlchen:
             blockchain_accounts=blockchain_accounts,
             ethereum_manager=EthereumManager(
                 node_inquirer=(ethereum_inquirer := EthereumInquirer(
-                    greenlet_manager=self.greenlet_manager,
+                    task_supervisor=self.task_supervisor,
                     database=self.data.db,
                     etherscan=(etherscan := Etherscan(
                         database=self.data.db,
@@ -450,7 +448,7 @@ class Rotkehlchen:
             ),
             optimism_manager=OptimismManager(
                 node_inquirer=OptimismInquirer(
-                    greenlet_manager=self.greenlet_manager,
+                    task_supervisor=self.task_supervisor,
                     database=self.data.db,
                     etherscan=etherscan,
                     blockscout=blockscout,
@@ -460,7 +458,7 @@ class Rotkehlchen:
             ),
             polygon_pos_manager=PolygonPOSManager(
                 node_inquirer=PolygonPOSInquirer(
-                    greenlet_manager=self.greenlet_manager,
+                    task_supervisor=self.task_supervisor,
                     database=self.data.db,
                     etherscan=etherscan,
                     blockscout=blockscout,
@@ -471,7 +469,7 @@ class Rotkehlchen:
             ),
             arbitrum_one_manager=ArbitrumOneManager(
                 node_inquirer=ArbitrumOneInquirer(
-                    greenlet_manager=self.greenlet_manager,
+                    task_supervisor=self.task_supervisor,
                     database=self.data.db,
                     etherscan=etherscan,
                     blockscout=blockscout,
@@ -482,7 +480,7 @@ class Rotkehlchen:
             ),
             base_manager=BaseManager(
                 node_inquirer=BaseInquirer(
-                    greenlet_manager=self.greenlet_manager,
+                    task_supervisor=self.task_supervisor,
                     database=self.data.db,
                     etherscan=etherscan,
                     blockscout=blockscout,
@@ -493,7 +491,7 @@ class Rotkehlchen:
             ),
             hyperliquid_manager=HyperliquidManager(
                 node_inquirer=HyperliquidInquirer(
-                    greenlet_manager=self.greenlet_manager,
+                    task_supervisor=self.task_supervisor,
                     database=self.data.db,
                     etherscan=etherscan,
                     blockscout=blockscout,
@@ -503,7 +501,7 @@ class Rotkehlchen:
             ),
             gnosis_manager=GnosisManager(
                 node_inquirer=GnosisInquirer(
-                    greenlet_manager=self.greenlet_manager,
+                    task_supervisor=self.task_supervisor,
                     database=self.data.db,
                     etherscan=etherscan,
                     blockscout=blockscout,
@@ -514,7 +512,7 @@ class Rotkehlchen:
             ),
             scroll_manager=ScrollManager(
                 node_inquirer=ScrollInquirer(
-                    greenlet_manager=self.greenlet_manager,
+                    task_supervisor=self.task_supervisor,
                     database=self.data.db,
                     etherscan=etherscan,
                     blockscout=blockscout,
@@ -525,7 +523,7 @@ class Rotkehlchen:
             ),
             binance_sc_manager=BinanceSCManager(
                 node_inquirer=BinanceSCInquirer(
-                    greenlet_manager=self.greenlet_manager,
+                    task_supervisor=self.task_supervisor,
                     database=self.data.db,
                     etherscan=etherscan,
                     blockscout=blockscout,
@@ -535,7 +533,7 @@ class Rotkehlchen:
             ),
             monad_manager=MonadManager(
                 node_inquirer=MonadInquirer(
-                    greenlet_manager=self.greenlet_manager,
+                    task_supervisor=self.task_supervisor,
                     database=self.data.db,
                     etherscan=etherscan,
                     blockscout=blockscout,
@@ -546,7 +544,7 @@ class Rotkehlchen:
             kusama_manager=SubstrateManager(
                 chain=SupportedBlockchain.KUSAMA,
                 msg_aggregator=self.msg_aggregator,
-                greenlet_manager=self.greenlet_manager,
+                task_supervisor=self.task_supervisor,
                 connect_at_start=KUSAMA_NODES_TO_CONNECT_AT_START,
                 connect_on_startup=len(blockchain_accounts.ksm) != 0,
                 own_rpc_endpoint=settings.ksm_rpc_endpoint,
@@ -554,7 +552,7 @@ class Rotkehlchen:
             polkadot_manager=SubstrateManager(
                 chain=SupportedBlockchain.POLKADOT,
                 msg_aggregator=self.msg_aggregator,
-                greenlet_manager=self.greenlet_manager,
+                task_supervisor=self.task_supervisor,
                 connect_at_start=POLKADOT_NODES_TO_CONNECT_AT_START,
                 connect_on_startup=len(blockchain_accounts.dot) != 0,
                 own_rpc_endpoint=settings.dot_rpc_endpoint,
@@ -571,7 +569,7 @@ class Rotkehlchen:
             bitcoin_cash_manager=BitcoinCashManager(database=self.data.db),
             solana_manager=SolanaManager(
                 node_inquirer=SolanaInquirer(
-                    greenlet_manager=self.greenlet_manager,
+                    task_supervisor=self.task_supervisor,
                     database=self.data.db,
                     helius=Helius(database=self.data.db),
                 ),
@@ -580,7 +578,7 @@ class Rotkehlchen:
             ),
             msg_aggregator=self.msg_aggregator,
             database=self.data.db,
-            greenlet_manager=self.greenlet_manager,
+            task_supervisor=self.task_supervisor,
             premium=self.premium,
             eth_modules=settings.active_modules,
             data_directory=self.data_dir,
@@ -636,8 +634,8 @@ class Rotkehlchen:
         )
         self.task_manager = TaskManager(
             max_tasks_num=DEFAULT_MAX_TASKS_NUM,
-            greenlet_manager=self.greenlet_manager,
-            api_task_greenlets=self.api_task_greenlets,
+            task_supervisor=self.task_supervisor,
+            api_tasks=self.api_tasks,
             database=self.data.db,
             cryptocompare=self.cryptocompare,
             premium_sync_manager=self.premium_sync_manager,
@@ -653,7 +651,7 @@ class Rotkehlchen:
         )
 
         self.migration_manager.maybe_migrate_data()
-        self.greenlet_manager.spawn_and_track(
+        self.task_supervisor.spawn_and_track(
             after_seconds=None,
             task_name='Check data updates',
             exception_is_error=False,
@@ -706,7 +704,7 @@ class Rotkehlchen:
 
         self.task_manager.clear()  # type: ignore  # task_manager is not None here
         self.task_manager = None
-        self.greenlet_manager.clear()
+        self.task_supervisor.clear()
 
         self.data.logout()
         self.monerium = None
@@ -792,11 +790,11 @@ class Rotkehlchen:
         self.deactivate_premium_status()
         return success, msg
 
-    def start(self) -> gevent.Greenlet:
+    def start(self) -> Task:
         assert not self.main_loop_spawned, 'Tried to spawn the main loop twice'
-        greenlet = gevent.spawn(self.main_loop)
+        task = Task(name='rotki main loop', target=self.main_loop).start()
         self.main_loop_spawned = True
-        return greenlet
+        return task
 
     def main_loop(self) -> None:
         """rotki main loop that fires often and runs the task manager's scheduler"""

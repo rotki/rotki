@@ -4,9 +4,8 @@ import tempfile
 from enum import Enum
 from typing import Any, Literal, NamedTuple
 
-import gevent
-
 from rotkehlchen.api.websockets.typedefs import WSMessageType
+from rotkehlchen.concurrency import run_in_native_thread
 from rotkehlchen.constants.misc import USERSDIR_NAME
 from rotkehlchen.data_handler import DataHandler
 from rotkehlchen.data_migrations.manager import DataMigrationManager
@@ -246,8 +245,7 @@ class PremiumSyncManager(LockableQueryMixIn):
                 )
                 self.last_upload_attempt_ts = ts_now()
                 return False, message
-            greenlet = gevent.get_hub().threadpool.spawn(self.data.compress_and_encrypt_db, tempdbpath)  # noqa: E501
-            data, our_hash = greenlet.get()
+            data, our_hash = run_in_native_thread(self.data.compress_and_encrypt_db, tempdbpath)
 
         log.debug(
             'CAN_PUSH',

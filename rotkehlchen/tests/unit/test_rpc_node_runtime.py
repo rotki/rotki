@@ -325,8 +325,8 @@ def test_maybe_connect_to_nodes_refreshes_stale_configured_nodes_cache() -> None
     db_mock.conn.read_ctx.return_value = ctx_mock
     manager.database = db_mock
 
-    manager.greenlet_manager = MagicMock()
-    manager.greenlet_manager.has_task.return_value = False
+    manager.task_supervisor = MagicMock()
+    manager.task_supervisor.has_task.return_value = False
 
     with patch.object(manager, 'connect_to_multiple_nodes') as mock_connect:
         manager.maybe_connect_to_nodes(when_tracked_accounts=False)

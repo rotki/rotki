@@ -10,7 +10,7 @@ The current task's token travels in a ContextVar. Greenlets do not inherit
 contextvars from their spawner (verified: each greenlet starts with an empty
 context), so anything that starts a task must establish the token explicitly
 via run_cancellable() -- the spawn functions in rotkehlchen.concurrency.tasks,
-GreenletManager and the REST API async-query path all do.
+TaskSupervisor and the REST API async-query path all do.
 
 See docs/designs/gevent_to_asyncio.md for the overall plan.
 """

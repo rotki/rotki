@@ -487,7 +487,7 @@ def initialize_mock_rotkehlchen_instance(
         # since we are past evm inquirer initialization and we just wrote rpc nodes up we need to start the connection  # noqa: E501
         evm_manager.node_inquirer.maybe_connect_to_nodes(when_tracked_accounts=True)
         # Check if any connection tasks are pending to wait for
-        if rotki.greenlet_manager.has_task(_connect_task_prefix(evm_manager.node_inquirer.chain_name)):  # noqa: E501
+        if rotki.task_supervisor.has_task(_connect_task_prefix(evm_manager.node_inquirer.chain_name)):  # noqa: E501
             evm_nodes_wait.append((evm_manager.node_inquirer, actual_nodes))
 
     if start_with_valid_premium:

@@ -71,7 +71,7 @@ from rotkehlchen.types import (
 if TYPE_CHECKING:
     from rotkehlchen.api.server import APIServer
     from rotkehlchen.data_migrations.progress import MigrationProgressHandler
-    from rotkehlchen.greenlets.manager import GreenletManager
+    from rotkehlchen.tasks.supervisor import TaskSupervisor
     from rotkehlchen.tests.fixtures.websockets import WebsocketReader
 
 
@@ -332,14 +332,14 @@ def test_failed_migration(database: DBHandler) -> None:
 def test_migration_3(
         database: DBHandler,
         data_dir: Path,
-        greenlet_manager: 'GreenletManager',
+        task_supervisor: 'TaskSupervisor',
 ) -> None:
     """
     Test that the third data migration for rotki works. This migration removes icons of assets
     that are not valid images and update the list of ignored assets.
     """
     rotki = MockRotkiForMigrations(database)
-    icon_manager = IconManager(data_dir=data_dir, coingecko=Coingecko(None), greenlet_manager=greenlet_manager)  # noqa: E501
+    icon_manager = IconManager(data_dir=data_dir, coingecko=Coingecko(None), task_supervisor=task_supervisor)  # noqa: E501
     rotki.icon_manager = icon_manager
     btc_iconpath = _create_invalid_icon(A_BTC.identifier, icon_manager.icons_dir)
     eth_iconpath = _create_invalid_icon(A_ETH.identifier, icon_manager.icons_dir)
@@ -361,14 +361,14 @@ def test_migration_3(
 def test_migration_5(
         database: DBHandler,
         data_dir: Path,
-        greenlet_manager: 'GreenletManager',
+        task_supervisor: 'TaskSupervisor',
 ) -> None:
     """
     Test that the fifth data migration for rotki works.
     - Create two fake icons and check that the file name was correctly updated
     """
     rotki = MockRotkiForMigrations(database)
-    icon_manager = IconManager(data_dir=data_dir, coingecko=Coingecko(None), greenlet_manager=greenlet_manager)  # noqa: E501
+    icon_manager = IconManager(data_dir=data_dir, coingecko=Coingecko(None), task_supervisor=task_supervisor)  # noqa: E501
     rotki.icon_manager = icon_manager
     migration_patch = patch(
         'rotkehlchen.data_migrations.manager.MIGRATION_LIST',

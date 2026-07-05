@@ -564,7 +564,7 @@ class APIServer:
                 msg = 'rotki is running in __debug__ mode'
                 print(msg)
                 log.info(msg)
-            log.info(f'Starting rotki {get_current_version().our_version}')
+            log.info('Starting rotki %s', get_current_version().our_version)
             msg = f'rotki REST API server ({backend}) is running at: {host}:{rest_port} with loglevel {logging.getLevelName(logging.root.level)}'  # noqa: E501
             print(msg)
             log.info(msg)

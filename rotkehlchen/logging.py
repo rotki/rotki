@@ -1,13 +1,11 @@
 import argparse
 import logging.config
 import re
+import threading
 from collections.abc import Callable, MutableMapping
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Final
 
-import gevent
-
-from rotkehlchen.greenlets.utils import get_greenlet_name
 from rotkehlchen.utils.misc import is_production, timestamp_to_date, ts_now
 
 PYWSGI_RE = re.compile(r'\[(.*)\] ')
@@ -93,10 +91,9 @@ class RotkehlchenLogsAdapter(logging.LoggerAdapter):
 
         This function:
         - appends all kwargs to the final message, redacting any sensitive information
-        - appends the greenlet id in the log message
+        - prepends the current task's thread name to the log message
         """
-        msg, greenlet = str(given_msg), gevent.getcurrent()
-        greenlet_name = get_greenlet_name(greenlet)
+        msg = str(given_msg)
         if (
                 'json_data' in kwargs and
                 isinstance((data := kwargs['json_data']), dict) and
@@ -108,7 +105,7 @@ class RotkehlchenLogsAdapter(logging.LoggerAdapter):
 
             kwargs['json_data'] = sanitized_data
 
-        msg = greenlet_name + ': ' + msg + ','.join(f' {k}={v}' for k, v in kwargs.items())
+        msg = threading.current_thread().name + ': ' + msg + ','.join(f' {k}={v}' for k, v in kwargs.items())  # noqa: E501
         return msg, {}
 
     def trace(self, msg: str, *args: Any, **kwargs: Any) -> None:

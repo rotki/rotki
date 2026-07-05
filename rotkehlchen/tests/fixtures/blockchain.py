@@ -78,7 +78,7 @@ def _initialize_and_yield_evm_inquirer_fixture(
         klass,
         class_path,
         manager_connect_at_start,
-        greenlet_manager,
+        task_supervisor,
         database,
         mock_other_web3,
         mock_data,
@@ -115,7 +115,7 @@ def _initialize_and_yield_evm_inquirer_fixture(
                 return_value=lambda *args: None,
             ))
         inquirer = klass(
-            greenlet_manager=greenlet_manager,
+            task_supervisor=task_supervisor,
             database=database,
             etherscan=(etherscan := Etherscan(
                 database=database,
@@ -343,7 +343,7 @@ def fixture_mock_other_web3(network_mocking, should_mock_web3):
 @pytest.fixture(name='ethereum_inquirer')
 def fixture_ethereum_inquirer(
         ethereum_manager_connect_at_start,
-        greenlet_manager,
+        task_supervisor,
         database,
         mock_other_web3,
         ethereum_mock_data,
@@ -355,7 +355,7 @@ def fixture_ethereum_inquirer(
             klass=EthereumInquirer,
             class_path='rotkehlchen.chain.ethereum.node_inquirer.EthereumInquirer',
             manager_connect_at_start=ethereum_manager_connect_at_start,
-            greenlet_manager=greenlet_manager,
+            task_supervisor=task_supervisor,
             database=database,
             mock_other_web3=mock_other_web3,
             mock_data=ethereum_mock_data,
@@ -416,7 +416,7 @@ def fixture_optimism_manager_connect_at_start() -> Literal['DEFAULT'] | Sequence
 @pytest.fixture(name='optimism_inquirer')
 def fixture_optimism_inquirer(
         optimism_manager_connect_at_start,
-        greenlet_manager,
+        task_supervisor,
         database,
         mock_other_web3,
         optimism_mock_data,
@@ -427,7 +427,7 @@ def fixture_optimism_inquirer(
             klass=OptimismInquirer,
             class_path='rotkehlchen.chain.optimism.node_inquirer.OptimismInquirer',
             manager_connect_at_start=optimism_manager_connect_at_start,
-            greenlet_manager=greenlet_manager,
+            task_supervisor=task_supervisor,
             database=database,
             mock_other_web3=mock_other_web3,
             mock_data=optimism_mock_data,
@@ -525,7 +525,7 @@ def fixture_polygon_pos_manager_connect_at_start() -> Literal['DEFAULT'] | Seque
 @pytest.fixture(name='polygon_pos_inquirer')
 def fixture_polygon_pos_inquirer(
         polygon_pos_manager_connect_at_start,
-        greenlet_manager,
+        task_supervisor,
         database,
         mock_other_web3,
 ):
@@ -535,7 +535,7 @@ def fixture_polygon_pos_inquirer(
             klass=PolygonPOSInquirer,
             class_path='rotkehlchen.chain.polygon_pos.node_inquirer.PolygonPOSInquirer',
             manager_connect_at_start=polygon_pos_manager_connect_at_start,
-            greenlet_manager=greenlet_manager,
+            task_supervisor=task_supervisor,
             database=database,
             mock_other_web3=mock_other_web3,
             mock_data={},  # Not used in polygon. TODO: remove it for all other chains too since we now have vcr  # noqa: E501
@@ -565,7 +565,7 @@ def fixture_arbitrum_one_manager_connect_at_start() -> Literal['DEFAULT'] | Sequ
 @pytest.fixture(name='arbitrum_one_inquirer')
 def fixture_arbitrum_one_inquirer(
         arbitrum_one_manager_connect_at_start,
-        greenlet_manager,
+        task_supervisor,
         database,
         mock_other_web3,
 ):
@@ -575,7 +575,7 @@ def fixture_arbitrum_one_inquirer(
             klass=ArbitrumOneInquirer,
             class_path='rotkehlchen.chain.arbitrum_one.node_inquirer.ArbitrumOneInquirer',
             manager_connect_at_start=arbitrum_one_manager_connect_at_start,
-            greenlet_manager=greenlet_manager,
+            task_supervisor=task_supervisor,
             database=database,
             mock_other_web3=mock_other_web3,
             mock_data={},  # Not used in arbitrum. TODO: remove it for all other chains too since we now have vcr  # noqa: E501
@@ -604,7 +604,7 @@ def fixture_base_manager_connect_at_start() -> Literal['DEFAULT'] | Sequence[Nod
 @pytest.fixture(name='base_inquirer')
 def fixture_base_inquirer(
         base_manager_connect_at_start,
-        greenlet_manager,
+        task_supervisor,
         database,
         mock_other_web3,
 ):
@@ -614,7 +614,7 @@ def fixture_base_inquirer(
             klass=BaseInquirer,
             class_path='rotkehlchen.chain.base.node_inquirer.BaseInquirer',
             manager_connect_at_start=base_manager_connect_at_start,
-            greenlet_manager=greenlet_manager,
+            task_supervisor=task_supervisor,
             database=database,
             mock_other_web3=mock_other_web3,
             mock_data={},  # Not used in base. TODO: remove it for all other chains too since we now have vcr  # noqa: E501
@@ -643,7 +643,7 @@ def fixture_hyperliquid_manager_connect_at_start() -> Literal['DEFAULT'] | Seque
 @pytest.fixture(name='hyperliquid_inquirer')
 def fixture_hyperliquid_inquirer(
         hyperliquid_manager_connect_at_start,
-        greenlet_manager,
+        task_supervisor,
         database,
         mock_other_web3,
 ):
@@ -653,7 +653,7 @@ def fixture_hyperliquid_inquirer(
             klass=HyperliquidInquirer,
             class_path='rotkehlchen.chain.hyperliquid.node_inquirer.HyperliquidInquirer',
             manager_connect_at_start=hyperliquid_manager_connect_at_start,
-            greenlet_manager=greenlet_manager,
+            task_supervisor=task_supervisor,
             database=database,
             mock_other_web3=mock_other_web3,
             mock_data={},  # Not used in hyperliquid. TODO: remove it for all other chains too since we now have vcr  # noqa: E501
@@ -679,7 +679,7 @@ def fixture_monad_manager_connect_at_start() -> Literal['DEFAULT'] | Sequence[No
 @pytest.fixture(name='monad_inquirer')
 def fixture_monad_inquirer(
         monad_manager_connect_at_start,
-        greenlet_manager,
+        task_supervisor,
         database,
         mock_other_web3,
 ):
@@ -689,7 +689,7 @@ def fixture_monad_inquirer(
             klass=MonadInquirer,
             class_path='rotkehlchen.chain.monad.node_inquirer.MonadInquirer',
             manager_connect_at_start=monad_manager_connect_at_start,
-            greenlet_manager=greenlet_manager,
+            task_supervisor=task_supervisor,
             database=database,
             mock_other_web3=mock_other_web3,
             mock_data={},
@@ -715,7 +715,7 @@ def fixture_gnosis_manager_connect_at_start() -> Literal['DEFAULT'] | Sequence[N
 @pytest.fixture(name='gnosis_inquirer')
 def fixture_gnosis_inquirer(
         gnosis_manager_connect_at_start,
-        greenlet_manager,
+        task_supervisor,
         database,
         mock_other_web3,
 ):
@@ -725,7 +725,7 @@ def fixture_gnosis_inquirer(
             klass=GnosisInquirer,
             class_path='rotkehlchen.chain.gnosis.node_inquirer.GnosisInquirer',
             manager_connect_at_start=gnosis_manager_connect_at_start,
-            greenlet_manager=greenlet_manager,
+            task_supervisor=task_supervisor,
             database=database,
             mock_other_web3=mock_other_web3,
             mock_data={},  # Not used in gnosis. TODO: remove it for all other chains too since we now have vcr  # noqa: E501
@@ -765,7 +765,7 @@ def fixture_scroll_manager_connect_at_start() -> Literal['DEFAULT'] | Sequence[N
 @pytest.fixture(name='scroll_inquirer')
 def fixture_scroll_inquirer(
         scroll_manager_connect_at_start,
-        greenlet_manager,
+        task_supervisor,
         database,
         mock_other_web3,
 ):
@@ -775,7 +775,7 @@ def fixture_scroll_inquirer(
             klass=ScrollInquirer,
             class_path='rotkehlchen.chain.scroll.node_inquirer.ScrollInquirer',
             manager_connect_at_start=scroll_manager_connect_at_start,
-            greenlet_manager=greenlet_manager,
+            task_supervisor=task_supervisor,
             database=database,
             mock_other_web3=mock_other_web3,
             mock_data={},  # Not used in scroll. TODO: remove it for all other chains too since we now have vcr  # noqa: E501
@@ -804,7 +804,7 @@ def fixture_binance_sc_manager_connect_at_start() -> Literal['DEFAULT'] | Sequen
 @pytest.fixture(name='binance_sc_inquirer')
 def fixture_binance_sc_inquirer(
         binance_sc_manager_connect_at_start,
-        greenlet_manager,
+        task_supervisor,
         database,
         mock_other_web3,
 ):
@@ -814,7 +814,7 @@ def fixture_binance_sc_inquirer(
             klass=BinanceSCInquirer,
             class_path='rotkehlchen.chain.binance_sc.node_inquirer.BinanceSCInquirer',
             manager_connect_at_start=binance_sc_manager_connect_at_start,
-            greenlet_manager=greenlet_manager,
+            task_supervisor=task_supervisor,
             database=database,
             mock_other_web3=mock_other_web3,
             mock_data={},  # Not used in bsc. TODO: remove it for all other chains too since we now have vcr  # noqa: E501
@@ -859,7 +859,7 @@ def fixture_polkadot_available_node_attributes_map():
 
 def _make_substrate_manager(
         messages_aggregator,
-        greenlet_manager,
+        task_supervisor,
         accounts,
         chain_type,
         rpc_endpoint,
@@ -872,7 +872,7 @@ def _make_substrate_manager(
     substrate_manager = SubstrateManager(
         chain=chain_type,
         msg_aggregator=messages_aggregator,
-        greenlet_manager=greenlet_manager,
+        task_supervisor=task_supervisor,
         connect_at_start=connect_at_start,
         connect_on_startup=bool(accounts),
         own_rpc_endpoint=own_rpc_endpoint,
@@ -909,7 +909,7 @@ def _make_substrate_manager(
 @pytest.fixture(name='kusama_manager')
 def fixture_kusama_manager(
         messages_aggregator,
-        greenlet_manager,
+        task_supervisor,
         ksm_accounts,
         ksm_rpc_endpoint,
         kusama_available_node_attributes_map,
@@ -917,7 +917,7 @@ def fixture_kusama_manager(
 ):
     return _make_substrate_manager(
         messages_aggregator=messages_aggregator,
-        greenlet_manager=greenlet_manager,
+        task_supervisor=task_supervisor,
         accounts=ksm_accounts,
         chain_type=SupportedBlockchain.KUSAMA,
         rpc_endpoint=ksm_rpc_endpoint,
@@ -929,7 +929,7 @@ def fixture_kusama_manager(
 @pytest.fixture(name='polkadot_manager')
 def fixture_polkadot_manager(
         messages_aggregator,
-        greenlet_manager,
+        task_supervisor,
         dot_accounts,
         dot_rpc_endpoint,
         polkadot_available_node_attributes_map,
@@ -937,7 +937,7 @@ def fixture_polkadot_manager(
 ):
     return _make_substrate_manager(
         messages_aggregator=messages_aggregator,
-        greenlet_manager=greenlet_manager,
+        task_supervisor=task_supervisor,
         accounts=dot_accounts,
         chain_type=SupportedBlockchain.POLKADOT,
         rpc_endpoint=dot_rpc_endpoint,
@@ -1008,9 +1008,9 @@ def fixture_solana_nodes_connect_at_start() -> Literal['DEFAULT'] | Sequence[Wei
 
 
 @pytest.fixture(name='solana_inquirer')
-def fixture_solana_inquirer(greenlet_manager, database, solana_nodes_connect_at_start):
+def fixture_solana_inquirer(task_supervisor, database, solana_nodes_connect_at_start):
     solana_inquirer = SolanaInquirer(
-        greenlet_manager=greenlet_manager,
+        task_supervisor=task_supervisor,
         database=database,
         helius=Helius(database=database),
     )
@@ -1053,7 +1053,7 @@ def fixture_blockchain(
         blockchain_accounts,
         inquirer,  # pylint: disable=unused-argument
         messages_aggregator,
-        greenlet_manager,
+        task_supervisor,
         ethereum_modules,
         start_with_valid_premium,
         rotki_premium_credentials,
@@ -1093,7 +1093,7 @@ def fixture_blockchain(
         solana_manager=solana_manager,
         msg_aggregator=messages_aggregator,
         database=database,
-        greenlet_manager=greenlet_manager,
+        task_supervisor=task_supervisor,
         premium=premium,
         eth_modules=ethereum_modules,
         data_directory=data_dir,

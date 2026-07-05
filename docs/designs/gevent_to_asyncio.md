@@ -14,7 +14,7 @@ the decision log.
 | 2 | Cooperative cancellation (replaces `greenlet.kill`) | **done** — CancellationToken + checkpoints landed, `greenlet.kill`/`GreenletKilledError` removed, substrate `gevent.Timeout` replaced |
 | 3 | DB driver dual-mode (gevent / threading backends) | **done** — gevent-free driver with SchedulingMode, transaction-slot locking replaces poll loops, both-modes tests + stress test, atomicity audit done (crash-class findings fixed) |
 | 4 | ASGI server behind a flag (uvicorn + WSGI bridge + native websockets) | **done** — `--api-server-backend asgi` serves REST+`/ws` via uvicorn on one port; gevent stays default; `api-asgi` CI leg |
-| 5 | Task orchestration on the asyncio loop | not started |
+| 5 | Task orchestration off greenlets (thread-backed Task/TaskSupervisor) | **done** — thread-backed `Task` handles everywhere, `GreenletManager`→`TaskSupervisor`, all `killall` paths now cancel+grace, gevent imports confined to the phase-6 files |
 | 6 | The flip: remove monkey patching and gevent | not started |
 | 7 | Harvest: native-async hot paths, free-threading experiments | not started |
 
@@ -76,16 +76,20 @@ Long tail (mechanical): 31 `gevent.sleep` backoff calls, 6 `spawn`/`joinall` cal
 
 ```
 main thread:  asyncio event loop
-              ├── uvicorn (ASGI)
-              │     ├── WSGI bridge → Flask REST (runs in worker pool)
-              │     └── native websocket route (/ws, same port)
-              ├── TaskSupervisor (replaces GreenletManager)
-              └── periodic scheduler (replaces TaskManager loop)
-worker pool:  bounded ThreadPoolExecutor (~32, IO-bound)
-              └── ALL business logic, synchronous, unchanged signatures
-                  ├── threading.Semaphore / Lock / Event, time.sleep
-                  └── DB driver (threading backend, no yield machinery)
+              └── uvicorn (ASGI)
+                    ├── WSGI bridge → Flask REST (dispatches to threads)
+                    └── native websocket route (/ws, same port)
+threads:      ALL business logic, synchronous, unchanged signatures
+              ├── main loop thread: 10s Event.wait tick → TaskManager.schedule()
+              ├── TaskSupervisor: one daemon thread per background task
+              ├── REST async-query tasks: one daemon thread per query
+              ├── threading.Semaphore / Lock / Event, time.sleep
+              └── DB driver (threading backend, no yield machinery)
 ```
+
+(As decided in phase 5, orchestration is plain threads rather than tasks on the
+asyncio loop: the loop only serves HTTP/websockets. A bounded shared pool was
+rejected for now — see the phase 5 notes.)
 
 - **Cancellation** becomes cooperative: a token checked at defined checkpoints — the
   sqlite progress handler (a truthy return aborts the query natively), retry/backoff
@@ -284,6 +288,62 @@ the worker pool, tracked by name with the same exception-logging behavior. The
 TaskManager 10s scheduler becomes an asyncio periodic task. The async-query REST
 pattern keeps its external contract. The seam's `spawn`/`joinall` flips to
 thread-pool futures. Worker pool sizing decision (start ~32) + queue-latency logging.
+
+As implemented (the same stdlib-under-monkeypatching trick as phases 1/3, so no
+dual mode was needed — a `threading.Thread` runs as a cooperative greenlet today
+and as a real thread after the flip; verified experimentally: 5 threads sleeping
+0.3s concurrently finish in 0.3s, `threading.Timer` fires cooperatively,
+greenlets keep running alongside):
+
+- The seam (`rotkehlchen/concurrency/tasks.py`) got a real `Task` class: a
+  handle around one daemon thread that captures result/exception/exc_info,
+  runs `run_cancellable` as its top frame when it has a token, exposes
+  `dead`/`join()`/`get()`/`add_done_callback()`/`request_cancellation()` and
+  keeps the target's `kwargs` (as `greenlet.kwargs` did) so cancellation paths
+  can identify what a task works on. Threads do not start on construction:
+  orchestrators attach bookkeeping (`task_id`, `api_command`,
+  `exception_is_error`) and done-callbacks first, then `start()` — under real
+  threads a callback could otherwise observe a half-initialized handle.
+  `spawn_later` became a token-aware sleep at the top of the task body.
+  `wait()` is deadline-joins. `run_in_native_thread()` was added for the one
+  real-OS-thread need (premium sync's CPU-bound DB compress/encrypt), backed
+  by gevent's hub threadpool until the flip makes it a direct call.
+- **No bounded shared pool, deliberately.** Thread-per-task mirrors the old
+  greenlet semantics exactly. A shared bounded pool would deadlock when a
+  pooled parent spawn-and-waits on children that queue behind it (the
+  aggregator/gate/internal-tx fan-outs run inside API tasks), and background
+  tasks are already capacity-gated by `max_tasks_num`, while REST concurrency
+  is bounded by the server's request workers. Pool + sizing/queue-latency work
+  moves to phase 7 if measurements justify it.
+- `GreenletManager` → `TaskSupervisor` (`rotkehlchen/tasks/supervisor.py`;
+  `rotkehlchen/greenlets/` is gone, `greenlet_manager` attributes renamed
+  `task_supervisor`, `api_task_greenlets` → `api_tasks`, `running_greenlets` →
+  `running_tasks`). Same tracking/exception-logging behavior via done-callbacks
+  instead of `link_exception`.
+- **Every `killall` became cancel + one grace period + abandon** (threads
+  cannot be killed): `TaskManager.clear()` only cancels (its tasks are all
+  supervisor-tracked; the supervisor's `clear()` right after waits the single
+  `DEFAULT_CANCEL_GRACE_SECONDS`), and the REST layer cancels api tasks on
+  logout/shutdown the same way. A cancelled task that dies later with an
+  arbitrary exception (e.g. on the closed DB of a logged-out user) is logged
+  at debug without alerting the user — its token shows the death was asked
+  for. `GlobalDBHandler.clear_locks()` still covers locks such tasks held.
+  The scheduler main loop stays a 10s `Event.wait` loop, now on a named
+  thread — no asyncio needed and identical in both worlds.
+- The log adapter tags records with `threading.current_thread().name` (task
+  threads carry their task name; raw request greenlets show as Dummy-N) and
+  `gevent.getcurrent()`/`get_greenlet_name` are gone. `RestAPI.login_lock`
+  became `threading.Lock` for `.locked()`.
+- Tests: `gevent.joinall`/`gevent.wait` on task collections became seam
+  `wait()`, the two killall-based tests became cancellation-based
+  (`test_deadlock_logout` now exercises "cancelled while holding the global DB
+  lock"), and the eager thread start exposed a latent mock-signature bug in
+  `test_maybe_cancel_running_tx_query_tasks` (its patched query function was
+  never actually called under gevent). Raw-greenlet tests (db driver stress,
+  websockets regression) are untouched until phase 6.
+- The TID251 allowlist now holds only phase-6 entries: `__main__`/wrappers
+  (monkeypatch), `server.py` (hub signals), `api/server.py` (gevent WSGI),
+  `notifier.py` (geventwebsocket), `concurrency/*` (native-thread helper).
 
 ### Phase 6 — The flip
 

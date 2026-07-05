@@ -1,11 +1,10 @@
 """Concurrency seam for the gevent removal migration.
 
 Business-logic code that needs to run work concurrently must go through this
-module instead of importing gevent directly (enforced via ruff TID251). The
-implementation is currently backed by gevent greenlets; at the migration flip
-it switches to worker-thread futures without any call site changing. Call
-sites must therefore only interact with task handles through the functions
-defined here and never use greenlet attributes directly.
+module instead of importing gevent directly (enforced via ruff TID251). Tasks
+run on threads, which the still-active monkeypatching turns into cooperative
+greenlets until the flip removes it. Call sites must only interact with task
+handles through the Task API defined here.
 
 See docs/designs/gevent_to_asyncio.md for the overall plan.
 """
@@ -22,6 +21,7 @@ from rotkehlchen.concurrency.tasks import (
     Task,
     exception_of,
     result_of,
+    run_in_native_thread,
     spawn,
     spawn_later,
     wait,
@@ -38,6 +38,7 @@ __all__ = [
     'exception_of',
     'result_of',
     'run_cancellable',
+    'run_in_native_thread',
     'spawn',
     'spawn_later',
     'wait',

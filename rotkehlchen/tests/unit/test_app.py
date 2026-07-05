@@ -89,7 +89,7 @@ def test_solana_tokens_migration_notification(uninitialized_rotkehlchen):
         cursor.execute("INSERT INTO user_added_solana_tokens VALUES ('token1'), ('token2')")
 
     # Mock greenlet spawning to avoid background tasks
-    with mock.patch.object(rotki.greenlet_manager, 'spawn_and_track'):
+    with mock.patch.object(rotki.task_supervisor, 'spawn_and_track'):
         # Unlock user
         rotki.unlock_user(
             user='testuser',

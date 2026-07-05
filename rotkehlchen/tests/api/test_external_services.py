@@ -315,7 +315,7 @@ def test_complete_monerium_oauth_triggers_background_refresh(
                 'user_email': 'mock@monerium.com',
             },
         ) as complete_oauth_mock,
-        patch('rotkehlchen.api.services.integrations.gevent.spawn') as spawn_mock,
+        patch('rotkehlchen.api.services.integrations.spawn') as spawn_mock,
     ):
         response = requests.put(
             api_url_for(rotkehlchen_api_server, 'moneriumoauthresource'),

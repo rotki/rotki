@@ -154,12 +154,12 @@ def test_connect_to_own_node(polkadot_manager: 'SubstrateManager'):
     polkadot_manager.connect_at_start = [PolkadotNodeName.OWN, PolkadotNodeName.DWELLIR]
     polkadot_manager.own_rpc_endpoint = ''
     polkadot_manager.attempt_connections()
-    assert [task.task_name for task in polkadot_manager.greenlet_manager.greenlets] == ['polkadot manager connection to dwellir node']  # noqa: E501
-    polkadot_manager.greenlet_manager.clear()
-    polkadot_manager.greenlet_manager.greenlets = []
+    assert [task.task_name for task in polkadot_manager.task_supervisor.tasks] == ['polkadot manager connection to dwellir node']  # noqa: E501
+    polkadot_manager.task_supervisor.clear()
+    polkadot_manager.task_supervisor.tasks = []
     polkadot_manager.own_rpc_endpoint = 'http://localhost:1234'
     polkadot_manager.attempt_connections()
-    assert [task.task_name for task in polkadot_manager.greenlet_manager.greenlets] == [
+    assert [task.task_name for task in polkadot_manager.task_supervisor.tasks] == [
         'polkadot manager connection to own node node',
         'polkadot manager connection to dwellir node',
     ]
