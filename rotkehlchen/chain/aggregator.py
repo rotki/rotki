@@ -88,11 +88,11 @@ from rotkehlchen.errors.misc import (
 from rotkehlchen.externalapis.etherscan_like import HasChainActivity
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.handler import GlobalDBHandler
-from rotkehlchen.greenlets.manager import GreenletManager
 from rotkehlchen.history.deserialization import deserialize_price
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.premium.premium import Premium
+from rotkehlchen.tasks.supervisor import TaskSupervisor
 from rotkehlchen.types import (
     CHAINS_WITH_CHAIN_MANAGER,
     CHAINS_WITH_NODES,
@@ -278,7 +278,7 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
             solana_manager: 'SolanaManager',
             msg_aggregator: MessagesAggregator,
             database: 'DBHandler',
-            greenlet_manager: GreenletManager,
+            task_supervisor: TaskSupervisor,
             premium: Premium | None,
             data_directory: Path,
             beaconchain: 'BeaconChain',
@@ -336,7 +336,7 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
         # Per asset total balances
         self.totals: BalanceSheet = BalanceSheet()
         self.premium = premium
-        self.greenlet_manager = greenlet_manager
+        self.task_supervisor = task_supervisor
         self.eth_modules: dict[ModuleName, EthereumModule] = {}
         for given_module in eth_modules:
             self.activate_module(given_module)
@@ -446,7 +446,7 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
 
         self.eth_modules[module_name] = instance
         if instance.on_startup is not None:  # run startup initialization actions for the module
-            self.greenlet_manager.spawn_and_track(
+            self.task_supervisor.spawn_and_track(
                 after_seconds=None,
                 task_name=f'startup of {module_name}',
                 exception_is_error=True,

@@ -1,4 +1,5 @@
 import datetime
+import threading
 from typing import TYPE_CHECKING, Any, cast
 from unittest.mock import MagicMock, patch
 
@@ -17,7 +18,7 @@ from rotkehlchen.chain.evm.decoding.aave.constants import CPT_AAVE_V3
 from rotkehlchen.chain.evm.decoding.spark.constants import CPT_SPARK
 from rotkehlchen.chain.evm.decoding.thegraph.constants import CPT_THEGRAPH
 from rotkehlchen.chain.evm.types import NodeName, WeightedNode, string_to_evm_address
-from rotkehlchen.concurrency import cancellable_sleep
+from rotkehlchen.concurrency import cancellable_sleep, wait
 from rotkehlchen.constants import HOUR_IN_SECONDS
 from rotkehlchen.constants.assets import A_COMP, A_DAI, A_GRT, A_LUSD, A_USDC, A_USDT
 from rotkehlchen.constants.misc import ONE, ZERO
@@ -113,7 +114,7 @@ def test_cryptocompare_task_not_scheduled_without_api_key(task_manager: TaskMana
 
     with (
         patch.object(task_manager.cryptocompare, 'has_api_key', return_value=False),
-        patch.object(task_manager.greenlet_manager, 'spawn_and_track') as spawn_mock,
+        patch.object(task_manager.task_supervisor, 'spawn_and_track') as spawn_mock,
     ):
         task_manager.schedule()
         assert spawn_mock.call_count == 0
@@ -363,7 +364,9 @@ def test_check_premium_status(rotkehlchen_api_server, username):
     and verifies that after the task was scheduled the users premium is deactivated.
     """
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
-    gevent.killall(rotki.api_task_greenlets)
+    for task in rotki.api_tasks:  # cancel any api tasks (e.g. login leftovers) to free capacity
+        task.request_cancellation('Cancelled due to test cleanup')
+    rotki.api_tasks.clear()
     task_manager = rotki.task_manager
     task_manager.potential_tasks = [task_manager._maybe_check_premium_status]
     task_manager.last_premium_status_check = ts_now() - 3601
@@ -447,7 +450,7 @@ def test_premium_status_error_conditions(
         task_manager.premium_check_retries = 3
         task_manager.last_premium_status_check = Timestamp(ts_now() - Timestamp(PREMIUM_STATUS_CHECK))  # noqa: E501
         task_manager.schedule()
-        gevent.joinall(task_manager.running_greenlets)
+        wait([task for tasks in task_manager.running_tasks.values() for task in tasks])
 
         messages = task_manager.database.msg_aggregator.rotki_notifier.messages   # type: ignore[union-attr]  # rotki_notifier is MockRotkiNotifier
         assert messages[0].data == {'is_premium_active': False, 'expired': error_case[1]}
@@ -468,7 +471,7 @@ def test_premium_device_limit_error(
     with patch('rotkehlchen.premium.premium.Premium.authenticate_device', side_effect=device_limit_error):  # noqa: E501
         task_manager.last_premium_status_check = Timestamp(ts_now() - Timestamp(PREMIUM_STATUS_CHECK))  # noqa: E501
         task_manager.schedule()
-        gevent.joinall(task_manager.running_greenlets)
+        wait([task for tasks in task_manager.running_tasks.values() for task in tasks])
 
         messages = task_manager.database.msg_aggregator.rotki_notifier.messages   # type: ignore[union-attr]  # rotki_notifier is MockRotkiNotifier
         assert len(messages) == 1
@@ -605,16 +608,16 @@ def test_try_start_same_task(rotkehlchen_api_server):
     2. Checks that is possible to start second same task when the first one finishes
     """
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
-    # Using rotki.greenlet_manager instead of pure GreenletManager() since patch.object
+    # Using rotki.task_supervisor instead of pure TaskSupervisor() since patch.object
     # needs it for proper mocking
     spawn_patch = patch.object(
-        rotki.greenlet_manager,
+        rotki.task_supervisor,
         'spawn_and_track',
-        wraps=rotki.greenlet_manager.spawn_and_track,
+        wraps=rotki.task_supervisor.spawn_and_track,
     )
 
     def simple_task():
-        return [rotki.greenlet_manager.spawn_and_track(
+        return [rotki.task_supervisor.spawn_and_track(
             method=lambda: gevent.sleep(0.1),
             after_seconds=None,
             task_name='Lol kek',
@@ -627,28 +630,28 @@ def test_try_start_same_task(rotkehlchen_api_server):
         rotki.task_manager.schedule()
         assert patched.call_count == 1
         # Check that mapping in the task manager is correct
-        assert rotki.task_manager.running_greenlets.keys() == {
+        assert rotki.task_manager.running_tasks.keys() == {
             rotki.task_manager._maybe_update_snapshot_balances,
         }
         rotki.task_manager.potential_tasks = [simple_task]
         rotki.task_manager.schedule()  # start a small greenlet
         assert patched.call_count == 2
-        assert rotki.task_manager.running_greenlets.keys() == {
+        assert rotki.task_manager.running_tasks.keys() == {
             rotki.task_manager._maybe_update_snapshot_balances,
             simple_task,  # check that mapping was updated
         }
         # Wait until our small greenlet finishes
-        gevent.wait(rotki.task_manager.running_greenlets[simple_task])
+        wait(rotki.task_manager.running_tasks[simple_task])
         rotki.task_manager.potential_tasks = []
         rotki.task_manager.schedule()  # clear the mapping
-        assert rotki.task_manager.running_greenlets.keys() == {  # and check that it was removed
+        assert rotki.task_manager.running_tasks.keys() == {  # and check that it was removed
             rotki.task_manager._maybe_update_snapshot_balances,
         }
         # And make sure that now we are able to start it again
         rotki.task_manager.potential_tasks = [simple_task]
         rotki.task_manager.schedule()
         assert patched.call_count == 3
-        assert rotki.task_manager.running_greenlets.keys() == {
+        assert rotki.task_manager.running_tasks.keys() == {
             rotki.task_manager._maybe_update_snapshot_balances,
             simple_task,
         }
@@ -728,14 +731,14 @@ def test_maybe_cancel_running_tx_query_tasks(rotkehlchen_api_server, ethereum_ac
 
     Also test that if called two times without a schedule() in between, no KeyErrors happen.
     These used to happen before a fix was introduced since the killed greenlet
-    was not removed from the tx_query_task_greenlets and/or api_task_greenlets.
+    was not removed from the tx_query_task_greenlets and/or api_tasks.
     """
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     address = ethereum_accounts[0]
     rotki.task_manager.potential_tasks = [rotki.task_manager._maybe_query_evm_transactions]
     eth_manager = rotki.chains_aggregator.get_chain_manager(SupportedBlockchain.ETHEREUM)
 
-    def patched_address_query_transactions(self, address, start_ts, end_ts):  # pylint: disable=unused-argument
+    def patched_address_query_transactions(address, start_ts, end_ts):  # pylint: disable=unused-argument
         while True:  # busy wait :D just for the test
             cancellable_sleep(1)  # dies here with TaskCancelledError when cancelled
 
@@ -747,7 +750,7 @@ def test_maybe_cancel_running_tx_query_tasks(rotkehlchen_api_server, ethereum_ac
 
     with query_patch:
         rotki.task_manager.schedule()  # Schedule the query
-        greenlet = rotki.task_manager.running_greenlets[rotki.task_manager._maybe_query_evm_transactions][0]  # noqa: E501
+        greenlet = rotki.task_manager.running_tasks[rotki.task_manager._maybe_query_evm_transactions][0]  # noqa: E501
         assert greenlet.dead is False
         assert 'Query ethereum transaction' in greenlet.task_name
         # Running it twice to see it's handled properly and dead greenlet does not raise KeyErrors
@@ -759,7 +762,7 @@ def test_maybe_cancel_running_tx_query_tasks(rotkehlchen_api_server, ethereum_ac
         # Do a reschedule to see that this clears running greenlets
         rotki.task_manager.potential_tasks = []
         rotki.task_manager.schedule()
-        assert len(rotki.task_manager.running_greenlets) == 0
+        assert len(rotki.task_manager.running_tasks) == 0
 
 
 @pytest.mark.parametrize('ethereum_accounts', [[make_evm_address()]])
@@ -787,7 +790,7 @@ def test_maybe_cancel_tx_query_tasks_all_accounts_refresh(
             json={'async_query': True},  # no accounts given: refresh all tracked accounts
         )
         task_id = assert_ok_async_response(response)
-        greenlet = next(g for g in rotki.api_task_greenlets if g.task_id == task_id)
+        greenlet = next(g for g in rotki.api_tasks if g.task_id == task_id)
         gevent.sleep(.1)  # give the greenlet a chance to start
         assert greenlet.dead is False
         rotki.maybe_cancel_running_tx_query_tasks(
@@ -843,7 +846,7 @@ def test_maybe_query_ethereum_withdrawals(task_manager, ethereum_accounts):
             ),
         ):
             task_manager.schedule()
-            gevent.joinall(task_manager.greenlet_manager.greenlets)
+            wait(task_manager.task_supervisor.tasks)
             assert get_withdrawals_mock.call_count == expected_call_count
             assert queried_addresses == expected_addresses
 
@@ -923,7 +926,7 @@ def test_maybe_detect_new_spam_tokens(
 
     task_manager.potential_tasks = [task_manager._maybe_detect_new_spam_tokens]
     task_manager.schedule()
-    gevent.joinall(task_manager.running_greenlets[task_manager._maybe_detect_new_spam_tokens])  # wait for the task to finish since it might context switch while running  # noqa: E501
+    wait(task_manager.running_tasks[task_manager._maybe_detect_new_spam_tokens])  # wait for the task to finish since it might context switch while running  # noqa: E501
 
     updated_token = EvmToken(token.identifier)
     assert updated_token.protocol == SPAM_PROTOCOL
@@ -947,8 +950,8 @@ def test_tasks_dont_schedule_if_no_eth_address(task_manager: TaskManager) -> Non
         ):
             task_manager.potential_tasks = [task_manager._maybe_update_ilk_cache]
             task_manager.schedule()
-            if len(task_manager.running_greenlets) != 0:
-                gevent.joinall(task_manager.running_greenlets[task_manager._maybe_update_ilk_cache])
+            if len(task_manager.running_tasks) != 0:
+                wait(task_manager.running_tasks[task_manager._maybe_update_ilk_cache])
             assert mocked_func.call_count == 0
 
 
@@ -1037,7 +1040,7 @@ def test_update_lending_protocol_underlying_assets_task(
             new=wrapped_find_missing_tokens,
         ):
             task_manager.schedule()
-            gevent.joinall(task_manager.running_greenlets[task_to_run])  # wait for the task to finish since it might context switch while running  # noqa: E501
+            wait(task_manager.running_tasks[task_to_run])  # wait for the task to finish since it might context switch while running  # noqa: E501
 
         # check the aave v3 like underlying assets table in globaldb after running the task
         with globaldb.conn.read_ctx() as write_cursor:
@@ -1155,14 +1158,14 @@ def test_send_ws_calendar_reminder(
 
     task_manager.potential_tasks = [task_manager._maybe_trigger_calendar_reminder]
     task_manager.schedule()
-    if len(task_manager.running_greenlets):
-        gevent.joinall(task_manager.running_greenlets[task_manager._maybe_trigger_calendar_reminder])  # wait for the task to finish since it might context switch while running  # noqa: E501
+    if len(task_manager.running_tasks):
+        wait(task_manager.running_tasks[task_manager._maybe_trigger_calendar_reminder])  # wait for the task to finish since it might context switch while running  # noqa: E501
     assert websocket_connection.messages_num() == 0
 
     # move the timestamp to trigger the first event and the event without reminder
     freezer.move_to(datetime.datetime(2024, 4, 19, 20, 0, 1, tzinfo=datetime.UTC))
     task_manager.schedule()
-    gevent.joinall(task_manager.running_greenlets[task_manager._maybe_trigger_calendar_reminder])  # wait for the task to finish since it might context switch while running  # noqa: E501
+    wait(task_manager.running_tasks[task_manager._maybe_trigger_calendar_reminder])  # wait for the task to finish since it might context switch while running  # noqa: E501
     websocket_connection.wait_until_messages_num(num=1, timeout=2)
     msg = websocket_connection.pop_message()
     assert msg == {
@@ -1190,7 +1193,7 @@ def test_send_ws_calendar_reminder(
     # the event, we should still get the notification
     freezer.move_to(datetime.datetime(2024, 5, 20, 20, 0, 1, tzinfo=datetime.UTC))
     task_manager.schedule()
-    gevent.joinall(task_manager.running_greenlets[task_manager._maybe_trigger_calendar_reminder])  # wait for the task to finish since it might context switch while running  # noqa: E501
+    wait(task_manager.running_tasks[task_manager._maybe_trigger_calendar_reminder])  # wait for the task to finish since it might context switch while running  # noqa: E501
     websocket_connection.wait_until_messages_num(num=2, timeout=5)
     msg = websocket_connection.pop_message()
     # first, we get the previous reminder since it was never acknowledged
@@ -1260,7 +1263,7 @@ def test_priority_queue_runs_calendar_reminders_when_task_slots_full(
     task_manager.potential_tasks = [regular_task]
     task_manager.should_schedule = True
     task_manager.schedule()
-    gevent.joinall(task_manager.running_greenlets[task_manager._maybe_trigger_calendar_reminder])
+    wait(task_manager.running_tasks[task_manager._maybe_trigger_calendar_reminder])
 
     assert regular_task.call_count == 0
     assert len(task_manager.priority_tasks_queue) == 0
@@ -1278,7 +1281,7 @@ def test_priority_queue_respects_disabled_scheduling(task_manager: 'TaskManager'
     assert [function.__name__ for function in task_manager.priority_tasks_queue] == [
         '_maybe_trigger_calendar_reminder',
     ]
-    assert task_manager.running_greenlets == {}
+    assert task_manager.running_tasks == {}
 
 
 @pytest.mark.parametrize('max_tasks_num', [1])
@@ -1335,7 +1338,7 @@ def test_acknowledged_calendar_reminder_does_not_retrigger(
     freezer.move_to(datetime.datetime(2024, 4, 20, 20, 0, 1, tzinfo=datetime.UTC))
     task_manager.potential_tasks = [task_manager._maybe_trigger_calendar_reminder]
     task_manager.schedule()
-    gevent.joinall(task_manager.running_greenlets[task_manager._maybe_trigger_calendar_reminder])
+    wait(task_manager.running_tasks[task_manager._maybe_trigger_calendar_reminder])
     websocket_connection.wait_until_messages_num(num=1, timeout=2)
     websocket_connection.pop_message()
 
@@ -1405,8 +1408,8 @@ def test_calendar_entries_get_deleted(
 
     task_manager.potential_tasks = [task_manager._maybe_delete_past_calendar_events]
     task_manager.schedule()
-    if len(task_manager.running_greenlets):
-        gevent.joinall(task_manager.running_greenlets[task_manager._maybe_delete_past_calendar_events])
+    if len(task_manager.running_tasks):
+        wait(task_manager.running_tasks[task_manager._maybe_delete_past_calendar_events])
 
     with database.conn.read_ctx() as cursor:  # event should be there because we don't delete due to the setting  # noqa: E501
         assert cursor.execute('SELECT COUNT(*) FROM calendar').fetchone()[0] == 2
@@ -1420,7 +1423,7 @@ def test_calendar_entries_get_deleted(
         CachedSettings().update_entry('auto_delete_calendar_entries', True)
     freezer.move_to(datetime.datetime(2024, 6, 4, 20, 0, 1, tzinfo=datetime.UTC))
     task_manager.schedule()
-    gevent.joinall(task_manager.running_greenlets[task_manager._maybe_delete_past_calendar_events])
+    wait(task_manager.running_tasks[task_manager._maybe_delete_past_calendar_events])
 
     with database.conn.read_ctx() as cursor:  # the calendar should still be present as the reminder has not been acknowledged  # noqa: E501
         assert cursor.execute(
@@ -1436,7 +1439,7 @@ def test_calendar_entries_get_deleted(
             acknowledged=True,
     ))
     task_manager.schedule()
-    gevent.joinall(task_manager.running_greenlets[task_manager._maybe_delete_past_calendar_events])
+    wait(task_manager.running_tasks[task_manager._maybe_delete_past_calendar_events])
     with database.conn.read_ctx() as cursor:  # events that are allowed to be deleted shouldn't be there anymore  # noqa: E501
         assert cursor.execute(
             'SELECT description FROM calendar',
@@ -1483,8 +1486,8 @@ def test_maybe_create_calendar_reminders(
     with patch('rotkehlchen.tasks.calendar.CalendarReminderCreator.maybe_create_airdrop_claim_reminder'):  # noqa: E501
         task_manager.potential_tasks = [task_manager._maybe_create_calendar_reminder]
         task_manager.schedule()
-        if len(task_manager.running_greenlets):
-            gevent.joinall(task_manager.running_greenlets[task_manager._maybe_create_calendar_reminder])
+        if len(task_manager.running_tasks):
+            wait(task_manager.running_tasks[task_manager._maybe_create_calendar_reminder])
 
     if db_settings['auto_create_calendar_reminders'] is False:
         assert calendar_db.query_calendar_entry(CalendarFilterQuery.make())['entries_total'] == 0
@@ -1506,47 +1509,42 @@ def test_deadlock_logout(
         rotkehlchen_instance: 'Rotkehlchen',
         globaldb: GlobalDBHandler,  # pylint: disable=unused-argument
 ):
-    """Test that we don't leave locks acquired by a greenlet that has been killed during logout"""
+    """Test that we don't leave locks acquired by a task that died at its
+    cancellation checkpoint during logout while holding them"""
     task_manager = cast('TaskManager', rotkehlchen_instance.task_manager)
     task_manager.max_tasks_num = 10
-    task_runs = 0
+    task_started = threading.Event()
 
     def task():
-        """Task that will be killed and acquires the lock"""
-        nonlocal task_runs
+        """Task that acquires the lock and dies at its next checkpoint on logout,
+        without ever releasing it"""
         GlobalDBHandler().packaged_db_lock.acquire()
+        task_started.set()
         while True:
-            task_runs += 1
-            gevent.sleep(1)
+            cancellable_sleep(1)  # dies here with TaskCancelledError when cancelled
 
     def maybe_task():
-        return [task_manager.greenlet_manager.spawn_and_track(
+        return [task_manager.task_supervisor.spawn_and_track(
             after_seconds=None,
             task_name='TEst',
             exception_is_error=True,
             method=task,
         )]
 
-    # schedule the task
+    # schedule the task and wait until it holds the lock
     task_manager.should_schedule = True
     task_manager.potential_tasks = [maybe_task]
     task_manager.schedule()
+    assert task_started.wait(timeout=5) is True
+    spawned_task = task_manager.running_tasks[maybe_task][0]
 
-    # ensure that the task runs
-    assert task_runs == 0
-    gevent.sleep(0)
-    assert task_runs == 1
-
-    # logout
+    # logout cancels the task and waits out the cancellation grace period
     rotkehlchen_instance.logout()
+    assert spawned_task.dead is True
 
-    # context switch to be sure that the task has not been executed again
-    gevent.sleep(0)
-    assert task_runs == 1
-
-    # shouldn't raise any exception because we released it
+    # shouldn't block since logout released the abandoned lock via clear_locks
     GlobalDBHandler().packaged_db_lock.acquire()
-    assert len(task_manager.running_greenlets) == 0
+    assert len(task_manager.running_tasks) == 0
 
 
 @pytest.mark.freeze_time('2026-06-05 04:27:20 GMT', tick=True)
@@ -1569,12 +1567,12 @@ def test_snapshots_dont_happen_always(rotkehlchen_api_server: 'APIServer') -> No
 
         # Schedule the task and check that we got one snapshot.
         task_manager.schedule()
-        gevent.joinall(rotki.greenlet_manager.greenlets)
+        wait(rotki.task_supervisor.tasks)
         assert cursor.execute(query).fetchone()[0] == 1
 
         # Schedule again. The job shouldn't run.
         task_manager.schedule()
-        gevent.joinall(rotki.greenlet_manager.greenlets)
+        wait(rotki.task_supervisor.tasks)
         assert cursor.execute(query).fetchone()[0] == 1
 
         with patch(  # Force a new snapshot.
@@ -1584,7 +1582,7 @@ def test_snapshots_dont_happen_always(rotkehlchen_api_server: 'APIServer') -> No
             gevent.sleep(1)  # wait for 1 second to save the next timestamp
             task_manager.last_balance_query_ts = Timestamp(0)  # reset last query timestamp
             task_manager.schedule()
-            gevent.joinall(rotki.greenlet_manager.greenlets)
+            wait(rotki.task_supervisor.tasks)
 
         assert cursor.execute(query).fetchone()[0] == 2
 
@@ -1611,12 +1609,12 @@ def test_failed_snapshot_waits_to_retry(rotkehlchen_api_server: 'APIServer') -> 
     ) as query_patch:
         # Schedule the task and check that we got one query_balances call
         task_manager.schedule()
-        gevent.joinall(rotki.greenlet_manager.greenlets)
+        wait(rotki.task_supervisor.tasks)
         assert query_patch.call_count == 1
 
         # Schedule again - query_balances shouldn't get called a second time.
         task_manager.schedule()
-        gevent.joinall(rotki.greenlet_manager.greenlets)
+        wait(rotki.task_supervisor.tasks)
         assert query_patch.call_count == 1
 
         # Move time into the future
@@ -1624,7 +1622,7 @@ def test_failed_snapshot_waits_to_retry(rotkehlchen_api_server: 'APIServer') -> 
         with freeze_time(future_timestamp):
             # Schedule again - query_balances should get called a second time now.
             task_manager.schedule()
-            gevent.joinall(rotki.greenlet_manager.greenlets)
+            wait(rotki.task_supervisor.tasks)
             assert query_patch.call_count == 2
 
 

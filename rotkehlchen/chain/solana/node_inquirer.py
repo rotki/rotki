@@ -62,7 +62,7 @@ from .types import SolanaTransaction, pubkey_to_solana_address
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.externalapis.helius import Helius
-    from rotkehlchen.greenlets.manager import GreenletManager
+    from rotkehlchen.tasks.supervisor import TaskSupervisor
 
 R = TypeVar('R')
 logger = logging.getLogger(__name__)
@@ -79,12 +79,12 @@ class SolanaInquirer(SolanaRPCMixin):
 
     def __init__(
             self,
-            greenlet_manager: 'GreenletManager',
+            task_supervisor: 'TaskSupervisor',
             database: 'DBHandler',
             helius: 'Helius',
     ):
         SolanaRPCMixin.__init__(self)
-        self.greenlet_manager = greenlet_manager
+        self.task_supervisor = task_supervisor
         self.database = database
         self.blockchain = SupportedBlockchain.SOLANA
         self.rpc_timeout = DEFAULT_RPC_TIMEOUT

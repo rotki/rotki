@@ -1,10 +1,9 @@
 import logging
 import random
+import threading
 from collections import defaultdict, deque
 from collections.abc import Callable, Mapping
 from typing import TYPE_CHECKING, Final, NamedTuple
-
-import gevent
 
 from rotkehlchen.api.websockets.typedefs import WSMessageType
 from rotkehlchen.assets.asset import AssetWithOracles
@@ -13,6 +12,7 @@ from rotkehlchen.chain.ethereum.modules.makerdao.cache import (
     query_ilk_registry_and_maybe_update_cache,
 )
 from rotkehlchen.chain.ethereum.utils import should_update_protocol_cache
+from rotkehlchen.concurrency import Task
 from rotkehlchen.constants import WEEK_IN_SECONDS
 from rotkehlchen.constants.timing import (
     AAVE_V3_ASSETS_UPDATE,
@@ -89,12 +89,12 @@ if TYPE_CHECKING:
     from rotkehlchen.db.updates import RotkiDataUpdater
     from rotkehlchen.exchanges.manager import ExchangeManager
     from rotkehlchen.externalapis.cryptocompare import Cryptocompare
-    from rotkehlchen.greenlets.manager import GreenletManager
     from rotkehlchen.history.processing import HistoryProcessingCoordinator
     from rotkehlchen.premium.sync import PremiumSyncManager
+    from rotkehlchen.tasks.supervisor import TaskSupervisor
     from rotkehlchen.user_messages import MessagesAggregator
 
-    SchedulerTask = Callable[[], list[gevent.Greenlet] | None]
+    SchedulerTask = Callable[[], list[Task] | None]
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -126,8 +126,8 @@ class TaskManager:
     def __init__(
             self,
             max_tasks_num: int,
-            greenlet_manager: 'GreenletManager',
-            api_task_greenlets: list[gevent.Greenlet],
+            task_supervisor: 'TaskSupervisor',
+            api_tasks: list[Task],
             database: 'DBHandler',
             cryptocompare: 'Cryptocompare',
             premium_sync_manager: 'PremiumSyncManager | None',
@@ -143,8 +143,8 @@ class TaskManager:
     ) -> None:
         self.should_schedule = False
         self.max_tasks_num = max_tasks_num
-        self.greenlet_manager = greenlet_manager
-        self.api_task_greenlets = api_task_greenlets
+        self.task_supervisor = task_supervisor
+        self.api_tasks = api_tasks
         self.database = database
         self.cryptocompare = cryptocompare
         self.exchange_manager = exchange_manager
@@ -154,7 +154,7 @@ class TaskManager:
         self.last_evm_tx_query_ts: defaultdict[tuple[ChecksumEvmAddress, SupportedBlockchain], int] = defaultdict(int)  # noqa: E501
         self.last_exchange_query_ts: defaultdict[ExchangeLocationID, int] = defaultdict(int)
         self.prepared_cryptocompare_query = False
-        self.running_greenlets: dict[SchedulerTask, list[gevent.Greenlet]] = {}
+        self.running_tasks: dict[SchedulerTask, list[Task]] = {}
         # Per-tick snapshot of periodic-task last-run timestamps, set for the duration of a
         # _schedule pass so each task's should_run check reads from memory instead of the DB.
         self._scheduler_task_timestamps: Mapping[str, str] | None = None
@@ -208,15 +208,15 @@ class TaskManager:
         self.priority_tasks_queue: deque[SchedulerTask] = deque((
             self._maybe_trigger_calendar_reminder,
         ))
-        self.schedule_lock = gevent.lock.Semaphore()
+        self.schedule_lock = threading.Semaphore()
 
-    def _maybe_schedule_db_upload(self) -> list[gevent.Greenlet] | None:
+    def _maybe_schedule_db_upload(self) -> list[Task] | None:
         assert self.premium_sync_manager is not None, 'caller should make sure premium sync manager exists'  # noqa: E501
         if self.premium_sync_manager.check_if_should_sync(force_upload=False) is False:
             return None
 
         log.debug('Scheduling task for DB upload to server')
-        return [self.greenlet_manager.spawn_and_track(
+        return [self.task_supervisor.spawn_and_track(
             after_seconds=None,
             task_name='Upload data to server',
             exception_is_error=True,
@@ -272,7 +272,7 @@ class TaskManager:
 
         self.prepared_cryptocompare_query = True
 
-    def _maybe_schedule_cryptocompare_query(self) -> list[gevent.Greenlet] | None:
+    def _maybe_schedule_cryptocompare_query(self) -> list[Task] | None:
         """Schedules a cryptocompare query for a single asset history"""
         if self.cryptocompare.has_api_key() is False:
             self.cryptocompare_queries.clear()
@@ -287,7 +287,7 @@ class TaskManager:
         # If there is already a cryptocompary query running don't schedule another
         if any(
                 'Cryptocompare historical prices' in x.task_name
-                for x in self.greenlet_manager.greenlets
+                for x in self.task_supervisor.tasks
         ):
             return None
 
@@ -300,7 +300,7 @@ class TaskManager:
         query = self.cryptocompare_queries.pop()
         task_name = f'Cryptocompare historical prices {query.from_asset} / {query.to_asset} query'
         log.debug(f'Scheduling task for {task_name}')
-        return [self.greenlet_manager.spawn_and_track(
+        return [self.task_supervisor.spawn_and_track(
             after_seconds=None,
             task_name=task_name,
             exception_is_error=False,
@@ -310,7 +310,7 @@ class TaskManager:
             timestamp=now_ts,
         )]
 
-    def _maybe_schedule_xpub_derivation(self) -> list[gevent.Greenlet] | None:
+    def _maybe_schedule_xpub_derivation(self) -> list[Task] | None:
         """Schedules the xpub derivation task if enough time has passed and if user has xpubs"""
         now = ts_now()
         if now - self.last_xpub_derivation_ts <= XPUB_DERIVATION_FREQUENCY:
@@ -332,7 +332,7 @@ class TaskManager:
         if not any(should_derive_xpubs.values()):
             return None
 
-        greenlets = []
+        tasks = []
         self.last_xpub_derivation_ts = now
         xpub_manager = XpubManager(chains_aggregator=self.chains_aggregator)
         for chain in SUPPORTED_BITCOIN_CHAINS:
@@ -340,16 +340,16 @@ class TaskManager:
                 continue
 
             log.debug(f'Scheduling task for {chain} Xpub derivation')
-            greenlets.append(self.greenlet_manager.spawn_and_track(
+            tasks.append(self.task_supervisor.spawn_and_track(
                 after_seconds=None,
                 task_name=f'Derive new xpub addresses for {chain}',
                 exception_is_error=True,
                 method=xpub_manager.check_for_new_xpub_addresses,
                 blockchain=chain,
             ))
-        return greenlets
+        return tasks
 
-    def _maybe_query_evm_transactions(self) -> list[gevent.Greenlet] | None:
+    def _maybe_query_evm_transactions(self) -> list[Task] | None:
         """Schedules the evm transaction query task if enough time has passed"""
         shuffled_chains = list(EVM_CHAINS_WITH_TRANSACTIONS)
         random.shuffle(shuffled_chains)
@@ -386,7 +386,7 @@ class TaskManager:
                 log.debug(f'Scheduling task to {task_name}')
                 self.last_evm_tx_query_ts[address, blockchain] = now
                 # Since this task is heavy we spawn it only for one chain at a time.
-                return [self.greenlet_manager.spawn_and_track(
+                return [self.task_supervisor.spawn_and_track(
                     after_seconds=None,
                     task_name=task_name,
                     exception_is_error=True,
@@ -397,7 +397,7 @@ class TaskManager:
                 )]
         return None
 
-    def _maybe_schedule_evm_txreceipts(self) -> list[gevent.Greenlet] | None:
+    def _maybe_schedule_evm_txreceipts(self) -> list[Task] | None:
         """Schedules the evm transaction receipts query task
 
         The DB check happens first here to see if scheduling would even be needed.
@@ -425,7 +425,7 @@ class TaskManager:
             task_name = f'Query {len(hash_results)} {blockchain!s} transactions receipts'
             log.debug(f'Scheduling task to {task_name}')
             # Since this task is heavy we spawn it only for one chain at a time.
-            return [self.greenlet_manager.spawn_and_track(
+            return [self.task_supervisor.spawn_and_track(
                 after_seconds=None,
                 task_name=task_name,
                 exception_is_error=True,
@@ -434,7 +434,7 @@ class TaskManager:
             )]
         return None
 
-    def _maybe_schedule_exchange_history_query(self) -> list[gevent.Greenlet] | None:
+    def _maybe_schedule_exchange_history_query(self) -> list[Task] | None:
         """Schedules the exchange history query task if enough time has passed"""
         if len(self.exchange_manager.connected_exchanges) == 0:
             return None
@@ -455,7 +455,7 @@ class TaskManager:
         task_name = f'Query history of {exchange.name} exchange'
         log.debug(f'Scheduling task to {task_name}')
         self.last_exchange_query_ts[exchange.location_id()] = now
-        return [self.greenlet_manager.spawn_and_track(
+        return [self.task_supervisor.spawn_and_track(
             after_seconds=None,
             task_name=task_name,
             exception_is_error=True,
@@ -465,7 +465,7 @@ class TaskManager:
             fail_callback=exchange_fail_cb,
         )]
 
-    def _maybe_decode_transactions(self) -> list[gevent.Greenlet] | None:
+    def _maybe_decode_transactions(self) -> list[Task] | None:
         """Schedules the transaction decoding task
 
         The DB check happens first here to see if scheduling would even be needed.
@@ -498,7 +498,7 @@ class TaskManager:
             task_name = f'decode {min(number_of_tx_to_decode, TX_DECODING_LIMIT)} {blockchain!s} transactions'  # noqa: E501
             log.debug(f'Scheduling periodic task to {task_name}')
             # Since this task is heavy we spawn it only for one chain at a time.
-            return [self.greenlet_manager.spawn_and_track(
+            return [self.task_supervisor.spawn_and_track(
                 after_seconds=None,
                 task_name=task_name,
                 exception_is_error=True,
@@ -589,9 +589,9 @@ class TaskManager:
     def _spawn_historical_balance_processing(
             self,
             from_ts: TimestampMS | None,
-    ) -> list[gevent.Greenlet]:
+    ) -> list[Task]:
         log.debug('Scheduling task to %s', HISTORICAL_BALANCE_PROCESSING_TASK_NAME)
-        return [self.greenlet_manager.spawn_and_track(
+        return [self.task_supervisor.spawn_and_track(
             after_seconds=None,
             task_name=HISTORICAL_BALANCE_PROCESSING_TASK_NAME,
             exception_is_error=True,
@@ -601,7 +601,7 @@ class TaskManager:
             from_ts=from_ts,
         )]
 
-    def trigger_historical_balance_processing(self) -> list[gevent.Greenlet] | None:
+    def trigger_historical_balance_processing(self) -> list[Task] | None:
         if (
             is_accounting_update_enabled() is False or
             self.history_processing_coordinator.is_history_fetching()
@@ -609,7 +609,7 @@ class TaskManager:
             return None
         return self._spawn_historical_balance_processing(from_ts=None)
 
-    def _maybe_process_historical_balances(self) -> list[gevent.Greenlet] | None:
+    def _maybe_process_historical_balances(self) -> list[Task] | None:
         if self.history_processing_coordinator.is_history_fetching():
             return None
 
@@ -633,7 +633,7 @@ class TaskManager:
             from_ts=TimestampMS(int(stale_from_ts)) if stale_from_ts is not None else None,
         )
 
-    def _maybe_update_snapshot_balances(self) -> list[gevent.Greenlet] | None:
+    def _maybe_update_snapshot_balances(self) -> list[Task] | None:
         """
         Update the balances of a user if the difference between last time they were updated
         and the current time exceeds the `balance_save_frequency`.
@@ -648,7 +648,7 @@ class TaskManager:
         maybe_detect_new_tokens(self.database)
         task_name = 'Periodically update snapshot balances'
         log.debug(f'Scheduling task to {task_name}')
-        return [self.greenlet_manager.spawn_and_track(
+        return [self.task_supervisor.spawn_and_track(
             after_seconds=None,
             task_name=task_name,
             exception_is_error=True,
@@ -668,7 +668,7 @@ class TaskManager:
         except RemoteError as e:
             log.error(f'Skipping produced blocks query due to error: {e!s}')
 
-    def _maybe_query_produced_blocks(self) -> list[gevent.Greenlet] | None:
+    def _maybe_query_produced_blocks(self) -> list[Task] | None:
         """Schedules the blocks production query if enough time has passed"""
         if (
             self.chains_aggregator.get_module('eth2') is None or
@@ -683,7 +683,7 @@ class TaskManager:
 
         task_name = 'Periodically query produced blocks'
         log.debug(f'Scheduling task to {task_name}')
-        return [self.greenlet_manager.spawn_and_track(
+        return [self.task_supervisor.spawn_and_track(
             after_seconds=None,
             task_name=task_name,
             exception_is_error=True,
@@ -691,7 +691,7 @@ class TaskManager:
             indices=indices,
         )]
 
-    def _maybe_query_withdrawals(self) -> list[gevent.Greenlet] | None:
+    def _maybe_query_withdrawals(self) -> list[Task] | None:
         """Schedules the eth withdrawal query if enough time has passed"""
         if (eth2 := self.chains_aggregator.get_module('eth2')) is None:
             return None
@@ -714,7 +714,7 @@ class TaskManager:
 
         task_name = 'Periodically query ethereum withdrawals'
         log.debug(f'Scheduling task to {task_name}')
-        return [self.greenlet_manager.spawn_and_track(
+        return [self.task_supervisor.spawn_and_track(
             after_seconds=None,
             task_name=task_name,
             exception_is_error=True,
@@ -723,7 +723,7 @@ class TaskManager:
             to_ts=now,
         )]
 
-    def _maybe_detect_withdrawal_exits(self) -> list[gevent.Greenlet] | None:
+    def _maybe_detect_withdrawal_exits(self) -> list[Task] | None:
         """Schedules the task that detects if any of the withdrawals should be exits
 
         Not putting a lock as it should probably not be a too heavy task?
@@ -740,14 +740,14 @@ class TaskManager:
 
         task_name = 'Periodically detect withdrawal exits'
         log.debug(f'Scheduling task to {task_name}')
-        return [self.greenlet_manager.spawn_and_track(
+        return [self.task_supervisor.spawn_and_track(
             after_seconds=None,
             task_name=task_name,
             exception_is_error=True,
             method=eth2.detect_exited_validators,
         )]
 
-    def _maybe_process_eth2_events(self) -> list[gevent.Greenlet] | None:
+    def _maybe_process_eth2_events(self) -> list[Task] | None:
         if (
             (self.chains_aggregator.get_module('eth2')) is None or
             should_run_periodic_task(
@@ -759,7 +759,7 @@ class TaskManager:
         ):
             return None
 
-        return [self.greenlet_manager.spawn_and_track(
+        return [self.task_supervisor.spawn_and_track(
             after_seconds=None,
             task_name='Process eth2 events',
             exception_is_error=True,
@@ -768,7 +768,7 @@ class TaskManager:
             database=self.database,
         )]
 
-    def _maybe_check_data_updates(self) -> list[gevent.Greenlet] | None:
+    def _maybe_check_data_updates(self) -> list[Task] | None:
         """
         Function that schedules the data update task if either there is no data update
         cache yet or this cache is older than `DATA_UPDATES_REFRESH`
@@ -776,14 +776,14 @@ class TaskManager:
         if should_run_periodic_task(self.database, DBCacheStatic.LAST_DATA_UPDATES_TS, DATA_UPDATES_REFRESH, cached_timestamps=self._scheduler_task_timestamps) is False:  # noqa: E501
             return None
 
-        return [self.greenlet_manager.spawn_and_track(
+        return [self.task_supervisor.spawn_and_track(
             after_seconds=None,
             task_name='Data update task',
             exception_is_error=True,
             method=self.data_updater.check_for_updates,
         )]
 
-    def _maybe_detect_evm_accounts(self) -> list[gevent.Greenlet] | None:
+    def _maybe_detect_evm_accounts(self) -> list[Task] | None:
         """
         Function that schedules the EVM accounts detection task if there has been more than
         EVM_ACCOUNTS_DETECTION_REFRESH seconds since the last time it ran.
@@ -791,7 +791,7 @@ class TaskManager:
         if should_run_periodic_task(self.database, DBCacheStatic.LAST_EVM_ACCOUNTS_DETECT_TS, EVMLIKE_ACCOUNTS_DETECTION_REFRESH, cached_timestamps=self._scheduler_task_timestamps) is False:  # noqa: E501
             return None
 
-        return [self.greenlet_manager.spawn_and_track(
+        return [self.task_supervisor.spawn_and_track(
             after_seconds=None,
             task_name='Detect EVM accounts',
             exception_is_error=True,
@@ -800,13 +800,13 @@ class TaskManager:
             chains=self.database.get_chains_to_detect_evm_accounts(),
         )]
 
-    def _maybe_update_ilk_cache(self) -> list[gevent.Greenlet] | None:
+    def _maybe_update_ilk_cache(self) -> list[Task] | None:
         with self.database.conn.read_ctx() as cursor:
             if len(self.database.get_single_blockchain_addresses(cursor, SupportedBlockchain.ETHEREUM)) == 0:  # noqa: E501
                 return None
 
         if should_update_protocol_cache(self.database, CacheType.MAKERDAO_VAULT_ILK, 'ETH-A') is True:  # noqa: E501
-            return [self.greenlet_manager.spawn_and_track(
+            return [self.task_supervisor.spawn_and_track(
                 after_seconds=None,
                 task_name='Update ilk cache',
                 exception_is_error=True,
@@ -816,7 +816,7 @@ class TaskManager:
 
         return None
 
-    def _maybe_detect_new_spam_tokens(self) -> list[gevent.Greenlet] | None:
+    def _maybe_detect_new_spam_tokens(self) -> list[Task] | None:
         """
         This function queries the globaldb looking for assets that look like spam tokens
         and ignores them in addition to marking them as spam tokens
@@ -824,7 +824,7 @@ class TaskManager:
         if should_run_periodic_task(self.database, DBCacheStatic.LAST_SPAM_ASSETS_DETECT_KEY, SPAM_ASSETS_DETECTION_REFRESH, cached_timestamps=self._scheduler_task_timestamps) is False:  # noqa: E501
             return None
 
-        return [self.greenlet_manager.spawn_and_track(
+        return [self.task_supervisor.spawn_and_track(
             after_seconds=None,
             task_name='Detect spam assets in globaldb',
             exception_is_error=True,
@@ -832,7 +832,7 @@ class TaskManager:
             user_db=self.database,
         )]
 
-    def _maybe_repull_internal_tx_conflicts(self) -> list[gevent.Greenlet] | None:
+    def _maybe_repull_internal_tx_conflicts(self) -> list[Task] | None:
         with self.database.conn.read_ctx() as cursor:
             if not table_exists(cursor, 'evm_internal_tx_conflicts'):  # temporary table, to be removed in a future release  # noqa: E501
                 return None
@@ -846,7 +846,7 @@ class TaskManager:
         ) is False:
             return None
 
-        return [self.greenlet_manager.spawn_and_track(
+        return [self.task_supervisor.spawn_and_track(
             after_seconds=None,
             task_name='Repull internal tx conflicts',
             exception_is_error=True,
@@ -856,7 +856,7 @@ class TaskManager:
             limit=cached_settings.internal_txs_to_repull,
         )]
 
-    def _maybe_update_owned_assets(self) -> list[gevent.Greenlet] | None:
+    def _maybe_update_owned_assets(self) -> list[Task] | None:
         """
         This function runs the logic to copy the owned assets from the user db to the globaldb.
         This task is required to have a fresh status on the assets searches when the filter for
@@ -865,7 +865,7 @@ class TaskManager:
         if should_run_periodic_task(self.database, DBCacheStatic.LAST_OWNED_ASSETS_UPDATE, OWNED_ASSETS_UPDATE, cached_timestamps=self._scheduler_task_timestamps) is False:  # noqa: E501
             return None
 
-        return [self.greenlet_manager.spawn_and_track(
+        return [self.task_supervisor.spawn_and_track(
             after_seconds=None,
             task_name='Update owned assets in globaldb',
             exception_is_error=True,
@@ -873,7 +873,7 @@ class TaskManager:
             user_db=self.database,
         )]
 
-    def _maybe_update_aave_v3_underlying_assets(self) -> list[gevent.Greenlet] | None:
+    def _maybe_update_aave_v3_underlying_assets(self) -> list[Task] | None:
         """
         This function runs the logic to query the aave v3 contracts to get all the
         underlying assets supported by them and save them in the globaldb.
@@ -881,7 +881,7 @@ class TaskManager:
         if should_run_periodic_task(self.database, DBCacheStatic.LAST_AAVE_V3_ASSETS_UPDATE, AAVE_V3_ASSETS_UPDATE, cached_timestamps=self._scheduler_task_timestamps) is False:  # noqa: E501
             return None
 
-        return [self.greenlet_manager.spawn_and_track(
+        return [self.task_supervisor.spawn_and_track(
             after_seconds=None,
             task_name='Update aave v3 underlying assets in globaldb',
             exception_is_error=True,
@@ -889,7 +889,7 @@ class TaskManager:
             chains_aggregator=self.chains_aggregator,
         )]
 
-    def _maybe_update_spark_underlying_assets(self) -> list[gevent.Greenlet] | None:
+    def _maybe_update_spark_underlying_assets(self) -> list[Task] | None:
         """This function runs the logic to query the Spark contracts to get all the
         underlying assets supported by them and save them in the globaldb.
         """
@@ -901,7 +901,7 @@ class TaskManager:
         ) is False:
             return None
 
-        return [self.greenlet_manager.spawn_and_track(
+        return [self.task_supervisor.spawn_and_track(
             after_seconds=None,
             task_name='Update Spark underlying assets in globaldb',
             exception_is_error=True,
@@ -909,7 +909,7 @@ class TaskManager:
             chains_aggregator=self.chains_aggregator,
         )]
 
-    def _maybe_create_calendar_reminder(self) -> list[gevent.Greenlet] | None:
+    def _maybe_create_calendar_reminder(self) -> list[Task] | None:
         """Create upcoming reminders for specific history events, if not already created."""
         if (
             CachedSettings().get_entry('auto_create_calendar_reminders') is False or
@@ -922,7 +922,7 @@ class TaskManager:
         ):
             return None
 
-        return [self.greenlet_manager.spawn_and_track(
+        return [self.task_supervisor.spawn_and_track(
             after_seconds=None,
             task_name='Maybe create calendar reminders',
             exception_is_error=True,
@@ -930,7 +930,7 @@ class TaskManager:
             database=self.database,
         )]
 
-    def _maybe_trigger_calendar_reminder(self) -> list[gevent.Greenlet] | None:
+    def _maybe_trigger_calendar_reminder(self) -> list[Task] | None:
         """Get upcoming reminders and maybe process them"""
         if (now := ts_now()) - self.last_calendar_reminder_check < 60 * 5:
             return None
@@ -959,7 +959,7 @@ class TaskManager:
         if len(reminders) == 0:
             return None
 
-        return [self.greenlet_manager.spawn_and_track(
+        return [self.task_supervisor.spawn_and_track(
             after_seconds=None,
             task_name='Notify calendar reminders',
             exception_is_error=True,
@@ -969,7 +969,7 @@ class TaskManager:
             msg_aggregator=self.msg_aggregator,
         )]
 
-    def _maybe_delete_past_calendar_events(self) -> list[gevent.Greenlet] | None:
+    def _maybe_delete_past_calendar_events(self) -> list[Task] | None:
         """
         Delete old calendar events if the setting for deleting them allows it and if they haven't
         been marked to not be deleted.
@@ -977,7 +977,7 @@ class TaskManager:
         if should_run_periodic_task(self.database, DBCacheStatic.LAST_DELETE_PAST_CALENDAR_EVENTS, DAY_IN_SECONDS, cached_timestamps=self._scheduler_task_timestamps) is False:  # noqa: E501
             return None
 
-        return [self.greenlet_manager.spawn_and_track(
+        return [self.task_supervisor.spawn_and_track(
             after_seconds=None,
             task_name='Delete old calendar entries',
             exception_is_error=True,
@@ -985,7 +985,7 @@ class TaskManager:
             database=self.database,
         )]
 
-    def _maybe_sync_google_calendar(self) -> list[gevent.Greenlet] | None:
+    def _maybe_sync_google_calendar(self) -> list[Task] | None:
         """
         Periodically sync rotki calendar events to Google Calendar if authenticated.
         Runs every 2 hours by default.
@@ -1003,7 +1003,7 @@ class TaskManager:
             return None
 
         self.last_google_calendar_sync = now
-        return [self.greenlet_manager.spawn_and_track(
+        return [self.task_supervisor.spawn_and_track(
             after_seconds=None,
             task_name='Sync Google Calendar',
             exception_is_error=False,  # Don't error out if sync fails
@@ -1025,7 +1025,7 @@ class TaskManager:
         result = google_calendar.sync_events(calendar_entries)
         log.debug(f'Google Calendar sync completed: {result}')
 
-    def _maybe_query_graph_delegated_tokens(self) -> list[gevent.Greenlet] | None:
+    def _maybe_query_graph_delegated_tokens(self) -> list[Task] | None:
         """
         Periodically query Ethereum transaction logs for Graph staking-related transactions,
         particularly, search for DelegationTransferredToL2 event. If not found, it decodes
@@ -1037,7 +1037,7 @@ class TaskManager:
         if len(self.chains_aggregator.accounts.get(SupportedBlockchain.ETHEREUM)) == 0:
             return None
 
-        return [self.greenlet_manager.spawn_and_track(
+        return [self.task_supervisor.spawn_and_track(
             after_seconds=None,
             task_name="Search for Graph's GRT DelegationTransferredToL2 events",
             exception_is_error=True,
@@ -1046,18 +1046,18 @@ class TaskManager:
         )]
 
     def _clear_finished_task_references(self) -> None:
-        self.greenlet_manager.clear_finished()
-        self.running_greenlets = {
-            method: greenlets
-            for method, greenlets in self.running_greenlets.items()
-            if not all(greenlet.dead for greenlet in greenlets)
+        self.task_supervisor.clear_finished()
+        self.running_tasks = {
+            method: tasks
+            for method, tasks in self.running_tasks.items()
+            if not all(task.dead for task in tasks)
         }
 
     def _run_scheduler_check(self, scheduling_fn: 'SchedulerTask') -> bool:
-        if scheduling_fn in self.running_greenlets:
+        if scheduling_fn in self.running_tasks:
             return False  # the specified task is already running
         try:
-            new_greenlets = scheduling_fn()
+            new_tasks = scheduling_fn()
         except (RemoteError, PremiumAuthenticationError, DeserializationError, UnknownAsset) as e:
             log.error(
                 'Scheduling function %s failed due to %s. '
@@ -1066,10 +1066,10 @@ class TaskManager:
                 e,
             )
             return False
-        if new_greenlets is None:
+        if new_tasks is None:
             return False
 
-        self.running_greenlets[scheduling_fn] = new_greenlets
+        self.running_tasks[scheduling_fn] = new_tasks
         return True
 
     def _drain_priority_tasks_queue(self) -> None:
@@ -1090,18 +1090,18 @@ class TaskManager:
 
     def _schedule(self) -> None:
         """Schedules background tasks"""
-        current_greenlets = len(self.greenlet_manager.greenlets) + len(self.api_task_greenlets)
-        not_proceed = current_greenlets >= self.max_tasks_num
+        current_tasks = len(self.task_supervisor.tasks) + len(self.api_tasks)
+        not_proceed = current_tasks >= self.max_tasks_num
         log.debug(
-            f'At task scheduling. Current greenlets: {current_greenlets} '
-            f'Max greenlets: {self.max_tasks_num}. '
+            f'At task scheduling. Current tasks: {current_tasks} '
+            f'Max tasks: {self.max_tasks_num}. '
             f'{"Will not schedule" if not_proceed else "Will schedule"}.',
         )
         if not_proceed:
             return  # too busy
 
         random.shuffle(self.potential_tasks)
-        max_tasks = min(self.max_tasks_num - current_greenlets, len(self.potential_tasks))
+        max_tasks = min(self.max_tasks_num - current_tasks, len(self.potential_tasks))
 
         # Read all periodic-task last-run timestamps once for this pass so the should_run checks
         # below hit this snapshot instead of each issuing its own key_value_cache query.
@@ -1138,10 +1138,15 @@ class TaskManager:
                 self._schedule()
 
     def clear(self) -> None:
-        """Ensure that no task is kept referenced. Used when removing the task manager"""
-        for task_list in self.running_greenlets.values():
-            gevent.killall(task_list)  # hard stop until phase 5 of the migration
+        """Ensure that no task is kept referenced. Used when removing the task manager.
 
-        self.running_greenlets.clear()
+        Only requests cancellation without waiting: all these tasks are also
+        tracked by the task supervisor, whose clear() -- called right after
+        during logout -- waits out the single grace period for all of them."""
+        for task_list in self.running_tasks.values():
+            for task in task_list:
+                task.request_cancellation('Cancelled due to logout or shutdown')
+
+        self.running_tasks.clear()
         self.priority_tasks_queue.clear()
         self.should_schedule = False

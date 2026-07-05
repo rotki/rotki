@@ -25,7 +25,7 @@ from rotkehlchen.utils.data_structures import LRUSetCache
 from rotkehlchen.utils.hashing import file_md5
 
 if TYPE_CHECKING:
-    from rotkehlchen.greenlets.manager import GreenletManager
+    from rotkehlchen.tasks.supervisor import TaskSupervisor
 
 
 logger = logging.getLogger(__name__)
@@ -105,7 +105,7 @@ class IconManager:
             self,
             data_dir: Path,
             coingecko: Coingecko,
-            greenlet_manager: 'GreenletManager',
+            task_supervisor: 'TaskSupervisor',
     ) -> None:
         asset_images_dir = data_dir / IMAGESDIR_NAME / ASSETIMAGESDIR_NAME
         self.icons_dir = asset_images_dir / ALLASSETIMAGESDIR_NAME
@@ -114,7 +114,7 @@ class IconManager:
         self.icons_dir.mkdir(parents=True, exist_ok=True)
         self.custom_icons_dir.mkdir(parents=True, exist_ok=True)
         self.failed_asset_ids: LRUSetCache[str] = LRUSetCache(maxsize=256)
-        self.greenlet_manager = greenlet_manager
+        self.task_supervisor = task_supervisor
 
     def iconfile_path(self, asset: AssetWithNameAndType) -> Path:
         return self.icons_dir / f'{urllib.parse.quote_plus(asset.identifier)}_small.png'

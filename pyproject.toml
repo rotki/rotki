@@ -453,14 +453,8 @@ known-third-party = ["packaging"]  # packaging is otherwise detected as first-pa
 # TID251 allowlist for the gevent removal migration. Each entry names the
 # phase of docs/designs/gevent_to_asyncio.md that deletes it.
 "rotkehlchen/server.py" = ["TID251"]  # gevent hub signal handling (phase 6)
-"rotkehlchen/logging.py" = ["TID251"]  # greenlet name in log records (phase 5)
-"rotkehlchen/rotkehlchen.py" = ["TID251"]  # main loop spawn/shutdown event (phase 5)
-"rotkehlchen/api/rest.py" = ["TID251"]  # async-query greenlets and killall (phase 5)
 "rotkehlchen/api/websockets/notifier.py" = ["TID251"]  # geventwebsocket, until the gevent server is removed (phase 6)
-"rotkehlchen/greenlets/*" = ["TID251"]  # greenlet manager (phase 5)
-"rotkehlchen/tasks/manager.py" = ["TID251"]  # greenlet typing/scheduling (phase 5)
-"rotkehlchen/premium/sync.py" = ["TID251"]  # gevent hub threadpool offload (phase 5)
-"rotkehlchen/concurrency/*" = ["TID251"]  # the seam's gevent backend (phase 6)
+"rotkehlchen/concurrency/*" = ["TID251"]  # run_in_native_thread gevent threadpool backend (phase 6)
 "pytestgeventwrapper.py" = ["TID251"]  # deleted at phase 6
 "tools/*" = [
     "T201",  # got prints in tools

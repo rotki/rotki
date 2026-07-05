@@ -4,6 +4,7 @@ import logging
 import os
 import sys
 import tempfile
+import threading
 import traceback
 from collections import defaultdict
 from collections.abc import Callable, Mapping, Sequence
@@ -12,10 +13,7 @@ from http import HTTPStatus
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Literal, Optional, overload
 
-import gevent
 from flask import Response, make_response, send_file
-from gevent.event import Event
-from gevent.lock import Semaphore
 from solders.solders import Signature
 from sqlcipher3 import dbapi2 as sqlcipher
 from web3.exceptions import BadFunctionCallOutput
@@ -69,7 +67,13 @@ from rotkehlchen.chain.evm.types import (
     EvmIndexer,
     WeightedNode,
 )
-from rotkehlchen.concurrency import CancellationToken, TaskCancelledError, run_cancellable
+from rotkehlchen.concurrency import (
+    DEFAULT_CANCEL_GRACE_SECONDS,
+    CancellationToken,
+    Task,
+    TaskCancelledError,
+    wait,
+)
 from rotkehlchen.constants.misc import (
     AIRDROPS_TOLERANCE,
     DEFAULT_LOGLEVEL,
@@ -141,7 +145,6 @@ from rotkehlchen.feature_flags import is_accounting_update_enabled
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.asset_updates.manager import ASSETS_VERSION_KEY
 from rotkehlchen.globaldb.handler import GlobalDBHandler
-from rotkehlchen.greenlets.utils import request_cancellation
 from rotkehlchen.history.data_issues.manager import DataIssuesManager
 from rotkehlchen.history.data_issues.types import DataIssue
 from rotkehlchen.history.events.structures.asset_movement import AssetMovement
@@ -328,7 +331,7 @@ def login_lock() -> Callable:
     async tasks using the user unlock logic.
 
     It has to be applied below async_api_call so that the lock is held while the wrapped
-    function actually runs in the spawned greenlet, and not just while it is dispatched.
+    function actually runs in the spawned task, and not just while it is dispatched.
     """
     def wrapper(func: Callable[..., Response]) -> Callable[..., Response]:
         def inner(rest_api: 'RestAPI', **kwargs: Any) -> Response:
@@ -370,14 +373,12 @@ class RestAPI:
         self.settings_service = SettingsService(rotkehlchen)
         self.transactions_service = TransactionsService(rotkehlchen)
         self.user_data_service = UserDataService(rotkehlchen)
-        self.stop_event = Event()
-        mainloop_greenlet = self.rotkehlchen.start()
-        mainloop_greenlet.link_exception(self._handle_killed_greenlets)
-        # Greenlets that will be waited for when we shutdown (just main loop)
-        self.waited_greenlets = [mainloop_greenlet]
-        self.task_lock = Semaphore()
-        self.login_lock = Semaphore()
-        self.migration_lock = Semaphore()
+        self.stop_event = threading.Event()
+        self.main_loop_task = self.rotkehlchen.start()
+        self.main_loop_task.add_done_callback(self._handle_task_death)
+        self.task_lock = threading.Semaphore()
+        self.login_lock = threading.Lock()  # a Lock and not a Semaphore since .locked() is needed
+        self.migration_lock = threading.Semaphore()
         self.task_id = 0
         self.task_results: dict[int, Any] = {}
 
@@ -392,40 +393,37 @@ class RestAPI:
         with self.task_lock:
             self.task_results[task_id] = result
 
-    def _handle_killed_greenlets(self, greenlet: gevent.Greenlet) -> None:
-        if not greenlet.exception:
-            log.warning('handle_killed_greenlets without an exception')
+    def _handle_task_death(self, task: Task) -> None:
+        """Done-callback of the main loop and the async-query tasks. Successful
+        async-query tasks have already written their result in _do_query_async."""
+        if task.exception is None:
             return
 
-        try:
-            task_id = greenlet.task_id
-            task_str = f'Greenlet for task {task_id}'
-        except AttributeError:
-            task_id = None
-            task_str = 'Main greenlet'
-
-        if isinstance(greenlet.exception, TaskCancelledError):
-            log.debug(
-                'Greenlet for task id %s with name %s was cancelled. %s',
-                task_id,
-                task_str,
-                greenlet.exception,
-            )
-            # Setting empty message to signify that the death of the greenlet is expected.
-            self._write_task_result(task_id, {'result': None, 'message': ''})
+        task_id = task.task_id
+        task_str = f'Task {task_id}' if task_id is not None else 'The main loop task'
+        if (
+                isinstance(task.exception, TaskCancelledError) or
+                # died at an arbitrary point after cancellation, e.g. on the
+                # closed DB of a logged-out user -- expected, not an error
+                ((token := task.cancellation_token) is not None and token.cancelled)
+        ):
+            log.debug('%s was cancelled. %s', task_str, task.exception)
+            if task_id is not None:
+                # Setting empty message to signify that the death of the task is expected.
+                self._write_task_result(task_id, {'result': None, 'message': ''})
             return
 
         log.error(
-            f'{task_str} dies with exception: {greenlet.exception}.\n'
-            f'Exception Name: {greenlet.exc_info[0]}\n'
-            f'Exception Info: {greenlet.exc_info[1]}\n'
-            f'Traceback:\n {"".join(traceback.format_tb(greenlet.exc_info[2]))}',
+            f'{task_str} dies with exception: {task.exception}.\n'
+            f'Exception Name: {task.exc_info[0]}\n'  # type: ignore[index]  # exc_info is set whenever exception is
+            f'Exception Info: {task.exc_info[1]}\n'
+            f'Traceback:\n {"".join(traceback.format_tb(task.exc_info[2]))}',  # type: ignore[index]
         )
-        # also write an error for the task result if it's not the main greenlet
+        # also write an error for the task result if it's not the main loop
         if task_id is not None:
             result = {
                 'result': None,
-                'message': f'The backend query task died unexpectedly: {greenlet.exception!s}',
+                'message': f'The backend query task died unexpectedly: {task.exception!s}',
             }
             self._write_task_result(task_id, result)
 
@@ -436,30 +434,45 @@ class RestAPI:
 
     def _query_async(self, command: Callable, **kwargs: Any) -> Response:
         task_id = self._new_task_id()
-        token = CancellationToken()
-        greenlet = gevent.spawn(
-            run_cancellable,
-            token,
-            self._do_query_async,
-            command,
-            task_id,
-            **kwargs,
+        task = Task(
+            name=f'API task {task_id}',
+            target=self._do_query_async,
+            args=(command, task_id),
+            kwargs=kwargs,
+            token=CancellationToken(),
         )
-        greenlet.task_id = task_id
-        greenlet.cancellation_token = token
-        greenlet.api_command = command  # inspected by maybe_cancel_running_tx_query_tasks
-        greenlet.link_exception(self._handle_killed_greenlets)
-        self.rotkehlchen.api_task_greenlets.append(greenlet)
+        task.task_id = task_id
+        task.api_command = command  # inspected by maybe_cancel_running_tx_query_tasks
+        task.add_done_callback(self._handle_task_death)
+        self.rotkehlchen.api_tasks.append(task)
+        task.start()
         return api_response(_wrap_in_ok_result({'task_id': task_id}), status_code=HTTPStatus.OK)
+
+    def _cancel_api_tasks(self, reason: str) -> None:
+        """Cancel all api tasks and give them a short grace period to exit at
+        their next checkpoint. Tasks cannot be killed since phase 5 of the
+        gevent removal migration: a task that does not make it (e.g. stuck in
+        a remote query) is abandoned and dies at its next checkpoint, with its
+        death logged without alerting the user since its token shows the
+        cancellation was deliberate."""
+        if len(pending := [x for x in self.rotkehlchen.api_tasks if x.dead is False]) != 0:
+            for task in pending:
+                task.request_cancellation(reason)
+            wait(pending, timeout=DEFAULT_CANCEL_GRACE_SECONDS)
+            if len(survivors := [x.task_id for x in pending if x.dead is False]) != 0:
+                log.warning(
+                    'Abandoning cancelled api tasks that did not exit within the grace period',
+                    task_ids=survivors,
+                )
+        self.rotkehlchen.api_tasks.clear()
 
     # - Public functions not exposed via the rest api
     def stop(self) -> None:
         self.rotkehlchen.shutdown()
-        log.debug('Waiting for greenlets')
-        gevent.wait(self.waited_greenlets)
-        log.debug('Waited for greenlets. Killing all other greenlets')
-        gevent.killall(self.rotkehlchen.api_task_greenlets)  # hard stop until phase 5 of the migration  # noqa: E501
-        self.rotkehlchen.api_task_greenlets.clear()
+        log.debug('Waiting for the main loop to finish')
+        self.main_loop_task.join()
+        log.debug('Waited for the main loop. Cancelling api tasks')
+        self._cancel_api_tasks(reason='Cancelled due to shutdown')
         log.debug('Cleaning up global DB')
         GlobalDBHandler().cleanup()
         log.debug('Shutdown completed')
@@ -485,8 +498,8 @@ class RestAPI:
             # If no task id is given return list of all pending and completed tasks
             completed = []
             pending = []
-            for greenlet in self.rotkehlchen.api_task_greenlets:
-                task_id = greenlet.task_id
+            for task in self.rotkehlchen.api_tasks:
+                task_id = task.task_id
                 if task_id in self.task_results:
                     completed.append(task_id)
                 else:
@@ -496,8 +509,8 @@ class RestAPI:
             return api_response(result=result, status_code=HTTPStatus.OK)
 
         with self.task_lock:
-            for idx, greenlet in enumerate(self.rotkehlchen.api_task_greenlets):
-                if greenlet.task_id == task_id:
+            for idx, task in enumerate(self.rotkehlchen.api_tasks):
+                if task.task_id == task_id:
                     if task_id in self.task_results:
                         # Task has completed and we just got the outcome
                         function_response = self.task_results.pop(int(task_id), None)
@@ -517,11 +530,11 @@ class RestAPI:
                             'result': returned_task_result,
                             'message': '',
                         }
-                        # Also remove the greenlet from the api tasks
-                        self.rotkehlchen.api_task_greenlets.pop(idx)
+                        # Also remove the task from the api tasks
+                        self.rotkehlchen.api_tasks.pop(idx)
                         return api_response(result=result_dict, status_code=HTTPStatus.OK)
 
-                    # else task is still pending and the greenlet is running
+                    # else task is still pending and running
                     result_dict = {
                         'result': {'status': 'pending', 'outcome': None},
                         'message': f'The task with id {task_id} is still pending',
@@ -538,18 +551,15 @@ class RestAPI:
     def delete_async_task(self, task_id: int) -> Response:
         """Tries to find and cancel the async task with the given task id"""
         with self.task_lock:
-            for idx, greenlet in enumerate(self.rotkehlchen.api_task_greenlets):  # noqa: B007 # var used right after loop
-                if (
-                        greenlet.dead is False and
-                        getattr(greenlet, 'task_id', None) == task_id
-                ):
+            for idx, task in enumerate(self.rotkehlchen.api_tasks):  # noqa: B007 # var used right after loop
+                if task.dead is False and task.task_id == task_id:
                     log.debug('Cancelling api task with task_id=%s', task_id)
-                    request_cancellation(greenlet, 'Cancelled due to api request')
+                    task.request_cancellation('Cancelled due to api request')
                     break
-            else:  # greenlet not found
+            else:  # task not found
                 return api_response(wrap_in_fail_result(f'Did not cancel task with id {task_id} because it could not be found'), status_code=HTTPStatus.NOT_FOUND)  # noqa: E501
 
-        self.rotkehlchen.api_task_greenlets.pop(idx)  # also pop from greenlets
+        self.rotkehlchen.api_tasks.pop(idx)  # also pop from the api tasks
         return api_response(OK_RESULT, status_code=HTTPStatus.OK)
 
     @async_api_call()
@@ -1098,14 +1108,10 @@ class RestAPI:
             result_dict['message'] = f'Provided user {name} is not the logged in user'
             return api_response(result_dict, status_code=HTTPStatus.CONFLICT)
 
-        # Kill all queries apart from the main loop -- perhaps a bit heavy handed
-        # but the other options would be:
-        # 1. to wait for all of them. That could take a lot of time, for no reason.
-        #    All results would be discarded anyway since we are logging out.
-        # 2. Have an intricate stop() notification system for each greenlet, but
-        #   that is going to get complicated fast.
-        gevent.killall(self.rotkehlchen.api_task_greenlets)  # hard stop until phase 5 of the migration  # noqa: E501
-        self.rotkehlchen.api_task_greenlets.clear()
+        # Cancel all queries apart from the main loop instead of waiting for
+        # them: that could take a lot of time for no reason since all results
+        # would be discarded anyway as we are logging out.
+        self._cancel_api_tasks(reason='Cancelled due to logout')
         with self.task_lock:
             self.task_results = {}
         self.rotkehlchen.logout()

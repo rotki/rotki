@@ -8,12 +8,12 @@ from rotkehlchen.tests.fixtures.exchanges import *  # noqa: F403
 from rotkehlchen.tests.fixtures.external_apis import *  # noqa: F403
 from rotkehlchen.tests.fixtures.globaldb import *  # noqa: F403
 from rotkehlchen.tests.fixtures.google import *  # noqa: F403
-from rotkehlchen.tests.fixtures.greenlets import *  # noqa: F403
 from rotkehlchen.tests.fixtures.history import *  # noqa: F403
 from rotkehlchen.tests.fixtures.messages import *  # noqa: F403
 from rotkehlchen.tests.fixtures.networking import *  # noqa: F403
 from rotkehlchen.tests.fixtures.oracles import *  # noqa: F403
 from rotkehlchen.tests.fixtures.rotkehlchen import *  # noqa: F403
+from rotkehlchen.tests.fixtures.task_supervisor import *  # noqa: F403
 from rotkehlchen.tests.fixtures.taskmanager import *  # noqa: F403
 from rotkehlchen.tests.fixtures.thegraph import *  # noqa: F403
 from rotkehlchen.tests.fixtures.variables import *  # noqa: F403

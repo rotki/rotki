@@ -32,8 +32,8 @@ from rotkehlchen.chain.solana.constants import (
 from rotkehlchen.constants.misc import ONE
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.fval import FVal
-from rotkehlchen.greenlets.manager import GreenletManager
 from rotkehlchen.logging import RotkehlchenLogsAdapter
+from rotkehlchen.tasks.supervisor import TaskSupervisor
 from rotkehlchen.types import (
     SUPPORTED_CHAIN_IDS,
     SUPPORTED_EVM_CHAINS_TYPE,
@@ -131,7 +131,7 @@ class RPCManagerMixin(ABC, Generic[WEB3_NODE_TYPE]):
     `WEB3_NODE_TYPE` accordingly.
     """
     database: 'DBHandler'
-    greenlet_manager: GreenletManager
+    task_supervisor: TaskSupervisor
     blockchain: SupportedBlockchain
     chain_name: str
     rpc_timeout: int
@@ -272,7 +272,7 @@ class RPCManagerMixin(ABC, Generic[WEB3_NODE_TYPE]):
         In ethereum case always connect to nodes. Needed for ENS resolution.
         For other EVM chains we respect `when_tracked_accounts`.
         """
-        if self.connected_to_any_node() or self.greenlet_manager.has_task(self._connect_task_prefix(self.chain_name)):  # noqa: E501
+        if self.connected_to_any_node() or self.task_supervisor.has_task(self._connect_task_prefix(self.chain_name)):  # noqa: E501
             return
 
         with self.database.conn.read_ctx() as cursor:
@@ -301,7 +301,7 @@ class RPCManagerMixin(ABC, Generic[WEB3_NODE_TYPE]):
     def connect_to_multiple_nodes(self, nodes: Sequence['WeightedNode']) -> None:
         task_prefix = self._connect_task_prefix(self.chain_name)
         for weighted_node in nodes:
-            self.greenlet_manager.spawn_and_track(
+            self.task_supervisor.spawn_and_track(
                 after_seconds=None,
                 task_name=f'{task_prefix} {weighted_node.node_info.name!s}',
                 exception_is_error=True,

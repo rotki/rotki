@@ -4,6 +4,7 @@ from unittest.mock import patch
 
 import requests
 
+from rotkehlchen.concurrency import wait
 from rotkehlchen.tests.utils.api import api_url_for, assert_error_response, assert_proper_response
 
 if TYPE_CHECKING:
@@ -16,11 +17,7 @@ def test_async_task_death_traceback(
         rotkehlchen_api_server: 'APIServer',
         caplog: 'pytest.LogCaptureFixture',
 ) -> None:
-    """Test that the exception traceback appears in the logs for dead async tasks
-
-    Note that there still can be some tasks for which the task's gevent has saved
-    no exception info for some reason.
-    """
+    """Test that the exception traceback appears in the logs for dead async tasks"""
     with patch('rotkehlchen.inquirer.Inquirer.find_usd_price', side_effect=ValueError('Boom')):
         response = requests.get(
             api_url_for(rotkehlchen_api_server, 'exchangeratesresource'),
@@ -28,7 +25,8 @@ def test_async_task_death_traceback(
         )
 
     assert_proper_response(response)
-    assert ' Greenlet for task 0 dies with exception: Boom' in caplog.text
+    wait(rotkehlchen_api_server.rest_api.rotkehlchen.api_tasks, timeout=10)
+    assert ' Task 0 dies with exception: Boom' in caplog.text
     assert "Exception Name: <class 'ValueError'>" in caplog.text
     assert 'Exception Info: Boom' in caplog.text
     assert 'Traceback:' in caplog.text

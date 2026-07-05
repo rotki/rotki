@@ -14,9 +14,9 @@ from rotkehlchen.constants.assets import A_XDAI
 from rotkehlchen.errors.misc import BlockchainQueryError, RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.fval import FVal
-from rotkehlchen.greenlets.manager import GreenletManager
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import deserialize_evm_address
+from rotkehlchen.tasks.supervisor import TaskSupervisor
 from rotkehlchen.types import ChainID, ChecksumEvmAddress, EVMTxHash, SupportedBlockchain
 from rotkehlchen.utils.misc import bytes_to_address, get_chunks
 
@@ -55,7 +55,7 @@ class GnosisInquirer(EvmNodeInquirer):
 
     def __init__(
             self,
-            greenlet_manager: GreenletManager,
+            task_supervisor: TaskSupervisor,
             database: 'DBHandler',
             etherscan: 'Etherscan',
             blockscout: 'Blockscout',
@@ -64,7 +64,7 @@ class GnosisInquirer(EvmNodeInquirer):
     ) -> None:
         contracts = EvmContracts[Literal[ChainID.GNOSIS]](chain_id=ChainID.GNOSIS)
         super().__init__(
-            greenlet_manager=greenlet_manager,
+            task_supervisor=task_supervisor,
             database=database,
             etherscan=etherscan,
             blockscout=blockscout,

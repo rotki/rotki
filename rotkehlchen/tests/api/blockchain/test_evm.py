@@ -487,7 +487,7 @@ def test_evm_account_deletion_does_not_wait_for_pending_txn_queries(
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     task_manager = rotki.task_manager
     assert task_manager is not None
-    gevent.killall(task_manager.greenlet_manager.greenlets)
+    task_manager.task_supervisor.clear()  # cancel any login leftovers to free capacity
     task_manager.max_tasks_num = 2
     now = ts_now()
     task_manager.potential_tasks = [task_manager._maybe_query_evm_transactions]
@@ -505,8 +505,8 @@ def test_evm_account_deletion_does_not_wait_for_pending_txn_queries(
 
         # schedule last address query through task manager
         task_manager.schedule()
-        assert len(task_manager.running_greenlets) == 1
-        greenlets = task_manager.running_greenlets[task_manager._maybe_query_evm_transactions]
+        assert len(task_manager.running_tasks) == 1
+        greenlets = task_manager.running_tasks[task_manager._maybe_query_evm_transactions]
         assert len(greenlets) == 1
         assert not greenlets[0].dead
         # query first two addresses via the api
@@ -521,9 +521,9 @@ def test_evm_account_deletion_does_not_wait_for_pending_txn_queries(
                 },
             )
             assert_ok_async_response(response)
-            api_task_greenlets = rotkehlchen_api_server.rest_api.rotkehlchen.api_task_greenlets
-            assert len(api_task_greenlets) == idx + 1  # the transactions fetching greenlets
-            assert not api_task_greenlets[idx].dead
+            api_tasks = rotkehlchen_api_server.rest_api.rotkehlchen.api_tasks
+            assert len(api_tasks) == idx + 1  # the transactions fetching greenlets
+            assert not api_tasks[idx].dead
 
     # now delete one address from api task and 1 from periodic task manager and see it's immediate
     with gevent.Timeout(5):
@@ -540,11 +540,11 @@ def test_evm_account_deletion_does_not_wait_for_pending_txn_queries(
             assert_proper_response(response)
 
     # Check that the 1 api greenlet and 1 task manager greenlet got cancelled and died
-    assert len(api_task_greenlets) == 2
-    assert api_task_greenlets[0].dead
-    assert len(task_manager.running_greenlets) == 1
-    assert task_manager.running_greenlets[task_manager._maybe_query_evm_transactions][0].dead
-    assert not api_task_greenlets[1].dead, 'The other address api greenlet should still run'
+    assert len(api_tasks) == 2
+    assert api_tasks[0].dead
+    assert len(task_manager.running_tasks) == 1
+    assert task_manager.running_tasks[task_manager._maybe_query_evm_transactions][0].dead
+    assert not api_tasks[1].dead, 'The other address api greenlet should still run'
 
     # retrieve ethereum accounts from the DB and see they are deleted
     with rotki.data.db.conn.read_ctx() as cursor:

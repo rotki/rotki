@@ -27,9 +27,9 @@ from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.errors.misc import BlockchainQueryError, InputError, RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.fval import FVal
-from rotkehlchen.greenlets.manager import GreenletManager
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import deserialize_evm_address
+from rotkehlchen.tasks.supervisor import TaskSupervisor
 from rotkehlchen.types import (
     ChainID,
     ChecksumEvmAddress,
@@ -56,7 +56,7 @@ class EthereumInquirer(DSProxyInquirerWithCacheData):
 
     def __init__(
             self,
-            greenlet_manager: GreenletManager,
+            task_supervisor: TaskSupervisor,
             database: 'DBHandler',
             etherscan: 'Etherscan',
             blockscout: 'Blockscout',
@@ -65,7 +65,7 @@ class EthereumInquirer(DSProxyInquirerWithCacheData):
     ) -> None:
         contracts = EvmContracts[Literal[ChainID.ETHEREUM]](chain_id=ChainID.ETHEREUM)
         super().__init__(
-            greenlet_manager=greenlet_manager,
+            task_supervisor=task_supervisor,
             database=database,
             etherscan=etherscan,
             blockscout=blockscout,

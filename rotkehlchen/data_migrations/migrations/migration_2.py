@@ -35,7 +35,7 @@ def data_migration_2(rotki: 'Rotkehlchen', progress_handler: 'MigrationProgressH
     Since this function happens at user unlock we spawn a greenlet to do the work
     asynchronously to not slow down unlock too much.
     """
-    rotki.greenlet_manager.spawn_and_track(
+    rotki.task_supervisor.spawn_and_track(
         after_seconds=None,
         task_name='data migration 2',
         exception_is_error=False,

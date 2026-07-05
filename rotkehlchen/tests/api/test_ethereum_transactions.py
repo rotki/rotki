@@ -6,7 +6,6 @@ from http import HTTPStatus
 from typing import TYPE_CHECKING, Any
 from unittest.mock import MagicMock, _patch, patch
 
-import gevent
 import pytest
 import requests
 from requests import Response
@@ -21,6 +20,7 @@ from rotkehlchen.chain.evm.decoding.monerium.decoder import MoneriumCommonDecode
 from rotkehlchen.chain.evm.structures import EvmTxReceipt, EvmTxReceiptLog
 from rotkehlchen.chain.evm.types import EvmIndexer, string_to_evm_address
 from rotkehlchen.chain.gnosis.modules.gnosis_pay.constants import CPT_GNOSIS_PAY
+from rotkehlchen.concurrency import wait
 from rotkehlchen.constants import ONE
 from rotkehlchen.constants.assets import A_BTC, A_DAI, A_ETH, A_EUR, A_MKR, A_USDT, A_WETH
 from rotkehlchen.constants.limits import FREE_HISTORY_EVENTS_LIMIT
@@ -784,9 +784,9 @@ def test_query_transactions_check_decoded_events(
         assert rotki.task_manager is not None
         with mock_evm_chains_with_transactions():
             rotki.task_manager._maybe_schedule_evm_txreceipts()
-            gevent.joinall(rotki.greenlet_manager.greenlets)
+            wait(rotki.task_supervisor.tasks)
             rotki.task_manager._maybe_decode_transactions()
-            gevent.joinall(rotki.greenlet_manager.greenlets)
+            wait(rotki.task_supervisor.tasks)
         response = requests.post(
             api_url_for(rotkehlchen_api_server, 'blockchaintransactionsresource'),
             json={'from_timestamp': start_ts, 'to_timestamp': end_ts},
