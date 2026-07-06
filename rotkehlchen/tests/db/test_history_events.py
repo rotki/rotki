@@ -767,6 +767,74 @@ def test_get_history_events_free_filter(database: 'DBHandler'):
                     assert free_event.identifier > 3, 'Free sub-events should be from the latest 3 event groups'  # noqa: E501
 
 
+def test_pagination_with_entries_limit(database: 'DBHandler') -> None:
+    """Test that LIMIT/OFFSET pagination composes correctly with the subscription
+    entries limit. The limit restricts the visible universe to the newest N event
+    groups and pagination pages within it: pages inside the cap fill normally, the
+    boundary page truncates and pages beyond it are empty.
+
+    Regression test for the pagination living in the same SELECT as the ORDER BY
+    instead of an outer wrapping query.
+    """
+    history_events = DBHistoryEvents(database)
+    with database.user_write() as write_cursor:
+        history_events.add_history_events(
+            write_cursor=write_cursor,
+            history=[HistoryEvent(
+                group_identifier=f'group_{group}',
+                sequence_index=sequence_index,
+                timestamp=TimestampMS(group * 1000),
+                location=Location.KRAKEN,
+                event_type=HistoryEventType.RECEIVE,
+                event_subtype=HistoryEventSubType.NONE,
+                asset=A_ETH,
+                amount=ONE,
+            ) for group in range(1, 11) for sequence_index in range(2)],
+        )
+
+    def paginated_filter(limit: int, offset: int) -> HistoryEventFilterQuery:
+        return HistoryEventFilterQuery.make(
+            order_by_rules=[('timestamp', False), ('sequence_index', True)],
+            limit=limit,
+            offset=offset,
+        )
+
+    with database.conn.read_ctx() as cursor:
+        # with entries_limit=5 only the 5 newest groups (group_10..group_6) are visible
+        assert [(num, event.group_identifier) for num, event in history_events.get_history_events(
+            cursor=cursor,
+            filter_query=paginated_filter(limit=2, offset=0),
+            entries_limit=5,
+            aggregate_by_group_ids=True,
+        )] == [(2, 'group_10'), (2, 'group_9')]
+        assert [(num, event.group_identifier) for num, event in history_events.get_history_events(
+            cursor=cursor,
+            filter_query=paginated_filter(limit=2, offset=4),  # page straddling the cap
+            entries_limit=5,
+            aggregate_by_group_ids=True,
+        )] == [(2, 'group_6')]
+        assert history_events.get_history_events(
+            cursor=cursor,
+            filter_query=paginated_filter(limit=2, offset=6),  # page beyond the cap
+            entries_limit=5,
+            aggregate_by_group_ids=True,
+        ) == []
+
+        # when not grouping the 5 visible groups contain 10 events
+        assert [event.group_identifier for event in history_events.get_history_events(
+            cursor=cursor,
+            filter_query=paginated_filter(limit=4, offset=8),
+            entries_limit=5,
+            aggregate_by_group_ids=False,
+        )] == ['group_6', 'group_6']
+        assert history_events.get_history_events(
+            cursor=cursor,
+            filter_query=paginated_filter(limit=4, offset=12),
+            entries_limit=5,
+            aggregate_by_group_ids=False,
+        ) == []
+
+
 def test_history_events_with_ignored_groups_excluding_assets(database: 'DBHandler') -> None:
     db = DBHistoryEvents(database)
     group_identifier = 'group_with_ignored_asset'

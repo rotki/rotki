@@ -1481,7 +1481,10 @@ class DBHistoryEvents:
             include_entries_with_limit_count=include_entries_with_limit_count,
         )
         if filter_query.pagination is not None:
-            base_query = f'SELECT * FROM ({base_query}) {filter_query.pagination.prepare()}'
+            # Append LIMIT/OFFSET to the same SELECT as the ORDER BY instead of wrapping
+            # in an outer query, so sqlite's sorter keeps only the page rows rather than
+            # sorting all grouped rows into a temp b-tree first.
+            base_query = f'{base_query} {filter_query.pagination.prepare()}'
 
         ethereum_tracked_accounts: set[ChecksumEvmAddress] | None = None
         cursor.execute(base_query, filters_bindings)
