@@ -41,7 +41,7 @@ from rotkehlchen.premium.premium import (
 )
 from rotkehlchen.premium.sync import PremiumSyncManager
 from rotkehlchen.serialization.deserialize import deserialize_timestamp
-from rotkehlchen.tasks.assets import _find_missing_tokens
+from rotkehlchen.tasks.assets import _find_missing_tokens, maybe_detect_new_tokens
 from rotkehlchen.tasks.manager import PREMIUM_STATUS_CHECK, TaskManager
 from rotkehlchen.tasks.utils import (
     prefetch_scheduler_task_timestamps,
@@ -565,7 +565,9 @@ def test_update_snapshot_balances(rotkehlchen_instance: 'Rotkehlchen'):
                 ignore_cache=True,
             )
 
-            assert save_tokens_mock.call_count == 3
+            # USDT is not saved: one of its events is before last_balance_save
+            # and the other is not of IN direction
+            assert save_tokens_mock.call_count == 2
             assert save_tokens_mock.call_args_list[0].kwargs['address'] == accounts[1]
             assert save_tokens_mock.call_args_list[0].kwargs['blockchain'] == SupportedBlockchain.ETHEREUM  # noqa: E501
             assert set(save_tokens_mock.call_args_list[0].kwargs['tokens']) == {A_COMP, A_LUSD, A_DAI}  # noqa: E501
@@ -922,6 +924,62 @@ def test_maybe_detect_new_spam_tokens(
             (DBCacheStatic.LAST_SPAM_ASSETS_DETECT_KEY.value,),
         )
         assert deserialize_timestamp(cursor.fetchone()[0]) - ts_now() < 2  # saved timestamp should be recent  # noqa: E501
+
+
+@pytest.mark.parametrize('ethereum_accounts', [['0x9531C059098e3d194fF87FebB587aB07B30B1306']])
+def test_maybe_detect_new_tokens_filters_events(
+        database: 'DBHandler',
+        ethereum_accounts: list[ChecksumEvmAddress],
+        globaldb: GlobalDBHandler,
+) -> None:
+    """Regression test for the detection query filters ending up in the LEFT JOIN's
+    ON clause where they filtered nothing. Ignored assets and events older than the
+    last balance save must not mark tokens as detected."""
+    detected_token, ignored_token, old_token = tokens = [EvmToken.initialize(
+        address=make_evm_address(),
+        chain_id=ChainID.ETHEREUM,
+        token_kind=TokenKind.ERC20,
+        name=f'Detection test token {idx}',
+        symbol=f'DTECT{idx}',
+        decimals=18,
+    ) for idx in range(3)]
+    for token in tokens:
+        globaldb.add_asset(asset=token)
+
+    last_save_ts = Timestamp(ts_now() - HOUR_IN_SECONDS)
+    with database.user_write() as write_cursor:
+        database.add_asset_identifiers(
+            write_cursor=write_cursor,
+            asset_identifiers=[token.identifier for token in tokens],
+        )
+        database.add_multiple_location_data(write_cursor=write_cursor, location_data=[
+            LocationData(time=last_save_ts, location=Location.TOTAL.serialize_for_db(), usd_value='100'),  # noqa: E501
+        ])
+        database.add_to_ignored_assets(write_cursor=write_cursor, asset=ignored_token)
+        DBHistoryEvents(database).add_history_events(write_cursor=write_cursor, history=[EvmEvent(
+            tx_ref=make_evm_tx_hash(),
+            sequence_index=0,
+            timestamp=TimestampMS(timestamp * 1000),
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.RECEIVE,
+            event_subtype=HistoryEventSubType.NONE,
+            asset=token,
+            amount=ONE,
+            location_label=ethereum_accounts[0],
+        ) for token, timestamp in (
+            (detected_token, last_save_ts + 60),  # after the last save -> detected
+            (ignored_token, last_save_ts + 60),  # ignored asset -> skipped
+            (old_token, last_save_ts - 3600),  # before the last save -> skipped
+        )])
+
+    maybe_detect_new_tokens(database)
+    with database.conn.read_ctx() as cursor:
+        assert database.get_tokens_for_address(
+            cursor=cursor,
+            address=ethereum_accounts[0],
+            blockchain=SupportedBlockchain.ETHEREUM,
+            token_exceptions=set(),
+        )[0] == [detected_token]
 
 
 @pytest.mark.parametrize('max_tasks_num', [5])
