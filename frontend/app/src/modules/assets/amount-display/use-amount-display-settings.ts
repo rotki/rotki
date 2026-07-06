@@ -1,78 +1,52 @@
-import type { ComputedRef, Ref } from 'vue';
+import type { Ref } from 'vue';
 import type { Currency } from '@/modules/assets/amount-display/currencies';
 import type { RoundingMode } from '@/modules/settings/types/frontend-settings';
-import { useFrontendSettingsStore } from '@/modules/settings/use-frontend-settings-store';
-import { useGeneralSettingsStore } from '@/modules/settings/use-general-settings-store';
+import { useSetting } from '@/modules/settings/use-setting';
 
 export interface AmountDisplaySettings {
   // General settings
-  floatingPrecision: Ref<number>;
-  currency: Ref<Currency>;
-  currencySymbol: Ref<string>;
+  floatingPrecision: Readonly<Ref<number>>;
+  currency: Readonly<Ref<Currency>>;
+  currencySymbol: Readonly<Ref<string>>;
 
   // Frontend settings - formatting
-  thousandSeparator: Ref<string>;
-  decimalSeparator: Ref<string>;
-  currencyLocation: Ref<'before' | 'after'>;
-  abbreviateNumber: Ref<boolean>;
-  minimumDigitToBeAbbreviated: Ref<number>;
-  subscriptDecimals: Ref<boolean>;
+  thousandSeparator: Readonly<Ref<string>>;
+  decimalSeparator: Readonly<Ref<string>>;
+  currencyLocation: Readonly<Ref<'before' | 'after'>>;
+  abbreviateNumber: Readonly<Ref<boolean>>;
+  minimumDigitToBeAbbreviated: Readonly<Ref<number>>;
+  subscriptDecimals: Readonly<Ref<boolean>>;
 
   // Frontend settings - rounding
-  amountRoundingMode: Ref<RoundingMode>;
-  valueRoundingMode: Ref<RoundingMode>;
+  amountRoundingMode: Readonly<Ref<RoundingMode>>;
+  valueRoundingMode: Readonly<Ref<RoundingMode>>;
 
   // Frontend settings - privacy
-  scrambleData: Ref<boolean>;
-  scrambleMultiplier: Ref<number | undefined>;
-  shouldShowAmount: ComputedRef<boolean>;
+  scrambleData: Readonly<Ref<boolean>>;
+  scrambleMultiplier: Readonly<Ref<number | undefined>>;
+  shouldShowAmount: Readonly<Ref<boolean>>;
 }
 
 /**
- * Consolidates all settings needed for AmountDisplay into a single composable.
- * This reduces duplicate store access calls and provides a clean API for settings.
- *
- * Note: Pinia stores are already singletons per pinia instance, so calling this
- * multiple times is efficient - no additional caching is needed.
+ * Domain facade bundling the settings needed for amount display. Each entry reads through
+ * `useSetting`, so this composable knows nothing about which store owns each key and no store is
+ * imported here. This is the "several settings consumed together" layer over the per-key primitive.
  */
 export function useAmountDisplaySettings(): AmountDisplaySettings {
-  const generalSettingsStore = useGeneralSettingsStore();
-  const frontendSettingsStore = useFrontendSettingsStore();
-
-  const {
-    currency,
-    currencySymbol,
-    floatingPrecision,
-  } = storeToRefs(generalSettingsStore);
-
-  const {
-    abbreviateNumber,
-    amountRoundingMode,
-    currencyLocation,
-    decimalSeparator,
-    minimumDigitToBeAbbreviated,
-    scrambleData,
-    scrambleMultiplier,
-    shouldShowAmount,
-    subscriptDecimals,
-    thousandSeparator,
-    valueRoundingMode,
-  } = storeToRefs(frontendSettingsStore);
-
   return {
-    abbreviateNumber,
-    amountRoundingMode,
-    currency,
-    currencyLocation,
-    currencySymbol,
-    decimalSeparator,
-    floatingPrecision,
-    minimumDigitToBeAbbreviated,
-    scrambleData,
-    scrambleMultiplier,
-    shouldShowAmount,
-    subscriptDecimals,
-    thousandSeparator,
-    valueRoundingMode,
+    abbreviateNumber: useSetting('abbreviateNumber'),
+    amountRoundingMode: useSetting('amountRoundingMode'),
+    currency: useSetting('currency'),
+    currencyLocation: useSetting('currencyLocation'),
+    currencySymbol: useSetting('currencySymbol'),
+    decimalSeparator: useSetting('decimalSeparator'),
+    floatingPrecision: useSetting('floatingPrecision'),
+    minimumDigitToBeAbbreviated: useSetting('minimumDigitToBeAbbreviated'),
+    scrambleData: useSetting('scrambleData'),
+    scrambleMultiplier: useSetting('scrambleMultiplier'),
+    shouldShowAmount: useSetting('shouldShowAmount'),
+    subscriptDecimals: useSetting('subscriptDecimals'),
+    thousandSeparator: useSetting('thousandSeparator'),
+    valueRoundingMode: useSetting('valueRoundingMode'),
   };
 }
