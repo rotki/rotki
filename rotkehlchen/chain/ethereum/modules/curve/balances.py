@@ -55,15 +55,16 @@ class CurveBalances(ProtocolWithGauges):
     def get_gauge_address(self, event: 'EvmEvent') -> ChecksumEvmAddress | None:
         return event.address
 
-    def query_balances(self) -> 'BalancesSheetType':
+    def query_balances(self, addresses: 'list[ChecksumEvmAddress]') -> 'BalancesSheetType':
         """Query gauge balances and CRV deposited in the veCRV contract"""
-        balances = super().query_balances()  # gauge balances
+        balances = super().query_balances(addresses=addresses)  # gauge balances
         db_filter = EvmEventFilterQuery.make(
             assets=(A_CRV,),
             counterparties=[self.counterparty],
             type_and_subtype_combinations=self.deposit_event_types,
             location=Location.from_chain_id(self.evm_inquirer.chain_id),
             addresses=[VOTING_ESCROW],
+            location_labels=[str(address) for address in addresses],
         )
         with self.event_db.db.conn.read_ctx() as cursor:
             events = self.event_db.get_history_events_internal(

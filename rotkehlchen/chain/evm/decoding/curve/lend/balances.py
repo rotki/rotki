@@ -55,12 +55,17 @@ class CurveControllerCommonBalances(ProtocolWithBalance, ABC):
     ) -> tuple['EvmToken', 'EvmToken'] | None:
         """Retrieve the collateral and borrowed tokens for the specified controller."""
 
-    def _get_controllers_with_balances(self) -> dict[ChecksumEvmAddress, set[ChecksumEvmAddress]]:
+    def _get_controllers_with_balances(
+            self,
+            addresses: 'list[ChecksumEvmAddress]',
+    ) -> dict[ChecksumEvmAddress, set[ChecksumEvmAddress]]:
         """Get addresses of controllers that the user may have balances on.
         Returns a dict of controller addresses -> set of user addresses with possible balances.
         """
         controllers: dict[ChecksumEvmAddress, set[ChecksumEvmAddress]] = defaultdict(set)
-        for address, events in self.addresses_with_deposits().items():
+        for address, events in self.addresses_with_deposits(
+            location_labels=addresses,
+        ).items():
             for event in events:
                 if event.extra_data is None or 'controller_address' not in event.extra_data:
                     continue  # skip any deposits without a controller address
@@ -69,13 +74,13 @@ class CurveControllerCommonBalances(ProtocolWithBalance, ABC):
 
         return controllers
 
-    def query_balances(self) -> 'BalancesSheetType':
+    def query_balances(self, addresses: 'list[ChecksumEvmAddress]') -> 'BalancesSheetType':
         """Query balances for Curve lending loans and leveraged positions.
         Funds deposited in lending vaults are represented by cvcrvUSD tokens and
         do not need any special logic here.
         """
         balances: BalancesSheetType = defaultdict(BalanceSheet)
-        controllers_with_balances = self._get_controllers_with_balances()
+        controllers_with_balances = self._get_controllers_with_balances(addresses=addresses)
         if len(controllers_with_balances) == 0:
             return balances
 

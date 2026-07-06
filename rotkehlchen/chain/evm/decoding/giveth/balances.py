@@ -47,10 +47,10 @@ class GivethCommonBalances(ProtocolWithBalance):
         self.giv_token_id = giv_token_id
         self.query_method = query_method
 
-    def query_balances(self) -> 'BalancesSheetType':
+    def query_balances(self, addresses: 'list[ChecksumEvmAddress]') -> 'BalancesSheetType':
         """Query balances of staked/locked GIV"""
         balances: BalancesSheetType = defaultdict(BalanceSheet)
-        address_to_deposits = self.addresses_with_deposits()
+        address_to_deposits = self.addresses_with_deposits(location_labels=addresses)
         staking_contract = EvmContract(
             address=self.staking_address,
             abi=DEPOSIT_BALANCE_ABI if self.query_method == 'depositTokenBalance' else self.evm_inquirer.contracts.abi('ERC20_TOKEN'),  # noqa: E501

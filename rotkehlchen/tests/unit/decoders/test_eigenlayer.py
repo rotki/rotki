@@ -431,7 +431,7 @@ def test_lst_create_delayed_withdrawals(database, ethereum_inquirer, ethereum_ac
         evm_inquirer=ethereum_inquirer,
         tx_decoder=tx_decoder,
     )
-    balances = balances_inquirer.query_balances()
+    balances = balances_inquirer.query_balances(addresses=ethereum_accounts)
     assert balances[ethereum_accounts[0]].assets[A_STETH.resolve_to_evm_token()][balances_inquirer.counterparty] == Balance(  # noqa: E501
         amount=FVal(amount),
         value=FVal('0.7720684677079537845'),
@@ -517,7 +517,7 @@ def test_lst_complete_delayed_withdrawals(database, ethereum_inquirer, ethereum_
         evm_inquirer=ethereum_inquirer,
         tx_decoder=tx_decoder,
     )
-    balances = balances_inquirer.query_balances()
+    balances = balances_inquirer.query_balances(addresses=ethereum_accounts)
     assert balances[ethereum_accounts[0]].assets[cbeth][balances_inquirer.counterparty] == Balance()  # noqa: E501
 
 

@@ -58,10 +58,10 @@ class ExtrafiCommonBalances(ProtocolWithBalance):
         )
         self.extrafi_token = extrafi_token
 
-    def query_balances(self) -> 'BalancesSheetType':
+    def query_balances(self, addresses: 'list[ChecksumEvmAddress]') -> 'BalancesSheetType':
         """Query balances of lending pools and extra locking"""
         balances: BalancesSheetType = defaultdict(BalanceSheet)
-        address_to_deposits = self.addresses_with_deposits()
+        address_to_deposits = self.addresses_with_deposits(location_labels=addresses)
         for address, events in address_to_deposits.items():
             unique_reserves = set()
             farm_positions: set[tuple[int, int]] = set()
@@ -91,6 +91,7 @@ class ExtrafiCommonBalances(ProtocolWithBalance):
         if len(locked_extra_addresses := list(self.addresses_with_activity(
             event_types=self.deposit_event_types,
             assets=(self.extrafi_token,),
+            location_labels=addresses,
         ).keys())) != 0:
             self._query_locked_extra(addresses=locked_extra_addresses, balances=balances)
 

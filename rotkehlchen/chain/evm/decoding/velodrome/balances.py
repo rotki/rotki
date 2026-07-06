@@ -59,10 +59,12 @@ class VelodromeLikeBalances(ProtocolWithGauges):
     def get_gauge_address(self, event: 'EvmEvent') -> ChecksumEvmAddress | None:
         return event.address if event.asset != self.protocol_token else None
 
-    def query_balances(self) -> BalancesSheetType:
-        balances = super().query_balances()
+    def query_balances(self, addresses: 'list[ChecksumEvmAddress]') -> BalancesSheetType:
+        balances = super().query_balances(addresses=addresses)
         if (
-            len(addresses_with_deposits := self.addresses_with_deposits()) == 0 or
+            len(addresses_with_deposits := self.addresses_with_deposits(
+                location_labels=addresses,
+            )) == 0 or
             len(addresses_to_token_ids := {
                 address: list(token_ids_set) for address, events in addresses_with_deposits.items()
                 if len(token_ids_set := {event.extra_data['token_id'] for event in events if event.extra_data is not None}) != 0  # noqa: E501

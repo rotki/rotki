@@ -86,10 +86,11 @@ class ConvexBalances(ProtocolWithGauges):
 
         return None
 
-    def query_balances(self) -> 'BalancesSheetType':
-        balances = super().query_balances()  # Query the gauges
+    def query_balances(self, addresses: 'list[ChecksumEvmAddress]') -> 'BalancesSheetType':
+        balances = super().query_balances(addresses=addresses)  # Query the gauges
         addresses_with_stake_mapping = self.addresses_with_activity(
             event_types=self.deposit_event_types,
+            location_labels=addresses,
             assets=(A_CVX,),
         )
         # addresses_with_deposits returns a mapping of address to evm event but since we will call

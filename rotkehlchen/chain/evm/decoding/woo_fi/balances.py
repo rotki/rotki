@@ -43,10 +43,12 @@ class WoofiBalances(ProtocolWithBalance):
             deposit_event_types={(HistoryEventType.STAKING, HistoryEventSubType.DEPOSIT_ASSET)},
         )
 
-    def query_balances(self) -> 'BalancesSheetType':
+    def query_balances(self, addresses: 'list[ChecksumEvmAddress]') -> 'BalancesSheetType':
         """Query WOO and vault token staked balances."""
         balances: BalancesSheetType = defaultdict(BalanceSheet)
-        if len(address_to_deposits := self.addresses_with_deposits()) == 0:
+        if len(address_to_deposits := self.addresses_with_deposits(
+            location_labels=addresses,
+        )) == 0:
             return balances
 
         addresses_with_staked_woo_tokens = set()

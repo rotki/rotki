@@ -1,3 +1,4 @@
+from collections import defaultdict
 from typing import TYPE_CHECKING
 from unittest.mock import patch
 
@@ -5,6 +6,7 @@ import pytest
 
 from rotkehlchen.accounting.structures.balance import Balance, BalanceSheet
 from rotkehlchen.assets.asset import EvmToken
+from rotkehlchen.chain.aggregator import CHAIN_TO_BALANCE_PROTOCOLS
 from rotkehlchen.chain.balances import BlockchainBalances
 from rotkehlchen.chain.ethereum.modules.liquity.constants import CPT_LIQUITY
 from rotkehlchen.chain.evm.types import string_to_evm_address
@@ -222,6 +224,31 @@ def test_partial_balance_refresh_keeps_other_accounts(blockchain: 'ChainsAggrega
 
     assert blockchain.balances.eth[refreshed_address] == refreshed_sheet
     assert blockchain.balances.eth[other_address] == other_sheet
+
+
+def test_protocol_balance_refresh_uses_requested_addresses(
+        blockchain: 'ChainsAggregator',
+) -> None:
+    requested_addresses = [make_evm_address()]
+
+    class ProtocolBalances:
+        def __init__(self, **kwargs) -> None:
+            pass
+
+        def query_balances(self, addresses: list[ChecksumEvmAddress]) -> dict:
+            assert addresses == requested_addresses
+            return {}
+
+    with patch.dict(
+        CHAIN_TO_BALANCE_PROTOCOLS,
+        {ChainID.ETHEREUM: (ProtocolBalances,)},
+    ):
+        blockchain.get_chain_manager(
+            blockchain=SupportedBlockchain.ETHEREUM,
+        ).query_protocols_with_balance(
+            balances=defaultdict(BalanceSheet),
+            addresses=requested_addresses,
+        )
 
 
 def test_blockchain_balances_cache_removes_spent_token(blockchain: 'ChainsAggregator') -> None:

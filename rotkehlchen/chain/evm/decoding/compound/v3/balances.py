@@ -63,11 +63,15 @@ class Compoundv3Balances(ProtocolWithBalance):
             deposit_event_types=set(),
         )
 
-    def _extract_unique_collateral_tokens(self) -> dict[ChecksumEvmAddress, set[CompoundArguments]]:  # noqa: E501
+    def _extract_unique_collateral_tokens(
+            self,
+            addresses: 'list[ChecksumEvmAddress]',
+    ) -> dict[ChecksumEvmAddress, set[CompoundArguments]]:
         """Fetch the unique collateral tokens we need to query the comet contracts for"""
         unique_collaterals: dict[ChecksumEvmAddress, set[CompoundArguments]] = defaultdict(set)
         for user_address, events in self.addresses_with_activity(
             event_types={(HistoryEventType.DEPOSIT, HistoryEventSubType.DEPOSIT_TO_PROTOCOL)},
+            location_labels=addresses,
         ).items():
             for event in events:
                 if event.address is None:
@@ -98,7 +102,10 @@ class Compoundv3Balances(ProtocolWithBalance):
 
         return unique_collaterals
 
-    def _extract_unique_borrowed_tokens(self) -> tuple[dict['EvmToken', set['ChecksumEvmAddress']], dict['ChecksumEvmAddress', 'EvmToken']]:  # noqa: E501
+    def _extract_unique_borrowed_tokens(
+            self,
+            addresses: 'list[ChecksumEvmAddress]',
+    ) -> tuple[dict['EvmToken', set['ChecksumEvmAddress']], dict['ChecksumEvmAddress', 'EvmToken']]:  # noqa: E501
         """
         Fetch unique borrow events from the userDB. Since a user can increase or decrease the same
         liability, we remove the duplicates to reduce the amount of queries. Returns a dict of
@@ -109,6 +116,7 @@ class Compoundv3Balances(ProtocolWithBalance):
         underlying_tokens: dict[ChecksumEvmAddress, EvmToken] = {}
         for address, events in self.addresses_with_activity(
             event_types={(HistoryEventType.RECEIVE, HistoryEventSubType.GENERATE_DEBT)},
+            location_labels=addresses,
         ).items():
             for event in events:
                 if event.address is None:
@@ -141,11 +149,15 @@ class Compoundv3Balances(ProtocolWithBalance):
 
         return unique_borrows, underlying_tokens
 
-    def query_collateral(self, balances: BalancesSheetType) -> 'BalancesSheetType':
+    def query_collateral(
+            self,
+            balances: BalancesSheetType,
+            addresses: 'list[ChecksumEvmAddress]',
+    ) -> 'BalancesSheetType':
         """Query for the collateral assets saved in the protocol that are in the
         COMET Contract and not as balanceOf in those contracts.
         """
-        unique_collaterals_mapping = self._extract_unique_collateral_tokens()
+        unique_collaterals_mapping = self._extract_unique_collateral_tokens(addresses=addresses)
         if len(unique_collaterals_mapping) == 0:
             return balances
 
@@ -199,7 +211,7 @@ class Compoundv3Balances(ProtocolWithBalance):
         self._add_priced_balances(balances=balances, amounts=entries)
         return balances
 
-    def query_liabilities(self) -> 'BalancesSheetType':
+    def query_liabilities(self, addresses: 'list[ChecksumEvmAddress]') -> 'BalancesSheetType':
         """
         Query liabilities for Compound v3 open positions and return them.
 
@@ -207,7 +219,9 @@ class Compoundv3Balances(ProtocolWithBalance):
         tokens whose borrow history events are found in the userDB.
         """
         balances: BalancesSheetType = defaultdict(BalanceSheet)
-        unique_borrows, underlying_token = self._extract_unique_borrowed_tokens()
+        unique_borrows, underlying_token = self._extract_unique_borrowed_tokens(
+            addresses=addresses,
+        )
         if len(unique_borrows) == 0:
             return balances
 
@@ -261,6 +275,6 @@ class Compoundv3Balances(ProtocolWithBalance):
         self._add_priced_balances(balances=balances, amounts=entries, category='liabilities')
         return balances
 
-    def query_balances(self) -> 'BalancesSheetType':
-        balances = self.query_liabilities()
-        return self.query_collateral(balances)
+    def query_balances(self, addresses: 'list[ChecksumEvmAddress]') -> 'BalancesSheetType':
+        balances = self.query_liabilities(addresses=addresses)
+        return self.query_collateral(balances=balances, addresses=addresses)
