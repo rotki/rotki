@@ -4,7 +4,7 @@ from collections import defaultdict
 from contextlib import ExitStack
 from pathlib import Path
 from typing import TYPE_CHECKING
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 import pytest
 
@@ -26,7 +26,7 @@ from rotkehlchen.chain.base.modules.extrafi.balances import ExtrafiBalances as E
 from rotkehlchen.chain.base.modules.morpho_blue.balances import MorphoBlueBalances
 from rotkehlchen.chain.base.modules.runmoney.balances import RunmoneyBalances
 from rotkehlchen.chain.base.modules.runmoney.constants import CPT_RUNMONEY
-from rotkehlchen.chain.ethereum.interfaces.balances import ProtocolWithBalance
+from rotkehlchen.chain.ethereum.interfaces.balances import ProtocolWithBalance, ProtocolWithGauges
 from rotkehlchen.chain.ethereum.modules.aave.balances import AaveBalances
 from rotkehlchen.chain.ethereum.modules.blur.balances import BlurBalances
 from rotkehlchen.chain.ethereum.modules.blur.constants import BLUR_IDENTIFIER, CPT_BLUR
@@ -179,6 +179,34 @@ def test_curve_balances(
         amount=FVal('2402.233522210805651105'),
         value=FVal('3603.3502833162084766575'),
     )
+
+
+def test_gauge_queries_are_scoped_per_address(
+        ethereum_inquirer: 'EthereumInquirer',
+        ethereum_transaction_decoder: 'EthereumTransactionDecoder',
+) -> None:
+    curve_balances = CurveBalances(
+        evm_inquirer=ethereum_inquirer,
+        tx_decoder=ethereum_transaction_decoder,
+    )
+    user1, user2, gauge1, gauge2 = (make_evm_address() for _ in range(4))
+    token1, token2 = A_CRV.resolve_to_evm_token(), A_CVX.resolve_to_evm_token()
+    with (
+        patch.object(curve_balances, 'addresses_with_gauge_deposits', return_value={
+            user1: [MagicMock(address=gauge1, asset=token1)],
+            user2: [MagicMock(address=gauge2, asset=token2)],
+        }),
+        patch.object(curve_balances, '_query_gauges_balances', return_value={}) as query_mock,
+        patch(
+            'rotkehlchen.chain.ethereum.interfaces.balances.get_rpc_first_chunk_size_call_order',
+            return_value=(100, []),
+        ),
+    ):
+        ProtocolWithGauges.query_balances(curve_balances, addresses=[user1, user2])
+
+    assert [
+        call_args.kwargs['gauges_to_token'] for call_args in query_mock.call_args_list
+    ] == [{gauge1: token1}, {gauge2: token2}]
 
 
 @pytest.mark.vcr
