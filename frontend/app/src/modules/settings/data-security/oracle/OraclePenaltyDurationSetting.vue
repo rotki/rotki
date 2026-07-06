@@ -60,6 +60,7 @@ onMounted(() => {
         color="primary"
         :min="min"
         class="mt-2"
+        data-testid="oracle-penalty-duration"
         :label="t('oracle_cache_management.penalty.labels.oracle_penalty_duration')"
         type="number"
         :success-messages="success"

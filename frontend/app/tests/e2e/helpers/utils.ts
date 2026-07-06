@@ -15,6 +15,22 @@ const DISABLE_ANIMATIONS_CSS = `
 `;
 
 /**
+ * Opens a settings sub-page through the user menu, mirroring the path the rest
+ * of the e2e suite uses. Navigating straight to `/#/settings/<tab>` lands on a
+ * blank shell because the layout's data-bootstrapping never runs.
+ *
+ * @param page - the Playwright page
+ * @param tab - the settings tab id (e.g. `interface`, `modules`, `oracle`)
+ */
+export async function openSettingsTab(page: Page, tab: string): Promise<void> {
+  await page.locator('[data-cy=user-menu-button]').click();
+  await page.locator('[data-cy=user-dropdown]').waitFor({ state: 'visible' });
+  await page.locator('[data-cy=settings-button]').click();
+  await page.locator('[data-cy=user-dropdown]').waitFor({ state: 'detached' });
+  await page.locator(`[data-cy="settings__${tab}"]`).click();
+}
+
+/**
  * Disables CSS animations and transitions on the page for faster test execution.
  */
 export async function disableAnimations(page: Page): Promise<void> {
