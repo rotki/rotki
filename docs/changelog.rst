@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`-` fix order of aave v3 token interest earnings for a specific subset of events.
 * :feature:`12499` Additional crypto.com CSV import transaction kinds such as van purchases, fiat wallet limit orders, and extra earn interest payments will now be properly imported.
 * :bug:`12507` The documented ``LOGFROMOTHERMODULES`` Docker environment variable is now honored again (it was misspelled internally) and accepts truthy string values such as ``true``, ``1``, ``yes`` and ``on``.
 * :bug:`-` The rate-limit hint in the PnL report's missing prices dialog is now a warning icon next to the refresh button, so its tooltip no longer covers the price input or the buttons of nearby rows.
