@@ -31,6 +31,7 @@ function updateSetting(value: boolean, update: (newValue: any) => void) {
     <template #default="{ error, success, updateImmediate }">
       <RuiSwitch
         color="primary"
+        data-testid="animations-enabled"
         :model-value="!animationsEnabled"
         :label="t('frontend_settings.animations.animations_note')"
         :success-messages="success"
