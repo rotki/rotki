@@ -294,6 +294,75 @@ def test_existing_decoded_transaction_is_redecoded_for_new_address(
             ).fetchone()[0] == 1
 
 
+def test_existing_transactions_are_batched_for_redecoding(database: DBHandler) -> None:
+    dbevmtx = DBEvmTx(database)
+    dbevents = DBHistoryEvents(database)
+    transactions = [make_ethereum_transaction() for _ in range(3)]
+    tx_ids: list[int] = []
+    with database.user_write() as write_cursor:
+        dbevmtx.add_transactions(
+            write_cursor=write_cursor,
+            evm_transactions=transactions,
+            relevant_address=make_evm_address(),
+        )
+        for transaction in transactions:
+            tx_ids.append(tx_id := transaction.get_or_query_db_id(write_cursor))
+            write_cursor.execute(
+                'INSERT INTO evm_tx_mappings(tx_id, value) VALUES(?, ?)',
+                (tx_id, TX_DECODED),
+            )
+        dbevents.add_history_event(
+            write_cursor=write_cursor,
+            event=EvmEvent(
+                tx_ref=transactions[0].tx_hash,
+                sequence_index=0,
+                timestamp=TimestampMS(transactions[0].timestamp * 1000),
+                location=Location.ETHEREUM,
+                event_type=HistoryEventType.RECEIVE,
+                event_subtype=HistoryEventSubType.NONE,
+                asset=A_ETH,
+                amount=ONE,
+            ),
+            mapping_values={HISTORY_MAPPING_KEY_STATE: HistoryMappingState.CUSTOMIZED},
+        )
+
+    with (
+        patch.object(
+            DBHistoryEvents,
+            'delete_events_by_tx_ref',
+            wraps=dbevents.delete_events_by_tx_ref,
+        ) as delete_events_mock,
+        patch.object(
+            database.pending_txs_tracker,
+            'mark_decoding_dirty',
+            wraps=database.pending_txs_tracker.mark_decoding_dirty,
+        ) as mark_decoding_dirty_mock,
+        database.user_write() as write_cursor,
+    ):
+        dbevmtx.add_transactions(
+            write_cursor=write_cursor,
+            evm_transactions=transactions,
+            relevant_address=make_evm_address(),
+        )
+
+    assert delete_events_mock.call_count == 1
+    assert set(delete_events_mock.call_args.kwargs['tx_refs']) == {
+        transaction.tx_hash for transaction in transactions[1:]
+    }
+    mark_decoding_dirty_mock.assert_called_once_with(SupportedBlockchain.ETHEREUM)
+    with database.conn.read_ctx() as cursor:
+        assert cursor.execute(
+            f'SELECT COUNT(*) FROM evm_tx_mappings WHERE value=? AND tx_id IN '
+            f'({",".join(["?"] * len(tx_ids))})',
+            (TX_DECODED, *tx_ids),
+        ).fetchone()[0] == 1
+        assert cursor.execute(
+            f'SELECT COUNT(*) FROM evmtx_address_mappings WHERE tx_id IN '
+            f'({",".join(["?"] * len(tx_ids))})',
+            tx_ids,
+        ).fetchone()[0] == len(tx_ids) * 2
+
+
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('gnosis_accounts', [[
     '0xBD6F210A624a792e7d30A2F7591Dc7Abce2F3C48',

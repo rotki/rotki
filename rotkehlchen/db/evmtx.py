@@ -1,4 +1,5 @@
 import logging
+from collections import defaultdict
 from typing import TYPE_CHECKING, Any, ClassVar, get_args
 
 from sqlcipher3 import dbapi2 as sqlcipher
@@ -32,7 +33,7 @@ from rotkehlchen.db.filtering import (
     EvmTransactionsNotDecodedFilterQuery,
 )
 from rotkehlchen.db.history_events import DBHistoryEvents
-from rotkehlchen.db.internal_tx_conflicts import is_tx_customized
+from rotkehlchen.db.utils import get_query_chunks
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import (
@@ -93,6 +94,10 @@ class DBEvmTx(DBCommonTx[ChecksumEvmAddress, EvmTransaction, EVMTxHash, EvmTrans
         """
         newly_inserted: list[EVMTxHash] = []
         dirty_chains: set[ChainID] = set()
+        transactions_to_redecode: defaultdict[
+            SUPPORTED_CHAIN_IDS,
+            dict[int, EVMTxHash],
+        ] = defaultdict(dict)
         for tx in evm_transactions:
             row_id, is_new, is_new_mapping = self.db.write_single_tuple(
                 write_cursor=write_cursor,
@@ -122,12 +127,8 @@ class DBEvmTx(DBCommonTx[ChecksumEvmAddress, EvmTransaction, EVMTxHash, EvmTrans
                 is_new_mapping and
                 tx.chain_id in EVM_CHAIN_IDS_WITH_TRANSACTIONS
             ):
-                self.flag_transaction_for_redecoding(
-                    write_cursor=write_cursor,
-                    tx_id=row_id,
-                    tx_hash=tx.tx_hash,
-                    chain_id=tx.chain_id,  # type: ignore[arg-type]  # checked above
-                )
+                # The membership check above narrows this at runtime but not for mypy.
+                transactions_to_redecode[tx.chain_id][row_id] = tx.tx_hash  # type: ignore[index]
 
             if row_id is not None and tx.authorization_list is not None:
                 self.db.write_tuples(
@@ -140,37 +141,72 @@ class DBEvmTx(DBCommonTx[ChecksumEvmAddress, EvmTransaction, EVMTxHash, EvmTrans
                     ],
                 )
 
-        for chain_id in dirty_chains:  # newly added txs have no receipt yet -> pending receipts
-            self.db.pending_txs_tracker.mark_receipts_dirty(chain_id.to_blockchain())
+        for redecode_chain_id, transactions in transactions_to_redecode.items():
+            self.flag_transactions_for_redecoding(
+                write_cursor=write_cursor,
+                transactions=transactions,
+                chain_id=redecode_chain_id,
+            )
+        # Newly added transactions have no receipt yet, so mark their chains as pending.
+        for dirty_chain_id in dirty_chains:
+            self.db.pending_txs_tracker.mark_receipts_dirty(dirty_chain_id.to_blockchain())
         return newly_inserted
 
-    def flag_transaction_for_redecoding(
+    def flag_transactions_for_redecoding(
             self,
             write_cursor: DBCursor,
-            tx_id: int,
-            tx_hash: EVMTxHash,
+            transactions: dict[int, EVMTxHash],
             chain_id: SUPPORTED_CHAIN_IDS,
     ) -> None:
-        """Clear an existing transaction's decoded state unless it has customized events."""
-        if write_cursor.execute(
-            'SELECT 1 FROM evm_tx_mappings WHERE tx_id=? AND value=?',
-            (tx_id, TX_DECODED),
-        ).fetchone() is None or is_tx_customized(
-            cursor=write_cursor,
-            tx_hash=tx_hash,
-            chain_id=chain_id,
-        ):
+        """Clear decoded state in bulk, excluding transactions with customized events."""
+        if len(transactions) == 0:
             return
 
-        DBHistoryEvents(self.db).delete_events_by_tx_ref(
-            write_cursor=write_cursor,
-            tx_refs=[tx_hash],
-            location=Location.from_chain_id(chain_id),
-            customized_handling='delete',
-        )
-        write_cursor.execute(
+        decoded_tx_ids: set[int] = set()
+        for tx_id_chunk, placeholders in get_query_chunks(list(transactions)):
+            decoded_tx_ids.update(row[0] for row in write_cursor.execute(
+                f'SELECT tx_id FROM evm_tx_mappings '
+                f'WHERE value=? AND tx_id IN ({placeholders})',
+                (TX_DECODED, *tx_id_chunk),
+            ))
+        if len(decoded_tx_ids) == 0:
+            return
+
+        location = Location.from_chain_id(chain_id)
+        dbevents = DBHistoryEvents(self.db)
+        decoded_tx_hashes = [transactions[tx_id] for tx_id in decoded_tx_ids]
+        customized_group_ids: set[str] = set()
+        for tx_hash_chunk, _ in get_query_chunks(decoded_tx_hashes):
+            customized_group_ids.update(str(group_identifier) for group_identifier in (
+                dbevents._get_customized_exclusions_for_tx_refs(
+                    cursor=write_cursor,
+                    tx_refs=tx_hash_chunk,
+                    location=location,
+                    customized_handling='preserve_transactions',
+                )
+            ))
+
+        transactions_to_redecode = {
+            tx_id: transactions[tx_id]
+            for tx_id in decoded_tx_ids
+            if f'{location.to_chain_id()}{transactions[tx_id]!s}' not in customized_group_ids
+        }
+        if len(transactions_to_redecode) == 0:
+            return
+
+        for tx_hash_chunk, _ in get_query_chunks(list(transactions_to_redecode.values())):
+            dbevents.delete_events_by_tx_ref(
+                write_cursor=write_cursor,
+                tx_refs=tx_hash_chunk,
+                location=location,
+                customized_handling='delete',
+            )
+        write_cursor.executemany(
             'DELETE FROM evm_tx_mappings WHERE tx_id=? AND value IN (?, ?)',
-            (tx_id, TX_DECODED, TX_SPAM),
+            [
+                (tx_id, TX_DECODED, TX_SPAM)
+                for tx_id in transactions_to_redecode
+            ],
         )
         self.db.pending_txs_tracker.mark_decoding_dirty(chain_id.to_blockchain())
 
