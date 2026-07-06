@@ -117,7 +117,7 @@ def create_asgi_app(
         flask_app: 'Flask',
         rotki_notifier: 'RotkiNotifier',
 ) -> 'ASGIApp':
-    """Compose the rotki ASGI app: /ws goes to the native websocket handler,
+    """Compose the rotki ASGI app: /ws and /ws/ go to the native websocket handler,
     everything else to the Flask REST app through the WSGI bridge"""
     wsgi_app = WSGIMiddleware(
         flask_app,  # type: ignore[arg-type]  # Flask is a WSGI callable, mypy can't see it
@@ -132,7 +132,7 @@ def create_asgi_app(
         if scope['type'] == 'lifespan':
             await _handle_lifespan(receive=receive, send=send)
         elif scope['type'] == 'websocket':
-            if scope['path'] != '/ws':
+            if scope['path'] not in {'/ws', '/ws/'}:
                 await send({'type': 'websocket.close'})  # reject the handshake
                 return
             await _serve_websocket(notifier=rotki_notifier, receive=receive, send=send)

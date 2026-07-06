@@ -53,7 +53,7 @@ class WebsocketReader:
 def fixture_websocket_connection_reader(
         rest_api_port,
 ) -> Generator[WebsocketReader, None, None]:
-    ws = create_connection(f'ws://127.0.0.1:{rest_api_port}/ws')
+    ws = create_connection(f'ws://127.0.0.1:{rest_api_port}/ws/')
     websocket_reader = WebsocketReader(ws)
     ws.send('{}')  # whatever -- just to subscribe
     reader_task = spawn(websocket_reader.read_forever)
