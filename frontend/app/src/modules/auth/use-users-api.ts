@@ -9,7 +9,8 @@ import { api } from '@/modules/core/api/rotki-api';
 import { VALID_ACCOUNT_OPERATION_STATUS } from '@/modules/core/api/utils';
 import { type PendingTask, PendingTaskSchema } from '@/modules/core/tasks/types';
 
-interface UseUserApiReturn {
+interface UseUsersApiReturn {
+  authenticate: (credentials: BasicLoginCredentials) => Promise<void>;
   createAccount: (payload: CreateAccountPayload) => Promise<PendingTask>;
   login: (credentials: LoginCredentials) => Promise<PendingTask>;
   colibriLogin: (credentials: BasicLoginCredentials) => Promise<boolean>;
@@ -21,7 +22,7 @@ interface UseUserApiReturn {
   changeUserPassword: (username: string, currentPassword: string, newPassword: string) => Promise<true>;
 }
 
-export function useUsersApi(): UseUserApiReturn {
+export function useUsersApi(): UseUsersApiReturn {
   const getUsers = async (): Promise<AccountSession> => {
     const response = await api.get<AccountSession>(`/users`, {
       skipRootCamelCase: true,
@@ -89,6 +90,27 @@ export function useUsersApi(): UseUserApiReturn {
     return PendingTaskSchema.parse(response);
   };
 
+  /**
+   * Authenticate-first for the Docker cookie deployment: validate the password
+   * and obtain the signed `rotki_session` HttpOnly cookie before the heavy async
+   * unlock, so the cookie already rides the WebSocket handshake and the `/tasks`
+   * poll that follow. Inert when no session key is configured (Electron uses the
+   * renderer secret; dev/standalone): the backend returns success without a
+   * cookie, so this is a cheap no-op. `skipAuthHandler` so a wrong-password 401 is
+   * surfaced to the login flow instead of triggering the global logout handler.
+   */
+  const authenticate = async (credentials: BasicLoginCredentials): Promise<void> => {
+    const { password, username } = credentials;
+    await api.post(
+      `/users/${username}/authenticate`,
+      { password },
+      {
+        skipAuthHandler: true,
+        validStatuses: VALID_ACCOUNT_OPERATION_STATUS,
+      },
+    );
+  };
+
   const login = async (credentials: LoginCredentials): Promise<PendingTask> => {
     const { username, ...otherFields } = credentials;
     const response = await api.post<PendingTask>(
@@ -125,6 +147,7 @@ export function useUsersApi(): UseUserApiReturn {
   );
 
   return {
+    authenticate,
     changeUserPassword,
     checkIfLogged,
     colibriLogin,

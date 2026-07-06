@@ -48,7 +48,7 @@ export function useUnlockSteps(): UseUnlockStepsReturn {
   const { conflictExist, incompleteUpgradeConflict, logged, shouldFetchData, syncConflict, username } = storeToRefs(authStore);
   const { runTask } = useTaskHandler();
   const { initialize } = useSessionSettings();
-  const { checkIfLogged, colibriLogin, createAccount: callCreateAccount, login: callLogin } = useUsersApi();
+  const { authenticate: sessionAuthenticate, checkIfLogged, colibriLogin, createAccount: callCreateAccount, login: callLogin } = useUsersApi();
   const { getRawSettings, setSettings } = useSettingsApi();
   const { getExchanges } = useExchangeApi();
   const { resolveStoredCredentials } = useStoredCredentials();
@@ -131,12 +131,47 @@ export function useUnlockSteps(): UseUnlockStepsReturn {
     return ok({ exchanges: account.exchanges, fetchData: true, settings: account.settings, username: name });
   }
 
-  const authenticate = async (): Promise<Result<void, UnlockError>> => ok(undefined);
+  // Docker cookie auth: obtain the signed `rotki_session` cookie before the WS opens
+  // and the unlock task runs, so both carry it (on_open validates it and the `/tasks`
+  // poll is cookie-gated). Also re-run after an asset-update restart to re-mint the
+  // cookie with the still-held password. Inert in Electron/dev — the endpoint is a
+  // no-op that sets no cookie. A wrong password rejects here (401), mapped to a typed
+  // err via `guarded`, before the heavy unlock. Account creation does NOT use this:
+  // the cookie rides the create task ack instead (the user does not exist yet).
+  const authenticate = async (credentials: UnlockCredentials): Promise<Result<void, UnlockError>> =>
+    guarded(async () => {
+      // No password ⇒ a background/resume attempt relying on an existing cookie, not a
+      // fresh login. There is nothing to prove, and posting an empty password would 400
+      // on the endpoint's NonEmptyString validation. Skip it: probeSession validates the
+      // cookie next, and if it is missing/stale the flow falls back to the login form.
+      if (!credentials.password)
+        return ok(undefined);
+
+      const name = credentials.username || get<string>(lastLogin);
+      await sessionAuthenticate({ password: credentials.password, username: name });
+      return ok(undefined);
+    });
+
+  // Create never authenticates first (see above); the cookie comes from the task ack.
+  const noopAuthenticate = async (): Promise<Result<void, UnlockError>> => ok(undefined);
 
   const connect = async (): Promise<Result<void, UnlockError>> => {
     useMonitorService().start();
     return ok(undefined);
   };
+
+  // Tear the monitor down when the flow abandons an unlock (error or back to the login
+  // form). Stopping disables websocket reconnection, so an optimistically-opened socket
+  // that the gate rejected (stale/absent cookie) stops retrying instead of looping.
+  const disconnect = (): void => {
+    useMonitorService().stop();
+  };
+
+  // Create defers the socket: its cookie only exists after the create task ack, so opening
+  // the socket here (before that ack) would hand the gate an uncookied handshake and get it
+  // closed. createUnlock starts the monitor right after the ack instead. Nothing streams
+  // over the socket during create anyway (fresh DB: no upgrade, no migration progress).
+  const noopConnect = async (): Promise<Result<void, UnlockError>> => ok(undefined);
 
   const loadSession = async (): Promise<Result<SessionModel, UnlockError>> => {
     if (!loaded)
@@ -201,7 +236,14 @@ export function useUnlockSteps(): UseUnlockStepsReturn {
   const createUnlock = (payload: CreateAccountPayload) => async (): Promise<Result<void, UnlockError>> =>
     guarded(async () => {
       const outcome = await runTask<UserAccount, TaskMeta>(
-        async () => callCreateAccount(payload),
+        async () => {
+          const pending = await callCreateAccount(payload);
+          // The create ack has now set the session cookie and the active sid, so the socket
+          // handshake and the gated /tasks poll both carry it. Start the monitor here (create's
+          // connect step is a no-op) rather than before the ack, when no cookie exists yet.
+          useMonitorService().start();
+          return pending;
+        },
         { meta: { title: 'creating account' }, type: TaskType.CREATE_ACCOUNT },
       );
       if (!outcome.success)
@@ -219,8 +261,8 @@ export function useUnlockSteps(): UseUnlockStepsReturn {
     });
 
   const shared = {
-    authenticate,
     connect,
+    disconnect,
     loadSession,
     requestRestart: assetSteps.requestRestart,
     waitReady: assetSteps.waitReady,
@@ -230,7 +272,9 @@ export function useUnlockSteps(): UseUnlockStepsReturn {
     createSteps: (payload: CreateAccountPayload): UnlockSteps => ({
       ...shared,
       applyUpdate: assetSteps.applyUpdate,
+      authenticate: noopAuthenticate,
       checkUpdate: async () => ok(none), // a fresh account is always current
+      connect: noopConnect, // the socket starts post-ack inside createUnlock (cookie-safe)
       login: createUnlock(payload),
       probeSession: async () => ok(false), // a new account is never resumable
       resolveCredentials: async () => ok(none), // create is never a background auto-unlock
@@ -239,6 +283,7 @@ export function useUnlockSteps(): UseUnlockStepsReturn {
     loginSteps: {
       ...shared,
       applyUpdate: assetSteps.applyUpdate,
+      authenticate,
       checkUpdate: assetSteps.checkUpdate,
       login: loginUnlock,
       probeSession,

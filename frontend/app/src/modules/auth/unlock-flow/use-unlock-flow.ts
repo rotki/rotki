@@ -100,6 +100,7 @@ export interface UnlockSteps {
   resolveCredentials: () => ResultAsync<Option<UnlockCredentials>, UnlockError>;
   authenticate: (credentials: UnlockCredentials) => ResultAsync<void, UnlockError>;
   connect: () => ResultAsync<void, UnlockError>;
+  disconnect: () => void;
   probeSession: (credentials: UnlockCredentials) => ResultAsync<boolean, UnlockError>;
   checkUpdate: () => ResultAsync<Option<UpdateChanges>, UnlockError>;
   applyUpdate: (upToVersion: number, resolution?: Resolution) => ResultAsync<ApplyOutcome, UnlockError>;
@@ -130,7 +131,13 @@ export function useUnlockFlow(steps: UnlockSteps): UseUnlockFlowReturn {
   let pendingVersion = 0;
 
   const toPhase = (next: UnlockState): void => set(state, next);
-  const fail = (error: UnlockError): void => toPhase({ kind: UnlockPhase.error, error });
+  // Any exit without a live session (error, or back to the idle form) tears the monitor
+  // down: the pipeline may have optimistically opened the websocket before probing, and
+  // if the session is not valid that socket 403s and would otherwise reconnect forever.
+  const fail = (error: UnlockError): void => {
+    steps.disconnect();
+    toPhase({ kind: UnlockPhase.error, error });
+  };
 
   // Manual login/create: credentials come from the form/payload.
   async function start(creds: UnlockCredentials): Promise<void> {
@@ -270,6 +277,7 @@ export function useUnlockFlow(steps: UnlockSteps): UseUnlockFlowReturn {
   }
 
   function reset(): void {
+    steps.disconnect();
     credentials = undefined;
     auto = false;
     pendingVersion = 0;

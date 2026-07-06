@@ -26,6 +26,7 @@ mod database;
 mod globaldb;
 mod icons;
 mod logging;
+mod session;
 mod types;
 
 #[tokio::main(flavor = "multi_thread")]
@@ -63,6 +64,26 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         evm_manager,
     });
 
+    // The session signing key (Docker cookie deployment), injected via env when
+    // colibri runs behind the proxy with cookie auth on. `None`/empty disables the
+    // cookie gate (Electron uses the renderer secret instead; dev/standalone are
+    // unaffected). Same key core signs with — colibri only validates. When on, colibri
+    // also reads core's session.db (next to global.db) so a kicked session is rejected
+    // immediately, not only once its token expires.
+    let session_gate: Option<Arc<session::SessionGate>> = std::env::var("ROTKI_SESSION_KEY")
+        .ok()
+        .filter(|value| !value.is_empty())
+        .map(|key| {
+            let db_path = state.data_dir.join("global").join("session.db");
+            Arc::new(session::SessionGate {
+                key: Arc::from(key),
+                store: session::SessionStore::new(db_path),
+            })
+        });
+    if session_gate.is_some() {
+        info!("Session cookie gate enabled for colibri app routes");
+    }
+
     let stateless_routes = Router::new().route("/health", routing::get(api::health::status));
     let app_routes = Router::new()
         .route(
@@ -94,6 +115,16 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             "/assets/ignored",
             routing::get(api::database::get_ignored_assets),
         )
+        // Docker cookie auth: require a valid `rotki_session` cookie on every
+        // stateful route (defence in depth — colibri is reachable on loopback too).
+        // The cookie is set by core's authenticate before the SPA ever talks to
+        // colibri, so there is no cookie-less allowlist; `/health` is structurally
+        // separate on the stateless routes. Disabled when `ROTKI_SESSION_KEY` is
+        // unset (Electron/dev).
+        .layer(axum::middleware::from_fn_with_state(
+            session_gate,
+            session::require_session,
+        ))
         .with_state(state);
 
     let cors_patterns: Vec<Pattern> = parsed_args

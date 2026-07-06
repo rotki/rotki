@@ -8,7 +8,7 @@ from typing import Any
 
 import uvicorn
 import werkzeug
-from flask import Blueprint, Flask, Response, abort, jsonify, request
+from flask import Blueprint, Flask, Response, abort, g, jsonify, request
 from flask.views import MethodView
 from flask_cors import CORS
 from marshmallow import Schema
@@ -18,6 +18,12 @@ from werkzeug.exceptions import NotFound
 
 from rotkehlchen.api.asgi import create_asgi_app
 from rotkehlchen.api.rest import RestAPI, api_response, wrap_in_fail_result
+from rotkehlchen.api.session_token import (
+    SESSION_COOKIE_NAME,
+    SESSION_IDLE_TTL,
+    read_session_token,
+    set_session_cookie,
+)
 from rotkehlchen.api.v1.parser import ignore_kwarg_parser, resource_parser
 from rotkehlchen.api.v1.resources import (
     AccountingLinkablePropertiesResource,
@@ -173,6 +179,7 @@ from rotkehlchen.api.v1.resources import (
     TypesMappingsResource,
     UserAssetsExportDownloadResource,
     UserAssetsResource,
+    UserAuthenticateResource,
     UserNotesResource,
     UserPasswordChangeResource,
     UserPremiumKeyResource,
@@ -206,6 +213,7 @@ URLS_V1: URLS = [
     ('/users', UsersResource),
     ('/watchers', WatchersResource),
     ('/users/<string:name>', UsersByNameResource),
+    ('/users/<string:name>/authenticate', UserAuthenticateResource),
     ('/users/<string:name>/password', UserPasswordChangeResource),
     ('/premium', UserPremiumKeyResource),
     ('/premium/devices', PremiumDevicesResource),
@@ -456,6 +464,25 @@ class APIServer:
 
     _api_prefix = '/api/1'
 
+    # Routes reachable without a session cookie in the Docker cookie deployment, keyed
+    # by (rule, method): what the SPA needs *before* it can obtain a cookie — the
+    # login/create screen and the auth-submit calls. The allowlist is per HTTP verb, so
+    # only the specific method is opened: POST on `/users/<name>` (login) is reachable,
+    # but PATCH on the same rule (premium-credential change / logout) stays gated — the
+    # rule alone shares a route with a state-changing, unauthenticated-dangerous verb.
+    # Matched on the routing *rule* (not the raw path), so a concrete id like
+    # `/users/foo` can't slip past and prefix tricks (`/ping/../settings`) don't matter.
+    # Everything else is deny-by-default once a session key is configured;
+    # `test_cookie_gate` asserts each route/method is either listed here or 401s.
+    _cookie_less_rules = frozenset({
+        (f'{_api_prefix}/ping', 'GET'),
+        (f'{_api_prefix}/info', 'GET'),
+        (f'{_api_prefix}/users', 'GET'),
+        (f'{_api_prefix}/users', 'PUT'),
+        (f'{_api_prefix}/users/<string:name>', 'POST'),
+        (f'{_api_prefix}/users/<string:name>/authenticate', 'POST'),
+    })
+
     def __init__(
             self,
             rest_api: RestAPI,
@@ -500,23 +527,68 @@ class APIServer:
         )
         return api_response(wrap_in_fail_result(str(exception)), HTTPStatus.INTERNAL_SERVER_ERROR)
 
-    @staticmethod
-    def before_request_callback() -> None:
-        """Function that runs before each request"""
+    def before_request_callback(self) -> Response | None:
+        """Function that runs before each request.
+
+        Returning a Response short-circuits the request (the session-cookie gate
+        rejecting with 401); returning None lets it proceed as normal.
+        """
+        # Session-cookie gate (Docker). Inert without a key; otherwise deny-by-default
+        # against `_cookie_less_rules`, rejecting with a plain 401 so the frontend
+        # routes to login. The cookie's `sid` must be the user's active session, so a
+        # newer login kicks old windows out (#3156). `/ws` is gated in the ASGI app.
+        session_key = self.rest_api.session_key
+        if session_key is not None:
+            assert self.rest_api.session_store is not None  # built together with session_key
+            rule = request.url_rule.rule if request.url_rule is not None else None
+            if (rule, request.method) not in self._cookie_less_rules:
+                claims = read_session_token(
+                    session_key,
+                    request.cookies.get(SESSION_COOKIE_NAME, ''),
+                )
+                if claims is None or not self.rest_api.session_store.is_active(
+                    claims.username, claims.sid,
+                ):
+                    return api_response(
+                        wrap_in_fail_result('Authentication required'),
+                        HTTPStatus.UNAUTHORIZED,
+                    )
+                g.rotki_session_user = claims.username
+                g.rotki_session_sid = claims.sid
+                g.rotki_session_exp = claims.exp
+
         log.debug(
             f'start rotki api {request.method} {request.path}',
             view_args=request.view_args,
             query_string=request.query_string,
             json_data=request.json if request.is_json else None,
         )
+        return None
 
-    @staticmethod
-    def after_request_callback(response: Response) -> Response:
+    def after_request_callback(self, response: Response) -> Response:
         """Function that runs after each completed request
 
         Logs the response if required. This is determined by the
         fake header rotki-log-result passed to all responses.
         """
+        # Rolling session: re-issue the cookie once it is past half its idle window so an
+        # active session never expires mid-use, without a Set-Cookie on every response.
+        # Only when the gate validated a cookie this request (g.rotki_session_*); the
+        # store re-mints the same sid with a fresh exp capped at the absolute ceiling.
+        session_user = getattr(g, 'rotki_session_user', None)
+        session_sid = getattr(g, 'rotki_session_sid', None)
+        session_exp = getattr(g, 'rotki_session_exp', None)
+        if (
+            session_user is not None and
+            session_sid is not None and
+            session_exp is not None and
+            self.rest_api.session_store is not None and
+            time.time() >= session_exp - SESSION_IDLE_TTL / 2
+        ):
+            token = self.rest_api.session_store.reissue(session_user, session_sid)
+            if token is not None:
+                set_session_cookie(response, token)
+
         # Always pop the internal header so it never leaks to the client.
         log_result = response.headers.pop('rotki-log-result', 'True') == 'True'
         # Only touch response.json (a full json.loads of the entire response body)
@@ -551,7 +623,11 @@ class APIServer:
         running on a dedicated thread.
         """
         config = uvicorn.Config(
-            app=create_asgi_app(flask_app=self.flask_app, rotki_notifier=self.rotki_notifier),
+            app=create_asgi_app(
+                flask_app=self.flask_app,
+                rotki_notifier=self.rotki_notifier,
+                rest_api=self.rest_api,
+            ),
             host=host,
             port=rest_port,
             log_config=None,  # inherit rotki's logging configuration
