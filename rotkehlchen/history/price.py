@@ -29,8 +29,14 @@ from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import Price, Timestamp
+from rotkehlchen.utils.misc import timestamp_to_daystart_timestamp
 
-from .types import HistoricalPrice, HistoricalPriceOracle, HistoricalPriceOracleInstance
+from .types import (
+    DAILY_GRANULARITY_ORACLES,
+    HistoricalPrice,
+    HistoricalPriceOracle,
+    HistoricalPriceOracleInstance,
+)
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.oracles.uniswap import UniswapV2Oracle, UniswapV3Oracle
@@ -329,6 +335,17 @@ class PriceHistorian:
         )) is not None:
             return cached_price_entry.price
 
+        # Daily-granularity oracles have a single price per UTC day, cached at the
+        # day-start timestamp, so any same-day query can reuse it without a remote call
+        if (cached_price_entry := GlobalDBHandler.get_historical_price(
+            from_asset=from_asset,
+            to_asset=to_asset,
+            timestamp=timestamp_to_daystart_timestamp(timestamp),
+            max_seconds_distance=0,
+            sources=tuple(source for source in sources if source in DAILY_GRANULARITY_ORACLES),
+        )) is not None:
+            return cached_price_entry.price
+
         # else cryptocompare also has historical fiat to fiat data
         rate_limited = False
         for oracle, oracle_instance in zip(oracles, oracle_instances, strict=True):
@@ -368,7 +385,12 @@ class PriceHistorian:
                 from_asset=from_asset,
                 to_asset=to_asset,
                 source=oracle,
-                timestamp=timestamp,
+                # daily-granularity sources return the same price for the whole UTC
+                # day, so cache at day start to make it reusable by same-day queries
+                timestamp=(
+                    timestamp_to_daystart_timestamp(timestamp)
+                    if oracle in DAILY_GRANULARITY_ORACLES else timestamp
+                ),
                 price=price,
             )])
             return price
