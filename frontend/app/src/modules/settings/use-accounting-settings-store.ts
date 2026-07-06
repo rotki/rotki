@@ -1,20 +1,11 @@
 import type { AccountingSettings } from '@/modules/settings/types/user-settings';
-import { useComputedRef } from '@/modules/core/common/use-computed-ref';
+import { toSettingsRefs } from '@/modules/core/common/to-settings-refs';
 import { defaultAccountingSettings } from '@/modules/settings/factories';
 
 export const useAccountingSettingsStore = defineStore('settings/accounting', () => {
   const settings = ref(defaultAccountingSettings());
 
-  const pnlCsvHaveSummary = useComputedRef(settings, 'pnlCsvHaveSummary');
-  const pnlCsvWithFormulas = useComputedRef(settings, 'pnlCsvWithFormulas');
-  const includeCrypto2crypto = useComputedRef(settings, 'includeCrypto2crypto');
-  const includeFeesInCostBasis = useComputedRef(settings, 'includeFeesInCostBasis');
-  const includeGasCosts = useComputedRef(settings, 'includeGasCosts');
-  const taxfreeAfterPeriod = useComputedRef(settings, 'taxfreeAfterPeriod');
-  const calculatePastCostBasis = useComputedRef(settings, 'calculatePastCostBasis');
-  const ethStakingTaxableAfterWithdrawalEnabled = useComputedRef(settings, 'ethStakingTaxableAfterWithdrawalEnabled');
-  const costBasisMethod = useComputedRef(settings, 'costBasisMethod');
-  const useAssetCollectionsInCostBasis = useComputedRef(settings, 'useAssetCollectionsInCostBasis');
+  const refs = toSettingsRefs(settings);
 
   const update = (accountingSettings: AccountingSettings): void => {
     set(settings, {
@@ -24,18 +15,9 @@ export const useAccountingSettingsStore = defineStore('settings/accounting', () 
   };
 
   return {
-    calculatePastCostBasis,
-    costBasisMethod,
-    ethStakingTaxableAfterWithdrawalEnabled,
-    includeCrypto2crypto,
-    includeFeesInCostBasis,
-    includeGasCosts,
-    pnlCsvHaveSummary,
-    pnlCsvWithFormulas,
+    ...refs,
     settings,
-    taxfreeAfterPeriod,
     update,
-    useAssetCollectionsInCostBasis,
   };
 });
 

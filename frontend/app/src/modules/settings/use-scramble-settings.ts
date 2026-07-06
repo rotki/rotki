@@ -1,4 +1,4 @@
-import type { ComputedRef, Ref } from 'vue';
+import type { Ref } from 'vue';
 import { startPromise } from '@shared/utils';
 import { generateRandomScrambleMultiplier } from '@/modules/session/session-utils';
 import { useFrontendSettingsStore } from '@/modules/settings/use-frontend-settings-store';
@@ -7,8 +7,8 @@ import { useSettingsOperations } from '@/modules/settings/use-settings-operation
 interface UseScrambleSettingReturn {
   scrambleData: Ref<boolean>;
   scrambleMultiplier: Ref<string>;
-  enabled: ComputedRef<boolean>;
-  multiplier: ComputedRef<number | undefined>;
+  enabled: Readonly<Ref<boolean>>;
+  multiplier: Readonly<Ref<number | undefined>>;
   handleMultiplierUpdate: (value: string) => void;
   randomMultiplier: () => string;
 }

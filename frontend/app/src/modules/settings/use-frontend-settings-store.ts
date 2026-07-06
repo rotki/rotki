@@ -1,5 +1,5 @@
 import type { PendingSuggestion } from '@/modules/settings/suggestions/settings-suggestions';
-import { useComputedRef } from '@/modules/core/common/use-computed-ref';
+import { toSettingsRefs } from '@/modules/core/common/to-settings-refs';
 import { PrivacyMode } from '@/modules/session/types';
 import { useItemsPerPage } from '@/modules/session/use-items-per-page';
 import {
@@ -10,74 +10,11 @@ import {
 export const useFrontendSettingsStore = defineStore('settings/frontend', () => {
   const settings = ref<FrontendSettings>(markRaw(getDefaultFrontendSettings()));
 
-  const defiSetupDone = useComputedRef(settings, 'defiSetupDone');
-  const enablePasswordConfirmation = useComputedRef(settings, 'enablePasswordConfirmation');
-  const language = useComputedRef(settings, 'language');
-  const autoDetectTokensCooldownHours = useComputedRef(settings, 'autoDetectTokensCooldownHours');
-  const autoDetectTokensOnLogin = useComputedRef(settings, 'autoDetectTokensOnLogin');
-  const lastAppliedSettingsVersion = useComputedRef(settings, 'lastAppliedSettingsVersion');
-  const lastAutoDetectAt = useComputedRef(settings, 'lastAutoDetectAt');
-  const timeframeSetting = useComputedRef(settings, 'timeframeSetting');
-  const visibleTimeframes = useComputedRef(settings, 'visibleTimeframes');
-  const lastKnownTimeframe = useComputedRef(settings, 'lastKnownTimeframe');
-  const queryPeriod = useComputedRef(settings, 'queryPeriod');
-  const profitLossReportPeriod = useComputedRef(settings, 'profitLossReportPeriod');
-  const thousandSeparator = useComputedRef(settings, 'thousandSeparator');
-  const decimalSeparator = useComputedRef(settings, 'decimalSeparator');
-  const currencyLocation = useComputedRef(settings, 'currencyLocation');
-  const abbreviateNumber = useComputedRef(settings, 'abbreviateNumber');
-  const minimumDigitToBeAbbreviated = useComputedRef(settings, 'minimumDigitToBeAbbreviated');
-  const newlyDetectedTokensMaxCount = useComputedRef(settings, 'newlyDetectedTokensMaxCount');
-  const newlyDetectedTokensTtlDays = useComputedRef(settings, 'newlyDetectedTokensTtlDays');
-  const refreshPeriod = useComputedRef(settings, 'refreshPeriod');
-  const explorers = useComputedRef(settings, 'explorers');
-  const gnosisPaySafeMigrationLastNotified = useComputedRef(settings, 'gnosisPaySafeMigrationLastNotified');
-  const gnosisPaySafeMigrationNeverNotify = useComputedRef(settings, 'gnosisPaySafeMigrationNeverNotify');
-  const itemsPerPage = useComputedRef(settings, 'itemsPerPage');
-  const amountRoundingMode = useComputedRef(settings, 'amountRoundingMode');
-  const valueRoundingMode = useComputedRef(settings, 'valueRoundingMode');
-  const subscriptDecimals = useComputedRef(settings, 'subscriptDecimals');
-  const suppressNoIndexerChains = useComputedRef(settings, 'suppressNoIndexerChains');
-  const selectedTheme = useComputedRef(settings, 'selectedTheme');
-  const lightTheme = useComputedRef(settings, 'lightTheme');
-  const darkTheme = useComputedRef(settings, 'darkTheme');
-  const defaultThemeVersion = useComputedRef(settings, 'defaultThemeVersion');
-  const graphZeroBased = useComputedRef(settings, 'graphZeroBased');
-  const ignoreSnapshotError = useComputedRef(settings, 'ignoreSnapshotError');
-  const showGraphRangeSelector = useComputedRef(settings, 'showGraphRangeSelector');
-  const nftsInNetValue = useComputedRef(settings, 'nftsInNetValue');
-  const persistTableSorting = useComputedRef(settings, 'persistTableSorting');
-  const renderAllNftImages = useComputedRef(settings, 'renderAllNftImages');
-  const whitelistedDomainsForNftImages = useComputedRef(settings, 'whitelistedDomainsForNftImages');
-  const dashboardTablesVisibleColumns = useComputedRef(settings, 'dashboardTablesVisibleColumns');
-  const dateInputFormat = useComputedRef(settings, 'dateInputFormat');
-  const versionUpdateCheckFrequency = useComputedRef(settings, 'versionUpdateCheckFrequency');
-  const enableAliasNames = useComputedRef(settings, 'enableAliasNames');
-  const blockchainRefreshButtonBehaviour = useComputedRef(
-    settings,
-    'blockchainRefreshButtonBehaviour',
-  );
-  const savedFilters = useComputedRef(settings, 'savedFilters');
-  const balanceValueThreshold = useComputedRef(settings, 'balanceValueThreshold');
-  const useHistoricalAssetBalances = useComputedRef(settings, 'useHistoricalAssetBalances');
-  const notifyNewNfts = useComputedRef(settings, 'notifyNewNfts');
-  const persistPrivacySettings = useComputedRef(settings, 'persistPrivacySettings');
-  const privacyMode = useComputedRef(settings, 'privacyMode');
-  const scrambleData = useComputedRef(settings, 'scrambleData');
-  const scrambleMultiplier = useComputedRef(settings, 'scrambleMultiplier');
-  const evmQueryIndicatorMinOutOfSyncPeriod = useComputedRef(
-    settings,
-    'evmQueryIndicatorMinOutOfSyncPeriod',
-  );
-  const evmQueryIndicatorDismissalThreshold = useComputedRef(
-    settings,
-    'evmQueryIndicatorDismissalThreshold',
-  );
-  const lastPasswordConfirmed = useComputedRef(settings, 'lastPasswordConfirmed');
-  const passwordConfirmationInterval = useComputedRef(settings, 'passwordConfirmationInterval');
+  // `schemaVersion` is internal bookkeeping and is intentionally not part of the public surface.
+  const refs = toSettingsRefs(settings, ['schemaVersion']);
 
-  const shouldShowAmount = computed(() => get(privacyMode) < PrivacyMode.SEMI_PRIVATE);
-  const shouldShowPercentage = computed(() => get(privacyMode) < PrivacyMode.PRIVATE);
+  const shouldShowAmount = computed(() => get(refs.privacyMode) < PrivacyMode.SEMI_PRIVATE);
+  const shouldShowPercentage = computed(() => get(refs.privacyMode) < PrivacyMode.PRIVATE);
 
   const pendingSuggestions = ref<PendingSuggestion[]>([]);
   const showSuggestionsDialog = shallowRef<boolean>(false);
@@ -95,68 +32,13 @@ export const useFrontendSettingsStore = defineStore('settings/frontend', () => {
   }
 
   return {
-    abbreviateNumber,
-    amountRoundingMode,
-    autoDetectTokensCooldownHours,
-    autoDetectTokensOnLogin,
-    balanceValueThreshold,
-    blockchainRefreshButtonBehaviour,
-    currencyLocation,
-    darkTheme,
-    dashboardTablesVisibleColumns,
-    dateInputFormat,
-    decimalSeparator,
-    defaultThemeVersion,
-    defiSetupDone,
-    enableAliasNames,
-    enablePasswordConfirmation,
-    evmQueryIndicatorDismissalThreshold,
-    evmQueryIndicatorMinOutOfSyncPeriod,
-    explorers,
-    gnosisPaySafeMigrationLastNotified,
-    gnosisPaySafeMigrationNeverNotify,
-    graphZeroBased,
-    ignoreSnapshotError,
-    itemsPerPage,
-    language,
-    lastAppliedSettingsVersion,
-    lastAutoDetectAt,
-    lastKnownTimeframe,
-    lastPasswordConfirmed,
-    lightTheme,
-    minimumDigitToBeAbbreviated,
-    newlyDetectedTokensMaxCount,
-    newlyDetectedTokensTtlDays,
-    nftsInNetValue,
-    notifyNewNfts,
-    passwordConfirmationInterval,
+    ...refs,
     pendingSuggestions,
-    persistPrivacySettings,
-    persistTableSorting,
-    privacyMode,
-    profitLossReportPeriod,
-    queryPeriod,
-    refreshPeriod,
-    renderAllNftImages,
-    savedFilters,
-    scrambleData,
-    scrambleMultiplier,
-    selectedTheme,
     settings,
     shouldShowAmount,
     shouldShowPercentage,
-    showGraphRangeSelector,
     showSuggestionsDialog,
-    subscriptDecimals,
-    suppressNoIndexerChains,
-    thousandSeparator,
-    timeframeSetting,
     update,
-    useHistoricalAssetBalances,
-    valueRoundingMode,
-    versionUpdateCheckFrequency,
-    visibleTimeframes,
-    whitelistedDomainsForNftImages,
   };
 });
 

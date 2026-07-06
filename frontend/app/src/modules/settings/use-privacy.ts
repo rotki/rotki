@@ -1,11 +1,11 @@
 import type { RuiIcons } from '@rotki/ui-library';
-import type { ComputedRef } from 'vue';
+import type { ComputedRef, Ref } from 'vue';
 import type { PrivacyMode } from '@/modules/session/types';
 import { useFrontendSettingsStore } from '@/modules/settings/use-frontend-settings-store';
 import { useSettingsOperations } from '@/modules/settings/use-settings-operations';
 
 interface UsePrivacyModeReturn {
-  privacyMode: ComputedRef<PrivacyMode>;
+  privacyMode: Readonly<Ref<PrivacyMode>>;
   privacyModeIcon: ComputedRef<string>;
   togglePrivacyMode: () => Promise<void>;
   changePrivacyMode: (mode: PrivacyMode) => Promise<void>;

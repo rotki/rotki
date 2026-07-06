@@ -2,7 +2,7 @@ import type { Exchange } from '@/modules/balances/types/exchanges';
 import type { ActionStatus } from '@/modules/core/common/action';
 import type { SessionSettings } from '@/modules/session/types';
 import { TimeFramePeriod } from '@rotki/common';
-import { useComputedRef } from '@/modules/core/common/use-computed-ref';
+import { toSettingsRefs } from '@/modules/core/common/to-settings-refs';
 
 const useSharedLocalStorage = createSharedComposable(useLocalStorage);
 const isAnimationEnabledSetting = useSharedLocalStorage('rotki.animations_enabled', true);
@@ -18,8 +18,7 @@ export const useSessionSettingsStore = defineStore('settings/session', () => {
   const settings = ref(defaultSessionSettings());
   const connectedExchanges = ref<Exchange[]>([]);
 
-  const timeframe = useComputedRef(settings, 'timeframe');
-  const animationsEnabled = useComputedRef(settings, 'animationsEnabled');
+  const refs = toSettingsRefs(settings);
 
   const setConnectedExchanges = (exchanges: Exchange[]): void => {
     set(connectedExchanges, exchanges);
@@ -44,12 +43,11 @@ export const useSessionSettingsStore = defineStore('settings/session', () => {
   };
 
   return {
-    animationsEnabled,
+    ...refs,
     connectedExchanges,
     setAnimationsEnabled,
     setConnectedExchanges,
     settings,
-    timeframe,
     update,
   };
 });
