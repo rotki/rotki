@@ -108,12 +108,11 @@ def test_trove_staking(rotkehlchen_api_server: APIServer, inquirer: Inquirer, et
             rotkehlchen_api_server,
             'liquitystakingresource',
         ), json={'async_query': async_query})
-
-    result = assert_proper_response_with_result(
-        response=response,
-        rotkehlchen_api_server=rotkehlchen_api_server,
-        async_query=async_query,
-    )
+        result = assert_proper_response_with_result(  # wait under the patch: the async task thread needs it while running  # noqa: E501
+            response=response,
+            rotkehlchen_api_server=rotkehlchen_api_server,
+            async_query=async_query,
+        )
 
     assert (user := ethereum_accounts[0]) in result
     stake_data = result[user]
@@ -265,12 +264,11 @@ def test_staking_v2_with_liquity_proxy(rotkehlchen_api_server: APIServer, ethere
             rotkehlchen_api_server,
             'liquitystakingresource',
         ), json={'async_query': async_query})
-
-    result = assert_proper_response_with_result(
-        response=response,
-        rotkehlchen_api_server=rotkehlchen_api_server,
-        async_query=async_query,
-    )
+        result = assert_proper_response_with_result(  # wait under the patch: the async task thread needs it while running  # noqa: E501
+            response=response,
+            rotkehlchen_api_server=rotkehlchen_api_server,
+            async_query=async_query,
+        )
     assert result[user]['balances']['staked']['amount'] == '0'
     assert result[user]['balances']['eth_rewards']['amount'] == '0'
     assert result[user]['balances']['lusd_rewards']['amount'] == '0'

@@ -789,8 +789,10 @@ def test_multiple_balance_queries_not_concurrent(
                 task_id_blockchain,
                 timeout=ASYNC_TASK_WAIT_TIMEOUT * 2,
             )
-        assert eth.call_count == 2, 'eth balance query should happen once per refresh call'
-        assert btc.call_count == 2, 'btc balance query should happen once per refresh call'
+        # either refresh may win the query lock first: the explicit refresh always
+        # queries, while the all-balances one may then be served from the fresh cache
+        assert (refresh_eth_calls := eth.call_count) in (1, 2), 'eth balance query should happen at most once per refresh call'  # noqa: E501
+        assert (refresh_btc_calls := btc.call_count) in (1, 2), 'btc balance query should happen at most once per refresh call'  # noqa: E501
         assert_proper_sync_response_with_result(requests.get(api_url_for(
             rotkehlchen_api_server_with_exchanges,
             'named_blockchain_balances_resource',
@@ -801,8 +803,8 @@ def test_multiple_balance_queries_not_concurrent(
             'named_blockchain_balances_resource',
             blockchain=SupportedBlockchain.BITCOIN.serialize(),
         )))
-        assert eth.call_count == 2, 'eth balance query should not increase on cached GET'
-        assert btc.call_count == 2, 'btc balance query should not increase on cached GET'
+        assert eth.call_count == refresh_eth_calls, 'eth balance query should not increase on cached GET'  # noqa: E501
+        assert btc.call_count == refresh_btc_calls, 'btc balance query should not increase on cached GET'  # noqa: E501
         assert bn.call_count == 2, 'binance balance query should do 2 calls'
 
     assert_all_balances(
@@ -1265,9 +1267,9 @@ def test_query_liquity_balances(
             ),
             json={'async_query': True},
         )
-
-    task_id = assert_ok_async_response(response)
-    result = wait_for_async_task_with_result(rotkehlchen_api_server, task_id)
+        task_id = assert_ok_async_response(response)
+        # wait under the patch: the async task thread needs it while running
+        result = wait_for_async_task_with_result(rotkehlchen_api_server, task_id)
 
     account_balances = result['per_account'][eth_chain_key][ethereum_accounts[0]]
     assert account_balances['assets'] == {A_ETH: {
