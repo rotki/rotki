@@ -201,6 +201,7 @@ class EvmTransactions(ABC):  # noqa: B024
                     )
 
             if relevant_address is not None:
+                transactions_to_redecode: dict[int, EVMTxHash] = {}
                 for tx_hash, tx_id in unmapped_tx_ids.items():
                     write_cursor.execute(
                         'INSERT OR IGNORE INTO evmtx_address_mappings(tx_id, address) '
@@ -208,12 +209,12 @@ class EvmTransactions(ABC):  # noqa: B024
                         (tx_id, relevant_address),
                     )
                     if write_cursor.rowcount == 1:
-                        self.dbevmtx.flag_transaction_for_redecoding(
-                            write_cursor=write_cursor,
-                            tx_id=tx_id,
-                            tx_hash=tx_hash,
-                            chain_id=self.evm_inquirer.chain_id,
-                        )
+                        transactions_to_redecode[tx_id] = tx_hash
+                self.dbevmtx.flag_transactions_for_redecoding(
+                    write_cursor=write_cursor,
+                    transactions=transactions_to_redecode,
+                    chain_id=self.evm_inquirer.chain_id,
+                )
 
         return timestamps, newly_inserted
 
