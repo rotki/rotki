@@ -17,17 +17,22 @@ serving modes.
 import asyncio
 import logging
 from contextlib import suppress
-from typing import TYPE_CHECKING
+from http.cookies import SimpleCookie
+from typing import TYPE_CHECKING, cast
 
 from a2wsgi import WSGIMiddleware
 
+from rotkehlchen.api.session_token import SESSION_COOKIE_NAME, read_session_token
 from rotkehlchen.api.websockets.typedefs import WebsocketSendError
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 
 if TYPE_CHECKING:
+    from collections.abc import Iterable
+
     from a2wsgi.asgi_typing import ASGIApp, Receive, Scope, Send
     from flask import Flask
 
+    from rotkehlchen.api.rest import RestAPI
     from rotkehlchen.api.websockets.notifier import RotkiNotifier
 
 logger = logging.getLogger(__name__)
@@ -113,9 +118,33 @@ async def _handle_lifespan(receive: 'Receive', send: 'Send') -> None:
             return
 
 
+def _ws_session_allowed(rest_api: 'RestAPI', scope: 'Scope') -> bool:
+    """Docker session-cookie gate for the /ws handshake (the ASGI equivalent of the
+    Flask before_request gate, which does not see websocket upgrades). Inert without a
+    key; otherwise the same-origin `rotki_session` cookie rides the handshake and must
+    carry the user's active `sid` (a newer login kicks it — #3156). Rejected here
+    *before* accept, so an unauthenticated client never completes the handshake."""
+    if rest_api.session_key is None:
+        return True  # feature off (Electron/dev)
+    if rest_api.session_store is None:
+        return False
+    raw_cookie = ''
+    # ASGI scope headers are an iterable of (name, value) byte pairs; the Scope union
+    # types `.get` as `object`, so narrow it for the loop below.
+    headers = cast('Iterable[tuple[bytes, bytes]]', scope.get('headers', []))
+    for name, value in headers:
+        if name == b'cookie':
+            raw_cookie = value.decode('latin-1')
+            break
+    morsel = SimpleCookie(raw_cookie).get(SESSION_COOKIE_NAME)
+    claims = read_session_token(rest_api.session_key, morsel.value if morsel is not None else '')
+    return claims is not None and rest_api.session_store.is_active(claims.username, claims.sid)
+
+
 def create_asgi_app(
         flask_app: 'Flask',
         rotki_notifier: 'RotkiNotifier',
+        rest_api: 'RestAPI',
 ) -> 'ASGIApp':
     """Compose the rotki ASGI app: /ws and /ws/ go to the native websocket handler,
     everything else to the Flask REST app through the WSGI bridge"""
@@ -132,7 +161,7 @@ def create_asgi_app(
         if scope['type'] == 'lifespan':
             await _handle_lifespan(receive=receive, send=send)
         elif scope['type'] == 'websocket':
-            if scope['path'] not in {'/ws', '/ws/'}:
+            if scope['path'] not in {'/ws', '/ws/'} or not _ws_session_allowed(rest_api, scope):
                 await send({'type': 'websocket.close'})  # reject the handshake
                 return
             await _serve_websocket(notifier=rotki_notifier, receive=receive, send=send)

@@ -198,6 +198,7 @@ from rotkehlchen.api.v1.schemas import (
     UserActionLoginSchema,
     UserActionSchema,
     UserAssetsExportDownloadSchema,
+    UserAuthenticateSchema,
     UserNotesGetSchema,
     UserNotesPatchSchema,
     UserNotesPutSchema,
@@ -1486,6 +1487,14 @@ class UsersByNameResource(BaseMethodView):
             sync_approval=sync_approval,
             resume_from_backup=resume_from_backup,
         )
+
+
+class UserAuthenticateResource(BaseMethodView):
+    post_schema = UserAuthenticateSchema()
+
+    @use_kwargs(post_schema, location='json_and_view_args')
+    def post(self, name: str, password: str) -> Response:
+        return self.rest_api.authenticate_user(name=name, password=password)
 
 
 class UserPasswordChangeResource(BaseMethodView):

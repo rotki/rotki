@@ -1924,6 +1924,11 @@ class UserActionLoginSchema(AsyncQueryArgumentSchema):
     resume_from_backup = fields.Boolean(load_default=False)
 
 
+class UserAuthenticateSchema(Schema):
+    name = NonEmptyStringField(required=True)
+    password = NonEmptyStringField(required=True)
+
+
 class UserPasswordChangeSchema(Schema):
     name = NonEmptyStringField(required=True)
     current_password = NonEmptyStringField(required=True)

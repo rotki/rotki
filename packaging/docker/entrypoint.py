@@ -203,6 +203,14 @@ base_args = [
 # Arguments need to be sanitized for `subprocess.Popen`, as it does not accept `int`
 cmd = [str(arg) for arg in (base_args + config_args)]
 
+# Session-cookie auth (issues #2922/#3156) is opt-in: set a stable `ROTKI_SESSION_KEY`
+# in the container environment (e.g. docker-compose `environment:`) to gate the
+# network-reachable API behind a signed HttpOnly cookie. It must be stable so sessions
+# survive restarts, so we never generate one here — absent ⇒ feature off (as before).
+# Both subprocesses inherit it from the environment; nginx already passes the cookie.
+if os.environ.get('ROTKI_SESSION_KEY'):
+    logger.info('ROTKI_SESSION_KEY set: session-cookie auth enabled for core and colibri')
+
 logger.info(f'starting rotki backend with arguments {cmd}')
 
 rotki = subprocess.Popen(cmd)

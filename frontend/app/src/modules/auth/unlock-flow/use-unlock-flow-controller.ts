@@ -89,6 +89,7 @@ export function createUnlockFlowController(): UseUnlockFlowControllerReturn {
     authenticate: async credentials => active.authenticate(credentials),
     checkUpdate: async () => active.checkUpdate(),
     connect: async () => active.connect(),
+    disconnect: () => active.disconnect(),
     loadSession: async () => active.loadSession(),
     login: async credentials => active.login(credentials),
     probeSession: async credentials => active.probeSession(credentials),

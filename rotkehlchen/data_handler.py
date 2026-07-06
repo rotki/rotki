@@ -7,13 +7,17 @@ import zlib
 from collections.abc import Sequence
 from pathlib import Path
 
+from sqlcipher3 import dbapi2 as sqlcipher  # pylint: disable=no-name-in-module
+
 from rotkehlchen.api.websockets.typedefs import DBUploadStatusStep, WSMessageType
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants.misc import USERDB_NAME, USERSDIR_NAME
 from rotkehlchen.crypto import decrypt, encrypt
 from rotkehlchen.db.dbhandler import DBHandler
-from rotkehlchen.db.misc import plaintext_db_integrity_check
+from rotkehlchen.db.drivers.sqlite import DBConnection, DBConnectionType
+from rotkehlchen.db.misc import detect_sqlcipher_version, plaintext_db_integrity_check
 from rotkehlchen.db.settings import ModifiableDBSettings
+from rotkehlchen.db.utils import unlock_database
 from rotkehlchen.errors.api import AuthenticationError
 from rotkehlchen.errors.misc import DataIntegrityError, SystemPermissionError
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -39,6 +43,45 @@ class DataHandler:
         self.username = 'no_user'
         self.msg_aggregator = msg_aggregator
         self.sql_vm_instructions_cb = sql_vm_instructions_cb
+
+    def check_password(self, username: str, password: str) -> bool:
+        """Cheaply verify a user's password without the full unlock.
+
+        Opens the encrypted user DB and applies the sqlcipher key (the same check
+        `DBHandler._connect` relies on) but skips migrations/data loading, then
+        closes. Used by the `authenticate` endpoint to mint a session token before
+        the heavy async login. Must only be called when no user is logged in (the
+        authenticate-first flow), since it briefly registers a USER connection.
+
+        Returns True if the password opens the DB, False on a wrong password or a
+        missing/unreadable DB.
+        """
+        user_db = self.data_directory / USERSDIR_NAME / username / USERDB_NAME
+        if not user_db.exists():
+            return False
+
+        try:
+            connection = DBConnection(
+                path=str(user_db),
+                connection_type=DBConnectionType.USER,
+                sql_vm_instructions_cb=self.sql_vm_instructions_cb,
+            )
+        except sqlcipher.OperationalError:  # pylint: disable=no-member
+            return False
+
+        try:
+            unlock_database(
+                db_connection=connection,
+                password=password,
+                sqlcipher_version=detect_sqlcipher_version(),
+                apply_optimizations=False,
+            )
+        except sqlcipher.DatabaseError:  # pylint: disable=no-member
+            return False
+        finally:
+            connection.close()
+
+        return True
 
     def logout(self) -> None:
         if self.logged_in:

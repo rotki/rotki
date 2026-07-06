@@ -44,12 +44,19 @@ base64 = "=0.22.1"
 thiserror = "=2.0.18"
 # Used for Levenshtein distance in asset search to mirror Python's behavior.
 strsim = "=0.11.1"
+# HMAC-SHA256 to validate the signed session cookie (Docker), minted by core
+hmac = "=0.12.1"
+sha2 = "=0.10.9"
+# constant-time comparison for the session-cookie signature check
+subtle = "=2.6.1"
 
 [dev-dependencies]
 mockito = "=1.7.2"
 tokio = { version = "=1.51.1", features = ["test-util"]}
 rand = "=0.10.1"
 regex = "=1.12.3"
+# `oneshot` for exercising the session middleware in tests
+tower = "=0.5.3"
 
 [build-dependencies]
 rustc_version = "=0.4.1"

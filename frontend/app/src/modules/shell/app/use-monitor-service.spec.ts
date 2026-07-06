@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mockConnect = vi.fn();
 const mockDisconnect = vi.fn();
+const mockSetConnectionEnabled = vi.fn();
 const mockConnected = ref<boolean>(false);
 
 const mockMonitor = vi.fn();
@@ -57,10 +58,11 @@ vi.mock('@/modules/core/tasks/use-task-monitor', () => ({
 }));
 
 vi.mock('@/modules/shell/app/use-websocket-connection', () => ({
-  useWebsocketConnection: vi.fn((): { connect: typeof mockConnect; connected: typeof mockConnected; disconnect: typeof mockDisconnect } => ({
+  useWebsocketConnection: vi.fn((): { connect: typeof mockConnect; connected: typeof mockConnected; disconnect: typeof mockDisconnect; setConnectionEnabled: typeof mockSetConnectionEnabled } => ({
     connect: mockConnect,
     connected: mockConnected,
     disconnect: mockDisconnect,
+    setConnectionEnabled: mockSetConnectionEnabled,
   })),
 }));
 
@@ -119,6 +121,24 @@ describe('useMonitorService', () => {
     // check() is gated by canRequestData (false by default), so not called
     // monitor() is called immediately when not restarting
     expect(mockMonitor).toHaveBeenCalledOnce();
+  });
+
+  it('should re-arm websocket reconnection on start', async () => {
+    service.start();
+    await vi.advanceTimersByTimeAsync(0);
+
+    expect(mockSetConnectionEnabled).toHaveBeenCalledWith(true);
+  });
+
+  it('should disable websocket reconnection on stop (not just close the socket)', async () => {
+    service.start();
+    await vi.advanceTimersByTimeAsync(0);
+    vi.clearAllMocks();
+
+    service.stop();
+
+    expect(mockSetConnectionEnabled).toHaveBeenCalledWith(false);
+    expect(mockDisconnect).toHaveBeenCalledOnce();
   });
 
   it('should call disconnect and clear all intervals on stop', async () => {

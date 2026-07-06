@@ -17,6 +17,7 @@ function makeSteps(overrides: Partial<UnlockSteps> = {}): UnlockSteps {
     authenticate: vi.fn(async () => ok(undefined)),
     checkUpdate: vi.fn(async () => ok(none)),
     connect: vi.fn(async () => ok(undefined)),
+    disconnect: vi.fn(),
     loadSession: vi.fn(async () => ok({})),
     login: vi.fn(async () => ok(undefined)),
     probeSession: vi.fn(async () => ok(false)),
@@ -233,6 +234,20 @@ describe('useUnlockFlow', () => {
       // no doomed empty-password login — straight back to the idle form
       expect(flow.state.value.kind).toBe(UnlockPhase.idle);
       expect(steps.login).not.toHaveBeenCalled();
+      // the optimistically-opened socket is torn down so it can't 403-loop on the form
+      expect(steps.disconnect).toHaveBeenCalled();
+    });
+
+    it('should tear down the monitor when an unlock fails', async () => {
+      const steps = makeSteps({
+        authenticate: vi.fn(async () => err({ kind: UnlockErrorKind.unknown, message: 'boom' })),
+      });
+      const flow = useUnlockFlow(steps);
+
+      await flow.start({ password: 'p', username: 'alice' });
+
+      expect(flow.state.value.kind).toBe(UnlockPhase.error);
+      expect(steps.disconnect).toHaveBeenCalled();
     });
   });
 });

@@ -8,6 +8,7 @@ import { useUnlockSteps } from './use-unlock-steps';
 
 const {
   applyUpdate,
+  authenticateApi,
   callCreateAccount,
   callLogin,
   checkIfLogged,
@@ -19,6 +20,7 @@ const {
   lastLoginRef,
   migrateSettingsIfNeeded,
   monitorStart,
+  monitorStop,
   requestRestart,
   resolveStoredCredentials,
   runTask,
@@ -30,6 +32,7 @@ const {
   const { ref: vueRef } = require('vue');
   return {
     applyUpdate: vi.fn(),
+    authenticateApi: vi.fn().mockResolvedValue(undefined),
     callCreateAccount: vi.fn(),
     callLogin: vi.fn(),
     checkIfLogged: vi.fn(),
@@ -41,6 +44,7 @@ const {
     lastLoginRef: vueRef(''),
     migrateSettingsIfNeeded: vi.fn(),
     monitorStart: vi.fn(),
+    monitorStop: vi.fn(),
     requestRestart: vi.fn(),
     resolveStoredCredentials: vi.fn(),
     runTask: vi.fn(),
@@ -52,6 +56,7 @@ const {
 
 vi.mock('@/modules/auth/use-users-api', () => ({
   useUsersApi: vi.fn(() => ({
+    authenticate: authenticateApi,
     checkIfLogged,
     colibriLogin,
     createAccount: callCreateAccount,
@@ -82,7 +87,7 @@ vi.mock('@/modules/session/use-session-settings', () => ({
 }));
 
 vi.mock('@/modules/shell/app/use-monitor-service', () => ({
-  useMonitorService: vi.fn(() => ({ start: monitorStart })),
+  useMonitorService: vi.fn(() => ({ start: monitorStart, stop: monitorStop })),
 }));
 
 vi.mock('@/modules/core/sigil/event-bus', () => ({
@@ -335,6 +340,34 @@ describe('useUnlockSteps', () => {
       expect(await steps.checkUpdate()).toEqual({ ok: true, value: { some: false } });
       expect(checkUpdate).not.toHaveBeenCalled();
     });
+
+    it('should not open the socket on connect (deferred to post-ack)', async () => {
+      setupStore();
+      const { createSteps } = useUnlockSteps();
+      const result = await createSteps(payload).connect();
+
+      expect(result).toEqual({ ok: true, value: undefined });
+      expect(monitorStart).not.toHaveBeenCalled();
+    });
+
+    it('should start the monitor only after the create ack sets the cookie', async () => {
+      setupStore();
+      callCreateAccount.mockResolvedValue({ taskId: 1 });
+      // run the executor so the ack→monitor ordering inside createUnlock is observable.
+      runTask.mockImplementation(async (executor: () => Promise<unknown>) => {
+        await executor();
+        return { result: { exchanges: [], settings: { frontendSettings: '{}' } }, success: true };
+      });
+
+      const { createSteps } = useUnlockSteps();
+      const result = await createSteps(payload).login(payload.credentials);
+
+      expect(result).toEqual({ ok: true, value: undefined });
+      expect(monitorStart).toHaveBeenCalled();
+      // the socket must not open before the create ack (no cookie exists until then).
+      expect(callCreateAccount.mock.invocationCallOrder[0])
+        .toBeLessThan(monitorStart.mock.invocationCallOrder[0]);
+    });
   });
 
   describe('loadSession', () => {
@@ -380,10 +413,48 @@ describe('useUnlockSteps', () => {
   });
 
   describe('shared steps', () => {
-    it('should resolve authenticate to ok without a session key', async () => {
+    it('should post the credentials to the authenticate endpoint on login', async () => {
       setupStore();
       const { loginSteps } = useUnlockSteps();
       expect(await loginSteps.authenticate(credentials)).toEqual({ ok: true, value: undefined });
+      // authenticate-first: the cookie must ride the WS handshake and /tasks poll.
+      expect(authenticateApi).toHaveBeenCalledWith({ password: 'p', username: 'alice' });
+    });
+
+    it('should fall back to the last login when authenticating without a username', async () => {
+      setupStore();
+      set(lastLoginRef, 'remembered');
+      const { loginSteps } = useUnlockSteps();
+      await loginSteps.authenticate({ password: 'p', username: '' });
+      expect(authenticateApi).toHaveBeenCalledWith({ password: 'p', username: 'remembered' });
+    });
+
+    it('should skip the authenticate call when there is no password (cookie-based resume)', async () => {
+      setupStore();
+      const { loginSteps } = useUnlockSteps();
+      expect(await loginSteps.authenticate({ password: '', username: 'alice' })).toEqual({ ok: true, value: undefined });
+      expect(authenticateApi).not.toHaveBeenCalled();
+    });
+
+    it('should map a wrong-password rejection to a typed err', async () => {
+      setupStore();
+      authenticateApi.mockRejectedValueOnce(new Error('Wrong username/password combination'));
+      const { loginSteps } = useUnlockSteps();
+      expect(await loginSteps.authenticate(credentials)).toEqual({
+        error: { kind: UnlockErrorKind.unknown, message: 'Wrong username/password combination' },
+        ok: false,
+      });
+    });
+
+    it('should not authenticate on account creation (cookie rides the task ack)', async () => {
+      setupStore();
+      const payload: CreateAccountPayload = {
+        credentials: { password: 'pw', username: 'new-user' },
+        initialSettings: { submitUsageAnalytics: true },
+      };
+      const { createSteps } = useUnlockSteps();
+      expect(await createSteps(payload).authenticate(credentials)).toEqual({ ok: true, value: undefined });
+      expect(authenticateApi).not.toHaveBeenCalled();
     });
 
     it('should start the monitor service on connect', async () => {

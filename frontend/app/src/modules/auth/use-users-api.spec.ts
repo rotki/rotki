@@ -394,4 +394,33 @@ describe('composables/api/session/users', () => {
         .toThrow('Invalid current password');
     });
   });
+
+  describe('authenticate', () => {
+    it('should post the password to the authenticate endpoint', async () => {
+      let captured: DefaultBodyType;
+      server.use(
+        http.post(`${backendUrl}/api/1/users/alice/authenticate`, async ({ request }) => {
+          captured = await request.json();
+          return HttpResponse.json({ result: {}, message: '' });
+        }),
+      );
+
+      const { authenticate } = useUsersApi();
+      await expect(authenticate({ password: 's3cret', username: 'alice' })).resolves.toBeUndefined();
+      expect(captured).toEqual({ password: 's3cret' });
+    });
+
+    it('should reject on a wrong-password 401', async () => {
+      server.use(
+        http.post(`${backendUrl}/api/1/users/alice/authenticate`, () =>
+          HttpResponse.json(
+            { result: null, message: 'Wrong username/password combination' },
+            { status: 401 },
+          )),
+      );
+
+      const { authenticate } = useUsersApi();
+      await expect(authenticate({ password: 'wrong', username: 'alice' })).rejects.toThrow();
+    });
+  });
 });

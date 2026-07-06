@@ -1,4 +1,5 @@
 import datetime
+import hmac
 import json
 import logging
 import os
@@ -15,7 +16,7 @@ from http import HTTPStatus
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Final, Literal, Optional, overload
 
-from flask import Response, make_response, send_file
+from flask import Response, make_response, request, send_file
 from sqlcipher3 import dbapi2 as sqlcipher
 from web3.exceptions import BadFunctionCallOutput
 from werkzeug.datastructures import FileStorage
@@ -40,6 +41,13 @@ from rotkehlchen.api.services.integrations import IntegrationsService
 from rotkehlchen.api.services.settings import SettingsService
 from rotkehlchen.api.services.transactions import TransactionsService
 from rotkehlchen.api.services.user_data import UserDataService
+from rotkehlchen.api.session_store import SESSION_DB_NAME, SessionStore
+from rotkehlchen.api.session_token import (
+    SESSION_COOKIE_NAME,
+    clear_session_cookie,
+    read_session_token,
+    set_session_cookie,
+)
 from rotkehlchen.api.v1.types import IncludeExcludeFilterData, TaskName
 from rotkehlchen.api.websockets.typedefs import ProgressUpdateSubType, WSMessageType
 from rotkehlchen.assets.asset import (
@@ -82,6 +90,7 @@ from rotkehlchen.constants.misc import (
     DEFAULT_MAX_LOG_BACKUP_FILES,
     DEFAULT_MAX_LOG_SIZE_IN_MB,
     DEFAULT_SQL_VM_INSTRUCTIONS_CB,
+    GLOBALDIR_NAME,
     HTTP_STATUS_INTERNAL_DB_ERROR,
 )
 from rotkehlchen.data_import.manager import DataImportSource
@@ -304,7 +313,7 @@ def make_response_from_dict(response_data: dict[str, Any]) -> Response:
     )
 
 
-def async_api_call() -> Callable:
+def async_api_call(session_token: bool = False) -> Callable:
     """
     This is a decorator that should be used with endpoints that can be called asynchronously.
     It reads `async_query` argument from the wrapped function to determine whether to call
@@ -313,23 +322,69 @@ def async_api_call() -> Callable:
     Endpoints that it wraps must return a dictionary with result, message and optionally a
     status code.
     This decorator reads the dictionary and transforms it to a Response object.
+
+    `session_token=True` (account creation) opens a new session for the `name` kwarg
+    and ships its signed `rotki_session` HttpOnly cookie on the response — the
+    immediate `{task_id}` ack in async mode, or the result Response in sync mode. A
+    new account's credentials are self-validating, so unlike login it needs no
+    separate `authenticate` step; setting the cookie up front means create's gated
+    `/tasks` poll already carries it. Inert when no session key is configured (the
+    Electron app and dev/standalone, which don't use the cookie).
+
+    The mint is guarded so a create that cannot succeed never touches the session
+    store: it is skipped when a user is already logged in (the create will 409, and
+    minting would clobber that user's active session — kicking their live window via
+    the network-reachable, cookie-less create endpoint). If the create still fails
+    afterwards (bad premium key, unlock error) the just-minted session is revoked so a
+    failed create leaves no live session behind for a user that was never created.
     """
     def wrapper(func: Callable[..., dict[str, Any]]) -> Callable[..., Response]:
         def inner(rest_api: 'RestAPI', async_query: bool = False, **kwargs: Any) -> Response:
-            response: dict[str, Any]
-            if async_query is True:
-                return rest_api._query_async(
-                    command=func,
-                    **kwargs,
-                )
+            token: str | None = None
+            # only mint for account creation, and only when it can actually proceed
+            mint_session = (
+                session_token and
+                rest_api.session_store is not None and
+                not rest_api.rotkehlchen.user_is_logged_in
+            )
+            if mint_session:
+                name = kwargs['name']
+                token = rest_api.session_store.login(name)  # type: ignore[union-attr]  # store is not None when mint_session
+                command = _revoke_session_on_failed_create(func, name)
+            else:
+                command = func
 
-            response = func(rest_api, **kwargs)
-            if isinstance(response, Response):  # the case of returning a file in a async response
-                return response
-            return make_response_from_dict(response)
+            if async_query is True:
+                response = rest_api._query_async(command=command, **kwargs)
+            else:
+                result = command(rest_api, **kwargs)
+                if isinstance(result, Response):  # returning a file in an async response
+                    return result
+                if mint_session and result.get('result') is None:
+                    token = None  # revoke ran inside command; don't ship a dead cookie
+                response = make_response_from_dict(result)
+
+            if token is not None:
+                set_session_cookie(response, token)
+            return response
 
         return inner
     return wrapper
+
+
+def _revoke_session_on_failed_create(
+        func: Callable[..., dict[str, Any]],
+        name: str,
+) -> Callable[..., dict[str, Any]]:
+    """Wrap an account-creation command so the session minted for `name` on the ack is
+    revoked when the create itself fails (every failure path returns `result=None`).
+    Runs in the async task worker, so revocation happens once the outcome is known."""
+    def wrapped(rest_api: 'RestAPI', **kwargs: Any) -> dict[str, Any]:
+        result = func(rest_api, **kwargs)
+        if result.get('result') is None and rest_api.session_store is not None:
+            rest_api.session_store.revoke(name)
+        return result
+    return wrapped
 
 
 def login_lock() -> Callable:
@@ -402,6 +457,22 @@ class RestAPI:
         self._inflight_session_requests = 0  # guarded by _session_usage_cond
         self._session_teardown = False  # guarded by _session_usage_cond
         self._thread_session_requests = threading.local()  # how many slots THIS thread holds
+        # Session-token signing key, injected by the operator as `ROTKI_SESSION_KEY`
+        # (UTF-8 bytes) only when the Docker cookie gate is on. core signs tokens
+        # with it on `authenticate`/create; the gate, the WS and colibri validate.
+        # None ⇒ feature off, so no token is ever minted (Electron/dev unaffected).
+        session_key = os.environ.get('ROTKI_SESSION_KEY') or None
+        self.session_key: bytes | None = session_key.encode('utf-8') if session_key else None
+        # Authority for the active session (Docker cookie). Per-user single-active,
+        # mirrored to session.db (next to global.db) so sessions survive a restart. A
+        # new login for a user kicks that user's previous session ⇒ its cookie 401s at
+        # the gate/WS (#3156). None ⇒ feature off (Electron/dev, no cookie).
+        self.session_store: SessionStore | None = (
+            SessionStore(
+                db_path=self.rotkehlchen.data_dir / GLOBALDIR_NAME / SESSION_DB_NAME,
+                session_key=self.session_key,
+            ) if self.session_key is not None else None
+        )
 
     @contextmanager
     def session_usage(self) -> Iterator[bool]:
@@ -1031,7 +1102,81 @@ class RestAPI:
         result_dict = _wrap_in_ok_result(result)
         return api_response(result_dict, status_code=HTTPStatus.OK)
 
-    @async_api_call()
+    def authenticate_user(self, name: str, password: str) -> Response:
+        """Authenticate-first (Docker cookie): prove the password and ship the
+        signed `rotki_session` cookie *before* the heavy async unlock, so the
+        cookie is already present on the unlock POST, the `/tasks` poll, and the
+        WebSocket handshake that follow.
+
+        The password is *always* proven — there is no password-less path (that
+        endpoint is allowlisted and network-reachable in Docker). Proof is either:
+
+        - a valid current cookie (signature + `exp` + `sid == active` + `u == name`)
+          riding the request — the session is already proven, so re-issue with the
+          *same* sid (a same-browser reload/new-tab; don't kick the user's own tabs);
+        - otherwise the password itself: against the in-memory `db.password` when the
+          user is already unlocked (no second sqlcipher connection), or via the cheap
+          `check_password` when not. This path *rotates* the sid (a takeover from a
+          new browser/location) so the previous window's cookie 401s → login (#3156),
+          and cancels that previous session's in-flight tasks.
+
+        When no session key is injected the feature is off: return success without
+        opening the DB or setting a cookie, so the Electron app and dev/standalone
+        behave exactly as before — the call is a no-op.
+        """
+        if self.session_key is None:
+            return api_response(_wrap_in_ok_result({}), status_code=HTTPStatus.OK)
+        assert self.session_store is not None  # built together with session_key
+
+        claims = read_session_token(
+            self.session_key,
+            request.cookies.get(SESSION_COOKIE_NAME, ''),
+        )
+        cookie_active = (
+            claims is not None and
+            claims.username == name and
+            self.session_store.is_active(name, claims.sid)
+        )
+
+        if self.rotkehlchen.user_is_logged_in:
+            if name != self.rotkehlchen.data.username:
+                return api_response(
+                    wrap_in_fail_result(f'User {self.rotkehlchen.data.username} is already logged in. Log out first.'),  # noqa: E501
+                    status_code=HTTPStatus.CONFLICT,
+                )
+            # already unlocked: verify against the in-memory password (as
+            # user_change_password does), never a second sqlcipher connection.
+            if not cookie_active and not hmac.compare_digest(
+                password,
+                self.rotkehlchen.data.db.password,
+            ):
+                return api_response(
+                    wrap_in_fail_result('Wrong username/password combination'),
+                    status_code=HTTPStatus.UNAUTHORIZED,
+                )
+        elif not self.rotkehlchen.data.check_password(name, password):
+            return api_response(
+                wrap_in_fail_result('Wrong username/password combination'),
+                status_code=HTTPStatus.UNAUTHORIZED,
+            )
+
+        if cookie_active:  # same-browser reload/tab: keep the session, re-issue
+            assert claims is not None  # cookie_active ⇒ claims present
+            token = self.session_store.reissue(name, claims.sid)
+            assert token is not None  # is_active ⇒ the session exists to re-issue
+        else:  # takeover: rotate the sid so the previous window's cookie 401s
+            if self.rotkehlchen.user_is_logged_in:
+                # cancel the previous session's tasks (as logout does), keep unlocked
+                self._cancel_api_tasks(reason='Cancelled due to session takeover')
+                with self.task_lock:
+                    self.task_results = {}
+            token = self.session_store.login(name)
+
+        response = api_response(_wrap_in_ok_result({}), status_code=HTTPStatus.OK)
+        set_session_cookie(response, token)
+        return response
+
+    @async_api_call(session_token=True)
     @login_lock()
     def create_new_user(
             self,
@@ -1214,7 +1359,15 @@ class RestAPI:
                     self._session_teardown = False
 
         result_dict['result'] = True
-        return api_response(result_dict, status_code=HTTPStatus.OK)
+        response = api_response(result_dict, status_code=HTTPStatus.OK)
+        # In cookie mode, end the session: revoke this user's active session so its
+        # cookie now fails the gate/WS (revocation) and clear the cookie so the browser
+        # stops sending it. Inert when the feature is off (no spurious Set-Cookie on the
+        # Electron/dev logout response).
+        if self.session_store is not None:
+            self.session_store.revoke(name)
+            clear_session_cookie(response)
+        return response
 
     def user_set_premium_credentials(
             self,
