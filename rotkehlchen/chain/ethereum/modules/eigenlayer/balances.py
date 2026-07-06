@@ -85,8 +85,12 @@ class EigenlayerBalances(ProtocolWithBalance):
         )
         self.evm_inquirer: EthereumInquirer
 
-    def _query_lst_deposits(self, balances: 'BalancesSheetType') -> 'BalancesSheetType':
-        addresses_with_deposits = self.addresses_with_deposits()
+    def _query_lst_deposits(
+            self,
+            balances: 'BalancesSheetType',
+            addresses: 'list[ChecksumEvmAddress]',
+    ) -> 'BalancesSheetType':
+        addresses_with_deposits = self.addresses_with_deposits(location_labels=addresses)
         # remap all events into a list that will contain all pairs (depositor, strategy)
         deposits = set()
         for depositor, event_list in addresses_with_deposits.items():
@@ -118,7 +122,11 @@ class EigenlayerBalances(ProtocolWithBalance):
         self._add_priced_balances(balances=balances, amounts=entries)
         return balances
 
-    def _query_token_pending_withdrawals(self, balances: 'BalancesSheetType') -> 'BalancesSheetType':  # noqa: E501
+    def _query_token_pending_withdrawals(
+            self,
+            balances: 'BalancesSheetType',
+            addresses: 'list[ChecksumEvmAddress]',
+    ) -> 'BalancesSheetType':
         """Query any balances that are being withdrawn from Eigenlayer and are on the fly"""
         # First find if there is any completed withdrawals unmatched,
         # as that would lead to double counting of balances
@@ -128,6 +136,7 @@ class EigenlayerBalances(ProtocolWithBalance):
             to_ts=ts_now(),
             event_types=[HistoryEventType.INFORMATIONAL],
             event_subtypes=[HistoryEventSubType.NONE],
+            location_labels=[str(address) for address in addresses],
         )
         with self.event_db.db.conn.read_ctx() as cursor:
             completed_withdrawal_events = self.event_db.get_history_events_internal(
@@ -151,6 +160,7 @@ class EigenlayerBalances(ProtocolWithBalance):
         # proceed with the counting of all pending withdrawals as balances
         addresses_with_withdrawals = self.addresses_with_activity(
             event_types={(HistoryEventType.INFORMATIONAL, HistoryEventSubType.REMOVE_ASSET)},
+            location_labels=addresses,
         )
         entries = []
         for address, event_list in addresses_with_withdrawals.items():
@@ -178,9 +188,18 @@ class EigenlayerBalances(ProtocolWithBalance):
         self._add_priced_balances(balances=balances, amounts=entries)
         return balances
 
-    def _query_eigenpod_balances(self, balances: 'BalancesSheetType') -> 'BalancesSheetType':
+    def _query_eigenpod_balances(
+            self,
+            balances: 'BalancesSheetType',
+            addresses: 'list[ChecksumEvmAddress]',
+    ) -> 'BalancesSheetType':
         """Queries the balance of ETH in the eigenpod and in the Delayed Withdrawal router"""
-        if len(eigenpod_to_owner := get_eigenpods_to_owners_mapping(self.event_db.db)) == 0:
+        eigenpod_to_owner = {
+            eigenpod: owner
+            for eigenpod, owner in get_eigenpods_to_owners_mapping(self.event_db.db).items()
+            if owner in addresses
+        }
+        if len(eigenpod_to_owner) == 0:
             return balances
 
         self._add_priced_balances(balances=balances, amounts=[  # query all eigenpod balances and add them  # noqa: E501
@@ -190,7 +209,7 @@ class EigenlayerBalances(ProtocolWithBalance):
         ])
         return balances
 
-    def query_balances(self) -> 'BalancesSheetType':
+    def query_balances(self, addresses: 'list[ChecksumEvmAddress]') -> 'BalancesSheetType':
         """
         Query underlying balances for deposits in eigenlayer. Also for eigenpod
         owners and funds deposited in eigenpods. Also for any pending withdrawals
@@ -200,6 +219,6 @@ class EigenlayerBalances(ProtocolWithBalance):
         - RemoteError: Querying price of the deposited token
         """
         balances: BalancesSheetType = defaultdict(BalanceSheet)
-        balances = self._query_lst_deposits(balances)
-        balances = self._query_eigenpod_balances(balances)
-        return self._query_token_pending_withdrawals(balances)
+        balances = self._query_lst_deposits(balances=balances, addresses=addresses)
+        balances = self._query_eigenpod_balances(balances=balances, addresses=addresses)
+        return self._query_token_pending_withdrawals(balances=balances, addresses=addresses)

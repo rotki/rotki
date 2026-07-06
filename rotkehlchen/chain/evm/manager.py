@@ -78,6 +78,7 @@ class EvmManager(
         """
         return self.query_protocols_with_balance(
             balances=self.query_evm_chain_balances(accounts=addresses),
+            addresses=addresses,
         )
 
     def query_transactions(
@@ -206,6 +207,7 @@ class EvmManager(
     def query_protocols_with_balance(
             self,
             balances: defaultdict[ChecksumEvmAddress, BalanceSheet],
+            addresses: Sequence[ChecksumEvmAddress],
     ) -> defaultdict[ChecksumEvmAddress, BalanceSheet]:
         """
         Query for balances of protocols in which tokens can be locked without returning a liquid
@@ -213,13 +215,16 @@ class EvmManager(
         needs to be added to the total balance of the account. Examples of such protocols are
         Legacy Curve gauges in ethereum, Convex and Velodrome.
         """
+        queried_addresses = list(addresses)
         for protocol in CHAIN_TO_BALANCE_PROTOCOLS[self.node_inquirer.chain_id]:
             protocol_with_balance: ProtocolWithBalance = protocol(
                 evm_inquirer=self.node_inquirer,  # type: ignore  # mypy can't match all possibilities here
                 tx_decoder=self.transactions_decoder,  # type: ignore  # mypy can't match all possibilities here
             )
             try:
-                protocol_balances = protocol_with_balance.query_balances()
+                protocol_balances = protocol_with_balance.query_balances(
+                    addresses=queried_addresses,
+                )
             except RemoteError as e:
                 log.error(f'Failed to query balances for {protocol} due to {e}. Skipping')
                 continue

@@ -40,12 +40,14 @@ class BlurBalances(ProtocolWithBalance):
             deposit_event_types={(HistoryEventType.STAKING, HistoryEventSubType.DEPOSIT_ASSET)},
         )
 
-    def query_balances(self) -> 'BalancesSheetType':
+    def query_balances(self, addresses: 'list[ChecksumEvmAddress]') -> 'BalancesSheetType':
         """Query balances of staked blur tokens if deposit events are found."""
         balances: BalancesSheetType = defaultdict(BalanceSheet)
 
         # fetch deposit events
-        if len(addresses_with_deposits := list(self.addresses_with_deposits())) == 0:
+        if len(addresses_with_deposits := list(self.addresses_with_deposits(
+            location_labels=addresses,
+        ))) == 0:
             return balances
 
         staking_contract = self.evm_inquirer.contracts.contract(BLUR_STAKING_CONTRACT)

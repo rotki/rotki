@@ -52,7 +52,7 @@ class UmamiBalances(ProtocolWithBalance):
             deployed_block=176053511,
         )
 
-    def query_balances(self) -> 'BalancesSheetType':
+    def query_balances(self, addresses: 'list[ChecksumEvmAddress]') -> 'BalancesSheetType':
         """Query both unstaked and staked balances for Umami vaults.
 
         For each user address with deposits:
@@ -69,7 +69,7 @@ class UmamiBalances(ProtocolWithBalance):
         if len(addresses_with_deposits := list(self.addresses_with_activity(event_types={
             (HistoryEventType.DEPOSIT, HistoryEventSubType.DEPOSIT_FOR_WRAPPED),
             (HistoryEventType.STAKING, HistoryEventSubType.DEPOSIT_ASSET),
-        }))) == 0:
+        }, location_labels=addresses))) == 0:
             return balances
 
         gm_vault_addresses = [

@@ -20,6 +20,7 @@ from rotkehlchen.logging import RotkehlchenLogsAdapter
 if TYPE_CHECKING:
     from rotkehlchen.chain.base.decoding.decoder import BaseTransactionDecoder
     from rotkehlchen.chain.base.node_inquirer import BaseInquirer
+    from rotkehlchen.types import ChecksumEvmAddress
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -44,9 +45,11 @@ class RunmoneyBalances(ProtocolWithBalance):
         )
         self.usdc_asset = Asset('eip155:8453/erc20:0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913')
 
-    def query_balances(self) -> 'BalancesSheetType':
+    def query_balances(self, addresses: 'list[ChecksumEvmAddress]') -> 'BalancesSheetType':
         balances: BalancesSheetType = defaultdict(BalanceSheet)
-        if len(addresses_with_deposits := list(self.addresses_with_deposits())) == 0:
+        if len(addresses_with_deposits := list(self.addresses_with_deposits(
+            location_labels=addresses,
+        ))) == 0:
             return balances
 
         try:

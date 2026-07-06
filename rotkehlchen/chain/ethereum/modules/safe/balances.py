@@ -134,18 +134,20 @@ class SafeBalances(ProtocolWithBalance):
 
         return entries
 
-    def query_balances(self) -> 'BalancesSheetType':
+    def query_balances(self, addresses: 'list[ChecksumEvmAddress]') -> 'BalancesSheetType':
         """Query balances of locked and SafeNet-staked SAFE tokens if deposit events are found."""
         balances: BalancesSheetType = defaultdict(BalanceSheet)
         entries: list[tuple[ChecksumEvmAddress, Asset, FVal]] = []
         safe_asset = Asset(SAFE_TOKEN_ID)
         if len(locked := self.addresses_with_activity(
             event_types={(HistoryEventType.DEPOSIT, HistoryEventSubType.DEPOSIT_TO_PROTOCOL)},
+            location_labels=addresses,
         )) != 0:
             entries.extend(self._query_locked_safe(list(locked), safe_asset))
 
         if len(staked := self.addresses_with_activity(
             event_types={(HistoryEventType.STAKING, HistoryEventSubType.DEPOSIT_ASSET)},
+            location_labels=addresses,
         )) != 0:
             entries.extend(self._query_safenet_staked(list(staked), safe_asset))
 

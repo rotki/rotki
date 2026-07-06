@@ -19,6 +19,7 @@ from rotkehlchen.logging import RotkehlchenLogsAdapter
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.decoding.decoder import EthereumTransactionDecoder
     from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
+    from rotkehlchen.types import ChecksumEvmAddress
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -37,7 +38,7 @@ class AaveBalances(ProtocolWithBalance):
             deposit_event_types={(HistoryEventType.STAKING, HistoryEventSubType.DEPOSIT_ASSET)},
         )
 
-    def query_balances(self) -> 'BalancesSheetType':
+    def query_balances(self, addresses: 'list[ChecksumEvmAddress]') -> 'BalancesSheetType':
         """Queries and returns the balances sheet for staking events.
 
         Retrieves deposit events and calls staking contract to get the total rewards balance.
@@ -45,7 +46,9 @@ class AaveBalances(ProtocolWithBalance):
         much AAVE is staked, that is the stkAAVE balance which should appear as
         part of balance queries and is 1-1 to AAVE."""
         balances: BalancesSheetType = defaultdict(BalanceSheet)
-        if len(addresses_with_deposits := list(self.addresses_with_deposits())) == 0:
+        if len(addresses_with_deposits := list(self.addresses_with_deposits(
+            location_labels=addresses,
+        ))) == 0:
             return balances
 
         staking_contract = self.evm_inquirer.contracts.contract(address=STK_AAVE_ADDR)

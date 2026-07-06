@@ -47,7 +47,10 @@ class ThegraphBalances(ProtocolWithBalance):
             deposit_event_types={(HistoryEventType.STAKING, HistoryEventSubType.DEPOSIT_ASSET)},
         )
 
-    def _get_delegations(self) -> list[tuple['ChecksumEvmAddress', 'ChecksumEvmAddress', 'ChecksumEvmAddress', 'ChecksumEvmAddress']]:  # noqa: E501
+    def _get_delegations(
+            self,
+            addresses: 'list[ChecksumEvmAddress]',
+    ) -> list[tuple['ChecksumEvmAddress', 'ChecksumEvmAddress', 'ChecksumEvmAddress', 'ChecksumEvmAddress']]:  # noqa: E501
         """Get staking events and process them to generate a unique set of delegations.
 
         Pre-Horizon upgrade events don't include the verifier in event logs, so we use the
@@ -71,6 +74,7 @@ class ThegraphBalances(ProtocolWithBalance):
                 return []
 
         delegations_unique = set()
+        queried_addresses = set(addresses)
         for event in events:
             if event.location_label is None or event.extra_data is None:
                 log.error(f'Skipping TheGraph deposit event {event} due to one or both of location_label and extra_data missing')  # noqa: E501
@@ -79,12 +83,18 @@ class ThegraphBalances(ProtocolWithBalance):
             verifier = event.extra_data.get('verifier', SUBGRAPH_DATA_SERVICE_ADDRESS)
             # simple staking where you just need to delegate to an indexer
             if (indexer := event.extra_data.get('indexer')) is not None:
+                if (
+                    (delegator := string_to_evm_address(event.location_label)) not in
+                    queried_addresses
+                ):
+                    continue
+
                 delegations_unique.add(
                     (
-                        string_to_evm_address(event.location_label),
+                        delegator,
                         string_to_evm_address(indexer),
                         verifier,
-                        string_to_evm_address(event.location_label),
+                        delegator,
                     ),
                 )
 
@@ -93,6 +103,9 @@ class ThegraphBalances(ProtocolWithBalance):
                 (delegator := event.extra_data.get('delegator_l2')) is not None and
                 (beneficiary := event.extra_data.get('beneficiary')) is not None
             ):
+                if beneficiary not in queried_addresses:
+                    continue
+
                 delegations_unique.add(
                     (
                         string_to_evm_address(delegator),
@@ -106,7 +119,7 @@ class ThegraphBalances(ProtocolWithBalance):
 
         return list(delegations_unique)
 
-    def query_balances(self) -> BalancesSheetType:
+    def query_balances(self, addresses: 'list[ChecksumEvmAddress]') -> BalancesSheetType:
         """Query balances of GRT tokens delegated to indexers.
 
         Retrieves staking events and processes them to generate a unique set of delegations.
@@ -115,7 +128,7 @@ class ThegraphBalances(ProtocolWithBalance):
         rewards earned over time. Supports both simple and vested staking.
         """
         balances: BalancesSheetType = defaultdict(BalanceSheet)
-        if len(delegations := self._get_delegations()) == 0:  # user had no delegation events
+        if len(delegations := self._get_delegations(addresses=addresses)) == 0:  # user had no delegation events  # noqa: E501
             return balances
 
         chunk_size, call_order = get_rpc_first_chunk_size_call_order(self.evm_inquirer)
