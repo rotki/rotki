@@ -3,6 +3,7 @@ import type { HistoryEventEntryType } from '@rotki/common';
 import { externalLinks } from '@shared/external-links';
 import { type HighlightSegment, splitHighlight } from '@/modules/history/events/action-picker/highlight-match';
 import HistoryEventActionDirectionBadge from '@/modules/history/events/action-picker/HistoryEventActionDirectionBadge.vue';
+import { useEventActionDescriptions } from '@/modules/history/events/action-picker/use-event-action-descriptions';
 import { type EventActionRow, useEventActionPicker } from '@/modules/history/events/action-picker/use-event-action-picker';
 import { useRecentActions } from '@/modules/history/events/action-picker/use-recent-actions';
 import { useHistoryEventMappings } from '@/modules/history/events/mapping/use-history-event-mappings';
@@ -34,6 +35,7 @@ const search = ref<string>('');
 
 const { findRowByTypeSubtype, rows } = useEventActionPicker(() => entryType);
 const { recent, record } = useRecentActions(() => entryType);
+const { describe } = useEventActionDescriptions();
 const { eventCategoryGroupsData, getHistoryEventSubTypeName, getHistoryEventTypeName } = useHistoryEventMappings();
 
 const selectedVerbKey = computed<string | undefined>(() => {
@@ -118,6 +120,14 @@ function subtitleFor(row: EventActionRow): string {
   const first = row.combinations[0];
   if (!first)
     return '';
+
+  // Recent rows carry a prefixed key; resolve to the canonical verb key so the
+  // description lookup still hits. Prefer the curated one-liner when present,
+  // otherwise fall back to the derived type · subtype summary below.
+  const realKey = row.verbKey.startsWith(RECENT_KEY_PREFIX) ? row.verbKey.slice(RECENT_KEY_PREFIX.length) : row.verbKey;
+  const description = describe(realKey);
+  if (description)
+    return description;
 
   const verb = row.label.toLowerCase();
   const typeLabel = getHistoryEventTypeName(first.eventType).trim();
