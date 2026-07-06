@@ -659,9 +659,10 @@ class DBConnection:
                             raise
                         if time.monotonic() >= deadline:
                             logger.warning(
-                                f'Skipped {pragma_sql} since a reader kept a statement '
-                                f'active during all attempts. The WAL file stays until '
-                                f'a later checkpoint.',
+                                'Skipped %s since a reader kept a statement '
+                                'active during all attempts. The WAL file stays until '
+                                'a later checkpoint.',
+                                pragma_sql,
                             )
                             return
                         time.sleep(0.05)  # a reader mid-statement: let it finish
