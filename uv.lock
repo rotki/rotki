@@ -2192,6 +2192,7 @@ dev = [
 ]
 docs = [
     { name = "rotki-releases" },
+    { name = "setuptools" },
     { name = "sphinx" },
     { name = "sphinx-autobuild" },
     { name = "sphinx-inline-tabs" },
@@ -2303,6 +2304,7 @@ dev = [
 ]
 docs = [
     { name = "rotki-releases", specifier = "==2.0.1" },
+    { name = "setuptools", specifier = "==80.9.0" },
     { name = "sphinx", specifier = "==7.2.6" },
     { name = "sphinx-autobuild", specifier = "==2024.2.4" },
     { name = "sphinx-inline-tabs", specifier = "==2023.4.21" },
