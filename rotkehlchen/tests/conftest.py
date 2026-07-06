@@ -6,15 +6,20 @@ import re
 import shutil
 import sys
 import tempfile
+import threading
 import warnings as test_warnings
-from contextlib import suppress
+from collections.abc import Callable, Iterator
+from contextlib import contextmanager, suppress
 from enum import auto
+from functools import wraps
 from http import HTTPStatus
 from pathlib import Path
 from subprocess import PIPE, Popen, check_output  # noqa: S404
 from typing import TYPE_CHECKING, Any, Final
 from urllib.parse import parse_qs, urlparse
 
+import freezegun
+import freezegun.config
 import py
 import pytest
 
@@ -39,6 +44,66 @@ if TYPE_CHECKING:
 
 # Added here to prevent a warning about polars and forking which does not affect us
 os.environ['POLARS_ALLOW_FORKING_THREAD'] = '1'
+# freezegun's default ignore list contains 'threading', and its call-stack inspection
+# looks only 5 frames up: any time call made near the top of a task thread's stack sees
+# the threading bootstrap frames and silently gets the REAL time instead of the frozen
+# one. Greenlets had detached stacks so this never triggered before the gevent removal,
+# but now every business-logic task runs on a thread and must see the frozen clock.
+# Thread timeout machinery is unaffected as CPython threading uses time.monotonic,
+# which freezegun does not patch.
+freezegun.configure(default_ignore_list=[
+    entry for entry in freezegun.config.DEFAULT_IGNORE_LIST if entry != 'threading'
+])
+
+
+def _make_vcr_thread_safe() -> None:
+    """Serialize vcrpy's global unpatch/repatch windows against connection checkout.
+
+    vcrpy's force_reset() (vcr/patch.py) REMOVES all VCR patches process-wide and
+    reapplies them afterwards. It runs on every stub connection creation and every
+    passthrough send -- including the ignore_localhost requests our tests use to poll
+    the API server. Under gevent only one OS thread existed so nothing could observe
+    the unpatched window, but with real threads a background task's outbound request
+    can race into it, construct a real (unstubbed) connection and hit the live network
+    while a cassette is supposedly recording/playing.
+
+    Guard both sides with one re-entrant lock: force_reset holds it for the whole
+    unpatch->work->repatch cycle, and the cassette's patched _get_conn/_new_conn
+    wrappers hold it while checking out a connection, so a connection can never be
+    created or class-checked inside another thread's unpatched window. The RLock
+    keeps the nested case (stub __init__ calling force_reset inside a locked
+    checkout on the same thread) deadlock-free.
+    """
+    import vcr.patch  # import here to keep the patching self-contained
+
+    vcr_reset_lock = threading.RLock()
+    original_force_reset = vcr.patch.force_reset
+
+    @contextmanager
+    def locked_force_reset() -> Iterator[None]:
+        with vcr_reset_lock, original_force_reset():
+            yield
+
+    vcr.patch.force_reset = locked_force_reset
+
+    def make_locked(original_method: Callable) -> Callable:
+        def locked_method(self: Any, *args: Any, **kwargs: Any) -> Callable:
+            inner = original_method(self, *args, **kwargs)
+
+            @wraps(inner)
+            def wrapper(*inner_args: Any, **inner_kwargs: Any) -> Any:
+                with vcr_reset_lock:
+                    return inner(*inner_args, **inner_kwargs)
+
+            return wrapper
+        return locked_method
+
+    builder = vcr.patch.CassettePatcherBuilder
+    builder._patched_get_conn = make_locked(builder._patched_get_conn)
+    builder._patched_new_conn = make_locked(builder._patched_new_conn)
+
+
+_make_vcr_thread_safe()
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 

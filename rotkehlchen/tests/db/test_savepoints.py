@@ -74,8 +74,8 @@ def test_write_transaction_with_savepoint(conn: DBConnection):
 
 
 def test_write_transaction_with_savepoint_other_context(conn: DBConnection):
-    """Test that opening a savepoint from a different greenlet while a write
-    transaction is already open from another greenlet waits for the original to finish"""
+    """Test that opening a savepoint from a different task while a write
+    transaction is already open from another task waits for the original to finish"""
     def other_context(conn: 'DBConnection', first_run: bool) -> None:
         with conn.savepoint_ctx() as savepoint1_cursor:
             values = (2,) if first_run else (4,)
@@ -89,32 +89,30 @@ def test_write_transaction_with_savepoint_other_context(conn: DBConnection):
     with conn.write_ctx() as write_cursor:
         write_cursor.execute('CREATE TABLE a(b INTEGER PRIMARY KEY)')
         write_cursor.execute('INSERT INTO a VALUES (1)')
-        greenlet1 = spawn(other_context, conn, True)
-        time.sleep(.3)  # context switch for a bit to let the other greenlet run
-        assert greenlet1.exception is None
-        assert greenlet1.dead is False, 'the other greenlet should still run'
+        task1 = spawn(other_context, conn, True)
+        time.sleep(.3)  # give the other task time to run into the write lock
+        assert task1.exception is None
+        assert task1.dead is False, 'the other task should still run'
+        # check while the write transaction is still open: once it commits the
+        # blocked task may be scheduled at any moment and write its row
+        assert write_cursor.execute('SELECT b from a').fetchall() == [(1,)], 'other task should not have written to the DB'  # noqa: E501
 
-    with conn.read_ctx() as cursor:
-        assert cursor.execute('SELECT b from a').fetchall() == [(1,)], 'other greenlet should not have written to the DB'  # noqa: E501
-
-    wait([greenlet1])  # wait till the other greenlet finishes
+    wait([task1])  # wait till the other task finishes
     with conn.read_ctx() as cursor:  # make sure it wrote in the DB
-        assert cursor.execute('SELECT b from a').fetchall() == [(1,), (2,)], 'other greenlet should write to the DB'  # noqa: E501
+        assert cursor.execute('SELECT b from a').fetchall() == [(1,), (2,)], 'other task should write to the DB'  # noqa: E501
 
-    # now let's try with the other greenlet also rolling back part of the savepoint
+    # now let's try with the other task also rolling back part of the savepoint
     with conn.write_ctx() as write_cursor:
         write_cursor.execute('INSERT INTO a VALUES (3)')
-        greenlet1 = spawn(other_context, conn, False)
-        time.sleep(.3)  # context switch for a bit to let the other greenlet run
-        assert greenlet1.exception is None
-        assert greenlet1.dead is False, 'the other greenlet should still run'
+        task1 = spawn(other_context, conn, False)
+        time.sleep(.3)  # give the other task time to run into the write lock
+        assert task1.exception is None
+        assert task1.dead is False, 'the other task should still run'
+        assert write_cursor.execute('SELECT b from a').fetchall() == [(1,), (2,), (3,)], 'other task should not have written to the DB'  # noqa: E501
 
-    with conn.read_ctx() as cursor:
-        assert cursor.execute('SELECT b from a').fetchall() == [(1,), (2,), (3,)], 'other greenlet should not have written to the DB'  # noqa: E501
-
-    wait([greenlet1])  # wait till the other greenlet finishes
+    wait([task1])  # wait till the other task finishes
     with conn.read_ctx() as cursor:  # make sure it wrote in the DB but not the last one
-        assert cursor.execute('SELECT b from a').fetchall() == [(1,), (2,), (3,), (4,)], 'other greenlet should write to the DB'  # noqa: E501
+        assert cursor.execute('SELECT b from a').fetchall() == [(1,), (2,), (3,), (4,)], 'other task should write to the DB'  # noqa: E501
 
 
 def test_savepoint_with_write_transaction(conn: DBConnection):
@@ -142,7 +140,7 @@ def test_savepoint_with_write_transaction(conn: DBConnection):
 
 
 def test_savepoint_with_write_transaction_other_context(conn: DBConnection):
-    """Test that a write transaction after a savepoint but in a different greenlet
+    """Test that a write transaction after a savepoint but in a different task
     does not continue the savepoint but instead waits"""
     def other_context(conn) -> None:
         with conn.write_ctx() as write_cursor:
@@ -153,22 +151,22 @@ def test_savepoint_with_write_transaction_other_context(conn: DBConnection):
 
     with conn.savepoint_ctx() as savepoint_cursor:
         savepoint_cursor.execute('INSERT INTO a VALUES (1)')
-        greenlet1 = spawn(other_context, conn)
-        time.sleep(.3)  # context switch for a bit to let the other greenlet run
-        assert greenlet1.exception is None
-        assert greenlet1.dead is False, 'the other greenlet should still run'
+        task1 = spawn(other_context, conn)
+        time.sleep(.3)  # give the other task time to run into the write lock
+        assert task1.exception is None
+        assert task1.dead is False, 'the other task should still run'
+        # check while the savepoint is still open: once it releases the blocked
+        # task may be scheduled at any moment and write its row
+        assert savepoint_cursor.execute('SELECT b from a').fetchall() == [(1,)], 'other task should not have written to the DB'  # noqa: E501
 
-    with conn.read_ctx() as cursor:
-        assert cursor.execute('SELECT b from a').fetchall() == [(1,)], 'other greenlet should not have written to the DB'  # noqa: E501
-
-    wait([greenlet1])  # wait till the other greenlet finishes
+    wait([task1])  # wait till the other task finishes
     with conn.read_ctx() as cursor:  # make sure it wrote in the DB
-        assert cursor.execute('SELECT b from a').fetchall() == [(1,), (4,)], 'other greenlet should write to the DB'  # noqa: E501
+        assert cursor.execute('SELECT b from a').fetchall() == [(1,), (4,)], 'other task should write to the DB'  # noqa: E501
 
 
 def test_open_savepoint_with_savepoint_other_context(conn: DBConnection):
     """Test that opening a savepoint while a savepoint queue is already open in
-    another greenlet waits until the first one is completely done"""
+    another task waits until the first one is completely done"""
     def other_context(conn, first_run) -> None:
         with conn.savepoint_ctx() as savepoint1_cursor:
             values = (2,) if first_run else (4,)
@@ -184,32 +182,28 @@ def test_open_savepoint_with_savepoint_other_context(conn: DBConnection):
 
     with conn.savepoint_ctx() as savepoint_cursor:
         savepoint_cursor.execute('INSERT INTO a VALUES (1)')
-        greenlet1 = spawn(other_context, conn, True)
-        time.sleep(.3)  # context switch for a bit to let the other greenlet run
-        assert greenlet1.exception is None
-        assert greenlet1.dead is False, 'the other greenlet should still run'
+        task1 = spawn(other_context, conn, True)
+        time.sleep(.3)  # give the other task time to run into the savepoint lock
+        assert task1.exception is None
+        assert task1.dead is False, 'the other task should still run'
+        assert savepoint_cursor.execute('SELECT b from a').fetchall() == [(1,)], 'other task should not have written to the DB'  # noqa: E501
 
-    with conn.read_ctx() as cursor:
-        assert cursor.execute('SELECT b from a').fetchall() == [(1,)], 'other greenlet should not have written to the DB'  # noqa: E501
-
-    wait([greenlet1])  # wait till the other greenlet finishes
+    wait([task1])  # wait till the other task finishes
     with conn.read_ctx() as cursor:  # make sure it wrote in the DB
-        assert cursor.execute('SELECT b from a').fetchall() == [(1,), (2,)], 'other greenlet should write to the DB'  # noqa: E501
+        assert cursor.execute('SELECT b from a').fetchall() == [(1,), (2,)], 'other task should write to the DB'  # noqa: E501
 
-    # now let's try with the other greenlet also rolling back part of the savepoint
+    # now let's try with the other task also rolling back part of the savepoint
     with conn.savepoint_ctx() as savepoint_cursor:
         savepoint_cursor.execute('INSERT INTO a VALUES (3)')
-        greenlet1 = spawn(other_context, conn, False)
-        time.sleep(.3)  # context switch for a bit to let the other greenlet run
-        assert greenlet1.exception is None
-        assert greenlet1.dead is False, 'the other greenlet should still run'
+        task1 = spawn(other_context, conn, False)
+        time.sleep(.3)  # give the other task time to run into the savepoint lock
+        assert task1.exception is None
+        assert task1.dead is False, 'the other task should still run'
+        assert savepoint_cursor.execute('SELECT b from a').fetchall() == [(1,), (2,), (3,)], 'other task should not have written to the DB'  # noqa: E501
 
-    with conn.read_ctx() as cursor:
-        assert cursor.execute('SELECT b from a').fetchall() == [(1,), (2,), (3,)], 'other greenlet should not have written to the DB'  # noqa: E501
-
-    wait([greenlet1])  # wait till the other greenlet finishes
+    wait([task1])  # wait till the other task finishes
     with conn.read_ctx() as cursor:  # make sure it wrote in the DB but not the last one
-        assert cursor.execute('SELECT b from a').fetchall() == [(1,), (2,), (3,), (4,)], 'other greenlet should write to the DB'  # noqa: E501
+        assert cursor.execute('SELECT b from a').fetchall() == [(1,), (2,), (3,), (4,)], 'other task should write to the DB'  # noqa: E501
 
 
 def test_rollback_in_savepoints(conn: DBConnection):
