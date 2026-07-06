@@ -200,6 +200,7 @@ watch([status, selectedAccounts], () => {
             color="primary"
             size="lg"
             :loading="loading"
+            data-testid="airdrop-refresh"
             @click="fetchAirdrops()"
           >
             <template #prepend>
@@ -226,6 +227,7 @@ watch([status, selectedAccounts], () => {
           v-model="status"
           :options="statusFilters"
           class="w-full flex-1"
+          data-testid="airdrop-status-filter"
           key-attr="value"
           text-attr="text"
           dense
@@ -239,6 +241,7 @@ watch([status, selectedAccounts], () => {
         type="info"
         class="mb-4"
         closeable
+        data-testid="airdrop-unknown-alert"
         @close="hideUnknownAlert = true"
       >
         {{ t('airdrops.unknown_info') }}
@@ -249,6 +252,7 @@ watch([status, selectedAccounts], () => {
         v-model:expanded="expanded"
         v-model:sort="sort"
         outlined
+        data-testid="airdrop-table"
         :rows="rows"
         :cols="cols"
         :loading="loading"
