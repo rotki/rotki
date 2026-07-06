@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { displayDateFormatter } from '@/modules/core/common/date-formatter';
-import { useGeneralSettingsStore } from '@/modules/settings/use-general-settings-store';
 import { useScramble } from '@/modules/settings/use-scramble';
+import { useSetting } from '@/modules/settings/use-setting';
 import CopyTooltip from '@/modules/shell/components/CopyTooltip.vue';
 
 const { hideTooltip = false, milliseconds = false, noTime = false, showTimezone = false, timestamp } = defineProps<{
@@ -12,7 +12,7 @@ const { hideTooltip = false, milliseconds = false, noTime = false, showTimezone 
   hideTooltip?: boolean;
 }>();
 
-const { dateDisplayFormat } = storeToRefs(useGeneralSettingsStore());
+const dateDisplayFormat = useSetting('dateDisplayFormat');
 
 const dateFormat = computed<string>(() => {
   const display = showTimezone
