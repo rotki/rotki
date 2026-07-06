@@ -274,13 +274,13 @@ class ProtocolWithGauges(ProtocolWithBalance):
         Query gauge balances for the addresses that have interacted with known gauges.
         """
         balances: BalancesSheetType = defaultdict(BalanceSheet)
-        gauges_to_token: dict[ChecksumEvmAddress, EvmToken] = {}
         entries: list[tuple[ChecksumEvmAddress, Asset, FVal]] = []
         # query addresses and gauges where they interacted
         chunk_size, call_order = get_rpc_first_chunk_size_call_order(self.evm_inquirer)
         for address, events in self.addresses_with_gauge_deposits(
             location_labels=addresses,
         ).items():
+            gauges_to_token: dict[ChecksumEvmAddress, EvmToken] = {}
             # Create a mapping of a gauge to its token
             for event in events:
                 if (
