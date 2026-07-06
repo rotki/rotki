@@ -189,7 +189,7 @@ def test_existing_decoded_transaction_is_redecoded_for_new_address(
         customized: bool,
         has_existing_mapping: bool,
 ) -> None:
-    """A newly discovered address association invalidates stale decoded events."""
+    """Only a newly discovered second address invalidates stale decoded events."""
     dbevmtx = DBEvmTx(database)
     dbevents = DBHistoryEvents(database)
     transaction = make_ethereum_transaction()
@@ -248,15 +248,17 @@ def test_existing_decoded_transaction_is_redecoded_for_new_address(
 
     assert timestamps == {transaction.tx_hash: transaction.timestamp}
     assert newly_inserted == []
+    should_redecode = has_existing_mapping and customized is False
+    expected_remaining_entries = 0 if should_redecode else 1
     with database.conn.read_ctx() as cursor:
         assert cursor.execute(
             'SELECT COUNT(*) FROM evm_tx_mappings WHERE tx_id=? AND value=?',
             (tx_id, TX_DECODED),
-        ).fetchone()[0] == int(customized)
+        ).fetchone()[0] == expected_remaining_entries
         assert cursor.execute(
             'SELECT COUNT(*) FROM chain_events_info WHERE tx_ref=?',
             (transaction.tx_hash,),
-        ).fetchone()[0] == int(customized)
+        ).fetchone()[0] == expected_remaining_entries
         assert cursor.execute(
             'SELECT COUNT(*) FROM evmtx_address_mappings WHERE tx_id=? AND address=?',
             (tx_id, new_address),
@@ -272,8 +274,8 @@ def test_existing_decoded_transaction_is_redecoded_for_new_address(
     assert database.pending_txs_tracker.should_scan_decoding(
         blockchain=SupportedBlockchain.ETHEREUM,
         now=Timestamp(1000),
-    ) is not customized
-    if customized is False:
+    ) is should_redecode
+    if should_redecode:
         with database.user_write() as write_cursor:
             write_cursor.execute(
                 'INSERT INTO evm_tx_mappings(tx_id, value) VALUES(?, ?)',

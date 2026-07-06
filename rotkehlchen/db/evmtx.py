@@ -99,7 +99,7 @@ class DBEvmTx(DBCommonTx[ChecksumEvmAddress, EvmTransaction, EVMTxHash, EvmTrans
             dict[int, EVMTxHash],
         ] = defaultdict(dict)
         for tx in evm_transactions:
-            row_id, is_new, is_new_mapping = self.db.write_single_tuple(
+            row_id, is_new, is_new_shared_mapping = self.db.write_single_tuple(
                 write_cursor=write_cursor,
                 tuple_type='evm_transaction',
                 query=query,
@@ -124,11 +124,10 @@ class DBEvmTx(DBCommonTx[ChecksumEvmAddress, EvmTransaction, EVMTxHash, EvmTrans
                 dirty_chains.add(tx.chain_id)
             elif (
                 row_id is not None and
-                is_new_mapping and
+                is_new_shared_mapping and
                 tx.chain_id in EVM_CHAIN_IDS_WITH_TRANSACTIONS
             ):
-                # The membership check above narrows this at runtime but not for mypy.
-                transactions_to_redecode[tx.chain_id][row_id] = tx.tx_hash  # type: ignore[index]
+                transactions_to_redecode[tx.chain_id][row_id] = tx.tx_hash
 
             if row_id is not None and tx.authorization_list is not None:
                 self.db.write_tuples(
