@@ -381,6 +381,12 @@ class RestAPI:
         self.migration_lock = threading.Semaphore()
         self.task_id = 0
         self.task_results: dict[int, Any] = {}
+        # Guarded by task_lock. Non-None while api tasks are being cancelled at
+        # logout/shutdown and until the teardown finishes: a task spawned in that
+        # window is cancelled on the spot, so it dies at its first checkpoint as an
+        # expected death instead of escaping cancellation and running (uncancelled)
+        # against the session being torn down.
+        self.api_tasks_stop_reason: str | None = None
 
     # - Private functions not exposed to the API
     def _new_task_id(self) -> int:
@@ -449,6 +455,10 @@ class RestAPI:
         task.add_done_callback(self._handle_task_death)
         with self.task_lock:
             self.rotkehlchen.api_tasks.append(task)
+            if self.api_tasks_stop_reason is not None:
+                # logout/shutdown is tearing the session down: die at the first
+                # checkpoint (before the command runs) as an expected death
+                task.request_cancellation(self.api_tasks_stop_reason)
         task.start()
         return api_response(_wrap_in_ok_result({'task_id': task_id}), status_code=HTTPStatus.OK)
 
@@ -460,6 +470,11 @@ class RestAPI:
         death logged without alerting the user since its token shows the
         cancellation was deliberate."""
         with self.task_lock:
+            # From here on newly spawned tasks are cancelled at spawn (see
+            # _query_async), so a task slipping in during the grace period below
+            # cannot escape cancellation. Reset by user_logout once teardown is done;
+            # deliberately never reset on shutdown.
+            self.api_tasks_stop_reason = reason
             pending = [x for x in self.rotkehlchen.api_tasks if x.dead is False]
         if len(pending) != 0:
             for task in pending:
@@ -1118,13 +1133,20 @@ class RestAPI:
             result_dict['message'] = f'Provided user {name} is not the logged in user'
             return api_response(result_dict, status_code=HTTPStatus.CONFLICT)
 
-        # Cancel all queries apart from the main loop instead of waiting for
-        # them: that could take a lot of time for no reason since all results
-        # would be discarded anyway as we are logging out.
-        self._cancel_api_tasks(reason='Cancelled due to logout')
-        with self.task_lock:
-            self.task_results = {}
-        self.rotkehlchen.logout()
+        # Serialize with in-flight login/create tasks, which hold login_lock for their
+        # whole task body. Without it a logout arriving mid-login reported success
+        # while the login kept going and finished against the logged-out state.
+        with self.login_lock:
+            # Cancel all queries apart from the main loop instead of waiting for
+            # them: that could take a lot of time for no reason since all results
+            # would be discarded anyway as we are logging out.
+            self._cancel_api_tasks(reason='Cancelled due to logout')
+            with self.task_lock:
+                self.task_results = {}
+            self.rotkehlchen.logout()
+            with self.task_lock:  # teardown done: let new api tasks (e.g. the next login) run
+                self.api_tasks_stop_reason = None
+
         result_dict['result'] = True
         return api_response(result_dict, status_code=HTTPStatus.OK)
 

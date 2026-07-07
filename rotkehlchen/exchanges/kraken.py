@@ -357,8 +357,9 @@ class Kraken(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
                 # still at limit, sleep for an amount big enough for smallest tier reduction
                 backoff_in_seconds = self.reduction_every_secs * 2
                 log.debug(
-                    f'Doing a Kraken API call would now exceed our call counter limit. '
-                    f'Backing off for {backoff_in_seconds} seconds',
+                    'Doing a Kraken API call would now exceed our call counter limit. '
+                    'Backing off for %s seconds',
+                    backoff_in_seconds,
                     call_counter=self.call_counter,
                 )
                 tries -= 1
@@ -1178,7 +1179,7 @@ class Kraken(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
                 digest_algorithm=hashlib.sha512,
             )
             full_url = KRAKEN_FUTURES_BASE_URL + urlpath
-            log.debug(f'Querying Kraken for {method} with {nonce} at URL: {full_url}')
+            log.debug('Querying Kraken for %s with %s at URL: %s', method, nonce, full_url)
             try:
                 response = self.session.get(
                     full_url,
@@ -1189,7 +1190,7 @@ class Kraken(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
                         'Authent': signature,
                     },
                 )
-                log.debug(f'raw response from kraken for API method {method} = {response}')
+                log.debug('raw response from kraken for API method %s = %s', method, response)
             except requests.exceptions.RequestException as e:
                 raise RemoteError(f'Kraken API request failed due to {e!s}') from e
 
