@@ -42,6 +42,13 @@ class AssetResolver:
     # Maps asset identifier -> its normalized identifier for existence checks. Lets
     # check_existence avoid a globaldb query for every event row during deserialization.
     existence_cache: LRUCacheLowerKey[str] = LRUCacheLowerKey(maxsize=512)
+    # Bumped on every clean_memory_cache. The resolution methods snapshot it before
+    # querying the DB and skip the cache write-back if it changed in the meantime, so
+    # a clean issued for an edited/deleted asset while a resolution is in flight
+    # cannot be resurrected by that resolution's stale result. Class-wide instead of
+    # per-identifier: the cost of a false positive is only one uncached call. Same
+    # pattern as CacheableMixIn.cache_flush_generation.
+    cache_clean_generation = 0
 
     def __new__(  # noqa: PYI034 # singleton pattern should not get Self
             cls,
@@ -63,9 +70,29 @@ class AssetResolver:
         return AssetResolver.__instance
 
     @staticmethod
+    def _may_cache(clean_generation: int) -> bool:
+        """Whether a resolution result queried from the global DB may be cached.
+
+        Not the case if the caches were cleaned after `clean_generation` was
+        snapshotted (the result may predate the edit/deletion that triggered the
+        clean), nor while any write transaction or savepoint stack is open on the
+        global DB connection: asset editors clean the caches before committing so
+        a concurrent resolution would re-cache the pre-commit state, and the
+        writing task itself resolves its own yet-uncommitted data which must not
+        become visible to others through the cache.
+        """
+        conn = AssetResolver._globaldb.conn
+        return (
+            AssetResolver.cache_clean_generation == clean_generation and
+            conn.write_task_ident is None and
+            conn.savepoint_task_ident is None
+        )
+
+    @staticmethod
     def clean_memory_cache(identifier: str | None = None) -> None:
         """Clean the memory cache of either a single or all assets"""
         assert AssetResolver.__instance is not None, 'when cleaning the cache instance should be set'  # noqa: E501
+        AssetResolver.cache_clean_generation += 1  # before the removals, so in-flight resolutions always notice  # noqa: E501
         if identifier is not None:
             AssetResolver.__instance.assets_cache.remove(identifier)
             AssetResolver.__instance.types_cache.remove(identifier)
@@ -89,8 +116,10 @@ class AssetResolver:
         if identifier.lower() in cache:
             return cache.get(identifier)
 
+        clean_generation = AssetResolver.cache_clean_generation
         main_asset = AssetResolver._globaldb.get_collection_main_asset(identifier)
-        cache.add(identifier, main_asset)
+        if AssetResolver._may_cache(clean_generation):
+            cache.add(identifier, main_asset)
         return main_asset
 
     @staticmethod
@@ -110,6 +139,7 @@ class AssetResolver:
             return cached_data
 
         # If was not found in the cache try querying it in the globaldb
+        clean_generation = AssetResolver.cache_clean_generation
         try:
             asset = AssetResolver._globaldb.resolve_asset(identifier=identifier)
         except UnknownAsset:
@@ -121,8 +151,8 @@ class AssetResolver:
                 identifier=identifier,
             )
 
-        # Save it in the cache
-        AssetResolver.assets_cache.add(identifier, asset)
+        if AssetResolver._may_cache(clean_generation):
+            AssetResolver.assets_cache.add(identifier, asset)
         return asset
 
     @staticmethod
@@ -130,10 +160,12 @@ class AssetResolver:
         if (cached_data := AssetResolver.types_cache.get(identifier)) is not None:
             return cached_data
 
+        clean_generation = AssetResolver.cache_clean_generation
         # If the asset was already fully resolved its type is known, so reuse it
         # instead of issuing a fresh `SELECT type` query against the globaldb.
         if (resolved := AssetResolver.assets_cache.get(identifier)) is not None:
-            AssetResolver.types_cache.add(identifier, resolved.asset_type)
+            if AssetResolver._may_cache(clean_generation):
+                AssetResolver.types_cache.add(identifier, resolved.asset_type)
             return resolved.asset_type
 
         try:
@@ -147,7 +179,8 @@ class AssetResolver:
                 identifier=identifier,
             )
             asset_type = asset.asset_type
-        AssetResolver.types_cache.add(identifier, asset_type)
+        if AssetResolver._may_cache(clean_generation):
+            AssetResolver.types_cache.add(identifier, asset_type)
         return asset_type
 
     @staticmethod
@@ -164,6 +197,7 @@ class AssetResolver:
         if (normalized_id := AssetResolver.existence_cache.get(identifier)) is not None:
             return normalized_id
 
+        clean_generation = AssetResolver.cache_clean_generation
         try:
             normalized_id = AssetResolver._globaldb.asset_id_exists(identifier)
         except UnknownAsset:
@@ -176,7 +210,8 @@ class AssetResolver:
                 use_packaged_db=True,
             )
 
-        AssetResolver.existence_cache.add(identifier, normalized_id)
+        if AssetResolver._may_cache(clean_generation):
+            AssetResolver.existence_cache.add(identifier, normalized_id)
         return normalized_id
 
     @staticmethod
@@ -202,6 +237,7 @@ class AssetResolver:
                 continue
             to_check.add(identifier)
 
+        clean_generation = AssetResolver.cache_clean_generation
         found_ids: set[str] = set()
         if len(to_check) != 0:
             with AssetResolver._globaldb.conn.read_ctx() as cursor:
@@ -214,8 +250,9 @@ class AssetResolver:
                     found_ids.update(row[0] for row in cursor)
 
         normalized_map.update({identifier: identifier for identifier in found_ids})
-        for identifier in found_ids:
-            AssetResolver.existence_cache.add(identifier, identifier)
+        if AssetResolver._may_cache(clean_generation):
+            for identifier in found_ids:
+                AssetResolver.existence_cache.add(identifier, identifier)
 
         if len(missing_ids := to_check - found_ids) == 0:
             return normalized_map, set()
@@ -237,8 +274,9 @@ class AssetResolver:
                     packaged_found.update(row[0] for row in cursor)
 
         normalized_map.update({identifier: identifier for identifier in packaged_found})
-        for identifier in packaged_found:
-            AssetResolver.existence_cache.add(identifier, identifier)
+        if AssetResolver._may_cache(clean_generation):
+            for identifier in packaged_found:
+                AssetResolver.existence_cache.add(identifier, identifier)
         unknown_ids = missing_non_constant | (missing_constant - packaged_found)
         return normalized_map, unknown_ids
 
@@ -262,10 +300,12 @@ class AssetResolver:
         if identifier in AssetResolver._constant_assets:
             # Check if the version in the packaged globaldb is correct
             globaldb = AssetResolver._globaldb
+            clean_generation = AssetResolver.cache_clean_generation
             packaged_asset = globaldb.resolve_asset(identifier=identifier, use_packaged_db=True)
             if isinstance(packaged_asset, expected_type):  # it's what was requested. So fix local global db  # noqa: E501
                 resolved_asset = globaldb.resolve_asset_from_packaged_and_store(identifier=identifier)  # noqa: E501
-                AssetResolver.assets_cache.add(identifier, resolved_asset)
+                if AssetResolver._may_cache(clean_generation):
+                    AssetResolver.assets_cache.add(identifier, resolved_asset)
                 if isinstance(resolved_asset, expected_type) is True:
                     # resolve_asset returns Asset, but we already narrow type with the if check above  # noqa: E501
                     return resolved_asset  # type: ignore

@@ -14,6 +14,7 @@ from rotkehlchen.accounting.structures.balance import BalanceType
 from rotkehlchen.assets.asset import Asset, CryptoAsset, CustomAsset, EvmToken, FiatAsset, Nft
 from rotkehlchen.assets.converters import asset_from_nexo
 from rotkehlchen.assets.ignored_assets_handling import IgnoredAssetsHandling
+from rotkehlchen.assets.resolver import AssetResolver
 from rotkehlchen.assets.types import AssetData, AssetType
 from rotkehlchen.assets.utils import (
     get_crypto_asset_by_symbol,
@@ -1109,6 +1110,35 @@ def test_resolve_nft():
         identifier='_nft_foo',
         chain_id=ChainID.ETHEREUM,
     )
+
+
+def test_resolver_cache_clean_during_resolution_not_resurrected(globaldb: GlobalDBHandler):
+    """A cache clean for an edited/deleted asset landing while a resolution is in
+    flight must not be undone by that resolution writing its stale result back"""
+    AssetResolver.clean_memory_cache()
+    original_resolve = GlobalDBHandler.resolve_asset
+
+    def resolve_then_concurrent_edit(*args, **kwargs):
+        result = original_resolve(*args, **kwargs)
+        # an edit of the asset lands after the DB read but before the write-back
+        AssetResolver.clean_memory_cache(A_DAI.identifier)
+        return result
+
+    with patch.object(GlobalDBHandler, 'resolve_asset', side_effect=resolve_then_concurrent_edit):
+        assert A_DAI.resolve().identifier == A_DAI.identifier
+    assert AssetResolver.assets_cache.get(A_DAI.identifier) is None, 'stale result should not have been cached'  # noqa: E501
+
+    # without an interleaved clean the resolution populates the cache normally
+    assert A_DAI.resolve().identifier == A_DAI.identifier
+    assert AssetResolver.assets_cache.get(A_DAI.identifier) is not None
+
+    # a resolution inside an open global DB write transaction (own uncommitted
+    # data) must not enter the cache either
+    AssetResolver.clean_memory_cache()
+    with globaldb.conn.write_ctx():
+        assert A_DAI.resolve().identifier == A_DAI.identifier
+        assert AssetResolver.assets_cache.get(A_DAI.identifier) is None
+    assert AssetResolver.assets_cache.get(A_DAI.identifier) is None
 
 
 def test_symbol_or_name(database):
