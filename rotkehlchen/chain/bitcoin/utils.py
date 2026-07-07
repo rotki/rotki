@@ -8,9 +8,10 @@ from typing import TYPE_CHECKING, Any
 
 import bech32
 import requests
-from bip_utils import P2TRAddrEncoder, P2WPKHAddrEncoder
 
 from rotkehlchen.chain.bitcoin.bch.validation import is_valid_bitcoin_cash_address
+from rotkehlchen.chain.bitcoin.secp256k1 import PublicKey
+from rotkehlchen.chain.bitcoin.segwit import encode_segwit_address
 from rotkehlchen.chain.bitcoin.validation import is_valid_btc_address
 from rotkehlchen.constants.timing import GLOBAL_REQUESTS_TIMEOUT
 from rotkehlchen.db.settings import CachedSettings
@@ -130,9 +131,9 @@ def pubkey_to_bech32_address(data: bytes, witver: WitnessVersion) -> BTCAddress:
     """
     try:
         if witver == WitnessVersion.BECH32:
-            result = P2WPKHAddrEncoder.EncodeKey(pub_key=data, hrp='bc')
+            result = encode_segwit_address('bc', 0, hash160(data))
         else:
-            result = P2TRAddrEncoder.EncodeKey(pub_key=data, hrp='bc')
+            result = encode_segwit_address('bc', 1, PublicKey(data).taproot_output_key())
     except ValueError as e:
         raise EncodingError('Could not derive Bech32 address from given public key') from e
     return BTCAddress(result)

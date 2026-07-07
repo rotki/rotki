@@ -7,6 +7,7 @@ import pytest
 
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.chain.bitcoin.hdkey import HDKey, XpubType
+from rotkehlchen.chain.bitcoin.secp256k1 import PublicKey
 from rotkehlchen.chain.bitcoin.utils import (
     WitnessVersion,
     is_valid_derivation_path,
@@ -294,6 +295,23 @@ def test_from_bad_xpub():
         HDKey.from_xpub('xpriv68V4ZQQ62mea7ZUKn2urQu47Bdn2Wr7SxrBxBDDwE3kjytj361YBGSKDT4WoBrE5htrSB8eAMe59NPnKrcAbiv2veN5GQUmfdjRddD1Hxrk')
     with pytest.raises(XPUBError):
         HDKey.from_xpub('apfiv68V4ZQQ62mea7ZUKn2urQu47Bdn2Wr7SxrBxBDDwE3kjytj361YBGSKDT4WoBrE5htrSB8eAMe59NPnKrcAbiv2veN5GQUmfdjRddD1Hxrk')
+
+
+def test_secp256k1_public_key_validation_and_tweaks():
+    key = PublicKey(bytes.fromhex(
+        '0279be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798',
+    ))
+    assert key.format(compressed=True) == bytes.fromhex(
+        '0279be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798',
+    )
+    assert key.add((1).to_bytes(32, byteorder='big')).format(compressed=True) == bytes.fromhex(
+        '02c6047f9441ed7d6d3045406e95c07cd85c778e4b8cef3ca7abac09b95c709ee5',
+    )
+
+    with pytest.raises(ValueError):
+        PublicKey(b'\x02' + b'\x00' * 32)
+    with pytest.raises(ValueError):
+        key.add(b'\x00' * 32)
 
 
 def test_xpub_data_comparison():

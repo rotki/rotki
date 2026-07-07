@@ -9,4 +9,4 @@ HASKOIN_BATCH_SIZE: Final = 100
 
 # Combined with the tx id to create the group identifiers for bitcoin cash transactions.
 BCH_GROUP_IDENTIFIER_PREFIX: Final = 'bch_'
-CASHADDR_PREFIX: Final = 'bitcoincash'  # standard prefix used by bip_utils and other APIs
+CASHADDR_PREFIX: Final = 'bitcoincash'  # standard prefix used by CashAddr APIs
