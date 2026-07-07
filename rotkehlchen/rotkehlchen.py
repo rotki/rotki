@@ -256,7 +256,9 @@ class Rotkehlchen:
         cancelled_tasks = []
         for address in addresses:
             account_data = OptionalBlockchainAccount(address=address, chain=blockchain)
-            for task in self.api_tasks:
+            # iterate a snapshot: api threads pop finished tasks concurrently and an
+            # index shift mid-iteration would silently skip a task that must be cancelled
+            for task in list(self.api_tasks):
                 is_evm_tx_task = (
                     task.dead is False and
                     isinstance(command := getattr(task, 'api_command', None), FunctionType) and

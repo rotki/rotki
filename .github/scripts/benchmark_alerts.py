@@ -168,5 +168,5 @@ if __name__ == '__main__':
     try:
         main()
     except (OSError, ValueError, json.JSONDecodeError) as e:
-        logger.error(f'Failed to check benchmark alerts: {e}')
+        logger.error('Failed to check benchmark alerts: %s', e)
         sys.exit(1)

@@ -2642,7 +2642,7 @@ class DBHandler:
                     try:
                         extras[key] = GateLocation.deserialize(entry[1])
                     except DeserializationError as e:
-                        log.error(f'Couldnt deserialize gate location from DB. {e!s}')
+                        log.error('Couldnt deserialize gate location from DB. %s', e)
                 elif key == OKX_LOCATION_KEY:
                     try:  # type is checked above
                         extras[key] = OkxLocation.deserialize(entry[1])

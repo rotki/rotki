@@ -350,6 +350,19 @@ class CachedPriceEntry(NamedTuple):
     oracle: CurrentPriceOracle
 
 
+class CurrentOracleState(NamedTuple):
+    """The oracle order and the matching oracle instances.
+
+    Kept as a single immutable unit swapped with one attribute assignment so that
+    concurrent price queries can never observe a new oracle list paired with the
+    old instances (or vice versa) while set_oracles_order runs on another thread.
+    """
+    oracles: list[CurrentPriceOracle]
+    instances: list[CurrentPriceOracleInstance]
+    oracles_not_onchain: list[CurrentPriceOracle]
+    instances_not_onchain: list[CurrentPriceOracleInstance]
+
+
 class Inquirer:
     __instance: Optional['Inquirer'] = None
     _cached_forex_data: dict
@@ -365,10 +378,7 @@ class Inquirer:
     _uniswapv2: Optional['UniswapV2Oracle'] = None
     _uniswapv3: Optional['UniswapV3Oracle'] = None
     _evm_managers: dict[ChainID, 'EvmManager']
-    _oracles: Sequence[CurrentPriceOracle] | None = None
-    _oracle_instances: list[CurrentPriceOracleInstance] | None = None
-    _oracles_not_onchain: Sequence[CurrentPriceOracle] | None = None
-    _oracle_instances_not_onchain: list[CurrentPriceOracleInstance] | None = None
+    _oracle_state: CurrentOracleState | None = None
     _msg_aggregator: 'MessagesAggregator'
     # save only the identifier of the special tokens since we only check if assets are in this set
     special_tokens: set[str]
@@ -462,6 +472,22 @@ class Inquirer:
 
         return Inquirer.__instance
 
+    @property
+    def _oracles(self) -> list[CurrentPriceOracle] | None:
+        """Convenience view into _oracle_state. Code needing the oracle/instance
+        pairing must read _oracle_state once instead of combining these properties."""
+        return state.oracles if (state := self._oracle_state) is not None else None
+
+    @property
+    def _oracle_instances(self) -> list[CurrentPriceOracleInstance] | None:
+        return state.instances if (state := self._oracle_state) is not None else None
+
+    @_oracle_instances.setter
+    def _oracle_instances(self, instances: list[CurrentPriceOracleInstance]) -> None:
+        state = self._oracle_state
+        assert state is not None, 'set_oracles_order has not been called'
+        self._oracle_state = state._replace(instances=instances)
+
     @staticmethod
     def inject_evm_managers(evm_managers: Sequence[tuple[ChainID, 'EvmManager']]) -> None:
         instance = Inquirer()
@@ -515,8 +541,9 @@ class Inquirer:
             "Oracles can't be empty or have repeated items"
         )
         instance = Inquirer()
-        # Build the new lists locally and rebind at the end: concurrent price queries
-        # iterate these attributes, so they must never observe a half-built list
+        # Build the new lists locally and publish them with a single _oracle_state
+        # assignment at the end: concurrent price queries read the state once, so they
+        # can never observe a half-built list or a mismatched oracle/instance pairing
         new_oracles, new_oracle_instances = [], []
         for oracle in oracles:
             if oracle == CurrentPriceOracle.CRYPTOCOMPARE and instance._cryptocompare.has_api_key() is False:  # noqa: E501
@@ -533,10 +560,12 @@ class Inquirer:
                 new_oracles_not_onchain.append(oracle)
                 new_oracle_instances_not_onchain.append(oracle_instance)
 
-        instance._oracles = new_oracles
-        instance._oracle_instances = new_oracle_instances
-        instance._oracles_not_onchain = new_oracles_not_onchain
-        instance._oracle_instances_not_onchain = new_oracle_instances_not_onchain
+        instance._oracle_state = CurrentOracleState(
+            oracles=new_oracles,
+            instances=new_oracle_instances,
+            oracles_not_onchain=new_oracles_not_onchain,
+            instances_not_onchain=new_oracle_instances_not_onchain,
+        )
 
     @staticmethod
     def set_cached_price(cache_key: tuple[Asset, Asset], cached_price: CachedPriceEntry) -> None:
@@ -602,12 +631,10 @@ class Inquirer:
         If no oracles are able to find an asset's price it will be set to ZERO_PRICE.
         """
         instance = Inquirer()
-        assert (
-            instance._oracles is not None and
-            instance._oracle_instances is not None and
-            instance._oracles_not_onchain is not None and
-            instance._oracle_instances_not_onchain is not None
-        ), 'Inquirer should never be called before setting the oracles'
+        # Read the state once: a concurrent set_oracles_order swaps it atomically, while
+        # two separate attribute loads could pair oracles with mismatched instances
+        state = instance._oracle_state
+        assert state is not None, 'Inquirer should never be called before setting the oracles'
 
         # Resolve assets to AssetWithOracles and set
         # the price of any assets without oracles to ZERO_PRICE
@@ -630,11 +657,11 @@ class Inquirer:
             return found_prices  # no assets with oracles found. Skip querying oracles.
 
         if skip_onchain:
-            oracles = instance._oracles_not_onchain
-            oracle_instances = instance._oracle_instances_not_onchain
+            oracles = state.oracles_not_onchain
+            oracle_instances = state.instances_not_onchain
         else:
-            oracles = instance._oracles
-            oracle_instances = instance._oracle_instances
+            oracles = state.oracles
+            oracle_instances = state.instances
 
         for oracle, oracle_instance in zip(oracles, oracle_instances, strict=True):
             if (
@@ -1583,7 +1610,4 @@ class Inquirer:
         inquirer = Inquirer()
         inquirer._uniswapv2 = None
         inquirer._uniswapv3 = None
-        del inquirer._oracle_instances
-        del inquirer._oracles
-        del inquirer._oracle_instances_not_onchain
-        del inquirer._oracles_not_onchain
+        inquirer._oracle_state = None

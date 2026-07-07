@@ -78,7 +78,9 @@ class ExchangeManager:
         # non_syncing_exchanges is a cached setting kept in sync on every write, so read it
         # from the in-memory cache instead of doing a full settings DB read on every call.
         excluded = CachedSettings().get_settings().non_syncing_exchanges
-        for exchanges in self.connected_exchanges.values():
+        # iterate a snapshot: api threads add/remove exchanges concurrently and a dict
+        # mutated mid-iteration would raise RuntimeError, killing the scheduler
+        for exchanges in list(self.connected_exchanges.values()):
             for exchange in exchanges:
                 # We are not yielding excluded exchanges
                 if exchange.location_id() not in excluded:
@@ -198,7 +200,8 @@ class ExchangeManager:
 
     def get_connected_exchanges_info(self) -> list[dict[str, Any]]:
         exchange_info = []
-        for location, exchanges in self.connected_exchanges.items():
+        # snapshot since api threads add/remove exchanges concurrently
+        for location, exchanges in list(self.connected_exchanges.items()):
             for exchangeobj in exchanges:
                 data = {'location': str(location), 'name': exchangeobj.name}
                 if location == Location.KRAKEN:  # ignore type since we know this is kraken here

@@ -4,7 +4,7 @@ from collections.abc import Mapping, Sequence
 from contextlib import suppress
 from http import HTTPStatus
 from pathlib import Path
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING, NamedTuple, Optional
 
 from rotkehlchen.api.websockets.typedefs import ProgressUpdateSubType, WSMessageType
 from rotkehlchen.assets.asset import Asset, EvmToken
@@ -69,6 +69,17 @@ def query_price_or_use_default(
     return price
 
 
+class HistoricalOracleState(NamedTuple):
+    """The oracle order and the matching oracle instances.
+
+    Kept as a single immutable unit swapped with one attribute assignment so that
+    concurrent history queries can never observe a new oracle list paired with the
+    old instances (or vice versa) while set_oracles_order runs on another thread.
+    """
+    oracles: tuple[HistoricalPriceOracle, ...]
+    instances: list[HistoricalPriceOracleInstance]
+
+
 class PriceHistorian:
     __instance: Optional['PriceHistorian'] = None
     _cryptocompare: 'Cryptocompare'
@@ -78,8 +89,7 @@ class PriceHistorian:
     _moralis: 'Moralis'
     _uniswapv2: 'UniswapV2Oracle'
     _uniswapv3: 'UniswapV3Oracle'
-    _oracles: Sequence[HistoricalPriceOracle] | None = None
-    _oracle_instances: list[HistoricalPriceOracleInstance] | None = None
+    _oracle_state: HistoricalOracleState | None = None
 
     def __new__(   # noqa: PYI034  # singleton is an exception
             cls,
@@ -116,14 +126,24 @@ class PriceHistorian:
 
         return PriceHistorian.__instance
 
+    @property
+    def _oracles(self) -> tuple[HistoricalPriceOracle, ...] | None:
+        """Convenience view into _oracle_state. Code needing the oracle/instance
+        pairing must read _oracle_state once instead of combining these properties."""
+        return state.oracles if (state := self._oracle_state) is not None else None
+
+    @property
+    def _oracle_instances(self) -> list[HistoricalPriceOracleInstance] | None:
+        return state.instances if (state := self._oracle_state) is not None else None
+
     @staticmethod
     def set_oracles_order(oracles: Sequence[HistoricalPriceOracle]) -> None:
         assert len(oracles) != 0 and len(oracles) == len(set(oracles)), (
             "Oracles can't be empty or have repeated items"
         )
         instance = PriceHistorian()
-        # Build both locally and rebind adjacently so concurrent readers of the pair
-        # never observe a new oracle list alongside instances still being built
+        # Build both locally and publish them with a single _oracle_state assignment
+        # so concurrent readers never observe a mismatched oracle/instance pairing
         new_oracles = tuple(
             oracle for oracle in oracles
             if (
@@ -131,9 +151,10 @@ class PriceHistorian:
                 instance._cryptocompare.has_api_key()
             )
         )
-        new_oracle_instances = [getattr(instance, f'_{oracle!s}') for oracle in new_oracles]
-        instance._oracles = new_oracles
-        instance._oracle_instances = new_oracle_instances
+        instance._oracle_state = HistoricalOracleState(
+            oracles=new_oracles,
+            instances=[getattr(instance, f'_{oracle!s}') for oracle in new_oracles],
+        )
 
     @staticmethod
     def _get_cached_price_or_query(
@@ -314,8 +335,11 @@ class PriceHistorian:
                 return price
 
         instance = PriceHistorian()
-        oracles, oracle_instances = instance._oracles, instance._oracle_instances
-        assert oracles is not None and oracle_instances is not None, 'PriceHistorian should never be called before setting the oracles'  # noqa: E501
+        # Read the state once: a concurrent set_oracles_order swaps it atomically, while
+        # two separate attribute loads could pair oracles with mismatched instances
+        state = instance._oracle_state
+        assert state is not None, 'PriceHistorian should never be called before setting the oracles'  # noqa: E501
+        oracles, oracle_instances = state.oracles, state.instances
         # try to get the price from the cache using only enabled historical sources
         sources = (
             HistoricalPriceOracle.MANUAL,

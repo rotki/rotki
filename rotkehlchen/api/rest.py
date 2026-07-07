@@ -447,7 +447,8 @@ class RestAPI:
         task.task_id = task_id
         task.api_command = command  # inspected by maybe_cancel_running_tx_query_tasks
         task.add_done_callback(self._handle_task_death)
-        self.rotkehlchen.api_tasks.append(task)
+        with self.task_lock:
+            self.rotkehlchen.api_tasks.append(task)
         task.start()
         return api_response(_wrap_in_ok_result({'task_id': task_id}), status_code=HTTPStatus.OK)
 
@@ -458,7 +459,9 @@ class RestAPI:
         a remote query) is abandoned and dies at its next checkpoint, with its
         death logged without alerting the user since its token shows the
         cancellation was deliberate."""
-        if len(pending := [x for x in self.rotkehlchen.api_tasks if x.dead is False]) != 0:
+        with self.task_lock:
+            pending = [x for x in self.rotkehlchen.api_tasks if x.dead is False]
+        if len(pending) != 0:
             for task in pending:
                 task.request_cancellation(reason)
             wait(pending, timeout=DEFAULT_CANCEL_GRACE_SECONDS)
@@ -467,7 +470,8 @@ class RestAPI:
                     'Abandoning cancelled api tasks that did not exit within the grace period',
                     task_ids=survivors,
                 )
-        self.rotkehlchen.api_tasks.clear()
+        with self.task_lock:
+            self.rotkehlchen.api_tasks.clear()
 
     # - Public functions not exposed via the rest api
     def stop(self) -> None:
@@ -501,12 +505,13 @@ class RestAPI:
             # If no task id is given return list of all pending and completed tasks
             completed = []
             pending = []
-            for task in self.rotkehlchen.api_tasks:
-                task_id = task.task_id
-                if task_id in self.task_results:
-                    completed.append(task_id)
-                else:
-                    pending.append(task_id)
+            with self.task_lock:
+                for task in self.rotkehlchen.api_tasks:
+                    task_id = task.task_id
+                    if task_id in self.task_results:
+                        completed.append(task_id)
+                    else:
+                        pending.append(task_id)
 
             result = _wrap_in_ok_result({'pending': pending, 'completed': completed})
             return api_response(result=result, status_code=HTTPStatus.OK)
@@ -562,7 +567,9 @@ class RestAPI:
             else:  # task not found
                 return api_response(wrap_in_fail_result(f'Did not cancel task with id {task_id} because it could not be found'), status_code=HTTPStatus.NOT_FOUND)  # noqa: E501
 
-        self.rotkehlchen.api_tasks.pop(idx)  # also pop from the api tasks
+            # pop while still holding the lock: a concurrent pop would shift the index
+            self.rotkehlchen.api_tasks.pop(idx)  # also pop from the api tasks
+
         return api_response(OK_RESULT, status_code=HTTPStatus.OK)
 
     @async_api_call()
