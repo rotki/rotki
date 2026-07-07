@@ -80,6 +80,7 @@ class BaseEvmDecoderTools(BaseDecoderTools[EvmTxReceipt, ChecksumEvmAddress, EVM
         """
         if __debug__:
             self.get_sequence_index_called = True
+            self._assert_sequence_counter_thread()
 
         return self.sequence_counter + tx_log.log_index
 

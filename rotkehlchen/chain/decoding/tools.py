@@ -1,4 +1,5 @@
 import logging
+import threading
 from abc import ABC, abstractmethod
 from collections.abc import Callable, Sequence
 from typing import TYPE_CHECKING, Any, Generic, TypeVar
@@ -42,6 +43,21 @@ class BaseDecoderTools(ABC, Generic[T, A, R, E]):
         self._tracked_addresses_for_chain: frozenset[A] = frozenset(tracked_accounts.get(self.blockchain))  # type: ignore[arg-type]  # noqa: E501
         self.sequence_counter = 0
         self.sequence_offset = 0
+        if __debug__:
+            # The sequence counters are per-decoder mutable state whose only
+            # thread-safety is that transaction decoding on one decoder is
+            # serialized (undecoded_tx_query_lock and callers). That protection is
+            # implicit, so track which thread last reset the counter and assert on
+            # use to catch unserialized concurrent decoding in develop.
+            self._sequence_counter_thread: int | None = None
+
+    def _assert_sequence_counter_thread(self) -> None:
+        """None is tolerated: a counter that was never reset is not evidence of
+        concurrent decoding, which is what this develop-only check is after"""
+        assert self._sequence_counter_thread in (None, threading.get_ident()), (
+            'sequence counter used from a different thread than the one that reset it. '
+            'Concurrent decoding on one decoder is not protected -- serialize it.'
+        )
 
     def reset_sequence_counter(self, tx_data: T) -> None:
         """Reset the sequence index counter before decoding a transaction.
@@ -50,6 +66,7 @@ class BaseDecoderTools(ABC, Generic[T, A, R, E]):
         self.sequence_counter = 0
         if __debug__:
             self.get_sequence_index_called = False
+            self._sequence_counter_thread = threading.get_ident()
 
     def get_next_sequence_index_pre_decoding(self) -> int:
         """Get a sequence index for a new event created prior to running the decoding rules.
@@ -59,6 +76,7 @@ class BaseDecoderTools(ABC, Generic[T, A, R, E]):
         """
         if __debug__:  # develop only test that sequence index was not called
             assert not self.get_sequence_index_called  # Perhaps remove after some time.
+            self._assert_sequence_counter_thread()
 
         value = self.sequence_counter
         self.sequence_counter += 1
@@ -71,6 +89,7 @@ class BaseDecoderTools(ABC, Generic[T, A, R, E]):
         """
         if __debug__:
             self.get_sequence_index_called = True
+            self._assert_sequence_counter_thread()
 
         value = self.sequence_counter
         self.sequence_counter += 1

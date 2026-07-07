@@ -266,11 +266,17 @@ def _progress_callback(connection: Optional['DBConnection']) -> int:
     if connection is None:
         return 0
 
-    if connection.in_callback.locked() or connection.in_critical_section.locked():
-        # if we get here and the connection is locked or in critical section its state
-        # must not be modified nor its running statement aborted from within the
-        # callback (e.g. a commit is in progress). So we immediately exit the callback
-        # without any sleep that would lead to context switching
+    if (
+            connection.in_callback.locked() or
+            connection.critical_section_owner == threading.get_ident()
+    ):
+        # if we get here and the connection is locked or THIS thread is inside a
+        # critical section, its state must not be modified nor its running statement
+        # aborted from within the callback (e.g. a commit is in progress). So we
+        # immediately exit the callback without doing anything. Ownership matters
+        # for the critical section check: another thread's critical section (e.g. a
+        # long write transaction) protects only that thread's statements, and must
+        # not suppress the cancellation of every other task's statements with it.
         return 0
 
     if (token := current_token()) is not None and token.cancelled:
@@ -356,6 +362,10 @@ class DBConnection:
         self.in_callback = threading.Lock()
         self.transaction_lock = threading.Lock()
         self.in_critical_section = threading.Lock()
+        # ident of the thread currently inside critical_section(), so the progress
+        # callback can suppress cancellation aborts for that thread's statements
+        # only instead of for every thread on the connection
+        self.critical_section_owner: int | None = None
         # Only one thread may be inside sqlite C code for this connection at a
         # time. pysqlite takes sqlite's connection mutex while holding the GIL
         # on several paths (sqlite3_reset & co), while a concurrent statement
@@ -590,6 +600,13 @@ class DBConnection:
 
         May raise TaskCancelledError.
         """
+        if __debug__:
+            # lock-order check: the transaction slot must be taken BEFORE entering a
+            # critical section (see _transaction_slot docstring) -- the reverse order
+            # creates a deadlock cycle against write_ctx, which takes slot-then-section
+            assert self.critical_section_owner != threading.get_ident(), (
+                'attempted to acquire the transaction slot while inside a critical section'
+            )
         while not self.transaction_lock.acquire(timeout=CONTEXT_SWITCH_WAIT):
             checkpoint()  # cancelled tasks should not keep waiting for the DB
 
@@ -763,6 +780,7 @@ class DBConnection:
         (without aborting cancelled statements) while it is locked.
         """
         with self.in_critical_section:
+            self.critical_section_owner = threading.get_ident()
             if __debug__:
                 identifier = random.random()
                 logger.trace(f'Got in critical section for {self.connection_type} and id: {identifier}')  # noqa: E501
@@ -776,6 +794,7 @@ class DBConnection:
                 with self.in_callback:
                     if __debug__:
                         logger.trace(f'exiting critical section for {self.connection_type} and id {identifier}')  # noqa: E501  # pyright: ignore  # if debug identifier is set
+                self.critical_section_owner = None
 
     @contextmanager
     def _transaction_slot(self) -> Generator[None, None, None]:
