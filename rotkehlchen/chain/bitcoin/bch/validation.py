@@ -1,5 +1,4 @@
-from bip_utils.bech32.bch_bech32 import BchBech32Decoder
-
+from rotkehlchen.chain.bitcoin.bch.cashaddr import cashaddr_decode
 from rotkehlchen.chain.bitcoin.bch.constants import CASHADDR_PREFIX
 
 
@@ -16,7 +15,7 @@ def is_valid_bitcoin_cash_address(address: str) -> bool:
         return False
 
     try:
-        BchBech32Decoder.Decode(hrp=CASHADDR_PREFIX, addr=address)
+        cashaddr_decode(prefix=CASHADDR_PREFIX, address=address)
     except ValueError:
         return False
 

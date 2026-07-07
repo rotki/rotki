@@ -7,6 +7,7 @@ import pytest
 
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.chain.bitcoin.hdkey import HDKey, XpubType
+from rotkehlchen.chain.bitcoin.secp256k1 import PublicKey
 from rotkehlchen.chain.bitcoin.utils import (
     WitnessVersion,
     is_valid_derivation_path,
@@ -83,6 +84,12 @@ def test_is_valid_btc_address():
     assert not is_valid_btc_address('bc1gmk9yu')
     assert not is_valid_btc_address('bc1p38j9r5y49hruaue7wxjce0updqjuyyx0kh56v8s25huc6995vvpql3jow4')  # noqa: E501
     assert not is_valid_btc_address('BC130XLXVLHEMJA6C4DQV22UAPCTQUPFHLXM9H8Z3K2E72Q4K9HCZ7VQ7ZWS8R')  # noqa: E501
+
+
+def test_bech32m_hrp_must_match_exactly():
+    """A bech32m string whose hrp merely starts with bc1 is not a bitcoin address."""
+    assert is_valid_btc_address('bc1p0xlxvlhemja6c4dqv22uapctqupfhlxm9h8z3k2e72q4k9hcz7vqzk5jj0')  # BIP-350 valid vector  # noqa: E501
+    assert not is_valid_btc_address('bc1b1pqqqsyqcyq5rqwzqfpg9scrgwpugpzysnzs23v9ccrydpk8qarc0sed2y4h')  # hrp is bc1b, encoded with a valid bech32m checksum  # noqa: E501
 
 
 def test_pubkey_to_base58_address():
@@ -294,6 +301,23 @@ def test_from_bad_xpub():
         HDKey.from_xpub('xpriv68V4ZQQ62mea7ZUKn2urQu47Bdn2Wr7SxrBxBDDwE3kjytj361YBGSKDT4WoBrE5htrSB8eAMe59NPnKrcAbiv2veN5GQUmfdjRddD1Hxrk')
     with pytest.raises(XPUBError):
         HDKey.from_xpub('apfiv68V4ZQQ62mea7ZUKn2urQu47Bdn2Wr7SxrBxBDDwE3kjytj361YBGSKDT4WoBrE5htrSB8eAMe59NPnKrcAbiv2veN5GQUmfdjRddD1Hxrk')
+
+
+def test_secp256k1_public_key_validation_and_tweaks():
+    key = PublicKey(bytes.fromhex(
+        '0279be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798',
+    ))
+    assert key.format(compressed=True) == bytes.fromhex(
+        '0279be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798',
+    )
+    assert key.add((1).to_bytes(32, byteorder='big')).format(compressed=True) == bytes.fromhex(
+        '02c6047f9441ed7d6d3045406e95c07cd85c778e4b8cef3ca7abac09b95c709ee5',
+    )
+
+    with pytest.raises(ValueError):
+        PublicKey(b'\x02' + b'\x00' * 32)
+    with pytest.raises(ValueError):
+        key.add(b'\x00' * 32)
 
 
 def test_xpub_data_comparison():

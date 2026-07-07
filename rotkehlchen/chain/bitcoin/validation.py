@@ -1,8 +1,8 @@
 import hashlib
 
 import bech32
-from bip_utils import Bech32ChecksumError, SegwitBech32Decoder
 
+from rotkehlchen.chain.bitcoin.segwit import is_valid_bech32m_segwit_address
 from rotkehlchen.utils.base58 import b58decode, b58encode
 
 
@@ -34,12 +34,7 @@ def is_valid_bech32_bip350_address(value: str) -> bool:
     This validation is based on BIP-350 which improves on a flaw in BIP-173
     https://github.com/bitcoin/bips/blob/master/bip-0350.mediawiki
     """
-    try:
-        SegwitBech32Decoder.Decode('bc', value)
-    except (ValueError, Bech32ChecksumError):
-        return False
-    else:
-        return True
+    return is_valid_bech32m_segwit_address('bc', value)
 
 
 def is_valid_base58_address(value: str) -> bool:

@@ -7,8 +7,7 @@ from dataclasses import dataclass
 from enum import auto
 from typing import NamedTuple, Optional, cast
 
-from coincurve import PrivateKey, PublicKey
-
+from rotkehlchen.chain.bitcoin.secp256k1 import PrivateKey, PublicKey
 from rotkehlchen.chain.bitcoin.utils import (
     BIP32_HARDEN,
     WitnessVersion,

@@ -1,10 +1,10 @@
 from typing import Literal
 
 from base58 import b58decode_check, b58encode_check
-from bip_utils.bech32.bch_bech32 import BchBech32Decoder, BchBech32Encoder
 from eth_typing import ChecksumAddress
 from marshmallow import ValidationError
 
+from rotkehlchen.chain.bitcoin.bch.cashaddr import cashaddr_decode, cashaddr_encode
 from rotkehlchen.chain.bitcoin.bch.constants import CASHADDR_PREFIX
 from rotkehlchen.chain.bitcoin.bch.validation import is_valid_bitcoin_cash_address
 from rotkehlchen.chain.bitcoin.validation import is_valid_base58_address
@@ -34,7 +34,7 @@ def cash_to_legacy_address(address: str) -> BTCAddress | None:
         if not address.startswith(CASHADDR_PREFIX):
             address = CASHADDR_PREFIX + ':' + address
 
-        version, data = BchBech32Decoder.Decode(hrp=CASHADDR_PREFIX, addr=address)
+        version, data = cashaddr_decode(prefix=CASHADDR_PREFIX, address=address)
         legacy_version = convert_version(
             version=int.from_bytes(version),
             target_type='legacy',
@@ -71,9 +71,9 @@ def legacy_to_cash_address(address: str) -> BTCAddress | None:
     try:
         decoded = b58decode_check(address)
         cash_version = convert_version(version=decoded[0], target_type='cash')
-        return BTCAddress(BchBech32Encoder.Encode(
-            hrp=CASHADDR_PREFIX,
-            net_ver=bytes([cash_version]),
+        return BTCAddress(cashaddr_encode(
+            prefix=CASHADDR_PREFIX,
+            version=bytes([cash_version]),
             data=decoded[1:],
         ))
     except ValueError:

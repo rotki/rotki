@@ -26,7 +26,6 @@ dependencies = [
     "sqlcipher3==0.6.2",
     "rotki-sqlite==2025.8.1",
     "requests==2.33.1",
-    "coincurve==21.0.0",
     "bech32==1.2.0",
     "gql[requests]==3.5.2",
     "scalecodec==1.2.11",
@@ -59,7 +58,6 @@ dependencies = [
     "polyleven==0.9",
     # We used to only use this for packaging, but now use it for the version comparison functionality
     "packaging==25.0",
-    "bip-utils==2.12.1",
     # For Google Calendar integration
     "google-api-python-client==2.192.0",
     "google-auth==2.49.1",
