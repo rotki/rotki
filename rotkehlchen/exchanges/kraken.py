@@ -6,6 +6,7 @@ import itertools
 import json
 import logging
 import operator
+import threading
 from collections import defaultdict
 from collections.abc import Sequence
 from typing import TYPE_CHECKING, Any, Literal
@@ -210,6 +211,10 @@ class Kraken(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
         self.secret = ApiSecret(base64.b64decode(self.secret))
         self.session.headers.update({'API-Key': self.api_key})
         self.set_account_type(kraken_account_type)
+        # Held across nonce generation + the signed request (as the other exchanges'
+        # nonce locks are) so concurrent queries can't send equal/reordered nonces and
+        # fail with EAPI:Invalid nonce. Also guards the call_counter read-modify-writes.
+        self.nonce_lock = threading.Lock()
         self.call_counter = 0
         self.last_query_ts = 0
         self.history_events_db = DBHistoryEvents(self.db)
@@ -323,11 +328,12 @@ class Kraken(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
             self,
             method: Literal['Balance', 'TradesHistory', 'Ledgers', 'Assets', 'AssetPairs', 'accounts'],  # noqa: E501
     ) -> None:
-        self.last_query_ts = ts_now()
-        if method in {'Ledgers', 'TradesHistory'}:
-            self.call_counter += 2
-        else:
-            self.call_counter += 1
+        with self.nonce_lock:  # += from concurrent queries would lose increments
+            self.last_query_ts = ts_now()
+            if method in {'Ledgers', 'TradesHistory'}:
+                self.call_counter += 2
+            else:
+                self.call_counter += 1
 
     def api_query(
             self,
@@ -336,25 +342,28 @@ class Kraken(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
     ) -> dict:
         tries = KRAKEN_QUERY_TRIES
         while tries > 0:
-            if self.call_counter + MAX_CALL_COUNTER_INCREASE > self.call_limit:
-                # If we are close to the limit, check how much our call counter reduced
-                # https://www.kraken.com/features/api#api-call-rate-limit
-                secs_since_last_call = ts_now() - self.last_query_ts
-                self.call_counter = max(
-                    0,
-                    self.call_counter - int(secs_since_last_call / self.reduction_every_secs),
-                )
-                # If still at limit, sleep for an amount big enough for smallest tier reduction
-                if self.call_counter + MAX_CALL_COUNTER_INCREASE > self.call_limit:
-                    backoff_in_seconds = self.reduction_every_secs * 2
-                    log.debug(
-                        f'Doing a Kraken API call would now exceed our call counter limit. '
-                        f'Backing off for {backoff_in_seconds} seconds',
-                        call_counter=self.call_counter,
+            with self.nonce_lock:  # the counter reduction is a read-modify-write
+                if (at_limit := self.call_counter + MAX_CALL_COUNTER_INCREASE > self.call_limit):
+                    # If we are close to the limit, check how much our call counter reduced
+                    # https://www.kraken.com/features/api#api-call-rate-limit
+                    secs_since_last_call = ts_now() - self.last_query_ts
+                    self.call_counter = max(
+                        0,
+                        self.call_counter - int(secs_since_last_call / self.reduction_every_secs),
                     )
-                    tries -= 1
-                    cancellable_sleep(backoff_in_seconds)
-                    continue
+                    at_limit = self.call_counter + MAX_CALL_COUNTER_INCREASE > self.call_limit
+
+            if at_limit:
+                # still at limit, sleep for an amount big enough for smallest tier reduction
+                backoff_in_seconds = self.reduction_every_secs * 2
+                log.debug(
+                    f'Doing a Kraken API call would now exceed our call counter limit. '
+                    f'Backing off for {backoff_in_seconds} seconds',
+                    call_counter=self.call_counter,
+                )
+                tries -= 1
+                cancellable_sleep(backoff_in_seconds)
+                continue
 
             log.debug(
                 'Kraken API query',
@@ -401,24 +410,25 @@ class Kraken(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
             req = {}
 
         urlpath = '/' + KRAKEN_API_VERSION + '/private/' + method
-        req['nonce'] = ts_now_in_ms()
-        post_data = urlencode(req)
-        # any unicode strings must be turned to bytes
-        hashable = (str(req['nonce']) + post_data).encode()
-        message = urlpath.encode() + hashlib.sha256(hashable).digest()
-        signature = self.generate_hmac_b64_signature(
-            message=message,
-            digest_algorithm=hashlib.sha512,
-        )
-        try:
-            response = self.session.post(
-                KRAKEN_BASE_URL + urlpath,
-                data=post_data.encode(),
-                timeout=CachedSettings().get_timeout_tuple(),
-                headers={'APIKey': self.api_key, 'API-Sign': signature},
+        with self.nonce_lock:  # hold across nonce generation + send so nonces reach kraken in order  # noqa: E501
+            req['nonce'] = ts_now_in_ms()
+            post_data = urlencode(req)
+            # any unicode strings must be turned to bytes
+            hashable = (str(req['nonce']) + post_data).encode()
+            message = urlpath.encode() + hashlib.sha256(hashable).digest()
+            signature = self.generate_hmac_b64_signature(
+                message=message,
+                digest_algorithm=hashlib.sha512,
             )
-        except requests.exceptions.RequestException as e:
-            raise RemoteError(f'Kraken API request failed due to {e!s}') from e
+            try:
+                response = self.session.post(
+                    KRAKEN_BASE_URL + urlpath,
+                    data=post_data.encode(),
+                    timeout=CachedSettings().get_timeout_tuple(),
+                    headers={'APIKey': self.api_key, 'API-Sign': signature},
+                )
+            except requests.exceptions.RequestException as e:
+                raise RemoteError(f'Kraken API request failed due to {e!s}') from e
         self._manage_call_counter(method)
 
         decoded_json = _check_and_get_response(response, method)
@@ -1156,31 +1166,32 @@ class Kraken(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
         """
         urlpath: str = '/derivatives/api/' + KRAKEN_FUTURES_API_VERSION + '/' + method
         urlpath_without_prefix = urlpath.removeprefix('/derivatives')
-        nonce = str(ts_now_in_ms())
+        with self.nonce_lock:  # hold across nonce generation + send so nonces reach kraken in order  # noqa: E501
+            nonce = str(ts_now_in_ms())
 
-        # any unicode strings must be turned to bytes
-        hashable = (nonce + urlpath_without_prefix).encode()
-        message = hashlib.sha256(hashable).digest()
-        signature = self.generate_hmac_b64_signature(
-            secret=self.futures_api_secret,
-            message=message,
-            digest_algorithm=hashlib.sha512,
-        )
-        full_url = KRAKEN_FUTURES_BASE_URL + urlpath
-        log.debug(f'Querying Kraken for {method} with {nonce} at URL: {full_url}')
-        try:
-            response = self.session.get(
-                full_url,
-                timeout=CachedSettings().get_timeout_tuple(),
-                headers={
-                    'APIKey': self.futures_api_key,
-                    'Nonce': nonce,
-                    'Authent': signature,
-                },
+            # any unicode strings must be turned to bytes
+            hashable = (nonce + urlpath_without_prefix).encode()
+            message = hashlib.sha256(hashable).digest()
+            signature = self.generate_hmac_b64_signature(
+                secret=self.futures_api_secret,
+                message=message,
+                digest_algorithm=hashlib.sha512,
             )
-            log.debug(f'raw response from kraken for API method {method} = {response}')
-        except requests.exceptions.RequestException as e:
-            raise RemoteError(f'Kraken API request failed due to {e!s}') from e
+            full_url = KRAKEN_FUTURES_BASE_URL + urlpath
+            log.debug(f'Querying Kraken for {method} with {nonce} at URL: {full_url}')
+            try:
+                response = self.session.get(
+                    full_url,
+                    timeout=CachedSettings().get_timeout_tuple(),
+                    headers={
+                        'APIKey': self.futures_api_key,
+                        'Nonce': nonce,
+                        'Authent': signature,
+                    },
+                )
+                log.debug(f'raw response from kraken for API method {method} = {response}')
+            except requests.exceptions.RequestException as e:
+                raise RemoteError(f'Kraken API request failed due to {e!s}') from e
 
         self._manage_call_counter(method)
         return _check_and_get_response(response, method)

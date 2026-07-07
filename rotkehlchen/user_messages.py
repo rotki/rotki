@@ -47,9 +47,11 @@ class MessagesAggregator:
 
     def consume_warnings(self) -> list[str]:
         result = []
-        while len(self.warnings) != 0:
-            result.append(self.warnings.pop())
-        return result
+        while True:
+            try:
+                result.append(self.warnings.pop())
+            except IndexError:  # a concurrent consumer (api call/logout) drained it
+                return result
 
     def _append_error(self, msg: str) -> None:
         self.errors.appendleft(msg)
@@ -111,9 +113,11 @@ class MessagesAggregator:
 
     def consume_errors(self) -> list[str]:
         result = []
-        while len(self.errors) != 0:
-            result.append(self.errors.pop())
-        return result
+        while True:
+            try:
+                result.append(self.errors.pop())
+            except IndexError:  # a concurrent consumer (api call/logout) drained it
+                return result
 
     @staticmethod
     def how_many_events_per_ws(total_events: int) -> int:

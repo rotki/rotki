@@ -90,9 +90,11 @@ class Eth2(EthereumModule):
         self.validator_stats_queried = 0
         self.deposits_re = re.compile(r'.*validator with pubkey (?P<pubkey>.*)\. Deposit.*|.*Deposit.*ETH to validator (?P<index>\d+)$')  # noqa: E501
         self.withdrawals_query_lock = Lock()
-        # This is a cache that is kept only for the last performance cache address, indices args
-        self.performance_cache: LRUCacheWithRemove[tuple[Timestamp, Timestamp], dict[str, dict]] = LRUCacheWithRemove(maxsize=3)  # noqa: E501
-        self.performance_cache_args: tuple[list[ChecksumEvmAddress] | None, list[int] | None, PerformanceStatusFilter] = (None, None, PerformanceStatusFilter.ALL)  # noqa: E501
+        # Each entry stores the filter args it was computed with alongside the result,
+        # so that reading and validating the cache is a single atomic get: keeping the
+        # args in a separate attribute allowed a concurrent get_performance with other
+        # filters to pair one request's args with another request's result
+        self.performance_cache: LRUCacheWithRemove[tuple[Timestamp, Timestamp], tuple[tuple[list[ChecksumEvmAddress] | None, list[int] | None, PerformanceStatusFilter], dict[str, dict]]] = LRUCacheWithRemove(maxsize=3)  # noqa: E501
         # Total staked cache variables
         self._cached_total_staked: FVal
         self._cached_staked_timestamp = Timestamp(0)
@@ -103,7 +105,9 @@ class Eth2(EthereumModule):
             to_ts: Timestamp,
     ) -> tuple[Timestamp, Timestamp]:
         """Check if there is any close timestamps in the performance cache and returns them"""
-        for key_from_ts, key_to_ts in self.performance_cache:
+        # snapshot_keys: the unlocked live iterator would raise RuntimeError if another
+        # thread's get()/add() reorders the underlying OrderedDict mid-iteration
+        for key_from_ts, key_to_ts in self.performance_cache.snapshot_keys():
             if abs(key_from_ts - from_ts) <= HOUR_IN_SECONDS * 12 and abs(key_to_ts - to_ts) <= HOUR_IN_SECONDS * 2:  # noqa: E501
                 return key_from_ts, key_to_ts
 
@@ -269,8 +273,9 @@ class Eth2(EthereumModule):
 
         if (
                 not ignore_cache and
-                self.performance_cache_args == (addresses, validator_indices, status) and
-                (result := self.performance_cache.get(cache_key))
+                (cache_entry := self.performance_cache.get(cache_key)) is not None and
+                cache_entry[0] == (addresses, validator_indices, status) and
+                (result := cache_entry[1])
         ):  # return pagination on cached data
             return {
                 'validators': dict(list(result['validators'].items())[offset: offset + limit]),
@@ -433,8 +438,8 @@ class Eth2(EthereumModule):
             sums['apr'] = sum_apr / count_apr
 
         result = {'validators': pnls, 'sums': sums}
-        self.performance_cache.add(cache_key, result)  # save cache & return pagination on the data
-        self.performance_cache_args = (addresses, validator_indices, status)
+        # save cache & return pagination on the data
+        self.performance_cache.add(cache_key, ((addresses, validator_indices, status), result))
         return {
             'validators': dict(list(result['validators'].items())[offset: offset + limit]),
             'sums': result['sums'],

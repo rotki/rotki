@@ -977,16 +977,17 @@ class AssetsService:
                 AssetResolver.clean_memory_cache(token.identifier)
 
                 blockchain = token.chain_id.to_blockchain() if isinstance(token, EvmToken) else SupportedBlockchain.SOLANA  # noqa: E501
-                for balances in self.rotkehlchen.chains_aggregator.balances.get(
-                    chain=blockchain,
-                ).values():
-                    in_assets = balances.assets.pop(token, None)  # type: ignore
-                    in_liabilities = balances.liabilities.pop(token, None)  # type: ignore
+                with self.rotkehlchen.chains_aggregator.balances_lock:  # balance query tasks mutate the dict concurrently  # noqa: E501
+                    for balances in self.rotkehlchen.chains_aggregator.balances.get(
+                        chain=blockchain,
+                    ).values():
+                        in_assets = balances.assets.pop(token, None)  # type: ignore
+                        in_liabilities = balances.liabilities.pop(token, None)  # type: ignore
 
-                    if in_assets is not None or in_liabilities is not None:
-                        self.rotkehlchen.chains_aggregator.flush_chain_balance_query_cache(
-                            blockchain=blockchain,
-                        )
+                        if in_assets is not None or in_liabilities is not None:
+                            self.rotkehlchen.chains_aggregator.flush_chain_balance_query_cache(
+                                blockchain=blockchain,
+                            )
 
         self.rotkehlchen.data.add_ignored_assets(assets=tokens)
         return {'result': True, 'message': '', 'status_code': HTTPStatus.OK}

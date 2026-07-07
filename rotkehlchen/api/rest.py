@@ -3437,7 +3437,8 @@ class RestAPI:
 
     @accounting_update_required('Historical balance processing is disabled')
     def _trigger_historical_balance_processing(self) -> dict[str, Any]:
-        self.rotkehlchen.task_manager.trigger_historical_balance_processing()  # type: ignore[union-attr]  # exists after login.
+        if (task_manager := self.rotkehlchen.task_manager) is not None:  # None if logout races us
+            task_manager.trigger_historical_balance_processing()
         return OK_RESULT
 
     @async_api_call()
@@ -3472,7 +3473,8 @@ class RestAPI:
         database write access (like backup sync) don't run during DB upgrades,
         migrations, and asset updates.
         """
-        self.rotkehlchen.task_manager.should_schedule = enabled  # type: ignore[union-attr]  # should exist here
+        if (task_manager := self.rotkehlchen.task_manager) is not None:  # None if logout races us
+            task_manager.should_schedule = enabled
         return api_response(_wrap_in_ok_result(result={'enabled': enabled}))
 
     def get_historical_netvalue(

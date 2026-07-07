@@ -163,7 +163,8 @@ class RPCManagerMixin(ABC, Generic[WEB3_NODE_TYPE]):
 
     def get_own_node_info(self) -> NodeName | None:
         """Get the node info for the any connected rpc node"""
-        for node in self.rpc_mapping:
+        # iterate a snapshot: spawned connect tasks insert into the mapping concurrently
+        for node in list(self.rpc_mapping):
             if node.owned:
                 return node
         return None

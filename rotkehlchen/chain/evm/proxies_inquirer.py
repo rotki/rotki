@@ -200,7 +200,12 @@ class EvmProxiesInquirer:
         """
         now = ts_now()
         if now - self.last_proxy_mapping_query_ts < DAY_IN_SECONDS:  # refresh daily
-            return self.address_to_proxies if proxy_type is None else self.address_to_proxies[proxy_type]  # noqa: E501
+            # return copies just like the requery path below: query_address_for_proxies
+            # inserts into these mappings when an account is added, while callers (e.g.
+            # a balance query summing proxy balances) iterate the returned dicts
+            if proxy_type is not None:
+                return self.address_to_proxies[proxy_type].copy()
+            return {i_type: mapping.copy() for i_type, mapping in self.address_to_proxies.items()}
 
         with self.node_inquirer.database.conn.read_ctx() as cursor:
             accounts = self.node_inquirer.database.get_blockchain_accounts(cursor)
@@ -216,5 +221,6 @@ class EvmProxiesInquirer:
         self.last_proxy_mapping_query_ts = ts_now()
         if proxy_type is not None:  # return a copy to avoid "dictionary modified during iteration errors"  # noqa: E501
             return self.address_to_proxies[proxy_type].copy()
-        # else again copy but the whole thing
-        return self.address_to_proxies.copy()
+        # else again copy but the whole thing. Copy the inner dicts too since those are
+        # the ones query_address_for_proxies inserts into
+        return {i_type: mapping.copy() for i_type, mapping in self.address_to_proxies.items()}
