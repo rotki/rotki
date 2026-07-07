@@ -22,7 +22,7 @@ import queue
 import random
 import threading
 import time
-from collections.abc import Generator, Sequence
+from collections.abc import Callable, Generator, Sequence
 from contextlib import contextmanager
 from enum import Enum, auto
 from pathlib import Path
@@ -393,8 +393,17 @@ class DBConnection:
                     check_same_thread=False,
                     isolation_level=None,
                 )
+        elif read_only:
+            # as_uri() gives a percent-encoded file:// URI that sqlite accepts
+            # on all platforms (a plain f'file:{path}' breaks on windows paths).
+            # The caller must key the connection (PRAGMA key) before reading.
+            self._conn = sqlcipher.connect(  # pylint: disable=no-member
+                database=Path(path).absolute().as_uri() + '?mode=ro',
+                uri=True,
+                check_same_thread=False,
+                isolation_level=None,
+            )
         else:
-            assert read_only is False, 'read-only pool readers are not implemented for sqlcipher connections yet'  # noqa: E501
             self._conn = sqlcipher.connect(  # pylint: disable=no-member
                 database=str(path),
                 check_same_thread=False,
@@ -448,29 +457,28 @@ class DBConnection:
             return DBCursor(connection=self, cursor=self._conn.cursor())
 
     def close(self) -> None:
-        with self._read_pool_lock:
-            read_pool, self._read_pool = self._read_pool, None
-        if read_pool is not None:
-            # Close the readers currently in the pool. A reader borrowed at this
-            # moment is closed by _return_reader when its read_ctx exits, since
-            # the pool it would be returned to is gone.
-            while True:
-                try:
-                    read_pool.get_nowait().close()
-                except queue.Empty:
-                    break
+        self.disable_read_pool()
         with self.statement_lock:
             self._conn.close()
         if not self._read_only:  # a reader was never registered in the map
             CONNECTION_MAP.pop(self.connection_type, None)
 
-    def enable_read_pool(self, size: int = 4) -> None:
+    def enable_read_pool(
+            self,
+            size: int = 4,
+            reader_setup: 'Callable[[DBConnection], None] | None' = None,
+    ) -> None:
         """Create the pool of read-only connections that read_ctx() borrows from.
 
         Must only be called after the database is in WAL mode: with the default
         journal mode a writer's transaction blocks readers on other connections
         (and vice versa), while under WAL they proceed concurrently and each read
         statement sees a consistent committed snapshot.
+
+        reader_setup runs once per created reader before it enters the pool, for
+        connection-level preparation reads need -- keying sqlcipher readers
+        (PRAGMA key) most importantly. If it raises, already-created readers are
+        closed and the error propagates with the pool left disabled.
 
         No-op for in-memory databases (used by tests): they cannot use WAL and
         there is no file for a second connection to open, so read_ctx() keeps
@@ -479,17 +487,49 @@ class DBConnection:
         assert self._read_only is False, 'cannot enable a read pool on a pool reader'
         if str(self._path) == ':memory:':
             return
+        with self._read_pool_lock:
+            if self._read_pool is not None:
+                return  # already enabled -- happens when connect-time actions rerun
+        readers: list[DBConnection] = []
+        try:
+            for _ in range(size):
+                readers.append(reader := DBConnection(
+                    path=self._path,
+                    connection_type=self.connection_type,
+                    sql_vm_instructions_cb=self.sql_vm_instructions_cb,
+                    read_only=True,
+                ))
+                if reader_setup is not None:
+                    reader_setup(reader)
+        except BaseException:
+            for reader in readers:
+                reader.close()
+            raise
+
         read_pool: queue.SimpleQueue[DBConnection] = queue.SimpleQueue()
-        for _ in range(size):
-            read_pool.put(DBConnection(
-                path=self._path,
-                connection_type=self.connection_type,
-                sql_vm_instructions_cb=self.sql_vm_instructions_cb,
-                read_only=True,
-            ))
+        for reader in readers:
+            read_pool.put(reader)
         with self._read_pool_lock:
             assert self._read_pool is None, 'read pool is already enabled'
             self._read_pool = read_pool
+
+    def disable_read_pool(self) -> None:
+        """Close the pooled readers and make read_ctx() serve cursors of this
+        connection again. No-op if no pool is enabled.
+
+        A reader borrowed at this moment is closed by _return_reader when its
+        read_ctx exits, since the pool it would be returned to is gone -- its
+        in-flight statements may still error if the disabling was for an
+        operation that invalidates readers (e.g. re-keying the DB).
+        """
+        with self._read_pool_lock:
+            read_pool, self._read_pool = self._read_pool, None
+        if read_pool is not None:
+            while True:
+                try:
+                    read_pool.get_nowait().close()
+                except queue.Empty:
+                    break
 
     def _borrow_reader(self, read_pool: 'queue.SimpleQueue[DBConnection]') -> 'DBConnection':
         """Blocking borrow of a pooled reader that stays responsive to task

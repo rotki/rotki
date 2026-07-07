@@ -407,6 +407,22 @@ class DBHandler:
                 ('version', str(ROTKEHLCHEN_TRANSIENT_DB_VERSION)),
             )
 
+        # Only now that upgrades ran, WAL mode is on and the schema is checked, spin
+        # up the pool of read-only connections isolating read_ctx() readers from
+        # write commits. Only for the user DB -- the transient DB is not worth it.
+        self.conn.enable_read_pool(reader_setup=self._setup_read_pool_connection)
+
+    def _setup_read_pool_connection(self, reader: DBConnection) -> None:
+        """Key and configure a read-only pool connection of the user DB"""
+        unlock_database(
+            db_connection=reader,
+            password=self.password,
+            sqlcipher_version=self.sqlcipher_version,
+            apply_optimizations=False,  # readers cannot (and need not) switch journal mode
+        )
+        with reader.read_ctx() as cursor:  # match the write connection's cache size
+            cursor.execute('PRAGMA cache_size = -32768')
+
     def get_md5hash(self, transient: bool = False) -> str:
         """Get the md5hash of the DB
 
@@ -565,12 +581,22 @@ class DBHandler:
 
     def change_password(self, new_password: str) -> bool:
         """Changes the password for the currently logged in user"""
+        # The rekey re-encrypts every page, so pooled readers keyed with the old
+        # password would only read garbage afterwards: close them now and key a
+        # fresh pool below once the effective password is known.
+        self.conn.disable_read_pool()
         result = (
             self._change_password(new_password, 'conn') and
             self._change_password(new_password, 'conn_transient')
         )
         if result is True:
             self.password = new_password
+        try:
+            self.conn.enable_read_pool(reader_setup=self._setup_read_pool_connection)
+        except sqlcipher.DatabaseError as e:  # pylint: disable=no-member
+            # can only happen if the DB ended up half-rekeyed (conn succeeded but
+            # conn_transient failed) leaving self.password wrong for the user DB
+            log.error(f'Could not re-key the user DB read pool after password change: {e!s}')
         return result
 
     def disconnect(self, conn_attribute: Literal['conn', 'conn_transient'] = 'conn') -> None:
@@ -4113,6 +4139,9 @@ class DBHandler:
         """
         with self.conn.read_ctx() as cursor:
             version = self.get_setting(cursor, 'version')
+        # flush the WAL into the DB file so the copy below contains all
+        # committed data -- the WAL file itself is not copied
+        self.conn.wal_checkpoint()
         new_db_filename = f'{ts_now()}_rotkehlchen_db_v{version}.backup'
         new_db_path = self.user_data_dir / new_db_filename
         shutil.copyfile(

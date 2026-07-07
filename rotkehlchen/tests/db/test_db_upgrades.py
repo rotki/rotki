@@ -2433,7 +2433,8 @@ def test_upgrade_db_42_to_43(user_data_dir, messages_aggregator, data_dir):
         # check hop-protocol counterparty is there
         assert cursor.execute('SELECT COUNT(*) from evm_events_info WHERE counterparty=?', ('hop-protocol',)).fetchone()[0] == 1  # noqa: E501
         assert cursor.execute('SELECT COUNT(*) from evm_events_info WHERE counterparty=?', ('hop',)).fetchone()[0] == 0  # noqa: E501
-        assert cursor.execute(
+    with db_v42.conn.write_ctx() as write_cursor:
+        assert write_cursor.execute(
             'INSERT INTO user_credentials VALUES (?, ?, ?, ?, ?)',
             ('coinbasepro', Location.COINBASEPRO.serialize_for_db(), 'api_key', 'api_secret', 'passphrase'),  # noqa: E501
         ).rowcount == 1
@@ -4105,8 +4106,8 @@ def test_upgrade_db_51_to_52(user_data_dir, messages_aggregator):
         ).fetchall() == [('etherscan', 'etherscan-key')]
 
         # Verify UNIQUE constraint is enforced — inserting a duplicate label should fail
-        with pytest.raises(sqlcipher.IntegrityError):  # pylint: disable=no-member
-            cursor.execute(
+        with pytest.raises(sqlcipher.IntegrityError), db.conn.write_ctx() as write_cursor:  # pylint: disable=no-member
+            write_cursor.execute(
                 'INSERT INTO manually_tracked_balances(asset, label, amount, location, category) '
                 'VALUES(?, ?, ?, ?, ?)',
                 ('BTC', 'Unique balance', '1', 'A', 'A'),

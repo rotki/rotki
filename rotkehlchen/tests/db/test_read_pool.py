@@ -7,11 +7,14 @@ from typing import Final
 
 import pytest
 import rsqlite
+from sqlcipher3 import dbapi2 as sqlcipher
 
 from rotkehlchen.concurrency import Task, spawn, wait
 from rotkehlchen.db.drivers.sqlite import DBConnection, DBConnectionType
+from rotkehlchen.db.utils import unlock_database
 
 POOL_SIZE: Final = 2
+USER_DB_PASSWORD: Final = '123'
 
 
 @pytest.fixture(name='conn')
@@ -159,6 +162,84 @@ def test_close_with_borrowed_reader(conn: DBConnection):
     # the read_ctx exit returned the reader to the closed pool, closing it
     with pytest.raises(rsqlite.ProgrammingError):
         reader.cursor()
+
+
+@pytest.fixture(name='user_conn')
+def fixture_user_conn(tmp_path: Path):
+    """A keyed sqlcipher user-type connection with the read pool enabled,
+    mirroring how DBHandler sets up the user DB connection"""
+    conn = DBConnection(
+        path=str(tmp_path / 'user.db'),
+        connection_type=DBConnectionType.USER,
+        sql_vm_instructions_cb=100,
+    )
+    unlock_database(  # applies the key and switches to WAL mode
+        db_connection=conn,
+        password=USER_DB_PASSWORD,
+        sqlcipher_version=4,
+    )
+    with conn.write_ctx() as cursor:
+        cursor.execute('CREATE TABLE t(a INTEGER)')
+        cursor.execute('INSERT INTO t VALUES (1)')
+    conn.enable_read_pool(reader_setup=lambda reader: unlock_database(
+        db_connection=reader,
+        password=USER_DB_PASSWORD,
+        sqlcipher_version=4,
+        apply_optimizations=False,
+    ))
+    yield conn
+    conn.close()
+
+
+def test_user_db_keyed_pooled_reads(user_conn: DBConnection):
+    """Pooled sqlcipher readers are keyed by reader_setup and read-only"""
+    with user_conn.read_ctx() as cursor:
+        assert cursor.execute('SELECT COUNT(*) FROM t').fetchone() == (1,)
+        with pytest.raises(sqlcipher.OperationalError, match='readonly'):  # pylint: disable=no-member
+            cursor.execute('INSERT INTO t VALUES (2)')
+
+    with user_conn.write_ctx() as write_cursor:  # own-write fallback also works keyed
+        write_cursor.execute('INSERT INTO t VALUES (2)')
+        with user_conn.read_ctx() as cursor:
+            assert cursor.execute('SELECT COUNT(*) FROM t').fetchone() == (2,)
+
+
+def test_user_db_rekey_rebuilds_pool(user_conn: DBConnection):
+    """The change_password flow: readers keyed with the old password are closed
+    before the rekey and a fresh pool is keyed with the new one"""
+    user_conn.disable_read_pool()
+    with user_conn.write_ctx() as write_cursor:
+        write_cursor.executescript("PRAGMA rekey='456';")
+    user_conn.enable_read_pool(reader_setup=lambda reader: unlock_database(
+        db_connection=reader,
+        password='456',
+        sqlcipher_version=4,
+        apply_optimizations=False,
+    ))
+    with user_conn.read_ctx() as cursor:
+        assert cursor.execute('SELECT COUNT(*) FROM t').fetchone() == (1,)
+
+
+def test_user_db_failed_reader_setup_cleans_up(user_conn: DBConnection):
+    """A reader_setup failure (e.g. wrong key) closes created readers, propagates
+    and leaves the pool disabled so read_ctx falls back to the write connection"""
+    user_conn.disable_read_pool()
+    with pytest.raises(sqlcipher.DatabaseError):  # pylint: disable=no-member
+        user_conn.enable_read_pool(reader_setup=lambda reader: unlock_database(
+            db_connection=reader,
+            password='wrong password',
+            sqlcipher_version=4,
+            apply_optimizations=False,
+        ))
+    with user_conn.read_ctx() as cursor:  # falls back to the write connection
+        assert cursor.execute('SELECT COUNT(*) FROM t').fetchone() == (1,)
+
+
+def test_user_db_integrity_check_on_pooled_reader(user_conn: DBConnection):
+    """PRAGMA integrity_check is a pure read and must work on pooled readers,
+    since db_integrity_check runs it through read_ctx"""
+    with user_conn.read_ctx() as cursor:
+        assert cursor.execute('PRAGMA integrity_check;').fetchall() == [('ok',)]
 
 
 def test_concurrent_readers_and_writers_soak(conn: DBConnection):

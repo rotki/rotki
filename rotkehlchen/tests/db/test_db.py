@@ -1869,7 +1869,7 @@ def test_add_edit_remove_kraken_futures(database: DBHandler) -> None:
     assert kraken_extras[KRAKEN_FUTURES_API_KEY_KEY] == kraken_futures_api_key
     assert kraken_extras[KRAKEN_FUTURES_API_SECRET_KEY] == kraken_futures_api_secret
 
-    with database.conn.read_ctx() as cursor:
+    with database.user_write() as cursor:
         new_kraken_futures_api_key = ApiKey('new_kraken_futures_api_key')
         new_kraken_futures_api_secret = ApiSecret(b'a3Jia2VuX2FwaV9zZWNyZXQz')
 
@@ -1900,7 +1900,7 @@ def test_add_edit_remove_kraken_futures(database: DBHandler) -> None:
     assert kraken_extras[KRAKEN_FUTURES_API_KEY_KEY] == new_kraken_futures_api_key
     assert kraken_extras[KRAKEN_FUTURES_API_SECRET_KEY] == new_kraken_futures_api_secret
 
-    with database.conn.read_ctx() as cursor:
+    with database.user_write() as cursor:
         database.remove_exchange(cursor, 'kraken1', Location.KRAKEN)
         credentials = database.get_exchange_credentials(cursor)
         kraken_extras = database.get_exchange_credentials_extras('kraken1', Location.KRAKEN)
