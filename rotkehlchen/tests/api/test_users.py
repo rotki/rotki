@@ -1,6 +1,7 @@
 import dataclasses
 import random
 import shutil
+import threading
 import time
 from contextlib import ExitStack
 from http import HTTPStatus
@@ -715,6 +716,71 @@ def test_user_logout(
         status_code=HTTPStatus.UNAUTHORIZED,
     )
     assert rotki.user_is_logged_in is False
+
+
+def test_user_logout_under_concurrent_api_load(
+        rotkehlchen_api_server: 'APIServer',
+        username: str,
+) -> None:
+    """Stress test: hammer the API with concurrent readers and writers on real
+    threads and land a logout in the middle of it. No request may error with a
+    5xx and the server must stay responsive throughout -- guards the logout
+    serialization, api task gating and DB thread-safety work of the gevent to
+    threads migration.
+    """
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+    bad_responses: list[tuple[str, int, str]] = []
+    stop = threading.Event()
+    requests_made = [0] * (workers_num := 4)
+
+    def hammer(worker: int) -> None:
+        while not stop.is_set():
+            for method, resource, json_payload in (
+                    ('GET', 'settingsresource', None),
+                    ('PUT', 'ignoredassetsresource', {'assets': ['ETH']}),
+                    ('POST', 'historyeventresource', {'limit': 10, 'offset': 0}),
+                    ('DELETE', 'ignoredassetsresource', {'assets': ['ETH']}),
+                    ('GET', 'usersresource', None),
+            ):
+                url = api_url_for(rotkehlchen_api_server, resource)
+                try:
+                    response = requests.request(method, url, json=json_payload, timeout=30)
+                except requests.RequestException as e:
+                    bad_responses.append((f'{method} {resource}', -1, str(e)))
+                    continue
+                requests_made[worker] += 1
+                if response.status_code >= 500:
+                    bad_responses.append(
+                        (f'{method} {resource}', response.status_code, response.text[:200]),
+                    )
+
+    threads = [
+        threading.Thread(target=hammer, args=(worker,), name=f'hammer_{worker}')
+        for worker in range(workers_num)
+    ]
+    for thread in threads:
+        thread.start()
+
+    try:
+        time.sleep(1)  # let the hammering run against the logged-in user for a while
+        response = requests.patch(  # then log out in the middle of it
+            api_url_for(rotkehlchen_api_server, 'usersbynameresource', name=username),
+            json={'action': 'logout'},
+        )
+        assert_simple_ok_response(response)
+        assert rotki.user_is_logged_in is False
+        time.sleep(0.5)  # keep hammering the logged-out server: 401s, but no 5xx
+    finally:
+        stop.set()
+        for thread in threads:
+            thread.join(timeout=60)
+
+    assert all(thread.is_alive() is False for thread in threads), 'a hammer thread got stuck'
+    assert sum(requests_made) > 0, 'the hammer threads made no requests at all'
+    assert bad_responses == []
+    # and the server must still answer normally after the dust settles
+    response = requests.get(api_url_for(rotkehlchen_api_server, 'usersresource'))
+    assert assert_proper_sync_response_with_result(response)[username] == 'loggedout'
 
 
 def test_user_login(

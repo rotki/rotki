@@ -5,13 +5,15 @@ import os
 import sys
 import tempfile
 import threading
+import time
 import traceback
 from collections import defaultdict
-from collections.abc import Callable, Mapping, Sequence
+from collections.abc import Callable, Iterator, Mapping, Sequence
+from contextlib import contextmanager
 from functools import wraps
 from http import HTTPStatus
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Literal, Optional, overload
+from typing import TYPE_CHECKING, Any, Final, Literal, Optional, overload
 
 from flask import Response, make_response, send_file
 from solders.solders import Signature
@@ -242,6 +244,11 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
+# How long a logout waits for in-flight session-using sync requests to finish
+# before proceeding with the teardown anyway (same abandon policy as api tasks
+# that ignore their cancellation)
+LOGOUT_DRAIN_TIMEOUT_SECONDS: Final = 10
+
 OK_RESULT = {'result': True, 'message': ''}
 
 
@@ -387,6 +394,55 @@ class RestAPI:
         # expected death instead of escaping cancellation and running (uncancelled)
         # against the session being torn down.
         self.api_tasks_stop_reason: str | None = None
+        # Coordination between sync request handlers using the logged-in session and
+        # user_logout: handlers register via session_usage() and logout waits for
+        # them to drain before tearing down the DB, else a handler that passed the
+        # logged-in check crashes on the connection being closed under it.
+        self._session_usage_cond = threading.Condition()
+        self._inflight_session_requests = 0  # guarded by _session_usage_cond
+        self._session_teardown = False  # guarded by _session_usage_cond
+        self._thread_session_requests = threading.local()  # how many slots THIS thread holds
+
+    @contextmanager
+    def session_usage(self) -> Iterator[bool]:
+        """Register the calling request as using the logged-in session for its
+        duration, so that a concurrent logout waits for it before tearing the DB
+        down. Yields False when there is no usable session -- either no user is
+        logged in or a logout is already in progress -- in which case the caller
+        must not touch any session state and reply accordingly.
+        """
+        with self._session_usage_cond:
+            if self.rotkehlchen.user_is_logged_in is False or self._session_teardown:
+                usable = False
+            else:
+                usable = True
+                self._inflight_session_requests += 1
+                self._thread_session_requests.count = getattr(self._thread_session_requests, 'count', 0) + 1  # noqa: E501
+        try:
+            yield usable
+        finally:
+            if usable:
+                with self._session_usage_cond:
+                    self._inflight_session_requests -= 1
+                    self._thread_session_requests.count -= 1
+                    self._session_usage_cond.notify_all()
+
+    def _drain_session_requests(self) -> None:
+        """Wait until no sync request except the ones held by this thread (the
+        logout request itself) is using the session anymore. Bounded: after
+        LOGOUT_DRAIN_TIMEOUT_SECONDS the teardown proceeds anyway and any still
+        running request may fail, which is logged."""
+        own_slots = getattr(self._thread_session_requests, 'count', 0)
+        deadline = time.monotonic() + LOGOUT_DRAIN_TIMEOUT_SECONDS
+        with self._session_usage_cond:
+            while self._inflight_session_requests > own_slots:
+                if (remaining := deadline - time.monotonic()) <= 0:
+                    log.warning(
+                        'Proceeding with logout teardown while sync requests are still running',
+                        inflight=self._inflight_session_requests - own_slots,
+                    )
+                    break
+                self._session_usage_cond.wait(timeout=remaining)
 
     # - Private functions not exposed to the API
     def _new_task_id(self) -> int:
@@ -1137,15 +1193,25 @@ class RestAPI:
         # whole task body. Without it a logout arriving mid-login reported success
         # while the login kept going and finished against the logged-out state.
         with self.login_lock:
-            # Cancel all queries apart from the main loop instead of waiting for
-            # them: that could take a lot of time for no reason since all results
-            # would be discarded anyway as we are logging out.
-            self._cancel_api_tasks(reason='Cancelled due to logout')
-            with self.task_lock:
-                self.task_results = {}
-            self.rotkehlchen.logout()
-            with self.task_lock:  # teardown done: let new api tasks (e.g. the next login) run
-                self.api_tasks_stop_reason = None
+            with self._session_usage_cond:
+                # From here on new session-using sync requests are turned away at
+                # session_usage() instead of racing the teardown below
+                self._session_teardown = True
+            try:
+                # Cancel all queries apart from the main loop instead of waiting for
+                # them: that could take a lot of time for no reason since all results
+                # would be discarded anyway as we are logging out.
+                self._cancel_api_tasks(reason='Cancelled due to logout')
+                with self.task_lock:
+                    self.task_results = {}
+                # and wait for in-flight sync requests to finish before the DB goes away
+                self._drain_session_requests()
+                self.rotkehlchen.logout()
+                with self.task_lock:  # teardown done: let new api tasks (e.g. the next login) run
+                    self.api_tasks_stop_reason = None
+            finally:
+                with self._session_usage_cond:
+                    self._session_teardown = False
 
         result_dict['result'] = True
         return api_response(result_dict, status_code=HTTPStatus.OK)
