@@ -241,3 +241,6 @@ def configure_globaldb(
         maybe_apply_globaldb_migrations(connection)
 
     connection.schema_sanity_check()
+    # Only now that WAL mode and the final schema are guaranteed, spin up the pool
+    # of read-only connections that isolates read_ctx() readers from write commits
+    connection.enable_read_pool()

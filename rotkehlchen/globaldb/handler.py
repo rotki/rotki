@@ -1845,7 +1845,10 @@ class GlobalDBHandler:
         with user_db.conn.read_ctx() as cursor:
             user_db.update_owned_assets_in_globaldb(cursor)
 
-        with self.conn.read_ctx() as read_cursor:
+        # A cursor of the write connection and not read_ctx: the ATTACH below is
+        # connection-level state that the nested write_ctx must see, so it cannot
+        # happen on a pooled read-only connection
+        with self.conn.cursor() as read_cursor:
             # First check that the operation can be made. If the difference is not the
             # empty set the operation is dangerous and the user should be notified.
             with user_db.user_write() as user_db_cursor:
@@ -1926,7 +1929,10 @@ class GlobalDBHandler:
 
         with self.packaged_db_lock:
             try:
-                with self.conn.read_ctx() as read_cursor:
+                # A cursor of the write connection and not read_ctx: the ATTACH below is
+                # connection-level state that the write_ctx further down must see, so it
+                # cannot happen on a pooled read-only connection
+                with self.conn.cursor() as read_cursor:
                     read_cursor.execute(f"ATTACH DATABASE '{builtin_database}' AS clean_db;")
                     # Check that versions match
                     query = read_cursor.execute("SELECT value from clean_db.settings WHERE name='version';")  # noqa: E501
@@ -1970,7 +1976,7 @@ class GlobalDBHandler:
                 log.error(f'Failed to restore assets in globaldb due to {e!s}')
                 return False, 'Failed to restore assets. Read logs to get more information.'
             finally:  # on the way out always detach the DB. Make sure no transaction is active
-                with self.conn.transaction_lock, self.conn.read_ctx() as read_cursor:
+                with self.conn.transaction_lock, self.conn.cursor() as read_cursor:
                     read_cursor.execute("DETACH DATABASE 'clean_db';")
 
         return True, ''

@@ -1041,7 +1041,7 @@ def test_packaged_db_check_for_constant_assets(globaldb: 'GlobalDBHandler'):
 
     # check that if the type of asset is changed, resolving to the real type
     # does not raise a `WrongAssetType` exception
-    with globaldb.conn.read_ctx() as cursor:
+    with globaldb.conn.write_ctx() as cursor:
         cursor.execute('UPDATE assets SET type=? WHERE identifier=?;', (AssetType.FIAT.serialize_for_db(), A_DAI.identifier))  # noqa: E501
         cursor.execute('UPDATE assets SET type=? WHERE identifier=?;', (AssetType.EVM_TOKEN.serialize_for_db(), A_USD.identifier))  # noqa: E501
         assert cursor.rowcount == 1

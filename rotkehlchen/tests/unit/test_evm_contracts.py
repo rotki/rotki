@@ -45,7 +45,7 @@ def test_fallback_to_packaged_db(ethereum_inquirer: 'EthereumInquirer'):
     """
     Test that if a contract / abi is missing in the globaldb, it is searched in the packaged db.
     """
-    with GlobalDBHandler().conn.read_ctx() as cursor:
+    with GlobalDBHandler().conn.write_ctx() as cursor:
         # Delete one contract and its abi
         cursor.execute(
             'SELECT contract_data.address, contract_abi.value FROM contract_data INNER JOIN '
