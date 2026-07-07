@@ -131,7 +131,7 @@ def pubkey_to_bech32_address(data: bytes, witver: WitnessVersion) -> BTCAddress:
     """
     try:
         if witver == WitnessVersion.BECH32:
-            result = encode_segwit_address('bc', 0, hash160(data))
+            result = encode_segwit_address('bc', 0, hash160(PublicKey(data).format()))
         else:
             result = encode_segwit_address('bc', 1, PublicKey(data).taproot_output_key())
     except ValueError as e:

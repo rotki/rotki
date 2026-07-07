@@ -60,20 +60,70 @@ def _point_add(first: Point | None, second: Point | None) -> Point | None:
     return Point(x=x, y=(slope * (first.x - x) - first.y) % P)
 
 
+def _jacobian_double(x: int, y: int, z: int) -> tuple[int, int, int]:
+    """Double a Jacobian point, using (0, 1, 0) as infinity."""
+    if z == 0 or y == 0:
+        return 0, 1, 0
+
+    s = 4 * x * y % P * y % P
+    m = 3 * x * x % P
+    nx = (m * m - 2 * s) % P
+    y_sq = y * y % P
+    return nx, (m * (s - nx) - 8 * y_sq * y_sq) % P, 2 * y * z % P
+
+
+def _jacobian_add(
+        x1: int,
+        y1: int,
+        z1: int,
+        x2: int,
+        y2: int,
+        z2: int,
+) -> tuple[int, int, int]:
+    """Add two Jacobian points, using (0, 1, 0) as infinity."""
+    if z1 == 0:
+        return x2, y2, z2
+    if z2 == 0:
+        return x1, y1, z1
+
+    z1_sq, z2_sq = z1 * z1 % P, z2 * z2 % P
+    u1, u2 = x1 * z2_sq % P, x2 * z1_sq % P
+    s1, s2 = y1 * z2_sq % P * z2 % P, y2 * z1_sq % P * z1 % P
+    if u1 == u2:
+        if s1 != s2:
+            return 0, 1, 0
+        return _jacobian_double(x1, y1, z1)
+
+    h, r = (u2 - u1) % P, (s2 - s1) % P
+    h_sq = h * h % P
+    h_cb = h_sq * h % P
+    nx = (r * r - h_cb - 2 * u1 * h_sq) % P
+    return nx, (r * (u1 * h_sq - nx) - s1 * h_cb) % P, h * z1 % P * z2 % P
+
+
 def _point_mul(scalar: int, point: Point) -> Point | None:
-    """Multiply a curve point by a non-negative scalar."""
+    """Multiply a curve point by a non-negative scalar.
+
+    Uses Jacobian coordinates so the multiplication needs a single field inversion instead
+    of one per point addition/doubling.
+    """
     if scalar < 0:
         raise ValueError('Invalid negative secp256k1 scalar')
 
-    result: Point | None = None
-    addend: Point | None = point
+    rx, ry, rz = 0, 1, 0
+    ax, ay, az = point.x, point.y, 1
     while scalar:
         if scalar & 1:
-            result = _point_add(result, addend)
-        addend = _point_add(addend, addend)
+            rx, ry, rz = _jacobian_add(rx, ry, rz, ax, ay, az)
+        ax, ay, az = _jacobian_double(ax, ay, az)
         scalar >>= 1
 
-    return result
+    if rz == 0:
+        return None
+
+    z_inv = _inverse_mod(rz)
+    z_inv_sq = z_inv * z_inv % P
+    return Point(x=rx * z_inv_sq % P, y=ry * z_inv_sq % P * z_inv % P)
 
 
 def _lift_x_even_y(x: int) -> Point:

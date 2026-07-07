@@ -86,6 +86,12 @@ def test_is_valid_btc_address():
     assert not is_valid_btc_address('BC130XLXVLHEMJA6C4DQV22UAPCTQUPFHLXM9H8Z3K2E72Q4K9HCZ7VQ7ZWS8R')  # noqa: E501
 
 
+def test_bech32m_hrp_must_match_exactly():
+    """A bech32m string whose hrp merely starts with bc1 is not a bitcoin address."""
+    assert is_valid_btc_address('bc1p0xlxvlhemja6c4dqv22uapctqupfhlxm9h8z3k2e72q4k9hcz7vqzk5jj0')  # BIP-350 valid vector  # noqa: E501
+    assert not is_valid_btc_address('bc1b1pqqqsyqcyq5rqwzqfpg9scrgwpugpzysnzs23v9ccrydpk8qarc0sed2y4h')  # hrp is bc1b, encoded with a valid bech32m checksum  # noqa: E501
+
+
 def test_pubkey_to_base58_address():
     """Test vectors from here: https://iancoleman.io/bip39/"""
     address = pubkey_to_base58_address(

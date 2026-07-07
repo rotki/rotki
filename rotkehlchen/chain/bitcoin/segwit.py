@@ -67,7 +67,7 @@ def is_valid_bech32m_segwit_address(hrp: str, address: str) -> bool:
     address = address.lower()
     data = [CHARSET.find(char) for char in address[address.rfind('1') + 1:-6]]
     if (
-        not address.startswith(hrp + '1') or
+        address[:address.rfind('1')] != hrp or
         len(data) == 0 or
         data[0] > 16 or
         (decoded := bech32.convertbits(data[1:], 5, 8, False)) is None or
