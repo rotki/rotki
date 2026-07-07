@@ -234,6 +234,12 @@ class DBConnectionType(Enum):
     USER = auto()
     TRANSIENT = auto()
     GLOBAL = auto()
+    # the read-only packaged global DB shipped with rotki. A distinct type so that
+    # its connection gets its own CONNECTION_MAP slot and progress callback -- were
+    # it registered as GLOBAL it would replace the main global DB connection in the
+    # map, making that one's progress callback consult the wrong connection's locks
+    # (and e.g. interrupt a commit the in_callback guard should have protected)
+    PACKAGED_GLOBAL = auto()
 
 
 # This is a global connection map to be able to get the connection from inside the
@@ -282,10 +288,16 @@ def global_callback() -> int:
     return _progress_callback(connection)
 
 
+def packaged_global_callback() -> int:
+    connection = CONNECTION_MAP.get(DBConnectionType.PACKAGED_GLOBAL)
+    return _progress_callback(connection)
+
+
 CALLBACK_MAP = {
     DBConnectionType.USER: user_callback,
     DBConnectionType.TRANSIENT: transient_callback,
     DBConnectionType.GLOBAL: global_callback,
+    DBConnectionType.PACKAGED_GLOBAL: packaged_global_callback,
 }
 
 
@@ -301,7 +313,6 @@ class DBConnection:
             connection_type: DBConnectionType,
             sql_vm_instructions_cb: int,
     ) -> None:
-        CONNECTION_MAP[connection_type] = self
         self._conn: UnderlyingConnection
         # Lock and not Semaphore since the progress callback inspects held
         # state through locked()
@@ -329,7 +340,7 @@ class DBConnection:
         # whether the current savepoint stack claimed transaction_lock itself
         # (False when the savepoints nest inside this task's own write transaction)
         self._savepoint_holds_transaction_lock = False
-        if connection_type == DBConnectionType.GLOBAL:
+        if connection_type in (DBConnectionType.GLOBAL, DBConnectionType.PACKAGED_GLOBAL):
             self._conn = rsqlite.connect(
                 database=path,
                 check_same_thread=False,
@@ -341,8 +352,13 @@ class DBConnection:
                 check_same_thread=False,
                 isolation_level=None,
             )
+        # Register in the map only now that the connection is fully initialized: the
+        # per-type callbacks read it from other threads (e.g. an abandoned task still
+        # stepping a statement on the previous connection of this type), and must
+        # never observe an object whose locks/underlying connection don't exist yet
+        CONNECTION_MAP[connection_type] = self
         self._set_progress_handler()
-        if connection_type == DBConnectionType.GLOBAL:
+        if connection_type in (DBConnectionType.GLOBAL, DBConnectionType.PACKAGED_GLOBAL):
             # Register a fuzzy-match helper so asset search/ranking can ORDER BY Levenshtein
             # distance directly in SQL instead of pulling every matching row into memory.
             with self.statement_lock:
