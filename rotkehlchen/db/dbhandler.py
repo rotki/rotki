@@ -253,6 +253,12 @@ class DBHandler:
         self.get_or_create_token_lock = Semaphore()
         self.match_asset_movements_lock = Semaphore()
         self._ignored_asset_ids_cache: dict[bool, set[str]] = {}
+        # Bumped on every cache invalidation. get_ignored_asset_ids snapshots it
+        # before querying and skips the write-back if it changed in the meantime,
+        # so an invalidation issued while a query is in flight cannot be
+        # resurrected by that query's stale result. Same pattern as
+        # CacheableMixIn.cache_flush_generation.
+        self._ignored_assets_flush_generation = 0
         # tracks, in memory, which chains may have transactions pending receipt fetching or
         # decoding so the periodic scheduler can skip its full-table "is there work?" scans
         self.pending_txs_tracker = PendingTransactionsTracker()
@@ -1521,7 +1527,25 @@ class DBHandler:
         self.invalidate_ignored_assets_cache()
 
     def invalidate_ignored_assets_cache(self) -> None:
+        self._ignored_assets_flush_generation += 1  # before the clear, so in-flight queries always notice  # noqa: E501
         self._ignored_asset_ids_cache.clear()
+
+    def _may_cache_ignored_assets(self, flush_generation: int) -> bool:
+        """Whether a queried ignored assets result may be written to the cache.
+
+        Not the case if the cache was invalidated after `flush_generation` was
+        snapshotted (the result may predate the change that invalidated), nor
+        while any write transaction or savepoint stack is open on the connection:
+        the invalidating writers call invalidate_ignored_assets_cache before
+        committing, so a concurrent reader would re-cache the pre-commit state,
+        and the writing task itself reads its own yet-uncommitted data which must
+        not become visible to others through the cache.
+        """
+        return (
+            self._ignored_assets_flush_generation == flush_generation and
+            self.conn.write_task_ident is None and
+            self.conn.savepoint_task_ident is None
+        )
 
     def get_ignored_asset_ids(self, cursor: 'DBCursor', only_nfts: bool = False) -> set[str]:
         """Gets the ignored asset ids without converting each one of them to an asset object
@@ -1531,12 +1555,14 @@ class DBHandler:
         """
         if (cached := self._ignored_asset_ids_cache.get(only_nfts)) is not None:
             return set(cached)
+        flush_generation = self._ignored_assets_flush_generation
         if (
                 only_nfts is True and
                 (all_cached := self._ignored_asset_ids_cache.get(False)) is not None
         ):
             nfts_only = {asset_id for asset_id in all_cached if asset_id.startswith(NFT_DIRECTIVE)}
-            self._ignored_asset_ids_cache[True] = nfts_only
+            if self._may_cache_ignored_assets(flush_generation):
+                self._ignored_asset_ids_cache[True] = nfts_only
             return set(nfts_only)
         bindings = []
         query = "SELECT value FROM multisettings WHERE name='ignored_asset' "
@@ -1545,7 +1571,8 @@ class DBHandler:
             bindings.append(f'{NFT_DIRECTIVE}%')
         cursor.execute(query, bindings)
         result = {x[0] for x in cursor}
-        self._ignored_asset_ids_cache[only_nfts] = result
+        if self._may_cache_ignored_assets(flush_generation):
+            self._ignored_asset_ids_cache[only_nfts] = result
         return set(result)
 
     def add_to_ignored_action_ids(
