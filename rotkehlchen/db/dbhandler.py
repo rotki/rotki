@@ -602,7 +602,7 @@ class DBHandler:
         except sqlcipher.DatabaseError as e:  # pylint: disable=no-member
             # can only happen if the DB ended up half-rekeyed (conn succeeded but
             # conn_transient failed) leaving self.password wrong for the user DB
-            log.error(f'Could not re-key the user DB read pool after password change: {e!s}')
+            log.error('Could not re-key the user DB read pool after password change: %s', e)
         return result
 
     def disconnect(self, conn_attribute: Literal['conn', 'conn_transient'] = 'conn') -> None:
