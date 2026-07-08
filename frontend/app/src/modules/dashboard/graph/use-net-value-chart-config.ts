@@ -10,7 +10,7 @@ import type { DataZoomComponentOption, GridComponentOption } from 'echarts/compo
 import type { ComputedRef, MaybeRefOrGetter } from 'vue';
 import type { NetValueZoomRange } from '@/modules/dashboard/graph/net-value-stats';
 import type { NetValueChartData } from '@/modules/dashboard/graph/types';
-import { useFrontendSettingsStore } from '@/modules/settings/use-frontend-settings-store';
+import { useSetting } from '@/modules/settings/use-setting';
 import { useGraph } from '@/modules/statistics/use-graph';
 
 interface AxisConfig {
@@ -38,7 +38,8 @@ export function useNetValueChartConfig(
     ]);
   });
 
-  const { graphZeroBased, showGraphRangeSelector } = storeToRefs(useFrontendSettingsStore());
+  const graphZeroBased = useSetting('graphZeroBased');
+  const showGraphRangeSelector = useSetting('showGraphRangeSelector');
   const { baseColor, gradient } = useGraph();
 
   const MS = 1000;

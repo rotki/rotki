@@ -1,7 +1,7 @@
 import type { RuiIcons } from '@rotki/ui-library';
 import type { ComputedRef, Ref } from 'vue';
 import type { PrivacyMode } from '@/modules/session/types';
-import { useFrontendSettingsStore } from '@/modules/settings/use-frontend-settings-store';
+import { useSetting } from '@/modules/settings/use-setting';
 import { useSettingsOperations } from '@/modules/settings/use-settings-operations';
 
 interface UsePrivacyModeReturn {
@@ -12,8 +12,7 @@ interface UsePrivacyModeReturn {
 }
 
 export function usePrivacyMode(): UsePrivacyModeReturn {
-  const store = useFrontendSettingsStore();
-  const { privacyMode } = storeToRefs(store);
+  const privacyMode = useSetting('privacyMode');
   const { updateFrontendSetting } = useSettingsOperations();
 
   const privacyModeIcon = computed<RuiIcons>(() => {

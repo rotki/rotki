@@ -5,7 +5,7 @@ import { omit } from 'es-toolkit';
 import { useCalendarApi } from '@/modules/calendar/use-calendar-api';
 import { useConfirmStore } from '@/modules/core/common/use-confirm-store';
 import { getErrorMessage, useNotifications } from '@/modules/core/notifications/use-notifications';
-import { useGeneralSettingsStore } from '@/modules/settings/use-general-settings-store';
+import { useSetting } from '@/modules/settings/use-setting';
 
 interface UseCalendarOperationsReturn {
   add: (selectedDate?: Dayjs) => void;
@@ -24,7 +24,7 @@ export function useCalendarOperations(
   const { deleteCalendarEvent } = useCalendarApi();
   const { show } = useConfirmStore();
   const { showErrorMessage } = useNotifications();
-  const { autoDeleteCalendarEntries } = storeToRefs(useGeneralSettingsStore());
+  const autoDeleteCalendarEntries = useSetting('autoDeleteCalendarEntries');
 
   const modelValue = ref<CalendarEvent>();
   const editMode = ref<boolean>(false);

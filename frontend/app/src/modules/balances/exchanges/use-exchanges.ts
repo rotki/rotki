@@ -4,6 +4,7 @@ import { assert, toSentenceCase } from '@rotki/common';
 import { startPromise } from '@shared/utils';
 import { useValueThreshold } from '@/modules/assets/amount-display/use-usd-value-threshold';
 import { useExchangeApi } from '@/modules/balances/api/use-exchange-api';
+import { useConnectedExchangesStore } from '@/modules/balances/exchanges/use-connected-exchanges-store';
 import { AssetBalances } from '@/modules/balances/types/balances';
 import { type EditExchange, Exchange, type ExchangeFormData } from '@/modules/balances/types/exchanges';
 import { useBalancesStore } from '@/modules/balances/use-balances-store';
@@ -13,7 +14,6 @@ import { useNotifications } from '@/modules/core/notifications/use-notifications
 import { TaskType } from '@/modules/core/tasks/task-type';
 import { isActionableFailure, useTaskHandler } from '@/modules/core/tasks/use-task-handler';
 import { BalanceSource } from '@/modules/settings/types/frontend-settings';
-import { useSessionSettingsStore } from '@/modules/settings/use-session-settings-store';
 import { useStatusUpdater } from '@/modules/shell/sync-progress/use-status-updater';
 
 interface UseExchangesReturn {
@@ -32,8 +32,8 @@ export function useExchanges(): UseExchangesReturn {
   const { runTask } = useTaskHandler();
   const { notifyError, showErrorMessage } = useNotifications();
   const { exchangeBalances } = storeToRefs(useBalancesStore());
-  const { connectedExchanges } = storeToRefs(useSessionSettingsStore());
-  const { setConnectedExchanges } = useSessionSettingsStore();
+  const { connectedExchanges } = storeToRefs(useConnectedExchangesStore());
+  const { setConnectedExchanges } = useConnectedExchangesStore();
   const { queryExchangeBalances } = useExchangeApi();
   const valueThreshold = useValueThreshold(BalanceSource.EXCHANGES);
 

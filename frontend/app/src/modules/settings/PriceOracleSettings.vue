@@ -15,13 +15,14 @@ import {
   UNISWAP2_PRIO_LIST_ITEM,
   UNISWAP3_PRIO_LIST_ITEM,
 } from '@/modules/settings/types/prioritized-list-id';
-import { useGeneralSettingsStore } from '@/modules/settings/use-general-settings-store';
+import { useSetting } from '@/modules/settings/use-setting';
 import PrioritizedList from '@/modules/shell/components/PrioritizedList.vue';
 
 const currentOracles = ref<PrioritizedListId[]>([]);
 const historicOracles = ref<PrioritizedListId[]>([]);
 
-const { currentPriceOracles, historicalPriceOracles } = storeToRefs(useGeneralSettingsStore());
+const currentPriceOracles = useSetting('currentPriceOracles');
+const historicalPriceOracles = useSetting('historicalPriceOracles');
 
 function resetCurrentPriceOracles(): void {
   set(currentOracles, get(currentPriceOracles));

@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import SettingsOption from '@/modules/settings/controls/SettingsOption.vue';
-import { useGeneralSettingsStore } from '@/modules/settings/use-general-settings-store';
+import { useSetting } from '@/modules/settings/use-setting';
 
 const value = ref<boolean>(false);
-const { autoDetectTokens } = storeToRefs(useGeneralSettingsStore());
+const autoDetectTokens = useSetting('autoDetectTokens');
 
 onMounted(() => {
   set(value, get(autoDetectTokens));

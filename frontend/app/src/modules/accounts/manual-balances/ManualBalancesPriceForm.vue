@@ -4,7 +4,7 @@ import { FiatDisplay } from '@/modules/assets/amount-display/components';
 import { useAssetPricesApi } from '@/modules/assets/api/use-asset-prices-api';
 import { usePriceTaskManager } from '@/modules/assets/prices/use-price-task-manager';
 import { usePriceUtils } from '@/modules/assets/prices/use-price-utils';
-import { useGeneralSettingsStore } from '@/modules/settings/use-general-settings-store';
+import { useSetting } from '@/modules/settings/use-setting';
 import AmountInput from '@/modules/shell/components/inputs/AmountInput.vue';
 import AssetSelect from '@/modules/shell/components/inputs/AssetSelect.vue';
 
@@ -20,7 +20,7 @@ const fetchedPrice = ref<string>('');
 const isCustomPrice = ref<boolean>(false);
 const fiatPriceHint = ref<BigNumber | null>();
 
-const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
+const currencySymbol = useSetting('currencySymbol');
 const { getAssetPrice } = usePriceUtils();
 const { fetchPrices } = usePriceTaskManager();
 const { addLatestPrice } = useAssetPricesApi();

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { useFrontendSettingsStore } from '@/modules/settings/use-frontend-settings-store';
+import { useSetting } from '@/modules/settings/use-setting';
 
 const { assetPadding = 0, justify = 'end', value } = defineProps<{
   value?: string;
@@ -7,7 +7,7 @@ const { assetPadding = 0, justify = 'end', value } = defineProps<{
   assetPadding?: number;
 }>();
 
-const { shouldShowPercentage } = storeToRefs(useFrontendSettingsStore());
+const shouldShowPercentage = useSetting('shouldShowPercentage');
 
 const displayValue = computed<string>(() => {
   if (!get(shouldShowPercentage))

@@ -5,9 +5,10 @@ import { Constraints } from '@/modules/core/common/constraints';
 import { useValidation } from '@/modules/core/common/use-validation';
 import { toMessages } from '@/modules/core/common/validation/validation';
 import SettingsOption from '@/modules/settings/controls/SettingsOption.vue';
-import { useFrontendSettingsStore } from '@/modules/settings/use-frontend-settings-store';
+import { useSetting } from '@/modules/settings/use-setting';
 
-const { autoDetectTokensCooldownHours, autoDetectTokensOnLogin } = storeToRefs(useFrontendSettingsStore());
+const autoDetectTokensCooldownHours = useSetting('autoDetectTokensCooldownHours');
+const autoDetectTokensOnLogin = useSetting('autoDetectTokensOnLogin');
 const cooldownHours = ref<string>(get(autoDetectTokensCooldownHours).toString());
 
 const { t } = useI18n({ useScope: 'global' });
@@ -48,7 +49,6 @@ watch(autoDetectTokensCooldownHours, () => {
 <template>
   <SettingsOption
     v-if="autoDetectTokensOnLogin"
-    frontend-setting
     setting="autoDetectTokensCooldownHours"
     :transform="transform"
     :error-message="t('general_settings.auto_detect_tokens_cooldown.validation.error')"

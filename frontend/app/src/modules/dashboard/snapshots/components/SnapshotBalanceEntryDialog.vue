@@ -10,7 +10,7 @@ import SnapshotLocationSplit from '@/modules/dashboard/snapshots/components/Snap
 import { useHistoricFiatConversion } from '@/modules/dashboard/snapshots/composables/use-historic-fiat-conversion';
 import { locationBalanceAfterEdit, type LocationBalancePreview, overdrawnLocationIds, soleEligibleLocation } from '@/modules/dashboard/snapshots/utils/snapshot-location-balance';
 import { isLiability, TOTAL_LOCATION } from '@/modules/dashboard/snapshots/utils/snapshot-totals';
-import { useGeneralSettingsStore } from '@/modules/settings/use-general-settings-store';
+import { useSetting } from '@/modules/settings/use-setting';
 import BigDialog from '@/modules/shell/components/dialogs/BigDialog.vue';
 
 type EditableBalance = BalanceSnapshot & { index: number };
@@ -28,7 +28,7 @@ const emit = defineEmits<{
 
 const { t } = useI18n({ useScope: 'global' });
 
-const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
+const currencySymbol = useSetting('currencySymbol');
 
 const open = ref<boolean>(false);
 const stateUpdated = ref<boolean>(false);

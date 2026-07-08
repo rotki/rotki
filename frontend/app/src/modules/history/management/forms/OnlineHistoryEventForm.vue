@@ -4,6 +4,7 @@ import type { StandaloneEventData } from '@/modules/history/management/forms/for
 import { HistoryEventEntryType, Zero } from '@rotki/common';
 import { generateUUID } from '@shared/utils';
 import dayjs from 'dayjs';
+import { useConnectedExchangesStore } from '@/modules/balances/exchanges/use-connected-exchanges-store';
 import LocationSelector from '@/modules/balances/LocationSelector.vue';
 import { bigNumberifyFromRef } from '@/modules/core/common/data/bignumbers';
 import { TRADE_LOCATION_EXTERNAL } from '@/modules/core/common/defaults';
@@ -11,7 +12,6 @@ import { useHistoryEventsForm } from '@/modules/history/events/use-history-event
 import HistoryEventAssetPriceForm from '@/modules/history/management/forms/HistoryEventAssetPriceForm.vue';
 import HistoryEventTypeForm from '@/modules/history/management/forms/HistoryEventTypeForm.vue';
 import { toMessages, useEventFormBase } from '@/modules/history/management/forms/use-event-form-base';
-import { useSessionSettingsStore } from '@/modules/settings/use-session-settings-store';
 import AmountInput from '@/modules/shell/components/inputs/AmountInput.vue';
 import AutoCompleteWithSearchSync from '@/modules/shell/components/inputs/AutoCompleteWithSearchSync.vue';
 import DateTimePicker from '@/modules/shell/components/inputs/DateTimePicker.vue';
@@ -78,7 +78,7 @@ const {
 const numericAmount = bigNumberifyFromRef(amount);
 
 const { saveHistoryEventHandler } = useHistoryEventsForm();
-const { connectedExchanges } = storeToRefs(useSessionSettingsStore());
+const { connectedExchanges } = storeToRefs(useConnectedExchangesStore());
 
 const locationLabelSuggestions = computed(() =>
   get(connectedExchanges)

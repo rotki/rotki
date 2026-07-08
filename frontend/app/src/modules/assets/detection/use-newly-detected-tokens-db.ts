@@ -4,7 +4,7 @@ import type { ItemFilter } from '@/modules/user-data/pagination';
 import { transformCase } from '@rotki/common';
 import { SECONDS_PER_DAY } from '@/modules/core/common/constraints';
 import { logger } from '@/modules/core/common/logging/logging';
-import { useFrontendSettingsStore } from '@/modules/settings/use-frontend-settings-store';
+import { useSetting } from '@/modules/settings/use-setting';
 import { useDatabase } from '@/modules/user-data/use-database';
 import {
   type NewDetectedToken,
@@ -34,8 +34,8 @@ export const useNewlyDetectedTokensDb = createSharedComposable((): UseNewlyDetec
 
   const { db, isReady } = useDatabase();
 
-  const settingsStore = useFrontendSettingsStore();
-  const { newlyDetectedTokensMaxCount, newlyDetectedTokensTtlDays } = storeToRefs(settingsStore);
+  const newlyDetectedTokensMaxCount = useSetting('newlyDetectedTokensMaxCount');
+  const newlyDetectedTokensTtlDays = useSetting('newlyDetectedTokensTtlDays');
 
   async function count(): Promise<number> {
     if (!get(isReady))

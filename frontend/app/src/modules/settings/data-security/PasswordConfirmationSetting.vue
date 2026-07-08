@@ -4,15 +4,15 @@ import { between, helpers, required } from '@vuelidate/validators';
 import { Constraints } from '@/modules/core/common/constraints';
 import { toMessages } from '@/modules/core/common/validation/validation';
 import SettingsItem from '@/modules/settings/controls/SettingsItem.vue';
-import { useFrontendSettingsStore } from '@/modules/settings/use-frontend-settings-store';
+import { useSetting } from '@/modules/settings/use-setting';
 import { useSettingsOperations } from '@/modules/settings/use-settings-operations';
 import ConfirmDialog from '@/modules/shell/components/dialogs/ConfirmDialog.vue';
 
 const { t } = useI18n({ useScope: 'global' });
 
-const frontendSettingsStore = useFrontendSettingsStore();
 const { updateFrontendSetting } = useSettingsOperations();
-const { enablePasswordConfirmation, passwordConfirmationInterval } = storeToRefs(frontendSettingsStore);
+const enablePasswordConfirmation = useSetting('enablePasswordConfirmation');
+const passwordConfirmationInterval = useSetting('passwordConfirmationInterval');
 
 const passwordConfirmationIntervalDays = ref<string>('7');
 const enabled = ref<boolean>(true);

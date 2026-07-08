@@ -3,7 +3,7 @@ import { mount, type VueWrapper } from '@vue/test-utils';
 import { createPinia, type Pinia, setActivePinia } from 'pinia';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { PrivacyMode } from '@/modules/session/types';
-import { useFrontendSettingsStore } from '@/modules/settings/use-frontend-settings-store';
+import { useSettingsRepo } from '@/modules/settings/settings-repo';
 import AccountDisplay from '@/modules/shell/components/display/AccountDisplay.vue';
 
 vi.mock('@/modules/assets/api/use-asset-icon-api', (): Record<string, unknown> => ({
@@ -51,7 +51,7 @@ describe('account-display', () => {
   });
 
   it('should blur address on privacy mode', async () => {
-    useFrontendSettingsStore().update({ privacyMode: PrivacyMode.SEMI_PRIVATE });
+    useSettingsRepo().updateFrontend({ privacyMode: PrivacyMode.SEMI_PRIVATE });
     await nextTick();
     expect(wrapper.find('.blur').exists()).toBe(true);
   });

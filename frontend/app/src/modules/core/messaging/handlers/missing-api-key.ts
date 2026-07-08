@@ -6,7 +6,7 @@ import { getServiceRegisterUrl } from '@/modules/core/common/helpers/url';
 import { useConfirmStore } from '@/modules/core/common/use-confirm-store';
 import { createNotificationHandler } from '@/modules/core/messaging/utils';
 import { SUPPRESSIBLE_SERVICES, SuppressibleMissingKeyService } from '@/modules/settings/types/user-settings';
-import { useGeneralSettingsStore } from '@/modules/settings/use-general-settings-store';
+import { useSetting } from '@/modules/settings/use-setting';
 import { useSettingsOperations } from '@/modules/settings/use-settings-operations';
 import { useInterop } from '@/modules/shell/app/use-electron-interop';
 import { Routes } from '@/router/routes';
@@ -19,7 +19,7 @@ export function createMissingApiKeyHandler(t: ReturnType<typeof useI18n>['t'], r
   // Capture interop functions at handler creation time (in setup context)
   const { openUrl } = useInterop();
   const { update } = useSettingsOperations();
-  const { suppressMissingKeyMsgServices } = storeToRefs(useGeneralSettingsStore());
+  const suppressMissingKeyMsgServices = useSetting('suppressMissingKeyMsgServices');
   const { show } = useConfirmStore();
 
   return createNotificationHandler<MissingApiKey>((data) => {

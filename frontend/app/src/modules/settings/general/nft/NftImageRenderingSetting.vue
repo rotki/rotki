@@ -4,7 +4,7 @@ import { uniqueStrings } from '@/modules/core/common/data/data';
 import { getDomain } from '@/modules/core/common/helpers/url';
 import { useConfirmStore } from '@/modules/core/common/use-confirm-store';
 import SettingsOption from '@/modules/settings/controls/SettingsOption.vue';
-import { useFrontendSettingsStore } from '@/modules/settings/use-frontend-settings-store';
+import { useSetting } from '@/modules/settings/use-setting';
 import ConfirmDialog from '@/modules/shell/components/dialogs/ConfirmDialog.vue';
 
 type RenderOption = 'all' | 'whitelisted';
@@ -14,9 +14,9 @@ const emit = defineEmits<{ 'dialog-open': [value: boolean] }>();
 const { t } = useI18n({ useScope: 'global' });
 
 const confirmStore = useConfirmStore();
-const frontendStore = useFrontendSettingsStore();
 const { visible } = storeToRefs(confirmStore);
-const { renderAllNftImages: renderAll, whitelistedDomainsForNftImages: whitelist } = storeToRefs(frontendStore);
+const renderAll = useSetting('renderAllNftImages');
+const whitelist = useSetting('whitelistedDomainsForNftImages');
 
 const renderAllNftImages = ref<RenderOption>('all');
 const whitelistedDomains = ref('');
@@ -71,7 +71,6 @@ onMounted(() => {
   <SettingsOption
     #default="{ error, success, updateImmediate }"
     setting="renderAllNftImages"
-    frontend-setting
   >
     <RuiRadioGroup
       v-model="renderAllNftImages"
@@ -94,7 +93,6 @@ onMounted(() => {
     :error-message="t('general_settings.nft_setting.messages.error')"
     :success-message="t('general_settings.nft_setting.messages.success')"
     setting="whitelistedDomainsForNftImages"
-    frontend-setting
     @updated="whitelistedDomains = ''"
   >
     <div class="flex flex-row gap-3.5 items-start">

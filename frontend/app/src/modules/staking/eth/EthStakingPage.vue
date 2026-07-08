@@ -3,7 +3,7 @@ import AccountFormApiKeyAlert from '@/modules/accounts/management/AccountFormApi
 import { EthStaking } from '@/modules/premium/premium';
 import { useExternalApiKeys } from '@/modules/settings/api-keys/external/use-external-api-keys';
 import ModuleNotActive from '@/modules/settings/modules/ModuleNotActive.vue';
-import { useGeneralSettingsStore } from '@/modules/settings/use-general-settings-store';
+import { useSetting } from '@/modules/settings/use-setting';
 import TablePageLayout from '@/modules/shell/layout/TablePageLayout.vue';
 import EthStakingHeaderActions from './components/EthStakingHeaderActions.vue';
 import EthStakingPagePlaceholder from './components/EthStakingPagePlaceholder.vue';
@@ -20,7 +20,7 @@ const { allowed, enabled, module } = useEthStakingAccess();
 
 // API key check (only when module is allowed and enabled)
 const { getApiKey } = useExternalApiKeys();
-const { beaconRpcEndpoint } = storeToRefs(useGeneralSettingsStore());
+const beaconRpcEndpoint = useSetting('beaconRpcEndpoint');
 
 const missingApiKeyService = computed<'beaconchain' | 'consensusRpc' | undefined>(() => {
   if (!get(allowed) || !get(enabled)) {

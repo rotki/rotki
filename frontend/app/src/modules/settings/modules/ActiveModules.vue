@@ -4,7 +4,7 @@ import QueriedAddressDialog from '@/modules/accounts/QueriedAddressDialog.vue';
 import { useQueriedAddressOperations } from '@/modules/accounts/use-queried-address-operations';
 import { type Module, SUPPORTED_MODULES } from '@/modules/core/common/modules';
 import { useConfirmStore } from '@/modules/core/common/use-confirm-store';
-import { useGeneralSettingsStore } from '@/modules/settings/use-general-settings-store';
+import { useSetting } from '@/modules/settings/use-setting';
 import { useSettingsOperations } from '@/modules/settings/use-settings-operations';
 import AppImage from '@/modules/shell/components/AppImage.vue';
 
@@ -23,7 +23,7 @@ const supportedModules = SUPPORTED_MODULES;
 
 const { fetchQueriedAddresses } = useQueriedAddressOperations();
 const { update } = useSettingsOperations();
-const { activeModules } = storeToRefs(useGeneralSettingsStore());
+const activeModules = useSetting('activeModules');
 
 const moduleStatus = computed(() => {
   const active = get(activeModules);

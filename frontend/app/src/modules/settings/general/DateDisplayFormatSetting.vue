@@ -8,7 +8,7 @@ import { toMessages } from '@/modules/core/common/validation/validation';
 import DateFormatHelp from '@/modules/settings/controls/DateFormatHelp.vue';
 import SettingsOption from '@/modules/settings/controls/SettingsOption.vue';
 import SettingResetConfirmButton from '@/modules/settings/SettingResetConfirmButton.vue';
-import { useGeneralSettingsStore } from '@/modules/settings/use-general-settings-store';
+import { useSetting } from '@/modules/settings/use-setting';
 
 const dateDisplayFormat = ref<string>('');
 const formatHelp = ref<boolean>(false);
@@ -33,7 +33,7 @@ const rules = {
 
 const v$ = useVuelidate(rules, { dateDisplayFormat }, { $autoDirty: true });
 const { callIfValid } = useValidation(v$);
-const { dateDisplayFormat: format } = storeToRefs(useGeneralSettingsStore());
+const format = useSetting('dateDisplayFormat');
 const dateDisplayFormatExample = computed<string>(() => displayDateFormatter.format(now, get(dateDisplayFormat)));
 
 function resetDateDisplayFormat() {

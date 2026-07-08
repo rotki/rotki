@@ -4,8 +4,7 @@ import type { ComputedRef, MaybeRefOrGetter, Ref } from 'vue';
 import type { DashboardTableType } from '@/modules/settings/types/frontend-settings';
 import { TableColumn } from '@/modules/core/table/table-column';
 import { TableId, useRememberTableSorting } from '@/modules/core/table/use-remember-table-sorting';
-import { useFrontendSettingsStore } from '@/modules/settings/use-frontend-settings-store';
-import { useGeneralSettingsStore } from '@/modules/settings/use-general-settings-store';
+import { useSetting } from '@/modules/settings/use-setting';
 
 interface UseDashboardTableConfigReturn {
   pagination: Ref<{ itemsPerPage: number; page: number }>;
@@ -32,8 +31,8 @@ export function useDashboardTableConfig(
     page: 1,
   });
 
-  const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
-  const { dashboardTablesVisibleColumns } = storeToRefs(useFrontendSettingsStore());
+  const currencySymbol = useSetting('currencySymbol');
+  const dashboardTablesVisibleColumns = useSetting('dashboardTablesVisibleColumns');
 
   function setPage(page: number): void {
     set(pagination, {

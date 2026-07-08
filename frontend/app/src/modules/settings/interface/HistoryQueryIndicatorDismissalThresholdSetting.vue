@@ -6,7 +6,7 @@ import { useValidation } from '@/modules/core/common/use-validation';
 import { toMessages } from '@/modules/core/common/validation/validation';
 import SettingsItem from '@/modules/settings/controls/SettingsItem.vue';
 import SettingsOption from '@/modules/settings/controls/SettingsOption.vue';
-import { useFrontendSettingsStore } from '@/modules/settings/use-frontend-settings-store';
+import { useSetting } from '@/modules/settings/use-setting';
 
 const evmQueryIndicatorDismissalThreshold = ref<string>('');
 
@@ -31,7 +31,7 @@ const rules = {
 const v$ = useVuelidate(rules, { evmQueryIndicatorDismissalThreshold }, { $autoDirty: true });
 const { callIfValid } = useValidation(v$);
 
-const { evmQueryIndicatorDismissalThreshold: currentThreshold } = storeToRefs(useFrontendSettingsStore());
+const currentThreshold = useSetting('evmQueryIndicatorDismissalThreshold');
 
 function resetValue() {
   set(evmQueryIndicatorDismissalThreshold, get(currentThreshold).toString());
@@ -55,7 +55,6 @@ onMounted(() => {
     <SettingsOption
       #default="{ error, success, update }"
       setting="evmQueryIndicatorDismissalThreshold"
-      frontend-setting
       :transform="transform"
       :error-message="t('frontend_settings.history_query_indicator.dismissal_threshold.validation.error')"
       @finished="resetValue()"

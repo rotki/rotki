@@ -2,11 +2,10 @@
 import { bigNumberify } from '@rotki/common';
 import useVuelidate from '@vuelidate/core';
 import { helpers, maxValue, minValue } from '@vuelidate/validators';
-import { storeToRefs } from 'pinia';
 import { useValidation } from '@/modules/core/common/use-validation';
 import { toMessages } from '@/modules/core/common/validation/validation';
 import SettingsOption from '@/modules/settings/controls/SettingsOption.vue';
-import { useGeneralSettingsStore } from '@/modules/settings/use-general-settings-store';
+import { useAssetMovementSettings } from '@/modules/settings/use-asset-movement-settings';
 import AmountInput from '@/modules/shell/components/inputs/AmountInput.vue';
 
 defineProps<{
@@ -18,7 +17,7 @@ const SECONDS_PER_HOUR = 3600;
 
 const { t } = useI18n({ useScope: 'global' });
 
-const { assetMovementAmountTolerance, assetMovementTimeRange } = storeToRefs(useGeneralSettingsStore());
+const { assetMovementAmountTolerance, assetMovementTimeRange } = useAssetMovementSettings();
 
 const showMenu = ref<boolean>(false);
 const tolerancePercentage = ref<string>('');

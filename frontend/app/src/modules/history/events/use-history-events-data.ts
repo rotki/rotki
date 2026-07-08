@@ -14,7 +14,7 @@ import { logger } from '@/modules/core/common/logging/logging';
 import { useRefWithDebounce } from '@/modules/core/common/use-ref-debounce';
 import { useHistoryEvents } from '@/modules/history/events/use-history-events';
 import { useHistoryEventsStatus } from '@/modules/history/events/use-history-events-status';
-import { useFrontendSettingsStore } from '@/modules/settings/use-frontend-settings-store';
+import { useSetting } from '@/modules/settings/use-setting';
 import { useCompleteEvents } from './use-complete-events';
 
 interface UseHistoryEventsDataOptions {
@@ -78,7 +78,7 @@ export function useHistoryEventsData(
   let fetchVersion = 0;
 
   // Extract collection data
-  const { itemsPerPage } = storeToRefs(useFrontendSettingsStore());
+  const itemsPerPage = useSetting('itemsPerPage');
   const { data, entriesFoundTotal, found, limit, total } = getCollectionData(groups);
   const { showUpgradeRow } = setupEntryLimit(limit, found, total, entriesFoundTotal);
   const { fetchHistoryEvents } = useHistoryEvents();

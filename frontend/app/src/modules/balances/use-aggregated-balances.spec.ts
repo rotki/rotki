@@ -19,12 +19,12 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
 import { useAssetInfoCache } from '@/modules/assets/use-asset-info-cache';
 import { useAssetsStore } from '@/modules/assets/use-assets-store';
+import { useConnectedExchangesStore } from '@/modules/balances/exchanges/use-connected-exchanges-store';
 import { BalanceType } from '@/modules/balances/types/balances';
 import { useBalancePricesStore } from '@/modules/balances/use-balance-prices-store';
 import { useBalancesStore } from '@/modules/balances/use-balances-store';
 import { TRADE_LOCATION_BANKS } from '@/modules/core/common/defaults';
 import { useLocationStore } from '@/modules/core/common/use-location-store';
-import { useSessionSettingsStore } from '@/modules/settings/use-session-settings-store';
 import { useAggregatedBalances } from './use-aggregated-balances';
 import '@test/i18n';
 
@@ -73,7 +73,7 @@ describe('useAggregatedBalances', () => {
 
   it('should aggregate balances from multiple sources with manual balance tracking', () => {
     const { balances: ethBalances, exchangeBalances, manualBalances } = storeToRefs(useBalancesStore());
-    const { connectedExchanges } = storeToRefs(useSessionSettingsStore());
+    const { connectedExchanges } = storeToRefs(useConnectedExchangesStore());
     const { prices } = storeToRefs(useBalancePricesStore());
     const { getBalances } = useAggregatedBalances();
 
@@ -647,7 +647,7 @@ describe('useAggregatedBalances', () => {
       matchChainMock.mockImplementation(location => (location === 'ethereum' ? 'eth' : undefined));
 
       const { exchangeBalances } = storeToRefs(useBalancesStore());
-      const { connectedExchanges } = storeToRefs(useSessionSettingsStore());
+      const { connectedExchanges } = storeToRefs(useConnectedExchangesStore());
       const { useLocationBreakdown } = useAggregatedBalances();
 
       // An exchange named 'ethereum' must not pollute the chain breakdown.
@@ -665,7 +665,7 @@ describe('useAggregatedBalances', () => {
       const { exchangeBalances, manualBalances } = storeToRefs(useBalancesStore());
       const { updateBalances } = useBalancesStore();
       const { updateAccounts } = useBlockchainAccountsStore();
-      const { connectedExchanges } = storeToRefs(useSessionSettingsStore());
+      const { connectedExchanges } = storeToRefs(useConnectedExchangesStore());
 
       // Set up test data for collection grouping
       set(connectedExchanges, [{
@@ -754,7 +754,7 @@ describe('useAggregatedBalances', () => {
 
     it('should handle asset association for location breakdown in exchange balances', async () => {
       const { exchangeBalances } = storeToRefs(useBalancesStore());
-      const { connectedExchanges } = storeToRefs(useSessionSettingsStore());
+      const { connectedExchanges } = storeToRefs(useConnectedExchangesStore());
       const { useLocationBreakdown } = useAggregatedBalances();
 
       const mockBalances: ExchangeData = {
@@ -808,7 +808,7 @@ describe('useAggregatedBalances', () => {
     });
 
     it('should respect the asset association for the location breakdown', async () => {
-      const sessionSettingsStore = useSessionSettingsStore();
+      const sessionSettingsStore = useConnectedExchangesStore();
       const { useLocationBreakdown } = useAggregatedBalances();
       const { connectedExchanges } = storeToRefs(sessionSettingsStore);
       const { exchangeBalances } = storeToRefs(useBalancesStore());

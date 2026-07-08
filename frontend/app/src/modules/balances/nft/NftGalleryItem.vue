@@ -6,7 +6,7 @@ import { useNftImage } from '@/modules/balances/nft/use-nft-image';
 import { uniqueStrings } from '@/modules/core/common/data/data';
 import { getDomain } from '@/modules/core/common/helpers/url';
 import { useConfirmStore } from '@/modules/core/common/use-confirm-store';
-import { useFrontendSettingsStore } from '@/modules/settings/use-frontend-settings-store';
+import { useSetting } from '@/modules/settings/use-setting';
 import { useSettingsOperations } from '@/modules/settings/use-settings-operations';
 import AppImage from '@/modules/shell/components/AppImage.vue';
 import ExternalLink from '@/modules/shell/components/ExternalLink.vue';
@@ -16,9 +16,7 @@ const { item } = defineProps<{
   item: GalleryNft;
 }>();
 
-const frontendStore = useFrontendSettingsStore();
-
-const { whitelistedDomainsForNftImages } = storeToRefs(frontendStore);
+const whitelistedDomainsForNftImages = useSetting('whitelistedDomainsForNftImages');
 const { updateFrontendSetting } = useSettingsOperations();
 
 const imageUrlSource = computed<string | null>(() => item.imageUrl);

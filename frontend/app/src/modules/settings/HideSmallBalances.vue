@@ -6,8 +6,7 @@ import { toMessages } from '@/modules/core/common/validation/validation';
 import { TaskType } from '@/modules/core/tasks/task-type';
 import { useTaskStore } from '@/modules/core/tasks/use-task-store';
 import { BalanceSource, type BalanceValueThreshold } from '@/modules/settings/types/frontend-settings';
-import { useFrontendSettingsStore } from '@/modules/settings/use-frontend-settings-store';
-import { useGeneralSettingsStore } from '@/modules/settings/use-general-settings-store';
+import { useSetting } from '@/modules/settings/use-setting';
 import { useSettingsOperations } from '@/modules/settings/use-settings-operations';
 import HintMenuIcon from '@/modules/shell/components/HintMenuIcon.vue';
 
@@ -22,9 +21,8 @@ const hide = ref<boolean>(false);
 const hideBelow = ref<string>('1');
 const applyToAllBalances = ref<boolean>(true);
 
-const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
-const frontendStore = useFrontendSettingsStore();
-const { balanceValueThreshold } = storeToRefs(frontendStore);
+const currencySymbol = useSetting('currencySymbol');
+const balanceValueThreshold = useSetting('balanceValueThreshold');
 const { updateFrontendSetting } = useSettingsOperations();
 
 const { useIsTaskRunning } = useTaskStore();

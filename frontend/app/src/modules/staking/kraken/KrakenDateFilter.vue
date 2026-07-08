@@ -4,12 +4,12 @@ import type { KrakenStakingDateFilter } from '@/modules/staking/staking-types';
 import { assert } from '@rotki/common';
 import { dateDeserializer, dateRangeValidator, dateSerializer, getDateInputISOFormat } from '@/modules/core/common/data/date';
 import TableFilter from '@/modules/core/table/TableFilter.vue';
-import { useFrontendSettingsStore } from '@/modules/settings/use-frontend-settings-store';
+import { useSetting } from '@/modules/settings/use-setting';
 
 const modelValue = defineModel<KrakenStakingDateFilter>({ required: true });
 
 const { t } = useI18n({ useScope: 'global' });
-const { dateInputFormat } = storeToRefs(useFrontendSettingsStore());
+const dateInputFormat = useSetting('dateInputFormat');
 
 enum KrakenStakingFilterKeys {
   START = 'start',

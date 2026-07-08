@@ -4,11 +4,11 @@ import type { AccountDataRow } from './types';
 import type { BlockchainAccountBalance } from '@/modules/accounts/blockchain-accounts';
 import type { SupportedCurrency } from '@/modules/assets/amount-display/currencies';
 import { TableId, useRememberTableSorting } from '@/modules/core/table/use-remember-table-sorting';
-import { useGeneralSettingsStore } from '@/modules/settings/use-general-settings-store';
+import { useSetting } from '@/modules/settings/use-setting';
 
 interface UseAccountTableConfigReturn<T extends BlockchainAccountBalance> {
   createColumns: (group: 'evm' | 'xpub' | undefined, anyExpansion: boolean) => DataTableColumn<AccountDataRow<T>>[];
-  currencySymbol: ComputedRef<SupportedCurrency>;
+  currencySymbol: Readonly<Ref<SupportedCurrency>>;
   initializeTableSorting: (sort: Ref<DataTableSortData<T>>, cols: ComputedRef<DataTableColumn<AccountDataRow<T>>[]>) => void;
 }
 
@@ -16,7 +16,7 @@ export function useAccountTableConfig<
   T extends BlockchainAccountBalance,
 >(): UseAccountTableConfigReturn<T> {
   const { t } = useI18n({ useScope: 'global' });
-  const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
+  const currencySymbol = useSetting('currencySymbol');
 
   function createColumns(
     group: 'evm' | 'xpub' | undefined,

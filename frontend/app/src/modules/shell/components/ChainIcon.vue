@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { LOOPRING_CHAIN } from '@/modules/balances/blockchain-types';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
-import { useFrontendSettingsStore } from '@/modules/settings/use-frontend-settings-store';
+import { useSetting } from '@/modules/settings/use-setting';
 import AppImage from '@/modules/shell/components/AppImage.vue';
 
 interface Props {
@@ -12,7 +12,7 @@ interface Props {
 const { chain, size = '26px' } = defineProps<Props>();
 
 const { matchChain, useChainImageUrl } = useSupportedChains();
-const { shouldShowAmount } = storeToRefs(useFrontendSettingsStore());
+const shouldShowAmount = useSetting('shouldShowAmount');
 
 const src = useChainImageUrl(() => chain);
 

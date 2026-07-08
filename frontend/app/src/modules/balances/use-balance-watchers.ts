@@ -6,7 +6,7 @@ import { useManualBalances } from '@/modules/balances/manual/use-manual-balances
 import { useBalancesStore } from '@/modules/balances/use-balances-store';
 import { useBlockchainBalances } from '@/modules/balances/use-blockchain-balances';
 import { BalanceSource } from '@/modules/settings/types/frontend-settings';
-import { useFrontendSettingsStore } from '@/modules/settings/use-frontend-settings-store';
+import { useSetting } from '@/modules/settings/use-setting';
 
 export function useBalanceWatchers(): void {
   const { fetchManualBalances } = useManualBalances();
@@ -14,7 +14,7 @@ export function useBalanceWatchers(): void {
   const { fetchBlockchainBalances } = useBlockchainBalances();
   const { removeIgnoredAssets } = useBalancesStore();
 
-  const { balanceValueThreshold } = storeToRefs(useFrontendSettingsStore());
+  const balanceValueThreshold = useSetting('balanceValueThreshold');
   const { ignoredAssets } = storeToRefs(useAssetsStore());
 
   watch(balanceValueThreshold, (current, old) => {

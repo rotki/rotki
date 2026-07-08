@@ -25,8 +25,8 @@ vi.mock('@/modules/auth/use-session-auth-store', () => ({
   useSessionAuthStore: (): object => ({ canRequestData }),
 }));
 
-vi.mock('@/modules/settings/use-frontend-settings-store', () => ({
-  useFrontendSettingsStore: (): object => ({ refreshPeriod }),
+vi.mock('@/modules/settings/use-setting', () => ({
+  useSetting: vi.fn((key: string) => (key === 'refreshPeriod' ? refreshPeriod : ref(undefined))),
 }));
 
 vi.mock('@/modules/balances/use-balance-fetching', () => ({

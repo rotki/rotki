@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import SettingsItem from '@/modules/settings/controls/SettingsItem.vue';
 import SettingsOption from '@/modules/settings/controls/SettingsOption.vue';
-import { useFrontendSettingsStore } from '@/modules/settings/use-frontend-settings-store';
+import { useSetting } from '@/modules/settings/use-setting';
 
-const { persistPrivacySettings } = storeToRefs(useFrontendSettingsStore());
+const persistPrivacySettings = useSetting('persistPrivacySettings');
 
 const persistPrivacy = ref<boolean>(false);
 
@@ -27,7 +27,6 @@ watch(persistPrivacySettings, setData);
     <SettingsOption
       #default="{ error, success, updateImmediate }"
       setting="persistPrivacySettings"
-      frontend-setting
       :error-message="t('frontend_settings.persist_privacy.validation.error')"
     >
       <RuiSwitch

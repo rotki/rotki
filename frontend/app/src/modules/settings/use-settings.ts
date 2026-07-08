@@ -4,7 +4,9 @@ import type { SessionSettings } from '@/modules/session/types';
 import type { FrontendSettingsPayload } from '@/modules/settings/types/frontend-settings';
 import type { SettingsUpdate } from '@/modules/settings/types/user-settings';
 import { logger } from '@/modules/core/common/logging/logging';
-import { useSessionSettingsStore } from '@/modules/settings/use-session-settings-store';
+import { Channel, getRegistryEntry, type SettingChannel } from '@/modules/settings/settings-registry';
+import { useSettingsRepo } from '@/modules/settings/settings-repo';
+import { useSettingsWriter, type WritableSettingKey } from '@/modules/settings/settings-writer';
 import { useSettingsOperations } from '@/modules/settings/use-settings-operations';
 
 export enum SettingLocation {
@@ -22,6 +24,15 @@ interface UnsuccessfulUpdate {
 }
 
 type UpdateResult = SuccessfulUpdate | UnsuccessfulUpdate;
+
+/**
+ * Resolves a setting key to its owning channel via the registry routing table, or `undefined` if the
+ * key is not registered (dynamic keys, wire-named keys, premium flags, and write-only settings not yet
+ * in the table).
+ */
+function channelFor(key: string): SettingChannel | undefined {
+  return getRegistryEntry(key)?.channel;
+}
 
 async function getActionStatus(method: () => Promise<ActionStatus>, messages?: BaseMessage): Promise<UpdateResult> {
   let message: UpdateResult = {
@@ -57,7 +68,8 @@ interface UseSettingsReturn {
 
 export function useSettings(): UseSettingsReturn {
   const { update: updateSettings, updateFrontendSetting: updateFrontendSettings } = useSettingsOperations();
-  const { update: updateSessionSettings } = useSessionSettingsStore();
+  const { updateSession: updateSessionSettings } = useSettingsRepo();
+  const { write } = useSettingsWriter();
 
   const updateSetting = async <T extends keyof SettingsUpdate | keyof FrontendSettingsPayload | keyof SessionSettings>(
     settingKey: T,
@@ -65,8 +77,20 @@ export function useSettings(): UseSettingsReturn {
     settingLocation: SettingLocation,
     message: BaseMessage,
   ): Promise<UpdateResult> => {
-    const payload = { [settingKey]: settingValue };
+    // Route registered general/accounting/frontend keys through the single write facade. Session keys
+    // keep the location path (animationsEnabled has a bespoke setter that must not fire here), as do
+    // unregistered keys (dynamic, wire-named, premium flags).
+    const channel = channelFor(settingKey);
+    if (channel !== undefined && channel !== Channel.session) {
+      // The generic write<K> can't correlate a widened key with its value, so call it through a
+      // non-generic view. channelFor resolving a non-session channel proves the key is writable.
+      // eslint-disable-next-line @typescript-eslint/consistent-type-assertions -- contained cast to a non-generic writer signature at this boundary
+      const writeAny = write as (key: WritableSettingKey, value: unknown) => Promise<ActionStatus>;
+      // eslint-disable-next-line @typescript-eslint/consistent-type-assertions -- settingKey is a WritableSettingKey here
+      return getActionStatus(async () => writeAny(settingKey as WritableSettingKey, settingValue), message);
+    }
 
+    const payload = { [settingKey]: settingValue };
     const updateMethods: Record<SettingLocation, () => Promise<ActionStatus>> = {
       [SettingLocation.FRONTEND]: async () => updateFrontendSettings(payload),
       [SettingLocation.GENERAL]: async () => updateSettings(payload),

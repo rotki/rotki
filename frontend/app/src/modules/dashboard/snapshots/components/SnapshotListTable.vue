@@ -3,7 +3,7 @@ import type { DataTableColumn, DataTableSortData, TablePaginationData } from '@r
 import type { SnapshotListRow } from '@/modules/dashboard/snapshots/composables/use-snapshot-list';
 import { FiatDisplay } from '@/modules/assets/amount-display/components';
 import SnapshotFiatDisplay from '@/modules/dashboard/snapshots/components/SnapshotFiatDisplay.vue';
-import { useGeneralSettingsStore } from '@/modules/settings/use-general-settings-store';
+import { useSetting } from '@/modules/settings/use-setting';
 import DateDisplay from '@/modules/shell/components/display/DateDisplay.vue';
 
 const sort = defineModel<DataTableSortData<SnapshotListRow>>('sort', {
@@ -31,7 +31,7 @@ const { t } = useI18n({ useScope: 'global' });
 /** Placeholder for an unavailable value / no change (avoids a raw text node). */
 const placeholder = '—';
 
-const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
+const currencySymbol = useSetting('currencySymbol');
 
 const cols = computed<DataTableColumn<SnapshotListRow>[]>(() => [
   {

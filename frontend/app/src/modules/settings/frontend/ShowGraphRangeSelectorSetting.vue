@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import SettingsOption from '@/modules/settings/controls/SettingsOption.vue';
-import { useFrontendSettingsStore } from '@/modules/settings/use-frontend-settings-store';
+import { useSetting } from '@/modules/settings/use-setting';
 
 const showGraphRangeSelector = ref<boolean>(true);
-const { showGraphRangeSelector: enabled } = storeToRefs(useFrontendSettingsStore());
+const enabled = useSetting('showGraphRangeSelector');
 
 onMounted(() => {
   set(showGraphRangeSelector, get(enabled));
@@ -16,7 +16,6 @@ const { t } = useI18n({ useScope: 'global' });
   <SettingsOption
     #default="{ error, success, updateImmediate }"
     setting="showGraphRangeSelector"
-    frontend-setting
   >
     <RuiSwitch
       v-model="showGraphRangeSelector"

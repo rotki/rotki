@@ -2,11 +2,11 @@ import type { ComputedRef, MaybeRefOrGetter } from 'vue';
 import type { AssetProtocolBalances } from '@/modules/balances/types/blockchain-balances';
 import type { Exchange, ExchangeInfo } from '@/modules/balances/types/exchanges';
 import { useAssetsStore } from '@/modules/assets/use-assets-store';
+import { useConnectedExchangesStore } from '@/modules/balances/exchanges/use-connected-exchanges-store';
 import { useBalancesStore } from '@/modules/balances/use-balances-store';
 import { sortDesc } from '@/modules/core/common/data/bignumbers';
 import { balanceSum, exchangeAssetSum } from '@/modules/core/common/data/calculation';
-import { useGeneralSettingsStore } from '@/modules/settings/use-general-settings-store';
-import { useSessionSettingsStore } from '@/modules/settings/use-session-settings-store';
+import { useSetting } from '@/modules/settings/use-setting';
 
 interface UseExchangeDataReturn {
   getBaseExchangeBalances: (exchange?: string) => AssetProtocolBalances;
@@ -18,8 +18,8 @@ interface UseExchangeDataReturn {
 
 export function useExchangeData(): UseExchangeDataReturn {
   const { exchangeBalances } = storeToRefs(useBalancesStore());
-  const { connectedExchanges } = storeToRefs(useSessionSettingsStore());
-  const { nonSyncingExchanges } = storeToRefs(useGeneralSettingsStore());
+  const { connectedExchanges } = storeToRefs(useConnectedExchangesStore());
+  const nonSyncingExchanges = useSetting('nonSyncingExchanges');
   const { isAssetIgnored } = useAssetsStore();
 
   const exchanges = computed<ExchangeInfo[]>(() => {

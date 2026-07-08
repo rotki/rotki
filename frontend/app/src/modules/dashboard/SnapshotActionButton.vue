@@ -4,7 +4,7 @@ import { useSnapshotActions } from '@/modules/dashboard/snapshots/composables/us
 import { usePremium } from '@/modules/premium/use-premium';
 import { useSessionMetadataStore } from '@/modules/session/use-session-metadata-store';
 import SettingsOption from '@/modules/settings/controls/SettingsOption.vue';
-import { useFrontendSettingsStore } from '@/modules/settings/use-frontend-settings-store';
+import { useSetting } from '@/modules/settings/use-setting';
 import DateDisplay from '@/modules/shell/components/display/DateDisplay.vue';
 import MenuTooltipButton from '@/modules/shell/components/MenuTooltipButton.vue';
 
@@ -15,7 +15,7 @@ const importSnapshotDialog = ref<boolean>(false);
 const { t } = useI18n({ useScope: 'global' });
 const premium = usePremium();
 const { lastBalanceSave } = storeToRefs(useSessionMetadataStore());
-const { ignoreSnapshotError } = storeToRefs(useFrontendSettingsStore());
+const ignoreSnapshotError = useSetting('ignoreSnapshotError');
 const { forceSave, forceSaving, importing, importSnapshot, modelBalanceFile, modelLocationFile } = useSnapshotActions();
 
 async function forceSaveAndClose(): Promise<void> {
@@ -103,7 +103,6 @@ watchImmediate(ignoreSnapshotError, (value) => {
           <SettingsOption
             #default="{ error, success, updateImmediate }"
             setting="ignoreSnapshotError"
-            frontend-setting
           >
             <RuiCheckbox
               v-model="ignoreErrors"

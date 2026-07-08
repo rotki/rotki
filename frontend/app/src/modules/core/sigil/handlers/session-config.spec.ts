@@ -8,24 +8,23 @@ describe('useSessionConfigHandler', () => {
 
   it('should collect session config from stores', async () => {
     const { usePremiumStore } = await import('@/modules/premium/use-premium-store');
-    const { useGeneralSettingsStore } = await import('@/modules/settings/use-general-settings-store');
-    const { useFrontendSettingsStore } = await import('@/modules/settings/use-frontend-settings-store');
+    const { useSettingsRepo } = await import('@/modules/settings/settings-repo');
 
     const { premium } = storeToRefs(usePremiumStore());
     set(premium, true);
 
-    const generalStore = useGeneralSettingsStore();
+    const generalStore = useSettingsRepo();
     generalStore.$patch({
-      settings: {
+      general: {
         submitUsageAnalytics: true,
         mainCurrency: { tickerSymbol: 'EUR' },
         currentPriceOracles: ['coingecko', 'cryptocompare'],
       },
     } as any);
 
-    const frontendStore = useFrontendSettingsStore();
+    const frontendStore = useSettingsRepo();
     frontendStore.$patch({
-      settings: {
+      frontend: {
         language: 'es',
         selectedTheme: Theme.DARK,
       },

@@ -3,8 +3,7 @@ import { TimeFramePeriod, type TimeFrameSetting } from '@rotki/common';
 import SettingsItem from '@/modules/settings/controls/SettingsItem.vue';
 import SettingsOption from '@/modules/settings/controls/SettingsOption.vue';
 import TimeFrameSettings from '@/modules/settings/general/TimeFrameSettings.vue';
-import { useFrontendSettingsStore } from '@/modules/settings/use-frontend-settings-store';
-import { useSessionSettingsStore } from '@/modules/settings/use-session-settings-store';
+import { useSetting } from '@/modules/settings/use-setting';
 
 const defaultGraphTimeframe = ref<TimeFrameSetting>(TimeFramePeriod.ALL);
 const visibleTimeframes = ref<TimeFramePeriod[]>([]);
@@ -12,8 +11,9 @@ const currentSessionTimeframe = ref<TimeFramePeriod>(TimeFramePeriod.ALL);
 
 const { t } = useI18n({ useScope: 'global' });
 
-const { timeframe } = useSessionSettingsStore();
-const { timeframeSetting, visibleTimeframes: visible } = storeToRefs(useFrontendSettingsStore());
+const timeframe = useSetting('timeframe');
+const timeframeSetting = useSetting('timeframeSetting');
+const visible = useSetting('visibleTimeframes');
 
 function resetTimeframeSetting() {
   set(defaultGraphTimeframe, get(timeframeSetting));
@@ -47,7 +47,6 @@ onMounted(() => {
     <SettingsOption
       #default="{ error, success, updateImmediate: updateTimeframeSetting }"
       setting="timeframeSetting"
-      frontend-setting
       :success-message="successMessage"
       :error-message="t('frontend_settings.validation.timeframe.error')"
       @finished="resetTimeframeSetting()"
@@ -55,7 +54,6 @@ onMounted(() => {
       <SettingsOption
         #default="{ updateImmediate: updateVisibleTimeframes }"
         setting="visibleTimeframes"
-        frontend-setting
         @finished="resetVisibleTimeframes()"
       >
         <TimeFrameSettings

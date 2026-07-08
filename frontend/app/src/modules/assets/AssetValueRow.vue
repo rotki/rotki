@@ -9,7 +9,7 @@ import { useAssetInfoRetrieval } from '@/modules/assets/use-asset-info-retrieval
 import { useAggregatedBalances } from '@/modules/balances/use-aggregated-balances';
 import { Section } from '@/modules/core/common/status';
 import { useConfirmStore } from '@/modules/core/common/use-confirm-store';
-import { useGeneralSettingsStore } from '@/modules/settings/use-general-settings-store';
+import { useSetting } from '@/modules/settings/use-setting';
 import CardTitle from '@/modules/shell/components/CardTitle.vue';
 import RowActions from '@/modules/shell/components/RowActions.vue';
 import { useSectionStatus } from '@/modules/shell/sync-progress/use-section-status';
@@ -23,7 +23,7 @@ const openPriceDialog = ref<boolean>(false);
 const customPrice = ref<ManualPriceFormPayload | null>(null);
 
 const { t } = useI18n({ useScope: 'global' });
-const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
+const currencySymbol = useSetting('currencySymbol');
 const { deletePrice, refreshCurrentPrices, refreshing } = useLatestPrices(t);
 const { useAssetPriceInfo } = useAggregatedBalances();
 const { useAssetPrice, useIsManualAssetPrice } = usePriceUtils();

@@ -5,9 +5,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { Currency, CURRENCY_USD } from '@/modules/assets/amount-display/currencies';
 import { Module } from '@/modules/core/common/modules';
 import { defaultAccountingSettings, defaultGeneralSettings } from '@/modules/settings/factories';
+import { useSettingsRepo } from '@/modules/settings/settings-repo';
 import { getDefaultFrontendSettings } from '@/modules/settings/types/frontend-settings';
-import { useFrontendSettingsStore } from '@/modules/settings/use-frontend-settings-store';
-import { useGeneralSettingsStore } from '@/modules/settings/use-general-settings-store';
 import '@test/i18n';
 
 const mockSetSettings = vi.fn();
@@ -128,27 +127,27 @@ describe('useSettingsOperations', () => {
 
   describe('applyFrontendSettingLocal', () => {
     it('should patch the frontend store without calling the API', async () => {
-      const frontendStore = useFrontendSettingsStore();
-      const initial = get(frontendStore.settings).scrambleMultiplier;
+      const frontendStore = useSettingsRepo();
+      const initial = frontendStore.frontend.scrambleMultiplier;
 
       const { useSettingsOperations } = await importModule();
       const { applyFrontendSettingLocal } = useSettingsOperations();
       applyFrontendSettingLocal({ scrambleMultiplier: 42 });
 
-      expect(get(frontendStore.settings).scrambleMultiplier).toBe(42);
-      expect(get(frontendStore.settings).scrambleMultiplier).not.toBe(initial);
+      expect(frontendStore.frontend.scrambleMultiplier).toBe(42);
+      expect(frontendStore.frontend.scrambleMultiplier).not.toBe(initial);
       expect(mockSetSettings).not.toHaveBeenCalled();
     });
 
     it('should merge with existing settings', async () => {
-      const frontendStore = useFrontendSettingsStore();
-      const before = get(frontendStore.settings);
+      const frontendStore = useSettingsRepo();
+      const before = frontendStore.frontend;
 
       const { useSettingsOperations } = await importModule();
       const { applyFrontendSettingLocal } = useSettingsOperations();
       applyFrontendSettingLocal({ scrambleMultiplier: 7 });
 
-      const after = get(frontendStore.settings);
+      const after = frontendStore.frontend;
       expect(after.scrambleMultiplier).toBe(7);
       expect(after.selectedTheme).toBe(before.selectedTheme);
       expect(after.privacyMode).toBe(before.privacyMode);
@@ -178,9 +177,9 @@ describe('useSettingsOperations', () => {
     });
 
     it('should merge with existing active modules without duplicates', async () => {
-      const generalStore = useGeneralSettingsStore();
-      generalStore.update({
-        ...generalStore.settings,
+      const generalStore = useSettingsRepo();
+      generalStore.updateGeneral({
+        ...generalStore.general,
         activeModules: [Module.MAKERDAO_DSR],
       });
 

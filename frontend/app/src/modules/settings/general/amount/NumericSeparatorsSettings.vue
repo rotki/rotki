@@ -4,12 +4,13 @@ import { helpers, not, numeric, sameAs } from '@vuelidate/validators';
 import { useValidation } from '@/modules/core/common/use-validation';
 import { isSingleVisualCharacter, toMessages } from '@/modules/core/common/validation/validation';
 import SettingsOption from '@/modules/settings/controls/SettingsOption.vue';
-import { useFrontendSettingsStore } from '@/modules/settings/use-frontend-settings-store';
+import { useSetting } from '@/modules/settings/use-setting';
 
 const thousandSeparator = ref<string>('');
 const decimalSeparator = ref<string>('');
 
-const { decimalSeparator: decimals, thousandSeparator: thousands } = storeToRefs(useFrontendSettingsStore());
+const decimals = useSetting('decimalSeparator');
+const thousands = useSetting('thousandSeparator');
 
 const { t } = useI18n({ useScope: 'global' });
 
@@ -88,7 +89,6 @@ onMounted(() => {
   <SettingsOption
     #default="{ error, success, update }"
     setting="thousandSeparator"
-    frontend-setting
     :error-message="t('general_settings.validation.thousand_separator.error')"
     :success-message="thousandsSuccessMessage"
   >
@@ -108,7 +108,6 @@ onMounted(() => {
   <SettingsOption
     #default="{ error, success, update }"
     setting="decimalSeparator"
-    frontend-setting
     :error-message="t('general_settings.validation.decimal_separator.error')"
     :success-message="decimalsSuccessMessage"
   >

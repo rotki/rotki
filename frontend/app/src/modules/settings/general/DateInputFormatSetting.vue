@@ -6,10 +6,10 @@ import { useValidation } from '@/modules/core/common/use-validation';
 import { toMessages } from '@/modules/core/common/validation/validation';
 import SettingsOption from '@/modules/settings/controls/SettingsOption.vue';
 import DateInputFormatSelector from '@/modules/settings/general/DateInputFormatSelector.vue';
-import { useFrontendSettingsStore } from '@/modules/settings/use-frontend-settings-store';
+import { useSetting } from '@/modules/settings/use-setting';
 
 const dateInputFormat = ref<string>('');
-const { dateInputFormat: inputFormat } = storeToRefs(useFrontendSettingsStore());
+const inputFormat = useSetting('dateInputFormat');
 
 const { t } = useI18n({ useScope: 'global' });
 
@@ -49,7 +49,6 @@ onMounted(() => {
   <SettingsOption
     #default="{ error, success, updateImmediate }"
     setting="dateInputFormat"
-    frontend-setting
     :error-message="t('general_settings.validation.date_input_format.error')"
     :success-message="successMessage"
     @finished="resetDateInputFormat()"

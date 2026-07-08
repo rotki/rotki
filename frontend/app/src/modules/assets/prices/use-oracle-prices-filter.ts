@@ -5,7 +5,7 @@ import { useAssetInfoRetrieval } from '@/modules/assets/use-asset-info-retrieval
 import { dateDeserializer, dateRangeValidator, dateSerializer, getDateInputISOFormat } from '@/modules/core/common/data/date';
 import { assetSuggestions } from '@/modules/core/common/display/assets';
 import { PriceOracle } from '@/modules/settings/types/price-oracle';
-import { useFrontendSettingsStore } from '@/modules/settings/use-frontend-settings-store';
+import { useSetting } from '@/modules/settings/use-setting';
 
 const OraclePriceFilterKeys = {
   END: 'end',
@@ -49,7 +49,7 @@ export function useOraclePricesFilter(): FilterSchema<Filters, Matcher> {
 
   const { t } = useI18n({ useScope: 'global' });
   const { assetSearch, getAssetInfo } = useAssetInfoRetrieval();
-  const { dateInputFormat } = storeToRefs(useFrontendSettingsStore());
+  const dateInputFormat = useSetting('dateInputFormat');
 
   const matchers = computed<Matcher[]>(() => [
     {

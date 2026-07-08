@@ -11,8 +11,7 @@ import PoolDetails from '@/modules/dashboard/liquidity-pools/PoolDetails.vue';
 import PoolIcon from '@/modules/dashboard/liquidity-pools/PoolIcon.vue';
 import VisibleColumnsSelector from '@/modules/dashboard/VisibleColumnsSelector.vue';
 import { DashboardTableType } from '@/modules/settings/types/frontend-settings';
-import { useFrontendSettingsStore } from '@/modules/settings/use-frontend-settings-store';
-import { useGeneralSettingsStore } from '@/modules/settings/use-general-settings-store';
+import { useSetting } from '@/modules/settings/use-setting';
 import PercentageDisplay from '@/modules/shell/components/display/PercentageDisplay.vue';
 import RefreshButton from '@/modules/shell/components/RefreshButton.vue';
 import RowAppend from '@/modules/shell/components/RowAppend.vue';
@@ -28,8 +27,8 @@ const sort = ref<DataTableSortData<PoolLiquidityBalance>>({
   direction: 'desc' as const,
 });
 
-const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
-const { dashboardTablesVisibleColumns } = storeToRefs(useFrontendSettingsStore());
+const currencySymbol = useSetting('currencySymbol');
+const dashboardTablesVisibleColumns = useSetting('dashboardTablesVisibleColumns');
 const statistics = useStatisticsStore();
 const { totalNetWorth } = storeToRefs(statistics);
 const { balances, fetch, getPoolName, loading, total } = usePoolBalances();

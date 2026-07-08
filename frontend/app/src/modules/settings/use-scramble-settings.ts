@@ -1,7 +1,7 @@
 import type { Ref } from 'vue';
 import { startPromise } from '@shared/utils';
 import { generateRandomScrambleMultiplier } from '@/modules/session/session-utils';
-import { useFrontendSettingsStore } from '@/modules/settings/use-frontend-settings-store';
+import { useSetting } from '@/modules/settings/use-setting';
 import { useSettingsOperations } from '@/modules/settings/use-settings-operations';
 
 interface UseScrambleSettingReturn {
@@ -19,8 +19,8 @@ export function useScrambleSetting(): UseScrambleSettingReturn {
   const isUpdating = shallowRef<boolean>(false);
   let timeoutId: number;
 
-  const frontendStore = useFrontendSettingsStore();
-  const { scrambleData: enabled, scrambleMultiplier: multiplier } = storeToRefs(frontendStore);
+  const enabled = useSetting('scrambleData');
+  const multiplier = useSetting('scrambleMultiplier');
   const { applyFrontendSettingLocal, updateFrontendSetting } = useSettingsOperations();
 
   // Debounced backend update

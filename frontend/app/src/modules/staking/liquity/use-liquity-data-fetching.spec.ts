@@ -39,16 +39,16 @@ vi.mock('@/modules/premium/use-premium', () => ({
   usePremium: vi.fn((): Ref<boolean> => ref<boolean>(true)),
 }));
 
-vi.mock('@/modules/settings/use-general-settings-store', () => ({
-  useGeneralSettingsStore: vi.fn((): Record<string, unknown> => ({
-    activeModules: ref<string[]>([Module.LIQUITY]),
-  })),
+const mockActiveModules = ref<string[]>([Module.LIQUITY]);
+vi.mock('@/modules/settings/use-setting', () => ({
+  useSetting: vi.fn(() => mockActiveModules),
 }));
 
 describe('useLiquityDataFetching', () => {
   beforeEach(() => {
     setActivePinia(createPinia());
     vi.clearAllMocks();
+    set(mockActiveModules, [Module.LIQUITY]);
     mockIsTaskRunning.mockReturnValue(false);
     mockRunTask.mockResolvedValue({ success: false, cancelled: true });
   });
@@ -124,9 +124,7 @@ describe('useLiquityDataFetching', () => {
 
   describe('module guard', () => {
     it('should skip fetch when module is not active', async () => {
-      const { useGeneralSettingsStore } = await import('@/modules/settings/use-general-settings-store');
-      // @ts-expect-error partial mock
-      vi.mocked(useGeneralSettingsStore).mockReturnValue({ activeModules: ref<string[]>([]) });
+      set(mockActiveModules, []);
 
       const { fetchBalances } = useLiquityDataFetching();
       await fetchBalances();

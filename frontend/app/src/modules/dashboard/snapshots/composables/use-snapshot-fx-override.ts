@@ -8,7 +8,7 @@ import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
 import { useNotifications } from '@/modules/core/notifications/use-notifications';
 import { useHistoricFiatConversion } from '@/modules/dashboard/snapshots/composables/use-historic-fiat-conversion';
 import { PriceOracle } from '@/modules/settings/types/price-oracle';
-import { useGeneralSettingsStore } from '@/modules/settings/use-general-settings-store';
+import { useSetting } from '@/modules/settings/use-setting';
 
 interface UseSnapshotFxOverrideReturn {
   /** Whether the display currency is USD (no FX needed; the control hides). */
@@ -20,7 +20,7 @@ interface UseSnapshotFxOverrideReturn {
   /** Whether the historic-rate lookup is in flight. */
   loading: ComputedRef<boolean>;
   /** The user's display currency symbol (the override's target asset). */
-  currencySymbol: ComputedRef<string>;
+  currencySymbol: Readonly<Ref<string>>;
   /** Whether an override write (add/edit/delete) is in flight. */
   saving: Readonly<Ref<boolean>>;
   /** The manual override rate stored at this timestamp, if any. */
@@ -48,7 +48,7 @@ interface UseSnapshotFxOverrideReturn {
  */
 export function useSnapshotFxOverride(timestamp: MaybeRefOrGetter<number>): UseSnapshotFxOverrideReturn {
   const { t } = useI18n({ useScope: 'global' });
-  const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
+  const currencySymbol = useSetting('currencySymbol');
   const { isUsd, loading, rate, rateReady } = useHistoricFiatConversion(timestamp);
   const { addHistoricalPrice, deleteHistoricalPrice, editHistoricalPrice, fetchHistoricalPrices } = useAssetPricesApi();
   const { resetHistoricalPricesData } = useHistoricPriceCache();

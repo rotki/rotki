@@ -2,13 +2,13 @@
 import { type SupportedCurrency, useCurrencies } from '@/modules/assets/amount-display/currencies';
 import { useCurrencyUpdate } from '@/modules/assets/prices/use-currency-update';
 import SettingsOption from '@/modules/settings/controls/SettingsOption.vue';
-import { useGeneralSettingsStore } from '@/modules/settings/use-general-settings-store';
+import { useSetting } from '@/modules/settings/use-setting';
 import ListItem from '@/modules/shell/components/ListItem.vue';
 
 const { currencies } = useCurrencies();
 const selectedCurrency = ref<SupportedCurrency>(get(currencies)[0].tickerSymbol);
 
-const { currency } = storeToRefs(useGeneralSettingsStore());
+const currency = useSetting('currency');
 const { t } = useI18n({ useScope: 'global' });
 const { onCurrencyUpdate } = useCurrencyUpdate();
 

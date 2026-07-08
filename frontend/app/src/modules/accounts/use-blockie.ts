@@ -1,7 +1,7 @@
 import { assert } from '@rotki/common';
 import { createBlockie } from '@rotki/ui-library';
 import { logger } from '@/modules/core/common/logging/logging';
-import { useFrontendSettingsStore } from '@/modules/settings/use-frontend-settings-store';
+import { useSetting } from '@/modules/settings/use-setting';
 
 const CACHE_SIZE = 100;
 
@@ -13,7 +13,7 @@ interface UseBlockieReturn {
 export const useBlockie = createSharedComposable((): UseBlockieReturn => {
   const cache: Map<string, string> = new Map();
 
-  const { itemsPerPage } = storeToRefs(useFrontendSettingsStore());
+  const itemsPerPage = useSetting('itemsPerPage');
 
   const put = (address: string, image: string): void => {
     const cacheSize = Math.max(CACHE_SIZE, 3 * get(itemsPerPage));

@@ -1,5 +1,5 @@
 import type { Ref } from 'vue';
-import { useFrontendSettingsStore } from '@/modules/settings/use-frontend-settings-store';
+import { useSetting } from '@/modules/settings/use-setting';
 
 interface UseHistoryQueryIndicatorThreshold {
   dismissalThresholdMs: Readonly<Ref<number, number>>;
@@ -7,7 +7,8 @@ interface UseHistoryQueryIndicatorThreshold {
 }
 
 export function useHistoryQueryIndicatorSettings(): UseHistoryQueryIndicatorThreshold {
-  const { evmQueryIndicatorDismissalThreshold, evmQueryIndicatorMinOutOfSyncPeriod } = storeToRefs(useFrontendSettingsStore());
+  const evmQueryIndicatorDismissalThreshold = useSetting('evmQueryIndicatorDismissalThreshold');
+  const evmQueryIndicatorMinOutOfSyncPeriod = useSetting('evmQueryIndicatorMinOutOfSyncPeriod');
   const HOUR_IN_MS = 60 * 60 * 1000;
 
   const evmQueryIndicatorMinOutOfSyncPeriodMs = computed<number>(() =>

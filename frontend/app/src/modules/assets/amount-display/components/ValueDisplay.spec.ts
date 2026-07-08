@@ -6,7 +6,7 @@ import { mount, type VueWrapper } from '@vue/test-utils';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import ValueDisplay from '@/modules/assets/amount-display/components/ValueDisplay.vue';
 import { useCurrencies } from '@/modules/assets/amount-display/currencies';
-import { useFrontendSettingsStore } from '@/modules/settings/use-frontend-settings-store';
+import { useSettingsRepo } from '@/modules/settings/settings-repo';
 
 describe('modules/amount-display/components/ValueDisplay', () => {
   let wrapper: VueWrapper<InstanceType<typeof ValueDisplay>>;
@@ -86,7 +86,7 @@ describe('modules/amount-display/components/ValueDisplay', () => {
 
   describe('scramble data', () => {
     beforeEach(async () => {
-      useFrontendSettingsStore().update({ scrambleData: true });
+      useSettingsRepo().updateFrontend({ scrambleData: true });
     });
 
     it('should scramble the value', async () => {

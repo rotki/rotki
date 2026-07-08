@@ -11,12 +11,12 @@ import {
   type RuleDraft,
   useDisabledChainQueriesState,
 } from '@/modules/settings/general/disabled-chain-queries/use-disabled-chain-queries-state';
-import { useGeneralSettingsStore } from '@/modules/settings/use-general-settings-store';
+import { useSetting } from '@/modules/settings/use-setting';
 import AccountDisplay from '@/modules/shell/components/display/AccountDisplay.vue';
 
 const { t } = useI18n({ useScope: 'global' });
 
-const { disabledChainQueries } = storeToRefs(useGeneralSettingsStore());
+const disabledChainQueries = useSetting('disabledChainQueries');
 const { matchChain, supportedChains } = useSupportedChains();
 
 const {

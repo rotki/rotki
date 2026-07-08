@@ -34,8 +34,8 @@ vi.mock('@/modules/core/notifications/use-notifications', () => ({
   useNotifications: vi.fn().mockImplementation(() => ({ showErrorMessage })),
 }));
 
-vi.mock('@/modules/settings/use-general-settings-store', () => ({
-  useGeneralSettingsStore: vi.fn().mockImplementation(() => ({ autoDeleteCalendarEntries })),
+vi.mock('@/modules/settings/use-setting', () => ({
+  useSetting: vi.fn(() => autoDeleteCalendarEntries),
 }));
 
 describe('useCalendarOperations', () => {

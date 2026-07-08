@@ -1,11 +1,11 @@
 <script setup lang="ts">
 import SettingsOption from '@/modules/settings/controls/SettingsOption.vue';
-import { useFrontendSettingsStore } from '@/modules/settings/use-frontend-settings-store';
+import { useSetting } from '@/modules/settings/use-setting';
 
 const persist = ref<boolean>(false);
 const { t } = useI18n({ useScope: 'global' });
 
-const { persistTableSorting: enabled } = storeToRefs(useFrontendSettingsStore());
+const enabled = useSetting('persistTableSorting');
 
 watchImmediate(enabled, (enabled) => {
   set(persist, enabled);
@@ -15,7 +15,6 @@ watchImmediate(enabled, (enabled) => {
 <template>
   <SettingsOption
     setting="persistTableSorting"
-    frontend-setting
     :error-message="t('frontend_settings.persist_table_sorting.validation.error')"
   >
     <template #title>

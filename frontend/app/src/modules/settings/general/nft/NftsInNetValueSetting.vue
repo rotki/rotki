@@ -1,11 +1,11 @@
 <script setup lang="ts">
 import SettingsOption from '@/modules/settings/controls/SettingsOption.vue';
-import { useFrontendSettingsStore } from '@/modules/settings/use-frontend-settings-store';
+import { useSetting } from '@/modules/settings/use-setting';
 import { useStatisticsDataFetching } from '@/modules/statistics/use-statistics-data-fetching';
 
 const includeNfts = ref<boolean>(true);
 const { fetchNetValue } = useStatisticsDataFetching();
-const { nftsInNetValue: enabled } = storeToRefs(useFrontendSettingsStore());
+const enabled = useSetting('nftsInNetValue');
 
 onMounted(() => {
   set(includeNfts, get(enabled));
@@ -18,7 +18,6 @@ const { t } = useI18n({ useScope: 'global' });
   <SettingsOption
     #default="{ error, success, update }"
     setting="nftsInNetValue"
-    frontend-setting
     @finished="fetchNetValue()"
   >
     <RuiSwitch

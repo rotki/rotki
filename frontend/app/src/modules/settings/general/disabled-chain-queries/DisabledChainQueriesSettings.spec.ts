@@ -6,7 +6,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useMainStore } from '@/modules/core/common/use-main-store';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
 import DisabledChainQueriesSettings from '@/modules/settings/general/disabled-chain-queries/DisabledChainQueriesSettings.vue';
-import { useGeneralSettingsStore } from '@/modules/settings/use-general-settings-store';
+import { useSettingsRepo } from '@/modules/settings/settings-repo';
 
 const setSettingsMock = vi.fn();
 
@@ -48,8 +48,8 @@ describe('disabled-chain-queries-settings', () => {
   }
 
   async function seedStore(value: Record<string, string[]>): Promise<void> {
-    const store = useGeneralSettingsStore();
-    store.update({ ...store.settings, disabledChainQueries: value });
+    const store = useSettingsRepo();
+    store.updateGeneral({ ...store.general, disabledChainQueries: value });
     await flushPromises();
     await nextTick();
   }

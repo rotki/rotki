@@ -5,8 +5,8 @@ import { usePrivacyMode } from './use-privacy';
 const privacyMode = ref<PrivacyMode>(PrivacyMode.NORMAL);
 const updateFrontendSetting = vi.fn();
 
-vi.mock('@/modules/settings/use-frontend-settings-store', () => ({
-  useFrontendSettingsStore: (): object => ({ privacyMode }),
+vi.mock('@/modules/settings/use-setting', () => ({
+  useSetting: vi.fn((key: string) => (key === 'privacyMode' ? privacyMode : ref(undefined))),
 }));
 
 vi.mock('@/modules/settings/use-settings-operations', () => ({

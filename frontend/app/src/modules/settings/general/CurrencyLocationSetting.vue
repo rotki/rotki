@@ -1,10 +1,10 @@
 <script setup lang="ts">
 import { CurrencyLocation } from '@/modules/assets/amount-display/currency-location';
 import SettingsOption from '@/modules/settings/controls/SettingsOption.vue';
-import { useFrontendSettingsStore } from '@/modules/settings/use-frontend-settings-store';
+import { useSetting } from '@/modules/settings/use-setting';
 
 const currencyLocation = ref<CurrencyLocation>(CurrencyLocation.AFTER);
-const { currencyLocation: location } = storeToRefs(useFrontendSettingsStore());
+const location = useSetting('currencyLocation');
 
 const { t } = useI18n({ useScope: 'global' });
 
@@ -23,7 +23,6 @@ onMounted(() => {
   <SettingsOption
     #default="{ error, success, update }"
     setting="currencyLocation"
-    frontend-setting
     :error-message="t('general_settings.validation.currency_location.error')"
     :success-message="successMessage"
   >

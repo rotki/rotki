@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import SettingsOption from '@/modules/settings/controls/SettingsOption.vue';
-import { useGeneralSettingsStore } from '@/modules/settings/use-general-settings-store';
+import { useSetting } from '@/modules/settings/use-setting';
 
 const autoCreateProfitEvents = ref<boolean>(false);
-const { autoCreateProfitEvents: storedAutoCreateProfitEvents } = storeToRefs(useGeneralSettingsStore());
+const storedAutoCreateProfitEvents = useSetting('autoCreateProfitEvents');
 
 onMounted(() => {
   set(autoCreateProfitEvents, get(storedAutoCreateProfitEvents));

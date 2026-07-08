@@ -6,7 +6,7 @@ import { useValidation } from '@/modules/core/common/use-validation';
 import { toMessages } from '@/modules/core/common/validation/validation';
 import SettingsItem from '@/modules/settings/controls/SettingsItem.vue';
 import SettingsOption from '@/modules/settings/controls/SettingsOption.vue';
-import { useFrontendSettingsStore } from '@/modules/settings/use-frontend-settings-store';
+import { useSetting } from '@/modules/settings/use-setting';
 
 const refreshPeriod = ref<string>('');
 const refreshEnabled = ref<boolean>(false);
@@ -32,7 +32,7 @@ const rules = {
 const v$ = useVuelidate(rules, { refreshPeriod }, { $autoDirty: true });
 const { callIfValid } = useValidation(v$);
 
-const { refreshPeriod: currentPeriod } = storeToRefs(useFrontendSettingsStore());
+const currentPeriod = useSetting('refreshPeriod');
 
 function resetRefreshPeriod() {
   const period = get(currentPeriod);
@@ -56,7 +56,6 @@ onMounted(() => {
     <SettingsOption
       #default="{ updateImmediate }"
       setting="refreshPeriod"
-      frontend-setting
       :transform="transformSwitch"
       :error-message="t('frontend_settings.refresh_balance.validation.error')"
       @finished="resetRefreshPeriod()"
@@ -72,7 +71,6 @@ onMounted(() => {
     <SettingsOption
       #default="{ error, success, update }"
       setting="refreshPeriod"
-      frontend-setting
       :transform="transform"
       :error-message="t('frontend_settings.refresh_balance.validation.error')"
       @finished="resetRefreshPeriod()"

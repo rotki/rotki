@@ -2,13 +2,14 @@
 import { abbreviationList } from '@/modules/assets/amount-display/amount-formatter';
 import { MINIMUM_DIGIT_TO_BE_ABBREVIATED } from '@/modules/core/common/constraints';
 import SettingsOption from '@/modules/settings/controls/SettingsOption.vue';
-import { useFrontendSettingsStore } from '@/modules/settings/use-frontend-settings-store';
+import { useSetting } from '@/modules/settings/use-setting';
 
 const { t } = useI18n({ useScope: 'global' });
 
 const abbreviate = ref<boolean>(false);
 const minimumDigit = ref<string>(MINIMUM_DIGIT_TO_BE_ABBREVIATED.toString());
-const { abbreviateNumber, minimumDigitToBeAbbreviated } = storeToRefs(useFrontendSettingsStore());
+const abbreviateNumber = useSetting('abbreviateNumber');
+const minimumDigitToBeAbbreviated = useSetting('minimumDigitToBeAbbreviated');
 
 function resetMinimumDigitToBeAbbreviated() {
   set(minimumDigit, get(minimumDigitToBeAbbreviated).toString());
@@ -44,7 +45,6 @@ const items = computed(() => textMap.map(({ label, symbol }) => {
     <SettingsOption
       #default="{ error, success, update }"
       setting="abbreviateNumber"
-      frontend-setting
     >
       <RuiSwitch
         v-model="abbreviate"
@@ -61,7 +61,6 @@ const items = computed(() => textMap.map(({ label, symbol }) => {
       #default="{ error, success, updateImmediate }"
       :transform="transform"
       setting="minimumDigitToBeAbbreviated"
-      frontend-setting
       @finished="resetMinimumDigitToBeAbbreviated()"
     >
       <RuiMenuSelect

@@ -11,8 +11,8 @@ const applyFrontendSettingLocal = vi.fn();
 const updateFrontendSetting = vi.fn();
 const generateRandomScrambleMultiplier = vi.fn(() => 5);
 
-vi.mock('@/modules/settings/use-frontend-settings-store', () => ({
-  useFrontendSettingsStore: (): object => ({ scrambleData, scrambleMultiplier }),
+vi.mock('@/modules/settings/use-setting', () => ({
+  useSetting: vi.fn((key: string) => Reflect.get({ scrambleData, scrambleMultiplier }, key) ?? ref(undefined)),
 }));
 
 vi.mock('@/modules/settings/use-settings-operations', () => ({

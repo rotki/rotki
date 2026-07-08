@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import SettingsOption from '@/modules/settings/controls/SettingsOption.vue';
-import { useAccountingSettingsStore } from '@/modules/settings/use-accounting-settings-store';
+import { useSetting } from '@/modules/settings/use-setting';
 
 const gasCosts = ref(false);
-const { includeGasCosts } = storeToRefs(useAccountingSettingsStore());
+const includeGasCosts = useSetting('includeGasCosts');
 
 onMounted(() => {
   set(gasCosts, get(includeGasCosts));

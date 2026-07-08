@@ -3,7 +3,7 @@ import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vite
 import { usePasswordConfirmation } from '@/modules/auth/use-password-confirmation';
 import { useSessionAuthStore } from '@/modules/auth/use-session-auth-store';
 import { Constraints } from '@/modules/core/common/constraints';
-import { useFrontendSettingsStore } from '@/modules/settings/use-frontend-settings-store';
+import { useSettingsRepo } from '@/modules/settings/settings-repo';
 
 const mockInterop = vi.hoisted(() => ({
   getPassword: vi.fn(),
@@ -39,12 +39,12 @@ describe('usePasswordConfirmation', () => {
       mockInterop.isPackaged = false;
       vi.mocked(mockInterop.getPassword).mockResolvedValue('storedPassword');
 
-      const frontendStore = useFrontendSettingsStore();
+      const frontendStore = useSettingsRepo();
       const authStore = useSessionAuthStore();
       const { needsPasswordConfirmation } = storeToRefs(authStore);
       set(needsPasswordConfirmation, false);
 
-      frontendStore.update({
+      frontendStore.updateFrontend({
         enablePasswordConfirmation: true,
         lastPasswordConfirmed: dayjs().unix() - Constraints.PASSWORD_CONFIRMATION_MIN_SECONDS - 100,
         passwordConfirmationInterval: Constraints.PASSWORD_CONFIRMATION_MIN_SECONDS,
@@ -60,12 +60,12 @@ describe('usePasswordConfirmation', () => {
       localStorage.removeItem(REMEMBER_PASSWORD_KEY);
       vi.mocked(mockInterop.getPassword).mockResolvedValue('storedPassword');
 
-      const frontendStore = useFrontendSettingsStore();
+      const frontendStore = useSettingsRepo();
       const authStore = useSessionAuthStore();
       const { needsPasswordConfirmation } = storeToRefs(authStore);
       set(needsPasswordConfirmation, false);
 
-      frontendStore.update({
+      frontendStore.updateFrontend({
         enablePasswordConfirmation: true,
         lastPasswordConfirmed: dayjs().unix() - Constraints.PASSWORD_CONFIRMATION_MIN_SECONDS - 100,
         passwordConfirmationInterval: Constraints.PASSWORD_CONFIRMATION_MIN_SECONDS,
@@ -80,12 +80,12 @@ describe('usePasswordConfirmation', () => {
     it('should not trigger when password confirmation is disabled', async () => {
       vi.mocked(mockInterop.getPassword).mockResolvedValue('storedPassword');
 
-      const frontendStore = useFrontendSettingsStore();
+      const frontendStore = useSettingsRepo();
       const authStore = useSessionAuthStore();
       const { needsPasswordConfirmation } = storeToRefs(authStore);
       set(needsPasswordConfirmation, false);
 
-      frontendStore.update({
+      frontendStore.updateFrontend({
         enablePasswordConfirmation: false,
         lastPasswordConfirmed: 0,
         passwordConfirmationInterval: Constraints.PASSWORD_CONFIRMATION_MIN_SECONDS,
@@ -100,14 +100,14 @@ describe('usePasswordConfirmation', () => {
     it('should initialize lastPasswordConfirmed when it is 0', async () => {
       vi.mocked(mockInterop.getPassword).mockResolvedValue('storedPassword');
 
-      const frontendStore = useFrontendSettingsStore();
+      const frontendStore = useSettingsRepo();
       const authStore = useSessionAuthStore();
       const { needsPasswordConfirmation } = storeToRefs(authStore);
       set(needsPasswordConfirmation, false);
 
       const beforeTime = dayjs().unix();
 
-      frontendStore.update({
+      frontendStore.updateFrontend({
         enablePasswordConfirmation: true,
         lastPasswordConfirmed: 0,
         passwordConfirmationInterval: Constraints.PASSWORD_CONFIRMATION_MIN_SECONDS,
@@ -118,19 +118,19 @@ describe('usePasswordConfirmation', () => {
       const afterTime = dayjs().unix();
 
       expect(get(needsPasswordConfirmation)).toBe(false);
-      expect(frontendStore.lastPasswordConfirmed).toBeGreaterThanOrEqual(beforeTime);
-      expect(frontendStore.lastPasswordConfirmed).toBeLessThanOrEqual(afterTime);
+      expect(frontendStore.frontend.lastPasswordConfirmed).toBeGreaterThanOrEqual(beforeTime);
+      expect(frontendStore.frontend.lastPasswordConfirmed).toBeLessThanOrEqual(afterTime);
     });
 
     it('should not trigger when interval has not elapsed', async () => {
       vi.mocked(mockInterop.getPassword).mockResolvedValue('storedPassword');
 
-      const frontendStore = useFrontendSettingsStore();
+      const frontendStore = useSettingsRepo();
       const authStore = useSessionAuthStore();
       const { needsPasswordConfirmation } = storeToRefs(authStore);
       set(needsPasswordConfirmation, false);
 
-      frontendStore.update({
+      frontendStore.updateFrontend({
         enablePasswordConfirmation: true,
         lastPasswordConfirmed: dayjs().unix(),
         passwordConfirmationInterval: Constraints.PASSWORD_CONFIRMATION_MIN_SECONDS,
@@ -146,12 +146,12 @@ describe('usePasswordConfirmation', () => {
     it('should trigger when interval has elapsed and password exists', async () => {
       vi.mocked(mockInterop.getPassword).mockResolvedValue('storedPassword');
 
-      const frontendStore = useFrontendSettingsStore();
+      const frontendStore = useSettingsRepo();
       const authStore = useSessionAuthStore();
       const { needsPasswordConfirmation } = storeToRefs(authStore);
       set(needsPasswordConfirmation, false);
 
-      frontendStore.update({
+      frontendStore.updateFrontend({
         enablePasswordConfirmation: true,
         lastPasswordConfirmed: dayjs().unix() - Constraints.PASSWORD_CONFIRMATION_MIN_SECONDS - 100,
         passwordConfirmationInterval: Constraints.PASSWORD_CONFIRMATION_MIN_SECONDS,
@@ -166,12 +166,12 @@ describe('usePasswordConfirmation', () => {
     it('should not trigger when no stored password exists', async () => {
       vi.mocked(mockInterop.getPassword).mockResolvedValue(undefined);
 
-      const frontendStore = useFrontendSettingsStore();
+      const frontendStore = useSettingsRepo();
       const authStore = useSessionAuthStore();
       const { needsPasswordConfirmation } = storeToRefs(authStore);
       set(needsPasswordConfirmation, false);
 
-      frontendStore.update({
+      frontendStore.updateFrontend({
         enablePasswordConfirmation: true,
         lastPasswordConfirmed: dayjs().unix() - Constraints.PASSWORD_CONFIRMATION_MIN_SECONDS - 1,
         passwordConfirmationInterval: Constraints.PASSWORD_CONFIRMATION_MIN_SECONDS,
@@ -193,7 +193,7 @@ describe('usePasswordConfirmation', () => {
       const { needsPasswordConfirmation } = storeToRefs(authStore);
       set(needsPasswordConfirmation, true);
 
-      const frontendStore = useFrontendSettingsStore();
+      const frontendStore = useSettingsRepo();
       const beforeTime = dayjs().unix();
 
       const { confirmPassword } = usePasswordConfirmation();
@@ -202,8 +202,8 @@ describe('usePasswordConfirmation', () => {
 
       expect(result).toBe(true);
       expect(get(needsPasswordConfirmation)).toBe(false);
-      expect(frontendStore.lastPasswordConfirmed).toBeGreaterThanOrEqual(beforeTime);
-      expect(frontendStore.lastPasswordConfirmed).toBeLessThanOrEqual(afterTime);
+      expect(frontendStore.frontend.lastPasswordConfirmed).toBeGreaterThanOrEqual(beforeTime);
+      expect(frontendStore.frontend.lastPasswordConfirmed).toBeLessThanOrEqual(afterTime);
     });
 
     it('should return false when password does not match', async () => {

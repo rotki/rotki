@@ -2,7 +2,7 @@
 import { Defaults } from '@/modules/core/common/defaults';
 import SettingsOption from '@/modules/settings/controls/SettingsOption.vue';
 import SettingResetConfirmButton from '@/modules/settings/SettingResetConfirmButton.vue';
-import { useGeneralSettingsStore } from '@/modules/settings/use-general-settings-store';
+import { useSetting } from '@/modules/settings/use-setting';
 
 const { compact = false } = defineProps<{
   compact?: boolean;
@@ -10,8 +10,8 @@ const { compact = false } = defineProps<{
 
 const { t } = useI18n({ useScope: 'global' });
 
-const store = useGeneralSettingsStore();
-const { internalTxConflictRepullFrequency: storedFrequency, internalTxsToRepull: storedBatchSize } = storeToRefs(store);
+const storedFrequency = useSetting('internalTxConflictRepullFrequency');
+const storedBatchSize = useSetting('internalTxsToRepull');
 
 const batchSize = ref<string>(Defaults.DEFAULT_INTERNAL_TXS_TO_REPULL.toString());
 const SECONDS_PER_MINUTE = 60;

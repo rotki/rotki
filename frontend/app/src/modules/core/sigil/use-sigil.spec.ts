@@ -57,11 +57,8 @@ vi.mock('@/modules/auth/use-session-auth-store', () => ({
   })),
 }));
 
-vi.mock('@/modules/settings/use-general-settings-store', () => ({
-  useGeneralSettingsStore: vi.fn(() => ({
-    $id: 'settings/general',
-    submitUsageAnalytics: mockSubmitUsageAnalytics,
-  })),
+vi.mock('@/modules/settings/use-setting', () => ({
+  useSetting: vi.fn(() => mockSubmitUsageAnalytics),
 }));
 
 vi.mock('@/modules/core/common/use-main-store', () => ({

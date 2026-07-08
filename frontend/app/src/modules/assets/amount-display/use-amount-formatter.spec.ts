@@ -2,17 +2,17 @@ import { BigNumber, bigNumberify } from '@rotki/common';
 import { updateGeneralSettings } from '@test/utils/general-settings';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { useAmountFormatter } from '@/modules/assets/amount-display/use-amount-formatter';
-import { useFrontendSettingsStore } from '@/modules/settings/use-frontend-settings-store';
+import { useSettingsRepo } from '@/modules/settings/settings-repo';
 
 describe('modules/amount-display/composables/use-amount-formatter', () => {
   beforeEach(() => {
     setActivePinia(createPinia());
 
-    const frontendStore = useFrontendSettingsStore();
+    const frontendStore = useSettingsRepo();
 
     updateGeneralSettings({ uiFloatingPrecision: 2 });
 
-    frontendStore.update({
+    frontendStore.updateFrontend({
       abbreviateNumber: false,
       amountRoundingMode: BigNumber.ROUND_DOWN,
       decimalSeparator: '.',
@@ -90,8 +90,8 @@ describe('modules/amount-display/composables/use-amount-formatter', () => {
   describe('abbreviation', () => {
     it('should abbreviate large numbers when enabled', () => {
       setActivePinia(createPinia());
-      const frontendStore = useFrontendSettingsStore();
-      frontendStore.update({
+      const frontendStore = useSettingsRepo();
+      frontendStore.updateFrontend({
         abbreviateNumber: true,
         minimumDigitToBeAbbreviated: 4,
       });
@@ -122,8 +122,8 @@ describe('modules/amount-display/composables/use-amount-formatter', () => {
     });
 
     it('should use subscript for small decimals when enabled', () => {
-      const frontendStore = useFrontendSettingsStore();
-      frontendStore.update({ subscriptDecimals: true });
+      const frontendStore = useSettingsRepo();
+      frontendStore.updateFrontend({ subscriptDecimals: true });
 
       const value = ref(bigNumberify(0.00012345));
       const formatter = useAmountFormatter({ value });
@@ -138,8 +138,8 @@ describe('modules/amount-display/composables/use-amount-formatter', () => {
     });
 
     it('should not use subscript for values >= 1', () => {
-      const frontendStore = useFrontendSettingsStore();
-      frontendStore.update({ subscriptDecimals: true });
+      const frontendStore = useSettingsRepo();
+      frontendStore.updateFrontend({ subscriptDecimals: true });
 
       const value = ref(bigNumberify(1.00012345));
       const formatter = useAmountFormatter({ value });
@@ -148,8 +148,8 @@ describe('modules/amount-display/composables/use-amount-formatter', () => {
     });
 
     it('should not use subscript for values with less than 2 leading zeros', () => {
-      const frontendStore = useFrontendSettingsStore();
-      frontendStore.update({ subscriptDecimals: true });
+      const frontendStore = useSettingsRepo();
+      frontendStore.updateFrontend({ subscriptDecimals: true });
 
       const value = ref(bigNumberify(0.12345));
       const formatter = useAmountFormatter({ value });
@@ -160,8 +160,8 @@ describe('modules/amount-display/composables/use-amount-formatter', () => {
 
   describe('rounding modes', () => {
     it('should use amountRoundingMode when rounding is "amount"', () => {
-      const frontendStore = useFrontendSettingsStore();
-      frontendStore.update({
+      const frontendStore = useSettingsRepo();
+      frontendStore.updateFrontend({
         amountRoundingMode: BigNumber.ROUND_UP,
         valueRoundingMode: BigNumber.ROUND_DOWN,
       });
@@ -173,8 +173,8 @@ describe('modules/amount-display/composables/use-amount-formatter', () => {
     });
 
     it('should use valueRoundingMode when rounding is "value" (default)', () => {
-      const frontendStore = useFrontendSettingsStore();
-      frontendStore.update({
+      const frontendStore = useSettingsRepo();
+      frontendStore.updateFrontend({
         amountRoundingMode: BigNumber.ROUND_UP,
         valueRoundingMode: BigNumber.ROUND_DOWN,
       });
@@ -203,8 +203,8 @@ describe('modules/amount-display/composables/use-amount-formatter', () => {
     });
 
     it('should disable abbreviation when decimals are fixed', () => {
-      const frontendStore = useFrontendSettingsStore();
-      frontendStore.update({ abbreviateNumber: true, minimumDigitToBeAbbreviated: 4 });
+      const frontendStore = useSettingsRepo();
+      frontendStore.updateFrontend({ abbreviateNumber: true, minimumDigitToBeAbbreviated: 4 });
       const value = ref(bigNumberify(1000000));
       const formatter = useAmountFormatter({ decimals: 2, value });
 
@@ -213,8 +213,8 @@ describe('modules/amount-display/composables/use-amount-formatter', () => {
     });
 
     it('should disable subscript notation when decimals are fixed', () => {
-      const frontendStore = useFrontendSettingsStore();
-      frontendStore.update({ subscriptDecimals: true });
+      const frontendStore = useSettingsRepo();
+      frontendStore.updateFrontend({ subscriptDecimals: true });
       const value = ref(bigNumberify(0.00012345));
       const formatter = useAmountFormatter({ decimals: 8, value });
 

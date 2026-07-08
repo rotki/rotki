@@ -4,7 +4,7 @@ import { bigNumberify } from '@rotki/common';
 import EditLocationDataSnapshotForm from '@/modules/dashboard/edit-snapshot/EditLocationDataSnapshotForm.vue';
 import { useHistoricFiatConversion } from '@/modules/dashboard/snapshots/composables/use-historic-fiat-conversion';
 import { convertFiatToUsd, convertUsdToFiat } from '@/modules/dashboard/snapshots/utils/snapshot-fx';
-import { useGeneralSettingsStore } from '@/modules/settings/use-general-settings-store';
+import { useSetting } from '@/modules/settings/use-setting';
 import BigDialog from '@/modules/shell/components/dialogs/BigDialog.vue';
 
 type IndexedLocationDataSnapshot = LocationDataSnapshot & { index: number };
@@ -25,7 +25,7 @@ const emit = defineEmits<{
 
 const { t } = useI18n({ useScope: 'global' });
 
-const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
+const currencySymbol = useSetting('currencySymbol');
 
 const stateUpdated = ref<boolean>(false);
 const submitting = ref<boolean>(false);

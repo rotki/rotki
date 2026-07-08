@@ -1,15 +1,12 @@
 import type { Exchange } from '@/modules/balances/types/exchanges';
 import type { UserSettingsModel } from '@/modules/settings/types/user-settings';
-import { BigNumber, TimeFramePersist } from '@rotki/common';
-import { getBnFormat } from '@/modules/assets/amount-display/amount-formatter';
+import { TimeFramePersist } from '@rotki/common';
+import { useConnectedExchangesStore } from '@/modules/balances/exchanges/use-connected-exchanges-store';
 import { usePremiumStore } from '@/modules/premium/use-premium-store';
 import { usePremiumWatchers } from '@/modules/premium/use-premium-watchers';
 import { PrivacyMode } from '@/modules/session/types';
+import { useSettingsRepo } from '@/modules/settings/settings-repo';
 import { useSettingsSuggestions } from '@/modules/settings/suggestions/use-settings-suggestions';
-import { useAccountingSettingsStore } from '@/modules/settings/use-accounting-settings-store';
-import { useFrontendSettingsStore } from '@/modules/settings/use-frontend-settings-store';
-import { useGeneralSettingsStore } from '@/modules/settings/use-general-settings-store';
-import { useSessionSettingsStore } from '@/modules/settings/use-session-settings-store';
 import { useSettingsOperations } from '@/modules/settings/use-settings-operations';
 import { useThemeMigration } from '@/modules/settings/use-theme-migration';
 
@@ -20,11 +17,14 @@ interface UseSessionSettingsReturn {
 export function useSessionSettings(): UseSessionSettingsReturn {
   const { premium, premiumSync } = storeToRefs(usePremiumStore());
   const { fetchCapabilities } = usePremiumWatchers();
-  const { update: updateFrontendSettings } = useFrontendSettingsStore();
+  const {
+    updateAccounting: updateAccountingSettings,
+    updateFrontend: updateFrontendSettings,
+    updateGeneral: updateGeneralSettings,
+    updateSession: updateSessionSettings,
+  } = useSettingsRepo();
   const { updateFrontendSetting } = useSettingsOperations();
-  const { update: updateAccountingSettings } = useAccountingSettingsStore();
-  const { update: updateGeneralSettings } = useGeneralSettingsStore();
-  const { setConnectedExchanges, update: updateSessionSettings } = useSessionSettingsStore();
+  const { setConnectedExchanges } = useConnectedExchangesStore();
   const { checkDefaultThemeVersion } = useThemeMigration();
   const { checkForSuggestions } = useSettingsSuggestions();
 
@@ -38,17 +38,15 @@ export function useSessionSettings(): UseSessionSettingsReturn {
   ): Promise<void> => {
     if (frontendSettings) {
       const { lastKnownTimeframe, persistPrivacySettings, timeframeSetting } = frontendSettings;
-      const { decimalSeparator, thousandSeparator } = frontendSettings;
       const timeframe = timeframeSetting !== TimeFramePersist.REMEMBER
         ? timeframeSetting
         : lastKnownTimeframe;
 
+      // Merging the frontend blob into the repo runs the registry's post-persist effects, which
+      // includes reconfiguring the global BigNumber format from the separators.
       updateFrontendSettings(frontendSettings);
       setConnectedExchanges(exchanges);
       updateSessionSettings({ timeframe });
-      BigNumber.config({
-        FORMAT: getBnFormat(thousandSeparator, decimalSeparator),
-      });
       checkDefaultThemeVersion();
       checkForSuggestions(frontendSettings, general);
 

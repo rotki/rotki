@@ -5,7 +5,7 @@ import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vite
 import { useNewlyDetectedTokensDb } from '@/modules/assets/detection/use-newly-detected-tokens-db';
 import { useLoggedUserIdentifier } from '@/modules/auth/use-logged-user-identifier';
 import { useMainStore } from '@/modules/core/common/use-main-store';
-import { useFrontendSettingsStore } from '@/modules/settings/use-frontend-settings-store';
+import { useSettingsRepo } from '@/modules/settings/settings-repo';
 import { useDatabase } from '@/modules/user-data/use-database';
 import { NewDetectedTokenKind, type NewDetectedTokensRequestPayload } from './types';
 
@@ -320,8 +320,8 @@ describe('useNewlyDetectedTokensDb', () => {
     const SECONDS_PER_DAY = 86400;
 
     beforeEach(() => {
-      const settingsStore = useFrontendSettingsStore();
-      settingsStore.update({
+      const settingsStore = useSettingsRepo();
+      settingsStore.updateFrontend({
         newlyDetectedTokensMaxCount: 10000,
         newlyDetectedTokensTtlDays: 365,
       });
@@ -331,8 +331,8 @@ describe('useNewlyDetectedTokensDb', () => {
       const ttlDays = 30;
 
       // Set TTL in frontend settings store
-      const settingsStore = useFrontendSettingsStore();
-      settingsStore.update({ newlyDetectedTokensTtlDays: ttlDays });
+      const settingsStore = useSettingsRepo();
+      settingsStore.updateFrontend({ newlyDetectedTokensTtlDays: ttlDays });
 
       const { db } = useDatabase();
       const { prune, count } = useNewlyDetectedTokensDb();
@@ -359,8 +359,8 @@ describe('useNewlyDetectedTokensDb', () => {
 
     it('should prune excess tokens based on max count setting', async () => {
       // Set max count in frontend settings store
-      const settingsStore = useFrontendSettingsStore();
-      settingsStore.update({ newlyDetectedTokensMaxCount: 3 });
+      const settingsStore = useSettingsRepo();
+      settingsStore.updateFrontend({ newlyDetectedTokensMaxCount: 3 });
 
       const { db } = useDatabase();
       const { prune, count } = useNewlyDetectedTokensDb();
@@ -388,8 +388,8 @@ describe('useNewlyDetectedTokensDb', () => {
       const ttlDays = 30;
 
       // Set both TTL and max count
-      const settingsStore = useFrontendSettingsStore();
-      settingsStore.update({
+      const settingsStore = useSettingsRepo();
+      settingsStore.updateFrontend({
         newlyDetectedTokensTtlDays: ttlDays,
         newlyDetectedTokensMaxCount: 2,
       });
@@ -419,9 +419,9 @@ describe('useNewlyDetectedTokensDb', () => {
 
     it('should not fail when no tokens need pruning', async () => {
       // Set high values so no pruning happens
-      const settingsStore = useFrontendSettingsStore();
+      const settingsStore = useSettingsRepo();
 
-      settingsStore.update({
+      settingsStore.updateFrontend({
         newlyDetectedTokensMaxCount: 100,
         newlyDetectedTokensTtlDays: 30,
       });

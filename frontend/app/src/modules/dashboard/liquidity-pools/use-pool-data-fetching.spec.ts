@@ -37,10 +37,8 @@ vi.mock('@/modules/premium/use-premium', () => ({
 }));
 
 const mockActiveModules = vi.fn((): Ref<string[]> => ref<string[]>([Module.UNISWAP, Module.SUSHISWAP]));
-vi.mock('@/modules/settings/use-general-settings-store', () => ({
-  useGeneralSettingsStore: vi.fn((): Record<string, unknown> => ({
-    activeModules: mockActiveModules(),
-  })),
+vi.mock('@/modules/settings/use-setting', () => ({
+  useSetting: (): Ref<string[]> => mockActiveModules(),
 }));
 
 vi.mock('@/modules/balances/blockchain/use-account-addresses', () => ({

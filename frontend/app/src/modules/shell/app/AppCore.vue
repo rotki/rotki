@@ -4,7 +4,7 @@ import { useAreaVisibilityStore } from '@/modules/core/common/use-area-visibilit
 import NotificationPopup from '@/modules/core/notifications/NotificationPopup.vue';
 import SettingsSuggestionsDialog from '@/modules/settings/suggestions/SettingsSuggestionsDialog.vue';
 import { useSettingsSuggestions } from '@/modules/settings/suggestions/use-settings-suggestions';
-import { useFrontendSettingsStore } from '@/modules/settings/use-frontend-settings-store';
+import { useSuggestionsStore } from '@/modules/settings/suggestions/use-suggestions-store';
 import AppDrawer from '@/modules/shell/app/AppDrawer.vue';
 import AppIndicators from '@/modules/shell/app/AppIndicators.vue';
 import AppSidebars from '@/modules/shell/app/AppSidebars.vue';
@@ -26,7 +26,7 @@ const { scrollToTop, shouldShowScrollToTopButton } = useCoreScroll();
 
 const { isXlAndDown } = useBreakpoint();
 const { applySelected, dismissAll } = useSettingsSuggestions();
-const frontendStore = useFrontendSettingsStore();
+const suggestionsStore = useSuggestionsStore();
 
 const pinnedPadding = computed<string | undefined>(() => {
   if (get(showPinned) && !get(isXlAndDown))
@@ -51,8 +51,8 @@ onBeforeMount(() => {
   <div class="app__content">
     <NotificationPopup />
     <SettingsSuggestionsDialog
-      v-model="frontendStore.showSuggestionsDialog"
-      :suggestions="frontendStore.pendingSuggestions"
+      v-model="suggestionsStore.showSuggestionsDialog"
+      :suggestions="suggestionsStore.pendingSuggestions"
       @apply="applySelected($event)"
       @dismiss="dismissAll()"
     />

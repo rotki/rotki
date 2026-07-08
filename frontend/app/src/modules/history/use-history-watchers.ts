@@ -1,6 +1,7 @@
 import { NotificationGroup } from '@rotki/common';
 import { startPromise } from '@shared/utils';
 import { isEqual } from 'es-toolkit';
+import { useConnectedExchangesStore } from '@/modules/balances/exchanges/use-connected-exchanges-store';
 import { useRefWithDebounce } from '@/modules/core/common/use-ref-debounce';
 import { useNotifications } from '@/modules/core/notifications/use-notifications';
 import { TaskType } from '@/modules/core/tasks/task-type';
@@ -11,7 +12,6 @@ import { useUnmatchedAssetMovements } from '@/modules/history/events/use-unmatch
 import { useHistoryDataFetching } from '@/modules/history/use-history-data-fetching';
 import { useHistoryStore } from '@/modules/history/use-history-store';
 import { useProtocolCacheStatusStore } from '@/modules/history/use-protocol-cache-status-store';
-import { useSessionSettingsStore } from '@/modules/settings/use-session-settings-store';
 import { Routes } from '@/router/routes';
 
 const HISTORY_EVENTS_MODIFIED_DEBOUNCE_MS = 15_000;
@@ -23,7 +23,7 @@ export function useHistoryWatchers(): void {
   const { hasUnprocessedModifications } = storeToRefs(historyStore);
   const { triggerAssetMovementAutoMatching } = useUnmatchedAssetMovements();
   const { triggerHistoricalBalancesProcessing } = useHistoricalBalances();
-  const { connectedExchanges } = storeToRefs(useSessionSettingsStore());
+  const { connectedExchanges } = storeToRefs(useConnectedExchangesStore());
   const { removeMatching } = useNotifications();
   const router = useRouter();
 

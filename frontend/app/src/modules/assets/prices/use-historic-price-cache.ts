@@ -13,7 +13,7 @@ import { createItemCache } from '@/modules/core/common/use-item-cache';
 import { useNotifications } from '@/modules/core/notifications/use-notifications';
 import { TaskType } from '@/modules/core/tasks/task-type';
 import { isActionableFailure, useTaskHandler } from '@/modules/core/tasks/use-task-handler';
-import { useGeneralSettingsStore } from '@/modules/settings/use-general-settings-store';
+import { useSetting } from '@/modules/settings/use-setting';
 
 interface UseHistoricPriceCacheReturn {
   cache: ReturnType<typeof createItemCache<BigNumber>>['cache'];
@@ -32,7 +32,7 @@ interface UseHistoricPriceCacheReturn {
 }
 
 export const useHistoricPriceCache = createSharedComposable((): UseHistoricPriceCacheReturn => {
-  const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
+  const currencySymbol = useSetting('currencySymbol');
   const historicCachePriceStore = useHistoricCachePriceStore();
   const { historicStorage } = historicCachePriceStore;
   const { failedDailyPrices, historicalDailyPriceStatus, resolvedFailedDailyPrices } = storeToRefs(historicCachePriceStore);

@@ -2,7 +2,8 @@ import type { MaybeRefOrGetter } from 'vue';
 import type { AccountingRuleLinkedSettingMap } from '@/modules/settings/types/accounting';
 import { assert, toHumanReadable, transformCase } from '@rotki/common';
 import { useAccountingApi } from '@/modules/settings/api/use-accounting-api';
-import { useAccountingSettingsStore } from '@/modules/settings/use-accounting-settings-store';
+import { settingsRegistry } from '@/modules/settings/settings-registry';
+import { type SettingKey, useSetting } from '@/modules/settings/use-setting';
 
 export const useAccountingRuleMappings = createSharedComposable(() => {
   // eslint-disable-next-line @typescript-eslint/unbound-method
@@ -15,9 +16,7 @@ export const useAccountingRuleMappings = createSharedComposable(() => {
     {},
   );
 
-  const store = storeToRefs(useAccountingSettingsStore());
-
-  const stateInStore = (stateName: string): stateName is keyof typeof store => stateName in store;
+  const stateInStore = (stateName: string): stateName is SettingKey => stateName in settingsRegistry;
 
   const stateIsBoolean = (state: MaybeRef<any>): state is MaybeRef<boolean> => typeof get(state) === 'boolean';
 
@@ -35,7 +34,7 @@ export const useAccountingRuleMappings = createSharedComposable(() => {
         const stateName = transformCase(item, true);
 
         assert(stateInStore(stateName), `linked property ${stateName} is not part of the setting`);
-        const state = store[stateName];
+        const state = useSetting(stateName);
 
         assert(stateIsBoolean(state), `linked property ${stateName} is not boolean`);
 

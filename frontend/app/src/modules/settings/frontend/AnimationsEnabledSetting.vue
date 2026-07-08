@@ -1,11 +1,11 @@
 <script setup lang="ts">
 import SettingsOption from '@/modules/settings/controls/SettingsOption.vue';
-import { useSessionSettingsStore } from '@/modules/settings/use-session-settings-store';
+import { useSetting } from '@/modules/settings/use-setting';
 
 const animationsEnabled = ref<boolean>(true);
 const { t } = useI18n({ useScope: 'global' });
 
-const { animationsEnabled: enabled } = storeToRefs(useSessionSettingsStore());
+const enabled = useSetting('animationsEnabled');
 const transform = (value: boolean) => !value;
 
 onMounted(() => {

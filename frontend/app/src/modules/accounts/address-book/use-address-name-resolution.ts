@@ -12,7 +12,7 @@ import { uniqueStrings } from '@/modules/core/common/data/data';
 import { logger } from '@/modules/core/common/logging/logging';
 import { createItemCache } from '@/modules/core/common/use-item-cache';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
-import { useFrontendSettingsStore } from '@/modules/settings/use-frontend-settings-store';
+import { useSetting } from '@/modules/settings/use-setting';
 
 interface UseAddressNameResolutionReturn {
   getAddressName: (address: string, blockchain?: string) => string | undefined;
@@ -41,7 +41,7 @@ interface UseAddressNameResolutionReturn {
 }
 
 export const useAddressNameResolution = createSharedComposable((): UseAddressNameResolutionReturn => {
-  const { enableAliasNames } = storeToRefs(useFrontendSettingsStore());
+  const enableAliasNames = useSetting('enableAliasNames');
   const store = useAddressNamesStore();
   const { addressNameStorage } = store;
   const { ensNames } = storeToRefs(store);

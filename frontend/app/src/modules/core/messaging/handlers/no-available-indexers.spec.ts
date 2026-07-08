@@ -3,7 +3,7 @@ import { mockT } from '@test/i18n';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useConfirmStore } from '@/modules/core/common/use-confirm-store';
 import { createNoAvailableIndexersHandler } from '@/modules/core/messaging/handlers/no-available-indexers';
-import { useFrontendSettingsStore } from '@/modules/settings/use-frontend-settings-store';
+import { useSettingsRepo } from '@/modules/settings/settings-repo';
 
 const updateFrontendSetting = vi.fn();
 
@@ -58,8 +58,8 @@ describe('createNoAvailableIndexersHandler', () => {
 
   it('should return null when the chain is in the suppression list', async () => {
     const handler = createNoAvailableIndexersHandler(mockT, router);
-    const store = useFrontendSettingsStore();
-    store.update({ suppressNoIndexerChains: ['binance_sc'] });
+    const store = useSettingsRepo();
+    store.updateFrontend({ suppressNoIndexerChains: ['binance_sc'] });
 
     const result = await handler.handle({ chain: 'binance_sc' });
 
@@ -104,13 +104,13 @@ describe('createNoAvailableIndexersHandler', () => {
 
   it('should skip the update when the chain was added to the list between notification and confirmation', async () => {
     const handler = createNoAvailableIndexersHandler(mockT, router);
-    const store = useFrontendSettingsStore();
+    const store = useSettingsRepo();
     const confirmStore = useConfirmStore();
 
     const result = await handler.handle({ chain: 'binance_sc' });
     const suppressAction = getSuppressAction(result);
 
-    store.update({ suppressNoIndexerChains: ['binance_sc'] });
+    store.updateFrontend({ suppressNoIndexerChains: ['binance_sc'] });
     await suppressAction.action();
     await confirmStore.confirm();
 

@@ -10,7 +10,7 @@ import { BalanceType } from '@/modules/balances/types/balances';
 import { useBalancePricesStore } from '@/modules/balances/use-balance-prices-store';
 import { useBalancesStore } from '@/modules/balances/use-balances-store';
 import { TRADE_LOCATION_BANKS, TRADE_LOCATION_BLOCKCHAIN } from '@/modules/core/common/defaults';
-import { useGeneralSettingsStore } from '@/modules/settings/use-general-settings-store';
+import { useSettingsRepo } from '@/modules/settings/settings-repo';
 
 const runTaskMock = vi.fn();
 
@@ -98,9 +98,9 @@ describe('store::balances/manual', () => {
     setActivePinia(createPinia());
     store = useBalancesStore();
     const { exchangeRates, prices } = storeToRefs(useBalancePricesStore());
-    const generalSettingsStore = useGeneralSettingsStore();
-    generalSettingsStore.update({
-      ...generalSettingsStore.settings,
+    const generalSettingsStore = useSettingsRepo();
+    generalSettingsStore.updateGeneral({
+      ...generalSettingsStore.general,
       mainCurrency: new Currency('US Dollar', CURRENCY_USD, '$'),
     });
     set(exchangeRates, { USD: bigNumberify(1) });

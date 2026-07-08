@@ -6,7 +6,7 @@ import AssetDetails from '@/modules/assets/AssetDetails.vue';
 import BalanceTopProtocols from '@/modules/balances/protocols/BalanceTopProtocols.vue';
 import { sum } from '@/modules/core/common/display/balances';
 import { TableId, useRememberTableSorting } from '@/modules/core/table/use-remember-table-sorting';
-import { useGeneralSettingsStore } from '@/modules/settings/use-general-settings-store';
+import { useSetting } from '@/modules/settings/use-setting';
 import RowAppend from '@/modules/shell/components/RowAppend.vue';
 
 interface AccountAssetBalancesProps {
@@ -27,7 +27,7 @@ const sort = ref<DataTableSortData<AssetBalanceWithPrice>>({
 
 const { t } = useI18n({ useScope: 'global' });
 
-const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
+const currencySymbol = useSetting('currencySymbol');
 
 const totalValue = computed<BigNumber>(() => sum(assets));
 

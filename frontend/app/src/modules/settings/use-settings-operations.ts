@@ -3,9 +3,8 @@ import type { ActionStatus } from '@/modules/core/common/action';
 import type { Module } from '@/modules/core/common/modules';
 import type { FrontendSettingsPayload } from '@/modules/settings/types/frontend-settings';
 import type { SettingsUpdate } from '@/modules/settings/types/user-settings';
-import { assert, BigNumber } from '@rotki/common';
+import { assert } from '@rotki/common';
 import { useQueriedAddressOperations } from '@/modules/accounts/use-queried-address-operations';
-import { getBnFormat } from '@/modules/assets/amount-display/amount-formatter';
 import { snakeCaseTransformer } from '@/modules/core/api/transformers';
 import { ApiValidationError } from '@/modules/core/api/types/errors';
 import { uniqueStrings } from '@/modules/core/common/data/data';
@@ -14,9 +13,7 @@ import { getErrorMessage, useNotifications } from '@/modules/core/notifications/
 import { usePremiumStore } from '@/modules/premium/use-premium-store';
 import { useItemsPerPage } from '@/modules/session/use-items-per-page';
 import { useSettingsApi } from '@/modules/settings/api/use-settings-api';
-import { useAccountingSettingsStore } from '@/modules/settings/use-accounting-settings-store';
-import { useFrontendSettingsStore } from '@/modules/settings/use-frontend-settings-store';
-import { useGeneralSettingsStore } from '@/modules/settings/use-general-settings-store';
+import { useSettingsRepo } from '@/modules/settings/settings-repo';
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
@@ -46,9 +43,7 @@ interface UseSettingsOperationsReturn {
 export function useSettingsOperations(): UseSettingsOperationsReturn {
   const { showErrorMessage, showSuccessMessage } = useNotifications();
   const { addQueriedAddress } = useQueriedAddressOperations();
-  const generalStore = useGeneralSettingsStore();
-  const accountingStore = useAccountingSettingsStore();
-  const frontendStore = useFrontendSettingsStore();
+  const repo = useSettingsRepo();
   const { premium, premiumSync } = storeToRefs(usePremiumStore());
   const { t } = useI18n({ useScope: 'global' });
 
@@ -76,7 +71,7 @@ export function useSettingsOperations(): UseSettingsOperationsReturn {
       const { general } = await api.setSettings({
         krakenAccountType,
       });
-      generalStore.update(general);
+      repo.updateGeneral(general);
       showSuccessMessage(t('actions.session.kraken_account.success.title'), t('actions.session.kraken_account.success.message'));
     }
     catch (error: unknown) {
@@ -95,8 +90,8 @@ export function useSettingsOperations(): UseSettingsOperationsReturn {
       } = await api.setSettings(payload);
       set(premium, havePremium);
       set(premiumSync, premiumShouldSync);
-      generalStore.update(general);
-      accountingStore.update(accounting);
+      repo.updateGeneral(general);
+      repo.updateAccounting(accounting);
       success = true;
     }
     catch (error: unknown) {
@@ -110,7 +105,7 @@ export function useSettingsOperations(): UseSettingsOperationsReturn {
   };
 
   const enableModule = async (payload: { readonly enable: Module[]; readonly addresses: string[] }): Promise<void> => {
-    const activeModules = generalStore.activeModules;
+    const activeModules = repo.general.activeModules;
     const modules: Module[] = [...activeModules, ...payload.enable].filter(uniqueStrings);
 
     await update({ activeModules: modules });
@@ -121,27 +116,21 @@ export function useSettingsOperations(): UseSettingsOperationsReturn {
   };
 
   function applyFrontendSettingLocal(payload: FrontendSettingsPayload): void {
-    const currentSettings = get(frontendStore.settings);
-    frontendStore.update({ ...currentSettings, ...payload });
+    repo.updateFrontend(payload);
   }
 
   async function updateFrontendSetting(payload: FrontendSettingsPayload): Promise<ActionStatus> {
     const props = Object.keys(payload);
     assert(props.length > 0, 'Payload must be not-empty');
     try {
-      const currentSettings = get(frontendStore.settings);
-      const updatedSettings = { ...currentSettings, ...payload };
-      const { other } = await api.setSettings({
+      const updatedSettings = { ...repo.frontend, ...payload };
+      await api.setSettings({
         frontendSettings: JSON.stringify(snakeCaseTransformer(updatedSettings)),
       });
 
-      frontendStore.update(updatedSettings);
-
-      if (payload.thousandSeparator || payload.decimalSeparator) {
-        BigNumber.config({
-          FORMAT: getBnFormat(other.frontendSettings.thousandSeparator, other.frontendSettings.decimalSeparator),
-        });
-      }
+      // Merge only the patch: the repo runs the registry's post-persist effects (BigNumber format)
+      // and mirror syncs for the keys that actually changed.
+      repo.updateFrontend(payload);
 
       return {
         success: true,

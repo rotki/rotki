@@ -9,7 +9,7 @@ import FiatDisplay from '@/modules/assets/amount-display/components/FiatDisplay.
 import { useCurrencies } from '@/modules/assets/amount-display/currencies';
 import { useHistoricPriceCache } from '@/modules/assets/prices/use-historic-price-cache';
 import { useBalancePricesStore } from '@/modules/balances/use-balance-prices-store';
-import { useFrontendSettingsStore } from '@/modules/settings/use-frontend-settings-store';
+import { useSettingsRepo } from '@/modules/settings/settings-repo';
 
 describe('modules/amount-display/components/FiatDisplay', () => {
   let wrapper: VueWrapper<InstanceType<typeof FiatDisplay>>;
@@ -94,7 +94,7 @@ describe('modules/amount-display/components/FiatDisplay', () => {
 
   describe('scramble data', () => {
     beforeEach(async () => {
-      useFrontendSettingsStore().update({ scrambleData: true });
+      useSettingsRepo().updateFrontend({ scrambleData: true });
     });
 
     it('should scramble the value', async () => {

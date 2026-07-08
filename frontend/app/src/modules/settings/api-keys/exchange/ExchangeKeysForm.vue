@@ -4,6 +4,7 @@ import { toSentenceCase } from '@rotki/common';
 import { RuiRevealableTextField, RuiTextField } from '@rotki/ui-library';
 import useVuelidate from '@vuelidate/core';
 import { helpers, requiredIf, requiredUnless } from '@vuelidate/validators';
+import { useConnectedExchangesStore } from '@/modules/balances/exchanges/use-connected-exchanges-store';
 import { type ExchangeFormData, GateLocation, KrakenAccountType, OkxLocation } from '@/modules/balances/types/exchanges';
 import { useFormStateWatcher } from '@/modules/core/common/use-form';
 import { useLocationStore } from '@/modules/core/common/use-location-store';
@@ -14,7 +15,6 @@ import BinancePairsSelector from '@/modules/settings/api-keys/BinancePairsSelect
 import ExchangeKeysFormStructure from '@/modules/settings/api-keys/exchange/ExchangeKeysFormStructure.vue';
 import GateRegionSelectorItem from '@/modules/settings/api-keys/exchange/GateRegionSelectorItem.vue';
 import OkxRegionSelectorItem from '@/modules/settings/api-keys/exchange/OkxRegionSelectorItem.vue';
-import { useSessionSettingsStore } from '@/modules/settings/use-session-settings-store';
 import ExchangeInput from '@/modules/shell/components/inputs/ExchangeInput.vue';
 
 const modelValue = defineModel<ExchangeFormData>({ required: true });
@@ -28,7 +28,7 @@ const editFuturesKeys = ref<boolean>(false);
 const locationStore = useLocationStore();
 const { exchangesWithoutApiSecret, exchangesWithPassphrase } = storeToRefs(locationStore);
 const { useIsExperimentalExchange } = locationStore;
-const { connectedExchanges } = storeToRefs(useSessionSettingsStore());
+const { connectedExchanges } = storeToRefs(useConnectedExchangesStore());
 const { getLocationData } = useLocations();
 const { t, te } = useI18n({ useScope: 'global' });
 

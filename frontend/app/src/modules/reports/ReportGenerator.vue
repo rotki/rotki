@@ -2,10 +2,10 @@
 import type { ProfitLossReportPeriod } from '@/modules/reports/report-types';
 import { startPromise } from '@shared/utils';
 import { useExchangeApi } from '@/modules/balances/api/use-exchange-api';
+import { useConnectedExchangesStore } from '@/modules/balances/exchanges/use-connected-exchanges-store';
 import { useTransactionStatusCheck } from '@/modules/dashboard/progress/use-transaction-status-check';
 import { useHistoryTransactions } from '@/modules/history/events/tx/use-history-transactions';
 import RangeSelector from '@/modules/reports/RangeSelector.vue';
-import { useSessionSettingsStore } from '@/modules/settings/use-session-settings-store';
 import CardTitle from '@/modules/shell/components/CardTitle.vue';
 import { useSyncProgress } from '@/modules/shell/sync-progress/use-sync-progress';
 import { Routes } from '@/router/routes';
@@ -22,7 +22,7 @@ const { isOutOfSync, processing } = useTransactionStatusCheck();
 const { overallProgress } = useSyncProgress();
 const { refreshTransactions } = useHistoryTransactions();
 const { queryBinanceUserMarkets } = useExchangeApi();
-const { connectedExchanges } = storeToRefs(useSessionSettingsStore());
+const { connectedExchanges } = storeToRefs(useConnectedExchangesStore());
 
 const range = ref<{ start: number | undefined; end: number }>({ end: 0, start: undefined });
 const valid = ref<boolean>(false);

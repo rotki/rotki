@@ -1,6 +1,6 @@
 import { useTokenDetectionOrchestrator } from '@/modules/balances/blockchain/use-token-detection-orchestrator';
 import { logger } from '@/modules/core/common/logging/logging';
-import { useFrontendSettingsStore } from '@/modules/settings/use-frontend-settings-store';
+import { useSetting } from '@/modules/settings/use-setting';
 import { useSettingsOperations } from '@/modules/settings/use-settings-operations';
 
 interface UseAutoTokenDetectionReturn {
@@ -13,11 +13,9 @@ const HOUR_IN_MS = 60 * 60 * 1000;
 
 export function useAutoTokenDetection(): UseAutoTokenDetectionReturn {
   const { detectAllTokens } = useTokenDetectionOrchestrator();
-  const {
-    autoDetectTokensCooldownHours,
-    autoDetectTokensOnLogin,
-    lastAutoDetectAt,
-  } = storeToRefs(useFrontendSettingsStore());
+  const autoDetectTokensCooldownHours = useSetting('autoDetectTokensCooldownHours');
+  const autoDetectTokensOnLogin = useSetting('autoDetectTokensOnLogin');
+  const lastAutoDetectAt = useSetting('lastAutoDetectAt');
   const { updateFrontendSetting } = useSettingsOperations();
 
   const inFlight = shallowRef<boolean>(false);

@@ -1,13 +1,13 @@
 <script setup lang="ts">
 import { type Currency, useCurrencies } from '@/modules/assets/amount-display/currencies';
 import { useCurrencyUpdate } from '@/modules/assets/prices/use-currency-update';
-import { useGeneralSettingsStore } from '@/modules/settings/use-general-settings-store';
+import { useSetting } from '@/modules/settings/use-setting';
 import { useSettingsOperations } from '@/modules/settings/use-settings-operations';
 import ListItem from '@/modules/shell/components/ListItem.vue';
 import MenuTooltipButton from '@/modules/shell/components/MenuTooltipButton.vue';
 
 const { update } = useSettingsOperations();
-const { currency } = storeToRefs(useGeneralSettingsStore());
+const currency = useSetting('currency');
 
 const filter = ref<string>('');
 const visible = ref<boolean>(false);

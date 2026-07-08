@@ -3,12 +3,12 @@ import { Defaults } from '@/modules/core/common/defaults';
 import SettingsItem from '@/modules/settings/controls/SettingsItem.vue';
 import SettingsOption from '@/modules/settings/controls/SettingsOption.vue';
 import SettingResetConfirmButton from '@/modules/settings/SettingResetConfirmButton.vue';
-import { useGeneralSettingsStore } from '@/modules/settings/use-general-settings-store';
+import { useSetting } from '@/modules/settings/use-setting';
 
 const DEFAULT = Defaults.BTC_DERIVATION_GAP_LIMIT;
 
 const btcDerivationGapLimit = ref<string>(DEFAULT.toString());
-const { btcDerivationGapLimit: limit } = storeToRefs(useGeneralSettingsStore());
+const limit = useSetting('btcDerivationGapLimit');
 const { t } = useI18n({ useScope: 'global' });
 
 function successMessage(limit: string) {

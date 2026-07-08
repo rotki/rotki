@@ -2,7 +2,7 @@ import { startPromise } from '@shared/utils';
 import { useSessionAuthStore } from '@/modules/auth/use-session-auth-store';
 import { useMessageHandling } from '@/modules/core/messaging';
 import { usePeriodicDataFetcher } from '@/modules/session/use-periodic-data-fetcher';
-import { useFrontendSettingsStore } from '@/modules/settings/use-frontend-settings-store';
+import { useSetting } from '@/modules/settings/use-setting';
 import { useWebsocketConnection } from '../use-websocket-connection';
 import { useIntervalScheduler } from './use-interval-scheduler';
 
@@ -15,7 +15,7 @@ interface UsePeriodicPollingSchedulerReturn {
 
 export function usePeriodicPollingScheduler(): UsePeriodicPollingSchedulerReturn {
   const { canRequestData } = storeToRefs(useSessionAuthStore());
-  const { queryPeriod } = storeToRefs(useFrontendSettingsStore());
+  const queryPeriod = useSetting('queryPeriod');
   const { check } = usePeriodicDataFetcher();
   const { consume } = useMessageHandling();
   const { connected } = useWebsocketConnection();

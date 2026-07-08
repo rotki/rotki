@@ -5,11 +5,11 @@ import { createPinia, setActivePinia } from 'pinia';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useCurrencies } from '@/modules/assets/amount-display/currencies';
 import { defaultGeneralSettings } from '@/modules/settings/factories';
-import { useGeneralSettingsStore } from '@/modules/settings/use-general-settings-store';
+import { useSettingsRepo } from '@/modules/settings/settings-repo';
 import { useStatisticsStore } from './use-statistics-store';
 
 // Store reference for accessing currency in mocks
-let generalSettingsStore: ReturnType<typeof useGeneralSettingsStore> | null = null;
+let generalSettingsStore: ReturnType<typeof useSettingsRepo> | null = null;
 
 function getExchangeRate(currency: string): BigNumber {
   if (currency === 'JPY')
@@ -28,7 +28,7 @@ function createBalanceWithPrice(
   const priceBN = new BigNumber(price);
   const usdValue = amountBN.multipliedBy(priceBN);
   // Get current currency from settings store
-  const currency = generalSettingsStore ? get(generalSettingsStore.currency).tickerSymbol : 'USD';
+  const currency = generalSettingsStore ? generalSettingsStore.general.mainCurrency.tickerSymbol : 'USD';
   const rate = getExchangeRate(currency);
   // If asset matches main currency, value = amount; otherwise value = usdValue * rate
   const value = asset === currency ? amountBN : usdValue.multipliedBy(rate);
@@ -65,21 +65,21 @@ vi.mock('@/modules/assets/prices/use-price-utils', () => ({
 }));
 
 describe('useStatisticsStore', () => {
-  let generalSettings: ReturnType<typeof useGeneralSettingsStore>;
+  let generalSettings: ReturnType<typeof useSettingsRepo>;
   let currencies: ReturnType<typeof useCurrencies>;
 
   beforeEach(() => {
     setActivePinia(createPinia());
 
     // Initialize stores
-    generalSettings = useGeneralSettingsStore();
+    generalSettings = useSettingsRepo();
     currencies = useCurrencies();
 
     // Set the store reference for use in mocks
     generalSettingsStore = generalSettings;
 
     // Reset currency to USD before each test
-    generalSettings.update({
+    generalSettings.updateGeneral({
       ...defaultGeneralSettings(currencies.findCurrency('USD')),
       mainCurrency: currencies.findCurrency('USD'),
     });
@@ -88,7 +88,7 @@ describe('useStatisticsStore', () => {
   describe('calculateTotalValue with main currency handling', () => {
     it('should use amount directly for main currency assets and convert USD values for others', () => {
       // Set the currency to JPY before creating the store
-      generalSettings.update({
+      generalSettings.updateGeneral({
         ...defaultGeneralSettings(currencies.findCurrency('JPY')),
         mainCurrency: currencies.findCurrency('JPY'),
       });
@@ -125,7 +125,7 @@ describe('useStatisticsStore', () => {
 
     it('should correctly handle EUR as main currency', () => {
       // Set the currency to EUR before creating the store
-      generalSettings.update({
+      generalSettings.updateGeneral({
         ...defaultGeneralSettings(currencies.findCurrency('EUR')),
         mainCurrency: currencies.findCurrency('EUR'),
       });
@@ -159,7 +159,7 @@ describe('useStatisticsStore', () => {
       }));
 
       // Set the currency to JPY before creating the store
-      generalSettings.update({
+      generalSettings.updateGeneral({
         ...defaultGeneralSettings(currencies.findCurrency('JPY')),
         mainCurrency: currencies.findCurrency('JPY'),
       });
@@ -182,7 +182,7 @@ describe('useStatisticsStore', () => {
   describe('totalNetWorth', () => {
     it('should not double-apply exchange rate', () => {
       // Set the currency to JPY before creating the store
-      generalSettings.update({
+      generalSettings.updateGeneral({
         ...defaultGeneralSettings(currencies.findCurrency('JPY')),
         mainCurrency: currencies.findCurrency('JPY'),
       });

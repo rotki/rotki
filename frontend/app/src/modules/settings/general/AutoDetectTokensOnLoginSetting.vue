@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import SettingsOption from '@/modules/settings/controls/SettingsOption.vue';
-import { useFrontendSettingsStore } from '@/modules/settings/use-frontend-settings-store';
+import { useSetting } from '@/modules/settings/use-setting';
 
 const value = ref<boolean>(false);
-const { autoDetectTokensOnLogin } = storeToRefs(useFrontendSettingsStore());
+const autoDetectTokensOnLogin = useSetting('autoDetectTokensOnLogin');
 
 onMounted(() => {
   set(value, get(autoDetectTokensOnLogin));
@@ -14,7 +14,6 @@ const { t } = useI18n({ useScope: 'global' });
 
 <template>
   <SettingsOption
-    frontend-setting
     setting="autoDetectTokensOnLogin"
     :error-message="t('general_settings.auto_detect_tokens_on_login.validation.error')"
   >

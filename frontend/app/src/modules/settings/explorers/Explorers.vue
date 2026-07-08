@@ -6,7 +6,7 @@ import AssetDetails from '@/modules/assets/AssetDetails.vue';
 import { useValueOrDefault } from '@/modules/core/common/use-value-or-default';
 import SettingsItem from '@/modules/settings/controls/SettingsItem.vue';
 import ExplorerInput from '@/modules/settings/explorers/ExplorerInput.vue';
-import { useFrontendSettingsStore } from '@/modules/settings/use-frontend-settings-store';
+import { useSetting } from '@/modules/settings/use-setting';
 import { useSettingsOperations } from '@/modules/settings/use-settings-operations';
 
 const extraExplorers = ['ETC'] as const;
@@ -26,8 +26,7 @@ const tx = ref<string>('');
 const block = ref<string>('');
 const token = ref<string>('');
 
-const store = useFrontendSettingsStore();
-const { explorers } = storeToRefs(store);
+const explorers = useSetting('explorers');
 const { updateFrontendSetting } = useSettingsOperations();
 const { t } = useI18n({ useScope: 'global' });
 

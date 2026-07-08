@@ -26,8 +26,7 @@ import { truncateAddress } from '@/modules/core/common/display/truncate';
 import { TaskType } from '@/modules/core/tasks/task-type';
 import { useTaskHandler } from '@/modules/core/tasks/use-task-handler';
 import { useTaskStore } from '@/modules/core/tasks/use-task-store';
-import { useFrontendSettingsStore } from '@/modules/settings/use-frontend-settings-store';
-import { useGeneralSettingsStore } from '@/modules/settings/use-general-settings-store';
+import { useSetting } from '@/modules/settings/use-setting';
 import { useStatisticsApi } from '@/modules/statistics/api/use-statistics-api';
 import { useStatisticsDataFetching } from '@/modules/statistics/use-statistics-data-fetching';
 import { useStatisticsStore } from '@/modules/statistics/use-statistics-store';
@@ -98,39 +97,22 @@ export function statisticsApi(): StatisticsApi {
 }
 
 export function userSettings(): UserSettingsApi {
-  const {
-    dateInputFormat,
-    decimalSeparator,
-    graphZeroBased,
-    privacyMode,
-    scrambleData,
-    scrambleMultiplier,
-    selectedTheme,
-    shouldShowAmount,
-    shouldShowPercentage,
-    showGraphRangeSelector,
-    subscriptDecimals,
-    thousandSeparator,
-    useHistoricalAssetBalances,
-  } = storeToRefs(useFrontendSettingsStore());
-  const { currencySymbol, floatingPrecision } = storeToRefs(useGeneralSettingsStore());
-
   return {
-    currencySymbol,
-    dateInputFormat,
-    decimalSeparator,
-    floatingPrecision,
-    graphZeroBased,
-    privacyMode,
-    scrambleData,
-    scrambleMultiplier,
-    selectedTheme,
-    shouldShowAmount,
-    shouldShowPercentage,
-    showGraphRangeSelector,
-    subscriptDecimals,
-    thousandSeparator,
-    useHistoricalAssetBalances,
+    currencySymbol: useSetting('currencySymbol'),
+    dateInputFormat: useSetting('dateInputFormat'),
+    decimalSeparator: useSetting('decimalSeparator'),
+    floatingPrecision: useSetting('floatingPrecision'),
+    graphZeroBased: useSetting('graphZeroBased'),
+    privacyMode: useSetting('privacyMode'),
+    scrambleData: useSetting('scrambleData'),
+    scrambleMultiplier: useSetting('scrambleMultiplier'),
+    selectedTheme: useSetting('selectedTheme'),
+    shouldShowAmount: useSetting('shouldShowAmount'),
+    shouldShowPercentage: useSetting('shouldShowPercentage'),
+    showGraphRangeSelector: useSetting('showGraphRangeSelector'),
+    subscriptDecimals: useSetting('subscriptDecimals'),
+    thousandSeparator: useSetting('thousandSeparator'),
+    useHistoricalAssetBalances: useSetting('useHistoricalAssetBalances'),
   };
 }
 
@@ -139,7 +121,7 @@ export function balancesApi(): BalancesApi {
   const { balancesByLocation, useBalances } = useAggregatedBalances();
   const { createKey, isPending } = useHistoricPriceCache();
   const { queryOnlyCacheHistoricalRates } = usePriceApi();
-  const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
+  const currencySymbol = useSetting('currencySymbol');
 
   return {
     assetPrice: (asset: string) => computed(() => getAssetPrice(asset, One)),

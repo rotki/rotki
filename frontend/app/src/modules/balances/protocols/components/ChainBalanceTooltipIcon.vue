@@ -2,7 +2,7 @@
 import type { Balance } from '@rotki/common';
 import { AssetAmountDisplay, FiatDisplay, ValueDisplay } from '@/modules/assets/amount-display/components';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
-import { useFrontendSettingsStore } from '@/modules/settings/use-frontend-settings-store';
+import { useSetting } from '@/modules/settings/use-setting';
 import ChainIcon from '@/modules/shell/components/ChainIcon.vue';
 
 const { chainId } = defineProps<{
@@ -11,7 +11,7 @@ const { chainId } = defineProps<{
   asset?: string;
 }>();
 
-const { shouldShowAmount } = storeToRefs(useFrontendSettingsStore());
+const shouldShowAmount = useSetting('shouldShowAmount');
 const { useChainName } = useSupportedChains();
 
 const chainName = useChainName(() => chainId);

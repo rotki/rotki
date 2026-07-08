@@ -5,6 +5,8 @@ import { CurrencyLocation } from '@/modules/assets/amount-display/currency-locat
 import { DateFormat } from '@/modules/core/common/date-format';
 import { TableColumn } from '@/modules/core/table/table-column';
 import { PrivacyMode } from '@/modules/session/types';
+import { useItemsPerPage } from '@/modules/session/use-items-per-page';
+import { useSettingsRepo } from '@/modules/settings/settings-repo';
 import {
   BalanceSource,
   BlockchainRefreshButtonBehaviour,
@@ -13,9 +15,8 @@ import {
   Quarter,
   SupportedLanguage,
 } from '@/modules/settings/types/frontend-settings';
-import { useFrontendSettingsStore } from '@/modules/settings/use-frontend-settings-store';
 
-describe('useFrontendSettingsStore', () => {
+describe('useSettingsRepo frontend channel', () => {
   let pinia: Pinia;
 
   beforeEach(() => {
@@ -23,30 +24,30 @@ describe('useFrontendSettingsStore', () => {
   });
 
   it('should update store state via update()', () => {
-    const store = useFrontendSettingsStore(pinia);
-    store.update({ defiSetupDone: true, language: SupportedLanguage.GR });
+    const store = useSettingsRepo(pinia);
+    store.updateFrontend({ defiSetupDone: true, language: SupportedLanguage.GR });
 
-    expect(store.defiSetupDone).toBe(true);
-    expect(store.language).toBe(SupportedLanguage.GR);
+    expect(store.frontend.defiSetupDone).toBe(true);
+    expect(store.frontend.language).toBe(SupportedLanguage.GR);
   });
 
   it('should default suppressNoIndexerChains to an empty array', () => {
-    const store = useFrontendSettingsStore(pinia);
-    expect(get(store.suppressNoIndexerChains)).toEqual([]);
+    const store = useSettingsRepo(pinia);
+    expect(get(store.frontend.suppressNoIndexerChains)).toEqual([]);
   });
 
   it('should default autoDetectTokensCooldownHours to 24', () => {
-    const store = useFrontendSettingsStore(pinia);
-    expect(get(store.autoDetectTokensCooldownHours)).toBe(24);
+    const store = useSettingsRepo(pinia);
+    expect(get(store.frontend.autoDetectTokensCooldownHours)).toBe(24);
   });
 
   it('should default lastAutoDetectAt to 0', () => {
-    const store = useFrontendSettingsStore(pinia);
-    expect(get(store.lastAutoDetectAt)).toBe(0);
+    const store = useSettingsRepo(pinia);
+    expect(get(store.frontend.lastAutoDetectAt)).toBe(0);
   });
 
   it('should restore settings', () => {
-    const store = useFrontendSettingsStore(pinia);
+    const store = useSettingsRepo(pinia);
     const state: FrontendSettings = {
       schemaVersion: 2,
       defiSetupDone: true,
@@ -139,13 +140,13 @@ describe('useFrontendSettingsStore', () => {
       gnosisPaySafeMigrationNeverNotify: false,
     };
 
-    store.update(state);
+    store.updateFrontend(state);
 
-    expect(store.defiSetupDone).toBe(true);
-    expect(store.language).toBe(SupportedLanguage.EN);
-    expect(store.timeframeSetting).toBe(TimeFramePeriod.YEAR);
-    expect(store.lastKnownTimeframe).toBe(TimeFramePeriod.TWO_WEEKS);
-    expect(store.visibleTimeframes).toStrictEqual([
+    expect(store.frontend.defiSetupDone).toBe(true);
+    expect(store.frontend.language).toBe(SupportedLanguage.EN);
+    expect(store.frontend.timeframeSetting).toBe(TimeFramePeriod.YEAR);
+    expect(store.frontend.lastKnownTimeframe).toBe(TimeFramePeriod.TWO_WEEKS);
+    expect(store.frontend.visibleTimeframes).toStrictEqual([
       TimeFramePeriod.ALL,
       TimeFramePeriod.YEAR,
       TimeFramePeriod.THREE_MONTHS,
@@ -153,57 +154,104 @@ describe('useFrontendSettingsStore', () => {
       TimeFramePeriod.TWO_WEEKS,
       TimeFramePeriod.WEEK,
     ]);
-    expect(store.queryPeriod).toBe(15);
-    expect(store.profitLossReportPeriod).toMatchObject({
+    expect(store.frontend.queryPeriod).toBe(15);
+    expect(store.frontend.profitLossReportPeriod).toMatchObject({
       year: '2018',
       quarter: Quarter.Q3,
     });
-    expect(store.thousandSeparator).toBe('|');
-    expect(store.decimalSeparator).toBe('-');
-    expect(store.currencyLocation).toBe(CurrencyLocation.BEFORE);
-    expect(store.abbreviateNumber).toBe(false);
-    expect(store.minimumDigitToBeAbbreviated).toBe(4);
-    expect(store.refreshPeriod).toBe(120);
-    expect(store.explorers).toStrictEqual({
+    expect(store.frontend.thousandSeparator).toBe('|');
+    expect(store.frontend.decimalSeparator).toBe('-');
+    expect(store.frontend.currencyLocation).toBe(CurrencyLocation.BEFORE);
+    expect(store.frontend.abbreviateNumber).toBe(false);
+    expect(store.frontend.minimumDigitToBeAbbreviated).toBe(4);
+    expect(store.frontend.refreshPeriod).toBe(120);
+    expect(store.frontend.explorers).toStrictEqual({
       [Blockchain.ETH]: {
         transaction: 'explore/tx',
       },
     });
-    expect(store.itemsPerPage).toBe(25);
-    expect(store.valueRoundingMode).toBe(BigNumber.ROUND_DOWN);
-    expect(store.amountRoundingMode).toBe(BigNumber.ROUND_UP);
-    expect(store.selectedTheme).toBe(Theme.AUTO);
-    expect(store.lightTheme).toStrictEqual({
+    expect(store.frontend.itemsPerPage).toBe(25);
+    expect(store.frontend.valueRoundingMode).toBe(BigNumber.ROUND_DOWN);
+    expect(store.frontend.amountRoundingMode).toBe(BigNumber.ROUND_UP);
+    expect(store.frontend.selectedTheme).toBe(Theme.AUTO);
+    expect(store.frontend.lightTheme).toStrictEqual({
       primary: '#000000',
       accent: '#ffffff',
       graph: '#555555',
     });
-    expect(store.darkTheme).toStrictEqual({
+    expect(store.frontend.darkTheme).toStrictEqual({
       primary: '#ffffff',
       accent: '#000000',
       graph: '#555555',
     });
-    expect(store.graphZeroBased).toBe(true);
-    expect(store.ignoreSnapshotError).toBe(false);
-    expect(store.showGraphRangeSelector).toBe(true);
-    expect(store.nftsInNetValue).toBe(true);
-    expect(store.persistTableSorting).toBe(false);
-    expect(store.renderAllNftImages).toBe(false);
-    expect(store.whitelistedDomainsForNftImages).toStrictEqual([]);
-    expect(store.dashboardTablesVisibleColumns).toStrictEqual({
+    expect(store.frontend.graphZeroBased).toBe(true);
+    expect(store.frontend.ignoreSnapshotError).toBe(false);
+    expect(store.frontend.showGraphRangeSelector).toBe(true);
+    expect(store.frontend.nftsInNetValue).toBe(true);
+    expect(store.frontend.persistTableSorting).toBe(false);
+    expect(store.frontend.renderAllNftImages).toBe(false);
+    expect(store.frontend.whitelistedDomainsForNftImages).toStrictEqual([]);
+    expect(store.frontend.dashboardTablesVisibleColumns).toStrictEqual({
       [DashboardTableType.ASSETS]: [TableColumn.PERCENTAGE_OF_TOTAL_NET_VALUE],
       [DashboardTableType.LIABILITIES]: [TableColumn.PERCENTAGE_OF_TOTAL_NET_VALUE],
       [DashboardTableType.NFT]: [TableColumn.PERCENTAGE_OF_TOTAL_NET_VALUE],
       [DashboardTableType.LIQUIDITY_POSITION]: [TableColumn.PERCENTAGE_OF_TOTAL_NET_VALUE],
       [DashboardTableType.BLOCKCHAIN_ASSET_BALANCES]: [TableColumn.PERCENTAGE_OF_TOTAL_NET_VALUE],
     });
-    expect(store.dateInputFormat).toBe(DateFormat.DateMonthYearHourMinuteSecond);
-    expect(store.versionUpdateCheckFrequency).toBe(24);
-    expect(store.enableAliasNames).toBe(true);
-    expect(store.blockchainRefreshButtonBehaviour).toBe(
+    expect(store.frontend.dateInputFormat).toBe(DateFormat.DateMonthYearHourMinuteSecond);
+    expect(store.frontend.versionUpdateCheckFrequency).toBe(24);
+    expect(store.frontend.enableAliasNames).toBe(true);
+    expect(store.frontend.blockchainRefreshButtonBehaviour).toBe(
       BlockchainRefreshButtonBehaviour.ONLY_REFRESH_BALANCES,
     );
-    expect(store.savedFilters).toMatchObject({});
-    expect(store.persistPrivacySettings).toBe(false);
+    expect(store.frontend.savedFilters).toMatchObject({});
+    expect(store.frontend.persistPrivacySettings).toBe(false);
+  });
+});
+
+describe('useSettingsRepo registry effects and mirrors', () => {
+  let pinia: Pinia;
+
+  beforeEach(() => {
+    pinia = createPinia();
+  });
+
+  it('should reconfigure the BigNumber format when the separators change', () => {
+    const store = useSettingsRepo(pinia);
+
+    store.updateFrontend({ decimalSeparator: '-', thousandSeparator: '|' });
+
+    // the thousandSeparator/decimalSeparator effect runs applyBigNumberFormat post-persist
+    expect(new BigNumber(1234567.89).toFormat()).toBe('1|234|567-89');
+  });
+
+  it('should not re-run the separator effect when those keys are unchanged', () => {
+    const store = useSettingsRepo(pinia);
+    store.updateFrontend({ decimalSeparator: '.', thousandSeparator: ',' });
+
+    // an update that does not touch the separators must leave the format intact
+    store.updateFrontend({ language: SupportedLanguage.GR });
+
+    expect(new BigNumber(1234567.89).toFormat()).toBe('1,234,567.89');
+  });
+
+  it('should sync the itemsPerPage mirror ref when itemsPerPage changes', () => {
+    const itemsPerPage = useItemsPerPage();
+    set(itemsPerPage, 10);
+    const store = useSettingsRepo(pinia);
+
+    store.updateFrontend({ itemsPerPage: 25 });
+
+    expect(get(itemsPerPage)).toBe(25);
+  });
+
+  it('should leave the itemsPerPage mirror untouched when itemsPerPage is not in the patch', () => {
+    const itemsPerPage = useItemsPerPage();
+    set(itemsPerPage, 99);
+    const store = useSettingsRepo(pinia);
+
+    store.updateFrontend({ language: SupportedLanguage.GR });
+
+    expect(get(itemsPerPage)).toBe(99);
   });
 });

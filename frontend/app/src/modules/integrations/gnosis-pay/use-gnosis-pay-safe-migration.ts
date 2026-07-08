@@ -8,7 +8,7 @@ import { logger } from '@/modules/core/common/logging/logging';
 import { useNotifications } from '@/modules/core/notifications/use-notifications';
 import { useGnosisPaySiweApi } from '@/modules/integrations/gnosis-pay/use-gnosis-pay-api';
 import { useExternalApiKeys } from '@/modules/settings/api-keys/external/use-external-api-keys';
-import { useFrontendSettingsStore } from '@/modules/settings/use-frontend-settings-store';
+import { useSetting } from '@/modules/settings/use-setting';
 import { useSettingsOperations } from '@/modules/settings/use-settings-operations';
 
 const WEEK_IN_SECONDS = 7 * 24 * 60 * 60;
@@ -46,7 +46,8 @@ export const useGnosisPaySafeMigration = createSharedComposable((): UseGnosisPay
   const { addAccounts } = useBlockchainAccountManagement();
   const { notify, showErrorMessage, showSuccessMessage } = useNotifications();
   const { updateFrontendSetting } = useSettingsOperations();
-  const settingsStore = useFrontendSettingsStore();
+  const gnosisPaySafeMigrationNeverNotify = useSetting('gnosisPaySafeMigrationNeverNotify');
+  const gnosisPaySafeMigrationLastNotified = useSetting('gnosisPaySafeMigrationLastNotified');
   const { getApiKey, keys, load } = useExternalApiKeys();
 
   const isGnosisPayConfigured = async (): Promise<boolean> => {
@@ -107,10 +108,10 @@ export const useGnosisPaySafeMigration = createSharedComposable((): UseGnosisPay
 
   const notifyIfNeeded = async (): Promise<void> => {
     const safe = get(untrackedSafe);
-    if (!safe || settingsStore.gnosisPaySafeMigrationNeverNotify)
+    if (!safe || get(gnosisPaySafeMigrationNeverNotify))
       return;
 
-    const lastNotified = settingsStore.gnosisPaySafeMigrationLastNotified;
+    const lastNotified = get(gnosisPaySafeMigrationLastNotified);
     const now = dayjs().unix();
     if (lastNotified !== 0 && (now - lastNotified) <= WEEK_IN_SECONDS)
       return;

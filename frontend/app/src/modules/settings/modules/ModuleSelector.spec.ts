@@ -7,7 +7,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { Module } from '@/modules/core/common/modules';
 import { useSettingsApi } from '@/modules/settings/api/use-settings-api';
 import ModuleSelector from '@/modules/settings/modules/ModuleSelector.vue';
-import { useGeneralSettingsStore } from '@/modules/settings/use-general-settings-store';
+import { useSettingsRepo } from '@/modules/settings/settings-repo';
 
 vi.mock('@/modules/settings/api/use-settings-api', (): Record<string, unknown> => ({
   useSettingsApi: vi.fn().mockReturnValue({
@@ -17,7 +17,7 @@ vi.mock('@/modules/settings/api/use-settings-api', (): Record<string, unknown> =
 
 describe('module-selector', () => {
   let wrapper: VueWrapper<InstanceType<typeof ModuleSelector>>;
-  let settingsStore: ReturnType<typeof useGeneralSettingsStore>;
+  let settingsStore: ReturnType<typeof useSettingsRepo>;
   let pinia: Pinia;
   let api: ReturnType<typeof useSettingsApi>;
 
@@ -33,7 +33,7 @@ describe('module-selector', () => {
   beforeEach((): void => {
     pinia = createPinia();
     setActivePinia(pinia);
-    settingsStore = useGeneralSettingsStore();
+    settingsStore = useSettingsRepo();
     api = useSettingsApi();
     document.body.dataset.app = 'true';
 
@@ -62,6 +62,6 @@ describe('module-selector', () => {
     await nextTick();
     await flushPromises();
     expect(wrapper.find<HTMLInputElement>('[data-cy=eth2-module-switch] input').element.checked).toBe(false);
-    expect(settingsStore.activeModules).toEqual([]);
+    expect(settingsStore.general.activeModules).toEqual([]);
   });
 });

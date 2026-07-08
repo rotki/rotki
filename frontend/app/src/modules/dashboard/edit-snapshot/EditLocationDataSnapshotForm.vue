@@ -6,7 +6,7 @@ import LocationSelector from '@/modules/balances/LocationSelector.vue';
 import { useFormStateWatcher } from '@/modules/core/common/use-form';
 import { useRefPropVModel } from '@/modules/core/common/validation/model';
 import { toMessages } from '@/modules/core/common/validation/validation';
-import { useGeneralSettingsStore } from '@/modules/settings/use-general-settings-store';
+import { useSetting } from '@/modules/settings/use-setting';
 import AmountInput from '@/modules/shell/components/inputs/AmountInput.vue';
 
 const stateUpdated = defineModel<boolean>('stateUpdated', { default: false, required: false });
@@ -19,7 +19,7 @@ const { excludedLocations = [] } = defineProps<{
 const location = useRefPropVModel(model, 'location');
 const value = useRefPropVModel(model, 'usdValue');
 
-const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
+const currencySymbol = useSetting('currencySymbol');
 
 const { t } = useI18n({ useScope: 'global' });
 

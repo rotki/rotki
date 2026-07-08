@@ -6,7 +6,7 @@ import { libraryDefaults } from '@test/utils/provide-defaults';
 import { mount, type VueWrapper } from '@vue/test-utils';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { computed } from 'vue';
-import { useFrontendSettingsStore } from '@/modules/settings/use-frontend-settings-store';
+import { useSettingsRepo } from '@/modules/settings/settings-repo';
 import HashLink from '@/modules/shell/components/HashLink.vue';
 
 vi.mock('@/modules/core/common/use-supported-chains', (): Record<string, unknown> => ({
@@ -226,7 +226,7 @@ describe('hash-link', () => {
 
   describe('scramble data', () => {
     beforeEach(async () => {
-      useFrontendSettingsStore().update({ scrambleData: true });
+      useSettingsRepo().updateFrontend({ scrambleData: true });
     });
 
     it('should scramble address when scrambleData is enabled', () => {
@@ -244,9 +244,9 @@ describe('hash-link', () => {
     });
 
     it('should apply blur class when privacy mode is semi-private or higher', async () => {
-      const frontendStore = useFrontendSettingsStore();
+      const frontendStore = useSettingsRepo();
       // PrivacyMode.SEMI_PRIVATE = 1 means shouldShowAmount is false
-      frontendStore.update({
+      frontendStore.updateFrontend({
         privacyMode: 1,
       });
       await nextTick();

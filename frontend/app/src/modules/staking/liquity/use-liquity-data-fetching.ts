@@ -13,7 +13,7 @@ import { TaskType } from '@/modules/core/tasks/task-type';
 import { isActionableFailure, useTaskHandler } from '@/modules/core/tasks/use-task-handler';
 import { useTaskStore } from '@/modules/core/tasks/use-task-store';
 import { usePremium } from '@/modules/premium/use-premium';
-import { useGeneralSettingsStore } from '@/modules/settings/use-general-settings-store';
+import { useSetting } from '@/modules/settings/use-setting';
 import { useStatusUpdater } from '@/modules/shell/sync-progress/use-status-updater';
 import { useLiquityApi } from '@/modules/staking/liquity/use-liquity-api';
 import { useLiquityStore } from '@/modules/staking/liquity/use-liquity-store';
@@ -27,7 +27,7 @@ interface UseLiquityDataFetchingReturn {
 
 export function useLiquityDataFetching(): UseLiquityDataFetchingReturn {
   const isPremium = usePremium();
-  const { activeModules } = storeToRefs(useGeneralSettingsStore());
+  const activeModules = useSetting('activeModules');
   const { t } = useI18n({ useScope: 'global' });
   const { runTask } = useTaskHandler();
   const { isTaskRunning } = useTaskStore();

@@ -5,6 +5,7 @@ import { FiatDisplay } from '@/modules/assets/amount-display/components';
 import AssetBalances from '@/modules/balances/AssetBalances.vue';
 import BinanceSavingDetail from '@/modules/balances/exchanges/BinanceSavingDetail.vue';
 import { useBinanceSavings } from '@/modules/balances/exchanges/use-binance-savings';
+import { useConnectedExchangesStore } from '@/modules/balances/exchanges/use-connected-exchanges-store';
 import { useAggregatedBalances } from '@/modules/balances/use-aggregated-balances';
 import { useBalanceRefresh } from '@/modules/balances/use-balance-refresh';
 import { uniqueStrings } from '@/modules/core/common/data/data';
@@ -14,7 +15,6 @@ import { useTaskStore } from '@/modules/core/tasks/use-task-store';
 import LocationDisplay from '@/modules/history/LocationDisplay.vue';
 import HideSmallBalances from '@/modules/settings/HideSmallBalances.vue';
 import { BalanceSource } from '@/modules/settings/types/frontend-settings';
-import { useSessionSettingsStore } from '@/modules/settings/use-session-settings-store';
 import InternalLink from '@/modules/shell/components/InternalLink.vue';
 import TablePageLayout from '@/modules/shell/layout/TablePageLayout.vue';
 import { Routes } from '@/router/routes';
@@ -34,7 +34,7 @@ const selectedTab = ref<string | undefined>(exchange ?? undefined);
 const { useIsTaskRunning } = useTaskStore();
 const { getExchangeBalances } = useAggregatedBalances();
 const { refreshExchangeSavings } = useBinanceSavings();
-const { connectedExchanges } = storeToRefs(useSessionSettingsStore());
+const { connectedExchanges } = storeToRefs(useConnectedExchangesStore());
 
 const { refreshBalance, refreshExchangeBalance } = useBalanceRefresh();
 

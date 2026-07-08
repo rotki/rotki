@@ -5,7 +5,7 @@ import { useAccountLoading } from '@/modules/accounts/use-account-loading';
 import { useQueriedAddressOperations } from '@/modules/accounts/use-queried-address-operations';
 import { type Module, SUPPORTED_MODULES } from '@/modules/core/common/modules';
 import { useSessionMetadataStore } from '@/modules/session/use-session-metadata-store';
-import { useGeneralSettingsStore } from '@/modules/settings/use-general-settings-store';
+import { useSetting } from '@/modules/settings/use-setting';
 import AppImage from '@/modules/shell/components/AppImage.vue';
 
 const emit = defineEmits<{
@@ -13,7 +13,7 @@ const emit = defineEmits<{
 }>();
 
 const enabledModules = ref<Module[]>([]);
-const { activeModules } = storeToRefs(useGeneralSettingsStore());
+const activeModules = useSetting('activeModules');
 const { queriedAddresses } = storeToRefs(useSessionMetadataStore());
 const { fetchQueriedAddresses } = useQueriedAddressOperations();
 

@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useAutoTokenDetection } from '@/modules/balances/blockchain/use-auto-token-detection';
-import { useFrontendSettingsStore } from '@/modules/settings/use-frontend-settings-store';
+import { useSettingsRepo } from '@/modules/settings/settings-repo';
 
 const detectAllTokens = vi.fn();
 const updateFrontendSetting = vi.fn();
@@ -30,7 +30,7 @@ describe('useAutoTokenDetection', () => {
     setActivePinia(createPinia());
     detectAllTokens.mockReset().mockResolvedValue(undefined);
     updateFrontendSetting.mockReset().mockResolvedValue({ success: true });
-    useFrontendSettingsStore().update({
+    useSettingsRepo().updateFrontend({
       autoDetectTokensCooldownHours: 24,
       autoDetectTokensOnLogin: true,
       lastAutoDetectAt: 0,
@@ -46,7 +46,7 @@ describe('useAutoTokenDetection', () => {
   });
 
   it('should skip detection when auto-detect is disabled', async () => {
-    useFrontendSettingsStore().update({ autoDetectTokensOnLogin: false });
+    useSettingsRepo().updateFrontend({ autoDetectTokensOnLogin: false });
     const { maybeDetect } = useAutoTokenDetection();
     await maybeDetect();
 
@@ -55,7 +55,7 @@ describe('useAutoTokenDetection', () => {
   });
 
   it('should skip detection when last run is within the cooldown window', async () => {
-    useFrontendSettingsStore().update({
+    useSettingsRepo().updateFrontend({
       autoDetectTokensCooldownHours: 24,
       lastAutoDetectAt: Date.now() - 1 * HOUR_MS,
     });
@@ -67,7 +67,7 @@ describe('useAutoTokenDetection', () => {
   });
 
   it('should run detection when the cooldown window has elapsed', async () => {
-    useFrontendSettingsStore().update({
+    useSettingsRepo().updateFrontend({
       autoDetectTokensCooldownHours: 24,
       lastAutoDetectAt: Date.now() - 25 * HOUR_MS,
     });
@@ -95,14 +95,14 @@ describe('useAutoTokenDetection', () => {
   });
 
   it('should report the skip reason via skipReason()', () => {
-    const store = useFrontendSettingsStore();
+    const store = useSettingsRepo();
     const { skipReason } = useAutoTokenDetection();
     expect(skipReason()).toBeNull();
 
-    store.update({ autoDetectTokensOnLogin: false });
+    store.updateFrontend({ autoDetectTokensOnLogin: false });
     expect(skipReason()).toBe('auto-detect-tokens-on-login disabled');
 
-    store.update({
+    store.updateFrontend({
       autoDetectTokensCooldownHours: 24,
       autoDetectTokensOnLogin: true,
       lastAutoDetectAt: Date.now() - 1 * HOUR_MS,
@@ -111,7 +111,7 @@ describe('useAutoTokenDetection', () => {
   });
 
   it('should run detection when lastAutoDetectAt is in the future (clock skew)', async () => {
-    useFrontendSettingsStore().update({
+    useSettingsRepo().updateFrontend({
       autoDetectTokensCooldownHours: 24,
       lastAutoDetectAt: Date.now() + 48 * HOUR_MS,
     });

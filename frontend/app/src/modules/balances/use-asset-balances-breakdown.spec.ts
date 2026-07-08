@@ -6,11 +6,11 @@ import { updateGeneralSettings } from '@test/utils/general-settings';
 import { testAccounts, testEthereumBalances, testExchangeBalances, testManualBalances } from '@test/utils/test-data';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
+import { useConnectedExchangesStore } from '@/modules/balances/exchanges/use-connected-exchanges-store';
 import { BalanceType } from '@/modules/balances/types/balances';
 import { useAssetBalancesBreakdown } from '@/modules/balances/use-asset-balances-breakdown';
 import { useBalancesStore } from '@/modules/balances/use-balances-store';
 import { TRADE_LOCATION_BANKS, TRADE_LOCATION_BLOCKCHAIN, TRADE_LOCATION_EXTERNAL } from '@/modules/core/common/defaults';
-import { useSessionSettingsStore } from '@/modules/settings/use-session-settings-store';
 
 vi.mock('@/modules/core/common/use-supported-chains', async () => {
   const { computed } = await import('vue');
@@ -41,7 +41,7 @@ describe('useAssetBalancesBreakdown', () => {
     const { exchangeBalances, manualBalances } = storeToRefs(useBalancesStore());
     const { updateAccounts } = useBlockchainAccountsStore();
     const { updateBalances } = useBalancesStore();
-    const { connectedExchanges } = storeToRefs(useSessionSettingsStore());
+    const { connectedExchanges } = storeToRefs(useConnectedExchangesStore());
     set(connectedExchanges, [{
       location: 'kraken',
       name: 'Kraken 1',

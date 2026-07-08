@@ -13,12 +13,12 @@ import {
   type PrioritizedListId,
   PRIVATE_ADDRESSBOOK_PRIO_LIST_ITEM,
 } from '@/modules/settings/types/prioritized-list-id';
-import { useGeneralSettingsStore } from '@/modules/settings/use-general-settings-store';
+import { useSetting } from '@/modules/settings/use-setting';
 import ActionStatusIndicator from '@/modules/shell/components/error/ActionStatusIndicator.vue';
 import PrioritizedList from '@/modules/shell/components/PrioritizedList.vue';
 
 const currentAddressNamePriorities = ref<PrioritizedListId[]>([]);
-const { addressNamePriority } = storeToRefs(useGeneralSettingsStore());
+const addressNamePriority = useSetting('addressNamePriority');
 const { resetAddressesNames } = useAddressNameResolution();
 
 function finishEditing() {

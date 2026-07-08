@@ -7,7 +7,7 @@ import { type AssetResolutionOptions, useAssetInfoRetrieval } from '@/modules/as
 import { useAssetsStore } from '@/modules/assets/use-assets-store';
 import { isBlockchain } from '@/modules/core/common/chains';
 import { useCopy } from '@/modules/core/common/use-clipboard';
-import { useFrontendSettingsStore } from '@/modules/settings/use-frontend-settings-store';
+import { useSetting } from '@/modules/settings/use-setting';
 import AppImage from '@/modules/shell/components/AppImage.vue';
 import CounterpartyDisplay from '@/modules/shell/components/display/CounterpartyDisplay.vue';
 import EvmChainIcon from '@/modules/shell/components/EvmChainIcon.vue';
@@ -57,7 +57,7 @@ const { getAssetIconUrl } = useAssetsStore();
 const { checkIfAssetExists } = useAssetIconCheck();
 const { currencies } = useCurrencies();
 const { useAssetInfo } = useAssetInfoRetrieval();
-const { shouldShowAmount } = storeToRefs(useFrontendSettingsStore());
+const shouldShowAmount = useSetting('shouldShowAmount');
 
 const mappedIdentifier = computed<string>(() => {
   const id = getIdentifierFromSymbolMap(identifier);

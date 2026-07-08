@@ -17,7 +17,7 @@ import SnapshotFiatDisplay from '@/modules/dashboard/snapshots/components/Snapsh
 import { useSnapshotAssetFilters } from '@/modules/dashboard/snapshots/composables/use-snapshot-asset-filters';
 import { getTotalValue } from '@/modules/dashboard/snapshots/utils/snapshot-totals';
 import { getSnapshotWarnings, type SnapshotWarning } from '@/modules/dashboard/snapshots/utils/snapshot-warnings';
-import { useGeneralSettingsStore } from '@/modules/settings/use-general-settings-store';
+import { useSetting } from '@/modules/settings/use-setting';
 import RowActions from '@/modules/shell/components/RowActions.vue';
 
 type CategoryFilter = 'all' | 'asset' | 'liability' | 'nft';
@@ -40,7 +40,7 @@ const emit = defineEmits<{
 
 const { t } = useI18n({ useScope: 'global' });
 
-const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
+const currencySymbol = useSetting('currencySymbol');
 const { getAssetField } = useAssetInfoRetrieval();
 const { isIgnoredAsset, isSpamAsset } = useSnapshotAssetFilters();
 

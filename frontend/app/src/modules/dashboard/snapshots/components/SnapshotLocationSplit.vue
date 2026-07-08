@@ -5,7 +5,7 @@ import SnapshotFiatDisplay from '@/modules/dashboard/snapshots/components/Snapsh
 import { useHistoricFiatConversion } from '@/modules/dashboard/snapshots/composables/use-historic-fiat-conversion';
 import { convertFiatToUsd, convertUsdToFiat } from '@/modules/dashboard/snapshots/utils/snapshot-fx';
 import { approxEqualUsd, type LocationSplit } from '@/modules/dashboard/snapshots/utils/snapshot-math';
-import { useGeneralSettingsStore } from '@/modules/settings/use-general-settings-store';
+import { useSetting } from '@/modules/settings/use-setting';
 import AmountInput from '@/modules/shell/components/inputs/AmountInput.vue';
 
 /** The resolved split in USD; the first row absorbs rounding so it sums to `total`. */
@@ -35,7 +35,7 @@ interface SplitRow {
 
 const { t } = useI18n({ useScope: 'global' });
 
-const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
+const currencySymbol = useSetting('currencySymbol');
 const { isUsd, rate } = useHistoricFiatConversion(() => timestamp);
 
 const rows = ref<SplitRow[]>([{ amount: '', location: '' }, { amount: '', location: '' }]);

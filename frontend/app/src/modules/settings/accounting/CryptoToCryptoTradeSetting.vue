@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import SettingsOption from '@/modules/settings/controls/SettingsOption.vue';
-import { useAccountingSettingsStore } from '@/modules/settings/use-accounting-settings-store';
+import { useSetting } from '@/modules/settings/use-setting';
 
 const crypto2CryptoTrades = ref(false);
-const { includeCrypto2crypto } = storeToRefs(useAccountingSettingsStore());
+const includeCrypto2crypto = useSetting('includeCrypto2crypto');
 
 onMounted(() => {
   set(crypto2CryptoTrades, get(includeCrypto2crypto));

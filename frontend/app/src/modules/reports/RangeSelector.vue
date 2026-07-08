@@ -7,7 +7,7 @@ import dayjs from 'dayjs';
 import { useRefPropVModel } from '@/modules/core/common/validation/model';
 import { toMessages } from '@/modules/core/common/validation/validation';
 import ReportPeriodSelector from '@/modules/reports/ReportPeriodSelector.vue';
-import { useFrontendSettingsStore } from '@/modules/settings/use-frontend-settings-store';
+import { useSetting } from '@/modules/settings/use-setting';
 import { useSettingsOperations } from '@/modules/settings/use-settings-operations';
 import DateTimeRangePicker from '@/modules/shell/components/inputs/DateTimeRangePicker.vue';
 
@@ -17,8 +17,7 @@ const emit = defineEmits<{
   'update:valid': [valid: boolean];
 }>();
 
-const store = useFrontendSettingsStore();
-const { profitLossReportPeriod } = storeToRefs(store);
+const profitLossReportPeriod = useSetting('profitLossReportPeriod');
 const { updateFrontendSetting } = useSettingsOperations();
 
 const year = computed<string>(() => get(profitLossReportPeriod).year);

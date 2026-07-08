@@ -6,11 +6,11 @@ import { useValidation } from '@/modules/core/common/use-validation';
 import { toMessages } from '@/modules/core/common/validation/validation';
 import SettingsItem from '@/modules/settings/controls/SettingsItem.vue';
 import SettingsOption from '@/modules/settings/controls/SettingsOption.vue';
-import { useFrontendSettingsStore } from '@/modules/settings/use-frontend-settings-store';
+import { useSetting } from '@/modules/settings/use-setting';
 
 const versionUpdateCheckFrequency = ref<string>('');
 const versionUpdateCheckEnabled = ref<boolean>(false);
-const { versionUpdateCheckFrequency: existingFrequency } = storeToRefs(useFrontendSettingsStore());
+const existingFrequency = useSetting('versionUpdateCheckFrequency');
 const maxVersionUpdateCheckFrequency = Constraints.MAX_HOURS_DELAY;
 const { t } = useI18n({ useScope: 'global' });
 
@@ -58,7 +58,6 @@ onMounted(() => {
     <SettingsOption
       #default="{ updateImmediate }"
       setting="versionUpdateCheckFrequency"
-      frontend-setting
       :transform="switchTransform"
       @finished="resetVersionUpdateCheckFrequency()"
     >
@@ -73,7 +72,6 @@ onMounted(() => {
       <SettingsOption
         #default="{ error, success, update }"
         setting="versionUpdateCheckFrequency"
-        frontend-setting
         :transform="frequencyTransform"
         :error-message="t('general_settings.version_update_check.validation.error')"
         @finished="resetVersionUpdateCheckFrequency()"

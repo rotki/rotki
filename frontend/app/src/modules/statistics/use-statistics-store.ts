@@ -8,9 +8,7 @@ import { usePriceUtils } from '@/modules/assets/prices/use-price-utils';
 import { useAggregatedBalances } from '@/modules/balances/use-aggregated-balances';
 import { useBalancesStore } from '@/modules/balances/use-balances-store';
 import { millisecondsToSeconds } from '@/modules/core/common/data/date';
-import { useFrontendSettingsStore } from '@/modules/settings/use-frontend-settings-store';
-import { useGeneralSettingsStore } from '@/modules/settings/use-general-settings-store';
-import { useSessionSettingsStore } from '@/modules/settings/use-session-settings-store';
+import { useSetting } from '@/modules/settings/use-setting';
 
 function defaultNetValue(): NetValue {
   return {
@@ -31,10 +29,15 @@ interface Overall {
 export const useStatisticsStore = defineStore('statistics', () => {
   const netValue = ref<NetValue>(defaultNetValue());
 
-  const { nftsInNetValue, scrambleData, scrambleMultiplier, shouldShowAmount, valueRoundingMode } = storeToRefs(useFrontendSettingsStore());
-  const { currencySymbol, floatingPrecision } = storeToRefs(useGeneralSettingsStore());
+  const nftsInNetValue = useSetting('nftsInNetValue');
+  const scrambleData = useSetting('scrambleData');
+  const scrambleMultiplier = useSetting('scrambleMultiplier');
+  const shouldShowAmount = useSetting('shouldShowAmount');
+  const valueRoundingMode = useSetting('valueRoundingMode');
+  const currencySymbol = useSetting('currencySymbol');
+  const floatingPrecision = useSetting('floatingPrecision');
   const { nonFungibleTotalValue } = storeToRefs(useBalancesStore());
-  const { timeframe } = storeToRefs(useSessionSettingsStore());
+  const timeframe = useSetting('timeframe');
   const { getExchangeRate } = usePriceUtils();
 
   const { getBalances, getLiabilities } = useAggregatedBalances();

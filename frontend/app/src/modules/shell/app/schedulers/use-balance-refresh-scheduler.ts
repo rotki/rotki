@@ -1,7 +1,7 @@
 import { startPromise } from '@shared/utils';
 import { useSessionAuthStore } from '@/modules/auth/use-session-auth-store';
 import { useBalanceFetching } from '@/modules/balances/use-balance-fetching';
-import { useFrontendSettingsStore } from '@/modules/settings/use-frontend-settings-store';
+import { useSetting } from '@/modules/settings/use-setting';
 import { useIntervalScheduler } from './use-interval-scheduler';
 
 const MINUTES_TO_MS = 60 * 1_000;
@@ -13,7 +13,7 @@ interface UseBalanceRefreshSchedulerReturn {
 
 export function useBalanceRefreshScheduler(): UseBalanceRefreshSchedulerReturn {
   const { canRequestData } = storeToRefs(useSessionAuthStore());
-  const { refreshPeriod } = storeToRefs(useFrontendSettingsStore());
+  const refreshPeriod = useSetting('refreshPeriod');
   const { autoRefresh } = useBalanceFetching();
 
   const period = get(refreshPeriod) * MINUTES_TO_MS;

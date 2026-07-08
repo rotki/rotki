@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import SettingsOption from '@/modules/settings/controls/SettingsOption.vue';
-import { useGeneralSettingsStore } from '@/modules/settings/use-general-settings-store';
+import { useSetting } from '@/modules/settings/use-setting';
 import CardTitle from '@/modules/shell/components/CardTitle.vue';
 
 const emit = defineEmits<{
@@ -12,7 +12,7 @@ const { t } = useI18n({ useScope: 'global' });
 const updated = () => emit('updated');
 
 const inferZeroTimedBalances = ref<boolean>(false);
-const { inferZeroTimedBalances: enabled } = storeToRefs(useGeneralSettingsStore());
+const enabled = useSetting('inferZeroTimedBalances');
 
 function resetState() {
   set(inferZeroTimedBalances, get(enabled));

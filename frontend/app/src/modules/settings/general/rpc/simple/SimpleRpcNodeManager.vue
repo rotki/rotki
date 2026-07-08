@@ -2,7 +2,7 @@
 import type { ValidationErrors } from '@/modules/core/api/types/errors';
 import { useConfirmStore } from '@/modules/core/common/use-confirm-store';
 import SimpleRpcNodeManagerForm from '@/modules/settings/general/rpc/simple/SimpleRpcNodeManagerForm.vue';
-import { useGeneralSettingsStore } from '@/modules/settings/use-general-settings-store';
+import { useSetting } from '@/modules/settings/use-setting';
 import { SettingLocation, useSettings } from '@/modules/settings/use-settings';
 import BigDialog from '@/modules/shell/components/dialogs/BigDialog.vue';
 import RowActions from '@/modules/shell/components/RowActions.vue';
@@ -21,10 +21,10 @@ const form = useTemplateRef<InstanceType<typeof SimpleRpcNodeManagerForm>>('form
 const stateUpdated = ref(false);
 const inputUrl = ref<string>('');
 
-const generalSettings = storeToRefs(useGeneralSettingsStore());
+const settingValue = useSetting(setting);
 const { updateSetting } = useSettings();
 
-const value = computed(() => get(generalSettings[setting]));
+const value = computed(() => get(settingValue));
 
 function addNewRpcNode() {
   set(errorMessages, {});

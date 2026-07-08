@@ -1,7 +1,7 @@
 import type { ComputedRef, MaybeRefOrGetter } from 'vue';
 import { usePriceUtils } from '@/modules/assets/prices/use-price-utils';
 import { PriceOracle } from '@/modules/settings/types/price-oracle';
-import { useGeneralSettingsStore } from '@/modules/settings/use-general-settings-store';
+import { useSetting } from '@/modules/settings/use-setting';
 
 export interface OracleInfoOptions {
   priceAsset: MaybeRefOrGetter<string>;
@@ -18,7 +18,7 @@ export function useOracleInfo(options: OracleInfoOptions): OracleInfoReturn {
 
   const { t } = useI18n({ useScope: 'global' });
   const { getAssetPriceOracle, isManualAssetPrice } = usePriceUtils();
-  const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
+  const currencySymbol = useSetting('currencySymbol');
 
   const isSameAsMainCurrency = computed<boolean>(() => toValue(priceAsset) === get(currencySymbol));
 

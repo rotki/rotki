@@ -12,7 +12,7 @@ import { groupAssetBreakdown } from '@/modules/core/common/display/balances';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
 import { TableId, useRememberTableSorting } from '@/modules/core/table/use-remember-table-sorting';
 import LocationDisplay from '@/modules/history/LocationDisplay.vue';
-import { useGeneralSettingsStore } from '@/modules/settings/use-general-settings-store';
+import { useSetting } from '@/modules/settings/use-setting';
 import PercentageDisplay from '@/modules/shell/components/display/PercentageDisplay.vue';
 
 const {
@@ -65,7 +65,7 @@ const rows = computed<AssetBreakdown[]>(() => {
     matchChain(item.location) || item.location);
 });
 
-const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
+const currencySymbol = useSetting('currencySymbol');
 
 const sort = ref<DataTableSortData<AssetBreakdown>>({
   column: 'value',

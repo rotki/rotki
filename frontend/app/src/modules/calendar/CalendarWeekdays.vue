@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { getDayNames } from '@/modules/core/common/data/date';
-import { useFrontendSettingsStore } from '@/modules/settings/use-frontend-settings-store';
+import { useSetting } from '@/modules/settings/use-setting';
 
-const { language } = storeToRefs(useFrontendSettingsStore());
+const language = useSetting('language');
 
 const getDayNamesReactify = reactify(getDayNames);
 const weekdays = getDayNamesReactify(language);
