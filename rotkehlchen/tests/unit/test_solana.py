@@ -88,8 +88,20 @@ def test_vendored_solana_types() -> None:
 def test_solana_rpc_invalid_envelope_raises_serde_error(payload: Any) -> None:
     client = Client(endpoint='http://example.invalid', timeout=1)
     with (
-        patch('requests.post', return_value=mock_solana_rpc_response(payload)),
+        patch.object(client.session, 'post', return_value=mock_solana_rpc_response(payload)),
         pytest.raises(SerdeJSONError, match='Unexpected solana RPC response format'),
+    ):
+        client.get_health()
+
+
+def test_solana_rpc_invalid_json_body_raises_serde_error() -> None:
+    client = Client(endpoint='http://example.invalid', timeout=1)
+    response = MagicMock()
+    response.raise_for_status.return_value = None
+    response.json.side_effect = requests.exceptions.JSONDecodeError('Expecting value', 'x', 0)
+    with (
+        patch.object(client.session, 'post', return_value=response),
+        pytest.raises(SerdeJSONError, match='Expecting value'),
     ):
         client.get_health()
 
@@ -124,7 +136,7 @@ def test_solana_rpc_method_decode_errors_raise_serde_error() -> None:
         (partial(client.get_transaction, signature, max_supported_transaction_version=0), {'result': {}}),  # noqa: E501
     ):
         with (
-            patch('requests.post', return_value=mock_solana_rpc_response(payload)),
+            patch.object(client.session, 'post', return_value=mock_solana_rpc_response(payload)),
             pytest.raises(SerdeJSONError, match='Failed to decode solana'),
         ):
             method()

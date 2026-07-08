@@ -1,11 +1,10 @@
 import hashlib
 import itertools
-import json
 import os
 from base64 import b64decode
 from binascii import Error as BinasciiError
 from dataclasses import dataclass
-from typing import Any, Final
+from typing import Any, Final, Self
 
 import requests
 from base58 import b58decode, b58encode
@@ -44,19 +43,18 @@ class Pubkey:
         self._value = value
 
     @classmethod
-    def from_string(cls, value: str) -> 'Pubkey':
+    def from_string(cls, value: str) -> Self:
         try:
-            decoded = b58decode(value)
+            return cls(b58decode(value))
         except ValueError as e:
             raise ValueError(f'invalid public key {value}') from e
-        return cls(decoded)
 
     @classmethod
-    def from_bytes(cls, value: bytes) -> 'Pubkey':
+    def from_bytes(cls, value: bytes) -> Self:
         return cls(value)
 
     @classmethod
-    def new_unique(cls) -> 'Pubkey':
+    def new_unique(cls) -> Self:
         return cls(os.urandom(32))
 
     @staticmethod
@@ -134,15 +132,14 @@ class Signature:
         self._value = value
 
     @classmethod
-    def from_string(cls, value: str) -> 'Signature':
+    def from_string(cls, value: str) -> Self:
         try:
-            decoded = b58decode(value)
+            return cls(b58decode(value))
         except ValueError as e:
             raise ValueError(f'invalid signature {value}') from e
-        return cls(decoded)
 
     @classmethod
-    def from_bytes(cls, value: bytes) -> 'Signature':
+    def from_bytes(cls, value: bytes) -> Self:
         return cls(value)
 
     @classmethod
@@ -174,10 +171,6 @@ class Signature:
 
 class Hash(Pubkey):
     """A 32-byte Solana hash."""
-
-    @classmethod
-    def from_string(cls, value: str) -> 'Hash':
-        return cls(bytes(Pubkey.from_string(value)))
 
 
 @dataclass(frozen=True)
@@ -402,13 +395,14 @@ class Client:
     def __init__(self, endpoint: str, timeout: int):
         self.endpoint = endpoint
         self.timeout = timeout
+        self.session = requests.Session()  # keep-alive: tx sync makes many sequential calls and a new TLS handshake per call is ~4x slower  # noqa: E501
 
     def _request(self, method: str, params: list[Any] | None = None) -> Any:
         """Perform a Solana JSON-RPC request.
         May raise SolanaRpcException, RPCException or SerdeJSONError.
         """
         try:
-            response = requests.post(
+            response = self.session.post(
                 url=self.endpoint,
                 json={
                     'jsonrpc': '2.0',
@@ -420,18 +414,10 @@ class Client:
             )
             response.raise_for_status()
             payload = response.json()
-        except requests.exceptions.HTTPError as e:
-            rpc_error = SolanaRpcException(str(e))
-            rpc_error.__cause__ = e
-            raise rpc_error from e
-        except requests.exceptions.Timeout as e:
-            rpc_error = SolanaRpcException(str(e))
-            rpc_error.__cause__ = e
-            raise rpc_error from e
+        except requests.exceptions.JSONDecodeError as e:  # subclasses RequestException, so must be caught first  # noqa: E501
+            raise SerdeJSONError(str(e)) from e
         except requests.exceptions.RequestException as e:
             raise SolanaRpcException(str(e)) from e
-        except (json.JSONDecodeError, ValueError) as e:
-            raise SerdeJSONError(str(e)) from e
 
         if not isinstance(payload, dict):
             raise SerdeJSONError(f'Unexpected solana RPC response format {payload!r}')
