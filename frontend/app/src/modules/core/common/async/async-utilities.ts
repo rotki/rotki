@@ -65,12 +65,8 @@ export async function waitForCondition<T>(checkFn: () => Promise<T>, condition: 
   const combinedSignal = signal ? AbortSignal.any([signal, abortController.signal]) : abortController.signal;
 
   return new Promise((resolve, reject) => {
-    const timeoutId = setTimeout(() => {
-      abortController.abort();
-      reject(new TimeoutError(name, timeout));
-    }, timeout);
-
     let isCompleted = false;
+    let timeoutId: ReturnType<typeof setTimeout>;
 
     const cleanup = (): void => {
       isCompleted = true;
@@ -85,6 +81,14 @@ export async function waitForCondition<T>(checkFn: () => Promise<T>, condition: 
       cleanup();
       reject(new AbortedError(name));
     }
+
+    // cleanup() removes the abort listener before aborting, so the TimeoutError
+    // below is the rejection callers observe (aborting first would fire onAbort
+    // and reject with an AbortedError instead).
+    timeoutId = setTimeout(() => {
+      cleanup();
+      reject(new TimeoutError(name, timeout));
+    }, timeout);
 
     combinedSignal.addEventListener('abort', onAbort, { once: true });
 
