@@ -8,7 +8,9 @@ from json.decoder import JSONDecodeError
 from pathlib import Path
 from typing import Any, Final, NamedTuple
 
-import polars as pl
+import pandas as pd
+import pyarrow as pa
+import pyarrow.parquet as pq
 import requests
 from eth_typing import ABI
 from requests import Response
@@ -325,7 +327,12 @@ def _maybe_get_updated_file(
     return filename
 
 
-def get_airdrop_data(airdrop_data: AirdropFileMetadata, name: str, data_dir: Path) -> pl.LazyFrame:
+def get_airdrop_data(
+        airdrop_data: AirdropFileMetadata,
+        name: str,
+        data_dir: Path,
+        addresses: Sequence[ChecksumEvmAddress],
+) -> pd.DataFrame:
     """Returns the airdrop's file after downloading it locally for the first time.
     If a new file is found in the index, it will be downloaded again to update the local copy
     and return new data."""
@@ -334,8 +341,14 @@ def get_airdrop_data(airdrop_data: AirdropFileMetadata, name: str, data_dir: Pat
     def _process_parquet(response: Response, filename: Path) -> None:
         filename.write_bytes(response.content)
         try:
-            pl.scan_parquet(filename).select(pl.selectors.by_index(0, 1)).first().collect()
-        except pl.exceptions.PolarsError as e:
+            # Validate the parquet is readable by decoding its first row group's first two
+            # columns (the address and amount columns used downstream) without loading the
+            # whole file into memory.
+            parquet_file = pq.ParquetFile(filename)  # type: ignore[no-untyped-call]
+            if parquet_file.num_row_groups > 0:
+                columns = parquet_file.schema_arrow.names
+                parquet_file.read_row_group(0, columns=columns[:2])  # type: ignore[no-untyped-call]
+        except pa.ArrowException as e:
             filename.unlink()
             log.error(f'Deleted invalid parquet file {filename} due to {e}')
             raise RemoteError(f'Invalid parquet file for {name}. Removing it.') from e
@@ -348,7 +361,15 @@ def get_airdrop_data(airdrop_data: AirdropFileMetadata, name: str, data_dir: Pat
         process_response=_process_parquet,
     )
 
-    return pl.scan_parquet(filename)
+    columns = pq.read_schema(filename).names[:2]  # type: ignore[no-untyped-call]
+    if len(addresses) == 0:
+        return pd.DataFrame(columns=columns)
+
+    return pd.read_parquet(
+        filename,
+        columns=columns,
+        filters=[(columns[0], 'in', list(addresses))],
+    )
 
 
 def get_poap_airdrop_data(airdrop_data: list[str], name: str, data_dir: Path) -> dict[str, Any]:
@@ -558,15 +579,14 @@ def _process_airdrop_file(
     # temporarily store this protocol's data here
     temp_found_data: dict[ChecksumEvmAddress, dict] = defaultdict(lambda: defaultdict(dict))
     temp_airdrop_tuples = []
-    airdrop_lazy_dataframe = get_airdrop_data(airdrop_data, protocol_name, data_dir)
+    airdrop_dataframe = get_airdrop_data(
+        airdrop_data=airdrop_data,
+        name=protocol_name,
+        data_dir=data_dir,
+        addresses=addresses,
+    )
 
-    for (address, amount_raw) in (
-        airdrop_lazy_dataframe.filter(
-            pl.selectors.by_index(0).is_in(addresses),
-        ).select(
-            pl.selectors.by_index(0, 1),  # select only first two columns (addr, amount)
-        ).collect().rows()
-    ):
+    for address, amount_raw in airdrop_dataframe.itertuples(index=False, name=None):
         if protocol_name in {
             'cornichon',
             'tornado',

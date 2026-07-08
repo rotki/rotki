@@ -103,8 +103,10 @@ def main() -> None:
 
     if response_status not in {HTTPStatus.OK, HTTPStatus.NO_CONTENT}:
         logger.error(
-            f'Failed to notify {group_key} group for {job_type} job. '
-            f'Status code: {response_status}',
+            'Failed to notify %s group for %s job. Status code: %s',
+            group_key,
+            job_type,
+            response_status,
         )
         sys.exit(1)
 

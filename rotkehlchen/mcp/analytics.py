@@ -4,11 +4,12 @@ import hmac
 import json
 import re
 import secrets
+import sqlite3
 from dataclasses import dataclass
 from hashlib import sha256
 from typing import TYPE_CHECKING, Any, Final
 
-import polars as pl
+import pandas as pd
 
 from rotkehlchen.mcp.backend import (
     BackendQueryError,
@@ -103,7 +104,7 @@ _session_seed: Final = secrets.token_bytes(32)
 
 @dataclass(frozen=True)
 class TableData:
-    frame: pl.DataFrame
+    frame: pd.DataFrame
     source: dict[str, Any]
 
 
@@ -266,16 +267,13 @@ def _load_history_events(scope: AnalyticsScope) -> TableData:
         isinstance(entries_found, int) and
         entries_found > len(rows)
     )
-    frame = pl.DataFrame(rows, infer_schema_length=None) if rows else pl.DataFrame()
-    if 'timestamp' in frame.columns and frame.schema['timestamp'].is_integer():
+    frame = pd.DataFrame(rows) if rows else pd.DataFrame()
+    if 'timestamp' in frame.columns and pd.api.types.is_integer_dtype(frame['timestamp']):
         # Add readable date columns derived from the ms timestamp so an LLM can filter on
         # `year` / `datetime` instead of computing error-prone unix-millisecond bounds.
-        frame = frame.with_columns(
-            _dt=pl.from_epoch(pl.col('timestamp'), time_unit='ms'),
-        ).with_columns(
-            datetime=pl.col('_dt').dt.strftime('%Y-%m-%dT%H:%M:%SZ'),
-            year=pl.col('_dt').dt.year(),
-        ).drop('_dt')
+        dt = pd.to_datetime(frame['timestamp'], unit='ms', utc=True)
+        frame['datetime'] = dt.dt.strftime('%Y-%m-%dT%H:%M:%SZ')
+        frame['year'] = dt.dt.year
 
     return TableData(
         frame=frame,
@@ -310,7 +308,7 @@ def _load_balances(scope: AnalyticsScope) -> TableData:
             ))
 
     return TableData(
-        frame=pl.DataFrame(rows, infer_schema_length=None) if rows else pl.DataFrame(),
+        frame=pd.DataFrame(rows) if rows else pd.DataFrame(),
         source={
             'endpoint': 'balances',
             'range_scoped': False,
@@ -358,17 +356,19 @@ def _error(error_type: str, message: str, **details: Any) -> dict[str, Any]:
 
 
 def _summary(table: str, table_data: TableData) -> dict[str, Any]:
-    return {'table': table, 'rows': table_data.frame.height, 'source': table_data.source}
+    return {'table': table, 'rows': len(table_data.frame), 'source': table_data.source}
 
 
 class AnalyticsSession:
-    """In-memory, privacy-filtered table store queried with Polars SQL. One instance lives
+    """In-memory, privacy-filtered table store queried with SQL (sqlite over pandas
+    DataFrames). One instance lives
     for the lifetime of the MCP server process and is shared across tool calls.
     """
 
     def __init__(self) -> None:
         self._tables: dict[str, TableData] = {}
         self._last_scope: AnalyticsScope | None = None
+        self._connection = sqlite3.connect(':memory:')
 
     def _current_scope(
             self,
@@ -399,9 +399,15 @@ class AnalyticsSession:
                 continue
             try:
                 self._tables[table] = (table_data := loader(scope))
+                table_data.frame.to_sql(
+                    table,
+                    self._connection,
+                    if_exists='replace',
+                    index=False,
+                )
             except BackendQueryError as e:
                 errors[table] = str(e)
-            except (KeyError, TypeError, pl.exceptions.PolarsError) as e:
+            except (KeyError, TypeError, ValueError, sqlite3.Error) as e:
                 errors[table] = str(e)
             else:
                 loaded[table] = _summary(table, table_data)
@@ -428,9 +434,9 @@ class AnalyticsSession:
             'table': table,
             'columns': [
                 {'name': name, 'dtype': str(dtype)}
-                for name, dtype in table_data.frame.schema.items()
+                for name, dtype in table_data.frame.dtypes.items()
             ],
-            'rows': table_data.frame.height,
+            'rows': len(table_data.frame),
             'source': table_data.source,
         }
 
@@ -443,26 +449,31 @@ class AnalyticsSession:
                 'No analytics tables are loaded yet. Call refresh_analytics_data first.',
             )
 
-        context = pl.SQLContext()
-        for table, table_data in self._tables.items():
-            context.register(table, table_data.frame)
         try:
-            result_frame = context.execute(sql, eager=True)
-        except pl.exceptions.PolarsError as e:
+            cursor = self._connection.cursor()
+            cursor.execute(sql)
+        except sqlite3.Error as e:
             return _error(
                 'sql_execution_error',
                 str(e),
-                available_columns={t: d.frame.columns for t, d in self._tables.items()},
+                available_columns={t: list(d.frame.columns) for t, d in self._tables.items()},
             )
+        try:
+            result_frame = pd.DataFrame(
+                cursor.fetchall(),
+                columns=[desc[0] for desc in cursor.description],
+            )
+        finally:
+            cursor.close()
 
         bounded = min(max(max_rows, 1), MAX_RESULT_ROWS)
-        result_rows = result_frame.head(bounded).to_dicts()
+        result_rows = result_frame.head(bounded).to_dict('records')
         return {
-            'columns': result_frame.columns,
+            'columns': list(result_frame.columns),
             'rows': result_rows,
-            'row_count': result_frame.height,
+            'row_count': len(result_frame),
             'returned_rows': len(result_rows),
-            'result_truncated': result_frame.height > bounded,
+            'result_truncated': len(result_frame) > bounded,
             'privacy_mode': get_backend_config().privacy_mode,
         }
 

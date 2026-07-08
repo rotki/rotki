@@ -8,7 +8,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 from unittest.mock import Mock, patch
 
-import polars as pl
+import pandas as pd
 import pytest
 
 from rotkehlchen.assets.asset import Asset
@@ -248,7 +248,7 @@ def prepare_airdrop_mock_response(
     elif '.parquet' in url:
         mock_response.text = url_to_data_map.get(url, 'address,tokens\n')  # Return the data from the dictionary or just a header if 'url' is not found  # noqa: E501
         parquet_file = BytesIO()
-        pl.read_csv(StringIO(mock_response.text), infer_schema_length=0).write_parquet(parquet_file)  # noqa: E501
+        pd.read_csv(StringIO(mock_response.text), dtype=str).to_parquet(parquet_file)
         parquet_file.seek(0)
         mock_response.content = parquet_file.read()
     else:
@@ -420,7 +420,10 @@ def test_check_airdrops(
         ).fetchone()[0] == MOCK_AIRDROP_INDEX['airdrops']['diva']['file_hash']
 
     # invalid CSV is also, updated
-    assert pl.read_parquet(csv_dir / 'shapeshift.parquet').rows() == [(TEST_ADDR1, '200')]
+    shapeshift_rows = list(
+        pd.read_parquet(csv_dir / 'shapeshift.parquet').itertuples(index=False, name=None),
+    )
+    assert shapeshift_rows == [(TEST_ADDR1, '200')]
 
     # verify new asset's presence and details
     new_found_asset = AssetResolver.resolve_asset(new_asset_identifier).resolve_to_crypto_asset()

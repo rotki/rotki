@@ -3,7 +3,7 @@ from collections import defaultdict
 from collections.abc import Sequence
 from typing import TYPE_CHECKING, NamedTuple
 
-import polars as pl
+import pandas as pd
 
 from rotkehlchen.accounting.constants import EVENT_CATEGORY_MAPPINGS
 from rotkehlchen.assets.asset import Asset
@@ -268,11 +268,11 @@ class HistoricalBalancesManager:
         from_ts_ms, to_ts_ms = ts_sec_to_ms(from_ts), ts_sec_to_ms(to_ts)
         metric_key = EventMetricKey.BALANCE.serialize()
         asset_ids = [asset.resolve_swapped_for().identifier for asset in assets]
-        schema = {'timestamp': pl.Int64, 'sort_key': pl.Int64, 'delta': pl.Float64}
-        df = pl.DataFrame(schema=schema)
+        columns = ['timestamp', 'sort_key', 'delta']
+        frames: list[pd.DataFrame] = []
         with self.db.conn.read_ctx() as cursor:
             for chunk, placeholders in get_query_chunks(data=asset_ids):
-                if (chunk_df := pl.DataFrame(
+                chunk_df = pd.DataFrame(
                     cursor.execute(
                         f"""
                         WITH all_events AS (
@@ -309,23 +309,20 @@ class HistoricalBalancesManager:
                         """,
                         (metric_key, *chunk, from_ts_ms, to_ts_ms),
                     ),
-                    schema=schema,
-                    orient='row',
-                )).height > 0:
-                    df.vstack(chunk_df, in_place=True)
+                    columns=columns,
+                )
+                if len(chunk_df) > 0:
+                    frames.append(chunk_df)
 
         data = None
-        if df.height != 0:
-            result_df = (
-                df.rechunk().sort('sort_key')
-                .with_columns(pl.col('delta').cum_sum().alias('amount'))
-                .select(['timestamp', 'amount'])
-            )
-            timestamps = result_df['timestamp'].to_list()
-            amounts = result_df['amount'].to_list()
+        if frames:
+            df = pd.concat(frames, ignore_index=True).astype(
+                {'timestamp': 'int64', 'sort_key': 'int64', 'delta': 'float64'},
+            ).sort_values('sort_key')
+            df['amount'] = df['delta'].cumsum()
             data = {
-                ts_ms_to_sec(ts): FVal(amt)
-                for ts, amt in zip(timestamps, amounts, strict=True)
+                ts_ms_to_sec(TimestampMS(int(ts))): FVal(amt)
+                for ts, amt in zip(df['timestamp'].tolist(), df['amount'].tolist(), strict=True)
             }
 
         for chunk, placeholders in get_query_chunks(data=asset_ids):
@@ -344,7 +341,7 @@ class HistoricalBalancesManager:
         """Returns daily snapshots of asset balances between the given timestamps.
 
         Computes balance deltas using SQL LAG() over location/protocol buckets, then
-        accumulates them per asset with polars. Days without activity for an asset
+        accumulates them per asset with pandas. Days without activity for an asset
         carry forward the last known balance.
 
         Returns a tuple of a boolean representing whether processing is still needed,
@@ -352,7 +349,7 @@ class HistoricalBalancesManager:
         """
         from_ts_ms, to_ts_ms = ts_sec_to_ms(from_ts), ts_sec_to_ms(to_ts)
         with self.db.conn.read_ctx() as cursor:
-            df = pl.DataFrame(
+            df = pd.DataFrame(
                 cursor.execute(
                     """
                     WITH all_events AS (
@@ -379,34 +376,32 @@ class HistoricalBalancesManager:
                     """,
                     (EventMetricKey.BALANCE.serialize(), from_ts_ms, to_ts_ms),
                 ),
-                schema={'timestamp': pl.Int64, 'sort_key': pl.Int64, 'asset': pl.String, 'delta': pl.Float64},  # noqa: E501
-                orient='row',
+                columns=['timestamp', 'sort_key', 'asset', 'delta'],
             )
 
         data = None
-        if df.height != 0:
+        if len(df) != 0:
             # The query returns balance deltas (changes) for each event.
             # Sum them up in order to reconstruct the running balance for each asset,
             # then keep only the last balance of each day (the end-of-day snapshot).
+            df = df.astype(
+                {'timestamp': 'int64', 'sort_key': 'int64', 'asset': 'str', 'delta': 'float64'},
+            ).sort_values('sort_key')
+            df['balance'] = df.groupby('asset', sort=False)['delta'].cumsum()
+            df['day'] = (df['timestamp'] // DAY_IN_MILLISECONDS) * DAY_IN_MILLISECONDS
             pivoted = (
-                df.rechunk()
-                .sort('sort_key')
-                .with_columns(
-                    pl.col('delta').cum_sum().over('asset').alias('balance'),
-                    (pl.col('timestamp') // DAY_IN_MILLISECONDS * DAY_IN_MILLISECONDS).alias('day'),  # noqa: E501
-                )
-                .group_by(['day', 'asset'])
-                .agg(pl.col('balance').last())
-                .sort('day')
-                # Pivot so each asset becomes a column. This allows forward-fill to
-                # carry each asset's balance independently to days without activity.
-                .pivot(on='asset', index='day', values='balance')
-                .fill_null(strategy='forward')
+                df.groupby(['day', 'asset'], sort=False)['balance']
+                .last().reset_index()
+                .pivot(index='day', columns='asset', values='balance')
+                .sort_index()
+                # Forward-fill so each asset's balance carries independently to days
+                # without activity.
+                .ffill()
             )
-            timestamps = [ts_ms_to_sec(d) for d in pivoted['day'].to_list()]
+            timestamps = [ts_ms_to_sec(TimestampMS(int(d))) for d in pivoted.index.tolist()]
             balances_per_day = [
-                {asset: FVal(val) for asset, val in row.items() if val is not None}
-                for row in pivoted.select(pl.exclude('day')).iter_rows(named=True)
+                {str(asset): FVal(val) for asset, val in row.items() if pd.notna(val)}
+                for row in pivoted.to_dict('records')
             ]
             data = (timestamps, balances_per_day)
 

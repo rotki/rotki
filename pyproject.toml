@@ -42,7 +42,6 @@ dependencies = [
     "more-itertools==10.6.0",  # for peekable iterators
     "regex==2025.11.3",  # used for unicode information in detection of spam tokens
     "eth-abi==5.2.0",
-    "polars-lts-cpu==1.33.1",
     "eth-utils==5.3.1",
     # For the rest api
     "flask-cors==6.0.1",
@@ -73,6 +72,8 @@ dependencies = [
     "idna==3.15",  # enforced due to dependabot reports
     "cbor2==5.9.0",  # enforced due to dependabot reports
     "protobuf==6.33.6",  # enforced due to dependabot reports
+    "pandas==3.0.3",
+    "pyarrow==24.0.0",  # parquet engine for pandas (airdrop files)
 ]
 
 [project.urls]
