@@ -5,13 +5,15 @@ export const testEnv = {
   PASSWORD: '1234',
   ETH_ADDRESS: '0x443E1f9b1c866E54e914822B7d3d7165EdB6e9Ea',
   BTC_ADDRESS: '3PFo18vaPMSXFTt6zUDGk3UoPjD56QLXjh',
-  // Stable Solana fixture wallet — also used by backend unit tests in
-  // rotkehlchen/tests/unit/test_solana.py. Has a small SOL balance and no
-  // SPL tokens, so account-add flow recordings stay tiny.
-  // WARNING: avoid exercising transaction-history fetching against this
-  // address (e.g. navigating to the history page while it is the tracked
-  // account); it has ~1000+ signatures and would inflate the cassette.
-  SOLANA_ADDRESS: 'updtkJ8HAhh3rSkBCd3p9Z1Q74yJW4rMhSbScRskDPM',
+  // Solana fixture wallet for the account-add e2e. Picked for a non-zero SOL
+  // balance (so the "USD value > 0" assertion has something real to verify) and
+  // zero SPL tokens, which keeps the recorded RPC surface minimal: no per-mint
+  // getAccountInfo metadata calls, so the cassette stays a handful of entries
+  // instead of thousands. Independent of the backend unit-test address in
+  // rotkehlchen/tests/unit/test_solana.py, which deliberately needs tokens/stake.
+  // WARNING: avoid exercising transaction-history fetching against this address;
+  // it would query signatures and inflate the cassette.
+  SOLANA_ADDRESS: '8GbwASqdpw4dVcwbWUxbHXMrjyQx2aKkoBR5H1GJF8iD',
   // Stable Polkadot fixture wallet — picked because it holds a non-trivial,
   // long-running DOT balance, so the test's "USD value > 0" assertion is
   // stable across re-recordings.
