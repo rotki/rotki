@@ -209,7 +209,7 @@ disallow_untyped_decorators = false
 module = [
     "rotkehlchen.tests.api.*",
     "rotkehlchen.tests.benchmarks.*",
-    "rotkehlchen.tests.data_migrations.test_migrations",
+    "rotkehlchen.tests.data_migrations.*",
 ]
 check_untyped_defs = true
 disallow_untyped_defs = true

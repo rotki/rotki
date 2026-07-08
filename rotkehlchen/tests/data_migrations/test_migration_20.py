@@ -111,7 +111,7 @@ def create_broken_swap_events(
     return spend_event.group_identifier, receive_event.group_identifier, fee_event.group_identifier
 
 
-def _init_v47_backup_conn(database, password: str | None) -> DBConnection:
+def _init_v47_backup_conn(database: DBHandler, password: str | None) -> DBConnection:
     backup_db_path = Path(__file__).resolve().parent.parent / 'data' / 'v47_rotkehlchen.db'
     backup_copy_path = database.user_data_dir / f'{ts_now()}_rotkehlchen_db_v47.backup'
     shutil.copy(src=backup_db_path, dst=backup_copy_path)
