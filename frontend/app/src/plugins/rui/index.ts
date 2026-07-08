@@ -5,6 +5,7 @@ import {
   ThemeMode,
 } from '@rotki/ui-library';
 import detectedIcons from 'virtual:rotki-icons';
+import { brandIcons } from '@/brand-icons';
 import '@rotki/ui-library/style.css';
 
 interface RuiPlugin {
@@ -15,7 +16,7 @@ export function createRuiPlugin(defaults: Partial<RuiOptions['defaults']>): RuiP
   return createRui({
     defaults,
     theme: {
-      icons: detectedIcons,
+      icons: [...detectedIcons, ...brandIcons],
       mode: ThemeMode.light,
     },
   });

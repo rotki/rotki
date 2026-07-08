@@ -190,6 +190,7 @@ export default defineConfig({
         'lu-slash',
         'lu-monitor',
       ],
+      customIcons: ['lu-github', 'lu-discord', 'lu-x-twitter'],
     }),
     VueI18nPlugin({
       include: [resolve(PACKAGE_ROOT, './src/locales/**')],

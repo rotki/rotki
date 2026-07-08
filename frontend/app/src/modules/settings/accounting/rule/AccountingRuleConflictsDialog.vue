@@ -251,7 +251,7 @@ async function save() {
         :loading="isLoading"
         :rows="state.data"
         disable-floating-header
-        mobile-breakpoint="0"
+        :mobile-breakpoint="0"
         outlined
         row-attr="localId"
       >
