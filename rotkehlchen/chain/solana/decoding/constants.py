@@ -1,7 +1,6 @@
 from typing import Final
 
-from spl.token.constants import TOKEN_2022_PROGRAM_ID, TOKEN_PROGRAM_ID
-
+from rotkehlchen.chain.solana.constants import TOKEN_2022_PROGRAM_ID, TOKEN_PROGRAM_ID
 from rotkehlchen.chain.solana.types import pubkey_to_solana_address
 from rotkehlchen.types import SolanaAddress
 

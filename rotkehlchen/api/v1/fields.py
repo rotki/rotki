@@ -13,7 +13,6 @@ from eth_utils import to_checksum_address
 from marshmallow import fields
 from marshmallow.exceptions import ValidationError
 from marshmallow.utils import is_iterable_but_not_string
-from solders.solders import Signature
 from werkzeug.datastructures import FileStorage
 
 from rotkehlchen.api.v1.types import IncludeExcludeFilterData
@@ -31,6 +30,7 @@ from rotkehlchen.assets.types import AssetType
 from rotkehlchen.chain.bitcoin.hdkey import HDKey
 from rotkehlchen.chain.bitcoin.utils import is_valid_derivation_path
 from rotkehlchen.chain.evm.types import EvmIndexer
+from rotkehlchen.chain.solana.rpc import Signature
 from rotkehlchen.chain.solana.validation import is_valid_solana_address
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.misc import NFT_DIRECTIVE

@@ -2,13 +2,12 @@ import logging
 from collections import defaultdict
 from typing import TYPE_CHECKING, Final, Literal, overload
 
-from solders.solders import Signature
-
 from rotkehlchen.api.websockets.typedefs import (
     TransactionStatusStep,
     TransactionStatusSubType,
     WSMessageType,
 )
+from rotkehlchen.chain.solana.rpc import Signature
 from rotkehlchen.chain.solana.types import SolanaTransaction, pubkey_to_solana_address
 from rotkehlchen.db.filtering import SolanaTransactionsFilterQuery
 from rotkehlchen.db.solanatx import DBSolanaTx

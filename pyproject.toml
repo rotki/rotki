@@ -62,9 +62,7 @@ dependencies = [
     "google-auth==2.49.1",
     # To build JWT for coinbase exchange key validation
     "PyJWT==2.13.0",
-    # solana
-    "solana==0.36.9",
-    "solders==0.26.0",
+    "construct==2.10.68",
     "tzdata==2025.2 ; sys_platform == 'win32'",
     # enfore transitive deps versions
     "aiohttp==3.14.1",  # dependency of web3.py that has security issues before this version

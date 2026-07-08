@@ -115,6 +115,33 @@ def _normalize_solana_rpc_uri(uri: str) -> str:
     return uri.removesuffix('/')
 
 
+def _normalize_solana_rpc_payload(payload: Any) -> Any:
+    """Normalize semantically equivalent Solana JSON-RPC request payloads."""
+    if isinstance(payload, dict):
+        result = {
+            key: _normalize_solana_rpc_payload(value)
+            for key, value in payload.items()
+            if key != 'id'
+        }
+        for default_none_key in ('dataSlice', 'minContextSlot', 'sortResults', 'withContext'):
+            if result.get(default_none_key) is None:
+                result.pop(default_none_key, None)
+        if result.get('commitment') == 'finalized':
+            result.pop('commitment')
+        if result.get('encoding') == 'base58':
+            result.pop('encoding')
+        if (
+            result.get('jsonrpc') == '2.0' and
+            'method' in result and
+            result.get('params') == []
+        ):
+            result.pop('params')
+        return result
+    if isinstance(payload, list):
+        return [_normalize_solana_rpc_payload(item) for item in payload]
+    return payload
+
+
 class TestEnvironment(SerializableEnumNameMixin):
     __test__ = False  # tell pytest not to collect this class
 
@@ -426,16 +453,9 @@ def vcr_fixture(vcr: 'VCR') -> 'VCR':
         ):
             return False
 
-        def strip_jsonrpc_id(payload: Any) -> Any:
-            if isinstance(payload, dict):
-                return {k: strip_jsonrpc_id(v) for k, v in payload.items() if k != 'id'}
-            if isinstance(payload, list):
-                return [strip_jsonrpc_id(item) for item in payload]
-            return payload
-
         try:
-            b1 = strip_jsonrpc_id(json.loads(r1.body))
-            b2 = strip_jsonrpc_id(json.loads(r2.body))
+            b1 = _normalize_solana_rpc_payload(json.loads(r1.body))
+            b2 = _normalize_solana_rpc_payload(json.loads(r2.body))
         except (TypeError, json.JSONDecodeError):
             return r1.body == r2.body
 

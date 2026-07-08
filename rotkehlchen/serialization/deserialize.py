@@ -5,7 +5,6 @@ from typing import TYPE_CHECKING, Any, Literal, TypeVar, overload
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from eth_utils import to_checksum_address
-from solders.solders import Pubkey, Signature
 
 from rotkehlchen.chain.evm.l2_with_l1_fees.types import (
     L2_CHAINIDS_WITH_L1_FEES,
@@ -13,6 +12,7 @@ from rotkehlchen.chain.evm.l2_with_l1_fees.types import (
     L2WithL1FeesTransaction,
 )
 from rotkehlchen.chain.optimism.constants import OP_BEDROCK_UPGRADE
+from rotkehlchen.chain.solana.rpc import Pubkey, Signature
 from rotkehlchen.constants import ZERO
 from rotkehlchen.errors.asset import UnprocessableTradePair
 from rotkehlchen.errors.misc import RemoteError

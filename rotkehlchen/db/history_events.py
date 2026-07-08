@@ -6,7 +6,6 @@ from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, Literal, Optional, TypeAlias, cast, overload
 
-from solders.solders import Signature
 from sqlcipher3 import dbapi2 as sqlcipher
 
 from rotkehlchen.api.v1.types import IncludeExcludeFilterData
@@ -17,6 +16,7 @@ from rotkehlchen.chain.bitcoin.bch.validation import is_valid_bitcoin_cash_addre
 from rotkehlchen.chain.bitcoin.btc.constants import BTC_GROUP_IDENTIFIER_PREFIX
 from rotkehlchen.chain.bitcoin.validation import is_valid_btc_address
 from rotkehlchen.chain.evm.types import string_to_evm_address
+from rotkehlchen.chain.solana.rpc import Signature
 from rotkehlchen.constants import ZERO
 from rotkehlchen.db.cache import (
     IGNORED_CUSTOMIZED_EVENT_DUPLICATE_PREFIX,

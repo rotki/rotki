@@ -1,10 +1,9 @@
 import logging
 from typing import TYPE_CHECKING, Any
 
-from solders.solders import Signature
-
 from rotkehlchen.assets.utils import TokenEncounterInfo, get_or_create_solana_token
 from rotkehlchen.chain.decoding.tools import BaseDecoderTools
+from rotkehlchen.chain.solana.rpc import Signature
 from rotkehlchen.chain.solana.types import SolanaInstruction, SolanaTransaction
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.solana_event import SolanaEvent

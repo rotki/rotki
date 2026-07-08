@@ -3,28 +3,27 @@ from collections.abc import Callable, Sequence
 from functools import partial
 from typing import TYPE_CHECKING, Final, TypeVar
 
-from httpx import HTTPStatusError, ReadTimeout
-from solana.exceptions import SolanaRpcException
-from solana.rpc.api import Client
-from solana.rpc.core import RPCException
-from solana.rpc.types import MemcmpOpts, TokenAccountOpts
-from solders.pubkey import Pubkey
-from solders.solders import (
-    LOOKUP_TABLE_META_SIZE,
-    Account,
-    EncodedConfirmedTransactionWithStatusMeta,
-    GetSignaturesForAddressResp,
-    MessageAddressTableLookup,
-    RpcKeyedAccount,
-    SerdeJSONError,
-    Signature,
-    UiAddressTableLookup,
-)
-from spl.token.constants import TOKEN_2022_PROGRAM_ID, TOKEN_PROGRAM_ID
+import requests
 
 from rotkehlchen.chain.constants import DEFAULT_RPC_TIMEOUT
 from rotkehlchen.chain.evm.types import WeightedNode
 from rotkehlchen.chain.mixins.rpc_nodes import SolanaNodeCapabilities, SolanaRPCMixin
+from rotkehlchen.chain.solana.rpc import (
+    LOOKUP_TABLE_META_SIZE,
+    Account,
+    Client,
+    EncodedConfirmedTransactionWithStatusMeta,
+    MemcmpOpts,
+    MessageAddressTableLookup,
+    Pubkey,
+    RPCException,
+    RpcKeyedAccount,
+    SerdeJSONError,
+    Signature,
+    SolanaRpcException,
+    TokenAccountOpts,
+    UiAddressTableLookup,
+)
 from rotkehlchen.chain.solana.utils import (
     ExtensionType,
     MetadataInfo,
@@ -56,6 +55,8 @@ from .constants import (
     METADATA_PROGRAM_IDS,
     STAKE_ACCOUNT_WITHDRAWER_OFFSET,
     STAKE_PROGRAM_ID,
+    TOKEN_2022_PROGRAM_ID,
+    TOKEN_PROGRAM_ID,
 )
 from .types import SolanaTransaction, pubkey_to_solana_address
 
@@ -209,10 +210,11 @@ class SolanaInquirer(SolanaRPCMixin):
                     ratelimit_response = None
                     if (
                         (
-                            isinstance(e.__cause__, HTTPStatusError) and
-                            (ratelimit_response := e.__cause__.response).status_code == 429  # pylint: disable=no-member  # cause is an HTTPStatusError here.
+                            isinstance(e.__cause__, requests.exceptions.HTTPError) and
+                            (ratelimit_response := e.__cause__.response) is not None and  # pylint: disable=no-member  # cause is an HTTPError here.
+                            ratelimit_response.status_code == 429
                         ) or
-                        isinstance(e.__cause__, ReadTimeout)  # Some RPCs (publicnode.com) do a read timeout instead of a proper 429 response  # noqa: E501
+                        isinstance(e.__cause__, requests.exceptions.ReadTimeout)  # Some RPCs (publicnode.com) do a read timeout instead of a proper 429 response  # noqa: E501
                     ):
                         if ratelimit_response is not None and (retry_after := ratelimit_response.headers.get('retry-after')) is not None:  # noqa: E501
                             backoff = int(retry_after) + 1
@@ -436,7 +438,7 @@ class SolanaInquirer(SolanaRPCMixin):
                 f'Querying solana transaction signatures for {address} '
                 f'with before={before} and until={until}',
             )
-            response: GetSignaturesForAddressResp = self.query(
+            response = self.query(
                 method=lambda client, _before=before, _until=until: client.get_signatures_for_address(  # type: ignore[misc]  # noqa: E501
                     account=Pubkey.from_string(address),
                     limit=SIGNATURES_PAGE_SIZE,
@@ -510,21 +512,18 @@ class SolanaInquirer(SolanaRPCMixin):
         Returns a tuple containing the transaction and
         a mapping of token accounts to (owner, mint).
 
-        Note that the solders library uses some complex union types, apparently to support querying
-        using different parsing options, so we use some type ignores here since we only use the
-        default (`json`) parsing option when querying tx data.
         May raise:
         - DeserializationError if there is a problem deserializing.
         - RemoteError if there is a problem with querying the Address Lookup Tables (ALTs).
         """
-        message = raw_tx.transaction.transaction.message  # type: ignore[union-attr]
+        message = raw_tx.transaction.transaction.message
         if raw_tx.transaction.meta is None:
             raise DeserializationError('The tx data does not contain transaction meta')
 
         try:
-            account_keys = [pubkey_to_solana_address(pubkey) for pubkey in message.account_keys]  # type: ignore[arg-type]  # it is a pubkey
+            account_keys = [pubkey_to_solana_address(pubkey) for pubkey in message.account_keys]
             if (  # maybe resolve addresses from Address Lookup Tables (ALTs)
-                (alts := message.address_table_lookups) is not None and  # type: ignore[union-attr]
+                (alts := message.address_table_lookups) is not None and
                 len(alts) > 0
             ):
                 writable_accounts, readonly_accounts = [], []
@@ -545,7 +544,7 @@ class SolanaInquirer(SolanaRPCMixin):
                         deserialize_solana_instruction_from_rpc(
                             execution_index=idx,
                             parent_execution_index=inner_instructions.index,
-                            raw_instruction=raw_instruction,  # type: ignore[arg-type]
+                            raw_instruction=raw_instruction,
                             account_keys=account_keys,
                         ) for idx, raw_instruction in enumerate(inner_instructions.instructions)
                     ]

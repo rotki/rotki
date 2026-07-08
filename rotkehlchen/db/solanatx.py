@@ -2,9 +2,7 @@ from collections import defaultdict
 from collections.abc import Sequence
 from typing import TYPE_CHECKING, Final
 
-from solders.pubkey import Pubkey
-from solders.solders import Signature
-
+from rotkehlchen.chain.solana.rpc import Pubkey, Signature
 from rotkehlchen.chain.solana.types import SolanaInstruction, SolanaTransaction
 from rotkehlchen.db.cache import DBCacheDynamic
 from rotkehlchen.db.dbtx import DBCommonTx

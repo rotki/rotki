@@ -66,13 +66,12 @@ from rotkehlchen.utils.misc import ts_now
 if TYPE_CHECKING:
     from collections.abc import Callable
 
-    from solders.solders import Signature
-
     from rotkehlchen.assets.asset import CryptoAsset, EvmToken
     from rotkehlchen.chain.accounts import OptionalBlockchainAccount
     from rotkehlchen.chain.evm.types import EvmIndexer, WeightedNode
     from rotkehlchen.chain.hyperliquid.manager import HyperliquidManager
     from rotkehlchen.chain.manager import ChainManagerWithNodesMixin
+    from rotkehlchen.chain.solana.rpc import Signature
     from rotkehlchen.db.drivers.sqlite import DBCursor
     from rotkehlchen.fval import FVal
     from rotkehlchen.rotkehlchen import Rotkehlchen

@@ -16,7 +16,6 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any, Final, Literal, Optional, overload
 
 from flask import Response, make_response, send_file
-from solders.solders import Signature
 from sqlcipher3 import dbapi2 as sqlcipher
 from web3.exceptions import BadFunctionCallOutput
 from werkzeug.datastructures import FileStorage
@@ -69,6 +68,7 @@ from rotkehlchen.chain.evm.types import (
     EvmIndexer,
     WeightedNode,
 )
+from rotkehlchen.chain.solana.rpc import Signature
 from rotkehlchen.concurrency import (
     DEFAULT_CANCEL_GRACE_SECONDS,
     CancellationToken,

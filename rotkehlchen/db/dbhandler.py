@@ -3653,7 +3653,10 @@ class DBHandler:
         cursor.execute(
             'SELECT name, description, background_color, foreground_color FROM tags;',
         )
-        for result in cursor:
+        # fetchall() on purpose: it materializes the rows under a single statement_lock
+        # hold and resets the statement immediately, so other threads sharing the
+        # connection can't interleave with a statement left open mid-iteration.
+        for result in cursor.fetchall():
             name = result[0]
             description = result[1]
 

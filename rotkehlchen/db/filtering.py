@@ -7,7 +7,6 @@ from enum import Enum, auto
 from typing import Any, Final, Generic, Literal, NamedTuple, Self, TypeVar
 
 from eth_utils import is_hex_address
-from solders.solders import Signature
 
 from rotkehlchen.accounting.types import SchemaEventType
 from rotkehlchen.api.v1.types import IncludeExcludeFilterData
@@ -18,6 +17,7 @@ from rotkehlchen.chain.bitcoin.bch.constants import BCH_GROUP_IDENTIFIER_PREFIX
 from rotkehlchen.chain.bitcoin.btc.constants import BTC_GROUP_IDENTIFIER_PREFIX
 from rotkehlchen.chain.ethereum.modules.nft.structures import NftLpHandling
 from rotkehlchen.chain.evm.types import EvmAccount
+from rotkehlchen.chain.solana.rpc import Signature
 from rotkehlchen.db.constants import (
     CHAIN_EVENT_FIELDS,
     ETH_STAKING_EVENT_FIELDS,

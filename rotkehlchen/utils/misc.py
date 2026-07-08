@@ -14,8 +14,8 @@ from typing import TYPE_CHECKING, Any, Final, TypeVar, overload
 
 from eth_utils import is_hexstr
 from eth_utils.address import to_checksum_address
-from solders.solders import Pubkey
 
+from rotkehlchen.chain.solana.rpc import Pubkey
 from rotkehlchen.errors.serialization import ConversionError, DeserializationError
 from rotkehlchen.fval import FVal
 from rotkehlchen.types import ChecksumEvmAddress, SolanaAddress, Timestamp, TimestampMS

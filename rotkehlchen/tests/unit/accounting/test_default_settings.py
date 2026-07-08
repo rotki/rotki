@@ -2,7 +2,6 @@ from typing import TYPE_CHECKING, Any, Literal
 
 import pytest
 from more_itertools import peekable
-from solders.solders import Signature
 
 from rotkehlchen.accounting.accountant import Accountant
 from rotkehlchen.accounting.cost_basis.base import (
@@ -17,6 +16,7 @@ from rotkehlchen.assets.asset import Asset
 from rotkehlchen.chain.decoding.constants import CPT_GAS
 from rotkehlchen.chain.evm.accounting.structures import BaseEventSettings, TxAccountingTreatment
 from rotkehlchen.chain.evm.decoding.weth.constants import CPT_WETH
+from rotkehlchen.chain.solana.rpc import Signature
 from rotkehlchen.constants import ONE, ZERO
 from rotkehlchen.constants.assets import A_DAI, A_ETH, A_WETH
 from rotkehlchen.db.accounting_rules import DBAccountingRules

@@ -1,8 +1,7 @@
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
-from solders.solders import Pubkey, Signature
-
+from rotkehlchen.chain.solana.rpc import Pubkey, Signature
 from rotkehlchen.types import SolanaAddress, Timestamp
 
 if TYPE_CHECKING:
