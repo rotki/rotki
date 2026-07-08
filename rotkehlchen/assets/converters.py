@@ -440,6 +440,23 @@ def asset_from_htx(htx_name: str) -> AssetWithOracles:
     ))
 
 
+def asset_from_coinex(coinex_name: str) -> AssetWithOracles:
+    """May raise:
+    - DeserializationError
+    - UnknownAsset
+    """
+    if not isinstance(coinex_name, str):
+        raise DeserializationError(
+            f'Got non-string type {type(coinex_name)} for CoinEx asset',
+        )
+
+    return symbol_to_asset_or_token(GlobalDBHandler.get_assetid_from_exchange_name(
+        exchange=Location.COINEX,
+        symbol=coinex_name,
+        default=coinex_name,
+    ))
+
+
 def asset_from_bitcoinde(bitcoinde: str) -> AssetWithOracles:
     """May raise:
     - DeserializationError
@@ -511,6 +528,7 @@ LOCATION_TO_ASSET_MAPPING: dict[Location, Callable[[str], AssetWithOracles]] = {
     Location.OKX: asset_from_okx,
     Location.WOO: asset_from_woo,
     Location.HTX: asset_from_htx,
+    Location.COINEX: asset_from_coinex,
     Location.BITCOINDE: asset_from_bitcoinde,
     Location.GATE: asset_from_gate,
     Location.EXTERNAL: asset_from_common_identifier,

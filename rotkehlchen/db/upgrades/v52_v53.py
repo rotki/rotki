@@ -89,6 +89,12 @@ CREATE UNIQUE INDEX IF NOT EXISTS unique_data_issues_bucket_scope ON data_issues
             "INSERT OR IGNORE INTO location(location, seq) VALUES ('|', 60);",
         )
 
+    @progress_step(description='Add CoinEx location.')
+    def _add_coinex_location(write_cursor: 'DBCursor') -> None:
+        write_cursor.execute(
+            "INSERT OR IGNORE INTO location(location, seq) VALUES ('}', 61);",
+        )
+
     @progress_step(description='Normalize exchange history event location labels.')
     def _normalize_exchange_event_location_labels(write_cursor: 'DBCursor') -> None:
         """Normalize exchange labels used as accounting bucket keys.
