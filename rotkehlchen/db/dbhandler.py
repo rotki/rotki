@@ -3653,7 +3653,7 @@ class DBHandler:
         cursor.execute(
             'SELECT name, description, background_color, foreground_color FROM tags;',
         )
-        for result in cursor:
+        for result in cursor.fetchall():
             name = result[0]
             description = result[1]
 
