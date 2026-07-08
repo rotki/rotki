@@ -22,7 +22,7 @@ WORKDIR /app
 COPY colibri/ ./colibri
 RUN cargo build --target-dir /tmp/dist/colibri --manifest-path ./colibri/Cargo.toml --release
 
-FROM ghcr.io/astral-sh/uv:python3.11-bookworm AS backend-build-stage
+FROM ghcr.io/astral-sh/uv:bookworm AS backend-build-stage
 
 ARG TARGETARCH
 ARG ROTKI_VERSION
@@ -32,7 +32,9 @@ ARG PYINSTALLER_VERSION=v6.21.0
 WORKDIR /app
 COPY pyproject.toml uv.lock* ./
 
-RUN uv sync --locked --no-dev --no-install-project
+ENV UV_PYTHON=3.14t
+RUN uv python install "$UV_PYTHON" && \
+    uv sync --locked --no-dev --no-install-project
 
 COPY . /app
 

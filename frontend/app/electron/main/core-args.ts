@@ -123,19 +123,34 @@ export const RotkiCoreConfig = {
 
     if (isDev) {
       const devServerUrl = import.meta.env.VITE_DEV_SERVER_URL as string;
-      const pythonArgs = ['-m', 'rotkehlchen'];
+      const pythonInterpreterArgs = ['-X', 'gil=0'];
+      const pythonModuleArgs = ['-m', 'rotkehlchen'];
       if (profilingCmd) {
         command = builder.setCommand(
           profilingCmd,
-          profilingArgs?.split(' '),
+          [
+            ...(profilingArgs?.split(' ') ?? []),
+            'python',
+            ...pythonInterpreterArgs,
+            ...pythonModuleArgs,
+          ],
         ).withCorsUrl(devServerUrl);
       }
       else if (shouldUseUv()) {
-        command = builder.setCommand('uv', ['run', '--locked', 'python', ...pythonArgs])
+        command = builder.setCommand('uv', [
+          'run',
+          '--locked',
+          'python',
+          ...pythonInterpreterArgs,
+          ...pythonModuleArgs,
+        ])
           .withCorsUrl(devServerUrl);
       }
       else {
-        command = builder.setCommand('python', pythonArgs)
+        command = builder.setCommand('python', [
+          ...pythonInterpreterArgs,
+          ...pythonModuleArgs,
+        ])
           .withCorsUrl(devServerUrl);
       }
     }

@@ -94,8 +94,9 @@ async function startPythonBackend(opts: BackendSpawnOptions): Promise<number> {
   logger.info(`Starting python backend on port ${formatPort(chosenPort)}`);
 
   const args = [
-    ...(opts.profilingArgs ? opts.profilingArgs.split(' ') : []),
-    ...(opts.profilingCmd ? ['python'] : []),
+    ...(opts.profilingCmd
+      ? [...(opts.profilingArgs?.split(' ') ?? []), 'python', '-X', 'gil=0']
+      : ['-X', 'gil=0', ...(opts.profilingArgs?.split(' ') ?? [])]),
     '-m',
     'rotkehlchen',
     '--rest-api-port',

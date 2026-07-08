@@ -72,6 +72,7 @@ class RotkehlchenServer:
         log.info(f'sqlite version: {rsqlite.sqlite_version}')
         log.info(f'rotki-pysqlcipher version: {importlib.metadata.version("sqlcipher3")}')
         log.info(f'SQLCipher version: {get_sqlcipher_version_string()}')
+        log.info(f'GIL disabled: {not sys._is_gil_enabled()}')
         if os.name != 'nt':
             signal.signal(signal.SIGQUIT, self.shutdown)
             signal.signal(signal.SIGTERM, self.shutdown)

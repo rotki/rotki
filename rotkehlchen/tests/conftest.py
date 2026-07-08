@@ -5,10 +5,10 @@ import os
 import re
 import shutil
 import sys
+import sysconfig
 import tempfile
 import threading
 import warnings as test_warnings
-from collections.abc import Callable, Iterator
 from contextlib import contextmanager, suppress
 from enum import auto
 from functools import wraps
@@ -39,6 +39,8 @@ from rotkehlchen.utils.rate_limiter import TokenBucket
 from rotkehlchen.utils.serialization import jsonloads_dict
 
 if TYPE_CHECKING:
+    from collections.abc import Callable, Iterator
+
     from vcr import VCR
 
 
@@ -158,7 +160,10 @@ configure_logging(default_args())
 from rotkehlchen.tests.fixtures import *  # noqa: F403
 
 assert sys.version_info.major == 3, 'Need to use python 3 for rotki'
-assert sys.version_info.minor == 11, 'Need to use python 3.11 for rotki'
+assert sys.version_info.minor == 14, 'Need to use python 3.14 for rotki'
+assert sysconfig.get_config_var('Py_GIL_DISABLED') == 1, (
+    'Need to use a free-threaded python build for rotki'
+)
 
 
 @pytest.fixture(name='force_beacon_rpc_fallback')
@@ -367,7 +372,7 @@ def vcr_cassette_name(request: pytest.FixtureRequest) -> str:
 
 
 @pytest.fixture(scope='module', name='vcr')
-def vcr_fixture(vcr: 'VCR') -> 'VCR':
+def vcr_fixture(vcr: VCR) -> VCR:
     """
     Update VCR instance to discard error responses during the record mode.
     This target directly etherscan that is the service we are first focusing on

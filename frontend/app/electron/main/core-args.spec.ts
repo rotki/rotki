@@ -16,6 +16,17 @@ describe('rotkiCoreConfig', () => {
     expect(args[idx + 1]).toBe('debug');
   });
 
+  it('should disable the GIL for the development backend', () => {
+    const { args } = RotkiCoreConfig.create(true, {}).build();
+    const gilArgIndex = args.indexOf('gil=0');
+    expect(args.slice(gilArgIndex - 1, gilArgIndex + 3)).toEqual([
+      '-X',
+      'gil=0',
+      '-m',
+      'rotkehlchen',
+    ]);
+  });
+
   it('should default the backend loglevel to critical in packaged builds (regression #12079)', () => {
     vi.spyOn(fs, 'existsSync').mockReturnValue(true);
     vi.spyOn(fs, 'statSync').mockReturnValue({ isDirectory: () => true } as fs.Stats);
