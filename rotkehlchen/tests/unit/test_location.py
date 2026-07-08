@@ -1,4 +1,5 @@
 from rotkehlchen.constants.location_details import LOCATION_DETAILS
+from rotkehlchen.db.schema import DB_CREATE_LOCATION
 from rotkehlchen.exchanges.constants import (
     ALL_SUPPORTED_EXCHANGES,
     EXCHANGES_WITH_PASSPHRASE,
@@ -26,3 +27,12 @@ def test_location_details_coverage():
                     assert 'is_exchange_without_api_secret' in exchange_details
                 continue
             assert 'is_exchange' in location_detail
+
+
+def test_all_locations_exist_in_db_schema():
+    """Test that fresh user DBs contain all Location enum values."""
+    for location in Location:
+        assert (
+            f"INSERT OR IGNORE INTO location(location, seq) VALUES "
+            f"('{location.serialize_for_db()}', {location.value});"
+        ) in DB_CREATE_LOCATION
