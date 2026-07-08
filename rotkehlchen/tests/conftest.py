@@ -42,8 +42,6 @@ if TYPE_CHECKING:
     from vcr import VCR
 
 
-# Added here to prevent a warning about polars and forking which does not affect us
-os.environ['POLARS_ALLOW_FORKING_THREAD'] = '1'
 # freezegun's default ignore list contains 'threading', and its call-stack inspection
 # looks only 5 frames up: any time call made near the top of a task thread's stack sees
 # the threading bootstrap frames and silently gets the REAL time instead of the frozen

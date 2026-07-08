@@ -83,7 +83,7 @@ def main() -> None:
     }
 
     if urlparse(url).scheme not in {'http', 'https'}:
-        logger.error(f'Invalid webhook URL scheme for {group_key} group {job_type} job')
+        logger.error('Invalid webhook URL scheme for %s group %s job', group_key, job_type)
         sys.exit(1)
 
     request = Request(  # noqa: S310  # scheme validated above
@@ -98,13 +98,15 @@ def main() -> None:
     except HTTPError as e:
         response_status = e.code
     except URLError as e:
-        logger.error(f'Failed to notify {group_key} group for {job_type} job: {e.reason}')
+        logger.error('Failed to notify %s group for %s job: %s', group_key, job_type, e.reason)
         sys.exit(1)
 
     if response_status not in {HTTPStatus.OK, HTTPStatus.NO_CONTENT}:
         logger.error(
-            f'Failed to notify {group_key} group for {job_type} job. '
-            f'Status code: {response_status}',
+            'Failed to notify %s group for %s job. Status code: %s',
+            group_key,
+            job_type,
+            response_status,
         )
         sys.exit(1)
 

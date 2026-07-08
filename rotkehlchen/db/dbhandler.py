@@ -2647,7 +2647,7 @@ class DBHandler:
                     try:  # type is checked above
                         extras[key] = OkxLocation.deserialize(entry[1])
                     except DeserializationError as e:
-                        log.error(f'Couldnt deserialize okx location from DB. {e!s}')
+                        log.error('Couldnt deserialize okx location from DB. %s', e)
                 else:  # can only be BINANCE_MARKETS_KEY
                     try:
                         extras[key] = json.loads(entry[1])
