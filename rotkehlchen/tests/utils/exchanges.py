@@ -20,6 +20,7 @@ from rotkehlchen.exchanges.bitstamp import Bitstamp
 from rotkehlchen.exchanges.bybit import Bybit
 from rotkehlchen.exchanges.coinbase import Coinbase
 from rotkehlchen.exchanges.coinbaseprime import Coinbaseprime
+from rotkehlchen.exchanges.coinex import Coinex
 from rotkehlchen.exchanges.cryptocom import Cryptocom
 from rotkehlchen.exchanges.exchange import ExchangeInterface, ExchangeWithoutApiSecret
 from rotkehlchen.exchanges.gate import Gate
@@ -903,6 +904,19 @@ def create_test_gate(
     )
 
 
+def create_test_coinex(
+        database: DBHandler,
+        msg_aggregator: MessagesAggregator,
+) -> Coinex:
+    return Coinex(
+        name='coinex',
+        api_key=make_api_key(),
+        secret=make_api_secret(),
+        database=database,
+        msg_aggregator=msg_aggregator,
+    )
+
+
 def create_test_kucoin(
         database: DBHandler,
         msg_aggregator: MessagesAggregator,
@@ -1096,6 +1110,14 @@ def try_get_first_exchange(
         exchange_manager: ExchangeManager,
         location: Literal[Location.COINBASEPRIME],
 ) -> Coinbaseprime | None:
+    ...
+
+
+@overload
+def try_get_first_exchange(
+        exchange_manager: ExchangeManager,
+        location: Literal[Location.COINEX],
+) -> Coinex | None:
     ...
 
 
