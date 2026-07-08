@@ -4,7 +4,6 @@ from contextlib import suppress
 from typing import TYPE_CHECKING, Any, Final, NamedTuple, overload
 
 import regex
-from solders.solders import Signature
 
 from rotkehlchen.api.websockets.typedefs import WSMessageType
 from rotkehlchen.assets.asset import (
@@ -19,6 +18,7 @@ from rotkehlchen.assets.asset import (
 from rotkehlchen.assets.resolver import AssetResolver
 from rotkehlchen.assets.types import AssetType
 from rotkehlchen.chain.evm.constants import DEFAULT_TOKEN_DECIMALS
+from rotkehlchen.chain.solana.rpc import Signature
 from rotkehlchen.chain.solana.utils import is_solana_token_nft
 from rotkehlchen.constants.assets import (
     A_BSC_BNB,

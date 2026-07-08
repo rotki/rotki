@@ -7,15 +7,22 @@ from typing import TYPE_CHECKING, Any
 from unittest.mock import MagicMock, patch
 
 import pytest
+import requests
 from base58 import b58decode
-from httpx import HTTPStatusError, Response
-from solana.exceptions import SolanaRpcException
-from solana.rpc.api import Client
 
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.utils import get_or_create_solana_token, get_solana_token
 from rotkehlchen.chain.evm.types import NodeName, WeightedNode
 from rotkehlchen.chain.mixins.rpc_nodes import RPCNode, SolanaNodeCapabilities
+from rotkehlchen.chain.solana.rpc import (
+    Client,
+    MemcmpOpts,
+    Pubkey,
+    SerdeJSONError,
+    Signature,
+    SolanaRpcException,
+    TokenAccountOpts,
+)
 from rotkehlchen.chain.solana.utils import (
     STAKE_ACCOUNT_DELEGATED_SIZE,
     STAKE_ACCOUNT_META_SIZE,
@@ -43,6 +50,84 @@ if TYPE_CHECKING:
 def identifier_to_address(identifier: str) -> SolanaAddress:
     """Extract the address from a solana token identifier."""
     return SolanaAddress(identifier.split(':')[1])
+
+
+def mock_solana_rpc_response(payload: Any) -> MagicMock:
+    """Build a mocked requests response containing a JSON-RPC payload."""
+    response = MagicMock()
+    response.raise_for_status.return_value = None
+    response.json.return_value = payload
+    return response
+
+
+def test_vendored_solana_types() -> None:
+    """Test the local Solana types match the behavior rotki relies on."""
+    address = 'So11111111111111111111111111111111111111112'
+    pubkey = Pubkey.from_string(address)
+    assert str(pubkey) == address
+    assert Pubkey.from_bytes(bytes(pubkey)) == pubkey
+
+    signature = Signature.from_string(
+        '58F9fNP78FiBCbVc2Gdy6on2d6pZiJcTbqib4MsTfNcgAXqS7UGp3a3eeEy7fRWnLiXaJjncUHdqtpCnEFuVsVEM',
+    )
+    assert str(Signature.from_bytes(signature.to_bytes())) == str(signature)
+
+    metadata_pda, bump = Pubkey.find_program_address(
+        seeds=[
+            b'metadata',
+            bytes(Pubkey.from_string('metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s')),
+            bytes(pubkey),
+        ],
+        program_id=Pubkey.from_string('metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s'),
+    )
+    assert str(metadata_pda) == '6dM4TqWyWJsbx7obrdLcviBkTafD5E8av61zfU6jq57X'
+    assert bump == 255
+
+
+@pytest.mark.parametrize('payload', [[], None, 'ok'])
+def test_solana_rpc_invalid_envelope_raises_serde_error(payload: Any) -> None:
+    client = Client(endpoint='http://example.invalid', timeout=1)
+    with (
+        patch('requests.post', return_value=mock_solana_rpc_response(payload)),
+        pytest.raises(SerdeJSONError, match='Unexpected solana RPC response format'),
+    ):
+        client.get_health()
+
+
+def test_solana_rpc_method_decode_errors_raise_serde_error() -> None:
+    client = Client(endpoint='http://example.invalid', timeout=1)
+    pubkey = Pubkey.from_string('11111111111111111111111111111111')
+    signature = Signature.default()
+
+    for method, payload in (
+        (partial(client.get_genesis_hash), {'result': 'bad'}),
+        (partial(client.get_block, 0), {'result': {}}),
+        (partial(client.get_account_info, pubkey), {'result': {'value': {
+            'data': ['', 'base64'],
+            'executable': False,
+            'lamports': 1,
+            'owner': 'bad',
+        }}}),
+        (partial(client.get_multiple_accounts, [pubkey]), {'result': {'value': [{
+            'data': ['', 'base64'],
+            'executable': False,
+            'lamports': 1,
+            'owner': 'bad',
+        }]}}),
+        (partial(
+            client.get_token_accounts_by_owner,
+            owner=pubkey,
+            opts=TokenAccountOpts(program_id=pubkey),
+        ), {'result': {'value': [{'pubkey': 'bad', 'account': {}}]}}),
+        (partial(client.get_program_accounts, pubkey, filters=[MemcmpOpts(offset=0, bytes='')]), {'result': [{'pubkey': 'bad', 'account': {}}]}),  # noqa: E501
+        (partial(client.get_signatures_for_address, pubkey, limit=1), {'result': [{'signature': 'bad'}]}),  # noqa: E501
+        (partial(client.get_transaction, signature, max_supported_transaction_version=0), {'result': {}}),  # noqa: E501
+    ):
+        with (
+            patch('requests.post', return_value=mock_solana_rpc_response(payload)),
+            pytest.raises(SerdeJSONError, match='Failed to decode solana'),
+        ):
+            method()
 
 
 @pytest.mark.vcr
@@ -320,10 +405,12 @@ def test_rate_limit_handling(
         call_log.append(client_name)
 
         if client_name == 'node1' and do_rate_limit:
-            raise SolanaRpcException(MagicMock(), MagicMock(), '', client) from HTTPStatusError(
-                message='Rate Limit',
-                request=MagicMock(),
-                response=Response(status_code=429, headers={'retry-after': '5'}),
+            response = requests.Response()
+            response.status_code = 429
+            response.headers['retry-after'] = '5'
+            raise SolanaRpcException(MagicMock(), MagicMock(), '', client) from requests.exceptions.HTTPError(  # noqa: E501
+                'Rate Limit',
+                response=response,
             )
 
     # Query 1: node1 rate limits, falls back to node2

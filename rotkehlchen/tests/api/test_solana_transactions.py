@@ -4,8 +4,8 @@ from unittest.mock import patch
 
 import pytest
 import requests
-from solders.solders import Signature
 
+from rotkehlchen.chain.solana.rpc import Signature
 from rotkehlchen.chain.solana.types import SolanaTransaction
 from rotkehlchen.db.filtering import SolanaEventFilterQuery, SolanaTransactionsFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents

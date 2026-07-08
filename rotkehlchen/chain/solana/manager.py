@@ -3,8 +3,6 @@ from collections import defaultdict
 from collections.abc import Sequence
 from typing import TYPE_CHECKING
 
-from solders.pubkey import Pubkey
-
 from rotkehlchen.accounting.structures.balance import Balance, BalanceSheet
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.utils import (
@@ -13,6 +11,7 @@ from rotkehlchen.assets.utils import (
     token_normalized_value,
 )
 from rotkehlchen.chain.manager import ChainManagerWithNodesMixin, ChainManagerWithTransactions
+from rotkehlchen.chain.solana.rpc import Pubkey
 from rotkehlchen.chain.solana.utils import deserialize_token_account, lamports_to_sol
 from rotkehlchen.constants import DEFAULT_BALANCE_LABEL
 from rotkehlchen.constants.assets import A_SOL

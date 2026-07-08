@@ -5,9 +5,8 @@ from typing import Final, NamedTuple
 from base58 import b58decode
 from construct import Struct
 from construct.core import ConstructError
-from solders.solders import Pubkey, UiCompiledInstruction
-from spl.token._layouts import ACCOUNT_LAYOUT, MINT_LAYOUT
 
+from rotkehlchen.chain.solana.rpc import Pubkey, UiCompiledInstruction
 from rotkehlchen.chain.solana.types import SolanaInstruction
 from rotkehlchen.errors.misc import RemoteError, UnableToDecryptRemoteData
 from rotkehlchen.errors.serialization import DeserializationError
@@ -124,14 +123,9 @@ def deserialize_mint(mint_data: bytes) -> MintInfo:
             f'only got {len(mint_data)} bytes.',
         )
 
-    try:
-        parsed_mint_data = MINT_LAYOUT.parse(mint_data)
-    except ConstructError as e:
-        raise DeserializationError(f'Failed to parse solana token mint data due to {e!s}') from e
-
     return MintInfo(
-        supply=parsed_mint_data.supply,
-        decimals=parsed_mint_data.decimals,
+        supply=int.from_bytes(mint_data[36:44], byteorder='little'),
+        decimals=mint_data[44],
         tlv_data=(
             mint_data[ACCOUNT_SIZE + ACCOUNT_TYPE_SIZE:]
             if len(mint_data) > ACCOUNT_SIZE and mint_data[ACCOUNT_SIZE] == AccountType.MINT
@@ -350,13 +344,8 @@ def deserialize_token_account(account_data: bytes) -> TokenAccountInfo:
             f'got {len(account_data)} bytes.',
         )
 
-    try:
-        decoded = ACCOUNT_LAYOUT.parse(account_data)
-    except ConstructError as e:
-        raise DeserializationError(f'Failed to parse solana token account data due to {e!s}') from e  # noqa: E501
-
     return TokenAccountInfo(
-        mint=bytes_to_solana_address(decoded.mint),
-        owner=bytes_to_solana_address(decoded.owner),
-        amount=decoded.amount,
+        mint=bytes_to_solana_address(account_data[0:32]),
+        owner=bytes_to_solana_address(account_data[32:64]),
+        amount=int.from_bytes(account_data[64:72], byteorder='little'),
     )

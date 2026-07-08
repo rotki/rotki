@@ -7,8 +7,7 @@ from rotkehlchen.db.filtering import (
 )
 
 if TYPE_CHECKING:
-    from solders.solders import Signature
-
+    from rotkehlchen.chain.solana.rpc import Signature
     from rotkehlchen.chain.solana.types import SolanaTransaction
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.db.drivers.sqlite import DBCursor

@@ -3,12 +3,11 @@ from contextlib import ExitStack
 from typing import Final
 from unittest.mock import patch
 
-from solders.solders import Signature
-
 from rotkehlchen.chain.evm.types import NodeName, WeightedNode
 from rotkehlchen.chain.solana.decoding.decoder import SolanaTransactionDecoder
 from rotkehlchen.chain.solana.decoding.tools import SolanaDecoderTools
 from rotkehlchen.chain.solana.node_inquirer import SolanaInquirer
+from rotkehlchen.chain.solana.rpc import Signature
 from rotkehlchen.chain.solana.transactions import SolanaTransactions
 from rotkehlchen.constants.misc import ONE
 from rotkehlchen.history.events.structures.solana_event import SolanaEvent

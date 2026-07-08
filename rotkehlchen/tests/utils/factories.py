@@ -4,12 +4,12 @@ import string
 from typing import TYPE_CHECKING, Any
 
 from eth_utils.address import to_checksum_address
-from solders.solders import Pubkey, Signature
 
 from rotkehlchen.accounting.types import EventAccountingRuleStatus
 from rotkehlchen.assets.asset import Asset, EvmToken
 from rotkehlchen.chain.ethereum.modules.eth2.constants import CPT_ETH2
 from rotkehlchen.chain.evm.types import string_to_evm_address
+from rotkehlchen.chain.solana.rpc import Pubkey, Signature
 from rotkehlchen.chain.substrate.types import SubstrateAddress
 from rotkehlchen.constants import ONE
 from rotkehlchen.constants.assets import A_ETH

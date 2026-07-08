@@ -5,9 +5,9 @@ from typing import TYPE_CHECKING, Any, Final, Literal, overload
 
 import requests
 from base58 import b58decode
-from solders.solders import Signature
 
 from rotkehlchen.chain.evm.types import NodeName, WeightedNode
+from rotkehlchen.chain.solana.rpc import Signature
 from rotkehlchen.chain.solana.types import SolanaInstruction, SolanaTransaction
 from rotkehlchen.concurrency import cancellable_sleep
 from rotkehlchen.constants.misc import ONE

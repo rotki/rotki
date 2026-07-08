@@ -1,9 +1,8 @@
 from typing import TYPE_CHECKING, Any, Literal, cast
 
-from solders.solders import Signature
-
 from rotkehlchen.accounting.mixins.event import AccountingEventType
 from rotkehlchen.assets.asset import Asset
+from rotkehlchen.chain.solana.rpc import Signature
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.history.events.structures.base import HistoryBaseEntryType
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
@@ -118,7 +117,7 @@ class SolanaSwapEvent(SolanaEvent, SwapEvent):
 
     def __repr__(self) -> str:
         fields = self._history_base_entry_repr_fields() + [
-            f'self.tx_ref={self.tx_ref!s}',  # convert to string to avoid newlines from solders library  # noqa: E501
+            f'self.tx_ref={self.tx_ref!s}',
             f'{self.counterparty=}',
             f'{self.address=}',
         ]

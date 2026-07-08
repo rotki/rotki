@@ -1,8 +1,7 @@
 import logging
 from typing import TYPE_CHECKING, Any, Literal
 
-from solders.solders import Signature
-
+from rotkehlchen.chain.solana.rpc import Signature
 from rotkehlchen.history.events.structures.base import (
     HistoryBaseEntryType,
 )
