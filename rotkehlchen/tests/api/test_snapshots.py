@@ -441,58 +441,60 @@ def test_export_snapshot(
         db.set_settings(cursor, ModifiableDBSettings(
             main_currency=A_EUR.resolve_to_asset_with_oracles()),
         )
-        response = requests.get(
-            api_url_for(
-                rotkehlchen_api_server,
-                'per_timestamp_db_snapshots_resource',
-                timestamp=ts,
-                path=csv_dir,
-                action='export',
-            ),
-        )
-        assert_csv_export_response(
-            response=response,
-            csv_dir=csv_dir,
-            main_currency=A_EUR.resolve_to_asset_with_oracles(),
-            is_download=False,
-            timestamp_validation_data=(ts, display_date_in_localtime),
-        )
+    response = requests.get(
+        api_url_for(
+            rotkehlchen_api_server,
+            'per_timestamp_db_snapshots_resource',
+            timestamp=ts,
+            path=csv_dir,
+            action='export',
+        ),
+    )
+    assert_csv_export_response(
+        response=response,
+        csv_dir=csv_dir,
+        main_currency=A_EUR.resolve_to_asset_with_oracles(),
+        is_download=False,
+        timestamp_validation_data=(ts, display_date_in_localtime),
+    )
 
+    with db.user_write() as cursor:
         db.set_settings(cursor, ModifiableDBSettings(
             main_currency=A_ETH.resolve_to_asset_with_oracles()),
         )
-        response = requests.get(
-            api_url_for(
-                rotkehlchen_api_server,
-                'per_timestamp_db_snapshots_resource',
-                timestamp=ts,
-                path=csv_dir2,
-                action='export',
-            ),
-        )
-        assert_csv_export_response(
-            response=response,
-            csv_dir=csv_dir2,
-            main_currency=A_ETH.resolve_to_asset_with_oracles(),
-            is_download=False,
-            timestamp_validation_data=(ts, display_date_in_localtime),
-        )
+    response = requests.get(
+        api_url_for(
+            rotkehlchen_api_server,
+            'per_timestamp_db_snapshots_resource',
+            timestamp=ts,
+            path=csv_dir2,
+            action='export',
+        ),
+    )
+    assert_csv_export_response(
+        response=response,
+        csv_dir=csv_dir2,
+        main_currency=A_ETH.resolve_to_asset_with_oracles(),
+        is_download=False,
+        timestamp_validation_data=(ts, display_date_in_localtime),
+    )
 
+    with db.user_write() as cursor:
         db.set_settings(cursor, ModifiableDBSettings(
             main_currency=A_USD.resolve_to_asset_with_oracles()),
         )
-        response = requests.get(
-            api_url_for(
-                rotkehlchen_api_server,
-                'per_timestamp_db_snapshots_resource',
-                timestamp=ts,
-                action='export',
-            ),
-        )
-        assert_error_response(
-            response,
-            contained_in_msg='A path has to be provided when action is export',
-        )
+    response = requests.get(
+        api_url_for(
+            rotkehlchen_api_server,
+            'per_timestamp_db_snapshots_resource',
+            timestamp=ts,
+            action='export',
+        ),
+    )
+    assert_error_response(
+        response,
+        contained_in_msg='A path has to be provided when action is export',
+    )
 
 
 @pytest.mark.parametrize('default_mock_price_value', [ONE])
@@ -509,25 +511,25 @@ def test_export_snapshot_unknown_asset(
         db.set_settings(cursor, ModifiableDBSettings(
             main_currency=A_EUR.resolve_to_asset_with_oracles()),
         )
-        response = requests.get(
-            api_url_for(
-                rotkehlchen_api_server,
-                'per_timestamp_db_snapshots_resource',
-                timestamp=ts,
-                path=csv_dir,
-                action='export',
-            ),
-        )
-        assert_csv_export_response(
-            response,
-            csv_dir,
-            main_currency=A_EUR.resolve_to_asset_with_oracles(),
-            is_download=False,
-            expected_entries=1,
-        )
-        errors = rotkehlchen_api_server.rest_api.rotkehlchen.msg_aggregator.consume_errors()
-        assert len(errors) == 1
-        assert 'Failed to include balance for asset YABIRXROTKI.' in errors[0]
+    response = requests.get(
+        api_url_for(
+            rotkehlchen_api_server,
+            'per_timestamp_db_snapshots_resource',
+            timestamp=ts,
+            path=csv_dir,
+            action='export',
+        ),
+    )
+    assert_csv_export_response(
+        response,
+        csv_dir,
+        main_currency=A_EUR.resolve_to_asset_with_oracles(),
+        is_download=False,
+        expected_entries=1,
+    )
+    errors = rotkehlchen_api_server.rest_api.rotkehlchen.msg_aggregator.consume_errors()
+    assert len(errors) == 1
+    assert 'Failed to include balance for asset YABIRXROTKI.' in errors[0]
 
 
 @pytest.mark.parametrize('default_mock_price_value', [ONE])
