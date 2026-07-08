@@ -11,7 +11,7 @@ import NftDetails from '@/modules/balances/nft/NftDetails.vue';
 import { useConfirmStore } from '@/modules/core/common/use-confirm-store';
 import { useCommonTableProps } from '@/modules/core/table/use-common-table-props';
 import { TableId, useRememberTableSorting } from '@/modules/core/table/use-remember-table-sorting';
-import { useGeneralSettingsStore } from '@/modules/settings/use-general-settings-store';
+import { useSetting } from '@/modules/settings/use-setting';
 import AssetSelect from '@/modules/shell/components/inputs/AssetSelect.vue';
 import RowActions from '@/modules/shell/components/RowActions.vue';
 import TablePageLayout from '@/modules/shell/layout/TablePageLayout.vue';
@@ -21,7 +21,7 @@ const { t } = useI18n({ useScope: 'global' });
 const filter = ref<string>();
 const { editableItem, openDialog } = useCommonTableProps<ManualPriceFormPayload>();
 
-const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
+const currencySymbol = useSetting('currencySymbol');
 
 const sort = ref<DataTableSortData<ManualPriceWithUsd>>([]);
 

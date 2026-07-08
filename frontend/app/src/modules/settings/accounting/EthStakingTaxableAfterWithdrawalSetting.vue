@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import SettingsOption from '@/modules/settings/controls/SettingsOption.vue';
-import { useAccountingSettingsStore } from '@/modules/settings/use-accounting-settings-store';
+import { useSetting } from '@/modules/settings/use-setting';
 
 const ethStakingTaxableAfterWithdrawalEnabled = ref(false);
-const { ethStakingTaxableAfterWithdrawalEnabled: enabled } = storeToRefs(useAccountingSettingsStore());
+const enabled = useSetting('ethStakingTaxableAfterWithdrawalEnabled');
 
 onMounted(() => {
   set(ethStakingTaxableAfterWithdrawalEnabled, get(enabled));

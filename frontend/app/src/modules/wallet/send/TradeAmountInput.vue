@@ -3,7 +3,7 @@ import { bigNumberify } from '@rotki/common';
 import { get, set } from '@vueuse/core';
 import { AssetAmountDisplay, FiatDisplay } from '@/modules/assets/amount-display/components';
 import { bigNumberifyFromRef } from '@/modules/core/common/data/bignumbers';
-import { useGeneralSettingsStore } from '@/modules/settings/use-general-settings-store';
+import { useSetting } from '@/modules/settings/use-setting';
 import AmountInput from '@/modules/shell/components/inputs/AmountInput.vue';
 import { useInjectedTradableAsset } from '@/modules/wallet/use-tradable-asset';
 
@@ -23,7 +23,7 @@ const { t } = useI18n({ useScope: 'global' });
 const fiatValue = ref<string>('0');
 const isAmountSelected = ref<boolean>(true);
 
-const { currency } = storeToRefs(useGeneralSettingsStore());
+const currency = useSetting('currency');
 
 const { getAssetDetail } = useInjectedTradableAsset();
 const assetDetail = getAssetDetail(() => asset, () => chain);

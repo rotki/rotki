@@ -50,8 +50,8 @@ async function setup(settings?: Record<string, unknown>): Promise<{
   composable: Awaited<ReturnType<typeof import('./use-gnosis-pay-safe-migration')['useGnosisPaySafeMigration']>>;
 }> {
   if (settings) {
-    const { useFrontendSettingsStore } = await import('@/modules/settings/use-frontend-settings-store');
-    useFrontendSettingsStore().update(settings);
+    const { useSettingsRepo } = await import('@/modules/settings/settings-repo');
+    useSettingsRepo().updateFrontend(settings);
   }
   const { useGnosisPaySafeMigration } = await import('./use-gnosis-pay-safe-migration');
   return { composable: useGnosisPaySafeMigration() };

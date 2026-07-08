@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { useLocations } from '@/modules/core/common/use-locations';
-import { useFrontendSettingsStore } from '@/modules/settings/use-frontend-settings-store';
+import { useSetting } from '@/modules/settings/use-setting';
 import AppImage from '@/modules/shell/components/AppImage.vue';
 
 const { item, horizontal, icon, size = '24px', imageClass } = defineProps<{
@@ -16,7 +16,7 @@ const emit = defineEmits<{
 }>();
 
 const { useLocationData } = useLocations();
-const { shouldShowAmount } = storeToRefs(useFrontendSettingsStore());
+const shouldShowAmount = useSetting('shouldShowAmount');
 
 const location = useLocationData(() => item);
 </script>

@@ -37,10 +37,8 @@ vi.mock('@/modules/core/notifications/use-notifications-store', () => ({
   }),
 }));
 
-vi.mock('@/modules/settings/use-frontend-settings-store', () => ({
-  useFrontendSettingsStore: (): object => ({
-    dateInputFormat: ref('%d/%m/%Y %H:%M'),
-  }),
+vi.mock('@/modules/settings/use-setting', () => ({
+  useSetting: vi.fn((key: string) => (key === 'dateInputFormat' ? ref('%d/%m/%Y %H:%M') : ref(undefined))),
 }));
 
 vi.mock('@/modules/core/common/data/date', () => ({

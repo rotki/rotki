@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import { CURRENCY_USD } from '@/modules/assets/amount-display/currencies';
-import { useGeneralSettingsStore } from '@/modules/settings/use-general-settings-store';
+import { useSetting } from '@/modules/settings/use-setting';
 
 const { t } = useI18n({ useScope: 'global' });
-const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
+const currencySymbol = useSetting('currencySymbol');
 
 const notUsd = computed(() => get(currencySymbol) !== CURRENCY_USD);
 </script>

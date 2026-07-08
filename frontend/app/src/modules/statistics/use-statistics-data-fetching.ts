@@ -1,5 +1,5 @@
 import { getErrorMessage, useNotifications } from '@/modules/core/notifications/use-notifications';
-import { useFrontendSettingsStore } from '@/modules/settings/use-frontend-settings-store';
+import { useSetting } from '@/modules/settings/use-setting';
 import { useStatisticsApi } from '@/modules/statistics/api/use-statistics-api';
 import { useStatisticsStore } from '@/modules/statistics/use-statistics-store';
 
@@ -11,7 +11,7 @@ export function useStatisticsDataFetching(): UseStatisticsDataFetchingReturn {
   const { netValue } = storeToRefs(useStatisticsStore());
   const api = useStatisticsApi();
   const { notifyError } = useNotifications();
-  const { nftsInNetValue } = storeToRefs(useFrontendSettingsStore());
+  const nftsInNetValue = useSetting('nftsInNetValue');
   const { t } = useI18n({ useScope: 'global' });
 
   async function fetchNetValue(): Promise<void> {

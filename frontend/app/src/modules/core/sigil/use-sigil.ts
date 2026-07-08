@@ -10,7 +10,7 @@ import { useExchangesSummaryHandler } from '@/modules/core/sigil/handlers/exchan
 import { useHistorySyncHandler } from '@/modules/core/sigil/handlers/history-sync';
 import { useSessionConfigHandler } from '@/modules/core/sigil/handlers/session-config';
 import { enqueue, startQueue, stopQueue, WEBSITE_ID } from '@/modules/core/sigil/use-sigil-queue';
-import { useGeneralSettingsStore } from '@/modules/settings/use-general-settings-store';
+import { useSetting } from '@/modules/settings/use-setting';
 import { router } from '@/router';
 
 /**
@@ -46,7 +46,7 @@ function buildSafeUrl(to: { name?: string | symbol | null | undefined; params: R
 
 export const useSigil = createPersistentSharedComposable(({ acquireBusy, releaseBusy }) => {
   const { logged } = storeToRefs(useSessionAuthStore());
-  const { submitUsageAnalytics } = storeToRefs(useGeneralSettingsStore());
+  const submitUsageAnalytics = useSetting('submitUsageAnalytics');
   const { isDevelop } = storeToRefs(useMainStore());
 
   // Initialize handlers in Vue context so they can resolve stores/composables.

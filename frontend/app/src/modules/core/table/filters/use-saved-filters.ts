@@ -1,7 +1,7 @@
 import type { ComputedRef, MaybeRefOrGetter } from 'vue';
 import type { ActionStatus } from '@/modules/core/common/action';
 import type { BaseSuggestion, SavedFilterLocation, Suggestion } from '@/modules/core/table/filtering';
-import { useFrontendSettingsStore } from '@/modules/settings/use-frontend-settings-store';
+import { useSetting } from '@/modules/settings/use-setting';
 import { useSettingsOperations } from '@/modules/settings/use-settings-operations';
 
 const LIMIT_PER_LOCATION = 10;
@@ -17,10 +17,9 @@ export function useSavedFilter(
   location: MaybeRefOrGetter<SavedFilterLocation>,
   isAsset: (key: string) => boolean,
 ): UseSavedFilterReturn {
-  const frontendStore = useFrontendSettingsStore();
   const { updateFrontendSetting } = useSettingsOperations();
 
-  const { savedFilters: allSavedFilters } = storeToRefs(frontendStore);
+  const allSavedFilters = useSetting('savedFilters');
 
   const savedFilters = computed<Suggestion[][]>(() => {
     const baseSuggestions = get(allSavedFilters)[toValue(location)] || [];

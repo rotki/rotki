@@ -6,7 +6,7 @@ import { useValidation } from '@/modules/core/common/use-validation';
 import { toMessages } from '@/modules/core/common/validation/validation';
 import SettingsItem from '@/modules/settings/controls/SettingsItem.vue';
 import SettingsOption from '@/modules/settings/controls/SettingsOption.vue';
-import { useFrontendSettingsStore } from '@/modules/settings/use-frontend-settings-store';
+import { useSetting } from '@/modules/settings/use-setting';
 
 const evmQueryIndicatorMinOutOfSyncPeriod = ref<string>('');
 
@@ -31,7 +31,7 @@ const rules = {
 const v$ = useVuelidate(rules, { evmQueryIndicatorMinOutOfSyncPeriod }, { $autoDirty: true });
 const { callIfValid } = useValidation(v$);
 
-const { evmQueryIndicatorMinOutOfSyncPeriod: currentPeriod } = storeToRefs(useFrontendSettingsStore());
+const currentPeriod = useSetting('evmQueryIndicatorMinOutOfSyncPeriod');
 
 function resetValue() {
   set(evmQueryIndicatorMinOutOfSyncPeriod, get(currentPeriod).toString());
@@ -55,7 +55,6 @@ onMounted(() => {
     <SettingsOption
       #default="{ error, success, update }"
       setting="evmQueryIndicatorMinOutOfSyncPeriod"
-      frontend-setting
       :transform="transform"
       :error-message="t('frontend_settings.history_query_indicator.min_out_of_sync_period.validation.error')"
       @finished="resetValue()"

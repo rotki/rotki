@@ -4,7 +4,7 @@ import { between, helpers, required } from '@vuelidate/validators';
 import { useValidation } from '@/modules/core/common/use-validation';
 import { toMessages } from '@/modules/core/common/validation/validation';
 import SettingsOption from '@/modules/settings/controls/SettingsOption.vue';
-import { useFrontendSettingsStore } from '@/modules/settings/use-frontend-settings-store';
+import { useSetting } from '@/modules/settings/use-setting';
 import { useMonitorService } from '@/modules/shell/app/use-monitor-service';
 
 const queryPeriod = ref<string>('5');
@@ -26,7 +26,7 @@ const rules = {
   },
 };
 
-const { queryPeriod: currentPeriod } = storeToRefs(useFrontendSettingsStore());
+const currentPeriod = useSetting('queryPeriod');
 
 function resetQueryPeriod() {
   set(queryPeriod, get(currentPeriod).toString());
@@ -48,7 +48,6 @@ onMounted(() => {
   <SettingsOption
     class="mt-1"
     setting="queryPeriod"
-    frontend-setting
     :transform="transform"
     :error-message="t('frontend_settings.periodic_query.validation.error')"
     @updated="restart()"

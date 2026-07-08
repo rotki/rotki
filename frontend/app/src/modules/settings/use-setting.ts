@@ -1,55 +1,25 @@
 import { type Ref, toRef } from 'vue';
-import { useAccountingSettingsStore } from '@/modules/settings/use-accounting-settings-store';
-import { useFrontendSettingsStore } from '@/modules/settings/use-frontend-settings-store';
-import { useGeneralSettingsStore } from '@/modules/settings/use-general-settings-store';
-import { useSessionSettingsStore } from '@/modules/settings/use-session-settings-store';
+import { type ChannelTypeMap, type RegistryEntry, settingsRegistry } from '@/modules/settings/settings-registry';
+import { useSettingsRepo } from '@/modules/settings/settings-repo';
 
-const storeFactories = {
-  accounting: useAccountingSettingsStore,
-  frontend: useFrontendSettingsStore,
-  general: useGeneralSettingsStore,
-  session: useSessionSettingsStore,
-} as const;
+/** The logical key of every registered setting; the single source of setting names. */
+export type SettingKey = keyof typeof settingsRegistry;
 
-export type SettingStoreTag = keyof typeof storeFactories;
+type RegistryOf<K extends SettingKey> = (typeof settingsRegistry)[K];
+
+/** The wire field a key reads from: its explicit `wireKey` when renamed, otherwise the logical key. */
+type WireField<K extends SettingKey> = RegistryOf<K> extends { wireKey: infer W extends string } ? W : K;
 
 /**
- * Explicit routing from a logical setting key to the store that owns it. This is the single place
- * that knows where a setting lives: `useSetting` and every domain facade built on it read through
- * here, so when the backing store is later replaced the routing changes in exactly one spot.
- *
- * The table grows as consumers migrate onto `useSetting` — add a key here the first time a consumer
- * needs it. Keys are grouped by their owning store and kept alphabetical within each group. A key
- * must exist on the store it is mapped to; `use-setting.spec.ts` asserts this at runtime.
+ * The read value type for a setting, derived from its registry entry: a projected key resolves to
+ * its `project` return type; every other key resolves to the field its channel object exposes.
  */
-export const settingStore = {
-  // general
-  currency: 'general',
-  currencySymbol: 'general',
-  dateDisplayFormat: 'general',
-  displayDateInLocaltime: 'general',
-  floatingPrecision: 'general',
-  // frontend
-  abbreviateNumber: 'frontend',
-  amountRoundingMode: 'frontend',
-  currencyLocation: 'frontend',
-  decimalSeparator: 'frontend',
-  minimumDigitToBeAbbreviated: 'frontend',
-  scrambleData: 'frontend',
-  scrambleMultiplier: 'frontend',
-  shouldShowAmount: 'frontend',
-  subscriptDecimals: 'frontend',
-  thousandSeparator: 'frontend',
-  valueRoundingMode: 'frontend',
-} as const satisfies Record<string, SettingStoreTag>;
-
-export type SettingKey = keyof typeof settingStore;
-
-type StoreInstance<T extends SettingStoreTag> = ReturnType<(typeof storeFactories)[T]>;
-
-/** The value the owning store exposes for `key`, read through the store proxy (already unwrapped). */
 export type SettingValue<K extends SettingKey> =
-  StoreInstance<(typeof settingStore)[K]>[K & keyof StoreInstance<(typeof settingStore)[K]>];
+  RegistryOf<K> extends { project: (settings: any) => infer V }
+    ? V
+    : WireField<K> extends keyof ChannelTypeMap[RegistryOf<K>['channel']]
+      ? ChannelTypeMap[RegistryOf<K>['channel']][WireField<K>]
+      : never;
 
 /**
  * Reads a single setting by its logical key and returns a readonly ref to it, without the caller
@@ -57,14 +27,23 @@ export type SettingValue<K extends SettingKey> =
  * domain facades (e.g. `useAmountDisplaySettings`) bundle several of these for settings that are
  * consumed together.
  *
- * The returned ref is a getter ref (no per-key reactive effect) and stays in sync when the store
- * replaces its whole settings object, mirroring `toSettingsRefs`.
+ * The value is projected out of the settings repo's channel object named by the key's registry
+ * entry (applying its `project` transform, or reading its `wireKey` field). The returned ref is a
+ * getter ref (no per-key reactive effect) and stays in sync when the repo replaces a channel object.
  */
 export function useSetting<K extends SettingKey>(key: K): Readonly<Ref<SettingValue<K>>> {
-  const store = storeFactories[settingStore[key]]();
-  // `store` is the union of the four store instance types; the routing table guarantees `key`
-  // indexes the resolved member, but TS cannot prove that for a generic `K`. Read through a getter
-  // ref and assert the element type once, behind this typed facade (same pattern as toSettingsRefs).
-  // eslint-disable-next-line @typescript-eslint/consistent-type-assertions -- routing table guarantees key exists on the resolved store
-  return toRef(() => (store as unknown as Record<K, SettingValue<K>>)[key]);
+  const repo = useSettingsRepo();
+  const entry: RegistryEntry = settingsRegistry[key];
+  const project = entry.project;
+  const field = entry.wireKey ?? key;
+  const read = (): SettingValue<K> => {
+    // `repo[entry.channel]` is the union of the four parsed channel objects; `Reflect.get` reads the
+    // dynamic `field` off it without a `Record` cast. The registry guarantees this resolves to the
+    // key's value type, but that can't be proven for a generic `K`, so assert once here (the only
+    // assertion behind this typed facade, same idea as pinia's storeToRefs).
+    const value: unknown = project ? project(repo[entry.channel]) : Reflect.get(repo[entry.channel], field);
+    // eslint-disable-next-line @typescript-eslint/consistent-type-assertions -- registry guarantees the resolved value is SettingValue<K>; use-setting.spec verifies the mapping at runtime
+    return value as SettingValue<K>;
+  };
+  return toRef(read);
 }

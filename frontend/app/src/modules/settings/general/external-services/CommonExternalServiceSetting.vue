@@ -5,7 +5,7 @@ import { useValidation } from '@/modules/core/common/use-validation';
 import { toMessages } from '@/modules/core/common/validation/validation';
 import SettingsOption from '@/modules/settings/controls/SettingsOption.vue';
 import SettingResetConfirmButton from '@/modules/settings/SettingResetConfirmButton.vue';
-import { useGeneralSettingsStore } from '@/modules/settings/use-general-settings-store';
+import { useSetting } from '@/modules/settings/use-setting';
 import { useMonitorService } from '@/modules/shell/app/use-monitor-service';
 
 const {
@@ -35,7 +35,7 @@ const rules = {
   },
 };
 
-const { [setting]: storeValue } = storeToRefs(useGeneralSettingsStore());
+const storeValue = useSetting(setting);
 
 function resetValue() {
   set(inputValue, get(storeValue).toString());

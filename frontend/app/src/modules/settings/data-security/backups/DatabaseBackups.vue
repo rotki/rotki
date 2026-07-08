@@ -7,7 +7,7 @@ import { getFilepath } from '@/modules/core/common/file/file';
 import { useConfirmStore } from '@/modules/core/common/use-confirm-store';
 import { TableId, useRememberTableSorting } from '@/modules/core/table/use-remember-table-sorting';
 import { useBackupApi } from '@/modules/session/api/use-backup-api';
-import { useGeneralSettingsStore } from '@/modules/settings/use-general-settings-store';
+import { useSetting } from '@/modules/settings/use-setting';
 import DateDisplay from '@/modules/shell/components/display/DateDisplay.vue';
 import RowAppend from '@/modules/shell/components/RowAppend.vue';
 
@@ -71,7 +71,7 @@ const tableHeaders = computed<DataTableColumn<UserDbBackupWithId>[]>(() => [
 
 useRememberTableSorting<UserDbBackupWithId>(TableId.USER_DB_BACKUP, sort, tableHeaders);
 
-const { dateDisplayFormat } = storeToRefs(useGeneralSettingsStore());
+const dateDisplayFormat = useSetting('dateDisplayFormat');
 
 const totalSize = computed(() => size(items.reduce((sum, db) => sum + db.size, 0)));
 

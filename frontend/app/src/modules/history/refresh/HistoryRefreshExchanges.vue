@@ -4,7 +4,7 @@ import { getTextToken } from '@rotki/common';
 import { isEqual, sortBy } from 'es-toolkit';
 import { useExchangeData } from '@/modules/balances/exchanges/use-exchange-data';
 import LocationDisplay from '@/modules/history/LocationDisplay.vue';
-import { useGeneralSettingsStore } from '@/modules/settings/use-general-settings-store';
+import { useSetting } from '@/modules/settings/use-setting';
 
 const modelValue = defineModel<Exchange[]>({ required: true });
 const search = defineModel<string>('search', { required: true });
@@ -18,7 +18,7 @@ const emit = defineEmits<{ 'update:all-selected': [allSelected: boolean] }>();
 const { t } = useI18n({ useScope: 'global' });
 
 const { syncingExchanges } = useExchangeData();
-const { nonSyncingExchanges } = storeToRefs(useGeneralSettingsStore());
+const nonSyncingExchanges = useSetting('nonSyncingExchanges');
 
 const hasNonSyncingExchanges = computed<boolean>(() => get(nonSyncingExchanges).length > 0);
 

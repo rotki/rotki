@@ -11,7 +11,7 @@ import { TaskType } from '@/modules/core/tasks/task-type';
 import { isActionableFailure, useTaskHandler } from '@/modules/core/tasks/use-task-handler';
 import { useTaskStore } from '@/modules/core/tasks/use-task-store';
 import { usePremium } from '@/modules/premium/use-premium';
-import { useGeneralSettingsStore } from '@/modules/settings/use-general-settings-store';
+import { useSetting } from '@/modules/settings/use-setting';
 import { useStatusUpdater } from '@/modules/shell/sync-progress/use-status-updater';
 import { PoolBalances } from './types';
 import { usePoolApi } from './use-pool-api';
@@ -27,7 +27,7 @@ export function usePoolDataFetching(): UsePoolDataFetchingReturn {
 
   const { sushiswapPoolBalances, uniswapPoolBalances } = storeToRefs(usePoolBalancesStore());
   const { recentlyAddedAddresses } = storeToRefs(useBlockchainAccountsStore());
-  const { activeModules } = storeToRefs(useGeneralSettingsStore());
+  const activeModules = useSetting('activeModules');
 
   const premium = usePremium();
   const { t } = useI18n({ useScope: 'global' });

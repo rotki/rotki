@@ -2,7 +2,7 @@ import { mount, type VueWrapper } from '@vue/test-utils';
 import { createPinia, type Pinia, setActivePinia } from 'pinia';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { PrivacyMode } from '@/modules/session/types';
-import { useFrontendSettingsStore } from '@/modules/settings/use-frontend-settings-store';
+import { useSettingsRepo } from '@/modules/settings/settings-repo';
 import EvmChainIcon from '@/modules/shell/components/EvmChainIcon.vue';
 
 describe('evmChainIcon', () => {
@@ -31,7 +31,7 @@ describe('evmChainIcon', () => {
   });
 
   it('should blur the chain icon in privacy mode', async () => {
-    useFrontendSettingsStore().update({ privacyMode: PrivacyMode.SEMI_PRIVATE });
+    useSettingsRepo().updateFrontend({ privacyMode: PrivacyMode.SEMI_PRIVATE });
     await nextTick();
     expect(wrapper.find('.blur').exists()).toBe(true);
   });

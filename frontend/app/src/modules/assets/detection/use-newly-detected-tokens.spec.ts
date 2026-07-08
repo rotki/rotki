@@ -15,10 +15,8 @@ vi.mock('@/modules/assets/use-assets-store', () => ({
 
 const mockNotifyNewNfts = ref<boolean>(true);
 
-vi.mock('@/modules/settings/use-frontend-settings-store', () => ({
-  useFrontendSettingsStore: vi.fn(() => ({
-    notifyNewNfts: mockNotifyNewNfts,
-  })),
+vi.mock('@/modules/settings/use-setting', () => ({
+  useSetting: vi.fn(() => mockNotifyNewNfts),
 }));
 
 // Mock the database composable

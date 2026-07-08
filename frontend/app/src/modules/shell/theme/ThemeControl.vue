@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Theme } from '@rotki/common';
-import { useFrontendSettingsStore } from '@/modules/settings/use-frontend-settings-store';
+import { useSetting } from '@/modules/settings/use-setting';
 import { useSettingsOperations } from '@/modules/settings/use-settings-operations';
 import { useInterop } from '@/modules/shell/app/use-electron-interop';
 import MenuTooltipButton from '@/modules/shell/components/MenuTooltipButton.vue';
@@ -19,9 +19,8 @@ const automaticSymbol = 'A';
 const { t } = useI18n({ useScope: 'global' });
 const { isPackaged, setSelectedTheme } = useInterop();
 
-const frontendSettingsStore = useFrontendSettingsStore();
 const { updateFrontendSetting } = useSettingsOperations();
-const { selectedTheme } = storeToRefs(frontendSettingsStore);
+const selectedTheme = useSetting('selectedTheme');
 
 const isAutomatic = computed<boolean>(() => get(selectedTheme) === Theme.AUTO);
 

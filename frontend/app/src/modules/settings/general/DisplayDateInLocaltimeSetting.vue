@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import SettingsOption from '@/modules/settings/controls/SettingsOption.vue';
-import { useGeneralSettingsStore } from '@/modules/settings/use-general-settings-store';
+import { useSetting } from '@/modules/settings/use-setting';
 
 const displayDateInLocaltime = ref<boolean>(true);
-const { displayDateInLocaltime: enabled } = storeToRefs(useGeneralSettingsStore());
+const enabled = useSetting('displayDateInLocaltime');
 
 onMounted(() => {
   set(displayDateInLocaltime, get(enabled));

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { toCapitalCase } from '@rotki/common';
 import { getPublicProtocolImagePath } from '@/modules/core/common/file/file';
-import { useFrontendSettingsStore } from '@/modules/settings/use-frontend-settings-store';
+import { useSetting } from '@/modules/settings/use-setting';
 import AppImage from '@/modules/shell/components/AppImage.vue';
 
 interface Props {
@@ -12,7 +12,7 @@ interface Props {
 
 const { chain, size = '24px', tooltip = false } = defineProps<Props>();
 
-const { shouldShowAmount } = storeToRefs(useFrontendSettingsStore());
+const shouldShowAmount = useSetting('shouldShowAmount');
 
 function getImageUrl(evmChain: string): string {
   return getPublicProtocolImagePath(`${evmChain}.svg`);

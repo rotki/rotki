@@ -18,7 +18,7 @@ import SummaryCardRefreshMenu from '@/modules/dashboard/summary/SummaryCardRefre
 import VisibleColumnsSelector from '@/modules/dashboard/VisibleColumnsSelector.vue';
 import HideSmallBalances from '@/modules/settings/HideSmallBalances.vue';
 import { BalanceSource, DashboardTableType } from '@/modules/settings/types/frontend-settings';
-import { useFrontendSettingsStore } from '@/modules/settings/use-frontend-settings-store';
+import { useSetting } from '@/modules/settings/use-setting';
 import TablePageLayout from '@/modules/shell/layout/TablePageLayout.vue';
 
 definePage({
@@ -42,7 +42,7 @@ const tableType = DashboardTableType.BLOCKCHAIN_ASSET_BALANCES;
 
 const { useBlockchainBalances } = useAggregatedBalances();
 const { isInitialLoading, isRefreshing } = useBalanceStatus();
-const { dashboardTablesVisibleColumns } = storeToRefs(useFrontendSettingsStore());
+const dashboardTablesVisibleColumns = useSetting('dashboardTablesVisibleColumns');
 const { isDetectingTokens, refreshDisabled } = useBlockchainAccountLoading();
 const { handleBlockchainRefresh } = useBalanceRefresh();
 

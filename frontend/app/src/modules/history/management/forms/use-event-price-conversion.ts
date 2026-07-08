@@ -5,7 +5,7 @@ import { bigNumberifyFromRef } from '@/modules/core/common/data/bignumbers';
 import { millisecondsToSeconds } from '@/modules/core/common/data/date';
 import { TaskType } from '@/modules/core/tasks/task-type';
 import { useTaskStore } from '@/modules/core/tasks/use-task-store';
-import { useGeneralSettingsStore } from '@/modules/settings/use-general-settings-store';
+import { useSetting } from '@/modules/settings/use-setting';
 
 interface UseEventPriceConversionOptions {
   /** The amount of the asset being priced */
@@ -41,7 +41,7 @@ export function useEventPriceConversion({
 
   const { useIsTaskRunning } = useTaskStore();
   const { getHistoricPrice } = usePriceTaskManager();
-  const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
+  const currencySymbol = useSetting('currencySymbol');
 
   const fetching = useIsTaskRunning(TaskType.FETCH_HISTORIC_PRICE);
 

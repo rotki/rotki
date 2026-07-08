@@ -1,10 +1,10 @@
 import type { ExchangesSummaryPayload } from '@/modules/core/sigil/types';
+import { useConnectedExchangesStore } from '@/modules/balances/exchanges/use-connected-exchanges-store';
 import { usePremiumHelper } from '@/modules/premium/use-premium-helper';
-import { useSessionSettingsStore } from '@/modules/settings/use-session-settings-store';
 
 export function useExchangesSummaryHandler(): () => ExchangesSummaryPayload {
   const { currentTier, premium } = usePremiumHelper();
-  const { connectedExchanges } = storeToRefs(useSessionSettingsStore());
+  const { connectedExchanges } = storeToRefs(useConnectedExchangesStore());
 
   return () => {
     const exchanges = get(connectedExchanges);

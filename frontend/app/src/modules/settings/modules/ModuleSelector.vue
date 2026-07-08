@@ -9,7 +9,7 @@ import { Module, SUPPORTED_MODULES, type SupportedModule } from '@/modules/core/
 import { Section } from '@/modules/core/common/status';
 import { TableId, useRememberTableSorting } from '@/modules/core/table/use-remember-table-sorting';
 import { useSessionMetadataStore } from '@/modules/session/use-session-metadata-store';
-import { useGeneralSettingsStore } from '@/modules/settings/use-general-settings-store';
+import { useSetting } from '@/modules/settings/use-setting';
 import { useSettingsOperations } from '@/modules/settings/use-settings-operations';
 import AppImage from '@/modules/shell/components/AppImage.vue';
 import RowActions from '@/modules/shell/components/RowActions.vue';
@@ -26,7 +26,7 @@ const manageModule = ref<Module>();
 
 const { queriedAddresses } = storeToRefs(useSessionMetadataStore());
 const { fetchQueriedAddresses } = useQueriedAddressOperations();
-const { activeModules } = storeToRefs(useGeneralSettingsStore());
+const activeModules = useSetting('activeModules');
 const { update: updateSettings } = useSettingsOperations();
 
 const { nonFungibleTotalValue } = storeToRefs(useBalancesStore());

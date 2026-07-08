@@ -8,9 +8,9 @@ import { computeNetValueDelta, type NetValueZoomRange } from '@/modules/dashboar
 import NetWorthChart from '@/modules/dashboard/graph/NetWorthChart.vue';
 import SnapshotActionButton from '@/modules/dashboard/SnapshotActionButton.vue';
 import { usePremium } from '@/modules/premium/use-premium';
+import { useSettingsRepo } from '@/modules/settings/settings-repo';
 import { isPeriodAllowed } from '@/modules/settings/settings-utils';
-import { useFrontendSettingsStore } from '@/modules/settings/use-frontend-settings-store';
-import { useSessionSettingsStore } from '@/modules/settings/use-session-settings-store';
+import { useSetting } from '@/modules/settings/use-setting';
 import { useSettingsOperations } from '@/modules/settings/use-settings-operations';
 import PercentageDisplay from '@/modules/shell/components/display/PercentageDisplay.vue';
 import { useSectionStatus } from '@/modules/shell/sync-progress/use-section-status';
@@ -21,11 +21,11 @@ const { t } = useI18n({ useScope: 'global' });
 
 const netWorthChart = useTemplateRef<InstanceType<typeof NetWorthChart>>('netWorthChart');
 
-const sessionStore = useSessionSettingsStore();
+const settingsRepo = useSettingsRepo();
 const statisticsStore = useStatisticsStore();
-const { timeframe } = storeToRefs(sessionStore);
+const timeframe = useSetting('timeframe');
 const { totalNetWorth } = storeToRefs(statisticsStore);
-const { visibleTimeframes } = storeToRefs(useFrontendSettingsStore());
+const visibleTimeframes = useSetting('visibleTimeframes');
 const { getNetValue } = statisticsStore;
 
 const premium = usePremium();
@@ -84,7 +84,7 @@ const balanceClass = computed<string>(() => {
 
 async function setTimeframe(value: TimeFrameSetting): Promise<void> {
   assert(value !== TimeFramePersist.REMEMBER);
-  sessionStore.update({ timeframe: value });
+  settingsRepo.updateSession({ timeframe: value });
   get(netWorthChart)?.resetZoom();
   await updateFrontendSetting({ lastKnownTimeframe: value });
 }
@@ -98,7 +98,7 @@ watch(timeframe, () => {
 
 onMounted(() => {
   if (!get(premium) && !isPeriodAllowed(get(timeframe)))
-    sessionStore.update({ timeframe: TimeFramePeriod.TWO_WEEKS });
+    settingsRepo.updateSession({ timeframe: TimeFramePeriod.TWO_WEEKS });
 });
 </script>
 

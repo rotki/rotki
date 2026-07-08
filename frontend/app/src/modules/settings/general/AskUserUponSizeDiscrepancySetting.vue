@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import SettingsOption from '@/modules/settings/controls/SettingsOption.vue';
-import { useGeneralSettingsStore } from '@/modules/settings/use-general-settings-store';
+import { useSetting } from '@/modules/settings/use-setting';
 
 const { dialog = false, confirm = false } = defineProps<{
   dialog?: boolean;
@@ -8,7 +8,7 @@ const { dialog = false, confirm = false } = defineProps<{
 }>();
 
 const value = ref<boolean>(false);
-const { askUserUponSizeDiscrepancy } = storeToRefs(useGeneralSettingsStore());
+const askUserUponSizeDiscrepancy = useSetting('askUserUponSizeDiscrepancy');
 
 watchImmediate(askUserUponSizeDiscrepancy, (askUser) => {
   set(value, !get(askUser));

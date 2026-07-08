@@ -3,7 +3,7 @@ import { type BigNumber, Zero } from '@rotki/common';
 import { startPromise } from '@shared/utils';
 import { CURRENCY_USD } from '@/modules/assets/amount-display/currencies';
 import { useHistoricPriceCache } from '@/modules/assets/prices/use-historic-price-cache';
-import { useGeneralSettingsStore } from '@/modules/settings/use-general-settings-store';
+import { useSetting } from '@/modules/settings/use-setting';
 import { useStatisticsDataFetching } from '@/modules/statistics/use-statistics-data-fetching';
 import { useStatisticsStore } from '@/modules/statistics/use-statistics-store';
 
@@ -66,7 +66,7 @@ interface UseSnapshotListReturn {
 export function useSnapshotList(filters: Ref<SnapshotListFilters> = ref({})): UseSnapshotListReturn {
   const { netValue } = storeToRefs(useStatisticsStore());
   const { fetchNetValue } = useStatisticsDataFetching();
-  const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
+  const currencySymbol = useSetting('currencySymbol');
   const { createKey, getHistoricPrice, getIsPending } = useHistoricPriceCache();
 
   const loading = shallowRef<boolean>(false);

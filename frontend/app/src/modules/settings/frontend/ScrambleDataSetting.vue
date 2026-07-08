@@ -23,7 +23,6 @@ const {
     <SettingsOption
       #default="{ error, success, updateImmediate }"
       setting="scrambleData"
-      frontend-setting
       :error-message="t('frontend_settings.scramble.validation.error')"
     >
       <RuiSwitch

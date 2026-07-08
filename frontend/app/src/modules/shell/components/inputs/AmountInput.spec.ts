@@ -2,7 +2,7 @@ import { createCustomPinia } from '@test/utils/create-pinia';
 import { type ComponentMountingOptions, mount, type VueWrapper } from '@vue/test-utils';
 import { type Pinia, setActivePinia } from 'pinia';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { useFrontendSettingsStore } from '@/modules/settings/use-frontend-settings-store';
+import { useSettingsRepo } from '@/modules/settings/settings-repo';
 import AmountInput from '@/modules/shell/components/inputs/AmountInput.vue';
 
 vi.mock('@/modules/settings/api/use-settings-api', (): Record<string, unknown> => ({
@@ -20,7 +20,7 @@ vi.mock('@/modules/settings/api/use-settings-api', (): Record<string, unknown> =
 
 describe('amount-input', () => {
   let wrapper: VueWrapper<InstanceType<typeof AmountInput>>;
-  let store: ReturnType<typeof useFrontendSettingsStore>;
+  let store: ReturnType<typeof useSettingsRepo>;
   let pinia: Pinia;
 
   beforeEach((): void => {
@@ -72,9 +72,9 @@ describe('amount-input', () => {
   });
 
   it('should works with different thousandSeparator and decimalSeparator', async () => {
-    store = useFrontendSettingsStore(pinia);
+    store = useSettingsRepo(pinia);
 
-    store.update({
+    store.updateFrontend({
       thousandSeparator: '.',
       decimalSeparator: ',',
     });

@@ -9,8 +9,8 @@ import { useBlockchainAccountData } from '@/modules/balances/blockchain/use-bloc
 import { isBlockchain } from '@/modules/core/common/chains';
 import { truncateAddress } from '@/modules/core/common/display/truncate';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
-import { useFrontendSettingsStore } from '@/modules/settings/use-frontend-settings-store';
 import { useScramble } from '@/modules/settings/use-scramble';
+import { useSetting } from '@/modules/settings/use-setting';
 import EnsAvatar from '@/modules/shell/components/display/EnsAvatar.vue';
 import LocationIcon from '@/modules/shell/components/display/LocationIcon.vue';
 import TagDisplay from '@/modules/tags/TagDisplay.vue';
@@ -85,7 +85,7 @@ const {
 
 const tooltip = useTemplateRef<InstanceType<typeof RuiTooltip>>('tooltip');
 
-const { explorers } = storeToRefs(useFrontendSettingsStore());
+const explorers = useSetting('explorers');
 const { useAccountTags } = useBlockchainAccountData();
 const { getAddressName, getAddressNameSource } = useAddressNameResolution();
 const { scrambleAddress, scrambleData, scrambleIdentifier, shouldShowAmount } = useScramble();

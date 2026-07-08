@@ -2,7 +2,7 @@ import type { DataTableColumn, DataTableSortData } from '@rotki/ui-library';
 import type { ComputedRef, Ref, WritableComputedRef } from 'vue';
 import { objectOmit } from '@vueuse/shared';
 import { arrayify } from '@/modules/core/common/data/array';
-import { useFrontendSettingsStore } from '@/modules/settings/use-frontend-settings-store';
+import { useSetting } from '@/modules/settings/use-setting';
 
 export enum TableId {
   ACCOUNT_ASSET_BALANCES = 'ACCOUNT_ASSET_BALANCES',
@@ -52,7 +52,7 @@ export function useRememberTableSorting<T>(
   sort: WritableComputedRef<DataTableSortData<T>> | Ref<DataTableSortData<T>>,
   headers: ComputedRef<DataTableColumn<T>[]> | Ref<DataTableColumn<T>[]>,
 ): void {
-  const { persistTableSorting } = storeToRefs(useFrontendSettingsStore());
+  const persistTableSorting = useSetting('persistTableSorting');
 
   const rawData = useLocalStorage(`rotki.table_sorting`, defaultTableSorting<T>());
 

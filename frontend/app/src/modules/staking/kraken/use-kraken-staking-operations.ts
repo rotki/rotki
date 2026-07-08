@@ -10,7 +10,7 @@ import { getErrorMessage, useNotifications } from '@/modules/core/notifications/
 import { TaskType } from '@/modules/core/tasks/task-type';
 import { useTaskHandler } from '@/modules/core/tasks/use-task-handler';
 import { useTaskStore } from '@/modules/core/tasks/use-task-store';
-import { useFrontendSettingsStore } from '@/modules/settings/use-frontend-settings-store';
+import { useSetting } from '@/modules/settings/use-setting';
 import { useStatusUpdater } from '@/modules/shell/sync-progress/use-status-updater';
 import { useKrakenApi } from '@/modules/staking/api/use-kraken-api';
 import { useKrakenStakingStore } from '@/modules/staking/use-kraken-staking-store';
@@ -28,7 +28,7 @@ export function useKrakenStakingOperations(): UseKrakenStakingOperationsReturn {
   const { isFirstLoad, loading, setStatus } = useStatusUpdater(Section.STAKING_KRAKEN);
   const { t } = useI18n({ useScope: 'global' });
   const { pagination, rawEvents } = storeToRefs(useKrakenStakingStore());
-  const { itemsPerPage } = storeToRefs(useFrontendSettingsStore());
+  const itemsPerPage = useSetting('itemsPerPage');
 
   watchImmediate(itemsPerPage, (newValue: number) => {
     set(pagination, { ...get(pagination), limit: newValue });

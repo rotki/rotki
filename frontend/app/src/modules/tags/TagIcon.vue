@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { Tag } from '@/modules/tags/tags';
-import { useFrontendSettingsStore } from '@/modules/settings/use-frontend-settings-store';
+import { useSetting } from '@/modules/settings/use-setting';
 
 defineOptions({
   inheritAttrs: false,
@@ -12,7 +12,7 @@ const { tag, small = false, showDescription = false } = defineProps<{
   showDescription?: boolean;
 }>();
 
-const { shouldShowAmount } = storeToRefs(useFrontendSettingsStore());
+const shouldShowAmount = useSetting('shouldShowAmount');
 </script>
 
 <template>

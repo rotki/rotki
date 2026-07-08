@@ -3,7 +3,7 @@ import { checkIfDevelopment, startPromise } from '@shared/utils';
 import { useSigil } from '@/modules/core/sigil/use-sigil';
 import { useLocale } from '@/modules/session/use-locale';
 import { useSessionStateCleaner } from '@/modules/session/use-session-state-cleaner';
-import { useSessionSettingsStore } from '@/modules/settings/use-session-settings-store';
+import { useSetting } from '@/modules/settings/use-setting';
 import { useBackendManagement } from '@/modules/shell/app/use-backend-management';
 import { useThemeChecker } from '@/modules/shell/theme/use-theme-checker';
 
@@ -12,7 +12,7 @@ useSigil();
 
 const DevApp = defineAsyncComponent(() => import('@/DevApp.vue'));
 
-const { animationsEnabled } = storeToRefs(useSessionSettingsStore());
+const animationsEnabled = useSetting('animationsEnabled');
 const { setupBackend } = useBackendManagement();
 const route = useRoute();
 useSessionStateCleaner();

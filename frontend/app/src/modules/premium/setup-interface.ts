@@ -12,7 +12,7 @@ import dayjs from 'dayjs';
 import { convertToTimestamp } from '@/modules/core/common/data/date';
 import { logger } from '@/modules/core/common/logging/logging';
 import { assetsApi, balancesApi, statisticsApi, userSettings, utilsApi } from '@/modules/premium/premium-apis';
-import { useFrontendSettingsStore } from '@/modules/settings/use-frontend-settings-store';
+import { useSetting } from '@/modules/settings/use-setting';
 import { useSettingsOperations } from '@/modules/settings/use-settings-operations';
 import { useGraph } from '@/modules/statistics/use-graph';
 import { DARK_COLORS, LIGHT_COLORS } from '@/plugins/theme';
@@ -20,7 +20,7 @@ import { DARK_COLORS, LIGHT_COLORS } from '@/plugins/theme';
 /**
  * Creates the PremiumApi instance.
  * This function must be called from within a Vue component context
- * because it uses Vue composables (useI18n, useFrontendSettingsStore, etc.)
+ * because it uses Vue composables (useI18n, useSettingsRepo, etc.)
  */
 export function createPremiumApi(): PremiumApi {
   const date: DateUtilities = {
@@ -41,7 +41,6 @@ export function createPremiumApi(): PremiumApi {
   function createSettings(): SettingsApi {
     // eslint-disable-next-line @typescript-eslint/unbound-method
     const { t, te } = useI18n({ useScope: 'global' });
-    const frontendStore = useFrontendSettingsStore();
     const { updateFrontendSetting } = useSettingsOperations();
     return {
       defaultThemes(): Themes {
@@ -57,8 +56,8 @@ export function createPremiumApi(): PremiumApi {
       isDark: useRotkiTheme().isDark,
       themes(): Themes {
         return {
-          dark: frontendStore.darkTheme,
-          light: frontendStore.lightTheme,
+          dark: get(useSetting('darkTheme')),
+          light: get(useSetting('lightTheme')),
         };
       },
       async update(settings: FrontendSettingsPayload): Promise<void> {

@@ -2,11 +2,11 @@ import type { MaybeRef } from 'vue';
 import { loadLocaleMessages } from '@/i18n';
 import { useSessionAuthStore } from '@/modules/auth/use-session-auth-store';
 import { SupportedLanguage } from '@/modules/settings/types/frontend-settings';
-import { useFrontendSettingsStore } from '@/modules/settings/use-frontend-settings-store';
+import { useSetting } from '@/modules/settings/use-setting';
 
 export const useLocale = createSharedComposable(() => {
   const { logged } = storeToRefs(useSessionAuthStore());
-  const { language } = storeToRefs(useFrontendSettingsStore());
+  const language = useSetting('language');
 
   const lastLanguage = useLocalStorage('rotki.last_language', SupportedLanguage.EN);
   const forceUpdateMachineLanguage = useLocalStorage('rotki.force_update_machine_language', 'true');

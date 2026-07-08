@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import SettingsOption from '@/modules/settings/controls/SettingsOption.vue';
 import { BlockchainRefreshButtonBehaviour } from '@/modules/settings/types/frontend-settings';
-import { useFrontendSettingsStore } from '@/modules/settings/use-frontend-settings-store';
+import { useSetting } from '@/modules/settings/use-setting';
 
-const { blockchainRefreshButtonBehaviour } = storeToRefs(useFrontendSettingsStore());
+const blockchainRefreshButtonBehaviour = useSetting('blockchainRefreshButtonBehaviour');
 
 const { t } = useI18n({ useScope: 'global' });
 </script>
@@ -17,7 +17,6 @@ const { t } = useI18n({ useScope: 'global' });
       <SettingsOption
         #default="{ updateImmediate }"
         setting="blockchainRefreshButtonBehaviour"
-        frontend-setting
       >
         <RuiRadioGroup
           :model-value="blockchainRefreshButtonBehaviour"

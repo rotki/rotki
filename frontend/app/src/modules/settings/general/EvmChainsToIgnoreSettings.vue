@@ -2,10 +2,10 @@
 import ChainDisplay from '@/modules/accounts/blockchain/ChainDisplay.vue';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
 import SettingsOption from '@/modules/settings/controls/SettingsOption.vue';
-import { useGeneralSettingsStore } from '@/modules/settings/use-general-settings-store';
+import { useSetting } from '@/modules/settings/use-setting';
 
 const { t } = useI18n({ useScope: 'global' });
-const { evmchainsToSkipDetection } = storeToRefs(useGeneralSettingsStore());
+const evmchainsToSkipDetection = useSetting('evmchainsToSkipDetection');
 const { evmChainsData, evmLikeChainsData } = useSupportedChains();
 const chains = computed(() => [...get(evmChainsData), ...get(evmLikeChainsData)]);
 

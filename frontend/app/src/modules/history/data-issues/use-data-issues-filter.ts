@@ -6,7 +6,7 @@ import { arrayify } from '@/modules/core/common/data/array';
 import { dateDeserializer, dateRangeValidator, dateSerializer, getDateInputISOFormat } from '@/modules/core/common/data/date';
 import { assetSuggestions } from '@/modules/core/common/display/assets';
 import { IssueKind, IssueState } from '@/modules/history/data-issues/constants';
-import { useFrontendSettingsStore } from '@/modules/settings/use-frontend-settings-store';
+import { useSetting } from '@/modules/settings/use-setting';
 
 enum DataIssuesFilterKeys {
   STATE = 'state',
@@ -38,7 +38,7 @@ export function useDataIssuesFilter(): FilterSchema<Filters, Matcher> {
 
   const { t } = useI18n({ useScope: 'global' });
   const { assetSearch, getAssetInfo } = useAssetInfoRetrieval();
-  const { dateInputFormat } = storeToRefs(useFrontendSettingsStore());
+  const dateInputFormat = useSetting('dateInputFormat');
 
   const matchers = computed<Matcher[]>(() => [
     {

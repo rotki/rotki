@@ -2,7 +2,7 @@ import type { MaybeRef, Ref } from 'vue';
 import type { NewDetectedToken, NewDetectedTokenInput, NewDetectedTokenKind, NewDetectedTokensRequestPayload } from './types';
 import type { Collection } from '@/modules/core/common/collection';
 import { useAssetsStore } from '@/modules/assets/use-assets-store';
-import { useFrontendSettingsStore } from '@/modules/settings/use-frontend-settings-store';
+import { useSetting } from '@/modules/settings/use-setting';
 import { useNewlyDetectedTokensDb } from './use-newly-detected-tokens-db';
 
 interface UseNewlyDetectedTokensReturn {
@@ -20,8 +20,7 @@ export const useNewlyDetectedTokens = createSharedComposable((): UseNewlyDetecte
   const { ignoredAssets } = storeToRefs(assetsStore);
   const { addIgnoredAsset } = assetsStore;
 
-  const settingsStore = useFrontendSettingsStore();
-  const { notifyNewNfts } = storeToRefs(settingsStore);
+  const notifyNewNfts = useSetting('notifyNewNfts');
 
   const {
     addToken,

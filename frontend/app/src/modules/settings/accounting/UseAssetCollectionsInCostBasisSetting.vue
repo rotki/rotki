@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import SettingsOption from '@/modules/settings/controls/SettingsOption.vue';
-import { useAccountingSettingsStore } from '@/modules/settings/use-accounting-settings-store';
+import { useSetting } from '@/modules/settings/use-setting';
 
 const useAssetCollectionsInCostBasis = ref<boolean>(true);
-const { useAssetCollectionsInCostBasis: enabled } = storeToRefs(useAccountingSettingsStore());
+const enabled = useSetting('useAssetCollectionsInCostBasis');
 
 onMounted(() => {
   set(useAssetCollectionsInCostBasis, get(enabled));

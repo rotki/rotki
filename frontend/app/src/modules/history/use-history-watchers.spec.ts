@@ -73,12 +73,12 @@ vi.mock('@/modules/core/notifications/use-notifications', () => ({
 
 const mockConnectedExchanges = ref<string[]>([]);
 
-vi.mock('@/modules/settings/use-session-settings-store', () => ({
-  useSessionSettingsStore: vi.fn((): {
+vi.mock('@/modules/balances/exchanges/use-connected-exchanges-store', () => ({
+  useConnectedExchangesStore: vi.fn((): {
     connectedExchanges: Ref<string[]>;
     $id: string;
   } => ({
-    $id: 'settings/session',
+    $id: 'exchanges',
     connectedExchanges: mockConnectedExchanges,
   })),
 }));

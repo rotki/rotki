@@ -5,13 +5,13 @@ import { type NotificationAction, NotificationCategory, NotificationGroup, Prior
 import { useConfirmStore } from '@/modules/core/common/use-confirm-store';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
 import { createConditionalHandler } from '@/modules/core/messaging/utils';
-import { useFrontendSettingsStore } from '@/modules/settings/use-frontend-settings-store';
+import { useSetting } from '@/modules/settings/use-setting';
 import { useSettingsOperations } from '@/modules/settings/use-settings-operations';
 import { Routes } from '@/router/routes';
 
 export function createNoAvailableIndexersHandler(t: ReturnType<typeof useI18n>['t'], router: Pick<Router, 'push'>): MessageHandler<NoAvailableIndexersData> {
   const { updateFrontendSetting } = useSettingsOperations();
-  const { suppressNoIndexerChains } = storeToRefs(useFrontendSettingsStore());
+  const suppressNoIndexerChains = useSetting('suppressNoIndexerChains');
   const { getChainName } = useSupportedChains();
   const { show } = useConfirmStore();
 

@@ -2,7 +2,7 @@ import { get } from '@vueuse/core';
 import { useAccountAddresses } from '@/modules/balances/blockchain/use-account-addresses';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
 import { type ChainAddress, TransactionChainType } from '@/modules/history/events/event-payloads';
-import { useGeneralSettingsStore } from '@/modules/settings/use-general-settings-store';
+import { useSetting } from '@/modules/settings/use-setting';
 
 interface UseHistoryTransactionAccountsReturn {
   filterDisabledChainAccounts: (accounts: ChainAddress[]) => ChainAddress[];
@@ -17,7 +17,7 @@ interface UseHistoryTransactionAccountsReturn {
 export function useHistoryTransactionAccounts(): UseHistoryTransactionAccountsReturn {
   const { addresses } = useAccountAddresses();
   const { isBtcChains, isEvmLikeChains, isSolanaChains, supportsTransactions } = useSupportedChains();
-  const { disabledChainQueries } = storeToRefs(useGeneralSettingsStore());
+  const disabledChainQueries = useSetting('disabledChainQueries');
 
   const getAccountsByChainType = (
     chainFilter: (chain: string) => boolean,

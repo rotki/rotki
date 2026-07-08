@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { useGeneralSettingsStore } from '@/modules/settings/use-general-settings-store';
+import { useSettingsRepo } from '@/modules/settings/settings-repo';
 import { useHistoryTransactionAccounts } from './use-history-transaction-accounts';
 
 vi.mock('@/modules/core/common/use-supported-chains', () => ({
@@ -176,8 +176,8 @@ describe('useHistoryTransactionAccounts', () => {
     ];
 
     function setDisabled(value: Record<string, string[]>): void {
-      const store = useGeneralSettingsStore();
-      store.update({ ...store.settings, disabledChainQueries: value });
+      const store = useSettingsRepo();
+      store.updateGeneral({ ...store.general, disabledChainQueries: value });
     }
 
     it('should return input unchanged when the setting is empty', () => {

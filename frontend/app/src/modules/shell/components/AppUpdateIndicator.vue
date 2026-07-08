@@ -2,7 +2,7 @@
 import { startPromise } from '@shared/utils';
 import { useMainStore } from '@/modules/core/common/use-main-store';
 import { useUpdateChecker } from '@/modules/session/use-update-checker';
-import { useFrontendSettingsStore } from '@/modules/settings/use-frontend-settings-store';
+import { useSetting } from '@/modules/settings/use-setting';
 import { useBackendConnection } from '@/modules/shell/app/use-backend-connection';
 import { useInterop } from '@/modules/shell/app/use-electron-interop';
 
@@ -10,7 +10,7 @@ const mainStore = useMainStore();
 const { updateNeeded, version } = storeToRefs(mainStore);
 const { getVersion } = useBackendConnection();
 const { isPackaged, openUrl } = useInterop();
-const { versionUpdateCheckFrequency } = storeToRefs(useFrontendSettingsStore());
+const versionUpdateCheckFrequency = useSetting('versionUpdateCheckFrequency');
 const { showUpdatePopup } = useUpdateChecker();
 
 const appVersion = computed(() => get(version).latestVersion);

@@ -3,14 +3,14 @@ import useVuelidate from '@vuelidate/core';
 import { helpers, minValue, requiredIf } from '@vuelidate/validators';
 import { toMessages } from '@/modules/core/common/validation/validation';
 import SettingsOption from '@/modules/settings/controls/SettingsOption.vue';
-import { useAccountingSettingsStore } from '@/modules/settings/use-accounting-settings-store';
+import { useSetting } from '@/modules/settings/use-setting';
 
 const taxFreeAfterPeriod = ref<string>('');
 const taxFreePeriod = ref(false);
 
 const { t } = useI18n({ useScope: 'global' });
 
-const { taxfreeAfterPeriod: period } = storeToRefs(useAccountingSettingsStore());
+const period = useSetting('taxfreeAfterPeriod');
 
 const rules = {
   taxFreeAfterPeriod: {

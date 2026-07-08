@@ -23,7 +23,7 @@ import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
 import { useRefPropVModel } from '@/modules/core/common/validation/model';
 import { useExternalApiKeys } from '@/modules/settings/api-keys/external/use-external-api-keys';
 import { EvmIndexer } from '@/modules/settings/types/evm-indexer';
-import { useGeneralSettingsStore } from '@/modules/settings/use-general-settings-store';
+import { useSetting } from '@/modules/settings/use-setting';
 
 const modelValue = defineModel<AccountManageState>({ required: true });
 
@@ -48,7 +48,9 @@ const { isEvm, isSolanaChains, txEvmChains } = useSupportedChains();
 const { t } = useI18n({ useScope: 'global' });
 const { getApiKey } = useExternalApiKeys();
 
-const { beaconRpcEndpoint, defaultEvmIndexerOrder, evmIndexersOrder } = storeToRefs(useGeneralSettingsStore());
+const beaconRpcEndpoint = useSetting('beaconRpcEndpoint');
+const defaultEvmIndexerOrder = useSetting('defaultEvmIndexerOrder');
+const evmIndexersOrder = useSetting('evmIndexersOrder');
 
 /**
  * Checks if etherscan is the top priority indexer for a given chain.

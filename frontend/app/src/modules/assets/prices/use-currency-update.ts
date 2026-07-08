@@ -5,7 +5,7 @@ import { CURRENCY_USD } from '@/modules/assets/amount-display/currencies';
 import { usePriceRefresh } from '@/modules/assets/prices/use-price-refresh';
 import { usePriceTaskManager } from '@/modules/assets/prices/use-price-task-manager';
 import { useBalancePricesStore } from '@/modules/balances/use-balance-prices-store';
-import { useGeneralSettingsStore } from '@/modules/settings/use-general-settings-store';
+import { useSetting } from '@/modules/settings/use-setting';
 import { useSettingsOperations } from '@/modules/settings/use-settings-operations';
 
 interface UseCurrencyUpdateReturn { onCurrencyUpdate: () => Promise<void> }
@@ -14,7 +14,7 @@ export function useCurrencyUpdate(): UseCurrencyUpdateReturn {
   const { updateFrontendSetting } = useSettingsOperations();
   const { adjustPrices, refreshPrices } = usePriceRefresh();
   const { fetchExchangeRates } = usePriceTaskManager();
-  const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
+  const currencySymbol = useSetting('currencySymbol');
   const { exchangeRates, previousCurrency, prices } = storeToRefs(useBalancePricesStore());
 
   if (!get(previousCurrency)) {

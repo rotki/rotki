@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import SettingsOption from '@/modules/settings/controls/SettingsOption.vue';
-import { useAccountingSettingsStore } from '@/modules/settings/use-accounting-settings-store';
+import { useSetting } from '@/modules/settings/use-setting';
 
 const calculatePastCostBasis = ref(false);
-const { calculatePastCostBasis: enabled } = storeToRefs(useAccountingSettingsStore());
+const enabled = useSetting('calculatePastCostBasis');
 const { t } = useI18n({ useScope: 'global' });
 
 function switchSuccessMessage(enabled: boolean) {

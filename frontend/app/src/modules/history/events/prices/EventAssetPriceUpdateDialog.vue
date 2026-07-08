@@ -9,7 +9,7 @@ import { logger } from '@/modules/core/common/logging/logging';
 import { useNotifications } from '@/modules/core/notifications/use-notifications';
 import { type EventPriceUpdateMode, useEventPriceUpdate } from '@/modules/history/events/prices/use-event-price-update';
 import { PriceOracle } from '@/modules/settings/types/price-oracle';
-import { useGeneralSettingsStore } from '@/modules/settings/use-general-settings-store';
+import { useSetting } from '@/modules/settings/use-setting';
 import CardTitle from '@/modules/shell/components/CardTitle.vue';
 import DateDisplay from '@/modules/shell/components/display/DateDisplay.vue';
 import AmountInput from '@/modules/shell/components/inputs/AmountInput.vue';
@@ -18,7 +18,7 @@ const modelValue = defineModel<EventPriceUpdatePayload | undefined>({ required: 
 
 const { t } = useI18n({ useScope: 'global' });
 const { notifyError, notifyInfo } = useNotifications();
-const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
+const currencySymbol = useSetting('currencySymbol');
 const { fetchExistingEntry, updatePrice } = useEventPriceUpdate();
 
 const price = ref<string>('');

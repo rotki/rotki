@@ -18,7 +18,7 @@ import { TaskType } from '@/modules/core/tasks/task-type';
 import { isActionableFailure, useTaskHandler } from '@/modules/core/tasks/use-task-handler';
 import { useHistoryEventsApi } from '@/modules/history/api/events/use-history-events-api';
 import { useRefreshTransactions } from '@/modules/history/events/tx/use-refresh-transactions';
-import { useGeneralSettingsStore } from '@/modules/settings/use-general-settings-store';
+import { useSetting } from '@/modules/settings/use-setting';
 
 export interface RepullingTransactionResult {
   newTransactionsCount: number;
@@ -36,7 +36,7 @@ export const useHistoryTransactions = createSharedComposable(() => {
   } = useHistoryEventsApi();
 
   const { runTask } = useTaskHandler();
-  const { dateDisplayFormat } = storeToRefs(useGeneralSettingsStore());
+  const dateDisplayFormat = useSetting('dateDisplayFormat');
   const { refreshTransactions } = useRefreshTransactions();
 
   const formatTimestamp = (seconds: number | undefined): string | undefined => {

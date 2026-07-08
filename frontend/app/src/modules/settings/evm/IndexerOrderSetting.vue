@@ -12,7 +12,7 @@ import {
   type PrioritizedListId,
   ROUTESCAN_PRIO_LIST_ITEM,
 } from '@/modules/settings/types/prioritized-list-id';
-import { useGeneralSettingsStore } from '@/modules/settings/use-general-settings-store';
+import { useEvmIndexerSettings } from '@/modules/settings/use-evm-indexer-settings';
 import { useSettingsOperations } from '@/modules/settings/use-settings-operations';
 import ChainIcon from '@/modules/shell/components/ChainIcon.vue';
 import PrioritizedList from '@/modules/shell/components/PrioritizedList.vue';
@@ -39,7 +39,7 @@ const router = useRouter();
 const DEFAULT_TAB = 'default';
 
 const { getChain, getChainName, getEvmChainName, txEvmChains } = useSupportedChains();
-const { defaultEvmIndexerOrder, evmIndexersOrder } = storeToRefs(useGeneralSettingsStore());
+const { defaultEvmIndexerOrder, evmIndexersOrder } = useEvmIndexerSettings();
 const { update: updateSettings } = useSettingsOperations();
 const { getApiKey, useApiKey } = useExternalApiKeys();
 

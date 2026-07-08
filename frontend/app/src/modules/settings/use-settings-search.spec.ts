@@ -1,5 +1,5 @@
-import type { SettingsSearchEntry } from '@/modules/settings/setting-highlight-ids';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { SettingsHighlightIds, type SettingsSearchEntry } from '@/modules/settings/setting-highlight-ids';
 
 vi.mock('@/router/routes', () => ({
   useAppRoutes: vi.fn((): { appRoutes: ReturnType<typeof import('vue')['ref']> } => ({
@@ -28,12 +28,38 @@ function makeEntry(texts: string[], keywords?: string[]): SettingsSearchEntry {
 
 describe('useSettingsSearch', () => {
   let filterEntries: (entries: SettingsSearchEntry[], keyword: string) => SettingsSearchEntry[];
+  let allEntries: SettingsSearchEntry[];
 
   beforeEach(async () => {
     setActivePinia(createPinia());
     const mod = await import('./use-settings-search');
     const result = mod.useSettingsSearch();
     filterEntries = result.filterEntries;
+    allEntries = get(result.entries);
+  });
+
+  describe('highlight-id integrity', () => {
+    it('should surface every defined highlight id in exactly one search entry', () => {
+      const searchIds = allEntries.map(entry => entry.highlightId).filter((id): id is NonNullable<typeof id> => id !== undefined);
+      const counts = new Map<string, number>();
+      for (const id of searchIds) counts.set(id, (counts.get(id) ?? 0) + 1);
+
+      const definedIds = Object.values(SettingsHighlightIds);
+      const missing = definedIds.filter(id => !counts.has(id));
+      const duplicated = [...counts.entries()].filter(([, count]) => count > 1).map(([id]) => id);
+
+      expect(missing, 'highlight ids defined but not surfaced in settings search (add a search entry)').toEqual([]);
+      expect(duplicated, 'highlight ids used by more than one search entry').toEqual([]);
+    });
+
+    it('should only reference highlight ids that are defined', () => {
+      const definedIds = new Set<string>(Object.values(SettingsHighlightIds));
+      const unknown = allEntries
+        .map(entry => entry.highlightId)
+        .filter((id): id is NonNullable<typeof id> => id !== undefined)
+        .filter(id => !definedIds.has(id));
+      expect(unknown, 'search entries referencing an undefined highlight id').toEqual([]);
+    });
   });
 
   describe('filterEntries', () => {

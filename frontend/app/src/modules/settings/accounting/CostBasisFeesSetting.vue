@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import SettingsOption from '@/modules/settings/controls/SettingsOption.vue';
-import { useAccountingSettingsStore } from '@/modules/settings/use-accounting-settings-store';
+import { useSetting } from '@/modules/settings/use-setting';
 
 const includeFeesInCostBasis = ref(true);
-const { includeFeesInCostBasis: enabled } = storeToRefs(useAccountingSettingsStore());
+const enabled = useSetting('includeFeesInCostBasis');
 
 onMounted(() => {
   set(includeFeesInCostBasis, get(enabled));

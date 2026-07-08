@@ -9,7 +9,7 @@ import { useAssetInfoRetrieval } from '@/modules/assets/use-asset-info-retrieval
 import { ApiValidationError } from '@/modules/core/api/types/errors';
 import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
 import { PriceOracle } from '@/modules/settings/types/price-oracle';
-import { useGeneralSettingsStore } from '@/modules/settings/use-general-settings-store';
+import { useSetting } from '@/modules/settings/use-setting';
 import DateDisplay from '@/modules/shell/components/display/DateDisplay.vue';
 import AmountInput from '@/modules/shell/components/inputs/AmountInput.vue';
 
@@ -32,7 +32,7 @@ const tab = ref(0);
 
 const { useAssetField } = useAssetInfoRetrieval();
 const { failedDailyPrices, resetHistoricalPricesData, resolvedFailedDailyPrices } = useHistoricPriceCache();
-const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
+const currencySymbol = useSetting('currencySymbol');
 const { addHistoricalPrice, deleteHistoricalPrice, editHistoricalPrice, fetchHistoricalPrices } = useAssetPricesApi();
 
 const name = useAssetField(() => asset, 'name');

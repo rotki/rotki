@@ -15,7 +15,7 @@ import { TaskType } from '@/modules/core/tasks/task-type';
 import { isActionableFailure, useTaskHandler } from '@/modules/core/tasks/use-task-handler';
 import { useTaskStore } from '@/modules/core/tasks/use-task-store';
 import { ExchangeRates } from '@/modules/settings/types/user-settings';
-import { useGeneralSettingsStore } from '@/modules/settings/use-general-settings-store';
+import { useSetting } from '@/modules/settings/use-setting';
 import { useStatusUpdater } from '@/modules/shell/sync-progress/use-status-updater';
 
 interface UsePriceTaskManagerReturn {
@@ -30,7 +30,7 @@ export function usePriceTaskManager(): UsePriceTaskManagerReturn {
   const { runTask } = useTaskHandler();
   const { isTaskRunning } = useTaskStore();
   const { notifyError } = useNotifications();
-  const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
+  const currencySymbol = useSetting('currencySymbol');
   const { exchangeRates, prices } = storeToRefs(useBalancePricesStore());
   const {
     createPriceCache,

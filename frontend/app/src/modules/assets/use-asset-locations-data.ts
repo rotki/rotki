@@ -9,7 +9,7 @@ import { useAssetBalancesBreakdown } from '@/modules/balances/use-asset-balances
 import { isBlockchain } from '@/modules/core/common/chains';
 import { useStatusStore } from '@/modules/core/common/use-status-store';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
-import { useGeneralSettingsStore } from '@/modules/settings/use-general-settings-store';
+import { useSetting } from '@/modules/settings/use-setting';
 
 export interface AssetLocation extends AssetBreakdown {
   readonly account?: BlockchainAccount;
@@ -41,7 +41,7 @@ interface UseAssetLocationsDataReturn {
 export function useAssetLocationsData(options: UseAssetLocationsDataOptions): UseAssetLocationsDataReturn {
   const { identifier, locationFilter, onlyTags, selectedAccounts } = options;
 
-  const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
+  const currencySymbol = useSetting('currencySymbol');
   const { detailsLoading } = storeToRefs(useStatusStore());
   const { getAccountByAddress } = useBlockchainAccountsStore();
   const { getAddressName } = useAddressNameResolution();

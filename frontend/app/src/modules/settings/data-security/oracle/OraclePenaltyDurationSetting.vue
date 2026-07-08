@@ -5,11 +5,11 @@ import { useValidation } from '@/modules/core/common/use-validation';
 import { toMessages } from '@/modules/core/common/validation/validation';
 import SettingsOption from '@/modules/settings/controls/SettingsOption.vue';
 import { SettingsHighlightIds } from '@/modules/settings/setting-highlight-ids';
-import { useGeneralSettingsStore } from '@/modules/settings/use-general-settings-store';
+import { useSetting } from '@/modules/settings/use-setting';
 
 const oraclePenaltyDuration = ref<string>('0');
 
-const { oraclePenaltyDuration: frequency } = storeToRefs(useGeneralSettingsStore());
+const frequency = useSetting('oraclePenaltyDuration');
 
 const { t } = useI18n({ useScope: 'global' });
 

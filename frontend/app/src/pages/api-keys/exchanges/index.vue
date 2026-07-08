@@ -2,6 +2,7 @@
 import type { DataTableColumn, DataTableSortColumn } from '@rotki/ui-library';
 import type { Exchange, ExchangeFormData } from '@/modules/balances/types/exchanges';
 import { externalLinks } from '@shared/external-links';
+import { useConnectedExchangesStore } from '@/modules/balances/exchanges/use-connected-exchanges-store';
 import { useExchanges } from '@/modules/balances/exchanges/use-exchanges';
 import { useConfirmStore } from '@/modules/core/common/use-confirm-store';
 import { useLocationStore } from '@/modules/core/common/use-location-store';
@@ -10,8 +11,7 @@ import { useNotificationDispatcher } from '@/modules/core/notifications/use-noti
 import { TableId, useRememberTableSorting } from '@/modules/core/table/use-remember-table-sorting';
 import LocationDisplay from '@/modules/history/LocationDisplay.vue';
 import ExchangeKeysFormDialog from '@/modules/settings/api-keys/exchange/ExchangeKeysFormDialog.vue';
-import { useGeneralSettingsStore } from '@/modules/settings/use-general-settings-store';
-import { useSessionSettingsStore } from '@/modules/settings/use-session-settings-store';
+import { useSetting } from '@/modules/settings/use-setting';
 import { useSettingsOperations } from '@/modules/settings/use-settings-operations';
 import ExternalLink from '@/modules/shell/components/ExternalLink.vue';
 import HintMenuIcon from '@/modules/shell/components/HintMenuIcon.vue';
@@ -27,8 +27,8 @@ const sort = ref<DataTableSortColumn<Exchange>>({
 
 const { exchangesWithKey } = storeToRefs(useLocationStore());
 const { removeExchange } = useExchanges();
-const { connectedExchanges: rows } = storeToRefs(useSessionSettingsStore());
-const { nonSyncingExchanges: current } = storeToRefs(useGeneralSettingsStore());
+const { connectedExchanges: rows } = storeToRefs(useConnectedExchangesStore());
+const current = useSetting('nonSyncingExchanges');
 const { update } = useSettingsOperations();
 const { show } = useConfirmStore();
 

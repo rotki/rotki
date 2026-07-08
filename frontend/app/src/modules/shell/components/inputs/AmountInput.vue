@@ -3,7 +3,7 @@ import { assert } from '@rotki/common';
 import { RuiTextField } from '@rotki/ui-library';
 import IMask, { type InputMask } from 'imask';
 import { logger } from '@/modules/core/common/logging/logging';
-import { useFrontendSettingsStore } from '@/modules/settings/use-frontend-settings-store';
+import { useSetting } from '@/modules/settings/use-setting';
 
 interface AmountInputProps {
   integer?: boolean;
@@ -29,7 +29,8 @@ const {
   integer = false,
   rawInput = false,
 } = defineProps<AmountInputProps>();
-const { decimalSeparator, thousandSeparator } = storeToRefs(useFrontendSettingsStore());
+const decimalSeparator = useSetting('decimalSeparator');
+const thousandSeparator = useSetting('thousandSeparator');
 
 const textInput = useTemplateRef<InstanceType<typeof RuiTextField>>('textInput');
 const rawTextInput = useTemplateRef<InstanceType<typeof HTMLInputElement>>('rawTextInput');

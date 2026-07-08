@@ -5,7 +5,7 @@ import { Constraints } from '@/modules/core/common/constraints';
 import { useValidation } from '@/modules/core/common/use-validation';
 import { toMessages } from '@/modules/core/common/validation/validation';
 import SettingsOption from '@/modules/settings/controls/SettingsOption.vue';
-import { useFrontendSettingsStore } from '@/modules/settings/use-frontend-settings-store';
+import { useSetting } from '@/modules/settings/use-setting';
 
 const ttlDays = ref<string>('30');
 
@@ -27,7 +27,7 @@ const rules = {
   },
 };
 
-const { newlyDetectedTokensTtlDays: currentTtlDays } = storeToRefs(useFrontendSettingsStore());
+const currentTtlDays = useSetting('newlyDetectedTokensTtlDays');
 
 function resetTtlDays(): void {
   set(ttlDays, get(currentTtlDays).toString());
@@ -47,7 +47,6 @@ onMounted(() => {
   <SettingsOption
     class="mt-1"
     setting="newlyDetectedTokensTtlDays"
-    frontend-setting
     :transform="transform"
     :error-message="t('frontend_settings.newly_detected_tokens.ttl_days.validation.error')"
     @finished="resetTtlDays()"

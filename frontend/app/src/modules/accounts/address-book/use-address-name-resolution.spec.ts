@@ -5,8 +5,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useAddressNameResolution } from '@/modules/accounts/address-book/use-address-name-resolution';
 import { useAddressNamesStore } from '@/modules/accounts/address-book/use-address-names-store';
 import { useAddressesNamesApi } from '@/modules/accounts/address-book/use-addresses-names-api';
+import { useSettingsRepo } from '@/modules/settings/settings-repo';
 import { getDefaultFrontendSettings } from '@/modules/settings/types/frontend-settings';
-import { useFrontendSettingsStore } from '@/modules/settings/use-frontend-settings-store';
 
 vi.mock('@/modules/accounts/address-book/use-addresses-names-api', () => ({
   useAddressesNamesApi: vi.fn().mockReturnValue({
@@ -28,7 +28,7 @@ vi.mock('@/modules/core/common/use-supported-chains', async () => {
 });
 
 function enableAliasNames(enabled: boolean): void {
-  useFrontendSettingsStore().update({
+  useSettingsRepo().updateFrontend({
     ...getDefaultFrontendSettings(),
     enableAliasNames: enabled,
   });

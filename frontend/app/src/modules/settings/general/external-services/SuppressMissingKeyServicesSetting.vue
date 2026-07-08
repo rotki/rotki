@@ -5,11 +5,11 @@ import SettingsItem from '@/modules/settings/controls/SettingsItem.vue';
 import SettingsOption from '@/modules/settings/controls/SettingsOption.vue';
 import { SettingsHighlightIds } from '@/modules/settings/setting-highlight-ids';
 import { SUPPRESSIBLE_SERVICES, SuppressibleMissingKeyService } from '@/modules/settings/types/user-settings';
-import { useGeneralSettingsStore } from '@/modules/settings/use-general-settings-store';
+import { useSetting } from '@/modules/settings/use-setting';
 import AppImage from '@/modules/shell/components/AppImage.vue';
 
 const { t } = useI18n({ useScope: 'global' });
-const { suppressMissingKeyMsgServices } = storeToRefs(useGeneralSettingsStore());
+const suppressMissingKeyMsgServices = useSetting('suppressMissingKeyMsgServices');
 
 const SERVICE_ICONS: Record<SuppressibleMissingKeyService, string> = {
   [SuppressibleMissingKeyService.BEACONCHAIN]: getPublicServiceImagePath('beaconchain.svg'),

@@ -6,6 +6,7 @@ import type {
 } from '@/modules/balances/types/exchanges';
 import type { TaskMeta } from '@/modules/core/tasks/types';
 import { useExchangeApi } from '@/modules/balances/api/use-exchange-api';
+import { useConnectedExchangesStore } from '@/modules/balances/exchanges/use-connected-exchanges-store';
 import { mapCollectionResponse } from '@/modules/core/common/data/collection-utils';
 import { uniqueStrings } from '@/modules/core/common/data/data';
 import { logger } from '@/modules/core/common/logging/logging';
@@ -14,7 +15,6 @@ import { useNotifications } from '@/modules/core/notifications/use-notifications
 import { TaskType } from '@/modules/core/tasks/task-type';
 import { isActionableFailure, useTaskHandler } from '@/modules/core/tasks/use-task-handler';
 import { useTaskStore } from '@/modules/core/tasks/use-task-store';
-import { useSessionSettingsStore } from '@/modules/settings/use-session-settings-store';
 import { useStatusUpdater } from '@/modules/shell/sync-progress/use-status-updater';
 
 interface UseBinanceSavingsReturn {
@@ -23,7 +23,7 @@ interface UseBinanceSavingsReturn {
 }
 
 export function useBinanceSavings(): UseBinanceSavingsReturn {
-  const { connectedExchanges } = storeToRefs(useSessionSettingsStore());
+  const { connectedExchanges } = storeToRefs(useConnectedExchangesStore());
   const { runTask } = useTaskHandler();
   const { isTaskRunning } = useTaskStore();
   const { notifyError } = useNotifications();

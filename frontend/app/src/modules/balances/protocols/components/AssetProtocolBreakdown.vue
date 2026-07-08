@@ -4,7 +4,7 @@ import { type ProtocolBalanceWithChains, transformCase } from '@rotki/common';
 import { AssetAmountDisplay, FiatDisplay, ValueDisplay } from '@/modules/assets/amount-display/components';
 import ChainBalances from '@/modules/balances/protocols/components/ChainBalances.vue';
 import ProtocolIcon from '@/modules/balances/protocols/ProtocolIcon.vue';
-import { useGeneralSettingsStore } from '@/modules/settings/use-general-settings-store';
+import { useSetting } from '@/modules/settings/use-setting';
 
 defineProps<{
   data: ProtocolBalanceWithChains[];
@@ -18,7 +18,7 @@ const sort = ref<DataTableSortData<ProtocolBalanceWithChains>>({
 });
 
 const { t } = useI18n({ useScope: 'global' });
-const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
+const currencySymbol = useSetting('currencySymbol');
 
 const cols = computed<DataTableColumn<ProtocolBalanceWithChains>[]>(() => [{
   align: 'start',

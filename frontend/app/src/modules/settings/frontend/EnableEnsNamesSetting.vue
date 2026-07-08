@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import SettingsOption from '@/modules/settings/controls/SettingsOption.vue';
-import { useFrontendSettingsStore } from '@/modules/settings/use-frontend-settings-store';
+import { useSetting } from '@/modules/settings/use-setting';
 
 const enableAliasNames = ref<boolean>(true);
-const { enableAliasNames: enabled } = storeToRefs(useFrontendSettingsStore());
+const enabled = useSetting('enableAliasNames');
 
 onMounted(() => {
   set(enableAliasNames, get(enabled));
@@ -16,7 +16,6 @@ const { t } = useI18n({ useScope: 'global' });
   <SettingsOption
     #default="{ error, success, update }"
     setting="enableAliasNames"
-    frontend-setting
     :error-message="t('frontend_settings.alias_names.validation.error')"
   >
     <RuiSwitch

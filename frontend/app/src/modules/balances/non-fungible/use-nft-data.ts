@@ -12,8 +12,7 @@ import { TableColumn } from '@/modules/core/table/table-column';
 import { usePaginationFilters } from '@/modules/core/table/use-pagination-filter';
 import { TableId, useRememberTableSorting } from '@/modules/core/table/use-remember-table-sorting';
 import { DashboardTableType } from '@/modules/settings/types/frontend-settings';
-import { useFrontendSettingsStore } from '@/modules/settings/use-frontend-settings-store';
-import { useGeneralSettingsStore } from '@/modules/settings/use-general-settings-store';
+import { useSetting } from '@/modules/settings/use-setting';
 import { useSectionStatus } from '@/modules/shell/sync-progress/use-section-status';
 import { useStatisticsStore } from '@/modules/statistics/use-statistics-store';
 
@@ -24,7 +23,7 @@ interface UseNftDataOptions {
 interface UseNftDataReturn {
   balances: Ref<Collection<NonFungibleBalance>>;
   cols: ComputedRef<DataTableColumn<NonFungibleBalance>[]>;
-  currencySymbol: ComputedRef<string>;
+  currencySymbol: Readonly<Ref<string>>;
   data: ComputedRef<NonFungibleBalance[]>;
   dataLoading: Ref<boolean>;
   fetchData: () => Promise<void>;
@@ -42,7 +41,7 @@ export function useNftData(options: UseNftDataOptions = {}): UseNftDataReturn {
   const { dashboard = false } = options;
 
   const { fetchNonFungibleBalances, refreshNonFungibleBalances } = useNftBalances();
-  const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
+  const currencySymbol = useSetting('currencySymbol');
   const { t } = useI18n({ useScope: 'global' });
 
   const ignoredAssetsHandling = ref<IgnoredAssetsHandlingType>('exclude');
@@ -89,7 +88,7 @@ export function useNftData(options: UseNftDataOptions = {}): UseNftDataReturn {
   // Dashboard-specific: percentage calculations
   const statistics = useStatisticsStore();
   const { totalNetWorth } = storeToRefs(statistics);
-  const { dashboardTablesVisibleColumns } = storeToRefs(useFrontendSettingsStore());
+  const dashboardTablesVisibleColumns = useSetting('dashboardTablesVisibleColumns');
 
   function percentageOfTotalNetValue(value: BigNumber): string {
     return calculatePercentage(value, get(totalNetWorth));

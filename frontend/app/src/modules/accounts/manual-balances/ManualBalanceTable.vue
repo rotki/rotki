@@ -13,7 +13,7 @@ import TableFilter from '@/modules/core/table/TableFilter.vue';
 import { usePaginationFilters } from '@/modules/core/table/use-pagination-filter';
 import { TableId, useRememberTableSorting } from '@/modules/core/table/use-remember-table-sorting';
 import LocationDisplay from '@/modules/history/LocationDisplay.vue';
-import { useGeneralSettingsStore } from '@/modules/settings/use-general-settings-store';
+import { useSetting } from '@/modules/settings/use-setting';
 import TagFilter from '@/modules/shell/components/inputs/TagFilter.vue';
 import RefreshButton from '@/modules/shell/components/RefreshButton.vue';
 import RowActions from '@/modules/shell/components/RowActions.vue';
@@ -32,7 +32,7 @@ const { t } = useI18n({ useScope: 'global' });
 
 const tags = ref<string[]>([]);
 
-const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
+const currencySymbol = useSetting('currencySymbol');
 const { dataSource, fetch, locations } = useManualBalancesOrLiabilities(() => type);
 const { prepareForEdit, pricesLoading, refresh, refreshing, showDeleteConfirmation } = useManualBalanceTableActions();
 

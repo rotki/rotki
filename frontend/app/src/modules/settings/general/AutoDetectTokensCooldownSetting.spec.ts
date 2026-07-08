@@ -2,7 +2,7 @@ import { libraryDefaults } from '@test/utils/provide-defaults';
 import { flushPromises, mount, type VueWrapper } from '@vue/test-utils';
 import { describe, expect, it, vi } from 'vitest';
 import AutoDetectTokensCooldownSetting from '@/modules/settings/general/AutoDetectTokensCooldownSetting.vue';
-import { useFrontendSettingsStore } from '@/modules/settings/use-frontend-settings-store';
+import { useSettingsRepo } from '@/modules/settings/settings-repo';
 
 vi.mock('@/modules/settings/use-settings-operations', () => ({
   useSettingsOperations: (): Record<string, ReturnType<typeof vi.fn>> => ({
@@ -20,7 +20,7 @@ describe('autoDetectTokensCooldownSetting', () => {
   function createWrapper(autoDetectTokensOnLogin = true): VueWrapper<InstanceType<typeof AutoDetectTokensCooldownSetting>> {
     const pinia = createPinia();
     setActivePinia(pinia);
-    useFrontendSettingsStore().update({ autoDetectTokensOnLogin });
+    useSettingsRepo().updateFrontend({ autoDetectTokensOnLogin });
     return mount(AutoDetectTokensCooldownSetting, {
       global: { plugins: [pinia] },
       provide: libraryDefaults,
@@ -47,7 +47,7 @@ describe('autoDetectTokensCooldownSetting', () => {
     wrapper = createWrapper();
     await flushPromises();
 
-    useFrontendSettingsStore().update({ autoDetectTokensCooldownHours: 48 });
+    useSettingsRepo().updateFrontend({ autoDetectTokensCooldownHours: 48 });
     await flushPromises();
     await nextTick();
 

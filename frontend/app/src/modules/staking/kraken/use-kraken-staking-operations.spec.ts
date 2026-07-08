@@ -50,8 +50,8 @@ vi.mock('@/modules/core/tasks/use-task-store', () => ({
   })),
 }));
 
-vi.mock('@/modules/settings/use-frontend-settings-store', () => ({
-  useFrontendSettingsStore: vi.fn(() => reactive({ itemsPerPage: 10 })),
+vi.mock('@/modules/settings/use-setting', () => ({
+  useSetting: vi.fn((key: string) => (key === 'itemsPerPage' ? ref(10) : ref(undefined))),
 }));
 
 function defaultEvents(): KrakenStakingEvents {

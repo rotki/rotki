@@ -7,8 +7,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import AssetAmountDisplay from '@/modules/assets/amount-display/components/AssetAmountDisplay.vue';
 import { useCurrencies } from '@/modules/assets/amount-display/currencies';
 import { CurrencyLocation } from '@/modules/assets/amount-display/currency-location';
+import { useSettingsRepo } from '@/modules/settings/settings-repo';
 import { getDefaultFrontendSettings } from '@/modules/settings/types/frontend-settings';
-import { useFrontendSettingsStore } from '@/modules/settings/use-frontend-settings-store';
 
 const mockUseAssetInfo = vi.fn().mockImplementation(() => computed(() => ({ symbol: 'ETH' })));
 
@@ -81,7 +81,7 @@ describe('modules/amount-display/components/AssetAmountDisplay', () => {
 
   describe('scramble data', () => {
     beforeEach(async () => {
-      useFrontendSettingsStore().update({ scrambleData: true });
+      useSettingsRepo().updateFrontend({ scrambleData: true });
     });
 
     it('should scramble the amount', async () => {
@@ -110,7 +110,7 @@ describe('modules/amount-display/components/AssetAmountDisplay', () => {
 
   describe('currency location', () => {
     it('should show symbol before amount', () => {
-      useFrontendSettingsStore().update({
+      useSettingsRepo().updateFrontend({
         ...getDefaultFrontendSettings(),
         currencyLocation: CurrencyLocation.BEFORE,
       });
@@ -132,7 +132,7 @@ describe('modules/amount-display/components/AssetAmountDisplay', () => {
     });
 
     it('should show symbol after amount', () => {
-      useFrontendSettingsStore().update({
+      useSettingsRepo().updateFrontend({
         ...getDefaultFrontendSettings(),
         currencyLocation: CurrencyLocation.AFTER,
       });

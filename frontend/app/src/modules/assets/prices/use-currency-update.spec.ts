@@ -26,8 +26,8 @@ vi.mock('@/modules/assets/prices/use-price-refresh', () => ({
 vi.mock('@/modules/assets/prices/use-price-task-manager', () => ({
   usePriceTaskManager: (): object => ({ fetchExchangeRates: spies.fetchExchangeRates }),
 }));
-vi.mock('@/modules/settings/use-general-settings-store', () => ({
-  useGeneralSettingsStore: vi.fn(() => ({ currencySymbol })),
+vi.mock('@/modules/settings/use-setting', () => ({
+  useSetting: vi.fn(() => currencySymbol),
 }));
 vi.mock('@/modules/balances/use-balance-prices-store', () => ({
   useBalancePricesStore: vi.fn(() => ({ exchangeRates, previousCurrency, prices })),

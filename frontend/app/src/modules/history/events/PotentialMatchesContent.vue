@@ -11,7 +11,7 @@ import {
   type UnmatchedAssetMovement,
   useUnmatchedAssetMovements,
 } from '@/modules/history/events/use-unmatched-asset-movements';
-import { useGeneralSettingsStore } from '@/modules/settings/use-general-settings-store';
+import { useAssetMovementSettings } from '@/modules/settings/use-asset-movement-settings';
 
 const { isPinned, movement } = defineProps<{
   movement: UnmatchedAssetMovement;
@@ -36,7 +36,7 @@ const {
 const { fetchHistoryEvents } = useHistoryEventsApi();
 const { getAssetMovementMatches } = useAssetMovementMatchingApi();
 
-const { assetMovementAmountTolerance, assetMovementTimeRange } = storeToRefs(useGeneralSettingsStore());
+const { assetMovementAmountTolerance, assetMovementTimeRange } = useAssetMovementSettings();
 
 function getDefaultHourRange(): number {
   return get(assetMovementTimeRange) / 3600;

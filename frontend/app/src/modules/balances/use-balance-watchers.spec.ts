@@ -50,10 +50,8 @@ vi.mock('@/modules/assets/use-assets-store', () => ({
   }),
 }));
 
-vi.mock('@/modules/settings/use-frontend-settings-store', () => ({
-  useFrontendSettingsStore: vi.fn().mockReturnValue({
-    balanceValueThreshold: mockBalanceValueThreshold,
-  }),
+vi.mock('@/modules/settings/use-setting', () => ({
+  useSetting: vi.fn(() => mockBalanceValueThreshold),
 }));
 
 describe('useBalanceWatchers', () => {

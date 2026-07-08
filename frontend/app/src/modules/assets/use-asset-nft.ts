@@ -5,7 +5,7 @@ import { NftResponse } from '@/modules/assets/nfts';
 import { getDomain } from '@/modules/core/common/helpers/url';
 import { TaskType } from '@/modules/core/tasks/task-type';
 import { isActionableFailure, useTaskHandler } from '@/modules/core/tasks/use-task-handler';
-import { useFrontendSettingsStore } from '@/modules/settings/use-frontend-settings-store';
+import { useSetting } from '@/modules/settings/use-setting';
 
 interface UseNftsReturn {
   fetchNfts: (ignoreCache: boolean) => Promise<ActionResult<NftResponse | null>>;
@@ -18,8 +18,8 @@ export function useNfts(): UseNftsReturn {
 
   const assetsApi = useAssetsApi();
 
-  const { renderAllNftImages: renderAll, whitelistedDomainsForNftImages: whitelist }
-    = storeToRefs(useFrontendSettingsStore());
+  const renderAll = useSetting('renderAllNftImages');
+  const whitelist = useSetting('whitelistedDomainsForNftImages');
 
   const fetchNfts = async (ignoreCache: boolean): Promise<ActionResult<NftResponse | null>> => {
     const outcome = await runTask<NftResponse, TaskMeta>(

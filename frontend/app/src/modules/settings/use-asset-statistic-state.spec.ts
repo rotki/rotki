@@ -4,8 +4,8 @@ import { useAssetStatisticState } from './use-asset-statistic-state';
 const storeEnabled = ref<boolean>(false);
 const useAssetField = vi.fn((_asset?: unknown, _key?: unknown) => computed<string>(() => 'Bitcoin'));
 
-vi.mock('@/modules/settings/use-frontend-settings-store', () => ({
-  useFrontendSettingsStore: (): object => ({ useHistoricalAssetBalances: storeEnabled }),
+vi.mock('@/modules/settings/use-setting', () => ({
+  useSetting: vi.fn((key: string) => (key === 'useHistoricalAssetBalances' ? storeEnabled : ref(undefined))),
 }));
 
 vi.mock('@/modules/assets/use-asset-info-retrieval', () => ({

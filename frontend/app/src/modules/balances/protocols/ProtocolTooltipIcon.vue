@@ -4,7 +4,7 @@ import { AssetAmountDisplay, FiatDisplay, ValueDisplay } from '@/modules/assets/
 import ProtocolIcon from '@/modules/balances/protocols/ProtocolIcon.vue';
 import { useProtocolData } from '@/modules/balances/protocols/use-protocol-data';
 import { useProxyProtocol } from '@/modules/balances/protocols/use-proxy-protocol';
-import { useFrontendSettingsStore } from '@/modules/settings/use-frontend-settings-store';
+import { useSetting } from '@/modules/settings/use-setting';
 import HashLink from '@/modules/shell/components/HashLink.vue';
 
 const { protocolBalance, asset, loading } = defineProps<{
@@ -13,7 +13,7 @@ const { protocolBalance, asset, loading } = defineProps<{
   loading?: boolean;
 }>();
 
-const { shouldShowAmount } = storeToRefs(useFrontendSettingsStore());
+const shouldShowAmount = useSetting('shouldShowAmount');
 
 const { t } = useI18n({ useScope: 'global' });
 const { isProxy, parsedProtocol, proxyAddress } = useProxyProtocol(() => protocolBalance.protocol);

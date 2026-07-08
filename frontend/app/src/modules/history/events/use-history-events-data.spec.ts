@@ -43,10 +43,8 @@ vi.mock('@/modules/assets/use-assets-store', () => ({
   })),
 }));
 
-vi.mock('@/modules/settings/use-frontend-settings-store', () => ({
-  useFrontendSettingsStore: vi.fn(() => ({
-    itemsPerPage: mockItemsPerPage,
-  })),
+vi.mock('@/modules/settings/use-setting', () => ({
+  useSetting: vi.fn((key: string) => (key === 'itemsPerPage' ? mockItemsPerPage : ref(undefined))),
 }));
 
 vi.mock('@/modules/core/common/data/collection-utils', () => ({

@@ -1,10 +1,10 @@
 import { Theme } from '@rotki/common';
 import { useSessionAuthStore } from '@/modules/auth/use-session-auth-store';
-import { useFrontendSettingsStore } from '@/modules/settings/use-frontend-settings-store';
+import { useSetting } from '@/modules/settings/use-setting';
 import { useDarkMode } from '@/modules/shell/theme/use-dark-mode';
 
 export const useThemeChecker = createSharedComposable(() => {
-  const { selectedTheme } = storeToRefs(useFrontendSettingsStore());
+  const selectedTheme = useSetting('selectedTheme');
   const { logged } = storeToRefs(useSessionAuthStore());
   const { updateDarkMode } = useDarkMode();
 

@@ -4,12 +4,12 @@ import { useExchanges } from '@/modules/balances/exchanges/use-exchanges';
 import { useBlockchainBalances } from '@/modules/balances/use-blockchain-balances';
 import { arrayify } from '@/modules/core/common/data/array';
 import { BlockchainRefreshButtonBehaviour } from '@/modules/settings/types/frontend-settings';
-import { useFrontendSettingsStore } from '@/modules/settings/use-frontend-settings-store';
+import { useSetting } from '@/modules/settings/use-setting';
 
 export const useBalanceRefresh = createSharedComposable(() => {
   const { refreshBlockchainBalances } = useBlockchainBalances();
   const { fetchConnectedExchangeBalances, fetchSelectedExchangeBalances } = useExchanges();
-  const { blockchainRefreshButtonBehaviour } = storeToRefs(useFrontendSettingsStore());
+  const blockchainRefreshButtonBehaviour = useSetting('blockchainRefreshButtonBehaviour');
 
   const refreshBlockchainBalancesFn = async (blockchain?: string | string[]): Promise<void> => {
     const chain = blockchain ? arrayify(blockchain) : undefined;

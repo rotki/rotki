@@ -7,7 +7,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import AssetValueDisplay from '@/modules/assets/amount-display/components/AssetValueDisplay.vue';
 import { useCurrencies } from '@/modules/assets/amount-display/currencies';
 import { useBalancePricesStore } from '@/modules/balances/use-balance-prices-store';
-import { useFrontendSettingsStore } from '@/modules/settings/use-frontend-settings-store';
+import { useSettingsRepo } from '@/modules/settings/settings-repo';
 
 describe('modules/amount-display/components/AssetValueDisplay', () => {
   let wrapper: VueWrapper<InstanceType<typeof AssetValueDisplay>>;
@@ -90,7 +90,7 @@ describe('modules/amount-display/components/AssetValueDisplay', () => {
 
   describe('scramble data', () => {
     beforeEach(async () => {
-      useFrontendSettingsStore().update({ scrambleData: true });
+      useSettingsRepo().updateFrontend({ scrambleData: true });
     });
 
     it('should scramble the value', async () => {

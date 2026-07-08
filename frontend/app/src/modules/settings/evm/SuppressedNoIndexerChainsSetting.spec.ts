@@ -5,7 +5,7 @@ import { mount, type VueWrapper } from '@vue/test-utils';
 import flushPromises from 'flush-promises';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import SuppressedNoIndexerChainsSetting from '@/modules/settings/evm/SuppressedNoIndexerChainsSetting.vue';
-import { useFrontendSettingsStore } from '@/modules/settings/use-frontend-settings-store';
+import { useSettingsRepo } from '@/modules/settings/settings-repo';
 
 vi.mock('@/modules/core/common/use-supported-chains', async () => {
   const { computed } = await import('vue');
@@ -75,8 +75,8 @@ describe('suppressedNoIndexerChainsSetting', () => {
   });
 
   it('should reflect the suppressed chain in the autocomplete value', async () => {
-    const store = useFrontendSettingsStore();
-    store.update({ suppressNoIndexerChains: ['binance_sc'] });
+    const store = useSettingsRepo();
+    store.updateFrontend({ suppressNoIndexerChains: ['binance_sc'] });
     await nextTick();
     await flushPromises();
 

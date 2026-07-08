@@ -2,7 +2,7 @@ import type { Ref } from 'vue';
 import dayjs from 'dayjs';
 import { useRememberSettings } from '@/modules/auth/use-remember-settings';
 import { useSessionAuthStore } from '@/modules/auth/use-session-auth-store';
-import { useFrontendSettingsStore } from '@/modules/settings/use-frontend-settings-store';
+import { useSetting } from '@/modules/settings/use-setting';
 import { useSettingsOperations } from '@/modules/settings/use-settings-operations';
 import { useInterop } from '@/modules/shell/app/use-electron-interop';
 
@@ -16,9 +16,10 @@ export function usePasswordConfirmation(): UsePasswordConfirmationReturn {
   const { getPassword, isPackaged } = useInterop();
   const authStore = useSessionAuthStore();
   const { needsPasswordConfirmation, username } = storeToRefs(authStore);
-  const frontendSettingsStore = useFrontendSettingsStore();
   const { updateFrontendSetting } = useSettingsOperations();
-  const { enablePasswordConfirmation, lastPasswordConfirmed, passwordConfirmationInterval } = storeToRefs(frontendSettingsStore);
+  const enablePasswordConfirmation = useSetting('enablePasswordConfirmation');
+  const lastPasswordConfirmed = useSetting('lastPasswordConfirmed');
+  const passwordConfirmationInterval = useSetting('passwordConfirmationInterval');
   const { savedRememberPassword } = useRememberSettings();
 
   const checkIfPasswordConfirmationNeeded = async (usernameToCheck: string): Promise<void> => {

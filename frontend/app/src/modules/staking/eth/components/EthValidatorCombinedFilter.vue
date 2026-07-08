@@ -8,7 +8,7 @@ import { assert, type EthStakingCombinedFilter } from '@rotki/common';
 import { dateDeserializer, dateRangeValidator, dateSerializer, getDateInputISOFormat } from '@/modules/core/common/data/date';
 import { isValidStatus, validStatuses } from '@/modules/core/table/filters/use-eth-validator-filter';
 import TableFilter from '@/modules/core/table/TableFilter.vue';
-import { useFrontendSettingsStore } from '@/modules/settings/use-frontend-settings-store';
+import { useSetting } from '@/modules/settings/use-setting';
 
 const filter = defineModel<EthStakingCombinedFilter | undefined>('filter', { required: true });
 
@@ -30,7 +30,7 @@ export type Filters = MatchedKeyword<Eth2StakingFilterValueKeys>;
 
 const filters = ref<Filters>({});
 
-const { dateInputFormat } = storeToRefs(useFrontendSettingsStore());
+const dateInputFormat = useSetting('dateInputFormat');
 
 const { t } = useI18n({ useScope: 'global' });
 

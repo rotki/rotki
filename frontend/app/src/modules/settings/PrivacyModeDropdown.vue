@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import { useAreaVisibilityStore } from '@/modules/core/common/use-area-visibility-store';
 import SettingsOption from '@/modules/settings/controls/SettingsOption.vue';
-import { useFrontendSettingsStore } from '@/modules/settings/use-frontend-settings-store';
 import { usePrivacyMode } from '@/modules/settings/use-privacy';
 import { useScrambleSetting } from '@/modules/settings/use-scramble-settings';
+import { useSetting } from '@/modules/settings/use-setting';
 import AmountInput from '@/modules/shell/components/inputs/AmountInput.vue';
 import MenuTooltipButton from '@/modules/shell/components/MenuTooltipButton.vue';
 
@@ -30,7 +30,7 @@ const labels = [
 
 const { changePrivacyMode, privacyMode, privacyModeIcon, togglePrivacyMode } = usePrivacyMode();
 
-const { persistPrivacySettings } = storeToRefs(useFrontendSettingsStore());
+const persistPrivacySettings = useSetting('persistPrivacySettings');
 
 const {
   enabled,
@@ -116,7 +116,6 @@ watch(persistPrivacySettings, setData);
             <SettingsOption
               #default="{ updateImmediate: updatePersist }"
               setting="persistPrivacySettings"
-              frontend-setting
             >
               <RuiSwitch
                 v-model="persistPrivacy"
@@ -179,7 +178,6 @@ watch(persistPrivacySettings, setData);
           #default="{ updateImmediate: updateScramble }"
           class="bg-rui-secondary border border-rui-secondary text-white px-2 rounded-l pt-[1px] -mt-[1px]"
           setting="scrambleData"
-          frontend-setting
         >
           <RuiSwitch
             v-model="scrambleData"

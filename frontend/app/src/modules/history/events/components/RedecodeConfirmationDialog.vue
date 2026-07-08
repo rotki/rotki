@@ -11,7 +11,7 @@ import {
   type PrioritizedListId,
   ROUTESCAN_PRIO_LIST_ITEM,
 } from '@/modules/settings/types/prioritized-list-id';
-import { useGeneralSettingsStore } from '@/modules/settings/use-general-settings-store';
+import { useEvmIndexerSettings } from '@/modules/settings/use-evm-indexer-settings';
 import PrioritizedList from '@/modules/shell/components/PrioritizedList.vue';
 
 const show = defineModel<boolean>('show', { required: true });
@@ -33,7 +33,7 @@ const forceDeleteCustom = computed<boolean>(() => !!hasCustomEvents);
 
 const { t } = useI18n({ useScope: 'global' });
 const { getEvmChainName } = useSupportedChains();
-const { defaultEvmIndexerOrder, evmIndexersOrder } = storeToRefs(useGeneralSettingsStore());
+const { defaultEvmIndexerOrder, evmIndexersOrder } = useEvmIndexerSettings();
 
 const availableIndexers = new PrioritizedListData<PrioritizedListId>([
   ETHERSCAN_PRIO_LIST_ITEM,

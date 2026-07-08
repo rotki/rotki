@@ -5,7 +5,7 @@ import { useBalancePricesStore } from '@/modules/balances/use-balance-prices-sto
 import { useBalancesStore } from '@/modules/balances/use-balances-store';
 import { useBlockchainRefreshTimestampsStore } from '@/modules/balances/use-blockchain-refresh-timestamps-store';
 import { logger } from '@/modules/core/common/logging/logging';
-import { useGeneralSettingsStore } from '@/modules/settings/use-general-settings-store';
+import { useSetting } from '@/modules/settings/use-setting';
 
 const SEED_CACHE_WINDOW_SECONDS = 6 * 60 * 60;
 
@@ -18,7 +18,7 @@ export function usePriceSeed(): UsePriceSeedReturn {
   const { prices } = storeToRefs(useBalancePricesStore());
   const { balances } = storeToRefs(useBalancesStore());
   const { refreshTimestamps } = storeToRefs(useBlockchainRefreshTimestampsStore());
-  const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
+  const currencySymbol = useSetting('currencySymbol');
   const { adjustPrices } = usePriceRefresh();
 
   const collectAssetsByNewestTimestamp = (): Map<string, number> => {

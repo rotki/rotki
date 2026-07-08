@@ -45,7 +45,6 @@ const { t } = useI18n({ useScope: 'global' });
     :id="SettingsHighlightIds.LANGUAGE"
     class="w-full"
     setting="language"
-    frontend-setting
     :error-message="t('general_settings.language.validation.error')"
   >
     <template #title>

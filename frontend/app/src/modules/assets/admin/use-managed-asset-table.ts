@@ -4,7 +4,7 @@ import type { ComputedRef, MaybeRefOrGetter, Ref } from 'vue';
 import type { Collection } from '@/modules/core/common/collection';
 import { some } from 'es-toolkit/compat';
 import { TableId, useRememberTableSorting } from '@/modules/core/table/use-remember-table-sorting';
-import { useFrontendSettingsStore } from '@/modules/settings/use-frontend-settings-store';
+import { useSetting } from '@/modules/settings/use-setting';
 
 interface UseManagedAssetTableReturn {
   cols: ComputedRef<DataTableColumn<SupportedAsset>[]>;
@@ -20,7 +20,7 @@ export function useManagedAssetTable(
   collection: MaybeRefOrGetter<Collection<SupportedAsset>>,
 ): UseManagedAssetTableReturn {
   const { t } = useI18n({ useScope: 'global' });
-  const { itemsPerPage } = storeToRefs(useFrontendSettingsStore());
+  const itemsPerPage = useSetting('itemsPerPage');
 
   const cols = computed<DataTableColumn<SupportedAsset>[]>(() => [{
     cellClass: 'py-0',

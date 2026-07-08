@@ -10,7 +10,7 @@ import { TaskType } from '@/modules/core/tasks/task-type';
 import { useTaskStore } from '@/modules/core/tasks/use-task-store';
 import { useHistoricFiatConversion } from '@/modules/dashboard/snapshots/composables/use-historic-fiat-conversion';
 import { PriceOracle } from '@/modules/settings/types/price-oracle';
-import { useGeneralSettingsStore } from '@/modules/settings/use-general-settings-store';
+import { useSetting } from '@/modules/settings/use-setting';
 
 interface UseSnapshotAssetPriceOptions {
   /** The asset amount (two-way; the form's v-model). */
@@ -71,7 +71,7 @@ export function useSnapshotAssetPrice(
   const fetchedAssetToFiatPrice = shallowRef<string>('');
 
   const { resetHistoricalPricesData } = useHistoricPriceCache();
-  const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
+  const currencySymbol = useSetting('currencySymbol');
   const { useIsTaskRunning } = useTaskStore();
   const { getHistoricPrice } = usePriceTaskManager();
   const { addHistoricalPrice } = useAssetPricesApi();

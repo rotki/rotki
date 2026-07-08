@@ -2,7 +2,7 @@ import type { ComputedRef, MaybeRefOrGetter } from 'vue';
 import { type BigNumber, One } from '@rotki/common';
 import { CURRENCY_USD } from '@/modules/assets/amount-display/currencies';
 import { useHistoricPriceCache } from '@/modules/assets/prices/use-historic-price-cache';
-import { useGeneralSettingsStore } from '@/modules/settings/use-general-settings-store';
+import { useSetting } from '@/modules/settings/use-setting';
 
 interface UseHistoricFiatConversionReturn {
   /** Whether the user's display currency is USD (no conversion needed). */
@@ -28,7 +28,7 @@ interface UseHistoricFiatConversionReturn {
  *   key unit) — plain value, ref or getter. Do not pass milliseconds.
  */
 export function useHistoricFiatConversion(timestamp: MaybeRefOrGetter<number>): UseHistoricFiatConversionReturn {
-  const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
+  const currencySymbol = useSetting('currencySymbol');
   const { createKey, getHistoricPrice, getIsPending } = useHistoricPriceCache();
 
   const isUsd = computed<boolean>(() => get(currencySymbol) === CURRENCY_USD);

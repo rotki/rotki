@@ -2,13 +2,12 @@
 import { bigNumberify } from '@rotki/common';
 import { RuiIcon } from '@rotki/ui-library';
 import { ValueDisplay } from '@/modules/assets/amount-display';
-import { useFrontendSettingsStore } from '@/modules/settings/use-frontend-settings-store';
+import { useSetting } from '@/modules/settings/use-setting';
 import HintMenuIcon from '@/modules/shell/components/HintMenuIcon.vue';
 import SettingsOption from '../../controls/SettingsOption.vue';
 
 const { t } = useI18n({ useScope: 'global' });
-const frontendSettingsStore = useFrontendSettingsStore();
-const { subscriptDecimals } = storeToRefs(frontendSettingsStore);
+const subscriptDecimals = useSetting('subscriptDecimals');
 const subscriptEnabled = ref<boolean>(false);
 
 const exampleValues = [
@@ -31,7 +30,6 @@ onMounted(() => {
   <SettingsOption
     #default="{ error, success, updateImmediate }"
     setting="subscriptDecimals"
-    frontend-setting
     :error-message="t('rounding_settings.subscript.error')"
   >
     <div class="flex flex-col space-y-2">

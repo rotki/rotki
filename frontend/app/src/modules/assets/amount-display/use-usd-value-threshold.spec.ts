@@ -1,27 +1,17 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { ref, type ToRefs } from 'vue';
-import { BalanceSource } from '@/modules/settings/types/frontend-settings';
-import { useFrontendSettingsStore } from '@/modules/settings/use-frontend-settings-store';
+import { ref } from 'vue';
+import { BalanceSource, type BalanceValueThreshold } from '@/modules/settings/types/frontend-settings';
 import { useValueThreshold } from './use-usd-value-threshold';
 
-type MockedStore<T extends (...args: any[]) => any> = ToRefs<Partial<ReturnType<T>>>;
-
-function createMock<T>(overrides: ToRefs<Partial<T>>): T {
-  // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
-  return {
-    ...overrides,
-  } as T;
-}
-
-vi.mock('@/modules/settings/use-frontend-settings-store', () => ({
-  useFrontendSettingsStore: vi.fn((): MockedStore<typeof useFrontendSettingsStore> => ({
-    balanceValueThreshold: ref({ BLOCKCHAIN: '10', EXCHANGES: '10', MANUAL: '10' }),
-  })),
+const mockBalanceValueThreshold = ref<BalanceValueThreshold>({ BLOCKCHAIN: '10', EXCHANGES: '10', MANUAL: '10' });
+vi.mock('@/modules/settings/use-setting', () => ({
+  useSetting: vi.fn(() => mockBalanceValueThreshold),
 }));
 
 describe('useValueThreshold', () => {
   beforeEach(() => {
     setActivePinia(createPinia());
+    set(mockBalanceValueThreshold, { BLOCKCHAIN: '10', EXCHANGES: '10', MANUAL: '10' });
   });
 
   it('should return the threshold value for BLOCKCHAIN', () => {
@@ -40,9 +30,7 @@ describe('useValueThreshold', () => {
   });
 
   it('should return undefined when no value threshold exists for the balance source', () => {
-    vi.mocked(useFrontendSettingsStore).mockImplementationOnce(() => createMock<ReturnType<typeof useFrontendSettingsStore>>({
-      balanceValueThreshold: ref({}),
-    }));
+    set(mockBalanceValueThreshold, {});
     const result = useValueThreshold(BalanceSource.MANUAL);
     expect(get(result)).toBeUndefined();
   });

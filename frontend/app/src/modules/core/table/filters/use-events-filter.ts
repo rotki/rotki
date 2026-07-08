@@ -27,7 +27,7 @@ import {
 import { useHistoryEventCounterpartyMappings } from '@/modules/history/events/mapping/use-history-event-counterparty-mappings';
 import { useHistoryEventMappings } from '@/modules/history/events/mapping/use-history-event-mappings';
 import { useHistoryStore } from '@/modules/history/use-history-store';
-import { useFrontendSettingsStore } from '@/modules/settings/use-frontend-settings-store';
+import { useSetting } from '@/modules/settings/use-setting';
 
 export enum HistoryEventFilterKeys {
   START = 'start',
@@ -76,7 +76,7 @@ export function useHistoryEventFilter(
 ): FilterSchema<Filters, Matcher> {
   const filters = ref<Filters>({});
 
-  const { dateInputFormat } = storeToRefs(useFrontendSettingsStore());
+  const dateInputFormat = useSetting('dateInputFormat');
   const { historyEventTypeGlobalMapping, historyEventTypes } = useHistoryEventMappings();
   const { counterparties } = useHistoryEventCounterpartyMappings();
   const { assetSearch, getAssetInfo } = useAssetInfoRetrieval();

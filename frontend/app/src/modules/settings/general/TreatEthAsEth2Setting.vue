@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import SettingsOption from '@/modules/settings/controls/SettingsOption.vue';
-import { useGeneralSettingsStore } from '@/modules/settings/use-general-settings-store';
+import { useSetting } from '@/modules/settings/use-setting';
 
 const treatEth2asEth = ref<boolean>(false);
-const { treatEth2AsEth: enabled } = storeToRefs(useGeneralSettingsStore());
+const enabled = useSetting('treatEth2AsEth');
 
 onMounted(() => {
   set(treatEth2asEth, get(enabled));

@@ -2,7 +2,7 @@ import type { MatchedKeywordWithBehaviour, SearchMatcher } from '@/modules/core/
 import type { FilterSchema } from '@/modules/core/table/pagination-filter-types';
 import { dateDeserializer, dateRangeValidator, dateSerializer, getDateInputISOFormat } from '@/modules/core/common/data/date';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
-import { useFrontendSettingsStore } from '@/modules/settings/use-frontend-settings-store';
+import { useSetting } from '@/modules/settings/use-setting';
 
 const InternalTxConflictFilterKeys = {
   CHAIN: 'chain',
@@ -28,7 +28,7 @@ export function useInternalTxConflictsFilter(): FilterSchema<Filters, Matcher> {
   const { t } = useI18n({ useScope: 'global' });
   const filters = ref<Filters>({});
   const { evmChainsData } = useSupportedChains();
-  const { dateInputFormat } = storeToRefs(useFrontendSettingsStore());
+  const dateInputFormat = useSetting('dateInputFormat');
 
   const matchers = computed<Matcher[]>(() => [
     {

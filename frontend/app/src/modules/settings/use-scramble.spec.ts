@@ -1,15 +1,15 @@
 import { consistOfNumbers, isValidEthAddress } from '@rotki/common';
 import { beforeAll, describe, expect, it } from 'vitest';
-import { useFrontendSettingsStore } from '@/modules/settings/use-frontend-settings-store';
+import { useSettingsRepo } from '@/modules/settings/settings-repo';
 import { useScramble } from '@/modules/settings/use-scramble';
 
 describe('useScramble', () => {
-  let store: ReturnType<typeof useFrontendSettingsStore>;
+  let store: ReturnType<typeof useSettingsRepo>;
 
   beforeAll(() => {
     const pinia = createPinia();
     setActivePinia(pinia);
-    store = useFrontendSettingsStore();
+    store = useSettingsRepo();
   });
 
   describe('when scramble is disabled', () => {
@@ -34,7 +34,7 @@ describe('useScramble', () => {
 
   describe('when scramble is enabled', () => {
     beforeAll(async () => {
-      store.update({ scrambleData: true, scrambleMultiplier: 7 });
+      store.updateFrontend({ scrambleData: true, scrambleMultiplier: 7 });
     });
 
     it('should scramble hex address', () => {

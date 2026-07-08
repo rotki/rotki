@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useSnapshotActions } from '@/modules/dashboard/snapshots/composables/use-snapshot-actions';
-import { useFrontendSettingsStore } from '@/modules/settings/use-frontend-settings-store';
+import { useSettingsRepo } from '@/modules/settings/settings-repo';
 
 // Hoisted so the vi.mock factories can reference them even when a dependency
 // (e.g. logging via use-electron-interop) is resolved during eager module init.
@@ -64,7 +64,7 @@ describe('modules/dashboard/snapshots/composables/use-snapshot-actions', () => {
     });
 
     it('should pass ignoreErrors when the frontend setting is enabled', async () => {
-      useFrontendSettingsStore().update({ ignoreSnapshotError: true });
+      useSettingsRepo().updateFrontend({ ignoreSnapshotError: true });
       const { forceSave } = useSnapshotActions();
 
       await forceSave();

@@ -7,7 +7,7 @@ import { usePremium } from '@/modules/premium/use-premium';
 import { Module, useModuleEnabled } from '@/modules/session/use-module-enabled';
 import ActiveModules from '@/modules/settings/modules/ActiveModules.vue';
 import ModuleNotActive from '@/modules/settings/modules/ModuleNotActive.vue';
-import { useGeneralSettingsStore } from '@/modules/settings/use-general-settings-store';
+import { useSetting } from '@/modules/settings/use-setting';
 import LiquityStakingDetails from '@/modules/staking/liquity/LiquityStakingDetails.vue';
 import LiquityStakingPagePlaceholder from '@/modules/staking/liquity/LiquityStakingPagePlaceholder.vue';
 import { useLiquityDataFetching } from '@/modules/staking/liquity/use-liquity-data-fetching';
@@ -19,7 +19,7 @@ const { setStakingQueryStatus } = useLiquityStore();
 const { fetchPools, fetchStaking, fetchStatistics } = useLiquityDataFetching();
 const { resetProtocolStatsPriceQueryStatus } = useHistoricCachePriceStore();
 const { useShouldShowLoadingScreen } = useStatusStore();
-const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
+const currencySymbol = useSetting('currencySymbol');
 const premium = usePremium();
 const { fetchPrices } = usePriceTaskManager();
 

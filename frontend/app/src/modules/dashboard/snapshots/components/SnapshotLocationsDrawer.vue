@@ -10,7 +10,7 @@ import SnapshotLocationSplit from '@/modules/dashboard/snapshots/components/Snap
 import { findSumMismatch, type LocationSplit } from '@/modules/dashboard/snapshots/utils/snapshot-math';
 import { getTotalValue, locationsTotal, TOTAL_LOCATION } from '@/modules/dashboard/snapshots/utils/snapshot-totals';
 import LocationDisplay from '@/modules/history/LocationDisplay.vue';
-import { useGeneralSettingsStore } from '@/modules/settings/use-general-settings-store';
+import { useSetting } from '@/modules/settings/use-setting';
 import RowActions from '@/modules/shell/components/RowActions.vue';
 
 type IndexedLocationDataSnapshot = LocationDataSnapshot & { index: number };
@@ -32,7 +32,7 @@ const emit = defineEmits<{
 
 const { t } = useI18n({ useScope: 'global' });
 
-const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
+const currencySymbol = useSetting('currencySymbol');
 const { show } = useConfirmStore();
 
 const sort = ref<DataTableSortData<LocationDataSnapshot>>({

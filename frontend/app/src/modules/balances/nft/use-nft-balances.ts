@@ -15,7 +15,7 @@ import { Section, Status } from '@/modules/core/common/status';
 import { useNotifications } from '@/modules/core/notifications/use-notifications';
 import { TaskType } from '@/modules/core/tasks/task-type';
 import { isActionableFailure, useTaskHandler } from '@/modules/core/tasks/use-task-handler';
-import { useGeneralSettingsStore } from '@/modules/settings/use-general-settings-store';
+import { useSetting } from '@/modules/settings/use-setting';
 import { useStatusUpdater } from '@/modules/shell/sync-progress/use-status-updater';
 
 interface NftBalancesReturn {
@@ -24,7 +24,7 @@ interface NftBalancesReturn {
 }
 
 export function useNftBalances(): NftBalancesReturn {
-  const { activeModules } = storeToRefs(useGeneralSettingsStore());
+  const activeModules = useSetting('activeModules');
   const { nonFungibleTotalValue } = storeToRefs(useBalancesStore());
   const { runTask } = useTaskHandler();
   const { notifyError } = useNotifications();

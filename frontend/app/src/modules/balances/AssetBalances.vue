@@ -13,7 +13,7 @@ import { assetFilterByKeyword } from '@/modules/core/common/display/assets';
 import { sortAssetBalances } from '@/modules/core/common/display/balances';
 import { TableColumn } from '@/modules/core/table/table-column';
 import { TableId, useRememberTableSorting } from '@/modules/core/table/use-remember-table-sorting';
-import { useGeneralSettingsStore } from '@/modules/settings/use-general-settings-store';
+import { useSetting } from '@/modules/settings/use-setting';
 import PercentageDisplay from '@/modules/shell/components/display/PercentageDisplay.vue';
 import RowAppend from '@/modules/shell/components/RowAppend.vue';
 import { useStatisticsStore } from '@/modules/statistics/use-statistics-store';
@@ -65,7 +65,7 @@ const sort = ref<DataTableSortData<AssetBalanceWithPrice>>({
 const debouncedSearch = refDebounced(search, 200);
 
 const { getAssetInfo } = useAssetSelectInfo();
-const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
+const currencySymbol = useSetting('currencySymbol');
 const statistics = useStatisticsStore();
 const { totalNetWorth } = storeToRefs(statistics);
 

@@ -7,6 +7,7 @@ import { requiredIf } from '@vuelidate/validators';
 import dayjs from 'dayjs';
 import { isEqual } from 'es-toolkit';
 import ChainSelect from '@/modules/accounts/blockchain/ChainSelect.vue';
+import { useConnectedExchangesStore } from '@/modules/balances/exchanges/use-connected-exchanges-store';
 import LocationSelector from '@/modules/balances/LocationSelector.vue';
 import { bigNumberifyFromRef } from '@/modules/core/common/data/bignumbers';
 import { TRADE_LOCATION_EXTERNAL } from '@/modules/core/common/defaults';
@@ -15,7 +16,6 @@ import { useHistoryEventsForm } from '@/modules/history/events/use-history-event
 import AssetMovementFeeEntry from '@/modules/history/management/forms/common/AssetMovementFeeEntry.vue';
 import HistoryEventAssetPriceForm from '@/modules/history/management/forms/HistoryEventAssetPriceForm.vue';
 import { toMessages, useEventFormBase } from '@/modules/history/management/forms/use-event-form-base';
-import { useSessionSettingsStore } from '@/modules/settings/use-session-settings-store';
 import AutoCompleteWithSearchSync from '@/modules/shell/components/inputs/AutoCompleteWithSearchSync.vue';
 import DateTimePicker from '@/modules/shell/components/inputs/DateTimePicker.vue';
 
@@ -95,7 +95,7 @@ const { v$, captureEditModeStateFromRefs, shouldSkipSaveFromRefs } = useEventFor
   stateUpdated,
 });
 
-const { connectedExchanges } = storeToRefs(useSessionSettingsStore());
+const { connectedExchanges } = storeToRefs(useConnectedExchangesStore());
 const { saveHistoryEventHandler } = useHistoryEventsForm();
 
 const lastLocation = useLocalStorage('rotki.history_event.location', TRADE_LOCATION_EXTERNAL);

@@ -2,14 +2,15 @@ import { hexToRgbPoints, type ThemeColors } from '@rotki/common';
 import { ThemeMode, useRotkiTheme } from '@rotki/ui-library';
 import { getColors } from 'theme-colors';
 import { usePremium } from '@/modules/premium/use-premium';
-import { useFrontendSettingsStore } from '@/modules/settings/use-frontend-settings-store';
+import { useSetting } from '@/modules/settings/use-setting';
 import { DARK_COLORS, LIGHT_COLORS } from '@/plugins/theme';
 
 interface ColorScheme { DEFAULT: string; lighter: string; darker: string }
 
 export const useDarkMode = createSharedComposable(() => {
   const { config, isDark, setThemeConfig, switchThemeScheme } = useRotkiTheme();
-  const { darkTheme, lightTheme } = storeToRefs(useFrontendSettingsStore());
+  const darkTheme = useSetting('darkTheme');
+  const lightTheme = useSetting('lightTheme');
   const premium = usePremium();
 
   const updateDarkMode = (enabled: boolean): void => {

@@ -8,7 +8,7 @@ import type { Collection } from '@/modules/core/common/collection';
 import { type Filters, type Matcher, useEthValidatorAccountFilter } from '@/modules/core/table/filters/use-eth-validator-filter';
 import { usePaginationFilters } from '@/modules/core/table/use-pagination-filter';
 import { TableId, useRememberTableSorting } from '@/modules/core/table/use-remember-table-sorting';
-import { useGeneralSettingsStore } from '@/modules/settings/use-general-settings-store';
+import { useSetting } from '@/modules/settings/use-setting';
 import { useBlockchainValidatorsStore } from '@/modules/staking/use-blockchain-validators-store';
 
 interface UseEthValidatorDataReturn {
@@ -30,7 +30,7 @@ export function useEthValidatorData(): UseEthValidatorDataReturn {
   const blockchainValidatorsStore = useBlockchainValidatorsStore();
   const { fetchValidators } = blockchainValidatorsStore;
   const { ethStakingValidators } = storeToRefs(blockchainValidatorsStore);
-  const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
+  const currencySymbol = useSetting('currencySymbol');
 
   const {
     fetchData,

@@ -4,10 +4,10 @@ import { updateGeneralSettings } from '@test/utils/general-settings';
 import flushPromises from 'flush-promises';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useCurrencies } from '@/modules/assets/amount-display/currencies';
+import { useConnectedExchangesStore } from '@/modules/balances/exchanges/use-connected-exchanges-store';
 import { useBalancePricesStore } from '@/modules/balances/use-balance-prices-store';
 import { useBalancesStore } from '@/modules/balances/use-balances-store';
 import { TRADE_LOCATION_BANKS } from '@/modules/core/common/defaults';
-import { useSessionSettingsStore } from '@/modules/settings/use-session-settings-store';
 import '@test/i18n';
 
 // Mock functions
@@ -37,7 +37,7 @@ describe('usePriceRefresh', () => {
   describe('adjustPrices', () => {
     it('should handle currency conversion without breaking calculations', () => {
       const { exchangeBalances } = storeToRefs(useBalancesStore());
-      const { connectedExchanges } = storeToRefs(useSessionSettingsStore());
+      const { connectedExchanges } = storeToRefs(useConnectedExchangesStore());
       const { adjustPrices } = usePriceRefresh();
 
       set(connectedExchanges, [{

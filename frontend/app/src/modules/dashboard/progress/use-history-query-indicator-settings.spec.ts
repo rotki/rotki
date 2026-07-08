@@ -4,11 +4,8 @@ import { useHistoryQueryIndicatorSettings } from './use-history-query-indicator-
 const evmQueryIndicatorDismissalThreshold = ref<number>(0);
 const evmQueryIndicatorMinOutOfSyncPeriod = ref<number>(0);
 
-vi.mock('@/modules/settings/use-frontend-settings-store', () => ({
-  useFrontendSettingsStore: (): object => ({
-    evmQueryIndicatorDismissalThreshold,
-    evmQueryIndicatorMinOutOfSyncPeriod,
-  }),
+vi.mock('@/modules/settings/use-setting', () => ({
+  useSetting: vi.fn((key: string) => Reflect.get({ evmQueryIndicatorDismissalThreshold, evmQueryIndicatorMinOutOfSyncPeriod }, key) ?? ref(undefined)),
 }));
 
 const HOUR_IN_MS = 60 * 60 * 1000;

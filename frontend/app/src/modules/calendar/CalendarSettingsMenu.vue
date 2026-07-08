@@ -2,7 +2,6 @@
 import type { OAuthResult } from '@shared/ipc';
 import { Severity } from '@rotki/common';
 import { get, set } from '@vueuse/core';
-import { storeToRefs } from 'pinia';
 import { onMounted, onUnmounted, ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
@@ -10,7 +9,7 @@ import { logger } from '@/modules/core/common/logging/logging';
 import { useNotificationDispatcher } from '@/modules/core/notifications/use-notification-dispatcher';
 import { useGoogleCalendarApi } from '@/modules/settings/api/use-google-calendar-api';
 import SettingsOption from '@/modules/settings/controls/SettingsOption.vue';
-import { useGeneralSettingsStore } from '@/modules/settings/use-general-settings-store';
+import { useSetting } from '@/modules/settings/use-setting';
 import { useBackendMessages } from '@/modules/shell/app/use-backend-messages';
 import { useInterop } from '@/modules/shell/app/use-electron-interop';
 import CardTitle from '@/modules/shell/components/CardTitle.vue';
@@ -36,7 +35,8 @@ const manualToken = ref<string>('');
 const manualRefreshToken = ref<string>('');
 const showTokenInput = ref(false);
 
-const { autoCreateCalendarReminders, autoDeleteCalendarEntries } = storeToRefs(useGeneralSettingsStore());
+const autoCreateCalendarReminders = useSetting('autoCreateCalendarReminders');
+const autoDeleteCalendarEntries = useSetting('autoDeleteCalendarEntries');
 
 function setAutoDelete() {
   set(autoDelete, get(autoDeleteCalendarEntries));

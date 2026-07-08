@@ -12,7 +12,7 @@ import { useReportGeneration } from '@/modules/reports/use-report-generation';
 import { useReportOperations } from '@/modules/reports/use-report-operations';
 import { useReportsApi } from '@/modules/reports/use-reports-api';
 import { PinnedNames } from '@/modules/session/types';
-import { useGeneralSettingsStore } from '@/modules/settings/use-general-settings-store';
+import { useSetting } from '@/modules/settings/use-setting';
 import { useInterop } from '@/modules/shell/app/use-electron-interop';
 
 interface UseReportsPageActionsOptions {
@@ -41,7 +41,7 @@ export function useReportsPageActions(options: UseReportsPageActionsOptions): Us
   const { fetchReports } = useReportOperations();
   const { pinned } = storeToRefs(useAreaVisibilityStore());
   const { notify, showErrorMessage, showSuccessMessage } = useNotifications();
-  const { dateDisplayFormat } = storeToRefs(useGeneralSettingsStore());
+  const dateDisplayFormat = useSetting('dateDisplayFormat');
   const { appSession, openDirectory } = useInterop();
   const { importReportData, uploadReportData } = useReportsApi();
 

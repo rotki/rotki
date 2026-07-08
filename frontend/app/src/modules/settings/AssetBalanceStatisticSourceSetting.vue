@@ -63,7 +63,6 @@ watchImmediate(() => asset, (asset) => {
       <SettingsOption
         #default="{ updateImmediate }"
         setting="useHistoricalAssetBalances"
-        frontend-setting
       >
         <RuiRadioGroup
           v-model="useHistoricalAssetBalances"

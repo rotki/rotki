@@ -2,7 +2,7 @@
 import type { AssetBalance } from '@rotki/common';
 import type { AssetResolutionOptions } from '@/modules/assets/use-asset-info-retrieval';
 import { AssetAmountDisplay } from '@/modules/assets/amount-display/components';
-import { useFrontendSettingsStore } from '@/modules/settings/use-frontend-settings-store';
+import { useSetting } from '@/modules/settings/use-setting';
 import AssetIcon from '@/modules/shell/components/AssetIcon.vue';
 
 const { assets, visible = 3 } = defineProps<{
@@ -12,7 +12,7 @@ const { assets, visible = 3 } = defineProps<{
   showChain?: boolean;
 }>();
 
-const { shouldShowAmount } = storeToRefs(useFrontendSettingsStore());
+const shouldShowAmount = useSetting('shouldShowAmount');
 const showMore = computed<number>(() => assets.length - visible);
 const router = useRouter();
 

@@ -11,7 +11,7 @@ import { sortAndFilterValidators } from '@/modules/accounts/account-validator';
 import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
 import { useBalancesStore } from '@/modules/balances/use-balances-store';
 import { Module } from '@/modules/core/common/modules';
-import { useGeneralSettingsStore } from '@/modules/settings/use-general-settings-store';
+import { useSetting } from '@/modules/settings/use-setting';
 
 export const useBlockchainValidatorsStore = defineStore('blockchain/validators', () => {
   const blockchainAccountsStore = useBlockchainAccountsStore();
@@ -21,7 +21,7 @@ export const useBlockchainValidatorsStore = defineStore('blockchain/validators',
   const { balances } = storeToRefs(balancesStore);
   const { updateBalances } = balancesStore;
 
-  const { activeModules } = storeToRefs(useGeneralSettingsStore());
+  const activeModules = useSetting('activeModules');
 
   const isEth2Enabled = (): boolean => get(activeModules).includes(Module.ETH2);
 

@@ -3,7 +3,6 @@ import type { GeneralSettings, SettingsUpdate } from '@/modules/settings/types/u
 import { startPromise } from '@shared/utils';
 import { isEqual } from 'es-toolkit';
 import { useMainStore } from '@/modules/core/common/use-main-store';
-import { useFrontendSettingsStore } from '@/modules/settings/use-frontend-settings-store';
 import { useSettingsOperations } from '@/modules/settings/use-settings-operations';
 import { compareVersions } from './compare-versions';
 import {
@@ -13,6 +12,7 @@ import {
   type SettingsSuggestion,
   type VersionSuggestions,
 } from './settings-suggestions';
+import { useSuggestionsStore } from './use-suggestions-store';
 
 function getCurrentValue(
   suggestion: SettingsSuggestion,
@@ -90,7 +90,7 @@ interface UseSettingsSuggestionsReturn {
 }
 
 export function useSettingsSuggestions(): UseSettingsSuggestionsReturn {
-  const frontendStore = useFrontendSettingsStore();
+  const suggestionsStore = useSuggestionsStore();
   const { update, updateFrontendSetting } = useSettingsOperations();
   const { appVersion } = storeToRefs(useMainStore());
   const { t } = useI18n({ useScope: 'global' });
@@ -107,8 +107,8 @@ export function useSettingsSuggestions(): UseSettingsSuggestionsReturn {
     const items = collectPendingSuggestions(frontendSettings, generalSettings, version, registry);
 
     if (items.length > 0) {
-      frontendStore.pendingSuggestions = items;
-      frontendStore.showSuggestionsDialog = true;
+      suggestionsStore.pendingSuggestions = items;
+      suggestionsStore.showSuggestionsDialog = true;
     }
     else {
       startPromise(updateFrontendSetting({ lastAppliedSettingsVersion: version }));
@@ -133,15 +133,15 @@ export function useSettingsSuggestions(): UseSettingsSuggestionsReturn {
     if (Object.keys(generalPayload).length > 0)
       await update(generalPayload);
 
-    frontendStore.pendingSuggestions = [];
-    frontendStore.showSuggestionsDialog = false;
+    suggestionsStore.pendingSuggestions = [];
+    suggestionsStore.showSuggestionsDialog = false;
   }
 
   async function dismissAll(): Promise<void> {
     const version = get(appVersion);
     await updateFrontendSetting({ lastAppliedSettingsVersion: version });
-    frontendStore.pendingSuggestions = [];
-    frontendStore.showSuggestionsDialog = false;
+    suggestionsStore.pendingSuggestions = [];
+    suggestionsStore.showSuggestionsDialog = false;
   }
 
   return {

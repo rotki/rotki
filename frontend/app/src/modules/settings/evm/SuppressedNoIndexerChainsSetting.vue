@@ -4,11 +4,11 @@ import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
 import SettingsItem from '@/modules/settings/controls/SettingsItem.vue';
 import SettingsOption from '@/modules/settings/controls/SettingsOption.vue';
 import { SettingsHighlightIds } from '@/modules/settings/setting-highlight-ids';
-import { useFrontendSettingsStore } from '@/modules/settings/use-frontend-settings-store';
+import { useSetting } from '@/modules/settings/use-setting';
 import ChainIcon from '@/modules/shell/components/ChainIcon.vue';
 
 const { t } = useI18n({ useScope: 'global' });
-const { suppressNoIndexerChains } = storeToRefs(useFrontendSettingsStore());
+const suppressNoIndexerChains = useSetting('suppressNoIndexerChains');
 const { txEvmChains } = useSupportedChains();
 
 const [DefineChainItem, ReuseChainItem] = createReusableTemplate<{ item: EvmChainInfo; size: string }>();
@@ -37,7 +37,6 @@ const [DefineChainItem, ReuseChainItem] = createReusableTemplate<{ item: EvmChai
     </template>
     <SettingsOption
       #default="{ error, success, updateImmediate }"
-      frontend-setting
       setting="suppressNoIndexerChains"
       :error-message="t('evm_settings.indexer.suppressed_no_indexer_chains.error')"
       :success-message="t('evm_settings.indexer.suppressed_no_indexer_chains.success')"

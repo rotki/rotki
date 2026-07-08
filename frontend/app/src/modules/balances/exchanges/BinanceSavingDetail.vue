@@ -8,7 +8,7 @@ import { useBinanceSavings } from '@/modules/balances/exchanges/use-binance-savi
 import { Section } from '@/modules/core/common/status';
 import { usePaginationFilters } from '@/modules/core/table/use-pagination-filter';
 import { TableId, useRememberTableSorting } from '@/modules/core/table/use-remember-table-sorting';
-import { useGeneralSettingsStore } from '@/modules/settings/use-general-settings-store';
+import { useSetting } from '@/modules/settings/use-setting';
 import DateDisplay from '@/modules/shell/components/display/DateDisplay.vue';
 import RowAppend from '@/modules/shell/components/RowAppend.vue';
 import { useSectionStatus } from '@/modules/shell/sync-progress/use-section-status';
@@ -24,7 +24,7 @@ const savingsReceived = ref<AssetBalance[]>([]);
 
 const { isLoading: loading } = useSectionStatus(Section.EXCHANGE_SAVINGS);
 const { fetchExchangeSavings } = useBinanceSavings();
-const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
+const currencySymbol = useSetting('currencySymbol');
 
 const defaultParams = computed(() => ({
   location: exchange.toString(),

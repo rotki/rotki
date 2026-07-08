@@ -2,7 +2,7 @@ import { omit } from 'es-toolkit';
 import { computed, type ComputedRef, type MaybeRefOrGetter, type Ref, type WritableComputedRef } from 'vue';
 import { useAssetInfoRetrieval } from '@/modules/assets/use-asset-info-retrieval';
 import { logger } from '@/modules/core/common/logging/logging';
-import { useFrontendSettingsStore } from '@/modules/settings/use-frontend-settings-store';
+import { useSetting } from '@/modules/settings/use-setting';
 
 const Source = {
   EVENTS: 'events',
@@ -27,7 +27,7 @@ interface UseAssetStatisticsStateReturn {
 export function useAssetStatisticState(asset: MaybeRefOrGetter<string | undefined>): UseAssetStatisticsStateReturn {
   const useHistoricalAssetBalances = ref<boolean>(false);
 
-  const { useHistoricalAssetBalances: enabled } = storeToRefs(useFrontendSettingsStore());
+  const enabled = useSetting('useHistoricalAssetBalances');
 
   const { useAssetField } = useAssetInfoRetrieval();
   const stateForAsset = useLocalStorage<Record<string, number>>('rotki.remember-state-for-asset', {});

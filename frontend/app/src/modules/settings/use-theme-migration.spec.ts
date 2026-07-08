@@ -6,8 +6,8 @@ const lightTheme = ref<Record<string, string>>({});
 const defaultThemeVersion = ref<number>(0);
 const updateFrontendSetting = vi.fn().mockResolvedValue(undefined);
 
-vi.mock('@/modules/settings/use-frontend-settings-store', () => ({
-  useFrontendSettingsStore: (): object => ({ darkTheme, defaultThemeVersion, lightTheme }),
+vi.mock('@/modules/settings/use-setting', () => ({
+  useSetting: vi.fn((key: string) => Reflect.get({ darkTheme, defaultThemeVersion, lightTheme }, key) ?? ref(undefined)),
 }));
 
 vi.mock('@/modules/settings/use-settings-operations', () => ({

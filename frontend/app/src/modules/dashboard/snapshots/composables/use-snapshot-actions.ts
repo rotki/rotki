@@ -6,7 +6,7 @@ import { useBalanceFetching } from '@/modules/balances/use-balance-fetching';
 import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
 import { useMessageStore } from '@/modules/core/common/use-message-store';
 import { useSnapshotApi } from '@/modules/settings/api/use-snapshot-api';
-import { useFrontendSettingsStore } from '@/modules/settings/use-frontend-settings-store';
+import { useSetting } from '@/modules/settings/use-setting';
 import { useInterop } from '@/modules/shell/app/use-electron-interop';
 import { useStatisticsDataFetching } from '@/modules/statistics/use-statistics-data-fetching';
 
@@ -48,7 +48,7 @@ export function useSnapshotActions(): UseSnapshotActionsReturn {
   const { setMessage } = useMessageStore();
   const { getPath } = useInterop();
   const { importBalancesSnapshot, uploadBalancesSnapshot } = useSnapshotApi();
-  const { ignoreSnapshotError } = storeToRefs(useFrontendSettingsStore());
+  const ignoreSnapshotError = useSetting('ignoreSnapshotError');
 
   async function forceSave(): Promise<void> {
     set(forceSaving, true);
