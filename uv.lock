@@ -1140,21 +1140,6 @@ wheels = [
 ]
 
 [[package]]
-name = "miniupnpc"
-version = "2.3.3"
-source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/73/8f/4d7964914386dcd82da566e04af9a8744d2025e2d68fa37689d5c4e152cf/miniupnpc-2.3.3.tar.gz", hash = "sha256:ee5e957df828d2fa1cc364e60c583d10439110888f086c9182071c96a374b2ad", size = 79010, upload-time = "2025-05-26T23:01:39.214Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/92/ab/41dd70379021622cf77256cb0da8e0c0ac9d8c1a5aa3dd9b3f3ac94c8ee9/miniupnpc-2.3.3-cp311-cp311-macosx_13_0_arm64.whl", hash = "sha256:131d03e395eeb5b4c8437ed60daeccbc72456dd95bc58c565519c492f387d2ce", size = 29520, upload-time = "2025-05-26T23:08:04.705Z" },
-    { url = "https://files.pythonhosted.org/packages/36/a3/8143744048aaf384ad7ca15d1a759f4645ec61084e5c5d961d64b7d85b90/miniupnpc-2.3.3-cp311-cp311-macosx_13_0_universal2.whl", hash = "sha256:ab5f053366d2685e74eb915e06a55ee2dca35f8d8785deb150908e7d0d200ce5", size = 36487, upload-time = "2025-05-26T23:08:06.065Z" },
-    { url = "https://files.pythonhosted.org/packages/f0/54/cd054dd5bc33c73f824eb1a3fbf093da5b7e16aab9dee3509e1cf185e384/miniupnpc-2.3.3-cp311-cp311-macosx_13_0_x86_64.whl", hash = "sha256:2086b9c6f67ee50f1954e16d25bf097134a26abe2a0fc2ff9b5b69ad76d4f5b5", size = 30199, upload-time = "2025-05-26T23:08:07.335Z" },
-    { url = "https://files.pythonhosted.org/packages/7d/c8/2c7e74cf62e784e2f4f825fdde15d43a7fd084b63493097759da32908d93/miniupnpc-2.3.3-cp311-cp311-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:b855a01fe521a3936ba3449c48b24b42dfb82b7569a4c9bbf394a5bcc975c416", size = 48160, upload-time = "2025-05-26T23:08:08.965Z" },
-    { url = "https://files.pythonhosted.org/packages/2c/c9/cb47e1dae1c5a370ba302ae19cdca41429944bc70a78ad2c96c3ef08027d/miniupnpc-2.3.3-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:e07ea5c02d3e2ce9837149af337b06d6ebdbe158f028dfc1a2ebde40703a45da", size = 48166, upload-time = "2025-05-26T23:08:10.628Z" },
-    { url = "https://files.pythonhosted.org/packages/8e/d3/a1889887f3baa1e65ed6a8c76fe6714a512b451ec83c82961d232faaf68d/miniupnpc-2.3.3-cp311-cp311-win32.whl", hash = "sha256:09e3fbfd7e0fcd76c425291107d38b2718c726c026e393d7a57815757940e017", size = 212906, upload-time = "2025-05-26T23:09:35.949Z" },
-    { url = "https://files.pythonhosted.org/packages/38/89/e7ffd17a9d86d90a785f0aed4597cf9122b6fe61088d11e1c745d5be0098/miniupnpc-2.3.3-cp311-cp311-win_amd64.whl", hash = "sha256:19958caa3830a86fc4a0bdca35d30fd07b5d565ba136d9fb26823d14edb216d4", size = 214373, upload-time = "2025-05-26T23:11:47.05Z" },
-]
-
-[[package]]
 name = "more-itertools"
 version = "10.6.0"
 source = { registry = "https://pypi.org/simple" }
@@ -2080,7 +2065,6 @@ dependencies = [
     { name = "idna" },
     { name = "marshmallow" },
     { name = "maxminddb" },
-    { name = "miniupnpc" },
     { name = "more-itertools" },
     { name = "packaging" },
     { name = "pandas" },
@@ -2198,7 +2182,6 @@ requires-dist = [
     { name = "marshmallow", specifier = "==4.2.2" },
     { name = "maxminddb", specifier = "==2.6.3" },
     { name = "mcp", marker = "extra == 'mcp'", specifier = "==1.27.1" },
-    { name = "miniupnpc", specifier = "==2.3.3" },
     { name = "more-itertools", specifier = "==10.6.0" },
     { name = "packaging", specifier = "==25.0" },
     { name = "pandas", specifier = "==3.0.3" },

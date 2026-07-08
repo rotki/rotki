@@ -36,7 +36,6 @@ dependencies = [
     "beautifulsoup4==4.14.2",
     "maxminddb==2.6.3",
     "pywin32==311; sys_platform == 'win32'",
-    "miniupnpc==2.3.3",
     "cryptography==48.0.1",
     "py-machineid==0.8.0",
     "more-itertools==10.6.0",  # for peekable iterators
