@@ -32,7 +32,7 @@ TEST_OLD_ASSET_IDENTIFIER: Final = 'old_solana_token_id'
 
 
 @pytest.fixture(name='setup_migration_table')
-def _setup_migration_table():
+def _setup_migration_table() -> None:
     """Setup user_added_solana_tokens table"""
     with GlobalDBHandler().conn.write_ctx() as write_cursor:
         write_cursor.execute("""
@@ -43,7 +43,7 @@ def _setup_migration_table():
         """)
 
 
-def test_migrate_solana_token_success(rotkehlchen_api_server: APIServer, setup_migration_table) -> None:  # noqa: E501
+def test_migrate_solana_token_success(rotkehlchen_api_server: APIServer, setup_migration_table: None) -> None:  # noqa: E501
     """Test successful migration including database references and table cleanup"""
     db_handler = rotkehlchen_api_server.rest_api.rotkehlchen.data.db
 

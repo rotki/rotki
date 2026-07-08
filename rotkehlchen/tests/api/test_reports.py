@@ -23,10 +23,15 @@ from rotkehlchen.types import Location, Price, Timestamp
 from rotkehlchen.utils.misc import timestamp_to_date
 
 if TYPE_CHECKING:
+<<<<<<< HEAD
     from rotkehlchen.api.server import APIServer
 
+=======
+    from rotkehlchen.db.dbhandler import DBHandler
+>>>>>>> 16b960eb52 (typing:tests/api/* add typing)
 
-def setup_report_events(database) -> tuple[int, list[ProcessedAccountingEvent]]:
+
+def setup_report_events(database: 'DBHandler') -> tuple[int, list[ProcessedAccountingEvent]]:
     """Input events to the DB for testing"""
     timestamp_1_secs, timestamp_2_secs, eth_price_ts_1, eth_price_ts_2, half_amount, hundred = Timestamp(1741634066), Timestamp(1741634100), FVal('2000'), FVal('2200'), FVal(0.5), FVal('100')  # noqa: E501
     dbreport = DBAccountingReports(database)

@@ -1,5 +1,5 @@
 from http import HTTPStatus
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 from unittest.mock import patch
 
 import pytest
@@ -15,7 +15,10 @@ from rotkehlchen.tests.utils.api import (
 from rotkehlchen.types import ChainID
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+
     from rotkehlchen.api.server import APIServer
+    from rotkehlchen.externalapis.etherscan_like import EtherscanLikeApi
 
 
 @pytest.mark.parametrize('ethereum_accounts', [[]])
@@ -72,8 +75,8 @@ def test_decode_given_transactions_custom_indexer(rotkehlchen_api_server: APISer
     available_indexers = node_inquirer.available_indexers
     original_try_indexers = node_inquirer._try_indexers
 
-    def tracking_try_indexers(func):
-        def wrapped(indexer_api):
+    def tracking_try_indexers(func: 'Callable[[EtherscanLikeApi], Any]') -> Any:
+        def wrapped(indexer_api: 'EtherscanLikeApi') -> Any:
             for name, candidate in available_indexers.items():
                 if candidate is indexer_api:
                     call_order.append(name)

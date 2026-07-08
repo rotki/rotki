@@ -1263,7 +1263,7 @@ def test_get_historical_prices_per_asset(
     # Test both rate limited and no price found scenarios
     original_query_historical_price = PriceHistorian.query_historical_price
 
-    def mock_query_historical_price(from_asset, to_asset, timestamp):
+    def mock_query_historical_price(from_asset: Asset, to_asset: Asset, timestamp: Timestamp) -> Price:  # noqa: E501
         # Rate limit for one timestamp
         if timestamp == DAY_AFTER_START_TS:
             raise NoPriceForGivenTimestamp(

@@ -53,7 +53,7 @@ def test_transfers(
         rotkehlchen_api_server: APIServer,
         ethereum_accounts: list[ChecksumEvmAddress],
         ethereum_manager_connect_at_start: list[WeightedNode],
-):
+) -> None:
     db = rotkehlchen_api_server.rest_api.rotkehlchen.data.db
     from_address, to_address = ethereum_accounts[0], string_to_evm_address('0x9531C059098e3d194fF87FebB587aB07B30B1306')  # noqa: E501
 

@@ -372,7 +372,7 @@ def test_edit_delete_nft(rotkehlchen_api_server: APIServer) -> None:
 
     def mock_get_all_nft_data(
             addresses: list[ChecksumEvmAddress],
-            **kwargs,
+            **kwargs: Any,
         ) -> tuple[dict[ChecksumEvmAddress, list[NFT]], int]:  # pylint: disable=unused-argument
         return nft_map, sum(len(x) for x in nft_map.values())
 
@@ -474,11 +474,15 @@ def test_edit_delete_nft(rotkehlchen_api_server: APIServer) -> None:
 @pytest.mark.parametrize('start_with_valid_premium', [True])
 @pytest.mark.parametrize('ethereum_modules', [['nfts']])
 @pytest.mark.parametrize('endpoint', ['nftsbalanceresource', 'nftsresource'])
+<<<<<<< HEAD
 def test_nfts_ignoring_works(rotkehlchen_api_server: APIServer, endpoint: str):
+=======
+def test_nfts_ignoring_works(rotkehlchen_api_server: 'APIServer', endpoint: str) -> None:
+>>>>>>> 16b960eb52 (typing:tests/api/* add typing)
     """Check that ignoring NFTs work as expected"""
     def mock_get_all_nft_data(
             addresses: list[ChecksumEvmAddress],
-            **kwargs,
+            **kwargs: Any,
         ) -> tuple[dict[str, list[NFT]], int]:  # pylint: disable=unused-argument
         nft_map = {
             '0xc37b40ABdB939635068d3c5f13E7faF686F03B65': [TEST_NFT_YABIR_ETH],
@@ -643,7 +647,7 @@ def test_customized_queried_addresses(rotkehlchen_api_server: APIServer) -> None
 
     def mock_get_all_nft_data(
             _addresses: list[ChecksumEvmAddress],
-            **_kwargs,
+            **_kwargs: Any,
         ) -> tuple[dict[ChecksumEvmAddress, Any], int]:
         data = {
             TEST_ACC5: [TEST_NFT_NEBOLAX_ETH],
