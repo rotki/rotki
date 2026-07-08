@@ -207,7 +207,9 @@ class EvmTransactions(ABC):  # noqa: B024
         """
         locks = []
         try:
-            for address in addresses:
+            # sort so two concurrent removals with overlapping addresses acquire the
+            # locks in the same order and cannot deadlock against each other
+            for address in sorted(addresses):
                 (lock := self.address_tx_locks[address]).acquire()
                 locks.append(lock)
 

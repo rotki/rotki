@@ -1869,7 +1869,7 @@ def test_add_edit_remove_kraken_futures(database: DBHandler) -> None:
     assert kraken_extras[KRAKEN_FUTURES_API_KEY_KEY] == kraken_futures_api_key
     assert kraken_extras[KRAKEN_FUTURES_API_SECRET_KEY] == kraken_futures_api_secret
 
-    with database.conn.read_ctx() as cursor:
+    with database.user_write() as cursor:
         new_kraken_futures_api_key = ApiKey('new_kraken_futures_api_key')
         new_kraken_futures_api_secret = ApiSecret(b'a3Jia2VuX2FwaV9zZWNyZXQz')
 
@@ -1900,7 +1900,7 @@ def test_add_edit_remove_kraken_futures(database: DBHandler) -> None:
     assert kraken_extras[KRAKEN_FUTURES_API_KEY_KEY] == new_kraken_futures_api_key
     assert kraken_extras[KRAKEN_FUTURES_API_SECRET_KEY] == new_kraken_futures_api_secret
 
-    with database.conn.read_ctx() as cursor:
+    with database.user_write() as cursor:
         database.remove_exchange(cursor, 'kraken1', Location.KRAKEN)
         credentials = database.get_exchange_credentials(cursor)
         kraken_extras = database.get_exchange_credentials_extras('kraken1', Location.KRAKEN)
@@ -2124,6 +2124,36 @@ def test_db_add_skipped_external_event_twice(database: 'DBHandler') -> None:
                 extra_data=None,
             )
             assert write_cursor.execute('SELECT COUNT(*) FROM skipped_external_events').fetchone()[0] == 1  # noqa: E501
+
+
+def test_ignored_assets_cache_consistency(database: 'DBHandler') -> None:
+    """The ignored assets cache must never be filled from uncommitted or stale data.
+
+    A task inside a write transaction reads its own uncommitted ignored assets
+    which must not enter the cache, and a query that was in flight when the
+    cache got invalidated must not write its potentially stale result back.
+    """
+    with database.conn.read_ctx() as cursor:
+        base_ignored = database.get_ignored_asset_ids(cursor)  # populate the cache
+    assert database._ignored_asset_ids_cache[False] == base_ignored
+    assert A_DAI.identifier not in base_ignored
+
+    with database.user_write() as write_cursor:
+        database.add_to_ignored_assets(write_cursor, A_DAI)  # invalidates the cache
+        # the writing task reads its own uncommitted data ...
+        assert A_DAI.identifier in database.get_ignored_asset_ids(write_cursor)
+        # ... which must not have entered the cache since it is not committed yet
+        assert database._ignored_asset_ids_cache == {}
+
+    with database.conn.read_ctx() as cursor:  # after the commit the cache fills normally
+        assert A_DAI.identifier in database.get_ignored_asset_ids(cursor)
+    assert A_DAI.identifier in database._ignored_asset_ids_cache[False]
+
+    # the result of a query in flight while an invalidation happened may not be cached
+    flush_generation = database._ignored_assets_flush_generation
+    assert database._may_cache_ignored_assets(flush_generation) is True
+    database.invalidate_ignored_assets_cache()
+    assert database._may_cache_ignored_assets(flush_generation) is False
 
 
 @pytest.mark.parametrize('db_settings', [

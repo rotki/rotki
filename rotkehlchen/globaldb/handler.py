@@ -1,8 +1,9 @@
 import logging
 import shutil
 from collections.abc import Callable, Iterator
+from contextlib import suppress
 from pathlib import Path
-from threading import Semaphore
+from threading import Lock
 from time import perf_counter
 from typing import TYPE_CHECKING, Any, Final, Literal, Optional, Union, cast, overload
 
@@ -149,7 +150,10 @@ class GlobalDBHandler:
     _packaged_db_conn: DBConnection | None = None
     conn: DBConnection
     used_backup: bool  # specifies if the global DB was restored from a backup
-    packaged_db_lock: Semaphore
+    packaged_db_lock: Lock
+    # guards the lazy creation of _packaged_db_conn. Class-level since the
+    # connection may first be needed concurrently from any two threads
+    _packaged_db_conn_lock: Lock = Lock()
     msg_aggregator: 'MessagesAggregator | None' = None
 
     def __new__(   # noqa: PYI034  # singleton is an exception
@@ -195,7 +199,7 @@ class GlobalDBHandler:
             db_filename=GLOBALDB_NAME,
             sql_vm_instructions_cb=sql_vm_instructions_cb,
         )
-        GlobalDBHandler.__instance.packaged_db_lock = Semaphore()
+        GlobalDBHandler.__instance.packaged_db_lock = Lock()
 
         # initialise the asset resolver here since asset updater class might require it.
         AssetResolver(globaldb=GlobalDBHandler.__instance, constant_assets=CONSTANT_ASSETS)
@@ -220,18 +224,18 @@ class GlobalDBHandler:
     @staticmethod
     def packaged_db_conn() -> DBConnection:
         """Return a DBConnection instance for the packaged global db."""
-        if GlobalDBHandler()._packaged_db_conn is not None:
-            # mypy does not recognize the initialization as that of a singleton
-            return GlobalDBHandler()._packaged_db_conn  # type: ignore
+        instance = GlobalDBHandler()
+        with GlobalDBHandler._packaged_db_conn_lock:
+            # check under the lock so two threads needing the connection for the
+            # first time cannot both create one (leaking the loser's sqlite handle)
+            if instance._packaged_db_conn is None:
+                instance._packaged_db_conn = DBConnection(
+                    path=Path(__file__).resolve().parent.parent / 'data' / GLOBALDB_NAME,
+                    connection_type=DBConnectionType.PACKAGED_GLOBAL,
+                    sql_vm_instructions_cb=DEFAULT_SQL_VM_INSTRUCTIONS_CB,
+                )
 
-        packaged_db_path = Path(__file__).resolve().parent.parent / 'data' / GLOBALDB_NAME
-        packaged_db_conn = DBConnection(
-            path=packaged_db_path,
-            connection_type=DBConnectionType.GLOBAL,
-            sql_vm_instructions_cb=DEFAULT_SQL_VM_INSTRUCTIONS_CB,
-        )
-        GlobalDBHandler()._packaged_db_conn = packaged_db_conn
-        return packaged_db_conn
+        return instance._packaged_db_conn
 
     @staticmethod
     def get_schema_version() -> int:
@@ -1841,7 +1845,10 @@ class GlobalDBHandler:
         with user_db.conn.read_ctx() as cursor:
             user_db.update_owned_assets_in_globaldb(cursor)
 
-        with self.conn.read_ctx() as read_cursor:
+        # A cursor of the write connection and not read_ctx: the ATTACH below is
+        # connection-level state that the nested write_ctx must see, so it cannot
+        # happen on a pooled read-only connection
+        with self.conn.cursor() as read_cursor:
             # First check that the operation can be made. If the difference is not the
             # empty set the operation is dangerous and the user should be notified.
             with user_db.user_write() as user_db_cursor:
@@ -1868,31 +1875,36 @@ class GlobalDBHandler:
                         )
                         return False, msg
 
-                    with self.conn.write_ctx() as write_cursor:
-                        # If versions match drop tables
-                        write_cursor.execute('DELETE FROM assets')
-                        write_cursor.execute('DELETE FROM asset_collections')
-                        # Copy assets
-                        write_cursor.switch_foreign_keys('OFF')
-                        write_cursor.execute('INSERT INTO assets SELECT * FROM clean_db.assets;')
-                        write_cursor.execute('INSERT INTO evm_tokens SELECT * FROM clean_db.evm_tokens;')  # noqa: E501
-                        write_cursor.execute('INSERT INTO solana_tokens SELECT * FROM clean_db.solana_tokens;')  # noqa: E501
-                        write_cursor.execute('INSERT INTO underlying_tokens_list SELECT * FROM clean_db.underlying_tokens_list;')  # noqa: E501
-                        write_cursor.execute('INSERT INTO common_asset_details SELECT * FROM clean_db.common_asset_details;')  # noqa: E501
-                        write_cursor.execute('INSERT INTO asset_collections SELECT * FROM clean_db.asset_collections')  # noqa: E501
-                        write_cursor.execute('INSERT INTO multiasset_mappings SELECT * FROM clean_db.multiasset_mappings')  # noqa: E501
-                        # Don't copy custom_assets since there are no custom assets in clean_db
-                        write_cursor.switch_foreign_keys('ON')
-
-                        with user_db.user_write() as user_db_cursor:
-                            user_db_cursor.switch_foreign_keys('OFF')
-                            user_db_cursor.execute('DELETE FROM assets;')
+                    # Take the user DB transaction before the global one. Every other
+                    # path holding both simultaneously (e.g. update_owned_assets_in_globaldb
+                    # called inside a user_write at login) nests the global write inside
+                    # the user one, so opening them global-first here could deadlock
+                    # against such a thread (each waiting on the lock the other holds).
+                    with user_db.user_write() as user_db_cursor:
+                        with self.conn.write_ctx() as write_cursor:
+                            # If versions match drop tables
+                            write_cursor.execute('DELETE FROM assets')
+                            write_cursor.execute('DELETE FROM asset_collections')
+                            # Copy assets
+                            write_cursor.switch_foreign_keys('OFF')
+                            write_cursor.execute('INSERT INTO assets SELECT * FROM clean_db.assets;')  # noqa: E501
+                            write_cursor.execute('INSERT INTO evm_tokens SELECT * FROM clean_db.evm_tokens;')  # noqa: E501
+                            write_cursor.execute('INSERT INTO solana_tokens SELECT * FROM clean_db.solana_tokens;')  # noqa: E501
+                            write_cursor.execute('INSERT INTO underlying_tokens_list SELECT * FROM clean_db.underlying_tokens_list;')  # noqa: E501
+                            write_cursor.execute('INSERT INTO common_asset_details SELECT * FROM clean_db.common_asset_details;')  # noqa: E501
+                            write_cursor.execute('INSERT INTO asset_collections SELECT * FROM clean_db.asset_collections')  # noqa: E501
+                            write_cursor.execute('INSERT INTO multiasset_mappings SELECT * FROM clean_db.multiasset_mappings')  # noqa: E501
+                            # Don't copy custom_assets as there are none in clean_db
+                            write_cursor.switch_foreign_keys('ON')
                             # Get ids for assets to insert them in the user db
                             write_cursor.execute('SELECT identifier from assets')
                             ids = write_cursor.fetchall()
-                            ids_processed = ', '.join([f"('{identifier[0]}')" for identifier in ids])  # noqa: E501
-                            user_db_cursor.execute(f'INSERT INTO assets(identifier) VALUES {ids_processed};')  # noqa: E501
-                            user_db_cursor.switch_foreign_keys('ON')
+
+                        user_db_cursor.switch_foreign_keys('OFF')
+                        user_db_cursor.execute('DELETE FROM assets;')
+                        ids_processed = ', '.join([f"('{identifier[0]}')" for identifier in ids])
+                        user_db_cursor.execute(f'INSERT INTO assets(identifier) VALUES {ids_processed};')  # noqa: E501
+                        user_db_cursor.switch_foreign_keys('ON')
 
                     with user_db.conn.read_ctx() as cursor:
                         # Update the owned assets table
@@ -1917,7 +1929,10 @@ class GlobalDBHandler:
 
         with self.packaged_db_lock:
             try:
-                with self.conn.read_ctx() as read_cursor:
+                # A cursor of the write connection and not read_ctx: the ATTACH below is
+                # connection-level state that the write_ctx further down must see, so it
+                # cannot happen on a pooled read-only connection
+                with self.conn.cursor() as read_cursor:
                     read_cursor.execute(f"ATTACH DATABASE '{builtin_database}' AS clean_db;")
                     # Check that versions match
                     query = read_cursor.execute("SELECT value from clean_db.settings WHERE name='version';")  # noqa: E501
@@ -1961,7 +1976,7 @@ class GlobalDBHandler:
                 log.error(f'Failed to restore assets in globaldb due to {e!s}')
                 return False, 'Failed to restore assets. Read logs to get more information.'
             finally:  # on the way out always detach the DB. Make sure no transaction is active
-                with self.conn.transaction_lock, self.conn.read_ctx() as read_cursor:
+                with self.conn.transaction_lock, self.conn.cursor() as read_cursor:
                     read_cursor.execute("DETACH DATABASE 'clean_db';")
 
         return True, ''
@@ -2544,21 +2559,19 @@ class GlobalDBHandler:
             ).fetchone()) is not None else None
 
     def clear_locks(self) -> None:
-        """release the locks in the globaldb.
+        """Recover packaged_db_lock if a task abandoned at logout (cancelled but
+        not yet at its next checkpoint) died while holding it, so the next
+        session does not block on it forever.
 
-        A task abandoned at logout (cancelled but not yet at its next
-        checkpoint) may still hold locks, so they have to be released manually.
-
-        packaged_db_lock is a Semaphore which tolerates over-releasing. The driver
-        locks are threading.Lock (bounded), so they are released only if held, and
-        the savepoint-slot bookkeeping is reset along with them so that a later
-        savepoint release does not release the forcibly-freed lock a second time.
+        The connection's driver locks (transaction_lock/in_callback) and the
+        savepoint bookkeeping are deliberately left alone: they are only ever
+        held through context managers whose cleanup runs even on cancellation,
+        so any holder is a live thread that will release them itself and the
+        next session at worst briefly blocks on it. Force-releasing them would
+        hand the transaction slot to the next session while the dying task's
+        transaction is still open on this process-lifetime connection, letting
+        the dying task's rollback wipe the new session's writes and its cleanup
+        release a lock the new session owns.
         """
-        self.packaged_db_lock.release()
-        self.conn.savepoints.clear()
-        self.conn.savepoint_task_ident = None
-        self.conn.write_task_ident = None
-        self.conn._savepoint_holds_transaction_lock = False
-        for lock in (self.conn.transaction_lock, self.conn.in_callback):
-            if lock.locked():
-                lock.release()
+        with suppress(RuntimeError):  # raised when not held, which is the common case
+            self.packaged_db_lock.release()

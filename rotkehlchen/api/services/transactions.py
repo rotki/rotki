@@ -200,7 +200,8 @@ class TransactionsService:
         if blockchain in CHAINS_WITH_NODES:
             manager = self.rotkehlchen.chains_aggregator.get_chain_manager(blockchain=blockchain)
             inquirer = manager.node_inquirer  # type: ignore[attr-defined]  # all CHAINS_WITH_NODES managers have a node inquirer
-            for node_info, rpc_node in inquirer.rpc_mapping.items():
+            # iterate a snapshot: spawned connect tasks insert into the mapping concurrently
+            for node_info, rpc_node in list(inquirer.rpc_mapping.items()):
                 archive_status[node_info.endpoint] = rpc_node.is_archive
 
         result = []

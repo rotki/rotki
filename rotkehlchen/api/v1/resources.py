@@ -451,6 +451,9 @@ def allow_async_validation() -> Callable:
 
 def require_loggedin_user() -> Callable:
     """ This is a decorator for the RestAPI class's methods requiring a logged in user.
+
+    The request is registered as using the session for its whole duration, so a
+    concurrent logout waits for it instead of closing the DB under it.
     """
     def _require_loggedin_user(f: Callable) -> Callable:
         @wraps(f)
@@ -458,10 +461,11 @@ def require_loggedin_user() -> Callable:
             # grab the `rest_api` attribute from the view class.
             view_class = args[0]
             rest_api = view_class.rest_api
-            if rest_api.rotkehlchen.user_is_logged_in is False:
-                result_dict = wrap_in_fail_result('No user is currently logged in')
-                return api_response(result_dict, status_code=HTTPStatus.UNAUTHORIZED)
-            return f(*args, **kwargs)
+            with rest_api.session_usage() as session_usable:
+                if session_usable is False:
+                    result_dict = wrap_in_fail_result('No user is currently logged in')
+                    return api_response(result_dict, status_code=HTTPStatus.UNAUTHORIZED)
+                return f(*args, **kwargs)
 
         return wrapper
     return _require_loggedin_user
@@ -483,23 +487,24 @@ def require_premium_user(active_check: bool) -> Callable:
             # grab the `rest_api` attribute from the view class.
             view_class = args[0]
             rest_api = view_class.rest_api
-            if rest_api.rotkehlchen.user_is_logged_in is False:
-                result_dict = wrap_in_fail_result('No user is currently logged in')
-                return api_response(result_dict, status_code=HTTPStatus.UNAUTHORIZED)
+            with rest_api.session_usage() as session_usable:
+                if session_usable is False:
+                    result_dict = wrap_in_fail_result('No user is currently logged in')
+                    return api_response(result_dict, status_code=HTTPStatus.UNAUTHORIZED)
 
-            msg = (
-                f'Currently logged in user {rest_api.rotkehlchen.data.username} '
-                f'does not have a premium subscription'
-            )
-            if rest_api.rotkehlchen.premium is None:
-                result_dict = wrap_in_fail_result(msg)
-                return api_response(result_dict, status_code=HTTPStatus.FORBIDDEN)
+                msg = (
+                    f'Currently logged in user {rest_api.rotkehlchen.data.username} '
+                    f'does not have a premium subscription'
+                )
+                if rest_api.rotkehlchen.premium is None:
+                    result_dict = wrap_in_fail_result(msg)
+                    return api_response(result_dict, status_code=HTTPStatus.FORBIDDEN)
 
-            if active_check and rest_api.rotkehlchen.premium.is_active() is False:
-                result_dict = wrap_in_fail_result(msg)
-                return api_response(result_dict, status_code=HTTPStatus.FORBIDDEN)
+                if active_check and rest_api.rotkehlchen.premium.is_active() is False:
+                    result_dict = wrap_in_fail_result(msg)
+                    return api_response(result_dict, status_code=HTTPStatus.FORBIDDEN)
 
-            return f(*args, **kwargs)
+                return f(*args, **kwargs)
 
         return wrapper
     return _require_premium_user
@@ -512,17 +517,18 @@ def require_premium_capability(capability_name: str, pretty_name: str) -> Callab
         def wrapper(*args: Any, **kwargs: Any) -> Any:
             view_class = args[0]
             rest_api = view_class.rest_api
-            if rest_api.rotkehlchen.user_is_logged_in is False:
-                result_dict = wrap_in_fail_result('No user is currently logged in')
-                return api_response(result_dict, status_code=HTTPStatus.UNAUTHORIZED)
+            with rest_api.session_usage() as session_usable:
+                if session_usable is False:
+                    result_dict = wrap_in_fail_result('No user is currently logged in')
+                    return api_response(result_dict, status_code=HTTPStatus.UNAUTHORIZED)
 
-            if has_premium_capability(rest_api.rotkehlchen.premium, capability_name):
-                return f(*args, **kwargs)
+                if has_premium_capability(rest_api.rotkehlchen.premium, capability_name):
+                    return f(*args, **kwargs)
 
-            result_dict = wrap_in_fail_result(
-                f'{pretty_name} is not available for your current subscription tier',
-            )
-            return api_response(result_dict, status_code=HTTPStatus.FORBIDDEN)
+                result_dict = wrap_in_fail_result(
+                    f'{pretty_name} is not available for your current subscription tier',
+                )
+                return api_response(result_dict, status_code=HTTPStatus.FORBIDDEN)
 
         return wrapper
     return _require_premium_capability

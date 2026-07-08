@@ -448,13 +448,15 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
 
     def has_archive_node(self) -> bool:
         """Check if any connected RPC node is an archive node."""
-        return any(rpc_node.is_archive for rpc_node in self.rpc_mapping.values())
+        # iterate a snapshot: spawned connect tasks insert into the mapping concurrently
+        return any(rpc_node.is_archive for rpc_node in list(self.rpc_mapping.values()))
 
     def get_archive_call_order(self) -> list['WeightedNode']:
         """Get connected archive nodes for historical queries."""
         return [
             WeightedNode(node_info=node, active=True, weight=ONE)
-            for node, rpc_node in self.rpc_mapping.items()
+            # iterate a snapshot: spawned connect tasks insert into the mapping concurrently
+            for node, rpc_node in list(self.rpc_mapping.items())
             if rpc_node.is_archive
         ]
 

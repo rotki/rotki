@@ -1639,25 +1639,26 @@ def test_event_grouping(rotkehlchen_api_server: 'APIServer') -> None:
                 amount=FVal(0.0002),
             )],
         )
-        result = assert_proper_sync_response_with_result(
-            response=requests.post(api_url_for(rotkehlchen_api_server, 'historyeventresource')),
-        )
-        assert result['entries_found'] == 10
-        assert len(entries := result['entries']) == 4  # gas event, evm swap group, informational event, multi trade group  # noqa: E501
-        assert entries[0]['entry']['counterparty'] == 'gas'
-        assert len(entries[1]) == 3  # spend, receive, fee
-        assert entries[1][0]['entry']['event_type'] == 'trade'
-        assert entries[1][0]['entry']['event_subtype'] == 'spend'
-        assert entries[1][1]['entry']['event_subtype'] == 'receive'
-        assert entries[1][2]['entry']['event_subtype'] == 'fee'
-        assert entries[2]['entry']['event_type'] == 'informational'
-        assert len(entries[3]) == 5  # spend, spend, receive, receive, fee
-        assert entries[3][0]['entry']['event_type'] == 'multi trade'
-        assert entries[3][0]['entry']['event_subtype'] == 'spend'
-        assert entries[3][1]['entry']['event_subtype'] == 'spend'
-        assert entries[3][2]['entry']['event_subtype'] == 'receive'
-        assert entries[3][3]['entry']['event_subtype'] == 'receive'
-        assert entries[3][4]['entry']['event_subtype'] == 'fee'
+
+    result = assert_proper_sync_response_with_result(
+        response=requests.post(api_url_for(rotkehlchen_api_server, 'historyeventresource')),
+    )
+    assert result['entries_found'] == 10
+    assert len(entries := result['entries']) == 4  # gas event, evm swap group, informational event, multi trade group  # noqa: E501
+    assert entries[0]['entry']['counterparty'] == 'gas'
+    assert len(entries[1]) == 3  # spend, receive, fee
+    assert entries[1][0]['entry']['event_type'] == 'trade'
+    assert entries[1][0]['entry']['event_subtype'] == 'spend'
+    assert entries[1][1]['entry']['event_subtype'] == 'receive'
+    assert entries[1][2]['entry']['event_subtype'] == 'fee'
+    assert entries[2]['entry']['event_type'] == 'informational'
+    assert len(entries[3]) == 5  # spend, spend, receive, receive, fee
+    assert entries[3][0]['entry']['event_type'] == 'multi trade'
+    assert entries[3][0]['entry']['event_subtype'] == 'spend'
+    assert entries[3][1]['entry']['event_subtype'] == 'spend'
+    assert entries[3][2]['entry']['event_subtype'] == 'receive'
+    assert entries[3][3]['entry']['event_subtype'] == 'receive'
+    assert entries[3][4]['entry']['event_subtype'] == 'fee'
 
 
 def test_group_has_ignored_assets_flag(rotkehlchen_api_server: 'APIServer') -> None:

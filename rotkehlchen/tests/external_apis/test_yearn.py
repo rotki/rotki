@@ -155,8 +155,8 @@ def test_process_staked_vaults(
         "staking": "0x7Fd8Af959B54A677a1D8F92265Bd0714274C56a3"
     }]"""
     original_request = requests.get
-    with globaldb.conn.read_ctx() as cursor:
-        cursor.execute('DELETE FROM unique_cache WHERE key=?', ('YEARN_VAULTS1',))
+    with globaldb.conn.write_ctx() as write_cursor:
+        write_cursor.execute('DELETE FROM unique_cache WHERE key=?', ('YEARN_VAULTS1',))
 
     def mock_yearn_api(url, timeout):
         """Return only two yearn vaults for the API response"""

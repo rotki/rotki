@@ -5,13 +5,15 @@ import os
 import sys
 import tempfile
 import threading
+import time
 import traceback
 from collections import defaultdict
-from collections.abc import Callable, Mapping, Sequence
+from collections.abc import Callable, Iterator, Mapping, Sequence
+from contextlib import contextmanager
 from functools import wraps
 from http import HTTPStatus
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Literal, Optional, overload
+from typing import TYPE_CHECKING, Any, Final, Literal, Optional, overload
 
 from flask import Response, make_response, send_file
 from solders.solders import Signature
@@ -242,6 +244,11 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
+# How long a logout waits for in-flight session-using sync requests to finish
+# before proceeding with the teardown anyway (same abandon policy as api tasks
+# that ignore their cancellation)
+LOGOUT_DRAIN_TIMEOUT_SECONDS: Final = 10
+
 OK_RESULT = {'result': True, 'message': ''}
 
 
@@ -381,6 +388,61 @@ class RestAPI:
         self.migration_lock = threading.Semaphore()
         self.task_id = 0
         self.task_results: dict[int, Any] = {}
+        # Guarded by task_lock. Non-None while api tasks are being cancelled at
+        # logout/shutdown and until the teardown finishes: a task spawned in that
+        # window is cancelled on the spot, so it dies at its first checkpoint as an
+        # expected death instead of escaping cancellation and running (uncancelled)
+        # against the session being torn down.
+        self.api_tasks_stop_reason: str | None = None
+        # Coordination between sync request handlers using the logged-in session and
+        # user_logout: handlers register via session_usage() and logout waits for
+        # them to drain before tearing down the DB, else a handler that passed the
+        # logged-in check crashes on the connection being closed under it.
+        self._session_usage_cond = threading.Condition()
+        self._inflight_session_requests = 0  # guarded by _session_usage_cond
+        self._session_teardown = False  # guarded by _session_usage_cond
+        self._thread_session_requests = threading.local()  # how many slots THIS thread holds
+
+    @contextmanager
+    def session_usage(self) -> Iterator[bool]:
+        """Register the calling request as using the logged-in session for its
+        duration, so that a concurrent logout waits for it before tearing the DB
+        down. Yields False when there is no usable session -- either no user is
+        logged in or a logout is already in progress -- in which case the caller
+        must not touch any session state and reply accordingly.
+        """
+        with self._session_usage_cond:
+            if self.rotkehlchen.user_is_logged_in is False or self._session_teardown:
+                usable = False
+            else:
+                usable = True
+                self._inflight_session_requests += 1
+                self._thread_session_requests.count = getattr(self._thread_session_requests, 'count', 0) + 1  # noqa: E501
+        try:
+            yield usable
+        finally:
+            if usable:
+                with self._session_usage_cond:
+                    self._inflight_session_requests -= 1
+                    self._thread_session_requests.count -= 1
+                    self._session_usage_cond.notify_all()
+
+    def _drain_session_requests(self) -> None:
+        """Wait until no sync request except the ones held by this thread (the
+        logout request itself) is using the session anymore. Bounded: after
+        LOGOUT_DRAIN_TIMEOUT_SECONDS the teardown proceeds anyway and any still
+        running request may fail, which is logged."""
+        own_slots = getattr(self._thread_session_requests, 'count', 0)
+        deadline = time.monotonic() + LOGOUT_DRAIN_TIMEOUT_SECONDS
+        with self._session_usage_cond:
+            while self._inflight_session_requests > own_slots:
+                if (remaining := deadline - time.monotonic()) <= 0:
+                    log.warning(
+                        'Proceeding with logout teardown while sync requests are still running',
+                        inflight=self._inflight_session_requests - own_slots,
+                    )
+                    break
+                self._session_usage_cond.wait(timeout=remaining)
 
     # - Private functions not exposed to the API
     def _new_task_id(self) -> int:
@@ -447,7 +509,12 @@ class RestAPI:
         task.task_id = task_id
         task.api_command = command  # inspected by maybe_cancel_running_tx_query_tasks
         task.add_done_callback(self._handle_task_death)
-        self.rotkehlchen.api_tasks.append(task)
+        with self.task_lock:
+            self.rotkehlchen.api_tasks.append(task)
+            if self.api_tasks_stop_reason is not None:
+                # logout/shutdown is tearing the session down: die at the first
+                # checkpoint (before the command runs) as an expected death
+                task.request_cancellation(self.api_tasks_stop_reason)
         task.start()
         return api_response(_wrap_in_ok_result({'task_id': task_id}), status_code=HTTPStatus.OK)
 
@@ -458,7 +525,14 @@ class RestAPI:
         a remote query) is abandoned and dies at its next checkpoint, with its
         death logged without alerting the user since its token shows the
         cancellation was deliberate."""
-        if len(pending := [x for x in self.rotkehlchen.api_tasks if x.dead is False]) != 0:
+        with self.task_lock:
+            # From here on newly spawned tasks are cancelled at spawn (see
+            # _query_async), so a task slipping in during the grace period below
+            # cannot escape cancellation. Reset by user_logout once teardown is done;
+            # deliberately never reset on shutdown.
+            self.api_tasks_stop_reason = reason
+            pending = [x for x in self.rotkehlchen.api_tasks if x.dead is False]
+        if len(pending) != 0:
             for task in pending:
                 task.request_cancellation(reason)
             wait(pending, timeout=DEFAULT_CANCEL_GRACE_SECONDS)
@@ -467,7 +541,8 @@ class RestAPI:
                     'Abandoning cancelled api tasks that did not exit within the grace period',
                     task_ids=survivors,
                 )
-        self.rotkehlchen.api_tasks.clear()
+        with self.task_lock:
+            self.rotkehlchen.api_tasks.clear()
 
     # - Public functions not exposed via the rest api
     def stop(self) -> None:
@@ -501,12 +576,13 @@ class RestAPI:
             # If no task id is given return list of all pending and completed tasks
             completed = []
             pending = []
-            for task in self.rotkehlchen.api_tasks:
-                task_id = task.task_id
-                if task_id in self.task_results:
-                    completed.append(task_id)
-                else:
-                    pending.append(task_id)
+            with self.task_lock:
+                for task in self.rotkehlchen.api_tasks:
+                    task_id = task.task_id
+                    if task_id in self.task_results:
+                        completed.append(task_id)
+                    else:
+                        pending.append(task_id)
 
             result = _wrap_in_ok_result({'pending': pending, 'completed': completed})
             return api_response(result=result, status_code=HTTPStatus.OK)
@@ -562,7 +638,9 @@ class RestAPI:
             else:  # task not found
                 return api_response(wrap_in_fail_result(f'Did not cancel task with id {task_id} because it could not be found'), status_code=HTTPStatus.NOT_FOUND)  # noqa: E501
 
-        self.rotkehlchen.api_tasks.pop(idx)  # also pop from the api tasks
+            # pop while still holding the lock: a concurrent pop would shift the index
+            self.rotkehlchen.api_tasks.pop(idx)  # also pop from the api tasks
+
         return api_response(OK_RESULT, status_code=HTTPStatus.OK)
 
     @async_api_call()
@@ -1111,13 +1189,30 @@ class RestAPI:
             result_dict['message'] = f'Provided user {name} is not the logged in user'
             return api_response(result_dict, status_code=HTTPStatus.CONFLICT)
 
-        # Cancel all queries apart from the main loop instead of waiting for
-        # them: that could take a lot of time for no reason since all results
-        # would be discarded anyway as we are logging out.
-        self._cancel_api_tasks(reason='Cancelled due to logout')
-        with self.task_lock:
-            self.task_results = {}
-        self.rotkehlchen.logout()
+        # Serialize with in-flight login/create tasks, which hold login_lock for their
+        # whole task body. Without it a logout arriving mid-login reported success
+        # while the login kept going and finished against the logged-out state.
+        with self.login_lock:
+            with self._session_usage_cond:
+                # From here on new session-using sync requests are turned away at
+                # session_usage() instead of racing the teardown below
+                self._session_teardown = True
+            try:
+                # Cancel all queries apart from the main loop instead of waiting for
+                # them: that could take a lot of time for no reason since all results
+                # would be discarded anyway as we are logging out.
+                self._cancel_api_tasks(reason='Cancelled due to logout')
+                with self.task_lock:
+                    self.task_results = {}
+                # and wait for in-flight sync requests to finish before the DB goes away
+                self._drain_session_requests()
+                self.rotkehlchen.logout()
+                with self.task_lock:  # teardown done: let new api tasks (e.g. the next login) run
+                    self.api_tasks_stop_reason = None
+            finally:
+                with self._session_usage_cond:
+                    self._session_teardown = False
+
         result_dict['result'] = True
         return api_response(result_dict, status_code=HTTPStatus.OK)
 
@@ -3430,7 +3525,8 @@ class RestAPI:
 
     @accounting_update_required('Historical balance processing is disabled')
     def _trigger_historical_balance_processing(self) -> dict[str, Any]:
-        self.rotkehlchen.task_manager.trigger_historical_balance_processing()  # type: ignore[union-attr]  # exists after login.
+        if (task_manager := self.rotkehlchen.task_manager) is not None:  # None if logout races us
+            task_manager.trigger_historical_balance_processing()
         return OK_RESULT
 
     @async_api_call()
@@ -3465,7 +3561,8 @@ class RestAPI:
         database write access (like backup sync) don't run during DB upgrades,
         migrations, and asset updates.
         """
-        self.rotkehlchen.task_manager.should_schedule = enabled  # type: ignore[union-attr]  # should exist here
+        if (task_manager := self.rotkehlchen.task_manager) is not None:  # None if logout races us
+            task_manager.should_schedule = enabled
         return api_response(_wrap_in_ok_result(result={'enabled': enabled}))
 
     def get_historical_netvalue(

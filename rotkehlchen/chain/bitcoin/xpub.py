@@ -70,11 +70,15 @@ class XpubDerivedAddressData(NamedTuple):
 
 
 class XpubManager:
+    # Class-level lock: a fresh XpubManager is constructed at every call site (api
+    # endpoints, balance queries, the periodic derivation task), so an instance lock
+    # would never serialize two of those against each other and concurrent derivation
+    # of the same xpub would double-add its addresses
+    lock = Semaphore()
 
     def __init__(self, chains_aggregator: 'ChainsAggregator'):
         self.chains_aggregator = chains_aggregator
         self.db = chains_aggregator.database
-        self.lock = Semaphore()
 
     def _derive_addresses_loop(
             self,
@@ -246,21 +250,19 @@ class XpubManager:
                 derived_addresses_data=derived_addresses_data,
             )
 
-        # also add queried balances
-        if xpub_data.blockchain == SupportedBlockchain.BITCOIN:
-            balances = self.chains_aggregator.balances.btc
-            asset_price = Inquirer.find_main_currency_price(A_BTC)
-        else:  # BCH
-            balances = self.chains_aggregator.balances.bch
-            asset_price = Inquirer.find_main_currency_price(A_BCH)
-
-        for entry in derived_addresses_data:
-            new_balance = Balance(
-                amount=entry.balance,
-                value=entry.balance * asset_price,
-            )
-            balances[entry.address] = new_balance
-        self.chains_aggregator.totals = self.chains_aggregator.balances.recalculate_totals()
+        # also add queried balances. Query the price outside the balances lock and
+        # only mutate the shared balances/totals under it: sibling chain balance
+        # query tasks iterate them concurrently during a full refresh
+        is_btc = xpub_data.blockchain == SupportedBlockchain.BITCOIN
+        asset_price = Inquirer.find_main_currency_price(A_BTC if is_btc else A_BCH)
+        with self.chains_aggregator.balances_lock:
+            balances = self.chains_aggregator.balances.btc if is_btc else self.chains_aggregator.balances.bch  # noqa: E501
+            for entry in derived_addresses_data:
+                balances[entry.address] = Balance(
+                    amount=entry.balance,
+                    value=entry.balance * asset_price,
+                )
+            self.chains_aggregator.totals = self.chains_aggregator.balances.recalculate_totals()
 
     def add_bitcoin_xpub(
             self,

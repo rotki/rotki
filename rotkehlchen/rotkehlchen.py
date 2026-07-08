@@ -256,7 +256,9 @@ class Rotkehlchen:
         cancelled_tasks = []
         for address in addresses:
             account_data = OptionalBlockchainAccount(address=address, chain=blockchain)
-            for task in self.api_tasks:
+            # iterate a snapshot: api threads pop finished tasks concurrently and an
+            # index shift mid-iteration would silently skip a task that must be cancelled
+            for task in list(self.api_tasks):
                 is_evm_tx_task = (
                     task.dead is False and
                     isinstance(command := getattr(task, 'api_command', None), FunctionType) and
@@ -799,8 +801,10 @@ class Rotkehlchen:
     def main_loop(self) -> None:
         """rotki main loop that fires often and runs the task manager's scheduler"""
         while self.shutdown_event.wait(timeout=MAIN_LOOP_SECS_DELAY) is not True:
-            if self.task_manager is not None and self.args.disable_task_manager is False:
-                self.task_manager.schedule()
+            # read the attribute once: logout sets it to None concurrently and a second
+            # read hitting that window would kill the main loop with AttributeError
+            if (task_manager := self.task_manager) is not None and self.args.disable_task_manager is False:  # noqa: E501
+                task_manager.schedule()
 
     def get_blockchain_account_data(
             self,
@@ -954,14 +958,16 @@ class Rotkehlchen:
         if len(account_data) == 0:
             raise InputError('Empty list of blockchain accounts to add was given')
 
-        with self.data.db.conn.read_ctx() as cursor:
+        with self.data.db.user_write() as write_cursor:
+            # check tags inside the write transaction: as a plain read_ctx read, a
+            # concurrent account addition's commit resets the pending statement
+            # mid-fetch and the cursor can no longer be fetched from
             self.data.db.ensure_tags_exist(
-                cursor=cursor,
+                cursor=write_cursor,
                 given_data=account_data,
                 action='adding',
                 data_type='blockchain accounts',
             )
-        with self.data.db.user_write() as write_cursor:
             self.chains_aggregator.modify_blockchain_accounts(
                 write_cursor=write_cursor,
                 blockchain=chain,

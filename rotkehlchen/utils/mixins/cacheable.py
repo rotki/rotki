@@ -35,6 +35,12 @@ class CacheableMixIn:
         self.results_cache: dict[int, ResultCache] = {}
         # Can also be 0 which means cache is disabled.
         self.cache_ttl_secs = CACHE_RESPONSE_FOR_SECS
+        # Bumped on every flush. The decorators snapshot it before running the wrapped
+        # function and skip storing the result if it changed in the meantime, so a
+        # flush issued while a slow query is in flight cannot be resurrected by that
+        # query's stale result. Object-wide instead of per-key: the cost of a false
+        # positive is only one uncached call.
+        self.cache_flush_generation = 0
 
     def flush_cache(self, name: str, *args: Any, **kwargs: Any) -> None:
         cache_key = function_sig_key(
@@ -44,6 +50,7 @@ class CacheableMixIn:
             *args,
             **kwargs,
         )
+        self.cache_flush_generation += 1  # before the pop, so in-flight queries always notice
         self.results_cache.pop(cache_key, None)
 
 
@@ -54,7 +61,7 @@ def _cache_response_timewise_base(
         forward_ignore_cache: bool,
         *args: Any,
         **kwargs: Any,
-) -> tuple[bool, int, 'Timestamp', dict]:
+) -> tuple[bool, int, 'Timestamp', dict, ResultCache | None]:
     """Base code used in the 2 cache_response_timewise decorators"""
     if forward_ignore_cache:
         ignore_cache = kwargs.get('ignore_cache', False)
@@ -68,12 +75,16 @@ def _cache_response_timewise_base(
         **kwargs,
     )
     now = ts_now()
+    # Read the entry exactly once: a concurrent flush_cache can pop it at any moment,
+    # so a membership check followed by a subscript would raise KeyError. The entry is
+    # returned so the hit paths don't re-subscript either.
+    cache_entry = wrappingobj.results_cache.get(cache_key)
     cache_miss = (
         ignore_cache is True or
-        cache_key not in wrappingobj.results_cache or
-        now - wrappingobj.results_cache[cache_key].timestamp >= wrappingobj.cache_ttl_secs
+        cache_entry is None or
+        now - cache_entry.timestamp >= wrappingobj.cache_ttl_secs
     )
-    return cache_miss, cache_key, now, kwargs
+    return cache_miss, cache_key, now, kwargs, cache_entry
 
 
 def cache_response_timewise(
@@ -106,7 +117,7 @@ def cache_response_timewise(
     def _cache_response_timewise(f: Callable) -> Callable:
         @wraps(f)
         def wrapper(wrappingobj: CacheableMixIn, *args: Any, **kwargs: Any) -> Any:
-            cache_miss, cache_key, now, kwargs = _cache_response_timewise_base(
+            cache_miss, cache_key, now, kwargs, cache_entry = _cache_response_timewise_base(
                 wrappingobj,
                 f,
                 arguments_matter,
@@ -115,13 +126,16 @@ def cache_response_timewise(
                 **kwargs,
             )
             if cache_miss:
-                # Call the function, write the result in cache and return it
+                # Call the function, write the result in cache and return it -- unless
+                # a flush happened during the call, whose invalidation must win
+                flush_generation = wrappingobj.cache_flush_generation
                 result = f(wrappingobj, *args, **kwargs)
-                wrappingobj.results_cache[cache_key] = ResultCache(result, now)
+                if wrappingobj.cache_flush_generation == flush_generation:
+                    wrappingobj.results_cache[cache_key] = ResultCache(result, now)
                 return result
 
             # else hit the cache and return it
-            return wrappingobj.results_cache[cache_key].result
+            return cache_entry.result  # type: ignore[union-attr]  # not None when cache_miss is False
 
         return wrapper
     return _cache_response_timewise
@@ -137,7 +151,7 @@ def cache_response_timewise_immutable(
     def _cache_response_timewise_immutable(f: Callable) -> Callable:
         @wraps(f)
         def wrapper(wrappingobj: CacheableMixIn, *args: Any, **kwargs: Any) -> Any:
-            cache_miss, cache_key, now, kwargs = _cache_response_timewise_base(
+            cache_miss, cache_key, now, kwargs, cache_entry = _cache_response_timewise_base(
                 wrappingobj,
                 f,
                 arguments_matter,
@@ -146,12 +160,17 @@ def cache_response_timewise_immutable(
                 **kwargs,
             )
             if cache_miss:
-                # Call the function, and write the result in cache
+                # Call the function, and write the result in cache -- unless a flush
+                # happened during the call, whose invalidation must win
+                flush_generation = wrappingobj.cache_flush_generation
                 result = f(wrappingobj, *args, **kwargs)
-                wrappingobj.results_cache[cache_key] = ResultCache(result, now)
+                if wrappingobj.cache_flush_generation == flush_generation:
+                    wrappingobj.results_cache[cache_key] = ResultCache(result, now)
+            else:
+                result = cache_entry.result  # type: ignore[union-attr]  # not None when cache_miss is False
 
             # in any case return a copy of the cache to avoid potential mutation
-            return deepcopy(wrappingobj.results_cache[cache_key].result)
+            return deepcopy(result)
 
         return wrapper
     return _cache_response_timewise_immutable

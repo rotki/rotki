@@ -253,6 +253,12 @@ class DBHandler:
         self.get_or_create_token_lock = Semaphore()
         self.match_asset_movements_lock = Semaphore()
         self._ignored_asset_ids_cache: dict[bool, set[str]] = {}
+        # Bumped on every cache invalidation. get_ignored_asset_ids snapshots it
+        # before querying and skips the write-back if it changed in the meantime,
+        # so an invalidation issued while a query is in flight cannot be
+        # resurrected by that query's stale result. Same pattern as
+        # CacheableMixIn.cache_flush_generation.
+        self._ignored_assets_flush_generation = 0
         # tracks, in memory, which chains may have transactions pending receipt fetching or
         # decoding so the periodic scheduler can skip its full-table "is there work?" scans
         self.pending_txs_tracker = PendingTransactionsTracker()
@@ -406,6 +412,22 @@ class DBHandler:
                 'INSERT OR IGNORE INTO settings(name, value) VALUES(?, ?)',
                 ('version', str(ROTKEHLCHEN_TRANSIENT_DB_VERSION)),
             )
+
+        # Only now that upgrades ran, WAL mode is on and the schema is checked, spin
+        # up the pool of read-only connections isolating read_ctx() readers from
+        # write commits. Only for the user DB -- the transient DB is not worth it.
+        self.conn.enable_read_pool(reader_setup=self._setup_read_pool_connection)
+
+    def _setup_read_pool_connection(self, reader: DBConnection) -> None:
+        """Key and configure a read-only pool connection of the user DB"""
+        unlock_database(
+            db_connection=reader,
+            password=self.password,
+            sqlcipher_version=self.sqlcipher_version,
+            apply_optimizations=False,  # readers cannot (and need not) switch journal mode
+        )
+        with reader.read_ctx() as cursor:  # match the write connection's cache size
+            cursor.execute('PRAGMA cache_size = -32768')
 
     def get_md5hash(self, transient: bool = False) -> str:
         """Get the md5hash of the DB
@@ -565,12 +587,22 @@ class DBHandler:
 
     def change_password(self, new_password: str) -> bool:
         """Changes the password for the currently logged in user"""
+        # The rekey re-encrypts every page, so pooled readers keyed with the old
+        # password would only read garbage afterwards: close them now and key a
+        # fresh pool below once the effective password is known.
+        self.conn.disable_read_pool()
         result = (
             self._change_password(new_password, 'conn') and
             self._change_password(new_password, 'conn_transient')
         )
         if result is True:
             self.password = new_password
+        try:
+            self.conn.enable_read_pool(reader_setup=self._setup_read_pool_connection)
+        except sqlcipher.DatabaseError as e:  # pylint: disable=no-member
+            # can only happen if the DB ended up half-rekeyed (conn succeeded but
+            # conn_transient failed) leaving self.password wrong for the user DB
+            log.error('Could not re-key the user DB read pool after password change: %s', e)
         return result
 
     def disconnect(self, conn_attribute: Literal['conn', 'conn_transient'] = 'conn') -> None:
@@ -1495,7 +1527,25 @@ class DBHandler:
         self.invalidate_ignored_assets_cache()
 
     def invalidate_ignored_assets_cache(self) -> None:
+        self._ignored_assets_flush_generation += 1  # before the clear, so in-flight queries always notice  # noqa: E501
         self._ignored_asset_ids_cache.clear()
+
+    def _may_cache_ignored_assets(self, flush_generation: int) -> bool:
+        """Whether a queried ignored assets result may be written to the cache.
+
+        Not the case if the cache was invalidated after `flush_generation` was
+        snapshotted (the result may predate the change that invalidated), nor
+        while any write transaction or savepoint stack is open on the connection:
+        the invalidating writers call invalidate_ignored_assets_cache before
+        committing, so a concurrent reader would re-cache the pre-commit state,
+        and the writing task itself reads its own yet-uncommitted data which must
+        not become visible to others through the cache.
+        """
+        return (
+            self._ignored_assets_flush_generation == flush_generation and
+            self.conn.write_task_ident is None and
+            self.conn.savepoint_task_ident is None
+        )
 
     def get_ignored_asset_ids(self, cursor: 'DBCursor', only_nfts: bool = False) -> set[str]:
         """Gets the ignored asset ids without converting each one of them to an asset object
@@ -1505,12 +1555,14 @@ class DBHandler:
         """
         if (cached := self._ignored_asset_ids_cache.get(only_nfts)) is not None:
             return set(cached)
+        flush_generation = self._ignored_assets_flush_generation
         if (
                 only_nfts is True and
                 (all_cached := self._ignored_asset_ids_cache.get(False)) is not None
         ):
             nfts_only = {asset_id for asset_id in all_cached if asset_id.startswith(NFT_DIRECTIVE)}
-            self._ignored_asset_ids_cache[True] = nfts_only
+            if self._may_cache_ignored_assets(flush_generation):
+                self._ignored_asset_ids_cache[True] = nfts_only
             return set(nfts_only)
         bindings = []
         query = "SELECT value FROM multisettings WHERE name='ignored_asset' "
@@ -1519,7 +1571,8 @@ class DBHandler:
             bindings.append(f'{NFT_DIRECTIVE}%')
         cursor.execute(query, bindings)
         result = {x[0] for x in cursor}
-        self._ignored_asset_ids_cache[only_nfts] = result
+        if self._may_cache_ignored_assets(flush_generation):
+            self._ignored_asset_ids_cache[only_nfts] = result
         return set(result)
 
     def add_to_ignored_action_ids(
@@ -2642,7 +2695,7 @@ class DBHandler:
                     try:
                         extras[key] = GateLocation.deserialize(entry[1])
                     except DeserializationError as e:
-                        log.error(f'Couldnt deserialize gate location from DB. {e!s}')
+                        log.error('Couldnt deserialize gate location from DB. %s', e)
                 elif key == OKX_LOCATION_KEY:
                     try:  # type is checked above
                         extras[key] = OkxLocation.deserialize(entry[1])
@@ -4113,6 +4166,9 @@ class DBHandler:
         """
         with self.conn.read_ctx() as cursor:
             version = self.get_setting(cursor, 'version')
+        # flush the WAL into the DB file so the copy below contains all
+        # committed data -- the WAL file itself is not copied
+        self.conn.wal_checkpoint()
         new_db_filename = f'{ts_now()}_rotkehlchen_db_v{version}.backup'
         new_db_path = self.user_data_dir / new_db_filename
         shutil.copyfile(

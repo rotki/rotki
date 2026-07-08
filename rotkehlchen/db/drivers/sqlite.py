@@ -6,13 +6,23 @@ A thread-safe driver over one sqlite/sqlcipher connection shared by concurrent
 tasks (the gevent yield machinery it grew out of was removed by the migration
 of docs/designs/gevent_to_asyncio.md). The sqlite progress handler serves as
 the cancellation checkpoint that aborts running statements of cancelled tasks.
+
+On top of the single write connection a DBConnection can maintain a pool of
+read-only connections (enable_read_pool()). With the database in WAL mode the
+pooled readers run concurrently with writes and are isolated from them: a
+commit/rollback on the write connection no longer resets in-flight read
+statements, and readers never observe uncommitted data. read_ctx() borrows a
+pooled reader transparently, falling back to the write connection when the
+calling thread currently holds the write transaction or savepoint stack (so a
+task keeps seeing its own uncommitted writes).
 """
 
 import logging
+import queue
 import random
 import threading
 import time
-from collections.abc import Generator, Sequence
+from collections.abc import Callable, Generator, Sequence
 from contextlib import contextmanager
 from enum import Enum, auto
 from pathlib import Path
@@ -234,6 +244,12 @@ class DBConnectionType(Enum):
     USER = auto()
     TRANSIENT = auto()
     GLOBAL = auto()
+    # the read-only packaged global DB shipped with rotki. A distinct type so that
+    # its connection gets its own CONNECTION_MAP slot and progress callback -- were
+    # it registered as GLOBAL it would replace the main global DB connection in the
+    # map, making that one's progress callback consult the wrong connection's locks
+    # (and e.g. interrupt a commit the in_callback guard should have protected)
+    PACKAGED_GLOBAL = auto()
 
 
 # This is a global connection map to be able to get the connection from inside the
@@ -250,11 +266,17 @@ def _progress_callback(connection: Optional['DBConnection']) -> int:
     if connection is None:
         return 0
 
-    if connection.in_callback.locked() or connection.in_critical_section.locked():
-        # if we get here and the connection is locked or in critical section its state
-        # must not be modified nor its running statement aborted from within the
-        # callback (e.g. a commit is in progress). So we immediately exit the callback
-        # without any sleep that would lead to context switching
+    if (
+            connection.in_callback.locked() or
+            connection.critical_section_owner == threading.get_ident()
+    ):
+        # if we get here and the connection is locked or THIS thread is inside a
+        # critical section, its state must not be modified nor its running statement
+        # aborted from within the callback (e.g. a commit is in progress). So we
+        # immediately exit the callback without doing anything. Ownership matters
+        # for the critical section check: another thread's critical section (e.g. a
+        # long write transaction) protects only that thread's statements, and must
+        # not suppress the cancellation of every other task's statements with it.
         return 0
 
     if (token := current_token()) is not None and token.cancelled:
@@ -282,17 +304,33 @@ def global_callback() -> int:
     return _progress_callback(connection)
 
 
+def packaged_global_callback() -> int:
+    connection = CONNECTION_MAP.get(DBConnectionType.PACKAGED_GLOBAL)
+    return _progress_callback(connection)
+
+
 CALLBACK_MAP = {
     DBConnectionType.USER: user_callback,
     DBConnectionType.TRANSIENT: transient_callback,
     DBConnectionType.GLOBAL: global_callback,
+    DBConnectionType.PACKAGED_GLOBAL: packaged_global_callback,
 }
+
+
+def reader_callback() -> int:
+    """Cancellation checkpoint for pooled read-only connections. Readers never
+    commit or modify driver bookkeeping state, so aborting a read statement is
+    always safe and none of the in_callback/in_critical_section guards of the
+    write connection's callback are needed here."""
+    if (token := current_token()) is not None and token.cancelled:
+        return 1
+    return 0
 
 
 class DBConnection:
 
     def _set_progress_handler(self) -> None:
-        callback = CALLBACK_MAP.get(self.connection_type)
+        callback = reader_callback if self._read_only else CALLBACK_MAP.get(self.connection_type)
         self._conn.set_progress_handler(callback, self.sql_vm_instructions_cb)
 
     def __init__(
@@ -300,14 +338,34 @@ class DBConnection:
             path: str | Path,
             connection_type: DBConnectionType,
             sql_vm_instructions_cb: int,
+            read_only: bool = False,
     ) -> None:
-        CONNECTION_MAP[connection_type] = self
+        """A read_only connection is a pool reader: it is opened with mode=ro so
+        sqlite rejects any write attempt, it is never registered in CONNECTION_MAP
+        (registering would evict the write connection of the same type) and its
+        progress callback only serves as a cancellation checkpoint."""
         self._conn: UnderlyingConnection
+        self._path = path
+        self._read_only = read_only
+        # Pool of read-only connections lazily created by enable_read_pool(). While
+        # None, read_ctx() serves cursors of this (the write) connection. The lock
+        # guards the pool reference swap at close() against concurrent returns.
+        self._read_pool: queue.SimpleQueue[DBConnection] | None = None
+        self._read_pool_lock = threading.Lock()
+        # The reader this thread has currently borrowed, so that nested read_ctx
+        # calls reuse it instead of borrowing a second one. Without this, N threads
+        # nesting read contexts could each hold one reader while waiting for
+        # another, deadlocking once the pool is exhausted.
+        self._borrowed_reader = threading.local()
         # Lock and not Semaphore since the progress callback inspects held
         # state through locked()
         self.in_callback = threading.Lock()
         self.transaction_lock = threading.Lock()
         self.in_critical_section = threading.Lock()
+        # ident of the thread currently inside critical_section(), so the progress
+        # callback can suppress cancellation aborts for that thread's statements
+        # only instead of for every thread on the connection
+        self.critical_section_owner: int | None = None
         # Only one thread may be inside sqlite C code for this connection at a
         # time. pysqlite takes sqlite's connection mutex while holding the GIL
         # on several paths (sqlite3_reset & co), while a concurrent statement
@@ -329,9 +387,29 @@ class DBConnection:
         # whether the current savepoint stack claimed transaction_lock itself
         # (False when the savepoints nest inside this task's own write transaction)
         self._savepoint_holds_transaction_lock = False
-        if connection_type == DBConnectionType.GLOBAL:
-            self._conn = rsqlite.connect(
-                database=path,
+        if connection_type in (DBConnectionType.GLOBAL, DBConnectionType.PACKAGED_GLOBAL):
+            if read_only:
+                # as_uri() gives a percent-encoded file:// URI that sqlite accepts
+                # on all platforms (a plain f'file:{path}' breaks on windows paths)
+                self._conn = rsqlite.connect(
+                    database=Path(path).absolute().as_uri() + '?mode=ro',
+                    uri=True,
+                    check_same_thread=False,
+                    isolation_level=None,
+                )
+            else:
+                self._conn = rsqlite.connect(
+                    database=path,
+                    check_same_thread=False,
+                    isolation_level=None,
+                )
+        elif read_only:
+            # as_uri() gives a percent-encoded file:// URI that sqlite accepts
+            # on all platforms (a plain f'file:{path}' breaks on windows paths).
+            # The caller must key the connection (PRAGMA key) before reading.
+            self._conn = sqlcipher.connect(  # pylint: disable=no-member
+                database=Path(path).absolute().as_uri() + '?mode=ro',
+                uri=True,
                 check_same_thread=False,
                 isolation_level=None,
             )
@@ -341,8 +419,14 @@ class DBConnection:
                 check_same_thread=False,
                 isolation_level=None,
             )
+        if not read_only:
+            # Register in the map only now that the connection is fully initialized: the
+            # per-type callbacks read it from other threads (e.g. an abandoned task still
+            # stepping a statement on the previous connection of this type), and must
+            # never observe an object whose locks/underlying connection don't exist yet
+            CONNECTION_MAP[connection_type] = self
         self._set_progress_handler()
-        if connection_type == DBConnectionType.GLOBAL:
+        if connection_type in (DBConnectionType.GLOBAL, DBConnectionType.PACKAGED_GLOBAL):
             # Register a fuzzy-match helper so asset search/ranking can ORDER BY Levenshtein
             # distance directly in SQL instead of pulling every matching row into memory.
             with self.statement_lock:
@@ -383,17 +467,129 @@ class DBConnection:
             return DBCursor(connection=self, cursor=self._conn.cursor())
 
     def close(self) -> None:
+        self.disable_read_pool()
         with self.statement_lock:
             self._conn.close()
-        CONNECTION_MAP.pop(self.connection_type, None)
+        if not self._read_only:  # a reader was never registered in the map
+            CONNECTION_MAP.pop(self.connection_type, None)
+
+    def enable_read_pool(
+            self,
+            size: int = 4,
+            reader_setup: 'Callable[[DBConnection], None] | None' = None,
+    ) -> None:
+        """Create the pool of read-only connections that read_ctx() borrows from.
+
+        Must only be called after the database is in WAL mode: with the default
+        journal mode a writer's transaction blocks readers on other connections
+        (and vice versa), while under WAL they proceed concurrently and each read
+        statement sees a consistent committed snapshot.
+
+        reader_setup runs once per created reader before it enters the pool, for
+        connection-level preparation reads need -- keying sqlcipher readers
+        (PRAGMA key) most importantly. If it raises, already-created readers are
+        closed and the error propagates with the pool left disabled.
+
+        No-op for in-memory databases (used by tests): they cannot use WAL and
+        there is no file for a second connection to open, so read_ctx() keeps
+        serving cursors of this connection there.
+        """
+        assert self._read_only is False, 'cannot enable a read pool on a pool reader'
+        if str(self._path) == ':memory:':
+            return
+        with self._read_pool_lock:
+            if self._read_pool is not None:
+                return  # already enabled -- happens when connect-time actions rerun
+        readers: list[DBConnection] = []
+        try:
+            for _ in range(size):
+                readers.append(reader := DBConnection(
+                    path=self._path,
+                    connection_type=self.connection_type,
+                    sql_vm_instructions_cb=self.sql_vm_instructions_cb,
+                    read_only=True,
+                ))
+                if reader_setup is not None:
+                    reader_setup(reader)
+        except BaseException:
+            for reader in readers:
+                reader.close()
+            raise
+
+        read_pool: queue.SimpleQueue[DBConnection] = queue.SimpleQueue()
+        for reader in readers:
+            read_pool.put(reader)
+        with self._read_pool_lock:
+            assert self._read_pool is None, 'read pool is already enabled'
+            self._read_pool = read_pool
+
+    def disable_read_pool(self) -> None:
+        """Close the pooled readers and make read_ctx() serve cursors of this
+        connection again. No-op if no pool is enabled.
+
+        A reader borrowed at this moment is closed by _return_reader when its
+        read_ctx exits, since the pool it would be returned to is gone -- its
+        in-flight statements may still error if the disabling was for an
+        operation that invalidates readers (e.g. re-keying the DB).
+        """
+        with self._read_pool_lock:
+            read_pool, self._read_pool = self._read_pool, None
+        if read_pool is not None:
+            while True:
+                try:
+                    read_pool.get_nowait().close()
+                except queue.Empty:
+                    break
+
+    def _borrow_reader(self, read_pool: 'queue.SimpleQueue[DBConnection]') -> 'DBConnection':
+        """Blocking borrow of a pooled reader that stays responsive to task
+        cancellation, mirroring _acquire_transaction_lock.
+
+        May raise TaskCancelledError.
+        """
+        while True:
+            try:
+                return read_pool.get(timeout=CONTEXT_SWITCH_WAIT)
+            except queue.Empty:
+                checkpoint()  # cancelled tasks should not keep waiting for a reader
+
+    def _return_reader(self, reader: 'DBConnection') -> None:
+        with self._read_pool_lock:
+            if (read_pool := self._read_pool) is not None:
+                read_pool.put(reader)
+                return
+        reader.close()  # the pool was closed while this reader was borrowed
 
     @contextmanager
     def read_ctx(self) -> Generator['DBCursor', None, None]:
-        cursor = self.cursor()
+        if (
+                (read_pool := self._read_pool) is None or
+                self.write_task_ident == (current_id := threading.get_ident()) or
+                self.savepoint_task_ident == current_id
+        ):
+            # No pool, or this task holds the write transaction/savepoint stack and
+            # must keep seeing its own uncommitted data: read on this connection.
+            cursor = self.cursor()
+            try:
+                yield cursor
+            finally:
+                cursor.close()
+            return
+
+        if (reader := getattr(self._borrowed_reader, 'reader', None)) is not None:
+            # nested read_ctx: reuse this thread's borrowed reader via a new cursor
+            with reader.read_ctx() as cursor:
+                yield cursor
+            return
+
+        reader = self._borrow_reader(read_pool)
+        self._borrowed_reader.reader = reader
         try:
-            yield cursor
+            with reader.read_ctx() as cursor:
+                yield cursor
         finally:
-            cursor.close()
+            self._borrowed_reader.reader = None
+            self._return_reader(reader)
 
     def _acquire_transaction_lock(self) -> None:
         """Blocking acquire of the transaction slot that stays responsive to task
@@ -404,6 +600,13 @@ class DBConnection:
 
         May raise TaskCancelledError.
         """
+        if __debug__:
+            # lock-order check: the transaction slot must be taken BEFORE entering a
+            # critical section (see _transaction_slot docstring) -- the reverse order
+            # creates a deadlock cycle against write_ctx, which takes slot-then-section
+            assert self.critical_section_owner != threading.get_ident(), (
+                'attempted to acquire the transaction slot while inside a critical section'
+            )
         while not self.transaction_lock.acquire(timeout=CONTEXT_SWITCH_WAIT):
             checkpoint()  # cancelled tasks should not keep waiting for the DB
 
@@ -577,6 +780,7 @@ class DBConnection:
         (without aborting cancelled statements) while it is locked.
         """
         with self.in_critical_section:
+            self.critical_section_owner = threading.get_ident()
             if __debug__:
                 identifier = random.random()
                 logger.trace(f'Got in critical section for {self.connection_type} and id: {identifier}')  # noqa: E501
@@ -590,6 +794,7 @@ class DBConnection:
                 with self.in_callback:
                     if __debug__:
                         logger.trace(f'exiting critical section for {self.connection_type} and id {identifier}')  # noqa: E501  # pyright: ignore  # if debug identifier is set
+                self.critical_section_owner = None
 
     @contextmanager
     def _transaction_slot(self) -> Generator[None, None, None]:

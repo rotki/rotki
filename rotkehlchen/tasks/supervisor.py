@@ -1,4 +1,5 @@
 import logging
+import threading
 import traceback
 from collections.abc import Callable
 from typing import Any
@@ -28,13 +29,17 @@ class TaskSupervisor:
 
     def __init__(self, msg_aggregator: MessagesAggregator) -> None:
         self.msg_aggregator = msg_aggregator
+        # guards self.tasks: appended to by any thread spawning work while the
+        # scheduler thread prunes finished entries
+        self.lock = threading.Lock()
         self.tasks: list[Task] = []
 
     def add(self, task_name: str, task: Task, exception_is_error: bool) -> None:
         task.task_name = task_name
         task.exception_is_error = exception_is_error
         task.add_done_callback(self._handle_finished_task)
-        self.tasks.append(task)
+        with self.lock:
+            self.tasks.append(task)
 
     def clear(self) -> None:
         """Cancel all tracked tasks and wait a short grace period for them to
@@ -43,7 +48,9 @@ class TaskSupervisor:
         query) is abandoned: it dies at its next checkpoint and its death is
         logged without alerting the user since its token shows the
         cancellation was deliberate."""
-        if len(pending := [task for task in self.tasks if task.dead is False]) != 0:
+        with self.lock:
+            pending = [task for task in self.tasks if task.dead is False]
+        if len(pending) != 0:
             for task in pending:
                 task.request_cancellation('Cancelled due to logout or shutdown')
             wait(pending, timeout=DEFAULT_CANCEL_GRACE_SECONDS)
@@ -52,11 +59,13 @@ class TaskSupervisor:
                     'Abandoning cancelled tasks that did not exit within the grace period',
                     tasks=survivors,
                 )
-        self.tasks.clear()
+        with self.lock:
+            self.tasks.clear()
 
     def clear_finished(self) -> None:
         """Remove all finished tracked tasks from the list"""
-        self.tasks = [x for x in self.tasks if not x.dead]
+        with self.lock:  # in-place so a concurrent add() cannot land on a discarded list
+            self.tasks[:] = [x for x in self.tasks if not x.dead]
 
     def spawn_and_track(
             self,
@@ -79,7 +88,8 @@ class TaskSupervisor:
 
     def has_task(self, name: str) -> bool:
         """Check if there is a running task with the given name"""
-        return any(task.dead is False and task.task_name.startswith(name) for task in self.tasks)
+        with self.lock:
+            return any(task.dead is False and task.task_name.startswith(name) for task in self.tasks)  # noqa: E501
 
     def _handle_finished_task(self, task: Task) -> None:
         if task.exception is None:

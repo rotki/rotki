@@ -45,19 +45,29 @@ def _ws_send_impl(
 class RotkiNotifier:
 
     def __init__(self) -> None:
+        # Guards subscribers and locks: subscribe/unsubscribe run on the event-loop
+        # thread while broadcast runs on any thread. Without it a broadcast can look
+        # up the per-websocket lock of a concurrently unsubscribed websocket and
+        # crash with KeyError inside a task done-callback.
+        self.subscribers_lock = threading.Lock()
         self.subscribers: list[AsgiWebsocketSubscriber] = []
         self.locks: dict[AsgiWebsocketSubscriber, threading.Lock] = {}
 
     def subscribe(self, websocket: 'AsgiWebsocketSubscriber') -> None:
         log.info('Websocket with hash id %s subscribed to rotki notifier', hash(websocket))
-        self.subscribers.append(websocket)
-        self.locks[websocket] = threading.Lock()
+        with self.subscribers_lock:
+            self.subscribers.append(websocket)
+            self.locks[websocket] = threading.Lock()
 
     def unsubscribe(self, websocket: 'AsgiWebsocketSubscriber') -> None:
-        self.locks.pop(websocket, None)
-        with suppress(ValueError):
-            self.subscribers.remove(websocket)
-            log.info('Websocket with hash id %s unsubscribed from rotki notifier', hash(websocket))
+        with self.subscribers_lock:
+            self.locks.pop(websocket, None)
+            try:
+                self.subscribers.remove(websocket)
+            except ValueError:
+                return  # already removed, e.g. by a broadcast that saw it closed
+
+        log.info('Websocket with hash id %s unsubscribed from rotki notifier', hash(websocket))
 
     def broadcast(
             self,
@@ -84,16 +94,22 @@ class RotkiNotifier:
 
             return  # get out of the broadcast
 
-        to_remove_indices = set()
+        with self.subscribers_lock:  # snapshot with the matching per-websocket locks
+            subscribers_with_locks = [
+                (websocket, ws_lock) for websocket in self.subscribers
+                if (ws_lock := self.locks.get(websocket)) is not None
+            ]
+
+        to_remove = []
         spawned_one_broadcast = False
-        for idx, websocket in enumerate(self.subscribers):
+        for websocket, ws_lock in subscribers_with_locks:
             if websocket.closed is True:
-                to_remove_indices.add(idx)
+                to_remove.append(websocket)
                 continue
 
             _ws_send_impl(
                 websocket=websocket,
-                lock=self.locks[websocket],
+                lock=ws_lock,
                 to_send_msg=message,
                 success_callback=success_callback,
                 success_callback_args=success_callback_args,
@@ -102,10 +118,12 @@ class RotkiNotifier:
             )
             spawned_one_broadcast = True
 
-        if len(to_remove_indices) != 0:  # removed closed websockets from the list
-            self.subscribers = [
-                i for j, i in enumerate(self.subscribers) if j not in to_remove_indices
-            ]
+        if len(to_remove) != 0:  # remove closed websockets from the list, by identity
+            with self.subscribers_lock:  # since a concurrent broadcast/unsubscribe shifts indices
+                for websocket in to_remove:
+                    self.locks.pop(websocket, None)
+                    with suppress(ValueError):  # may have been removed concurrently
+                        self.subscribers.remove(websocket)
         if spawned_one_broadcast is False and failure_callback is not None:
             failure_callback_args = {} if failure_callback_args is None else failure_callback_args
             failure_callback(**failure_callback_args)

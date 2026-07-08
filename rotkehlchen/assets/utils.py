@@ -507,8 +507,8 @@ def _get_or_create_token(
 
     Note: if the token already exists but the other arguments don't match the
     existing token will still be silently returned
-    Note2: This entire function is designed so that it does not context switch away from
-    its calling greenlet so it should be safe to call from multiple greenlets.
+    Note2: Safe to call from multiple threads since the check-then-create runs under
+    get_or_create_token_lock.
     Note3: If encounter is None, it will broadcast the `NEW_TOKEN_DETECTED` message by default.
 
     May raise:
