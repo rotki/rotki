@@ -208,6 +208,7 @@ disallow_untyped_decorators = false
 [[tool.mypy.overrides]]
 module = [
     "rotkehlchen.tests.api.*",
+    "rotkehlchen.tests.benchmarks.*",
     "rotkehlchen.tests.data_migrations.test_migrations",
 ]
 check_untyped_defs = true
