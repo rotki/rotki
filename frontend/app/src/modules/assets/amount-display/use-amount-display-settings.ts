@@ -1,30 +1,33 @@
 import type { Ref } from 'vue';
-import type { Currency } from '@/modules/assets/amount-display/currencies';
-import type { RoundingMode } from '@/modules/settings/types/frontend-settings';
-import { useSetting } from '@/modules/settings/use-setting';
+import { type SettingValue, useSetting } from '@/modules/settings/use-setting';
 
+/**
+ * Read value types are derived from the settings registry via `SettingValue`, so this interface
+ * cannot drift from the registry's precise per-key types (e.g. `currencySymbol` stays the currency
+ * union rather than widening to `string`).
+ */
 export interface AmountDisplaySettings {
   // General settings
-  floatingPrecision: Readonly<Ref<number>>;
-  currency: Readonly<Ref<Currency>>;
-  currencySymbol: Readonly<Ref<string>>;
+  floatingPrecision: Readonly<Ref<SettingValue<'floatingPrecision'>>>;
+  currency: Readonly<Ref<SettingValue<'currency'>>>;
+  currencySymbol: Readonly<Ref<SettingValue<'currencySymbol'>>>;
 
   // Frontend settings - formatting
-  thousandSeparator: Readonly<Ref<string>>;
-  decimalSeparator: Readonly<Ref<string>>;
-  currencyLocation: Readonly<Ref<'before' | 'after'>>;
-  abbreviateNumber: Readonly<Ref<boolean>>;
-  minimumDigitToBeAbbreviated: Readonly<Ref<number>>;
-  subscriptDecimals: Readonly<Ref<boolean>>;
+  thousandSeparator: Readonly<Ref<SettingValue<'thousandSeparator'>>>;
+  decimalSeparator: Readonly<Ref<SettingValue<'decimalSeparator'>>>;
+  currencyLocation: Readonly<Ref<SettingValue<'currencyLocation'>>>;
+  abbreviateNumber: Readonly<Ref<SettingValue<'abbreviateNumber'>>>;
+  minimumDigitToBeAbbreviated: Readonly<Ref<SettingValue<'minimumDigitToBeAbbreviated'>>>;
+  subscriptDecimals: Readonly<Ref<SettingValue<'subscriptDecimals'>>>;
 
   // Frontend settings - rounding
-  amountRoundingMode: Readonly<Ref<RoundingMode>>;
-  valueRoundingMode: Readonly<Ref<RoundingMode>>;
+  amountRoundingMode: Readonly<Ref<SettingValue<'amountRoundingMode'>>>;
+  valueRoundingMode: Readonly<Ref<SettingValue<'valueRoundingMode'>>>;
 
   // Frontend settings - privacy
-  scrambleData: Readonly<Ref<boolean>>;
-  scrambleMultiplier: Readonly<Ref<number | undefined>>;
-  shouldShowAmount: Readonly<Ref<boolean>>;
+  scrambleData: Readonly<Ref<SettingValue<'scrambleData'>>>;
+  scrambleMultiplier: Readonly<Ref<SettingValue<'scrambleMultiplier'>>>;
+  shouldShowAmount: Readonly<Ref<SettingValue<'shouldShowAmount'>>>;
 }
 
 /**
