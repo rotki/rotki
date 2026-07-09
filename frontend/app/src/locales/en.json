@@ -1749,6 +1749,28 @@
   "backend_settings_button": {
     "tooltip": "Change the backend settings. Changing the settings will restart the rotki backend"
   },
+  "balance_divergence": {
+    "action": "Find divergence",
+    "asset": "Asset",
+    "block": "Block",
+    "chain": "Chain",
+    "checked": "Checked {probes} points.",
+    "difference": "Difference",
+    "event": "Tx",
+    "first_diverged": "First diverged event",
+    "last_matching": "Last matching event",
+    "location_label": "Location label",
+    "missing_group": "No transaction group",
+    "no_divergence": "The latest tracked and on-chain balances match. No persistent divergence to locate. Checked {probes} points.",
+    "no_options": "No EVM location labels are available.",
+    "onchain": "On-chain",
+    "task": {
+      "title": "Finding balance divergence for {asset}"
+    },
+    "title": "Find balance divergence",
+    "tracked": "Tracked",
+    "view_event": "View event"
+  },
   "big_dialog": {
     "prompt_close": {
       "actions": {
@@ -6322,6 +6344,8 @@
         "tooltip": "Select multiple events",
         "unignore": "Include in accounting (PnL)"
       },
+      "show_accounting_divergence": "Highlighting accounting divergence event",
+      "show_accounting_divergence_tooltip": "This row is one of the events around the detected balance mismatch.",
       "show_missing_acquisition": "Showing event for missing acquisition",
       "show_negative_balance": "Highlighting event where negative balances detected",
       "showing_ignored_assets": "Showing all events including those with ignored assets. Click to hide.",

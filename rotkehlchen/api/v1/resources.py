@@ -154,6 +154,7 @@ from rotkehlchen.api.v1.schemas import (
     NewUserSchema,
     NFTFilterQuerySchema,
     NFTLpFilterSchema,
+    OnchainHistoricalBalanceDivergenceSchema,
     OnchainHistoricalBalanceSchema,
     OptionalAddressesWithBlockchainsListSchema,
     PendingTransactionDecodingSchema,
@@ -3808,6 +3809,29 @@ class OnchainHistoricalBalanceResource(BaseMethodView):
             address=address,
             asset=asset,
             timestamp=timestamp,
+        )
+
+
+class OnchainHistoricalBalanceDivergenceResource(BaseMethodView):
+
+    post_schema = OnchainHistoricalBalanceDivergenceSchema()
+
+    @require_premium_user(active_check=False)
+    @use_kwargs(post_schema, location='json')
+    def post(
+            self,
+            async_query: bool,
+            evm_chain: EVM_CHAIN_IDS_WITH_TRANSACTIONS_TYPE,
+            address: ChecksumEvmAddress,
+            asset: Asset,
+            tolerance: FVal,
+    ) -> Response:
+        return self.rest_api.find_onchain_historical_balance_divergence(
+            async_query=async_query,
+            evm_chain=evm_chain,
+            address=address,
+            asset=asset,
+            tolerance=tolerance,
         )
 
 

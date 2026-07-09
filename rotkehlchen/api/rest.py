@@ -60,6 +60,9 @@ from rotkehlchen.assets.asset import (
 )
 from rotkehlchen.assets.resolver import AssetResolver
 from rotkehlchen.balances.historical import (
+    HistoricalBalanceDivergenceEvent,
+    HistoricalBalanceDivergenceProbe,
+    HistoricalBalanceDivergenceResult,
     HistoricalBalanceEntry,
     HistoricalBalancesManager,
 )
@@ -136,7 +139,7 @@ from rotkehlchen.errors.api import (
     PremiumPermissionError,
     RotkehlchenPermissionError,
 )
-from rotkehlchen.errors.asset import UnknownAsset
+from rotkehlchen.errors.asset import UnknownAsset, WrongAssetType
 from rotkehlchen.errors.misc import (
     DBSchemaError,
     DBUpgradeError,
@@ -3801,6 +3804,94 @@ class RestAPI:
             )
 
         return _wrap_in_ok_result(result={asset.identifier: str(balance)})
+
+    @staticmethod
+    def _serialize_historical_balance_divergence_event(
+            event: HistoricalBalanceDivergenceEvent | None,
+    ) -> dict[str, Any] | None:
+        if event is None:
+            return None
+
+        return {
+            'event_identifier': event.event_identifier,
+            'group_identifier': event.group_identifier,
+            'timestamp': event.timestamp,
+            'block_number': event.block_number,
+            'tracked_balance': str(event.tracked_balance),
+            'onchain_balance': str(event.onchain_balance),
+            'difference': str(event.difference),
+        }
+
+    @classmethod
+    def _serialize_historical_balance_divergence_probe(
+            cls,
+            probe: HistoricalBalanceDivergenceProbe,
+    ) -> dict[str, Any]:
+        return {
+            'event_index': probe.event_index,
+            'matches': probe.matches,
+            'event': cls._serialize_historical_balance_divergence_event(probe.event),
+        }
+
+    @classmethod
+    def _serialize_historical_balance_divergence_result(
+            cls,
+            result: HistoricalBalanceDivergenceResult,
+    ) -> dict[str, Any]:
+        return {
+            'status': result.status,
+            'location': result.location.serialize(),
+            'address': result.address,
+            'asset': result.asset.identifier,
+            'total_events': result.total_events,
+            'tolerance': str(result.tolerance),
+            'first_diverged': cls._serialize_historical_balance_divergence_event(
+                result.first_diverged,
+            ),
+            'last_matching': cls._serialize_historical_balance_divergence_event(
+                result.last_matching,
+            ),
+            'probes': [
+                cls._serialize_historical_balance_divergence_probe(probe)
+                for probe in result.probes
+            ],
+        }
+
+    @async_api_call()
+    @accounting_update_required('Historical balance divergence search is disabled')
+    def find_onchain_historical_balance_divergence(
+            self,
+            evm_chain: EVM_CHAIN_IDS_WITH_TRANSACTIONS_TYPE,
+            address: ChecksumEvmAddress,
+            asset: Asset,
+            tolerance: FVal,
+    ) -> dict[str, Any]:
+        evm_manager = self.rotkehlchen.chains_aggregator.get_evm_manager(chain_id=evm_chain)
+        if not evm_manager.node_inquirer.has_archive_node():
+            return wrap_in_fail_result(
+                message=f'No archive node available for {evm_chain.to_name()} to query historical balance divergence',  # noqa: E501
+                status_code=HTTPStatus.CONFLICT,
+            )
+
+        try:
+            result = HistoricalBalancesManager(
+                self.rotkehlchen.data.db,
+            ).find_onchain_balance_divergence(
+                evm_manager=evm_manager,
+                evm_chain=evm_chain,
+                address=address,
+                asset=asset,
+                tolerance=tolerance,
+            )
+        except NotFoundError as e:
+            return wrap_in_fail_result(str(e), status_code=HTTPStatus.NOT_FOUND)
+        except (RemoteError, DeserializationError, UnknownAsset, WrongAssetType) as e:
+            return wrap_in_fail_result(str(e), status_code=HTTPStatus.CONFLICT)
+
+        return _wrap_in_ok_result(
+            result=self._serialize_historical_balance_divergence_result(result),
+            status_code=HTTPStatus.OK,
+        )
 
     @async_api_call()
     def get_historical_prices_per_asset(

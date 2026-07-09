@@ -1,7 +1,7 @@
 import logging
 from collections import defaultdict
 from collections.abc import Sequence
-from typing import TYPE_CHECKING, NamedTuple
+from typing import TYPE_CHECKING, Literal, NamedTuple
 
 import pandas as pd
 
@@ -14,7 +14,7 @@ from rotkehlchen.db.filtering import (
     HistoryEventFilterQuery,
 )
 from rotkehlchen.db.utils import get_query_chunks
-from rotkehlchen.errors.misc import NotFoundError
+from rotkehlchen.errors.misc import NotFoundError, RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.base import HistoryEvent, get_event_direction
@@ -25,8 +25,9 @@ from rotkehlchen.utils.misc import ts_ms_to_sec, ts_sec_to_ms
 
 if TYPE_CHECKING:
     from rotkehlchen.assets.asset import EvmToken
+    from rotkehlchen.chain.evm.manager import EvmManager
     from rotkehlchen.db.dbhandler import DBHandler
-    from rotkehlchen.types import ChecksumEvmAddress
+    from rotkehlchen.types import EVM_CHAIN_IDS_WITH_TRANSACTIONS_TYPE, ChecksumEvmAddress
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -47,6 +48,42 @@ class HistoricalBalanceSeriesEntry(NamedTuple):
     asset: Asset
     times: list[Timestamp]
     values: list[FVal]
+
+
+class HistoricalBalanceDivergenceEvent(NamedTuple):
+    event_identifier: int
+    group_identifier: str | None
+    timestamp: Timestamp
+    block_number: int
+    tracked_balance: FVal
+    onchain_balance: FVal
+    difference: FVal
+
+
+class HistoricalBalanceDivergenceProbe(NamedTuple):
+    event_index: int
+    event: HistoricalBalanceDivergenceEvent
+    matches: bool
+
+
+class HistoricalBalanceDivergenceResult(NamedTuple):
+    status: Literal['diverged', 'diverged_from_start', 'no_divergence']
+    location: Location
+    address: str
+    asset: Asset
+    total_events: int
+    tolerance: FVal
+    first_diverged: HistoricalBalanceDivergenceEvent | None
+    last_matching: HistoricalBalanceDivergenceEvent | None
+    probes: list[HistoricalBalanceDivergenceProbe]
+
+
+class _TrackedBalanceEvent(NamedTuple):
+    event_identifier: int
+    group_identifier: str | None
+    timestamp: Timestamp
+    tracked_balance: FVal
+    block_number: int | None
 
 
 class HistoricalBalancesManager:
@@ -186,6 +223,188 @@ class HistoricalBalancesManager:
             where_clause=filter_query.unprocessed_where_clause,
             bindings=filter_query.unprocessed_bindings,
         ), entries or None
+
+    def find_onchain_balance_divergence(
+            self,
+            evm_manager: 'EvmManager',
+            evm_chain: 'EVM_CHAIN_IDS_WITH_TRANSACTIONS_TYPE',
+            address: 'ChecksumEvmAddress',
+            asset: Asset,
+            tolerance: FVal = ZERO,
+    ) -> HistoricalBalanceDivergenceResult:
+        """Find the first tracked wallet-balance event that disagrees with on-chain data.
+
+        Uses the monotonic case this diagnostic targets: tracked and on-chain balance match up to
+        a point, then remain diverged because a balance-changing event is missing or incorrect.
+        The database scan is narrow to one chain/address/asset wallet bucket, while remote archive
+        node probes are O(log n). Transient mismatches that later resolve are outside this search.
+
+        May raise:
+        - NotFoundError if no processed wallet balance metrics exist for the address/asset.
+        - RemoteError if block lookup or archive balance lookup fails.
+        """
+        location = Location.from_chain_id(evm_chain)
+        events = self._get_tracked_wallet_balance_events(
+            evm_chain=evm_chain,
+            location=location,
+            address=address,
+            asset=asset,
+        )
+        if len(events) == 0:
+            raise NotFoundError(
+                f'No historical wallet balance data found for {asset.identifier} at '
+                f'{address} on {location.serialize()}',
+            )
+
+        token = (
+            None
+            if asset == evm_manager.node_inquirer.native_token
+            else asset.resolve_to_evm_token()
+        )
+        probes: list[HistoricalBalanceDivergenceProbe] = []
+        probe_cache: dict[int, HistoricalBalanceDivergenceProbe] = {}
+        last_probe = self._probe_onchain_balance_divergence(
+            evm_manager=evm_manager,
+            events=events,
+            probe_cache=probe_cache,
+            probes=probes,
+            index=len(events) - 1,
+            address=address,
+            asset=asset,
+            token=token,
+            tolerance=tolerance,
+        )
+        if last_probe.matches is True:
+            return HistoricalBalanceDivergenceResult(
+                status='no_divergence',
+                location=location,
+                address=address,
+                asset=asset,
+                total_events=len(events),
+                tolerance=tolerance,
+                first_diverged=None,
+                last_matching=last_probe.event,
+                probes=probes,
+            )
+
+        first_probe = self._probe_onchain_balance_divergence(
+            evm_manager=evm_manager,
+            events=events,
+            probe_cache=probe_cache,
+            probes=probes,
+            index=0,
+            address=address,
+            asset=asset,
+            token=token,
+            tolerance=tolerance,
+        )
+        if first_probe.matches is False:
+            return HistoricalBalanceDivergenceResult(
+                status='diverged_from_start',
+                location=location,
+                address=address,
+                asset=asset,
+                total_events=len(events),
+                tolerance=tolerance,
+                first_diverged=first_probe.event,
+                last_matching=None,
+                probes=probes,
+            )
+
+        low, high = 0, len(events) - 1
+        last_matching = first_probe.event
+        first_diverged = last_probe.event
+        while low + 1 < high:
+            mid = (low + high) // 2
+            mid_probe = self._probe_onchain_balance_divergence(
+                evm_manager=evm_manager,
+                events=events,
+                probe_cache=probe_cache,
+                probes=probes,
+                index=mid,
+                address=address,
+                asset=asset,
+                token=token,
+                tolerance=tolerance,
+            )
+            if mid_probe.matches:
+                low = mid
+                last_matching = mid_probe.event
+            else:
+                high = mid
+                first_diverged = mid_probe.event
+
+        return HistoricalBalanceDivergenceResult(
+            status='diverged',
+            location=location,
+            address=address,
+            asset=asset,
+            total_events=len(events),
+            tolerance=tolerance,
+            first_diverged=first_diverged,
+            last_matching=last_matching,
+            probes=probes,
+        )
+
+    @staticmethod
+    def _probe_onchain_balance_divergence(
+            evm_manager: 'EvmManager',
+            events: list[_TrackedBalanceEvent],
+            probe_cache: dict[int, HistoricalBalanceDivergenceProbe],
+            probes: list[HistoricalBalanceDivergenceProbe],
+            index: int,
+            address: 'ChecksumEvmAddress',
+            asset: Asset,
+            token: 'EvmToken | None',
+            tolerance: FVal,
+    ) -> HistoricalBalanceDivergenceProbe:
+        if (cached_probe := probe_cache.get(index)) is not None:
+            return cached_probe
+
+        event = events[index]
+        block_number = event.block_number
+        if block_number is None:
+            block_number = evm_manager.node_inquirer.get_blocknumber_by_time(
+                ts=event.timestamp,
+            )
+
+        if token is None:
+            onchain_balance = evm_manager.node_inquirer.get_historical_native_balance(
+                address=address,
+                block_number=block_number,
+                queried_timestamp=event.timestamp,
+            )
+        else:
+            onchain_balance = evm_manager.node_inquirer.get_historical_token_balance(
+                address=address,
+                token=token,
+                block_number=block_number,
+                queried_timestamp=event.timestamp,
+            )
+
+        if onchain_balance is None:
+            raise RemoteError(
+                f'Failed to query historical on-chain balance for {asset.identifier} '
+                f'at block {block_number}',
+            )
+
+        divergence_event = HistoricalBalanceDivergenceEvent(
+            event_identifier=event.event_identifier,
+            group_identifier=event.group_identifier,
+            timestamp=event.timestamp,
+            block_number=block_number,
+            tracked_balance=event.tracked_balance,
+            onchain_balance=onchain_balance,
+            difference=onchain_balance - event.tracked_balance,
+        )
+        result = HistoricalBalanceDivergenceProbe(
+            event_index=index + 1,
+            event=divergence_event,
+            matches=abs(divergence_event.difference) <= tolerance,
+        )
+        probe_cache[index] = result
+        probes.append(result)
+        return result
 
     def get_erc721_tokens_balances(
             self,
@@ -443,6 +662,63 @@ class HistoricalBalancesManager:
                 """,  # noqa: E501
                 [*bindings, *[v for pair in self._neutral_balance_tracking_pairs for v in pair]],
             ).fetchone() is not None
+
+    def _get_tracked_wallet_balance_events(
+            self,
+            evm_chain: 'EVM_CHAIN_IDS_WITH_TRANSACTIONS_TYPE',
+            location: Location,
+            address: 'ChecksumEvmAddress',
+            asset: Asset,
+    ) -> list[_TrackedBalanceEvent]:
+        """Load processed wallet balance checkpoints for one chain/address/asset.
+
+        Protocol buckets are intentionally excluded: archive-node balance queries return the
+        wallet balance held by the address, not balances custodied in DeFi protocol buckets.
+        """
+        with self.db.conn.read_ctx() as cursor:
+            events = [
+                _TrackedBalanceEvent(
+                    event_identifier=event_identifier,
+                    group_identifier=group_identifier,
+                    timestamp=ts_ms_to_sec(TimestampMS(timestamp)),
+                    tracked_balance=FVal(metric_value),
+                    block_number=block_number,
+                )
+                for event_identifier, group_identifier, timestamp, metric_value, block_number in cursor.execute(  # noqa: E501
+                    """
+                    SELECT em.event_identifier, he.group_identifier, em.timestamp,
+                    em.metric_value, et.block_number
+                    FROM event_metrics em
+                    JOIN history_events he ON he.identifier = em.event_identifier
+                    LEFT JOIN chain_events_info cei ON cei.identifier = em.event_identifier
+                    LEFT JOIN evm_transactions et ON et.tx_hash = cei.tx_ref AND et.chain_id = ?
+                    WHERE em.metric_key = ? AND em.location = ? AND em.location_label = ?
+                    AND em.protocol IS NULL AND em.asset = ?
+                    ORDER BY em.sort_key
+                    """,
+                    (
+                        evm_chain.serialize_for_db(),
+                        EventMetricKey.BALANCE.serialize(),
+                        location.serialize_for_db(),
+                        address,
+                        asset.resolve_swapped_for().identifier,
+                    ),
+                )
+            ]
+
+        # RPC balances represent the state at the end of a block. Keep the last tracked
+        # checkpoint for each block so earlier events in that block are not false mismatches.
+        checkpoints: list[_TrackedBalanceEvent] = []
+        for event in events:
+            if (
+                event.block_number is not None and
+                checkpoints and
+                checkpoints[-1].block_number == event.block_number
+            ):
+                checkpoints[-1] = event
+            else:
+                checkpoints.append(event)
+        return checkpoints
 
     def _get_events_and_currency(
             self,

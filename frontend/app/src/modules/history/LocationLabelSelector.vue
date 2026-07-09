@@ -55,18 +55,25 @@ function getBlockchainLocation(location: string): string | undefined {
 }
 
 function getTags(item: LocationLabel): string[] {
+  const registeredAccounts = getRegisteredAccounts(item);
+  if (registeredAccounts.length === 0)
+    return [];
+
+  return registeredAccounts[0].tags || [];
+}
+
+function getRegisteredAccounts(item: LocationLabel): BlockchainAccount<AddressData>[] {
   const chain = getBlockchainLocation(item.location);
 
   if (!chain)
     return [];
 
-  const registeredAccounts = get(accounts).filter(acc => getAccountAddress(acc) === item.locationLabel && acc.chain === chain);
+  return get(accounts).filter(acc => getAccountAddress(acc) === item.locationLabel && acc.chain === chain);
+}
 
-  if (registeredAccounts.length === 0) {
-    return [];
-  }
-
-  return registeredAccounts[0].tags || [];
+function getTrackedAccountLabel(item: LocationLabel): string | undefined {
+  const label = getRegisteredAccounts(item)[0]?.label;
+  return label && label !== item.locationLabel ? label : undefined;
 }
 
 function filter(item: LocationLabel, queryText: string): boolean {
@@ -86,8 +93,9 @@ function filter(item: LocationLabel, queryText: string): boolean {
   }
 
   const text = getTextToken(getAddressName(item.locationLabel, chain) ?? '');
+  const trackedAccountLabel = getTextToken(getTrackedAccountLabel(item) ?? '');
 
-  const labelMatches = text.includes(query);
+  const labelMatches = text.includes(query) || trackedAccountLabel.includes(query);
 
   if (labelMatches) {
     return true;
@@ -107,14 +115,24 @@ const [DefineLocationItem, ReuseLocationItem] = createReusableTemplate<{ item: L
 
 <template>
   <DefineLocationItem #default="{ item, dense }">
-    <AccountDisplay
+    <div
       v-if="getBlockchainLocation(item.location)"
       :class="{ 'py-1': !dense }"
-      :size="dense ? '16px' : '24px'"
-      :account="{ address: item.locationLabel, chain: getBlockchainLocation(item.location)! }"
-      hide-chain-icon
-      :no-truncate="noTruncate"
-    />
+      class="flex items-center gap-2 min-w-0"
+    >
+      <AccountDisplay
+        :size="dense ? '16px' : '24px'"
+        :account="{ address: item.locationLabel, chain: getBlockchainLocation(item.location)! }"
+        hide-chain-icon
+        :no-truncate="noTruncate"
+      />
+      <span
+        v-if="getTrackedAccountLabel(item)"
+        class="text-rui-text-secondary truncate"
+      >
+        {{ getTrackedAccountLabel(item) }}
+      </span>
+    </div>
     <div
       v-else
       class="flex items-center gap-2"

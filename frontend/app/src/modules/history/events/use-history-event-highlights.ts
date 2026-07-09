@@ -15,8 +15,10 @@ export function useHistoryEventHighlights(): UseHistoryEventHighlightsReturn {
   const route = useRoute();
 
   const highlightedIdentifiers = computed<string[] | undefined>(() => {
-    const { highlightedAssetMovement, highlightedPotentialMatch, highlightedNegativeBalanceEvent } = get(route).query;
+    const { highlightedAccountingEvent, highlightedAssetMovement, highlightedPotentialMatch, highlightedNegativeBalanceEvent } = get(route).query;
     const identifiers: string[] = [];
+    if (highlightedAccountingEvent)
+      identifiers.push(highlightedAccountingEvent.toString());
     if (highlightedAssetMovement)
       identifiers.push(highlightedAssetMovement.toString());
     if (highlightedPotentialMatch)
@@ -32,8 +34,10 @@ export function useHistoryEventHighlights(): UseHistoryEventHighlightsReturn {
   });
 
   const highlightTypes = computed<Record<string, HighlightType>>(() => {
-    const { highlightedAssetMovement, highlightedPotentialMatch, highlightedNegativeBalanceEvent } = get(route).query;
+    const { highlightedAccountingEvent, highlightedAssetMovement, highlightedPotentialMatch, highlightedNegativeBalanceEvent } = get(route).query;
     const types: Record<string, HighlightType> = {};
+    if (highlightedAccountingEvent)
+      types[highlightedAccountingEvent.toString()] = 'warning';
     if (highlightedAssetMovement)
       types[highlightedAssetMovement.toString()] = 'warning';
     if (highlightedNegativeBalanceEvent)

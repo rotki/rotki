@@ -26,6 +26,8 @@ export interface HistoryEventNavigationRequest {
   targetGroupIdentifier: string;
   /** Event ID for selected asset movement highlight (warning/yellow) */
   highlightedAssetMovement?: number;
+  /** Event ID for accounting overlay divergence highlight (warning/yellow) */
+  highlightedAccountingEvent?: number;
   /** Event ID for potential match highlight (success/green) */
   highlightedPotentialMatch?: number;
   /** Event ID for negative balance highlight (error/red) */
@@ -48,6 +50,7 @@ export interface HighlightTarget {
 }
 
 export const HighlightTargetTypes = {
+  ACCOUNTING_EVENT: 'accountingEvent',
   ASSET_MOVEMENT: 'assetMovement',
   INTERNAL_TX_CONFLICT: 'internalTxConflict',
   NEGATIVE_BALANCE: 'negativeBalance',
@@ -112,6 +115,7 @@ export const useHistoryEventNavigation = createSharedComposable(() => {
     const targets = get(highlightTargets);
 
     const candidates: string[] = [
+      targets.accountingEvent?.groupIdentifier,
       targets.potentialMatch?.groupIdentifier,
       targets.assetMovement?.groupIdentifier,
       targets.internalTxConflict?.groupIdentifier,
