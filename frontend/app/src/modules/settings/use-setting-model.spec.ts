@@ -98,4 +98,22 @@ describe('useSettingModel', () => {
       vi.useRealTimers();
     }
   });
+
+  it('should not persist a transient edit reverted to the source within the debounce window', async () => {
+    vi.useFakeTimers();
+    try {
+      const { model } = createModel({ debounce: 500 });
+      set(model, 50);
+      await nextTick();
+      await vi.advanceTimersByTimeAsync(300);
+      // revert to the persisted value before the pending debounced write fires
+      set(model, 25);
+      await nextTick();
+      await vi.advanceTimersByTimeAsync(500);
+      expect(mockWrite).not.toHaveBeenCalled();
+    }
+    finally {
+      vi.useRealTimers();
+    }
+  });
 });

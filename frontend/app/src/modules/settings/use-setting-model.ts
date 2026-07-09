@@ -45,7 +45,12 @@ export function useSettingModel<K extends WritableSettingKey>(
       set(model, value);
   });
 
-  const persist = async (value: SettingValue<K>): Promise<void> => {
+  const persist = async (): Promise<void> => {
+    // Read the live draft at fire time. A debounced fire can be stale: if the draft was changed again
+    // during the window (in particular reverted back to the persisted value), there is nothing to write.
+    const value = get(model);
+    if (isEqual(value, get(source)))
+      return;
     set(pending, true);
     set(error, '');
     set(success, false);
@@ -62,7 +67,7 @@ export function useSettingModel<K extends WritableSettingKey>(
   watch(model, (value) => {
     if (isEqual(value, get(source)))
       return;
-    startPromise(schedule(value));
+    startPromise(schedule());
   });
 
   return {
