@@ -22,8 +22,20 @@ KINETIQ_STAKING_MANAGERS: Final = {
     string_to_evm_address('0x09B4cdA849037D1717e91D201EE416bf1c113895'): 'eip155:999/erc20:0x498edC41Fa92530920a95483dea7a6CCe91F1C5c',  # HYLQ hylqHYPE  # noqa: E501
 }
 
+# Kinetiq Earn: a Veda BoringVault. Deposits go through its teller and mint vkHYPE
+# (the vault contract is also the share token), withdrawals go through the on-chain
+# withdraw queue and are executed by solvers after maturity.
+KINETIQ_EARN_VAULT: Final = string_to_evm_address('0x9BA2EDc44E0A4632EB4723E81d4142353e1bB160')
+KINETIQ_EARN_QUEUE: Final = string_to_evm_address('0x08a9552688F8DEC4835f5396ca3D1fd2713f79A7')
+VKHYPE_TOKEN_ID: Final = 'eip155:999/erc20:0x9BA2EDc44E0A4632EB4723E81d4142353e1bB160'
+
 STAKE_RECEIVED_TOPIC: Final = b'\xf4\x03S\xee\x0e\x00\xd0\x04\xd0Z\xf8\\b\x1c\xb1\x7f\x88H]$Fc\xa0\xb1\x00\xa1LvZ>\x86\xf7'  # noqa: E501
 WITHDRAWAL_QUEUED_TOPIC: Final = b'\xbf\x9e\x91|\x1f\x92\xe3\x1f\xa4[)\x7f\x9a\x8c"\x99:V\x04x\xbb\xb7e\xb3\xfcC\r\x7f\xa6.\x08<'  # noqa: E501
 WITHDRAWAL_CONFIRMED_TOPIC: Final = b"z\t\x91`\x98i\x16TkV\xe2\x8a _\xfdlF\xad\xbe\xdd';\xea\xc7(\xfc\x0eo\xaf-\xfbL"  # noqa: E501
 INSTANT_UNSTAKE_EXECUTED_TOPIC: Final = b'\x17\x01\x9b;\xe6=\xd0\xe3\xa8\xa8\xf0\x82\xd3\x12\xa7\xd0\xc3\xfe\xdf\x98\x99"P\xf3\x9d\xcc\xb0\xf8\x02\tlW'  # noqa: E501
 REDELEGATION_REQUESTED_TOPIC: Final = b'\xa0V-\xa8\xc9}\x80\x11\xe7i\rb\xb3\xf0\xaf\xed\x08\x8f\xa6\x1ce(\x8dkj\xb6\xc0-@\xd8\x05\x1a'  # noqa: E501
+VAULT_ENTER_TOPIC: Final = b'\xea\x00\xf8\x87h\xa8a\x84\xa6\xe5\x15#\x8aT\x9c\x17\x17i\xfet`\xa0\x11\xd6\xfd\x0b\xcdH\xca\x07\x8e\xa4'  # noqa: E501
+VAULT_EXIT_TOPIC: Final = b'\xe0\xc8"\x80\xa1\x16F\x80\xe0\xcfC\xbe}\xb4\xc4\xc9\xf9\x85B6#\xadzTO\xb7lw+\xdc`C'  # noqa: E501
+ONCHAIN_WITHDRAW_REQUESTED_TOPIC: Final = b'.\xb0\x8e\xbd\xb4\xd6\x8bJ7\xe3\xb4$\x92\x7f3c\xe1\xd7\x99\xca~V\xe7\xb2\xc5\x9c\xc6\xc1w\x8d3\xf5'  # noqa: E501
+ONCHAIN_WITHDRAW_CANCELLED_TOPIC: Final = b'\x11N\xf4!\xae\xf5W\xf2\xe4\x08c\x96x\x9e\x7f\xb52\xb1\x13?\xf2\x98,\x9d\x94\x8d\xaas\xd0i\x1e6'  # noqa: E501
+ONCHAIN_WITHDRAW_SOLVED_TOPIC: Final = b'\xd9O\xc4\x9aex\x87?\xf8Qg\x1d\x19\xca\xcb\x18\t\x88\x7fz\x91(\x86~\xe40m\xc3\xff\xc9<&'  # noqa: E501

@@ -2,7 +2,7 @@
 Changelog
 =========
 
-* :feature:`-` Kinetiq liquid staking on HyperEVM is now supported. Staking, withdrawals (queued and instant) are decoded, and the HYPE value of pending withdrawals is detected in your balances.
+* :feature:`-` Kinetiq liquid staking on HyperEVM is now supported. Staking, withdrawals (queued and instant) are decoded, and the HYPE value of pending withdrawals is detected in your balances. Also Kinetiq earn vaults are supported.
 * :feature:`12559` History events can now be filtered by an amount range. Two new filters, minimum and maximum amount, are available in the history events view and can be combined with the asset filter to e.g. find all EURe payments between 25 and 30 EURe.
 * :feature:`-` The Gwei Name Service (.gwei names) is now supported. Registrations, renewals, subdomains, primary names and record changes are decoded, .gwei names resolve in address inputs, a new opt-in "GNS names" source in the address name priority setting shows gwei names for your addresses configurable relative to ENS, avatars of gwei names are displayed following the same priority setting, and calendar entries with reminders are created for upcoming gwei name expiries just like for ENS.
 * :feature:`12002` You can now jump straight from a history event to the accounting rule that governs it, and from an accounting rule to the events it matches, with the event type, subtype and counterparty filter applied automatically.

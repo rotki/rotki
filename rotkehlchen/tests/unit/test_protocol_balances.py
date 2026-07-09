@@ -1695,8 +1695,32 @@ def test_kinetiq_pending_withdrawal_balances(
         evm_inquirer=hyperliquid_inquirer,
         tx_decoder=tx_decoder,
     ).query_balances()
-    amount = FVal('9.140056182774328838')
-    assert protocol_balances[hyperliquid_accounts[0]].assets[A_HYPE][CPT_KINETIQ] == Balance(
-        amount=amount,
+    expected_balance = Balance(  # a walrus inside the assert hits an UnboundLocalError under pytest's assertion rewriting  # noqa: E501
+        amount=(amount := FVal('9.140056182774328838')),
         value=amount * FVal(1.5),
     )
+    assert protocol_balances[hyperliquid_accounts[0]].assets[A_HYPE][CPT_KINETIQ] == expected_balance  # noqa: E501
+
+
+@pytest.mark.parametrize('hyperliquid_accounts', [['0xD161D9C1871372c150ED68Fcc90Be73a9062a1b1']])
+def test_kinetiq_earn_pending_withdrawal_balances(
+        hyperliquid_inquirer: 'HyperliquidInquirer',
+        hyperliquid_accounts: list[ChecksumEvmAddress],
+        inquirer: 'Inquirer',  # pylint: disable=unused-argument
+) -> None:
+    """Check that the value of Kinetiq Earn withdrawal requests still pending in the
+    on-chain withdraw queue is detected"""
+    _, tx_decoder = get_decoded_events_of_transaction(
+        evm_inquirer=hyperliquid_inquirer,
+        tx_hash=deserialize_evm_tx_hash('0x5fa977bc915e9bd14622a1c1556aab103eea31f8e9ebc60bcab84525cf01796b'),
+    )
+    protocol_balances = KinetiqBalances(
+        evm_inquirer=hyperliquid_inquirer,
+        tx_decoder=tx_decoder,
+    ).query_balances()
+    expected_balance = Balance(  # a walrus inside the assert hits an UnboundLocalError under pytest's assertion rewriting  # noqa: E501
+        amount=(amount := FVal('10.650464908520496564')),
+        value=amount * FVal(1.5),
+    )
+    khype = Asset('eip155:999/erc20:0xfD739d4e423301CE9385c1fb8850539D657C296D')
+    assert protocol_balances[hyperliquid_accounts[0]].assets[khype][CPT_KINETIQ] == expected_balance  # noqa: E501
