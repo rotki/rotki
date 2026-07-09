@@ -272,6 +272,67 @@ describe('useHistoryEventFilter', () => {
     });
   });
 
+  describe('amount range validation', () => {
+    it('should include the min and max amount matchers', () => {
+      const { matchers } = useHistoryEventFilter({});
+      const computedMatchers = get(matchers);
+
+      const minAmountMatcher = computedMatchers.find(m => m.key === 'min_amount');
+      const maxAmountMatcher = computedMatchers.find(m => m.key === 'max_amount');
+      expect(minAmountMatcher).toBeDefined();
+      expect(minAmountMatcher?.description).toContain('transactions.filter.min_amount');
+      expect(maxAmountMatcher).toBeDefined();
+      expect(maxAmountMatcher?.description).toContain('transactions.filter.max_amount');
+    });
+
+    it('should reject non-numeric or negative amounts', () => {
+      const { matchers } = useHistoryEventFilter({});
+      const computedMatchers = get(matchers);
+      const minAmountMatcher = computedMatchers.find(m => m.key === 'min_amount');
+      assert(minAmountMatcher && 'validate' in minAmountMatcher);
+
+      expect(minAmountMatcher.validate('abc')).toBe(false);
+      expect(minAmountMatcher.validate('-1')).toBe(false);
+      expect(minAmountMatcher.validate('')).toBe(false);
+    });
+
+    it('should accept a numeric amount when no other bound is set', () => {
+      const { matchers } = useHistoryEventFilter({});
+      const computedMatchers = get(matchers);
+      const minAmountMatcher = computedMatchers.find(m => m.key === 'min_amount');
+      const maxAmountMatcher = computedMatchers.find(m => m.key === 'max_amount');
+      assert(minAmountMatcher && 'validate' in minAmountMatcher);
+      assert(maxAmountMatcher && 'validate' in maxAmountMatcher);
+
+      expect(minAmountMatcher.validate('25')).toBe(true);
+      expect(maxAmountMatcher.validate('30.5')).toBe(true);
+    });
+
+    it('should reject a min amount that is greater than the max amount', () => {
+      const { matchers, filters } = useHistoryEventFilter({});
+      set(filters, { maxAmount: '30' });
+
+      const computedMatchers = get(matchers);
+      const minAmountMatcher = computedMatchers.find(m => m.key === 'min_amount');
+      assert(minAmountMatcher && 'validate' in minAmountMatcher);
+
+      expect(minAmountMatcher.validate('31')).toBe(false);
+      expect(minAmountMatcher.validate('25')).toBe(true);
+    });
+
+    it('should reject a max amount that is smaller than the min amount', () => {
+      const { matchers, filters } = useHistoryEventFilter({});
+      set(filters, { minAmount: '25' });
+
+      const computedMatchers = get(matchers);
+      const maxAmountMatcher = computedMatchers.find(m => m.key === 'max_amount');
+      assert(maxAmountMatcher && 'validate' in maxAmountMatcher);
+
+      expect(maxAmountMatcher.validate('24')).toBe(false);
+      expect(maxAmountMatcher.validate('30')).toBe(true);
+    });
+  });
+
   describe('send selected location to asset search', () => {
     it('should pass the location string to assetSuggestions for chain sanitization', () => {
       const { matchers, filters } = useHistoryEventFilter({});

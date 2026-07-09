@@ -243,6 +243,28 @@ class DBTimestampFilter(DBFilter):
 
 
 @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
+class DBAmountRangeFilter(DBFilter):
+    """Filter a TEXT amount column by a numeric range, casting it to REAL.
+
+    The cast loses precision beyond float range, which is acceptable for searching.
+    """
+    column: str = 'amount'
+    min_amount: FVal | None = None
+    max_amount: FVal | None = None
+
+    def prepare(self) -> tuple[list[str], list[Any]]:
+        filters, bindings = [], []
+        if self.min_amount is not None:
+            filters.append(f'CAST({self.column} AS REAL) >= ?')
+            bindings.append(float(self.min_amount))
+        if self.max_amount is not None:
+            filters.append(f'CAST({self.column} AS REAL) <= ?')
+            bindings.append(float(self.max_amount))
+
+        return filters, bindings
+
+
+@dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
 class DBEvmTransactionJoinsFilter(DBFilter):
     """This join finds transactions involving any of the address/chain combos.
     Including internal ones. This uses the mappings we create in the DB at transaction
@@ -912,6 +934,8 @@ class HistoryBaseEntryFilterQuery(DBFilterQuery, FilterWithTimestamp, FilterWith
             exclude_ignored_assets: bool = False,
             state_markers: list[HistoryMappingState] | None = None,
             notes_substring: str | None = None,
+            min_amount: FVal | None = None,
+            max_amount: FVal | None = None,
     ) -> Self:
         """May raise:
         - InvalidFilter for invalid combination of filters
@@ -1050,6 +1074,12 @@ class HistoryBaseEntryFilterQuery(DBFilterQuery, FilterWithTimestamp, FilterWith
                     search_string=notes_substring,
                 ),
             )
+        if min_amount is not None or max_amount is not None:
+            filters.append(DBAmountRangeFilter(
+                and_op=True,
+                min_amount=min_amount,
+                max_amount=max_amount,
+            ))
 
         filter_query.timestamp_filter = DBTimestampFilter(
             and_op=True,
@@ -1126,6 +1156,8 @@ class AssetMovementMatchFilterQuery(HistoryEventFilterQuery):
             exclude_ignored_assets: bool = False,
             state_markers: list[HistoryMappingState] | None = None,
             notes_substring: str | None = None,
+            min_amount: FVal | None = None,
+            max_amount: FVal | None = None,
             asset_timestamp_ranges: list[tuple[tuple[Asset, ...], TimestampMS, TimestampMS]] | None = None,  # noqa: E501
             entry_types_to_exclude: list[HistoryBaseEntryType] | None = None,
     ) -> Self:
@@ -1160,6 +1192,8 @@ class AssetMovementMatchFilterQuery(HistoryEventFilterQuery):
             exclude_ignored_assets=exclude_ignored_assets,
             state_markers=state_markers,
             notes_substring=notes_substring,
+            min_amount=min_amount,
+            max_amount=max_amount,
         )
         if len(asset_timestamp_ranges) != 0:
             filter_query.filters.append(DBAssetMovementsMatchFilter(
@@ -1196,6 +1230,8 @@ class HistoryEventWithTxRefFilterQuery(HistoryBaseEntryFilterQuery):
             exclude_ignored_assets: bool = False,
             state_markers: list[HistoryMappingState] | None = None,
             notes_substring: str | None = None,
+            min_amount: FVal | None = None,
+            max_amount: FVal | None = None,
             tx_refs: list[EVMTxHash | BTCTxId | Signature] | None = None,
     ) -> Self:
         if entry_types is None:
@@ -1230,6 +1266,8 @@ class HistoryEventWithTxRefFilterQuery(HistoryBaseEntryFilterQuery):
             exclude_ignored_assets=exclude_ignored_assets,
             state_markers=state_markers,
             notes_substring=notes_substring,
+            min_amount=min_amount,
+            max_amount=max_amount,
         )
         if tx_refs is not None and len(tx_refs) > 0:
             group_identifiers, tx_ref_values = [], []
@@ -1323,6 +1361,8 @@ class HistoryEventWithCounterpartyFilterQuery(HistoryEventWithTxRefFilterQuery):
             exclude_ignored_assets: bool = False,
             state_markers: list[HistoryMappingState] | None = None,
             notes_substring: str | None = None,
+            min_amount: FVal | None = None,
+            max_amount: FVal | None = None,
             tx_refs: list[EVMTxHash | BTCTxId | Signature] | None = None,
             counterparties: list[str] | None = None,
             addresses: list[ChecksumEvmAddress | SolanaAddress | BTCAddress] | None = None,
@@ -1359,6 +1399,8 @@ class HistoryEventWithCounterpartyFilterQuery(HistoryEventWithTxRefFilterQuery):
             exclude_ignored_assets=exclude_ignored_assets,
             state_markers=state_markers,
             notes_substring=notes_substring,
+            min_amount=min_amount,
+            max_amount=max_amount,
             tx_refs=tx_refs,
         )
         if counterparties is not None and len(counterparties) > 0:
@@ -1412,6 +1454,8 @@ class SolanaEventFilterQuery(HistoryEventWithCounterpartyFilterQuery):
             exclude_ignored_assets: bool = False,
             state_markers: list[HistoryMappingState] | None = None,
             notes_substring: str | None = None,
+            min_amount: FVal | None = None,
+            max_amount: FVal | None = None,
             signatures: list[Signature] | None = None,
             counterparties: list[str] | None = None,
             addresses: list[SolanaAddress] | None = None,
@@ -1445,6 +1489,8 @@ class SolanaEventFilterQuery(HistoryEventWithCounterpartyFilterQuery):
             exclude_ignored_assets=exclude_ignored_assets,
             state_markers=state_markers,
             notes_substring=notes_substring,
+            min_amount=min_amount,
+            max_amount=max_amount,
             counterparties=counterparties,
         )
 
@@ -1521,6 +1567,8 @@ class EvmEventFilterQuery(HistoryEventWithCounterpartyFilterQuery):
             exclude_ignored_assets: bool = False,
             state_markers: list[HistoryMappingState] | None = None,
             notes_substring: str | None = None,
+            min_amount: FVal | None = None,
+            max_amount: FVal | None = None,
             tx_hashes: list[EVMTxHash] | None = None,
             counterparties: list[str] | None = None,
             addresses: list[ChecksumEvmAddress] | None = None,
@@ -1552,6 +1600,8 @@ class EvmEventFilterQuery(HistoryEventWithCounterpartyFilterQuery):
             exclude_ignored_assets=exclude_ignored_assets,
             state_markers=state_markers,
             notes_substring=notes_substring,
+            min_amount=min_amount,
+            max_amount=max_amount,
             counterparties=counterparties,
         )
 
@@ -1638,6 +1688,8 @@ class EthStakingEventFilterQuery(HistoryBaseEntryFilterQuery, ABC):
             exclude_ignored_assets: bool = False,
             state_markers: list[HistoryMappingState] | None = None,
             notes_substring: str | None = None,
+            min_amount: FVal | None = None,
+            max_amount: FVal | None = None,
             validator_indices: list[int] | None = None,
     ) -> Self:
         if entry_types is None:
@@ -1667,6 +1719,8 @@ class EthStakingEventFilterQuery(HistoryBaseEntryFilterQuery, ABC):
             exclude_ignored_assets=exclude_ignored_assets,
             state_markers=state_markers,
             notes_substring=notes_substring,
+            min_amount=min_amount,
+            max_amount=max_amount,
         )
         if validator_indices is not None:
             filter_query.filters.append(DBMultiIntegerFilter(
@@ -1720,6 +1774,8 @@ class EthWithdrawalFilterQuery(EthStakingEventFilterQuery):
             exclude_ignored_assets: bool = False,
             state_markers: list[HistoryMappingState] | None = None,
             notes_substring: str | None = None,
+            min_amount: FVal | None = None,
+            max_amount: FVal | None = None,
             validator_indices: list[int] | None = None,
             withdrawal_types_filter: WithdrawalTypesFilter = WithdrawalTypesFilter.ALL,
     ) -> 'EthWithdrawalFilterQuery':
@@ -1750,6 +1806,8 @@ class EthWithdrawalFilterQuery(EthStakingEventFilterQuery):
             exclude_ignored_assets=exclude_ignored_assets,
             state_markers=state_markers,
             notes_substring=notes_substring,
+            min_amount=min_amount,
+            max_amount=max_amount,
             validator_indices=validator_indices,
         )
         if withdrawal_types_filter != WithdrawalTypesFilter.ALL:

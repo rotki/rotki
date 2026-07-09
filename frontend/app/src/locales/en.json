@@ -6400,6 +6400,8 @@
       "location": "filter by event location",
       "match_exact_filter": "Should match exact filter",
       "match_exact_filter_hint": "If enabled, it will show only the events that match the filter, excluding the other events in the same group.",
+      "max_amount": "filter by maximum amount",
+      "min_amount": "filter by minimum amount",
       "notes": "filter by notes content",
       "protocol": "filter by the protocol of the events",
       "show_ignored_assets": "Show entries with ignored assets",

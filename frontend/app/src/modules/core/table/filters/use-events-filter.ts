@@ -42,6 +42,8 @@ export enum HistoryEventFilterKeys {
   VALIDATOR_INDICES = 'validator_index',
   ADDRESSES = 'address',
   NOTES = 'notes',
+  MIN_AMOUNT = 'min_amount',
+  MAX_AMOUNT = 'max_amount',
 }
 
 enum HistoryEventFilterValueKeys {
@@ -57,9 +59,32 @@ enum HistoryEventFilterValueKeys {
   VALIDATOR_INDICES = 'validatorIndices',
   ADDRESSES = 'addresses',
   NOTES = 'notesSubstring',
+  MIN_AMOUNT = 'minAmount',
+  MAX_AMOUNT = 'maxAmount',
 }
 
 export type Matcher = SearchMatcher<HistoryEventFilterKeys, HistoryEventFilterValueKeys>;
+
+function amountRangeValidator(
+  otherBound: () => string | undefined,
+  bound: 'min' | 'max',
+): (amount: string) => boolean {
+  return (amount: string): boolean => {
+    const parsed = Number(amount);
+    if (!amount || Number.isNaN(parsed) || parsed < 0)
+      return false;
+
+    const other = otherBound();
+    if (other === undefined)
+      return true;
+
+    const otherParsed = Number(other);
+    if (Number.isNaN(otherParsed))
+      return true;
+
+    return bound === 'min' ? parsed <= otherParsed : parsed >= otherParsed;
+  };
+}
 
 export type Filters = MatchedKeywordWithBehaviour<HistoryEventFilterValueKeys>;
 
@@ -182,6 +207,22 @@ export function useHistoryEventFilter(
         string: true,
         suggestions: () => [],
         validate: (notes: string) => !!notes,
+      },
+      {
+        description: t('transactions.filter.min_amount'),
+        key: HistoryEventFilterKeys.MIN_AMOUNT,
+        keyValue: HistoryEventFilterValueKeys.MIN_AMOUNT,
+        string: true,
+        suggestions: () => [],
+        validate: amountRangeValidator(() => get(filters)?.maxAmount?.toString(), 'min'),
+      },
+      {
+        description: t('transactions.filter.max_amount'),
+        key: HistoryEventFilterKeys.MAX_AMOUNT,
+        keyValue: HistoryEventFilterValueKeys.MAX_AMOUNT,
+        string: true,
+        suggestions: () => [],
+        validate: amountRangeValidator(() => get(filters)?.minAmount?.toString(), 'max'),
       },
     ];
 
@@ -319,6 +360,8 @@ export function useHistoryEventFilter(
     [HistoryEventFilterValueKeys.EVENT_SUBTYPE]: OptionalMultipleString,
     [HistoryEventFilterValueKeys.EVENT_TYPE]: OptionalMultipleString,
     [HistoryEventFilterValueKeys.LOCATION]: OptionalString,
+    [HistoryEventFilterValueKeys.MAX_AMOUNT]: OptionalString,
+    [HistoryEventFilterValueKeys.MIN_AMOUNT]: OptionalString,
     [HistoryEventFilterValueKeys.NOTES]: OptionalString,
     [HistoryEventFilterValueKeys.PROTOCOL]: OptionalMultipleString,
     [HistoryEventFilterValueKeys.TX_HASHES]: OptionalMultipleString,

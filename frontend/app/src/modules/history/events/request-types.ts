@@ -19,6 +19,8 @@ export interface HistoryEventRequestPayload extends PaginationRequestPayload<{ t
   readonly excludeIgnoredAssets?: boolean;
   readonly identifiers?: string[];
   readonly notesSubstring?: string;
+  readonly minAmount?: string;
+  readonly maxAmount?: string;
   readonly stateMarkers?: string[];
 }
 

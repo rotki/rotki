@@ -214,6 +214,8 @@ def test_history_events_deletion_schema_field_coverage() -> None:
         'state_markers',
         'identifiers',
         'notes_substring',
+        'min_amount',
+        'max_amount',
         'tx_refs',
         'addresses',
         'validator_indices',
