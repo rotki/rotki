@@ -156,8 +156,10 @@ def _remove_canceling_ledger_legs(event_set: list[tuple[int, HistoryEvent]]) -> 
                     receive_entry[1].amount == spend_entry[1].amount
             ):
                 log.debug(
-                    f'Removing kraken internal settlement legs that cancel each other '
-                    f'out: {spend_entry[1]} and {receive_entry[1]}',
+                    'Removing kraken internal settlement legs that cancel each other '
+                    'out: %s and %s',
+                    spend_entry[1],
+                    receive_entry[1],
                 )
                 event_set.remove(spend_entry)
                 event_set.remove(receive_entry)
