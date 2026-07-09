@@ -22,6 +22,8 @@ from rotkehlchen.chain.evm.transactions import EvmTransactions
 from rotkehlchen.chain.evm.types import NodeName, WeightedNode, string_to_evm_address
 from rotkehlchen.chain.gnosis.decoding.decoder import GnosisTransactionDecoder
 from rotkehlchen.chain.gnosis.transactions import GnosisTransactions
+from rotkehlchen.chain.hyperliquid.decoding.decoder import HyperliquidTransactionDecoder
+from rotkehlchen.chain.hyperliquid.transactions import HyperliquidTransactions
 from rotkehlchen.chain.monad.decoding.decoder import MonadTransactionDecoder
 from rotkehlchen.chain.monad.transactions import MonadTransactions
 from rotkehlchen.chain.optimism.decoding.decoder import OptimismTransactionDecoder
@@ -57,6 +59,7 @@ if TYPE_CHECKING:
     from rotkehlchen.chain.evm.decoding.decoder import EVMTransactionDecoder
     from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
     from rotkehlchen.chain.gnosis.node_inquirer import GnosisInquirer
+    from rotkehlchen.chain.hyperliquid.node_inquirer import HyperliquidInquirer
     from rotkehlchen.chain.optimism.node_inquirer import OptimismInquirer
     from rotkehlchen.chain.polygon_pos.node_inquirer import PolygonPOSInquirer
     from rotkehlchen.chain.scroll.node_inquirer import ScrollInquirer
@@ -427,6 +430,17 @@ def get_decoded_events_of_transaction(
     ...
 
 
+@overload
+def get_decoded_events_of_transaction(
+        evm_inquirer: 'HyperliquidInquirer',
+        tx_hash: EVMTxHash,
+        transactions: EvmTransactions | None = None,
+        relevant_address: ChecksumAddress | None = None,
+        load_global_caches: list[str] | None = None,
+) -> tuple[list['EvmEvent'], HyperliquidTransactionDecoder]:
+    ...
+
+
 def get_decoded_events_of_transaction(
         evm_inquirer: 'EvmNodeInquirer',
         tx_hash: EVMTxHash,
@@ -458,6 +472,7 @@ def get_decoded_events_of_transaction(
         ChainID.SCROLL: (ScrollTransactions, ScrollTransactionDecoder),
         ChainID.BINANCE_SC: (BinanceSCTransactions, BinanceSCTransactionDecoder),
         ChainID.MONAD: (MonadTransactions, MonadTransactionDecoder),
+        ChainID.HYPERLIQUID: (HyperliquidTransactions, HyperliquidTransactionDecoder),
     }
     mappings_result = chain_mappings.get(evm_inquirer.chain_id)
     if mappings_result is not None:

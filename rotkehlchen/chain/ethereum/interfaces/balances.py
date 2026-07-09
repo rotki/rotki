@@ -56,6 +56,7 @@ PROTOCOLS_WITH_BALANCES = Literal[
     'uniswap-v3',
     'hedgey',
     'hyperliquid',
+    'kinetiq',
     'pendle',
     'runmoney',
     'lido-csm',

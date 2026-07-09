@@ -55,6 +55,7 @@ from rotkehlchen.chain.evm.decoding.hop.balances import HopBalances
 from rotkehlchen.chain.evm.decoding.woo_fi.balances import WoofiBalances
 from rotkehlchen.chain.evm.types import EvmIndexer
 from rotkehlchen.chain.gnosis.modules.giveth.balances import GivethBalances as GivethGnosisBalances
+from rotkehlchen.chain.hyperliquid.modules.kinetiq.balances import KinetiqBalances
 from rotkehlchen.chain.optimism.modules.extrafi.balances import (
     ExtrafiBalances as ExtrafiBalancesOp,
 )
@@ -244,7 +245,7 @@ CHAIN_TO_BALANCE_PROTOCOLS = {
         HopBalances,
         GivethGnosisBalances,
     ),
-    ChainID.HYPERLIQUID: (),
+    ChainID.HYPERLIQUID: (KinetiqBalances,),
     ChainID.SCROLL: (Compoundv3Balances,),
     ChainID.BINANCE_SC: (WoofiBalances,),
     ChainID.MONAD: (),
