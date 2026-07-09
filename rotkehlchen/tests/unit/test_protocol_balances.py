@@ -74,6 +74,8 @@ from rotkehlchen.chain.evm.decoding.woo_fi.constants import CPT_WOO_FI
 from rotkehlchen.chain.evm.tokens import TokenBalancesType
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.chain.gnosis.modules.giveth.balances import GivethBalances as GivethGnosisBalances
+from rotkehlchen.chain.hyperliquid.modules.kinetiq.balances import KinetiqBalances
+from rotkehlchen.chain.hyperliquid.modules.kinetiq.constants import CPT_KINETIQ
 from rotkehlchen.chain.optimism.modules.extrafi.balances import ExtrafiBalances
 from rotkehlchen.chain.optimism.modules.giveth.balances import (
     GivethBalances as GivethOptimismBalances,
@@ -94,6 +96,7 @@ from rotkehlchen.constants.assets import (
     A_GLM,
     A_GMX,
     A_GRT_ARB,
+    A_HYPE,
     A_STETH,
     A_USDC,
     A_WBTC,
@@ -150,6 +153,7 @@ if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.decoding.decoder import EthereumTransactionDecoder
     from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
     from rotkehlchen.chain.gnosis.node_inquirer import GnosisInquirer
+    from rotkehlchen.chain.hyperliquid.node_inquirer import HyperliquidInquirer
     from rotkehlchen.chain.optimism.decoding.decoder import OptimismTransactionDecoder
     from rotkehlchen.chain.optimism.node_inquirer import OptimismInquirer
     from rotkehlchen.inquirer import Inquirer
@@ -1674,3 +1678,25 @@ def test_pickle_dill_zero_positions_skip_price_query(
     assert price_mock.call_count == 1
     assert result[user_address].pending_rewards.balance.amount == FVal(5)
     assert result[user_address].pending_rewards.balance.value == FVal(10)
+
+
+@pytest.mark.parametrize('hyperliquid_accounts', [['0xC16D03879B158604958A7bAE8b61763c2953a5f2']])
+def test_kinetiq_pending_withdrawal_balances(
+        hyperliquid_inquirer: 'HyperliquidInquirer',
+        hyperliquid_accounts: list[ChecksumEvmAddress],
+        inquirer: 'Inquirer',  # pylint: disable=unused-argument
+) -> None:
+    """Check that the HYPE value of queued but unconfirmed Kinetiq withdrawals is detected"""
+    _, tx_decoder = get_decoded_events_of_transaction(
+        evm_inquirer=hyperliquid_inquirer,
+        tx_hash=deserialize_evm_tx_hash('0x1638247ae17adceb57fb31545c569ceed387c1d82c9b8e9ef55cfcec5446bf25'),
+    )
+    protocol_balances = KinetiqBalances(
+        evm_inquirer=hyperliquid_inquirer,
+        tx_decoder=tx_decoder,
+    ).query_balances()
+    amount = FVal('9.140056182774328838')
+    assert protocol_balances[hyperliquid_accounts[0]].assets[A_HYPE][CPT_KINETIQ] == Balance(
+        amount=amount,
+        value=amount * FVal(1.5),
+    )

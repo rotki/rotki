@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :feature:`-` Kinetiq liquid staking on HyperEVM is now supported. Staking, withdrawals (queued and instant) are decoded, and the HYPE value of pending withdrawals is detected in your balances.
 * :feature:`-` The Gwei Name Service (.gwei names) is now supported. Registrations, renewals, subdomains, primary names and record changes are decoded, .gwei names resolve in address inputs, a new opt-in "GNS names" source in the address name priority setting shows gwei names for your addresses configurable relative to ENS, avatars of gwei names are displayed following the same priority setting, and calendar entries with reminders are created for upcoming gwei name expiries just like for ENS.
 * :feature:`12002` You can now jump straight from a history event to the accounting rule that governs it, and from an accounting rule to the events it matches, with the event type, subtype and counterparty filter applied automatically.
 * :feature:`12002` The history event editor and the accounting rules settings now link out to documentation explaining each event type, subtype and accounting rule option, so it is clearer what options like "Count cost basis PnL" or the Swap and Basis transfer treatments do.
