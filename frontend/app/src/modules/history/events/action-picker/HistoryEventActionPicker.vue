@@ -24,8 +24,8 @@ const { entryType, disabled = false, label, errorMessages, required = false, hin
   hint?: string;
 }>();
 // Synthetic group used to pin frequently picked verbs to the top. Recent rows
-// reuse a real row but carry a distinct key/group so RuiAutoComplete doesn't
-// collide with the canonical row that also lives in its taxonomy group.
+// reuse a real row but carry a distinct key/group so the picker doesn't collide
+// with the canonical row that also lives in its taxonomy group.
 const RECENT_GROUP_ID = '__recent__';
 const RECENT_KEY_PREFIX = 'recent:';
 
@@ -112,6 +112,31 @@ function getGroupConfig(groupId: string): GroupHeaderConfig {
   return { classes: 'text-rui-text-secondary', icon: group.icon, label: group.label };
 }
 
+// RuiCategoryPicker uses the category string for both grouping and the header it
+// prints in the detail pane, so category-of must return the human label rather
+// than the raw group id (otherwise the detail header shows e.g. `__recent__`).
+function categoryLabelOf(row: EventActionRow): string {
+  return getGroupConfig(row.groupId).label || row.groupId;
+}
+
+// Reverse lookup so the rail slot can recover each group's icon/classes/testId
+// from the label RuiCategoryPicker hands back.
+const categoryConfigByLabel = computed<Map<string, GroupHeaderConfig>>(() => {
+  const map = new Map<string, GroupHeaderConfig>();
+  const recent = getGroupConfig(RECENT_GROUP_ID);
+  map.set(recent.label, recent);
+  for (const groupId in get(eventCategoryGroupsData)) {
+    const config = getGroupConfig(groupId);
+    map.set(config.label || groupId, config);
+  }
+  return map;
+});
+
+function categoryConfig(category: string): GroupHeaderConfig {
+  return get(categoryConfigByLabel).get(category)
+    ?? { classes: 'text-rui-text-secondary', icon: FALLBACK_GROUP.icon, label: category };
+}
+
 function rowEventTypes(row: EventActionRow): string {
   return row.combinations.map(c => `${c.eventType}:${c.eventSubtype}`).join(' ');
 }
@@ -144,9 +169,9 @@ function subtitleFor(row: EventActionRow): string {
 }
 
 function onUpdate(verbKey: string | undefined): void {
-  // The picker is required and has no clear affordance, so we must reject
-  // RuiAutoComplete's implicit clears (Backspace-from-empty, options-watcher
-  // resync) and only react to genuine row selections. The defensive watcher
+  // The picker is required and has no clear affordance, so we only react to
+  // genuine row selections. RuiCategoryPicker never emits implicit clears, so
+  // the old Backspace/resync guard is no longer needed. The defensive watcher
   // above still clears the model when the current value is no longer mappable
   // to a row (e.g. after an entry-type switch).
   if (!verbKey)
@@ -176,14 +201,14 @@ function onUpdate(verbKey: string | undefined): void {
 </script>
 
 <template>
-  <RuiAutoComplete
-    v-model:search-input="search"
+  <RuiCategoryPicker
+    v-model:search="search"
     :model-value="selectedVerbKey"
-    :options="displayRows"
+    :items="displayRows"
     key-attr="verbKey"
     text-attr="label"
     variant="outlined"
-    :group-by="(row: EventActionRow) => row.groupId"
+    :category-of="categoryLabelOf"
     :label="triggerLabel"
     :placeholder="t('history_event_action.picker.placeholder')"
     :disabled="disabled"
@@ -196,7 +221,7 @@ function onUpdate(verbKey: string | undefined): void {
   >
     <template #selection="{ item }">
       <div
-        class="flex items-center gap-2 min-w-0"
+        class="flex items-center gap-2 min-w-0 w-full"
         data-testid="event-action-picker-selection"
       >
         <RuiIcon
@@ -204,24 +229,50 @@ function onUpdate(verbKey: string | undefined): void {
           size="16"
           class="shrink-0 text-rui-text"
         />
-        <span class="font-medium text-rui-text truncate">{{ item.label }}</span>
+        <span class="font-medium text-rui-text shrink-0">{{ item.label }}</span>
+        <span
+          v-if="subtitleFor(item)"
+          class="text-xs text-rui-text-secondary truncate min-w-0"
+          data-testid="event-action-picker-selection-description"
+        >
+          {{ subtitleFor(item) }}
+        </span>
+        <!--
+          Pin the direction toward the chevron. RuiCategoryPicker's selection
+          layer applies `w-full` on top of its `left-4 right-8` box, so the
+          layer overflows ~16px past the field's right edge and reserves no room
+          for the chevron; the wide right margin clears it (verified ~12px gap).
+          Workaround for rotki/ui-library#559 — drop the margin once fixed.
+        -->
         <HistoryEventActionDirectionBadge
           :direction="item.direction"
-          class="shrink-0 ml-2"
+          class="shrink-0 ml-auto mr-16"
         />
       </div>
     </template>
-    <template #group-header="{ group }">
+    <template #category="{ category, label: categoryLabel }">
       <div
-        class="flex items-center gap-2 px-3 py-2 text-xs uppercase tracking-wide"
-        :class="getGroupConfig(group).classes"
-        :data-testid="getGroupConfig(group).testId"
+        v-if="category === null"
+        class="flex items-center gap-2 text-rui-text-secondary"
       >
         <RuiIcon
-          :name="getGroupConfig(group).icon"
-          size="14"
+          name="lu-layers"
+          size="16"
         />
-        <span>{{ getGroupConfig(group).label }}</span>
+        <span class="truncate">{{ categoryLabel }}</span>
+      </div>
+      <div
+        v-else
+        class="flex items-center gap-2 min-w-0"
+        :class="categoryConfig(category).classes"
+        :data-testid="categoryConfig(category).testId"
+      >
+        <RuiIcon
+          :name="categoryConfig(category).icon"
+          size="16"
+          class="shrink-0"
+        />
+        <span class="truncate">{{ category }}</span>
       </div>
     </template>
     <template #item="{ item }">
@@ -247,7 +298,7 @@ function onUpdate(verbKey: string | undefined): void {
           </div>
           <div
             v-if="subtitleFor(item)"
-            class="text-xs text-rui-text-secondary truncate"
+            class="text-xs text-rui-text-secondary whitespace-normal line-clamp-2"
           >
             {{ subtitleFor(item) }}
           </div>
@@ -258,7 +309,7 @@ function onUpdate(verbKey: string | undefined): void {
         />
       </div>
     </template>
-    <template #no-data>
+    <template #empty>
       <div
         class="flex flex-col gap-1 px-4 py-3 text-sm text-rui-text-secondary"
         data-testid="event-action-picker-empty"
@@ -291,5 +342,5 @@ function onUpdate(verbKey: string | undefined): void {
         <span>{{ t('history_event_action.picker.keyboard_hint') }}</span>
       </div>
     </template>
-  </RuiAutoComplete>
+  </RuiCategoryPicker>
 </template>
