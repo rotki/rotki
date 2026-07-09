@@ -1,12 +1,14 @@
 import logging
 from typing import Any
 
+from rotkehlchen.assets.utils import token_normalized_value
 from rotkehlchen.chain.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.decoding.utils import maybe_reshuffle_events
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
 from rotkehlchen.chain.evm.decoding.interfaces import EvmDecoderInterface
 from rotkehlchen.chain.evm.decoding.structures import (
     DEFAULT_EVM_DECODING_OUTPUT,
+    ActionItem,
     DecoderContext,
     EvmDecodingOutput,
 )
@@ -20,9 +22,17 @@ from .constants import (
     CPT_KINETIQ,
     INSTANT_UNSTAKE_EXECUTED_TOPIC,
     KINETIQ_CPT_DETAILS,
+    KINETIQ_EARN_QUEUE,
+    KINETIQ_EARN_VAULT,
     KINETIQ_STAKING_MANAGERS,
+    ONCHAIN_WITHDRAW_CANCELLED_TOPIC,
+    ONCHAIN_WITHDRAW_REQUESTED_TOPIC,
+    ONCHAIN_WITHDRAW_SOLVED_TOPIC,
     REDELEGATION_REQUESTED_TOPIC,
     STAKE_RECEIVED_TOPIC,
+    VAULT_ENTER_TOPIC,
+    VAULT_EXIT_TOPIC,
+    VKHYPE_TOKEN_ID,
     WITHDRAWAL_CONFIRMED_TOPIC,
     WITHDRAWAL_QUEUED_TOPIC,
 )
@@ -215,6 +225,154 @@ class KinetiqDecoder(EvmDecoderInterface):
         )
         return EvmDecodingOutput(events=[event])
 
+    def _decode_earn_deposit(self, context: DecoderContext) -> EvmDecodingOutput:
+        """Decode a deposit into the Kinetiq Earn vault (a Veda BoringVault).
+        The user deposits kHYPE via the vault's teller and receives vkHYPE shares."""
+        if context.tx_log.topics[0] != VAULT_ENTER_TOPIC:
+            return DEFAULT_EVM_DECODING_OUTPUT
+
+        if not self.base.is_tracked(depositor := bytes_to_address(context.tx_log.topics[3])):
+            return DEFAULT_EVM_DECODING_OUTPUT
+
+        deposit_token = self.base.get_or_create_evm_token(bytes_to_address(context.tx_log.topics[2]))  # noqa: E501
+        deposit_amount = token_normalized_value(
+            token_amount=int.from_bytes(context.tx_log.data[:32]),
+            token=deposit_token,
+        )
+        shares_amount = from_wei(int.from_bytes(context.tx_log.data[32:64]))
+        in_event, out_event = None, None
+        for event in context.decoded_events:
+            if (
+                    event.event_type == HistoryEventType.SPEND and
+                    event.event_subtype == HistoryEventSubType.NONE and
+                    event.asset == deposit_token and
+                    event.amount == deposit_amount and
+                    event.location_label == depositor
+            ):
+                event.event_type = HistoryEventType.DEPOSIT
+                event.event_subtype = HistoryEventSubType.DEPOSIT_FOR_WRAPPED
+                event.notes = f'Deposit {deposit_amount} {deposit_token.symbol} in Kinetiq Earn'
+                event.counterparty = CPT_KINETIQ
+                out_event = event
+            elif (
+                    event.event_type == HistoryEventType.RECEIVE and
+                    event.event_subtype == HistoryEventSubType.NONE and
+                    event.asset.identifier == VKHYPE_TOKEN_ID and
+                    event.amount == shares_amount and
+                    event.location_label == depositor and
+                    event.address == ZERO_ADDRESS
+            ):
+                event.event_subtype = HistoryEventSubType.RECEIVE_WRAPPED
+                event.notes = f'Receive {shares_amount} vkHYPE from depositing in Kinetiq Earn'
+                event.counterparty = CPT_KINETIQ
+                in_event = event
+
+        if out_event is None or in_event is None:
+            log.error('Failed to find the deposit and vkHYPE receive events for Kinetiq Earn deposit', transaction=context.transaction)  # noqa: E501
+            return DEFAULT_EVM_DECODING_OUTPUT
+
+        maybe_reshuffle_events(
+            ordered_events=[out_event, in_event],
+            events_list=context.decoded_events,
+        )
+        return EvmDecodingOutput(matched_counterparty=CPT_KINETIQ)
+
+    def _decode_earn_withdraw_request(self, context: DecoderContext) -> EvmDecodingOutput:
+        """Decode requesting a withdrawal of vkHYPE shares via the on-chain withdraw queue"""
+        if not self.base.is_tracked(user := bytes_to_address(context.tx_log.topics[2])):
+            return DEFAULT_EVM_DECODING_OUTPUT
+
+        asset_out_token = self.base.get_or_create_evm_token(bytes_to_address(context.tx_log.topics[3]))  # noqa: E501
+        shares_amount = from_wei(int.from_bytes(context.tx_log.data[32:64]))
+        assets_amount = token_normalized_value(
+            token_amount=int.from_bytes(context.tx_log.data[64:96]),
+            token=asset_out_token,
+        )
+        for event in context.decoded_events:
+            if (
+                    event.event_type == HistoryEventType.SPEND and
+                    event.event_subtype == HistoryEventSubType.NONE and
+                    event.asset.identifier == VKHYPE_TOKEN_ID and
+                    event.amount == shares_amount and
+                    event.location_label == user and
+                    event.address == KINETIQ_EARN_QUEUE
+            ):
+                event.event_subtype = HistoryEventSubType.RETURN_WRAPPED
+                event.notes = f'Request withdrawal of {shares_amount} vkHYPE worth {assets_amount} {asset_out_token.symbol} from Kinetiq Earn'  # noqa: E501
+                event.counterparty = CPT_KINETIQ
+                event.extra_data = {
+                    'request_id': '0x' + context.tx_log.topics[1].hex(),
+                    'amount_of_assets': str(assets_amount),
+                    'asset_out': asset_out_token.identifier,
+                }
+                break
+        else:
+            log.error('Failed to find the vkHYPE transfer event for Kinetiq Earn withdrawal request', transaction=context.transaction)  # noqa: E501
+
+        return EvmDecodingOutput(matched_counterparty=CPT_KINETIQ)
+
+    def _decode_earn_withdraw_cancel(self, context: DecoderContext) -> EvmDecodingOutput:
+        """Decode cancelling a queued Kinetiq Earn withdrawal, getting the shares back"""
+        if not self.base.is_tracked(user := bytes_to_address(context.tx_log.topics[2])):
+            return DEFAULT_EVM_DECODING_OUTPUT
+
+        for event in context.decoded_events:
+            if (
+                    event.event_type == HistoryEventType.RECEIVE and
+                    event.event_subtype == HistoryEventSubType.NONE and
+                    event.asset.identifier == VKHYPE_TOKEN_ID and
+                    event.location_label == user and
+                    event.address == KINETIQ_EARN_QUEUE
+            ):
+                event.notes = f'Receive back {event.amount} vkHYPE from a cancelled Kinetiq Earn withdrawal request'  # noqa: E501
+                event.counterparty = CPT_KINETIQ
+                break
+        else:
+            log.error('Failed to find the vkHYPE transfer event for Kinetiq Earn withdrawal cancellation', transaction=context.transaction)  # noqa: E501
+
+        return EvmDecodingOutput(matched_counterparty=CPT_KINETIQ)
+
+    def _decode_earn_withdraw_solve(self, context: DecoderContext) -> EvmDecodingOutput:
+        """Decode the execution of a queued Kinetiq Earn withdrawal. A solver (possibly
+        the user themselves) burns the queued vkHYPE shares and the user receives the
+        withdrawn asset, so the receive transfer is decoded after this log and is
+        transformed via an action item."""
+        if not self.base.is_tracked(user := bytes_to_address(context.tx_log.topics[2])):
+            return DEFAULT_EVM_DECODING_OUTPUT
+
+        for tx_log in context.all_logs:  # the withdrawn asset is only in the vault Exit log
+            if tx_log.address == KINETIQ_EARN_VAULT and tx_log.topics[0] == VAULT_EXIT_TOPIC:
+                asset_out_token = self.base.get_or_create_evm_token(bytes_to_address(tx_log.topics[2]))  # noqa: E501
+                break
+        else:
+            log.error('Failed to find the vault exit log for Kinetiq Earn withdrawal solve', transaction=context.transaction)  # noqa: E501
+            return DEFAULT_EVM_DECODING_OUTPUT
+
+        return EvmDecodingOutput(
+            action_items=[ActionItem(
+                action='transform',
+                from_event_type=HistoryEventType.RECEIVE,
+                from_event_subtype=HistoryEventSubType.NONE,
+                asset=asset_out_token,
+                location_label=user,
+                to_event_type=HistoryEventType.WITHDRAWAL,
+                to_event_subtype=HistoryEventSubType.REDEEM_WRAPPED,
+                to_notes=f'Withdraw {{amount}} {asset_out_token.symbol} from Kinetiq Earn',
+                to_counterparty=CPT_KINETIQ,
+            )],
+            matched_counterparty=CPT_KINETIQ,
+        )
+
+    def _decode_earn_queue_events(self, context: DecoderContext) -> EvmDecodingOutput:
+        if context.tx_log.topics[0] == ONCHAIN_WITHDRAW_REQUESTED_TOPIC:
+            return self._decode_earn_withdraw_request(context)
+        if context.tx_log.topics[0] == ONCHAIN_WITHDRAW_CANCELLED_TOPIC:
+            return self._decode_earn_withdraw_cancel(context)
+        if context.tx_log.topics[0] == ONCHAIN_WITHDRAW_SOLVED_TOPIC:
+            return self._decode_earn_withdraw_solve(context)
+
+        return DEFAULT_EVM_DECODING_OUTPUT
+
     def _decode_staking_manager_events(self, context: DecoderContext) -> EvmDecodingOutput:
         if context.tx_log.topics[0] == STAKE_RECEIVED_TOPIC:
             return self._decode_stake(context)
@@ -235,7 +393,10 @@ class KinetiqDecoder(EvmDecoderInterface):
         return dict.fromkeys(
             KINETIQ_STAKING_MANAGERS,
             (self._decode_staking_manager_events,),
-        )
+        ) | {
+            KINETIQ_EARN_VAULT: (self._decode_earn_deposit,),
+            KINETIQ_EARN_QUEUE: (self._decode_earn_queue_events,),
+        }
 
     @staticmethod
     def counterparties() -> tuple[CounterpartyDetails, ...]:

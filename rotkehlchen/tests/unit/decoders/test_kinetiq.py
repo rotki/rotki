@@ -2,9 +2,12 @@ import pytest
 
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.chain.decoding.constants import CPT_GAS
+from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.chain.hyperliquid.modules.kinetiq.constants import (
     CPT_KINETIQ,
+    KINETIQ_EARN_QUEUE,
+    KINETIQ_EARN_VAULT,
     KINETIQ_STAKING_MANAGER,
 )
 from rotkehlchen.chain.hyperliquid.node_inquirer import HyperliquidInquirer
@@ -16,6 +19,7 @@ from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
 from rotkehlchen.types import ChecksumEvmAddress, Location, TimestampMS, deserialize_evm_tx_hash
 
 A_KHYPE = Asset('eip155:999/erc20:0xfD739d4e423301CE9385c1fb8850539D657C296D')
+A_VKHYPE = Asset('eip155:999/erc20:0x9BA2EDc44E0A4632EB4723E81d4142353e1bB160')
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
@@ -66,7 +70,7 @@ def test_kinetiq_stake(
             location_label=hyperliquid_accounts[0],
             notes=f'Receive {received_amount} kHYPE from staking in Kinetiq',
             counterparty=CPT_KINETIQ,
-            address=string_to_evm_address('0x0000000000000000000000000000000000000000'),
+            address=ZERO_ADDRESS,
         ),
     ]
 
@@ -120,7 +124,7 @@ def test_kinetiq_partner_stake(
             location_label=hyperliquid_accounts[0],
             notes=f'Receive {received_amount} flowHYPE from staking in Kinetiq',
             counterparty=CPT_KINETIQ,
-            address=string_to_evm_address('0x0000000000000000000000000000000000000000'),
+            address=ZERO_ADDRESS,
         ),
     ]
 
@@ -295,5 +299,144 @@ def test_kinetiq_redelegate(
             notes=f'Request redelegation of {redelegated_amount} HYPE from validator 0xb8F45222a3246a2B0104696a1Df26842007c5Bc5 to validator 0xEEEe86F718F9Da3e7250624A460f6EA710E9C006 in Kinetiq',  # noqa: E501
             counterparty=CPT_KINETIQ,
             address=KINETIQ_STAKING_MANAGER,
+        ),
+    ]
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('hyperliquid_accounts', [['0x0F049Fea32a4AA8892596570f2F59791180449be']])
+def test_kinetiq_earn_deposit(
+        hyperliquid_inquirer: HyperliquidInquirer,
+        hyperliquid_accounts: list[ChecksumEvmAddress],
+):
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=hyperliquid_inquirer,
+        tx_hash=(tx_hash := deserialize_evm_tx_hash('0x8307faa1eb25f100669a87aed4d026ccb5366974f39f215af731aca383ddcc01')),  # noqa: E501
+    )
+    assert events == [
+        EvmEvent(
+            tx_ref=tx_hash,
+            sequence_index=0,
+            timestamp=(timestamp := TimestampMS(1781640798000)),
+            location=Location.HYPERLIQUID,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_HYPE,
+            amount=FVal(gas_amount := '0.000153270842071554'),
+            location_label=hyperliquid_accounts[0],
+            notes=f'Burn {gas_amount} HYPE for gas',
+            counterparty=CPT_GAS,
+        ), EvmEvent(
+            tx_ref=tx_hash,
+            sequence_index=1,
+            timestamp=timestamp,
+            location=Location.HYPERLIQUID,
+            event_type=HistoryEventType.DEPOSIT,
+            event_subtype=HistoryEventSubType.DEPOSIT_FOR_WRAPPED,
+            asset=A_KHYPE,
+            amount=FVal(deposited_amount := '3.542776370761928914'),
+            location_label=hyperliquid_accounts[0],
+            notes=f'Deposit {deposited_amount} kHYPE in Kinetiq Earn',
+            counterparty=CPT_KINETIQ,
+            address=KINETIQ_EARN_VAULT,
+        ), EvmEvent(
+            tx_ref=tx_hash,
+            sequence_index=2,
+            timestamp=timestamp,
+            location=Location.HYPERLIQUID,
+            event_type=HistoryEventType.RECEIVE,
+            event_subtype=HistoryEventSubType.RECEIVE_WRAPPED,
+            asset=A_VKHYPE,
+            amount=FVal(shares_amount := '3.509614785423175029'),
+            location_label=hyperliquid_accounts[0],
+            notes=f'Receive {shares_amount} vkHYPE from depositing in Kinetiq Earn',
+            counterparty=CPT_KINETIQ,
+            address=ZERO_ADDRESS,
+        ),
+    ]
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('hyperliquid_accounts', [['0xF839aD355713BA6B2245f651979D110A26Ea59b9']])
+def test_kinetiq_earn_withdraw_request(
+        hyperliquid_inquirer: HyperliquidInquirer,
+        hyperliquid_accounts: list[ChecksumEvmAddress],
+):
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=hyperliquid_inquirer,
+        tx_hash=(tx_hash := deserialize_evm_tx_hash('0x5039d2c51631d6b600a346b502d46fb9354a7948a24c4fdef8907f030b94aafe')),  # noqa: E501
+    )
+    assert events == [
+        EvmEvent(
+            tx_ref=tx_hash,
+            sequence_index=0,
+            timestamp=(timestamp := TimestampMS(1780666943000)),
+            location=Location.HYPERLIQUID,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_HYPE,
+            amount=FVal(gas_amount := '0.00016954769121696'),
+            location_label=hyperliquid_accounts[0],
+            notes=f'Burn {gas_amount} HYPE for gas',
+            counterparty=CPT_GAS,
+        ), EvmEvent(
+            tx_ref=tx_hash,
+            sequence_index=10,
+            timestamp=timestamp,
+            location=Location.HYPERLIQUID,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.RETURN_WRAPPED,
+            asset=A_VKHYPE,
+            amount=FVal(shares_amount := '24.979101460783017797'),
+            location_label=hyperliquid_accounts[0],
+            notes=f'Request withdrawal of {shares_amount} vkHYPE worth 25.214842088204747132 kHYPE from Kinetiq Earn',  # noqa: E501
+            counterparty=CPT_KINETIQ,
+            address=KINETIQ_EARN_QUEUE,
+            extra_data={
+                'request_id': '0xdbd575ad894695b2b220863aea4c520c0b6b2683d1a6bc1f1794fa4b9c9de669',
+                'amount_of_assets': '25.214842088204747132',
+                'asset_out': 'eip155:999/erc20:0xfD739d4e423301CE9385c1fb8850539D657C296D',
+            },
+        ),
+    ]
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('hyperliquid_accounts', [['0xD101497Ae918Fdbb1347704cDbea3440C5471473']])
+def test_kinetiq_earn_withdraw_solve(
+        hyperliquid_inquirer: HyperliquidInquirer,
+        hyperliquid_accounts: list[ChecksumEvmAddress],
+):
+    """Test the execution of a queued Kinetiq Earn withdrawal (here self-solved by the user)"""
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=hyperliquid_inquirer,
+        tx_hash=(tx_hash := deserialize_evm_tx_hash('0xd4323118eeb3e5614bb1bda3149d35f4775e847f8280eb52d86cc1157106a94a')),  # noqa: E501
+    )
+    assert events == [
+        EvmEvent(
+            tx_ref=tx_hash,
+            sequence_index=0,
+            timestamp=(timestamp := TimestampMS(1779687913000)),
+            location=Location.HYPERLIQUID,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_HYPE,
+            amount=FVal(gas_amount := '0.000752592441132494'),
+            location_label=hyperliquid_accounts[0],
+            notes=f'Burn {gas_amount} HYPE for gas',
+            counterparty=CPT_GAS,
+        ), EvmEvent(
+            tx_ref=tx_hash,
+            sequence_index=9,
+            timestamp=timestamp,
+            location=Location.HYPERLIQUID,
+            event_type=HistoryEventType.WITHDRAWAL,
+            event_subtype=HistoryEventSubType.REDEEM_WRAPPED,
+            asset=A_KHYPE,
+            amount=FVal(withdrawn_amount := '393.719079254754886309'),
+            location_label=hyperliquid_accounts[0],
+            notes=f'Withdraw {withdrawn_amount} kHYPE from Kinetiq Earn',
+            counterparty=CPT_KINETIQ,
+            address=string_to_evm_address('0xb3C859c519052eb5111c321Db1114ae006837F4C'),
         ),
     ]
