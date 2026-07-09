@@ -1,29 +1,12 @@
 <script setup lang="ts">
-import SettingsOption from '@/modules/settings/controls/SettingsOption.vue';
-import { useSetting } from '@/modules/settings/use-setting';
-
-const showGraphRangeSelector = ref<boolean>(true);
-const enabled = useSetting('showGraphRangeSelector');
-
-onMounted(() => {
-  set(showGraphRangeSelector, get(enabled));
-});
+import SettingSwitch from '@/modules/settings/controls/SettingSwitch.vue';
 
 const { t } = useI18n({ useScope: 'global' });
 </script>
 
 <template>
-  <SettingsOption
-    #default="{ error, success, updateImmediate }"
+  <SettingSwitch
     setting="showGraphRangeSelector"
-  >
-    <RuiSwitch
-      v-model="showGraphRangeSelector"
-      :label="t('frontend_settings.graph_basis.range_selector.label')"
-      :success-messages="success"
-      :error-messages="error"
-      color="primary"
-      @update:model-value="updateImmediate($event)"
-    />
-  </SettingsOption>
+    :label="t('frontend_settings.graph_basis.range_selector.label')"
+  />
 </template>

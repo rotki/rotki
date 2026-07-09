@@ -1,31 +1,15 @@
 <script setup lang="ts">
-import SettingsOption from '@/modules/settings/controls/SettingsOption.vue';
-import { useSetting } from '@/modules/settings/use-setting';
-
-const exportCSVFormulas = ref(false);
-const pnlCsvWithFormulas = useSetting('pnlCsvWithFormulas');
-
-onMounted(() => {
-  set(exportCSVFormulas, get(pnlCsvWithFormulas));
-});
+import SettingSwitch from '@/modules/settings/controls/SettingSwitch.vue';
 
 const { t } = useI18n({ useScope: 'global' });
 </script>
 
 <template>
-  <SettingsOption
-    #default="{ error, success, update }"
+  <SettingSwitch
     setting="pnlCsvWithFormulas"
+    class="csv_export_settings__exportCSVFormulas"
+    :debounce="1500"
+    :label="t('account_settings.csv_export_settings.labels.export_csv_formulas')"
     :error-message="t('account_settings.messages.export_csv_formulas')"
-  >
-    <RuiSwitch
-      v-model="exportCSVFormulas"
-      class="csv_export_settings__exportCSVFormulas"
-      :label="t('account_settings.csv_export_settings.labels.export_csv_formulas')"
-      color="primary"
-      :success-messages="success"
-      :error-messages="error"
-      @update:model-value="update($event)"
-    />
-  </SettingsOption>
+  />
 </template>
