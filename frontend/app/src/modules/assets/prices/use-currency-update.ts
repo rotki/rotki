@@ -1,10 +1,11 @@
 import type { AssetPrices } from '@/modules/assets/prices/price-types';
-import { One } from '@rotki/common';
+import { type BigNumber, bigNumberify, One } from '@rotki/common';
 import { startPromise } from '@shared/utils';
 import { CURRENCY_USD } from '@/modules/assets/amount-display/currencies';
 import { usePriceRefresh } from '@/modules/assets/prices/use-price-refresh';
 import { usePriceTaskManager } from '@/modules/assets/prices/use-price-task-manager';
 import { useBalancePricesStore } from '@/modules/balances/use-balance-prices-store';
+import { BalanceSource, type BalanceValueThreshold } from '@/modules/settings/types/frontend-settings';
 import { useSetting } from '@/modules/settings/use-setting';
 import { useSettingsOperations } from '@/modules/settings/use-settings-operations';
 
@@ -15,10 +16,32 @@ export function useCurrencyUpdate(): UseCurrencyUpdateReturn {
   const { adjustPrices, refreshPrices } = usePriceRefresh();
   const { fetchExchangeRates } = usePriceTaskManager();
   const currencySymbol = useSetting('currencySymbol');
+  const balanceValueThreshold = useSetting('balanceValueThreshold');
   const { exchangeRates, previousCurrency, prices } = storeToRefs(useBalancePricesStore());
 
   if (!get(previousCurrency)) {
     set(previousCurrency, get(currencySymbol));
+  }
+
+  // The hide-small-balances thresholds are stored and displayed in the user's main currency, so a
+  // currency switch must re-denominate them by the same exchange-rate ratio used for prices. Only
+  // the sources that actually have a threshold are converted, and the write is skipped entirely
+  // when nothing is set (an empty reset would needlessly re-trigger the balance watchers).
+  function convertValueThresholds(ratio: BigNumber): void {
+    const thresholds = get(balanceValueThreshold);
+    const converted: BalanceValueThreshold = {};
+    let hasThreshold = false;
+
+    for (const source of Object.values(BalanceSource)) {
+      const value = thresholds[source];
+      if (value === undefined || value === '')
+        continue;
+      converted[source] = bigNumberify(value).multipliedBy(ratio).toString();
+      hasThreshold = true;
+    }
+
+    if (hasThreshold)
+      startPromise(updateFrontendSetting({ balanceValueThreshold: converted }));
   }
 
   async function onCurrencyUpdate(): Promise<void> {
@@ -53,15 +76,12 @@ export function useCurrencyUpdate(): UseCurrencyUpdateReturn {
 
         set(prices, scaledPrices);
         adjustPrices(scaledPrices);
+
+        convertValueThresholds(ratio);
       }
     }
 
     startPromise(refreshPrices(true));
-
-    // Clear hide small balances state, if the currency is changed
-    startPromise(updateFrontendSetting({
-      balanceValueThreshold: {},
-    }));
   }
 
   return { onCurrencyUpdate };

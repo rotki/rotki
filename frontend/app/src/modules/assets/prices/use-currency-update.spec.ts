@@ -1,9 +1,11 @@
 import type { AssetPrices } from '@/modules/assets/prices/price-types';
 import { bigNumberify } from '@rotki/common';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { BalanceSource, type BalanceValueThreshold } from '@/modules/settings/types/frontend-settings';
 import { useCurrencyUpdate } from './use-currency-update';
 
 const currencySymbol = ref<string>('USD');
+const balanceValueThreshold = ref<BalanceValueThreshold>({});
 const previousCurrency = ref<string>();
 const exchangeRates = ref<Record<string, ReturnType<typeof bigNumberify>>>({});
 const prices = ref<AssetPrices>({});
@@ -27,7 +29,7 @@ vi.mock('@/modules/assets/prices/use-price-task-manager', () => ({
   usePriceTaskManager: (): object => ({ fetchExchangeRates: spies.fetchExchangeRates }),
 }));
 vi.mock('@/modules/settings/use-setting', () => ({
-  useSetting: vi.fn(() => currencySymbol),
+  useSetting: vi.fn((key: string) => (key === 'balanceValueThreshold' ? balanceValueThreshold : currencySymbol)),
 }));
 vi.mock('@/modules/balances/use-balance-prices-store', () => ({
   useBalancePricesStore: vi.fn(() => ({ exchangeRates, previousCurrency, prices })),
@@ -40,6 +42,7 @@ function price(value: number): AssetPrices[string] {
 describe('useCurrencyUpdate', () => {
   beforeEach(() => {
     set(currencySymbol, 'USD');
+    set(balanceValueThreshold, {});
     set(previousCurrency, undefined);
     set(exchangeRates, { EUR: bigNumberify(0.9) });
     set(prices, { ETH: price(100) });
@@ -57,11 +60,41 @@ describe('useCurrencyUpdate', () => {
     expect(get(previousCurrency)).toBe('USD');
   });
 
-  it('should refresh prices and reset the balance threshold on update', async () => {
+  it('should refresh prices on update', async () => {
     const { onCurrencyUpdate } = useCurrencyUpdate();
     await onCurrencyUpdate();
     expect(spies.refreshPrices).toHaveBeenCalledWith(true);
-    expect(spies.updateFrontendSetting).toHaveBeenCalledWith({ balanceValueThreshold: {} });
+  });
+
+  it('should not write the threshold when the currency is unchanged', async () => {
+    set(balanceValueThreshold, { [BalanceSource.BLOCKCHAIN]: '100' });
+    const { onCurrencyUpdate } = useCurrencyUpdate();
+    await onCurrencyUpdate();
+    expect(spies.updateFrontendSetting).not.toHaveBeenCalled();
+  });
+
+  it('should not write the threshold when none is set', async () => {
+    const { onCurrencyUpdate } = useCurrencyUpdate();
+    set(currencySymbol, 'EUR');
+    await onCurrencyUpdate();
+    expect(spies.updateFrontendSetting).not.toHaveBeenCalled();
+  });
+
+  it('should convert the set thresholds by the exchange-rate ratio on a currency change', async () => {
+    set(balanceValueThreshold, {
+      [BalanceSource.BLOCKCHAIN]: '100',
+      [BalanceSource.MANUAL]: '50',
+    });
+    const { onCurrencyUpdate } = useCurrencyUpdate();
+    set(currencySymbol, 'EUR');
+    await onCurrencyUpdate();
+    // USD (rate 1) -> EUR (rate 0.9): 100 -> 90, 50 -> 45; unset sources stay unset
+    expect(spies.updateFrontendSetting).toHaveBeenCalledWith({
+      balanceValueThreshold: {
+        [BalanceSource.BLOCKCHAIN]: '90',
+        [BalanceSource.MANUAL]: '45',
+      },
+    });
   });
 
   it('should scale prices by the exchange-rate ratio when the currency changes', async () => {
