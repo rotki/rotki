@@ -146,7 +146,8 @@ def _remove_canceling_ledger_legs(event_set: list[tuple[int, HistoryEvent]]) -> 
     entries sharing the same refid: the tokenized asset spend, the fiat receive and two
     internal USD settlement legs (a spend and a receive of the same asset and amount)
     that cancel each other out. Removing the settlement legs leaves the actual trade
-    pair. https://github.com/rotki/rotki/issues/12564
+    pair. Only called for groups containing a tokenized_asset leg so that normal
+    kraken history is not affected. https://github.com/rotki/rotki/issues/12564
     """
     for spend_entry in [x for x in event_set if x[1].event_type == HistoryEventType.SPEND]:
         for receive_entry in event_set:
@@ -1144,7 +1145,10 @@ class Kraken(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
                 continue
 
         for event_set in receive_spend_events.values():
-            if len(event_set) > 2:  # tokenized asset trades come with extra settlement legs
+            if (  # tokenized asset trades come with extra settlement legs
+                    len(event_set) > 2 and
+                    any(x.get('aclass') == 'tokenized_asset' for x in events)
+            ):
                 _remove_canceling_ledger_legs(event_set)
             if len(event_set) == 2:
                 for _, history_event in event_set:

@@ -776,6 +776,51 @@ def test_kraken_tokenized_asset_trade(kraken):
     assert len(kraken.msg_aggregator.consume_errors()) == 0
     assert len(kraken.msg_aggregator.consume_warnings()) == 0
 
+    # A group with more than 2 spend/receive legs containing a canceling pair but
+    # no tokenized_asset leg is left untouched by the settlement leg removal
+    events, skipped, found_unknown = kraken.history_event_from_kraken(
+        events=[{
+            'refid': 'NORMAL1',
+            'time': 1736246100.5,
+            'type': 'spend',
+            'subtype': '',
+            'aclass': 'currency',
+            'asset': 'XETH',
+            'amount': '-1',
+            'fee': '0',
+        }, {
+            'refid': 'NORMAL1',
+            'time': 1736246100.5,
+            'type': 'receive',
+            'subtype': '',
+            'aclass': 'currency',
+            'asset': 'ZEUR',
+            'amount': '100',
+            'fee': '0',
+        }, {
+            'refid': 'NORMAL1',
+            'time': 1736246100.5,
+            'type': 'spend',
+            'subtype': '',
+            'aclass': 'currency',
+            'asset': 'ZUSD',
+            'amount': '-50',
+            'fee': '0',
+        }, {
+            'refid': 'NORMAL1',
+            'time': 1736246100.5,
+            'type': 'receive',
+            'subtype': '',
+            'aclass': 'currency',
+            'asset': 'ZUSD',
+            'amount': '50',
+            'fee': '0',
+        }],
+        save_skipped_events=False,
+    )
+    assert skipped is False and found_unknown is False
+    assert len(events) == 4  # all legs kept
+
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
 def test_kraken_trade_with_adjustment(kraken):
