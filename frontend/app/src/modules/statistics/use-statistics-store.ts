@@ -3,6 +3,7 @@ import type { NetValueChartData } from '@/modules/dashboard/graph/types';
 import { type AssetBalanceWithPriceAndChains, type BigNumber, type NetValue, One, type TimeFramePeriod, timeframes, TimeUnit, Zero } from '@rotki/common';
 import dayjs from 'dayjs';
 import { CURRENCY_USD, type SupportedCurrency } from '@/modules/assets/amount-display/currencies';
+import { useAmountDisplaySettings } from '@/modules/assets/amount-display/use-amount-display-settings';
 import { useNumberScrambler } from '@/modules/assets/amount-display/use-number-scrambler';
 import { usePriceUtils } from '@/modules/assets/prices/use-price-utils';
 import { useAggregatedBalances } from '@/modules/balances/use-aggregated-balances';
@@ -30,14 +31,16 @@ export const useStatisticsStore = defineStore('statistics', () => {
   const netValue = ref<NetValue>(defaultNetValue());
 
   const nftsInNetValue = useSetting('nftsInNetValue');
-  const scrambleData = useSetting('scrambleData');
-  const scrambleMultiplier = useSetting('scrambleMultiplier');
-  const shouldShowAmount = useSetting('shouldShowAmount');
-  const valueRoundingMode = useSetting('valueRoundingMode');
-  const currencySymbol = useSetting('currencySymbol');
-  const floatingPrecision = useSetting('floatingPrecision');
-  const { nonFungibleTotalValue } = storeToRefs(useBalancesStore());
   const timeframe = useSetting('timeframe');
+  const {
+    currencySymbol,
+    floatingPrecision,
+    scrambleData,
+    scrambleMultiplier,
+    shouldShowAmount,
+    valueRoundingMode,
+  } = useAmountDisplaySettings();
+  const { nonFungibleTotalValue } = storeToRefs(useBalancesStore());
   const { getExchangeRate } = usePriceUtils();
 
   const { getBalances, getLiabilities } = useAggregatedBalances();
