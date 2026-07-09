@@ -72,6 +72,60 @@ def test_kinetiq_stake(
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('hyperliquid_accounts', [['0xd418224aE3c510B645112FD9275CCFD50F996ee4']])
+def test_kinetiq_partner_stake(
+        hyperliquid_inquirer: HyperliquidInquirer,
+        hyperliquid_accounts: list[ChecksumEvmAddress],
+):
+    """Test that staking via a partner deployment (Flowdesk flowHYPE) is also decoded"""
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=hyperliquid_inquirer,
+        tx_hash=(tx_hash := deserialize_evm_tx_hash('0x48bb914d934aa42806429092e302656ff671b4fb60bf20d0a3782892755f8bef')),  # noqa: E501
+    )
+    assert events == [
+        EvmEvent(
+            tx_ref=tx_hash,
+            sequence_index=0,
+            timestamp=(timestamp := TimestampMS(1754935589000)),
+            location=Location.HYPERLIQUID,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_HYPE,
+            amount=FVal(gas_amount := '0.0051277856259259'),
+            location_label=hyperliquid_accounts[0],
+            notes=f'Burn {gas_amount} HYPE for gas',
+            counterparty=CPT_GAS,
+        ), EvmEvent(
+            tx_ref=tx_hash,
+            sequence_index=1,
+            timestamp=timestamp,
+            location=Location.HYPERLIQUID,
+            event_type=HistoryEventType.DEPOSIT,
+            event_subtype=HistoryEventSubType.DEPOSIT_FOR_WRAPPED,
+            asset=A_HYPE,
+            amount=FVal(staked_amount := '1'),
+            location_label=hyperliquid_accounts[0],
+            notes=f'Stake {staked_amount} HYPE in Kinetiq',
+            counterparty=CPT_KINETIQ,
+            address=string_to_evm_address('0xfdd35c5179E8594E237031dd945E0584Af29572b'),
+        ), EvmEvent(
+            tx_ref=tx_hash,
+            sequence_index=2,
+            timestamp=timestamp,
+            location=Location.HYPERLIQUID,
+            event_type=HistoryEventType.RECEIVE,
+            event_subtype=HistoryEventSubType.RECEIVE_WRAPPED,
+            asset=Asset('eip155:999/erc20:0x86d96fF0E78Dba9570b00f75807ce21213a19f3d'),
+            amount=FVal(received_amount := '1'),
+            location_label=hyperliquid_accounts[0],
+            notes=f'Receive {received_amount} flowHYPE from staking in Kinetiq',
+            counterparty=CPT_KINETIQ,
+            address=string_to_evm_address('0x0000000000000000000000000000000000000000'),
+        ),
+    ]
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('hyperliquid_accounts', [['0xC16D03879B158604958A7bAE8b61763c2953a5f2']])
 def test_kinetiq_queue_withdrawal(
         hyperliquid_inquirer: HyperliquidInquirer,
@@ -198,7 +252,7 @@ def test_kinetiq_instant_unstake(
             asset=A_HYPE,
             amount=FVal(hype_amount := '4.590272458558035808'),
             location_label=hyperliquid_accounts[0],
-            notes=f'Receive {hype_amount} HYPE from unstaking kHYPE in Kinetiq',
+            notes=f'Receive {hype_amount} HYPE from unstaking in Kinetiq',
             counterparty=CPT_KINETIQ,
             address=string_to_evm_address('0x665b67793594fc5C251a3C95cbEb4B6245Cd2123'),
         ),

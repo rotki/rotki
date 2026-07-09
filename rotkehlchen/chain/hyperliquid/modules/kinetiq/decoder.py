@@ -19,9 +19,8 @@ from rotkehlchen.utils.misc import bytes_to_address, from_wei
 from .constants import (
     CPT_KINETIQ,
     INSTANT_UNSTAKE_EXECUTED_TOPIC,
-    KHYPE_TOKEN_ID,
     KINETIQ_CPT_DETAILS,
-    KINETIQ_STAKING_MANAGER,
+    KINETIQ_STAKING_MANAGERS,
     REDELEGATION_REQUESTED_TOPIC,
     STAKE_RECEIVED_TOPIC,
     WITHDRAWAL_CONFIRMED_TOPIC,
@@ -35,16 +34,19 @@ log = RotkehlchenLogsAdapter(logger)
 class KinetiqDecoder(EvmDecoderInterface):
     """Decoder for the Kinetiq liquid staking protocol on hyperliquid
 
-    Users stake native HYPE via the StakingManager and receive kHYPE. Unstaking
-    happens either through the withdrawal queue (queueWithdrawal + confirmWithdrawal
-    after the withdrawal delay) or instantly against the buffer for a fee.
+    Users stake native HYPE via a StakingManager and receive its LST (kHYPE for the
+    flagship deployment, flowHYPE/HiHYPE/asxnHYPE/hylqHYPE for the institutional
+    partner deployments which run the same contract). Unstaking happens either through
+    the withdrawal queue (queueWithdrawal + confirmWithdrawal after the withdrawal
+    delay) or instantly against the buffer for a fee.
     """
 
     def _decode_stake(self, context: DecoderContext) -> EvmDecodingOutput:
-        """Decode staking native HYPE for kHYPE"""
+        """Decode staking native HYPE for the staking manager's LST"""
         if not self.base.is_tracked(staker := bytes_to_address(context.tx_log.topics[2])):
             return DEFAULT_EVM_DECODING_OUTPUT
 
+        lst_token_id = KINETIQ_STAKING_MANAGERS[context.tx_log.address]
         hype_amount = from_wei(int.from_bytes(context.tx_log.data[:32]))
         in_event, out_event = None, None
         for event in context.decoded_events:
@@ -63,17 +65,17 @@ class KinetiqDecoder(EvmDecoderInterface):
             elif (
                     event.event_type == HistoryEventType.RECEIVE and
                     event.event_subtype == HistoryEventSubType.NONE and
-                    event.asset.identifier == KHYPE_TOKEN_ID and
+                    event.asset.identifier == lst_token_id and
                     event.location_label == staker and
                     event.address == ZERO_ADDRESS
             ):
                 event.event_subtype = HistoryEventSubType.RECEIVE_WRAPPED
-                event.notes = f'Receive {event.amount} kHYPE from staking in Kinetiq'
+                event.notes = f'Receive {event.amount} {event.asset.resolve_to_evm_token().symbol} from staking in Kinetiq'  # noqa: E501
                 event.counterparty = CPT_KINETIQ
                 in_event = event
 
         if out_event is None or in_event is None:
-            log.error(f'Failed to find the HYPE spend and kHYPE receive events for Kinetiq stake in {context.transaction}')  # noqa: E501
+            log.error('Failed to find the HYPE spend and LST receive events for Kinetiq stake', transaction=context.transaction)  # noqa: E501
             return DEFAULT_EVM_DECODING_OUTPUT
 
         maybe_reshuffle_events(
@@ -83,29 +85,30 @@ class KinetiqDecoder(EvmDecoderInterface):
         return EvmDecodingOutput(matched_counterparty=CPT_KINETIQ)
 
     def _decode_queue_withdrawal(self, context: DecoderContext) -> EvmDecodingOutput:
-        """Decode queueing a kHYPE withdrawal from the staking manager"""
+        """Decode queueing an LST withdrawal from the staking manager"""
         if not self.base.is_tracked(user := bytes_to_address(context.tx_log.topics[2])):
             return DEFAULT_EVM_DECODING_OUTPUT
 
+        lst_token_id = KINETIQ_STAKING_MANAGERS[context.tx_log.address]
         withdrawal_id = int.from_bytes(context.tx_log.topics[3])
-        khype_amount = from_wei(int.from_bytes(context.tx_log.data[:32]))
+        lst_amount = from_wei(int.from_bytes(context.tx_log.data[:32]))
         hype_amount = from_wei(int.from_bytes(context.tx_log.data[32:64]))
         for event in context.decoded_events:
             if (
                     event.event_type == HistoryEventType.SPEND and
                     event.event_subtype == HistoryEventSubType.NONE and
-                    event.asset.identifier == KHYPE_TOKEN_ID and
-                    event.amount == khype_amount and
+                    event.asset.identifier == lst_token_id and
+                    event.amount == lst_amount and
                     event.location_label == user and
-                    event.address == KINETIQ_STAKING_MANAGER
+                    event.address == context.tx_log.address
             ):
                 event.event_subtype = HistoryEventSubType.RETURN_WRAPPED
-                event.notes = f'Queue unstaking of {khype_amount} kHYPE for {hype_amount} HYPE from Kinetiq with withdrawal request id {withdrawal_id}'  # noqa: E501
+                event.notes = f'Queue unstaking of {lst_amount} {event.asset.resolve_to_evm_token().symbol} for {hype_amount} HYPE from Kinetiq with withdrawal request id {withdrawal_id}'  # noqa: E501
                 event.counterparty = CPT_KINETIQ
                 event.extra_data = {'withdrawal_id': withdrawal_id}
                 break
         else:
-            log.error(f'Failed to find the kHYPE transfer event for Kinetiq queued withdrawal in {context.transaction}')  # noqa: E501
+            log.error('Failed to find the LST transfer event for Kinetiq queued withdrawal', transaction=context.transaction)  # noqa: E501
 
         return EvmDecodingOutput(matched_counterparty=CPT_KINETIQ)
 
@@ -125,7 +128,7 @@ class KinetiqDecoder(EvmDecoderInterface):
                     event.event_subtype == HistoryEventSubType.NONE and
                     event.asset == A_HYPE and
                     event.location_label == user and
-                    event.address == KINETIQ_STAKING_MANAGER
+                    event.address == context.tx_log.address
             ):
                 event.event_type = HistoryEventType.WITHDRAWAL
                 event.event_subtype = HistoryEventSubType.REDEEM_WRAPPED
@@ -140,29 +143,30 @@ class KinetiqDecoder(EvmDecoderInterface):
                     for event in context.decoded_events
                 )
                 if not found_transformed:
-                    log.error(f'Failed to find the HYPE receive event for Kinetiq confirmed withdrawal in {context.transaction}')  # noqa: E501
+                    log.error('Failed to find the HYPE receive event for Kinetiq confirmed withdrawal', transaction=context.transaction)  # noqa: E501
 
         return EvmDecodingOutput(matched_counterparty=CPT_KINETIQ)
 
     def _decode_instant_unstake(self, context: DecoderContext) -> EvmDecodingOutput:
-        """Decode instantly unstaking kHYPE for HYPE against the buffer for a fee"""
+        """Decode instantly unstaking the LST for HYPE against the buffer for a fee"""
         if not self.base.is_tracked(user := bytes_to_address(context.tx_log.topics[1])):
             return DEFAULT_EVM_DECODING_OUTPUT
 
-        khype_amount = from_wei(int.from_bytes(context.tx_log.data[:32]))
+        lst_token_id = KINETIQ_STAKING_MANAGERS[context.tx_log.address]
+        lst_amount = from_wei(int.from_bytes(context.tx_log.data[:32]))
         hype_amount = from_wei(int.from_bytes(context.tx_log.data[32:64]))
         in_event, out_event = None, None
         for event in context.decoded_events:
             if (
                     event.event_type == HistoryEventType.SPEND and
                     event.event_subtype == HistoryEventSubType.NONE and
-                    event.asset.identifier == KHYPE_TOKEN_ID and
-                    event.amount == khype_amount and
+                    event.asset.identifier == lst_token_id and
+                    event.amount == lst_amount and
                     event.location_label == user and
-                    event.address == KINETIQ_STAKING_MANAGER
+                    event.address == context.tx_log.address
             ):
                 event.event_subtype = HistoryEventSubType.RETURN_WRAPPED
-                event.notes = f'Instantly unstake {khype_amount} kHYPE from Kinetiq'
+                event.notes = f'Instantly unstake {lst_amount} {event.asset.resolve_to_evm_token().symbol} from Kinetiq'  # noqa: E501
                 event.counterparty = CPT_KINETIQ
                 out_event = event
             elif (
@@ -174,12 +178,12 @@ class KinetiqDecoder(EvmDecoderInterface):
             ):
                 event.event_type = HistoryEventType.WITHDRAWAL
                 event.event_subtype = HistoryEventSubType.REDEEM_WRAPPED
-                event.notes = f'Receive {hype_amount} HYPE from unstaking kHYPE in Kinetiq'
+                event.notes = f'Receive {hype_amount} HYPE from unstaking in Kinetiq'
                 event.counterparty = CPT_KINETIQ
                 in_event = event
 
         if out_event is None or in_event is None:
-            log.error(f'Failed to find the kHYPE spend and HYPE receive events for Kinetiq instant unstake in {context.transaction}')  # noqa: E501
+            log.error('Failed to find the LST spend and HYPE receive events for Kinetiq instant unstake', transaction=context.transaction)  # noqa: E501
             return DEFAULT_EVM_DECODING_OUTPUT
 
         maybe_reshuffle_events(
@@ -207,7 +211,7 @@ class KinetiqDecoder(EvmDecoderInterface):
             location_label=sender,
             notes=f'Request redelegation of {amount} HYPE from validator {from_validator} to validator {to_validator} in Kinetiq',  # noqa: E501
             counterparty=CPT_KINETIQ,
-            address=KINETIQ_STAKING_MANAGER,
+            address=context.tx_log.address,
         )
         return EvmDecodingOutput(events=[event])
 
@@ -228,7 +232,10 @@ class KinetiqDecoder(EvmDecoderInterface):
     # -- DecoderInterface methods
 
     def addresses_to_decoders(self) -> dict[ChecksumEvmAddress, tuple[Any, ...]]:
-        return {KINETIQ_STAKING_MANAGER: (self._decode_staking_manager_events,)}
+        return dict.fromkeys(
+            KINETIQ_STAKING_MANAGERS,
+            (self._decode_staking_manager_events,),
+        )
 
     @staticmethod
     def counterparties() -> tuple[CounterpartyDetails, ...]:

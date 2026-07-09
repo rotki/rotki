@@ -64,32 +64,37 @@ class KinetiqBalances(ProtocolWithBalance):
 
     def query_balances(self) -> 'BalancesSheetType':
         balances: BalancesSheetType = defaultdict(BalanceSheet)
-        staking_manager = EvmContract(
+        staking_manager = EvmContract(  # only used for encoding/decoding. The call targets are the events' staking managers.  # noqa: E501
             address=KINETIQ_STAKING_MANAGER,
             abi=WITHDRAWAL_REQUESTS_ABI,
             deployed_block=0,
         )
-        calls_arguments = []
+        calls, calls_arguments = [], []
         for user_address, events in self.addresses_with_deposits().items():
             for event in events:
                 if (
+                        event.address is None or
                         event.extra_data is None or
                         (withdrawal_id := event.extra_data.get('withdrawal_id')) is None
                 ):  # instant unstakes share the type/subtype combo but have no withdrawal id
                     continue
 
-                calls_arguments.append([user_address, withdrawal_id])
+                calls.append((
+                    event.address,  # the staking manager (kHYPE or a partner deployment)
+                    staking_manager.encode(
+                        method_name='withdrawalRequests',
+                        arguments=(arguments := [user_address, withdrawal_id]),
+                    ),
+                ))
+                calls_arguments.append(arguments)
 
-        if len(calls_arguments) == 0:
+        if len(calls) == 0:
             return balances
 
         try:
-            results = self.evm_inquirer.multicall(calls=[(
-                staking_manager.address,
-                staking_manager.encode(method_name='withdrawalRequests', arguments=arguments),
-            ) for arguments in calls_arguments])
+            results = self.evm_inquirer.multicall(calls=calls)
         except RemoteError as e:
-            log.error(f'Failed to query Kinetiq withdrawal requests due to {e!s}')
+            log.error('Failed to query Kinetiq withdrawal requests', error=str(e))
             return balances
 
         amounts: list[tuple[ChecksumEvmAddress, FVal]] = []
