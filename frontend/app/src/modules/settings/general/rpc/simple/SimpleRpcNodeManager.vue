@@ -21,10 +21,8 @@ const form = useTemplateRef<InstanceType<typeof SimpleRpcNodeManagerForm>>('form
 const stateUpdated = ref(false);
 const inputUrl = ref<string>('');
 
-const settingValue = useSetting(setting);
+const value = useSetting(setting);
 const { updateSetting } = useSettings();
-
-const value = computed(() => get(settingValue));
 
 function addNewRpcNode() {
   set(errorMessages, {});
