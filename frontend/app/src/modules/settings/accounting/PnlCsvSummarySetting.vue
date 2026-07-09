@@ -1,31 +1,15 @@
 <script setup lang="ts">
-import SettingsOption from '@/modules/settings/controls/SettingsOption.vue';
-import { useSetting } from '@/modules/settings/use-setting';
-
-const haveCSVSummary = ref(false);
-const pnlCsvHaveSummary = useSetting('pnlCsvHaveSummary');
-
-onMounted(() => {
-  set(haveCSVSummary, get(pnlCsvHaveSummary));
-});
+import SettingSwitch from '@/modules/settings/controls/SettingSwitch.vue';
 
 const { t } = useI18n({ useScope: 'global' });
 </script>
 
 <template>
-  <SettingsOption
-    #default="{ error, success, update }"
+  <SettingSwitch
     setting="pnlCsvHaveSummary"
+    class="csv_export_settings__haveCSVSummary"
+    :debounce="1500"
+    :label="t('account_settings.csv_export_settings.labels.have_csv_summary')"
     :error-message="t('account_settings.messages.have_csv_summary')"
-  >
-    <RuiSwitch
-      v-model="haveCSVSummary"
-      class="csv_export_settings__haveCSVSummary"
-      :label="t('account_settings.csv_export_settings.labels.have_csv_summary')"
-      color="primary"
-      :success-messages="success"
-      :error-messages="error"
-      @update:model-value="update($event)"
-    />
-  </SettingsOption>
+  />
 </template>

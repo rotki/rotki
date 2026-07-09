@@ -1,31 +1,15 @@
 <script setup lang="ts">
-import SettingsOption from '@/modules/settings/controls/SettingsOption.vue';
-import { useSetting } from '@/modules/settings/use-setting';
-
-const crypto2CryptoTrades = ref(false);
-const includeCrypto2crypto = useSetting('includeCrypto2crypto');
-
-onMounted(() => {
-  set(crypto2CryptoTrades, get(includeCrypto2crypto));
-});
+import SettingSwitch from '@/modules/settings/controls/SettingSwitch.vue';
 
 const { t } = useI18n({ useScope: 'global' });
 </script>
 
 <template>
-  <SettingsOption
-    #default="{ error, success, update }"
+  <SettingSwitch
     setting="includeCrypto2crypto"
+    data-cy="crypto2crypto-switch"
+    :debounce="1500"
+    :label="t('accounting_settings.trade.labels.include_crypto2crypto')"
     :error-message="t('account_settings.messages.crypto_to_crypto')"
-  >
-    <RuiSwitch
-      v-model="crypto2CryptoTrades"
-      data-cy="crypto2crypto-switch"
-      :label="t('accounting_settings.trade.labels.include_crypto2crypto')"
-      color="primary"
-      :success-messages="success"
-      :error-messages="error"
-      @update:model-value="update($event)"
-    />
-  </SettingsOption>
+  />
 </template>

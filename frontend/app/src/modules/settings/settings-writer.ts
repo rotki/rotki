@@ -15,6 +15,15 @@ type ProjectedKey = {
  */
 export type WritableSettingKey = Exclude<SettingKey, ProjectedKey>;
 
+/**
+ * A writable setting whose read value is assignable to `V`. Constrains generic owning components to
+ * the keys they can bind (e.g. `SettingSwitch` to `WritableSettingKeyOf<boolean>`), so passing a
+ * wrong-typed setting fails to compile.
+ */
+export type WritableSettingKeyOf<V> = {
+  [K in WritableSettingKey]: SettingValue<K> extends V ? K : never;
+}[WritableSettingKey];
+
 type SettingsPatch = Partial<{ [K in WritableSettingKey]: SettingValue<K> }>;
 
 /**
