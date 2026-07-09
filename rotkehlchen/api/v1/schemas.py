@@ -649,6 +649,8 @@ class HistoryEventFilterSchema(
         load_default=None,
     )
     notes_substring = fields.String(load_default=None)
+    min_amount = AmountField(load_default=None)
+    max_amount = AmountField(load_default=None)
 
     # Evm, Solana, or BTC/BCH
     tx_refs = DelimitedOrNormalList(NonEmptyStringField(), load_default=None)
@@ -658,6 +660,22 @@ class HistoryEventFilterSchema(
 
     # EthStakingEvent only
     validator_indices = DelimitedOrNormalList(fields.Integer(), load_default=None)
+
+    @validates_schema
+    def validate_amount_range(
+            self,
+            data: dict[str, Any],
+            **_kwargs: Any,
+    ) -> None:
+        if (
+                data['min_amount'] is not None and
+                data['max_amount'] is not None and
+                data['min_amount'] > data['max_amount']
+        ):
+            raise ValidationError(
+                message='min_amount must be smaller than or equal to max_amount',
+                field_name='min_amount',
+            )
 
     @post_load
     def make_history_event_filter(
@@ -714,6 +732,8 @@ class HistoryEventFilterSchema(
             'state_markers': data['state_markers'],
             'identifiers': data['identifiers'],
             'notes_substring': data['notes_substring'],
+            'min_amount': data['min_amount'],
+            'max_amount': data['max_amount'],
         }
 
         tx_ref_types = set()
