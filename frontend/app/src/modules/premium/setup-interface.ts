@@ -12,8 +12,8 @@ import dayjs from 'dayjs';
 import { convertToTimestamp } from '@/modules/core/common/data/date';
 import { logger } from '@/modules/core/common/logging/logging';
 import { assetsApi, balancesApi, statisticsApi, userSettings, utilsApi } from '@/modules/premium/premium-apis';
-import { useSetting } from '@/modules/settings/use-setting';
 import { useSettingsOperations } from '@/modules/settings/use-settings-operations';
+import { useThemeSettings } from '@/modules/shell/theme/use-theme-settings';
 import { useGraph } from '@/modules/statistics/use-graph';
 import { DARK_COLORS, LIGHT_COLORS } from '@/plugins/theme';
 
@@ -42,6 +42,7 @@ export function createPremiumApi(): PremiumApi {
     // eslint-disable-next-line @typescript-eslint/unbound-method
     const { t, te } = useI18n({ useScope: 'global' });
     const { updateFrontendSetting } = useSettingsOperations();
+    const { darkTheme, lightTheme } = useThemeSettings();
     return {
       defaultThemes(): Themes {
         return {
@@ -56,8 +57,8 @@ export function createPremiumApi(): PremiumApi {
       isDark: useRotkiTheme().isDark,
       themes(): Themes {
         return {
-          dark: get(useSetting('darkTheme')),
-          light: get(useSetting('lightTheme')),
+          dark: get(darkTheme),
+          light: get(lightTheme),
         };
       },
       async update(settings: FrontendSettingsPayload): Promise<void> {
