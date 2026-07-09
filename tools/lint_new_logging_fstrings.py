@@ -16,6 +16,11 @@ Base ref resolution order:
      recent - i.e. the branch this one actually stems from - so a feature branch off
      bugfixes is diffed against bugfixes, not against a stale develop.
 
+The diff is taken from the merge-base with the resolved ref to the WORKING TREE, and
+untracked python files count as fully added, so uncommitted work is checked locally
+exactly like it will be in the PR. In CI the working tree is the PR head commit, so
+the result matches the old committed-only behavior there.
+
 If no base can be resolved (e.g. a local checkout without any of those branches), the
 check prints a notice and exits 0 so it never blocks local `make lint`.
 """
@@ -50,11 +55,13 @@ def _autodetect_base() -> str | None:
     """Pick the existing base branch closest to HEAD (the one HEAD branched off).
 
     For each candidate we take its merge-base with HEAD and keep the candidate whose
-    merge-base is the most recent commit. Candidates whose merge-base IS HEAD (the
-    currently checked-out branch's own ref, or any descendant) are skipped, since
-    diffing against them would yield no changes and silently pass.
+    merge-base is the most recent commit. A candidate whose merge-base IS HEAD (an
+    up-to-date checkout of that branch) is a valid base: the committed diff is empty
+    but uncommitted working tree changes are still checked against it. Skipping such
+    refs would instead fall back to an older branch (e.g. bugfixes when sitting on
+    develop) whose merge-base diff buries the local changes among weeks of already
+    merged - and grandfathered - history.
     """
-    head = _git('rev-parse', 'HEAD').stdout.strip()
     current_branch = _git('symbolic-ref', '--quiet', '--short', 'HEAD').stdout.strip()
     best_ref: str | None = None
     best_ts = -1
@@ -63,8 +70,8 @@ def _autodetect_base() -> str | None:
             continue
         if _git('rev-parse', '--verify', '--quiet', ref).returncode != 0:
             continue  # ref does not exist in this checkout
-        if (merge_base := _git('merge-base', 'HEAD', ref).stdout.strip()) in ('', head):
-            continue  # unrelated history, or ref is at/ahead of HEAD (empty diff)
+        if (merge_base := _git('merge-base', 'HEAD', ref).stdout.strip()) == '':
+            continue  # unrelated history
         if (ts := int(_git('show', '-s', '--format=%ct', merge_base).stdout.strip() or -1)) > best_ts:  # noqa: E501
             best_ts, best_ref = ts, ref
     return best_ref
@@ -83,10 +90,14 @@ def resolve_base() -> str | None:
 def added_lines(base: str) -> dict[str, set[int]]:
     """Return {repo_relative_path: {added line numbers}} for python files since base.
 
-    Uses the three-dot diff so only changes introduced on HEAD since the merge-base
-    with `base` are considered - exactly what would land in the PR.
+    Diffs from the merge-base with `base` to the working tree, so committed, staged
+    and unstaged changes are all covered - exactly what would land in the PR once
+    committed. Untracked python files are counted as fully added for the same reason.
     """
-    result = _git('diff', '--unified=0', '--no-color', f'{base}...HEAD', '--', '*.py')
+    merge_base = _git('merge-base', base, 'HEAD').stdout.strip()
+    if merge_base == '':  # explicit sha bases (CI) may not share history locally
+        merge_base = base
+    result = _git('diff', '--unified=0', '--no-color', merge_base, '--', '*.py')
     if result.returncode != 0:
         print(f'[lint-new-logs] git diff against {base!r} failed, skipping:\n{result.stderr}')
         return {}
@@ -101,6 +112,13 @@ def added_lines(base: str) -> dict[str, set[int]]:
             start = int(match.group(1))
             count = int(match.group(2)) if match.group(2) is not None else 1
             added[current].update(range(start, start + count))
+
+    untracked = _git('ls-files', '--others', '--exclude-standard', '--', '*.py')
+    for path in untracked.stdout.splitlines():
+        if (filepath := Path(REPO_ROOT, path)).is_file():
+            with open(filepath, encoding='utf-8') as new_file:
+                added[path] = set(range(1, sum(1 for _ in new_file) + 1))
+
     return added
 
 
