@@ -4,6 +4,7 @@ import type { AccountingSettings, GeneralSettings } from '@/modules/settings/typ
 import { BigNumber } from '@rotki/common';
 import { getBnFormat } from '@/modules/assets/amount-display/amount-formatter';
 import { PrivacyMode, type SessionSettings } from '@/modules/session/types';
+import { useAnimationsEnabled } from '@/modules/session/use-animations-enabled';
 import { useItemsPerPage } from '@/modules/session/use-items-per-page';
 
 /** Post-persist effect: reconfigure BigNumber's global format when the separators change. */
@@ -221,7 +222,7 @@ export const settingsRegistry = {
   visibleTimeframes: frontend('visibleTimeframes'),
   whitelistedDomainsForNftImages: frontend('whitelistedDomainsForNftImages'),
   // session
-  animationsEnabled: session('animationsEnabled'),
+  animationsEnabled: session('animationsEnabled', { mirror: useAnimationsEnabled }),
   timeframe: session('timeframe'),
   // accounting
   calculatePastCostBasis: accounting('calculatePastCostBasis'),

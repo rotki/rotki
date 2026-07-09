@@ -5,6 +5,7 @@ import { CurrencyLocation } from '@/modules/assets/amount-display/currency-locat
 import { DateFormat } from '@/modules/core/common/date-format';
 import { TableColumn } from '@/modules/core/table/table-column';
 import { PrivacyMode } from '@/modules/session/types';
+import { useAnimationsEnabled } from '@/modules/session/use-animations-enabled';
 import { useItemsPerPage } from '@/modules/session/use-items-per-page';
 import { useSettingsRepo } from '@/modules/settings/settings-repo';
 import {
@@ -253,5 +254,15 @@ describe('useSettingsRepo registry effects and mirrors', () => {
     store.updateFrontend({ language: SupportedLanguage.GR });
 
     expect(get(itemsPerPage)).toBe(99);
+  });
+
+  it('should sync the animationsEnabled mirror (localStorage) when it changes via the session channel', () => {
+    const animationsEnabled = useAnimationsEnabled();
+    set(animationsEnabled, true);
+    const store = useSettingsRepo(pinia);
+
+    store.updateSession({ animationsEnabled: false });
+
+    expect(get(animationsEnabled)).toBe(false);
   });
 });

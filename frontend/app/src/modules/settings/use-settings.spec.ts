@@ -1,5 +1,6 @@
 import { createPinia, setActivePinia } from 'pinia';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { logger } from '@/modules/core/common/logging/logging';
 import { SettingLocation, useSettings } from '@/modules/settings/use-settings';
 
 const mockWrite = vi.fn(async (): Promise<{ success: boolean; message?: string }> => ({ success: true }));
@@ -25,9 +26,12 @@ vi.mock('@/modules/settings/settings-repo', () => ({
 const message = { error: 'failed', success: 'saved' };
 
 describe('useSettings', () => {
+  let warnSpy: ReturnType<typeof vi.spyOn>;
+
   beforeEach(() => {
     setActivePinia(createPinia());
     vi.clearAllMocks();
+    warnSpy = vi.spyOn(logger, 'warn').mockImplementation(() => {});
   });
 
   it('should route a registered general key through the writer', async () => {
@@ -44,11 +48,25 @@ describe('useSettings', () => {
     expect(mockUpdateFrontendSetting).not.toHaveBeenCalled();
   });
 
-  it('should keep session keys on the session path, not the writer', async () => {
+  it('should route a registered session key through the writer', async () => {
     const { updateSetting } = useSettings();
     await updateSetting('animationsEnabled', false, SettingLocation.SESSION, message);
-    expect(mockUpdateSession).toHaveBeenCalledWith({ animationsEnabled: false });
-    expect(mockWrite).not.toHaveBeenCalled();
+    expect(mockWrite).toHaveBeenCalledWith('animationsEnabled', false);
+    expect(mockUpdateSession).not.toHaveBeenCalled();
+  });
+
+  it('should warn when the supplied location disagrees with the registered channel', async () => {
+    const { updateSetting } = useSettings();
+    // animationsEnabled is a session key; passing GENERAL should still route by registry but warn.
+    await updateSetting('animationsEnabled', false, SettingLocation.GENERAL, message);
+    expect(mockWrite).toHaveBeenCalledWith('animationsEnabled', false);
+    expect(warnSpy).toHaveBeenCalledOnce();
+  });
+
+  it('should not warn when the supplied location matches the registered channel', async () => {
+    const { updateSetting } = useSettings();
+    await updateSetting('submitUsageAnalytics', true, SettingLocation.GENERAL, message);
+    expect(warnSpy).not.toHaveBeenCalled();
   });
 
   it('should keep unregistered (wire-named) keys on the location path', async () => {

@@ -32,15 +32,13 @@ interface ChannelPartition {
   readonly general: Record<string, unknown>;
   readonly frontend: Record<string, unknown>;
   readonly session: Record<string, unknown>;
-  readonly animationsEnabled?: boolean;
 }
 
-/** Splits a patch into one merged wire payload per channel, pulling animationsEnabled out for its setter. */
+/** Splits a patch into one merged wire payload per channel. */
 function partitionByChannel(patch: SettingsPatch): ChannelPartition {
   const general: Record<string, unknown> = {};
   const frontend: Record<string, unknown> = {};
   const session: Record<string, unknown> = {};
-  let animationsEnabled: boolean | undefined;
 
   // eslint-disable-next-line @typescript-eslint/consistent-type-assertions -- Object.keys widens to string[]; the patch owns exactly WritableSettingKey entries
   for (const key of Object.keys(patch) as WritableSettingKey[]) {
@@ -52,14 +50,11 @@ function partitionByChannel(patch: SettingsPatch): ChannelPartition {
       Object.assign(general, toWirePayload(key, value));
     else if (channel === Channel.frontend)
       Object.assign(frontend, toWirePayload(key, value));
-    else if (key === 'animationsEnabled')
-      // eslint-disable-next-line @typescript-eslint/consistent-type-assertions -- animationsEnabled's value type is boolean
-      animationsEnabled = value as boolean;
     else
       Object.assign(session, toWirePayload(key, value));
   }
 
-  return { animationsEnabled, frontend, general, session };
+  return { frontend, general, session };
 }
 
 interface UseSettingsWriterReturn {
@@ -76,7 +71,7 @@ interface UseSettingsWriterReturn {
  */
 export function useSettingsWriter(): UseSettingsWriterReturn {
   const { update, updateFrontendSetting } = useSettingsOperations();
-  const { setAnimationsEnabled, updateSession } = useSettingsRepo();
+  const { updateSession } = useSettingsRepo();
 
   async function write<K extends WritableSettingKey>(key: K, value: SettingValue<K>): Promise<ActionStatus> {
     const channel = settingsRegistry[key].channel;
@@ -87,17 +82,12 @@ export function useSettingsWriter(): UseSettingsWriterReturn {
       case Channel.frontend:
         return updateFrontendSetting(toWirePayload(key, value));
       case Channel.session:
-        if (key === 'animationsEnabled') {
-          // eslint-disable-next-line @typescript-eslint/consistent-type-assertions -- animationsEnabled's value type is boolean; TS cannot prove it for a generic K
-          setAnimationsEnabled(value as boolean);
-          return { success: true };
-        }
         return updateSession(toWirePayload(key, value));
     }
   }
 
   async function writeMany(patch: SettingsPatch): Promise<ActionStatus> {
-    const { animationsEnabled, frontend, general, session } = partitionByChannel(patch);
+    const { frontend, general, session } = partitionByChannel(patch);
 
     const results: ActionStatus[] = [];
     if (Object.keys(general).length > 0)
@@ -106,8 +96,6 @@ export function useSettingsWriter(): UseSettingsWriterReturn {
       results.push(await updateFrontendSetting(frontend));
     if (Object.keys(session).length > 0)
       results.push(updateSession(session));
-    if (animationsEnabled !== undefined)
-      setAnimationsEnabled(animationsEnabled);
 
     return results.find(result => !result.success) ?? { success: true };
   }

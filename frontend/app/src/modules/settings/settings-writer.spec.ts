@@ -9,7 +9,6 @@ import { CostBasisMethod } from '@/modules/settings/types/user-settings';
 const mockUpdate = vi.fn(async (): Promise<{ success: boolean; message?: string }> => ({ success: true }));
 const mockUpdateFrontendSetting = vi.fn(async (): Promise<{ success: boolean; message?: string }> => ({ success: true }));
 const mockUpdateSession = vi.fn((): { success: boolean } => ({ success: true }));
-const mockSetAnimationsEnabled = vi.fn();
 
 vi.mock('@/modules/settings/use-settings-operations', () => ({
   useSettingsOperations: vi.fn((): Record<string, unknown> => ({
@@ -20,7 +19,6 @@ vi.mock('@/modules/settings/use-settings-operations', () => ({
 
 vi.mock('@/modules/settings/settings-repo', () => ({
   useSettingsRepo: vi.fn((): Record<string, unknown> => ({
-    setAnimationsEnabled: mockSetAnimationsEnabled,
     updateSession: mockUpdateSession,
   })),
 }));
@@ -69,11 +67,10 @@ describe('useSettingsWriter', () => {
       expect(mockUpdateSession).toHaveBeenCalledWith({ timeframe: TimeFramePeriod.ALL });
     });
 
-    it('should route animationsEnabled through its dedicated setter', async () => {
+    it('should route animationsEnabled through the session store update', async () => {
       const { write } = useSettingsWriter();
       await write('animationsEnabled', false);
-      expect(mockSetAnimationsEnabled).toHaveBeenCalledWith(false);
-      expect(mockUpdateSession).not.toHaveBeenCalled();
+      expect(mockUpdateSession).toHaveBeenCalledWith({ animationsEnabled: false });
     });
 
     it('should surface a write failure', async () => {
@@ -100,12 +97,11 @@ describe('useSettingsWriter', () => {
       expect(mockUpdateSession).toHaveBeenCalledWith({ timeframe: TimeFramePeriod.WEEK });
     });
 
-    it('should route animationsEnabled separately within a batch', async () => {
+    it('should route animationsEnabled through the session channel within a batch', async () => {
       const { writeMany } = useSettingsWriter();
       await writeMany({ animationsEnabled: true, itemsPerPage: 10 });
-      expect(mockSetAnimationsEnabled).toHaveBeenCalledWith(true);
+      expect(mockUpdateSession).toHaveBeenCalledWith({ animationsEnabled: true });
       expect(mockUpdateFrontendSetting).toHaveBeenCalledWith({ itemsPerPage: 10 });
-      expect(mockUpdateSession).not.toHaveBeenCalled();
     });
 
     it('should return the first failure', async () => {
