@@ -139,6 +139,31 @@ def kraken_ledger_entry_type_to_ours(value: str) -> tuple[HistoryEventType, Hist
     return event_type, event_subtype
 
 
+def _remove_canceling_ledger_legs(event_set: list[tuple[int, HistoryEvent]]) -> None:
+    """Remove spend/receive leg pairs of the same asset and amount that cancel out.
+
+    Kraken reports trades of tokenized assets (aclass: tokenized_asset) as 4 ledger
+    entries sharing the same refid: the tokenized asset spend, the fiat receive and two
+    internal USD settlement legs (a spend and a receive of the same asset and amount)
+    that cancel each other out. Removing the settlement legs leaves the actual trade
+    pair. https://github.com/rotki/rotki/issues/12564
+    """
+    for spend_entry in [x for x in event_set if x[1].event_type == HistoryEventType.SPEND]:
+        for receive_entry in event_set:
+            if (
+                    receive_entry[1].event_type == HistoryEventType.RECEIVE and
+                    receive_entry[1].asset == spend_entry[1].asset and
+                    receive_entry[1].amount == spend_entry[1].amount
+            ):
+                log.debug(
+                    f'Removing kraken internal settlement legs that cancel each other '
+                    f'out: {spend_entry[1]} and {receive_entry[1]}',
+                )
+                event_set.remove(spend_entry)
+                event_set.remove(receive_entry)
+                break
+
+
 def _check_and_get_response(
         response: Response,
         method: Literal['Balance', 'TradesHistory', 'Ledgers', 'Assets', 'AssetPairs', 'accounts'],
@@ -1117,6 +1142,8 @@ class Kraken(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
                 continue
 
         for event_set in receive_spend_events.values():
+            if len(event_set) > 2:  # tokenized asset trades come with extra settlement legs
+                _remove_canceling_ledger_legs(event_set)
             if len(event_set) == 2:
                 for _, history_event in event_set:
                     history_event.event_subtype = HistoryEventSubType.RECEIVE if history_event.event_type == HistoryEventType.RECEIVE else HistoryEventSubType.SPEND  # noqa: E501
