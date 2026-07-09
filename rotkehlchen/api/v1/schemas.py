@@ -4979,6 +4979,42 @@ class OnchainHistoricalBalanceSchema(AsyncQueryArgumentSchema):
             )
 
 
+class OnchainHistoricalBalanceDivergenceSchema(AsyncQueryArgumentSchema):
+    evm_chain = EvmChainNameField(required=True, limit_to=list(EVM_CHAIN_IDS_WITH_TRANSACTIONS))
+    address = EvmAddressField(required=True)
+    asset = AssetField(expected_type=Asset, required=True)
+    tolerance = AmountField(load_default=ZERO)
+
+    @validates_schema
+    def validate_schema(
+            self,
+            data: dict[str, Any],
+            **_kwargs: Any,
+    ) -> None:
+        if data['tolerance'] < ZERO:
+            raise ValidationError(
+                message='Tolerance must be non-negative',
+                field_name='tolerance',
+            )
+
+        if (chain_id := data['evm_chain']).to_blockchain().get_native_token_id() == (asset := data['asset']).identifier:  # noqa: E501
+            return
+
+        try:
+            token = asset.resolve_to_evm_token()
+        except (WrongAssetType, UnknownAsset):
+            raise ValidationError(
+                message=f'{asset.identifier} is not a valid EVM token',
+                field_name='asset',
+            ) from None
+
+        if token.chain_id != chain_id:
+            raise ValidationError(
+                message=f'{asset.identifier} is not on the {chain_id.to_name()}',
+                field_name='asset',
+            )
+
+
 class RefreshProtocolDataSchema(AsyncQueryArgumentSchema):
     cache_protocol = SerializableEnumField(
         enum_class=ProtocolsWithCache,

@@ -100,7 +100,7 @@ export function useHistoryEventsFilters(
   const { fetchHistoryEvents } = useHistoryEvents();
   const { clearAllHighlightTargets, isNavigating } = useHistoryEventNavigation();
 
-  const highlightKeys = ['highlightedAssetMovement', 'highlightedInternalTxConflict', 'highlightedPotentialMatch', 'highlightedNegativeBalanceEvent'] as const;
+  const highlightKeys = ['highlightedAccountingEvent', 'highlightedAssetMovement', 'highlightedInternalTxConflict', 'highlightedPotentialMatch', 'highlightedNegativeBalanceEvent'] as const;
   const shouldPreserveHighlights = ref<boolean>(highlightKeys.some(key => !!get(route).query[key]));
 
   const fetchHistoryEventsTagged = async (
@@ -217,6 +217,7 @@ export function useHistoryEventsFilters(
         'groupIdentifiers',
         'duplicateHandlingStatus',
         'targetGroupIdentifier',
+        'highlightedAccountingEvent',
         'highlightedAssetMovement',
         'highlightedInternalTxConflict',
         'highlightedPotentialMatch',
@@ -232,7 +233,7 @@ export function useHistoryEventsFilters(
       const duplicateHandlingStatusValue = get(duplicateHandlingStatusFromQuery);
       const groupIdentifiersValue = get(groupIdentifiersFromQuery);
       const preserve = get(shouldPreserveHighlights);
-      const { highlightedAssetMovement, highlightedInternalTxConflict, highlightedPotentialMatch, highlightedNegativeBalanceEvent } = get(route).query;
+      const { highlightedAccountingEvent, highlightedAssetMovement, highlightedInternalTxConflict, highlightedPotentialMatch, highlightedNegativeBalanceEvent } = get(route).query;
 
       const missingAcquisitionValue = get(missingAcquisitionFromQuery);
       const stateMarkersValue = get(toggles, 'stateMarkers');
@@ -242,6 +243,7 @@ export function useHistoryEventsFilters(
         ...(preserve
           ? {
               highlightedAssetMovement,
+              highlightedAccountingEvent,
               highlightedInternalTxConflict,
               highlightedNegativeBalanceEvent,
               highlightedPotentialMatch,

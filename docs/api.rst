@@ -15613,6 +15613,111 @@ Historical Balance Queries
     :statuscode 409: No archive node available for the specified chain
     :statuscode 502: Failed to query balance from archive node
 
+  .. http:post:: /api/(version)/balances/historical/onchain/divergence
+
+    Finds the first historical balance checkpoint where rotki's tracked wallet balance starts to
+    persistently diverge from the on-chain balance returned by an archive node. This is intended to
+    debug accounting refactor balance mismatches for a specific EVM address and asset.
+
+    The search uses the processed historical balance checkpoints for the given chain, address and
+    asset, checks that an archive node is connected, then probes on-chain balances with a binary
+    search. The result identifies the last matching checkpoint and the first diverged checkpoint,
+    along with every probe performed during the search. It assumes the mismatch persists once it
+    begins; transient mismatches that later resolve are outside the scope of the search.
+
+    .. note::
+      This endpoint is only available when the accounting refactor feature flag is enabled
+      (``ROTKI_ACCOUNTING_UPDATE=True``). It requires an archive node to be available for the
+      specified chain. This endpoint can also be queried asynchronously by using
+      ``"async_query": true``.
+
+    **Example Request:**
+
+      .. http:example:: curl wget httpie python-requests
+
+        POST /api/1/balances/historical/onchain/divergence HTTP/1.1
+        Host: localhost:5042
+        Content-Type: application/json;charset=UTF-8
+
+        {
+          "evm_chain": "arbitrum_one",
+          "address": "0x9531C059098e3d194fF87FebB587aB07B30B1306",
+          "asset": "ETH",
+          "tolerance": "0.0033305072912590555"
+        }
+
+    :reqjson string evm_chain: The EVM chain name (e.g., "ethereum", "optimism", "arbitrum_one")
+    :reqjson string address: The EVM address whose wallet balance should be checked
+    :reqjson string asset: The asset identifier (native token or ERC20 token on the specified chain)
+    :reqjson string[optional] tolerance: Maximum absolute difference treated as a match. Defaults to ``"0"``.
+
+    **Example Response:**
+
+      .. sourcecode:: http
+
+        HTTP/1.1 200 OK
+        Content-Type: application/json
+
+        {
+          "message": "",
+          "result": {
+            "status": "diverged",
+            "location": "arbitrum_one",
+            "address": "0x9531C059098e3d194fF87FebB587aB07B30B1306",
+            "asset": "ETH",
+            "total_events": 106,
+            "tolerance": "0.0033305072912590555",
+            "last_matching": {
+              "event_identifier": 12345,
+              "group_identifier": "421610x7e3b7cc64daf94ed14d47743908cf1ef11be0da3adaf9887d59847330230882c",
+              "timestamp": 1755037576,
+              "block_number": 371234567,
+              "tracked_balance": "0.005964804719627",
+              "onchain_balance": "0.005964804719627",
+              "difference": "0"
+            },
+            "first_diverged": {
+              "event_identifier": 12346,
+              "group_identifier": "421610x4e2dab3d32fbec3123de4f83fd2dc3becb7cf3a7bbfcb75d8dc35d1a80a355b3",
+              "timestamp": 1755037590,
+              "block_number": 371234580,
+              "tracked_balance": "1.60181176561987326",
+              "onchain_balance": "1.609610590731148371",
+              "difference": "0.007798825111275111"
+            },
+            "probes": [{
+              "event_index": 1,
+              "matches": true,
+              "event": {
+                "event_identifier": 12000,
+                "group_identifier": "421610x...",
+                "timestamp": 1735689600,
+                "block_number": 290000000,
+                "tracked_balance": "0.004369412502091037",
+                "onchain_balance": "0.004369412502091037",
+                "difference": "0"
+              }
+            }]
+          },
+          "status_code": 200
+        }
+
+    :resjson string status: ``"diverged"``, ``"diverged_from_start"`` or ``"no_divergence"``
+    :resjson string location: The chain/location checked
+    :resjson string address: The checked EVM address
+    :resjson string asset: The checked asset identifier
+    :resjson integer total_events: Number of tracked wallet-balance checkpoints considered
+    :resjson string tolerance: The tolerance used for match comparisons
+    :resjson object/null last_matching: Last checkpoint where tracked and on-chain balances matched
+    :resjson object/null first_diverged: First checkpoint where tracked and on-chain balances diverged
+    :resjson list[object] probes: Ordered list of balance probes performed by the binary search
+    :statuscode 200: Divergence search completed successfully
+    :statuscode 400: Invalid request (wrong chain for asset, invalid chain, negative tolerance)
+    :statuscode 401: User is not logged in
+    :statuscode 403: User does not have premium access
+    :statuscode 404: Accounting refactor feature flag is disabled or no tracked historical balance data exists
+    :statuscode 409: No archive node available for the specified chain or archive balance query failed
+
 
 Refetch transactions for a specific time period
 ===================================================

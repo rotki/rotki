@@ -14,6 +14,33 @@ describe('composables/api/balances/historical-balances', () => {
     return useHistoricalBalancesApi();
   }
 
+  describe('findHistoricalBalanceDivergence', () => {
+    it('should request the divergence search as an async task with required fields', async () => {
+      let capturedBody: DefaultBodyType = null;
+      server.use(
+        http.post(`${backendUrl}/api/1/balances/historical/onchain/divergence`, async ({ request }) => {
+          capturedBody = await request.json();
+          return HttpResponse.json({ message: '', result: { task_id: 654 } });
+        }),
+      );
+
+      const { findHistoricalBalanceDivergence } = await getApi();
+      const result = await findHistoricalBalanceDivergence({
+        address: '0xABC',
+        asset: 'ETH',
+        evmChain: 'ethereum',
+      });
+
+      expect(capturedBody).toEqual({
+        address: '0xABC',
+        asset: 'ETH',
+        async_query: true,
+        evm_chain: 'ethereum',
+      });
+      expect(result.taskId).toBe(654);
+    });
+  });
+
   describe('fetchHistoricalBalanceSeries', () => {
     it('should request the balance series as an async task with required fields', async () => {
       let capturedBody: DefaultBodyType = null;

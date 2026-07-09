@@ -2,7 +2,7 @@
 import type { Account, Blockchain, HistoryEventEntryType } from '@rotki/common';
 import type { PullLocationTransactionPayload } from '@/modules/history/events/event-payloads';
 import type { HistoryEventEntry, HistoryEventRow } from '@/modules/history/events/schemas';
-import AccountingOverlayToggle from '@/modules/history/balances/AccountingOverlayToggle.vue';
+import { AccountingOverlayToggle, BalanceDivergencePanel, BalanceDivergenceToggle } from '@/modules/history/balances/components';
 import { OverlayMode, type OverlayPair, useAccountingOverlay } from '@/modules/history/balances/use-accounting-overlay';
 import { provideAccountingOverlay } from '@/modules/history/balances/use-accounting-overlay-context';
 import { DataIssuesPanel, DataIssuesToggle } from '@/modules/history/data-issues/components/inbox';
@@ -77,6 +77,7 @@ const toggles = ref<HistoryEventsToggles>(getDefaultToggles());
 const overlayMode = ref<OverlayMode>(OverlayMode.NONE);
 
 const showAlerts = ref<boolean>(false);
+const showBalanceDivergence = ref<boolean>(false);
 const currentAction = ref<HistoryEventAction>(HISTORY_EVENT_ACTIONS.QUERY);
 const eventPriceUpdatePayload = ref<EventPriceUpdatePayload>();
 
@@ -363,6 +364,7 @@ watchDebounced(route, async () => {
             >
               <AccountingOverlayToggle v-model="overlayMode" />
               <DataIssuesToggle />
+              <BalanceDivergenceToggle v-model="showBalanceDivergence" />
             </div>
 
             <HistoryEventsFiltersChips
@@ -414,6 +416,11 @@ watchDebounced(route, async () => {
         <EventAssetPriceUpdateDialog
           v-if="eventPriceUpdatePayload"
           v-model="eventPriceUpdatePayload"
+        />
+
+        <BalanceDivergencePanel
+          v-if="overlayAvailable"
+          v-model="showBalanceDivergence"
         />
       </div>
     </TablePageLayout>

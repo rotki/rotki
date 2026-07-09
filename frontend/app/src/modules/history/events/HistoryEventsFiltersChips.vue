@@ -92,6 +92,13 @@ function removeNegativeBalanceParam(): void {
   router.push({ query });
 }
 
+function removeAccountingEventParam(): void {
+  const query = { ...route.query };
+  delete query.highlightedAccountingEvent;
+  delete query.targetGroupIdentifier;
+  router.push({ query });
+}
+
 function removeDuplicateEventsParam(): void {
   const query = { ...route.query };
   delete query.groupIdentifiers;
@@ -170,6 +177,27 @@ function refreshDuplicateView(): void {
         </RuiChip>
       </template>
       {{ t('historical_balances.negative_balances.view_event_tooltip') }}
+    </RuiTooltip>
+
+    <RuiTooltip
+      v-if="route.query.highlightedAccountingEvent"
+      class="pb-4"
+      :popper="{ placement: 'bottom' }"
+      :open-delay="400"
+      tooltip-class="max-w-80"
+    >
+      <template #activator>
+        <RuiChip
+          closeable
+          color="warning"
+          size="sm"
+          variant="outlined"
+          @click:close="removeAccountingEventParam()"
+        >
+          {{ t('transactions.events.show_accounting_divergence') }}
+        </RuiChip>
+      </template>
+      {{ t('transactions.events.show_accounting_divergence_tooltip') }}
     </RuiTooltip>
 
     <div

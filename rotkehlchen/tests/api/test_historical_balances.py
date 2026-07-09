@@ -13,6 +13,7 @@ from rotkehlchen.assets.utils import get_or_create_evm_token
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants import DAY_IN_SECONDS, HOUR_IN_SECONDS, ONE
 from rotkehlchen.constants.assets import A_BTC, A_ETH, A_EUR, A_USD
+from rotkehlchen.db.evmtx import DBEvmTx
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.errors.price import NoPriceForGivenTimestamp
 from rotkehlchen.fval import FVal
@@ -37,7 +38,14 @@ from rotkehlchen.tests.utils.api import (
 )
 from rotkehlchen.tests.utils.constants import A_DASH
 from rotkehlchen.tests.utils.factories import make_evm_address, make_evm_tx_hash
-from rotkehlchen.types import AssetAmount, ChainID, Location, Price, Timestamp
+from rotkehlchen.types import (
+    AssetAmount,
+    ChainID,
+    EvmTransaction,
+    Location,
+    Price,
+    Timestamp,
+)
 from rotkehlchen.utils.misc import timestamp_to_daystart_timestamp, ts_now, ts_sec_to_ms
 
 pytestmark = pytest.mark.accounting_update
@@ -452,6 +460,95 @@ def test_get_historical_balance_with_filters(
             ),
             contained_in_msg=error_msg,
         )
+
+
+@pytest.mark.parametrize('start_with_valid_premium', [True])
+@pytest.mark.parametrize('have_decoders', [True])
+def test_find_onchain_historical_balance_divergence(
+        rotkehlchen_api_server: 'APIServer',
+) -> None:
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+    db = rotki.data.db
+    user_address = make_evm_address()
+    tx_hashes = [make_evm_tx_hash() for _ in range(8)]
+    with db.user_write() as write_cursor:
+        DBEvmTx(db).add_transactions(
+            write_cursor=write_cursor,
+            evm_transactions=[
+                EvmTransaction(
+                    tx_hash=tx_hash,
+                    chain_id=ChainID.ETHEREUM,
+                    timestamp=Timestamp(START_TS + idx),
+                    block_number=idx if idx >= 4 else idx + 1,
+                    from_address=make_evm_address(),
+                    to_address=user_address,
+                    value=0,
+                    gas=21000,
+                    gas_price=1000000000,
+                    gas_used=21000,
+                    input_data=b'',
+                    nonce=idx,
+                )
+                for idx, tx_hash in enumerate(tx_hashes)
+            ],
+            relevant_address=None,
+        )
+        DBHistoryEvents(database=db).add_history_events(
+            write_cursor=write_cursor,
+            history=[
+                EvmEvent(
+                    tx_ref=tx_hash,
+                    sequence_index=0,
+                    timestamp=ts_sec_to_ms(Timestamp(START_TS + idx)),
+                    location=Location.ETHEREUM,
+                    event_type=HistoryEventType.RECEIVE,
+                    event_subtype=HistoryEventSubType.NONE,
+                    asset=A_ETH,
+                    amount=ONE,
+                    location_label=user_address,
+                    notes='Receive ETH',
+                )
+                for idx, tx_hash in enumerate(tx_hashes)
+            ],
+        )
+
+    process_historical_balances(database=db, msg_aggregator=db.msg_aggregator)
+    node_inquirer = rotki.chains_aggregator.ethereum.node_inquirer
+    with (
+        patch.object(
+            node_inquirer,
+            'get_historical_native_balance',
+            side_effect=[FVal(9), FVal(1), FVal(5), FVal(7)],
+        ) as balance_mock,
+        patch.object(
+            node_inquirer,
+            'get_blocknumber_by_time',
+            side_effect=AssertionError('transaction block number should be reused'),
+        ),
+        patch.object(node_inquirer, 'has_archive_node', return_value=True),
+    ):
+        result = assert_proper_sync_response_with_result(requests.post(
+            api_url_for(
+                rotkehlchen_api_server,
+                'onchainhistoricalbalancedivergenceresource',
+            ),
+            json={
+                'evm_chain': 'ethereum',
+                'address': user_address,
+                'asset': A_ETH.identifier,
+            },
+        ))
+
+    assert result['status'] == 'diverged'
+    assert result['total_events'] == 7
+    assert result['last_matching']['block_number'] == 4
+    assert result['last_matching']['tracked_balance'] == '5'
+    assert result['first_diverged']['block_number'] == 5
+    assert result['first_diverged']['tracked_balance'] == '6'
+    assert result['first_diverged']['onchain_balance'] == '7'
+    assert result['first_diverged']['difference'] == '1'
+    assert [probe['event']['block_number'] for probe in result['probes']] == [7, 1, 4, 5]
+    assert balance_mock.call_count == 4
 
 
 @pytest.mark.parametrize('start_with_valid_premium', [True])

@@ -42,7 +42,19 @@ export function useHistoryEventNavigationConsumer(
 
   // Watch for route-based navigation from external packages
   watchImmediate(route, ({ query }) => {
-    const { targetGroupIdentifier, highlightedNegativeBalanceEvent, asset } = query;
+    const { targetGroupIdentifier, highlightedAccountingEvent, highlightedNegativeBalanceEvent, asset } = query;
+    if (targetGroupIdentifier && highlightedAccountingEvent) {
+      setHighlightTarget(HighlightTargetTypes.ACCOUNTING_EVENT, {
+        groupIdentifier: targetGroupIdentifier.toString(),
+        identifier: Number(highlightedAccountingEvent),
+      });
+      requestNavigation({
+        assetFilter: typeof asset === 'string' ? asset : undefined,
+        highlightedAccountingEvent: Number(highlightedAccountingEvent),
+        targetGroupIdentifier: targetGroupIdentifier.toString(),
+      });
+    }
+
     if (targetGroupIdentifier && highlightedNegativeBalanceEvent) {
       setHighlightTarget(HighlightTargetTypes.NEGATIVE_BALANCE, {
         groupIdentifier: targetGroupIdentifier.toString(),
@@ -61,6 +73,7 @@ export function useHistoryEventNavigationConsumer(
    */
   async function clearHighlightsFromRoute(): Promise<void> {
     const {
+      highlightedAccountingEvent,
       highlightedAssetMovement,
       highlightedInternalTxConflict,
       highlightedNegativeBalanceEvent,
@@ -68,6 +81,7 @@ export function useHistoryEventNavigationConsumer(
       ...remainingQuery
     } = get(route).query;
     if (
+      highlightedAccountingEvent ||
       highlightedAssetMovement ||
       highlightedInternalTxConflict ||
       highlightedPotentialMatch ||
@@ -88,6 +102,9 @@ export function useHistoryEventNavigationConsumer(
 
     if (request.highlightedAssetMovement)
       query.highlightedAssetMovement = request.highlightedAssetMovement.toString();
+
+    if (request.highlightedAccountingEvent)
+      query.highlightedAccountingEvent = request.highlightedAccountingEvent.toString();
 
     if (request.highlightedPotentialMatch)
       query.highlightedPotentialMatch = request.highlightedPotentialMatch.toString();
