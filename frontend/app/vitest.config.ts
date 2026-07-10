@@ -54,6 +54,7 @@ export default mergeConfig(
           'src/DevApp.vue',
           'src/i18n.ts',
           'src/main.ts',
+          'src/modules/shell/app/store-debug-plugin.ts',
           'src/pages/playground/**',
         ],
       },
