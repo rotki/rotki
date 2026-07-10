@@ -1,34 +1,13 @@
 <script setup lang="ts">
-import SettingsOption from '@/modules/settings/controls/SettingsOption.vue';
-import { useSetting } from '@/modules/settings/use-setting';
-
-const autoCreateProfitEvents = ref<boolean>(false);
-const storedAutoCreateProfitEvents = useSetting('autoCreateProfitEvents');
-
-onMounted(() => {
-  set(autoCreateProfitEvents, get(storedAutoCreateProfitEvents));
-});
+import SettingSwitch from '@/modules/settings/controls/SettingSwitch.vue';
 
 const { t } = useI18n({ useScope: 'global' });
 </script>
 
 <template>
-  <SettingsOption
+  <SettingSwitch
     setting="autoCreateProfitEvents"
+    :label="t('general_settings.history_event.auto_create_profit_events.label')"
     :error-message="t('general_settings.history_event.auto_create_profit_events.validation.error')"
-  >
-    <template #title>
-      {{ t('general_settings.history_event.auto_create_profit_events.title') }}
-    </template>
-    <template #default="{ error, success, updateImmediate }">
-      <RuiSwitch
-        v-model="autoCreateProfitEvents"
-        color="primary"
-        :label="t('general_settings.history_event.auto_create_profit_events.label')"
-        :success-messages="success"
-        :error-messages="error"
-        @update:model-value="updateImmediate($event)"
-      />
-    </template>
-  </SettingsOption>
+  />
 </template>

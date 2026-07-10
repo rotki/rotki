@@ -16,6 +16,12 @@ interface UseSettingModelReturn<K extends WritableSettingKey> {
   readonly pending: Readonly<Ref<boolean>>;
   readonly error: Readonly<Ref<string>>;
   readonly success: Readonly<Ref<boolean>>;
+  /**
+   * Persist the current draft now, bypassing the debounce (e.g. a reset-to-default button: set the
+   * draft, then flush). Intended for debounced models: the debounced write the draft change also
+   * scheduled re-checks the source at fire time and no-ops once this immediate write has landed.
+   */
+  readonly flush: () => Promise<void>;
 }
 
 /**
@@ -70,8 +76,13 @@ export function useSettingModel<K extends WritableSettingKey>(
     startPromise(schedule());
   });
 
+  const flush = async (): Promise<void> => {
+    await persist();
+  };
+
   return {
     error: readonly(error),
+    flush,
     model,
     pending: readonly(pending),
     success: readonly(success),

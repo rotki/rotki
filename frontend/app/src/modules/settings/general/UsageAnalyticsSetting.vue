@@ -1,35 +1,14 @@
 <script setup lang="ts">
-import SettingsOption from '@/modules/settings/controls/SettingsOption.vue';
-import { useSetting } from '@/modules/settings/use-setting';
-
-const anonymousUsageAnalytics = ref<boolean>(false);
-const submitUsageAnalytics = useSetting('submitUsageAnalytics');
-
-onMounted(() => {
-  set(anonymousUsageAnalytics, get(submitUsageAnalytics));
-});
+import SettingSwitch from '@/modules/settings/controls/SettingSwitch.vue';
 
 const { t } = useI18n({ useScope: 'global' });
 </script>
 
 <template>
-  <SettingsOption
+  <SettingSwitch
     setting="submitUsageAnalytics"
+    data-cy="anonymous-usage-statistics-input"
+    :label="t('general_settings.usage_analytics.label')"
     :error-message="t('general_settings.usage_analytics.validation.error')"
-  >
-    <template #title>
-      {{ t('general_settings.usage_analytics.title') }}
-    </template>
-    <template #default="{ error, success, updateImmediate }">
-      <RuiSwitch
-        v-model="anonymousUsageAnalytics"
-        data-cy="anonymous-usage-statistics-input"
-        color="primary"
-        :label="t('general_settings.usage_analytics.label')"
-        :success-messages="success"
-        :error-messages="error"
-        @update:model-value="updateImmediate($event)"
-      />
-    </template>
-  </SettingsOption>
+  />
 </template>

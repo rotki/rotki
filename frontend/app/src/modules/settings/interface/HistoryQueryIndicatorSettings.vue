@@ -38,8 +38,24 @@ onUnmounted(() => {
     <template #title>
       {{ t('frontend_settings.history_query_indicator.title') }}
     </template>
-    <HistoryQueryIndicatorMinOutOfSyncPeriodSetting :id="SettingsHighlightIds.MIN_OUT_OF_SYNC_PERIOD" />
-    <HistoryQueryIndicatorDismissalThresholdSetting :id="SettingsHighlightIds.DISMISSAL_THRESHOLD" />
+    <SettingsItem :id="SettingsHighlightIds.MIN_OUT_OF_SYNC_PERIOD">
+      <template #title>
+        {{ t('frontend_settings.history_query_indicator.min_out_of_sync_period.title') }}
+      </template>
+      <template #subtitle>
+        {{ t('frontend_settings.history_query_indicator.min_out_of_sync_period.subtitle') }}
+      </template>
+      <HistoryQueryIndicatorMinOutOfSyncPeriodSetting />
+    </SettingsItem>
+    <SettingsItem :id="SettingsHighlightIds.DISMISSAL_THRESHOLD">
+      <template #title>
+        {{ t('frontend_settings.history_query_indicator.dismissal_threshold.title') }}
+      </template>
+      <template #subtitle>
+        {{ t('frontend_settings.history_query_indicator.dismissal_threshold.subtitle') }}
+      </template>
+      <HistoryQueryIndicatorDismissalThresholdSetting />
+    </SettingsItem>
     <div>
       <SettingsItem :id="SettingsHighlightIds.RESET_DISMISSAL_STATUS">
         <template #title>

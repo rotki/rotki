@@ -5658,6 +5658,18 @@
     "security_settings": {
       "subtitle": "Manage your account security",
       "title": "Security"
+    },
+    "validation": {
+      "number": {
+        "between": "The value must be between {min} and {max}",
+        "max": "The value must be at most {max}",
+        "min": "The value must be at least {min}",
+        "non_empty": "The value cannot be empty"
+      },
+      "text": {
+        "max_length": "Use at most {max} character(s)",
+        "non_empty": "The value cannot be empty"
+      }
     }
   },
   "settings_suggestions": {

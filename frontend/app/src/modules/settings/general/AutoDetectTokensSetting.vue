@@ -1,36 +1,13 @@
 <script setup lang="ts">
-import SettingsOption from '@/modules/settings/controls/SettingsOption.vue';
-import { useSetting } from '@/modules/settings/use-setting';
-
-const value = ref<boolean>(false);
-const autoDetectTokens = useSetting('autoDetectTokens');
-
-onMounted(() => {
-  set(value, get(autoDetectTokens));
-});
+import SettingSwitch from '@/modules/settings/controls/SettingSwitch.vue';
 
 const { t } = useI18n({ useScope: 'global' });
 </script>
 
 <template>
-  <SettingsOption
+  <SettingSwitch
     setting="autoDetectTokens"
+    :label="t('general_settings.auto_detect_tokens.label')"
     :error-message="t('general_settings.auto_detect_tokens.validation.error')"
-  >
-    <template #title>
-      {{ t('general_settings.auto_detect_tokens.title') }}
-    </template>
-    <template
-      #default="{ error, success, updateImmediate }"
-    >
-      <RuiSwitch
-        v-model="value"
-        color="primary"
-        :label="t('general_settings.auto_detect_tokens.label')"
-        :success-messages="success"
-        :error-messages="error"
-        @update:model-value="updateImmediate($event)"
-      />
-    </template>
-  </SettingsOption>
+  />
 </template>

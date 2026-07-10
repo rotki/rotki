@@ -72,4 +72,29 @@ describe('settingSwitch', () => {
     await nextTick();
     expect(wrapper.find('.error').text()).toBe('');
   });
+
+  it('should emit updated with the persisted value after a successful write', async () => {
+    set(model, true);
+    const wrapper = createWrapper();
+    set(success, true);
+    await nextTick();
+    expect(wrapper.emitted('updated')).toStrictEqual([[true]]);
+  });
+
+  it('should coerce a nullish draft to false for the switch', () => {
+    const nullableModel = ref<boolean | null | undefined>(null);
+    useSettingModelMock.mockReturnValue({ error, model: nullableModel, pending: ref(false), success });
+    const wrapper = createWrapper({ setting: 'includeFeesInCostBasis' });
+    expect(wrapper.find('.model').text()).toBe('false');
+  });
+
+  it('should treat a nullish draft as off in a callback success message', async () => {
+    const successMessage = (value: boolean): string => (value ? 'turned on' : 'turned off');
+    const nullableModel = ref<boolean | null | undefined>(null);
+    useSettingModelMock.mockReturnValue({ error, model: nullableModel, pending: ref(false), success });
+    const wrapper = createWrapper({ setting: 'includeFeesInCostBasis', successMessage });
+    set(success, true);
+    await nextTick();
+    expect(wrapper.find('.success').text()).toContain('turned off');
+  });
 });
