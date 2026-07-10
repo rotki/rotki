@@ -19,7 +19,7 @@ from setuptools_scm import get_version
 
 rotki_version = get_version()
 
-pyinstaller_version = os.environ.get('PYINSTALLER_VERSION', '6.15.0')
+pyinstaller_version = os.environ.get('PYINSTALLER_VERSION', '6.21.0')
 BACKEND_PREFIX = 'rotki-core'
 BACKEND_DEBUG_SYMBOLS_ENV = 'ROTKI_BACKEND_DEBUG_SYMBOLS'
 SUPPORTED_ARCHS = [
