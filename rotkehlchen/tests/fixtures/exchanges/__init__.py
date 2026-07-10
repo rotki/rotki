@@ -6,8 +6,8 @@ from .bitmex import *  # noqa: F403
 from .bitpanda import *  # noqa: F403
 from .bitstamp import *  # noqa: F403
 from .bybit import *  # noqa: F403
-from .coinex import *  # noqa: F403
 from .coinbase import *  # noqa: F403
+from .coinex import *  # noqa: F403
 from .cryptocom import *  # noqa: F403
 from .exchanges import *  # noqa: F403
 from .gate import *  # noqa: F403
