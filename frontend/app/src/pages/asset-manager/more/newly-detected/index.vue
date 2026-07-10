@@ -2,7 +2,9 @@
 import NewlyDetectedAssetTable from '@/modules/assets/detection/NewlyDetectedAssetTable.vue';
 
 definePage({
-  name: 'asset-manager-newly-detected',
+  meta: {
+    nav: { labelKey: 'navigation_menu.manage_assets_sub.newly_detected', icon: 'lu-list-collapse', parent: '/asset-manager/' },
+  },
 });
 </script>
 

@@ -4,9 +4,9 @@ import Dashboard from '@/modules/dashboard/Dashboard.vue';
 
 definePage({
   meta: {
+    nav: { labelKey: 'navigation_menu.dashboard', icon: 'lu-layout-dashboard', section: 1, order: 10, drawer: 'dashboard' },
     noteLocation: NoteLocation.DASHBOARD,
   },
-  name: 'dashboard',
 });
 </script>
 

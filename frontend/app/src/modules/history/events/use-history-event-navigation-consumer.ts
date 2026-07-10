@@ -4,10 +4,14 @@ import type { HistoryEventRequestPayload } from '@/modules/history/events/reques
 import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
 import { useNotifications } from '@/modules/core/notifications/use-notifications';
 import { useHistoryEventsApi } from '@/modules/history/api/events/use-history-events-api';
-import { HIGHLIGHT_LOADING_START_TIMEOUT, HighlightTargetTypes, type HistoryEventNavigationRequest, useHistoryEventNavigation } from '@/modules/history/events/use-history-event-navigation';
-import { Routes } from '@/router/routes';
+import {
+  HIGHLIGHT_LOADING_START_TIMEOUT,
+  HighlightTargetTypes,
+  type HistoryEventNavigationRequest,
+  useHistoryEventNavigation,
+} from '@/modules/history/events/use-history-event-navigation';
 
-const historyEventsPath = Routes.HISTORY_EVENTS.toString();
+const historyEventsName = '/history/events/';
 
 /**
  * Sets up watchers that consume pending navigation requests.
@@ -27,7 +31,13 @@ export function useHistoryEventNavigationConsumer(
   const router = useRouter();
   const route = useRoute();
   const { getHistoryEventGroupPosition } = useHistoryEventsApi();
-  const { consumeNavigation, pendingNavigation, requestNavigation, setHighlightTarget } = useHistoryEventNavigation();
+  const {
+    consumeNavigation,
+    pendingNavigation,
+    requestNavigation,
+    setHighlightTarget,
+  } =
+    useHistoryEventNavigation();
   const { notifyError } = useNotifications();
 
   // Watch for route-based navigation from external packages
@@ -50,8 +60,19 @@ export function useHistoryEventNavigationConsumer(
    * Clear all highlight query params from the current route.
    */
   async function clearHighlightsFromRoute(): Promise<void> {
-    const { highlightedAssetMovement, highlightedInternalTxConflict, highlightedNegativeBalanceEvent, highlightedPotentialMatch, ...remainingQuery } = get(route).query;
-    if (highlightedAssetMovement || highlightedInternalTxConflict || highlightedPotentialMatch || highlightedNegativeBalanceEvent) {
+    const {
+      highlightedAssetMovement,
+      highlightedInternalTxConflict,
+      highlightedNegativeBalanceEvent,
+      highlightedPotentialMatch,
+      ...remainingQuery
+    } = get(route).query;
+    if (
+      highlightedAssetMovement ||
+      highlightedInternalTxConflict ||
+      highlightedPotentialMatch ||
+      highlightedNegativeBalanceEvent
+    ) {
       await router.replace({ query: remainingQuery });
     }
   }
@@ -59,7 +80,10 @@ export function useHistoryEventNavigationConsumer(
   /**
    * Build highlight query params from a navigation request.
    */
-  function buildHighlightQuery(request: HistoryEventNavigationRequest, page: number): Record<string, string> {
+  function buildHighlightQuery(
+    request: HistoryEventNavigationRequest,
+    page: number,
+  ): Record<string, string> {
     const query: Record<string, string> = { page: page.toString() };
 
     if (request.highlightedAssetMovement)
@@ -89,13 +113,17 @@ export function useHistoryEventNavigationConsumer(
 
     try {
       while (currentRequest) {
-        const basePayload = currentRequest.preserveFilters && pageParams ? get(pageParams) : undefined;
+        const basePayload =
+          currentRequest.preserveFilters && pageParams ? get(pageParams) : undefined;
         // Compute the target's position within the asset-filtered view so the page number
         // matches the filter that will be applied on arrival.
         const filterPayload = currentRequest.assetFilter
           ? { ...basePayload, asset: currentRequest.assetFilter }
           : basePayload;
-        const position = await getHistoryEventGroupPosition(currentRequest.targetGroupIdentifier, filterPayload);
+        const position = await getHistoryEventGroupPosition(
+          currentRequest.targetGroupIdentifier,
+          filterPayload,
+        );
 
         // Check if this request is still current after the await
         if (get(pendingNavigation) !== request)
@@ -127,7 +155,10 @@ export function useHistoryEventNavigationConsumer(
            * The loading may not have started yet (fetchDebounce), so wait for it to start first.
            */
           if (!get(groupLoading)) {
-            await until(groupLoading).toBe(true, { timeout: HIGHLIGHT_LOADING_START_TIMEOUT, throwOnTimeout: false });
+            await until(groupLoading).toBe(true, {
+              timeout: HIGHLIGHT_LOADING_START_TIMEOUT,
+              throwOnTimeout: false,
+            });
           }
           // Now wait for loading to finish
           if (get(groupLoading)) {
@@ -141,14 +172,14 @@ export function useHistoryEventNavigationConsumer(
           // Route now has the correct filter/limit values from the pagination system
           await router.push({
             force: true,
-            path: historyEventsPath,
+            name: historyEventsName,
             query: { ...get(route).query, ...highlightQuery },
           });
         }
         else {
           await router.push({
             force: true,
-            path: historyEventsPath,
+            name: historyEventsName,
             query: { limit: limit.toString(), ...highlightQuery },
           });
         }
@@ -158,10 +189,7 @@ export function useHistoryEventNavigationConsumer(
     catch (error: unknown) {
       // Only show notification for user-initiated navigation, not filter-change re-navigation
       if (!request.preserveFilters) {
-        notifyError(
-          t('asset_movement_matching.dialog.show_in_events'),
-          getErrorMessage(error),
-        );
+        notifyError(t('asset_movement_matching.dialog.show_in_events'), getErrorMessage(error));
       }
     }
     finally {

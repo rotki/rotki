@@ -3,7 +3,6 @@ import type { MaybeRefOrGetter, Ref } from 'vue';
 import { startPromise } from '@shared/utils';
 import { isEvmNativeToken } from '@/modules/assets/types';
 import { DashboardTableType } from '@/modules/settings/types/frontend-settings';
-import { Routes } from '@/router/routes';
 
 interface UseDashboardAssetOperationsReturn {
   expanded: Ref<AssetBalanceWithPrice[]>;
@@ -20,12 +19,17 @@ export function useDashboardAssetOperations(
   function redirectToManualBalance(item: AssetBalanceWithPrice): void {
     const type = toValue(tableType);
     if ([DashboardTableType.ASSETS, DashboardTableType.LIABILITIES].includes(type)) {
-      startPromise(router.push({
-        path: `${Routes.BALANCES_MANUAL.toString()}/${type.toLowerCase()}`,
-        query: {
-          asset: item.asset,
-        },
-      }));
+      startPromise(
+        router.push({
+          name: '/balances/manual/[[tab]]',
+          params: {
+            tab: type.toLowerCase(),
+          },
+          query: {
+            asset: item.asset,
+          },
+        }),
+      );
     }
   }
 

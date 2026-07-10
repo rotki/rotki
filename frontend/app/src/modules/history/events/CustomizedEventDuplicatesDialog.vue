@@ -8,7 +8,6 @@ import { DuplicateHandlingStatus } from '@/modules/history/events/action-types';
 import CustomizedEventDuplicatesList from '@/modules/history/events/CustomizedEventDuplicatesList.vue';
 import { type DuplicateRow, useCustomizedEventDuplicates } from '@/modules/history/events/use-customized-event-duplicates';
 import CardTitle from '@/modules/shell/components/CardTitle.vue';
-import { Routes } from '@/router/routes';
 
 const modelValue = defineModel<boolean>({ default: false });
 
@@ -93,7 +92,7 @@ async function showInHistoryEvents(groupIds: string[], status: DuplicateHandling
 
   closeDialog();
   await router.push({
-    path: Routes.HISTORY_EVENTS.toString(),
+    name: '/history/events/',
     query: {
       duplicateHandlingStatus: status,
       groupIdentifiers: groupIds.join(','),

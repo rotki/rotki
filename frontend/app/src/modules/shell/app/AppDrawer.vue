@@ -4,7 +4,6 @@ import SponsorshipView from '@/modules/premium/SponsorshipView.vue';
 import GlobalSearch from '@/modules/shell/components/GlobalSearch.vue';
 import NavigationMenu from '@/modules/shell/components/navigation/NavigationMenu.vue';
 import RotkiLogo from '@/modules/shell/components/RotkiLogo.vue';
-import { Routes } from '@/router/routes';
 
 const { isMini, showDrawer } = storeToRefs(useAreaVisibilityStore());
 const { isXlAndDown } = useBreakpoint();
@@ -41,7 +40,7 @@ watchImmediate(isXlAndDown, (isXlAndDown) => {
           'px-0 [&>div]:h-8 justify-center': isMini,
         }"
       >
-        <RouterLink :to="Routes.DASHBOARD">
+        <RouterLink :to="{ name: '/dashboard/' }">
           <RotkiLogo
             :text="!isMini"
             :size="isMini ? 1.625 : 3"

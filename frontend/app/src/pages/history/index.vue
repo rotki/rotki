@@ -1,8 +1,9 @@
 <script setup lang="ts">
-import { Routes } from '@/router/routes';
-
 definePage({
-  redirect: Routes.HISTORY_EVENTS,
+  meta: {
+    nav: { labelKey: 'navigation_menu.history', icon: 'lu-history', section: 1, order: 40, drawer: 'history' },
+  },
+  redirect: { name: '/history/events/' },
 });
 </script>
 

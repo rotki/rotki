@@ -5,6 +5,7 @@ import RpcSettings from '@/modules/settings/general/rpc/RpcSettings.vue';
 
 definePage({
   meta: {
+    nav: { labelKey: 'navigation_menu.settings_sub.rpc_nodes', icon: 'lu-wifi', parent: '/settings' },
     noteLocation: NoteLocation.SETTINGS_RPC,
   },
 });

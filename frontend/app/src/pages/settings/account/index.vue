@@ -8,6 +8,7 @@ import SettingCategory from '@/modules/settings/SettingCategory.vue';
 
 definePage({
   meta: {
+    nav: { labelKey: 'navigation_menu.settings_sub.account', icon: 'lu-user-round-cog', parent: '/settings' },
     canNavigateBack: true,
     noteLocation: NoteLocation.SETTINGS_ACCOUNT,
   },

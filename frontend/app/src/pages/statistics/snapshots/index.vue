@@ -21,9 +21,9 @@ import TablePageLayout from '@/modules/shell/layout/TablePageLayout.vue';
 
 definePage({
   meta: {
+    nav: { labelKey: 'navigation_menu.statistics_sub.snapshots', icon: 'lu-camera', parent: '/statistics/', order: 30, drawer: 'statistics-snapshots' },
     noteLocation: NoteLocation.STATISTICS_SNAPSHOTS,
   },
-  name: 'statistics-snapshots',
 });
 
 const { t } = useI18n({ useScope: 'global' });

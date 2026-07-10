@@ -65,7 +65,7 @@ describe('createMissingApiKeyHandler', () => {
     await action.action();
 
     expect(mockPush).toHaveBeenCalledWith({
-      path: '/api-keys/external',
+      name: '/api-keys/external/',
       query: { service: 'etherscan' },
     });
   });
@@ -77,7 +77,7 @@ describe('createMissingApiKeyHandler', () => {
     const action = findAction(result, 'change_indexer_order');
     await action.action();
 
-    expect(mockPush).toHaveBeenCalledWith({ hash: '#indexer', path: '/settings/evm' });
+    expect(mockPush).toHaveBeenCalledWith({ hash: '#indexer', name: '/settings/evm/' });
   });
 
   it('should offer to open the registration url for blockscout', async () => {

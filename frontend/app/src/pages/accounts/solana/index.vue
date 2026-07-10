@@ -2,7 +2,9 @@
 import AccountBalancesDefaultPage from '@/modules/accounts/AccountBalancesDefaultPage.vue';
 
 definePage({
-  name: 'accounts-solana',
+  meta: {
+    nav: { labelKey: 'navigation_menu.accounts_sub.solana', icon: 'lu-solana-accounts-fill', parent: '/accounts/', order: 30, drawer: 'accounts-solana' },
+  },
 });
 
 const { t } = useI18n({ useScope: 'global' });

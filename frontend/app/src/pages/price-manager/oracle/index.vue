@@ -4,7 +4,9 @@ import OraclePriceContent from '@/modules/assets/prices/components/oracle/Oracle
 import TablePageLayout from '@/modules/shell/layout/TablePageLayout.vue';
 
 definePage({
-  name: 'price-manager-oracle',
+  meta: {
+    nav: { labelKey: 'navigation_menu.manage_prices_sub.oracle_prices', icon: 'lu-database', parent: '/price-manager/', order: 30, drawer: 'price-manager-oracle' },
+  },
 });
 
 const { t } = useI18n({ useScope: 'global' });

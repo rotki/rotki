@@ -14,7 +14,6 @@ import { useRefPropVModel } from '@/modules/core/common/validation/model';
 import { toMessages } from '@/modules/core/common/validation/validation';
 import { useRepullingTransactionForm } from '@/modules/history/events/tx/use-repulling-transaction-form';
 import DateTimeRangePicker from '@/modules/shell/components/inputs/DateTimeRangePicker.vue';
-import { Routes } from '@/router/routes';
 
 const modelValue = defineModel<RepullingTransactionPayload>({ required: true });
 const errors = defineModel<ValidationErrors>('errorMessages', { required: true });
@@ -110,7 +109,7 @@ defineExpose({
         tag="span"
       >
         <template #link>
-          <RouterLink :to="Routes.ACCOUNTS_EVM">
+          <RouterLink :to="{ name: '/accounts/evm/[[tab]]' }">
             <RuiButton
               color="primary"
               variant="text"

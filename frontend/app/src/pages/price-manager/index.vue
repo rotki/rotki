@@ -1,29 +1,19 @@
 <script setup lang="ts">
-import type { TabContent } from '@/modules/core/common/tabs';
 import { NoteLocation } from '@/modules/core/common/notes';
 import TabNavigation from '@/modules/shell/components/TabNavigation.vue';
-import { useAppRoutes } from '@/router/routes';
+import { useChildNavTabs } from '@/modules/shell/layout/use-nav-tabs';
 
 definePage({
   meta: {
+    nav: { labelKey: 'navigation_menu.manage_prices', icon: 'lu-manage-prices', section: 2, order: 30, drawer: 'price-manager' },
     canNavigateBack: true,
     noteLocation: NoteLocation.PRICE_MANAGER,
   },
-  name: 'price-manager',
   props: true,
   redirect: '/price-manager/latest',
 });
 
-const { appRoutes } = useAppRoutes();
-
-const tabs = computed<TabContent[]>(() => {
-  const Routes = get(appRoutes);
-  return [
-    Routes.PRICE_MANAGER_LATEST,
-    Routes.PRICE_MANAGER_HISTORIC,
-    Routes.PRICE_MANAGER_ORACLE,
-  ];
-});
+const tabs = useChildNavTabs('/price-manager/');
 </script>
 
 <template>

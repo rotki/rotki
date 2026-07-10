@@ -2,7 +2,6 @@
 import { type Module, SUPPORTED_MODULES } from '@/modules/core/common/modules';
 import AppImage from '@/modules/shell/components/AppImage.vue';
 import InternalLink from '@/modules/shell/components/InternalLink.vue';
-import { Routes } from '@/router/routes';
 
 defineProps<{
   modules: Module[];
@@ -52,7 +51,7 @@ const { top } = useElementBounding(wrapper);
         <template #link>
           <InternalLink
             class="!normal-case font-weight-regular text-body-1 text-decoration-none"
-            :to="Routes.SETTINGS_MODULES"
+            :to="{ name: '/settings/modules/' }"
           >
             {{ t('module_not_active.settings_link') }}
           </InternalLink>

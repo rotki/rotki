@@ -10,10 +10,10 @@ import ErrorScreen from '@/modules/shell/components/error/ErrorScreen.vue';
 import ProgressScreen from '@/modules/shell/components/ProgressScreen.vue';
 import FileUpload from '@/modules/user-data/FileUpload.vue';
 import { useReportsPageActions } from '@/pages/reports/use-reports-page-actions';
-import { Routes } from '@/router/routes';
 
 definePage({
   meta: {
+    nav: { labelKey: 'navigation_menu.profit_loss_report', icon: 'lu-calculator', section: 1, order: 80, drawer: 'profit-loss-report' },
     noteLocation: NoteLocation.PROFIT_LOSS_REPORTS,
   },
 });
@@ -34,7 +34,7 @@ const { t } = useI18n({ useScope: 'global' });
 const { getPath } = useInterop();
 
 function navigateToReport(reportId: number): void {
-  if (route.path === Routes.PROFIT_LOSS_REPORTS) {
+  if (route.name === '/reports/') {
     router.push({
       name: '/reports/[id]',
       params: {

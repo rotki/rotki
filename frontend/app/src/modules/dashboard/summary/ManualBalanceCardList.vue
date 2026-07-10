@@ -5,7 +5,6 @@ import { FiatDisplay } from '@/modules/assets/amount-display/components';
 import { useLocations } from '@/modules/core/common/use-locations';
 import LocationDisplay from '@/modules/history/LocationDisplay.vue';
 import ListItem from '@/modules/shell/components/ListItem.vue';
-import { Routes } from '@/router/routes';
 
 const { name, amount } = defineProps<{
   name: string;
@@ -13,7 +12,8 @@ const { name, amount } = defineProps<{
 }>();
 
 const manualBalancesRoute = computed<RouteLocationRaw>(() => ({
-  path: `${Routes.BALANCES_MANUAL}/assets`,
+  name: '/balances/manual/[[tab]]',
+  params: { tab: 'assets' },
   query: { location: name },
 }));
 

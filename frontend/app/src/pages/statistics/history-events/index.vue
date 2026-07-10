@@ -6,9 +6,9 @@ import WrappedContainerPlaceholder from '@/modules/statistics/WrappedContainerPl
 
 definePage({
   meta: {
+    nav: { labelKey: 'navigation_menu.statistics_sub.history_events', icon: 'lu-chart-bar', parent: '/statistics/', order: 20, drawer: 'statistics-history-events' },
     noteLocation: NoteLocation.STATISTICS_HISTORY_EVENTS,
   },
-  name: 'statistics-history-events',
 });
 
 const { allowed } = useFeatureAccess(PremiumFeature.EVENT_ANALYSIS_VIEW);

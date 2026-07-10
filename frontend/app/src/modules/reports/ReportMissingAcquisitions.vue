@@ -11,7 +11,6 @@ import ScrollableDialogContent from '@/modules/core/table/ScrollableDialogConten
 import { TableId, useRememberTableSorting } from '@/modules/core/table/use-remember-table-sorting';
 import BadgeDisplay from '@/modules/history/BadgeDisplay.vue';
 import DateDisplay from '@/modules/shell/components/display/DateDisplay.vue';
-import { Routes } from '@/router/routes';
 
 type GroupedItems = Record<string, MissingAcquisition[]>;
 
@@ -144,7 +143,7 @@ async function showInHistoryEvent(identifier: number) {
   emit('pin');
 
   await router.push({
-    path: Routes.HISTORY_EVENTS.toString(),
+    name: '/history/events/',
     query: {
       missingAcquisitionIdentifier: identifier.toString(),
     },

@@ -18,6 +18,12 @@ import HintMenuIcon from '@/modules/shell/components/HintMenuIcon.vue';
 import RowActions from '@/modules/shell/components/RowActions.vue';
 import TablePageLayout from '@/modules/shell/layout/TablePageLayout.vue';
 
+definePage({
+  meta: {
+    nav: { labelKey: 'navigation_menu.api_keys_sub.exchanges', icon: 'lu-coins-exchange', parent: '/api-keys/', order: 20, drawer: 'api-keys-exchanges', addAction: { labelKey: 'exchange_settings.dialog.add.title' } },
+  },
+});
+
 const nonSyncingExchanges = ref<Exchange[]>([]);
 const exchange = ref<ExchangeFormData>();
 const sort = ref<DataTableSortColumn<Exchange>>({

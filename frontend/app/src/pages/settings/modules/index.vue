@@ -7,6 +7,7 @@ import SettingCategory from '@/modules/settings/SettingCategory.vue';
 
 definePage({
   meta: {
+    nav: { labelKey: 'navigation_menu.settings_sub.modules', icon: 'lu-layout-grid', parent: '/settings' },
     noteLocation: NoteLocation.SETTINGS_MODULES,
   },
 });

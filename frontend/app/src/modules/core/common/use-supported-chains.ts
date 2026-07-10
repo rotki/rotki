@@ -12,7 +12,6 @@ import { isBlockchain } from '@/modules/core/common/chains';
 import { getPublicProtocolImagePath } from '@/modules/core/common/file/file';
 import { useSupportedChainsApi } from '@/modules/core/common/use-supported-chains-api';
 import { useSupportedChainsStore } from '@/modules/core/common/use-supported-chains-store';
-import { Routes } from '@/router/routes';
 
 function isEvmChain(info: ChainInfo): info is EvmChainInfo {
   return info.type === ChainType.EVM;
@@ -260,7 +259,7 @@ export const useSupportedChains = createSharedComposable((): UseSupportedChainsR
       return '/staking/eth2';
 
     const target = getChainAccountType(blockchain) ?? ChainType.EVM;
-    const basePath = `${Routes.ACCOUNTS.toString()}/${target}`;
+    const basePath = `/accounts/${target}`;
     if (target === ChainType.EVM)
       return `${basePath}/accounts?chain=${blockchain}`;
 

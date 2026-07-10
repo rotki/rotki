@@ -3,7 +3,6 @@ import { externalLinks } from '@shared/external-links';
 import ExternalLink from '@/modules/shell/components/ExternalLink.vue';
 import InternalLink from '@/modules/shell/components/InternalLink.vue';
 import ImportSource from '@/modules/user-data/ImportSource.vue';
-import { Routes } from '@/router/routes';
 
 const { t } = useI18n({ useScope: 'global' });
 </script>
@@ -48,7 +47,7 @@ const { t } = useI18n({ useScope: 'global' });
           keypath="import_data.cryptocom.line_four"
           tag="span"
         >
-          <InternalLink :to="Routes.BALANCES_MANUAL">
+          <InternalLink :to="{ name: '/balances/manual/[[tab]]' }">
             {{ t('navigation_menu.balances_sub.manual_balances') }}
           </InternalLink>
         </i18n-t>

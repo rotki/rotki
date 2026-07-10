@@ -32,7 +32,7 @@ describe('useRuleEventsLink', () => {
     viewEvents(buildRule({ counterparty: 'aave-v3' }));
 
     expect(push).toHaveBeenCalledWith({
-      path: '/history/events',
+      name: '/history/events/',
       query: { counterparties: 'aave-v3', eventSubtypes: 'reward', eventTypes: 'staking' },
     });
   });
@@ -42,7 +42,7 @@ describe('useRuleEventsLink', () => {
     viewEvents(buildRule());
 
     expect(push).toHaveBeenCalledWith({
-      path: '/history/events',
+      name: '/history/events/',
       query: { eventSubtypes: 'reward', eventTypes: 'staking' },
     });
   });

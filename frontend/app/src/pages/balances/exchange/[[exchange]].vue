@@ -17,13 +17,12 @@ import HideSmallBalances from '@/modules/settings/HideSmallBalances.vue';
 import { BalanceSource } from '@/modules/settings/types/frontend-settings';
 import InternalLink from '@/modules/shell/components/InternalLink.vue';
 import TablePageLayout from '@/modules/shell/layout/TablePageLayout.vue';
-import { Routes } from '@/router/routes';
 
 definePage({
   meta: {
+    nav: { labelKey: 'navigation_menu.balances_sub.exchange_balances', icon: 'lu-coins-exchange', parent: '/balances/', order: 20, drawer: 'balances-exchange' },
     noteLocation: NoteLocation.BALANCES_EXCHANGE,
   },
-  name: 'balances-exchange',
   props: true,
 });
 
@@ -83,7 +82,7 @@ const sortedExchanges = computed(() =>
 
 function openExchangeDetails() {
   router.push({
-    name: 'balances-exchange',
+    name: '/balances/exchange/[[exchange]]',
     params: {
       exchange: get(selectedExchange),
     },
@@ -199,7 +198,7 @@ function isBinance(exchange?: string): exchange is 'binance' | 'binanceus' {
               link
               class="h-[8rem]"
               :to="{
-                name: 'balances-exchange',
+                name: '/balances/exchange/[[exchange]]',
                 params: {
                   exchange: usedExchange,
                 },
@@ -287,7 +286,7 @@ function isBinance(exchange?: string): exchange is 'binance' | 'binanceus' {
         >
           <InternalLink
             :to="{
-              path: `${Routes.API_KEYS_EXCHANGES}`,
+              name: '/api-keys/exchanges/',
               query: { add: 'true' },
             }"
             class="module-not-active__link font-weight-regular text-body-1 text-decoration-none"

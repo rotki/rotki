@@ -4,6 +4,7 @@ import { NoteLocation } from '@/modules/core/common/notes';
 
 definePage({
   meta: {
+    nav: { labelKey: 'navigation_menu.calendar', icon: 'lu-calendar-days', section: 4, order: 10, drawer: 'calendar' },
     canNavigateBack: true,
     noteLocation: NoteLocation.CALENDAR,
   },

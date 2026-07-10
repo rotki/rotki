@@ -2,7 +2,6 @@ import type { DataIssue } from '@/modules/history/data-issues/schemas';
 import { describe, expect, it } from 'vitest';
 import { IssueKind, IssueSeverity, IssueState } from '@/modules/history/data-issues/constants';
 import { describeIssue, humanizeStrategy, relatedEventRoute, toTimelineItems } from '@/modules/history/data-issues/transforms';
-import { Routes } from '@/router/routes';
 
 function createIssue(overrides: Partial<DataIssue> = {}): DataIssue {
   return {
@@ -106,34 +105,34 @@ describe('data-issues transforms', () => {
   describe('relatedEventRoute', () => {
     it('should deep-link a negative balance to its highlighted event', () => {
       expect(relatedEventRoute(IssueKind.NEGATIVE_BALANCE, 42)).toEqual({
-        path: Routes.HISTORY_EVENTS.toString(),
+        name: '/history/events/',
         query: { highlightedNegativeBalanceEvent: '42' },
       });
     });
 
     it('should also pass the group identifier so the events view can page to the event', () => {
       expect(relatedEventRoute(IssueKind.NEGATIVE_BALANCE, 42, '0xabc')).toEqual({
-        path: Routes.HISTORY_EVENTS.toString(),
+        name: '/history/events/',
         query: { highlightedNegativeBalanceEvent: '42', targetGroupIdentifier: '0xabc' },
       });
     });
 
     it('should link a non negative-balance kind to the events page without a highlight', () => {
       expect(relatedEventRoute(IssueKind.CURRENT_BALANCE_MISMATCH, 7)).toEqual({
-        path: Routes.HISTORY_EVENTS.toString(),
+        name: '/history/events/',
       });
     });
 
     it('should also filter by asset when the issue carries one', () => {
       expect(relatedEventRoute(IssueKind.NEGATIVE_BALANCE, 42, '0xabc', 'ETH')).toEqual({
-        path: Routes.HISTORY_EVENTS.toString(),
+        name: '/history/events/',
         query: { asset: 'ETH', highlightedNegativeBalanceEvent: '42', targetGroupIdentifier: '0xabc' },
       });
     });
 
     it('should filter a non negative-balance kind by asset alone', () => {
       expect(relatedEventRoute(IssueKind.CURRENT_BALANCE_MISMATCH, 7, undefined, 'BTC')).toEqual({
-        path: Routes.HISTORY_EVENTS.toString(),
+        name: '/history/events/',
         query: { asset: 'BTC' },
       });
     });

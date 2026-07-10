@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import InternalLink from '@/modules/shell/components/InternalLink.vue';
 import NoDataScreen from '@/modules/shell/components/NoDataScreen.vue';
-import { Routes } from '@/router/routes';
 
 interface Props {
   error: string;
@@ -30,7 +29,7 @@ const { t } = useI18n({ useScope: 'global' });
         <template #link>
           <InternalLink
             :to="{
-              path: Routes.API_KEYS_EXTERNAL_SERVICES.toString(),
+              name: '/api-keys/external/',
               query: { service: 'opensea' },
             }"
           >

@@ -25,6 +25,12 @@ import ExternalLink from '@/modules/shell/components/ExternalLink.vue';
 import HashLink from '@/modules/shell/components/HashLink.vue';
 import TablePageLayout from '@/modules/shell/layout/TablePageLayout.vue';
 
+definePage({
+  meta: {
+    nav: { labelKey: 'navigation_menu.defi_sub.airdrops', icon: 'lu-gift', section: 1, order: 90, drawer: 'airdrops' },
+  },
+});
+
 type AirdropWithIndex = Omit<Airdrop, 'amount'> & { index: number; amount: BigNumber };
 
 type Statuses = '' | 'unknown' | 'unclaimed' | 'claimed' | 'missed';

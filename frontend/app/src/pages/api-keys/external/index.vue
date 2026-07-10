@@ -3,6 +3,12 @@ import { getTextToken } from '@rotki/common';
 import { useExternalApiKeys } from '@/modules/settings/api-keys/external/use-external-api-keys';
 import TablePageLayout from '@/modules/shell/layout/TablePageLayout.vue';
 
+definePage({
+  meta: {
+    nav: { labelKey: 'navigation_menu.api_keys_sub.external_services', icon: 'lu-blocks', parent: '/api-keys/', order: 30, drawer: 'api-keys-external-services' },
+  },
+});
+
 const { t } = useI18n({ useScope: 'global' });
 
 const search = ref<string>('');

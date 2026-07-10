@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import InternalLink from '@/modules/shell/components/InternalLink.vue';
 import ImportSource from '@/modules/user-data/ImportSource.vue';
-import { Routes } from '@/router/routes';
 
 const { t } = useI18n({ useScope: 'global' });
 </script>
@@ -26,7 +25,7 @@ const { t } = useI18n({ useScope: 'global' });
         keypath="import_data.cointracking.line_three"
         tag="span"
       >
-        <InternalLink :to="Routes.ACCOUNTS">
+        <InternalLink :to="{ name: '/accounts/' }">
           {{ t('navigation_menu.accounts') }}
         </InternalLink>
       </i18n-t>

@@ -3,6 +3,7 @@ import { NoteLocation } from '@/modules/core/common/notes';
 
 definePage({
   meta: {
+    nav: { labelKey: 'navigation_menu.api_keys', icon: 'lu-key', section: 3, order: 10, drawer: 'api-keys' },
     noteLocation: NoteLocation.API_KEYS,
   },
   redirect: '/api-keys/premium',

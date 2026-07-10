@@ -2,13 +2,13 @@
 import { NoteLocation } from '@/modules/core/common/notes';
 import { useNotesCount } from '@/modules/notes/use-notes-count';
 import UserNotesList from '@/modules/notes/UserNotesList.vue';
-import { useAppRoutes } from '@/router/routes';
 
 const display = defineModel<boolean>({ required: true });
 
 const [DefineCountBadge, ReuseCountBadge] = createReusableTemplate<{ count: number }>();
 
 const { t } = useI18n({ useScope: 'global' });
+const route = useRoute();
 
 const tab = ref<number>(0);
 
@@ -16,32 +16,13 @@ const openDialog = ref<boolean>(false);
 
 const { globalNotesCount, location, notesCount } = useNotesCount();
 
-const { appRoutes } = useAppRoutes();
-
-function getNoteLocationKey(key: string): string | null {
-  const index = Object.values<string>(NoteLocation).indexOf(key);
-  if (index > -1)
-    return Object.keys(NoteLocation)[index];
-
-  return null;
-}
-
 const locationName = computed<string>(() => {
-  const locationVal = get(location);
-  if (!locationVal)
+  if (!get(location))
     return '';
 
-  const noteLocationKey = getNoteLocationKey(locationVal);
-  if (!noteLocationKey)
-    return '';
-
-  const Routes = get(appRoutes);
-  const keyIn = (key: string): key is keyof typeof Routes => key in Routes;
-
-  if (keyIn(noteLocationKey))
-    return Routes[noteLocationKey].text;
-
-  return '';
+  // `location` is the current route's note location, so its label is the current route's nav label.
+  const nav = route.meta.nav;
+  return nav ? t(nav.labelKey) : '';
 });
 
 watch(locationName, (locationName) => {

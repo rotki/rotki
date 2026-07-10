@@ -6,9 +6,9 @@ import ModuleNotActive from '@/modules/settings/modules/ModuleNotActive.vue';
 
 definePage({
   meta: {
+    nav: { labelKey: 'navigation_menu.nfts', icon: 'lu-image', section: 1, order: 100, drawer: 'nfts' },
     noteLocation: NoteLocation.NFTS,
   },
-  name: 'nfts',
 });
 
 const modules = [Module.NFTS];

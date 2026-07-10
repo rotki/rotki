@@ -13,6 +13,8 @@ import ProgressScreen from '@/modules/shell/components/ProgressScreen.vue';
 
 definePage({
   meta: {
+    // label-only: gives the notes sidebar a title; not shown in the drawer or search.
+    nav: { labelKey: 'navigation_menu.profit_loss_report', icon: 'lu-calculator', searchable: false },
     canNavigateBack: true,
     noteLocation: NoteLocation.PROFIT_LOSS_REPORTS,
   },

@@ -6,7 +6,6 @@ import type { RepullingTransactionResult } from '@/modules/history/events/tx/use
 import { type NotificationAction, Severity } from '@rotki/common';
 import { useNotifications } from '@/modules/core/notifications/use-notifications';
 import { useDecodingStatusStore } from '@/modules/history/use-decoding-status-store';
-import { Routes } from '@/router/routes';
 
 interface UseHistoryEventsDialogHandlersDeps {
   /** Fetches event data and refreshes associated locations/labels. */
@@ -57,7 +56,7 @@ export function useHistoryEventsDialogHandlers(deps: UseHistoryEventsDialogHandl
         action = {
           action: async (): Promise<void> => {
             await router.push({
-              path: Routes.HISTORY_EVENTS.toString(),
+              name: '/history/events/',
               query: { txRefs: allTxHashes },
             });
           },

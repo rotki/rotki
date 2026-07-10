@@ -277,11 +277,11 @@ export class RotkiApp {
       await element.click();
     };
 
-    const menuSelector = `[data-cy="navigation__${menu}"]`;
+    const menuSelector = `[data-testid="navigation__${menu}"]`;
     const menuElement = page.locator(menuSelector);
 
     // Check if the submenu wrapper exists and if it's expanded
-    const submenuWrapper = menuElement.locator('[data-cy=submenu-wrapper]');
+    const submenuWrapper = menuElement.locator('[data-testid=submenu-wrapper]');
     const hasSubmenuWrapper = await submenuWrapper.count() > 0;
 
     if (hasSubmenuWrapper) {
@@ -301,7 +301,7 @@ export class RotkiApp {
       await submenuWrapper.scrollIntoViewIfNeeded();
       await submenuWrapper.waitFor({ state: 'visible' });
 
-      const subMenuSelector = `[data-cy="navigation__${submenu}"]`;
+      const subMenuSelector = `[data-testid="navigation__${submenu}"]`;
       await click(subMenuSelector);
     }
   }

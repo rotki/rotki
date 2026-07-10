@@ -7,6 +7,7 @@ import { SettingsCategoryIds } from '@/modules/settings/setting-highlight-ids';
 
 definePage({
   meta: {
+    nav: { labelKey: 'navigation_menu.settings_sub.oracles', icon: 'lu-circle-dollar-sign', parent: '/settings' },
     noteLocation: NoteLocation.SETTINGS_ORACLE,
   },
 });

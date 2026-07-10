@@ -7,7 +7,6 @@ import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
 import { createConditionalHandler } from '@/modules/core/messaging/utils';
 import { useSetting } from '@/modules/settings/use-setting';
 import { useSettingsOperations } from '@/modules/settings/use-settings-operations';
-import { Routes } from '@/router/routes';
 
 export function createNoAvailableIndexersHandler(t: ReturnType<typeof useI18n>['t'], router: Pick<Router, 'push'>): MessageHandler<NoAvailableIndexersData> {
   const { updateFrontendSetting } = useSettingsOperations();
@@ -23,7 +22,7 @@ export function createNoAvailableIndexersHandler(t: ReturnType<typeof useI18n>['
 
     const actions: NotificationAction[] = [
       {
-        action: async () => router.push({ path: Routes.SETTINGS_EVM.toString(), hash: '#indexer' }),
+        action: async () => router.push({ name: '/settings/evm/', hash: '#indexer' }),
         label: t('notification_messages.no_available_indexers.action'),
         persist: true,
       },

@@ -17,7 +17,6 @@ import KrakenStaking from '@/modules/staking/kraken/KrakenStaking.vue';
 import KrakenStakingPagePlaceholder from '@/modules/staking/kraken/KrakenStakingPagePlaceholder.vue';
 import { useKrakenStakingOperations } from '@/modules/staking/kraken/use-kraken-staking-operations';
 import { useKrakenStakingStore } from '@/modules/staking/use-kraken-staking-store';
-import { Routes } from '@/router/routes';
 
 const filters = ref<KrakenStakingDateFilter>({});
 
@@ -34,7 +33,7 @@ const { t } = useI18n({ useScope: 'global' });
 const premium = usePremium();
 
 const addKrakenApiKeysLink: RouteLocationRaw = {
-  path: `${Routes.API_KEYS_EXCHANGES}`,
+  name: '/api-keys/exchanges/',
   query: {
     add: 'true',
   },

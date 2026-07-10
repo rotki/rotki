@@ -10,6 +10,7 @@ import { SettingsCategoryIds } from '@/modules/settings/setting-highlight-ids';
 
 definePage({
   meta: {
+    nav: { labelKey: 'navigation_menu.settings_sub.database', icon: 'lu-manage-assets', parent: '/settings' },
     noteLocation: NoteLocation.SETTINGS_DATABASE,
   },
 });

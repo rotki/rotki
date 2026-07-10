@@ -17,7 +17,6 @@ import { useSettingModel } from '@/modules/settings/use-setting-model';
 import { useSettingsOperations } from '@/modules/settings/use-settings-operations';
 import ChainIcon from '@/modules/shell/components/ChainIcon.vue';
 import PrioritizedList from '@/modules/shell/components/PrioritizedList.vue';
-import { Routes } from '@/router/routes';
 
 defineProps<{
   id?: string;
@@ -217,10 +216,10 @@ function navigateToApiKeys(): void {
 
   const firstIndexer = order[0];
   if (firstIndexer === EvmIndexer.ETHERSCAN) {
-    router.push({ path: Routes.API_KEYS_EXTERNAL_SERVICES.toString(), query: { service: EvmIndexer.ETHERSCAN } });
+    router.push({ name: '/api-keys/external/', query: { service: EvmIndexer.ETHERSCAN } });
   }
   else if (firstIndexer === EvmIndexer.BLOCKSCOUT) {
-    router.push({ path: Routes.API_KEYS_EXTERNAL_SERVICES.toString(), query: { service: EvmIndexer.BLOCKSCOUT } });
+    router.push({ name: '/api-keys/external/', query: { service: EvmIndexer.BLOCKSCOUT } });
   }
 }
 

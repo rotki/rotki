@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import type { RouteLocationRaw } from 'vue-router';
 import { AssetAmountDisplay, FiatDisplay } from '@/modules/assets/amount-display/components';
 import NftDetails from '@/modules/balances/nft/NftDetails.vue';
 import { useNftData } from '@/modules/balances/non-fungible/use-nft-data';
@@ -8,9 +9,8 @@ import { DashboardTableType } from '@/modules/settings/types/frontend-settings';
 import PercentageDisplay from '@/modules/shell/components/display/PercentageDisplay.vue';
 import RefreshButton from '@/modules/shell/components/RefreshButton.vue';
 import RowAppend from '@/modules/shell/components/RowAppend.vue';
-import { Routes } from '@/router/routes';
 
-const nonFungibleRoute = Routes.BALANCES_NON_FUNGIBLE;
+const nonFungibleRoute: RouteLocationRaw = { name: '/balances/non-fungible/' };
 const group = DashboardTableType.NFT;
 
 const { t } = useI18n({ useScope: 'global' });
