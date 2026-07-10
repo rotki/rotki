@@ -1,5 +1,5 @@
 import type { GeneralSettings } from '@/modules/settings/types/user-settings';
-import { describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { Currency } from '@/modules/assets/amount-display/currencies';
 import { defaultGeneralSettings } from '@/modules/settings/factories';
 import {
@@ -7,8 +7,36 @@ import {
   getDefaultFrontendSettings,
 } from '@/modules/settings/types/frontend-settings';
 import { PriceOracle } from '@/modules/settings/types/price-oracle';
-import { getSuggestionKey, type VersionSuggestions } from './settings-suggestions';
-import { collectPendingSuggestions } from './use-settings-suggestions';
+import { getSuggestionKey, type PendingSuggestion, type VersionSuggestions } from './settings-suggestions';
+import { collectPendingSuggestions, useSettingsSuggestions } from './use-settings-suggestions';
+
+const { mockRegistry } = vi.hoisted(() => ({ mockRegistry: { value: [] as VersionSuggestions[] } }));
+const mockUpdate = vi.fn();
+const mockUpdateFrontendSetting = vi.fn();
+const mockAppVersion = ref<string>('1.43.0');
+const mockStore = { pendingSuggestions: [] as PendingSuggestion[], showSuggestionsDialog: false };
+
+vi.mock('./settings-suggestions', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('./settings-suggestions')>();
+  return { ...actual, createSettingsSuggestions: vi.fn(() => mockRegistry.value) };
+});
+
+vi.mock('./use-suggestions-store', () => ({
+  useSuggestionsStore: vi.fn(() => mockStore),
+}));
+
+vi.mock('@/modules/settings/use-settings-operations', () => ({
+  useSettingsOperations: vi.fn(() => ({
+    update: mockUpdate,
+    updateFrontendSetting: mockUpdateFrontendSetting,
+  })),
+}));
+
+vi.mock('@/modules/core/common/use-main-store', () => ({
+  useMainStore: vi.fn(() => ({
+    appVersion: mockAppVersion,
+  })),
+}));
 
 function createFrontendSettings(overrides: Partial<FrontendSettings> = {}): FrontendSettings {
   return getDefaultFrontendSettings(overrides);
@@ -275,5 +303,102 @@ describe('collectPendingSuggestions', () => {
       oracleRegistry,
     );
     expect(resultDifferent).toHaveLength(1);
+  });
+});
+
+describe('useSettingsSuggestions', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockRegistry.value = [];
+    set(mockAppVersion, '1.43.0');
+    mockStore.pendingSuggestions = [];
+    mockStore.showSuggestionsDialog = false;
+    mockUpdateFrontendSetting.mockResolvedValue(undefined);
+    mockUpdate.mockResolvedValue(undefined);
+  });
+
+  describe('checkForSuggestions', () => {
+    it('should do nothing on a development version', () => {
+      set(mockAppVersion, '1.43.0-dev');
+      const { checkForSuggestions } = useSettingsSuggestions();
+      checkForSuggestions(createFrontendSettings(), createGeneralSettings());
+
+      expect(mockUpdateFrontendSetting).not.toHaveBeenCalled();
+      expect(mockStore.showSuggestionsDialog).toBe(false);
+    });
+
+    it('should do nothing when the app version is empty', () => {
+      set(mockAppVersion, '');
+      const { checkForSuggestions } = useSettingsSuggestions();
+      checkForSuggestions(createFrontendSettings(), createGeneralSettings());
+
+      expect(mockUpdateFrontendSetting).not.toHaveBeenCalled();
+    });
+
+    it('should open the dialog when there are pending suggestions', () => {
+      mockRegistry.value = [
+        { suggestions: [{ description: 'd', key: 'submitUsageAnalytics', settingType: 'general', suggestedValue: true }], version: '1.43.0' },
+      ];
+      const { checkForSuggestions } = useSettingsSuggestions();
+      checkForSuggestions(createFrontendSettings(), createGeneralSettings({ submitUsageAnalytics: false }));
+
+      expect(mockStore.showSuggestionsDialog).toBe(true);
+      expect(mockStore.pendingSuggestions).toHaveLength(1);
+      expect(mockUpdateFrontendSetting).not.toHaveBeenCalled();
+    });
+
+    it('should mark the version applied when there are no suggestions', () => {
+      const { checkForSuggestions } = useSettingsSuggestions();
+      checkForSuggestions(createFrontendSettings(), createGeneralSettings());
+
+      expect(mockUpdateFrontendSetting).toHaveBeenCalledWith({ lastAppliedSettingsVersion: '1.43.0' });
+      expect(mockStore.showSuggestionsDialog).toBe(false);
+    });
+  });
+
+  describe('applySelected', () => {
+    it('should split frontend and general payloads and reset the store', async () => {
+      mockStore.showSuggestionsDialog = true;
+      const selected: PendingSuggestion[] = [
+        { currentValue: false, description: 'd', fromVersion: '1.43.0', key: 'defiSetupDone', settingType: 'frontend', suggestedValue: true },
+        { currentValue: 2, description: 'd', fromVersion: '1.43.0', key: 'uiFloatingPrecision', settingType: 'general', suggestedValue: 6 },
+      ];
+
+      const { applySelected } = useSettingsSuggestions();
+      await applySelected(selected);
+
+      expect(mockUpdateFrontendSetting).toHaveBeenCalledWith({ defiSetupDone: true, lastAppliedSettingsVersion: '1.43.0' });
+      expect(mockUpdate).toHaveBeenCalledWith({ uiFloatingPrecision: 6 });
+      expect(mockStore.pendingSuggestions).toEqual([]);
+      expect(mockStore.showSuggestionsDialog).toBe(false);
+    });
+
+    it('should not call the general update when only frontend settings are selected', async () => {
+      const selected: PendingSuggestion[] = [
+        { currentValue: false, description: 'd', fromVersion: '1.43.0', key: 'defiSetupDone', settingType: 'frontend', suggestedValue: true },
+      ];
+
+      const { applySelected } = useSettingsSuggestions();
+      await applySelected(selected);
+
+      expect(mockUpdateFrontendSetting).toHaveBeenCalledOnce();
+      expect(mockUpdate).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('dismissAll', () => {
+    it('should persist the current version and reset the store', async () => {
+      mockStore.pendingSuggestions = [
+        { currentValue: false, description: 'd', fromVersion: '1.43.0', key: 'defiSetupDone', settingType: 'frontend', suggestedValue: true },
+      ];
+      mockStore.showSuggestionsDialog = true;
+
+      const { dismissAll } = useSettingsSuggestions();
+      await dismissAll();
+
+      expect(mockUpdateFrontendSetting).toHaveBeenCalledWith({ lastAppliedSettingsVersion: '1.43.0' });
+      expect(mockStore.pendingSuggestions).toEqual([]);
+      expect(mockStore.showSuggestionsDialog).toBe(false);
+    });
   });
 });
