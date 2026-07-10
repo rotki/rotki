@@ -6,7 +6,15 @@ from rotkehlchen.assets.asset import Asset
 from rotkehlchen.chain.evm.types import string_to_evm_address
 
 VE_PENDLE_CONTRACT_ADDRESS: Final = string_to_evm_address('0x4f30A9D41B80ecC5B94306AB4364951AE3170210')  # noqa: E501
+STAKED_PENDLE_CONTRACT_ADDRESS: Final = string_to_evm_address('0x999999999991E178D52Cd95AFd4b00d066664144')  # noqa: E501
 VE_PENDLE_ABI: Final[ABI] = [{'inputs': [{'name': '', 'type': 'address'}], 'name': 'positionData', 'outputs': [{'name': 'amount', 'type': 'uint128'}, {'name': 'expiry', 'type': 'uint128'}], 'stateMutability': 'view', 'type': 'function'}]  # noqa: E501
 PENDLE_TOKEN: Final = Asset('eip155:1/erc20:0x808507121B80c02388fAd14726482e061B8da827')
+STAKED_PENDLE_TOKEN: Final = Asset(f'eip155:1/erc20:{STAKED_PENDLE_CONTRACT_ADDRESS}')
 NEW_LOCK_POSITION_TOPIC: Final = b'\xb1\xa37\x19V\xc5M\xc1\xd86\x95\xb4\xa0\x06\xb0Q\xc81>\xe9\x86\xe53\xb6\xb9d\xe7|\x90f\xfc,'  # noqa: E501
 WITHDRAW_TOPIC: Final = b'\x0e\x1b\xb0T\\\x1e\xbb\x9f\xb6\x80\xbd\xe75\x14\xe5r\x83\x1d\xe9;G\x9c\x08~\xc1\xefl5\xc3\xa1\x9f\xd6'  # noqa: E501
+# keccak of CooldownInitiated(address,uint256,uint256)
+COOLDOWN_INITIATED_TOPIC: Final = b'\x81\x05\x00\x03\x0fQ\xf0N\nj|\x03#\xc8FT\xa3\x86\xb2W-$\x8az\xe1T2\xd4Il\xc9\xd1'  # noqa: E501
+# keccak of Unstaked(address,uint256,uint256)
+UNSTAKED_TOPIC: Final = b'\x7f\xc4r~\x06.3`\x10\xf2\xc2\x82Y\x8e\xf5\xf1O\xac\xb3\xdeh\xcf\x81\x95\xc2\xf2>\x14T\xb2\xb7N'  # noqa: E501
+# finalizeCooldown() selector: 0x716907a7
+FINALIZE_COOLDOWN_SIGNATURE: Final = b'qi\x07\xa7'
