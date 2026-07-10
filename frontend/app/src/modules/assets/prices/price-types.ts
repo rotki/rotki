@@ -1,7 +1,7 @@
 import type { PaginationRequestPayload } from '@/modules/core/common/common-types';
 import { AssetEntry, type Balance, type BigNumber, NumericString } from '@rotki/common';
 import { forEach } from 'es-toolkit/compat';
-import { z } from 'zod/v4';
+import { z } from 'zod';
 import { CollectionCommonFields } from '@/modules/core/common/collection';
 import { PriceOracle, PriceOracleEnum } from '@/modules/settings/types/price-oracle';
 

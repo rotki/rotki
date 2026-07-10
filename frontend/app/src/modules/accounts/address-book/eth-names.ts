@@ -1,6 +1,6 @@
 import type { PaginationRequestPayload } from '@/modules/core/common/common-types';
 import { Blockchain } from '@rotki/common';
-import { z } from 'zod/v4';
+import { z } from 'zod';
 import { CollectionCommonFields } from '@/modules/core/common/collection';
 
 export const EthNamesSchema = z.record(z.string(), z.string().nullable());

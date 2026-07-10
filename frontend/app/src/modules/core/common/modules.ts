@@ -1,4 +1,4 @@
-import { z } from 'zod/v4';
+import { z } from 'zod';
 import { getPublicProtocolImagePath } from '@/modules/core/common/file/file';
 
 export enum Module {

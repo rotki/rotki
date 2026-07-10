@@ -1,5 +1,5 @@
 import { type HistoryEventEntryType, NumericString } from '@rotki/common';
-import { z } from 'zod/v4';
+import { z } from 'zod';
 
 const LiquityStakingEventExtraData = z.object({
   asset: z.string(),

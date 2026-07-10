@@ -4,7 +4,7 @@ import type {
   AccountingRuleEntry,
   AccountingRuleRequestPayload,
 } from '@/modules/settings/types/accounting';
-import { z } from 'zod/v4';
+import { z } from 'zod';
 import { useConfirmStore } from '@/modules/core/common/use-confirm-store';
 import { useMessageStore } from '@/modules/core/common/use-message-store';
 import { type Filters, type Matcher, useAccountingRuleFilter } from '@/modules/core/table/filters/use-accounting-rule-filter';

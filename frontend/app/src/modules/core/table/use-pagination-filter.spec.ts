@@ -5,7 +5,7 @@ import type { MatchedKeywordWithBehaviour, SearchMatcher } from '@/modules/core/
 import type { FilterSchema } from '@/modules/core/table/pagination-filter-types';
 import flushPromises from 'flush-promises';
 import { afterEach, beforeAll, beforeEach, describe, expect, it, type Mock, vi } from 'vitest';
-import { z } from 'zod/v4';
+import { z } from 'zod';
 import { arrayify } from '@/modules/core/common/data/array';
 import { usePaginationFilters } from '@/modules/core/table/use-pagination-filter';
 import { TableId } from '@/modules/core/table/use-remember-table-sorting';

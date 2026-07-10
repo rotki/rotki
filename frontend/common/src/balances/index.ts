@@ -1,4 +1,4 @@
-import z from 'zod/v4';
+import z from 'zod';
 import { bigNumberify, NumericString } from '../numbers';
 
 export const Balance = z.object({

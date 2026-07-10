@@ -1,4 +1,4 @@
-import { z } from 'zod/v4';
+import { z } from 'zod';
 
 export enum GnosisPayError {
   NO_REGISTERED_ACCOUNTS = 'NO_REGISTERED_ACCOUNTS',

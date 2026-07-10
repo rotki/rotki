@@ -1,7 +1,7 @@
 import type { MaybeRef } from 'vue';
 import type { MatchedKeyword, SearchMatcher } from '@/modules/core/table/filtering';
 import type { FilterSchema } from '@/modules/core/table/pagination-filter-types';
-import { z } from 'zod/v4';
+import { z } from 'zod';
 
 enum CustomAssetFilterKeys {
   NAME = 'name',

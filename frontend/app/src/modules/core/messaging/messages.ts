@@ -1,4 +1,4 @@
-import { z } from 'zod/v4';
+import { z } from 'zod';
 import { NewDetectedToken } from '@/modules/assets/detection';
 import { CalendarEventWithReminder } from '@/modules/calendar/types';
 import { LegacyMessageData, SocketMessageType } from './types/base';

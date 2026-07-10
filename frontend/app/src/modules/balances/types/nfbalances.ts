@@ -1,6 +1,6 @@
 import type { IgnoredAssetsHandlingType } from '@/modules/assets/types';
 import type { PaginationRequestPayload } from '@/modules/core/common/common-types';
-import { z } from 'zod/v4';
+import { z } from 'zod';
 import { PriceInformation } from '@/modules/assets/prices/price-types';
 import { CollectionCommonFields } from '@/modules/core/common/collection';
 

@@ -1,5 +1,5 @@
 import { CommonQueryStatusData, NumericString } from '@rotki/common';
-import { z } from 'zod/v4';
+import { z } from 'zod';
 import { EvmChainLikeAddress } from '@/modules/history/events/event-payloads';
 import { SocketMessageProgressUpdateSubType } from './base';
 

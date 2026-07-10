@@ -1,7 +1,7 @@
 import type { Ref } from 'vue';
 import type { MatchedKeyword, SearchMatcher } from '@/modules/core/table/filtering';
 import type { FilterSchema } from '@/modules/core/table/pagination-filter-types';
-import { z } from 'zod/v4';
+import { z } from 'zod';
 import { SOLANA_CHAIN } from '@/modules/assets/types';
 import { arrayify } from '@/modules/core/common/data/array';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';

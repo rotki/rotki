@@ -1,5 +1,5 @@
 import { NumericString } from '@rotki/common';
-import { z } from 'zod/v4';
+import { z } from 'zod';
 import { AddressNamePriorityEnum } from '@/modules/accounts/address-book/types/address-name-priorities';
 import { useCurrencies } from '@/modules/assets/amount-display/currencies';
 import { Exchange, KrakenAccountType } from '@/modules/balances/types/exchanges';

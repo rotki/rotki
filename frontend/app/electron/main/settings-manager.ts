@@ -1,7 +1,7 @@
 import type { App } from 'electron';
 import fs from 'node:fs';
 import path from 'node:path';
-import { z } from 'zod/v4';
+import { z } from 'zod';
 
 const AppSettingsSchema = z.object({
   displayTray: z.boolean().default(true),

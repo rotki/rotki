@@ -1,5 +1,5 @@
 import { type BigNumber, HistoryEventEntryType, NumericString } from '@rotki/common';
-import { z } from 'zod/v4';
+import { z } from 'zod';
 import { CollectionCommonFields } from '@/modules/core/common/collection';
 import { EntryMeta } from '@/modules/history/meta';
 

@@ -1,5 +1,5 @@
 import type { ConflictResolutionStrategy, PaginationRequestPayload } from '@/modules/core/common/common-types';
-import { z } from 'zod/v4';
+import { z } from 'zod';
 import { CollectionCommonFields } from '@/modules/core/common/collection';
 
 export enum AccountingTreatment {

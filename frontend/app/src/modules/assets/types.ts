@@ -1,6 +1,6 @@
 import type { ConflictResolutionStrategy, PaginationRequestPayload } from '@/modules/core/common/common-types';
 import { AssetCollection, AssetInfoWithId, AssetInfoWithTransformer, SupportedAsset } from '@rotki/common';
-import { z } from 'zod/v4';
+import { z } from 'zod';
 import { CollectionCommonFields } from '@/modules/core/common/collection';
 
 export interface AssetDBVersion {

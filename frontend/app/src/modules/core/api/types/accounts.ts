@@ -1,4 +1,4 @@
-import { z } from 'zod/v4';
+import { z } from 'zod';
 
 export const EvmAccountsResult = z.object({
   added: z.record(z.string(), z.array(z.string())).optional(),

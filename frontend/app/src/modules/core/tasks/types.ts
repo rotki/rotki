@@ -1,5 +1,5 @@
 import type { TaskType } from '@/modules/core/tasks/task-type';
-import { z } from 'zod/v4';
+import { z } from 'zod';
 
 export interface Task<T extends TaskMeta> {
   readonly id: number;

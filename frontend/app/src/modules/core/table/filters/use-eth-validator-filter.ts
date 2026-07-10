@@ -1,6 +1,6 @@
 import type { MatchedKeywordWithBehaviour, SearchMatcher } from '@/modules/core/table/filtering';
 import type { FilterSchema } from '@/modules/core/table/pagination-filter-types';
-import { z } from 'zod/v4';
+import { z } from 'zod';
 import { arrayify } from '@/modules/core/common/data/array';
 
 enum EthValidatorAccountFilterKeys {

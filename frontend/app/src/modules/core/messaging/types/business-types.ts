@@ -1,5 +1,5 @@
 import { Blockchain } from '@rotki/common';
-import { z } from 'zod/v4';
+import { z } from 'zod';
 
 export const AccountingRuleConflictData = z.object({
   numOfConflicts: z.number(),

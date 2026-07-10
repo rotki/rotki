@@ -2,7 +2,7 @@
 import type { DataTableColumn } from '@rotki/ui-library';
 import type { CexMapping } from '@/modules/assets/types';
 import type { MissingMapping } from '@/modules/user-data/schemas';
-import z from 'zod/v4';
+import z from 'zod';
 import ExchangeMappingFilter from '@/modules/assets/admin/cex-mapping/ExchangeMappingFilter.vue';
 import ManageCexMappingFormDialog from '@/modules/assets/admin/cex-mapping/ManageCexMappingFormDialog.vue';
 import { useMissingMappingsDB } from '@/modules/assets/admin/missing-mappings/use-missing-mappings-db';

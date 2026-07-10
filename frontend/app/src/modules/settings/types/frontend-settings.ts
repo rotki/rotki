@@ -9,7 +9,7 @@ import {
   TimeFrameSetting,
 } from '@rotki/common';
 import { isEmpty } from 'es-toolkit/compat';
-import { z } from 'zod/v4';
+import { z } from 'zod';
 import { CurrencyLocationEnum } from '@/modules/assets/amount-display/currency-location';
 import { camelCaseTransformer } from '@/modules/core/api/transformers';
 import { Constraints, MINIMUM_DIGIT_TO_BE_ABBREVIATED } from '@/modules/core/common/constraints';

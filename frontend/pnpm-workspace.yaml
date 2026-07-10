@@ -132,7 +132,7 @@ catalog:
   vue-router: 5.1.0
   vue-tsc: 3.3.5
   ws: 8.21.0
-  zod: 3.25.76
+  zod: 4.4.3
 peerDependencyRules:
   allowedVersions:
     tailwind-variants>tailwind-merge: '>=2.0.0 <3.0.0'

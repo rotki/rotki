@@ -1,6 +1,6 @@
 import type { Exchange } from '@/modules/balances/types/exchanges';
 import type { UserSettingsModel } from '@/modules/settings/types/user-settings';
-import { z } from 'zod/v4';
+import { z } from 'zod';
 
 export type SyncApproval = 'yes' | 'no' | 'unknown';
 

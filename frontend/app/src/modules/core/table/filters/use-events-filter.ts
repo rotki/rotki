@@ -10,7 +10,7 @@ import {
   isValidTxHashOrSignature,
 } from '@rotki/common';
 import { isEqual } from 'es-toolkit';
-import { z } from 'zod/v4';
+import { z } from 'zod';
 import { useAssetInfoRetrieval } from '@/modules/assets/use-asset-info-retrieval';
 import { arrayify } from '@/modules/core/common/data/array';
 import { uniqueStrings } from '@/modules/core/common/data/data';
