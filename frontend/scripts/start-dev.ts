@@ -19,9 +19,9 @@ import {
 } from './dev-instance';
 import { errorMessage, formatPort } from './dev-instance/format';
 import { getCurrentGitBranch } from './dev-instance/git';
-import { ensurePrerequisites, parsePort } from './dev/prerequisites';
+import { ensurePrerequisites, parsePort, verifyBackendReady } from './dev/prerequisites';
 import { registerShutdownHandlers, terminateSubprocesses } from './dev/process-pool';
-import { startDevelopmentEnvironment } from './dev/services';
+import { startDevelopmentEnvironment, warmColibri } from './dev/services';
 
 const ENV_FILE_RELATIVE = 'app/.env.development.local';
 const APP_ENV_RELATIVE = 'app/.env';
@@ -277,6 +277,13 @@ async function runDevAction(options: DevCliOptions): Promise<void> {
   }
 
   ensurePrerequisites();
+  verifyBackendReady();
+
+  // Warm the colibri build before either mode reaches its start point. In web
+  // mode startColibriService runs `cargo run`; in electron mode electron spawns
+  // colibri itself. On a fresh worktree both otherwise hit a cold compile at
+  // launch — pre-building here makes that later `cargo run` a plain launch.
+  await warmColibri();
 
   // Decide instance vs default from CLI/shell before loading env, then for a
   // default run strip the managed block first so it can't leak into process.env.

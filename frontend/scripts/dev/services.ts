@@ -123,14 +123,23 @@ interface ColibriSpawnOptions {
   dataDir?: string;
 }
 
+/**
+ * Warm the colibri debug build before anything tries to launch it. Both start
+ * paths run colibri via `cargo run --locked` (web mode here; electron mode from
+ * its own subprocess handler), which compiles on the fly on a cold cache. On a
+ * fresh worktree that cold compile happens at the worst moment — after the dev
+ * server is already up in web mode, or mid electron-startup — and on Windows the
+ * vendored-openssl compile blows past the readiness timeout entirely. Building
+ * synchronously first (same debug profile, same target dir) means the later
+ * `cargo run` is just a launch. Incremental rebuilds are near-instant, so this is
+ * cheap once the cache is warm.
+ */
+export async function warmColibri(): Promise<void> {
+  await buildColibriEagerly(path.join('..', 'colibri'));
+}
+
 async function buildColibriEagerly(cwd: string): Promise<void> {
-  // Windows-only: `rusqlite`'s `bundled-sqlcipher-vendored-openssl` feature
-  // compiles OpenSSL from source, which on a cold cache can take several
-  // minutes on Windows — well past the readiness timeout. Run `cargo build`
-  // synchronously first so the user sees the compile progress, and the
-  // subsequent `cargo run` only races the socket bind. Incremental rebuilds
-  // are near-instant, so this is cheap once the cache is warm.
-  logger.info('Pre-building colibri (cargo build --locked) — first build compiles vendored openssl and may take a while');
+  logger.info('Warming colibri (cargo build --locked) so the dev launch does not compile at startup; the first build may take a while');
   const buildEnv = buildColibriEnv();
   if (buildEnv === null) {
     logger.warn(
@@ -163,8 +172,6 @@ async function startColibriService(opts: ColibriSpawnOptions): Promise<number> {
   const chosenPort = opts.strictPort ? opts.colibriPort : await selectPort(opts.colibriPort);
 
   const colibriCwd = path.join('..', 'colibri');
-  if (isWindows)
-    await buildColibriEagerly(colibriCwd);
 
   logger.info(`Starting colibri on port ${formatPort(chosenPort)}`);
 
