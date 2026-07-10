@@ -2,8 +2,8 @@
 import type { ValidationErrors } from '@/modules/core/api/types/errors';
 import { useConfirmStore } from '@/modules/core/common/use-confirm-store';
 import SimpleRpcNodeManagerForm from '@/modules/settings/general/rpc/simple/SimpleRpcNodeManagerForm.vue';
+import { useSettingsWriter } from '@/modules/settings/settings-writer';
 import { useSetting } from '@/modules/settings/use-setting';
-import { SettingLocation, useSettings } from '@/modules/settings/use-settings';
 import BigDialog from '@/modules/shell/components/dialogs/BigDialog.vue';
 import RowActions from '@/modules/shell/components/RowActions.vue';
 import SimpleTable from '@/modules/shell/components/SimpleTable.vue';
@@ -22,7 +22,7 @@ const stateUpdated = ref(false);
 const inputUrl = ref<string>('');
 
 const value = useSetting(setting);
-const { updateSetting } = useSettings();
+const { write } = useSettingsWriter();
 
 function addNewRpcNode() {
   set(errorMessages, {});
@@ -44,18 +44,15 @@ async function save(force: boolean = false) {
 
   set(submitting, true);
 
-  const result = await updateSetting(setting, value, SettingLocation.GENERAL, {
-    error: '',
-    success: '',
-  });
+  const result = await write(setting, value);
 
   set(submitting, false);
 
-  if ('success' in result) {
+  if (result.success) {
     set(openDialog, false);
   }
   else {
-    set(errorMessages, { modelValue: result.error });
+    set(errorMessages, { modelValue: result.message ?? '' });
   }
 }
 

@@ -17,30 +17,24 @@ vi.mock('@/modules/settings/use-settings-operations', () => ({
 describe('autoDetectTokensCooldownSetting', () => {
   let wrapper: VueWrapper<InstanceType<typeof AutoDetectTokensCooldownSetting>>;
 
-  function createWrapper(autoDetectTokensOnLogin = true): VueWrapper<InstanceType<typeof AutoDetectTokensCooldownSetting>> {
+  function createWrapper(): VueWrapper<InstanceType<typeof AutoDetectTokensCooldownSetting>> {
     const pinia = createPinia();
     setActivePinia(pinia);
-    useSettingsRepo().updateFrontend({ autoDetectTokensOnLogin });
     return mount(AutoDetectTokensCooldownSetting, {
       global: { plugins: [pinia] },
       provide: libraryDefaults,
     });
   }
 
-  it('should render the cooldown input when on-login auto-detect is enabled', async () => {
+  // The visibility gate (v-if on autoDetectTokensOnLogin) now lives in GeneralSettingsCategory; this
+  // component always renders the field and only owns the numeric setting.
+  it('should render the cooldown input with the current value', async () => {
     wrapper = createWrapper();
     await flushPromises();
 
-    const input = wrapper.find<HTMLInputElement>('[data-cy=auto-detect-tokens-cooldown-input] input');
+    const input = wrapper.find<HTMLInputElement>('[data-testid=auto-detect-tokens-cooldown-input] input');
     expect(input.exists()).toBe(true);
     expect(input.element.value).toBe('24');
-  });
-
-  it('should hide the cooldown input when on-login auto-detect is disabled', async () => {
-    wrapper = createWrapper(false);
-    await flushPromises();
-
-    expect(wrapper.find('[data-cy=auto-detect-tokens-cooldown-input]').exists()).toBe(false);
   });
 
   it('should sync the local input value when the store setting changes externally', async () => {
@@ -51,7 +45,7 @@ describe('autoDetectTokensCooldownSetting', () => {
     await flushPromises();
     await nextTick();
 
-    const input = wrapper.find<HTMLInputElement>('[data-cy=auto-detect-tokens-cooldown-input] input');
+    const input = wrapper.find<HTMLInputElement>('[data-testid=auto-detect-tokens-cooldown-input] input');
     expect(input.element.value).toBe('48');
   });
 });

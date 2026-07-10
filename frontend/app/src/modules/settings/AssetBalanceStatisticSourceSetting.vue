@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import SettingsOption from '@/modules/settings/controls/SettingsOption.vue';
 import { useAssetStatisticState } from '@/modules/settings/use-asset-statistic-state';
+import { useSettingModel } from '@/modules/settings/use-setting-model';
 import MenuTooltipButton from '@/modules/shell/components/MenuTooltipButton.vue';
 
 const { asset } = defineProps<{
@@ -20,6 +20,14 @@ const {
 } = useAssetStatisticState(() => asset);
 
 const { t } = useI18n({ useScope: 'global' });
+
+const { model } = useSettingModel('useHistoricalAssetBalances');
+
+async function persistSource(value: boolean | undefined): Promise<void> {
+  await suppressIfPerAsset(async () => {
+    set(model, value ?? false);
+  });
+}
 
 watch(useHistoricalAssetBalances, () => {
   if (!asset || !get(rememberStateForAsset)) {
@@ -60,27 +68,22 @@ watchImmediate(() => asset, (asset) => {
           {{ t('statistics_graph_settings.source.title') }}
         </template>
       </RuiCardHeader>
-      <SettingsOption
-        #default="{ updateImmediate }"
-        setting="useHistoricalAssetBalances"
+      <RuiRadioGroup
+        v-model="useHistoricalAssetBalances"
+        color="primary"
+        :hint="t('statistics_graph_settings.source.warning')"
+        size="sm"
+        @update:model-value="persistSource($event)"
       >
-        <RuiRadioGroup
-          v-model="useHistoricalAssetBalances"
-          color="primary"
-          :hint="t('statistics_graph_settings.source.warning')"
-          size="sm"
-          @update:model-value="suppressIfPerAsset(() => updateImmediate($event))"
-        >
-          <RuiRadio
-            :label="t('statistics_graph_settings.source.snapshot')"
-            :value="false"
-          />
-          <RuiRadio
-            :label="t('statistics_graph_settings.source.historical_events_processing')"
-            :value="true"
-          />
-        </RuiRadioGroup>
-      </SettingsOption>
+        <RuiRadio
+          :label="t('statistics_graph_settings.source.snapshot')"
+          :value="false"
+        />
+        <RuiRadio
+          :label="t('statistics_graph_settings.source.historical_events_processing')"
+          :value="true"
+        />
+      </RuiRadioGroup>
       <RuiCheckbox
         v-if="asset"
         v-model="rememberStateForAsset"

@@ -1,15 +1,13 @@
 <script setup lang="ts">
 import { toCapitalCase } from '@rotki/common';
 import { getPublicServiceImagePath } from '@/modules/core/common/file/file';
+import SettingMultiSelect from '@/modules/settings/controls/SettingMultiSelect.vue';
 import SettingsItem from '@/modules/settings/controls/SettingsItem.vue';
-import SettingsOption from '@/modules/settings/controls/SettingsOption.vue';
 import { SettingsHighlightIds } from '@/modules/settings/setting-highlight-ids';
 import { SUPPRESSIBLE_SERVICES, SuppressibleMissingKeyService } from '@/modules/settings/types/user-settings';
-import { useSetting } from '@/modules/settings/use-setting';
 import AppImage from '@/modules/shell/components/AppImage.vue';
 
 const { t } = useI18n({ useScope: 'global' });
-const suppressMissingKeyMsgServices = useSetting('suppressMissingKeyMsgServices');
 
 const SERVICE_ICONS: Record<SuppressibleMissingKeyService, string> = {
   [SuppressibleMissingKeyService.BEACONCHAIN]: getPublicServiceImagePath('beaconchain.svg'),
@@ -33,17 +31,6 @@ const serviceOptions = computed<ServiceOption[]>(() =>
   })),
 );
 
-const allSelected = computed<boolean>(() => get(suppressMissingKeyMsgServices).length === SUPPRESSIBLE_SERVICES.length);
-const noneSelected = computed<boolean>(() => get(suppressMissingKeyMsgServices).length === 0);
-
-function selectAll(updateImmediate: (value: SuppressibleMissingKeyService[]) => void): void {
-  updateImmediate([...SUPPRESSIBLE_SERVICES]);
-}
-
-function deselectAll(updateImmediate: (value: SuppressibleMissingKeyService[]) => void): void {
-  updateImmediate([]);
-}
-
 const [DefineServiceItem, ReuseServiceItem] = createReusableTemplate<{ item: ServiceOption; size: string }>();
 </script>
 
@@ -62,7 +49,7 @@ const [DefineServiceItem, ReuseServiceItem] = createReusableTemplate<{ item: Ser
 
   <SettingsItem
     :id="SettingsHighlightIds.SUPPRESS_MISSING_KEY"
-    data-cy="suppress-missing-key-services-setting"
+    data-testid="suppress-missing-key-services-setting"
   >
     <template #title>
       {{ t('general_settings.external_service_setting.suppress_missing_key.title') }}
@@ -70,62 +57,33 @@ const [DefineServiceItem, ReuseServiceItem] = createReusableTemplate<{ item: Ser
     <template #subtitle>
       {{ t('general_settings.external_service_setting.suppress_missing_key.subtitle') }}
     </template>
-    <SettingsOption
-      #default="{ error, success, updateImmediate, loading }"
+    <SettingMultiSelect
       setting="suppressMissingKeyMsgServices"
-      :error-message="t('general_settings.external_service_setting.suppress_missing_key.error')"
+      :options="serviceOptions"
+      key-attr="id"
+      text-attr="name"
+      :bulk-actions="{
+        clearLabel: t('general_settings.external_service_setting.suppress_missing_key.clear_all'),
+        selectLabel: t('general_settings.external_service_setting.suppress_missing_key.suppress_all'),
+      }"
+      :label="t('general_settings.external_service_setting.suppress_missing_key.label')"
+      data-testid="suppress-missing-key-services"
+      :item-height="48"
       :success-message="t('general_settings.external_service_setting.suppress_missing_key.success')"
+      :error-message="t('general_settings.external_service_setting.suppress_missing_key.error')"
     >
-      <div class="flex flex-col gap-2">
-        <div class="flex gap-2">
-          <RuiButton
-            variant="text"
-            size="sm"
-            color="primary"
-            :disabled="loading || allSelected"
-            @click="selectAll(updateImmediate)"
-          >
-            {{ t('general_settings.external_service_setting.suppress_missing_key.suppress_all') }}
-          </RuiButton>
-          <RuiButton
-            variant="text"
-            size="sm"
-            color="primary"
-            :disabled="loading || noneSelected"
-            @click="deselectAll(updateImmediate)"
-          >
-            {{ t('general_settings.external_service_setting.suppress_missing_key.clear_all') }}
-          </RuiButton>
-        </div>
-        <RuiAutoComplete
-          :options="serviceOptions"
-          :label="t('general_settings.external_service_setting.suppress_missing_key.label')"
-          :model-value="suppressMissingKeyMsgServices"
-          :success-messages="success"
-          :error-messages="error"
-          data-cy="suppress-missing-key-services"
-          variant="outlined"
-          key-attr="id"
-          text-attr="name"
-          chips
-          :item-height="48"
-          auto-select-first
-          @update:model-value="updateImmediate($event)"
-        >
-          <template #selection="{ item }">
-            <ReuseServiceItem
-              :item="item"
-              size="1.25rem"
-            />
-          </template>
-          <template #item="{ item }">
-            <ReuseServiceItem
-              :item="item"
-              size="1.5rem"
-            />
-          </template>
-        </RuiAutoComplete>
-      </div>
-    </SettingsOption>
+      <template #selection="{ item }">
+        <ReuseServiceItem
+          :item="item"
+          size="1.25rem"
+        />
+      </template>
+      <template #item="{ item }">
+        <ReuseServiceItem
+          :item="item"
+          size="1.5rem"
+        />
+      </template>
+    </SettingMultiSelect>
   </SettingsItem>
 </template>

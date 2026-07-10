@@ -1,11 +1,7 @@
 <script setup lang="ts">
-import useVuelidate from '@vuelidate/core';
 import { helpers, minValue, required } from '@vuelidate/validators';
-import { useValidation } from '@/modules/core/common/use-validation';
-import { toMessages } from '@/modules/core/common/validation/validation';
-import SettingsOption from '@/modules/settings/controls/SettingsOption.vue';
-import SettingResetConfirmButton from '@/modules/settings/SettingResetConfirmButton.vue';
-import { useSetting } from '@/modules/settings/use-setting';
+import SettingNumber from '@/modules/settings/controls/SettingNumber.vue';
+import SettingsItem from '@/modules/settings/controls/SettingsItem.vue';
 import { useMonitorService } from '@/modules/shell/app/use-monitor-service';
 
 const {
@@ -26,71 +22,30 @@ const {
   defaultValue: number;
 }>();
 
-const inputValue = ref<string>('');
+const { restart } = useMonitorService();
 
 const rules = {
-  inputValue: {
+  value: {
     min: helpers.withMessage(minValueMessage(min), minValue(min)),
     required: helpers.withMessage(requiredMessage, required),
   },
 };
-
-const storeValue = useSetting(setting);
-
-function resetValue() {
-  set(inputValue, get(storeValue).toString());
-}
-
-const v$ = useVuelidate(rules, { inputValue }, { $autoDirty: true });
-const { callIfValid } = useValidation(v$);
-
-const { restart } = useMonitorService();
-
-function transform(value: string) {
-  return value ? Number.parseInt(value) : value;
-}
-
-function reset(update: (value: number) => void) {
-  update(defaultValue);
-  set(inputValue, defaultValue.toString());
-}
-
-onMounted(() => {
-  resetValue();
-});
 </script>
 
 <template>
-  <div>
-    <SettingsOption
+  <SettingsItem>
+    <template #title>
+      {{ label }}
+    </template>
+    <template #subtitle>
+      {{ hint }}
+    </template>
+    <SettingNumber
       class="mt-1"
       :setting="setting"
-      :transform="transform"
+      :rules="rules"
+      :default="defaultValue"
       @updated="restart()"
-      @finished="resetValue()"
-    >
-      <template #title>
-        {{ label }}
-      </template>
-      <template #subtitle>
-        {{ hint }}
-      </template>
-      <template #default="{ error, success, update, updateImmediate }">
-        <div class="flex items-start w-full">
-          <RuiTextField
-            v-model="inputValue"
-            variant="outlined"
-            color="primary"
-            type="number"
-            class="w-full"
-            :min="min"
-            :success-messages="success"
-            :error-messages="error || toMessages(v$.inputValue)"
-            @update:model-value="callIfValid($event, update)"
-          />
-          <SettingResetConfirmButton @confirm="reset(updateImmediate)" />
-        </div>
-      </template>
-    </SettingsOption>
-  </div>
+    />
+  </SettingsItem>
 </template>

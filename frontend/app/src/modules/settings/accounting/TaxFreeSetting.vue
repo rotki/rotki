@@ -1,122 +1,42 @@
 <script setup lang="ts">
-import useVuelidate from '@vuelidate/core';
-import { helpers, minValue, requiredIf } from '@vuelidate/validators';
-import { toMessages } from '@/modules/core/common/validation/validation';
-import SettingsOption from '@/modules/settings/controls/SettingsOption.vue';
-import { useSetting } from '@/modules/settings/use-setting';
+import SettingToggleNumber from '@/modules/settings/controls/SettingToggleNumber.vue';
 
-const taxFreeAfterPeriod = ref<string>('');
-const taxFreePeriod = ref(false);
+const DAY_IN_SECONDS = 86400;
 
 const { t } = useI18n({ useScope: 'global' });
 
-const period = useSetting('taxfreeAfterPeriod');
-
-const rules = {
-  taxFreeAfterPeriod: {
-    minValue: helpers.withMessage(t('account_settings.validation.tax_free_days_gt_zero'), minValue(1)),
-    required: helpers.withMessage(t('account_settings.validation.tax_free_days'), requiredIf(taxFreePeriod)),
-  },
-};
-
-const v$ = useVuelidate(rules, { taxFreeAfterPeriod }, { $autoDirty: true });
-
-function convertPeriod(period: number, currentType: 'days' | 'seconds') {
-  const dayInSeconds = 86400;
-  if (currentType === 'days')
-    return period * dayInSeconds;
-  else if (currentType === 'seconds')
-    return period / dayInSeconds;
-
-  throw new Error(`invalid type: ${currentType}`);
+function toDays(seconds: number): string {
+  return (seconds / DAY_IN_SECONDS).toString();
 }
 
-function getTaxFreePeriod(enabled: boolean) {
-  if (!enabled)
-    return -1;
-
-  return convertPeriod(365, 'days');
+function toSeconds(days: string): number {
+  return Number.parseInt(days) * DAY_IN_SECONDS;
 }
 
-function resetTaxFreePeriod() {
-  const currentPeriod = get(period);
-  if (currentPeriod && currentPeriod > -1) {
-    set(taxFreePeriod, true);
-    set(taxFreeAfterPeriod, convertPeriod(currentPeriod, 'seconds').toString());
-  }
-  else {
-    set(taxFreePeriod, false);
-    set(taxFreeAfterPeriod, undefined);
-  }
+function switchSuccess(enabled: boolean): string {
+  return t('account_settings.messages.tax_free', { enabled: enabled ? 'enabled' : 'disabled' });
 }
 
-function callIfValid<T = unknown>(value: T, method: (e: T) => void) {
-  const validator = get(v$);
-  if (!validator.$error)
-    method(value);
+function numberSuccess(period: string): string {
+  return t('account_settings.messages.tax_free_period', { period });
 }
-
-function switchSuccess(enabled: boolean) {
-  return t('account_settings.messages.tax_free', {
-    enabled: enabled ? 'enabled' : 'disabled',
-  });
-}
-
-function numberSuccess(period: number) {
-  return t('account_settings.messages.tax_free_period', {
-    period,
-  });
-}
-
-function getPeriod(value: number) {
-  return value ? convertPeriod(value, 'days') : -1;
-}
-
-onMounted(() => {
-  resetTaxFreePeriod();
-});
 </script>
 
 <template>
-  <div>
-    <SettingsOption
-      #default="{ error, success, update }"
-      setting="taxfreeAfterPeriod"
-      :transform="getTaxFreePeriod"
-      :success-message="switchSuccess"
-      @finished="resetTaxFreePeriod()"
-    >
-      <RuiSwitch
-        v-model="taxFreePeriod"
-        data-cy="taxfree-period-switch"
-        :success-messages="success"
-        :error-messages="error"
-        :label="t('accounting_settings.trade.labels.tax_free')"
-        color="primary"
-        @update:model-value="update($event)"
-      />
-    </SettingsOption>
-
-    <SettingsOption
-      #default="{ error, success, update }"
-      setting="taxfreeAfterPeriod"
-      :transform="getPeriod"
-      :success-message="numberSuccess"
-      @finished="resetTaxFreePeriod()"
-    >
-      <RuiTextField
-        v-model="taxFreeAfterPeriod"
-        variant="outlined"
-        color="primary"
-        data-cy="taxfree-period"
-        class="pt-4"
-        :success-messages="success"
-        :error-messages="error || toMessages(v$.taxFreeAfterPeriod)"
-        :disabled="!taxFreePeriod"
-        :label="t('accounting_settings.trade.labels.taxfree_after_period')"
-        type="number"
-        @update:model-value="callIfValid($event, update)"
-      />
-    </SettingsOption>
-  </div>
+  <SettingToggleNumber
+    setting="taxfreeAfterPeriod"
+    :enabled-value="365 * DAY_IN_SECONDS"
+    :min="1"
+    :to-field="toDays"
+    :from-field="toSeconds"
+    :switch-label="t('accounting_settings.trade.labels.tax_free')"
+    :field-label="t('accounting_settings.trade.labels.taxfree_after_period')"
+    :validation="{
+      empty: t('account_settings.validation.tax_free_days'),
+      invalid: t('account_settings.validation.tax_free_days_gt_zero'),
+    }"
+    :success="{ onToggle: switchSuccess, onValue: numberSuccess }"
+    switch-test-id="taxfree-period-switch"
+    field-test-id="taxfree-period"
+  />
 </template>

@@ -69,8 +69,8 @@ describe('suppressedNoIndexerChainsSetting', () => {
   });
 
   it('should render the suppressed chains setting with no chips by default', () => {
-    expect(wrapper.find('[data-cy=suppressed-no-indexer-chains-setting]').exists()).toBe(true);
-    expect(wrapper.find('[data-cy=suppressed-no-indexer-chains]').exists()).toBe(true);
+    expect(wrapper.find('[data-testid=suppressed-no-indexer-chains-setting]').exists()).toBe(true);
+    expect(wrapper.find('[data-testid=suppressed-no-indexer-chains]').exists()).toBe(true);
     expect(wrapper.findAll('.rui-chip')).toHaveLength(0);
   });
 

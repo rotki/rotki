@@ -7,7 +7,7 @@ const { t } = useI18n({ useScope: 'global' });
 <template>
   <SettingSwitch
     setting="includeGasCosts"
-    data-cy="include-gas-costs-switch"
+    data-testid="include-gas-costs-switch"
     :debounce="1500"
     :label="t('accounting_settings.trade.labels.include_gas_costs')"
     :error-message="t('account_settings.messages.gas_costs')"

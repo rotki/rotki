@@ -11,7 +11,7 @@ export class GeneralSettingsPage {
     await this.page.locator('[data-cy=settings-button]').click();
     await this.page.locator('[data-cy=user-dropdown]').waitFor({ state: 'detached' });
     await this.page.locator('[data-cy="settings__general"]').click();
-    await this.page.locator('[data-cy=floating-precision-settings]').waitFor({ state: 'visible' });
+    await this.page.locator('[data-testid=floating-precision-settings]').waitFor({ state: 'visible' });
   }
 
   async setInputFieldValue(selector: string, value: string): Promise<void> {
@@ -22,12 +22,12 @@ export class GeneralSettingsPage {
   }
 
   async setFloatingPrecision(value: string): Promise<void> {
-    await this.setInputFieldValue('[data-cy=floating-precision-settings]', value);
+    await this.setInputFieldValue('[data-testid=floating-precision-settings]', value);
   }
 
   async changeAnonymousUsageStatistics(): Promise<void> {
-    await this.page.locator('[data-cy=anonymous-usage-statistics-input]').click();
-    await confirmInlineSuccess(this.page, '[data-cy=anonymous-usage-statistics-input] .details .text-rui-success');
+    await this.page.locator('[data-testid=anonymous-usage-statistics-input]').click();
+    await confirmInlineSuccess(this.page, '[data-testid=anonymous-usage-statistics-input] .details .text-rui-success');
   }
 
   async selectCurrency(value: string): Promise<void> {
@@ -36,7 +36,7 @@ export class GeneralSettingsPage {
   }
 
   async setBalanceSaveFrequency(value: string): Promise<void> {
-    await this.setInputFieldValue('[data-cy=balance-save-frequency-input]', value);
+    await this.setInputFieldValue('[data-testid=balance-save-frequency-input]', value);
   }
 
   async setDateDisplayFormat(value: string): Promise<void> {
@@ -53,24 +53,24 @@ export class GeneralSettingsPage {
     currency: string;
     balanceSaveFrequency: string;
   }): Promise<void> {
-    await expect(this.page.locator('[data-cy=floating-precision-settings] input')).toHaveValue(settings.floatingPrecision);
+    await expect(this.page.locator('[data-testid=floating-precision-settings] input')).toHaveValue(settings.floatingPrecision);
 
     if (settings.anonymousUsageStatistics) {
-      await expect(this.page.locator('[data-cy=anonymous-usage-statistics-input] input')).toBeChecked();
+      await expect(this.page.locator('[data-testid=anonymous-usage-statistics-input] input')).toBeChecked();
     }
     else {
-      await expect(this.page.locator('[data-cy=anonymous-usage-statistics-input] input')).not.toBeChecked();
+      await expect(this.page.locator('[data-testid=anonymous-usage-statistics-input] input')).not.toBeChecked();
     }
 
     await expect(this.page.locator('[data-cy=currency-selector] input')).toHaveValue(settings.currency);
-    await expect(this.page.locator('[data-cy=balance-save-frequency-input] input')).toHaveValue(settings.balanceSaveFrequency);
+    await expect(this.page.locator('[data-testid=balance-save-frequency-input] input')).toHaveValue(settings.balanceSaveFrequency);
 
     await expect(this.page.locator('[data-cy=date-display-format-input] input')).toHaveValue(settings.dateDisplayFormat);
     await expect(this.page.locator('[data-cy=thousand-separator-input] input')).toHaveValue(settings.thousandSeparator);
     await expect(this.page.locator('[data-cy=decimal-separator-input] input')).toHaveValue(settings.decimalSeparator);
 
-    await expect(this.page.locator('[data-cy=currency-location-input] input')).toHaveCount(2);
-    await expect(this.page.locator('[data-cy=currency-location-input] input:checked')).toHaveValue(settings.currencyLocation);
+    await expect(this.page.locator('[data-testid=currency-location-input] input')).toHaveCount(2);
+    await expect(this.page.locator('[data-testid=currency-location-input] input:checked')).toHaveValue(settings.currencyLocation);
   }
 
   async navigateAway(): Promise<void> {

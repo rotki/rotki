@@ -13,7 +13,7 @@ function successMessage(frequency: number): string {
 <template>
   <SettingNumber
     setting="balanceSaveFrequency"
-    data-cy="balance-save-frequency-input"
+    data-testid="balance-save-frequency-input"
     :label="t('general_settings.balance_frequency.label')"
     :min="1"
     :max="Constraints.MAX_HOURS_DELAY"

@@ -3,29 +3,22 @@ import SnapshotImportDialog from '@/modules/dashboard/SnapshotImportDialog.vue';
 import { useSnapshotActions } from '@/modules/dashboard/snapshots/composables/use-snapshot-actions';
 import { usePremium } from '@/modules/premium/use-premium';
 import { useSessionMetadataStore } from '@/modules/session/use-session-metadata-store';
-import SettingsOption from '@/modules/settings/controls/SettingsOption.vue';
-import { useSetting } from '@/modules/settings/use-setting';
+import SettingSwitch from '@/modules/settings/controls/SettingSwitch.vue';
 import DateDisplay from '@/modules/shell/components/display/DateDisplay.vue';
 import MenuTooltipButton from '@/modules/shell/components/MenuTooltipButton.vue';
 
-const ignoreErrors = ref<boolean>(false);
 const visible = ref<boolean>(false);
 const importSnapshotDialog = ref<boolean>(false);
 
 const { t } = useI18n({ useScope: 'global' });
 const premium = usePremium();
 const { lastBalanceSave } = storeToRefs(useSessionMetadataStore());
-const ignoreSnapshotError = useSetting('ignoreSnapshotError');
 const { forceSave, forceSaving, importing, importSnapshot, modelBalanceFile, modelLocationFile } = useSnapshotActions();
 
 async function forceSaveAndClose(): Promise<void> {
   set(visible, false);
   await forceSave();
 }
-
-watchImmediate(ignoreSnapshotError, (value) => {
-  set(ignoreErrors, value);
-});
 </script>
 
 <template>
@@ -100,21 +93,12 @@ watchImmediate(ignoreSnapshotError, (value) => {
         tooltip-class="max-w-[16rem]"
       >
         <template #activator>
-          <SettingsOption
-            #default="{ error, success, updateImmediate }"
+          <SettingSwitch
             setting="ignoreSnapshotError"
-          >
-            <RuiCheckbox
-              v-model="ignoreErrors"
-              color="primary"
-              :error-messages="error"
-              :success-messages="success"
-              hide-details
-              @update:model-value="updateImmediate($event)"
-            >
-              {{ t('snapshot_action_button.ignore_errors_label') }}
-            </RuiCheckbox>
-          </SettingsOption>
+            control="checkbox"
+            :label="t('snapshot_action_button.ignore_errors_label')"
+            hide-details
+          />
         </template>
         {{ t('snapshot_action_button.ignore_errors_tooltip') }}
       </RuiTooltip>

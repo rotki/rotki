@@ -1,9 +1,8 @@
 <script setup lang="ts">
 import { useAreaVisibilityStore } from '@/modules/core/common/use-area-visibility-store';
-import SettingsOption from '@/modules/settings/controls/SettingsOption.vue';
 import { usePrivacyMode } from '@/modules/settings/use-privacy';
 import { useScrambleSetting } from '@/modules/settings/use-scramble-settings';
-import { useSetting } from '@/modules/settings/use-setting';
+import { useSettingModel } from '@/modules/settings/use-setting-model';
 import AmountInput from '@/modules/shell/components/inputs/AmountInput.vue';
 import MenuTooltipButton from '@/modules/shell/components/MenuTooltipButton.vue';
 
@@ -30,7 +29,8 @@ const labels = [
 
 const { changePrivacyMode, privacyMode, privacyModeIcon, togglePrivacyMode } = usePrivacyMode();
 
-const persistPrivacySettings = useSetting('persistPrivacySettings');
+const { model: persistPrivacy } = useSettingModel('persistPrivacySettings');
+const { flush: flushScramble, model: scrambleModel } = useSettingModel('scrambleData');
 
 const {
   enabled,
@@ -40,16 +40,12 @@ const {
   scrambleMultiplier,
 } = useScrambleSetting();
 
-const persistPrivacy = ref<boolean>(false);
 const settingMenuOpen = ref<boolean>(false);
 
-function setData() {
-  set(persistPrivacy, get(persistPrivacySettings));
+async function updateScramble(value: boolean): Promise<void> {
+  set(scrambleModel, value);
+  await flushScramble();
 }
-
-onMounted(setData);
-
-watch(persistPrivacySettings, setData);
 </script>
 
 <template>
@@ -113,26 +109,20 @@ watch(persistPrivacySettings, setData);
             </RuiButton>
           </template>
           <div class="p-4">
-            <SettingsOption
-              #default="{ updateImmediate: updatePersist }"
-              setting="persistPrivacySettings"
+            <RuiSwitch
+              v-model="persistPrivacy"
+              color="primary"
+              hide-details
             >
-              <RuiSwitch
-                v-model="persistPrivacy"
-                color="primary"
-                hide-details
-                @update:model-value="updatePersist($event)"
-              >
-                <div class="flex flex-col gap-1">
-                  <span class="text-sm">
-                    {{ t('frontend_settings.persist_privacy.label') }}
-                  </span>
-                  <span class="text-xs text-rui-text-secondary">
-                    {{ t('frontend_settings.persist_privacy.hint') }}
-                  </span>
-                </div>
-              </RuiSwitch>
-            </SettingsOption>
+              <div class="flex flex-col gap-1">
+                <span class="text-sm">
+                  {{ t('frontend_settings.persist_privacy.label') }}
+                </span>
+                <span class="text-xs text-rui-text-secondary">
+                  {{ t('frontend_settings.persist_privacy.hint') }}
+                </span>
+              </div>
+            </RuiSwitch>
           </div>
         </RuiMenu>
       </div>
@@ -174,24 +164,19 @@ watch(persistPrivacySettings, setData);
         </div>
       </label>
       <div class="border-t border-default p-4 flex flex-col gap-4">
-        <SettingsOption
-          #default="{ updateImmediate: updateScramble }"
+        <RuiSwitch
+          v-model="scrambleData"
           class="bg-rui-secondary border border-rui-secondary text-white px-2 rounded-l pt-[1px] -mt-[1px]"
-          setting="scrambleData"
+          color="secondary"
+          size="sm"
+          data-cy="privacy-mode-scramble__toggle"
+          hide-details
+          @update:model-value="updateScramble($event)"
         >
-          <RuiSwitch
-            v-model="scrambleData"
-            color="secondary"
-            size="sm"
-            data-cy="privacy-mode-scramble__toggle"
-            hide-details
-            @update:model-value="updateScramble($event)"
-          >
-            <span class="text-sm">
-              {{ t('user_dropdown.change_privacy_mode.scramble.label') }}
-            </span>
-          </RuiSwitch>
-        </SettingsOption>
+          <span class="text-sm">
+            {{ t('user_dropdown.change_privacy_mode.scramble.label') }}
+          </span>
+        </RuiSwitch>
 
         <AmountInput
           v-model="scrambleMultiplier"

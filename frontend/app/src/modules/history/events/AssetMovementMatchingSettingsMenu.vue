@@ -4,8 +4,8 @@ import useVuelidate from '@vuelidate/core';
 import { helpers, maxValue, minValue } from '@vuelidate/validators';
 import { useValidation } from '@/modules/core/common/use-validation';
 import { toMessages } from '@/modules/core/common/validation/validation';
-import SettingsOption from '@/modules/settings/controls/SettingsOption.vue';
-import { useAssetMovementSettings } from '@/modules/settings/use-asset-movement-settings';
+import { useClearableMessages } from '@/modules/settings/use-clearable-messages';
+import { useSettingModel } from '@/modules/settings/use-setting-model';
 import AmountInput from '@/modules/shell/components/inputs/AmountInput.vue';
 
 defineProps<{
@@ -17,7 +17,31 @@ const SECONDS_PER_HOUR = 3600;
 
 const { t } = useI18n({ useScope: 'global' });
 
-const { assetMovementAmountTolerance, assetMovementTimeRange } = useAssetMovementSettings();
+const {
+  error: toleranceWriteError,
+  model: toleranceModel,
+  success: toleranceWriteSuccess,
+} = useSettingModel('assetMovementAmountTolerance', { debounce: 1500 });
+const {
+  clearAll: clearTolerance,
+  error: toleranceError,
+  setError: setToleranceError,
+  setSuccess: setToleranceSuccess,
+  success: toleranceSuccess,
+} = useClearableMessages();
+
+const {
+  error: timeRangeWriteError,
+  model: timeRangeModel,
+  success: timeRangeWriteSuccess,
+} = useSettingModel('assetMovementTimeRange', { debounce: 1500 });
+const {
+  clearAll: clearTimeRange,
+  error: timeRangeError,
+  setError: setTimeRangeError,
+  setSuccess: setTimeRangeSuccess,
+  success: timeRangeSuccess,
+} = useClearableMessages();
 
 const showMenu = ref<boolean>(false);
 const tolerancePercentage = ref<string>('');
@@ -55,12 +79,56 @@ function hoursToSeconds(hours: string): number {
 }
 
 function resetToleranceState(): void {
-  set(tolerancePercentage, decimalToPercentage(get(assetMovementAmountTolerance)));
+  set(tolerancePercentage, decimalToPercentage(get(toleranceModel)));
 }
 
 function resetTimeRangeState(): void {
-  set(timeRangeHours, secondsToHours(get(assetMovementTimeRange)));
+  set(timeRangeHours, secondsToHours(get(timeRangeModel)));
 }
+
+function updateTolerance(value: string): void {
+  set(toleranceModel, percentageToDecimal(value));
+}
+
+function updateTimeRange(value: string): void {
+  set(timeRangeModel, hoursToSeconds(value));
+}
+
+watch(toleranceModel, () => {
+  clearTolerance();
+});
+
+watch(toleranceWriteSuccess, (saved) => {
+  if (saved) {
+    setToleranceSuccess('', true);
+    resetToleranceState();
+  }
+});
+
+watch(toleranceWriteError, (message) => {
+  if (message) {
+    setToleranceError(message, true);
+    resetToleranceState();
+  }
+});
+
+watch(timeRangeModel, () => {
+  clearTimeRange();
+});
+
+watch(timeRangeWriteSuccess, (saved) => {
+  if (saved) {
+    setTimeRangeSuccess('', true);
+    resetTimeRangeState();
+  }
+});
+
+watch(timeRangeWriteError, (message) => {
+  if (message) {
+    setTimeRangeError(message, true);
+    resetTimeRangeState();
+  }
+});
 
 onMounted(() => {
   resetToleranceState();
@@ -102,43 +170,29 @@ onMounted(() => {
       <div class="text-subtitle-1 font-medium mb-4">
         {{ t('asset_movement_matching.settings.title') }}
       </div>
-      <SettingsOption
-        #default="{ update, error, success }"
-        setting="assetMovementAmountTolerance"
-        :transform="percentageToDecimal"
-        @finished="resetToleranceState()"
-      >
-        <AmountInput
-          v-model="tolerancePercentage"
-          variant="outlined"
-          type="number"
-          step="0.001"
-          :label="t('asset_movement_matching.settings.amount_tolerance.label')"
-          :hint="t('asset_movement_matching.settings.amount_tolerance.hint')"
-          :error-messages="error || toMessages(v$.tolerancePercentage)"
-          :success-messages="success"
-          class="min-h-[12rem]"
-          @update:model-value="callIfValid($event, update)"
-        />
-      </SettingsOption>
-      <SettingsOption
-        #default="{ update, error, success }"
-        setting="assetMovementTimeRange"
-        :transform="hoursToSeconds"
-        @finished="resetTimeRangeState()"
-      >
-        <AmountInput
-          v-model="timeRangeHours"
-          variant="outlined"
-          integer
-          class="min-h-[8rem]"
-          :label="t('asset_movement_matching.settings.time_range.label')"
-          :hint="t('asset_movement_matching.settings.time_range.hint')"
-          :error-messages="error || toMessages(v$.timeRangeHours)"
-          :success-messages="success"
-          @update:model-value="callIfValid($event, update)"
-        />
-      </SettingsOption>
+      <AmountInput
+        v-model="tolerancePercentage"
+        variant="outlined"
+        type="number"
+        step="0.001"
+        :label="t('asset_movement_matching.settings.amount_tolerance.label')"
+        :hint="t('asset_movement_matching.settings.amount_tolerance.hint')"
+        :error-messages="toleranceError || toMessages(v$.tolerancePercentage)"
+        :success-messages="toleranceSuccess"
+        class="min-h-[12rem]"
+        @update:model-value="callIfValid($event, updateTolerance)"
+      />
+      <AmountInput
+        v-model="timeRangeHours"
+        variant="outlined"
+        integer
+        class="min-h-[8rem]"
+        :label="t('asset_movement_matching.settings.time_range.label')"
+        :hint="t('asset_movement_matching.settings.time_range.hint')"
+        :error-messages="timeRangeError || toMessages(v$.timeRangeHours)"
+        :success-messages="timeRangeSuccess"
+        @update:model-value="callIfValid($event, updateTimeRange)"
+      />
       <div class="flex justify-end mt-4">
         <RuiButton
           variant="text"

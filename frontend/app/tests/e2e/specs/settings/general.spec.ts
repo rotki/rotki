@@ -34,7 +34,7 @@ test.describe.serial('settings::general', () => {
     await pageGeneral.setFloatingPrecision(settings.floatingPrecision);
     await confirmInlineSuccess(
       ctx.sharedPage,
-      '[data-cy=floating-precision-settings] .details .text-rui-success',
+      '[data-testid=floating-precision-settings] .details .text-rui-success',
       settings.floatingPrecision,
     );
   });
@@ -52,7 +52,7 @@ test.describe.serial('settings::general', () => {
     await pageGeneral.setBalanceSaveFrequency(settings.balanceSaveFrequency);
     await confirmInlineSuccess(
       ctx.sharedPage,
-      '[data-cy=balance-save-frequency-input] .details',
+      '[data-testid=balance-save-frequency-input] .details',
       settings.balanceSaveFrequency,
     );
   });

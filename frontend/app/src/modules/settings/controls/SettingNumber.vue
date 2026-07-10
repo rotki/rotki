@@ -44,7 +44,8 @@ const {
   transform?: (value: string) => number;
   /** Static text, or a callback given the persisted value. */
   successMessage?: string | ((value: number) => string);
-  errorMessage?: string;
+  /** Static prefix, or a callback given the persisted value. Prefixed before the writer error. */
+  errorMessage?: string | ((value: number) => string);
   debounce?: number;
 }>();
 
@@ -98,8 +99,10 @@ watch(writeSuccess, (saved) => {
 });
 
 watch(writeError, (message) => {
-  if (message)
-    setError(errorMessage ? `${errorMessage}: ${message}` : message, true);
+  if (message) {
+    const prefix = typeof errorMessage === 'function' ? errorMessage(get(model)) : errorMessage;
+    setError(prefix ? `${prefix}: ${message}` : message, true);
+  }
 });
 
 function persistValue(value: string): void {

@@ -1,13 +1,7 @@
 <script setup lang="ts">
-import useVuelidate from '@vuelidate/core';
 import { between, helpers, required } from '@vuelidate/validators';
 import { Constraints } from '@/modules/core/common/constraints';
-import { useValidation } from '@/modules/core/common/use-validation';
-import { toMessages } from '@/modules/core/common/validation/validation';
-import SettingsOption from '@/modules/settings/controls/SettingsOption.vue';
-import { useSetting } from '@/modules/settings/use-setting';
-
-const maxCount = ref<string>('500');
+import SettingNumber from '@/modules/settings/controls/SettingNumber.vue';
 
 const { t } = useI18n({ useScope: 'global' });
 
@@ -15,7 +9,7 @@ const minCount = Constraints.NEWLY_DETECTED_TOKENS_MIN_COUNT;
 const maxCountLimit = Constraints.NEWLY_DETECTED_TOKENS_MAX_COUNT;
 
 const rules = {
-  maxCount: {
+  value: {
     between: helpers.withMessage(
       t('frontend_settings.newly_detected_tokens.max_count.validation.invalid_range', {
         max: maxCountLimit,
@@ -26,48 +20,15 @@ const rules = {
     required: helpers.withMessage(t('frontend_settings.newly_detected_tokens.max_count.validation.non_empty'), required),
   },
 };
-
-const currentMaxCount = useSetting('newlyDetectedTokensMaxCount');
-
-function resetMaxCount(): void {
-  set(maxCount, get(currentMaxCount).toString());
-}
-
-const v$ = useVuelidate(rules, { maxCount }, { $autoDirty: true });
-const { callIfValid } = useValidation(v$);
-
-const transform = (value: string): number | string => (value ? Number.parseInt(value) : value);
-
-onMounted(() => {
-  resetMaxCount();
-});
 </script>
 
 <template>
-  <SettingsOption
+  <SettingNumber
     class="mt-1"
     setting="newlyDetectedTokensMaxCount"
-    :transform="transform"
+    :rules="rules"
+    :label="t('frontend_settings.newly_detected_tokens.max_count.label')"
+    :hint="t('frontend_settings.newly_detected_tokens.max_count.hint')"
     :error-message="t('frontend_settings.newly_detected_tokens.max_count.validation.error')"
-    @finished="resetMaxCount()"
-  >
-    <template #title>
-      {{ t('frontend_settings.newly_detected_tokens.max_count.title') }}
-    </template>
-    <template #default="{ error, success, update }">
-      <RuiTextField
-        v-model="maxCount"
-        variant="outlined"
-        color="primary"
-        :label="t('frontend_settings.newly_detected_tokens.max_count.label')"
-        :hint="t('frontend_settings.newly_detected_tokens.max_count.hint')"
-        type="number"
-        :min="minCount"
-        :max="maxCountLimit"
-        :success-messages="success"
-        :error-messages="error || toMessages(v$.maxCount)"
-        @update:model-value="callIfValid($event, update)"
-      />
-    </template>
-  </SettingsOption>
+  />
 </template>

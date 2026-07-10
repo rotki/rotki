@@ -82,4 +82,11 @@ describe('settingNumber', () => {
     const wrapper = createWrapper();
     expect(wrapper.find('.reset').exists()).toBe(false);
   });
+
+  it('should prefix a callback error message on a failed write', async () => {
+    const wrapper = createWrapper({ errorMessage: (value: number) => `bad ${value}` });
+    set(error, 'boom');
+    await nextTick();
+    expect(wrapper.find('.error').text()).toContain('bad 3');
+  });
 });

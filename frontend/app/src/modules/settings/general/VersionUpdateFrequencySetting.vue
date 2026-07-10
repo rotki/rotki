@@ -1,53 +1,11 @@
 <script setup lang="ts">
-import useVuelidate from '@vuelidate/core';
-import { between, helpers, requiredIf } from '@vuelidate/validators';
 import { Constraints } from '@/modules/core/common/constraints';
-import { useValidation } from '@/modules/core/common/use-validation';
-import { toMessages } from '@/modules/core/common/validation/validation';
 import SettingsItem from '@/modules/settings/controls/SettingsItem.vue';
-import SettingsOption from '@/modules/settings/controls/SettingsOption.vue';
-import { useSetting } from '@/modules/settings/use-setting';
+import SettingToggleNumber from '@/modules/settings/controls/SettingToggleNumber.vue';
 
-const versionUpdateCheckFrequency = ref<string>('');
-const versionUpdateCheckEnabled = ref<boolean>(false);
-const existingFrequency = useSetting('versionUpdateCheckFrequency');
 const maxVersionUpdateCheckFrequency = Constraints.MAX_HOURS_DELAY;
+
 const { t } = useI18n({ useScope: 'global' });
-
-const rules = {
-  versionUpdateCheckFrequency: {
-    between: helpers.withMessage(
-      t('general_settings.version_update_check.validation.invalid_frequency', {
-        end: maxVersionUpdateCheckFrequency,
-        start: 1,
-      }),
-      between(1, Constraints.MAX_HOURS_DELAY),
-    ),
-    required: helpers.withMessage(
-      t('general_settings.version_update_check.validation.non_empty'),
-      requiredIf(versionUpdateCheckEnabled),
-    ),
-  },
-};
-
-const v$ = useVuelidate(rules, { versionUpdateCheckFrequency }, { $autoDirty: true });
-const { callIfValid } = useValidation(v$);
-
-function resetVersionUpdateCheckFrequency() {
-  const frequency = get(existingFrequency);
-  set(versionUpdateCheckEnabled, frequency > 0);
-  set(versionUpdateCheckFrequency, get(versionUpdateCheckEnabled) ? frequency.toString() : '');
-}
-
-function frequencyTransform(value: string) {
-  return value ? Number.parseInt(value) : value;
-}
-
-const switchTransform = (value: boolean) => (value ? 24 : -1);
-
-onMounted(() => {
-  resetVersionUpdateCheckFrequency();
-});
 </script>
 
 <template>
@@ -55,42 +13,22 @@ onMounted(() => {
     <template #title>
       {{ t('general_settings.version_update_check.title') }}
     </template>
-    <SettingsOption
-      #default="{ updateImmediate }"
+    <SettingToggleNumber
       setting="versionUpdateCheckFrequency"
-      :transform="switchTransform"
-      @finished="resetVersionUpdateCheckFrequency()"
-    >
-      <RuiSwitch
-        v-model="versionUpdateCheckEnabled"
-        :label="t('general_settings.version_update_check.switch')"
-        color="primary"
-        @update:model-value="callIfValid($event, updateImmediate)"
-      />
-    </SettingsOption>
-    <div class="grow">
-      <SettingsOption
-        #default="{ error, success, update }"
-        setting="versionUpdateCheckFrequency"
-        :transform="frequencyTransform"
-        :error-message="t('general_settings.version_update_check.validation.error')"
-        @finished="resetVersionUpdateCheckFrequency()"
-      >
-        <RuiTextField
-          v-model="versionUpdateCheckFrequency"
-          variant="outlined"
-          color="primary"
-          :disabled="!versionUpdateCheckEnabled"
-          type="number"
-          min="1"
-          :max="maxVersionUpdateCheckFrequency"
-          :label="t('general_settings.version_update_check.label')"
-          :hint="t('general_settings.version_update_check.hint')"
-          :success-messages="success"
-          :error-messages="error || toMessages(v$.versionUpdateCheckFrequency)"
-          @update:model-value="update($event)"
-        />
-      </SettingsOption>
-    </div>
+      :enabled-value="24"
+      :min="1"
+      :max="maxVersionUpdateCheckFrequency"
+      :switch-label="t('general_settings.version_update_check.switch')"
+      :field-label="t('general_settings.version_update_check.label')"
+      :field-hint="t('general_settings.version_update_check.hint')"
+      :validation="{
+        empty: t('general_settings.version_update_check.validation.non_empty'),
+        invalid: t('general_settings.version_update_check.validation.invalid_frequency', {
+          end: maxVersionUpdateCheckFrequency,
+          start: 1,
+        }),
+      }"
+      :error-message="t('general_settings.version_update_check.validation.error')"
+    />
   </SettingsItem>
 </template>

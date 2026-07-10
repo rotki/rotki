@@ -8,11 +8,17 @@ vi.mock('@/modules/settings/use-setting-model', () => ({ useSettingModel: useSet
 
 const RuiSwitchStub = {
   props: ['modelValue', 'successMessages', 'errorMessages', 'label'],
+  emits: ['update:model-value'],
   template: `<div>
     <span class="model">{{ modelValue }}</span>
     <span class="success">{{ successMessages }}</span>
     <span class="error">{{ errorMessages }}</span>
   </div>`,
+};
+
+const RuiCheckboxStub = {
+  props: ['modelValue', 'label'],
+  template: `<div class="checkbox"><span class="model">{{ modelValue }}</span></div>`,
 };
 
 describe('settingSwitch', () => {
@@ -23,7 +29,7 @@ describe('settingSwitch', () => {
   function createWrapper(props: Record<string, unknown> = {}): VueWrapper {
     return mount(SettingSwitch, {
       props: { setting: 'treatEth2AsEth', label: 'Treat', ...props },
-      global: { stubs: { RuiSwitch: RuiSwitchStub } },
+      global: { stubs: { RuiCheckbox: RuiCheckboxStub, RuiSwitch: RuiSwitchStub } },
     });
   }
 
@@ -96,5 +102,24 @@ describe('settingSwitch', () => {
     set(success, true);
     await nextTick();
     expect(wrapper.find('.success').text()).toContain('turned off');
+  });
+
+  it('should display the negated value when inverted', () => {
+    set(model, true);
+    const wrapper = createWrapper({ inverted: true });
+    expect(wrapper.find('.model').text()).toBe('false');
+  });
+
+  it('should write the negated value when inverted', async () => {
+    set(model, true);
+    const wrapper = createWrapper({ inverted: true });
+    await wrapper.findComponent(RuiSwitchStub).vm.$emit('update:model-value', true);
+    await nextTick();
+    expect(get(model)).toBe(false);
+  });
+
+  it('should render a checkbox when control is checkbox', () => {
+    const wrapper = createWrapper({ control: 'checkbox' });
+    expect(wrapper.find('.checkbox').exists()).toBe(true);
   });
 });

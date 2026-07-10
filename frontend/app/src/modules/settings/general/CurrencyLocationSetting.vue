@@ -1,52 +1,39 @@
 <script setup lang="ts">
 import { CurrencyLocation } from '@/modules/assets/amount-display/currency-location';
-import SettingsOption from '@/modules/settings/controls/SettingsOption.vue';
-import { useSetting } from '@/modules/settings/use-setting';
-
-const currencyLocation = ref<CurrencyLocation>(CurrencyLocation.AFTER);
-const location = useSetting('currencyLocation');
+import SettingSelect from '@/modules/settings/controls/SettingSelect.vue';
 
 const { t } = useI18n({ useScope: 'global' });
 
-function successMessage(currencyLocation: CurrencyLocation) {
-  return t('general_settings.validation.currency_location.success', {
-    currencyLocation,
-  });
-}
+const options = [CurrencyLocation.BEFORE, CurrencyLocation.AFTER];
 
-onMounted(() => {
-  set(currencyLocation, get(location));
-});
+function successMessage(currencyLocation: string): string {
+  return t('general_settings.validation.currency_location.success', { currencyLocation });
+}
 </script>
 
 <template>
-  <SettingsOption
-    #default="{ error, success, update }"
+  <SettingSelect
+    control="radio"
     setting="currencyLocation"
+    class="flex flex-col"
+    data-testid="currency-location-input"
+    :options="options"
     :error-message="t('general_settings.validation.currency_location.error')"
     :success-message="successMessage"
   >
-    <RuiRadioGroup
-      v-model="currencyLocation"
-      color="primary"
-      data-cy="currency-location-input"
-      class="flex flex-col"
-      :success-messages="success"
-      :error-messages="error"
-      @update:model-value="update($event)"
-    >
-      <RuiRadio value="before">
+    <template #option="{ option }">
+      <template v-if="option === CurrencyLocation.BEFORE">
         {{ t('general_settings.amount.label.location_before') }}
         <div class="text-sm text-rui-text-secondary mt-1">
           {{ t('general_settings.amount.example.before') }}
         </div>
-      </RuiRadio>
-      <RuiRadio value="after">
+      </template>
+      <template v-else>
         {{ t('general_settings.amount.label.location_after') }}
         <div class="text-sm text-rui-text-secondary mt-1">
           {{ t('general_settings.amount.example.after') }}
         </div>
-      </RuiRadio>
-    </RuiRadioGroup>
-  </SettingsOption>
+      </template>
+    </template>
+  </SettingSelect>
 </template>

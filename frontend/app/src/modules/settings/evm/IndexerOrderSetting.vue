@@ -2,7 +2,6 @@
 import { toCapitalCase } from '@rotki/common';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
 import { useExternalApiKeys } from '@/modules/settings/api-keys/external/use-external-api-keys';
-import SettingsOption from '@/modules/settings/controls/SettingsOption.vue';
 import SettingCategoryHeader from '@/modules/settings/SettingCategoryHeader.vue';
 import { EvmIndexer } from '@/modules/settings/types/evm-indexer';
 import { PrioritizedListData } from '@/modules/settings/types/prioritized-list-data';
@@ -12,7 +11,9 @@ import {
   type PrioritizedListId,
   ROUTESCAN_PRIO_LIST_ITEM,
 } from '@/modules/settings/types/prioritized-list-id';
+import { useClearableMessages } from '@/modules/settings/use-clearable-messages';
 import { useEvmIndexerSettings } from '@/modules/settings/use-evm-indexer-settings';
+import { useSettingModel } from '@/modules/settings/use-setting-model';
 import { useSettingsOperations } from '@/modules/settings/use-settings-operations';
 import ChainIcon from '@/modules/shell/components/ChainIcon.vue';
 import PrioritizedList from '@/modules/shell/components/PrioritizedList.vue';
@@ -42,6 +43,13 @@ const { getChain, getChainName, getEvmChainName, txEvmChains } = useSupportedCha
 const { defaultEvmIndexerOrder, evmIndexersOrder } = useEvmIndexerSettings();
 const { update: updateSettings } = useSettingsOperations();
 const { getApiKey, useApiKey } = useExternalApiKeys();
+
+const { error: defaultWriteError, model: defaultOrderModel, success: defaultWriteSuccess } = useSettingModel('defaultEvmIndexerOrder', { debounce: 0 });
+const { error: chainWriteError, model: chainOrdersModel, success: chainWriteSuccess } = useSettingModel('evmIndexersOrder', { debounce: 0 });
+const { clearAll: clearDefault, error: defaultError, setError: setDefaultError, setSuccess: setDefaultSuccess, success: defaultSuccess } = useClearableMessages();
+const { clearAll: clearChain, error: chainError, setError: setChainError, setSuccess: setChainSuccess, success: chainSuccess } = useClearableMessages();
+
+const pendingChainName = ref<string>('');
 
 const etherscanApiKey = useApiKey('etherscan');
 
@@ -216,20 +224,49 @@ function navigateToApiKeys(): void {
   }
 }
 
-function updateDefaultOrder(value: PrioritizedListId[], updateImmediate: (value: PrioritizedListId[]) => void): void {
+function updateDefaultOrder(value: PrioritizedListId[]): void {
   set(localDefaultOrder, value);
-  updateImmediate(value);
+  set(defaultOrderModel, value.filter(isEvmIndexer));
 }
 
-function updateChainOrder(chainId: string, value: PrioritizedListId[], updateImmediate: (value: PrioritizedListId[]) => void): void {
+function updateChainOrder(chainId: string, value: PrioritizedListId[]): void {
   const orders = { ...get(localChainOrders) };
   orders[chainId] = value;
   set(localChainOrders, orders);
-  updateImmediate(value);
+  set(pendingChainName, getChainName(chainId));
+  set(chainOrdersModel, toEvmChainNameKeys(orders));
 }
 
 watchImmediate([evmIndexersOrder, defaultEvmIndexerOrder], () => {
   resetLocalValues();
+});
+
+watch(defaultOrderModel, () => {
+  clearDefault();
+});
+
+watch(defaultWriteSuccess, (saved) => {
+  if (saved)
+    setDefaultSuccess(t('evm_settings.indexer.default_updated'), true);
+});
+
+watch(defaultWriteError, (message) => {
+  if (message)
+    setDefaultError(message, true);
+});
+
+watch(chainOrdersModel, () => {
+  clearChain();
+});
+
+watch(chainWriteSuccess, (saved) => {
+  if (saved)
+    setChainSuccess(t('evm_settings.indexer.chain_updated', { chain: get(pendingChainName) }), true);
+});
+
+watch(chainWriteError, (message) => {
+  if (message)
+    setChainError(message, true);
 });
 </script>
 
@@ -393,49 +430,34 @@ watchImmediate([evmIndexersOrder, defaultEvmIndexerOrder], () => {
           :key="tab.id"
           :value="tab.id"
         >
-          <SettingsOption
+          <PrioritizedList
             v-if="tab.isDefault"
-            #default="{ error, success, updateImmediate }"
-            setting="defaultEvmIndexerOrder"
-            :success-message="t('evm_settings.indexer.default_updated')"
-            @finished="resetLocalValues()"
+            data-cy="default-indexer-order"
+            :model-value="localDefaultOrder"
+            :all-items="availableIndexers"
+            :status="{ error: defaultError, success: defaultSuccess }"
+            :item-data-name="t('evm_settings.indexer.data_name')"
+            :disable-delete="localDefaultOrder.length <= 1"
+            @update:model-value="updateDefaultOrder($event)"
           >
-            <PrioritizedList
-              data-cy="default-indexer-order"
-              :model-value="localDefaultOrder"
-              :all-items="availableIndexers"
-              :status="{ error, success }"
-              :item-data-name="t('evm_settings.indexer.data_name')"
-              :disable-delete="localDefaultOrder.length <= 1"
-              @update:model-value="updateDefaultOrder($event, updateImmediate)"
-            >
-              <template #title>
-                {{ t('evm_settings.indexer.default_order') }}
-              </template>
-            </PrioritizedList>
-          </SettingsOption>
-          <SettingsOption
+            <template #title>
+              {{ t('evm_settings.indexer.default_order') }}
+            </template>
+          </PrioritizedList>
+          <PrioritizedList
             v-else
-            #default="{ error, success, updateImmediate }"
-            setting="evmIndexersOrder"
-            :transform="() => toEvmChainNameKeys(localChainOrders)"
-            :success-message="t('evm_settings.indexer.chain_updated', { chain: tab.name })"
-            @finished="resetLocalValues()"
+            :data-cy="`chain-indexer-order-${tab.id}`"
+            :model-value="localChainOrders[tab.id] ?? []"
+            :all-items="availableIndexers"
+            :status="{ error: chainError, success: chainSuccess }"
+            :item-data-name="t('evm_settings.indexer.data_name')"
+            :disable-delete="(localChainOrders[tab.id]?.length ?? 0) <= 1"
+            @update:model-value="updateChainOrder(tab.id, $event)"
           >
-            <PrioritizedList
-              :data-cy="`chain-indexer-order-${tab.id}`"
-              :model-value="localChainOrders[tab.id] ?? []"
-              :all-items="availableIndexers"
-              :status="{ error, success }"
-              :item-data-name="t('evm_settings.indexer.data_name')"
-              :disable-delete="(localChainOrders[tab.id]?.length ?? 0) <= 1"
-              @update:model-value="updateChainOrder(tab.id, $event, updateImmediate)"
-            >
-              <template #title>
-                {{ t('evm_settings.indexer.chain_order', { chain: tab.name }) }}
-              </template>
-            </PrioritizedList>
-          </SettingsOption>
+            <template #title>
+              {{ t('evm_settings.indexer.chain_order', { chain: tab.name }) }}
+            </template>
+          </PrioritizedList>
         </RuiTabItem>
       </RuiTabItems>
       <slot name="footer" />

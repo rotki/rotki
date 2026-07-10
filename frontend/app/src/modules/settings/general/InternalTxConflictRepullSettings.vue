@@ -1,8 +1,9 @@
 <script setup lang="ts">
 import { Defaults } from '@/modules/core/common/defaults';
-import SettingsOption from '@/modules/settings/controls/SettingsOption.vue';
+import SettingsItem from '@/modules/settings/controls/SettingsItem.vue';
 import SettingResetConfirmButton from '@/modules/settings/SettingResetConfirmButton.vue';
-import { useSetting } from '@/modules/settings/use-setting';
+import { useClearableMessages } from '@/modules/settings/use-clearable-messages';
+import { useSettingModel } from '@/modules/settings/use-setting-model';
 
 const { compact = false } = defineProps<{
   compact?: boolean;
@@ -10,37 +11,72 @@ const { compact = false } = defineProps<{
 
 const { t } = useI18n({ useScope: 'global' });
 
-const storedFrequency = useSetting('internalTxConflictRepullFrequency');
-const storedBatchSize = useSetting('internalTxsToRepull');
-
-const batchSize = ref<string>(Defaults.DEFAULT_INTERNAL_TXS_TO_REPULL.toString());
 const SECONDS_PER_MINUTE = 60;
-const frequency = ref<string>((Defaults.DEFAULT_INTERNAL_TX_CONFLICT_REPULL_FREQUENCY / SECONDS_PER_MINUTE).toString());
 
-function resetBatchSize(update: (value: number) => void): void {
-  const defaultVal = Defaults.DEFAULT_INTERNAL_TXS_TO_REPULL;
-  update(defaultVal);
-  set(batchSize, defaultVal.toString());
+const { error: batchWriteError, flush: flushBatch, model: batchModel, success: batchWriteSuccess } = useSettingModel('internalTxsToRepull', { debounce: 1500 });
+const { error: frequencyWriteError, flush: flushFrequency, model: frequencyModel, success: frequencyWriteSuccess } = useSettingModel('internalTxConflictRepullFrequency', { debounce: 1500 });
+const { clearAll: clearBatchMessages, error: batchError, setError: setBatchError, setSuccess: setBatchSuccess, success: batchSuccess } = useClearableMessages();
+const { clearAll: clearFrequencyMessages, error: frequencyError, setError: setFrequencyError, setSuccess: setFrequencySuccess, success: frequencySuccess } = useClearableMessages();
+
+const batchSize = ref<string>(get(batchModel).toString());
+const frequency = ref<string>((get(frequencyModel) / SECONDS_PER_MINUTE).toString());
+
+function updateBatchSize(value: string): void {
+  clearBatchMessages();
+  if (value)
+    set(batchModel, Number.parseInt(value));
 }
 
-function resetFrequency(update: (value: number) => void): void {
-  const defaultVal = Defaults.DEFAULT_INTERNAL_TX_CONFLICT_REPULL_FREQUENCY;
-  update(defaultVal);
-  set(frequency, (defaultVal / SECONDS_PER_MINUTE).toString());
+function updateFrequency(value: string): void {
+  clearFrequencyMessages();
+  if (value)
+    set(frequencyModel, Number.parseFloat(value) * SECONDS_PER_MINUTE);
 }
 
-onMounted(() => {
-  set(batchSize, get(storedBatchSize).toString());
-  set(frequency, (get(storedFrequency) / SECONDS_PER_MINUTE).toString());
+async function resetBatchSize(): Promise<void> {
+  clearBatchMessages();
+  set(batchModel, Defaults.DEFAULT_INTERNAL_TXS_TO_REPULL);
+  await flushBatch();
+}
+
+async function resetFrequency(): Promise<void> {
+  clearFrequencyMessages();
+  set(frequencyModel, Defaults.DEFAULT_INTERNAL_TX_CONFLICT_REPULL_FREQUENCY);
+  await flushFrequency();
+}
+
+watch(batchModel, (value) => {
+  set(batchSize, value.toString());
+});
+
+watch(frequencyModel, (value) => {
+  set(frequency, (value / SECONDS_PER_MINUTE).toString());
+});
+
+watch(batchWriteSuccess, (saved) => {
+  if (saved)
+    setBatchSuccess('', true);
+});
+
+watch(batchWriteError, (message) => {
+  if (message)
+    setBatchError(`${t('general_settings.history_event.internal_tx_conflicts.batch_size.error')}: ${message}`, true);
+});
+
+watch(frequencyWriteSuccess, (saved) => {
+  if (saved)
+    setFrequencySuccess('', true);
+});
+
+watch(frequencyWriteError, (message) => {
+  if (message)
+    setFrequencyError(`${t('general_settings.history_event.internal_tx_conflicts.frequency.error')}: ${message}`, true);
 });
 </script>
 
 <template>
   <div :class="compact ? 'flex flex-col gap-3 pt-4' : undefined">
-    <SettingsOption
-      setting="internalTxsToRepull"
-      :error-message="t('general_settings.history_event.internal_tx_conflicts.batch_size.error')"
-    >
+    <SettingsItem>
       <template
         v-if="!compact"
         #title
@@ -53,32 +89,27 @@ onMounted(() => {
       >
         {{ t('general_settings.history_event.internal_tx_conflicts.batch_size.subtitle') }}
       </template>
-      <template #default="{ error, success, update, updateImmediate }">
-        <div class="flex items-start w-full">
-          <RuiTextField
-            v-model.number="batchSize"
-            variant="outlined"
-            color="primary"
-            class="w-full"
-            :dense="compact"
-            :label="t('general_settings.history_event.internal_tx_conflicts.batch_size.label')"
-            type="number"
-            :min="1"
-            :success-messages="success"
-            :error-messages="error"
-            @update:model-value="update($event ? parseInt($event) : $event)"
-          />
-          <SettingResetConfirmButton
-            :compact="compact"
-            @confirm="resetBatchSize(updateImmediate)"
-          />
-        </div>
-      </template>
-    </SettingsOption>
-    <SettingsOption
-      setting="internalTxConflictRepullFrequency"
-      :error-message="t('general_settings.history_event.internal_tx_conflicts.frequency.error')"
-    >
+      <div class="flex items-start w-full">
+        <RuiTextField
+          v-model="batchSize"
+          variant="outlined"
+          color="primary"
+          class="w-full"
+          :dense="compact"
+          :label="t('general_settings.history_event.internal_tx_conflicts.batch_size.label')"
+          type="number"
+          :min="1"
+          :success-messages="batchSuccess"
+          :error-messages="batchError"
+          @update:model-value="updateBatchSize($event)"
+        />
+        <SettingResetConfirmButton
+          :compact="compact"
+          @confirm="resetBatchSize()"
+        />
+      </div>
+    </SettingsItem>
+    <SettingsItem>
       <template
         v-if="!compact"
         #title
@@ -91,28 +122,26 @@ onMounted(() => {
       >
         {{ t('general_settings.history_event.internal_tx_conflicts.frequency.subtitle') }}
       </template>
-      <template #default="{ error, success, update, updateImmediate }">
-        <div class="flex items-start w-full">
-          <RuiTextField
-            v-model.number="frequency"
-            variant="outlined"
-            color="primary"
-            class="w-full"
-            :dense="compact"
-            :label="t('general_settings.history_event.internal_tx_conflicts.frequency.label')"
-            type="number"
-            :min="0.5"
-            :step="0.5"
-            :success-messages="success"
-            :error-messages="error"
-            @update:model-value="update($event ? Number.parseFloat($event) * SECONDS_PER_MINUTE : $event)"
-          />
-          <SettingResetConfirmButton
-            :compact="compact"
-            @confirm="resetFrequency(updateImmediate)"
-          />
-        </div>
-      </template>
-    </SettingsOption>
+      <div class="flex items-start w-full">
+        <RuiTextField
+          v-model="frequency"
+          variant="outlined"
+          color="primary"
+          class="w-full"
+          :dense="compact"
+          :label="t('general_settings.history_event.internal_tx_conflicts.frequency.label')"
+          type="number"
+          :min="0.5"
+          :step="0.5"
+          :success-messages="frequencySuccess"
+          :error-messages="frequencyError"
+          @update:model-value="updateFrequency($event)"
+        />
+        <SettingResetConfirmButton
+          :compact="compact"
+          @confirm="resetFrequency()"
+        />
+      </div>
+    </SettingsItem>
   </div>
 </template>

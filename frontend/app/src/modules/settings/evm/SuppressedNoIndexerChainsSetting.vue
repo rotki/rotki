@@ -1,14 +1,12 @@
 <script setup lang="ts">
 import type { EvmChainInfo } from '@/modules/core/api/types/chains';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
+import SettingMultiSelect from '@/modules/settings/controls/SettingMultiSelect.vue';
 import SettingsItem from '@/modules/settings/controls/SettingsItem.vue';
-import SettingsOption from '@/modules/settings/controls/SettingsOption.vue';
 import { SettingsHighlightIds } from '@/modules/settings/setting-highlight-ids';
-import { useSetting } from '@/modules/settings/use-setting';
 import ChainIcon from '@/modules/shell/components/ChainIcon.vue';
 
 const { t } = useI18n({ useScope: 'global' });
-const suppressNoIndexerChains = useSetting('suppressNoIndexerChains');
 const { txEvmChains } = useSupportedChains();
 
 const [DefineChainItem, ReuseChainItem] = createReusableTemplate<{ item: EvmChainInfo; size: string }>();
@@ -27,7 +25,7 @@ const [DefineChainItem, ReuseChainItem] = createReusableTemplate<{ item: EvmChai
 
   <SettingsItem
     :id="SettingsHighlightIds.SUPPRESSED_NO_INDEXER_CHAINS"
-    data-cy="suppressed-no-indexer-chains-setting"
+    data-testid="suppressed-no-indexer-chains-setting"
   >
     <template #title>
       {{ t('evm_settings.indexer.suppressed_no_indexer_chains.title') }}
@@ -35,41 +33,30 @@ const [DefineChainItem, ReuseChainItem] = createReusableTemplate<{ item: EvmChai
     <template #subtitle>
       {{ t('evm_settings.indexer.suppressed_no_indexer_chains.subtitle') }}
     </template>
-    <SettingsOption
-      #default="{ error, success, updateImmediate }"
+    <SettingMultiSelect
       setting="suppressNoIndexerChains"
-      :error-message="t('evm_settings.indexer.suppressed_no_indexer_chains.error')"
+      :options="txEvmChains"
+      key-attr="id"
+      text-attr="name"
+      :label="t('evm_settings.indexer.suppressed_no_indexer_chains.label')"
+      :hint="t('evm_settings.indexer.suppressed_no_indexer_chains.hint')"
+      data-testid="suppressed-no-indexer-chains"
+      :item-height="48"
       :success-message="t('evm_settings.indexer.suppressed_no_indexer_chains.success')"
+      :error-message="t('evm_settings.indexer.suppressed_no_indexer_chains.error')"
     >
-      <RuiAutoComplete
-        :options="txEvmChains"
-        :label="t('evm_settings.indexer.suppressed_no_indexer_chains.label')"
-        :model-value="suppressNoIndexerChains"
-        :success-messages="success"
-        :error-messages="error"
-        :hint="t('evm_settings.indexer.suppressed_no_indexer_chains.hint')"
-        data-cy="suppressed-no-indexer-chains"
-        variant="outlined"
-        key-attr="id"
-        text-attr="name"
-        chips
-        :item-height="48"
-        auto-select-first
-        @update:model-value="updateImmediate($event)"
-      >
-        <template #selection="{ item }">
-          <ReuseChainItem
-            :item="item"
-            size="20px"
-          />
-        </template>
-        <template #item="{ item }">
-          <ReuseChainItem
-            :item="item"
-            size="24px"
-          />
-        </template>
-      </RuiAutoComplete>
-    </SettingsOption>
+      <template #selection="{ item }">
+        <ReuseChainItem
+          :item="item"
+          size="20px"
+        />
+      </template>
+      <template #item="{ item }">
+        <ReuseChainItem
+          :item="item"
+          size="24px"
+        />
+      </template>
+    </SettingMultiSelect>
   </SettingsItem>
 </template>

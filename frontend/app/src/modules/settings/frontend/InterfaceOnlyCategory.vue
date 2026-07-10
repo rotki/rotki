@@ -21,7 +21,12 @@ const { t } = useI18n({ useScope: 'global' });
       {{ t('frontend_settings.title') }}
     </template>
     <LanguageSetting />
-    <AnimationsEnabledSetting :id="SettingsHighlightIds.ANIMATIONS" />
+    <SettingsItem :id="SettingsHighlightIds.ANIMATIONS">
+      <template #title>
+        {{ t('frontend_settings.animations.title') }}
+      </template>
+      <AnimationsEnabledSetting />
+    </SettingsItem>
     <SettingsItem :id="SettingsHighlightIds.PERSIST_TABLE_SORTING">
       <template #title>
         {{ t('frontend_settings.persist_table_sorting.title') }}
