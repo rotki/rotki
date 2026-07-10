@@ -2,7 +2,9 @@ import logging
 from typing import TYPE_CHECKING, Any
 
 from rotkehlchen.assets.utils import token_normalized_value_decimals
+from rotkehlchen.chain.decoding.utils import maybe_reshuffle_events
 from rotkehlchen.chain.evm.constants import DEFAULT_TOKEN_DECIMALS
+from rotkehlchen.chain.evm.decoding.constants import STAKED as STAKED_TOPIC
 from rotkehlchen.chain.evm.decoding.pendle.constants import CPT_PENDLE
 from rotkehlchen.chain.evm.decoding.pendle.decoder import PendleCommonDecoder
 from rotkehlchen.chain.evm.decoding.structures import (
@@ -15,11 +17,17 @@ from rotkehlchen.history.events.structures.types import HistoryEventSubType, His
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import deserialize_timestamp
 from rotkehlchen.types import ChecksumEvmAddress
+from rotkehlchen.utils.misc import bytes_to_address
 from rotkehlchen.utils.mixins.customizable_date import CustomizableDateMixin
 
 from .constants import (
+    COOLDOWN_INITIATED_TOPIC,
+    FINALIZE_COOLDOWN_SIGNATURE,
     NEW_LOCK_POSITION_TOPIC,
     PENDLE_TOKEN,
+    STAKED_PENDLE_CONTRACT_ADDRESS,
+    STAKED_PENDLE_TOKEN,
+    UNSTAKED_TOPIC,
     VE_PENDLE_CONTRACT_ADDRESS,
     WITHDRAW_TOPIC,
 )
@@ -121,7 +129,103 @@ class PendleDecoder(PendleCommonDecoder, CustomizableDateMixin):
 
         return DEFAULT_EVM_DECODING_OUTPUT
 
+    def _decode_staked_pendle_events(self, context: DecoderContext) -> EvmDecodingOutput:
+        if not self.base.is_tracked(user_address := bytes_to_address(context.tx_log.topics[1])):
+            return DEFAULT_EVM_DECODING_OUTPUT
+
+        topic = context.tx_log.topics[0]
+        if topic == COOLDOWN_INITIATED_TOPIC:
+            amount = token_normalized_value_decimals(
+                token_amount=int.from_bytes(context.tx_log.data[:32]),
+                token_decimals=DEFAULT_TOKEN_DECIMALS,
+            )
+            for event in context.decoded_events:
+                if (
+                    event.event_type == HistoryEventType.SPEND and
+                    event.event_subtype == HistoryEventSubType.NONE and
+                    event.asset == STAKED_PENDLE_TOKEN and
+                    event.amount == amount and
+                    event.location_label == user_address
+                ):
+                    event.event_subtype = HistoryEventSubType.RETURN_WRAPPED
+                    event.notes = f'Return {amount} sPENDLE to Pendle for cooldown'
+                    event.counterparty = CPT_PENDLE
+                    break
+
+            return EvmDecodingOutput(events=[self.base.make_event_from_transaction(
+                transaction=context.transaction,
+                tx_log=context.tx_log,
+                event_type=HistoryEventType.INFORMATIONAL,
+                event_subtype=HistoryEventSubType.NONE,
+                asset=STAKED_PENDLE_TOKEN,
+                amount=amount,
+                location_label=user_address,
+                notes=f'Initiate cooldown for {amount} sPENDLE',
+                counterparty=CPT_PENDLE,
+                address=STAKED_PENDLE_CONTRACT_ADDRESS,
+            )])
+
+        if not (is_stake := topic == STAKED_TOPIC) and topic != UNSTAKED_TOPIC:
+            return DEFAULT_EVM_DECODING_OUTPUT
+
+        amount = token_normalized_value_decimals(
+            token_amount=int.from_bytes(context.tx_log.data[:32]),
+            token_decimals=DEFAULT_TOKEN_DECIMALS,
+        )
+        is_finalize_cooldown = context.transaction.input_data.startswith(FINALIZE_COOLDOWN_SIGNATURE)  # noqa: E501
+        wrapped_event, pendle_event = None, None
+        for event in context.decoded_events:
+            if (
+                event.event_subtype != HistoryEventSubType.NONE or
+                event.location_label != user_address
+            ):
+                continue
+
+            if is_stake:
+                if event.event_type == HistoryEventType.SPEND and event.asset == PENDLE_TOKEN and event.amount == amount:  # noqa: E501
+                    event.event_type = HistoryEventType.STAKING
+                    event.event_subtype = HistoryEventSubType.DEPOSIT_ASSET
+                    event.notes = f'Stake {amount} PENDLE'
+                    event.counterparty = CPT_PENDLE
+                    pendle_event = event
+                elif event.event_type == HistoryEventType.RECEIVE and event.asset == STAKED_PENDLE_TOKEN and event.amount == amount:  # noqa: E501
+                    event.event_subtype = HistoryEventSubType.RECEIVE_WRAPPED
+                    event.notes = f'Receive {amount} sPENDLE from staking in Pendle'
+                    event.counterparty = CPT_PENDLE
+                    wrapped_event = event
+            elif event.event_type == HistoryEventType.SPEND and event.asset == STAKED_PENDLE_TOKEN:
+                event.event_subtype = HistoryEventSubType.RETURN_WRAPPED
+                event.notes = f'Instantly unstake {event.amount} sPENDLE from Pendle'
+                event.counterparty = CPT_PENDLE
+                wrapped_event = event
+            elif (
+                event.event_type == HistoryEventType.RECEIVE and
+                event.asset == PENDLE_TOKEN and
+                event.amount == amount and
+                event.location_label == user_address
+            ):
+                event.event_type = HistoryEventType.STAKING
+                event.event_subtype = HistoryEventSubType.REMOVE_ASSET
+                event.notes = f'Receive {amount} PENDLE after unstaking from Pendle'
+                event.counterparty = CPT_PENDLE
+                pendle_event = event
+
+        if is_finalize_cooldown:
+            return DEFAULT_EVM_DECODING_OUTPUT
+
+        if wrapped_event is None or pendle_event is None:
+            log.error('Could not find matching sPENDLE events for transaction %s ', context.transaction)  # noqa: E501
+
+        maybe_reshuffle_events(
+            ordered_events=(
+                [pendle_event, wrapped_event] if is_stake else [wrapped_event, pendle_event]
+            ),
+            events_list=context.decoded_events,
+        )
+        return DEFAULT_EVM_DECODING_OUTPUT
+
     def addresses_to_decoders(self) -> dict[ChecksumEvmAddress, tuple[Any, ...]]:
         return super().addresses_to_decoders() | {
             VE_PENDLE_CONTRACT_ADDRESS: (self._decode_ve_pendle_events,),
+            STAKED_PENDLE_CONTRACT_ADDRESS: (self._decode_staked_pendle_events,),
         }

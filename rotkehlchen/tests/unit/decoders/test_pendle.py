@@ -5,6 +5,11 @@ import pytest
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.utils import get_evm_token
 from rotkehlchen.chain.decoding.constants import CPT_GAS
+from rotkehlchen.chain.ethereum.modules.pendle.constants import (
+    PENDLE_TOKEN,
+    STAKED_PENDLE_CONTRACT_ADDRESS,
+    STAKED_PENDLE_TOKEN,
+)
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
 from rotkehlchen.chain.evm.decoding.aave.constants import CPT_AAVE_V3
 from rotkehlchen.chain.evm.decoding.pendle.constants import CPT_PENDLE
@@ -105,6 +110,202 @@ def test_lock_pendle(ethereum_inquirer, ethereum_accounts):
             location_label=user_address,
             notes=f'Set PENDLE spending approval of {user_address} by 0x4f30A9D41B80ecC5B94306AB4364951AE3170210 to {approval_amount}',  # noqa: E501
             address=string_to_evm_address('0x4f30A9D41B80ecC5B94306AB4364951AE3170210'),
+        ),
+    ]
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('ethereum_accounts', [['0x6fB14757A71978D067142d7aAc0C869497dc9119']])
+def test_stake_pendle_all_events(ethereum_inquirer, ethereum_accounts):
+    user_address = ethereum_accounts[0]
+    tx_hash = deserialize_evm_tx_hash('0x8d10ccae89cdd39bf3b0ce88bb889731e9a13a09c86c05f505292c87e368f5c1')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
+    assert events == [
+        EvmEvent(
+            tx_ref=tx_hash,
+            sequence_index=0,
+            timestamp=(timestamp := TimestampMS(1783671683000)),
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_ETH,
+            amount=FVal('0.00012854388021585'),
+            location_label=user_address,
+            notes='Burn 0.00012854388021585 ETH for gas',
+            counterparty=CPT_GAS,
+        ), EvmEvent(
+            tx_ref=tx_hash,
+            sequence_index=154,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.INFORMATIONAL,
+            event_subtype=HistoryEventSubType.APPROVE,
+            asset=PENDLE_TOKEN,
+            amount=ZERO,
+            location_label=user_address,
+            notes=f'Revoke PENDLE spending approval of {user_address} by {STAKED_PENDLE_CONTRACT_ADDRESS}',  # noqa: E501
+            address=STAKED_PENDLE_CONTRACT_ADDRESS,
+        ), EvmEvent(
+            tx_ref=tx_hash,
+            sequence_index=155,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.STAKING,
+            event_subtype=HistoryEventSubType.DEPOSIT_ASSET,
+            asset=PENDLE_TOKEN,
+            amount=(amount := FVal('4285.030950404238321328')),
+            location_label=user_address,
+            notes=f'Stake {amount} PENDLE',
+            counterparty=CPT_PENDLE,
+            address=STAKED_PENDLE_CONTRACT_ADDRESS,
+        ), EvmEvent(
+            tx_ref=tx_hash,
+            sequence_index=156,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.RECEIVE,
+            event_subtype=HistoryEventSubType.RECEIVE_WRAPPED,
+            asset=STAKED_PENDLE_TOKEN,
+            amount=amount,
+            location_label=user_address,
+            notes=f'Receive {amount} sPENDLE from staking in Pendle',
+            counterparty=CPT_PENDLE,
+            address=ZERO_ADDRESS,
+        ),
+    ]
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('ethereum_accounts', [['0x2F8eC6866a50a64AC2d0cE211519C6f4172b770b']])
+def test_cooldown_staked_pendle_all_events(ethereum_inquirer, ethereum_accounts):
+    user_address = ethereum_accounts[0]
+    tx_hash = deserialize_evm_tx_hash('0xa9b1b06fd4c88f0b29bf76866311f58d79e78d35604913d13be622c613211fbd')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
+    assert events == [
+        EvmEvent(
+            tx_ref=tx_hash,
+            sequence_index=0,
+            timestamp=(timestamp := TimestampMS(1783624043000)),
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_ETH,
+            amount=FVal('0.00000969085196709'),
+            location_label=user_address,
+            notes='Burn 0.00000969085196709 ETH for gas',
+            counterparty=CPT_GAS,
+        ), EvmEvent(
+            tx_ref=tx_hash,
+            sequence_index=187,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.RETURN_WRAPPED,
+            asset=STAKED_PENDLE_TOKEN,
+            amount=(amount := FVal('159.133677910249077725')),
+            location_label=user_address,
+            notes=f'Return {amount} sPENDLE to Pendle for cooldown',
+            counterparty=CPT_PENDLE,
+            address=ZERO_ADDRESS,
+        ), EvmEvent(
+            tx_ref=tx_hash,
+            sequence_index=188,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.INFORMATIONAL,
+            event_subtype=HistoryEventSubType.NONE,
+            asset=STAKED_PENDLE_TOKEN,
+            amount=amount,
+            location_label=user_address,
+            notes=f'Initiate cooldown for {amount} sPENDLE',
+            counterparty=CPT_PENDLE,
+            address=STAKED_PENDLE_CONTRACT_ADDRESS,
+        ),
+    ]
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('ethereum_accounts', [['0x97C1837fEEc918Bd2Db0365Dd075F8EFB3EaaCe2']])
+def test_instant_unstake_staked_pendle_all_events(ethereum_inquirer, ethereum_accounts):
+    user_address = ethereum_accounts[0]
+    tx_hash = deserialize_evm_tx_hash('0x12ca108e16f9ad79ee915ef090adf65b95765bdf11a5d7827798b81234903020')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
+    timestamp = TimestampMS(1783603727000)
+    assert events == [
+        EvmEvent(
+            tx_ref=tx_hash,
+            sequence_index=0,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_ETH,
+            amount=FVal('0.000016000293148507'),
+            location_label=user_address,
+            notes='Burn 0.000016000293148507 ETH for gas',
+            counterparty=CPT_GAS,
+        ), EvmEvent(
+            tx_ref=tx_hash,
+            sequence_index=1,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.RETURN_WRAPPED,
+            asset=STAKED_PENDLE_TOKEN,
+            amount=FVal('2.187529060045591949'),
+            location_label=user_address,
+            notes='Instantly unstake 2.187529060045591949 sPENDLE from Pendle',
+            counterparty=CPT_PENDLE,
+            address=ZERO_ADDRESS,
+        ), EvmEvent(
+            tx_ref=tx_hash,
+            sequence_index=2,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.STAKING,
+            event_subtype=HistoryEventSubType.REMOVE_ASSET,
+            asset=PENDLE_TOKEN,
+            amount=FVal('2.078152607043312351'),
+            location_label=user_address,
+            notes='Receive 2.078152607043312351 PENDLE after unstaking from Pendle',
+            counterparty=CPT_PENDLE,
+            address=STAKED_PENDLE_CONTRACT_ADDRESS,
+        ),
+    ]
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('ethereum_accounts', [['0x0661f7963fA984bDFE53F86FCe7b3172D63BEC13']])
+def test_finalize_cooldown_staked_pendle_all_events(ethereum_inquirer, ethereum_accounts):
+    user_address = ethereum_accounts[0]
+    tx_hash = deserialize_evm_tx_hash('0x3ff3020e7e4c01385fdf123df970ffe242a658e3ec82c618338e7f6464ed5a01')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
+    assert events == [
+        EvmEvent(
+            tx_ref=tx_hash,
+            sequence_index=0,
+            timestamp=(timestamp := TimestampMS(1783684007000)),
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_ETH,
+            amount=FVal('0.00005298942987213'),
+            location_label=user_address,
+            notes='Burn 0.00005298942987213 ETH for gas',
+            counterparty=CPT_GAS,
+        ), EvmEvent(
+            tx_ref=tx_hash,
+            sequence_index=344,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.STAKING,
+            event_subtype=HistoryEventSubType.REMOVE_ASSET,
+            asset=PENDLE_TOKEN,
+            amount=(amount := FVal('9.552293024886859976')),
+            location_label=user_address,
+            notes=f'Receive {amount} PENDLE after unstaking from Pendle',
+            counterparty=CPT_PENDLE,
+            address=STAKED_PENDLE_CONTRACT_ADDRESS,
         ),
     ]
 
