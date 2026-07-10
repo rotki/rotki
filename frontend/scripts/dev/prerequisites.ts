@@ -55,6 +55,35 @@ export function ensurePrerequisites(): void {
   }
 }
 
+/**
+ * When a python virtualenv is active, confirm the `rotkehlchen` package is
+ * actually installed AND answers. A common fresh-worktree footgun is activating a
+ * venv but forgetting to sync the backend deps: `python -m rotkehlchen` then fails
+ * at spawn time and the dev server just times out waiting for a backend that never
+ * came up. `python -m rotkehlchen version` imports the package and runs its entry
+ * point, so it catches both a missing install and an import that blows up — a
+ * stronger signal than merely resolving the module.
+ *
+ * The uv path is skipped: `uv run` resolves the project and its deps itself.
+ */
+export function verifyBackendReady(): void {
+  const venv = process.env.VIRTUAL_ENV;
+  if (!venv)
+    return;
+  try {
+    const version = execSync('python -m rotkehlchen version', { encoding: 'utf-8' }).trim();
+    logger.info(`detected rotkehlchen ${version} in the active virtualenv`);
+  }
+  catch {
+    logger.error(
+      `A python virtualenv is active (${venv}) but \`rotkehlchen\` did not answer.\n`
+      + 'It is likely not installed there — sync the backend deps (`uv sync`) or install it '
+      + 'editable (`pip install -e .`) and re-run.',
+    );
+    process.exit(1);
+  }
+}
+
 export function parsePort(raw: string | undefined, defaultValue: number): number {
   if (!raw)
     return defaultValue;
