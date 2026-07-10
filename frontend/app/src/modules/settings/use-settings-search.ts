@@ -1,9 +1,22 @@
 import type { RuiIcons } from '@rotki/ui-library';
 import type { Ref } from 'vue';
 import type { RouteLocationRaw } from 'vue-router';
-import { getTextToken } from '@rotki/common';
+import { getTextToken, TimeFramePeriod } from '@rotki/common';
+import { CurrencyLocation } from '@/modules/assets/amount-display/currency-location';
 import { type SettingsCategoryId, SettingsCategoryIds, type SettingsHighlightId, SettingsHighlightIds, type SettingsSearchEntry } from '@/modules/settings/setting-highlight-ids';
+import { CostBasisMethod } from '@/modules/settings/types/user-settings';
 import { useAppRoutes } from '@/router/routes';
+
+/**
+ * Extra search keywords derived from a setting's option domain, so a value like `fifo` or `6m` finds
+ * its setting even though the value is never rendered as UI text. Only anchors whose option set is a
+ * cleanly-importable enum qualify (see the fold plan); everything else keeps its hand-written keywords.
+ */
+const anchorKeywordDomains: Partial<Record<SettingsHighlightId, readonly string[]>> = {
+  [SettingsHighlightIds.ACCOUNTING_TRADE]: Object.values(CostBasisMethod),
+  [SettingsHighlightIds.CURRENCY_LOCATION]: Object.values(CurrencyLocation),
+  [SettingsHighlightIds.TIMEFRAME]: Object.values(TimeFramePeriod),
+};
 
 interface TabInfo {
   icon: RuiIcons;
@@ -252,14 +265,17 @@ export function useSettingsSearch(): UseSettingsSearchReturn {
 
     return tabs.flatMap(({ tab, categories }: TabGroup) =>
       categories.flatMap(({ categoryId, children }: CategoryDef) =>
-        children.map(({ texts, keywords, highlightId }: EntryDef) => ({
-          categoryId,
-          highlightId,
-          icon: tab.icon,
-          keywords,
-          route: tab.route,
-          texts: [tab.text, ...texts],
-        })),
+        children.map(({ texts, keywords, highlightId }: EntryDef) => {
+          const derived = highlightId ? anchorKeywordDomains[highlightId] : undefined;
+          return {
+            categoryId,
+            highlightId,
+            icon: tab.icon,
+            keywords: derived ? [...new Set([...(keywords ?? []), ...derived])] : keywords,
+            route: tab.route,
+            texts: [tab.text, ...texts],
+          };
+        }),
       ),
     );
   });

@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { SettingsHighlightIds, type SettingsSearchEntry } from '@/modules/settings/setting-highlight-ids';
+import { getRegistryEntry, registryEntries, registryKeysForAnchor } from '@/modules/settings/settings-registry';
 
 vi.mock('@/router/routes', () => ({
   useAppRoutes: vi.fn((): { appRoutes: ReturnType<typeof import('vue')['ref']> } => ({
@@ -59,6 +60,72 @@ describe('useSettingsSearch', () => {
         .filter((id): id is NonNullable<typeof id> => id !== undefined)
         .filter(id => !definedIds.has(id));
       expect(unknown, 'search entries referencing an undefined highlight id').toEqual([]);
+    });
+  });
+
+  describe('registry <-> anchor coverage', () => {
+    // Anchors that intentionally back no registry setting: action targets, info displays, backend
+    // settings and subsystems that are not part of the settings registry. Keeping this list explicit
+    // makes "this anchor has no setting" a reviewed decision rather than silent drift.
+    const keylessAnchors: string[] = [
+      SettingsHighlightIds.ACCOUNTING_RULE,
+      SettingsHighlightIds.ASSET_UPDATE,
+      SettingsHighlightIds.CHANGE_PASSWORD,
+      SettingsHighlightIds.GLOBALDB_INFO,
+      SettingsHighlightIds.LOG_LEVEL,
+      SettingsHighlightIds.MODULES,
+      SettingsHighlightIds.PURGE_DATA,
+      SettingsHighlightIds.PURGE_IMAGES_CACHE,
+      SettingsHighlightIds.REFRESH_CACHE,
+      SettingsHighlightIds.RESET_DISMISSAL_STATUS,
+      SettingsHighlightIds.RESTORE_ASSETS_DB,
+      SettingsHighlightIds.RPC_NODES,
+      SettingsHighlightIds.SKIPPED_EVENTS,
+      SettingsHighlightIds.USERDB_INFO,
+    ].sort();
+
+    it('should only anchor registry entries to defined highlight ids', () => {
+      const definedIds = new Set<string>(Object.values(SettingsHighlightIds));
+      const invalid = registryEntries()
+        .map(([key, entry]) => ({ anchor: entry.anchor, key }))
+        .filter(({ anchor }) => anchor !== undefined && !definedIds.has(anchor));
+      expect(invalid, 'registry entries anchored to an undefined highlight id').toEqual([]);
+    });
+
+    it('should surface every registry anchor in the search entries', () => {
+      const surfaced = new Set(
+        allEntries.map(entry => entry.highlightId).filter((id): id is NonNullable<typeof id> => id !== undefined),
+      );
+      const unsurfaced = registryEntries()
+        .map(([key, entry]) => ({ anchor: entry.anchor, key }))
+        .filter(({ anchor }) => anchor !== undefined && !surfaced.has(anchor));
+      expect(unsurfaced, 'registry keys anchored to a highlight id the search does not surface').toEqual([]);
+    });
+
+    it('should resolve every anchored highlight id back to existing registry keys', () => {
+      const anchoredIds = Object.values(SettingsHighlightIds).filter(id => registryKeysForAnchor(id).length > 0);
+      for (const id of anchoredIds) {
+        const keys = registryKeysForAnchor(id);
+        expect(keys.length, `anchor ${id} should map to at least one registry key`).toBeGreaterThan(0);
+        for (const key of keys)
+          expect(getRegistryEntry(key), `key ${key} for anchor ${id} should resolve to a registry entry`).toBeDefined();
+      }
+    });
+
+    it('should keep the keyless-anchor allowlist in sync with the registry', () => {
+      const keyless = Object.values(SettingsHighlightIds)
+        .filter(id => registryKeysForAnchor(id).length === 0)
+        .sort();
+      expect(keyless).toEqual(keylessAnchors);
+    });
+
+    it('should find settings by their derived enum-value keywords', () => {
+      const anchorOf = (keyword: string): (string | undefined)[] =>
+        filterEntries(allEntries, keyword).map(entry => entry.highlightId);
+      expect(anchorOf('fifo')).toContain(SettingsHighlightIds.ACCOUNTING_TRADE);
+      expect(anchorOf('hifo')).toContain(SettingsHighlightIds.ACCOUNTING_TRADE);
+      expect(anchorOf('6m')).toContain(SettingsHighlightIds.TIMEFRAME);
+      expect(anchorOf('before')).toContain(SettingsHighlightIds.CURRENCY_LOCATION);
     });
   });
 
