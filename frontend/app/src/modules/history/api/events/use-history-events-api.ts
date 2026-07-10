@@ -2,7 +2,7 @@ import type { QueryExchangeEventsPayload } from '@/modules/balances/types/exchan
 import type { CollectionResponse } from '@/modules/core/common/collection';
 import type { HistoryEventExportPayload, HistoryEventRequestPayload } from '@/modules/history/events/request-types';
 import { omit } from 'es-toolkit';
-import { z } from 'zod/v4';
+import { z } from 'zod';
 import { api } from '@/modules/core/api/rotki-api';
 import {
   VALID_TASK_STATUS,

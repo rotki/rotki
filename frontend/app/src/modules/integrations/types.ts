@@ -1,5 +1,5 @@
 import type { ToSnakeCase } from '@/modules/core/common/common-types';
-import { z } from 'zod/v4';
+import { z } from 'zod';
 
 const ApiKey = z.object({
   apiKey: z.string(),

@@ -1,4 +1,4 @@
-import { z } from 'zod/v4';
+import { z } from 'zod';
 
 export enum AddressNamePriority {
   BLOCKCHAIN_ACCOUNT = 'blockchain_account',

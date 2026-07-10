@@ -1,5 +1,5 @@
 import { groupBy, omit } from 'es-toolkit';
-import { z } from 'zod/v4';
+import { z } from 'zod';
 import { useAddressBookOperations } from '@/modules/accounts/address-book/use-address-book-operations';
 import { logger } from '@/modules/core/common/logging/logging';
 import { CSVMissingHeadersError, useCsvImportExport } from '@/modules/core/common/use-csv-import-export';

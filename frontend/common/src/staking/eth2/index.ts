@@ -1,5 +1,5 @@
 import type { Account } from '../../account';
-import { z } from 'zod/v4';
+import { z } from 'zod';
 import { Percentage } from '../../balances';
 import { type BigNumber, NumericString } from '../../numbers';
 

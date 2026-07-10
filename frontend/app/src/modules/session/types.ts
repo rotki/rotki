@@ -1,6 +1,6 @@
 import type { TimeFramePeriod } from '@rotki/common';
 import type { Module } from '@/modules/core/common/modules';
-import { z } from 'zod/v4';
+import { z } from 'zod';
 
 export const PeriodicClientQueryResultSchema = z.object({
   connectedNodes: z.record(z.string(), z.array(z.string())),

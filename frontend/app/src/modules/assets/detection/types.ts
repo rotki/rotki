@@ -1,5 +1,5 @@
 import type { PaginationRequestPayload } from '@/modules/core/common/common-types';
-import { z } from 'zod/v4';
+import { z } from 'zod';
 
 export enum NewDetectedTokenKind {
   EVM = 'evm',

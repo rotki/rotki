@@ -1,5 +1,5 @@
 import { AssetBalance, NumericString } from '@rotki/common';
-import { z } from 'zod/v4';
+import { z } from 'zod';
 
 enum KrakenStakingEventType {
   REWARD = 'reward',

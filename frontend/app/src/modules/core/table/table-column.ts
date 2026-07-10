@@ -1,4 +1,4 @@
-import { z } from 'zod/v4';
+import { z } from 'zod';
 
 export enum TableColumn {
   PERCENTAGE_OF_TOTAL_NET_VALUE = 'percentage_of_total_net_value',

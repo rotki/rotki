@@ -2,7 +2,7 @@ import type { AccountPayload } from '@/modules/accounts/blockchain-accounts';
 import type { StakingValidatorManage } from '@/modules/accounts/blockchain/use-account-manage';
 import type { Eth2Validator } from '@/modules/balances/types/balances';
 import { Blockchain } from '@rotki/common';
-import { z } from 'zod/v4';
+import { z } from 'zod';
 
 const CSVRow = z.object({
   address: z.string(),

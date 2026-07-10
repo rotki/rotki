@@ -1,6 +1,6 @@
 import type { RuiIcons } from '@rotki/ui-library';
 import type { ActionDataEntry } from '@/modules/core/common/action';
-import { z } from 'zod/v4';
+import { z } from 'zod';
 
 export interface TradeLocationData {
   readonly identifier: string;

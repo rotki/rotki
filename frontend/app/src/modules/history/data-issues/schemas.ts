@@ -1,6 +1,6 @@
 import type { PaginationRequestPayload } from '@/modules/core/common/common-types';
 import { NumericString } from '@rotki/common';
-import { z } from 'zod/v4';
+import { z } from 'zod';
 import { IssueKind, IssueSeverity, IssueState } from '@/modules/history/data-issues/constants';
 
 /**

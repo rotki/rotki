@@ -1,6 +1,6 @@
 import { BigNumber } from 'bignumber.js';
 import { markRaw } from 'vue';
-import z from 'zod/v4';
+import z from 'zod';
 
 markRaw(BigNumber.prototype);
 

@@ -1,6 +1,6 @@
 import process from 'node:process';
 import consola from 'consola';
-import z from 'zod/v4';
+import z from 'zod';
 import { externalLinks } from '../shared/external-links';
 
 const Release = z.object({

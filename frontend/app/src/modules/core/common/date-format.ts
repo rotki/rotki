@@ -1,4 +1,4 @@
-import { z } from 'zod/v4';
+import { z } from 'zod';
 
 export enum DateFormat {
   DateMonthYearHourMinuteSecondTimezone = '%d/%m/%Y %H:%M:%S %Z',

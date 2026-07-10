@@ -1,7 +1,7 @@
 import type { MaybeRefOrGetter } from 'vue';
 import type { MatchedKeywordWithBehaviour, SearchMatcher } from '@/modules/core/table/filtering';
 import type { FilterSchema } from '@/modules/core/table/pagination-filter-types';
-import { z } from 'zod/v4';
+import { z } from 'zod';
 import { getAccountAddress, getAccountLabel, getChain, isXpubAccount } from '@/modules/accounts/account-utils';
 import { useAddressNameResolution } from '@/modules/accounts/address-book/use-address-name-resolution';
 import { useAccountCategoryHelper } from '@/modules/accounts/use-account-category-helper';

@@ -1,5 +1,5 @@
 import { NumericString } from '@rotki/common';
-import { z } from 'zod/v4';
+import { z } from 'zod';
 import { api } from '@/modules/core/api/rotki-api';
 
 const WrapStatisticsSchema = z.object({

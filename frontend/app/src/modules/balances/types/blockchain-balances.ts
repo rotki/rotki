@@ -1,5 +1,5 @@
 import { Balance } from '@rotki/common';
-import { z } from 'zod/v4';
+import { z } from 'zod';
 
 const ProtocolBalances = z.record(z.string(), Balance);
 

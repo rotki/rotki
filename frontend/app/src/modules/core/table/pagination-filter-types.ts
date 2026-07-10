@@ -1,6 +1,6 @@
 import type { DataTableSortColumn } from '@rotki/ui-library';
 import type { ComputedRef, Ref } from 'vue';
-import type { Schema } from 'zod/v4';
+import type { Schema } from 'zod';
 
 export type TableRowKey<T> = keyof T extends string ? keyof T : never;
 

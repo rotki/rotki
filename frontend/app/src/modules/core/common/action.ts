@@ -1,6 +1,6 @@
 import type { ContextColorsType, RuiIcons } from '@rotki/ui-library';
 import type { Section, Status } from '@/modules/core/common/status';
-import { z } from 'zod/v4';
+import { z } from 'zod';
 
 interface ActionFailure<T = string> {
   readonly message: T;

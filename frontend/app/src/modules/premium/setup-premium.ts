@@ -15,7 +15,7 @@ import { CanvasRenderer } from 'echarts/renderers';
 import * as Vue from 'vue';
 import VChart from 'vue-echarts';
 import * as VueRouter from 'vue-router';
-import * as zod from 'zod/v4';
+import * as zod from 'zod';
 import { app } from '@/main';
 
 // Register only the needed echarts components for premium

@@ -1,5 +1,5 @@
 import type { BigNumber } from '@rotki/common';
-import { z } from 'zod/v4';
+import { z } from 'zod';
 
 export interface TradableAssetWithoutValue {
   asset: string;

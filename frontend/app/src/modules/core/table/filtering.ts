@@ -1,6 +1,6 @@
 import type { AssetsWithId } from '@/modules/assets/types';
 import { AssetInfoWithId } from '@rotki/common';
-import { z } from 'zod/v4';
+import { z } from 'zod';
 
 export enum FilterBehaviour {
   INCLUDE = 'include',

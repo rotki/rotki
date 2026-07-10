@@ -1,6 +1,6 @@
 import type { PaginationRequestPayload } from '@/modules/core/common/common-types';
 import { NumericString } from '@rotki/common';
-import { z } from 'zod/v4';
+import { z } from 'zod';
 import { BalanceType } from '@/modules/balances/types/balances';
 
 const RawManualBalance = z.object({
