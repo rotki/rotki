@@ -4,7 +4,6 @@ import { NotificationCategory, NotificationGroup, Severity } from '@rotki/common
 import { pick } from 'es-toolkit';
 import { useMissingMappingsDB } from '@/modules/assets/admin/missing-mappings/use-missing-mappings-db';
 import { createStateWithNotificationHandler } from '@/modules/core/messaging/utils';
-import { Routes } from '@/router/routes';
 
 export function createExchangeUnknownAssetHandler(
   t: ReturnType<typeof useI18n>['t'],
@@ -25,7 +24,7 @@ export function createExchangeUnknownAssetHandler(
     async (data, groupCount) => ({
       action: {
         action: async () => router.push({
-          path: Routes.ASSET_MANAGER_MISSING_MAPPINGS.toString(),
+          name: '/asset-manager/more/missing-mappings/',
         }),
         icon: 'lu-cable',
         label: t('asset_management.cex_mapping.add_mapping'),

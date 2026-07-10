@@ -11,7 +11,6 @@ import { toMessages } from '@/modules/core/common/validation/validation';
 import { shouldShowDateRangePicker } from '@/modules/history/events/tx/use-repulling-transaction-form';
 import LocationIcon from '@/modules/shell/components/display/LocationIcon.vue';
 import DateTimeRangePicker from '@/modules/shell/components/inputs/DateTimeRangePicker.vue';
-import { Routes } from '@/router/routes';
 
 const modelValue = defineModel<RepullingTransactionPayload>({ required: true });
 const errors = defineModel<ValidationErrors>('errorMessages', { required: true });
@@ -89,7 +88,7 @@ defineExpose({
         tag="span"
       >
         <template #link>
-          <RouterLink :to="Routes.API_KEYS_EXCHANGES">
+          <RouterLink :to="{ name: '/api-keys/exchanges/' }">
             <RuiButton
               color="primary"
               variant="text"

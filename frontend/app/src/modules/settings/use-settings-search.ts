@@ -1,11 +1,10 @@
 import type { RuiIcons } from '@rotki/ui-library';
 import type { Ref } from 'vue';
-import type { RouteLocationRaw } from 'vue-router';
+import type { RouteName } from '@/types/router';
 import { getTextToken, TimeFramePeriod } from '@rotki/common';
 import { CurrencyLocation } from '@/modules/assets/amount-display/currency-location';
 import { type SettingsCategoryId, SettingsCategoryIds, type SettingsHighlightId, SettingsHighlightIds, type SettingsSearchEntry } from '@/modules/settings/setting-highlight-ids';
 import { CostBasisMethod } from '@/modules/settings/types/user-settings';
-import { useAppRoutes } from '@/router/routes';
 
 /**
  * Extra search keywords derived from a setting's option domain, so a value like `fifo` or `6m` finds
@@ -21,7 +20,7 @@ const anchorKeywordDomains: Partial<Record<SettingsHighlightId, readonly string[
 interface TabInfo {
   icon: RuiIcons;
   text: string;
-  route: RouteLocationRaw;
+  route: string;
 }
 
 interface EntryDef {
@@ -47,20 +46,8 @@ interface UseSettingsSearchReturn {
   filterEntries: (entries: SettingsSearchEntry[], keyword: string) => SettingsSearchEntry[];
 }
 
-interface SettingsRoutes {
-  SETTINGS_ACCOUNT: TabInfo;
-  SETTINGS_GENERAL: TabInfo;
-  SETTINGS_DATABASE: TabInfo;
-  SETTINGS_ACCOUNTING: TabInfo;
-  SETTINGS_EVM: TabInfo;
-  SETTINGS_ORACLE: TabInfo;
-  SETTINGS_RPC: TabInfo;
-  SETTINGS_MODULES: TabInfo;
-  SETTINGS_INTERFACE: TabInfo;
-}
-
-function getAccountTab(routes: SettingsRoutes, t: T): TabGroup {
-  return { tab: routes.SETTINGS_ACCOUNT, categories: [
+function getAccountTab(tab: TabInfo, t: T): TabGroup {
+  return { tab, categories: [
     { categoryId: SettingsCategoryIds.SECURITY, children: [
       { texts: [t('settings.security_settings.title')], keywords: [t('settings.security_settings.subtitle')] },
       { texts: [t('settings.security_settings.title'), t('change_password.title')], keywords: [t('change_password.subtitle')], highlightId: SettingsHighlightIds.CHANGE_PASSWORD },
@@ -69,8 +56,8 @@ function getAccountTab(routes: SettingsRoutes, t: T): TabGroup {
   ] };
 }
 
-function getGeneralTab(routes: SettingsRoutes, t: T): TabGroup {
-  return { tab: routes.SETTINGS_GENERAL, categories: [
+function getGeneralTab(tab: TabInfo, t: T): TabGroup {
+  return { tab, categories: [
     { categoryId: SettingsCategoryIds.GENERAL, children: [
       { texts: [t('general_settings.title')], keywords: [t('general_settings.subtitle')] },
       { texts: [t('general_settings.title'), t('general_settings.usage_analytics.title')], highlightId: SettingsHighlightIds.USAGE_ANALYTICS },
@@ -118,8 +105,8 @@ function getGeneralTab(routes: SettingsRoutes, t: T): TabGroup {
   ] };
 }
 
-function getDatabaseTab(routes: SettingsRoutes, t: T): TabGroup {
-  return { tab: routes.SETTINGS_DATABASE, categories: [
+function getDatabaseTab(tab: TabInfo, t: T): TabGroup {
+  return { tab, categories: [
     { categoryId: SettingsCategoryIds.DATABASE_INFO, children: [
       { texts: [t('database_settings.database_info.title')], keywords: [t('database_settings.database_info.subtitle')] },
       { texts: [t('database_settings.database_info.title'), t('database_settings.database_info.labels.userdb')], highlightId: SettingsHighlightIds.USERDB_INFO },
@@ -145,8 +132,8 @@ function getDatabaseTab(routes: SettingsRoutes, t: T): TabGroup {
   ] };
 }
 
-function getAccountingTab(routes: SettingsRoutes, t: T): TabGroup {
-  return { tab: routes.SETTINGS_ACCOUNTING, categories: [
+function getAccountingTab(tab: TabInfo, t: T): TabGroup {
+  return { tab, categories: [
     { children: [
       { texts: [t('accounting_settings.rule.title')], keywords: [t('accounting_settings.rule.subtitle')], highlightId: SettingsHighlightIds.ACCOUNTING_RULE },
       { texts: [t('accounting_settings.trade.title')], highlightId: SettingsHighlightIds.ACCOUNTING_TRADE, keywords: [
@@ -163,8 +150,8 @@ function getAccountingTab(routes: SettingsRoutes, t: T): TabGroup {
   ] };
 }
 
-function getEvmTab(routes: SettingsRoutes, t: T): TabGroup {
-  return { tab: routes.SETTINGS_EVM, categories: [
+function getEvmTab(tab: TabInfo, t: T): TabGroup {
+  return { tab, categories: [
     { categoryId: SettingsCategoryIds.CHAINS, children: [
       { texts: [t('evm_settings.general.title')] },
       { texts: [t('evm_settings.general.title'), t('evm_settings.general.treat_eth2_as_eth.title')], keywords: [t('evm_settings.general.treat_eth2_as_eth.subtitle')], highlightId: SettingsHighlightIds.TREAT_ETH2_AS_ETH },
@@ -177,8 +164,8 @@ function getEvmTab(routes: SettingsRoutes, t: T): TabGroup {
   ] };
 }
 
-function getOracleTab(routes: SettingsRoutes, t: T): TabGroup {
-  return { tab: routes.SETTINGS_ORACLE, categories: [
+function getOracleTab(tab: TabInfo, t: T): TabGroup {
+  return { tab, categories: [
     { categoryId: SettingsCategoryIds.PRICE_ORACLE, children: [
       { texts: [t('price_oracle_settings.title')], keywords: [t('price_oracle_settings.subtitle')] },
       { texts: [t('price_oracle_settings.title'), t('price_oracle_settings.latest_prices')] },
@@ -192,24 +179,24 @@ function getOracleTab(routes: SettingsRoutes, t: T): TabGroup {
   ] };
 }
 
-function getRpcTab(routes: SettingsRoutes, t: T): TabGroup {
-  return { tab: routes.SETTINGS_RPC, categories: [
+function getRpcTab(tab: TabInfo, t: T): TabGroup {
+  return { tab, categories: [
     { children: [
       { texts: [t('general_settings.rpc_node_setting.title')], highlightId: SettingsHighlightIds.RPC_NODES, keywords: [t('general_settings.rpc_node_setting.subtitle')] },
     ] },
   ] };
 }
 
-function getModulesTab(routes: SettingsRoutes, t: T): TabGroup {
-  return { tab: routes.SETTINGS_MODULES, categories: [
+function getModulesTab(tab: TabInfo, t: T): TabGroup {
+  return { tab, categories: [
     { children: [
       { texts: [t('module_settings.title')], highlightId: SettingsHighlightIds.MODULES, keywords: [t('module_settings.subtitle')] },
     ] },
   ] };
 }
 
-function getInterfaceTab(routes: SettingsRoutes, t: T): TabGroup {
-  return { tab: routes.SETTINGS_INTERFACE, categories: [
+function getInterfaceTab(tab: TabInfo, t: T): TabGroup {
+  return { tab, categories: [
     { categoryId: SettingsCategoryIds.INTERFACE_ONLY, children: [
       { texts: [t('frontend_settings.title')] },
       { texts: [t('general_settings.language.title')], keywords: [t('general_settings.language.subtitle')], highlightId: SettingsHighlightIds.LANGUAGE },
@@ -244,24 +231,45 @@ function getInterfaceTab(routes: SettingsRoutes, t: T): TabGroup {
   ] };
 }
 
+// A settings tab's identity (route, label, icon) comes from its page `nav` meta; only the
+// per-setting rows are unique content, listed here keyed by route name. Adding a settings tab means
+// adding its `nav` meta and one entry below - there is no separate route map to keep in sync.
+const TAB_BUILDERS: [RouteName, (tab: TabInfo, t: T) => TabGroup][] = [
+  ['/settings/account/', getAccountTab],
+  ['/settings/general/', getGeneralTab],
+  ['/settings/database/', getDatabaseTab],
+  ['/settings/accounting/', getAccountingTab],
+  ['/settings/evm/', getEvmTab],
+  ['/settings/oracle/', getOracleTab],
+  ['/settings/rpc/', getRpcTab],
+  ['/settings/modules/', getModulesTab],
+  ['/settings/interface/', getInterfaceTab],
+];
+
 export function useSettingsSearch(): UseSettingsSearchReturn {
   const { t } = useI18n({ useScope: 'global' });
-  const { appRoutes } = useAppRoutes();
+  const router = useRouter();
+
+  // Resolves a settings tab's route/label/icon from that page's `nav` meta; returns undefined when the
+  // route lacks it so a single misconfigured tab is skipped rather than breaking the whole search.
+  function tabInfo(name: RouteName): TabInfo | undefined {
+    const nav = router.getRoutes().find(route => route.name === name)?.meta.nav;
+    if (!nav)
+      return undefined;
+    return {
+      icon: nav.icon,
+      route: router.resolve({ name }).path,
+      text: t(nav.labelKey),
+    };
+  }
 
   const entries = computed<SettingsSearchEntry[]>(() => {
-    const routes = get(appRoutes);
-
-    const tabs: TabGroup[] = [
-      getAccountTab(routes, t),
-      getGeneralTab(routes, t),
-      getDatabaseTab(routes, t),
-      getAccountingTab(routes, t),
-      getEvmTab(routes, t),
-      getOracleTab(routes, t),
-      getRpcTab(routes, t),
-      getModulesTab(routes, t),
-      getInterfaceTab(routes, t),
-    ];
+    const tabs: TabGroup[] = TAB_BUILDERS
+      .map(([name, build]) => {
+        const info = tabInfo(name);
+        return info ? build(info, t) : undefined;
+      })
+      .filter((group): group is TabGroup => group !== undefined);
 
     return tabs.flatMap(({ tab, categories }: TabGroup) =>
       categories.flatMap(({ categoryId, children }: CategoryDef) =>

@@ -8,9 +8,9 @@ import GroupedImport from '@/modules/user-data/GroupedImport.vue';
 
 definePage({
   meta: {
+    nav: { labelKey: 'navigation_menu.import_data', icon: 'lu-folder-input', section: 3, order: 20, drawer: 'import' },
     noteLocation: NoteLocation.IMPORT,
   },
-  name: 'import',
 });
 
 const { t } = useI18n({ useScope: 'global' });

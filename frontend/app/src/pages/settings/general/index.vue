@@ -11,6 +11,7 @@ import { SettingsCategoryIds } from '@/modules/settings/setting-highlight-ids';
 
 definePage({
   meta: {
+    nav: { labelKey: 'navigation_menu.settings_sub.general', icon: 'lu-bolt', parent: '/settings' },
     noteLocation: NoteLocation.SETTINGS_GENERAL,
   },
 });

@@ -1,6 +1,5 @@
 import type { AccountingRuleEntry } from '@/modules/settings/types/accounting';
 import { startPromise } from '@shared/utils';
-import { Routes } from '@/router/routes';
 
 interface UseRuleEventsLinkReturn {
   viewEvents: (rule: AccountingRuleEntry) => void;
@@ -22,7 +21,7 @@ export function useRuleEventsLink(): UseRuleEventsLinkReturn {
     if (rule.counterparty)
       query.counterparties = rule.counterparty;
 
-    startPromise(router.push({ path: Routes.HISTORY_EVENTS.toString(), query }));
+    startPromise(router.push({ name: '/history/events/', query }));
   }
 
   return { viewEvents };

@@ -7,7 +7,6 @@ import { useConfirmStore } from '@/modules/core/common/use-confirm-store';
 import { toMessages } from '@/modules/core/common/validation/validation';
 import HistoryEventActionPicker from '@/modules/history/events/action-picker/HistoryEventActionPicker.vue';
 import { useHistoryEventMappings } from '@/modules/history/events/mapping/use-history-event-mappings';
-import { Routes } from '@/router/routes';
 
 interface HistoryEventTypeFormProps {
   counterparty?: string | null;
@@ -87,7 +86,7 @@ function navigateToAccountingRule(): void {
   if (counterparty)
     query.counterparties = counterparty;
 
-  startPromise(router.push({ path: Routes.SETTINGS_ACCOUNTING.toString(), query }));
+  startPromise(router.push({ name: '/settings/accounting/', query }));
 }
 
 function viewAccountingRule(): void {

@@ -2,7 +2,6 @@ import type { NotificationHandler } from '../interfaces';
 import type { GnosisPaySessionKeyExpiredData } from '@/modules/core/messaging/types';
 import { NotificationCategory, NotificationGroup, Severity } from '@rotki/common';
 import { createNotificationHandler } from '@/modules/core/messaging/utils';
-import { Routes } from '@/router/routes';
 
 export function createGnosisPaySessionHandler(
   t: ReturnType<typeof useI18n>['t'],
@@ -11,7 +10,7 @@ export function createGnosisPaySessionHandler(
   return createNotificationHandler<GnosisPaySessionKeyExpiredData>(data => ({
     action: {
       action: async () => router.push({
-        path: Routes.API_KEYS_EXTERNAL_SERVICES.toString(),
+        name: '/api-keys/external/',
         query: { service: 'gnosis_pay' },
       }),
       icon: 'lu-arrow-right',

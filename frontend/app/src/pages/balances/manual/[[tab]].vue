@@ -18,9 +18,9 @@ import { useSectionStatus } from '@/modules/shell/sync-progress/use-section-stat
 
 definePage({
   meta: {
+    nav: { labelKey: 'navigation_menu.balances_sub.manual_balances', icon: 'lu-notebook-pen', parent: '/balances/', order: 30, drawer: 'balances-manual', addAction: { labelKey: 'manual_balances.dialog.add.title' } },
     noteLocation: NoteLocation.BALANCES_MANUAL,
   },
-  name: 'balances-manual',
   props: true,
 });
 
@@ -32,7 +32,7 @@ const balance = ref<ManualBalance | RawManualBalance>();
 
 const { t } = useI18n({ useScope: 'global' });
 const router = useRouter();
-const route = useRoute('balances-manual');
+const route = useRoute('/balances/manual/[[tab]]');
 
 const { fetchManualBalances } = useManualBalances();
 const { fetchAssociatedLocations } = useHistoryDataFetching();

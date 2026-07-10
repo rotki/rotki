@@ -8,6 +8,8 @@ import TablePageLayout from '@/modules/shell/layout/TablePageLayout.vue';
 
 definePage({
   meta: {
+    // label-only: gives the notes sidebar a title; not shown in the drawer or search.
+    nav: { labelKey: 'navigation_menu.locations', icon: 'lu-coins-exchange', searchable: false },
     canNavigateBack: true,
     noteLocation: NoteLocation.LOCATIONS,
   },

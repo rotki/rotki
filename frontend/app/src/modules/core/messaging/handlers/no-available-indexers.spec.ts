@@ -53,7 +53,7 @@ describe('createNoAvailableIndexersHandler', () => {
 
     await configureAction.action();
 
-    expect(router.push).toHaveBeenCalledWith({ path: '/settings/evm', hash: '#indexer' });
+    expect(router.push).toHaveBeenCalledWith({ name: '/settings/evm/', hash: '#indexer' });
   });
 
   it('should return null when the chain is in the suppression list', async () => {

@@ -6,7 +6,6 @@ import PendingTasks from '@/modules/core/notifications/PendingTasks.vue';
 import { useNotificationsStore } from '@/modules/core/notifications/use-notifications-store';
 import { useTaskStore } from '@/modules/core/tasks/use-task-store';
 import LazyLoader from '@/modules/shell/components/LazyLoader.vue';
-import { Routes } from '@/router/routes';
 
 const display = defineModel<boolean>({ required: true });
 
@@ -200,7 +199,7 @@ watch(
         >
           {{ t('notification_sidebar.clear_tooltip') }}
         </RuiButton>
-        <RouterLink :to="Routes.CALENDAR">
+        <RouterLink :to="{ name: '/calendar/' }">
           <RuiButton
             color="primary"
             @click="close()"

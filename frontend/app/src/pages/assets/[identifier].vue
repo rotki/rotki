@@ -21,6 +21,8 @@ import { useAssetPageActions } from '@/pages/assets/use-asset-page-actions';
 
 definePage({
   meta: {
+    // label-only: gives the notes sidebar a title; not shown in the drawer or search.
+    nav: { labelKey: 'common.assets', icon: 'lu-coins', searchable: false },
     canNavigateBack: true,
     noteLocation: NoteLocation.ASSETS,
   },

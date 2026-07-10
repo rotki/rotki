@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import type { RouteLocationRaw } from 'vue-router';
 import type { ProfitLossReportPeriod } from '@/modules/reports/report-types';
 import { startPromise } from '@shared/utils';
 import { useExchangeApi } from '@/modules/balances/api/use-exchange-api';
@@ -8,7 +9,6 @@ import { useHistoryTransactions } from '@/modules/history/events/tx/use-history-
 import RangeSelector from '@/modules/reports/RangeSelector.vue';
 import CardTitle from '@/modules/shell/components/CardTitle.vue';
 import { useSyncProgress } from '@/modules/shell/sync-progress/use-sync-progress';
-import { Routes } from '@/router/routes';
 
 const emit = defineEmits<{
   'generate': [data: ProfitLossReportPeriod];
@@ -76,8 +76,8 @@ function importReportData(): void {
   emit('import-data');
 }
 
-const accountSettingsRoute = Routes.SETTINGS_ACCOUNTING;
-const exchangeSettingsRoute = Routes.API_KEYS_EXCHANGES;
+const accountSettingsRoute: RouteLocationRaw = { name: '/settings/accounting/' };
+const exchangeSettingsRoute: RouteLocationRaw = { name: '/api-keys/exchanges/' };
 
 onMounted(async () => {
   await checkBinanceMarketPairs();

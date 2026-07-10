@@ -45,36 +45,36 @@ declare module 'vue-router/auto-routes' {
       Record<never, never>,
       | never
     >,
-    'accounts': RouteRecordInfo<
-      'accounts',
+    '/accounts/': RouteRecordInfo<
+      '/accounts/',
       '/accounts',
       Record<never, never>,
       Record<never, never>,
       | never
     >,
-    'accounts-bitcoin': RouteRecordInfo<
-      'accounts-bitcoin',
+    '/accounts/bitcoin/': RouteRecordInfo<
+      '/accounts/bitcoin/',
       '/accounts/bitcoin',
       Record<never, never>,
       Record<never, never>,
       | never
     >,
-    'accounts-evm': RouteRecordInfo<
-      'accounts-evm',
+    '/accounts/evm/[[tab]]': RouteRecordInfo<
+      '/accounts/evm/[[tab]]',
       '/accounts/evm/:tab?',
       { tab?: ParamValueZeroOrOne<true> },
       { tab?: ParamValueZeroOrOne<false> },
       | never
     >,
-    'accounts-solana': RouteRecordInfo<
-      'accounts-solana',
+    '/accounts/solana/': RouteRecordInfo<
+      '/accounts/solana/',
       '/accounts/solana',
       Record<never, never>,
       Record<never, never>,
       | never
     >,
-    'accounts-substrate': RouteRecordInfo<
-      'accounts-substrate',
+    '/accounts/substrate/': RouteRecordInfo<
+      '/accounts/substrate/',
       '/accounts/substrate',
       Record<never, never>,
       Record<never, never>,
@@ -129,61 +129,61 @@ declare module 'vue-router/auto-routes' {
       Record<never, never>,
       | never
     >,
-    'asset-manager-custom': RouteRecordInfo<
-      'asset-manager-custom',
+    '/asset-manager/custom/': RouteRecordInfo<
+      '/asset-manager/custom/',
       '/asset-manager/custom',
       Record<never, never>,
       Record<never, never>,
       | never
     >,
-    'asset-manager-managed': RouteRecordInfo<
-      'asset-manager-managed',
+    '/asset-manager/managed/': RouteRecordInfo<
+      '/asset-manager/managed/',
       '/asset-manager/managed',
       Record<never, never>,
       Record<never, never>,
       | never
     >,
-    'asset-manager-more': RouteRecordInfo<
-      'asset-manager-more',
+    '/asset-manager/more': RouteRecordInfo<
+      '/asset-manager/more',
       '/asset-manager/more',
       Record<never, never>,
       Record<never, never>,
-      | 'asset-manager-cex-mapping'
-      | 'asset-manager-counterparty-mapping'
-      | 'asset-manager-missing-mappings'
-      | 'asset-manager-newly-detected'
-      | 'asset-manager-solana-token-migration'
+      | '/asset-manager/more/cex-mapping/'
+      | '/asset-manager/more/counterparty-mapping/'
+      | '/asset-manager/more/missing-mappings/'
+      | '/asset-manager/more/newly-detected/'
+      | '/asset-manager/more/solana-token-migration/'
     >,
-    'asset-manager-cex-mapping': RouteRecordInfo<
-      'asset-manager-cex-mapping',
+    '/asset-manager/more/cex-mapping/': RouteRecordInfo<
+      '/asset-manager/more/cex-mapping/',
       '/asset-manager/more/cex-mapping',
       Record<never, never>,
       Record<never, never>,
       | never
     >,
-    'asset-manager-counterparty-mapping': RouteRecordInfo<
-      'asset-manager-counterparty-mapping',
+    '/asset-manager/more/counterparty-mapping/': RouteRecordInfo<
+      '/asset-manager/more/counterparty-mapping/',
       '/asset-manager/more/counterparty-mapping',
       Record<never, never>,
       Record<never, never>,
       | never
     >,
-    'asset-manager-missing-mappings': RouteRecordInfo<
-      'asset-manager-missing-mappings',
+    '/asset-manager/more/missing-mappings/': RouteRecordInfo<
+      '/asset-manager/more/missing-mappings/',
       '/asset-manager/more/missing-mappings',
       Record<never, never>,
       Record<never, never>,
       | never
     >,
-    'asset-manager-newly-detected': RouteRecordInfo<
-      'asset-manager-newly-detected',
+    '/asset-manager/more/newly-detected/': RouteRecordInfo<
+      '/asset-manager/more/newly-detected/',
       '/asset-manager/more/newly-detected',
       Record<never, never>,
       Record<never, never>,
       | never
     >,
-    'asset-manager-solana-token-migration': RouteRecordInfo<
-      'asset-manager-solana-token-migration',
+    '/asset-manager/more/solana-token-migration/': RouteRecordInfo<
+      '/asset-manager/more/solana-token-migration/',
       '/asset-manager/more/solana-token-migration',
       Record<never, never>,
       Record<never, never>,
@@ -196,36 +196,36 @@ declare module 'vue-router/auto-routes' {
       { identifier: ParamValue<false> },
       | never
     >,
-    'balances': RouteRecordInfo<
-      'balances',
+    '/balances/': RouteRecordInfo<
+      '/balances/',
       '/balances',
       Record<never, never>,
       Record<never, never>,
       | never
     >,
-    'balances-blockchain': RouteRecordInfo<
-      'balances-blockchain',
+    '/balances/blockchain/': RouteRecordInfo<
+      '/balances/blockchain/',
       '/balances/blockchain',
       Record<never, never>,
       Record<never, never>,
       | never
     >,
-    'balances-exchange': RouteRecordInfo<
-      'balances-exchange',
+    '/balances/exchange/[[exchange]]': RouteRecordInfo<
+      '/balances/exchange/[[exchange]]',
       '/balances/exchange/:exchange?',
       { exchange?: ParamValueZeroOrOne<true> },
       { exchange?: ParamValueZeroOrOne<false> },
       | never
     >,
-    'balances-manual': RouteRecordInfo<
-      'balances-manual',
+    '/balances/manual/[[tab]]': RouteRecordInfo<
+      '/balances/manual/[[tab]]',
       '/balances/manual/:tab?',
       { tab?: ParamValueZeroOrOne<true> },
       { tab?: ParamValueZeroOrOne<false> },
       | never
     >,
-    'balances-non-fungible': RouteRecordInfo<
-      'balances-non-fungible',
+    '/balances/non-fungible/': RouteRecordInfo<
+      '/balances/non-fungible/',
       '/balances/non-fungible',
       Record<never, never>,
       Record<never, never>,
@@ -238,8 +238,8 @@ declare module 'vue-router/auto-routes' {
       Record<never, never>,
       | never
     >,
-    'dashboard': RouteRecordInfo<
-      'dashboard',
+    '/dashboard/': RouteRecordInfo<
+      '/dashboard/',
       '/dashboard',
       Record<never, never>,
       Record<never, never>,
@@ -252,22 +252,22 @@ declare module 'vue-router/auto-routes' {
       Record<never, never>,
       | never
     >,
-    'history-data-issues': RouteRecordInfo<
-      'history-data-issues',
+    '/history/data-issues/': RouteRecordInfo<
+      '/history/data-issues/',
       '/history/data-issues',
       Record<never, never>,
       Record<never, never>,
       | never
     >,
-    'history-events': RouteRecordInfo<
-      'history-events',
+    '/history/events/': RouteRecordInfo<
+      '/history/events/',
       '/history/events',
       Record<never, never>,
       Record<never, never>,
       | never
     >,
-    'import': RouteRecordInfo<
-      'import',
+    '/import/': RouteRecordInfo<
+      '/import/',
       '/import',
       Record<never, never>,
       Record<never, never>,
@@ -280,8 +280,8 @@ declare module 'vue-router/auto-routes' {
       { identifier: ParamValue<false> },
       | never
     >,
-    'nfts': RouteRecordInfo<
-      'nfts',
+    '/nfts/': RouteRecordInfo<
+      '/nfts/',
       '/nfts',
       Record<never, never>,
       Record<never, never>,
@@ -301,36 +301,36 @@ declare module 'vue-router/auto-routes' {
       Record<never, never>,
       | never
     >,
-    'playground': RouteRecordInfo<
-      'playground',
+    '/playground/': RouteRecordInfo<
+      '/playground/',
       '/playground',
       Record<never, never>,
       Record<never, never>,
       | never
     >,
-    'price-manager': RouteRecordInfo<
-      'price-manager',
+    '/price-manager/': RouteRecordInfo<
+      '/price-manager/',
       '/price-manager',
       Record<never, never>,
       Record<never, never>,
       | never
     >,
-    'price-manager-historic': RouteRecordInfo<
-      'price-manager-historic',
+    '/price-manager/historic/': RouteRecordInfo<
+      '/price-manager/historic/',
       '/price-manager/historic',
       Record<never, never>,
       Record<never, never>,
       | never
     >,
-    'price-manager-current': RouteRecordInfo<
-      'price-manager-current',
+    '/price-manager/latest/': RouteRecordInfo<
+      '/price-manager/latest/',
       '/price-manager/latest',
       Record<never, never>,
       Record<never, never>,
       | never
     >,
-    'price-manager-oracle': RouteRecordInfo<
-      'price-manager-oracle',
+    '/price-manager/oracle/': RouteRecordInfo<
+      '/price-manager/oracle/',
       '/price-manager/oracle',
       Record<never, never>,
       Record<never, never>,
@@ -449,36 +449,36 @@ declare module 'vue-router/auto-routes' {
       Record<never, never>,
       | never
     >,
-    'statistics-graphs': RouteRecordInfo<
-      'statistics-graphs',
+    '/statistics/graphs/': RouteRecordInfo<
+      '/statistics/graphs/',
       '/statistics/graphs',
       Record<never, never>,
       Record<never, never>,
       | never
     >,
-    'statistics-history-events': RouteRecordInfo<
-      'statistics-history-events',
+    '/statistics/history-events/': RouteRecordInfo<
+      '/statistics/history-events/',
       '/statistics/history-events',
       Record<never, never>,
       Record<never, never>,
       | never
     >,
-    'statistics-snapshots': RouteRecordInfo<
-      'statistics-snapshots',
+    '/statistics/snapshots/': RouteRecordInfo<
+      '/statistics/snapshots/',
       '/statistics/snapshots',
       Record<never, never>,
       Record<never, never>,
       | never
     >,
-    'statistics-snapshot-detail': RouteRecordInfo<
-      'statistics-snapshot-detail',
+    '/statistics/snapshots/[timestamp]': RouteRecordInfo<
+      '/statistics/snapshots/[timestamp]',
       '/statistics/snapshots/:timestamp',
       { timestamp: ParamValue<true> },
       { timestamp: ParamValue<false> },
       | never
     >,
-    'tag_manager': RouteRecordInfo<
-      'tag_manager',
+    '/tag-manager/': RouteRecordInfo<
+      '/tag-manager/',
       '/tag-manager',
       Record<never, never>,
       Record<never, never>,
@@ -543,7 +543,7 @@ declare module 'vue-router/auto-routes' {
     }
     'src/pages/accounts/index.vue': {
       routes:
-        | 'accounts'
+        | '/accounts/'
       views:
         | never
       pathParamNames:
@@ -551,7 +551,7 @@ declare module 'vue-router/auto-routes' {
     }
     'src/pages/accounts/bitcoin/index.vue': {
       routes:
-        | 'accounts-bitcoin'
+        | '/accounts/bitcoin/'
       views:
         | never
       pathParamNames:
@@ -559,7 +559,7 @@ declare module 'vue-router/auto-routes' {
     }
     'src/pages/accounts/evm/[[tab]].vue': {
       routes:
-        | 'accounts-evm'
+        | '/accounts/evm/[[tab]]'
       views:
         | never
       pathParamNames:
@@ -567,7 +567,7 @@ declare module 'vue-router/auto-routes' {
     }
     'src/pages/accounts/solana/index.vue': {
       routes:
-        | 'accounts-solana'
+        | '/accounts/solana/'
       views:
         | never
       pathParamNames:
@@ -575,7 +575,7 @@ declare module 'vue-router/auto-routes' {
     }
     'src/pages/accounts/substrate/index.vue': {
       routes:
-        | 'accounts-substrate'
+        | '/accounts/substrate/'
       views:
         | never
       pathParamNames:
@@ -639,7 +639,7 @@ declare module 'vue-router/auto-routes' {
     }
     'src/pages/asset-manager/custom/index.vue': {
       routes:
-        | 'asset-manager-custom'
+        | '/asset-manager/custom/'
       views:
         | never
       pathParamNames:
@@ -647,7 +647,7 @@ declare module 'vue-router/auto-routes' {
     }
     'src/pages/asset-manager/managed/index.vue': {
       routes:
-        | 'asset-manager-managed'
+        | '/asset-manager/managed/'
       views:
         | never
       pathParamNames:
@@ -655,12 +655,12 @@ declare module 'vue-router/auto-routes' {
     }
     'src/pages/asset-manager/more.vue': {
       routes:
-        | 'asset-manager-cex-mapping'
-        | 'asset-manager-counterparty-mapping'
-        | 'asset-manager-missing-mappings'
-        | 'asset-manager-more'
-        | 'asset-manager-newly-detected'
-        | 'asset-manager-solana-token-migration'
+        | '/asset-manager/more'
+        | '/asset-manager/more/cex-mapping/'
+        | '/asset-manager/more/counterparty-mapping/'
+        | '/asset-manager/more/missing-mappings/'
+        | '/asset-manager/more/newly-detected/'
+        | '/asset-manager/more/solana-token-migration/'
       views:
         | 'default'
       pathParamNames:
@@ -668,7 +668,7 @@ declare module 'vue-router/auto-routes' {
     }
     'src/pages/asset-manager/more/cex-mapping/index.vue': {
       routes:
-        | 'asset-manager-cex-mapping'
+        | '/asset-manager/more/cex-mapping/'
       views:
         | never
       pathParamNames:
@@ -676,7 +676,7 @@ declare module 'vue-router/auto-routes' {
     }
     'src/pages/asset-manager/more/counterparty-mapping/index.vue': {
       routes:
-        | 'asset-manager-counterparty-mapping'
+        | '/asset-manager/more/counterparty-mapping/'
       views:
         | never
       pathParamNames:
@@ -684,7 +684,7 @@ declare module 'vue-router/auto-routes' {
     }
     'src/pages/asset-manager/more/missing-mappings/index.vue': {
       routes:
-        | 'asset-manager-missing-mappings'
+        | '/asset-manager/more/missing-mappings/'
       views:
         | never
       pathParamNames:
@@ -692,7 +692,7 @@ declare module 'vue-router/auto-routes' {
     }
     'src/pages/asset-manager/more/newly-detected/index.vue': {
       routes:
-        | 'asset-manager-newly-detected'
+        | '/asset-manager/more/newly-detected/'
       views:
         | never
       pathParamNames:
@@ -700,7 +700,7 @@ declare module 'vue-router/auto-routes' {
     }
     'src/pages/asset-manager/more/solana-token-migration/index.vue': {
       routes:
-        | 'asset-manager-solana-token-migration'
+        | '/asset-manager/more/solana-token-migration/'
       views:
         | never
       pathParamNames:
@@ -716,7 +716,7 @@ declare module 'vue-router/auto-routes' {
     }
     'src/pages/balances/index.vue': {
       routes:
-        | 'balances'
+        | '/balances/'
       views:
         | never
       pathParamNames:
@@ -724,7 +724,7 @@ declare module 'vue-router/auto-routes' {
     }
     'src/pages/balances/blockchain/index.vue': {
       routes:
-        | 'balances-blockchain'
+        | '/balances/blockchain/'
       views:
         | never
       pathParamNames:
@@ -732,7 +732,7 @@ declare module 'vue-router/auto-routes' {
     }
     'src/pages/balances/exchange/[[exchange]].vue': {
       routes:
-        | 'balances-exchange'
+        | '/balances/exchange/[[exchange]]'
       views:
         | never
       pathParamNames:
@@ -740,7 +740,7 @@ declare module 'vue-router/auto-routes' {
     }
     'src/pages/balances/manual/[[tab]].vue': {
       routes:
-        | 'balances-manual'
+        | '/balances/manual/[[tab]]'
       views:
         | never
       pathParamNames:
@@ -748,7 +748,7 @@ declare module 'vue-router/auto-routes' {
     }
     'src/pages/balances/non-fungible/index.vue': {
       routes:
-        | 'balances-non-fungible'
+        | '/balances/non-fungible/'
       views:
         | never
       pathParamNames:
@@ -764,7 +764,7 @@ declare module 'vue-router/auto-routes' {
     }
     'src/pages/dashboard/index.vue': {
       routes:
-        | 'dashboard'
+        | '/dashboard/'
       views:
         | never
       pathParamNames:
@@ -780,7 +780,7 @@ declare module 'vue-router/auto-routes' {
     }
     'src/pages/history/data-issues/index.vue': {
       routes:
-        | 'history-data-issues'
+        | '/history/data-issues/'
       views:
         | never
       pathParamNames:
@@ -788,7 +788,7 @@ declare module 'vue-router/auto-routes' {
     }
     'src/pages/history/events/index.vue': {
       routes:
-        | 'history-events'
+        | '/history/events/'
       views:
         | never
       pathParamNames:
@@ -796,7 +796,7 @@ declare module 'vue-router/auto-routes' {
     }
     'src/pages/import/index.vue': {
       routes:
-        | 'import'
+        | '/import/'
       views:
         | never
       pathParamNames:
@@ -812,7 +812,7 @@ declare module 'vue-router/auto-routes' {
     }
     'src/pages/nfts/index.vue': {
       routes:
-        | 'nfts'
+        | '/nfts/'
       views:
         | never
       pathParamNames:
@@ -836,7 +836,7 @@ declare module 'vue-router/auto-routes' {
     }
     'src/pages/playground/index.vue': {
       routes:
-        | 'playground'
+        | '/playground/'
       views:
         | never
       pathParamNames:
@@ -844,7 +844,7 @@ declare module 'vue-router/auto-routes' {
     }
     'src/pages/price-manager/index.vue': {
       routes:
-        | 'price-manager'
+        | '/price-manager/'
       views:
         | never
       pathParamNames:
@@ -852,7 +852,7 @@ declare module 'vue-router/auto-routes' {
     }
     'src/pages/price-manager/historic/index.vue': {
       routes:
-        | 'price-manager-historic'
+        | '/price-manager/historic/'
       views:
         | never
       pathParamNames:
@@ -860,7 +860,7 @@ declare module 'vue-router/auto-routes' {
     }
     'src/pages/price-manager/latest/index.vue': {
       routes:
-        | 'price-manager-current'
+        | '/price-manager/latest/'
       views:
         | never
       pathParamNames:
@@ -868,7 +868,7 @@ declare module 'vue-router/auto-routes' {
     }
     'src/pages/price-manager/oracle/index.vue': {
       routes:
-        | 'price-manager-oracle'
+        | '/price-manager/oracle/'
       views:
         | never
       pathParamNames:
@@ -1005,7 +1005,7 @@ declare module 'vue-router/auto-routes' {
     }
     'src/pages/statistics/graphs/index.vue': {
       routes:
-        | 'statistics-graphs'
+        | '/statistics/graphs/'
       views:
         | never
       pathParamNames:
@@ -1013,7 +1013,7 @@ declare module 'vue-router/auto-routes' {
     }
     'src/pages/statistics/history-events/index.vue': {
       routes:
-        | 'statistics-history-events'
+        | '/statistics/history-events/'
       views:
         | never
       pathParamNames:
@@ -1021,7 +1021,7 @@ declare module 'vue-router/auto-routes' {
     }
     'src/pages/statistics/snapshots/index.vue': {
       routes:
-        | 'statistics-snapshots'
+        | '/statistics/snapshots/'
       views:
         | never
       pathParamNames:
@@ -1029,7 +1029,7 @@ declare module 'vue-router/auto-routes' {
     }
     'src/pages/statistics/snapshots/[timestamp].vue': {
       routes:
-        | 'statistics-snapshot-detail'
+        | '/statistics/snapshots/[timestamp]'
       views:
         | never
       pathParamNames:
@@ -1037,7 +1037,7 @@ declare module 'vue-router/auto-routes' {
     }
     'src/pages/tag-manager/index.vue': {
       routes:
-        | 'tag_manager'
+        | '/tag-manager/'
       views:
         | never
       pathParamNames:

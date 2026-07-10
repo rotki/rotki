@@ -8,7 +8,6 @@ import { useBalanceStatus } from '@/modules/balances/use-balance-status';
 import { TaskType } from '@/modules/core/tasks/task-type';
 import { useTaskStore } from '@/modules/core/tasks/use-task-store';
 import SummaryCard from '@/modules/dashboard/summary/SummaryCard.vue';
-import { Routes } from '@/router/routes';
 import BlockchainBalanceCardList from './BlockchainBalanceCardList.vue';
 import BlockchainSummaryCardCreateButton from './BlockchainSummaryCardCreateButton.vue';
 
@@ -28,7 +27,7 @@ const isLoading = logicOr(isRefreshing, isTokenDetecting);
       :name="t('dashboard.blockchain_balances.title')"
       :is-loading="isLoading"
       can-refresh
-      :navigates-to="Routes.BALANCES"
+      :navigates-to="{ name: '/balances/' }"
       @refresh="refreshBalance($event)"
     >
       <template #refreshMenu>

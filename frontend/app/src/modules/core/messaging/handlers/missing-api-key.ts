@@ -9,7 +9,6 @@ import { SUPPRESSIBLE_SERVICES, SuppressibleMissingKeyService } from '@/modules/
 import { useSetting } from '@/modules/settings/use-setting';
 import { useSettingsOperations } from '@/modules/settings/use-settings-operations';
 import { useInterop } from '@/modules/shell/app/use-electron-interop';
-import { Routes } from '@/router/routes';
 
 function isSuppressibleService(service: string): service is SuppressibleMissingKeyService {
   return Array.prototype.includes.call(SUPPRESSIBLE_SERVICES, service);
@@ -42,7 +41,7 @@ export function createMissingApiKeyHandler(t: ReturnType<typeof useI18n>['t'], r
     // Both etherscan and blockscout are transaction indexers, so offer to change the order.
     if (isEtherscan || isBlockscout) {
       actions.push({
-        action: async () => router.push({ path: Routes.SETTINGS_EVM.toString(), hash: '#indexer' }),
+        action: async () => router.push({ name: '/settings/evm/', hash: '#indexer' }),
         icon: 'lu-settings',
         label: t('notification_messages.missing_api_key.change_indexer_order'),
         persist: true,

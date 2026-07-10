@@ -5,7 +5,6 @@ import { TaskType } from '@/modules/core/tasks/task-type';
 import { useTaskStore } from '@/modules/core/tasks/use-task-store';
 import SummaryCard from '@/modules/dashboard/summary/SummaryCard.vue';
 import SummaryCardCreateButton from '@/modules/dashboard/summary/SummaryCardCreateButton.vue';
-import { Routes } from '@/router/routes';
 import ExchangeBox from './ExchangeBox.vue';
 
 const { t } = useI18n({ useScope: 'global' });
@@ -23,7 +22,7 @@ const isExchangeLoading = useIsTaskRunning(TaskType.QUERY_EXCHANGE_BALANCES);
       :name="t('dashboard.exchange_balances.title')"
       can-refresh
       :is-loading="isExchangeLoading"
-      :navigates-to="Routes.BALANCES_EXCHANGE"
+      :navigates-to="{ name: '/balances/exchange/[[exchange]]' }"
       @refresh="refreshBalance($event)"
     >
       <SummaryCardCreateButton

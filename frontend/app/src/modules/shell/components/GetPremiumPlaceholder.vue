@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import GetPremiumButton from '@/modules/premium/GetPremiumButton.vue';
 import { usePremiumHelper } from '@/modules/premium/use-premium-helper';
-import { Routes } from '@/router/routes';
 
 defineProps<{
   title: string;
@@ -57,7 +56,7 @@ const { currentTier, premium } = usePremiumHelper();
     </div>
     <div class="flex items-center gap-2 flex-wrap">
       <GetPremiumButton />
-      <RouterLink :to="Routes.API_KEYS_ROTKI_PREMIUM">
+      <RouterLink :to="{ name: '/api-keys/premium/' }">
         <RuiButton
           class="lg:!py-2"
         >

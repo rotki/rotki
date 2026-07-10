@@ -1,47 +1,23 @@
 <script setup lang="ts">
-import type { RuiIcons } from '@rotki/ui-library';
-import type { RouteLocationRaw } from 'vue-router';
-import type { Exchange } from '@/modules/balances/types/exchanges';
-import type { TradeLocationData } from '@/modules/core/common/location';
-import { type BigNumber, getTextToken } from '@rotki/common';
 import { startPromise } from '@shared/utils';
 import { FiatDisplay } from '@/modules/assets/amount-display/components';
-import { useAssetInfoRetrieval } from '@/modules/assets/use-asset-info-retrieval';
-import { useConnectedExchangesStore } from '@/modules/balances/exchanges/use-connected-exchanges-store';
-import { useAggregatedBalances } from '@/modules/balances/use-aggregated-balances';
-import { useLocations } from '@/modules/core/common/use-locations';
 import { useInterop } from '@/modules/shell/app/use-electron-interop';
 import AppImage from '@/modules/shell/components/AppImage.vue';
 import AssetIcon from '@/modules/shell/components/AssetIcon.vue';
 import LocationIcon from '@/modules/shell/components/display/LocationIcon.vue';
-import { useAppRoutes } from '@/router/routes';
+import { type SearchItem, useGlobalSearch } from '@/modules/shell/layout/use-global-search';
 
 const { isMini = false } = defineProps<{
   isMini?: boolean;
 }>();
 
-interface SearchItem {
-  value: number;
-  text?: string;
-  texts?: string[];
-  asset?: string;
-  location?: TradeLocationData;
-  price?: BigNumber;
-  total?: BigNumber;
-  icon?: RuiIcons;
-  image?: string;
-  route?: RouteLocationRaw;
-  action?: () => void;
-  matchedPoints?: number;
-}
-
-type SearchItemWithoutValue = Omit<SearchItem, 'value'>;
-
 const { t } = useI18n({ useScope: 'global' });
-const { appRoutes } = useAppRoutes();
+const { search: performSearch } = useGlobalSearch();
+const router = useRouter();
+const interop = useInterop();
+
 const open = ref<boolean>(false);
 const isMac = ref<boolean>(false);
-
 const input = useTemplateRef<any>('input');
 const selected = ref<number>();
 const search = ref<string>('');
@@ -50,342 +26,33 @@ const visibleItems = ref<SearchItem[]>([]);
 
 const key = '/';
 
-const router = useRouter();
-const interop = useInterop();
-
-const { connectedExchanges } = storeToRefs(useConnectedExchangesStore());
-const { balancesByChainLocation, balancesByLocation, getBalances } = useAggregatedBalances();
-const { getLocationData } = useLocations();
-const { assetSearch } = useAssetInfoRetrieval();
-
-function getItemText(item: SearchItemWithoutValue): string {
-  return item.texts ? item.texts.join(' ') : (item.text ?? '');
-}
-
-function filterItems(items: SearchItemWithoutValue[], keyword: string): SearchItemWithoutValue[] {
-  const words = keyword.split(/\s+/).map(w => getTextToken(w)).filter(Boolean);
-  return items.filter((item) => {
-    let matchedPoints = 0;
-    const text = getTextToken(getItemText(item));
-    for (const word of words) {
-      const indexOf = text.indexOf(word);
-      if (indexOf > -1) {
-        matchedPoints++;
-        if (indexOf === 0)
-          matchedPoints += 0.5;
-      }
-    }
-    item.matchedPoints = matchedPoints;
-    return matchedPoints > 0;
-  });
-}
-
-function getRoutes(keyword: string): SearchItemWithoutValue[] {
-  const Routes = get(appRoutes);
-  const routeItems: SearchItemWithoutValue[] = [
-    { ...Routes.DASHBOARD },
-    {
-      ...Routes.ACCOUNTS_EVM,
-      texts: [Routes.ACCOUNTS.text, Routes.ACCOUNTS_EVM.text],
-    },
-    {
-      ...Routes.ACCOUNTS_BITCOIN,
-      texts: [Routes.ACCOUNTS.text, Routes.ACCOUNTS_BITCOIN.text],
-    },
-    {
-      ...Routes.ACCOUNTS_SOLANA,
-      texts: [Routes.ACCOUNTS.text, Routes.ACCOUNTS_SOLANA.text],
-    },
-    {
-      ...Routes.ACCOUNTS_SUBSTRATE,
-      texts: [Routes.ACCOUNTS.text, Routes.ACCOUNTS_SUBSTRATE.text],
-    },
-    {
-      ...Routes.BALANCES_BLOCKCHAIN,
-      texts: [Routes.BALANCES.text, Routes.BALANCES_BLOCKCHAIN.text],
-    },
-    {
-      ...Routes.BALANCES_EXCHANGE,
-      texts: [Routes.BALANCES.text, Routes.BALANCES_EXCHANGE.text],
-    },
-    {
-      ...Routes.BALANCES_MANUAL,
-      texts: [Routes.BALANCES.text, Routes.BALANCES_MANUAL.text],
-    },
-    {
-      ...Routes.BALANCES_NON_FUNGIBLE,
-      texts: [Routes.BALANCES.text, Routes.BALANCES_NON_FUNGIBLE.text],
-    },
-    {
-      ...Routes.ONCHAIN_SEND,
-      texts: [Routes.ONCHAIN.text, Routes.ONCHAIN_SEND.text],
-    },
-    { ...Routes.NFTS },
-    {
-      ...Routes.HISTORY,
-      texts: [Routes.HISTORY.text, Routes.HISTORY_EVENTS.text],
-    },
-    { ...Routes.AIRDROPS },
-    { ...Routes.STATISTICS },
-    { ...Routes.STAKING },
-    { ...Routes.PROFIT_LOSS_REPORTS },
-    { ...Routes.TAG_MANAGER },
-    {
-      ...Routes.ASSET_MANAGER_MANAGED,
-      texts: [Routes.ASSET_MANAGER.text, Routes.ASSET_MANAGER_MANAGED.text],
-    },
-    {
-      ...Routes.ASSET_MANAGER_CUSTOM,
-      texts: [Routes.ASSET_MANAGER.text, Routes.ASSET_MANAGER_CUSTOM.text],
-    },
-    {
-      ...Routes.ASSET_MANAGER_CEX_MAPPING,
-      texts: [Routes.ASSET_MANAGER.text, Routes.ASSET_MANAGER_CEX_MAPPING.text],
-    },
-    {
-      ...Routes.ASSET_MANAGER_NEWLY_DETECTED,
-      texts: [Routes.ASSET_MANAGER.text, Routes.ASSET_MANAGER_NEWLY_DETECTED.text],
-    },
-    {
-      ...Routes.PRICE_MANAGER_LATEST,
-      texts: [Routes.PRICE_MANAGER.text, Routes.PRICE_MANAGER_LATEST.text],
-    },
-    {
-      ...Routes.PRICE_MANAGER_HISTORIC,
-      texts: [Routes.PRICE_MANAGER.text, Routes.PRICE_MANAGER_HISTORIC.text],
-    },
-    { ...Routes.ADDRESS_BOOK_MANAGER },
-    {
-      ...Routes.API_KEYS_ROTKI_PREMIUM,
-      texts: [Routes.API_KEYS.text, Routes.API_KEYS_ROTKI_PREMIUM.text],
-    },
-    {
-      ...Routes.API_KEYS_EXCHANGES,
-      texts: [Routes.API_KEYS.text, Routes.API_KEYS_EXCHANGES.text],
-    },
-    {
-      ...Routes.API_KEYS_EXTERNAL_SERVICES,
-      texts: [Routes.API_KEYS.text, Routes.API_KEYS_EXTERNAL_SERVICES.text],
-    },
-    { ...Routes.IMPORT },
-    {
-      ...Routes.SETTINGS_ACCOUNT,
-      texts: [Routes.SETTINGS.text, Routes.SETTINGS_ACCOUNT.text],
-    },
-    {
-      ...Routes.SETTINGS_GENERAL,
-      texts: [Routes.SETTINGS.text, Routes.SETTINGS_GENERAL.text],
-    },
-    {
-      ...Routes.SETTINGS_DATABASE,
-      texts: [Routes.SETTINGS.text, Routes.SETTINGS_DATABASE.text],
-    },
-    {
-      ...Routes.SETTINGS_ACCOUNTING,
-      texts: [Routes.SETTINGS.text, Routes.SETTINGS_ACCOUNTING.text],
-    },
-    {
-      ...Routes.SETTINGS_ORACLE,
-      texts: [Routes.SETTINGS.text, Routes.SETTINGS_ORACLE.text],
-    },
-    {
-      ...Routes.SETTINGS_RPC,
-      texts: [Routes.SETTINGS.text, Routes.SETTINGS_RPC.text],
-    },
-    {
-      ...Routes.SETTINGS_MODULES,
-      texts: [Routes.SETTINGS.text, Routes.SETTINGS_MODULES.text],
-    },
-    {
-      ...Routes.SETTINGS_INTERFACE,
-      texts: [Routes.SETTINGS.text, Routes.SETTINGS_INTERFACE.text],
-    },
-    {
-      ...Routes.CALENDAR,
-    },
-  ];
-
-  return filterItems(routeItems, keyword);
-}
-
-function getExchanges(keyword: string): SearchItemWithoutValue[] {
-  const Routes = get(appRoutes);
-  const exchanges = get(connectedExchanges);
-  const exchangeItems: SearchItemWithoutValue[] = exchanges.map((exchange: Exchange) => {
-    const identifier = exchange.location;
-    const name = exchange.name;
-
-    return {
-      location: getLocationData(identifier),
-      route: `${Routes.BALANCES_EXCHANGE.route}/${identifier}`,
-      texts: [Routes.BALANCES.text, Routes.BALANCES_EXCHANGE.text, name],
-    };
-  });
-
-  return filterItems(exchangeItems, keyword);
-}
-
-function getActions(keyword: string): SearchItemWithoutValue[] {
-  const Routes = get(appRoutes);
-  const actionItems: SearchItemWithoutValue[] = [
-    {
-      route: `${Routes.API_KEYS_EXCHANGES.route}?add=true`,
-      text: t('exchange_settings.dialog.add.title'),
-    },
-    {
-      route: `${Routes.ACCOUNTS_EVM.route}?add=true`,
-      text: t('blockchain_balances.form_dialog.add_title'),
-    },
-    {
-      route: `${Routes.BALANCES_MANUAL.route}?add=true`,
-      text: t('manual_balances.dialog.add.title'),
-    },
-    {
-      route: `${Routes.ASSET_MANAGER.route}?add=true`,
-      text: t('asset_management.add_title'),
-    },
-    {
-      route: `${Routes.PRICE_MANAGER_LATEST.route}?add=true`,
-      text: t('price_management.latest.add_title'),
-    },
-    {
-      route: `${Routes.PRICE_MANAGER_HISTORIC.route}?add=true`,
-      text: t('price_management.historic.add_title'),
-    },
-    {
-      route: `${Routes.ASSET_MANAGER_CEX_MAPPING.route}?add=true`,
-      text: t('asset_management.cex_mapping.add_title'),
-    },
-    {
-      route: `${Routes.TAG_MANAGER.route}?add=true`,
-      text: t('tag_manager.create_tag.title'),
-    },
-  ].map(item => ({ ...item, icon: 'lu-circle-plus' }));
-
-  return filterItems(actionItems, keyword);
-}
-
-async function getAssets(keyword: string): Promise<SearchItemWithoutValue[]> {
-  const matches = await assetSearch({
-    limit: 5,
-    value: keyword,
-  });
-  const assetBalances = getBalances();
-  const map: Record<string, string> = {};
-  for (const match of matches) map[match.identifier] = match.symbol ?? match.name ?? '';
-
-  const ids = matches.map(({ identifier }) => identifier);
-
-  return assetBalances
-    .filter(balance => ids.includes(balance.asset))
-    .map((balance) => {
-      const price = balance.price.gt(0) ? balance.price : undefined;
-      const asset = balance.asset;
-
-      return {
-        asset,
-        price,
-        route: {
-          name: '/assets/[identifier]',
-          params: {
-            identifier: asset,
-          },
-        },
-        texts: [t('common.asset'), map[asset] ?? ''],
-      };
-    });
-}
-
-function* transformLocations(): IterableIterator<SearchItemWithoutValue> {
-  const locationBalances = get(balancesByLocation);
-  const chainBalances = get(balancesByChainLocation);
-
-  // Merge per-chain on-chain totals so chain locations (e.g. 'ethereum')
-  // surface in global search even when the user has no manual balance
-  // tagged with that label. When both exist for the same identifier, sum.
-  const merged: Record<string, BigNumber> = { ...locationBalances };
-  for (const identifier in chainBalances) {
-    const existing = merged[identifier];
-    const chainTotal = chainBalances[identifier];
-    merged[identifier] = existing ? existing.plus(chainTotal) : chainTotal;
-  }
-
-  for (const identifier in merged) {
-    const location = getLocationData(identifier);
-    if (!location)
-      continue;
-
-    const total = merged[identifier];
-    yield {
-      location,
-      route: {
-        name: '/locations/[identifier]',
-        params: {
-          identifier: encodeURIComponent(location.identifier),
-        },
-      },
-      texts: [t('common.location'), location.name],
-      total,
-    } satisfies SearchItemWithoutValue;
-  }
-}
-
-function getLocations(keyword: string) {
-  return filterItems([...transformLocations()], keyword);
-}
-
-function change(index?: number) {
+function change(index?: number): void {
   if (!isDefined(index))
     return;
 
-  const item: SearchItem = get(visibleItems)[index];
+  const item = get(visibleItems)[index];
   if (item) {
-    if (item.route && get(router.currentRoute).fullPath !== item.route)
+    // Resolve to a fullPath so the "already here" guard works for both string and named-location routes.
+    if (item.route && get(router.currentRoute).fullPath !== router.resolve(item.route).fullPath)
       startPromise(router.push(item.route));
 
-    item?.action?.();
+    item.action?.();
     set(open, false);
   }
 }
 
-watchDebounced(
-  search,
-  async (keyword) => {
-    if (!keyword) {
-      set(visibleItems, []);
-      return;
-    }
+watchDebounced(search, async (keyword) => {
+  set(visibleItems, await performSearch(keyword));
+  set(loading, false);
+}, { debounce: 800 });
 
-    const staticData = [
-      ...getRoutes(keyword),
-      ...getExchanges(keyword),
-      ...getActions(keyword),
-      ...getLocations(keyword),
-    ].sort((a, b) => (b.matchedPoints ?? 0) - (a.matchedPoints ?? 0));
-
-    set(
-      visibleItems,
-      [...staticData, ...(await getAssets(keyword))].map((item, index) => ({
-        ...item,
-        text: getItemText(item),
-        value: index,
-      })),
-    );
-
-    set(loading, false);
-  },
-  {
-    debounce: 800,
-  },
-);
-
-watch(search, (search) => {
-  set(loading, !!search);
+watch(search, (value) => {
+  set(loading, !!value);
 });
 
-watch(open, (open) => {
+watch(open, (isOpen) => {
   nextTick(() => {
-    if (open) {
+    if (isOpen) {
       setTimeout(() => {
         get(input)?.focus?.();
       }, 100);
@@ -399,7 +66,7 @@ onBeforeMount(async () => {
   set(isMac, await interop.isMac());
 
   window.addEventListener('keydown', (event) => {
-    // Mac use Command, Others use Control
+    // Mac uses Command, others use Control
     if (((get(isMac) && event.metaKey) || (!get(isMac) && event.ctrlKey)) && event.key === key)
       set(open, true);
   });

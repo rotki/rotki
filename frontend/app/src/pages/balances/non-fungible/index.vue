@@ -6,9 +6,9 @@ import ModuleNotActive from '@/modules/settings/modules/ModuleNotActive.vue';
 
 definePage({
   meta: {
+    nav: { labelKey: 'navigation_menu.balances_sub.non_fungible_balances', icon: 'lu-image', parent: '/balances/', order: 40, drawer: 'balances-non-fungible' },
     noteLocation: NoteLocation.BALANCES_NON_FUNGIBLE,
   },
-  name: 'balances-non-fungible',
 });
 
 const modules = [Module.NFTS];

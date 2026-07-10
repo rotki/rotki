@@ -3,7 +3,6 @@ import { NotificationCategory, NotificationGroup, Priority, Severity } from '@ro
 import { type NewDetectedToken, useNewlyDetectedTokens } from '@/modules/assets/detection';
 import { createStateWithNotificationHandler } from '@/modules/core/messaging/utils';
 import { useNotificationsStore } from '@/modules/core/notifications/use-notifications-store';
-import { Routes } from '@/router/routes';
 
 export function createNewTokenDetectedHandler(
   t: ReturnType<typeof useI18n>['t'],
@@ -16,7 +15,9 @@ export function createNewTokenDetectedHandler(
 
   return createStateWithNotificationHandler<NewDetectedToken, number>(
     async (data: NewDetectedToken) => {
-      const existingNotification = get(notifications).find(({ group }) => group === NotificationGroup.NEW_DETECTED_TOKENS);
+      const existingNotification = get(notifications).find(
+        ({ group }) => group === NotificationGroup.NEW_DETECTED_TOKENS,
+      );
       const countAdded = await addNewDetectedToken(data);
       return (existingNotification?.groupCount || 0) + +countAdded;
     },
@@ -26,7 +27,7 @@ export function createNewTokenDetectedHandler(
 
       return {
         action: {
-          action: async () => router.push(Routes.ASSET_MANAGER_NEWLY_DETECTED),
+          action: async () => router.push({ name: '/asset-manager/more/newly-detected/' }),
           label: t('notification_messages.new_detected_token.action'),
         },
         category: NotificationCategory.DEFAULT,

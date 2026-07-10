@@ -17,6 +17,7 @@ interface StakingInfo {
 
 definePage({
   meta: {
+    nav: { labelKey: 'navigation_menu.staking', icon: 'lu-layers', section: 1, order: 60, drawer: 'staking' },
     noteLocation: NoteLocation.STAKING,
   },
   props: true,

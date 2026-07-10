@@ -11,6 +11,7 @@ import SettingCategory from '@/modules/settings/SettingCategory.vue';
 
 definePage({
   meta: {
+    nav: { labelKey: 'navigation_menu.settings_sub.evm', icon: 'lu-link', parent: '/settings' },
     noteLocation: NoteLocation.SETTINGS_EVM,
   },
 });

@@ -1,9 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useAppNavigation } from '@/modules/shell/layout/use-navigation';
-import { Routes } from '@/router/routes';
 
 const mockPush = vi.fn();
-const mockCurrentRoute = ref<{ path: string }>({ path: '/' });
+const mockCurrentRoute = ref<{ name?: string }>({ name: '/' });
 
 vi.mock('vue-router', () => ({
   useRouter: vi.fn(() => ({
@@ -15,7 +14,7 @@ vi.mock('vue-router', () => ({
 describe('modules::shell::use-navigation', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    set(mockCurrentRoute, { path: '/' });
+    set(mockCurrentRoute, { name: '/' });
   });
 
   describe('navigateToUserLogin', () => {
@@ -25,11 +24,11 @@ describe('modules::shell::use-navigation', () => {
       await navigateToUserLogin();
 
       expect(mockPush).toHaveBeenCalledTimes(1);
-      expect(mockPush).toHaveBeenCalledWith(Routes.USER_LOGIN);
+      expect(mockPush).toHaveBeenCalledWith({ name: '/user/login/' });
     });
 
     it('should be a no-op when already on the login route', async () => {
-      set(mockCurrentRoute, { path: Routes.USER_LOGIN });
+      set(mockCurrentRoute, { name: '/user/login/' });
 
       const { navigateToUserLogin } = useAppNavigation();
       await navigateToUserLogin();
@@ -44,7 +43,7 @@ describe('modules::shell::use-navigation', () => {
 
       await navigateToUserCreation();
 
-      expect(mockPush).toHaveBeenCalledWith(Routes.USER_CREATE);
+      expect(mockPush).toHaveBeenCalledWith({ name: '/user/create/' });
     });
   });
 
@@ -54,7 +53,7 @@ describe('modules::shell::use-navigation', () => {
 
       await navigateToDashboard();
 
-      expect(mockPush).toHaveBeenCalledWith(Routes.DASHBOARD);
+      expect(mockPush).toHaveBeenCalledWith({ name: '/dashboard/' });
     });
   });
 });

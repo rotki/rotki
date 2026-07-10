@@ -15,7 +15,6 @@ import { type Filters, type Matcher, useDataIssuesFilter } from '@/modules/histo
 import { useDataIssuesSummary } from '@/modules/history/data-issues/use-data-issues-summary';
 import { HighlightTargetTypes, useHistoryEventNavigation } from '@/modules/history/events/use-history-event-navigation';
 import { useSyncCompleted } from '@/modules/shell/sync-progress/use-sync-completed';
-import { Routes } from '@/router/routes';
 
 /** Mirrors whether a stacked detail/resolve overlay is open, so the host drawer can stay stateless. */
 const subDialogOpen = defineModel<boolean>('subDialogOpen', { default: false });
@@ -416,7 +415,7 @@ onMounted(() => {
     </div>
 
     <div class="p-3 flex justify-end border-t border-default">
-      <RouterLink :to="Routes.HISTORY_DATA_ISSUES">
+      <RouterLink :to="{ name: '/history/data-issues/' }">
         <RuiButton
           variant="text"
           color="primary"

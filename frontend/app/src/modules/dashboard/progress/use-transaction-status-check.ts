@@ -4,7 +4,6 @@ import { useRefWithDebounce } from '@/modules/core/common/use-ref-debounce';
 import { useHistoryQueryIndicatorSettings } from '@/modules/dashboard/progress/use-history-query-indicator-settings';
 import { useHistoryEventsStatus } from '@/modules/history/events/use-history-events-status';
 import { useHistoryStore } from '@/modules/history/use-history-store';
-import { Routes } from '@/router/routes';
 
 interface UseTransactionStatusCheckReturn {
   /**
@@ -64,7 +63,12 @@ export function useTransactionStatusCheck(): UseTransactionStatusCheckReturn {
     }
     const status = get(transactionStatusSummary)!;
 
-    const { evmLastQueriedTs = 0, exchangesLastQueriedTs = 0, hasEvmAccounts = false, hasExchangesAccounts = false } = status;
+    const {
+      evmLastQueriedTs = 0,
+      exchangesLastQueriedTs = 0,
+      hasEvmAccounts = false,
+      hasExchangesAccounts = false,
+    } = status;
 
     // Only consider timestamps for account types the user has
     const timestamps: number[] = [];
@@ -99,7 +103,12 @@ export function useTransactionStatusCheck(): UseTransactionStatusCheckReturn {
 
     const status = get(transactionStatusSummary)!;
 
-    const { evmLastQueriedTs = 0, exchangesLastQueriedTs = 0, hasEvmAccounts = false, hasExchangesAccounts = false } = status;
+    const {
+      evmLastQueriedTs = 0,
+      exchangesLastQueriedTs = 0,
+      hasEvmAccounts = false,
+      hasExchangesAccounts = false,
+    } = status;
 
     const now = Date.now();
     const minOutOfSyncMs = get(minOutOfSyncPeriodMs);
@@ -124,7 +133,7 @@ export function useTransactionStatusCheck(): UseTransactionStatusCheckReturn {
   });
 
   async function navigateToHistory(): Promise<void> {
-    await router.push(Routes.HISTORY_EVENTS);
+    await router.push({ name: '/history/events/' });
   }
 
   return {

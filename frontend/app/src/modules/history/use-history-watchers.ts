@@ -12,7 +12,6 @@ import { useUnmatchedAssetMovements } from '@/modules/history/events/use-unmatch
 import { useHistoryDataFetching } from '@/modules/history/use-history-data-fetching';
 import { useHistoryStore } from '@/modules/history/use-history-store';
 import { useProtocolCacheStatusStore } from '@/modules/history/use-protocol-cache-status-store';
-import { Routes } from '@/router/routes';
 
 const HISTORY_EVENTS_MODIFIED_DEBOUNCE_MS = 15_000;
 
@@ -36,7 +35,11 @@ export function useHistoryWatchers(): void {
   const { protocolCacheUpdateStatus } = storeToRefs(protocolCacheStore);
 
   watch(refreshProtocolCacheTaskRunning, (curr, prev) => {
-    if (!curr && prev && !Object.values(get(protocolCacheUpdateStatus)).some(entry => entry.cancelled)) {
+    if (
+      !curr &&
+      prev &&
+      !Object.values(get(protocolCacheUpdateStatus)).some(entry => entry.cancelled)
+    ) {
       protocolCacheStore.resetProtocolCacheUpdatesStatus();
     }
   });
@@ -53,11 +56,20 @@ export function useHistoryWatchers(): void {
     { debounce: HISTORY_EVENTS_MODIFIED_DEBOUNCE_MS },
   );
 
-  watch([processing, connectedExchanges], async ([currentProcessing, connectedExchanges], [previousProcessing, previousConnectedExchanges]) => {
-    if (currentProcessing !== previousProcessing || !isEqual(connectedExchanges, previousConnectedExchanges)) {
-      await fetchTransactionStatusSummary();
-    }
-  });
+  watch(
+    [processing, connectedExchanges],
+    async (
+      [currentProcessing, connectedExchanges],
+      [previousProcessing, previousConnectedExchanges],
+    ) => {
+      if (
+        currentProcessing !== previousProcessing ||
+        !isEqual(connectedExchanges, previousConnectedExchanges)
+      ) {
+        await fetchTransactionStatusSummary();
+      }
+    },
+  );
 
   watch(processingDebounced, async (processing, wasProcessing) => {
     if (!processing && wasProcessing) {
@@ -68,8 +80,10 @@ export function useHistoryWatchers(): void {
   });
 
   watchImmediate(router.currentRoute, (to) => {
-    if (to.path === Routes.HISTORY_EVENTS.toString()) {
-      removeMatching(notification => notification.group === NotificationGroup.UNMATCHED_ASSET_MOVEMENTS);
+    if (to.name === '/history/events/') {
+      removeMatching(
+        notification => notification.group === NotificationGroup.UNMATCHED_ASSET_MOVEMENTS,
+      );
     }
   });
 }

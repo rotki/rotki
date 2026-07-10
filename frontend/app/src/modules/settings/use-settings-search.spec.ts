@@ -1,20 +1,30 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { SettingsHighlightIds, type SettingsSearchEntry } from '@/modules/settings/setting-highlight-ids';
+import {
+  SettingsHighlightIds,
+  type SettingsSearchEntry,
+} from '@/modules/settings/setting-highlight-ids';
 import { getRegistryEntry, registryEntries, registryKeysForAnchor } from '@/modules/settings/settings-registry';
 
-vi.mock('@/router/routes', () => ({
-  useAppRoutes: vi.fn((): { appRoutes: ReturnType<typeof import('vue')['ref']> } => ({
-    appRoutes: ref({
-      SETTINGS_ACCOUNT: { icon: 'lu-user', text: 'Account', route: '/settings/account' },
-      SETTINGS_GENERAL: { icon: 'lu-settings', text: 'General', route: '/settings/general' },
-      SETTINGS_DATABASE: { icon: 'lu-database', text: 'Database', route: '/settings/database' },
-      SETTINGS_ACCOUNTING: { icon: 'lu-calculator', text: 'Accounting', route: '/settings/accounting' },
-      SETTINGS_EVM: { icon: 'lu-cpu', text: 'EVM', route: '/settings/evm' },
-      SETTINGS_ORACLE: { icon: 'lu-activity', text: 'Oracles', route: '/settings/oracle' },
-      SETTINGS_RPC: { icon: 'lu-server', text: 'RPC Nodes', route: '/settings/rpc' },
-      SETTINGS_MODULES: { icon: 'lu-boxes', text: 'Modules', route: '/settings/modules' },
-      SETTINGS_INTERFACE: { icon: 'lu-monitor', text: 'Interface', route: '/settings/interface' },
-    }),
+// The settings tabs derive their route/label/icon from each page's `nav` meta via the router.
+const settingsRoutes = [
+  { name: '/settings/account/', meta: { nav: { icon: 'lu-user', labelKey: 'Account' } } },
+  { name: '/settings/general/', meta: { nav: { icon: 'lu-settings', labelKey: 'General' } } },
+  { name: '/settings/database/', meta: { nav: { icon: 'lu-database', labelKey: 'Database' } } },
+  {
+    name: '/settings/accounting/',
+    meta: { nav: { icon: 'lu-calculator', labelKey: 'Accounting' } },
+  },
+  { name: '/settings/evm/', meta: { nav: { icon: 'lu-cpu', labelKey: 'EVM' } } },
+  { name: '/settings/oracle/', meta: { nav: { icon: 'lu-activity', labelKey: 'Oracles' } } },
+  { name: '/settings/rpc/', meta: { nav: { icon: 'lu-server', labelKey: 'RPC Nodes' } } },
+  { name: '/settings/modules/', meta: { nav: { icon: 'lu-boxes', labelKey: 'Modules' } } },
+  { name: '/settings/interface/', meta: { nav: { icon: 'lu-monitor', labelKey: 'Interface' } } },
+];
+
+vi.mock('vue-router', () => ({
+  useRouter: vi.fn(() => ({
+    getRoutes: (): typeof settingsRoutes => settingsRoutes,
+    resolve: ({ name }: { name: string }): { path: string } => ({ path: name }),
   })),
 }));
 
@@ -41,7 +51,9 @@ describe('useSettingsSearch', () => {
 
   describe('highlight-id integrity', () => {
     it('should surface every defined highlight id in exactly one search entry', () => {
-      const searchIds = allEntries.map(entry => entry.highlightId).filter((id): id is NonNullable<typeof id> => id !== undefined);
+      const searchIds = allEntries
+        .map(entry => entry.highlightId)
+        .filter((id): id is NonNullable<typeof id> => id !== undefined);
       const counts = new Map<string, number>();
       for (const id of searchIds) counts.set(id, (counts.get(id) ?? 0) + 1);
 
@@ -49,7 +61,10 @@ describe('useSettingsSearch', () => {
       const missing = definedIds.filter(id => !counts.has(id));
       const duplicated = [...counts.entries()].filter(([, count]) => count > 1).map(([id]) => id);
 
-      expect(missing, 'highlight ids defined but not surfaced in settings search (add a search entry)').toEqual([]);
+      expect(
+        missing,
+        'highlight ids defined but not surfaced in settings search (add a search entry)',
+      ).toEqual([]);
       expect(duplicated, 'highlight ids used by more than one search entry').toEqual([]);
     });
 

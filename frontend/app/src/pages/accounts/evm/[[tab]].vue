@@ -18,10 +18,10 @@ import { useEthStakingAccess } from '@/modules/staking/eth/use-eth-staking-acces
 
 definePage({
   meta: {
+    nav: { labelKey: 'navigation_menu.accounts_sub.evm', icon: 'lu-evm-accounts', parent: '/accounts/', order: 10, drawer: 'accounts-evm', addAction: { labelKey: 'blockchain_balances.form_dialog.add_title' } },
     canNavigateBack: true,
     noteLocation: NoteLocation.ACCOUNTS_EVM,
   },
-  name: 'accounts-evm',
   props: true,
 });
 
@@ -31,7 +31,7 @@ const { tab } = defineProps<{
 
 const { t } = useI18n({ useScope: 'global' });
 const router = useRouter();
-const route = useRoute('accounts-evm');
+const route = useRoute('/accounts/evm/[[tab]]');
 
 const account = ref<AccountManageState>();
 const table = useTemplateRef<InstanceType<typeof AccountBalances>>('table');
@@ -77,7 +77,7 @@ function refresh(): void {
 
 function getTabLink(category: string): RouteLocationRaw {
   return {
-    name: 'accounts-evm',
+    name: '/accounts/evm/[[tab]]',
     params: {
       tab: category,
     },

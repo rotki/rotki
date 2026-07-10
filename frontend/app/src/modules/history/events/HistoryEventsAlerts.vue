@@ -6,7 +6,6 @@ import { useCustomizedEventDuplicates } from '@/modules/history/events/use-custo
 import { useUnmatchedAssetMovements } from '@/modules/history/events/use-unmatched-asset-movements';
 import { useInternalTxConflicts } from '@/modules/history/internal-tx-conflicts/use-internal-tx-conflicts';
 import { useStatusUpdater } from '@/modules/shell/sync-progress/use-status-updater';
-import { Routes } from '@/router/routes';
 
 const show = defineModel<boolean>('show', { required: true });
 
@@ -72,7 +71,7 @@ async function viewDuplicates(groupIds: string[], status: DuplicateHandlingStatu
   closeAlerts();
   const groupIdentifiers = groupIds.join(',');
   await router.push({
-    path: Routes.HISTORY_EVENTS.toString(),
+    name: '/history/events/',
     query: {
       duplicateHandlingStatus: status,
       groupIdentifiers,

@@ -133,7 +133,7 @@ onMounted(() => {
       v-if="parent"
       class="transition-all h-0 overflow-hidden"
       :style="submenuWrapperStyle"
-      data-cy="submenu-wrapper"
+      data-testid="submenu-wrapper"
       :data-expanded="subMenuExpanded"
     >
       <div ref="inner">

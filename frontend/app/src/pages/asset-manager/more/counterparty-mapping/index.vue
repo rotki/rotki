@@ -2,7 +2,9 @@
 import ManageCounterpartyMapping from '@/modules/assets/admin/counterparty-mapping/ManageCounterpartyMapping.vue';
 
 definePage({
-  name: 'asset-manager-counterparty-mapping',
+  meta: {
+    nav: { labelKey: 'navigation_menu.manage_assets_sub.counterparty_mapping', icon: 'lu-list-todo', parent: '/asset-manager/' },
+  },
 });
 </script>
 

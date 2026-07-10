@@ -1,26 +1,22 @@
 <script setup lang="ts">
-import type { TabContent } from '@/modules/core/common/tabs';
 import TabNavigation from '@/modules/shell/components/TabNavigation.vue';
 import TablePageLayout from '@/modules/shell/layout/TablePageLayout.vue';
-import { useAppRoutes } from '@/router/routes';
+import { useNavTabs } from '@/modules/shell/layout/use-nav-tabs';
 
 definePage({
-  name: 'asset-manager-more',
+  meta: {
+    nav: { labelKey: 'navigation_menu.manage_assets_sub.more', icon: 'lu-more-assets', parent: '/asset-manager/', order: 30, drawer: 'asset-manager-more' },
+  },
   redirect: '/asset-manager/more/cex-mapping',
 });
 
-const { appRoutes } = useAppRoutes();
-
-const tabs = computed<TabContent[]>(() => {
-  const Routes = get(appRoutes);
-  return [
-    Routes.ASSET_MANAGER_CEX_MAPPING,
-    Routes.ASSET_MANAGER_COUNTERPARTY_MAPPING,
-    Routes.ASSET_MANAGER_NEWLY_DETECTED,
-    Routes.ASSET_MANAGER_MISSING_MAPPINGS,
-    Routes.ASSET_MANAGER_SOLANA_TOKEN_MIGRATION,
-  ];
-});
+const tabs = useNavTabs([
+  '/asset-manager/more/cex-mapping/',
+  '/asset-manager/more/counterparty-mapping/',
+  '/asset-manager/more/newly-detected/',
+  '/asset-manager/more/missing-mappings/',
+  '/asset-manager/more/solana-token-migration/',
+]);
 
 const { t } = useI18n({ useScope: 'global' });
 </script>

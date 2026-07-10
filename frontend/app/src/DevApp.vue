@@ -1,6 +1,4 @@
 <script setup lang="ts">
-import { Routes } from '@/router/routes';
-
 function reset() {
   sessionStorage.removeItem('vuex');
   window.location.reload();
@@ -15,7 +13,7 @@ const resetState = 'Reset State';
     class="w-full h-full"
   >
     <nav class="border-default bg-white dark:bg-black border-b flex gap-4 items-center fixed w-full p-2 top-0">
-      <RouterLink :to="Routes.DASHBOARD">
+      <RouterLink :to="{ name: '/dashboard/' }">
         <RuiButton
           variant="text"
           icon

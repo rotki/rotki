@@ -91,10 +91,10 @@ vi.mock('@/modules/core/tasks/use-task-store', () => ({
   })),
 }));
 
-const mockCurrentRoute = ref<{ path: string }>({ path: '/' });
+const mockCurrentRoute = ref<{ name: string }>({ name: '/' });
 
 vi.mock('vue-router', () => ({
-  useRouter: vi.fn((): { currentRoute: Ref<{ path: string }> } => ({
+  useRouter: vi.fn((): { currentRoute: Ref<{ name: string }> } => ({
     currentRoute: mockCurrentRoute,
   })),
 }));
@@ -128,7 +128,7 @@ describe('useHistoryWatchers', () => {
     set(mockEventsVersion, 0);
     set(mockHasUnprocessedModifications, false);
     set(mockConnectedExchanges, []);
-    set(mockCurrentRoute, { path: '/' });
+    set(mockCurrentRoute, { name: '/' });
 
     scope = effectScope();
   });
@@ -251,7 +251,7 @@ describe('useHistoryWatchers', () => {
       setupWatchers();
       await nextTick();
 
-      set(mockCurrentRoute, { path: '/history/events' });
+      set(mockCurrentRoute, { name: '/history/events/' });
       await nextTick();
 
       expect(mockRemoveMatching).toHaveBeenCalled();
@@ -263,7 +263,7 @@ describe('useHistoryWatchers', () => {
 
       vi.clearAllMocks();
 
-      set(mockCurrentRoute, { path: '/dashboard' });
+      set(mockCurrentRoute, { name: '/dashboard/' });
       await nextTick();
 
       expect(mockRemoveMatching).not.toHaveBeenCalled();

@@ -23,10 +23,10 @@ import TablePageLayout from '@/modules/shell/layout/TablePageLayout.vue';
 
 definePage({
   meta: {
+    nav: { labelKey: 'navigation_menu.balances_sub.blockchain_balances', icon: 'lu-blockchain', parent: '/balances/', order: 10, drawer: 'balances-blockchain' },
     canNavigateBack: true,
     noteLocation: NoteLocation.BALANCES_BLOCKCHAIN,
   },
-  name: 'balances-blockchain',
   props: true,
 });
 
@@ -36,7 +36,7 @@ const chainsFilter = ref<string[]>([]);
 
 const { t } = useI18n({ useScope: 'global' });
 
-const route = useRoute('balances-blockchain');
+const route = useRoute('/balances/blockchain/');
 
 const tableType = DashboardTableType.BLOCKCHAIN_ASSET_BALANCES;
 

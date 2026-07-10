@@ -56,7 +56,7 @@ describe('forms/HistoryEventTypeForm.vue', () => {
     await wrapper.find('[data-testid="view-accounting-rule"]').trigger('click');
 
     expect(push).toHaveBeenCalledWith({
-      path: '/settings/accounting',
+      name: '/settings/accounting/',
       query: { counterparties: 'aave-v3', eventSubtypes: 'reward', eventTypes: 'staking' },
     });
   });
@@ -67,7 +67,7 @@ describe('forms/HistoryEventTypeForm.vue', () => {
     await wrapper.find('[data-testid="view-accounting-rule"]').trigger('click');
 
     expect(push).toHaveBeenCalledWith({
-      path: '/settings/accounting',
+      name: '/settings/accounting/',
       query: { eventSubtypes: 'reward', eventTypes: 'staking' },
     });
   });
@@ -89,7 +89,7 @@ describe('forms/HistoryEventTypeForm.vue', () => {
     const onConfirm = show.mock.calls[0][1];
     onConfirm();
     expect(push).toHaveBeenCalledWith({
-      path: '/settings/accounting',
+      name: '/settings/accounting/',
       query: { eventSubtypes: 'reward', eventTypes: 'staking' },
     });
   });

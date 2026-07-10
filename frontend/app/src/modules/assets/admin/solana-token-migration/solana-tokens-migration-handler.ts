@@ -3,7 +3,6 @@ import type { SolanaTokensMigrationData } from '@/modules/core/messaging/types';
 import { NotificationCategory, Severity } from '@rotki/common';
 import { useSolanaTokenMigrationStore } from '@/modules/assets/admin/solana-token-migration/use-solana-token-migration-store';
 import { createStateWithNotificationHandler } from '@/modules/core/messaging/utils';
-import { Routes } from '@/router/routes';
 
 export function createSolanaTokensHandler(
   t: ReturnType<typeof useI18n>['t'],
@@ -18,7 +17,7 @@ export function createSolanaTokensHandler(
     },
     data => ({
       action: {
-        action: async () => router.push(Routes.ASSET_MANAGER_SOLANA_TOKEN_MIGRATION.toString()),
+        action: async () => router.push({ name: '/asset-manager/more/solana-token-migration/' }),
         icon: 'lu-arrow-right',
         label: t('notification_messages.solana_tokens_migration.action'),
         persist: true,

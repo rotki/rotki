@@ -3,7 +3,6 @@ import type { MoneriumSessionKeyExpiredData } from '@/modules/core/messaging/typ
 import { NotificationCategory, Severity } from '@rotki/common';
 import { createNotificationHandler } from '@/modules/core/messaging/utils';
 import { useMoneriumOAuth } from '@/modules/integrations/monerium/use-monerium-auth';
-import { Routes } from '@/router/routes';
 
 export function createMoneriumSessionHandler(
   t: ReturnType<typeof useI18n>['t'],
@@ -19,7 +18,7 @@ export function createMoneriumSessionHandler(
     return {
       action: {
         action: async () => router.push({
-          path: Routes.API_KEYS_EXTERNAL_SERVICES.toString(),
+          name: '/api-keys/external/',
           query: { service: 'monerium' },
         }),
         icon: 'lu-arrow-right',

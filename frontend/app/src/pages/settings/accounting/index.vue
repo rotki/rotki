@@ -7,6 +7,7 @@ import SettingsPage from '@/modules/settings/controls/SettingsPage.vue';
 
 definePage({
   meta: {
+    nav: { labelKey: 'navigation_menu.settings_sub.accounting', icon: 'lu-file-spreadsheet', parent: '/settings' },
     canNavigateBack: true,
     noteLocation: NoteLocation.SETTINGS_ACCOUNTING,
   },

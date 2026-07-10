@@ -20,15 +20,16 @@ import ProgressScreen from '@/modules/shell/components/ProgressScreen.vue';
 
 definePage({
   meta: {
+    // label-only: gives the notes sidebar a title; not shown in the drawer or search.
+    nav: { labelKey: 'navigation_menu.statistics_sub.snapshots', icon: 'lu-camera', searchable: false },
     canNavigateBack: true,
     noteLocation: NoteLocation.STATISTICS_SNAPSHOTS,
   },
-  name: 'statistics-snapshot-detail',
 });
 
 const { t } = useI18n({ useScope: 'global' });
 const router = useRouter();
-const route = useRoute();
+const route = useRoute<'/statistics/snapshots/[timestamp]'>();
 
 const timestamp = computed<number>(() => Number(String(get(route).params.timestamp)));
 

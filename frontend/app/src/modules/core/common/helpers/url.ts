@@ -2,7 +2,6 @@ import type { RouteLocationRaw } from 'vue-router';
 import { blockscoutLink, etherscanLink, externalLinks } from '@shared/external-links';
 import { logger } from '@/modules/core/common/logging/logging';
 import { pslSuffixes } from '@/modules/core/common/psl';
-import { Routes } from '@/router/routes';
 
 export function getDomain(str: string): string {
   const pattern = /^(?:https?:)?(?:\/\/)?(?:[^\n@]+@)?(?:www\.)?([^\n/:]+)/;
@@ -42,7 +41,7 @@ function getEtherScanRegisterUrl(): ExternalUrl | undefined {
   return {
     external: etherscanLink,
     route: {
-      path: Routes.API_KEYS_EXTERNAL_SERVICES.toString(),
+      name: '/api-keys/external/',
       query: { service: 'etherscan' },
     },
   };
@@ -52,7 +51,7 @@ function getBlockscoutRegisterUrl(): ExternalUrl {
   return {
     external: blockscoutLink,
     route: {
-      path: Routes.API_KEYS_EXTERNAL_SERVICES.toString(),
+      name: '/api-keys/external/',
       query: { service: 'blockscout' },
     },
   };
@@ -62,7 +61,7 @@ function getTheGraphRegisterUrl(): ExternalUrl {
   return {
     external: externalLinks.applyTheGraphApiKey,
     route: {
-      path: Routes.API_KEYS_EXTERNAL_SERVICES.toString(),
+      name: '/api-keys/external/',
       query: { service: 'thegraph' },
     },
   };
@@ -72,7 +71,7 @@ function getHeliusRegisterUrl(): ExternalUrl {
   return {
     external: 'https://dev.helius.xyz/dashboard/app',
     route: {
-      path: Routes.API_KEYS_EXTERNAL_SERVICES.toString(),
+      name: '/api-keys/external/',
       query: { service: 'helius' },
     },
   };
@@ -82,7 +81,7 @@ function getBeaconchainRegisterUrl(): ExternalUrl {
   return {
     external: externalLinks.beaconChainApiKey,
     route: {
-      path: Routes.API_KEYS_EXTERNAL_SERVICES.toString(),
+      name: '/api-keys/external/',
       query: { service: 'beaconchain' },
     },
   };

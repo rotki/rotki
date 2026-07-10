@@ -2,7 +2,9 @@
 import CustomAssetContent from '@/modules/assets/admin/custom/CustomAssetContent.vue';
 
 definePage({
-  name: 'asset-manager-custom',
+  meta: {
+    nav: { labelKey: 'navigation_menu.manage_assets_sub.custom_assets', icon: 'lu-custom-assets', parent: '/asset-manager/', order: 20, drawer: 'asset-manager-custom' },
+  },
   props: to => ({
     identifier: to.query.id ?? null,
   }),

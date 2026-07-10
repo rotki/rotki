@@ -1,6 +1,5 @@
 import type { Ref } from 'vue';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { Routes } from '@/router/routes';
 import { useTransactionStatusCheck } from './use-transaction-status-check';
 
 interface Summary {
@@ -122,7 +121,7 @@ describe('useTransactionStatusCheck', () => {
     it('should push the history events route', async () => {
       const { navigateToHistory } = useTransactionStatusCheck();
       await navigateToHistory();
-      expect(push).toHaveBeenCalledWith(Routes.HISTORY_EVENTS);
+      expect(push).toHaveBeenCalledWith({ name: '/history/events/' });
     });
   });
 

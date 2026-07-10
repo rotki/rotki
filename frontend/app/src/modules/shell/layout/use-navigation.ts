@@ -1,5 +1,3 @@
-import { Routes } from '@/router/routes';
-
 interface UseAppNavigationReturn {
   navigateToDashboard: () => Promise<void>;
   navigateToUserCreation: () => Promise<void>;
@@ -9,18 +7,18 @@ interface UseAppNavigationReturn {
 export function useAppNavigation(): UseAppNavigationReturn {
   const router = useRouter();
   const navigateToUserLogin = async (): Promise<void> => {
-    if (get(router.currentRoute).path === Routes.USER_LOGIN)
+    if (get(router.currentRoute).name === '/user/login/')
       return;
 
-    await router.push(Routes.USER_LOGIN);
+    await router.push({ name: '/user/login/' });
   };
 
   const navigateToUserCreation = async (): Promise<void> => {
-    await router.push(Routes.USER_CREATE);
+    await router.push({ name: '/user/create/' });
   };
 
   const navigateToDashboard = async (): Promise<void> => {
-    await router.push(Routes.DASHBOARD);
+    await router.push({ name: '/dashboard/' });
   };
 
   return {

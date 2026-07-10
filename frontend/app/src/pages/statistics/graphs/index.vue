@@ -6,9 +6,9 @@ import StatisticPlaceholder from '@/modules/statistics/StatisticPlaceholder.vue'
 
 definePage({
   meta: {
+    nav: { labelKey: 'navigation_menu.statistics_sub.graphs', icon: 'lu-chart-line', parent: '/statistics/', order: 10, drawer: 'statistics-graph' },
     noteLocation: NoteLocation.STATISTICS,
   },
-  name: 'statistics-graphs',
 });
 
 const { allowed } = useFeatureAccess(PremiumFeature.GRAPHS_VIEW);

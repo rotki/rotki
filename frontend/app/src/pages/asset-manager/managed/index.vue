@@ -2,7 +2,9 @@
 import ManagedAssetContent from '@/modules/assets/admin/managed/ManagedAssetContent.vue';
 
 definePage({
-  name: 'asset-manager-managed',
+  meta: {
+    nav: { labelKey: 'navigation_menu.manage_assets_sub.assets', icon: 'lu-manage-assets', parent: '/asset-manager/', order: 10, drawer: 'asset-manager-managed' },
+  },
   props: to => ({
     identifier: to.query.id ?? null,
   }),

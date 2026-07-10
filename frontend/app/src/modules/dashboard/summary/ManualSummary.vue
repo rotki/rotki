@@ -3,7 +3,6 @@ import { useManualBalanceData } from '@/modules/balances/manual/use-manual-balan
 import { useManualBalances } from '@/modules/balances/manual/use-manual-balances';
 import { TaskType } from '@/modules/core/tasks/task-type';
 import { useTaskStore } from '@/modules/core/tasks/use-task-store';
-import { Routes } from '@/router/routes';
 import ManualBalanceCardList from './ManualBalanceCardList.vue';
 import SummaryCard from './SummaryCard.vue';
 import SummaryCardCreateButton from './SummaryCardCreateButton.vue';
@@ -23,7 +22,7 @@ const { t } = useI18n({ useScope: 'global' });
       :tooltip="t('dashboard.manual_balances.card_tooltip')"
       :is-loading="isManualBalancesLoading"
       can-refresh
-      :navigates-to="Routes.BALANCES_MANUAL"
+      :navigates-to="{ name: '/balances/manual/[[tab]]' }"
       @refresh="fetchManualBalances(true)"
     >
       <SummaryCardCreateButton

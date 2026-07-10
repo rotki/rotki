@@ -2,7 +2,9 @@
 import AssetMissingMappings from '@/modules/assets/admin/missing-mappings/AssetMissingMappings.vue';
 
 definePage({
-  name: 'asset-manager-missing-mappings',
+  meta: {
+    nav: { labelKey: 'navigation_menu.manage_assets_sub.missing_mappings', icon: 'lu-scroll', parent: '/asset-manager/' },
+  },
 });
 </script>
 

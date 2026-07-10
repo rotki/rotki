@@ -1,10 +1,10 @@
 <script setup lang="ts">
 import type { BigNumber } from '@rotki/common';
+import type { RouteLocationRaw } from 'vue-router';
 import { FiatDisplay } from '@/modules/assets/amount-display/components';
 import { useLocations } from '@/modules/core/common/use-locations';
 import LocationDisplay from '@/modules/history/LocationDisplay.vue';
 import ListItem from '@/modules/shell/components/ListItem.vue';
-import { Routes } from '@/router/routes';
 
 interface ExchangeBoxProps {
   location: string;
@@ -15,10 +15,10 @@ const { location } = defineProps<ExchangeBoxProps>();
 
 const { getExchangeName } = useLocations();
 
-const exchangeLocationRoute = computed<string>(() => {
-  const route = Routes.BALANCES_EXCHANGE;
-  return `${route}/${location}`;
-});
+const exchangeLocationRoute = computed<RouteLocationRaw>(() => ({
+  name: '/balances/exchange/[[exchange]]',
+  params: { exchange: location },
+}));
 </script>
 
 <template>

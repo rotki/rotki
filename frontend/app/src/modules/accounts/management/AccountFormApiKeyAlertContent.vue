@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import type { RouteLocationRaw } from 'vue-router';
-import { Routes } from '@/router/routes';
 
 const { service } = defineProps<{
   service: 'etherscan' | 'helius' | 'beaconchain' | 'consensusRpc' | 'blockscout';
@@ -78,7 +77,7 @@ const [DefineOptionBlock, ReuseOptionBlock] = createReusableTemplate<{
         :description="t('general_settings.rpc_node_setting.consensus_rpc.consensus_rpc_only.description')"
         :button-text="t('general_settings.rpc_node_setting.consensus_rpc.consensus_rpc_only.input_rpc')"
         :route="{
-          path: Routes.SETTINGS_RPC.toString(),
+          name: '/settings/rpc/',
           query: { tab: 'eth_consensus_layer' },
         }"
       />
@@ -87,7 +86,7 @@ const [DefineOptionBlock, ReuseOptionBlock] = createReusableTemplate<{
         :description="t('general_settings.rpc_node_setting.consensus_rpc.beaconchain_only.description')"
         :button-text="t('notification_messages.missing_api_key.action')"
         :route="{
-          path: Routes.API_KEYS_EXTERNAL_SERVICES.toString(),
+          name: '/api-keys/external/',
           query: { service: 'beaconchain' },
         }"
       />
@@ -96,14 +95,14 @@ const [DefineOptionBlock, ReuseOptionBlock] = createReusableTemplate<{
       <ReuseOptionBlock
         :button-text="t('notification_messages.missing_api_key.action')"
         :route="{
-          path: Routes.API_KEYS_EXTERNAL_SERVICES.toString(),
+          name: '/api-keys/external/',
           query: { service },
         }"
       />
       <ReuseOptionBlock
         v-if="service === 'etherscan'"
         :button-text="t('external_services.etherscan.change_indexer.action')"
-        :route="Routes.SETTINGS_EVM.toString()"
+        :route="{ name: '/settings/evm/' }"
       />
     </template>
   </div>

@@ -2,7 +2,6 @@
 import AppImage from '@/modules/shell/components/AppImage.vue';
 import InternalLink from '@/modules/shell/components/InternalLink.vue';
 import NoDataScreen from '@/modules/shell/components/NoDataScreen.vue';
-import { Routes } from '@/router/routes';
 
 const { t } = useI18n({ useScope: 'global' });
 </script>
@@ -17,7 +16,7 @@ const { t } = useI18n({ useScope: 'global' });
     </h5>
 
     <InternalLink
-      :to="Routes.DASHBOARD"
+      :to="{ name: '/dashboard/' }"
       class="text-decoration-none"
     >
       <RuiButton color="primary">
@@ -29,6 +28,6 @@ const { t } = useI18n({ useScope: 'global' });
         </template>
         {{ t('page_not_found.back') }}
       </RuiButton>
-    </internallink>
+    </InternalLink>
   </NoDataScreen>
 </template>

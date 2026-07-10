@@ -30,10 +30,10 @@ vi.mock('@/modules/core/notifications/use-notifications', () => ({
   })),
 }));
 
-let mockRoute: Ref<{ path: string; query: Record<string, unknown> }>;
+let mockRoute: Ref<{ name: string; query: Record<string, unknown> }>;
 
-function setupMockRoute(path: string = '/history/events', query: Record<string, unknown> = {}): void {
-  mockRoute = ref({ path, query });
+function setupMockRoute(name: string = '/history/events/', query: Record<string, unknown> = {}): void {
+  mockRoute = ref({ name, query });
   useRouteMock.mockReturnValue(mockRoute);
   useRouterMock.mockReturnValue({ currentRoute: mockRoute, push: mockRouterPush, replace: mockRouterReplace });
 }
@@ -97,7 +97,7 @@ describe('use-history-event-navigation-consumer', () => {
       expect(mockGetHistoryEventGroupPosition).toHaveBeenCalledWith('group-1', undefined);
       expect(mockRouterPush).toHaveBeenCalledWith({
         force: true,
-        path: '/history/events',
+        name: '/history/events/',
         query: {
           highlightedAssetMovement: '100',
           limit: '10',
@@ -126,7 +126,7 @@ describe('use-history-event-navigation-consumer', () => {
 
       expect(mockRouterPush).toHaveBeenCalledWith({
         force: true,
-        path: '/history/events',
+        name: '/history/events/',
         query: {
           highlightedPotentialMatch: '200',
           limit: '10',
@@ -155,7 +155,7 @@ describe('use-history-event-navigation-consumer', () => {
 
       expect(mockRouterPush).toHaveBeenCalledWith({
         force: true,
-        path: '/history/events',
+        name: '/history/events/',
         query: {
           highlightedNegativeBalanceEvent: '300',
           limit: '10',
@@ -185,7 +185,7 @@ describe('use-history-event-navigation-consumer', () => {
 
       expect(mockRouterPush).toHaveBeenCalledWith({
         force: true,
-        path: '/history/events',
+        name: '/history/events/',
         query: {
           highlightedAssetMovement: '100',
           highlightedPotentialMatch: '200',
@@ -212,7 +212,7 @@ describe('use-history-event-navigation-consumer', () => {
 
       expect(mockRouterPush).toHaveBeenCalledWith({
         force: true,
-        path: '/history/events',
+        name: '/history/events/',
         query: {
           limit: '10',
           page: '1',
@@ -372,7 +372,7 @@ describe('use-history-event-navigation-consumer', () => {
       // Should navigate to the fallback
       expect(mockRouterPush).toHaveBeenCalledWith({
         force: true,
-        path: '/history/events',
+        name: '/history/events/',
         query: {
           highlightedAssetMovement: '100',
           limit: '10',
@@ -382,7 +382,7 @@ describe('use-history-event-navigation-consumer', () => {
     });
 
     it('should clear highlights when position is -1 and no fallbacks remain', async () => {
-      setupMockRoute('/history/events', {
+      setupMockRoute('/history/events/', {
         highlightedAssetMovement: '100',
       });
       mockGetHistoryEventGroupPosition.mockResolvedValue(-1);
@@ -430,7 +430,7 @@ describe('use-history-event-navigation-consumer', () => {
     });
 
     it('should preserve route query when preserveFilters is true', async () => {
-      setupMockRoute('/history/events', {
+      setupMockRoute('/history/events/', {
         eventTypes: 'deposit',
         limit: '25',
         page: '2',
@@ -461,7 +461,7 @@ describe('use-history-event-navigation-consumer', () => {
       // Should merge page + highlights into existing route while preserving filter params
       expect(mockRouterPush).toHaveBeenCalledWith({
         force: true,
-        path: '/history/events',
+        name: '/history/events/',
         query: expect.objectContaining({
           eventTypes: 'deposit',
           highlightedAssetMovement: '100',
@@ -474,7 +474,7 @@ describe('use-history-event-navigation-consumer', () => {
 
   describe('route-based navigation', () => {
     it('should trigger navigation from route query params', async () => {
-      setupMockRoute('/history/events', {
+      setupMockRoute('/history/events/', {
         targetGroupIdentifier: 'group-route',
         highlightedNegativeBalanceEvent: '500',
       });
@@ -492,7 +492,7 @@ describe('use-history-event-navigation-consumer', () => {
       expect(mockGetHistoryEventGroupPosition).toHaveBeenCalledWith('group-route', undefined);
       expect(mockRouterPush).toHaveBeenCalledWith({
         force: true,
-        path: '/history/events',
+        name: '/history/events/',
         query: {
           highlightedNegativeBalanceEvent: '500',
           limit: '10',
@@ -502,7 +502,7 @@ describe('use-history-event-navigation-consumer', () => {
     });
 
     it('should keep the asset filter and compute the page within the filtered view', async () => {
-      setupMockRoute('/history/events', {
+      setupMockRoute('/history/events/', {
         asset: 'ETH',
         highlightedNegativeBalanceEvent: '500',
         targetGroupIdentifier: 'group-route',
@@ -521,7 +521,7 @@ describe('use-history-event-navigation-consumer', () => {
       expect(mockGetHistoryEventGroupPosition).toHaveBeenCalledWith('group-route', { asset: 'ETH' });
       expect(mockRouterPush).toHaveBeenCalledWith({
         force: true,
-        path: '/history/events',
+        name: '/history/events/',
         query: {
           asset: 'ETH',
           highlightedNegativeBalanceEvent: '500',
@@ -532,7 +532,7 @@ describe('use-history-event-navigation-consumer', () => {
     });
 
     it('should wait for the loading cycle and preserve the asset filter when navigating with an asset', async () => {
-      setupMockRoute('/history/events', {
+      setupMockRoute('/history/events/', {
         asset: 'ETH',
         highlightedNegativeBalanceEvent: '500',
         targetGroupIdentifier: 'group-route',
@@ -561,7 +561,7 @@ describe('use-history-event-navigation-consumer', () => {
 
       expect(mockRouterPush).toHaveBeenCalledWith({
         force: true,
-        path: '/history/events',
+        name: '/history/events/',
         query: expect.objectContaining({
           asset: 'ETH',
           highlightedNegativeBalanceEvent: '500',
@@ -571,7 +571,7 @@ describe('use-history-event-navigation-consumer', () => {
     });
 
     it('should not trigger navigation when targetGroupIdentifier is missing', async () => {
-      setupMockRoute('/history/events', {
+      setupMockRoute('/history/events/', {
         highlightedNegativeBalanceEvent: '500',
       });
 
@@ -588,7 +588,7 @@ describe('use-history-event-navigation-consumer', () => {
     });
 
     it('should not trigger navigation when highlightedNegativeBalanceEvent is missing', async () => {
-      setupMockRoute('/history/events', {
+      setupMockRoute('/history/events/', {
         targetGroupIdentifier: 'group-1',
       });
 
@@ -605,7 +605,7 @@ describe('use-history-event-navigation-consumer', () => {
     });
 
     it('should react to route changes with new navigation params', async () => {
-      setupMockRoute('/history/events');
+      setupMockRoute('/history/events/');
       mockGetHistoryEventGroupPosition.mockResolvedValue(0);
 
       const { useHistoryEventNavigationConsumer } = await importFresh();
@@ -620,7 +620,7 @@ describe('use-history-event-navigation-consumer', () => {
 
       // Simulate route change with navigation params
       set(mockRoute, {
-        path: '/history/events',
+        name: '/history/events/',
         query: {
           targetGroupIdentifier: 'group-new',
           highlightedNegativeBalanceEvent: '999',

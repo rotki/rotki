@@ -7,7 +7,6 @@ import { type Blockchain, HistoryEventEntryType, Severity } from '@rotki/common'
 import flushPromises from 'flush-promises';
 import { afterEach, beforeEach, describe, expect, it, type Mock, vi } from 'vitest';
 import { ref, type Ref } from 'vue';
-import { Routes } from '@/router/routes';
 import { useHistoryEventsActions } from './use-history-events-actions';
 
 const mockRefreshTransactions = vi.fn();
@@ -178,7 +177,7 @@ describe('useHistoryEventsActions', () => {
       await notifyCall.action.action();
 
       expect(mockRouterPush).toHaveBeenCalledWith({
-        path: Routes.HISTORY_EVENTS.toString(),
+        name: '/history/events/',
         query: {
           txRefs: ['0xhash1', '0xhash2'],
         },

@@ -38,7 +38,7 @@ const { setupChartEventHandlers, setupZoomToolHandler, tooltipData } = useNetVal
   chartInstance,
   // Clicking a snapshot point opens the snapshot editor page for that timestamp.
   onHover: (timestamp: number, _balance: BigNumber) => {
-    startPromise(router.push({ name: 'statistics-snapshot-detail', params: { timestamp: timestamp.toString() } }));
+    startPromise(router.push({ name: '/statistics/snapshots/[timestamp]', params: { timestamp: timestamp.toString() } }));
   },
   onZoomChange: (range: NetValueZoomRange | undefined) => {
     updateZoomRange(range);

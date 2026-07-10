@@ -17,6 +17,12 @@ import HintMenuIcon from '@/modules/shell/components/HintMenuIcon.vue';
 import TablePageLayout from '@/modules/shell/layout/TablePageLayout.vue';
 import AutomaticSyncSetting from '@/modules/shell/sync-progress/AutomaticSyncSetting.vue';
 
+definePage({
+  meta: {
+    nav: { labelKey: 'navigation_menu.api_keys_sub.premium', icon: 'lu-crown', parent: '/api-keys/', order: 10, drawer: 'api-keys-premium' },
+  },
+});
+
 defineOptions({
   name: 'PremiumApiKeys',
 });

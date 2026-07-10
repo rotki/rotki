@@ -1,10 +1,17 @@
 import type { RouteLocationRaw } from 'vue-router';
-import type { IssueDescription, RemediationTimelineItem } from '@/modules/history/data-issues/types';
+import type {
+  IssueDescription,
+  RemediationTimelineItem,
+} from '@/modules/history/data-issues/types';
 import { fromNullable, getOr } from 'plainfp/option';
 import { pipe } from 'plainfp/pipe';
 import { IssueKind } from '@/modules/history/data-issues/constants';
-import { type AutoRemediationAttempt, CurrentBalanceMismatchPayload, type DataIssue, NegativeBalancePayload } from '@/modules/history/data-issues/schemas';
-import { Routes } from '@/router/routes';
+import {
+  type AutoRemediationAttempt,
+  CurrentBalanceMismatchPayload,
+  type DataIssue,
+  NegativeBalancePayload,
+} from '@/modules/history/data-issues/schemas';
 
 /**
  * Turns a raw strategy identifier (e.g. `reprocess_event`) into a human label
@@ -84,7 +91,7 @@ export function relatedEventRoute(
   if (eventIdentifier === undefined)
     return undefined;
 
-  const path = Routes.HISTORY_EVENTS.toString();
+  const name = '/history/events/';
   const query: Record<string, string> = {};
 
   if (kind === IssueKind.NEGATIVE_BALANCE) {
@@ -96,7 +103,7 @@ export function relatedEventRoute(
   if (asset)
     query.asset = asset;
 
-  return Object.keys(query).length > 0 ? { path, query } : { path };
+  return Object.keys(query).length > 0 ? { name, query } : { name };
 }
 
 function toTimelineItem(attempt: AutoRemediationAttempt): RemediationTimelineItem {
@@ -114,11 +121,9 @@ function toTimelineItem(attempt: AutoRemediationAttempt): RemediationTimelineIte
  * attempts (older backend rows) is preserved.
  */
 export function toTimelineItems(issue: DataIssue): RemediationTimelineItem[] {
-  return issue.autoRemediationAttempts
-    .map(toTimelineItem)
-    .sort((a, b) => {
-      const left = pipe(fromNullable(a.timestamp), option => getOr(option, 0));
-      const right = pipe(fromNullable(b.timestamp), option => getOr(option, 0));
-      return left - right;
-    });
+  return issue.autoRemediationAttempts.map(toTimelineItem).sort((a, b) => {
+    const left = pipe(fromNullable(a.timestamp), option => getOr(option, 0));
+    const right = pipe(fromNullable(b.timestamp), option => getOr(option, 0));
+    return left - right;
+  });
 }

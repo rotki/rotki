@@ -1,7 +1,6 @@
 import type { HistoryEventRequestPayload } from '@/modules/history/events/request-types';
 import { startPromise } from '@shared/utils';
 import { useHistoryEventsApi } from '@/modules/history/api/events/use-history-events-api';
-import { Routes } from '@/router/routes';
 
 // Re-exported here (the highlight-navigation module) so consumers that already depend on it can
 // pull in the route-derived highlight targets without an extra import dependency.
@@ -55,9 +54,9 @@ export const HighlightTargetTypes = {
   POTENTIAL_MATCH: 'potentialMatch',
 } as const;
 
-export type HighlightTargetType = typeof HighlightTargetTypes[keyof typeof HighlightTargetTypes];
+export type HighlightTargetType = (typeof HighlightTargetTypes)[keyof typeof HighlightTargetTypes];
 
-const historyEventsPath = Routes.HISTORY_EVENTS.toString();
+const historyEventsName = '/history/events/';
 const pendingNavigation = ref<HistoryEventNavigationRequest>();
 const isNavigating = ref<boolean>(false);
 
@@ -76,8 +75,8 @@ export const useHistoryEventNavigation = createSharedComposable(() => {
      * If not on the history events page, navigate there first.
      * The consumer will pick up the pending request via watchImmediate when it mounts.
      */
-    if (!get(route).path.startsWith(historyEventsPath)) {
-      startPromise(router.push({ path: historyEventsPath }));
+    if (get(route).name !== historyEventsName) {
+      startPromise(router.push({ name: historyEventsName }));
     }
   }
 

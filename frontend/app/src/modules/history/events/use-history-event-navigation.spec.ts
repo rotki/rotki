@@ -22,8 +22,8 @@ vi.mock('@/modules/history/api/events/use-history-events-api', () => ({
   })),
 }));
 
-function setupMockRoute(path: string = '/history/events', query: Record<string, unknown> = {}): void {
-  const mockRoute = ref<{ path: string; query: Record<string, unknown> }>({ path, query });
+function setupMockRoute(name: string = '/history/events/', query: Record<string, unknown> = {}): void {
+  const mockRoute = ref<{ name: string; query: Record<string, unknown> }>({ name, query });
   useRouteMock.mockReturnValue(mockRoute);
   useRouterMock.mockReturnValue({ currentRoute: mockRoute, push: mockRouterPush });
 }
@@ -78,17 +78,17 @@ describe('use-history-event-navigation', () => {
   });
 
   it('should navigate to history events route when not already on it', async () => {
-    setupMockRoute('/dashboard');
+    setupMockRoute('/dashboard/');
     const { useHistoryEventNavigation } = await importFresh();
     const { requestNavigation } = scope.run(() => useHistoryEventNavigation())!;
 
     requestNavigation({ targetGroupIdentifier: 'group-1' });
 
-    expect(mockRouterPush).toHaveBeenCalledWith({ path: '/history/events' });
+    expect(mockRouterPush).toHaveBeenCalledWith({ name: '/history/events/' });
   });
 
   it('should not navigate when already on history events route', async () => {
-    setupMockRoute('/history/events');
+    setupMockRoute('/history/events/');
     const { useHistoryEventNavigation } = await importFresh();
     const { requestNavigation } = scope.run(() => useHistoryEventNavigation())!;
 
@@ -98,7 +98,7 @@ describe('use-history-event-navigation', () => {
   });
 
   it('should not navigate when on a sub-path of history events', async () => {
-    setupMockRoute('/history/events?page=2');
+    setupMockRoute('/history/events/');
     const { useHistoryEventNavigation } = await importFresh();
     const { requestNavigation } = scope.run(() => useHistoryEventNavigation())!;
 

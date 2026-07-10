@@ -1,7 +1,4 @@
 <script setup lang="ts">
-definePage({
-  name: 'playground',
-});
 const message = 'put your changes here';
 </script>
 

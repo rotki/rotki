@@ -4,9 +4,9 @@ import { NoteLocation } from '@/modules/core/common/notes';
 
 definePage({
   meta: {
+    nav: { labelKey: 'navigation_menu.accounts_sub.bitcoin', icon: 'lu-bitcoin-accounts', parent: '/accounts/', order: 20, drawer: 'accounts-bitcoin' },
     noteLocation: NoteLocation.ACCOUNTS_BITCOIN,
   },
-  name: 'accounts-bitcoin',
 });
 
 const { t } = useI18n({ useScope: 'global' });

@@ -9,7 +9,9 @@ import { useConfirmStore } from '@/modules/core/common/use-confirm-store';
 import TablePageLayout from '@/modules/shell/layout/TablePageLayout.vue';
 
 definePage({
-  name: 'asset-manager-solana-token-migration',
+  meta: {
+    nav: { labelKey: 'navigation_menu.manage_assets_sub.solana_token_migration', icon: 'lu-coins', parent: '/asset-manager/' },
+  },
 });
 
 const { t } = useI18n({ useScope: 'global' });
