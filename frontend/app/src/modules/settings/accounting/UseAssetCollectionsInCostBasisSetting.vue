@@ -13,7 +13,7 @@ function getSuccessMessage(enabled: boolean): string {
 <template>
   <SettingSwitch
     setting="useAssetCollectionsInCostBasis"
-    data-cy="use-asset-collections-in-cost-basis-switch"
+    data-testid="use-asset-collections-in-cost-basis-switch"
     :debounce="1500"
     :label="t('accounting_settings.trade.labels.use_asset_collections_in_cost_basis')"
     :error-message="t('account_settings.messages.use_asset_collections_in_cost_basis.error')"

@@ -1,9 +1,10 @@
 <script setup lang="ts">
 import { TimeFramePeriod, type TimeFrameSetting } from '@rotki/common';
 import SettingsItem from '@/modules/settings/controls/SettingsItem.vue';
-import SettingsOption from '@/modules/settings/controls/SettingsOption.vue';
 import TimeFrameSettings from '@/modules/settings/general/TimeFrameSettings.vue';
+import { useClearableMessages } from '@/modules/settings/use-clearable-messages';
 import { useSetting } from '@/modules/settings/use-setting';
+import { useSettingModel } from '@/modules/settings/use-setting-model';
 
 const defaultGraphTimeframe = ref<TimeFrameSetting>(TimeFramePeriod.ALL);
 const visibleTimeframes = ref<TimeFramePeriod[]>([]);
@@ -12,22 +13,50 @@ const currentSessionTimeframe = ref<TimeFramePeriod>(TimeFramePeriod.ALL);
 const { t } = useI18n({ useScope: 'global' });
 
 const timeframe = useSetting('timeframe');
-const timeframeSetting = useSetting('timeframeSetting');
-const visible = useSetting('visibleTimeframes');
+const { error: writeError, model: timeframeModel, success: writeSuccess } = useSettingModel('timeframeSetting');
+const { model: visibleModel } = useSettingModel('visibleTimeframes');
+const { clearAll, error, setError, setSuccess, success } = useClearableMessages();
 
-function resetTimeframeSetting() {
-  set(defaultGraphTimeframe, get(timeframeSetting));
-}
-
-function resetVisibleTimeframes() {
-  set(visibleTimeframes, get(visible));
-}
-
-function successMessage(timeframe: TimeFramePeriod) {
+function successMessage(timeframe: TimeFrameSetting): string {
   return t('frontend_settings.validation.timeframe.success', {
     timeframe,
   });
 }
+
+function resetTimeframeSetting(): void {
+  set(defaultGraphTimeframe, get(timeframeModel));
+}
+
+function resetVisibleTimeframes(): void {
+  set(visibleTimeframes, get(visibleModel));
+}
+
+function updateTimeframeSetting(value: TimeFrameSetting): void {
+  set(timeframeModel, value);
+}
+
+function updateVisibleTimeframes(value: TimeFrameSetting[]): void {
+  set(visibleModel, value);
+}
+
+watch(timeframeModel, () => {
+  clearAll();
+  resetTimeframeSetting();
+});
+
+watch(visibleModel, () => {
+  resetVisibleTimeframes();
+});
+
+watch(writeSuccess, (saved) => {
+  if (saved)
+    setSuccess(successMessage(get(timeframeModel)), true);
+});
+
+watch(writeError, (message) => {
+  if (message)
+    setError(`${t('frontend_settings.validation.timeframe.error')}: ${message}`, true);
+});
 
 onMounted(() => {
   set(currentSessionTimeframe, get(timeframe));
@@ -44,27 +73,13 @@ onMounted(() => {
     <template #subtitle>
       {{ t('timeframe_settings.default_timeframe_description') }}
     </template>
-    <SettingsOption
-      #default="{ error, success, updateImmediate: updateTimeframeSetting }"
-      setting="timeframeSetting"
-      :success-message="successMessage"
-      :error-message="t('frontend_settings.validation.timeframe.error')"
-      @finished="resetTimeframeSetting()"
-    >
-      <SettingsOption
-        #default="{ updateImmediate: updateVisibleTimeframes }"
-        setting="visibleTimeframes"
-        @finished="resetVisibleTimeframes()"
-      >
-        <TimeFrameSettings
-          :message="{ error, success }"
-          :value="defaultGraphTimeframe"
-          :visible-timeframes="visibleTimeframes"
-          :current-session-timeframe="currentSessionTimeframe"
-          @timeframe-change="updateTimeframeSetting($event)"
-          @visible-timeframes-change="updateVisibleTimeframes($event)"
-        />
-      </SettingsOption>
-    </SettingsOption>
+    <TimeFrameSettings
+      :message="{ error, success }"
+      :value="defaultGraphTimeframe"
+      :visible-timeframes="visibleTimeframes"
+      :current-session-timeframe="currentSessionTimeframe"
+      @timeframe-change="updateTimeframeSetting($event)"
+      @visible-timeframes-change="updateVisibleTimeframes($event)"
+    />
   </SettingsItem>
 </template>

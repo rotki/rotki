@@ -1,11 +1,19 @@
 <script setup lang="ts">
-import SettingsOption from '@/modules/settings/controls/SettingsOption.vue';
+import SettingSelect from '@/modules/settings/controls/SettingSelect.vue';
 import { BlockchainRefreshButtonBehaviour } from '@/modules/settings/types/frontend-settings';
-import { useSetting } from '@/modules/settings/use-setting';
-
-const blockchainRefreshButtonBehaviour = useSetting('blockchainRefreshButtonBehaviour');
 
 const { t } = useI18n({ useScope: 'global' });
+
+const options = [
+  {
+    label: t('dashboard.blockchain_balances.behaviour.only_refresh_balances'),
+    value: BlockchainRefreshButtonBehaviour.ONLY_REFRESH_BALANCES,
+  },
+  {
+    label: t('dashboard.blockchain_balances.behaviour.redetect_tokens'),
+    value: BlockchainRefreshButtonBehaviour.REDETECT_TOKENS,
+  },
+];
 </script>
 
 <template>
@@ -14,27 +22,15 @@ const { t } = useI18n({ useScope: 'global' });
       {{ t('dashboard.blockchain_balances.behaviour.title') }}:
     </div>
     <div class="pb-2 px-3">
-      <SettingsOption
-        #default="{ updateImmediate }"
+      <SettingSelect
+        control="radio"
         setting="blockchainRefreshButtonBehaviour"
-      >
-        <RuiRadioGroup
-          :model-value="blockchainRefreshButtonBehaviour"
-          color="primary"
-          class="mt-0"
-          hide-details
-          @update:model-value="updateImmediate($event)"
-        >
-          <RuiRadio
-            :value="BlockchainRefreshButtonBehaviour.ONLY_REFRESH_BALANCES"
-            :label="t('dashboard.blockchain_balances.behaviour.only_refresh_balances')"
-          />
-          <RuiRadio
-            :value="BlockchainRefreshButtonBehaviour.REDETECT_TOKENS"
-            :label="t('dashboard.blockchain_balances.behaviour.redetect_tokens')"
-          />
-        </RuiRadioGroup>
-      </SettingsOption>
+        class="mt-0"
+        hide-details
+        key-attr="value"
+        text-attr="label"
+        :options="options"
+      />
     </div>
   </div>
 </template>

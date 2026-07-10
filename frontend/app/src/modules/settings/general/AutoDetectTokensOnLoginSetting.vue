@@ -7,7 +7,7 @@ const { t } = useI18n({ useScope: 'global' });
 <template>
   <SettingSwitch
     setting="autoDetectTokensOnLogin"
-    data-cy="auto-detect-tokens-on-login-toggle"
+    data-testid="auto-detect-tokens-on-login-toggle"
     :label="t('general_settings.auto_detect_tokens_on_login.label')"
     :error-message="t('general_settings.auto_detect_tokens_on_login.validation.error')"
   />

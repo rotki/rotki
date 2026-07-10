@@ -7,7 +7,7 @@ const { t } = useI18n({ useScope: 'global' });
 <template>
   <SettingSwitch
     setting="submitUsageAnalytics"
-    data-cy="anonymous-usage-statistics-input"
+    data-testid="anonymous-usage-statistics-input"
     :label="t('general_settings.usage_analytics.label')"
     :error-message="t('general_settings.usage_analytics.validation.error')"
   />

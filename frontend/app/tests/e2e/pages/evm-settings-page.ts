@@ -11,7 +11,7 @@ export class EvmSettingsPage {
     await this.page.locator('[data-cy=settings-button]').click();
     await this.page.locator('[data-cy=user-dropdown]').waitFor({ state: 'detached' });
     await this.page.locator('[data-cy="settings__evm"]').click();
-    await this.page.locator('[data-cy=chains-to-skip-detection]').waitFor({ state: 'visible' });
+    await this.page.locator('[data-testid=chains-to-skip-detection]').waitFor({ state: 'visible' });
   }
 
   async navigateAway(): Promise<void> {
@@ -59,7 +59,7 @@ export class EvmSettingsPage {
 
   // Chains to Skip Detection Settings
   async selectChainToIgnore(value: string, waitForMessageToDisappear: boolean = true): Promise<void> {
-    const field = this.page.locator('[data-cy=chains-to-skip-detection]');
+    const field = this.page.locator('[data-testid=chains-to-skip-detection]');
     if (await field.locator(`[data-value=${value}]`).first().isVisible()) {
       return;
     }
@@ -78,20 +78,20 @@ export class EvmSettingsPage {
     // Always wait for the success message to appear
     await confirmInlineSuccess(
       this.page,
-      '[data-cy=chains-to-skip-detection] .details',
+      '[data-testid=chains-to-skip-detection] .details',
       'EVM Chains for which to skip automatic token detection saved successfully',
     );
 
     // Only wait for message to disappear on the last chain
     if (waitForMessageToDisappear) {
-      await expect(this.page.locator('[data-cy=chains-to-skip-detection] .details')).toBeEmpty();
+      await expect(this.page.locator('[data-testid=chains-to-skip-detection] .details')).toBeEmpty();
     }
   }
 
   async verifySkipped(entries: string[]): Promise<void> {
     for (const item of entries) {
       // Use .first() since the selector may match both chip and dropdown option
-      await expect(this.page.locator(`[data-cy=chains-to-skip-detection] [data-value=${item}]`).first()).toBeAttached();
+      await expect(this.page.locator(`[data-testid=chains-to-skip-detection] [data-value=${item}]`).first()).toBeAttached();
     }
   }
 }

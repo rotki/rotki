@@ -15,8 +15,11 @@ import UsageAnalyticsSetting from '@/modules/settings/general/UsageAnalyticsSett
 import VersionUpdateFrequencySetting from '@/modules/settings/general/VersionUpdateFrequencySetting.vue';
 import { SettingsHighlightIds } from '@/modules/settings/setting-highlight-ids';
 import SettingCategory from '@/modules/settings/SettingCategory.vue';
+import { useSetting } from '@/modules/settings/use-setting';
 
 const { t } = useI18n({ useScope: 'global' });
+
+const autoDetectTokensOnLogin = useSetting('autoDetectTokensOnLogin');
 </script>
 
 <template>
@@ -48,7 +51,16 @@ const { t } = useI18n({ useScope: 'global' });
       </template>
       <AutoDetectTokensOnLoginSetting />
     </SettingsItem>
-    <SettingsItem :id="SettingsHighlightIds.AUTO_DETECT_TOKENS_COOLDOWN">
+    <SettingsItem
+      v-if="autoDetectTokensOnLogin"
+      :id="SettingsHighlightIds.AUTO_DETECT_TOKENS_COOLDOWN"
+    >
+      <template #title>
+        {{ t('general_settings.auto_detect_tokens_cooldown.title') }}
+      </template>
+      <template #subtitle>
+        {{ t('general_settings.auto_detect_tokens_cooldown.subtitle') }}
+      </template>
       <AutoDetectTokensCooldownSetting />
     </SettingsItem>
     <SettingsItem :id="SettingsHighlightIds.DISPLAY_DATE_IN_LOCALTIME">

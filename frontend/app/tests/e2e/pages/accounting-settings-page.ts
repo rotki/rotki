@@ -10,14 +10,14 @@ export class AccountingSettingsPage {
     await this.page.locator('[data-cy=settings-button]').click();
     await this.page.locator('[data-cy=user-dropdown]').waitFor({ state: 'detached' });
     await this.page.locator('[data-cy="settings__accounting"]').click();
-    await this.page.locator('[data-cy=crypto2crypto-switch]').waitFor({ state: 'visible' });
+    await this.page.locator('[data-testid=crypto2crypto-switch]').waitFor({ state: 'visible' });
   }
 
   async setTaxFreePeriodDays(value: string): Promise<void> {
-    await this.page.locator('[data-cy=taxfree-period] input').clear();
-    await this.page.locator('[data-cy=taxfree-period] input').fill(value);
-    await this.page.locator('[data-cy=taxfree-period] input').blur();
-    await confirmInlineSuccess(this.page, '[data-cy=taxfree-period] .details', value);
+    await this.page.locator('[data-testid=taxfree-period] input').clear();
+    await this.page.locator('[data-testid=taxfree-period] input').fill(value);
+    await this.page.locator('[data-testid=taxfree-period] input').blur();
+    await confirmInlineSuccess(this.page, '[data-testid=taxfree-period] .details', value);
   }
 
   async changeSwitch(target: string, enabled: boolean): Promise<void> {

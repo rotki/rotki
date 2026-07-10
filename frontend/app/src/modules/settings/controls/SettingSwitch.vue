@@ -7,18 +7,29 @@ import { useSettingModel } from '@/modules/settings/use-setting-model';
  * Generic owning component for a boolean setting. Given a registry key it manages its own local draft
  * and persistence through `useSettingModel` (the writer pipeline), and surfaces the same "Settings
  * saved" / error messages the hand-written toggles did. Place it inside a `SettingsItem` for the
- * title/subtitle; this renders only the switch.
+ * title/subtitle; this renders only the switch (or checkbox).
+ *
+ * `inverted` flips the displayed state against the stored value (e.g. an "animations note" toggle that
+ * shows the opposite of `animationsEnabled`). Extra attributes (data-cy, size, class, hint) are
+ * forwarded to the underlying control.
  */
+defineOptions({ inheritAttrs: false });
+
 const {
   setting,
   label = '',
+  inverted = false,
+  control = 'switch',
   successMessage = '',
   errorMessage = '',
   debounce = 0,
 } = defineProps<{
   setting: WritableSettingKeyOf<boolean | null | undefined>;
   label?: string;
-  /** Static text, or a callback given the persisted value (e.g. distinct enabled/disabled copy). */
+  /** Show and write the negation of the stored value. */
+  inverted?: boolean;
+  control?: 'switch' | 'checkbox';
+  /** Static text, or a callback given the displayed value (e.g. distinct enabled/disabled copy). */
   successMessage?: string | ((value: boolean) => string);
   errorMessage?: string;
   debounce?: number;
@@ -32,12 +43,15 @@ const emit = defineEmits<{
 const { error: writeError, model, success: writeSuccess } = useSettingModel(setting, { debounce });
 const { clearAll, error, setError, setSuccess, success } = useClearableMessages();
 
-// The switch needs a plain boolean; nullable-boolean settings read `null`/`undefined` before the user
-// has ever toggled them, which we treat as off. Writes always push a concrete boolean.
+// The control needs a plain boolean; nullable-boolean settings read `null`/`undefined` before the user
+// has ever toggled them, which we treat as off. `inverted` flips both the read and the written value.
 const enabled = computed<boolean>({
-  get: () => get(model) ?? false,
+  get: () => {
+    const value = get(model) ?? false;
+    return inverted ? !value : value;
+  },
   set: (value) => {
-    set(model, value);
+    set(model, inverted ? !value : value);
   },
 });
 
@@ -59,7 +73,18 @@ watch(writeError, (message) => {
 </script>
 
 <template>
+  <RuiCheckbox
+    v-if="control === 'checkbox'"
+    v-bind="$attrs"
+    v-model="enabled"
+    color="primary"
+    :label="label"
+    :success-messages="success"
+    :error-messages="error"
+  />
   <RuiSwitch
+    v-else
+    v-bind="$attrs"
     v-model="enabled"
     color="primary"
     :label="label"

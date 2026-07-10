@@ -19,29 +19,29 @@ test.describe.serial('settings::accounting', () => {
   });
 
   test('change crypto2crypto switch & validate UI message', async () => {
-    await pageAccounting.changeSwitch('[data-cy=crypto2crypto-switch]', false);
+    await pageAccounting.changeSwitch('[data-testid=crypto2crypto-switch]', false);
   });
 
   test('change gas costs switch & validate UI message', async () => {
-    await pageAccounting.changeSwitch('[data-cy=include-gas-costs-switch]', false);
+    await pageAccounting.changeSwitch('[data-testid=include-gas-costs-switch]', false);
   });
 
   test('change tax free period value and switch & validate UI message', async () => {
     await pageAccounting.setTaxFreePeriodDays('50');
-    await pageAccounting.changeSwitch('[data-cy=taxfree-period-switch]', false);
+    await pageAccounting.changeSwitch('[data-testid=taxfree-period-switch]', false);
   });
 
   test('change cost basis fee settings & validate UI message', async () => {
-    await pageAccounting.verifySwitchState('[data-cy=include-fees-in-cost-basis-switch]', true);
-    await pageAccounting.changeSwitch('[data-cy=include-fees-in-cost-basis-switch]', false);
+    await pageAccounting.verifySwitchState('[data-testid=include-fees-in-cost-basis-switch]', true);
+    await pageAccounting.changeSwitch('[data-testid=include-fees-in-cost-basis-switch]', false);
   });
 
   test('verify changes persist', async () => {
     await ctx.app.relogin(ctx.username);
     await pageAccounting.visit();
-    await pageAccounting.verifySwitchState('[data-cy=crypto2crypto-switch]', false);
-    await pageAccounting.verifySwitchState('[data-cy=include-gas-costs-switch]', false);
-    await pageAccounting.verifySwitchState('[data-cy=taxfree-period-switch]', false);
-    await pageAccounting.verifySwitchState('[data-cy=include-fees-in-cost-basis-switch]', false);
+    await pageAccounting.verifySwitchState('[data-testid=crypto2crypto-switch]', false);
+    await pageAccounting.verifySwitchState('[data-testid=include-gas-costs-switch]', false);
+    await pageAccounting.verifySwitchState('[data-testid=taxfree-period-switch]', false);
+    await pageAccounting.verifySwitchState('[data-testid=include-fees-in-cost-basis-switch]', false);
   });
 });

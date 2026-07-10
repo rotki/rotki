@@ -1,43 +1,15 @@
 <script setup lang="ts">
-import SettingsOption from '@/modules/settings/controls/SettingsOption.vue';
-import { useSetting } from '@/modules/settings/use-setting';
+import SettingSwitch from '@/modules/settings/controls/SettingSwitch.vue';
 
-const animationsEnabled = ref<boolean>(true);
 const { t } = useI18n({ useScope: 'global' });
-
-const enabled = useSetting('animationsEnabled');
-const transform = (value: boolean) => !value;
-
-onMounted(() => {
-  set(animationsEnabled, get(enabled));
-});
-
-function updateSetting(value: boolean, update: (newValue: any) => void) {
-  set(animationsEnabled, !value);
-  update(value);
-}
 </script>
 
 <template>
-  <SettingsOption
+  <SettingSwitch
     setting="animationsEnabled"
-    session-setting
-    :transform="transform"
+    inverted
+    data-testid="animations-enabled"
+    :label="t('frontend_settings.animations.animations_note')"
     :error-message="t('frontend_settings.animations.validation.error')"
-  >
-    <template #title>
-      {{ t('frontend_settings.animations.title') }}
-    </template>
-    <template #default="{ error, success, updateImmediate }">
-      <RuiSwitch
-        color="primary"
-        data-testid="animations-enabled"
-        :model-value="!animationsEnabled"
-        :label="t('frontend_settings.animations.animations_note')"
-        :success-messages="success"
-        :error-messages="error"
-        @update:model-value="updateSetting($event, updateImmediate)"
-      />
-    </template>
-  </SettingsOption>
+  />
 </template>

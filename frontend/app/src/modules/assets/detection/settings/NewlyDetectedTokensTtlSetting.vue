@@ -1,13 +1,7 @@
 <script setup lang="ts">
-import useVuelidate from '@vuelidate/core';
 import { between, helpers, required } from '@vuelidate/validators';
 import { Constraints } from '@/modules/core/common/constraints';
-import { useValidation } from '@/modules/core/common/use-validation';
-import { toMessages } from '@/modules/core/common/validation/validation';
-import SettingsOption from '@/modules/settings/controls/SettingsOption.vue';
-import { useSetting } from '@/modules/settings/use-setting';
-
-const ttlDays = ref<string>('30');
+import SettingNumber from '@/modules/settings/controls/SettingNumber.vue';
 
 const { t } = useI18n({ useScope: 'global' });
 
@@ -15,7 +9,7 @@ const minTtlDays = Constraints.NEWLY_DETECTED_TOKENS_MIN_TTL_DAYS;
 const maxTtlDays = Constraints.NEWLY_DETECTED_TOKENS_MAX_TTL_DAYS;
 
 const rules = {
-  ttlDays: {
+  value: {
     between: helpers.withMessage(
       t('frontend_settings.newly_detected_tokens.ttl_days.validation.invalid_range', {
         max: maxTtlDays,
@@ -26,48 +20,15 @@ const rules = {
     required: helpers.withMessage(t('frontend_settings.newly_detected_tokens.ttl_days.validation.non_empty'), required),
   },
 };
-
-const currentTtlDays = useSetting('newlyDetectedTokensTtlDays');
-
-function resetTtlDays(): void {
-  set(ttlDays, get(currentTtlDays).toString());
-}
-
-const v$ = useVuelidate(rules, { ttlDays }, { $autoDirty: true });
-const { callIfValid } = useValidation(v$);
-
-const transform = (value: string): number | string => (value ? Number.parseInt(value) : value);
-
-onMounted(() => {
-  resetTtlDays();
-});
 </script>
 
 <template>
-  <SettingsOption
+  <SettingNumber
     class="mt-1"
     setting="newlyDetectedTokensTtlDays"
-    :transform="transform"
+    :rules="rules"
+    :label="t('frontend_settings.newly_detected_tokens.ttl_days.label')"
+    :hint="t('frontend_settings.newly_detected_tokens.ttl_days.hint')"
     :error-message="t('frontend_settings.newly_detected_tokens.ttl_days.validation.error')"
-    @finished="resetTtlDays()"
-  >
-    <template #title>
-      {{ t('frontend_settings.newly_detected_tokens.ttl_days.title') }}
-    </template>
-    <template #default="{ error, success, update }">
-      <RuiTextField
-        v-model="ttlDays"
-        variant="outlined"
-        color="primary"
-        :label="t('frontend_settings.newly_detected_tokens.ttl_days.label')"
-        :hint="t('frontend_settings.newly_detected_tokens.ttl_days.hint')"
-        type="number"
-        :min="minTtlDays"
-        :max="maxTtlDays"
-        :success-messages="success"
-        :error-messages="error || toMessages(v$.ttlDays)"
-        @update:model-value="callIfValid($event, update)"
-      />
-    </template>
-  </SettingsOption>
+  />
 </template>

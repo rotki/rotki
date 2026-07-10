@@ -3,8 +3,9 @@ import useVuelidate from '@vuelidate/core';
 import { helpers, minValue } from '@vuelidate/validators';
 import { useValidation } from '@/modules/core/common/use-validation';
 import { toMessages } from '@/modules/core/common/validation/validation';
-import SettingsOption from '@/modules/settings/controls/SettingsOption.vue';
+import { useClearableMessages } from '@/modules/settings/use-clearable-messages';
 import { useSetting } from '@/modules/settings/use-setting';
+import { useSettingModel } from '@/modules/settings/use-setting-model';
 
 const emit = defineEmits<{
   updated: [];
@@ -12,12 +13,11 @@ const emit = defineEmits<{
 
 const { t } = useI18n({ useScope: 'global' });
 
-const updated = () => emit('updated');
-
-const multiplier = ref<string>('0');
-
 const balanceSaveFrequency = useSetting('balanceSaveFrequency');
-const multiplierSetting = useSetting('ssfGraphMultiplier');
+const { error: writeError, model, success: writeSuccess } = useSettingModel('ssfGraphMultiplier', { debounce: 1500 });
+const { clearAll, error, setError, setSuccess, success } = useClearableMessages();
+
+const multiplier = ref<string>(String(get(model)));
 
 const rules = {
   multiplier: {
@@ -27,12 +27,12 @@ const rules = {
 const v$ = useVuelidate(rules, { multiplier }, { $autoDirty: true });
 const { callIfValid } = useValidation(v$);
 
-const numericMultiplier = computed(() => {
+const numericMultiplier = computed<number>(() => {
   const multi = Number.parseInt(get(multiplier));
   return isNaN(multi) ? 0 : multi;
 });
 
-const period = computed(() => {
+const period = computed<number>(() => {
   const multi = get(numericMultiplier);
   if (multi <= 0)
     return 0;
@@ -40,19 +40,30 @@ const period = computed(() => {
   return multi * get(balanceSaveFrequency);
 });
 
-function resetState() {
-  set(multiplier, get(multiplierSetting).toString());
+function persist(): void {
+  set(model, get(numericMultiplier));
 }
 
-const transform = () => get(numericMultiplier);
-
-function finished() {
-  resetState();
-  updated();
+function onInput(value: string): void {
+  clearAll();
+  callIfValid(value, persist);
 }
 
-onMounted(() => {
-  resetState();
+watch(model, (value) => {
+  if (String(value) !== get(multiplier))
+    set(multiplier, String(value));
+});
+
+watch(writeSuccess, (saved) => {
+  if (saved) {
+    setSuccess('', true);
+    emit('updated');
+  }
+});
+
+watch(writeError, (message) => {
+  if (message)
+    setError(message, true);
 });
 </script>
 
@@ -66,24 +77,17 @@ onMounted(() => {
         {{ t('statistics_graph_settings.multiplier.subtitle') }}
       </template>
     </RuiCardHeader>
-    <SettingsOption
-      #default="{ error, success, update }"
-      setting="ssfGraphMultiplier"
-      :transform="transform"
-      @finished="finished()"
-    >
-      <RuiTextField
-        v-model="multiplier"
-        variant="outlined"
-        color="primary"
-        min="0"
-        :label="t('statistics_graph_settings.multiplier.label')"
-        type="number"
-        :messages="success"
-        :error-messages="error || toMessages(v$.multiplier)"
-        @update:model-value="callIfValid($event, update)"
-      />
-    </SettingsOption>
+    <RuiTextField
+      v-model="multiplier"
+      variant="outlined"
+      color="primary"
+      min="0"
+      :label="t('statistics_graph_settings.multiplier.label')"
+      type="number"
+      :success-messages="success"
+      :error-messages="error || toMessages(v$.multiplier)"
+      @update:model-value="onInput($event)"
+    />
 
     <div class="text-body-2 text-rui-text-secondary mt-2">
       <span v-if="period === 0">

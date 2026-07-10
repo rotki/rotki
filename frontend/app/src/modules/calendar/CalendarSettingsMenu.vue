@@ -8,8 +8,7 @@ import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
 import { logger } from '@/modules/core/common/logging/logging';
 import { useNotificationDispatcher } from '@/modules/core/notifications/use-notification-dispatcher';
 import { useGoogleCalendarApi } from '@/modules/settings/api/use-google-calendar-api';
-import SettingsOption from '@/modules/settings/controls/SettingsOption.vue';
-import { useSetting } from '@/modules/settings/use-setting';
+import SettingSwitch from '@/modules/settings/controls/SettingSwitch.vue';
 import { useBackendMessages } from '@/modules/shell/app/use-backend-messages';
 import { useInterop } from '@/modules/shell/app/use-electron-interop';
 import CardTitle from '@/modules/shell/components/CardTitle.vue';
@@ -19,8 +18,6 @@ const { t } = useI18n({ useScope: 'global' });
 const websiteUrl = import.meta.env.VITE_ROTKI_WEBSITE_URL;
 
 const showMenu = ref(false);
-const autoDelete = ref(true);
-const autoCreateReminders = ref(true);
 
 // Google Calendar integration
 const googleCalendarApi = useGoogleCalendarApi();
@@ -34,17 +31,6 @@ const connectedUserEmail = ref<string>('');
 const manualToken = ref<string>('');
 const manualRefreshToken = ref<string>('');
 const showTokenInput = ref(false);
-
-const autoCreateCalendarReminders = useSetting('autoCreateCalendarReminders');
-const autoDeleteCalendarEntries = useSetting('autoDeleteCalendarEntries');
-
-function setAutoDelete() {
-  set(autoDelete, get(autoDeleteCalendarEntries));
-}
-
-function setAutoCreate() {
-  set(autoCreateReminders, get(autoCreateCalendarReminders));
-}
 
 // Google Calendar functions
 async function checkGoogleCalendarStatus() {
@@ -242,8 +228,6 @@ async function disconnect() {
 }
 
 onMounted(() => {
-  setAutoDelete();
-  setAutoCreate();
   checkGoogleCalendarStatus();
 
   registerOAuthCallbackHandler(handleOAuthCallback);
@@ -284,36 +268,14 @@ onUnmounted(() => {
         {{ t('calendar.dialog.settings.title') }}
       </CardTitle>
       <div class="flex flex-col gap-1">
-        <SettingsOption
-          #default="{ updateImmediate, loading, error, success }"
+        <SettingSwitch
           setting="autoCreateCalendarReminders"
-          @finished="setAutoCreate()"
-        >
-          <RuiSwitch
-            v-model="autoCreateReminders"
-            :disabled="loading"
-            :label="t('calendar.dialog.settings.auto_create_reminders')"
-            color="primary"
-            :error-messages="error"
-            :success-messages="success"
-            @update:model-value="updateImmediate($event)"
-          />
-        </SettingsOption>
-        <SettingsOption
-          #default="{ updateImmediate, loading, error, success }"
+          :label="t('calendar.dialog.settings.auto_create_reminders')"
+        />
+        <SettingSwitch
           setting="autoDeleteCalendarEntries"
-          @finished="setAutoDelete()"
-        >
-          <RuiSwitch
-            v-model="autoDelete"
-            :disabled="loading"
-            :label="t('calendar.dialog.settings.auto_delete')"
-            color="primary"
-            :error-messages="error"
-            :success-messages="success"
-            @update:model-value="updateImmediate($event)"
-          />
-        </SettingsOption>
+          :label="t('calendar.dialog.settings.auto_delete')"
+        />
 
         <!-- Google Calendar Integration -->
         <div class="border-t border-default pt-4">

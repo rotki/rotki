@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import PriceRefresh from '@/modules/assets/prices/PriceRefresh.vue';
 import { useHistoricPriceCache } from '@/modules/assets/prices/use-historic-price-cache';
-import SettingsOption from '@/modules/settings/controls/SettingsOption.vue';
 import SettingCategoryHeader from '@/modules/settings/SettingCategoryHeader.vue';
+import { PriceOracle } from '@/modules/settings/types/price-oracle';
 import { PrioritizedListData, type PrioritizedListItemData } from '@/modules/settings/types/prioritized-list-data';
 import {
   ALCHEMY_PRIO_LIST_ITEM,
@@ -15,17 +15,28 @@ import {
   UNISWAP2_PRIO_LIST_ITEM,
   UNISWAP3_PRIO_LIST_ITEM,
 } from '@/modules/settings/types/prioritized-list-id';
-import { useSetting } from '@/modules/settings/use-setting';
+import { useClearableMessages } from '@/modules/settings/use-clearable-messages';
+import { useSettingModel } from '@/modules/settings/use-setting-model';
 import PrioritizedList from '@/modules/shell/components/PrioritizedList.vue';
 
-const currentOracles = ref<PrioritizedListId[]>([]);
-const historicOracles = ref<PrioritizedListId[]>([]);
+const { error: currentWriteError, model: currentOracles, success: currentWriteSuccess } = useSettingModel('currentPriceOracles', { debounce: 0 });
+const { error: historicWriteError, model: historicOracles, success: historicWriteSuccess } = useSettingModel('historicalPriceOracles', { debounce: 0 });
 
-const currentPriceOracles = useSetting('currentPriceOracles');
-const historicalPriceOracles = useSetting('historicalPriceOracles');
+const { clearAll: clearCurrent, error: currentError, setError: setCurrentError, setSuccess: setCurrentSuccess, success: currentSuccess } = useClearableMessages();
+const { clearAll: clearHistoric, error: historicError, setError: setHistoricError, setSuccess: setHistoricSuccess, success: historicSuccess } = useClearableMessages();
 
-function resetCurrentPriceOracles(): void {
-  set(currentOracles, get(currentPriceOracles));
+const priceOracleValues: string[] = Object.values(PriceOracle);
+
+function isPriceOracle(value: PrioritizedListId): value is PriceOracle {
+  return priceOracleValues.includes(value);
+}
+
+function updateCurrentOracles(value: PrioritizedListId[]): void {
+  set(currentOracles, value.filter(isPriceOracle));
+}
+
+function updateHistoricOracles(value: PrioritizedListId[]): void {
+  set(historicOracles, value.filter(isPriceOracle));
 }
 
 const historicalAvailableOraclesTyped: Array<PrioritizedListItemData<PrioritizedListId>> = [
@@ -53,19 +64,37 @@ function availableHistoricalOracles(): PrioritizedListData<PrioritizedListId> {
 
 const { reset: resetCachedHistoricalPrices } = useHistoricPriceCache();
 
-function resetHistoricalPriceOracles(resetPrices: boolean = false): void {
-  set(historicOracles, get(historicalPriceOracles));
+const { t } = useI18n({ useScope: 'global' });
 
-  if (resetPrices)
-    resetCachedHistoricalPrices();
-}
-
-onMounted(() => {
-  resetCurrentPriceOracles();
-  resetHistoricalPriceOracles();
+watch(currentOracles, () => {
+  clearCurrent();
 });
 
-const { t } = useI18n({ useScope: 'global' });
+watch(currentWriteSuccess, (saved) => {
+  if (saved)
+    setCurrentSuccess(t('price_oracle_settings.latest_prices_update'), true);
+});
+
+watch(currentWriteError, (message) => {
+  if (message)
+    setCurrentError(message, true);
+});
+
+watch(historicOracles, () => {
+  clearHistoric();
+});
+
+watch(historicWriteSuccess, (saved) => {
+  if (saved) {
+    setHistoricSuccess('', true);
+    resetCachedHistoricalPrices();
+  }
+});
+
+watch(historicWriteError, (message) => {
+  if (message)
+    setHistoricError(message, true);
+});
 </script>
 
 <template>
@@ -90,42 +119,29 @@ const { t } = useI18n({ useScope: 'global' });
       {{ t('price_oracle_selection.hint') }}
     </RuiAlert>
     <div class="grid gap-4 lg:grid-cols-2">
-      <SettingsOption
-        #default="{ error, success, updateImmediate }"
-        setting="currentPriceOracles"
-        :success-message="t('price_oracle_settings.latest_prices_update')"
-        @finished="resetCurrentPriceOracles()"
+      <PrioritizedList
+        :model-value="currentOracles"
+        :all-items="availableCurrentOracles()"
+        :status="{ error: currentError, success: currentSuccess }"
+        :item-data-name="t('price_oracle_settings.data_name')"
+        @update:model-value="updateCurrentOracles($event)"
       >
-        <PrioritizedList
-          :model-value="currentOracles"
-          :all-items="availableCurrentOracles()"
-          :status="{ error, success }"
-          :item-data-name="t('price_oracle_settings.data_name')"
-          @update:model-value="updateImmediate($event)"
-        >
-          <template #title>
-            {{ t('price_oracle_settings.latest_prices') }}
-          </template>
-        </PrioritizedList>
-      </SettingsOption>
+        <template #title>
+          {{ t('price_oracle_settings.latest_prices') }}
+        </template>
+      </PrioritizedList>
 
-      <SettingsOption
-        #default="{ error, success, updateImmediate }"
-        setting="historicalPriceOracles"
-        @finished="resetHistoricalPriceOracles(true)"
+      <PrioritizedList
+        :model-value="historicOracles"
+        :all-items="availableHistoricalOracles()"
+        :status="{ error: historicError, success: historicSuccess }"
+        :item-data-name="t('price_oracle_settings.data_name')"
+        @update:model-value="updateHistoricOracles($event)"
       >
-        <PrioritizedList
-          :model-value="historicOracles"
-          :all-items="availableHistoricalOracles()"
-          :status="{ error, success }"
-          :item-data-name="t('price_oracle_settings.data_name')"
-          @update:model-value="updateImmediate($event)"
-        >
-          <template #title>
-            {{ t('price_oracle_settings.historic_prices') }}
-          </template>
-        </PrioritizedList>
-      </SettingsOption>
+        <template #title>
+          {{ t('price_oracle_settings.historic_prices') }}
+        </template>
+      </PrioritizedList>
     </div>
   </div>
 </template>
