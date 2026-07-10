@@ -1,57 +1,20 @@
 <script setup lang="ts">
 import { Defaults } from '@/modules/core/common/defaults';
-import SettingsItem from '@/modules/settings/controls/SettingsItem.vue';
-import SettingsOption from '@/modules/settings/controls/SettingsOption.vue';
-import SettingResetConfirmButton from '@/modules/settings/SettingResetConfirmButton.vue';
-import { useSetting } from '@/modules/settings/use-setting';
+import SettingNumber from '@/modules/settings/controls/SettingNumber.vue';
 
-const DEFAULT = Defaults.BTC_DERIVATION_GAP_LIMIT;
-
-const btcDerivationGapLimit = ref<string>(DEFAULT.toString());
-const limit = useSetting('btcDerivationGapLimit');
 const { t } = useI18n({ useScope: 'global' });
 
-function successMessage(limit: string) {
-  return t('general_settings.validation.btc_derivation_gap.success', {
-    limit,
-  });
+function successMessage(limit: number): string {
+  return t('general_settings.validation.btc_derivation_gap.success', { limit });
 }
-
-function reset(update: (value: number) => void) {
-  update(DEFAULT);
-  set(btcDerivationGapLimit, DEFAULT.toString());
-}
-
-onMounted(() => {
-  set(btcDerivationGapLimit, get(limit).toString());
-});
 </script>
 
 <template>
-  <SettingsItem>
-    <template #title>
-      {{ t('general_settings.labels.btc_derivation_gap') }}
-    </template>
-    <SettingsOption
-      #default="{ error, success, update, updateImmediate }"
-      setting="btcDerivationGapLimit"
-      :error-message="t('general_settings.validation.btc_derivation_gap.error')"
-      :success-message="successMessage"
-    >
-      <div class="flex items-start w-full">
-        <RuiTextField
-          v-model.number="btcDerivationGapLimit"
-          variant="outlined"
-          color="primary"
-          class="w-full"
-          :label="t('general_settings.labels.btc_derivation_gap')"
-          type="number"
-          :success-messages="success"
-          :error-messages="error"
-          @update:model-value="update($event ? parseInt($event) : $event)"
-        />
-        <SettingResetConfirmButton @confirm="reset(updateImmediate)" />
-      </div>
-    </SettingsOption>
-  </SettingsItem>
+  <SettingNumber
+    setting="btcDerivationGapLimit"
+    :label="t('general_settings.labels.btc_derivation_gap')"
+    :default="Defaults.BTC_DERIVATION_GAP_LIMIT"
+    :error-message="t('general_settings.validation.btc_derivation_gap.error')"
+    :success-message="successMessage"
+  />
 </template>

@@ -27,9 +27,25 @@ const { t } = useI18n({ useScope: 'global' });
     <template #subtitle>
       {{ t('general_settings.subtitle') }}
     </template>
-    <UsageAnalyticsSetting :id="SettingsHighlightIds.USAGE_ANALYTICS" />
-    <AutoDetectTokensSetting :id="SettingsHighlightIds.AUTO_DETECT_TOKENS" />
+    <SettingsItem :id="SettingsHighlightIds.USAGE_ANALYTICS">
+      <template #title>
+        {{ t('general_settings.usage_analytics.title') }}
+      </template>
+      <UsageAnalyticsSetting />
+    </SettingsItem>
+    <SettingsItem :id="SettingsHighlightIds.AUTO_DETECT_TOKENS">
+      <template #title>
+        {{ t('general_settings.auto_detect_tokens.title') }}
+      </template>
+      <AutoDetectTokensSetting />
+    </SettingsItem>
     <SettingsItem :id="SettingsHighlightIds.AUTO_DETECT_TOKENS_ON_LOGIN">
+      <template #title>
+        {{ t('general_settings.auto_detect_tokens_on_login.title') }}
+      </template>
+      <template #subtitle>
+        {{ t('general_settings.auto_detect_tokens_on_login.subtitle') }}
+      </template>
       <AutoDetectTokensOnLoginSetting />
     </SettingsItem>
     <SettingsItem :id="SettingsHighlightIds.AUTO_DETECT_TOKENS_COOLDOWN">
@@ -46,8 +62,18 @@ const { t } = useI18n({ useScope: 'global' });
     </SettingsItem>
     <AskUserUponSizeDiscrepancySetting :id="SettingsHighlightIds.ASK_SIZE_DISCREPANCY" />
     <VersionUpdateFrequencySetting :id="SettingsHighlightIds.VERSION_UPDATE_CHECK" />
-    <BalanceSaveFrequencySetting :id="SettingsHighlightIds.BALANCE_SAVE_FREQUENCY" />
-    <BtcDerivationGapLimitSetting :id="SettingsHighlightIds.BTC_DERIVATION_GAP" />
+    <SettingsItem :id="SettingsHighlightIds.BALANCE_SAVE_FREQUENCY">
+      <template #title>
+        {{ t('general_settings.balance_frequency.title') }}
+      </template>
+      <BalanceSaveFrequencySetting />
+    </SettingsItem>
+    <SettingsItem :id="SettingsHighlightIds.BTC_DERIVATION_GAP">
+      <template #title>
+        {{ t('general_settings.labels.btc_derivation_gap') }}
+      </template>
+      <BtcDerivationGapLimitSetting />
+    </SettingsItem>
     <SettingsItem :id="SettingsHighlightIds.DATE_FORMAT">
       <template #title>
         {{ t('date_format_help.title') }}

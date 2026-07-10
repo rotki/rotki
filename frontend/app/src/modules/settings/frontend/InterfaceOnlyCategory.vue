@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import SettingsItem from '@/modules/settings/controls/SettingsItem.vue';
 import Explorers from '@/modules/settings/explorers/Explorers.vue';
 import AnimationsEnabledSetting from '@/modules/settings/frontend/AnimationsEnabledSetting.vue';
 import PersistPrivacySettings from '@/modules/settings/frontend/PersistPrivacySettings.vue';
@@ -21,11 +22,26 @@ const { t } = useI18n({ useScope: 'global' });
     </template>
     <LanguageSetting />
     <AnimationsEnabledSetting :id="SettingsHighlightIds.ANIMATIONS" />
-    <PersistTableSortingSetting :id="SettingsHighlightIds.PERSIST_TABLE_SORTING" />
+    <SettingsItem :id="SettingsHighlightIds.PERSIST_TABLE_SORTING">
+      <template #title>
+        {{ t('frontend_settings.persist_table_sorting.title') }}
+      </template>
+      <PersistTableSortingSetting />
+    </SettingsItem>
     <ScrambleDataSetting :id="SettingsHighlightIds.SCRAMBLE" />
-    <PersistPrivacySettings :id="SettingsHighlightIds.PERSIST_PRIVACY" />
+    <SettingsItem :id="SettingsHighlightIds.PERSIST_PRIVACY">
+      <template #title>
+        {{ t('frontend_settings.persist_privacy.title') }}
+      </template>
+      <PersistPrivacySettings />
+    </SettingsItem>
     <RefreshSetting :id="SettingsHighlightIds.REFRESH_BALANCE" />
-    <QueryPeriodSetting :id="SettingsHighlightIds.PERIODIC_QUERY" />
+    <SettingsItem :id="SettingsHighlightIds.PERIODIC_QUERY">
+      <template #title>
+        {{ t('frontend_settings.periodic_query.title') }}
+      </template>
+      <QueryPeriodSetting />
+    </SettingsItem>
     <Explorers :id="SettingsHighlightIds.EXPLORERS" />
     <HistoryQueryIndicatorSettings />
   </SettingCategory>

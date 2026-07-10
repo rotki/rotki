@@ -1,13 +1,5 @@
 <script setup lang="ts">
-import SettingsOption from '@/modules/settings/controls/SettingsOption.vue';
-import { useSetting } from '@/modules/settings/use-setting';
-
-const useAssetCollectionsInCostBasis = ref<boolean>(true);
-const enabled = useSetting('useAssetCollectionsInCostBasis');
-
-onMounted(() => {
-  set(useAssetCollectionsInCostBasis, get(enabled));
-});
+import SettingSwitch from '@/modules/settings/controls/SettingSwitch.vue';
 
 const { t } = useI18n({ useScope: 'global' });
 
@@ -19,20 +11,12 @@ function getSuccessMessage(enabled: boolean): string {
 </script>
 
 <template>
-  <SettingsOption
-    #default="{ error, success, update }"
+  <SettingSwitch
     setting="useAssetCollectionsInCostBasis"
+    data-cy="use-asset-collections-in-cost-basis-switch"
+    :debounce="1500"
+    :label="t('accounting_settings.trade.labels.use_asset_collections_in_cost_basis')"
     :error-message="t('account_settings.messages.use_asset_collections_in_cost_basis.error')"
     :success-message="getSuccessMessage"
-  >
-    <RuiSwitch
-      v-model="useAssetCollectionsInCostBasis"
-      data-cy="use-asset-collections-in-cost-basis-switch"
-      :success-messages="success"
-      :error-messages="error"
-      :label="t('accounting_settings.trade.labels.use_asset_collections_in_cost_basis')"
-      color="primary"
-      @update:model-value="update($event)"
-    />
-  </SettingsOption>
+  />
 </template>

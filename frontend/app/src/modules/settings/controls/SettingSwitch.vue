@@ -16,7 +16,7 @@ const {
   errorMessage = '',
   debounce = 0,
 } = defineProps<{
-  setting: WritableSettingKeyOf<boolean>;
+  setting: WritableSettingKeyOf<boolean | null | undefined>;
   label?: string;
   /** Static text, or a callback given the persisted value (e.g. distinct enabled/disabled copy). */
   successMessage?: string | ((value: boolean) => string);
@@ -24,16 +24,32 @@ const {
   debounce?: number;
 }>();
 
+const emit = defineEmits<{
+  /** Fired after a successful persist, mirroring the old `SettingsOption` `@finished` hook. */
+  updated: [value: boolean];
+}>();
+
 const { error: writeError, model, success: writeSuccess } = useSettingModel(setting, { debounce });
 const { clearAll, error, setError, setSuccess, success } = useClearableMessages();
+
+// The switch needs a plain boolean; nullable-boolean settings read `null`/`undefined` before the user
+// has ever toggled them, which we treat as off. Writes always push a concrete boolean.
+const enabled = computed<boolean>({
+  get: () => get(model) ?? false,
+  set: (value) => {
+    set(model, value);
+  },
+});
 
 watch(model, () => {
   clearAll();
 });
 
 watch(writeSuccess, (saved) => {
-  if (saved)
-    setSuccess(typeof successMessage === 'function' ? successMessage(get(model)) : successMessage, true);
+  if (saved) {
+    setSuccess(typeof successMessage === 'function' ? successMessage(get(enabled)) : successMessage, true);
+    emit('updated', get(enabled));
+  }
 });
 
 watch(writeError, (message) => {
@@ -44,7 +60,7 @@ watch(writeError, (message) => {
 
 <template>
   <RuiSwitch
-    v-model="model"
+    v-model="enabled"
     color="primary"
     :label="label"
     :success-messages="success"
