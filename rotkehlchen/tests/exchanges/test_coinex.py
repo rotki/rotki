@@ -15,35 +15,32 @@ from rotkehlchen.history.events.utils import create_group_identifier_from_unique
 from rotkehlchen.types import Location, Timestamp, TimestampMS
 
 
-def test_name() -> None:
-    exchange = Coinex('coinex', 'a', b'a', object(), object())
-    assert exchange.location == Location.COINEX
-    assert exchange.name == 'coinex'
+def test_name(coinex_exchange: Coinex) -> None:
+    assert coinex_exchange.location == Location.COINEX
+    assert coinex_exchange.name == 'coinex'
 
 
-def test_signature() -> None:
-    exchange = Coinex('coinex', 'access', b'secret', object(), object())
+def test_signature(coinex_exchange: Coinex) -> None:
     request_path = '/v2/spot/user-deals?market=BTCUSDT&market_type=SPOT&page=1&limit=100'
     timestamp = '1700490703564'
-    assert exchange._generate_signature(
+    assert coinex_exchange._generate_signature(
         method='GET',
         request_path=request_path,
         timestamp=timestamp,
     ) == hmac.new(
-        b'secret',
-        msg=f'GET{request_path}{timestamp}'.encode('latin-1'),
+        coinex_exchange.secret,
+        msg=f'GET{request_path}{timestamp}'.encode(),
         digestmod=sha256,
-    ).hexdigest().lower()
+    ).hexdigest()
 
 
-def test_api_query_headers() -> None:
-    exchange = Coinex('coinex', 'access', b'secret', object(), object())
+def test_api_query_headers(coinex_exchange: Coinex) -> None:
+    assert coinex_exchange.session.headers['X-COINEX-KEY'] == coinex_exchange.api_key
 
     def mock_get(url, **kwargs):  # pylint: disable=unused-argument
         headers = kwargs['headers']
-        assert headers['X-COINEX-KEY'] == 'access'
         assert headers['X-COINEX-TIMESTAMP'] == '1700490703564'
-        assert headers['X-COINEX-SIGN'] == exchange._generate_signature(
+        assert headers['X-COINEX-SIGN'] == coinex_exchange._generate_signature(
             method='GET',
             request_path='/v2/assets/spot/balance',
             timestamp='1700490703564',
@@ -60,19 +57,21 @@ def test_api_query_headers() -> None:
         return Response()
 
     with (
-        patch.object(exchange.session, 'get', side_effect=mock_get),
+        patch.object(coinex_exchange.session, 'get', side_effect=mock_get),
         patch('rotkehlchen.exchanges.coinex.ts_now_in_ms', return_value=1700490703564),
     ):
-        assert exchange._api_query(endpoint='/assets/spot/balance') == []
+        assert coinex_exchange._api_query(
+            endpoint='/assets/spot/balance',
+        ) == {'code': 0, 'data': [], 'message': 'OK'}
 
 
 @pytest.mark.parametrize('should_mock_current_price_queries', [True])
 def test_query_balances(coinex_exchange: Coinex) -> None:
-    with patch.object(coinex_exchange, '_api_query', return_value=[
+    with patch.object(coinex_exchange, '_api_query', return_value={'code': 0, 'data': [
         {'ccy': 'BTC', 'available': '1.1', 'frozen': '0.4'},
         {'ccy': 'USDT', 'available': '2', 'frozen': '0'},
         {'ccy': 'ETH', 'available': '0', 'frozen': '0'},
-    ]):
+    ], 'message': 'OK'}):
         balances, msg = coinex_exchange.query_balances()
 
     assert msg == ''
@@ -84,7 +83,7 @@ def test_query_balances(coinex_exchange: Coinex) -> None:
 
 def test_query_asset_movements(coinex_exchange: Coinex) -> None:
     responses = iter([
-        [
+        {'code': 0, 'data': [
             {
                 'deposit_id': 14270229,
                 'created_at': 1637212022134,
@@ -98,9 +97,22 @@ def test_query_asset_movements(coinex_exchange: Coinex) -> None:
                 'confirmations': 12,
                 'status': 'finished',
                 'remark': '',
+            }, {  # deposit outside the queried range that has to be filtered out
+                'deposit_id': 14270230,
+                'created_at': 1637212025134,
+                'tx_id': '0xdeposit2',
+                'ccy': 'USDT',
+                'chain': 'CSC',
+                'deposit_method': 'on_chain',
+                'amount': '5',
+                'actual_amount': '5',
+                'to_address': '0xabc',
+                'confirmations': 12,
+                'status': 'finished',
+                'remark': '',
             },
-        ],
-        [
+        ], 'pagination': {'total': 2, 'has_next': False}, 'message': 'OK'},
+        {'code': 0, 'data': [
             {
                 'withdraw_id': 206,
                 'created_at': 1637212023134,
@@ -115,7 +127,7 @@ def test_query_asset_movements(coinex_exchange: Coinex) -> None:
                 'status': 'finished',
                 'remark': '',
             },
-        ],
+        ], 'pagination': {'total': 1, 'has_next': False}, 'message': 'OK'},
     ])
 
     with patch.object(
@@ -158,7 +170,7 @@ def test_query_asset_movements(coinex_exchange: Coinex) -> None:
             event_subtype=HistoryEventSubType.SPEND,
             timestamp=TimestampMS(1637212023134),
             asset=A_USDT,
-            amount=FVal('1'),
+            amount=FVal('0.9'),  # actual_amount, without the 0.1 fee
             unique_id='withdrawal-206',
             extra_data={'address': '0xdef', 'transaction_id': '0xwithdraw'},
         ), AssetMovement(
@@ -178,21 +190,41 @@ def test_query_trades(coinex_exchange: Coinex) -> None:
         market='BTCUSDT',
         base_asset_symbol='BTC',
         quote_asset_symbol='USDT',
-        base_asset=A_BTC,
-        quote_asset=A_USDT,
+        base_asset=A_BTC.resolve_to_asset_with_oracles(),
+        quote_asset=A_USDT.resolve_to_asset_with_oracles(),
     )
     with (
         patch.object(coinex_exchange, '_query_markets', return_value=[market]),
-        patch.object(coinex_exchange, '_api_query', return_value=[{
-            'created_at': 1689152421692,
-            'market': 'BTCUSDT',
-            'side': 'buy',
-            'order_id': 8678890,
-            'filled_amount': '0.00000325',
-            'filled_value': '0.0998348650',
-            'base_fee': '0',
-            'quote_fee': '0.0001',
-        }]) as api_query,
+        patch.object(coinex_exchange, '_api_query', return_value={'code': 0, 'data': [
+            {
+                'created_at': '1689152421692',  # str on purpose since docs examples show strings
+                'market': 'BTCUSDT',
+                'side': 'buy',
+                'order_id': 8678890,
+                'filled_amount': '0.00000325',
+                'filled_value': '0.0998348650',
+                'base_fee': '0',
+                'quote_fee': '0.0001',
+            }, {  # trade outside the queried range that has to be filtered out
+                'created_at': 1689152425000,
+                'market': 'BTCUSDT',
+                'side': 'sell',
+                'order_id': 8678891,
+                'filled_amount': '1',
+                'filled_value': '30000',
+                'base_fee': '0',
+                'quote_fee': '30',
+            }, {  # trade in a delisted/unknown market that has to be skipped
+                'created_at': 1689152421700,
+                'market': 'LUNAUSDT',
+                'side': 'buy',
+                'order_id': 8678892,
+                'filled_amount': '1',
+                'filled_value': '1',
+                'base_fee': '0',
+                'quote_fee': '0.001',
+            },
+        ], 'pagination': {'total': 3, 'has_next': False}, 'message': 'OK'}) as api_query,
     ):
         trades = coinex_exchange._query_trades(
             start_ts=Timestamp(1689152421),
@@ -203,12 +235,13 @@ def test_query_trades(coinex_exchange: Coinex) -> None:
         endpoint='/spot/finished-order',
         options={
             'market_type': 'SPOT',
-            'start_time': 1689152421000,
-            'end_time': 1689152422000,
             'page': 1,
             'limit': API_MAX_LIMIT,
         },
     )]
+    assert coinex_exchange.msg_aggregator.consume_errors() == [
+        'Skipped CoinEx trades in unknown or delisted markets: LUNAUSDT',
+    ]
     group_identifier = create_group_identifier_from_unique_id(
         location=Location.COINEX,
         unique_id='trade-8678890',
@@ -239,4 +272,48 @@ def test_query_trades(coinex_exchange: Coinex) -> None:
             location_label='coinex',
             group_identifier=group_identifier,
         ),
+    ]
+
+
+def test_paginated_query_follows_has_next(coinex_exchange: Coinex) -> None:
+    """Test that pagination follows the API's has_next flag
+    even when pages are smaller than the requested limit.
+    """
+    def make_deposit(deposit_id: int) -> dict:
+        return {
+            'deposit_id': deposit_id,
+            'created_at': 1637212022134,
+            'tx_id': f'0xdeposit{deposit_id}',
+            'ccy': 'USDT',
+            'chain': 'CSC',
+            'deposit_method': 'on_chain',
+            'amount': '200',
+            'actual_amount': '200',
+            'to_address': '0xabc',
+            'confirmations': 12,
+            'status': 'finished',
+            'remark': '',
+        }
+
+    responses = iter([
+        {'code': 0, 'data': [make_deposit(1)], 'pagination': {'total': 2, 'has_next': True}, 'message': 'OK'},  # noqa: E501
+        {'code': 0, 'data': [make_deposit(2)], 'pagination': {'total': 2, 'has_next': False}, 'message': 'OK'},  # noqa: E501
+    ])
+    with patch.object(
+            coinex_exchange,
+            '_api_query',
+            side_effect=lambda **kwargs: next(responses),
+    ) as mock_api_query:
+        deposits = coinex_exchange._query_asset_movements(
+            movement_type='deposit',
+            start_ts=Timestamp(1637212022),
+            end_ts=Timestamp(1637212024),
+        )
+
+    assert [entry.kwargs['options']['page'] for entry in mock_api_query.call_args_list] == [1, 2]
+    assert [movement.group_identifier for movement in deposits] == [
+        create_group_identifier_from_unique_id(
+            location=Location.COINEX,
+            unique_id=f'deposit-{deposit_id}',
+        ) for deposit_id in (1, 2)
     ]
