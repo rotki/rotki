@@ -156,6 +156,9 @@ def test_connect_to_own_node(polkadot_manager: 'SubstrateManager'):
     polkadot_manager.attempt_connections()
     assert [task.task_name for task in polkadot_manager.task_supervisor.tasks] == ['polkadot manager connection to dwellir node']  # noqa: E501
     polkadot_manager.task_supervisor.clear()
+    # clear() latches cancel-at-registration for teardown; lift it so the
+    # connection tasks spawned below are not cancelled at birth
+    polkadot_manager.task_supervisor.allow_new_tasks()
     polkadot_manager.task_supervisor.tasks = []
     polkadot_manager.own_rpc_endpoint = 'http://localhost:1234'
     polkadot_manager.attempt_connections()

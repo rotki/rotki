@@ -27,7 +27,7 @@ from rotkehlchen.api.websockets.typedefs import WebsocketSendError
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 
 if TYPE_CHECKING:
-    from collections.abc import Iterable, Callable
+    from collections.abc import Callable, Iterable
 
     from a2wsgi.asgi_typing import ASGIApp, Receive, Scope, Send
     from flask import Flask
