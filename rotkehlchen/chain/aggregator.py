@@ -420,7 +420,11 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
                 self.activate_module(name)
 
     def iterate_modules(self) -> Iterator[tuple[str, EthereumModule]]:
-        yield from self.eth_modules.items()
+        # snapshot the items: a settings update can activate/deactivate modules on
+        # another thread while e.g. a premium status change on the scheduler thread
+        # iterates, and the RuntimeError a live-dict iteration raises there would
+        # kill the main loop task and with it all background scheduling
+        yield from list(self.eth_modules.items())
 
     def queried_addresses_for_module(self, module: ModuleName) -> tuple[ChecksumEvmAddress, ...]:
         """Returns the addresses to query for the given module/protocol"""
