@@ -1,7 +1,6 @@
 import logging
 import shutil
 from collections.abc import Callable, Iterator
-from contextlib import suppress
 from pathlib import Path
 from threading import Lock
 from time import perf_counter
@@ -2557,21 +2556,3 @@ class GlobalDBHandler:
                 'SELECT protocol FROM evm_tokens WHERE identifier=?;',
                 (asset_identifier,),
             ).fetchone()) is not None else None
-
-    def clear_locks(self) -> None:
-        """Recover packaged_db_lock if a task abandoned at logout (cancelled but
-        not yet at its next checkpoint) died while holding it, so the next
-        session does not block on it forever.
-
-        The connection's driver locks (transaction_lock/in_callback) and the
-        savepoint bookkeeping are deliberately left alone: they are only ever
-        held through context managers whose cleanup runs even on cancellation,
-        so any holder is a live thread that will release them itself and the
-        next session at worst briefly blocks on it. Force-releasing them would
-        hand the transaction slot to the next session while the dying task's
-        transaction is still open on this process-lifetime connection, letting
-        the dying task's rollback wipe the new session's writes and its cleanup
-        release a lock the new session owns.
-        """
-        with suppress(RuntimeError):  # raised when not held, which is the common case
-            self.packaged_db_lock.release()

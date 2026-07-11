@@ -725,10 +725,6 @@ class Rotkehlchen:
         PriceHistorian._PriceHistorian__instance = None  # type: ignore  #  has no attribute "_PriceHistorian__instance" but is the name used by python
         Inquirer.clear()
 
-        # We have locks in the chain aggregator that gets removed in this
-        # function and in the db connections. The user db gets replaced but the globaldb
-        # needs to be released.
-        GlobalDBHandler().clear_locks()
         self.user_is_logged_in = False
         log.info('User successfully logged out', user=user)
 
