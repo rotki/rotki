@@ -316,43 +316,46 @@ class DBAccountingReports:
         May raise:
         - InputError if the report ID does not exist in the DB
         """
-        cursor = self.db.conn_transient.cursor()
         report_id = filter_.report_id
-        query_result = cursor.execute(
-            'SELECT COUNT(*) FROM pnl_reports WHERE identifier=?',
-            (report_id,),
-        )
-        if query_result.fetchone()[0] != 1:
-            raise InputError(
-                f'Tried to get PnL events from non existing report with id {report_id}',
+        # context-managed cursor: leaking it would leave its statement for GC
+        # finalization, which bypasses the driver's statement_lock and can
+        # deadlock against a thread mid-statement on this shared connection
+        with self.db.conn_transient.cursor() as cursor:
+            query_result = cursor.execute(
+                'SELECT COUNT(*) FROM pnl_reports WHERE identifier=?',
+                (report_id,),
             )
-
-        query, bindings = filter_.prepare()
-        query = f'SELECT timestamp, data FROM pnl_events {query}'
-        cursor.execute(query, bindings)
-
-        records = []
-        for result in cursor:
-            try:
-                record = ProcessedAccountingEvent.deserialize_from_db(result[0], result[1])
-            except DeserializationError as e:
-                self.db.msg_aggregator.add_error(
-                    f'Error deserializing AccountingEvent from the DB. Skipping it.'
-                    f'Error was: {e!s}',
+            if query_result.fetchone()[0] != 1:
+                raise InputError(
+                    f'Tried to get PnL events from non existing report with id {report_id}',
                 )
-                continue
 
-            records.append(record)
+            query, bindings = filter_.prepare()
+            query = f'SELECT timestamp, data FROM pnl_events {query}'
+            cursor.execute(query, bindings)
 
-        if filter_.pagination is not None:
-            no_pagination_filter = deepcopy(filter_)
-            no_pagination_filter.pagination = None
-            query, bindings = no_pagination_filter.prepare()
-            entries_found = cursor.execute(f'SELECT COUNT(*) FROM pnl_events {query}', bindings).fetchone()[0]  # noqa: E501
-            entries_total = entries_found
-        else:
-            entries_found = len(records)
-            entries_total = entries_found
+            records = []
+            for result in cursor:
+                try:
+                    record = ProcessedAccountingEvent.deserialize_from_db(result[0], result[1])
+                except DeserializationError as e:
+                    self.db.msg_aggregator.add_error(
+                        f'Error deserializing AccountingEvent from the DB. Skipping it.'
+                        f'Error was: {e!s}',
+                    )
+                    continue
+
+                records.append(record)
+
+            if filter_.pagination is not None:
+                no_pagination_filter = deepcopy(filter_)
+                no_pagination_filter.pagination = None
+                query, bindings = no_pagination_filter.prepare()
+                entries_found = cursor.execute(f'SELECT COUNT(*) FROM pnl_events {query}', bindings).fetchone()[0]  # noqa: E501
+                entries_total = entries_found
+            else:
+                entries_found = len(records)
+                entries_total = entries_found
 
         return _get_reports_or_events_maybe_limit(
             entry_type='events',

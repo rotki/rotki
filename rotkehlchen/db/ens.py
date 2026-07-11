@@ -94,8 +94,8 @@ class DBEns:
                 self.add_ens_mapping(write_cursor, address=address, name=name, now=now, source=source)  # noqa: E501
             except sqlcipher.IntegrityError:  # pylint: disable=no-member
                 # Means that we have an old name mapping in the DB which has by now expired
-                cursor = self.db.conn.cursor()
-                cursor.execute('DELETE FROM ens_mappings WHERE ens_name=?', (name,))
+                with self.db.conn.cursor() as cursor:  # context-managed: a leaked cursor's GC finalization bypasses the driver's statement lock  # noqa: E501
+                    cursor.execute('DELETE FROM ens_mappings WHERE ens_name=?', (name,))
                 self.add_ens_mapping(write_cursor, address=address, name=name, now=now, source=source)  # noqa: E501
 
             if name is not None:
