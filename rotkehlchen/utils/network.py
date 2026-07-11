@@ -8,7 +8,7 @@ import requests
 from requests.adapters import HTTPAdapter
 from urllib3.util import Retry
 
-from rotkehlchen.concurrency import cancellable_sleep
+from rotkehlchen.concurrency import cancellable_sleep, checkpoint
 from rotkehlchen.constants import GLOBAL_REQUESTS_TIMEOUT
 from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.misc import RemoteError, UnableToDecryptRemoteData
@@ -187,6 +187,7 @@ def retry_calls(
             if tries == 0:
                 raise RemoteError(
                     f'{location} query for {method_name} failed after {times} tries. Reason: {e}') from e  # noqa: E501
+            checkpoint()  # a cancelled task should not retry: each retry can be a full timeout
 
 
 @overload
