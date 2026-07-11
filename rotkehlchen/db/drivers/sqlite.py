@@ -913,9 +913,34 @@ class DBConnection:
             self.transaction_lock.release()
 
     @contextmanager
-    def critical_section_and_transaction_lock(self) -> Generator[None, None, None]:
-        with self._transaction_slot(), self.critical_section():
-            yield
+    def critical_section_and_transaction_lock(
+            self,
+            cancellable: bool = True,
+    ) -> Generator[None, None, None]:
+        """Hold the transaction slot and a critical section, in that order (the
+        reverse creates a deadlock cycle against write_ctx).
+
+        With cancellable=False the slot is taken with a plain blocking acquire
+        containing no cancellation checkpoints: for cleanup paths (e.g. detaching
+        an attached database) that must run even inside an already-cancelled task,
+        where the checkpoint of the normal acquire loop would raise before the
+        cleanup statement could execute.
+        """
+        if cancellable:
+            with self._transaction_slot(), self.critical_section():
+                yield
+            return
+
+        if __debug__:  # same lock-order check as _acquire_transaction_lock
+            assert self.critical_section_owner != threading.get_ident(), (
+                'attempted to acquire the transaction slot while inside a critical section'
+            )
+        self.transaction_lock.acquire()
+        try:
+            with self.critical_section():
+                yield
+        finally:
+            self.transaction_lock.release()
 
     def vacuum(self) -> None:
         """Helper function to vacuum the DB. Abstracted into its own function since
