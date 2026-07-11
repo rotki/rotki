@@ -357,6 +357,9 @@ class Rotkehlchen:
             resume_from_backup=resume_from_backup,
         )
 
+        # lift the previous logout's cancel-at-registration latch before anything
+        # of this session spawns supervised tasks
+        self.task_supervisor.allow_new_tasks()
         # unlock or create the DB
         self.user_directory = self.data.unlock(
             username=user,
