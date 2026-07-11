@@ -598,9 +598,8 @@ class EVMTransactionDecoder(TransactionDecoder['EvmTransaction', EvmDecodingRule
                 monerium_special_handling_event = True
 
             if (idx + 1) % MIN_LOGS_PROCESSED_TO_SLEEP == 0:
-                log.debug('Context switching out of the log event nr. %s of %s %s', idx + 1, self.evm_inquirer.chain_name, transaction)  # noqa: E501
                 checkpoint()  # cancellation checkpoint of the decoding loop
-                time.sleep(0)
+                time.sleep(0)  # release the GIL so concurrent DB readers interleave
 
             context = DecoderContext(
                 tx_log=tx_log,
