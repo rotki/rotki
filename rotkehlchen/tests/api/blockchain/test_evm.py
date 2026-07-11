@@ -488,6 +488,9 @@ def test_evm_account_deletion_does_not_wait_for_pending_txn_queries(
     task_manager = rotki.task_manager
     assert task_manager is not None
     task_manager.task_supervisor.clear()  # cancel any login leftovers to free capacity
+    # clear() latches cancel-at-registration for the logout/shutdown teardown; lift
+    # it since this session continues and spawns the tasks under test
+    task_manager.task_supervisor.allow_new_tasks()
     task_manager.max_tasks_num = 2
     now = ts_now()
     task_manager.potential_tasks = [task_manager._maybe_query_evm_transactions]

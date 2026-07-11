@@ -48,7 +48,7 @@ def generate_expected_info(
         'backend_default_arguments': {
             'max_logfiles_num': 3,
             'max_size_in_mb_all_logs': 300,
-            'sqlite_instructions': 5000,
+            'sqlite_instructions': DEFAULT_SQL_VM_INSTRUCTIONS_CB,
         },
     }
 

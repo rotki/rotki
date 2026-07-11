@@ -302,6 +302,7 @@ def test_complete_monerium_oauth_triggers_background_refresh(
         rotkehlchen_api_server: 'APIServer',
         start_with_valid_premium: bool,  # pylint: disable=unused-argument
 ) -> None:
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     with (
         patch(
             'rotkehlchen.api.v1.resources.has_premium_capability',
@@ -315,7 +316,7 @@ def test_complete_monerium_oauth_triggers_background_refresh(
                 'user_email': 'mock@monerium.com',
             },
         ) as complete_oauth_mock,
-        patch('rotkehlchen.api.services.integrations.spawn') as spawn_mock,
+        patch.object(rotki.task_supervisor, 'spawn_and_track') as spawn_mock,
     ):
         response = requests.put(
             api_url_for(rotkehlchen_api_server, 'moneriumoauthresource'),
@@ -336,7 +337,7 @@ def test_complete_monerium_oauth_triggers_background_refresh(
         expires_in=3600,
     )
     spawn_mock.assert_called_once()
-    spawned_fn = spawn_mock.call_args.args[0]
+    spawned_fn = spawn_mock.call_args.kwargs['method']
     assert spawned_fn.__name__ == 'get_and_process_orders'
 
 
