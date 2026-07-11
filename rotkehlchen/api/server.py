@@ -632,6 +632,17 @@ class APIServer:
             port=rest_port,
             log_config=None,  # inherit rotki's logging configuration
             access_log=False,  # the flask before/after request callbacks already log
+            # Shed load instead of queueing without bound: past this many concurrent
+            # connections (idle keep-alive and websockets included) uvicorn answers
+            # 503 immediately. Far above anything normal use reaches, but it turns a
+            # saturated server into fast failures clients can retry instead of a
+            # silently growing FIFO behind the WSGI worker pool.
+            limit_concurrency=256,
+            # The old gevent server never closed idle keep-alive connections; the
+            # uvicorn default of 5s races api consumers whose pooled requests
+            # sessions reuse a connection just as the server closes it, surfacing
+            # as spurious connection resets.
+            timeout_keep_alive=300,
             ws='websockets',
             # Generous keepalive pings: without them a silently dead TCP peer
             # (crashed frontend, network drop without FIN) is detected only by

@@ -38,10 +38,15 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
-# Concurrent WSGI dispatches of the bridge. While monkeypatching is active the
-# "threads" are greenlets so this is not a hard parallelism limit; after the
-# flip it becomes the worker pool size decision of phase 5.
-WSGI_BRIDGE_WORKERS = 30
+# Concurrent WSGI dispatches of the bridge -- a hard cap since the flip to real
+# threads: requests beyond it queue FIFO in the executor, so once the pool is
+# saturated by slow synchronous endpoints even /ping waits. Workers blocked on
+# DB or remote IO have released the GIL, so a generous pool is cheap and moves
+# that cliff far out; uvicorn's limit_concurrency (see api/server.py) makes
+# hitting it fail fast with 503s instead of queueing unboundedly. A dedicated
+# worker lane so that /ping, /tasks and /messages can never starve is
+# https://github.com/rotki/rotki/issues/12578
+WSGI_BRIDGE_WORKERS = 64
 
 # Cap on a client's pending-message queue. Since send() became an enqueue,
 # producers never block, so a client that stops reading (frozen renderer,
