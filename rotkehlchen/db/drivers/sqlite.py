@@ -951,39 +951,44 @@ class DBConnection:
         and succeed on the first try.
         """
         pragma_sql = f'PRAGMA wal_checkpoint{mode};'
-        # Acquire the callback lock to prevent progress callbacks from causing
-        # context switches during the checkpoint operation
         deadline = time.monotonic() + 2
-        with self.in_callback:
-            if __debug__:
-                logger.trace(f'START {pragma_sql}')
-
-            with self.cursor() as cursor:
-                while True:
-                    try:
-                        result = cursor.execute(pragma_sql).fetchone()
-                    except (sqlcipher.OperationalError, rsqlite.OperationalError) as e:  # pylint: disable=no-member
-                        if 'locked' not in str(e):
-                            raise
-                        if time.monotonic() >= deadline:
-                            logger.warning(
-                                'Skipped %s since a reader kept a statement '
-                                'active during all attempts. The WAL file stays until '
-                                'a later checkpoint.',
-                                pragma_sql,
-                            )
-                            return
-                        time.sleep(0.05)  # a reader mid-statement: let it finish
-                        continue
-                    break
-
+        while True:
+            # Acquire the callback lock per attempt -- NOT across the retry sleep:
+            # commit/rollback and the savepoint bookkeeping block on in_callback,
+            # so holding it for the whole retry window would stall every write on
+            # the connection while a reader keeps a statement active. Holding it
+            # around the attempt itself prevents progress callbacks from causing
+            # context switches during the checkpoint operation (see issue #5038).
+            with self.in_callback:
                 if __debug__:
-                    if len(result) != 3:  # should never happen, PRAGMA wal checkpoint returns 3 ints # noqa: E501
-                        result_text = ''
-                    else:
-                        result_text = f' with result(Status: {result[0]}, Wal file Pages: {result[1]}, Checkpointed Pages: {result[2]})'  # noqa: E501
+                    logger.trace(f'START {pragma_sql}')
+                try:
+                    with self.cursor() as cursor:
+                        result = cursor.execute(pragma_sql).fetchone()
+                except (sqlcipher.OperationalError, rsqlite.OperationalError) as e:  # pylint: disable=no-member
+                    if 'locked' not in str(e):
+                        raise
+                    result = None
 
-                    logger.trace(f'FINISH {pragma_sql}{result_text}')
+            if result is not None:
+                break
+            if time.monotonic() >= deadline:
+                logger.warning(
+                    'Skipped %s since a reader kept a statement '
+                    'active during all attempts. The WAL file stays until '
+                    'a later checkpoint.',
+                    pragma_sql,
+                )
+                return
+            time.sleep(0.05)  # a reader mid-statement: let it finish
+
+        if __debug__:
+            if len(result) != 3:  # should never happen, PRAGMA wal checkpoint returns 3 ints
+                result_text = ''
+            else:
+                result_text = f' with result(Status: {result[0]}, Wal file Pages: {result[1]}, Checkpointed Pages: {result[2]})'  # noqa: E501
+
+            logger.trace(f'FINISH {pragma_sql}{result_text}')
 
     @property
     def total_changes(self) -> int:
