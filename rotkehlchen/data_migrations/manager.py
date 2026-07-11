@@ -3,6 +3,7 @@ import traceback
 from collections.abc import Callable
 from typing import TYPE_CHECKING, NamedTuple
 
+from rotkehlchen.concurrency import TaskCancelledError
 from rotkehlchen.data_migrations.migrations.migration_1 import data_migration_1
 from rotkehlchen.data_migrations.migrations.migration_2 import data_migration_2
 from rotkehlchen.data_migrations.migrations.migration_3 import data_migration_3
@@ -97,6 +98,8 @@ class DataMigrationManager:
         self.progress_handler.new_round(version=migration.version)
         try:
             migration.function(self.rotki, self.progress_handler)
+        except TaskCancelledError:
+            raise  # the login task got cancelled: die, instead of treating it as a failed migration  # noqa: E501
         except BaseException as e:
             stacktrace = traceback.format_exc()
             error = f'Failed to run soft data migration to version {migration.version} due to {e!s}'  # noqa: E501

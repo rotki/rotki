@@ -11,6 +11,7 @@ from rotkehlchen.assets.asset import EvmToken
 from rotkehlchen.assets.resolver import AssetResolver
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.chain.gnosis.constants import BRIDGE_QUERIED_ADDRESS_PREFIX
+from rotkehlchen.concurrency import TaskCancelledError
 from rotkehlchen.constants import APPDIR_NAME, ONE
 from rotkehlchen.constants.assets import A_BTC, A_ETH
 from rotkehlchen.data_migrations.constants import LAST_USERDB_DATA_MIGRATION
@@ -324,6 +325,34 @@ def test_failed_migration(database: DBHandler) -> None:
     assert len(warnings) == 0
     assert len(errors) == 1
     assert errors[0] == 'Failed to run soft data migration to version 1 due to ngmi'
+
+
+@pytest.mark.parametrize('perform_upgrades_at_unlock', [False])
+@pytest.mark.parametrize('skip_sync_globaldb_assets', [True])
+@pytest.mark.parametrize('data_migration_version', [0])
+@pytest.mark.parametrize('new_db_unlock_actions', [None])
+def test_cancelled_migration(database: DBHandler) -> None:
+    """Test that a migration interrupted by task cancellation propagates instead of
+    being treated as a failed migration: the login task must die at the cancellation
+    instead of continuing (uncancelled) into the session teardown, and the user must
+    not get a spurious migration-failure error"""
+    rotki = MockRotkiForMigrations(database)
+
+    def cancelled_migration(rotki: MockDataForMigrations, progress_handler: 'MigrationProgressHandler') -> None:  # noqa: E501
+        raise TaskCancelledError('Cancelled due to logout')
+
+    rotki.msg_aggregator.consume_errors()  # discard db upgrade notification messages
+    with patch(
+        'rotkehlchen.data_migrations.manager.MIGRATION_LIST',
+        new=[MigrationRecord(version=1, function=cancelled_migration)],  # type: ignore
+    ), pytest.raises(TaskCancelledError):
+        DataMigrationManager(rotki).maybe_migrate_data()
+
+    with database.conn.read_ctx() as cursor:
+        last_data_migration = database.get_setting(cursor=cursor, name='last_data_migration')
+    assert last_data_migration == 0, 'no migration should have been recorded'
+    assert len(rotki.msg_aggregator.consume_errors()) == 0
+    assert len(rotki.msg_aggregator.consume_warnings()) == 0
 
 
 @pytest.mark.parametrize('data_migration_version', [2])

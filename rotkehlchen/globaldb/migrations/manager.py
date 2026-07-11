@@ -4,6 +4,7 @@ import traceback
 from collections.abc import Callable
 from typing import TYPE_CHECKING, NamedTuple
 
+from rotkehlchen.concurrency import TaskCancelledError
 from rotkehlchen.globaldb.migrations.migration2 import globaldb_data_migration_2
 from rotkehlchen.globaldb.migrations.migration3 import globaldb_data_migration_3
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -45,6 +46,8 @@ def maybe_apply_globaldb_migrations(connection: 'DBConnection') -> None:
         if current_migration < migration.version:
             try:
                 migration.function(connection)
+            except TaskCancelledError:
+                raise  # the running task got cancelled: die, instead of treating it as a failed migration  # noqa: E501
             except BaseException as e:
                 stacktrace = traceback.format_exc()
                 error = f'Failed to run globaldb soft data migration to version {migration.version} due to {e!s}'  # noqa: E501
