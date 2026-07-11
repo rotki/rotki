@@ -1,4 +1,5 @@
 import logging
+import threading
 from collections import defaultdict
 from collections.abc import Iterator
 from importlib import import_module
@@ -47,6 +48,12 @@ class ExchangeManager:
     def __init__(self, msg_aggregator: MessagesAggregator) -> None:
         self.connected_exchanges: dict[Location, list[ExchangeInterface]] = defaultdict(list)
         self.msg_aggregator = msg_aggregator
+        # Serializes compound mutations of connected_exchanges (check-then-append,
+        # check-then-rebind): concurrent api requests adding/removing exchanges
+        # could otherwise lose each other's update -- resurrecting a deleted
+        # exchange or registering a duplicate whose balances get double-counted.
+        # Never held across network calls.
+        self.registry_lock = threading.Lock()
 
     @staticmethod
     def _get_exchange_module_name(location: Location) -> str:
@@ -174,17 +181,18 @@ class ExchangeManager:
         Deletes an exchange with the specified name + location from both connected_exchanges
         and the DB.
         """
-        if self.get_exchange(name=name, location=location) is None:
-            return False, f'{location!s} exchange {name} is not registered'
+        with self.registry_lock:
+            if self.get_exchange(name=name, location=location) is None:
+                return False, f'{location!s} exchange {name} is not registered'
 
-        exchanges_list = self.connected_exchanges.get(location)
-        if exchanges_list is None:
-            return False, f'{location!s} exchange {name} is not registered'
+            exchanges_list = self.connected_exchanges.get(location)
+            if exchanges_list is None:
+                return False, f'{location!s} exchange {name} is not registered'
 
-        if len(exchanges_list) == 1:  # if is last exchange of this location
-            self.connected_exchanges.pop(location)
-        else:
-            self.connected_exchanges[location] = [x for x in exchanges_list if x.name != name]
+            if len(exchanges_list) == 1:  # if is last exchange of this location
+                self.connected_exchanges.pop(location)
+            else:
+                self.connected_exchanges[location] = [x for x in exchanges_list if x.name != name]
         with self.database.user_write() as write_cursor:  # Also remove it from the db
             self.database.remove_exchange(write_cursor=write_cursor, name=name, location=location)
             self.database.delete_used_query_range_for_exchange(
@@ -274,7 +282,12 @@ class ExchangeManager:
             )
             return False, message
 
-        self.connected_exchanges[location].append(exchange)
+        with self.registry_lock:
+            # re-check under the lock: a concurrent setup of the same exchange may
+            # have registered it while this one validated the credentials remotely
+            if self.get_exchange(name=name, location=location) is not None:
+                return False, f'{location!s} exchange {name} is already registered'
+            self.connected_exchanges[location].append(exchange)
         return True, ''
 
     def initialize_exchange(
@@ -334,7 +347,8 @@ class ExchangeManager:
                     database=database,
                     **extras,
                 )
-                self.connected_exchanges[location].append(exchange_obj)
+                with self.registry_lock:
+                    self.connected_exchanges[location].append(exchange_obj)
         log.debug('Initialized exchanges')
 
     def get_user_binance_pairs(self, name: str, location: Location) -> list[str]:
