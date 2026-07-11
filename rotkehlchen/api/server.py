@@ -633,11 +633,16 @@ class APIServer:
             log_config=None,  # inherit rotki's logging configuration
             access_log=False,  # the flask before/after request callbacks already log
             ws='websockets',
-            # no protocol-level keepalive pings, as with the old gevent server: a
-            # client whose pong is delayed (e.g. busy process) must not be dropped,
-            # and dead clients are already noticed and removed on failed sends
-            ws_ping_interval=None,
-            ws_ping_timeout=None,
+            # Generous keepalive pings: without them a silently dead TCP peer
+            # (crashed frontend, network drop without FIN) is detected only by
+            # TCP retransmit timeouts (15-30 min) or never, since send() is an
+            # enqueue that cannot fail for a nominally-open connection. The
+            # 60s/60s values are deliberately far above the 20s/20s defaults
+            # whose late pongs dropped GIL-starved clients in CI-like load, and
+            # browsers answer pings in the network stack so even a breakpointed
+            # frontend still pongs.
+            ws_ping_interval=60,
+            ws_ping_timeout=60,
             # bound the graceful shutdown: without it uvicorn waits forever for
             # in-flight requests, and stop()'s join would abandon a still-serving
             # loop thread instead of letting it wind down

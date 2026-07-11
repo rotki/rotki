@@ -52,6 +52,17 @@ class RotkiNotifier:
         self.subscribers_lock = threading.Lock()
         self.subscribers: list[AsgiWebsocketSubscriber] = []
         self.locks: dict[AsgiWebsocketSubscriber, threading.Lock] = {}
+        # Invoked with each message that was still queued for a client when its
+        # connection died, so error-class messages reach the polling fallback
+        # instead of vanishing. Wired to the messages aggregator at startup.
+        self.undelivered_callback: Callable[[str], None] | None = None
+
+    def requeue_undelivered(self, messages: list[str]) -> None:
+        """Hand messages a dead client never received to the undelivered callback"""
+        if self.undelivered_callback is None:
+            return
+        for message in messages:
+            self.undelivered_callback(message)
 
     def subscribe(self, websocket: 'AsgiWebsocketSubscriber') -> None:
         log.info('Websocket with hash id %s subscribed to rotki notifier', hash(websocket))
