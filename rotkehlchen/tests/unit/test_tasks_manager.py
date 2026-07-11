@@ -1501,19 +1501,22 @@ def test_deadlock_logout(
         rotkehlchen_instance: 'Rotkehlchen',
         globaldb: GlobalDBHandler,  # pylint: disable=unused-argument
 ):
-    """Test that we don't leave locks acquired by a task that died at its
-    cancellation checkpoint during logout while holding them"""
+    """Test that a task cancelled at logout while holding packaged_db_lock through
+    its context manager releases the lock itself when it dies at its next
+    checkpoint. Logout must not force-release the lock: threads cannot die inside
+    a with block without running its cleanup, so any holder at logout is a live
+    thread, and stealing the lock from it would let the next session run e.g. an
+    asset reset concurrently with the abandoned one."""
     task_manager = cast('TaskManager', rotkehlchen_instance.task_manager)
     task_manager.max_tasks_num = 10
     task_started = threading.Event()
 
     def task():
-        """Task that acquires the lock and dies at its next checkpoint on logout,
-        without ever releasing it"""
-        GlobalDBHandler().packaged_db_lock.acquire()
-        task_started.set()
-        while True:
-            cancellable_sleep(1)  # dies here with TaskCancelledError when cancelled
+        """Task that holds the lock and dies at its next checkpoint on logout"""
+        with GlobalDBHandler().packaged_db_lock:
+            task_started.set()
+            while True:
+                cancellable_sleep(1)  # dies here with TaskCancelledError when cancelled
 
     def maybe_task():
         return [task_manager.task_supervisor.spawn_and_track(
@@ -1534,8 +1537,9 @@ def test_deadlock_logout(
     rotkehlchen_instance.logout()
     assert spawned_task.dead is True
 
-    # shouldn't block since logout released the abandoned lock via clear_locks
-    GlobalDBHandler().packaged_db_lock.acquire()
+    # the dying task's context manager cleanup released the lock
+    assert GlobalDBHandler().packaged_db_lock.acquire(timeout=5) is True
+    GlobalDBHandler().packaged_db_lock.release()
     assert len(task_manager.running_tasks) == 0
 
 
