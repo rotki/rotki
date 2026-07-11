@@ -592,13 +592,20 @@ class DBHandler:
         # password would only read garbage afterwards: close them now and key a
         # fresh pool below once the effective password is known.
         self.conn.disable_read_pool()
-        result = (
-            self._change_password(new_password, 'conn') and
-            self._change_password(new_password, 'conn_transient')
-        )
-        if result is True:
-            self.password = new_password
-        self.conn.enable_read_pool(reader_setup=self._setup_read_pool_connection)
+        try:
+            result = (
+                self._change_password(new_password, 'conn') and
+                self._change_password(new_password, 'conn_transient')
+            )
+            if result is True:
+                self.password = new_password
+        finally:  # re-enable even if the rekey raised, else all reads stay serialized
+            try:
+                self.conn.enable_read_pool(reader_setup=self._setup_read_pool_connection)
+            except sqlcipher.DatabaseError as e:  # pylint: disable=no-member
+                # can only happen if the DB ended up half-rekeyed (conn succeeded but
+                # conn_transient failed) leaving self.password wrong for the user DB
+                log.error('Could not re-key the user DB read pool after password change: %s', e)
         return result
 
     def disconnect(self, conn_attribute: Literal['conn', 'conn_transient'] = 'conn') -> None:
