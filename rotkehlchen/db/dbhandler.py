@@ -4165,15 +4165,19 @@ class DBHandler:
         """
         with self.conn.read_ctx() as cursor:
             version = self.get_setting(cursor, 'version')
-        # flush the WAL into the DB file so the copy below contains all
-        # committed data -- the WAL file itself is not copied
-        self.conn.wal_checkpoint()
         new_db_filename = f'{ts_now()}_rotkehlchen_db_v{version}.backup'
         new_db_path = self.user_data_dir / new_db_filename
-        shutil.copyfile(
-            self.user_data_dir / USERDB_NAME,
-            new_db_path,
-        )
+        # VACUUM INTO refuses an existing target; a timestamp collision within the
+        # same second overwrites, as the previous copyfile-based backup did
+        new_db_path.unlink(missing_ok=True)
+        try:
+            # A consistent snapshot instead of checkpoint+copyfile, which could
+            # produce a stale backup (a PASSIVE checkpoint stops at the oldest
+            # pooled reader's snapshot and its result was never checked) or a torn
+            # one (a concurrent commit's auto-checkpoint rewriting pages mid-copy)
+            self.conn.vacuum_into(new_db_path)
+        except sqlcipher.Error as e:  # pylint: disable=no-member
+            raise OSError(f'Failed to create a DB backup due to {e!s}') from e
         return new_db_path
 
     def get_associated_locations(self) -> set[Location]:
