@@ -3,7 +3,7 @@ from threading import Semaphore
 from types import TracebackType
 from typing import Final, Self
 
-from rotkehlchen.concurrency import cancellable_sleep
+from rotkehlchen.concurrency import cancellable_sleep, checkpoint
 
 # Hysteresis: don't churn the bucket on every response. Only update when the
 # observed rate differs from the current by at least this fraction.
@@ -64,7 +64,10 @@ class TokenBucket:
 
     def acquire(self) -> None:
         """Block until a token is available, then consume one. Sleeping is a
-        cancellation checkpoint, so a cancelled task does not wait for a token."""
+        cancellation checkpoint, so a cancelled task does not wait for a token.
+        The explicit checkpoint covers the fast path: with a full bucket a
+        cancelled request loop would otherwise never sleep and keep querying."""
+        checkpoint()
         while True:
             with self._lock:
                 self._refill()

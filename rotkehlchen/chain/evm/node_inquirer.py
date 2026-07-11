@@ -40,6 +40,7 @@ from rotkehlchen.chain.evm.proxies_inquirer import EvmProxiesInquirer
 from rotkehlchen.chain.evm.types import EvmIndexer, RemoteDataQueryStatus, WeightedNode
 from rotkehlchen.chain.mixins.rpc_nodes import EVMRPCMixin, _is_rate_limit_error
 from rotkehlchen.chain.structures import TimestampOrBlockRange
+from rotkehlchen.concurrency import checkpoint
 from rotkehlchen.constants import ONE
 from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.misc import (
@@ -121,6 +122,7 @@ def _query_web3_get_logs(
     block_range = initial_block_range
 
     while start_block <= until_block:
+        checkpoint()  # cancellation checkpoint: this loop can make hundreds of node queries
         filter_args['fromBlock'] = start_block
         end_block = min(start_block + block_range, until_block)
         filter_args['toBlock'] = end_block
@@ -1125,6 +1127,7 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
             )
             blocks_step = 300000
             while start_block <= until_block:
+                checkpoint()  # cancellation checkpoint: this loop can make hundreds of queries
                 while True:  # loop to continuously reduce block range if need b
                     end_block = min(start_block + blocks_step, until_block)
                     try:
