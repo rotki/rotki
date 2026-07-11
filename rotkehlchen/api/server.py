@@ -638,6 +638,10 @@ class APIServer:
             # and dead clients are already noticed and removed on failed sends
             ws_ping_interval=None,
             ws_ping_timeout=None,
+            # bound the graceful shutdown: without it uvicorn waits forever for
+            # in-flight requests, and stop()'s join would abandon a still-serving
+            # loop thread instead of letting it wind down
+            timeout_graceful_shutdown=4,
         )
         self.uvicorn_server = uvicorn.Server(config)
         self.uvicorn_task = Task(name='rotki api server', target=self.uvicorn_server.run).start()
