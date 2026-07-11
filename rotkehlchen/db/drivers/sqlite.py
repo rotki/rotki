@@ -839,21 +839,28 @@ class DBConnection:
                 f'{savepoint_name}, but it is not present in the stack: {list_savepoints}',
             )
 
-        # Hold in_callback so the progress callback exits immediately: no context
-        # switches and no cancellation aborts while modifying savepoint state, since
-        # this also runs during cleanup of an already-cancelled task.
-        with self.in_callback, self.cursor() as cursor:  # this should not be a write_ctx as it's inside savepoint logic and would block  # noqa: E501
-            cursor.execute(f"{rollback_or_release} SAVEPOINT '{savepoint_name}'")
-
-        # Release all savepoints until, and including, the one with name `savepoint_name`.
-        # For rollback we don't remove the savepoints since they are not released yet.
-        if rollback_or_release == 'RELEASE':
-            self.savepoints = dict.fromkeys(list_savepoints[:list_savepoints.index(savepoint_name)])  # noqa: E501
-            if len(self.savepoints) == 0:  # we are out of all savepoints
-                self.savepoint_task_ident = None
-                if self._savepoint_holds_transaction_lock is True:  # free the transaction slot
-                    self._savepoint_holds_transaction_lock = False
-                    self.transaction_lock.release()
+        try:
+            # Hold in_callback so the progress callback exits immediately: no context
+            # switches and no cancellation aborts while modifying savepoint state, since
+            # this also runs during cleanup of an already-cancelled task.
+            with self.in_callback, self.cursor() as cursor:  # this should not be a write_ctx as it's inside savepoint logic and would block  # noqa: E501
+                cursor.execute(f"{rollback_or_release} SAVEPOINT '{savepoint_name}'")
+        finally:
+            # Release all savepoints until, and including, the one with name
+            # `savepoint_name`. For rollback we don't remove the savepoints since they
+            # are not released yet. The bookkeeping runs even when the statement fails
+            # (e.g. an executescript inside the savepoint body issued an implicit
+            # COMMIT that destroyed all sqlite savepoints, making the RELEASE raise
+            # 'no such savepoint'): abandoning the stack is strictly safer than
+            # leaking the transaction slot, which on the process-lifetime global
+            # connection would block every global write until restart.
+            if rollback_or_release == 'RELEASE':
+                self.savepoints = dict.fromkeys(list_savepoints[:list_savepoints.index(savepoint_name)])  # noqa: E501
+                if len(self.savepoints) == 0:  # we are out of all savepoints
+                    self.savepoint_task_ident = None
+                    if self._savepoint_holds_transaction_lock is True:  # free the transaction slot
+                        self._savepoint_holds_transaction_lock = False
+                        self.transaction_lock.release()
 
     def rollback_savepoint(self, savepoint_name: str | None = None) -> None:
         """
