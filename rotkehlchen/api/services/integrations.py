@@ -3,7 +3,6 @@ from http import HTTPStatus
 from typing import TYPE_CHECKING, Any
 
 from rotkehlchen.chain.evm.types import ChainID
-from rotkehlchen.concurrency import spawn
 from rotkehlchen.db.calendar import CalendarEntry, CalendarFilterQuery, DBCalendar, ReminderEntry
 from rotkehlchen.errors.misc import InputError, RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
@@ -203,7 +202,15 @@ class IntegrationsService:
         except RemoteError as e:
             return {'result': None, 'message': str(e), 'status_code': HTTPStatus.BAD_REQUEST}
 
-        spawn(self.rotkehlchen.monerium.get_and_process_orders)
+        # track through the supervisor: this endpoint is synchronous, so a raw
+        # spawn() would inherit no cancellation token and the task would keep
+        # writing to the DB through logout, uncancellable and invisible
+        self.rotkehlchen.task_supervisor.spawn_and_track(
+            after_seconds=None,
+            task_name='Query monerium orders after oauth',
+            exception_is_error=True,
+            method=self.rotkehlchen.monerium.get_and_process_orders,
+        )
         return {'result': result, 'message': '', 'status_code': HTTPStatus.OK}
 
     def disconnect_monerium(self) -> dict[str, Any]:
@@ -274,8 +281,14 @@ class IntegrationsService:
         if gnosispay_decoder is not None:
             gnosispay_decoder.reload_data()  # type: ignore
             if gnosispay_decoder.gnosispay_api is not None:  # type: ignore
-                spawn(
-                    gnosispay_decoder.gnosispay_api.backfill_missing_events,  # type: ignore
+                # track through the supervisor: a raw spawn() would share the
+                # spawning api task's token, which is never cancelled once that
+                # task finishes, so the backfill would survive logout untracked
+                self.rotkehlchen.task_supervisor.spawn_and_track(
+                    after_seconds=None,
+                    task_name='Backfill gnosis pay events',
+                    exception_is_error=True,
+                    method=gnosispay_decoder.gnosispay_api.backfill_missing_events,  # type: ignore
                 )
 
         return {'result': True, 'message': '', 'status_code': HTTPStatus.OK}
