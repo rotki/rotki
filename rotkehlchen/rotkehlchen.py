@@ -188,6 +188,7 @@ class Rotkehlchen:
         self.task_supervisor = TaskSupervisor(msg_aggregator=self.msg_aggregator)
         self.rotki_notifier = RotkiNotifier()
         self.msg_aggregator.rotki_notifier = self.rotki_notifier
+        self.rotki_notifier.undelivered_callback = self.msg_aggregator.requeue_undelivered
         self.exchange_manager = ExchangeManager(msg_aggregator=self.msg_aggregator)
         # Initialize the GlobalDBHandler singleton. Has to be initialized BEFORE asset resolver
         globaldb = GlobalDBHandler(

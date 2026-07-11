@@ -94,6 +94,30 @@ class MessagesAggregator:
         elif message_type in ERROR_MESSAGE_TYPES:  # Fallback to polling for error messages
             self.errors.appendleft(fallback_msg)
 
+    def requeue_undelivered(self, raw_message: str) -> None:
+        """Callback for a message that was queued to a websocket client which
+        disconnected before receiving it. Re-queues error-class messages into
+        the polling fallback deques, mirroring what the failure callbacks of
+        add_warning/add_error/add_message do when a send fails outright.
+        Everything else (progress updates etc.) is dropped, as it is only
+        meaningful to a connected client."""
+        try:
+            message = json.loads(raw_message)
+        except json.JSONDecodeError:
+            log.error('Could not parse undelivered websocket message %s', raw_message)
+            return
+
+        if (msg_type := message.get('type')) == WSMessageType.LEGACY:
+            data = message.get('data', {})
+            if (value := data.get('value')) is None:
+                return
+            if data.get('verbosity') == 'warning':
+                self.warnings.appendleft(value)
+            else:
+                self.errors.appendleft(value)
+        elif msg_type in ERROR_MESSAGE_TYPES:
+            self.errors.appendleft(raw_message)
+
     def add_missing_key_message(
             self,
             service: ExternalService,

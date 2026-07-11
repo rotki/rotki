@@ -27,7 +27,7 @@ from rotkehlchen.api.websockets.typedefs import WebsocketSendError
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 
 if TYPE_CHECKING:
-    from collections.abc import Iterable
+    from collections.abc import Iterable, Callable
 
     from a2wsgi.asgi_typing import ASGIApp, Receive, Scope, Send
     from flask import Flask
@@ -43,6 +43,14 @@ log = RotkehlchenLogsAdapter(logger)
 # flip it becomes the worker pool size decision of phase 5.
 WSGI_BRIDGE_WORKERS = 30
 
+# Cap on a client's pending-message queue. Since send() became an enqueue,
+# producers never block, so a client that stops reading (frozen renderer,
+# suspended laptop, zero-window TCP peer) would otherwise accumulate messages
+# unboundedly and invisibly. On overflow the client is disconnected instead:
+# the frontend reconnects within seconds and polls /messages while it is
+# disconnected, which is strictly better than silent unbounded lag.
+WS_QUEUE_MAXSIZE = 4096
+
 
 class AsgiWebsocketSubscriber:
     """A websocket client of the asyncio server, as seen by RotkiNotifier.
@@ -54,8 +62,26 @@ class AsgiWebsocketSubscriber:
 
     def __init__(self, loop: asyncio.AbstractEventLoop) -> None:
         self.loop = loop
-        self.queue: asyncio.Queue[str] = asyncio.Queue()
+        self.queue: asyncio.Queue[str] = asyncio.Queue(maxsize=WS_QUEUE_MAXSIZE)
         self.closed = False
+        # set by _serve_websocket; invoked on the event-loop thread when the
+        # queue overflows, to tear the lagging connection down
+        self.overflow_callback: Callable[[], None] | None = None
+
+    def enqueue(self, message: str) -> None:
+        """Put a message on the queue. Must run on the event-loop thread.
+
+        On overflow the client has not consumed WS_QUEUE_MAXSIZE messages: mark
+        it closed -- broadcasts skip and remove closed subscribers, with their
+        failure callbacks routing error messages to the polling fallback -- and
+        let the overflow callback disconnect it so the frontend reconnects.
+        """
+        try:
+            self.queue.put_nowait(message)
+        except asyncio.QueueFull:
+            self.closed = True
+            if self.overflow_callback is not None:
+                self.overflow_callback()
 
     def send(self, message: str) -> None:
         """Enqueue a message for delivery by the connection's sender coroutine.
@@ -66,10 +92,21 @@ class AsgiWebsocketSubscriber:
         if self.closed:
             raise WebsocketSendError('Websocket subscriber is closed')
         try:
-            self.loop.call_soon_threadsafe(self.queue.put_nowait, message)
+            self.loop.call_soon_threadsafe(self.enqueue, message)
         except RuntimeError as e:  # the event loop is closed (server shutdown)
             self.closed = True
             raise WebsocketSendError(str(e)) from e
+
+    def drain_pending(self) -> list[str]:
+        """Return and clear the messages still queued. To be called on the
+        event-loop thread during connection teardown, after closed is set, so
+        undelivered messages can be given back to the notifier."""
+        pending = []
+        while True:
+            try:
+                pending.append(self.queue.get_nowait())
+            except asyncio.QueueEmpty:
+                return pending
 
 
 async def _serve_websocket(
@@ -85,7 +122,6 @@ async def _serve_websocket(
         return
     await send({'type': 'websocket.accept'})
     subscriber = AsgiWebsocketSubscriber(loop=asyncio.get_running_loop())
-    notifier.subscribe(subscriber)
 
     async def drain_queue() -> None:
         while True:
@@ -93,19 +129,37 @@ async def _serve_websocket(
             await send({'type': 'websocket.send', 'text': text})
 
     sender_task = asyncio.create_task(drain_queue())
+
+    async def disconnect_lagging_client() -> None:
+        sender_task.cancel()
+        with suppress(BaseException):  # swallow CancelledError and any send failure
+            await sender_task
+        with suppress(Exception):  # the client may be gone already
+            await send({'type': 'websocket.close', 'code': 1013})  # 1013: try again later
+
+    def on_overflow() -> None:  # runs on the event-loop thread
+        log.warning('Disconnecting a websocket client that stopped consuming messages')
+        asyncio.get_running_loop().create_task(disconnect_lagging_client())
+
+    subscriber.overflow_callback = on_overflow
+    notifier.subscribe(subscriber)
     try:
         while True:
             message = await receive()
             if message['type'] == 'websocket.disconnect':
                 break
             if isinstance(text := message.get('text'), str):
-                subscriber.queue.put_nowait(text)  # echo, as the gevent app does
+                subscriber.enqueue(text)  # echo, as the gevent app does
     finally:
         subscriber.closed = True
         notifier.unsubscribe(subscriber)
         sender_task.cancel()
         with suppress(BaseException):  # swallow CancelledError and any send failure
             await sender_task
+        # give messages the client never received back to the notifier, so
+        # error-class ones reach the /messages polling fallback instead of
+        # vanishing with the queue
+        notifier.requeue_undelivered(subscriber.drain_pending())
 
 
 async def _handle_lifespan(receive: 'Receive', send: 'Send') -> None:

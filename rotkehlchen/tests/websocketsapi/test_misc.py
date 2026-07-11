@@ -1,8 +1,10 @@
+import json
 import platform
 
 import pytest
 
 from rotkehlchen.concurrency import spawn, wait
+from rotkehlchen.user_messages import MessagesAggregator
 
 
 def _send_stuff(msg_aggregator, websocket_connection, string_len):
@@ -38,3 +40,30 @@ def test_websockets_concurrent_use(rotkehlchen_api_server, websocket_connection)
         x.exception is None
         for x in [g1, g2] + rotki.task_supervisor.tasks
     ), 'At least one exception happened in a websocket sender or supervised task'
+
+
+def test_requeue_undelivered_messages():
+    """Test that messages queued to a websocket client that disconnected before
+    receiving them land in the polling fallback deques if they are error-class,
+    and are dropped otherwise"""
+    msg_aggregator = MessagesAggregator()
+    msg_aggregator.requeue_undelivered(json.dumps({
+        'type': 'legacy',
+        'data': {'verbosity': 'error', 'value': 'an error'},
+    }))
+    msg_aggregator.requeue_undelivered(json.dumps({
+        'type': 'legacy',
+        'data': {'verbosity': 'warning', 'value': 'a warning'},
+    }))
+    msg_aggregator.requeue_undelivered(snapshot_error_msg := json.dumps({
+        'type': 'balance_snapshot_error',
+        'data': {'location': 'kraken', 'error': 'oops'},
+    }))
+    msg_aggregator.requeue_undelivered(json.dumps({
+        'type': 'progress_updates',
+        'data': {'total': 10, 'processed': 5},
+    }))  # progress is meaningless to a dead client and gets dropped
+    msg_aggregator.requeue_undelivered('{not json')  # malformed input is just logged
+
+    assert msg_aggregator.consume_errors() == ['an error', snapshot_error_msg]
+    assert msg_aggregator.consume_warnings() == ['a warning']
