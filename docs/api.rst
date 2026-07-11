@@ -1175,7 +1175,7 @@ Getting or modifying backend arguments
                            "is_default": true
                    },
                    "sqlite_instructions": {
-                           "value": 5000,
+                           "value": 100000,
                            "is_default": true
                    },
                    "loglevel": {
@@ -1230,7 +1230,7 @@ Getting or modifying backend arguments
                   "is_default": true
                },
                "sqlite_instructions": {
-                  "value": 5000,
+                  "value": 100000,
                   "is_default": true
                },
                "loglevel": {
@@ -11142,7 +11142,7 @@ Querying general information
                 "backend_default_arguments": {
                         "max_logfiles_num": 3,
                         "max_size_in_mb_all_logs": 300,
-                        "sqlite_instructions": 5000
+                        "sqlite_instructions": 100000
                 }
         },
         "message": ""
