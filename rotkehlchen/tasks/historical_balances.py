@@ -73,6 +73,10 @@ DUAL_BUCKET_TRANSFER_EVENTS: Final[EventTypeSubtypePairs] = {
 }
 
 METRICS_BATCH_SIZE: Final = 500
+# How many events to process before voluntarily releasing the GIL, so concurrent
+# DB readers (e.g. the history page) interleave instead of waiting out the switch
+# interval per row while this pure-Python loop runs.
+MIN_EVENTS_PROCESSED_TO_SLEEP: Final = 25
 
 
 class Bucket(NamedTuple):
@@ -302,6 +306,9 @@ def process_historical_balances(
                 last_run_ts=last_run_ts,
                 treat_eth2_as_eth=treat_eth2_as_eth,
             )
+
+        if idx % MIN_EVENTS_PROCESSED_TO_SLEEP == 0:
+            time.sleep(0)  # release the GIL so concurrent DB readers interleave
 
         if idx % send_ws_every == 0:
             msg_aggregator.add_message(

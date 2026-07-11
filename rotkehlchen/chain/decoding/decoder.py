@@ -1,6 +1,7 @@
 import importlib
 import logging
 import pkgutil
+import time
 from abc import ABC, abstractmethod
 from contextlib import suppress
 from threading import Semaphore
@@ -9,6 +10,7 @@ from typing import TYPE_CHECKING, Final, Generic, Literal, TypeVar
 from more_itertools import peekable
 
 from rotkehlchen.api.websockets.typedefs import ProgressUpdateSubType, WSMessageType
+from rotkehlchen.concurrency import checkpoint
 from rotkehlchen.db.cache import DBCacheDynamic
 from rotkehlchen.db.constants import TX_DECODED, TX_SPAM
 from rotkehlchen.db.dbtx import DBCommonTx, T_Transaction, T_TxHash, T_TxNotDecodedFilterQuery
@@ -414,6 +416,8 @@ class TransactionDecoder(ABC, Generic[T_Transaction, T_DecodingRules, T_DecoderI
         total_transactions = len(tx_hashes)
         log.debug(f'Started logic to decode {total_transactions} transactions from {self.chain_name}')  # noqa: E501
         for tx_index, tx_hash in enumerate(tx_hashes):
+            checkpoint()  # cancellation checkpoint of the bulk decoding loop
+            time.sleep(0)  # release the GIL between transactions so concurrent DB readers interleave  # noqa: E501
             log.debug(f'Decoding logic started for {tx_hash!s} ({self.chain_name})')
             if send_ws_notifications and tx_index % 10 == 0:
                 log.debug(f'Processed {tx_index} out of {total_transactions} transactions from {self.chain_name}')  # noqa: E501

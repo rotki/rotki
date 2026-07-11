@@ -2,6 +2,7 @@ import importlib.metadata
 import logging
 import os
 import signal
+import sys
 import threading
 from typing import Any
 
@@ -24,6 +25,14 @@ class RotkehlchenServer:
         - SystemPermissionError due to the given args containing a datadir
         that does not have the correct permissions
         """
+        # Since the gevent removal business logic runs on preemptive threads sharing
+        # the GIL. A thread waiting for the GIL (e.g. a DB read stepping sqlite rows,
+        # or the api server's event loop) waits up to the switch interval per
+        # acquisition while a CPU-bound thread (decoding, PnL processing) runs, so at
+        # the 5ms default a row fetch degrades to ~200 rows/s next to two busy
+        # threads. 0.5ms recovers more than 20x of that for ~1% CPU-bound throughput
+        # cost (measured; see docs/designs/gevent_to_asyncio.md risk #6).
+        sys.setswitchinterval(0.0005)
         arg_parser = app_args(
             prog='rotki',
             description=(
