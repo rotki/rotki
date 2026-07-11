@@ -276,7 +276,10 @@ class MakerdaoVaults(EthereumModule):
         now = ts_now()
         if now - self.last_vault_mapping_query_ts < MAKERDAO_REQUERY_PERIOD:
             prequeried_vaults = []
-            for vaults in self.vault_mappings.values():
+            # iterate a snapshot: an account addition/removal on another thread
+            # mutates the mapping and would kill this balance query with a
+            # RuntimeError if it iterated the live dict
+            for vaults in list(self.vault_mappings.values()):
                 prequeried_vaults.extend(vaults)
 
             prequeried_vaults.sort(key=lambda vault: vault.identifier)
@@ -310,12 +313,17 @@ class MakerdaoVaults(EthereumModule):
     def on_account_addition(self, address: ChecksumEvmAddress) -> None:  # pylint: disable=useless-return
         # Check if it has been added to the mapping
         proxy_addresses = self.ethereum.proxies_inquirer.address_to_proxies[ProxyType.DS].get(address, set())  # noqa: E501
-        for proxy_address in proxy_addresses:
-            # get any vaults the proxy owns
-            self._get_vaults_of_address(user_address=address, proxy_address=proxy_address)
+        # serialize the mapping mutation with get_vaults' requery, which rebinds
+        # vault_mappings -- an unserialized append would land on the discarded
+        # dict and the new account's vaults would silently vanish from balances
+        with self.lock:
+            for proxy_address in proxy_addresses:
+                # get any vaults the proxy owns
+                self._get_vaults_of_address(user_address=address, proxy_address=proxy_address)
 
     def on_account_removal(self, address: ChecksumEvmAddress) -> None:
-        self.vault_mappings.pop(address, None)
+        with self.lock:  # serialize with get_vaults' requery rebinding vault_mappings
+            self.vault_mappings.pop(address, None)
 
     def deactivate(self) -> None:
         ...
