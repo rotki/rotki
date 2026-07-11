@@ -29,10 +29,16 @@ class TaskSupervisor:
 
     def __init__(self, msg_aggregator: MessagesAggregator) -> None:
         self.msg_aggregator = msg_aggregator
-        # guards self.tasks: appended to by any thread spawning work while the
-        # scheduler thread prunes finished entries
+        # guards self.tasks and stop_reason: appended to by any thread spawning
+        # work while the scheduler thread prunes finished entries
         self.lock = threading.Lock()
         self.tasks: list[Task] = []
+        # Non-None from the moment clear() starts cancelling at logout/shutdown
+        # until the next session unlocks: a task registered in that window (e.g.
+        # spawned by a still-live abandoned thread) is cancelled on the spot, so
+        # it cannot escape into the next session with a fresh uncancelled token.
+        # Mirrors RestAPI.api_tasks_stop_reason for the api-task path.
+        self.stop_reason: str | None = None
 
     def add(self, task_name: str, task: Task, exception_is_error: bool) -> None:
         task.task_name = task_name
@@ -40,6 +46,14 @@ class TaskSupervisor:
         task.add_done_callback(self._handle_finished_task)
         with self.lock:
             self.tasks.append(task)
+            if self.stop_reason is not None:
+                task.request_cancellation(self.stop_reason)
+
+    def allow_new_tasks(self) -> None:
+        """Lift the cancel-at-registration latch of clear(). To be called when a
+        new user session unlocks, so its tasks are no longer cancelled at birth."""
+        with self.lock:
+            self.stop_reason = None
 
     def clear(self) -> None:
         """Cancel all tracked tasks and wait a short grace period for them to
@@ -49,6 +63,10 @@ class TaskSupervisor:
         logged without alerting the user since its token shows the
         cancellation was deliberate."""
         with self.lock:
+            # from here on new tasks are cancelled at registration (see add), so
+            # nothing spawned during or after the grace period below -- including
+            # in the window before tasks.clear() -- escapes cancellation
+            self.stop_reason = 'Cancelled due to logout or shutdown'
             pending = [task for task in self.tasks if task.dead is False]
         if len(pending) != 0:
             for task in pending:
