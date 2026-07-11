@@ -24,7 +24,14 @@ KRAKEN_FUTURES_API_VERSION: Final = 'v3'
 
 DEFAULT_MAX_LOG_SIZE_IN_MB: Final = 300
 DEFAULT_MAX_LOG_BACKUP_FILES: Final = 3
-DEFAULT_SQL_VM_INSTRUCTIONS_CB: Final = 5000
+# Interval (in sqlite VM instructions) at which the DB progress callback fires.
+# Since the gevent removal the callback is only a cancellation checkpoint, so the
+# interval only bounds cancellation latency: 100k instructions is well under a
+# millisecond of statement execution. The old value of 5000 dates from when the
+# callback was the cooperative-scheduling yield and made scan-heavy queries pay a
+# GIL reacquisition mid-statement every 5000 instructions -- a measured 7x slowdown
+# next to CPU-bound threads (decoding, PnL processing).
+DEFAULT_SQL_VM_INSTRUCTIONS_CB: Final = 100000
 DEFAULT_LOGLEVEL: Final = 'DEBUG'
 VALID_LOGLEVELS: Final = ('TRACE', 'DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL')
 
