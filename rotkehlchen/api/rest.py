@@ -524,6 +524,14 @@ class RestAPI:
 
     def _write_task_result(self, task_id: int, result: Any) -> None:
         with self.task_lock:
+            if not any(x.task_id == task_id for x in self.rotkehlchen.api_tasks):
+                # An abandoned task of a torn-down session finishing late: its entry
+                # was cleared from api_tasks at logout/shutdown (a live task stays
+                # in the list until its outcome is fetched), so the result would be
+                # unreachable through the API and only pin the previous user's data
+                # in memory until the next logout.
+                log.debug('Discarding the result of task %s which is no longer tracked', task_id)
+                return
             self.task_results[task_id] = result
 
     def _handle_task_death(self, task: Task) -> None:
