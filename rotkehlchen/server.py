@@ -44,6 +44,9 @@ class RotkehlchenServer:
         configure_logging(self.args)
         self.rotkehlchen = Rotkehlchen(self.args)
         self.stop_event = threading.Event()
+        # never released: makes shutdown() run once even when two signal paths
+        # fire together (e.g. the windows console ctrl handler and SIGINT)
+        self._shutdown_lock = threading.Lock()
         if ',' in self.args.api_cors:
             domain_list = [str(domain) for domain in self.args.api_cors.split(',')]
         else:
@@ -57,6 +60,9 @@ class RotkehlchenServer:
     def shutdown(self, *args: Any) -> None:
         """Shut the server down. Also used as a signal/console-ctrl handler,
         hence the unused extra arguments."""
+        if self._shutdown_lock.acquire(blocking=False) is False:
+            return  # a concurrent signal already runs the shutdown
+
         log.debug('Shutdown initiated')
         self.api_server.stop()
         self.stop_event.set()
@@ -84,3 +90,10 @@ class RotkehlchenServer:
             rest_port=self.args.rest_api_port,
         )
         self.stop_event.wait()
+        # Exit without running interpreter shutdown. All rotki task threads are
+        # daemons, but the WSGI bridge's executor threads are not and the
+        # interpreter joins non-daemon threads at exit -- a single request handler
+        # wedged in a remote call would keep the process alive (appearing to
+        # ignore SIGTERM) indefinitely. State is already persisted and logging
+        # flushed by rest_api.stop() before stop_event is set.
+        os._exit(0)
