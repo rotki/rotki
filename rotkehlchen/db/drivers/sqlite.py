@@ -57,6 +57,10 @@ CONTEXT_SWITCH_WAIT = 0.025  # seconds between cancellation checks while waiting
 # (measured), so fetch in batches under one hold. 1000 rows keeps the buffer's
 # memory footprint trivial while making the per-row lock cost disappear.
 CURSOR_PREFETCH_ROWS = 1000
+# How long disable_read_pool() waits for borrowed readers to be returned before
+# proceeding without them. Read contexts are short (statement duration), so this
+# is generous; matching DEFAULT_CANCEL_GRACE_SECONDS in spirit.
+DISABLE_READ_POOL_DRAIN_SECONDS = 3.0
 
 logger: 'RotkehlchenLogger' = logging.getLogger(__name__)  # type: ignore
 
@@ -381,6 +385,12 @@ class DBConnection:
         self._read_pool_size = 0
         self._readers_num = 0
         self._reader_setup: Callable[[DBConnection], None] | None = None
+        # Number of readers currently borrowed (or being borrowed) from the pool,
+        # so disable_read_pool() can wait for them: callers disable the pool to
+        # delete or re-key the underlying file, and a still-open borrowed reader
+        # would make the unlink fail on windows or read re-keyed pages as garbage.
+        self._borrowed_readers_count = 0
+        self._readers_returned = threading.Condition(self._read_pool_lock)
         # The reader this thread has currently borrowed, so that nested read_ctx
         # calls reuse it instead of borrowing a second one. Without this, N threads
         # nesting read contexts could each hold one reader while waiting for
@@ -539,18 +549,31 @@ class DBConnection:
         """Close the pooled readers and make read_ctx() serve cursors of this
         connection again. No-op if no pool is enabled.
 
-        A reader borrowed at this moment is closed by _return_reader when its
-        read_ctx exits, since the pool it would be returned to is gone -- its
-        in-flight statements may still error if the disabling was for an
-        operation that invalidates readers (e.g. re-keying the DB).
+        Waits (bounded) for borrowed readers to be returned first: callers
+        disable the pool to delete or re-key the underlying file, and a reader
+        still open at that moment makes the file unlink fail on windows
+        (premium sync pull) or serves re-keyed pages as garbage. A reader not
+        returned within the wait is closed by _return_reader when its read_ctx
+        exits, since the pool it would be returned to is gone.
         """
-        with self._read_pool_lock:
+        with self._readers_returned:
             read_pool, self._read_pool = self._read_pool, None
             self._read_pool_size = 0
             self._readers_num = 0
             self._reader_setup = None
-        if read_pool is not None:
-            self._close_idle_readers(read_pool)
+            if read_pool is None:
+                return
+            deadline = time.monotonic() + DISABLE_READ_POOL_DRAIN_SECONDS
+            while self._borrowed_readers_count > 0:
+                if (remaining := deadline - time.monotonic()) <= 0:
+                    logger.warning(
+                        'Disabling the read pool with %s readers still borrowed. The '
+                        'operation that needed the pool gone may fail.',
+                        self._borrowed_readers_count,
+                    )
+                    break
+                self._readers_returned.wait(remaining)
+        self._close_idle_readers(read_pool)
 
     @staticmethod
     def _close_idle_readers(read_pool: 'queue.LifoQueue[DBConnection]') -> None:
@@ -616,6 +639,8 @@ class DBConnection:
                 return read_pool.get(timeout=CONTEXT_SWITCH_WAIT)
             except queue.Empty:
                 checkpoint()  # cancelled tasks should not keep waiting for a reader
+                if self._read_pool is not read_pool:
+                    return None  # the pool was disabled while waiting
 
         try:
             reader = self._create_reader(reader_setup)
@@ -648,7 +673,9 @@ class DBConnection:
             reader: 'DBConnection',
             source_pool: 'queue.LifoQueue[DBConnection]',
     ) -> None:
-        with self._read_pool_lock:
+        with self._readers_returned:
+            self._borrowed_readers_count -= 1
+            self._readers_returned.notify_all()
             if self._read_pool is source_pool:
                 source_pool.put(reader)
                 return
@@ -676,7 +703,21 @@ class DBConnection:
                 yield cursor
             return
 
-        if (reader := self._borrow_reader(read_pool)) is None:
+        # count the borrow before taking from the queue: a disable_read_pool that
+        # runs between the take and the count increment would otherwise miss this
+        # reader and proceed while it is still open
+        with self._readers_returned:
+            self._borrowed_readers_count += 1
+        reader = None
+        try:
+            reader = self._borrow_reader(read_pool)
+        finally:
+            if reader is None:  # cancelled, or the pool got disabled while waiting
+                with self._readers_returned:
+                    self._borrowed_readers_count -= 1
+                    self._readers_returned.notify_all()
+
+        if reader is None:
             # The pool was disabled after read_ctx observed it. Fall back to the
             # write connection just as a read starting after disable_read_pool does.
             cursor = self.cursor()
