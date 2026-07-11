@@ -958,6 +958,26 @@ class DBConnection:
             cursor.execute('VACUUM')
             cursor.close()
 
+    def vacuum_into(self, target: Path) -> None:
+        """Write a consistent, defragmented snapshot of the database to target via
+        VACUUM INTO. Unlike checkpoint-then-copy the snapshot always contains all
+        committed data (a PASSIVE checkpoint stops at the oldest pooled reader's
+        snapshot) and cannot be torn by concurrent commits rewriting pages mid-copy.
+        On an encrypted database the snapshot is encrypted with the same key.
+
+        Holds the transaction slot since VACUUM cannot run within a transaction.
+        A partial target file is removed on failure.
+
+        May raise sqlcipher/rsqlite errors (existing target, IO failure, ...).
+        """
+        with self._transaction_slot(), self.critical_section():
+            try:
+                with self.cursor() as cursor:
+                    cursor.execute('VACUUM INTO ?', (str(target),))
+            except BaseException:  # also cancellation must not leave a partial file
+                target.unlink(missing_ok=True)
+                raise
+
     def wal_checkpoint(self, mode: Literal['', '(FULL)', '(PASSIVE)', '(TRUNCATE)'] = '') -> None:
         """
         Perform a WAL checkpoint operation.
