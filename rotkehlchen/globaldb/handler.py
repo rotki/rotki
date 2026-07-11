@@ -1913,7 +1913,10 @@ class GlobalDBHandler:
                     log.error(f'Failed to restore assets in globaldb due to {e!s}')
                     return False, 'Failed to restore assets. Read logs to get more information.'
                 finally:  # on the way out always detach the DB. Make sure no transaction is active
-                    with self.conn.critical_section_and_transaction_lock():
+                    # not cancellable: this cleanup must run even in a cancelled task,
+                    # else clean_db stays attached on the process-lifetime connection
+                    # and every later asset reset fails until restart
+                    with self.conn.critical_section_and_transaction_lock(cancellable=False):
                         read_cursor.execute("DETACH DATABASE 'clean_db';")
 
         return True, ''
@@ -1927,12 +1930,20 @@ class GlobalDBHandler:
         builtin_database = root_dir / 'data' / GLOBALDB_NAME
 
         with self.packaged_db_lock:
+            # A cursor of the write connection and not read_ctx: the ATTACH below is
+            # connection-level state that the write_ctx further down must see, so it
+            # cannot happen on a pooled read-only connection. Attached outside the
+            # try below so that a failed ATTACH is not followed by the finally's
+            # DETACH, whose 'no such database' error would mask the original one.
             try:
-                # A cursor of the write connection and not read_ctx: the ATTACH below is
-                # connection-level state that the write_ctx further down must see, so it
-                # cannot happen on a pooled read-only connection
+                with self.conn.cursor() as attach_cursor:
+                    attach_cursor.execute(f"ATTACH DATABASE '{builtin_database}' AS clean_db;")
+            except rsqlite.Error as e:
+                log.error('Failed to attach the packaged globaldb due to %s', e)
+                return False, 'Failed to restore assets. Read logs to get more information.'
+
+            try:
                 with self.conn.cursor() as read_cursor:
-                    read_cursor.execute(f"ATTACH DATABASE '{builtin_database}' AS clean_db;")
                     # Check that versions match
                     query = read_cursor.execute("SELECT value from clean_db.settings WHERE name='version';")  # noqa: E501
                     version = query.fetchone()
@@ -1975,8 +1986,13 @@ class GlobalDBHandler:
                 log.error(f'Failed to restore assets in globaldb due to {e!s}')
                 return False, 'Failed to restore assets. Read logs to get more information.'
             finally:  # on the way out always detach the DB. Make sure no transaction is active
-                with self.conn.transaction_lock, self.conn.cursor() as read_cursor:
-                    read_cursor.execute("DETACH DATABASE 'clean_db';")
+                # critical section so the progress callback cannot abort the DETACH of
+                # a cancelled task, and not cancellable so the slot acquire cannot
+                # raise either: if this cleanup is skipped, clean_db stays attached on
+                # the process-lifetime connection and every later asset reset fails
+                # until restart
+                with self.conn.critical_section_and_transaction_lock(cancellable=False), self.conn.cursor() as detach_cursor:  # noqa: E501
+                    detach_cursor.execute("DETACH DATABASE 'clean_db';")
 
         return True, ''
 
