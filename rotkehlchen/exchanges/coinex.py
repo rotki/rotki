@@ -292,10 +292,6 @@ class Coinex(ExchangeInterface, SignatureGeneratorMixin):
     ) -> list[SwapEvent]:
         """Deserialize a CoinEx finished order into swap events.
 
-        A discount_fee (fee paid in the CET deduction currency) is not turned
-        into a fee event since the response does not name the deduction
-        currency and CET can't be resolved unambiguously by symbol.
-
         May raise DeserializationError.
         """
         if (filled_amount := deserialize_fval(trade['filled_amount'])) == ZERO:
@@ -310,21 +306,28 @@ class Coinex(ExchangeInterface, SignatureGeneratorMixin):
             amount=filled_amount,
             rate=deserialize_price(deserialize_fval(trade['filled_value']) / filled_amount),
         )
+        fees = [
+            (AssetAmount(
+                asset=market.base_asset,
+                amount=deserialize_fval_or_zero(trade['base_fee']),
+            ), None, None),
+            (AssetAmount(
+                asset=market.quote_asset,
+                amount=deserialize_fval_or_zero(trade['quote_fee']),
+            ), None, None),
+        ]
+        if (discount_fee := deserialize_fval_or_zero(trade.get('discount_fee'))) != ZERO:
+            fees.append((AssetAmount(
+                asset=asset_from_coinex('CET'),
+                amount=discount_fee,
+            ), None, None))
+
         return create_swap_events_multi_fee(
             timestamp=deserialize_coinex_timestamp(trade['created_at']),
             location=self.location,
             spend=spend,
             receive=receive,
-            fees=[
-                (AssetAmount(
-                    asset=market.base_asset,
-                    amount=deserialize_fval_or_zero(trade['base_fee']),
-                ), None, None),
-                (AssetAmount(
-                    asset=market.quote_asset,
-                    amount=deserialize_fval_or_zero(trade['quote_fee']),
-                ), None, None),
-            ],
+            fees=fees,
             location_label=self.name,
             group_identifier=create_group_identifier_from_unique_id(
                 location=self.location,

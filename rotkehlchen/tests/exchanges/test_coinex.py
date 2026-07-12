@@ -1,10 +1,12 @@
 import hmac
 from hashlib import sha256
+from typing import TYPE_CHECKING
 from unittest.mock import call, patch
 
 import pytest
 
 from rotkehlchen.accounting.structures.balance import Balance
+from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants.assets import A_BTC, A_USDT
 from rotkehlchen.exchanges.coinex import API_MAX_LIMIT, Coinex, CoinexMarket
 from rotkehlchen.fval import FVal
@@ -12,7 +14,10 @@ from rotkehlchen.history.events.structures.asset_movement import AssetMovement
 from rotkehlchen.history.events.structures.swap import SwapEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType
 from rotkehlchen.history.events.utils import create_group_identifier_from_unique_id
-from rotkehlchen.types import Location, Timestamp, TimestampMS
+from rotkehlchen.types import Location, LocationAssetMappingUpdateEntry, Timestamp, TimestampMS
+
+if TYPE_CHECKING:
+    from rotkehlchen.globaldb.handler import GlobalDBHandler
 
 
 def test_name(coinex_exchange: Coinex) -> None:
@@ -185,7 +190,15 @@ def test_query_asset_movements(coinex_exchange: Coinex) -> None:
     ]
 
 
-def test_query_trades(coinex_exchange: Coinex) -> None:
+def test_query_trades(coinex_exchange: Coinex, globaldb: 'GlobalDBHandler') -> None:
+    cet_asset = Asset('eip155:1/erc20:0x081F67aFA0cCF8c7B17540767BBe95DF2bA8D97F').resolve_to_asset_with_oracles()  # noqa: E501
+    globaldb.add_location_asset_mappings([
+        LocationAssetMappingUpdateEntry(
+            location=Location.COINEX,
+            location_symbol='CET',
+            asset=cet_asset,
+        ),
+    ])
     market = CoinexMarket(
         market='BTCUSDT',
         base_asset_symbol='BTC',
@@ -205,6 +218,7 @@ def test_query_trades(coinex_exchange: Coinex) -> None:
                 'filled_value': '0.0998348650',
                 'base_fee': '0',
                 'quote_fee': '0.0001',
+                'discount_fee': '0.0002',
             }, {  # trade outside the queried range that has to be filtered out
                 'created_at': 1689152425000,
                 'market': 'BTCUSDT',
@@ -269,6 +283,15 @@ def test_query_trades(coinex_exchange: Coinex) -> None:
             event_subtype=HistoryEventSubType.FEE,
             asset=A_USDT,
             amount=FVal('0.0001'),
+            location_label='coinex',
+            group_identifier=group_identifier,
+        ), SwapEvent(
+            timestamp=TimestampMS(1689152421692),
+            location=Location.COINEX,
+            event_subtype=HistoryEventSubType.FEE,
+            sequence_index=3,
+            asset=cet_asset,
+            amount=FVal('0.0002'),
             location_label='coinex',
             group_identifier=group_identifier,
         ),
