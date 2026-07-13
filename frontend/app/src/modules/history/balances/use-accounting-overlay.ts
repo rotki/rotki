@@ -84,8 +84,6 @@ export interface UseAccountingOverlayReturn {
    */
   ensurePair: (pair: OverlayPair) => void;
   refresh: () => Promise<void>;
-  /** Refetch only the pairs currently in the PROCESSING state (e.g. once sync completes). */
-  refreshProcessing: () => void;
 }
 
 /** Backend returns this message (404) when the scope has no computed metrics yet. */
@@ -255,15 +253,6 @@ export function useAccountingOverlay(params: AccountingOverlayParams): UseAccoun
     fetchMissing();
   }
 
-  /**
-   * Refetch only the pairs currently stuck on PROCESSING — used when historical-balance sync
-   * reaches 100%. Their event_metrics now exist, so a re-query flips them to ready/empty while
-   * leaving already-resolved pairs untouched (no blanket cache reset).
-   */
-  function refreshProcessing(): void {
-    fetchPairsWhere(entry => entry?.status === PairOverlayStatus.PROCESSING);
-  }
-
   function statusFor(locationLabel: string, asset: string): PairOverlayStatus {
     return get(cache).get(pairKey(locationLabel, asset))?.status ?? PairOverlayStatus.LOADING;
   }
@@ -332,6 +321,5 @@ export function useAccountingOverlay(params: AccountingOverlayParams): UseAccoun
     seriesUpTo,
     ensurePair,
     refresh,
-    refreshProcessing,
   };
 }

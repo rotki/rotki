@@ -5,7 +5,6 @@ import type { HistoryEventEntry, HistoryEventRow } from '@/modules/history/event
 import AccountingOverlayToggle from '@/modules/history/balances/AccountingOverlayToggle.vue';
 import { OverlayMode, type OverlayPair, useAccountingOverlay } from '@/modules/history/balances/use-accounting-overlay';
 import { provideAccountingOverlay } from '@/modules/history/balances/use-accounting-overlay-context';
-import { useHistoricalBalancesStore } from '@/modules/history/balances/use-historical-balances-store';
 import { DataIssuesPanel, DataIssuesToggle } from '@/modules/history/data-issues/components/inbox';
 import { HISTORY_EVENT_ACTIONS, type HistoryEventAction } from '@/modules/history/events/action-types';
 import HistoryEventsVirtualTable from '@/modules/history/events/components/HistoryEventsVirtualTable.vue';
@@ -33,6 +32,7 @@ import {
 } from '@/modules/history/events/prices/use-event-price-update-trigger';
 import RefreshButton from '@/modules/shell/components/RefreshButton.vue';
 import TablePageLayout from '@/modules/shell/layout/TablePageLayout.vue';
+import { useSyncCompleted } from '@/modules/shell/sync-progress/use-sync-completed';
 
 type Period = { fromTimestamp?: string; toTimestamp?: string } | { fromTimestamp?: number; toTimestamp?: number };
 
@@ -173,13 +173,13 @@ const accountingOverlay = useAccountingOverlay({
 
 provideAccountingOverlay({ enabled: overlayEnabled, overlay: accountingOverlay });
 
-// When historical-balance sync finishes (isProcessing flips true -> false, i.e. it hit 100%),
-// any rows that were waiting on metrics now have them — refetch just those PROCESSING pairs so
-// their spinners resolve without re-querying everything. Guarded so a hidden overlay stays idle.
-const { isProcessing } = storeToRefs(useHistoricalBalancesStore());
-watch(isProcessing, (processing, wasProcessing) => {
-  if (get(overlayEnabled) && wasProcessing && !processing)
-    accountingOverlay.refreshProcessing();
+// When the history sync (tx query + exchange events + decoding) completes, new events have
+// landed and their historical balances may have shifted, so the whole overlay is refreshed to
+// re-resolve every visible row against the updated series. Guarded so a hidden overlay stays idle.
+const { syncCompleted } = useSyncCompleted();
+watch(syncCompleted, async () => {
+  if (get(overlayEnabled))
+    await accountingOverlay.refresh();
 });
 
 const actions = useHistoryEventsActions({
