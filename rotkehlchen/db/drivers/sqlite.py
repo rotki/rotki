@@ -224,6 +224,10 @@ class DBCursor:
             logger.trace(f'CURSOR FETCHMANY with {size=} for cursor {id(self)}')
         if size is None:
             size = self._cursor.arraysize
+        if size <= 0:
+            # both underlying drivers treat a non-positive size as "no limit" and
+            # return all remaining rows -- mirror that instead of returning []
+            return self.fetchall()
         result: list[Any] = []
         while len(result) < size and len(self._prefetched_rows) != 0:
             result.append(self._prefetched_rows.popleft())
