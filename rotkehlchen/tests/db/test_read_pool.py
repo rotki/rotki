@@ -3,6 +3,7 @@ from write commits on the same DB (WAL mode). See DBConnection.enable_read_pool.
 """
 import threading
 import time
+from contextlib import suppress
 from pathlib import Path
 from typing import Final
 from unittest.mock import Mock
@@ -208,6 +209,46 @@ def test_close_with_borrowed_reader(conn: DBConnection):
     # the read_ctx exit returned the reader to the closed pool, closing it
     with pytest.raises(rsqlite.ProgrammingError):
         reader.cursor()
+
+
+def test_disable_read_pool_interrupts_borrowed_reader(
+        conn: DBConnection,
+        monkeypatch: pytest.MonkeyPatch,
+):
+    """A reader still executing a statement when the drain wait expires gets it
+    interrupted, so the disabling caller proceeds without a reader holding the
+    file open instead of only logging a warning"""
+    monkeypatch.setattr('rotkehlchen.db.drivers.sqlite.DISABLE_READ_POOL_DRAIN_SECONDS', 0.2)
+    reading = threading.Event()
+    borrowed: list[DBConnection] = []
+    errors: list[Exception] = []
+
+    def stuck_reader() -> None:
+        with conn.read_ctx() as cursor:
+            borrowed.append(conn._borrowed_reader.reader)
+            reading.set()
+            try:
+                cursor.execute(
+                    'WITH RECURSIVE c(x) AS (VALUES(1) UNION ALL SELECT x+1 FROM c '
+                    'WHERE x < 500000000) SELECT COUNT(*) FROM c',
+                ).fetchone()
+            except rsqlite.OperationalError as e:  # pylint: disable=no-member
+                errors.append(e)
+
+    task = spawn(stuck_reader)
+    assert reading.wait(timeout=5)
+    time.sleep(0.1)  # let the reader enter the statement before disabling
+    try:
+        conn.disable_read_pool()
+    finally:  # if disabling failed to interrupt, don't leave the query running for minutes
+        with suppress(rsqlite.ProgrammingError):  # closed already when disabling worked
+            borrowed[0].interrupt()
+    wait([task])
+    assert task.exception is None
+    assert conn._borrowed_readers_count == 0
+    assert len(errors) == 1 and 'interrupted' in str(errors[0])
+    with pytest.raises(rsqlite.ProgrammingError):  # returned to the gone pool and closed
+        borrowed[0].cursor()
 
 
 def test_borrowed_reader_is_not_returned_to_replacement_pool(conn: DBConnection):
