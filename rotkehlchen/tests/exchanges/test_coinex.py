@@ -1,4 +1,5 @@
 import hmac
+import logging
 from hashlib import sha256
 from typing import TYPE_CHECKING
 from unittest.mock import call, patch
@@ -8,6 +9,7 @@ import pytest
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants.assets import A_BTC, A_USDT
+from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.exchanges.coinex import API_MAX_LIMIT, Coinex, CoinexMarket
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.asset_movement import AssetMovement
@@ -292,6 +294,88 @@ def test_query_trades(coinex_exchange: Coinex, globaldb: 'GlobalDBHandler') -> N
             sequence_index=3,
             asset=cet_asset,
             amount=FVal('0.0002'),
+            location_label='coinex',
+            group_identifier=group_identifier,
+        ),
+    ]
+
+
+def test_query_trades_skips_discount_fee_without_cet_mapping(
+        coinex_exchange: Coinex,
+        caplog: pytest.LogCaptureFixture,
+) -> None:
+    market = CoinexMarket(
+        market='BTCUSDT',
+        base_asset_symbol='BTC',
+        quote_asset_symbol='USDT',
+        base_asset=A_BTC.resolve_to_asset_with_oracles(),
+        quote_asset=A_USDT.resolve_to_asset_with_oracles(),
+    )
+    with (
+        caplog.at_level(logging.WARNING),
+        patch.object(coinex_exchange, '_query_markets', return_value=[market]),
+        patch(
+            'rotkehlchen.exchanges.coinex.asset_from_coinex',
+            side_effect=UnknownAsset('CET'),
+        ) as mock_asset_from_coinex,
+        patch.object(coinex_exchange, '_api_query', return_value={'code': 0, 'data': [{
+            'created_at': 1689152421692,
+            'market': 'BTCUSDT',
+            'side': 'buy',
+            'order_id': 8678890,
+            'filled_amount': '0.00000325',
+            'filled_value': '0.0998348650',
+            'base_fee': '0.00000001',
+            'quote_fee': '0.0001',
+            'discount_fee': '0.0002',
+        }], 'pagination': {'total': 1, 'has_next': False}, 'message': 'OK'}),
+    ):
+        trades = coinex_exchange._query_trades(
+            start_ts=Timestamp(1689152421),
+            end_ts=Timestamp(1689152422),
+        )
+
+    assert mock_asset_from_coinex.call_args_list == [call('CET')]
+    assert (
+        'Skipping CoinEx discount fee for order 8678890 because CET could not be resolved' in
+        caplog.text
+    )
+    group_identifier = create_group_identifier_from_unique_id(
+        location=Location.COINEX,
+        unique_id='trade-8678890',
+    )
+    assert trades == [
+        SwapEvent(
+            timestamp=TimestampMS(1689152421692),
+            location=Location.COINEX,
+            event_subtype=HistoryEventSubType.SPEND,
+            asset=A_USDT,
+            amount=FVal('0.0998348650'),
+            location_label='coinex',
+            group_identifier=group_identifier,
+        ), SwapEvent(
+            timestamp=TimestampMS(1689152421692),
+            location=Location.COINEX,
+            event_subtype=HistoryEventSubType.RECEIVE,
+            asset=A_BTC,
+            amount=FVal('0.00000325'),
+            location_label='coinex',
+            group_identifier=group_identifier,
+        ), SwapEvent(
+            timestamp=TimestampMS(1689152421692),
+            location=Location.COINEX,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_BTC,
+            amount=FVal('0.00000001'),
+            location_label='coinex',
+            group_identifier=group_identifier,
+        ), SwapEvent(
+            timestamp=TimestampMS(1689152421692),
+            location=Location.COINEX,
+            event_subtype=HistoryEventSubType.FEE,
+            sequence_index=3,
+            asset=A_USDT,
+            amount=FVal('0.0001'),
             location_label='coinex',
             group_identifier=group_identifier,
         ),
