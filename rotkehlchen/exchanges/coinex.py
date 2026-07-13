@@ -289,8 +289,12 @@ class Coinex(ExchangeInterface, SignatureGeneratorMixin):
             self,
             trade: dict[str, Any],
             market: CoinexMarket,
+            cet_fee_asset: 'AssetWithOracles | None',
     ) -> list[SwapEvent]:
         """Deserialize a CoinEx finished order into swap events.
+
+        CoinEx does not name the deduction currency in the response.
+        discount_fee is assumed to be CET.
 
         May raise DeserializationError.
         """
@@ -317,10 +321,17 @@ class Coinex(ExchangeInterface, SignatureGeneratorMixin):
             ), None, None),
         ]
         if (discount_fee := deserialize_fval_or_zero(trade.get('discount_fee'))) != ZERO:
-            fees.append((AssetAmount(
-                asset=asset_from_coinex('CET'),
-                amount=discount_fee,
-            ), None, None))
+            if cet_fee_asset is None:
+                log.warning(
+                    'Skipping CoinEx discount fee for order %s because CET could not be '
+                    'resolved',
+                    trade['order_id'],
+                )
+            else:
+                fees.append((AssetAmount(
+                    asset=cet_fee_asset,
+                    amount=discount_fee,
+                ), None, None))
 
         return create_swap_events_multi_fee(
             timestamp=deserialize_coinex_timestamp(trade['created_at']),
@@ -453,6 +464,10 @@ class Coinex(ExchangeInterface, SignatureGeneratorMixin):
         markets = self._get_markets()
         start_ts_ms, end_ts_ms = ts_sec_to_ms(start_ts), ts_sec_to_ms(end_ts)
         missing_markets: set[str] = set()
+        try:
+            cet_fee_asset = asset_from_coinex('CET')
+        except UnknownAsset:
+            cet_fee_asset = None
 
         def deserialize_trade(entry: dict[str, Any]) -> list[SwapEvent]:
             """Deserialize a finished order, filtering by time client-side
@@ -465,7 +480,11 @@ class Coinex(ExchangeInterface, SignatureGeneratorMixin):
                 missing_markets.add(entry['market'])
                 return []
 
-            return self._deserialize_trade(trade=entry, market=market)
+            return self._deserialize_trade(
+                trade=entry,
+                market=market,
+                cet_fee_asset=cet_fee_asset,
+            )
 
         events = self._api_query_paginated(
             endpoint='/spot/finished-order',
