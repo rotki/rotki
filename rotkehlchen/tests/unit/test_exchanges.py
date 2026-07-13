@@ -1,4 +1,5 @@
-from typing import TYPE_CHECKING
+import threading
+from typing import TYPE_CHECKING, Any
 from unittest.mock import patch
 
 from rotkehlchen.api.server import APIServer
@@ -210,6 +211,47 @@ def test_change_credentials(rotkehlchen_api_server: APIServer) -> None:
                 name='KuCoin',
             )[Location.KUCOIN][0]
             assert credentials_in_db == get_current_credentials(kucoin) == TEST_CREDENTIALS_3
+
+
+def test_delete_cannot_interleave_with_setup_persistence(
+        rotkehlchen_api_server: APIServer,
+) -> None:
+    """A delete arriving while setup persists the new exchange must serialize
+    after the whole setup, so the DB cannot end up keeping credentials the
+    registry lost -- which would resurrect the exchange on the next login"""
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+    delete_results: list[tuple[bool, str]] = []
+    original_add_exchange = rotki.data.db.add_exchange
+    delete_thread = threading.Thread(target=lambda: delete_results.append(
+        rotki.exchange_manager.delete_exchange(name='KuCoin', location=Location.KUCOIN),
+    ))
+
+    def add_exchange_racing_a_delete(*args: Any, **kwargs: Any) -> None:
+        delete_thread.start()
+        delete_thread.join(timeout=0.5)  # must stay blocked on the registry lock
+        assert delete_thread.is_alive(), 'the delete ran during setup persistence'
+        original_add_exchange(*args, **kwargs)
+
+    with (
+        patch('rotkehlchen.exchanges.kucoin.Kucoin.validate_api_key', return_value=(True, '')),
+        patch.object(rotki.data.db, 'add_exchange', side_effect=add_exchange_racing_a_delete),
+    ):
+        success, msg = rotki.setup_exchange(
+            name='KuCoin',
+            location=Location.KUCOIN,
+            api_key=TEST_CREDENTIALS_1.api_key,
+            api_secret=TEST_CREDENTIALS_1.api_secret,
+            passphrase=TEST_CREDENTIALS_1.passphrase,
+        )
+    assert success is True, msg
+    delete_thread.join(timeout=5)
+    assert not delete_thread.is_alive()
+
+    # the delete ran after the setup completed, leaving no leftovers anywhere
+    assert delete_results == [(True, '')]
+    assert Location.KUCOIN not in rotki.exchange_manager.connected_exchanges
+    with rotki.data.db.conn.read_ctx() as cursor:
+        assert Location.KUCOIN not in rotki.data.db.get_exchange_credentials(cursor)
 
 
 def test_binance_selected_pairs_persist_after_restart(rotkehlchen_api_server: APIServer) -> None:

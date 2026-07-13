@@ -49,10 +49,11 @@ class ExchangeManager:
         self.connected_exchanges: dict[Location, list[ExchangeInterface]] = defaultdict(list)
         self.msg_aggregator = msg_aggregator
         # Serializes compound mutations of connected_exchanges (check-then-append,
-        # check-then-rebind): concurrent api requests adding/removing exchanges
-        # could otherwise lose each other's update -- resurrecting a deleted
-        # exchange or registering a duplicate whose balances get double-counted.
-        # Never held across network calls.
+        # check-then-rebind) together with their DB persistence: concurrent api
+        # requests adding/removing exchanges could otherwise lose each other's
+        # update -- resurrecting a deleted exchange, registering a duplicate whose
+        # balances get double-counted, or persisting credentials the registry no
+        # longer holds. Never held across network calls.
         self.registry_lock = threading.Lock()
 
     @staticmethod
@@ -193,13 +194,17 @@ class ExchangeManager:
                 self.connected_exchanges.pop(location)
             else:
                 self.connected_exchanges[location] = [x for x in exchanges_list if x.name != name]
-        with self.database.user_write() as write_cursor:  # Also remove it from the db
-            self.database.remove_exchange(write_cursor=write_cursor, name=name, location=location)
-            self.database.delete_used_query_range_for_exchange(
-                write_cursor=write_cursor,
-                location=location,
-                exchange_name=name,
-            )
+
+            # remove from the db under the same lock: setup_exchange persists under
+            # it too, so its DB write cannot interleave with this removal and leave
+            # credentials in the DB for an exchange the registry no longer holds
+            with self.database.user_write() as write_cursor:
+                self.database.remove_exchange(write_cursor=write_cursor, name=name, location=location)  # noqa: E501
+                self.database.delete_used_query_range_for_exchange(
+                    write_cursor=write_cursor,
+                    location=location,
+                    exchange_name=name,
+                )
         return True, ''
 
     def delete_all_exchanges(self) -> None:
@@ -243,10 +248,12 @@ class ExchangeManager:
             api_secret: ApiSecret | None,
             database: 'DBHandler',
             passphrase: str | None = None,
+            kraken_account_type: Optional['KrakenAccountType'] = None,
             **kwargs: Any,
     ) -> tuple[bool, str]:
         """
-        Setup a new exchange with an api key, an api secret.
+        Setup a new exchange with an api key, an api secret and register it in
+        both connected_exchanges and the DB.
 
         For some exchanges there is more attributes to add
         """
@@ -287,6 +294,24 @@ class ExchangeManager:
             # have registered it while this one validated the credentials remotely
             if self.get_exchange(name=name, location=location) is not None:
                 return False, f'{location!s} exchange {name} is already registered'
+            # persist under the same lock as the registry append: delete_exchange
+            # serializes on it too, so a concurrent delete cannot slip between the
+            # two and leave orphaned credentials in the DB that would resurrect
+            # the exchange on the next login. DB first, so that a failed write
+            # registers nothing.
+            database.add_exchange(
+                name=name,
+                location=location,
+                api_key=api_key,
+                api_secret=api_secret,
+                passphrase=passphrase,
+                kraken_account_type=kraken_account_type,
+                kraken_futures_api_key=kwargs.get('kraken_futures_api_key'),
+                kraken_futures_api_secret=kwargs.get('kraken_futures_api_secret'),
+                binance_selected_trade_pairs=kwargs.get('binance_selected_trade_pairs'),
+                okx_location=kwargs.get('okx_location'),
+                gate_location=kwargs.get('gate_location'),
+            )
             self.connected_exchanges[location].append(exchange)
         return True, ''
 
