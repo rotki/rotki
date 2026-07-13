@@ -408,4 +408,50 @@ describe('composables/use-filter-selection', () => {
       expect(get(selection)[0].value).toBe('value');
     });
   });
+
+  describe('echo guard (matches round-trip)', () => {
+    it('should not reorder chips when the parent echoes the emitted matches back', () => {
+      const setup = createTestSetup([createStringMatcher('type'), createStringMatcher('protocol')]);
+      const { updateMatches, restoreSelection, selection } = useFilterSelection(
+        setup.search,
+        setup.matcherForKey,
+        setup.matcherForKeyValue,
+        setup.emit,
+      );
+
+      // User adds chips interleaved: type, protocol, then type again.
+      updateMatches([
+        createSuggestion('type', 'a'),
+        createSuggestion('protocol', 'x'),
+        createSuggestion('type', 'b'),
+      ]);
+      expect(setup.emit).toHaveBeenLastCalledWith('update:matches', { protocol: ['x'], type: ['a', 'b'] });
+
+      // The parent round-trips a structurally-equal matches object straight back.
+      restoreSelection({ protocol: ['x'], type: ['a', 'b'] });
+
+      // Selection keeps the user's insertion order instead of being regrouped by key.
+      expect(get(selection).map(item => `${item.key}=${item.value}`)).toStrictEqual([
+        'type=a',
+        'protocol=x',
+        'type=b',
+      ]);
+    });
+
+    it('should rebuild selection when matches differ from the last emit', () => {
+      const setup = createTestSetup([createStringMatcher('type')]);
+      const { updateMatches, restoreSelection, selection } = useFilterSelection(
+        setup.search,
+        setup.matcherForKey,
+        setup.matcherForKeyValue,
+        setup.emit,
+      );
+
+      updateMatches([createSuggestion('type', 'a')]);
+      restoreSelection({ type: ['c'] });
+
+      expect(get(selection)).toHaveLength(1);
+      expect(get(selection)[0].value).toBe('c');
+    });
+  });
 });

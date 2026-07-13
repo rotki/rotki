@@ -6,6 +6,7 @@ import type {
   Suggestion,
 } from '@/modules/core/table/filtering';
 import { assert } from '@rotki/common';
+import { isEqual } from 'es-toolkit';
 import { arrayify } from '@/modules/core/common/data/array';
 
 interface SuggestionText {
@@ -36,6 +37,11 @@ export function useFilterSelection(
 ): UseFilterSelectionReturn {
   const selection = ref<Suggestion[]>([]);
   const suggestionBeingEdited = ref<Suggestion>();
+  // The matches object we last emitted. The parent echoes it straight back through the `matches`
+  // prop after every edit; restoreSelection uses this to skip rebuilding `selection` for that
+  // echo, since re-deriving it regroups chips by key (reordering them) and drops any match it
+  // can't map, diverging the visible chips from a filter that never actually changed.
+  const lastEmitted = ref<MatchedKeywordWithBehaviour<any>>();
 
   // TODO: This is too specific for custom asset, move it!
   function getDisplayValue(suggestion: Suggestion): string {
@@ -138,6 +144,7 @@ export function useFilterSelection(
     }
 
     set(selection, validPairs);
+    set(lastEmitted, matched);
     emit('update:matches', matched);
   }
 
@@ -178,6 +185,11 @@ export function useFilterSelection(
   }
 
   function restoreSelection(matchesData: MatchedKeywordWithBehaviour<any>): void {
+    // Ignore the echo of our own last emit: the parent round-trips `matches` back after every
+    // edit, and rebuilding `selection` from it would reorder/drop chips for no real change.
+    if (isEqual(matchesData, get(lastEmitted)))
+      return;
+
     const oldSelection = get(selection);
     const newSelection: Suggestion[] = [];
     Object.entries(matchesData).forEach(([key, value]) => {
