@@ -58,9 +58,12 @@ CONTEXT_SWITCH_WAIT = 0.025  # seconds between cancellation checks while waiting
 # memory footprint trivial while making the per-row lock cost disappear.
 CURSOR_PREFETCH_ROWS = 1000
 # How long disable_read_pool() waits for borrowed readers to be returned before
-# proceeding without them. Read contexts are short (statement duration), so this
-# is generous; matching DEFAULT_CANCEL_GRACE_SECONDS in spirit.
+# interrupting their in-flight statements. Read contexts are short (statement
+# duration), so this is generous; matching DEFAULT_CANCEL_GRACE_SECONDS in spirit.
 DISABLE_READ_POOL_DRAIN_SECONDS = 3.0
+# Extra wait after interrupting the statements of still-borrowed readers, for
+# their read contexts to unwind and return them.
+DISABLE_READ_POOL_INTERRUPT_GRACE_SECONDS = 1.0
 
 logger: 'RotkehlchenLogger' = logging.getLogger(__name__)  # type: ignore
 
@@ -395,6 +398,10 @@ class DBConnection:
         # would make the unlink fail on windows or read re-keyed pages as garbage.
         self._borrowed_readers_count = 0
         self._readers_returned = threading.Condition(self._read_pool_lock)
+        # The borrowed reader connections themselves (guarded by the same lock),
+        # so disable_read_pool() can interrupt their in-flight statements once
+        # its graceful wait for their return expires.
+        self._borrowed_readers: set[DBConnection] = set()
         # The reader this thread has currently borrowed, so that nested read_ctx
         # calls reuse it instead of borrowing a second one. Without this, N threads
         # nesting read contexts could each hold one reader while waiting for
@@ -509,6 +516,12 @@ class DBConnection:
         with self.statement_lock:
             return DBCursor(connection=self, cursor=self._conn.cursor())
 
+    def interrupt(self) -> None:
+        """Abort this connection's in-flight statements (sqlite3_interrupt). Safe
+        to call from any thread and without the statement lock, which the thread
+        running the statement to be aborted is holding."""
+        self._conn.interrupt()
+
     def close(self) -> None:
         self.disable_read_pool()
         with self.statement_lock:
@@ -557,8 +570,10 @@ class DBConnection:
         disable the pool to delete or re-key the underlying file, and a reader
         still open at that moment makes the file unlink fail on windows
         (premium sync pull) or serves re-keyed pages as garbage. A reader not
-        returned within the wait is closed by _return_reader when its read_ctx
-        exits, since the pool it would be returned to is gone.
+        returned within the wait gets its in-flight statements interrupted so
+        its read context errors out and returns it; one still not returned
+        after that is closed by _return_reader when its read_ctx exits, since
+        the pool it would be returned to is gone.
         """
         with self._readers_returned:
             read_pool, self._read_pool = self._read_pool, None
@@ -568,14 +583,25 @@ class DBConnection:
             if read_pool is None:
                 return
             deadline = time.monotonic() + DISABLE_READ_POOL_DRAIN_SECONDS
+            interrupted = False
             while self._borrowed_readers_count > 0:
                 if (remaining := deadline - time.monotonic()) <= 0:
-                    logger.warning(
-                        'Disabling the read pool with %s readers still borrowed. The '
-                        'operation that needed the pool gone may fail.',
-                        self._borrowed_readers_count,
-                    )
-                    break
+                    if interrupted:
+                        logger.warning(
+                            'Disabling the read pool with %s readers still borrowed '
+                            'after interrupting their statements. The operation that '
+                            'needed the pool gone may fail.',
+                            self._borrowed_readers_count,
+                        )
+                        break
+                    # the graceful wait expired: abort the borrowed readers'
+                    # in-flight statements so their read contexts exit, then
+                    # wait (bounded again) for them to be returned
+                    for reader in self._borrowed_readers:
+                        reader.interrupt()
+                    interrupted = True
+                    deadline = time.monotonic() + DISABLE_READ_POOL_INTERRUPT_GRACE_SECONDS
+                    continue
                 self._readers_returned.wait(remaining)
         self._close_idle_readers(read_pool)
 
@@ -679,6 +705,7 @@ class DBConnection:
     ) -> None:
         with self._readers_returned:
             self._borrowed_readers_count -= 1
+            self._borrowed_readers.discard(reader)
             self._readers_returned.notify_all()
             if self._read_pool is source_pool:
                 source_pool.put(reader)
@@ -731,6 +758,8 @@ class DBConnection:
                 cursor.close()
             return
 
+        with self._readers_returned:
+            self._borrowed_readers.add(reader)
         self._borrowed_reader.reader = reader
         try:
             with reader.read_ctx() as cursor:
