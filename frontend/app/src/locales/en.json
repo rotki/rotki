@@ -5687,6 +5687,11 @@
     "historical_price_oracles_v1_43": "Prioritize DefiLlama for historical prices (less rate limiting)",
     "keep_current": "Keep current"
   },
+  "single_tab": {
+    "action": "Use rotki in this tab",
+    "message": "rotki was opened in another browser tab. Only one tab can be active at a time, so this tab has been paused to avoid interfering with your session.",
+    "title": "rotki is active in another tab"
+  },
   "snapshot_action_button": {
     "force_save": "Force save",
     "ignore_errors_label": "Ignore Errors",
