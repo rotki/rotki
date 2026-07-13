@@ -1509,13 +1509,15 @@ class Rotkehlchen:
             gate_location: Optional['GateLocation'] = None,
     ) -> tuple[bool, str]:
         """
-        Setup a new exchange with an api key and an api secret and optionally a passphrase
+        Setup a new exchange with an api key and an api secret and optionally a passphrase.
+        The manager registers it and saves it in the DB atomically w.r.t. concurrent deletes.
         """
-        is_success, msg = self.exchange_manager.setup_exchange(
+        return self.exchange_manager.setup_exchange(
             name=name,
             location=location,
             api_key=api_key,
             api_secret=api_secret,
+            kraken_account_type=kraken_account_type,
             kraken_futures_api_key=kraken_futures_api_key,
             kraken_futures_api_secret=kraken_futures_api_secret,
             database=self.data.db,
@@ -1524,22 +1526,6 @@ class Rotkehlchen:
             okx_location=okx_location,
             gate_location=gate_location,
         )
-        if is_success:
-            # Success, save the result in the DB
-            self.data.db.add_exchange(
-                name=name,
-                location=location,
-                api_key=api_key,
-                api_secret=api_secret,
-                passphrase=passphrase,
-                kraken_account_type=kraken_account_type,
-                kraken_futures_api_key=kraken_futures_api_key,
-                kraken_futures_api_secret=kraken_futures_api_secret,
-                binance_selected_trade_pairs=binance_selected_trade_pairs,
-                okx_location=okx_location,
-            gate_location=gate_location,
-            )
-        return is_success, msg
 
     def query_periodic_data(self) -> dict[str, bool | (dict[str, list[str]] | Timestamp)]:
         """Query for frequently changing data"""
