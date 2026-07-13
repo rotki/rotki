@@ -293,8 +293,8 @@ class Coinex(ExchangeInterface, SignatureGeneratorMixin):
     ) -> list[SwapEvent]:
         """Deserialize a CoinEx finished order into swap events.
 
-        CoinEx does not name the deduction currency in the response.
-        discount_fee is assumed to be CET.
+        CoinEx does not name the deduction currency in the response, so discount_fee
+        is assumed to be CET.
 
         May raise DeserializationError.
         """
