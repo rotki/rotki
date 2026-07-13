@@ -44,6 +44,11 @@ def create_api_server(
     api_server.start(
         host='127.0.0.1',
         rest_port=rest_port_number,
+        # No keepalive pings under pytest: freezegun patches time.monotonic, so a
+        # test jumping frozen time fires the ping timer and then the pong-timeout
+        # timer early, spuriously closing the test websocket with 1011 mid-test.
+        ws_ping_interval=None,
+        ws_ping_timeout=None,
     )
 
     # Fixes flaky test, where requests are done prior to the server initializing
