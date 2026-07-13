@@ -72,6 +72,9 @@ class AsgiWebsocketSubscriber:
         # set by _serve_websocket; invoked on the event-loop thread when the
         # queue overflows, to tear the lagging connection down
         self.overflow_callback: Callable[[], None] | None = None
+        # messages that found the queue full, retained so teardown hands them to
+        # the notifier along with the queued ones instead of losing them
+        self._overflowed: list[str] = []
 
     def enqueue(self, message: str) -> None:
         """Put a message on the queue. Must run on the event-loop thread.
@@ -79,11 +82,14 @@ class AsgiWebsocketSubscriber:
         On overflow the client has not consumed WS_QUEUE_MAXSIZE messages: mark
         it closed -- broadcasts skip and remove closed subscribers, with their
         failure callbacks routing error messages to the polling fallback -- and
-        let the overflow callback disconnect it so the frontend reconnects.
+        let the overflow callback disconnect it so the frontend reconnects. The
+        overflowing message is retained for drain_pending, so an error-class one
+        still reaches the polling fallback through the teardown requeue.
         """
         try:
             self.queue.put_nowait(message)
         except asyncio.QueueFull:
+            self._overflowed.append(message)
             self.closed = True
             if self.overflow_callback is not None:
                 self.overflow_callback()
@@ -103,14 +109,17 @@ class AsgiWebsocketSubscriber:
             raise WebsocketSendError(str(e)) from e
 
     def drain_pending(self) -> list[str]:
-        """Return and clear the messages still queued. To be called on the
-        event-loop thread during connection teardown, after closed is set, so
-        undelivered messages can be given back to the notifier."""
+        """Return and clear the messages still queued plus the ones dropped on
+        queue overflow (queued first: the overflowed ones are newer). To be
+        called on the event-loop thread during connection teardown, after closed
+        is set, so undelivered messages can be given back to the notifier."""
         pending = []
         while True:
             try:
                 pending.append(self.queue.get_nowait())
             except asyncio.QueueEmpty:
+                pending.extend(self._overflowed)
+                self._overflowed.clear()
                 return pending
 
 

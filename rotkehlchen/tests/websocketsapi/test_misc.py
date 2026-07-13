@@ -1,8 +1,11 @@
+import asyncio
 import json
 import platform
+from unittest.mock import Mock
 
 import pytest
 
+from rotkehlchen.api.asgi import WS_QUEUE_MAXSIZE, AsgiWebsocketSubscriber
 from rotkehlchen.concurrency import spawn, wait
 from rotkehlchen.user_messages import MessagesAggregator
 
@@ -67,3 +70,30 @@ def test_requeue_undelivered_messages():
 
     assert msg_aggregator.consume_errors() == ['an error', snapshot_error_msg]
     assert msg_aggregator.consume_warnings() == ['a warning']
+
+
+def test_queue_overflow_retains_dropped_messages():
+    """The message that finds the queue full must be kept for teardown: it is
+    handed back to the notifier by drain_pending along with the queued ones, so
+    an error-class message still reaches the /messages polling fallback"""
+    loop = asyncio.new_event_loop()
+    try:
+        subscriber = AsgiWebsocketSubscriber(loop=loop)
+        subscriber.overflow_callback = (overflow_callback := Mock())
+        for i in range(WS_QUEUE_MAXSIZE):
+            subscriber.enqueue(f'message {i}')
+        assert subscriber.closed is False
+
+        subscriber.enqueue('the overflowing message')
+        assert subscriber.closed is True
+        overflow_callback.assert_called_once()
+        # an enqueue already scheduled before the overflow closed it is kept too
+        subscriber.enqueue('a message scheduled before the disconnect')
+
+        pending = subscriber.drain_pending()
+        assert len(pending) == WS_QUEUE_MAXSIZE + 2
+        assert pending[0] == 'message 0'
+        assert pending[-2] == 'the overflowing message'
+        assert pending[-1] == 'a message scheduled before the disconnect'
+    finally:
+        loop.close()
