@@ -7,6 +7,16 @@ This changelog documents API changes, schema modifications, and other developer-
 Unreleased
 ==========
 
+Session Cookie Authentication (Docker)
+--------------------------------------
+
+When rotki is set up with the ``ROTKI_SESSION_KEY`` environment variable (the Docker/web deployment), the API enforces a single active session backed by an ``HttpOnly`` cookie. Requests without a valid session cookie are rejected with ``401`` and the websocket handshake is refused. Logging in a user establishes the session and revokes any previous one, so only one frontend is served at a time.
+
+* **New Endpoint**: ``POST /api/(version)/users/(name)/authenticate``
+
+  - Accepts the account ``password`` and issues the session cookie before the asynchronous unlock, so the gated task poll and websocket handshake are authorized.
+  - Has no effect when ``ROTKI_SESSION_KEY`` is unset (desktop/Electron deployment), where the API stays session-less as before.
+
 Spam Token Endpoint Renamed
 ----------------------------
 

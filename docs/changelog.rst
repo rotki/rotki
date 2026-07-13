@@ -2,6 +2,8 @@
 Changelog
 =========
 
+* :feature:`2922` The Docker version of rotki can now require authentication. When set up with the session key environment variable it issues a secure, HttpOnly session cookie on login and rejects unauthenticated API and websocket access, so a rotki instance reachable on your network is no longer open to anyone who can reach its port.
+* :feature:`3156` When rotki runs in a browser (Docker), only one session can be active at a time. Logging in from another browser or window takes over the session and signs the previous one out, and opening rotki in a second tab of the same browser now pauses the older tab with a prompt to continue in whichever tab you choose, so two frontends no longer compete over one backend.
 * :feature:`-` Kinetiq liquid staking on HyperEVM is now supported. Staking, withdrawals (queued and instant) are decoded, and the HYPE value of pending withdrawals is detected in your balances. Also Kinetiq earn vaults are supported.
 * :feature:`12559` History events can now be filtered by an amount range. Two new filters, minimum and maximum amount, are available in the history events view and can be combined with the asset filter to e.g. find all EURe payments between 25 and 30 EURe.
 * :feature:`-` Add support for CoinEx exchange.

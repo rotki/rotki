@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { checkIfDevelopment, startPromise } from '@shared/utils';
 import { useSigil } from '@/modules/core/sigil/use-sigil';
+import SingleTabOverlay from '@/modules/session/single-tab/SingleTabOverlay.vue';
+import { useSingleTabGuard } from '@/modules/session/single-tab/use-single-tab-guard';
 import { useLocale } from '@/modules/session/use-locale';
 import { useSessionStateCleaner } from '@/modules/session/use-session-state-cleaner';
 import { useSetting } from '@/modules/settings/use-setting';
@@ -16,6 +18,7 @@ const animationsEnabled = useSetting('animationsEnabled');
 const { setupBackend } = useBackendManagement();
 const route = useRoute();
 useSessionStateCleaner();
+useSingleTabGuard();
 
 const isDevelopment = checkIfDevelopment();
 const isPlayground = computed(() => isDevelopment && get(route).path === '/playground');
@@ -40,6 +43,7 @@ watch(adaptiveLanguage, async (language) => {
     :class="{ 'animations-disabled': !animationsEnabled }"
   >
     <slot />
+    <SingleTabOverlay />
   </div>
   <DevApp v-else />
 </template>
