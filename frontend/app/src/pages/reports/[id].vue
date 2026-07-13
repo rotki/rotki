@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { Report } from '@/modules/reports/report-types';
+import { msg } from '@/message-key';
 import { NoteLocation } from '@/modules/core/common/notes';
 import AccountingSettingsDisplay from '@/modules/reports/AccountingSettingsDisplay.vue';
 import ExportReportCsv from '@/modules/reports/ExportReportCsv.vue';
@@ -14,7 +15,7 @@ import ProgressScreen from '@/modules/shell/components/ProgressScreen.vue';
 definePage({
   meta: {
     // label-only: gives the notes sidebar a title; not shown in the drawer or search.
-    nav: { labelKey: 'navigation_menu.profit_loss_report', icon: 'lu-calculator', searchable: false },
+    nav: { labelKey: msg.$t('navigation_menu.profit_loss_report'), icon: 'lu-calculator', searchable: false },
     canNavigateBack: true,
     noteLocation: NoteLocation.PROFIT_LOSS_REPORTS,
   },

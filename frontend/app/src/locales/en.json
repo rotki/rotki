@@ -95,7 +95,6 @@
       "xpub_non_empty": "The XPUB field cannot be empty"
     },
     "xpub_detected": {
-      "badge": "Auto Detected",
       "disambiguation_hint": "Native SegWit is the most common for modern wallets. Pick Legacy, SegWit, or Taproot if your wallet uses those.",
       "disambiguation_prompt": "Which address type does your wallet use?",
       "legacy": "Legacy",
@@ -106,8 +105,7 @@
       "segwit_description": "Addresses start with 3",
       "taproot": "Taproot",
       "taproot_description": "Addresses start with bc1p",
-      "type_hint": "{type} detected",
-      "type_override": "Key Type (override)"
+      "type_hint": "{type} detected"
     }
   },
   "account_import_progress": {
@@ -189,7 +187,6 @@
     "balance_after": "Balance after this event",
     "error": "Could not load the balance for this event.",
     "high_precision": "This balance has unusually high precision and is shown rounded to {decimals} decimals. The actual value is preserved for calculations.",
-    "label": "Accounting overlay",
     "modes": {
       "balance": "Balance",
       "none": "Off"
@@ -1286,7 +1283,8 @@
       "counterparty_symbol": "Asset symbol in the counterparty",
       "filter_by_counterparty": "Filter by counterparty",
       "form": {
-        "counterparty_non_empty": "The counterparty field cannot be empty"
+        "counterparty_non_empty": "The counterparty field cannot be empty",
+        "counterparty_symbol_non_empty": "The counterparty symbol field cannot be empty"
       },
       "subtitle": "You can link asset symbols on a counterparty with assets recognized by rotki. This is necessary for rotki to process assets on certain counterparty."
     },
@@ -1934,7 +1932,6 @@
       "clear": "Clear",
       "clear_selection": "Clear Selection",
       "close": "Close",
-      "collapse": "Collapse",
       "confirm": "Confirm",
       "continue": "Continue",
       "copy": "Copy",
@@ -1946,7 +1943,6 @@
       "download": "Download",
       "download_csv": "Download CSV",
       "edit": "Edit",
-      "expand": "Expand",
       "export": "Export",
       "export_csv": "Export CSV",
       "filter": "Filter",
@@ -2418,7 +2414,6 @@
           "locations_sum": "Sum of locations",
           "reconcile_apply": "Reconcile locations",
           "reconcile_into": "Absorb difference into",
-          "stored_total": "Stored net worth",
           "title": "Totals do not match"
         },
         "navigation": {
@@ -2428,8 +2423,7 @@
         "not_found": "Snapshot not found",
         "save": {
           "failure": "Failed to save snapshot",
-          "success": "Snapshot saved successfully",
-          "title": "Save snapshot"
+          "success": "Snapshot saved successfully"
         },
         "split": {
           "add_row": "Add location",
@@ -2535,7 +2529,6 @@
         },
         "title": "Snapshots"
       },
-      "search_asset": "Search asset",
       "subtitle": "Download this snapshot's data."
     }
   },
@@ -3112,7 +3105,6 @@
     },
     "blockscout": {
       "api_key_message": "Blockscout API key is needed to query historical EVM transactions.",
-      "delete_tooltip": "Deletes the Blockscout API key",
       "description": "Alternative to Etherscan for querying EVM blockchain balances and transactions.",
       "hint": "Enter your Blockscout API key",
       "title": "Blockscout"
@@ -3334,9 +3326,7 @@
         "subtitle": "The time in hours after dismissing the indicator before it can be shown again",
         "title": "Dismissal Threshold",
         "validation": {
-          "error": "Failed to set the dismissal threshold",
-          "invalid_period": "Period must be between {start} and {end} hours",
-          "non_empty": "Please enter the number of hours"
+          "error": "Failed to set the dismissal threshold"
         }
       },
       "min_out_of_sync_period": {
@@ -3344,9 +3334,7 @@
         "subtitle": "The minimum time in hours that blockchain data must be out of sync before showing the query indicator",
         "title": "Minimum Out of Sync Period",
         "validation": {
-          "error": "Failed to set the minimum out of sync period",
-          "invalid_period": "Period must be between {start} and {end} hours",
-          "non_empty": "Please enter the number of hours"
+          "error": "Failed to set the minimum out of sync period"
         }
       },
       "reset_dismissal_status": {
@@ -3386,9 +3374,7 @@
       "label": "Query period in seconds",
       "title": "Periodic status query",
       "validation": {
-        "error": "Error setting query period",
-        "invalid_period": "Period must be between {start} and {end}",
-        "non_empty": "Please enter the number of seconds"
+        "error": "Error setting query period"
       }
     },
     "persist_privacy": {
@@ -3496,8 +3482,6 @@
       "title": "Balance saving",
       "validation": {
         "error": "Error setting balance save frequency to {frequency}",
-        "invalid_frequency": "Frequency must be between {start} and {end} hours",
-        "non_empty": "Please enter the number of hours",
         "success": "Data save frequency set to {frequency} hours"
       }
     },
@@ -3728,9 +3712,7 @@
         "success": "EVM chains to skip for cross-chain account activity detection saved successfully"
       },
       "csv_delimiter": {
-        "empty": "CSV delimiter cannot be empty.",
         "error": "Please provide a valid delimiter.",
-        "single_character": "CSV delimiter must be a single character.",
         "success": "CSV delimiter {delimiter} has been successfully set."
       },
       "currency": {
@@ -4653,8 +4635,7 @@
       "history_events": "Events Analysis",
       "snapshots": "Snapshots"
     },
-    "tag_manager": "Tag Manager",
-    "wallet_bridge": "Wallet Bridge"
+    "tag_manager": "Tag Manager"
   },
   "net_worth_chart": {
     "current_balance": "Current balance"
@@ -4883,12 +4864,10 @@
       "title": "Oracle penalty settings",
       "validation": {
         "oracle_penalty_duration": {
-          "invalid_period": "Duration must be greater than {min} second.",
-          "non_empty": "Please enter the number of seconds"
+
         },
         "oracle_penalty_threshold_count": {
-          "invalid_period": "Number of failures must be greater than {min}",
-          "non_empty": "Please enter the number of failures"
+
         }
       }
     }
@@ -4972,17 +4951,7 @@
     },
     "refresh_tooltip": "Refresh the oracle prices list",
     "sources": {
-      "alchemy": "Alchemy",
-      "blockchain": "Blockchain",
-      "coingecko": "CoinGecko",
-      "cryptocompare": "CryptoCompare",
-      "defillama": "DeFi Llama",
-      "fiat": "Fiat Exchange Rates",
-      "kraken": "Kraken",
-      "manual": "Manual",
-      "moralis": "Moralis",
-      "uniswapv2": "Uniswap V2",
-      "uniswapv3": "Uniswap V3"
+      "cryptocompare": "CryptoCompare"
     },
     "tabs": {
       "caches": "Caches",
@@ -6387,9 +6356,7 @@
         "true": "All transactions have been processed."
       },
       "decoding": {
-        "done": "Decoded {count} transaction | Decoded {count} transactions",
-        "pending": "{count} Undecoded transaction | {count} Undecoded transactions",
-        "processing": "Decoding {count} transaction | Decoding {count} of {total} transactions"
+
       },
       "fetching": "Checking transaction decoding status",
       "preparing": "Decoding transactions, please wait...",

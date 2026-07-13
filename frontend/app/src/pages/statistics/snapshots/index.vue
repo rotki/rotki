@@ -4,6 +4,7 @@ import type { LocationQueryRaw } from 'vue-router';
 import type { LocationQuery } from '@/modules/core/table/route';
 import { type BigNumber, type Message, Zero } from '@rotki/common';
 import { startPromise } from '@shared/utils';
+import { msg } from '@/message-key';
 import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
 import { NoteLocation } from '@/modules/core/common/notes';
 import { useConfirmStore } from '@/modules/core/common/use-confirm-store';
@@ -21,7 +22,7 @@ import TablePageLayout from '@/modules/shell/layout/TablePageLayout.vue';
 
 definePage({
   meta: {
-    nav: { labelKey: 'navigation_menu.statistics_sub.snapshots', icon: 'lu-camera', parent: '/statistics/', order: 30, drawer: 'statistics-snapshots' },
+    nav: { labelKey: msg.$t('navigation_menu.statistics_sub.snapshots'), icon: 'lu-camera', parent: '/statistics/', order: 30, drawer: 'statistics-snapshots' },
     noteLocation: NoteLocation.STATISTICS_SNAPSHOTS,
   },
 });

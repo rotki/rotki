@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { RouteLocationRaw } from 'vue-router';
 import { startPromise } from '@shared/utils';
+import { msg } from '@/message-key';
 import { getPublicProtocolImagePath } from '@/modules/core/common/file/file';
 import { NoteLocation } from '@/modules/core/common/notes';
 import AppImage from '@/modules/shell/components/AppImage.vue';
@@ -17,7 +18,7 @@ interface StakingInfo {
 
 definePage({
   meta: {
-    nav: { labelKey: 'navigation_menu.staking', icon: 'lu-layers', section: 1, order: 60, drawer: 'staking' },
+    nav: { labelKey: msg.$t('navigation_menu.staking'), icon: 'lu-layers', section: 1, order: 60, drawer: 'staking' },
     noteLocation: NoteLocation.STAKING,
   },
   props: true,

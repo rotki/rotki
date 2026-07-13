@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { type AssetBalanceWithPrice, type BigNumber, toHumanReadable, toSentenceCase, Zero } from '@rotki/common';
+import { msg } from '@/message-key';
 import ExchangeAmountRow from '@/modules/accounts/exchanges/ExchangeAmountRow.vue';
 import { FiatDisplay } from '@/modules/assets/amount-display/components';
 import AssetBalances from '@/modules/balances/AssetBalances.vue';
@@ -20,7 +21,7 @@ import TablePageLayout from '@/modules/shell/layout/TablePageLayout.vue';
 
 definePage({
   meta: {
-    nav: { labelKey: 'navigation_menu.balances_sub.exchange_balances', icon: 'lu-coins-exchange', parent: '/balances/', order: 20, drawer: 'balances-exchange' },
+    nav: { labelKey: msg.$t('navigation_menu.balances_sub.exchange_balances'), icon: 'lu-coins-exchange', parent: '/balances/', order: 20, drawer: 'balances-exchange' },
     noteLocation: NoteLocation.BALANCES_EXCHANGE,
   },
   props: true,

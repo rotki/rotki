@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { AssetBalanceWithPrice } from '@rotki/common';
 import { externalLinks } from '@shared/external-links';
+import { msg } from '@/message-key';
 import ManagedAssetIgnoreSwitch from '@/modules/assets/admin/managed/ManagedAssetIgnoreSwitch.vue';
 import AssetLocations from '@/modules/assets/AssetLocations.vue';
 import AssetValueRow from '@/modules/assets/AssetValueRow.vue';
@@ -22,7 +23,7 @@ import { useAssetPageActions } from '@/pages/assets/use-asset-page-actions';
 definePage({
   meta: {
     // label-only: gives the notes sidebar a title; not shown in the drawer or search.
-    nav: { labelKey: 'common.assets', icon: 'lu-coins', searchable: false },
+    nav: { labelKey: msg.$t('common.assets'), icon: 'lu-coins', searchable: false },
     canNavigateBack: true,
     noteLocation: NoteLocation.ASSETS,
   },

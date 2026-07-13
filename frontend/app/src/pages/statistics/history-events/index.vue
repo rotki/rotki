@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { msg } from '@/message-key';
 import { NoteLocation } from '@/modules/core/common/notes';
 import { PremiumFeature, useFeatureAccess } from '@/modules/premium/use-feature-access';
 import WrappedContainer from '@/modules/statistics/wrapped/components/WrappedContainer.vue';
@@ -6,7 +7,7 @@ import WrappedContainerPlaceholder from '@/modules/statistics/WrappedContainerPl
 
 definePage({
   meta: {
-    nav: { labelKey: 'navigation_menu.statistics_sub.history_events', icon: 'lu-chart-bar', parent: '/statistics/', order: 20, drawer: 'statistics-history-events' },
+    nav: { labelKey: msg.$t('navigation_menu.statistics_sub.history_events'), icon: 'lu-chart-bar', parent: '/statistics/', order: 20, drawer: 'statistics-history-events' },
     noteLocation: NoteLocation.STATISTICS_HISTORY_EVENTS,
   },
 });

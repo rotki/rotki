@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { msg } from '@/message-key';
 import { NoteLocation } from '@/modules/core/common/notes';
 import SettingsPage from '@/modules/settings/controls/SettingsPage.vue';
 import ModuleSelector from '@/modules/settings/modules/ModuleSelector.vue';
@@ -7,7 +8,7 @@ import SettingCategory from '@/modules/settings/SettingCategory.vue';
 
 definePage({
   meta: {
-    nav: { labelKey: 'navigation_menu.settings_sub.modules', icon: 'lu-layout-grid', parent: '/settings' },
+    nav: { labelKey: msg.$t('navigation_menu.settings_sub.modules'), icon: 'lu-layout-grid', parent: '/settings' },
     noteLocation: NoteLocation.SETTINGS_MODULES,
   },
 });

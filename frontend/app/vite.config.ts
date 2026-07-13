@@ -117,6 +117,7 @@ export default defineConfig({
       'plainfp/result-async',
       'plainfp/option',
       'plainfp/pipe',
+      'plainfp/brand',
       '@rotki/ui-library/components',
       'vue-echarts',
     ],

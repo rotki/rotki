@@ -1064,8 +1064,7 @@
       "add_title": "添加区块链账户",
       "edit_subtitle": "修改账户信息",
       "edit_title": "编辑区块链账户"
-    },
-    "title": "每项资产的区块链余额"
+    }
   },
   "change_password": {
     "button": "更改密码",
@@ -1343,7 +1342,6 @@
       "edit": {
         "dialog": {
           "actions": {
-            "add_new_entry": "添加新条目",
             "delete_item": "删除项目",
             "edit_item": "编辑项目"
           },
@@ -1368,11 +1366,10 @@
               "category": "类别字段不能为空",
               "value": "值字段不能为空"
             },
-            "title": "余额快照",
             "token": "Token"
           },
           "fetch": {
-            "loading": "正在获取快照数据"
+
           },
           "location_data": {
             "add_title": "添加位置数据快照数据",
@@ -1382,24 +1379,15 @@
             "rules": {
               "location": "位置字段不能为空",
               "value": "值字段不能为空"
-            },
-            "title": "位置数据快照"
+            }
           },
           "message": {
-            "error": "无法更新快照数据：{message}",
-            "success": "数据更新成功",
-            "title": "更新快照数据"
+
           },
-          "title": "编辑 {date} 的快照数据",
           "total": {
-            "hint": "资产总额和位置总额之间的金额不同。您可以选择要使用的金额。",
             "rules": {
-              "total": "值字段不能为空"
-            },
-            "use_calculated_asset": "使用 {length} 个资产总值：",
-            "use_calculated_location": "使用 {length} 个位置的总计值：",
-            "use_calculated_total": "使用计算总值：",
-            "warning": "这是包括 NFTs 价值的总价值。如果你关闭设置“在图表和总量中包括 NFTs”,它将在图表上显示价值 {amount}"
+
+            }
           }
         }
       },
@@ -1691,7 +1679,6 @@
       "title": "Beaconcha.in"
     },
     "blockscout": {
-      "delete_tooltip": "删除 Blockscout API 密钥",
       "description": "rotki 使用 Blockscout 获取有关 ETH 提现查询等信息。仅当您受到速率限制时才需要 API 密钥。",
       "hint": "输入您的 Blockscout API 密钥",
       "title": "Blockscout"
@@ -2215,7 +2202,6 @@
   },
   "manual_balances": {
     "add_manual_balance": "添加手动余额",
-    "balances": "手动跟踪余额",
     "dialog": {
       "add": {
         "title": "添加手动余额"
@@ -2224,8 +2210,7 @@
         "subtitle": "修改余额、位置、标签",
         "title": "编辑手动余额"
       }
-    },
-    "liabilities": "手动跟踪负债"
+    }
   },
   "manual_balances_form": {
     "fields": {
@@ -2489,30 +2474,15 @@
     "title": "通知"
   },
   "oracle_cache_management": {
-    "clear_error": "清除 {fromAsset} 到 {toAsset} 的缓存失败：{error}",
-    "create_cache": "缓存对价格",
-    "create_tooltip": "获取并缓存指定价格对的历史价格",
     "delete_confirmation": {
-      "message": "您确定要删除 {selection} 上 {fromAsset} 到 {toAsset} 对的所有缓存价格吗？",
-      "title": "删除所有缓存价格"
+
     },
-    "delete_tooltip": "删除为这对缓存的价格和选定的价格 oracle",
-    "from_asset": "来自资产",
     "headers": {
-      "from": "来自资产",
-      "from_date": "起始日期",
-      "to": "到资产",
-      "to_date": "截止日期"
+
     },
     "notification": {
-      "error": "为 {fromAsset} 到 {toAsset} 对创建缓存失败：{error}",
-      "success": "{source} 上 {fromAsset} 到 {toAsset} 对的缓存已成功创建",
-      "title": "价格对缓存创建"
-    },
-    "select_oracle": "选择价格预言机",
-    "subtitle": "创建/删除和查看缓存价格",
-    "title": "甲骨文缓存",
-    "to_asset": "到资产"
+
+    }
   },
   "oracles": {
     "uniswap_v2": "Uniswap V2",
@@ -2662,7 +2632,6 @@
   "premium_credentials": {
     "label_api_key": "rotki API Key",
     "label_api_secret": "rotki API Secret",
-    "restore_synced_database": "恢复同步数据库",
     "validation": {
       "non_empty_key": "API key 不能为空",
       "non_empty_secret": "API secret 不能为空"

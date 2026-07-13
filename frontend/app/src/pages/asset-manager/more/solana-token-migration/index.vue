@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { DataTableColumn } from '@rotki/ui-library';
 import { SolanaTokenKind } from '@rotki/common';
+import { msg } from '@/message-key';
 import MergeDialog from '@/modules/assets/admin/MergeDialog.vue';
 import SolanaTokenMigrationDialog from '@/modules/assets/admin/solana-token-migration/SolanaTokenMigrationDialog.vue';
 import { useSolanaTokenMigrationStore } from '@/modules/assets/admin/solana-token-migration/use-solana-token-migration-store';
@@ -10,7 +11,7 @@ import TablePageLayout from '@/modules/shell/layout/TablePageLayout.vue';
 
 definePage({
   meta: {
-    nav: { labelKey: 'navigation_menu.manage_assets_sub.solana_token_migration', icon: 'lu-coins', parent: '/asset-manager/' },
+    nav: { labelKey: msg.$t('navigation_menu.manage_assets_sub.solana_token_migration'), icon: 'lu-coins', parent: '/asset-manager/' },
   },
 });
 

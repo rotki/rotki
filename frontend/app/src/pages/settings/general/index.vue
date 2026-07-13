@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { msg } from '@/message-key';
 import { NoteLocation } from '@/modules/core/common/notes';
 import AmountSettingsCategory from '@/modules/settings/AmountSettingsCategory.vue';
 import BackendServiceSettingsCategory from '@/modules/settings/BackendServiceSettingsCategory.vue';
@@ -11,7 +12,7 @@ import { SettingsCategoryIds } from '@/modules/settings/setting-highlight-ids';
 
 definePage({
   meta: {
-    nav: { labelKey: 'navigation_menu.settings_sub.general', icon: 'lu-bolt', parent: '/settings' },
+    nav: { labelKey: msg.$t('navigation_menu.settings_sub.general'), icon: 'lu-bolt', parent: '/settings' },
     noteLocation: NoteLocation.SETTINGS_GENERAL,
   },
 });

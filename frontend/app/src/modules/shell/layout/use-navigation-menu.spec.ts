@@ -1,5 +1,6 @@
 import type { RouteNavMeta } from '@/types/router';
 import { afterEach, assert, beforeEach, describe, expect, it, vi } from 'vitest';
+import { msg } from '@/message-key';
 import { type MenuItem, type MenuNavGroup, type MenuNavItem, useNavigationMenu } from '@/modules/shell/layout/use-navigation-menu';
 
 interface FakeRoute {
@@ -18,8 +19,8 @@ vi.mock('vue-router', () => ({
   })),
 }));
 
-function route(name: string, nav?: Omit<RouteNavMeta, 'icon'>): FakeRoute {
-  return { name, meta: nav ? { nav: { icon: 'lu-wallet', ...nav } } : {} };
+function route(name: string, nav?: Omit<RouteNavMeta, 'icon' | 'labelKey'> & { labelKey: string }): FakeRoute {
+  return { name, meta: nav ? { nav: { icon: 'lu-wallet', ...nav, labelKey: msg.$t(nav.labelKey) } } : {} };
 }
 
 function itemAt(items: MenuItem[], index: number): MenuNavItem {

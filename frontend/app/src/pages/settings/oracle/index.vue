@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { msg } from '@/message-key';
 import { NoteLocation } from '@/modules/core/common/notes';
 import SettingsPage from '@/modules/settings/controls/SettingsPage.vue';
 import OraclePenaltySettings from '@/modules/settings/data-security/oracle/OraclePenaltySettings.vue';
@@ -7,7 +8,7 @@ import { SettingsCategoryIds } from '@/modules/settings/setting-highlight-ids';
 
 definePage({
   meta: {
-    nav: { labelKey: 'navigation_menu.settings_sub.oracles', icon: 'lu-circle-dollar-sign', parent: '/settings' },
+    nav: { labelKey: msg.$t('navigation_menu.settings_sub.oracles'), icon: 'lu-circle-dollar-sign', parent: '/settings' },
     noteLocation: NoteLocation.SETTINGS_ORACLE,
   },
 });
