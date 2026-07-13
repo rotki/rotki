@@ -27,11 +27,7 @@ const GNOSIS_CHAIN_ID = 100;
 const { useApiKey, confirmDelete, load, loading } = useExternalApiKeys();
 const key = useApiKey(name);
 
-const { addMissingSafe, adding, checkMigration, hasUntrackedSafe, untrackedAccount, untrackedSafe } = useGnosisPaySafeMigration();
-
-const safeMigrationKeypath = computed<string>(() => get(untrackedSafe)?.type === 'new'
-  ? 'external_services.gnosispay.safe_migration.missing_new'
-  : 'external_services.gnosispay.safe_migration.missing_old');
+const { addMissingSafe, adding, checkMigration, hasUntrackedSafe, safeMigrationKeypath, untrackedAccount, untrackedSafe } = useGnosisPaySafeMigration();
 
 const { allowed, minimumTier, premium } = useFeatureAccess(PremiumFeature.GNOSIS_PAY);
 const featureGate = computed<FeatureGate>(() => {

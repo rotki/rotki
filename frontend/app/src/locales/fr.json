@@ -1213,8 +1213,7 @@
       "add_title": "Ajouter un compte blockchain",
       "edit_subtitle": "Modifier les détails du compte",
       "edit_title": "Modifier le compte blockchain"
-    },
-    "title": "Solde blockchain par actif"
+    }
   },
   "change_password": {
     "button": "Changer de mot de passe",
@@ -1502,7 +1501,6 @@
       "edit": {
         "dialog": {
           "actions": {
-            "add_new_entry": "Ajouter une nouvelle entrée",
             "delete_item": "Supprimer l'élément",
             "edit_item": "Modifier l'élément"
           },
@@ -1527,11 +1525,10 @@
               "category": "Le champ de catégorie ne peut pas être vide",
               "value": "Le champ de valeur ne peut pas être vide"
             },
-            "title": "Solde instantané",
             "token": "Jeton"
           },
           "fetch": {
-            "loading": "Chargement des données d'instantané"
+
           },
           "location_data": {
             "add_title": "Ajouter des données de localisation instantané",
@@ -1541,29 +1538,19 @@
             "rules": {
               "location": "Le champ de localisation ne peut pas être vide",
               "value": "Le champ de valeur ne peut pas être vide"
-            },
-            "title": "Données de localisation instantané"
+            }
           },
           "message": {
-            "error": "Échec de la mise à jour des données d'instantané: {message}",
-            "success": "Les données ont été mises à jour avec succès",
-            "title": "Mettre à jour les données d'instantané"
+
           },
-          "title": "Modifier les données de l'instantané à {date}",
           "total": {
-            "hint": "Vous avez un montant différent entre les actifs totaux et les montants de localisation. Vous pouvez choisir quelle valeur utiliser.",
             "rules": {
-              "total": "Le champ de valeur ne peut pas être vide"
-            },
-            "use_calculated_asset": "Utiliser la valeur totale à partir de {length} actif(s) valeur: ",
-            "use_calculated_location": "Utiliser la valeur totale à partir de {length} emplacement(s) valeur: ",
-            "use_calculated_total": "Utiliser la valeur totale calculée: ",
-            "warning": "Ceci est la valeur totale qui inclut la valeur NFT. Si vous désactivez l'option \"Inclure NFT dans les graphiques et les montants totaux\", il affichera la valeur {amount} sur le graphique"
+
+            }
           }
         }
       },
       "export_database_snapshot": "Exporter l'instantané de la base de données",
-      "search_asset": "Rechercher un actif",
       "subtitle": "Cliquez sur le bouton ci-dessous pour télécharger l'instantané pour"
     }
   },
@@ -1861,7 +1848,6 @@
       "title": "Beaconcha.in"
     },
     "blockscout": {
-      "delete_tooltip": "Supprime la clé API Blockscout",
       "description": "rotki utilise Blockscout pour obtenir des informations sur les retraits ETH et plus encore. Une clé API est uniquement nécessaire si vous êtes soumis à une limitation de taux.",
       "hint": "Entrer votre clé API Blockscout",
       "title": "Blockscout"
@@ -2473,7 +2459,6 @@
   },
   "manual_balances": {
     "add_manual_balance": "Ajouter un solde manuel",
-    "balances": "Solde manuel suivi",
     "dialog": {
       "add": {
         "title": "Ajouter un solde manuel"
@@ -2482,8 +2467,7 @@
         "subtitle": "Modifier le montant du solde, l'emplacement et les étiquettes",
         "title": "Modifier le solde manuel"
       }
-    },
-    "liabilities": "Passif manuellement suivi"
+    }
   },
   "manual_balances_form": {
     "fields": {
@@ -2757,30 +2741,15 @@
     "title": "Notifications"
   },
   "oracle_cache_management": {
-    "clear_error": "Échec du vidage du cache pour {fromAsset} vers {toAsset}: {error}",
-    "create_cache": "Cache de paires de prix",
-    "create_tooltip": "Récupérer et mettre en cache les prix historiques pour la paire de prix spécifiée",
     "delete_confirmation": {
-      "message": "Voulez-vous vraiment supprimer toutes les prix mis en cache pour la paire {fromAsset} vers {toAsset} sur {selection} ?",
-      "title": "Supprimer tous les prix mis en cache"
+
     },
-    "delete_tooltip": "Supprimer les prix mis en cache pour cette paire et l'oracle de prix sélectionné",
-    "from_asset": "De l'actif",
     "headers": {
-      "from": "De l'actif",
-      "from_date": "De la date",
-      "to": "Vers l'actif",
-      "to_date": "Vers la date"
+
     },
     "notification": {
-      "error": "L'échec de la création de cache pour la paire {fromAsset} vers {toAsset} sur : {error}",
-      "success": "Le cache pour la paire {fromAsset} vers {toAsset} sur {source} a été créé avec succès",
-      "title": "Création de cache de paire de prix"
-    },
-    "select_oracle": "Sélectionner l'oracle de prix",
-    "subtitle": "Créer/supprimer et afficher les prix mis en cache",
-    "title": "Cache d'oracle",
-    "to_asset": "Vers l'actif"
+
+    }
   },
   "oracles": {
     "uniswap_v2": "Uniswap V2",
@@ -2934,7 +2903,6 @@
   "premium_credentials": {
     "label_api_key": "Clé API rotki",
     "label_api_secret": "Secret API rotki",
-    "restore_synced_database": "Restaurer la base de données synchronisée",
     "validation": {
       "non_empty_key": "La clé API ne peut pas être vide",
       "non_empty_secret": "Le secret API ne peut pas être vide"
@@ -3622,9 +3590,7 @@
         "true": "Tous les transactions ont été recodés."
       },
       "decoding": {
-        "done": "Transaction décodé {count} | Transactions décodés {count}",
-        "pending": "{count} Transactions non décodé | {count} Transactions non décodés",
-        "processing": "Décodage de {count} transaction | Décodage de {count} de {total} transactions"
+
       },
       "progress": "Progression",
       "redecode_all": "Recoder tous les transactions EVM",

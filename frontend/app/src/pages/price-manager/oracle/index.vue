@@ -1,11 +1,12 @@
 <script setup lang="ts">
+import { msg } from '@/message-key';
 import OracleCacheContent from '@/modules/assets/prices/components/oracle/OracleCacheContent.vue';
 import OraclePriceContent from '@/modules/assets/prices/components/oracle/OraclePriceContent.vue';
 import TablePageLayout from '@/modules/shell/layout/TablePageLayout.vue';
 
 definePage({
   meta: {
-    nav: { labelKey: 'navigation_menu.manage_prices_sub.oracle_prices', icon: 'lu-database', parent: '/price-manager/', order: 30, drawer: 'price-manager-oracle' },
+    nav: { labelKey: msg.$t('navigation_menu.manage_prices_sub.oracle_prices'), icon: 'lu-database', parent: '/price-manager/', order: 30, drawer: 'price-manager-oracle' },
   },
 });
 

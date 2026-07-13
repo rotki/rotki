@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { msg } from '@/message-key';
 import { NoteLocation } from '@/modules/core/common/notes';
 import { TaskType } from '@/modules/core/tasks/task-type';
 import { useTaskStore } from '@/modules/core/tasks/use-task-store';
@@ -13,7 +14,7 @@ import { useReportsPageActions } from '@/pages/reports/use-reports-page-actions'
 
 definePage({
   meta: {
-    nav: { labelKey: 'navigation_menu.profit_loss_report', icon: 'lu-calculator', section: 1, order: 80, drawer: 'profit-loss-report' },
+    nav: { labelKey: msg.$t('navigation_menu.profit_loss_report'), icon: 'lu-calculator', section: 1, order: 80, drawer: 'profit-loss-report' },
     noteLocation: NoteLocation.PROFIT_LOSS_REPORTS,
   },
 });

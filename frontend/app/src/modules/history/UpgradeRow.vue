@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { externalLinks } from '@shared/external-links';
+import { msg } from '@/message-key';
 import { usePremium } from '@/modules/premium/use-premium';
 import DateDisplay from '@/modules/shell/components/display/DateDisplay.vue';
 import ExternalLink from '@/modules/shell/components/ExternalLink.vue';
@@ -20,20 +21,13 @@ const { t } = useI18n({ useScope: 'global' });
 
 const premium = usePremium();
 
-// Linter hints: Ensure all keys are detectable by calling t() with explicit strings
-if (false as boolean) {
-  t('upgrade_row.events');
-  t('upgrade_row.events_premium');
-  t('upgrade_row.upgrade');
-  t('upgrade_row.upgrade_premium');
-}
-
+// Keys are branded via `msg.$t` so the i18n key-usage lint counts them despite the dynamic keypath.
 const messageKey = computed<string>(() => {
   const isPremium = get(premium);
   if (events)
-    return isPremium ? 'upgrade_row.events_premium' : 'upgrade_row.events';
+    return isPremium ? msg.$t('upgrade_row.events_premium') : msg.$t('upgrade_row.events');
 
-  return isPremium ? 'upgrade_row.upgrade_premium' : 'upgrade_row.upgrade';
+  return isPremium ? msg.$t('upgrade_row.upgrade_premium') : msg.$t('upgrade_row.upgrade');
 });
 
 const linkText = computed<string>(() => {

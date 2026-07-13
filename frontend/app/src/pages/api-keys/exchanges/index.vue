@@ -2,6 +2,7 @@
 import type { DataTableColumn, DataTableSortColumn } from '@rotki/ui-library';
 import type { Exchange, ExchangeFormData } from '@/modules/balances/types/exchanges';
 import { externalLinks } from '@shared/external-links';
+import { msg } from '@/message-key';
 import { useConnectedExchangesStore } from '@/modules/balances/exchanges/use-connected-exchanges-store';
 import { useExchanges } from '@/modules/balances/exchanges/use-exchanges';
 import { useConfirmStore } from '@/modules/core/common/use-confirm-store';
@@ -20,7 +21,7 @@ import TablePageLayout from '@/modules/shell/layout/TablePageLayout.vue';
 
 definePage({
   meta: {
-    nav: { labelKey: 'navigation_menu.api_keys_sub.exchanges', icon: 'lu-coins-exchange', parent: '/api-keys/', order: 20, drawer: 'api-keys-exchanges', addAction: { labelKey: 'exchange_settings.dialog.add.title' } },
+    nav: { labelKey: msg.$t('navigation_menu.api_keys_sub.exchanges'), icon: 'lu-coins-exchange', parent: '/api-keys/', order: 20, drawer: 'api-keys-exchanges', addAction: { labelKey: msg.$t('exchange_settings.dialog.add.title') } },
   },
 });
 

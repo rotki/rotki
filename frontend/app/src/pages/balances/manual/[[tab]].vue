@@ -2,6 +2,7 @@
 import type { ManualBalance, RawManualBalance } from '@/modules/balances/types/manual-balances';
 import { Zero } from '@rotki/common';
 import { startPromise } from '@shared/utils';
+import { msg } from '@/message-key';
 import ManualBalancesDialog from '@/modules/accounts/manual-balances/ManualBalancesDialog.vue';
 import ManualBalanceTable from '@/modules/accounts/manual-balances/ManualBalanceTable.vue';
 import PriceRefresh from '@/modules/assets/prices/PriceRefresh.vue';
@@ -18,7 +19,7 @@ import { useSectionStatus } from '@/modules/shell/sync-progress/use-section-stat
 
 definePage({
   meta: {
-    nav: { labelKey: 'navigation_menu.balances_sub.manual_balances', icon: 'lu-notebook-pen', parent: '/balances/', order: 30, drawer: 'balances-manual', addAction: { labelKey: 'manual_balances.dialog.add.title' } },
+    nav: { labelKey: msg.$t('navigation_menu.balances_sub.manual_balances'), icon: 'lu-notebook-pen', parent: '/balances/', order: 30, drawer: 'balances-manual', addAction: { labelKey: msg.$t('manual_balances.dialog.add.title') } },
     noteLocation: NoteLocation.BALANCES_MANUAL,
   },
   props: true,

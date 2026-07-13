@@ -1,11 +1,12 @@
 <script setup lang="ts">
 import { getTextToken } from '@rotki/common';
+import { msg } from '@/message-key';
 import { useExternalApiKeys } from '@/modules/settings/api-keys/external/use-external-api-keys';
 import TablePageLayout from '@/modules/shell/layout/TablePageLayout.vue';
 
 definePage({
   meta: {
-    nav: { labelKey: 'navigation_menu.api_keys_sub.external_services', icon: 'lu-blocks', parent: '/api-keys/', order: 30, drawer: 'api-keys-external-services' },
+    nav: { labelKey: msg.$t('navigation_menu.api_keys_sub.external_services'), icon: 'lu-blocks', parent: '/api-keys/', order: 30, drawer: 'api-keys-external-services' },
   },
 });
 

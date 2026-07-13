@@ -1,5 +1,6 @@
 import type { RouteNavMeta } from '@/types/router';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { msg } from '@/message-key';
 import { useRouteSearch } from '@/modules/shell/layout/use-route-search';
 
 interface FakeRoute {
@@ -17,8 +18,8 @@ vi.mock('vue-router', () => ({
   })),
 }));
 
-function route(name: string, nav?: Omit<RouteNavMeta, 'icon'>): FakeRoute {
-  return { name, meta: nav ? { nav: { icon: 'lu-wallet', ...nav } } : {} };
+function route(name: string, nav?: Omit<RouteNavMeta, 'icon' | 'labelKey'> & { labelKey: string }): FakeRoute {
+  return { name, meta: nav ? { nav: { icon: 'lu-wallet', ...nav, labelKey: msg.$t(nav.labelKey) } } : {} };
 }
 
 describe('modules::shell::use-route-search', () => {

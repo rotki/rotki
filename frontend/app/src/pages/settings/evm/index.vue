@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { msg } from '@/message-key';
 import { NoteLocation } from '@/modules/core/common/notes';
 import SettingsItem from '@/modules/settings/controls/SettingsItem.vue';
 import SettingsPage from '@/modules/settings/controls/SettingsPage.vue';
@@ -11,7 +12,7 @@ import SettingCategory from '@/modules/settings/SettingCategory.vue';
 
 definePage({
   meta: {
-    nav: { labelKey: 'navigation_menu.settings_sub.evm', icon: 'lu-link', parent: '/settings' },
+    nav: { labelKey: msg.$t('navigation_menu.settings_sub.evm'), icon: 'lu-link', parent: '/settings' },
     noteLocation: NoteLocation.SETTINGS_EVM,
   },
 });

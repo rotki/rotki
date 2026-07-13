@@ -2,6 +2,7 @@
 import { externalLinks } from '@shared/external-links';
 import useVuelidate from '@vuelidate/core';
 import { required } from '@vuelidate/validators';
+import { msg } from '@/message-key';
 import { useSessionAuthStore } from '@/modules/auth/use-session-auth-store';
 import { useConfirmStore } from '@/modules/core/common/use-confirm-store';
 import { useMessageStore } from '@/modules/core/common/use-message-store';
@@ -19,7 +20,7 @@ import AutomaticSyncSetting from '@/modules/shell/sync-progress/AutomaticSyncSet
 
 definePage({
   meta: {
-    nav: { labelKey: 'navigation_menu.api_keys_sub.premium', icon: 'lu-crown', parent: '/api-keys/', order: 10, drawer: 'api-keys-premium' },
+    nav: { labelKey: msg.$t('navigation_menu.api_keys_sub.premium'), icon: 'lu-crown', parent: '/api-keys/', order: 10, drawer: 'api-keys-premium' },
   },
 });
 

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { msg } from '@/message-key';
 import LocationAssets from '@/modules/balances/LocationAssets.vue';
 import LocationValueRow from '@/modules/balances/LocationValueRow.vue';
 import { NoteLocation } from '@/modules/core/common/notes';
@@ -9,7 +10,7 @@ import TablePageLayout from '@/modules/shell/layout/TablePageLayout.vue';
 definePage({
   meta: {
     // label-only: gives the notes sidebar a title; not shown in the drawer or search.
-    nav: { labelKey: 'navigation_menu.locations', icon: 'lu-coins-exchange', searchable: false },
+    nav: { labelKey: msg.$t('navigation_menu.locations'), icon: 'lu-coins-exchange', searchable: false },
     canNavigateBack: true,
     noteLocation: NoteLocation.LOCATIONS,
   },

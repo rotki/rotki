@@ -3,6 +3,7 @@ import type { DataTableColumn, DataTableSortData, TablePaginationData } from '@r
 import type { AddressData, BlockchainAccount } from '@/modules/accounts/blockchain-accounts';
 import type { TaskMeta } from '@/modules/core/tasks/types';
 import { type BigNumber, Blockchain, Zero } from '@rotki/common';
+import { msg } from '@/message-key';
 import { getAccountAddress } from '@/modules/accounts/account-utils';
 import BlockchainAccountSelector from '@/modules/accounts/BlockchainAccountSelector.vue';
 import AirdropDisplay from '@/modules/airdrops/AirdropDisplay.vue';
@@ -27,7 +28,7 @@ import TablePageLayout from '@/modules/shell/layout/TablePageLayout.vue';
 
 definePage({
   meta: {
-    nav: { labelKey: 'navigation_menu.defi_sub.airdrops', icon: 'lu-gift', section: 1, order: 90, drawer: 'airdrops' },
+    nav: { labelKey: msg.$t('navigation_menu.defi_sub.airdrops'), icon: 'lu-gift', section: 1, order: 90, drawer: 'airdrops' },
   },
 });
 

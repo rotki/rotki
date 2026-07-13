@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { startPromise } from '@shared/utils';
+import { msg } from '@/message-key';
 import ChainSelect from '@/modules/accounts/blockchain/ChainSelect.vue';
 import {
   type AccountManageState,
@@ -23,7 +24,7 @@ import TablePageLayout from '@/modules/shell/layout/TablePageLayout.vue';
 
 definePage({
   meta: {
-    nav: { labelKey: 'navigation_menu.balances_sub.blockchain_balances', icon: 'lu-blockchain', parent: '/balances/', order: 10, drawer: 'balances-blockchain' },
+    nav: { labelKey: msg.$t('navigation_menu.balances_sub.blockchain_balances'), icon: 'lu-blockchain', parent: '/balances/', order: 10, drawer: 'balances-blockchain' },
     canNavigateBack: true,
     noteLocation: NoteLocation.BALANCES_BLOCKCHAIN,
   },

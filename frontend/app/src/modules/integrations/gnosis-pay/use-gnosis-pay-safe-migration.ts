@@ -2,6 +2,7 @@ import type { ComputedRef, Ref } from 'vue';
 import type { GnosisPaySafeMigration, GnosisPayUntrackedSafe } from '@/modules/integrations/gnosis-pay/types';
 import { type Account, Blockchain, NotificationCategory, Priority, Severity } from '@rotki/common';
 import dayjs from 'dayjs';
+import { msg } from '@/message-key';
 import { useBlockchainAccountManagement } from '@/modules/accounts/use-blockchain-account-management';
 import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
 import { logger } from '@/modules/core/common/logging/logging';
@@ -18,6 +19,7 @@ interface UseGnosisPaySafeMigrationReturn {
   untrackedSafe: Ref<GnosisPayUntrackedSafe | undefined>;
   untrackedAccount: ComputedRef<Account | undefined>;
   hasUntrackedSafe: ComputedRef<boolean>;
+  safeMigrationKeypath: ComputedRef<string>;
   adding: Ref<boolean>;
   checkMigration: () => Promise<void>;
   addMissingSafe: () => Promise<void>;
@@ -35,6 +37,11 @@ export const useGnosisPaySafeMigration = createSharedComposable((): UseGnosisPay
   const adding = ref<boolean>(false);
 
   const hasUntrackedSafe = computed<boolean>(() => isDefined(untrackedSafe));
+
+  // i18n keypath for the "missing Safe" message; branded so the key-usage lint counts the keys.
+  const safeMigrationKeypath = computed<string>(() => get(untrackedSafe)?.type === 'new'
+    ? msg.$t('external_services.gnosispay.safe_migration.missing_new')
+    : msg.$t('external_services.gnosispay.safe_migration.missing_old'));
 
   const untrackedAccount = computed<Account | undefined>(() => {
     const safe = get(untrackedSafe);
@@ -153,6 +160,7 @@ export const useGnosisPaySafeMigration = createSharedComposable((): UseGnosisPay
     checkAndNotify,
     checkMigration,
     hasUntrackedSafe,
+    safeMigrationKeypath,
     untrackedAccount,
     untrackedSafe,
   };

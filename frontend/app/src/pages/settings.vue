@@ -1,11 +1,12 @@
 <script setup lang="ts">
+import { msg } from '@/message-key';
 import SettingsSearch from '@/modules/settings/SettingsSearch.vue';
 import TabNavigation from '@/modules/shell/components/TabNavigation.vue';
 import { useNavTabs } from '@/modules/shell/layout/use-nav-tabs';
 
 definePage({
   meta: {
-    nav: { labelKey: 'navigation_menu.settings', icon: 'lu-settings', searchable: false },
+    nav: { labelKey: msg.$t('navigation_menu.settings'), icon: 'lu-settings', searchable: false },
   },
   redirect: { name: '/settings/account/' },
 });

@@ -1,7 +1,9 @@
 <script setup lang="ts">
+import { msg } from '@/message-key';
+
 definePage({
   meta: {
-    nav: { labelKey: 'navigation_menu.onchain', icon: 'lu-onchain', section: 1, order: 50, drawer: 'onchain' },
+    nav: { labelKey: msg.$t('navigation_menu.onchain'), icon: 'lu-onchain', section: 1, order: 50, drawer: 'onchain' },
   },
   redirect: '/onchain/send',
 });

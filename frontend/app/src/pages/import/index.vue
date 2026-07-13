@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { externalLinks } from '@shared/external-links';
+import { msg } from '@/message-key';
 import { NoteLocation } from '@/modules/core/common/notes';
 import ExternalLink from '@/modules/shell/components/ExternalLink.vue';
 import HintMenuIcon from '@/modules/shell/components/HintMenuIcon.vue';
@@ -8,7 +9,7 @@ import GroupedImport from '@/modules/user-data/GroupedImport.vue';
 
 definePage({
   meta: {
-    nav: { labelKey: 'navigation_menu.import_data', icon: 'lu-folder-input', section: 3, order: 20, drawer: 'import' },
+    nav: { labelKey: msg.$t('navigation_menu.import_data'), icon: 'lu-folder-input', section: 3, order: 20, drawer: 'import' },
     noteLocation: NoteLocation.IMPORT,
   },
 });

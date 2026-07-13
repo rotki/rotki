@@ -3,6 +3,7 @@ import type { RouteLocationRaw } from 'vue-router';
 import type { AccountManageState } from '@/modules/accounts/blockchain/use-account-manage';
 import { Blockchain } from '@rotki/common';
 import { useTemplateRef } from 'vue';
+import { msg } from '@/message-key';
 import AccountBalances from '@/modules/accounts/AccountBalances.vue';
 import AccountImportProgress from '@/modules/accounts/AccountImportProgress.vue';
 import EthStakingValidators from '@/modules/accounts/EthStakingValidators.vue';
@@ -18,7 +19,7 @@ import { useEthStakingAccess } from '@/modules/staking/eth/use-eth-staking-acces
 
 definePage({
   meta: {
-    nav: { labelKey: 'navigation_menu.accounts_sub.evm', icon: 'lu-evm-accounts', parent: '/accounts/', order: 10, drawer: 'accounts-evm', addAction: { labelKey: 'blockchain_balances.form_dialog.add_title' } },
+    nav: { labelKey: msg.$t('navigation_menu.accounts_sub.evm'), icon: 'lu-evm-accounts', parent: '/accounts/', order: 10, drawer: 'accounts-evm', addAction: { labelKey: msg.$t('blockchain_balances.form_dialog.add_title') } },
     canNavigateBack: true,
     noteLocation: NoteLocation.ACCOUNTS_EVM,
   },

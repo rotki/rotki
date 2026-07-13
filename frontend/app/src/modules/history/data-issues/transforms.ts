@@ -5,6 +5,7 @@ import type {
 } from '@/modules/history/data-issues/types';
 import { fromNullable, getOr } from 'plainfp/option';
 import { pipe } from 'plainfp/pipe';
+import { msg } from '@/message-key';
 import { IssueKind } from '@/modules/history/data-issues/constants';
 import {
   type AutoRemediationAttempt,
@@ -45,7 +46,7 @@ export function describeIssue(issue: DataIssue): IssueDescription {
         },
         asset: issue.asset ?? undefined,
         eventIdentifier: payload.eventIdentifier,
-        messageKey: 'data_issues.description.negative_balance',
+        messageKey: msg.$t('data_issues.description.negative_balance'),
       };
     }
   }
@@ -64,12 +65,12 @@ export function describeIssue(issue: DataIssue): IssueDescription {
           fromNullable(payload.latestEventIdentifier),
           (option): number | undefined => getOr(option, undefined),
         ),
-        messageKey: 'data_issues.description.current_balance_mismatch',
+        messageKey: msg.$t('data_issues.description.current_balance_mismatch'),
       };
     }
   }
 
-  return { amounts: {}, messageKey: 'data_issues.description.unknown' };
+  return { amounts: {}, messageKey: msg.$t('data_issues.description.unknown') };
 }
 
 /**

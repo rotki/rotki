@@ -2,6 +2,7 @@
 import type { Snapshot } from '@/modules/dashboard/snapshots';
 import { type BigNumber, Zero } from '@rotki/common';
 import { startPromise } from '@shared/utils';
+import { msg } from '@/message-key';
 import { getErrorMessage } from '@/modules/core/common/logging/error-handling';
 import { NoteLocation } from '@/modules/core/common/notes';
 import { useConfirmStore } from '@/modules/core/common/use-confirm-store';
@@ -21,7 +22,7 @@ import ProgressScreen from '@/modules/shell/components/ProgressScreen.vue';
 definePage({
   meta: {
     // label-only: gives the notes sidebar a title; not shown in the drawer or search.
-    nav: { labelKey: 'navigation_menu.statistics_sub.snapshots', icon: 'lu-camera', searchable: false },
+    nav: { labelKey: msg.$t('navigation_menu.statistics_sub.snapshots'), icon: 'lu-camera', searchable: false },
     canNavigateBack: true,
     noteLocation: NoteLocation.STATISTICS_SNAPSHOTS,
   },

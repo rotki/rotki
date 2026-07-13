@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { msg } from '@/message-key';
 import { NoteLocation } from '@/modules/core/common/notes';
 import AccountingCsvExportSetting from '@/modules/settings/accounting/AccountingCsvExportSetting.vue';
 import AccountingTradeSettings from '@/modules/settings/accounting/AccountingTradeSettings.vue';
@@ -7,7 +8,7 @@ import SettingsPage from '@/modules/settings/controls/SettingsPage.vue';
 
 definePage({
   meta: {
-    nav: { labelKey: 'navigation_menu.settings_sub.accounting', icon: 'lu-file-spreadsheet', parent: '/settings' },
+    nav: { labelKey: msg.$t('navigation_menu.settings_sub.accounting'), icon: 'lu-file-spreadsheet', parent: '/settings' },
     canNavigateBack: true,
     noteLocation: NoteLocation.SETTINGS_ACCOUNTING,
   },

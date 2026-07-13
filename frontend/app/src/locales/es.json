@@ -1027,8 +1027,7 @@
       "add_title": "Añade una cuenta en la blockchain",
       "edit_subtitle": "Modify account details",
       "edit_title": "Edit blockchain account"
-    },
-    "title": "Blockchain Balances per asset"
+    }
   },
   "change_password": {
     "button": "Change Password",
@@ -1294,7 +1293,6 @@
       "edit": {
         "dialog": {
           "actions": {
-            "add_new_entry": "Add New Entry",
             "delete_item": "Delete item",
             "edit_item": "Edit item"
           },
@@ -1319,11 +1317,10 @@
               "category": "The category field cannot be empty",
               "value": "The value field cannot be empty"
             },
-            "title": "Instantanea de balances",
             "token": "Token"
           },
           "fetch": {
-            "loading": "Fetching snapshot data"
+
           },
           "location_data": {
             "add_title": "Add location data snapshot data",
@@ -1333,24 +1330,15 @@
             "rules": {
               "location": "The location field cannot be empty",
               "value": "The value field cannot be empty"
-            },
-            "title": "Location Data Snapshot"
+            }
           },
           "message": {
-            "error": "Failed to update snapshot data: {message}",
-            "success": "Data was successfully updated",
-            "title": "Update snapshot data"
+
           },
-          "title": "Edit snapshot data at {date}",
           "total": {
-            "hint": "You have different amount between assets total and locations total. You can choose which amount to use.",
             "rules": {
-              "total": "The value field cannot be empty"
-            },
-            "use_calculated_asset": "Use total from {length} asset(s) value: ",
-            "use_calculated_location": "Use total from {length} location(s) value: ",
-            "use_calculated_total": "Use calculated total value: ",
-            "warning": "This is total value that includes NFTs value. If you turn off setting \"Include NFTs in graphs and total amounts\", it will show value {amount} on the chart"
+
+            }
           }
         }
       },
@@ -1631,7 +1619,6 @@
       "title": "Beaconcha.in"
     },
     "blockscout": {
-      "delete_tooltip": "Elimina la clave API de Blockscout",
       "description": "rotki usa Blockscout para obtener información sobre consultas de retiro de ETH y más. Solo es necesaria una clave API si las peticiones están siendo limitadas por el servidor de Blockscout.",
       "hint": "Ingrese su clave para la API de Blockscout",
       "title": "Blockscout"
@@ -2135,7 +2122,6 @@
   },
   "manual_balances": {
     "add_manual_balance": "Add Manual Balance",
-    "balances": "Balances registrados manualmente",
     "dialog": {
       "add": {
         "title": "Añadir un balance manual"
@@ -2144,8 +2130,7 @@
         "subtitle": "Modify balance amount, location, and tags",
         "title": "Editar balance manual"
       }
-    },
-    "liabilities": "Manually Tracked Liabilities"
+    }
   },
   "manual_balances_form": {
     "fields": {
@@ -2382,30 +2367,15 @@
     "title": "Notificaciones"
   },
   "oracle_cache_management": {
-    "clear_error": "Clearing the cache for {fromAsset} to {toAsset} failed: {error}",
-    "create_cache": "Cache Pair prices",
-    "create_tooltip": "Fetch and cache historical prices for the specified price pair",
     "delete_confirmation": {
-      "message": "Are you sure you want to delete all cached prices for the {fromAsset} to {toAsset} pair on {selection}?",
-      "title": "Delete all the cached prices"
+
     },
-    "delete_tooltip": "Delete the prices cached for this pair and the selected price oracle",
-    "from_asset": "From Asset",
     "headers": {
-      "from": "From Asset",
-      "from_date": "From Date",
-      "to": "To Asset",
-      "to_date": "To Date"
+
     },
     "notification": {
-      "error": "The cache creation for pair {fromAsset} to {toAsset} on failed: {error}",
-      "success": "The cache for pair {fromAsset} to {toAsset} on {source} was successfully created",
-      "title": "Price pair cache creation"
-    },
-    "select_oracle": "Select price oracle",
-    "subtitle": "Create/delete and view cached prices",
-    "title": "Oracle cache",
-    "to_asset": "To Asset"
+
+    }
   },
   "oracles": {
     "uniswap_v2": "Uniswap V2",
@@ -2532,7 +2502,6 @@
   "premium_credentials": {
     "label_api_key": "rotki API Key",
     "label_api_secret": "rotki API Secret",
-    "restore_synced_database": "Restore synced database",
     "validation": {
       "non_empty_key": "The API key cannot be empty",
       "non_empty_secret": "The API secret cannot be empty"

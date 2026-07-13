@@ -1,5 +1,6 @@
 import type { RuiIcons } from '@rotki/ui-library';
 import type { RouteNamedMap } from 'vue-router/auto-routes';
+import type { MessageKey } from '@/message-key';
 import type { NoteLocation } from '@/modules/core/common/notes';
 
 /**
@@ -19,10 +20,10 @@ export type RouteName = keyof RouteNamedMap;
  */
 export interface RouteNavMeta {
   /** i18n key for the label, resolved at render time (meta cannot hold reactive translations). */
-  readonly labelKey: string;
+  readonly labelKey: MessageKey;
   readonly icon: RuiIcons;
   /** Extra i18n keys matched by the search palette, for aliases beyond the label. */
-  readonly keywords?: readonly string[];
+  readonly keywords?: readonly MessageKey[];
   /** Route name of the logical parent: drawer nesting and the search breadcrumb both use it. */
   readonly parent?: string;
   /** Order among siblings (within the parent group, or within the drawer section). */
@@ -37,7 +38,7 @@ export interface RouteNavMeta {
    * Exposes a "quick add" action for this route in the search palette. Selecting it navigates to the
    * route with `?add=true` (which opens the page's add dialog). `labelKey` is the i18n key shown.
    */
-  readonly addAction?: { readonly labelKey: string };
+  readonly addAction?: { readonly labelKey: MessageKey };
 }
 
 declare module 'vue-router' {
