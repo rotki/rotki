@@ -23,7 +23,7 @@ import random
 import threading
 import time
 from collections.abc import Callable, Generator, Sequence
-from contextlib import contextmanager
+from contextlib import contextmanager, suppress
 from enum import Enum, auto
 from pathlib import Path
 from types import TracebackType
@@ -347,11 +347,15 @@ class DBConnection:
         self._conn: UnderlyingConnection
         self._path = path
         self._read_only = read_only
-        # Pool of read-only connections lazily created by enable_read_pool(). While
-        # None, read_ctx() serves cursors of this (the write) connection. The lock
-        # guards the pool reference swap at close() against concurrent returns.
-        self._read_pool: queue.SimpleQueue[DBConnection] | None = None
+        # Pool of read-only connections configured by enable_read_pool() and created
+        # lazily as concurrent reads need them. LIFO reuse keeps sequential reads on
+        # the same warm SQLite page cache instead of rotating through every reader.
+        # While None, read_ctx() serves cursors of this (the write) connection.
+        self._read_pool: queue.LifoQueue[DBConnection] | None = None
         self._read_pool_lock = threading.Lock()
+        self._read_pool_size = 0
+        self._readers_num = 0
+        self._reader_setup: Callable[[DBConnection], None] | None = None
         # The reader this thread has currently borrowed, so that nested read_ctx
         # calls reuse it instead of borrowing a second one. Without this, N threads
         # nesting read contexts could each hold one reader while waiting for
@@ -478,50 +482,33 @@ class DBConnection:
             size: int = 4,
             reader_setup: 'Callable[[DBConnection], None] | None' = None,
     ) -> None:
-        """Create the pool of read-only connections that read_ctx() borrows from.
+        """Configure the pool of read-only connections that read_ctx() borrows from.
 
         Must only be called after the database is in WAL mode: with the default
         journal mode a writer's transaction blocks readers on other connections
         (and vice versa), while under WAL they proceed concurrently and each read
         statement sees a consistent committed snapshot.
 
-        reader_setup runs once per created reader before it enters the pool, for
-        connection-level preparation reads need -- keying sqlcipher readers
-        (PRAGMA key) most importantly. If it raises, already-created readers are
-        closed and the error propagates with the pool left disabled.
+        Readers are created lazily up to size as concurrent reads require them.
+        reader_setup runs once per created reader, for connection-level preparation
+        reads need -- keying sqlcipher readers (PRAGMA key) most importantly.
+        Persistent database errors disable the pool; transient errors release the
+        reader reservation so a later read can retry.
 
         No-op for in-memory databases (used by tests): they cannot use WAL and
         there is no file for a second connection to open, so read_ctx() keeps
         serving cursors of this connection there.
         """
         assert self._read_only is False, 'cannot enable a read pool on a pool reader'
+        assert size > 0, 'read pool size must be positive'
         if str(self._path) == ':memory:':
             return
         with self._read_pool_lock:
             if self._read_pool is not None:
                 return  # already enabled -- happens when connect-time actions rerun
-        readers: list[DBConnection] = []
-        try:
-            for _ in range(size):
-                readers.append(reader := DBConnection(
-                    path=self._path,
-                    connection_type=self.connection_type,
-                    sql_vm_instructions_cb=self.sql_vm_instructions_cb,
-                    read_only=True,
-                ))
-                if reader_setup is not None:
-                    reader_setup(reader)
-        except BaseException:
-            for reader in readers:
-                reader.close()
-            raise
-
-        read_pool: queue.SimpleQueue[DBConnection] = queue.SimpleQueue()
-        for reader in readers:
-            read_pool.put(reader)
-        with self._read_pool_lock:
-            assert self._read_pool is None, 'read pool is already enabled'
-            self._read_pool = read_pool
+            self._read_pool = queue.LifoQueue()
+            self._read_pool_size = size
+            self._reader_setup = reader_setup
 
     def disable_read_pool(self) -> None:
         """Close the pooled readers and make read_ctx() serve cursors of this
@@ -534,31 +521,113 @@ class DBConnection:
         """
         with self._read_pool_lock:
             read_pool, self._read_pool = self._read_pool, None
+            self._read_pool_size = 0
+            self._readers_num = 0
+            self._reader_setup = None
         if read_pool is not None:
-            while True:
-                try:
-                    read_pool.get_nowait().close()
-                except queue.Empty:
-                    break
+            self._close_idle_readers(read_pool)
 
-    def _borrow_reader(self, read_pool: 'queue.SimpleQueue[DBConnection]') -> 'DBConnection':
-        """Blocking borrow of a pooled reader that stays responsive to task
-        cancellation, mirroring _acquire_transaction_lock.
+    @staticmethod
+    def _close_idle_readers(read_pool: 'queue.LifoQueue[DBConnection]') -> None:
+        """Detach and close all readers that are currently idle in the pool."""
+        with read_pool.mutex:
+            readers = list(read_pool.queue)
+            read_pool.queue.clear()
+        for reader in readers:
+            reader.close()
+
+    def _create_reader(
+            self,
+            reader_setup: 'Callable[[DBConnection], None] | None',
+    ) -> 'DBConnection':
+        """Create and prepare one read-only connection for the pool."""
+        reader = DBConnection(
+            path=self._path,
+            connection_type=self.connection_type,
+            sql_vm_instructions_cb=self.sql_vm_instructions_cb,
+            read_only=True,
+        )
+        try:
+            if reader_setup is not None:
+                reader_setup(reader)
+        except BaseException:
+            reader.close()
+            raise
+        return reader
+
+    def _borrow_reader(
+            self,
+            read_pool: 'queue.LifoQueue[DBConnection]',
+    ) -> 'DBConnection | None':
+        """Borrow an idle reader, lazily creating one while below the pool limit.
+
+        If all readers are borrowed, wait while staying responsive to task
+        cancellation, mirroring _acquire_transaction_lock. Returns None if the
+        pool is disabled concurrently, so read_ctx can fall back to the write
+        connection.
 
         May raise TaskCancelledError.
         """
         while True:
+            with suppress(queue.Empty):
+                reader = read_pool.get_nowait()
+                with self._read_pool_lock:
+                    if self._read_pool is read_pool:
+                        return reader
+                reader.close()
+                return None
+
+            with self._read_pool_lock:
+                if self._read_pool is not read_pool:
+                    return None
+                with suppress(queue.Empty):  # may have been returned before we got the lock
+                    return read_pool.get_nowait()
+                if self._readers_num < self._read_pool_size:
+                    self._readers_num += 1  # reserve capacity before creating outside the lock
+                    reader_setup = self._reader_setup
+                    break
+
             try:
                 return read_pool.get(timeout=CONTEXT_SWITCH_WAIT)
             except queue.Empty:
                 checkpoint()  # cancelled tasks should not keep waiting for a reader
 
-    def _return_reader(self, reader: 'DBConnection') -> None:
+        try:
+            reader = self._create_reader(reader_setup)
+        except BaseException as e:
+            persistent_error = isinstance(  # pylint: disable=no-member
+                e,
+                (sqlcipher.DatabaseError, rsqlite.Error),
+            )
+            with self._read_pool_lock:
+                if self._read_pool is read_pool:
+                    if persistent_error:
+                        self._read_pool = None
+                        self._read_pool_size = 0
+                        self._readers_num = 0
+                        self._reader_setup = None
+                    else:
+                        self._readers_num -= 1
+            if persistent_error:
+                self._close_idle_readers(read_pool)
+            raise
+
         with self._read_pool_lock:
-            if (read_pool := self._read_pool) is not None:
-                read_pool.put(reader)
+            if self._read_pool is read_pool:
+                return reader
+        reader.close()  # the pool was disabled while this reader was being prepared
+        return None
+
+    def _return_reader(
+            self,
+            reader: 'DBConnection',
+            source_pool: 'queue.LifoQueue[DBConnection]',
+    ) -> None:
+        with self._read_pool_lock:
+            if self._read_pool is source_pool:
+                source_pool.put(reader)
                 return
-        reader.close()  # the pool was closed while this reader was borrowed
+        reader.close()  # its source pool was closed while this reader was borrowed
 
     @contextmanager
     def read_ctx(self) -> Generator['DBCursor', None, None]:
@@ -582,14 +651,23 @@ class DBConnection:
                 yield cursor
             return
 
-        reader = self._borrow_reader(read_pool)
+        if (reader := self._borrow_reader(read_pool)) is None:
+            # The pool was disabled after read_ctx observed it. Fall back to the
+            # write connection just as a read starting after disable_read_pool does.
+            cursor = self.cursor()
+            try:
+                yield cursor
+            finally:
+                cursor.close()
+            return
+
         self._borrowed_reader.reader = reader
         try:
             with reader.read_ctx() as cursor:
                 yield cursor
         finally:
             self._borrowed_reader.reader = None
-            self._return_reader(reader)
+            self._return_reader(reader, read_pool)
 
     def _acquire_transaction_lock(self) -> None:
         """Blocking acquire of the transaction slot that stays responsive to task

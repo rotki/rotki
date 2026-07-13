@@ -1,15 +1,17 @@
 """Tests for the pool of read-only connections that isolates read_ctx() readers
 from write commits on the same DB (WAL mode). See DBConnection.enable_read_pool.
 """
+import threading
 import time
 from pathlib import Path
 from typing import Final
+from unittest.mock import Mock
 
 import pytest
 import rsqlite
 from sqlcipher3 import dbapi2 as sqlcipher
 
-from rotkehlchen.concurrency import Task, spawn, wait
+from rotkehlchen.concurrency import Task, TaskCancelledError, spawn, wait
 from rotkehlchen.db.drivers.sqlite import DBConnection, DBConnectionType
 from rotkehlchen.db.utils import unlock_database
 
@@ -44,6 +46,47 @@ def test_write_through_read_cursor_raises(conn: DBConnection):
             cursor.execute('INSERT INTO t(a) VALUES (2)')
 
 
+def test_read_pool_grows_lazily_and_reuses_last_reader(conn: DBConnection):
+    """Enabling the pool opens nothing until needed, grows only with concurrent
+    demand and keeps sequential reads on the most recently used warm connection."""
+    assert conn._readers_num == 0
+    assert (read_pool := conn._read_pool) is not None
+
+    with conn.read_ctx():
+        first_reader = conn._borrowed_reader.reader
+    assert conn._readers_num == 1
+
+    borrowed_first = conn._borrow_reader(read_pool)
+    borrowed_second = conn._borrow_reader(read_pool)
+    assert borrowed_first is first_reader
+    assert borrowed_first is not None
+    assert borrowed_second is not None
+    assert conn._readers_num == POOL_SIZE
+    conn._return_reader(borrowed_first, read_pool)
+    conn._return_reader(borrowed_second, read_pool)
+
+    with conn.read_ctx():
+        assert conn._borrowed_reader.reader is borrowed_second
+
+
+def test_transient_reader_setup_failure_keeps_pool_enabled(conn: DBConnection):
+    """Cancellation during lazy setup releases the reserved slot and lets a later read retry."""
+    conn.disable_read_pool()
+    reader_setup = Mock(side_effect=(TaskCancelledError('cancelled'), None))
+    conn.enable_read_pool(size=1, reader_setup=reader_setup)
+    read_pool = conn._read_pool
+
+    with pytest.raises(TaskCancelledError), conn.read_ctx():
+        pass
+    assert conn._read_pool is read_pool
+    assert conn._readers_num == 0
+
+    with conn.read_ctx() as cursor:
+        assert cursor.execute('SELECT COUNT(*) FROM t').fetchone() == (1,)
+    assert conn._readers_num == 1
+    assert reader_setup.call_count == 2
+
+
 def test_own_uncommitted_data_stays_visible(conn: DBConnection):
     """The thread holding the write transaction or savepoint stack must keep
     reading its own uncommitted data, so its read_ctx uses the write connection"""
@@ -65,15 +108,18 @@ def test_readers_are_isolated_from_write_commits(conn: DBConnection):
         write_cursor.executemany('INSERT INTO t(a) VALUES (?)', [(i,) for i in range(2, 11)])
 
     read_results: list[int] = []
+    reader_started = threading.Event()
 
     def slow_reader() -> None:
         with conn.read_ctx() as cursor:
             cursor.execute('SELECT a FROM t')
+            reader_started.set()
             for _ in cursor:  # keep the statement active across the writer's commits
                 read_results.append(1)
                 time.sleep(0.01)
 
     def writer() -> None:
+        assert reader_started.wait(timeout=5)
         for i in range(5):
             with conn.write_ctx() as write_cursor:
                 write_cursor.execute('INSERT INTO t(a) VALUES (?)', (100 + i,))
@@ -164,6 +210,21 @@ def test_close_with_borrowed_reader(conn: DBConnection):
         reader.cursor()
 
 
+def test_borrowed_reader_is_not_returned_to_replacement_pool(conn: DBConnection):
+    """A reader from a disabled pool must be closed rather than returned into a
+    replacement pool, where it may have stale connection setup such as an old key."""
+    with conn.read_ctx():
+        old_reader = conn._borrowed_reader.reader
+        conn.disable_read_pool()
+        conn.enable_read_pool(size=POOL_SIZE)
+
+    assert conn._readers_num == 0
+    with pytest.raises(rsqlite.ProgrammingError):
+        old_reader.cursor()
+    with conn.read_ctx():
+        assert conn._borrowed_reader.reader is not old_reader
+
+
 @pytest.fixture(name='user_conn')
 def fixture_user_conn(tmp_path: Path):
     """A keyed sqlcipher user-type connection with the read pool enabled,
@@ -224,13 +285,15 @@ def test_user_db_failed_reader_setup_cleans_up(user_conn: DBConnection):
     """A reader_setup failure (e.g. wrong key) closes created readers, propagates
     and leaves the pool disabled so read_ctx falls back to the write connection"""
     user_conn.disable_read_pool()
-    with pytest.raises(sqlcipher.DatabaseError):  # pylint: disable=no-member
-        user_conn.enable_read_pool(reader_setup=lambda reader: unlock_database(
-            db_connection=reader,
-            password='wrong password',
-            sqlcipher_version=4,
-            apply_optimizations=False,
-        ))
+    user_conn.enable_read_pool(reader_setup=lambda reader: unlock_database(
+        db_connection=reader,
+        password='wrong password',
+        sqlcipher_version=4,
+        apply_optimizations=False,
+    ))
+    with pytest.raises(sqlcipher.DatabaseError), user_conn.read_ctx():  # pylint: disable=no-member
+        pass
+    assert user_conn._read_pool is None
     with user_conn.read_ctx() as cursor:  # falls back to the write connection
         assert cursor.execute('SELECT COUNT(*) FROM t').fetchone() == (1,)
 

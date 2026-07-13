@@ -413,9 +413,10 @@ class DBHandler:
                 ('version', str(ROTKEHLCHEN_TRANSIENT_DB_VERSION)),
             )
 
-        # Only now that upgrades ran, WAL mode is on and the schema is checked, spin
-        # up the pool of read-only connections isolating read_ctx() readers from
-        # write commits. Only for the user DB -- the transient DB is not worth it.
+        # Only now that upgrades ran, WAL mode is on and the schema is checked,
+        # configure the lazy pool of read-only connections isolating read_ctx()
+        # readers from write commits. Only for the user DB -- the transient DB is
+        # not worth it.
         self.conn.enable_read_pool(reader_setup=self._setup_read_pool_connection)
 
     def _setup_read_pool_connection(self, reader: DBConnection) -> None:
@@ -597,12 +598,7 @@ class DBHandler:
         )
         if result is True:
             self.password = new_password
-        try:
-            self.conn.enable_read_pool(reader_setup=self._setup_read_pool_connection)
-        except sqlcipher.DatabaseError as e:  # pylint: disable=no-member
-            # can only happen if the DB ended up half-rekeyed (conn succeeded but
-            # conn_transient failed) leaving self.password wrong for the user DB
-            log.error('Could not re-key the user DB read pool after password change: %s', e)
+        self.conn.enable_read_pool(reader_setup=self._setup_read_pool_connection)
         return result
 
     def disconnect(self, conn_attribute: Literal['conn', 'conn_transient'] = 'conn') -> None:

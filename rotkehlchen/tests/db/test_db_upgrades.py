@@ -3508,6 +3508,8 @@ def test_unfinished_upgrades(user_data_dir):
             backup_connection.close()
 
             if backup_version == 33:
+                if write_version != backup_version:
+                    db.logout()  # close the connection restored for the previous backup
                 db = _init_db_with_target_version(  # Now the backup should be used
                     target_version=34,
                     user_data_dir=user_data_dir,
