@@ -615,12 +615,19 @@ class APIServer:
             self,
             host: str = '127.0.0.1',
             rest_port: int = 5042,
+            ws_ping_interval: float | None = 60,
+            ws_ping_timeout: float | None = 60,
     ) -> None:
         """This is used to start the API server in production
 
         One uvicorn server on one port serves the REST api (via the WSGI
         bridge) and the /ws websocket route, with its asyncio event loop
         running on a dedicated thread.
+
+        The websocket keepalive ping settings are overridable (None disables)
+        because the test harness must turn them off: freezegun patches
+        time.monotonic, so tests that jump frozen time fire the ping and
+        pong-timeout timers spuriously, killing test websocket connections.
         """
         config = uvicorn.Config(
             app=create_asgi_app(
@@ -648,12 +655,12 @@ class APIServer:
             # (crashed frontend, network drop without FIN) is detected only by
             # TCP retransmit timeouts (15-30 min) or never, since send() is an
             # enqueue that cannot fail for a nominally-open connection. The
-            # 60s/60s values are deliberately far above the 20s/20s defaults
-            # whose late pongs dropped GIL-starved clients in CI-like load, and
-            # browsers answer pings in the network stack so even a breakpointed
-            # frontend still pongs.
-            ws_ping_interval=60,
-            ws_ping_timeout=60,
+            # default 60s/60s values are deliberately far above the 20s/20s
+            # uvicorn defaults whose late pongs dropped GIL-starved clients in
+            # CI-like load, and browsers answer pings in the network stack so
+            # even a breakpointed frontend still pongs.
+            ws_ping_interval=ws_ping_interval,
+            ws_ping_timeout=ws_ping_timeout,
             # bound the graceful shutdown: without it uvicorn waits forever for
             # in-flight requests, and stop()'s join would abandon a still-serving
             # loop thread instead of letting it wind down
