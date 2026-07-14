@@ -24,6 +24,7 @@ mod blockchain;
 mod coingecko;
 mod database;
 mod globaldb;
+mod http;
 mod icons;
 mod logging;
 mod session;

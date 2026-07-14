@@ -17,7 +17,7 @@ impl Coingecko {
     pub fn new(globaldb: Arc<globaldb::GlobalDB>, base_url: String) -> Self {
         Coingecko {
             globaldb,
-            client: reqwest::Client::new(),
+            client: crate::http::client(),
             base_url,
         }
     }
