@@ -1,19 +1,9 @@
 <script setup lang="ts">
 import type { NftAsset } from '@/modules/assets/nfts';
-import {
-  assert,
-  type AssetInfoWithId,
-  getValidSelectorFromEvmAddress,
-  transformCase,
-} from '@rotki/common';
-import { useAssetInfoApi } from '@/modules/assets/api/use-asset-info-api';
+import { type AssetInfoWithId, getValidSelectorFromEvmAddress } from '@rotki/common';
 import AssetDetailsBase from '@/modules/assets/AssetDetailsBase.vue';
-import { useAssetsStore } from '@/modules/assets/use-assets-store';
 import NftDetails from '@/modules/balances/nft/NftDetails.vue';
-import { uniqueObjects } from '@/modules/core/common/data/data';
-import { getAssetSearchTypeParams, getSanitizedChain, parseAssetSearchKeyword } from '@/modules/core/common/display/assets';
-import { isAbortError } from '@/modules/core/common/helpers/is-of-enum';
-import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
+import { useAssetSearch } from '@/modules/shell/components/inputs/use-asset-search';
 
 defineOptions({
   inheritAttrs: false,
@@ -61,19 +51,19 @@ const emit = defineEmits<{
 defineSlots<{
   prepend: () => any;
 }>();
-const { isAssetIgnored } = useAssetsStore();
-const { getEvmChainName, matchChain } = useSupportedChains();
 
-const search = ref<string>('');
-const assets = ref<(AssetInfoWithId | NftAsset)[]>([]);
-const error = ref('');
-const loading = ref(false);
-let pending: AbortController | null = null;
-
-const { assetMapping, assetSearch } = useAssetInfoApi();
 const { t } = useI18n({ useScope: 'global' });
 
-const errors = computed(() => {
+const { error, getVisibleAsset, loading, modelSearch, visibleAssets } = useAssetSearch({
+  chain: () => chain,
+  excludes: () => excludes,
+  includeNfts: () => includeNfts,
+  items: () => items,
+  modelValue,
+  showIgnored: () => showIgnored,
+});
+
+const errors = computed<string[]>(() => {
   const messages = [...errorMessages];
   const errorMessage = get(error);
   if (errorMessage)
@@ -82,115 +72,10 @@ const errors = computed(() => {
   return messages;
 });
 
-const visibleAssets = computed<AssetInfoWithId[]>(() => {
-  const knownAssets = get(assets);
-  const currentValue = get(modelValue);
-
-  const filtered = knownAssets.filter(({ identifier }: AssetInfoWithId) => {
-    const isCurrentValue = identifier === currentValue;
-    const unIgnored = showIgnored || isCurrentValue || !isAssetIgnored(identifier);
-
-    const included = items && items.length > 0 ? items.includes(identifier) : true;
-
-    const excluded
-      = excludes && excludes.length > 0
-        ? excludes.some(excludedId => identifier.toLowerCase() === excludedId?.toLowerCase())
-        : false;
-
-    return !!identifier && unIgnored && included && !excluded;
-  });
-
-  return uniqueObjects<AssetInfoWithId>(filtered, item => item.identifier);
-});
-
-async function searchAssets(keyword: string, signal: AbortSignal): Promise<void> {
-  set(loading, true);
-  try {
-    const { address, value } = parseAssetSearchKeyword(keyword);
-    const usedChain = getSanitizedChain(chain, matchChain, getEvmChainName);
-
-    const fetchedAssets = await assetSearch({
-      address,
-      ...getAssetSearchTypeParams(usedChain),
-      limit: 50,
-      searchNfts: includeNfts,
-      signal,
-      value,
-    });
-    if (get(modelValue))
-      await retainSelectedValueInOptions(fetchedAssets);
-    else
-      set(assets, fetchedAssets);
-
-    pending = null;
-    set(loading, false);
-  }
-  catch (error_: any) {
-    if (!isAbortError(error_)) {
-      set(loading, false);
-      set(error, error_.message);
-    }
-  }
-}
-
-function getVisibleAsset(identifier: string) {
-  return get(visibleAssets)?.find(asset => asset.identifier === identifier);
-}
-
-function onUpdateModelValue(value: string) {
+function onUpdateModelValue(value: string): void {
   set(modelValue, value);
   emit('update:asset', getVisibleAsset(value));
 }
-
-async function retainSelectedValueInOptions(newAssets: (AssetInfoWithId | NftAsset)[]) {
-  try {
-    const val = get(modelValue);
-    assert(val);
-    const mapping = await assetMapping([val]);
-    set(assets, [
-      ...newAssets,
-      {
-        identifier: val,
-        ...mapping.assets[transformCase(val, true)],
-      },
-    ]);
-  }
-  catch (error_: any) {
-    set(loading, false);
-    set(error, error_.message);
-  }
-}
-
-async function checkValue() {
-  if (!get(modelValue))
-    return;
-
-  await retainSelectedValueInOptions(get(assets));
-}
-
-watch(modelValue, async () => {
-  await checkValue();
-});
-
-watch(search, (search) => {
-  if (search)
-    set(loading, true);
-  else if (!pending)
-    set(loading, false);
-});
-
-watchDebounced(search, async (search) => {
-  if (!search)
-    return set(loading, false);
-
-  if (pending) {
-    pending.abort();
-    pending = null;
-  }
-  set(error, '');
-  pending = new AbortController();
-  await searchAssets(search, pending.signal);
-}, { debounce: 800 });
 
 watch(visibleAssets, (_, oldVisibleAssets) => {
   const identifier = get(modelValue);
@@ -206,30 +91,12 @@ watch(visibleAssets, (_, oldVisibleAssets) => {
   if (!getVisibleAsset(identifier))
     onUpdateModelValue('');
 });
-
-watch(() => [chain], async () => {
-  if (!get(modelValue)) {
-    return;
-  }
-  await retainSelectedValueInOptions([]);
-});
-
-onMounted(async () => {
-  await checkValue();
-});
-
-onUnmounted(() => {
-  if (!isDefined(pending)) {
-    return;
-  }
-  get(pending).abort();
-});
 </script>
 
 <template>
   <RuiAutoComplete
     v-model="modelValue"
-    v-model:search-input="search"
+    v-model:search-input="modelSearch"
     :disabled="disabled"
     :options="visibleAssets"
     class="asset-select w-full [&_.group]:py-1.5"
@@ -244,7 +111,7 @@ onUnmounted(() => {
     key-attr="identifier"
     text-attr="identifier"
     :hide-details="hideDetails"
-    :hide-no-data="loading || !search || !!error"
+    :hide-no-data="loading || !modelSearch || !!error"
     auto-select-first
     :loading="loading"
     :variant="outlined ? 'outlined' : 'default'"
