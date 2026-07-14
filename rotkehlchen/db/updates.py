@@ -1,7 +1,6 @@
 import json
 import logging
 import os
-from collections.abc import Callable, Sequence
 from typing import TYPE_CHECKING, Any, Literal
 
 import requests
@@ -41,6 +40,8 @@ from rotkehlchen.utils.network import query_file
 from rotkehlchen.utils.version_check import get_current_version
 
 if TYPE_CHECKING:
+    from collections.abc import Callable, Sequence
+
     from rotkehlchen.db.dbhandler import DBCursor, DBHandler
     from rotkehlchen.user_messages import MessagesAggregator
 
@@ -81,7 +82,7 @@ class RotkiDataUpdater:
     - Contracts
     """
 
-    def __init__(self, msg_aggregator: 'MessagesAggregator', user_db: 'DBHandler') -> None:
+    def __init__(self, msg_aggregator: MessagesAggregator, user_db: DBHandler) -> None:
         self.msg_aggregator = msg_aggregator
         self.user_db = user_db
         self.branch = os.getenv('GITHUB_BASE_REF', 'develop')
@@ -538,7 +539,7 @@ class RotkiDataUpdater:
             )
 
     @staticmethod
-    def _check_for_last_version(cursor: 'DBCursor', update_type: UpdateType) -> int:
+    def _check_for_last_version(cursor: DBCursor, update_type: UpdateType) -> int:
         """This method checks the database for the last local version of `update_type`"""
         found_version = cursor.execute(
             'SELECT value FROM settings WHERE name=?',

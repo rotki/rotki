@@ -1,15 +1,16 @@
 import logging
 import traceback
-from collections.abc import Callable, Collection, Sequence
-from typing import TYPE_CHECKING, Any, Optional, overload
+from typing import TYPE_CHECKING, Any, overload
 
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import AnyBlockchainAddress, SupportedBlockchain
 
 if TYPE_CHECKING:
+    from collections.abc import Callable, Collection, Sequence
+
     from rotkehlchen.history.events.structures.evm_event import EvmEvent
     from rotkehlchen.history.events.structures.solana_event import SolanaEvent
+    from rotkehlchen.types import AnyBlockchainAddress, SupportedBlockchain
     from rotkehlchen.user_messages import MessagesAggregator
 
 logger = logging.getLogger(__name__)
@@ -74,7 +75,7 @@ def decode_transfer_direction(
 
 def decode_safely(
         handled_exceptions: tuple[type[Exception], ...],
-        msg_aggregator: 'MessagesAggregator',
+        msg_aggregator: MessagesAggregator,
         blockchain: SupportedBlockchain,
         func: Callable,
         tx_reference: str | None = None,
@@ -111,23 +112,23 @@ def decode_safely(
 
 @overload
 def maybe_reshuffle_events(
-        ordered_events: Sequence[Optional['EvmEvent']],
-        events_list: list['EvmEvent'],
+        ordered_events: Sequence[EvmEvent | None],
+        events_list: list[EvmEvent],
 ) -> None:
     ...
 
 
 @overload
 def maybe_reshuffle_events(
-        ordered_events: Sequence[Optional['SolanaEvent']],
-        events_list: list['SolanaEvent'],
+        ordered_events: Sequence[SolanaEvent | None],
+        events_list: list[SolanaEvent],
 ) -> None:
     ...
 
 
 def maybe_reshuffle_events(
-        ordered_events: Sequence[Optional['EvmEvent']] | Sequence[Optional['SolanaEvent']],
-        events_list: list['EvmEvent'] | list['SolanaEvent'],
+        ordered_events: Sequence[EvmEvent | None] | Sequence[SolanaEvent | None],
+        events_list: list[EvmEvent] | list[SolanaEvent],
 ) -> None:
     """Updates the sequence indexes of the events in `events_list` to be in ascending order as
     specified by the order of `ordered_events`. The actual order of the events in the list

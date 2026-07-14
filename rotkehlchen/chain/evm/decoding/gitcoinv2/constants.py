@@ -1,8 +1,9 @@
-from typing import Final
-
-from eth_typing.abi import ABI, ABIEvent
+from typing import TYPE_CHECKING, Final
 
 from rotkehlchen.chain.evm.types import string_to_evm_address
+
+if TYPE_CHECKING:
+    from eth_typing.abi import ABI, ABIEvent
 
 PROFILE_REGISTRY: Final = string_to_evm_address('0x4AAcca72145e1dF2aeC137E1f3C5E3D75DB8b5f3')  # same address in all chains # noqa: E501
 

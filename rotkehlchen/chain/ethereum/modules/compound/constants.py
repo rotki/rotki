@@ -1,4 +1,4 @@
-from typing import Final
+from typing import TYPE_CHECKING, Final
 
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.chain.evm.types import string_to_evm_address
@@ -21,7 +21,9 @@ from rotkehlchen.constants.assets import (
     A_YFI,
     A_ZRX,
 )
-from rotkehlchen.types import ChecksumEvmAddress
+
+if TYPE_CHECKING:
+    from rotkehlchen.types import ChecksumEvmAddress
 
 COMPTROLLER_PROXY_ADDRESS: Final = string_to_evm_address('0x3d9819210A31b4961b30EF54bE2aeD79B9c9Cd3B')  # noqa: E501
 CPT_COMPOUND: Final = 'compound'

@@ -1,6 +1,4 @@
 import logging
-from collections.abc import Sequence
-from pathlib import Path
 from time import monotonic
 from typing import TYPE_CHECKING
 
@@ -13,20 +11,23 @@ from rotkehlchen.accounting.types import EventAccountingRuleStatus, MissingPrice
 from rotkehlchen.chain.evm.accounting.aggregator import EVMAccountingAggregators
 from rotkehlchen.concurrency import cancellable_sleep
 from rotkehlchen.db.reports import DBAccountingReports
-from rotkehlchen.db.settings import DBSettings
 from rotkehlchen.errors.asset import UnknownAsset, UnprocessableTradePair
 from rotkehlchen.errors.misc import AccountingError, RemoteError
 from rotkehlchen.errors.price import NoPriceForGivenTimestamp, PriceQueryUnsupportedAsset
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.premium.premium import Premium
 from rotkehlchen.types import EVM_CHAIN_IDS_WITH_TRANSACTIONS, Timestamp
-from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.data_structures import DefaultLRUCache, LRUCacheWithRemove
 
 if TYPE_CHECKING:
+    from collections.abc import Sequence
+    from pathlib import Path
+
     from rotkehlchen.accounting.mixins.event import AccountingEventMixin
     from rotkehlchen.chain.aggregator import ChainsAggregator
     from rotkehlchen.db.dbhandler import DBHandler
+    from rotkehlchen.db.settings import DBSettings
+    from rotkehlchen.premium.premium import Premium
+    from rotkehlchen.user_messages import MessagesAggregator
 
 
 logger = logging.getLogger(__name__)
@@ -43,9 +44,9 @@ class Accountant:
 
     def __init__(
             self,
-            db: 'DBHandler',
+            db: DBHandler,
             msg_aggregator: MessagesAggregator,
-            chains_aggregator: 'ChainsAggregator',
+            chains_aggregator: ChainsAggregator,
             premium: Premium | None,
     ) -> None:
         self.db = db
@@ -90,7 +91,7 @@ class Accountant:
     def _process_skipping_exception(
             self,
             exception: Exception,
-            events: Sequence['AccountingEventMixin'],
+            events: Sequence[AccountingEventMixin],
             count: int,
             reason: str,
     ) -> int:
@@ -113,7 +114,7 @@ class Accountant:
             self,
             start_ts: Timestamp,
             end_ts: Timestamp,
-            events: Sequence['AccountingEventMixin'],
+            events: Sequence[AccountingEventMixin],
     ) -> int:
         """Processes the entire history of cryptoworld actions in order to determine
         the price and time at which every asset was obtained and also
@@ -252,7 +253,7 @@ class Accountant:
 
     def _process_event(
             self,
-            events_iterator: "peekable['AccountingEventMixin']",
+            events_iterator: peekable[AccountingEventMixin],
             start_ts: Timestamp,
             end_ts: Timestamp,
             prev_time: Timestamp,

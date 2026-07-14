@@ -21,7 +21,6 @@ from rotkehlchen.constants import ONE
 from rotkehlchen.constants.assets import A_SOL, A_WSOL
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import SolanaAddress
 
 from .constants import (
     CPT_JUPITER,
@@ -43,6 +42,7 @@ from .constants import (
 if TYPE_CHECKING:
     from rotkehlchen.assets.asset import Asset, AssetWithSymbol, SolanaToken
     from rotkehlchen.history.events.structures.solana_event import SolanaEvent
+    from rotkehlchen.types import SolanaAddress
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -379,7 +379,7 @@ class JupiterDecoder(SolanaDecoderInterface):
 
     def _maybe_get_wsol_ata(
             self,
-            operation_token: 'SolanaToken',
+            operation_token: SolanaToken,
             context: SolanaDecoderContext,
             is_out_operation: bool,
     ) -> SolanaAddress | None:
@@ -417,7 +417,7 @@ class JupiterDecoder(SolanaDecoderInterface):
     def decode_lend_collateral_deposit_withdraw(
             self,
             context: SolanaDecoderContext,
-            collateral_token: 'SolanaToken',
+            collateral_token: SolanaToken,
             raw_collateral_amount: int,
             liquidity_address: SolanaAddress,
     ) -> None:
@@ -489,7 +489,7 @@ class JupiterDecoder(SolanaDecoderInterface):
     def decode_lend_borrow_repay(
             self,
             context: SolanaDecoderContext,
-            debt_token: 'SolanaToken',
+            debt_token: SolanaToken,
             raw_debt_amount: int,
     ) -> None:
         """Decode a Jupiter lend borrow/repay event."""
@@ -582,7 +582,7 @@ class JupiterDecoder(SolanaDecoderInterface):
         }
 
     @staticmethod
-    def counterparties() -> tuple['CounterpartyDetails', ...]:
+    def counterparties() -> tuple[CounterpartyDetails, ...]:
         return (CounterpartyDetails(
             identifier=CPT_JUPITER,
             label='Jupiter',

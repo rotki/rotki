@@ -1,9 +1,10 @@
 from enum import IntEnum
-from typing import Final
-
-from eth_typing.abi import ABI
+from typing import TYPE_CHECKING, Final
 
 from rotkehlchen.chain.evm.types import ChecksumEvmAddress, string_to_evm_address
+
+if TYPE_CHECKING:
+    from eth_typing.abi import ABI
 
 LIDO_STETH_DEPLOYED_BLOCK: Final[int] = 11473216
 

@@ -1,9 +1,9 @@
 from http import HTTPStatus
+from typing import TYPE_CHECKING
 
 import pytest
 import requests
 
-from rotkehlchen.api.server import APIServer
 from rotkehlchen.chain.ethereum.modules.ens.constants import CPT_ENS
 from rotkehlchen.chain.evm.decoding.curve.constants import CPT_CURVE
 from rotkehlchen.constants.timing import DAY_IN_SECONDS
@@ -14,6 +14,9 @@ from rotkehlchen.tests.utils.api import (
     assert_proper_sync_response_with_result,
 )
 from rotkehlchen.types import ChecksumEvmAddress, SupportedBlockchain
+
+if TYPE_CHECKING:
+    from rotkehlchen.api.server import APIServer
 
 
 @pytest.mark.parametrize('have_decoders', [True])

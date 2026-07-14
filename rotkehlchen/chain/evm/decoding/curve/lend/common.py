@@ -2,10 +2,7 @@ import logging
 from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING, Any, Literal
 
-from eth_typing import ABI
-
 from rotkehlchen.assets.utils import token_normalized_value
-from rotkehlchen.chain.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.decoding.utils import maybe_reshuffle_events
 from rotkehlchen.chain.ethereum.modules.curve.crvusd.constants import CURVE_CRVUSD_CONTROLLER_ABI
 from rotkehlchen.chain.evm.decoding.curve.constants import (
@@ -35,7 +32,10 @@ from rotkehlchen.types import CacheType, ChecksumEvmAddress
 from .constants import BORROW_TOPIC, CURVE_VAULT_ABI, REMOVE_COLLATERAL_TOPIC, REPAY_TOPIC
 
 if TYPE_CHECKING:
+    from eth_typing import ABI
+
     from rotkehlchen.assets.asset import EvmToken
+    from rotkehlchen.chain.decoding.types import CounterpartyDetails
     from rotkehlchen.chain.evm.decoding.base import BaseEvmDecoderTools
     from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
     from rotkehlchen.fval import FVal
@@ -50,10 +50,10 @@ class CurveBorrowRepayCommonDecoder(EvmDecoderInterface, ABC):
 
     def __init__(
             self,
-            evm_inquirer: 'EvmNodeInquirer',  # pylint: disable=unused-argument
-            base_tools: 'BaseEvmDecoderTools',
-            msg_aggregator: 'MessagesAggregator',
-            leverage_zap: 'ChecksumEvmAddress | None' = None,
+            evm_inquirer: EvmNodeInquirer,  # pylint: disable=unused-argument
+            base_tools: BaseEvmDecoderTools,
+            msg_aggregator: MessagesAggregator,
+            leverage_zap: ChecksumEvmAddress | None = None,
     ) -> None:
         """Decoder for Curve borrow/repay events.
         `evm_product` is used by the balances logic to differentiate between events for
@@ -75,7 +75,7 @@ class CurveBorrowRepayCommonDecoder(EvmDecoderInterface, ABC):
                 CacheType.CURVE_CRVUSD_COLLATERAL_TOKEN,
                 CacheType.CURVE_CRVUSD_AMM,
             ],
-            contract_address: 'ChecksumEvmAddress',
+            contract_address: ChecksumEvmAddress,
             contract_abi: ABI,
             contract_method: Literal['amm', 'controller', 'collateral_token', 'borrowed_token'],
     ) -> ChecksumEvmAddress | None:
@@ -115,8 +115,8 @@ class CurveBorrowRepayCommonDecoder(EvmDecoderInterface, ABC):
                 CacheType.CURVE_LENDING_VAULT_BORROWED_TOKEN,
                 CacheType.CURVE_CRVUSD_COLLATERAL_TOKEN,
             ],
-            contract_address: 'ChecksumEvmAddress',
-    ) -> 'EvmToken | None':
+            contract_address: ChecksumEvmAddress,
+    ) -> EvmToken | None:
         """Get token from the cache or the specified vault contract method.
         Returns the token or None on error."""
         contract_method: Literal['collateral_token', 'borrowed_token']
@@ -149,9 +149,9 @@ class CurveBorrowRepayCommonDecoder(EvmDecoderInterface, ABC):
     @abstractmethod
     def _get_controller_event_tokens_and_amounts(
             self,
-            controller_address: 'ChecksumEvmAddress',
+            controller_address: ChecksumEvmAddress,
             context: DecoderContext,
-    ) -> tuple['EvmToken', 'EvmToken', 'FVal', 'FVal'] | None:
+    ) -> tuple[EvmToken, EvmToken, FVal, FVal] | None:
         """Get the collateral token, borrowed token, and the corresponding amounts.
         Returns the tokens and amounts in a tuple or None on error."""
 

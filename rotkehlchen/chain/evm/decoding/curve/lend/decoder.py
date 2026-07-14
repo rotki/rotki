@@ -1,5 +1,4 @@
 import logging
-from collections.abc import Callable, Mapping
 from typing import TYPE_CHECKING, Any
 
 from rotkehlchen.assets.utils import token_normalized_value, token_normalized_value_decimals
@@ -42,6 +41,8 @@ from .constants import (
 from .utils import query_curve_lending_vaults
 
 if TYPE_CHECKING:
+    from collections.abc import Callable, Mapping
+
     from rotkehlchen.assets.asset import EvmToken
     from rotkehlchen.chain.evm.decoding.base import BaseEvmDecoderTools
     from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
@@ -57,10 +58,10 @@ class CurveLendCommonDecoder(CurveBorrowRepayCommonDecoder, ReloadableDecoderMix
 
     def __init__(
             self,
-            evm_inquirer: 'EvmNodeInquirer',  # pylint: disable=unused-argument
-            base_tools: 'BaseEvmDecoderTools',
-            msg_aggregator: 'MessagesAggregator',
-            leverage_zap: 'ChecksumEvmAddress | None',
+            evm_inquirer: EvmNodeInquirer,  # pylint: disable=unused-argument
+            base_tools: BaseEvmDecoderTools,
+            msg_aggregator: MessagesAggregator,
+            leverage_zap: ChecksumEvmAddress | None,
     ) -> None:
         """Decoder for Curve lending.
 
@@ -78,7 +79,7 @@ class CurveLendCommonDecoder(CurveBorrowRepayCommonDecoder, ReloadableDecoderMix
         self.controllers: set[ChecksumEvmAddress] = set()
         self.gauges: set[ChecksumEvmAddress] = set()
 
-    def reload_data(self) -> Mapping['ChecksumEvmAddress', tuple[Any, ...]] | None:
+    def reload_data(self) -> Mapping[ChecksumEvmAddress, tuple[Any, ...]] | None:
         """Check that cache is up to date and refresh cache from db.
         Returns a fresh addresses to decoders mapping."""
         if should_update_protocol_cache(
@@ -130,9 +131,9 @@ class CurveLendCommonDecoder(CurveBorrowRepayCommonDecoder, ReloadableDecoderMix
 
     def _get_vault_event_tokens_and_amounts(
             self,
-            vault_address: 'ChecksumEvmAddress',
+            vault_address: ChecksumEvmAddress,
             context: DecoderContext,
-    ) -> tuple['EvmToken', 'EvmToken', 'FVal', 'FVal'] | None:
+    ) -> tuple[EvmToken, EvmToken, FVal, FVal] | None:
         """Get the vault token, underlying token, and the corresponding amounts.
         Returns the tokens and amounts in a tuple or None on error."""
         try:
@@ -160,7 +161,7 @@ class CurveLendCommonDecoder(CurveBorrowRepayCommonDecoder, ReloadableDecoderMix
     def _decode_deposit(
             self,
             context: DecoderContext,
-    ) -> tuple['EvmEvent | None', 'EvmEvent | None']:
+    ) -> tuple[EvmEvent | None, EvmEvent | None]:
         """Decode events associated with a deposit.
         Returns out_event and in_event in a tuple to be used for reordering."""
         if (tokens_and_amounts := self._get_vault_event_tokens_and_amounts(
@@ -204,7 +205,7 @@ class CurveLendCommonDecoder(CurveBorrowRepayCommonDecoder, ReloadableDecoderMix
     def _decode_withdraw(
             self,
             context: DecoderContext,
-    ) -> tuple['EvmEvent | None', 'EvmEvent | None']:
+    ) -> tuple[EvmEvent | None, EvmEvent | None]:
         """Decode events associated with a withdrawal.
         Returns out_event and in_event in a tuple to be used for reordering."""
         if (tokens_and_amounts := self._get_vault_event_tokens_and_amounts(
@@ -266,8 +267,8 @@ class CurveLendCommonDecoder(CurveBorrowRepayCommonDecoder, ReloadableDecoderMix
 
     def _get_vault_for_controller(
             self,
-            controller_address: 'ChecksumEvmAddress',
-    ) -> 'ChecksumEvmAddress | None':
+            controller_address: ChecksumEvmAddress,
+    ) -> ChecksumEvmAddress | None:
         """Find the vault address associated with the specified controller address.
         Returns the vault address or None on error."""
         with GlobalDBHandler().conn.read_ctx() as cursor:
@@ -285,9 +286,9 @@ class CurveLendCommonDecoder(CurveBorrowRepayCommonDecoder, ReloadableDecoderMix
 
     def _get_controller_event_tokens_and_amounts(
             self,
-            controller_address: 'ChecksumEvmAddress',
+            controller_address: ChecksumEvmAddress,
             context: DecoderContext,
-    ) -> tuple['EvmToken', 'EvmToken', 'FVal', 'FVal'] | None:
+    ) -> tuple[EvmToken, EvmToken, FVal, FVal] | None:
         """Get the collateral token, borrowed token, and the corresponding amounts.
         Returns the tokens and amounts in a tuple or None on error."""
         if (vault_address := self._get_vault_for_controller(controller_address)) is None:

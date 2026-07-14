@@ -21,8 +21,8 @@ if TYPE_CHECKING:
 class HedgeyBalances(ProtocolWithBalance):
     def __init__(
             self,
-            evm_inquirer: 'EthereumInquirer',
-            tx_decoder: 'EthereumTransactionDecoder',
+            evm_inquirer: EthereumInquirer,
+            tx_decoder: EthereumTransactionDecoder,
     ):
         super().__init__(
             evm_inquirer=evm_inquirer,
@@ -32,7 +32,7 @@ class HedgeyBalances(ProtocolWithBalance):
         )
         self.evm_inquirer: EthereumInquirer
 
-    def query_balances(self) -> 'BalancesSheetType':
+    def query_balances(self) -> BalancesSheetType:
         """
         Query underlying balances for deposits in eigenlayer. Also for eigenpod
         owners and funds deposited in eigenpods. Also for any pending withdrawals

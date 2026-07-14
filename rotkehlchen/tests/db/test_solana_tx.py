@@ -44,7 +44,7 @@ def create_test_solana_transactions() -> tuple[list[SolanaTransaction], SolanaAd
     return txs, sol_address1, sol_address2, sol_address3
 
 
-def test_add_get_solana_transactions(database: 'DBHandler') -> None:
+def test_add_get_solana_transactions(database: DBHandler) -> None:
     txs, sol_address1, sol_address2, _ = create_test_solana_transactions()
     with database.conn.write_ctx() as write_cursor:
         # add and retrieve the first 2 tx. All should be fine.
@@ -86,7 +86,7 @@ def test_add_get_solana_transactions(database: 'DBHandler') -> None:
         assert len(returned_transactions) == 3
 
 
-def test_solana_transactions_filtering(database: 'DBHandler') -> None:
+def test_solana_transactions_filtering(database: DBHandler) -> None:
     """Test filtering solana transactions by various criteria"""
     txs, sol_address1, _, _ = create_test_solana_transactions()
     with database.conn.write_ctx() as write_cursor:
@@ -159,7 +159,7 @@ def test_solana_transactions_filtering(database: 'DBHandler') -> None:
         )) == 0
 
 
-def test_solana_instruction_execution_order(database: 'DBHandler') -> None:
+def test_solana_instruction_execution_order(database: DBHandler) -> None:
     """Test that nested instructions are returned in correct execution order"""
     with database.conn.write_ctx() as write_cursor:
         dbsolanatx = DBSolanaTx(database)
@@ -255,7 +255,7 @@ def test_solana_instruction_execution_order(database: 'DBHandler') -> None:
             assert instructions[i].data == expected_data
 
 
-def test_query_txs_not_decoded(database: 'DBHandler') -> None:
+def test_query_txs_not_decoded(database: DBHandler) -> None:
     txs, sol_address1, _, _ = create_test_solana_transactions()
     dbsolanatx = DBSolanaTx(database)
     with database.conn.write_ctx() as write_cursor:

@@ -14,10 +14,10 @@ if TYPE_CHECKING:
 
 
 def query_woo_fi_token_price(
-        token: 'EvmToken',
-        inquirer: 'Inquirer',
-        evm_inquirer: 'EvmNodeInquirer',
-) -> 'Price':
+        token: EvmToken,
+        inquirer: Inquirer,
+        evm_inquirer: EvmNodeInquirer,
+) -> Price:
     """Gets the token price for a WOOFi supercharger vault or xWOO token."""
     return get_vault_price(
         inquirer=inquirer,

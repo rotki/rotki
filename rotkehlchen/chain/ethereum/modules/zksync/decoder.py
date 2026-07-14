@@ -1,4 +1,4 @@
-from typing import Any, Final
+from typing import TYPE_CHECKING, Any, Final
 
 from rotkehlchen.assets.utils import asset_normalized_value, asset_raw_value
 from rotkehlchen.chain.decoding.types import CounterpartyDetails
@@ -12,10 +12,12 @@ from rotkehlchen.chain.evm.decoding.structures import (
 )
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
-from rotkehlchen.types import ChecksumEvmAddress
 from rotkehlchen.utils.misc import bytes_to_address
 
 from .constants import CPT_ZKSYNC, ZKSYNC_BRIDGE, ZKSYNC_LITE_SUNSET_CLAIM
+
+if TYPE_CHECKING:
+    from rotkehlchen.types import ChecksumEvmAddress
 
 ONCHAIN_DEPOSIT: Final = b'\xb6\x86k\x02\x9f:\xa2\x9c\xd9\xe2\xbf\xf8\x15\x9a\x8c\xca\xa48\x9fz\x08|q\th\xe0\xb2\x00\xc0\xc7;\x08'  # noqa: E501
 DEPOSIT: Final = b'\x8f_QD\x83\x94i\x9a\xd6\xa3\xb8\x0c\xda\xdfN\xc6\x8c]rL\x8c?\xea\t\xbe\xa5[<-\x0e-\xd0'  # noqa: E501

@@ -47,8 +47,8 @@ if TYPE_CHECKING:
 
 
 def _check_all_unlinked(
-        dbevents: 'DBHistoryEvents',
-        original_events: list['HistoryBaseEntry'],
+        dbevents: DBHistoryEvents,
+        original_events: list[HistoryBaseEntry],
 ) -> None:
     """Check that all asset movements are unlinked with the matched events restored
     to their original state.
@@ -72,7 +72,7 @@ def _check_all_unlinked(
 
 
 @pytest.mark.parametrize('start_with_valid_premium', [True])
-def test_match_asset_movements(rotkehlchen_api_server: 'APIServer') -> None:
+def test_match_asset_movements(rotkehlchen_api_server: APIServer) -> None:
     """Test manually matching asset movements with corresponding onchain events."""
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     dbevents = DBHistoryEvents(rotki.data.db)
@@ -131,7 +131,7 @@ def test_match_asset_movements(rotkehlchen_api_server: 'APIServer') -> None:
 
 
 @pytest.mark.parametrize('start_with_valid_premium', [True])
-def test_match_asset_movements_errors(rotkehlchen_api_server: 'APIServer') -> None:
+def test_match_asset_movements_errors(rotkehlchen_api_server: APIServer) -> None:
     """Test error cases when matching asset movements."""
     assert_error_response(
         response=requests.put(
@@ -169,7 +169,7 @@ def test_match_asset_movements_errors(rotkehlchen_api_server: 'APIServer') -> No
     )
 
 
-def test_match_asset_movements_requires_premium(rotkehlchen_api_server: 'APIServer') -> None:
+def test_match_asset_movements_requires_premium(rotkehlchen_api_server: APIServer) -> None:
     assert_error_response(
         response=requests.put(
             url=api_url_for(rotkehlchen_api_server, 'matchassetmovementsresource'),
@@ -181,7 +181,7 @@ def test_match_asset_movements_requires_premium(rotkehlchen_api_server: 'APIServ
 
 
 @pytest.mark.parametrize('start_with_valid_premium', [True])
-def test_multi_match_asset_movements(rotkehlchen_api_server: 'APIServer') -> None:
+def test_multi_match_asset_movements(rotkehlchen_api_server: APIServer) -> None:
     """Test manually matching an asset movement with multiple onchain events."""
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     dbevents = DBHistoryEvents(rotki.data.db)
@@ -385,7 +385,7 @@ def test_multi_match_asset_movements(rotkehlchen_api_server: 'APIServer') -> Non
 
 
 @pytest.mark.parametrize('start_with_valid_premium', [True])
-def test_mark_asset_movement_no_match(rotkehlchen_api_server: 'APIServer') -> None:
+def test_mark_asset_movement_no_match(rotkehlchen_api_server: APIServer) -> None:
     """Test that marking an asset movement as not matching works as expected, and also that
     this ignored movement can also be converted to a matched pair properly.
     """
@@ -451,7 +451,7 @@ def test_mark_asset_movement_no_match(rotkehlchen_api_server: 'APIServer') -> No
 
 
 @pytest.mark.parametrize('start_with_valid_premium', [True])
-def test_unlink_matched_asset_movements(rotkehlchen_api_server: 'APIServer') -> None:
+def test_unlink_matched_asset_movements(rotkehlchen_api_server: APIServer) -> None:
     """Test that unlinking matched asset movements works as expected."""
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     dbevents = DBHistoryEvents(rotki.data.db)
@@ -572,7 +572,7 @@ def test_unlink_matched_asset_movements(rotkehlchen_api_server: 'APIServer') -> 
     ))
 
 
-def test_get_unmatched_asset_movements(rotkehlchen_api_server: 'APIServer') -> None:
+def test_get_unmatched_asset_movements(rotkehlchen_api_server: APIServer) -> None:
     """Test getting unmatched asset movements"""
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     dbevents = DBHistoryEvents(rotki.data.db)
@@ -649,7 +649,7 @@ def test_get_unmatched_asset_movements(rotkehlchen_api_server: 'APIServer') -> N
 
 @pytest.mark.parametrize('start_with_valid_premium', [True])
 def test_get_unmatched_excludes_right_match(
-        rotkehlchen_api_server: 'APIServer',
+        rotkehlchen_api_server: APIServer,
 ) -> None:
     """
     Regression: right-side matches were still returned because only left_event_id was checked.
@@ -698,7 +698,7 @@ def test_get_unmatched_excludes_right_match(
 
 
 @pytest.mark.parametrize('start_with_valid_premium', [True])
-def test_get_possible_matches(rotkehlchen_api_server: 'APIServer') -> None:
+def test_get_possible_matches(rotkehlchen_api_server: APIServer) -> None:
     """Test getting possible matches for an asset movement"""
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     dbevents = DBHistoryEvents(rotki.data.db)
@@ -833,7 +833,7 @@ def test_get_possible_matches(rotkehlchen_api_server: 'APIServer') -> None:
 
 @pytest.mark.parametrize('start_with_valid_premium', [True])
 def test_protocol_counterparty_in_other_events_only(
-        rotkehlchen_api_server: 'APIServer',
+        rotkehlchen_api_server: APIServer,
 ) -> None:
     """Protocol counterparty events should not appear in close_matches (which mirrors
     auto-matching) but should be included in other_events for manual matching."""
@@ -881,7 +881,7 @@ def test_protocol_counterparty_in_other_events_only(
     assert result['other_events'] == [2]
 
 
-def test_get_possible_matches_requires_premium(rotkehlchen_api_server: 'APIServer') -> None:
+def test_get_possible_matches_requires_premium(rotkehlchen_api_server: APIServer) -> None:
     assert_error_response(
         response=requests.post(
             api_url_for(rotkehlchen_api_server, 'matchassetmovementsresource'),
@@ -897,7 +897,7 @@ def test_get_possible_matches_requires_premium(rotkehlchen_api_server: 'APIServe
 
 
 def test_unlink_matched_asset_movements_requires_premium(
-        rotkehlchen_api_server: 'APIServer',
+        rotkehlchen_api_server: APIServer,
 ) -> None:
     assert_error_response(
         response=requests.delete(
@@ -910,7 +910,7 @@ def test_unlink_matched_asset_movements_requires_premium(
 
 
 def test_get_history_events_with_matched_asset_movements(
-        rotkehlchen_api_server: 'APIServer',
+        rotkehlchen_api_server: APIServer,
 ) -> None:
     """Test that getting history events with matched asset movements works as expected with
     asset movements grouped with their matched events. Checks both the case where a movement
@@ -1081,7 +1081,7 @@ def test_get_history_events_with_matched_asset_movements(
 
 
 def test_coinbase_chain_two_groups(
-        rotkehlchen_api_server: 'APIServer',
+        rotkehlchen_api_server: APIServer,
 ) -> None:
     """Regression reproducer for Coinbase/CoinbasePro/EVM chain grouping with ignores."""
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
@@ -1177,7 +1177,7 @@ def test_coinbase_chain_two_groups(
     assert len(result['entries']) == 3
 
 
-def test_group_header_event(rotkehlchen_api_server: 'APIServer') -> None:
+def test_group_header_event(rotkehlchen_api_server: APIServer) -> None:
     """Test that we get the asset movement as the header event even when filtering for an
     adjustment event or an evm event in the same tx other than the matched event.
     """
@@ -1264,7 +1264,7 @@ def test_group_header_event(rotkehlchen_api_server: 'APIServer') -> None:
 
 @pytest.mark.parametrize('start_with_valid_premium', [True])
 def test_get_history_events_with_matched_asset_movements_pagination_no_duplicates(
-        rotkehlchen_api_server: 'APIServer',
+        rotkehlchen_api_server: APIServer,
 ) -> None:
     """Regression test for matched movement groups duplicating across adjacent pages.
 
@@ -1374,7 +1374,7 @@ def test_get_history_events_with_matched_asset_movements_pagination_no_duplicate
 
 
 @pytest.mark.parametrize('start_with_valid_premium', [True])
-def test_trigger_matching_task(rotkehlchen_api_server: 'APIServer') -> None:
+def test_trigger_matching_task(rotkehlchen_api_server: APIServer) -> None:
     """Test that triggering matching task requires capability and calls processing when allowed."""
     with (
         patch('rotkehlchen.api.rest.has_premium_capability', return_value=False),
@@ -1414,7 +1414,7 @@ def test_trigger_matching_task(rotkehlchen_api_server: 'APIServer') -> None:
         assert match_mock.call_args.kwargs['should_auto_match'] is True
 
 
-def test_scheduler_endpoint(rotkehlchen_api_server: 'APIServer') -> None:
+def test_scheduler_endpoint(rotkehlchen_api_server: APIServer) -> None:
     """Test that the scheduler endpoint can enable and disable the task scheduler."""
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     assert rotki.task_manager is not None

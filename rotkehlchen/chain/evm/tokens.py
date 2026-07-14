@@ -1,9 +1,8 @@
 import logging
 from abc import ABC
 from collections import defaultdict, deque
-from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, TypeVar, cast
+from typing import TYPE_CHECKING, cast
 
 from rotkehlchen.assets.asset import Asset, EvmToken, Nft
 from rotkehlchen.assets.utils import (
@@ -13,7 +12,6 @@ from rotkehlchen.assets.utils import (
 from rotkehlchen.balances.historical import HistoricalBalancesManager
 from rotkehlchen.chain.evm.proxies_inquirer import ProxyType
 from rotkehlchen.chain.evm.types import WeightedNode, asset_id_is_evm_token
-from rotkehlchen.chain.structures import EvmTokenDetectionData
 from rotkehlchen.constants import ONE, ZERO
 from rotkehlchen.constants.resolver import tokenid_to_collectible_id
 from rotkehlchen.errors.misc import NotFoundError, RemoteError, RequestTooLargeError
@@ -36,7 +34,10 @@ from .constants import ETHERSCAN_MAX_ARGUMENTS_TO_CONTRACT, ZERO_ADDRESS
 from .contracts import EvmContract
 
 if TYPE_CHECKING:
+    from collections.abc import Mapping, Sequence
+
     from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirerWithProxies
+    from rotkehlchen.chain.structures import EvmTokenDetectionData
     from rotkehlchen.db.dbhandler import DBHandler
 
     from .node_inquirer import EvmNodeInquirer
@@ -105,10 +106,8 @@ OTHER_MAX_TOKEN_CHUNK_LENGTH = 460
 # to multicall. In total, it occupies (7 + number of tokens passed) arguments.
 PURE_TOKENS_BALANCE_ARGUMENTS = 7
 
-T = TypeVar('T')
 
-
-def generate_multicall_chunks(
+def generate_multicall_chunks[T](
         chunk_length: int,
         addresses_to_tokens: Mapping[ChecksumEvmAddress, Sequence[T]],
 ) -> list[list[tuple[ChecksumEvmAddress, Sequence[T]]]]:
@@ -137,7 +136,7 @@ def generate_multicall_chunks(
 
 
 def get_rpc_first_chunk_size_call_order(
-        evm_inquirer: 'EvmNodeInquirer',
+        evm_inquirer: EvmNodeInquirer,
         web3_node_chunk_size: int = OTHER_MAX_TOKEN_CHUNK_LENGTH,
 ) -> tuple[int, list[WeightedNode]]:
     """Return chunk size and RPC-first call order with indexer fallback.
@@ -163,8 +162,8 @@ class EvmTokens(ABC):  # noqa: B024
 
     def __init__(
             self,
-            database: 'DBHandler',
-            evm_inquirer: 'EvmNodeInquirer',
+            database: DBHandler,
+            evm_inquirer: EvmNodeInquirer,
             token_exceptions: set[ChecksumEvmAddress] | None = None,
     ):
         self.db = database
@@ -230,7 +229,7 @@ class EvmTokens(ABC):  # noqa: B024
     def _get_multicall_token_balances(
             self,
             chunk: list[tuple[ChecksumEvmAddress, Sequence[EvmToken]]],
-            call_order: Sequence['WeightedNode'] | None = None,
+            call_order: Sequence[WeightedNode] | None = None,
     ) -> dict[ChecksumEvmAddress, dict[EvmToken, FVal]]:
         """Gets token balances from a chunk of address -> token address
 
@@ -663,8 +662,8 @@ class EvmTokens(ABC):  # noqa: B024
 class EvmTokensWithProxies(EvmTokens, ABC):
     def __init__(
             self,
-            database: 'DBHandler',
-            evm_inquirer: 'EvmNodeInquirer',
+            database: DBHandler,
+            evm_inquirer: EvmNodeInquirer,
             token_exceptions: set[ChecksumEvmAddress] | None = None,
     ):
         super().__init__(database=database, evm_inquirer=evm_inquirer, token_exceptions=token_exceptions)  # noqa: E501

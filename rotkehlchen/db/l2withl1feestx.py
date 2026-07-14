@@ -28,7 +28,7 @@ class DBL2WithL1FeesTx(DBEvmTx):
 
     def add_transactions(
             self,
-            write_cursor: 'DBCursor',
+            write_cursor: DBCursor,
             evm_transactions: list[L2WithL1FeesTransaction],  # type: ignore[override]
             relevant_address: ChecksumEvmAddress | None,
     ) -> list[EVMTxHash]:
@@ -88,7 +88,7 @@ class DBL2WithL1FeesTx(DBEvmTx):
 
     def add_or_ignore_receipt_data(
             self,
-            write_cursor: 'DBCursor',
+            write_cursor: DBCursor,
             chain_id: ChainID,
             data: dict[str, Any],
     ) -> int:

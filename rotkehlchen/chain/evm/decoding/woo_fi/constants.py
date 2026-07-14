@@ -1,9 +1,10 @@
-from typing import Final
-
-from eth_typing import ABI
+from typing import TYPE_CHECKING, Final
 
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.types import ChainID
+
+if TYPE_CHECKING:
+    from eth_typing import ABI
 
 CPT_WOO_FI: Final = 'woo-fi'
 CPT_WOO_FI_LABEL: Final = 'WOOFi'

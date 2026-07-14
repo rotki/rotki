@@ -4,7 +4,6 @@ from typing import TYPE_CHECKING, Any, Literal, NamedTuple
 
 import requests
 
-from rotkehlchen.assets.asset import Asset, AssetWithOracles
 from rotkehlchen.constants import HOUR_IN_SECONDS
 from rotkehlchen.constants.assets import A_USD
 from rotkehlchen.constants.prices import ZERO_PRICE
@@ -25,6 +24,7 @@ from rotkehlchen.utils.mixins.penalizable_oracle import PenalizablePriceOracleMi
 from rotkehlchen.utils.network import create_session
 
 if TYPE_CHECKING:
+    from rotkehlchen.assets.asset import Asset, AssetWithOracles
     from rotkehlchen.db.dbhandler import DBHandler
 
 logger = logging.getLogger(__name__)
@@ -96,7 +96,7 @@ class Alchemy(
     PenalizablePriceOracleMixin,
 ):
 
-    def __init__(self, database: 'DBHandler | None') -> None:
+    def __init__(self, database: DBHandler | None) -> None:
         ExternalServiceWithApiKeyOptionalDB.__init__(
             self,
             database=database,

@@ -19,8 +19,6 @@ from rotkehlchen.constants.prices import ZERO_PRICE
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.db.ranges import DBQueryRanges
 from rotkehlchen.errors.misc import RemoteError
-from rotkehlchen.exchanges.data_structures import MarginPosition
-from rotkehlchen.fval import FVal
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import (
@@ -40,6 +38,8 @@ from rotkehlchen.utils.network import create_session
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
+    from rotkehlchen.exchanges.data_structures import MarginPosition
+    from rotkehlchen.fval import FVal
     from rotkehlchen.history.events.structures.base import HistoryBaseEntry
     from rotkehlchen.user_messages import MessagesAggregator
 
@@ -56,7 +56,7 @@ ExchangeHistoryNewStepCallback = Callable[[str], None]
 class RecoveringExchangeSession(requests.Session):
     """Session wrapper that retries once after recoverable keep-alive disconnects."""
 
-    def __init__(self, exchange: 'ExchangeWithoutApiSecret') -> None:
+    def __init__(self, exchange: ExchangeWithoutApiSecret) -> None:
         super().__init__()
         self.exchange = exchange
         self._recovery_lock = Semaphore()
@@ -160,7 +160,7 @@ class ExchangeWithExtras:
     An interface for exchanges that have extra properties that can be edited.
     Note: it should be used only together with ExchangeInterface to have db, name and location.
     """
-    db: 'DBHandler'
+    db: DBHandler
     name: str
     location: Location
 
@@ -184,8 +184,8 @@ class ExchangeWithoutApiSecret(CacheableMixIn, LockableQueryMixIn):
             name: str,
             location: Location,
             api_key: ApiKey,
-            database: 'DBHandler',
-            msg_aggregator: 'MessagesAggregator',
+            database: DBHandler,
+            msg_aggregator: MessagesAggregator,
     ):
         assert isinstance(api_key, T_ApiKey), (
             f'api key for {name} should be a string'
@@ -326,7 +326,7 @@ class ExchangeWithoutApiSecret(CacheableMixIn, LockableQueryMixIn):
             start_ts: Timestamp,
             end_ts: Timestamp,
             force_refresh: bool = False,
-    ) -> tuple[Sequence['HistoryBaseEntry'], Timestamp]:
+    ) -> tuple[Sequence[HistoryBaseEntry], Timestamp]:
         """Queries the exchange's API for history events of the user
 
         Should be implemented in subclasses, unless query_history_events is reimplemented with
@@ -540,8 +540,8 @@ class ExchangeInterface(ExchangeWithoutApiSecret):
             location: Location,
             api_key: ApiKey,
             secret: ApiSecret,
-            database: 'DBHandler',
-            msg_aggregator: 'MessagesAggregator',
+            database: DBHandler,
+            msg_aggregator: MessagesAggregator,
     ):
         super().__init__(
             name=name,

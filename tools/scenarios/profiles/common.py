@@ -50,8 +50,8 @@ CHAIN_STATE_SEED_OFFSET: Final = 0xC0FFEE  # decouple from the profile's event r
 
 def make_chain_state(
         seed: int,
-        accounts: 'Sequence[ChecksumEvmAddress]',
-        assets: 'Sequence[tuple[Asset, str]]',
+        accounts: Sequence[ChecksumEvmAddress],
+        assets: Sequence[tuple[Asset, str]],
         chain_id: int = 1,
 ) -> tuple[dict[str, Any], dict[str, Any]]:
     """Deterministic on-chain holdings (native + ERC-20) for the accounts.
@@ -98,10 +98,10 @@ def make_chain_state(
 
 
 def make_snapshots(
-        factory: 'DeterministicFactory',
-        assets: 'Sequence[tuple[Asset, str]]',
+        factory: DeterministicFactory,
+        assets: Sequence[tuple[Asset, str]],
         weeks: int,
-        location_weights: 'Sequence[tuple[Location, float]]',
+        location_weights: Sequence[tuple[Location, float]],
 ) -> tuple[list[tuple], list[tuple], int]:
     """Weekly balance snapshots over the profile lifetime.
 
@@ -162,21 +162,21 @@ EVM_EVENT_KIND_WEIGHTS: Final = (0.28, 0.22, 0.12, 0.12, 0.08, 0.18)
 @dataclass(frozen=True)
 class EvmPools:
     """Distribution pools for generating EVM events on one chain"""
-    dex_counterparties: 'Sequence[str]'
-    dex_weights: 'Sequence[float]'
-    defi_counterparties: 'Sequence[str]'
-    defi_weights: 'Sequence[float]'
-    assets: 'Sequence[tuple[Asset, str]]'  # (asset, symbol-for-notes)
-    asset_weights: 'Sequence[float]'
-    gas_asset: 'Asset'
+    dex_counterparties: Sequence[str]
+    dex_weights: Sequence[float]
+    defi_counterparties: Sequence[str]
+    defi_weights: Sequence[float]
+    assets: Sequence[tuple[Asset, str]]  # (asset, symbol-for-notes)
+    asset_weights: Sequence[float]
+    gas_asset: Asset
 
 
 def make_evm_tx_group(
-        factory: 'DeterministicFactory',
+        factory: DeterministicFactory,
         pools: EvmPools,
-        location: 'Location',
-        account: 'ChecksumEvmAddress',
-        timestamp: 'TimestampMS',
+        location: Location,
+        account: ChecksumEvmAddress,
+        timestamp: TimestampMS,
         size: int,
 ) -> list[EvmEvent]:
     """One transaction's worth of decoded events: a gas fee event plus
@@ -283,20 +283,20 @@ def make_evm_tx_group(
     return events
 
 
-def _address_topic(address: 'ChecksumEvmAddress') -> str:
+def _address_topic(address: ChecksumEvmAddress) -> str:
     """Left-pad a 20-byte address into a 32-byte log-topic hex string."""
     return '0x' + '0' * 24 + address[2:].lower()
 
 
 def make_decodable_evm_transactions(
-        factory: 'DeterministicFactory',
-        chain_id: 'ChainID',
-        from_address: 'ChecksumEvmAddress',
-        to_address: 'ChecksumEvmAddress',
+        factory: DeterministicFactory,
+        chain_id: ChainID,
+        from_address: ChecksumEvmAddress,
+        to_address: ChecksumEvmAddress,
         token_address: str,
         count: int,
         logs_per_tx: int = 3,
-) -> tuple[list['EvmTransaction'], list[dict[str, Any]]]:
+) -> tuple[list[EvmTransaction], list[dict[str, Any]]]:
     """Build ``count`` ERC20-transfer transactions plus their receipts, decodable offline.
 
     The bench mock serves no receipts, so a redecode operation can only run if the
@@ -347,13 +347,13 @@ def make_decodable_evm_transactions(
 
 
 def make_exchange_swap(
-        factory: 'DeterministicFactory',
-        location: 'Location',
-        timestamp: 'TimestampMS',
-        spend: 'tuple[Asset, str]',
-        receive: 'tuple[Asset, str]',
+        factory: DeterministicFactory,
+        location: Location,
+        timestamp: TimestampMS,
+        spend: tuple[Asset, str],
+        receive: tuple[Asset, str],
         unique_suffix: str,
-        fee_asset: 'Asset | None' = None,
+        fee_asset: Asset | None = None,
 ) -> list[SwapEvent]:
     """An exchange trade: spend/receive pair, optionally with a fee event"""
     group_identifier = f'{location!s}-swap-{unique_suffix}'
@@ -388,10 +388,10 @@ def make_exchange_swap(
 
 
 def make_asset_movement(
-        factory: 'DeterministicFactory',
-        location: 'Location',
-        timestamp: 'TimestampMS',
-        asset: 'tuple[Asset, str]',
+        factory: DeterministicFactory,
+        location: Location,
+        timestamp: TimestampMS,
+        asset: tuple[Asset, str],
         is_deposit: bool,
         unique_suffix: str,
         with_fee: bool,
@@ -419,12 +419,12 @@ def make_asset_movement(
 
 
 def make_staking_reward(
-        factory: 'DeterministicFactory',
-        location: 'Location',
-        timestamp: 'TimestampMS',
-        asset: 'tuple[Asset, str]',
+        factory: DeterministicFactory,
+        location: Location,
+        timestamp: TimestampMS,
+        asset: tuple[Asset, str],
         unique_suffix: str,
-) -> 'HistoryBaseEntry':
+) -> HistoryBaseEntry:
     amount = factory.amount(0.001, 50, 8)
     return HistoryEvent(
         group_identifier=f'{location!s}-reward-{unique_suffix}',

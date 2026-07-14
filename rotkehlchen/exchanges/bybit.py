@@ -2,13 +2,11 @@ import json
 import logging
 import urllib.parse
 from collections import defaultdict
-from collections.abc import Sequence
 from http import HTTPStatus
 from typing import TYPE_CHECKING, Any, Final, Literal
 
 import requests
 
-from rotkehlchen.assets.asset import AssetWithOracles
 from rotkehlchen.assets.converters import asset_from_bybit
 from rotkehlchen.concurrency import cancellable_sleep
 from rotkehlchen.constants.misc import ZERO
@@ -19,7 +17,6 @@ from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
-from rotkehlchen.exchanges.data_structures import MarginPosition
 from rotkehlchen.exchanges.exchange import ExchangeInterface, ExchangeQueryBalances
 from rotkehlchen.exchanges.utils import SignatureGeneratorMixin
 from rotkehlchen.fval import FVal
@@ -50,7 +47,11 @@ from rotkehlchen.types import (
 from rotkehlchen.utils.misc import combine_dicts, ts_ms_to_sec, ts_now, ts_now_in_ms, ts_sec_to_ms
 
 if TYPE_CHECKING:
+    from collections.abc import Sequence
+
+    from rotkehlchen.assets.asset import AssetWithOracles
     from rotkehlchen.db.dbhandler import DBHandler
+    from rotkehlchen.exchanges.data_structures import MarginPosition
     from rotkehlchen.history.events.structures.base import HistoryBaseEntry
     from rotkehlchen.user_messages import MessagesAggregator
 
@@ -111,8 +112,8 @@ class Bybit(ExchangeInterface, SignatureGeneratorMixin):
             name: str,
             api_key: ApiKey,
             secret: ApiSecret,
-            database: 'DBHandler',
-            msg_aggregator: 'MessagesAggregator',
+            database: DBHandler,
+            msg_aggregator: MessagesAggregator,
     ):
         """
         Interact with the bybit API.
@@ -633,7 +634,7 @@ class Bybit(ExchangeInterface, SignatureGeneratorMixin):
             start_ts: Timestamp,
             end_ts: Timestamp,
             force_refresh: bool = False,
-    ) -> tuple[Sequence['HistoryBaseEntry'], Timestamp]:
+    ) -> tuple[Sequence[HistoryBaseEntry], Timestamp]:
         """Query deposits and withdrawals sequentially"""
         events: list[AssetMovement | SwapEvent] = []
         for event_type in (HistoryEventType.DEPOSIT, HistoryEventType.WITHDRAWAL):

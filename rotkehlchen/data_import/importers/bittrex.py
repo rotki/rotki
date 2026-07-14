@@ -1,11 +1,9 @@
 import csv
 from enum import Enum, auto
-from pathlib import Path
 from typing import TYPE_CHECKING, Any, Literal
 
 from rotkehlchen.assets.converters import asset_from_bittrex
 from rotkehlchen.data_import.utils import BaseExchangeImporter, maybe_set_transaction_extra_data
-from rotkehlchen.db.drivers.sqlite import DBCursor
 from rotkehlchen.errors.misc import InputError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.exchanges.utils import deserialize_asset_movement_address, get_key_if_has_val
@@ -30,8 +28,10 @@ from rotkehlchen.utils.misc import ts_sec_to_ms
 
 if TYPE_CHECKING:
     from collections.abc import Callable
+    from pathlib import Path
 
     from rotkehlchen.db.dbhandler import DBHandler
+    from rotkehlchen.db.drivers.sqlite import DBCursor
 
 
 class BittrexFileType(Enum):
@@ -49,7 +49,7 @@ class BittrexFileType(Enum):
 class BittrexImporter(BaseExchangeImporter):
     """Bittrex CSV importer"""
 
-    def __init__(self, db: 'DBHandler') -> None:
+    def __init__(self, db: DBHandler) -> None:
         super().__init__(db=db, name='Bittrex')
 
     @staticmethod

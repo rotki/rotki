@@ -1,7 +1,6 @@
-import abc
 import logging
 import re
-from typing import TYPE_CHECKING, Generic, TypeVar
+from typing import TYPE_CHECKING
 
 from rotkehlchen.assets.types import AssetData, AssetType
 from rotkehlchen.errors.asset import UnknownAsset
@@ -17,13 +16,11 @@ if TYPE_CHECKING:
 
     from rotkehlchen.db.drivers.sqlite import DBConnection
 
-T = TypeVar('T')
-
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
-class BaseAssetParser(abc.ABC, Generic[T]):
+class BaseAssetParser[T]:
     """Base assets parser with common parsing functionality.
 
     This was introduced to handle asset updates that need to be applied
@@ -36,7 +33,7 @@ class BaseAssetParser(abc.ABC, Generic[T]):
         self._string_re = re.compile(r'.*([\'"])(.*?)\1.*')
         self._version_parsers: list[tuple[VersionRange, Callable]] = []
 
-    def parse(self, insert_text: str, version: int, connection: 'DBConnection') -> T:
+    def parse(self, insert_text: str, version: int, connection: DBConnection) -> T:
         for version_range, parser in self._version_parsers:
             if version_range.contains(version):
                 return parser(insert_text=insert_text, connection=connection)
@@ -108,7 +105,7 @@ class AssetParser(BaseAssetParser[AssetData]):
             (VersionRange(37, None), self._parse_latest_format),
         ]
 
-    def _parse_legacy_format(self, connection: 'DBConnection', insert_text: str) -> AssetData:
+    def _parse_legacy_format(self, connection: DBConnection, insert_text: str) -> AssetData:
         """Parse assets for versions 15-36 (before solana_tokens table support)."""
         asset_data = self._parse_asset_data(insert_text)
         address: ChecksumEvmAddress | None = None
@@ -133,7 +130,7 @@ class AssetParser(BaseAssetParser[AssetData]):
             protocol=protocol,
         )
 
-    def _parse_latest_format(self, connection: 'DBConnection', insert_text: str) -> AssetData:
+    def _parse_latest_format(self, connection: DBConnection, insert_text: str) -> AssetData:
         """Parse assets for versions 37+ (with solana_tokens table support)."""
         asset_data = self._parse_legacy_format(connection, insert_text)
         if asset_data.asset_type == AssetType.SOLANA_TOKEN:
@@ -299,7 +296,7 @@ class AssetCollectionParser(BaseAssetParser[tuple[int, str, str] | tuple[int, st
             (VersionRange(33, None), self._parse_latest_format),
         ]
 
-    def _parse_latest_format(self, connection: 'DBConnection', insert_text: str) -> tuple[int, str, str, str]:  # noqa: E501
+    def _parse_latest_format(self, connection: DBConnection, insert_text: str) -> tuple[int, str, str, str]:  # noqa: E501
         collection_match = self._latest_collection_re.match(insert_text)
         if collection_match is None:
             log.error(f'Failed to match asset collection {insert_text}')
@@ -325,7 +322,7 @@ class AssetCollectionParser(BaseAssetParser[tuple[int, str, str] | tuple[int, st
         main_asset = self._parse_str(collection_match.group(4), 'main_asset', insert_text)
         return collection_id, name, symbol, main_asset
 
-    def _parse_legacy_format(self, connection: 'DBConnection', insert_text: str) -> tuple[int, str, str]:  # noqa: E501
+    def _parse_legacy_format(self, connection: DBConnection, insert_text: str) -> tuple[int, str, str]:  # noqa: E501
         collection_match = self._legacy_collection_re.match(insert_text)
         if collection_match is None:
             log.error(f'Failed to match asset collection {insert_text}')
@@ -361,7 +358,7 @@ class MultiAssetMappingsParser(BaseAssetParser[tuple[int, str]]):
             (VersionRange(16, None), self._parse),
         ]
 
-    def _parse(self, connection: 'DBConnection', insert_text: str) -> tuple[int, str]:
+    def _parse(self, connection: DBConnection, insert_text: str) -> tuple[int, str]:
         mapping_match = self._mappings_re.match(insert_text)
         if mapping_match is None:
             log.error(f'Failed to match asset collection mapping {insert_text}')

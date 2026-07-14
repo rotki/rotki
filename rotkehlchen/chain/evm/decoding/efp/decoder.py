@@ -43,10 +43,10 @@ class EfpCommonDecoder(EvmDecoderInterface, ABC):
 
     def __init__(
             self,
-            evm_inquirer: 'EvmNodeInquirer',
-            base_tools: 'BaseEvmDecoderTools',
-            msg_aggregator: 'MessagesAggregator',
-            list_records_contract: 'ChecksumEvmAddress',
+            evm_inquirer: EvmNodeInquirer,
+            base_tools: BaseEvmDecoderTools,
+            msg_aggregator: MessagesAggregator,
+            list_records_contract: ChecksumEvmAddress,
     ) -> None:
         super().__init__(
             evm_inquirer=evm_inquirer,
@@ -55,7 +55,7 @@ class EfpCommonDecoder(EvmDecoderInterface, ABC):
         )
         self.list_records_contract = list_records_contract
 
-    def _get_address_for_slot(self, slot: int) -> 'ChecksumEvmAddress | None':
+    def _get_address_for_slot(self, slot: int) -> ChecksumEvmAddress | None:
         """Get address associated with the specified slot.
         Returns an address or None if unable to match an address to this slot."""
         with GlobalDBHandler().conn.read_ctx() as cursor:
@@ -142,7 +142,7 @@ class EfpCommonDecoder(EvmDecoderInterface, ABC):
 
     # -- DecoderInterface methods
 
-    def addresses_to_decoders(self) -> dict['ChecksumEvmAddress', tuple[Any, ...]]:
+    def addresses_to_decoders(self) -> dict[ChecksumEvmAddress, tuple[Any, ...]]:
         return {self.list_records_contract: (self._decode_list_op_events,)}
 
     @staticmethod

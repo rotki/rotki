@@ -1,5 +1,4 @@
 import logging
-from collections.abc import Callable, Mapping
 from typing import TYPE_CHECKING, Any
 
 from eth_utils import to_checksum_address
@@ -21,7 +20,6 @@ from rotkehlchen.chain.evm.decoding.structures import (
     DecoderContext,
     EvmDecodingOutput,
 )
-from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants import ONE
 from rotkehlchen.errors.misc import InputError, NotERC20Conformant, NotERC721Conformant
@@ -42,9 +40,12 @@ from .constants import (
 from .utils import query_beefy_vaults
 
 if TYPE_CHECKING:
+    from collections.abc import Callable, Mapping
+
     from rotkehlchen.assets.asset import CryptoAsset
     from rotkehlchen.chain.evm.decoding.base import BaseEvmDecoderTools
     from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
+    from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
     from rotkehlchen.fval import FVal
     from rotkehlchen.history.events.structures.evm_event import EvmEvent
     from rotkehlchen.user_messages import MessagesAggregator
@@ -62,9 +63,9 @@ class BeefyFinanceCommonDecoder(EvmDecoderInterface, ReloadableDecoderMixin):
 
     def __init__(
             self,
-            evm_inquirer: 'EvmNodeInquirer',
-            base_tools: 'BaseEvmDecoderTools',
-            msg_aggregator: 'MessagesAggregator',
+            evm_inquirer: EvmNodeInquirer,
+            base_tools: BaseEvmDecoderTools,
+            msg_aggregator: MessagesAggregator,
     ) -> None:
         super().__init__(
             evm_inquirer=evm_inquirer,
@@ -84,8 +85,8 @@ class BeefyFinanceCommonDecoder(EvmDecoderInterface, ReloadableDecoderMixin):
     def _decode_legacy_boost_exit(
             self,
             tx_log: EvmTxReceiptLog,
-            unmatched_receive_events: list['EvmEvent'],
-            ordered_events: list['EvmEvent'],
+            unmatched_receive_events: list[EvmEvent],
+            ordered_events: list[EvmEvent],
             transaction: EvmTransaction,
     ) -> None:
         """Decode a Withdrawn event from a legacy boost contract.
@@ -168,12 +169,12 @@ class BeefyFinanceCommonDecoder(EvmDecoderInterface, ReloadableDecoderMixin):
 
     def _process_beefy_events(
             self,
-            events: list['EvmEvent'],
-            transaction: 'EvmTransaction',
+            events: list[EvmEvent],
+            transaction: EvmTransaction,
             all_logs: list[EvmTxReceiptLog],
             from_address: ChecksumEvmAddress | None = None,
-            expected_amounts_and_assets: list[tuple['FVal', 'CryptoAsset']] | None = None,
-    ) -> list['EvmEvent']:
+            expected_amounts_and_assets: list[tuple[FVal, CryptoAsset]] | None = None,
+    ) -> list[EvmEvent]:
         """Core logic for processing Beefy finance events.
 
         If `from_address` is provided, only processes events from that specific contract.
@@ -456,9 +457,9 @@ class BeefyFinanceCommonDecoder(EvmDecoderInterface, ReloadableDecoderMixin):
     def _decode_deposit_or_withdrawal(
             self,
             transaction: EvmTransaction,  # pylint: disable=unused-argument
-            decoded_events: list['EvmEvent'],
+            decoded_events: list[EvmEvent],
             all_logs: list[EvmTxReceiptLog],  # pylint: disable=unused-argument
-    ) -> list['EvmEvent']:
+    ) -> list[EvmEvent]:
         """Decodes vault interactions by identifying spend and receive events.
 
         Transforms generic spend and receive events into structured deposit and withdrawal
@@ -524,7 +525,7 @@ class BeefyFinanceCommonDecoder(EvmDecoderInterface, ReloadableDecoderMixin):
 
         return DEFAULT_EVM_DECODING_OUTPUT
 
-    def reload_data(self) -> Mapping['ChecksumEvmAddress', tuple[Any, ...]] | None:
+    def reload_data(self) -> Mapping[ChecksumEvmAddress, tuple[Any, ...]] | None:
         if should_update_protocol_cache(
             userdb=self.base.database,
             cache_key=CacheType.BEEFY_VAULTS,

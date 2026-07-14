@@ -26,7 +26,7 @@ NFT_DIRECTIVE: Final = '_nft_'
 
 
 @enter_exit_debug_log(name='UserDB v43->v44 upgrade')
-def upgrade_v43_to_v44(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHandler') -> None:
+def upgrade_v43_to_v44(db: DBHandler, progress_handler: DBUpgradeProgressHandler) -> None:
     """Upgrades the DB from v43 to v44. This was in v1.35 release.
 
     - last_price and last_price asset are no longer optional in the nfts table
@@ -40,7 +40,7 @@ def upgrade_v43_to_v44(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
     - Add 4 new locations to the DB (moved from migration 17 which was in 1.34.3)
     """
     @progress_step(description='Adding new locations to the DB.')
-    def _add_new_locations(write_cursor: 'DBCursor') -> None:
+    def _add_new_locations(write_cursor: DBCursor) -> None:
         write_cursor.executescript("""
         /* Bitcoin */
         INSERT OR IGNORE INTO location(location, seq) VALUES ('q', 49);
@@ -53,7 +53,7 @@ def upgrade_v43_to_v44(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
         """)
 
     @progress_step(description='Updating NFT table schema.')
-    def _update_nft_table(write_cursor: 'DBCursor') -> None:
+    def _update_nft_table(write_cursor: DBCursor) -> None:
         write_cursor.execute("""
         CREATE TABLE IF NOT EXISTS nfts_new (
             identifier TEXT NOT NULL PRIMARY KEY,
@@ -110,13 +110,13 @@ def upgrade_v43_to_v44(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
         write_cursor.execute('ALTER TABLE nfts_new RENAME TO nfts')
 
     @progress_step(description='Removing log column "removed".')
-    def _remove_log_removed_column(write_cursor: 'DBCursor') -> None:
+    def _remove_log_removed_column(write_cursor: DBCursor) -> None:
         write_cursor.execute(
             'ALTER TABLE evmtx_receipt_logs DROP COLUMN removed;',
         )
 
     @progress_step(description='Upgrading account tags.')
-    def _upgrade_account_tags(write_cursor: 'DBCursor') -> None:
+    def _upgrade_account_tags(write_cursor: DBCursor) -> None:
         """Upgrade the object_reference references in tag_mappings to not
         depend on the supported blockchain since the format has changed in 1.35
         """
@@ -141,12 +141,12 @@ def upgrade_v43_to_v44(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
         )
 
     @progress_step(description='Updating addressbook schema.')
-    def _addressbook_schema_update(write_cursor: 'DBCursor') -> None:
+    def _addressbook_schema_update(write_cursor: DBCursor) -> None:
         """Make the blockchain column to a non nullable column for address_book"""
         fix_address_book_duplications(write_cursor=write_cursor)
 
     @progress_step(description='Adding Uniswap to historical oracles.')
-    def _add_uniswap_to_historical_oracles(cursor: 'DBCursor') -> None:
+    def _add_uniswap_to_historical_oracles(cursor: DBCursor) -> None:
         """Add uniswapv2 and uniswapv3 to the list of historical price oracles."""
         cursor.execute('SELECT value FROM settings WHERE name=?', ('historical_price_oracles',))
         if (price_oracles := cursor.fetchone()) is None:
@@ -169,12 +169,12 @@ def upgrade_v43_to_v44(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
         )
 
     @progress_step(description='Adding exited_timestamp column to the eth2_validators table.')
-    def _add_exited_timestamp(cursor: 'DBCursor') -> None:
+    def _add_exited_timestamp(cursor: DBCursor) -> None:
         """Add exited_timestamp column to the eth2_validators table"""
         cursor.execute('ALTER TABLE eth2_validators ADD COLUMN exited_timestamp INTEGER')
 
     @progress_step(description='Adding new cowswap_orders and gnosispay_data tables.')
-    def _add_new_tables(write_cursor: 'DBCursor') -> None:
+    def _add_new_tables(write_cursor: DBCursor) -> None:
         write_cursor.execute("""
         CREATE TABLE IF NOT EXISTS cowswap_orders (
             identifier TEXT NOT NULL PRIMARY KEY,
@@ -200,14 +200,14 @@ def upgrade_v43_to_v44(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
         );""")
 
     @progress_step(description='Removing zksynclite used query ranges.')
-    def _remove_zksynclite_used_query_ranges(write_cursor: 'DBCursor') -> None:
+    def _remove_zksynclite_used_query_ranges(write_cursor: DBCursor) -> None:
         write_cursor.execute(
             'DELETE FROM used_query_ranges WHERE name LIKE ? ESCAPE ?',
             ('zksynclitetxs\\_%', '\\'),
         )
 
     @progress_step(description='Resetting decoded events.')
-    def _reset_decoded_events(write_cursor: 'DBCursor') -> None:
+    def _reset_decoded_events(write_cursor: DBCursor) -> None:
         """Reset all decoded evm events except for the customized ones and those in zksync lite."""
         if write_cursor.execute('SELECT COUNT(*) FROM evm_transactions').fetchone()[0] > 0:
             customized_events = write_cursor.execute(

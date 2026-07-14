@@ -1,6 +1,5 @@
 import logging
-from collections.abc import Sequence
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from web3 import HTTPProvider, Web3
 from web3.datastructures import MutableAttributeDict
@@ -16,8 +15,12 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import ChecksumEvmAddress
-from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import from_wei
+
+if TYPE_CHECKING:
+    from collections.abc import Sequence
+
+    from rotkehlchen.user_messages import MessagesAggregator
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)

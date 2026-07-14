@@ -1,11 +1,14 @@
 """Test for data migration 27 - cleanup of defunct Loopring module settings."""
 import json
+from typing import TYPE_CHECKING
 
 import pytest
 
-from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.tests.utils.data_migrations import run_single_migration
 from rotkehlchen.tests.utils.factories import make_evm_address
+
+if TYPE_CHECKING:
+    from rotkehlchen.db.dbhandler import DBHandler
 
 
 @pytest.mark.parametrize('data_migration_version', [26])

@@ -1,6 +1,7 @@
 import os
 import string
 from pathlib import Path
+from typing import TYPE_CHECKING
 from unittest import mock
 
 import pytest
@@ -8,7 +9,9 @@ import pytest
 from rotkehlchen.constants.misc import USERDB_NAME, USERSDIR_NAME
 from rotkehlchen.data_handler import DataHandler
 from rotkehlchen.errors.misc import SystemPermissionError
-from rotkehlchen.user_messages import MessagesAggregator
+
+if TYPE_CHECKING:
+    from rotkehlchen.user_messages import MessagesAggregator
 
 
 def _user_creation_and_login(

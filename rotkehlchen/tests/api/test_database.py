@@ -2,11 +2,11 @@ import filecmp
 import tempfile
 from http import HTTPStatus
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 import pytest
 import requests
 
-from rotkehlchen.api.server import APIServer
 from rotkehlchen.constants.misc import USERDB_NAME, USERSDIR_NAME
 from rotkehlchen.db.settings import ROTKEHLCHEN_DB_VERSION
 from rotkehlchen.globaldb.utils import GLOBAL_DB_VERSION
@@ -17,6 +17,9 @@ from rotkehlchen.tests.utils.api import (
     assert_simple_ok_response,
 )
 from rotkehlchen.utils.misc import ts_now
+
+if TYPE_CHECKING:
+    from rotkehlchen.api.server import APIServer
 
 
 @pytest.mark.parametrize('start_with_logged_in_user', [True, False])

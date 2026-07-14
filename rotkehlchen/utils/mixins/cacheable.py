@@ -1,4 +1,3 @@
-from collections.abc import Callable
 from copy import deepcopy
 from functools import wraps
 from typing import TYPE_CHECKING, Any, NamedTuple
@@ -8,13 +7,15 @@ from rotkehlchen.utils.misc import ts_now
 from .common import function_sig_key
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+
     from rotkehlchen.types import Timestamp
 
 
 class ResultCache(NamedTuple):
     """Represents a time-cached result of some API query"""
     result: dict
-    timestamp: 'Timestamp'
+    timestamp: Timestamp
 
 
 # Seconds for which cached api queries will be cached
@@ -61,7 +62,7 @@ def _cache_response_timewise_base(
         forward_ignore_cache: bool,
         *args: Any,
         **kwargs: Any,
-) -> tuple[bool, int, 'Timestamp', dict, ResultCache | None]:
+) -> tuple[bool, int, Timestamp, dict, ResultCache | None]:
     """Base code used in the 2 cache_response_timewise decorators"""
     if forward_ignore_cache:
         ignore_cache = kwargs.get('ignore_cache', False)

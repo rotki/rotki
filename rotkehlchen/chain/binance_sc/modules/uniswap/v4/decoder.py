@@ -13,9 +13,9 @@ class Uniswapv4Decoder(Uniswapv4CommonDecoder):
 
     def __init__(
             self,
-            binance_sc_inquirer: 'BinanceSCInquirer',
-            base_tools: 'BaseEvmDecoderTools',
-            msg_aggregator: 'MessagesAggregator',
+            binance_sc_inquirer: BinanceSCInquirer,
+            base_tools: BaseEvmDecoderTools,
+            msg_aggregator: MessagesAggregator,
     ) -> None:
         super().__init__(
             evm_inquirer=binance_sc_inquirer,

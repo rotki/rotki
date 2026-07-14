@@ -24,7 +24,7 @@ if TYPE_CHECKING:
 
 @pytest.mark.parametrize('added_exchanges', [(Location.BINANCE, Location.POLONIEX)])
 @pytest.mark.parametrize('should_mock_current_price_queries', [False])
-def test_query_async_tasks(rotkehlchen_api_server_with_exchanges: 'APIServer') -> None:
+def test_query_async_tasks(rotkehlchen_api_server_with_exchanges: APIServer) -> None:
     """Test that querying the outcomes of async tasks works as expected
 
     We don't mock price queries in this test only because that cause the tasks
@@ -104,7 +104,7 @@ def test_query_async_tasks(rotkehlchen_api_server_with_exchanges: 'APIServer') -
 
 
 @pytest.mark.parametrize('added_exchanges', [(Location.BINANCE,)])
-def test_query_async_task_that_died(rotkehlchen_api_server_with_exchanges: 'APIServer') -> None:
+def test_query_async_task_that_died(rotkehlchen_api_server_with_exchanges: APIServer) -> None:
     """If an async task dies with an exception check that it's properly handled"""
 
     # async query balances of one specific exchange
@@ -158,7 +158,7 @@ def test_query_async_task_that_died(rotkehlchen_api_server_with_exchanges: 'APIS
     assert result['outcome']['message'] == msg
 
 
-def test_cancel_async_task(rotkehlchen_api_server_with_exchanges: 'APIServer') -> None:
+def test_cancel_async_task(rotkehlchen_api_server_with_exchanges: APIServer) -> None:
     """Test that canceling an ongoing async task works fine"""
     # async query balances of one specific exchange
     server = rotkehlchen_api_server_with_exchanges

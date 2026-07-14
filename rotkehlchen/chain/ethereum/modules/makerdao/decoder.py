@@ -1,6 +1,5 @@
 from typing import TYPE_CHECKING, Any
 
-from rotkehlchen.assets.asset import CryptoAsset
 from rotkehlchen.assets.utils import (
     asset_normalized_value,
     token_normalized_value,
@@ -56,7 +55,6 @@ from rotkehlchen.errors.asset import UnknownAsset, WrongAssetType
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.serialization.deserialize import deserialize_evm_address
-from rotkehlchen.types import ChecksumEvmAddress
 from rotkehlchen.utils.misc import bytes_to_address, shift_num_right_by
 
 from .constants import (
@@ -73,8 +71,10 @@ from .constants import (
 )
 
 if TYPE_CHECKING:
+    from rotkehlchen.assets.asset import CryptoAsset
     from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
     from rotkehlchen.chain.evm.decoding.base import BaseEvmDecoderTools
+    from rotkehlchen.types import ChecksumEvmAddress
     from rotkehlchen.user_messages import MessagesAggregator
 
 
@@ -91,9 +91,9 @@ CDPMANAGER_FROB = b'E\xe6\xbd\xcd\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x0
 class MakerdaoDecoder(EvmDecoderInterface):
     def __init__(  # pylint: disable=super-init-not-called
             self,
-            ethereum_inquirer: 'EthereumInquirer',
-            base_tools: 'BaseEvmDecoderTools',
-            msg_aggregator: 'MessagesAggregator',
+            ethereum_inquirer: EthereumInquirer,
+            base_tools: BaseEvmDecoderTools,
+            msg_aggregator: MessagesAggregator,
     ) -> None:
         EvmDecoderInterface.__init__(
             self,

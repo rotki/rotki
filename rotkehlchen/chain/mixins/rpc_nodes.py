@@ -2,16 +2,14 @@ import json
 import logging
 import random
 from abc import ABC, abstractmethod
-from collections.abc import Callable, Sequence
 from contextlib import suppress
 from dataclasses import dataclass
 from enum import StrEnum
-from typing import TYPE_CHECKING, Any, Final, Generic, Literal, TypeVar
+from typing import TYPE_CHECKING, Any, Final, Literal, NamedTuple, TypeVar
 from urllib.parse import urlparse
 
 import requests
 from ens import ENS
-from typing_extensions import NamedTuple
 from web3 import HTTPProvider, Web3
 from web3.exceptions import Web3Exception
 from web3.middleware import ExtraDataToPOAMiddleware
@@ -32,9 +30,7 @@ from rotkehlchen.chain.solana.rpc import (
 )
 from rotkehlchen.constants.misc import ONE
 from rotkehlchen.errors.misc import RemoteError
-from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.tasks.supervisor import TaskSupervisor
 from rotkehlchen.types import (
     SUPPORTED_CHAIN_IDS,
     SUPPORTED_EVM_CHAINS_TYPE,
@@ -47,7 +43,11 @@ from rotkehlchen.types import (
 from rotkehlchen.utils.misc import ts_now
 
 if TYPE_CHECKING:
+    from collections.abc import Callable, Sequence
+
     from rotkehlchen.db.dbhandler import DBHandler
+    from rotkehlchen.fval import FVal
+    from rotkehlchen.tasks.supervisor import TaskSupervisor
 
 
 WEB3_NODE_TYPE = TypeVar('WEB3_NODE_TYPE', Web3, Client)
@@ -112,7 +112,7 @@ def _is_rate_limit_error(exc: Exception) -> bool:
     return any(p in err for p in RATE_LIMIT_PATTERNS)
 
 
-class RPCNode(NamedTuple, Generic[WEB3_NODE_TYPE]):
+class RPCNode[WEB3_NODE_TYPE: (Web3, Client)](NamedTuple):
     """This represents an RPC node with its capabilities."""
     rpc_client: WEB3_NODE_TYPE
     is_pruned: bool
@@ -120,7 +120,7 @@ class RPCNode(NamedTuple, Generic[WEB3_NODE_TYPE]):
     supports_program_accounts: bool = False
 
 
-class RPCManagerMixin(ABC, Generic[WEB3_NODE_TYPE]):
+class RPCManagerMixin[WEB3_NODE_TYPE: (Web3, Client)](ABC):
     """
     Mixin that provides logic for managing RPC nodes. It tracks active connections
     and implements the core mechanisms for connecting to them.
@@ -131,7 +131,7 @@ class RPCManagerMixin(ABC, Generic[WEB3_NODE_TYPE]):
     `SolanaRPCMixin`) extend this class and adjust parameters such as
     `WEB3_NODE_TYPE` accordingly.
     """
-    database: 'DBHandler'
+    database: DBHandler
     task_supervisor: TaskSupervisor
     blockchain: SupportedBlockchain
     chain_name: str
@@ -174,7 +174,7 @@ class RPCManagerMixin(ABC, Generic[WEB3_NODE_TYPE]):
         """Get all currently connected nodes"""
         return list(self.rpc_mapping.keys())
 
-    def _get_configured_nodes(self) -> list['WeightedNode']:
+    def _get_configured_nodes(self) -> list[WeightedNode]:
         """Return the cached list of active configured nodes, loading from DB if needed."""
         if self._configured_nodes_cache is None:
             self._configured_nodes_cache = list(
@@ -189,10 +189,10 @@ class RPCManagerMixin(ABC, Generic[WEB3_NODE_TYPE]):
         """
         self._configured_nodes_cache = None
 
-    def _endpoint_key(self, node: 'NodeName') -> str:
+    def _endpoint_key(self, node: NodeName) -> str:
         return _normalize_endpoint(node.endpoint)
 
-    def mark_node_success(self, node: 'NodeName') -> None:
+    def mark_node_success(self, node: NodeName) -> None:
         """Record a successful query."""
         key = self._endpoint_key(node)
         now = ts_now()
@@ -209,7 +209,7 @@ class RPCManagerMixin(ABC, Generic[WEB3_NODE_TYPE]):
                 last_success_ts=now,
             )
 
-    def mark_node_rate_limited(self, node: 'NodeName', error: str) -> None:
+    def mark_node_rate_limited(self, node: NodeName, error: str) -> None:
         """Put a node into cooldown after a rate-limit response (HTTP 429 / 403 / message)."""
         key = self._endpoint_key(node)
         now = ts_now()
@@ -228,7 +228,7 @@ class RPCManagerMixin(ABC, Generic[WEB3_NODE_TYPE]):
             f'Cooling down for {RATE_LIMIT_COOLDOWN_SECS}s. Error: {error}',
         )
 
-    def mark_node_failure(self, node: 'NodeName', error: str) -> None:
+    def mark_node_failure(self, node: NodeName, error: str) -> None:
         """Record a non-rate-limit failure for a node."""
         key = self._endpoint_key(node)
         now = ts_now()
@@ -244,7 +244,7 @@ class RPCManagerMixin(ABC, Generic[WEB3_NODE_TYPE]):
             consecutive_failures=consecutive_failures,
         )
 
-    def is_node_in_cooldown(self, node: 'NodeName') -> bool:
+    def is_node_in_cooldown(self, node: NodeName) -> bool:
         """Return True if the node is currently in the rate-limit cooldown window."""
         key = self._endpoint_key(node)
         state = self._node_runtime_state.get(key)
@@ -257,11 +257,11 @@ class RPCManagerMixin(ABC, Generic[WEB3_NODE_TYPE]):
             return False
         return True
 
-    def get_runtime_state(self, node: 'NodeName') -> NodeRuntimeState | None:
+    def get_runtime_state(self, node: NodeName) -> NodeRuntimeState | None:
         """Return the current runtime state for a node, or None if not yet tracked."""
         return self._node_runtime_state.get(self._endpoint_key(node))
 
-    def clear_runtime_state(self, node: 'NodeName') -> None:
+    def clear_runtime_state(self, node: NodeName) -> None:
         """Remove all runtime state for a node (call when a node is deleted from config)."""
         self._node_runtime_state.pop(self._endpoint_key(node), None)
 
@@ -300,7 +300,7 @@ class RPCManagerMixin(ABC, Generic[WEB3_NODE_TYPE]):
     ) -> tuple[bool, str]:
         """Attempt to connect to a particular node type"""
 
-    def connect_to_multiple_nodes(self, nodes: Sequence['WeightedNode']) -> None:
+    def connect_to_multiple_nodes(self, nodes: Sequence[WeightedNode]) -> None:
         task_prefix = self._connect_task_prefix(self.chain_name)
         for weighted_node in nodes:
             self.task_supervisor.spawn_and_track(
@@ -312,7 +312,7 @@ class RPCManagerMixin(ABC, Generic[WEB3_NODE_TYPE]):
                 connectivity_check=True,
             )
 
-    def default_call_order(self) -> list['WeightedNode']:
+    def default_call_order(self) -> list[WeightedNode]:
         """Default call order for RPC nodes.
 
         Builds the order from the in-memory configured-node cache (no DB hit).
@@ -384,7 +384,7 @@ class EVMRPCMixin(RPCManagerMixin['Web3']):
         checking whether a node is an archive one."""
 
     @abstractmethod
-    def _get_pruned_check_tx_hash(self) -> 'EVMTxHash':
+    def _get_pruned_check_tx_hash(self) -> EVMTxHash:
         """Returns a transaction hash that can used for checking whether a node is pruned."""
 
     def _init_web3(self, node: NodeName) -> tuple[Web3, str]:
@@ -498,7 +498,7 @@ class EVMRPCMixin(RPCManagerMixin['Web3']):
         log.warning(message)
         return False, message
 
-    def default_call_order(self, skip_indexers: bool = False) -> list['WeightedNode']:
+    def default_call_order(self, skip_indexers: bool = False) -> list[WeightedNode]:
         """Default call order for evm nodes
 
         Own node always has preference. Then all other node types are randomly queried

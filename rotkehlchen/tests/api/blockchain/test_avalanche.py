@@ -26,7 +26,7 @@ if TYPE_CHECKING:
 
 
 @pytest.mark.parametrize('number_of_eth_accounts', [0])
-def test_add_avax_blockchain_account_invalid(rotkehlchen_api_server: 'APIServer') -> None:
+def test_add_avax_blockchain_account_invalid(rotkehlchen_api_server: APIServer) -> None:
     """Test adding an invalid Avalanche blockchain account works as expected.
     """
     response = requests.put(
@@ -46,7 +46,7 @@ def test_add_avax_blockchain_account_invalid(rotkehlchen_api_server: 'APIServer'
 
 
 @pytest.mark.parametrize('number_of_eth_accounts', [0])
-def test_add_avax_blockchain_account(rotkehlchen_api_server: 'APIServer') -> None:
+def test_add_avax_blockchain_account(rotkehlchen_api_server: APIServer) -> None:
     """Test adding an Avalanche blockchain account when there is none in the db
     works as expected."""
     async_query = random.choice([False, True])
@@ -91,7 +91,7 @@ def test_add_avax_blockchain_account(rotkehlchen_api_server: 'APIServer') -> Non
 
 @pytest.mark.parametrize('number_of_eth_accounts', [0])
 @pytest.mark.parametrize('avax_accounts', [[AVALANCHE_ACC1_AVAX_ADDR, AVALANCHE_ACC2_AVAX_ADDR]])
-def test_remove_avax_blockchain_account(rotkehlchen_api_server: 'APIServer') -> None:
+def test_remove_avax_blockchain_account(rotkehlchen_api_server: APIServer) -> None:
     """Test removing an Avalanche blockchain account works as expected"""
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     async_query = random.choice([False, True])

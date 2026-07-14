@@ -1,7 +1,6 @@
 import logging
 from typing import TYPE_CHECKING
 
-from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants.prices import ZERO_PRICE
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.inquirer import Inquirer
@@ -11,6 +10,7 @@ from rotkehlchen.types import Price
 from rotkehlchen.utils.interfaces import DBSetterMixin
 
 if TYPE_CHECKING:
+    from rotkehlchen.assets.asset import Asset
     from rotkehlchen.db.dbhandler import DBHandler
 
 

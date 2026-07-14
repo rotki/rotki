@@ -13,8 +13,8 @@ if TYPE_CHECKING:
 class VelodromeBalances(VelodromeLikeBalances):
     def __init__(
             self,
-            evm_inquirer: 'OptimismInquirer',
-            tx_decoder: 'OptimismTransactionDecoder',
+            evm_inquirer: OptimismInquirer,
+            tx_decoder: OptimismTransactionDecoder,
     ):
         super().__init__(
             evm_inquirer=evm_inquirer,

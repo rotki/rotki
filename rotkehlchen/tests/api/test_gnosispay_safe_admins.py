@@ -24,7 +24,7 @@ if TYPE_CHECKING:
     '0xD501c55f42214fcC22D7Bfad845bD069D528bda1',
 ]])
 def test_gnosis_pay_safe_admins_success(
-        rotkehlchen_api_server: 'APIServer',
+        rotkehlchen_api_server: APIServer,
         gnosis_accounts: list[str],
 ) -> None:
     with patch(
@@ -53,7 +53,7 @@ def test_gnosis_pay_safe_admins_success(
 
 
 @pytest.mark.parametrize('start_with_valid_premium', [True])
-def test_gnosis_pay_safe_admins_no_accounts(rotkehlchen_api_server: 'APIServer') -> None:
+def test_gnosis_pay_safe_admins_no_accounts(rotkehlchen_api_server: APIServer) -> None:
     with patch(
         'rotkehlchen.api.v1.resources.has_premium_capability',
         return_value=True,
@@ -68,7 +68,7 @@ def test_gnosis_pay_safe_admins_no_accounts(rotkehlchen_api_server: 'APIServer')
 
 @pytest.mark.parametrize('start_with_valid_premium', [True])
 def test_gnosis_pay_safe_admins_requires_capability(
-        rotkehlchen_api_server: 'APIServer',
+        rotkehlchen_api_server: APIServer,
         start_with_valid_premium: bool,  # pylint: disable=unused-argument
 ) -> None:
     with patch(

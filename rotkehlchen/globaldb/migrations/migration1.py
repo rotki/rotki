@@ -38,7 +38,7 @@ ilk_mapping = {  # ilk to (ilk_class, underlying_asset, join address)
 }
 
 
-def globaldb_data_migration_1(conn: 'DBConnection') -> None:
+def globaldb_data_migration_1(conn: DBConnection) -> None:
     """Introduced at 1.27.1
     - Removes old setting last_assets_json_version (if existing)
     - Adds a makerdao vault types cache

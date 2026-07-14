@@ -5,13 +5,13 @@ from typing import TYPE_CHECKING, Any, Literal
 from rotkehlchen.chain.evm.accounting.structures import BaseEventSettings, TxAccountingTreatment
 from rotkehlchen.db.accounting_rules import DBAccountingRules
 from rotkehlchen.db.constants import NO_ACCOUNTING_COUNTERPARTY
-from rotkehlchen.db.filtering import DBFilterQuery
 from rotkehlchen.errors.misc import InputError
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.utils.mixins.enums import DBIntEnumMixIn
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
+    from rotkehlchen.db.filtering import DBFilterQuery
 
 
 class ConflictType(DBIntEnumMixIn):
@@ -55,7 +55,7 @@ class DBRemoteConflicts:
     conflicts.
     """
 
-    def __init__(self, db_handler: 'DBHandler') -> None:
+    def __init__(self, db_handler: DBHandler) -> None:
         self.db = db_handler
 
     def save_conflicts(self, conflicts: list[tuple[int, str, int]]) -> None:

@@ -1,8 +1,9 @@
-from typing import Final
-
-from eth_typing.abi import ABI
+from typing import TYPE_CHECKING, Final
 
 from rotkehlchen.chain.evm.types import string_to_evm_address
+
+if TYPE_CHECKING:
+    from eth_typing.abi import ABI
 
 CPT_HEDGEY: Final = 'hedgey'
 VOTING_TOKEN_LOCKUPS: Final = string_to_evm_address('0x73cD8626b3cD47B009E68380720CFE6679A3Ec3D')

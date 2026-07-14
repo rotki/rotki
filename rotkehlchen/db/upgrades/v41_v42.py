@@ -20,7 +20,7 @@ log = RotkehlchenLogsAdapter(logger)
 
 
 @enter_exit_debug_log(name='UserDB v41->v42 upgrade')
-def upgrade_v41_to_v42(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHandler') -> None:
+def upgrade_v41_to_v42(db: DBHandler, progress_handler: DBUpgradeProgressHandler) -> None:
     """Upgrades the DB from v41 to v42. This was in v1.33 release.
 
         - Create new tables for zksync lite
@@ -32,7 +32,7 @@ def upgrade_v41_to_v42(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
         - remove evm events that link to a transaction not in the database
     """
     @progress_step(description='Adding zkSync Lite.')
-    def _add_zksynclite(write_cursor: 'DBCursor') -> None:
+    def _add_zksynclite(write_cursor: DBCursor) -> None:
         """Add zksynclite related table"""
         write_cursor.execute("""
         CREATE TABLE IF NOT EXISTS zksynclite_tx_type (
@@ -90,14 +90,14 @@ def upgrade_v41_to_v42(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
         );""")  # noqa: E501
 
     @progress_step(description='Adding new supported locations.')
-    def _add_new_supported_locations(write_cursor: 'DBCursor') -> None:
+    def _add_new_supported_locations(write_cursor: DBCursor) -> None:
         write_cursor.executemany(
             'INSERT OR IGNORE INTO location(location, seq) VALUES (?, ?)',
             [('n', Location.SCROLL.value), ('o', Location.ZKSYNC_LITE.value)],
         )
 
     @progress_step(description='Upgrading evmchains to skip detection.')
-    def _upgrade_evmchains_to_skip_detection(write_cursor: 'DBCursor') -> None:
+    def _upgrade_evmchains_to_skip_detection(write_cursor: DBCursor) -> None:
         """We used to have it only in EVM Chain IDs serialized as names.
         Now turning it into all supported chains due to evmlike introduction"""
         write_cursor.execute("SELECT value from settings WHERE name='evmchains_to_skip_detection'")
@@ -117,7 +117,7 @@ def upgrade_v41_to_v42(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
         )
 
     @progress_step(description='Adding calendar tables.')
-    def _add_calendar_tables(write_cursor: 'DBCursor') -> None:
+    def _add_calendar_tables(write_cursor: DBCursor) -> None:
         write_cursor.execute("""CREATE TABLE IF NOT EXISTS calendar (
         identifier INTEGER PRIMARY KEY NOT NULL,
         name TEXT NOT NULL,
@@ -140,7 +140,7 @@ def upgrade_v41_to_v42(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
         );""")
 
     @progress_step(description='Removing manual current price oracle.')
-    def _remove_manualcurrent_oracle(write_cursor: 'DBCursor') -> None:
+    def _remove_manualcurrent_oracle(write_cursor: DBCursor) -> None:
         """Removes the manualcurrent oracle from the current_price_oracles setting"""
         write_cursor.execute("SELECT value FROM settings WHERE name='current_price_oracles'")
         if (data := write_cursor.fetchone()) is None:
@@ -161,7 +161,7 @@ def upgrade_v41_to_v42(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
         )
 
     @progress_step(description='Resetting decoded events.')
-    def _reset_decoded_events(write_cursor: 'DBCursor') -> None:
+    def _reset_decoded_events(write_cursor: DBCursor) -> None:
         """Reset all decoded evm events except the customized ones."""
         if write_cursor.execute('SELECT COUNT(*) FROM evm_transactions').fetchone()[0] > 0:
             customized_events = write_cursor.execute(
@@ -186,7 +186,7 @@ def upgrade_v41_to_v42(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
             )
 
     @progress_step(description='Removing balancer events table.')
-    def _remove_balancer_events_table(write_cursor: 'DBCursor') -> None:
+    def _remove_balancer_events_table(write_cursor: DBCursor) -> None:
         """Delete the table with balancer events"""
         write_cursor.execute('DROP TABLE balancer_events')
         write_cursor.execute(
@@ -195,7 +195,7 @@ def upgrade_v41_to_v42(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
         )
 
     @progress_step(description='Removing yearn events table.')
-    def _remove_yearn_events_table(write_cursor: 'DBCursor') -> None:
+    def _remove_yearn_events_table(write_cursor: DBCursor) -> None:
         """Delete the table with balancer events"""
         write_cursor.execute('DROP TABLE yearn_vaults_events')
         write_cursor.execute(
@@ -204,7 +204,7 @@ def upgrade_v41_to_v42(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
         )
 
     @progress_step(description='Deleting orphan events.')
-    def _delete_orphan_events(write_cursor: 'DBCursor') -> None:
+    def _delete_orphan_events(write_cursor: DBCursor) -> None:
         """
         Delete all the evm events that have a tx_hash that is not present in the db.
         This can for example happen for customized events of addresses that got deleted

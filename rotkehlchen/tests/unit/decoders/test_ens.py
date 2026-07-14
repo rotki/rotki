@@ -373,8 +373,8 @@ def test_register_v2(ethereum_inquirer, ethereum_accounts, add_subgraph_api_key)
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0x706A70067BE19BdadBea3600Db0626859Ff25D74']])
 def test_register_v2_with_refund(
-        ethereum_inquirer: 'EthereumInquirer',
-        ethereum_accounts: list['ChecksumEvmAddress'],
+        ethereum_inquirer: EthereumInquirer,
+        ethereum_accounts: list[ChecksumEvmAddress],
         add_subgraph_api_key: None,
 ) -> None:
     """Test that a registration with a refund on the new eth registar is decoded correctly."""
@@ -1059,7 +1059,7 @@ def test_claim_airdrop(ethereum_inquirer, ethereum_accounts, add_subgraph_api_ke
     ]
 
 
-def test_invalid_ens_name(globaldb: 'GlobalDBHandler'):
+def test_invalid_ens_name(globaldb: GlobalDBHandler):
     """
     Test that possible exceptions when processing invalid ENS names are handled correctly and
     nothing gets stored in the database cache for invalid names.

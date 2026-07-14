@@ -1,20 +1,21 @@
 import logging
 import threading
 from abc import ABC, abstractmethod
-from collections.abc import Callable, Sequence
-from typing import TYPE_CHECKING, Any, Generic, TypeVar
+from typing import TYPE_CHECKING, Any, TypeVar
 
-from rotkehlchen.fval import FVal
-from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import SupportedBlockchain, Timestamp
 
 from .utils import decode_transfer_direction
 
 if TYPE_CHECKING:
+    from collections.abc import Callable, Sequence
+
     from rotkehlchen.assets.asset import Asset
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.db.drivers.sqlite import DBCursor
+    from rotkehlchen.fval import FVal
+    from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
+    from rotkehlchen.types import SupportedBlockchain, Timestamp
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -25,12 +26,12 @@ E = TypeVar('E')  # For events
 A = TypeVar('A')  # For addresses
 
 
-class BaseDecoderTools(ABC, Generic[T, A, R, E]):
+class BaseDecoderTools[T, A, R, E](ABC):
     """Base class for chain-agnostic decoder tools providing common state and functionality"""
 
     def __init__(
             self,
-            database: 'DBHandler',
+            database: DBHandler,
             blockchain: SupportedBlockchain,
             address_is_exchange_fn: Callable[[A], str | None],
     ) -> None:
@@ -95,7 +96,7 @@ class BaseDecoderTools(ABC, Generic[T, A, R, E]):
         self.sequence_counter += 1
         return value + self.sequence_offset
 
-    def refresh_tracked_accounts(self, cursor: 'DBCursor') -> None:
+    def refresh_tracked_accounts(self, cursor: DBCursor) -> None:
         """Refresh tracked accounts from the database"""
         self._tracked_addresses_for_chain = frozenset(
             self.database.get_blockchain_accounts(cursor).get(self.blockchain),    # type: ignore[arg-type]
@@ -130,7 +131,7 @@ class BaseDecoderTools(ABC, Generic[T, A, R, E]):
             timestamp: Timestamp,
             event_type: HistoryEventType,
             event_subtype: HistoryEventSubType,
-            asset: 'Asset',
+            asset: Asset,
             amount: FVal,
             location_label: str | None = None,
             notes: str | None = None,
@@ -146,7 +147,7 @@ class BaseDecoderTools(ABC, Generic[T, A, R, E]):
             timestamp: Timestamp,
             event_type: HistoryEventType,
             event_subtype: HistoryEventSubType,
-            asset: 'Asset',
+            asset: Asset,
             amount: FVal,
             location_label: str | None = None,
             notes: str | None = None,

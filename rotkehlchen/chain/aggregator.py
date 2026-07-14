@@ -1,12 +1,10 @@
 import logging
 import operator
 from collections import defaultdict
-from collections.abc import Callable, Iterator, Sequence
 from functools import reduce
 from importlib import import_module
-from pathlib import Path
 from threading import RLock, Semaphore
-from typing import TYPE_CHECKING, Any, Literal, Optional, TypeVar, cast, overload
+from typing import TYPE_CHECKING, Any, Literal, TypeVar, cast, overload
 
 import requests
 from web3.exceptions import BadFunctionCallOutput, Web3Exception
@@ -92,8 +90,6 @@ from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.history.deserialization import deserialize_price
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.premium.premium import Premium
-from rotkehlchen.tasks.supervisor import TaskSupervisor
 from rotkehlchen.types import (
     CHAINS_WITH_CHAIN_MANAGER,
     CHAINS_WITH_NODES,
@@ -119,13 +115,14 @@ from rotkehlchen.types import (
     Timestamp,
     TuplesOfBlockchainAddresses,
 )
-from rotkehlchen.user_messages import MessagesAggregator
-from rotkehlchen.utils.interfaces import EthereumModule, ProgressUpdater
 from rotkehlchen.utils.misc import ts_now
 from rotkehlchen.utils.mixins.cacheable import CacheableMixIn, cache_response_timewise
 from rotkehlchen.utils.mixins.lockable import LockableQueryMixIn, protect_with_lock
 
 if TYPE_CHECKING:
+    from collections.abc import Callable, Iterator, Sequence
+    from pathlib import Path
+
     from rotkehlchen.chain.arbitrum_one.manager import ArbitrumOneManager
     from rotkehlchen.chain.avalanche.manager import AvalancheManager
     from rotkehlchen.chain.base.manager import BaseManager
@@ -165,6 +162,10 @@ if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.db.drivers.sqlite import DBCursor
     from rotkehlchen.externalapis.beaconchain.service import BeaconChain
+    from rotkehlchen.premium.premium import Premium
+    from rotkehlchen.tasks.supervisor import TaskSupervisor
+    from rotkehlchen.user_messages import MessagesAggregator
+    from rotkehlchen.utils.interfaces import EthereumModule, ProgressUpdater
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -260,29 +261,29 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
     def __init__(
             self,
             blockchain_accounts: BlockchainAccounts,
-            ethereum_manager: 'EthereumManager',
-            optimism_manager: 'OptimismManager',
-            polygon_pos_manager: 'PolygonPOSManager',
-            arbitrum_one_manager: 'ArbitrumOneManager',
-            base_manager: 'BaseManager',
-            hyperliquid_manager: 'HyperliquidManager',
-            gnosis_manager: 'GnosisManager',
-            scroll_manager: 'ScrollManager',
-            binance_sc_manager: 'BinanceSCManager',
-            monad_manager: 'MonadManager',
-            kusama_manager: 'SubstrateManager',
-            polkadot_manager: 'SubstrateManager',
-            avalanche_manager: 'AvalancheManager',
-            zksync_lite_manager: 'ZksyncLiteManager',
-            bitcoin_manager: 'BitcoinManager',
-            bitcoin_cash_manager: 'BitcoinCashManager',
-            solana_manager: 'SolanaManager',
+            ethereum_manager: EthereumManager,
+            optimism_manager: OptimismManager,
+            polygon_pos_manager: PolygonPOSManager,
+            arbitrum_one_manager: ArbitrumOneManager,
+            base_manager: BaseManager,
+            hyperliquid_manager: HyperliquidManager,
+            gnosis_manager: GnosisManager,
+            scroll_manager: ScrollManager,
+            binance_sc_manager: BinanceSCManager,
+            monad_manager: MonadManager,
+            kusama_manager: SubstrateManager,
+            polkadot_manager: SubstrateManager,
+            avalanche_manager: AvalancheManager,
+            zksync_lite_manager: ZksyncLiteManager,
+            bitcoin_manager: BitcoinManager,
+            bitcoin_cash_manager: BitcoinCashManager,
+            solana_manager: SolanaManager,
             msg_aggregator: MessagesAggregator,
-            database: 'DBHandler',
+            database: DBHandler,
             task_supervisor: TaskSupervisor,
             premium: Premium | None,
             data_directory: Path,
-            beaconchain: 'BeaconChain',
+            beaconchain: BeaconChain,
             btc_derivation_gap_limit: int,
             eth_modules: Sequence[ModuleName],
     ):
@@ -478,35 +479,35 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
         return
 
     @overload
-    def get_module(self, module_name: Literal['eth2']) -> 'Eth2 | None':
+    def get_module(self, module_name: Literal['eth2']) -> Eth2 | None:
         ...
 
     @overload
-    def get_module(self, module_name: Literal['makerdao_dsr']) -> 'MakerdaoDsr | None':
+    def get_module(self, module_name: Literal['makerdao_dsr']) -> MakerdaoDsr | None:
         ...
 
     @overload
-    def get_module(self, module_name: Literal['makerdao_vaults']) -> 'MakerdaoVaults | None':
+    def get_module(self, module_name: Literal['makerdao_vaults']) -> MakerdaoVaults | None:
         ...
 
     @overload
-    def get_module(self, module_name: Literal['uniswap']) -> 'Uniswap | None':
+    def get_module(self, module_name: Literal['uniswap']) -> Uniswap | None:
         ...
 
     @overload
-    def get_module(self, module_name: Literal['sushiswap']) -> 'Sushiswap | None':
+    def get_module(self, module_name: Literal['sushiswap']) -> Sushiswap | None:
         ...
 
     @overload
-    def get_module(self, module_name: Literal['liquity']) -> 'Liquity | None':
+    def get_module(self, module_name: Literal['liquity']) -> Liquity | None:
         ...
 
     @overload
-    def get_module(self, module_name: Literal['pickle_finance']) -> 'PickleFinance | None':
+    def get_module(self, module_name: Literal['pickle_finance']) -> PickleFinance | None:
         ...
 
     @overload
-    def get_module(self, module_name: Literal['nfts']) -> 'Nfts | None':
+    def get_module(self, module_name: Literal['nfts']) -> Nfts | None:
         ...
 
     def get_module(self, module_name: ModuleName) -> Any | None:
@@ -555,7 +556,7 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
     def get_blockchain_balances_last_query_ts(
             self,
             chain: SupportedBlockchain | None,
-            cursor: 'DBCursor | None' = None,
+            cursor: DBCursor | None = None,
     ) -> dict[str, Timestamp]:
         chains = SupportedBlockchain if chain is None else (chain,)
         if cursor is not None:
@@ -899,7 +900,7 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
 
     def sync_bitcoin_accounts_with_db(
             self,
-            write_cursor: 'DBCursor',
+            write_cursor: DBCursor,
             blockchain: Literal[SupportedBlockchain.BITCOIN, SupportedBlockchain.BITCOIN_CASH],
     ) -> None:
         """Call this function after having deleted BTC/BCH accounts from the DB to
@@ -922,7 +923,7 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
 
     def remove_single_blockchain_accounts(
             self,
-            write_cursor: 'DBCursor',
+            write_cursor: DBCursor,
             blockchain: SupportedBlockchain,
             accounts: ListOfBlockchainAddresses,
     ) -> None:
@@ -998,7 +999,7 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
 
     def modify_blockchain_accounts(
             self,
-            write_cursor: 'DBCursor',
+            write_cursor: DBCursor,
             blockchain: SupportedBlockchain,
             accounts: ListOfBlockchainAddresses,
             append_or_remove: Literal['append', 'remove'],
@@ -1189,7 +1190,7 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
             self,
             ignore_cache: bool,
             validator_indices: set[int] | None,
-    ) -> list['ValidatorDetailsWithStatus']:
+    ) -> list[ValidatorDetailsWithStatus]:
         """May raise:
         - ModuleInactive if eth2 module is not activated
         """
@@ -1258,39 +1259,39 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
         self.flush_eth2_cache()
 
     @overload
-    def get_chain_manager(self, blockchain: SUPPORTED_EVM_CHAINS_TYPE) -> 'EvmManager':
+    def get_chain_manager(self, blockchain: SUPPORTED_EVM_CHAINS_TYPE) -> EvmManager:
         ...
 
     @overload
-    def get_chain_manager(self, blockchain: SUPPORTED_EVMLIKE_CHAINS_TYPE) -> 'ZksyncLiteManager':
+    def get_chain_manager(self, blockchain: SUPPORTED_EVMLIKE_CHAINS_TYPE) -> ZksyncLiteManager:
         ...
 
     @overload
-    def get_chain_manager(self, blockchain: SUPPORTED_BITCOIN_CHAINS_TYPE) -> 'BitcoinCommonManager':  # noqa: E501
+    def get_chain_manager(self, blockchain: SUPPORTED_BITCOIN_CHAINS_TYPE) -> BitcoinCommonManager:
         ...
 
     @overload
-    def get_chain_manager(self, blockchain: SUPPORTED_SUBSTRATE_CHAINS_TYPE) -> 'SubstrateManager':
+    def get_chain_manager(self, blockchain: SUPPORTED_SUBSTRATE_CHAINS_TYPE) -> SubstrateManager:
         ...
 
     @overload
-    def get_chain_manager(self, blockchain: Literal[SupportedBlockchain.SOLANA]) -> 'SolanaManager':  # noqa: E501
+    def get_chain_manager(self, blockchain: Literal[SupportedBlockchain.SOLANA]) -> SolanaManager:
         ...
 
     @overload
-    def get_chain_manager(self, blockchain: CHAINS_WITH_TRANSACTIONS_TYPE) -> 'ChainManagerWithTransactions':  # noqa: E501
+    def get_chain_manager(self, blockchain: CHAINS_WITH_TRANSACTIONS_TYPE) -> ChainManagerWithTransactions:  # noqa: E501
         ...
 
     @overload
-    def get_chain_manager(self, blockchain: CHAINS_WITH_CHAIN_MANAGER) -> 'ChainManager':
+    def get_chain_manager(self, blockchain: CHAINS_WITH_CHAIN_MANAGER) -> ChainManager:
         ...
 
-    def get_chain_manager(self, blockchain: CHAINS_WITH_CHAIN_MANAGER) -> 'ChainManager':
+    def get_chain_manager(self, blockchain: CHAINS_WITH_CHAIN_MANAGER) -> ChainManager:
         """Returns blockchain manager"""
         attr = blockchain.name.lower()
         return getattr(self, attr)
 
-    def get_evm_manager(self, chain_id: SUPPORTED_CHAIN_IDS) -> 'EvmManager':
+    def get_evm_manager(self, chain_id: SUPPORTED_CHAIN_IDS) -> EvmManager:
         return self.get_chain_manager(chain_id.to_blockchain())  # type: ignore[call-overload]  # SUPPORTED_CHAIN_IDS only includes chains with chain managers.
 
     def renable_etherscan_indixer(self) -> None:
@@ -1505,7 +1506,7 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
 
     def detect_evm_accounts(
             self,
-            progress_handler: Optional['ProgressUpdater'] = None,
+            progress_handler: ProgressUpdater | None = None,
             chains: list[SUPPORTED_EVM_EVMLIKE_CHAINS_TYPE] | None = None,
     ) -> list[tuple[SUPPORTED_EVM_EVMLIKE_CHAINS_TYPE, ChecksumEvmAddress]]:
         """
@@ -1568,7 +1569,7 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
 
         return added_accounts
 
-    def iterate_chain_managers_with_nodes(self) -> Iterator['ChainManagerWithNodesMixin']:
+    def iterate_chain_managers_with_nodes(self) -> Iterator[ChainManagerWithNodesMixin]:
         """Iterate the supported evm chain managers"""
         for blockchain in CHAINS_WITH_NODES:
             yield self.get_chain_manager(blockchain)  # type: ignore[misc]  # will be a chain manager with nodes
@@ -1589,7 +1590,7 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
                 blockchain=SupportedBlockchain.ETHEREUM_BEACONCHAIN.serialize(),
             )
 
-    def get_all_counterparties(self) -> set['CounterpartyDetails']:
+    def get_all_counterparties(self) -> set[CounterpartyDetails]:
         """
         Obtain the set of unique counterparties from the decoders across
         all EVM chains and Solana, including misc entries defined per decoder.

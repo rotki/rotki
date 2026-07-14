@@ -23,7 +23,7 @@ DAI_TIMESTAMP = Timestamp(1700000000)
 
 
 @pytest.fixture(name='moralis')
-def fixture_real_moralis(database: 'DBHandler') -> Moralis:
+def fixture_real_moralis(database: DBHandler) -> Moralis:
     """A Moralis instance backed by a real API key taken from the environment.
 
     Skips the test if no MORALIS_API_KEY is set so the suite stays green in

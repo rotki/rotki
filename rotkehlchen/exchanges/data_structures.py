@@ -1,5 +1,4 @@
 import logging
-from collections.abc import Iterator
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, NamedTuple
 
@@ -18,6 +17,8 @@ from rotkehlchen.serialization.deserialize import (
 from rotkehlchen.types import Location, Timestamp
 
 if TYPE_CHECKING:
+    from collections.abc import Iterator
+
     from rotkehlchen.accounting.pot import AccountingPot
     from rotkehlchen.fval import FVal
 
@@ -52,11 +53,11 @@ class MarginPosition(AccountingEventMixin):
     open_time: Timestamp | None
     close_time: Timestamp
     # Profit loss in pl_currency (does not include fees)
-    profit_loss: 'FVal'
+    profit_loss: FVal
     # The asset gained or lost
     pl_currency: Asset
     # Amount of fees paid
-    fee: 'FVal'
+    fee: FVal
     # The asset in which fees were paid
     fee_currency: Asset
     # For exchange margins this should be the exchange unique identifier
@@ -102,7 +103,7 @@ class MarginPosition(AccountingEventMixin):
         }
 
     @classmethod
-    def deserialize(cls, data: dict[str, Any]) -> 'MarginPosition':
+    def deserialize(cls, data: dict[str, Any]) -> MarginPosition:
         """Deserialize a dict margin position to a MarginPosition object.
         May raise:
             - DeserializationError
@@ -122,7 +123,7 @@ class MarginPosition(AccountingEventMixin):
         )
 
     @classmethod
-    def deserialize_from_db(cls, entry: MarginPositionDBTuple) -> 'MarginPosition':
+    def deserialize_from_db(cls, entry: MarginPositionDBTuple) -> MarginPosition:
         """May raise:
             - DeserializationError
             - UnknownAsset
@@ -163,8 +164,8 @@ class MarginPosition(AccountingEventMixin):
 
     def process(
             self,
-            accounting: 'AccountingPot',
-            events_iterator: Iterator['AccountingEventMixin'],  # pylint: disable=unused-argument
+            accounting: AccountingPot,
+            events_iterator: Iterator[AccountingEventMixin],  # pylint: disable=unused-argument
     ) -> int:
         if self.profit_loss >= ZERO:
             amount = self.profit_loss
@@ -205,9 +206,9 @@ class Loan(AccountingEventMixin):
     open_time: Timestamp
     close_time: Timestamp
     currency: Asset
-    fee: 'FVal'
-    earned: 'FVal'
-    amount_lent: 'FVal'
+    fee: FVal
+    earned: FVal
+    amount_lent: FVal
 
     # -- Methods of AccountingEventMixin
 
@@ -227,7 +228,7 @@ class Loan(AccountingEventMixin):
         }
 
     @classmethod
-    def deserialize(cls, data: dict[str, Any]) -> 'Loan':
+    def deserialize(cls, data: dict[str, Any]) -> Loan:
         """Deserialize a dict loan to a Loan object.
         May raise:
             - DeserializationError
@@ -259,8 +260,8 @@ class Loan(AccountingEventMixin):
 
     def process(
             self,
-            accounting: 'AccountingPot',
-            events_iterator: Iterator['AccountingEventMixin'],  # pylint: disable=unused-argument
+            accounting: AccountingPot,
+            events_iterator: Iterator[AccountingEventMixin],  # pylint: disable=unused-argument
     ) -> int:
         accounting.add_in_event(
             event_type=AccountingEventType.LOAN,
@@ -301,7 +302,7 @@ class BinancePair(NamedTuple):
         )
 
     @classmethod
-    def deserialize_from_db(cls, entry: BINANCE_PAIR_DB_TUPLE) -> 'BinancePair':
+    def deserialize_from_db(cls, entry: BINANCE_PAIR_DB_TUPLE) -> BinancePair:
         """Create a BinancePair from data in the database. May raise:
         - DeserializationError
         - UnknownAsset

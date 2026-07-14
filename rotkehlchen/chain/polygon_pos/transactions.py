@@ -12,7 +12,7 @@ class PolygonPOSTransactions(EvmTransactions):
 
     def __init__(
             self,
-            polygon_pos_inquirer: 'PolygonPOSInquirer',
-            database: 'DBHandler',
+            polygon_pos_inquirer: PolygonPOSInquirer,
+            database: DBHandler,
     ) -> None:
         super().__init__(evm_inquirer=polygon_pos_inquirer, database=database)

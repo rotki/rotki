@@ -20,7 +20,7 @@ if TYPE_CHECKING:
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0x9531C059098e3d194fF87FebB587aB07B30B1306']])
 def test_delegate_vested_tokens_with_vault_creation(
-        ethereum_inquirer: 'EthereumInquirer',
+        ethereum_inquirer: EthereumInquirer,
         ethereum_accounts: list[ChecksumEvmAddress],
 ):
     tx_hash = deserialize_evm_tx_hash('0x50dc56b705219f9f26e1749d4dabefbac7fae4e60925f4c57cb8a42687adf703')  # noqa: E501
@@ -59,7 +59,7 @@ def test_delegate_vested_tokens_with_vault_creation(
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0x9531C059098e3d194fF87FebB587aB07B30B1306']])
 def test_delegate_plans(
-        ethereum_inquirer: 'EthereumInquirer',
+        ethereum_inquirer: EthereumInquirer,
         ethereum_accounts: list[ChecksumEvmAddress],
 ):
     tx_hash = deserialize_evm_tx_hash('0xf5317d7926c5b3f269604ea983a8ed9a6240dfdbabcccd33a12dd135b9b2389a')  # noqa: E501
@@ -98,7 +98,7 @@ def test_delegate_plans(
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0x54BeCc7560a7Be76d72ED76a1f5fee6C5a2A7Ab6']])
 def test_redeem_plans(
-        ethereum_inquirer: 'EthereumInquirer',
+        ethereum_inquirer: EthereumInquirer,
         ethereum_accounts: list[ChecksumEvmAddress],
 ):
     tx_hash = deserialize_evm_tx_hash('0xb85eb3fb6496fa51ac3d43d230ea729b52593bd2781b2b9dfab638aab7011719')  # noqa: E501

@@ -8,7 +8,7 @@ T_Event = TypeVar('T_Event', bound='HistoryBaseEntry')
 
 
 @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=True)
-class CommonDecodingOutput(Generic[T_Event]):
+class CommonDecodingOutput(Generic[T_Event]):  # noqa: UP046
     """Output of decoding functions
 
     - events can be returned if the decoding method has generated new events and they need to be

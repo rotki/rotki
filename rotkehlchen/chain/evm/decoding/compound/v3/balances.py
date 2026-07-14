@@ -53,8 +53,8 @@ class Compoundv3Balances(ProtocolWithBalance):
 
     def __init__(
             self,
-            evm_inquirer: 'EvmNodeInquirer',
-            tx_decoder: 'EVMTransactionDecoder',
+            evm_inquirer: EvmNodeInquirer,
+            tx_decoder: EVMTransactionDecoder,
     ):
         super().__init__(
             evm_inquirer=evm_inquirer,
@@ -98,7 +98,7 @@ class Compoundv3Balances(ProtocolWithBalance):
 
         return unique_collaterals
 
-    def _extract_unique_borrowed_tokens(self) -> tuple[dict['EvmToken', set['ChecksumEvmAddress']], dict['ChecksumEvmAddress', 'EvmToken']]:  # noqa: E501
+    def _extract_unique_borrowed_tokens(self) -> tuple[dict[EvmToken, set[ChecksumEvmAddress]], dict[ChecksumEvmAddress, EvmToken]]:  # noqa: E501
         """
         Fetch unique borrow events from the userDB. Since a user can increase or decrease the same
         liability, we remove the duplicates to reduce the amount of queries. Returns a dict of
@@ -141,7 +141,7 @@ class Compoundv3Balances(ProtocolWithBalance):
 
         return unique_borrows, underlying_tokens
 
-    def query_collateral(self, balances: BalancesSheetType) -> 'BalancesSheetType':
+    def query_collateral(self, balances: BalancesSheetType) -> BalancesSheetType:
         """Query for the collateral assets saved in the protocol that are in the
         COMET Contract and not as balanceOf in those contracts.
         """
@@ -199,7 +199,7 @@ class Compoundv3Balances(ProtocolWithBalance):
         self._add_priced_balances(balances=balances, amounts=entries)
         return balances
 
-    def query_liabilities(self) -> 'BalancesSheetType':
+    def query_liabilities(self) -> BalancesSheetType:
         """
         Query liabilities for Compound v3 open positions and return them.
 
@@ -261,6 +261,6 @@ class Compoundv3Balances(ProtocolWithBalance):
         self._add_priced_balances(balances=balances, amounts=entries, category='liabilities')
         return balances
 
-    def query_balances(self) -> 'BalancesSheetType':
+    def query_balances(self) -> BalancesSheetType:
         balances = self.query_liabilities()
         return self.query_collateral(balances)

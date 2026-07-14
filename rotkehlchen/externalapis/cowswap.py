@@ -1,6 +1,6 @@
 import json
 import logging
-from typing import TYPE_CHECKING, Any, Final, Literal, TypeAlias
+from typing import TYPE_CHECKING, Any, Final, Literal
 
 import requests
 
@@ -27,7 +27,7 @@ CHAIN_MAPPING: Final = {
     SupportedBlockchain.BINANCE_SC: 'bnb',
     SupportedBlockchain.POLYGON_POS: 'polygon',
 }
-SUPPORTED_COWSWAP_BLOCKCHAIN: TypeAlias = Literal[
+type SUPPORTED_COWSWAP_BLOCKCHAIN = Literal[
     SupportedBlockchain.ETHEREUM,
     SupportedBlockchain.GNOSIS,
     SupportedBlockchain.ARBITRUM_ONE,
@@ -43,7 +43,7 @@ class CowswapAPI:
     https://api.cow.fi/docs/
     """
 
-    def __init__(self, database: 'DBHandler', chain: SUPPORTED_COWSWAP_BLOCKCHAIN) -> None:
+    def __init__(self, database: DBHandler, chain: SUPPORTED_COWSWAP_BLOCKCHAIN) -> None:
         self.database = database
         self.session = create_session()
         self.api_url = f'https://api.cow.fi/{CHAIN_MAPPING[chain]}/api/v1'

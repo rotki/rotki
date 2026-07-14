@@ -2,7 +2,6 @@ import logging
 from typing import TYPE_CHECKING, Any
 
 from rotkehlchen.assets.utils import asset_normalized_value
-from rotkehlchen.chain.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.decoding.utils import maybe_reshuffle_events
 from rotkehlchen.chain.evm.decoding.clipper.constants import (
     CLIPPER_CPT_DETAILS,
@@ -18,15 +17,16 @@ from rotkehlchen.chain.evm.decoding.structures import (
 )
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import ChecksumEvmAddress
 from rotkehlchen.utils.misc import bytes_to_address
 
 if TYPE_CHECKING:
     from rotkehlchen.assets.asset import Asset, CryptoAsset
+    from rotkehlchen.chain.decoding.types import CounterpartyDetails
     from rotkehlchen.chain.evm.decoding.base import BaseEvmDecoderTools
     from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
     from rotkehlchen.fval import FVal
     from rotkehlchen.history.events.structures.evm_event import EvmEvent
+    from rotkehlchen.types import ChecksumEvmAddress
     from rotkehlchen.user_messages import MessagesAggregator
 
 logger = logging.getLogger(__name__)
@@ -37,9 +37,9 @@ class ClipperCommonDecoder(EvmDecoderInterface):
 
     def __init__(
             self,
-            evm_inquirer: 'EvmNodeInquirer',
-            base_tools: 'BaseEvmDecoderTools',
-            msg_aggregator: 'MessagesAggregator',
+            evm_inquirer: EvmNodeInquirer,
+            base_tools: BaseEvmDecoderTools,
+            msg_aggregator: MessagesAggregator,
             pool_addresses: set[ChecksumEvmAddress],
     ) -> None:
         super().__init__(
@@ -123,10 +123,10 @@ class ClipperCommonDecoder(EvmDecoderInterface):
 
     def _maybe_resolve_native_spend(
             self,
-            decoded_events: list['EvmEvent'],
+            decoded_events: list[EvmEvent],
             recipient: ChecksumEvmAddress,
-            amount: 'FVal',
-    ) -> 'CryptoAsset':
+            amount: FVal,
+    ) -> CryptoAsset:
         """If the user spent native currency instead of the wrapped token, return native token."""
         for event in decoded_events:
             if (
@@ -141,10 +141,10 @@ class ClipperCommonDecoder(EvmDecoderInterface):
 
     def _maybe_resolve_native_receive(
             self,
-            decoded_events: list['EvmEvent'],
+            decoded_events: list[EvmEvent],
             recipient: ChecksumEvmAddress,
-            amount: 'FVal',
-    ) -> 'CryptoAsset':
+            amount: FVal,
+    ) -> CryptoAsset:
         """If the user received native currency instead of the wrapped token, return native token."""  # noqa: E501
         for event in decoded_events:
             if (
@@ -159,12 +159,12 @@ class ClipperCommonDecoder(EvmDecoderInterface):
 
     def _find_and_update_spend_event(
             self,
-            decoded_events: list['EvmEvent'],
+            decoded_events: list[EvmEvent],
             recipient: ChecksumEvmAddress,
-            asset: 'Asset',
-            amount: 'FVal',
+            asset: Asset,
+            amount: FVal,
             pool_address: ChecksumEvmAddress,
-    ) -> 'EvmEvent | None':
+    ) -> EvmEvent | None:
         for event in decoded_events:
             if (
                 (
@@ -185,12 +185,12 @@ class ClipperCommonDecoder(EvmDecoderInterface):
 
     def _find_and_update_receive_event(
             self,
-            decoded_events: list['EvmEvent'],
+            decoded_events: list[EvmEvent],
             recipient: ChecksumEvmAddress,
-            asset: 'Asset',
-            amount: 'FVal',
+            asset: Asset,
+            amount: FVal,
             pool_address: ChecksumEvmAddress,
-    ) -> 'EvmEvent | None':
+    ) -> EvmEvent | None:
         for event in decoded_events:
             if (
                 (

@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Any, Literal, Optional
+from typing import TYPE_CHECKING, Any, Literal
 from uuid import uuid4
 
 import webargs
@@ -40,7 +40,7 @@ if TYPE_CHECKING:
 def _validate_single_oracle_id(
         data: dict[str, Any],
         oracle_name: Literal['coingecko', 'cryptocompare'],
-        oracle_obj: 'HistoricalPriceOracleWithCoinListInterface',
+        oracle_obj: HistoricalPriceOracleWithCoinListInterface,
 ) -> None:
     coin_key = data.get(oracle_name)
     if coin_key is None or len(coin_key) == 0:
@@ -85,8 +85,8 @@ class AssetWithOraclesSchema(BaseAssetSchema):
     def __init__(
             self,
             identifier_required: bool,
-            coingecko: Optional['Coingecko'] = None,
-            cryptocompare: Optional['Cryptocompare'] = None,
+            coingecko: Coingecko | None = None,
+            cryptocompare: Cryptocompare | None = None,
     ) -> None:
         super().__init__()
         self.identifier_required = identifier_required
@@ -141,8 +141,8 @@ class CryptoAssetSchema(CryptoAssetFieldsSchema):
     def __init__(
             self,
             identifier_required: bool,
-            coingecko: Optional['Coingecko'] = None,
-            cryptocompare: Optional['Cryptocompare'] = None,
+            coingecko: Coingecko | None = None,
+            cryptocompare: Cryptocompare | None = None,
             expected_asset_type: AssetType | None = None,
     ) -> None:
         super().__init__(
@@ -198,8 +198,8 @@ class TokenWithDecimalAndProtocolSchema(CryptoAssetFieldsSchema):
 
     def __init__(
             self,
-            coingecko: Optional['Coingecko'] = None,
-            cryptocompare: Optional['Cryptocompare'] = None,
+            coingecko: Coingecko | None = None,
+            cryptocompare: Cryptocompare | None = None,
             is_edit: bool = False,
     ) -> None:
         super().__init__(
@@ -378,8 +378,8 @@ class AssetSchema(Schema):
             self,
             identifier_required: bool,
             disallowed_asset_types: list[AssetType] | None = None,
-            coingecko: Optional['Coingecko'] = None,
-            cryptocompare: Optional['Cryptocompare'] = None,
+            coingecko: Coingecko | None = None,
+            cryptocompare: Cryptocompare | None = None,
             is_edit: bool = False,
             **kwargs: Any,
     ) -> None:

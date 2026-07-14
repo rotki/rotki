@@ -1,5 +1,4 @@
 import logging
-from collections.abc import Callable
 from typing import TYPE_CHECKING, Any, Final
 
 from rotkehlchen.assets.asset import UnderlyingToken
@@ -35,7 +34,6 @@ from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.misc import ONE
 from rotkehlchen.errors.misc import InputError, NotERC20Conformant, RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
-from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import deserialize_evm_address
@@ -43,9 +41,12 @@ from rotkehlchen.types import ChainID, ChecksumEvmAddress, TokenKind
 from rotkehlchen.utils.misc import bytes_to_address
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+
     from rotkehlchen.assets.asset import Asset
     from rotkehlchen.chain.evm.decoding.base import BaseEvmDecoderTools
     from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
+    from rotkehlchen.fval import FVal
     from rotkehlchen.history.events.structures.evm_event import EvmEvent
     from rotkehlchen.user_messages import MessagesAggregator
 
@@ -72,11 +73,11 @@ class AuraFinanceCommonDecoder(EvmDecoderInterface):
 
     def __init__(
             self,
-            evm_inquirer: 'EvmNodeInquirer',
-            base_tools: 'BaseEvmDecoderTools',
-            msg_aggregator: 'MessagesAggregator',
+            evm_inquirer: EvmNodeInquirer,
+            base_tools: BaseEvmDecoderTools,
+            msg_aggregator: MessagesAggregator,
             claim_zap_address: ChecksumEvmAddress,
-            base_reward_tokens: tuple['Asset', 'Asset'],  # this is always the AURA and BAL tokens of the chain  # noqa: E501
+            base_reward_tokens: tuple[Asset, Asset],  # this is always the AURA and BAL tokens of the chain  # noqa: E501
     ) -> None:
         super().__init__(
             evm_inquirer=evm_inquirer,

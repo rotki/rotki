@@ -6,7 +6,6 @@ from rotkehlchen.chain.evm.l2_with_l1_fees.decoding.decoder import L2WithL1FeesT
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.db.l2withl1feestx import DBL2WithL1FeesTx
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import ChecksumEvmAddress
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.base.node_inquirer import BaseInquirer
@@ -14,6 +13,7 @@ if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.externalapis.monerium import Monerium
     from rotkehlchen.premium.premium import Premium
+    from rotkehlchen.types import ChecksumEvmAddress
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -23,11 +23,11 @@ class BaseTransactionDecoder(L2WithL1FeesTransactionDecoder):
 
     def __init__(
             self,
-            database: 'DBHandler',
-            base_inquirer: 'BaseInquirer',
-            transactions: 'BaseTransactions',
-            premium: 'Premium | None' = None,
-            monerium: 'Monerium | None' = None,
+            database: DBHandler,
+            base_inquirer: BaseInquirer,
+            transactions: BaseTransactions,
+            premium: Premium | None = None,
+            monerium: Monerium | None = None,
     ):
         super().__init__(
             database=database,

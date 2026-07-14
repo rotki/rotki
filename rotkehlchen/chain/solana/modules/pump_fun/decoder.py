@@ -17,7 +17,6 @@ from rotkehlchen.chain.solana.utils import lamports_to_sol
 from rotkehlchen.constants.assets import A_WSOL
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import SolanaAddress
 from rotkehlchen.utils.misc import bytes_to_solana_address
 
 if TYPE_CHECKING:
@@ -25,6 +24,7 @@ if TYPE_CHECKING:
         SolanaDecoderContext,
         SolanaDecodingOutput,
     )
+    from rotkehlchen.types import SolanaAddress
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -36,7 +36,7 @@ class PumpFunDecoder(SolanaDecoderInterface):
     TODO: Add decoding for the full Pump.fun protocol.
     """
 
-    def decode_swap_fees(self, context: 'SolanaDecoderContext') -> 'SolanaDecodingOutput':
+    def decode_swap_fees(self, context: SolanaDecoderContext) -> SolanaDecodingOutput:
         """Decode Pump.fun swap fees."""
         if not match_discriminator(context.instruction.data, GET_FEES_DISCRIMINATOR):
             return DEFAULT_SOLANA_DECODING_OUTPUT
@@ -87,7 +87,7 @@ class PumpFunDecoder(SolanaDecoderInterface):
         return {PUMP_FEES_PROGRAM: (self.decode_swap_fees,)}
 
     @staticmethod
-    def counterparties() -> tuple['CounterpartyDetails', ...]:
+    def counterparties() -> tuple[CounterpartyDetails, ...]:
         return (CounterpartyDetails(
             identifier=CPT_PUMP_FUN,
             label='Pump.fun',

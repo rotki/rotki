@@ -1,10 +1,13 @@
-from collections.abc import Callable, Sequence
 from enum import Enum, auto
-from typing import Any, NamedTuple
+from typing import TYPE_CHECKING, Any, NamedTuple
 
 from rotkehlchen.errors.serialization import DeserializationError
-from rotkehlchen.fval import FVal
-from rotkehlchen.types import BTCAddress, Timestamp
+
+if TYPE_CHECKING:
+    from collections.abc import Callable, Sequence
+
+    from rotkehlchen.fval import FVal
+    from rotkehlchen.types import BTCAddress, Timestamp
 
 
 class BtcQueryAction(Enum):
@@ -23,7 +26,7 @@ class BtcApiCallback(NamedTuple):
     name: str  # Used for logging
     balances_fn: Callable[[Sequence[BTCAddress]], dict[BTCAddress, FVal]] | None
     has_transactions_fn: Callable[[Sequence[BTCAddress]], dict[BTCAddress, tuple[bool, FVal]]] | None  # noqa: E501
-    transactions_fn: Callable[[Sequence[BTCAddress], dict[str, Any]], tuple[int, list['BitcoinTx']]] | None  # noqa: E501
+    transactions_fn: Callable[[Sequence[BTCAddress], dict[str, Any]], tuple[int, list[BitcoinTx]]] | None  # noqa: E501
 
 
 class BtcTxIO(NamedTuple):
@@ -38,8 +41,8 @@ class BtcTxIO(NamedTuple):
             cls,
             data: dict[str, Any],
             direction: BtcTxIODirection,
-            deserialize_fn: Callable[[dict[str, Any], BtcTxIODirection], 'BtcTxIO'],
-    ) -> 'BtcTxIO':
+            deserialize_fn: Callable[[dict[str, Any], BtcTxIODirection], BtcTxIO],
+    ) -> BtcTxIO:
         try:
             return deserialize_fn(data, direction)
         except KeyError as e:
@@ -52,8 +55,8 @@ class BtcTxIO(NamedTuple):
             cls,
             data_list: list[dict[str, Any]],
             direction: BtcTxIODirection,
-            deserialize_fn: Callable[[dict[str, Any], BtcTxIODirection], 'BtcTxIO'],
-    ) -> list['BtcTxIO']:
+            deserialize_fn: Callable[[dict[str, Any], BtcTxIODirection], BtcTxIO],
+    ) -> list[BtcTxIO]:
         return [cls.deserialize(
             data=raw_tx_io,
             direction=direction,

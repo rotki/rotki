@@ -12,7 +12,6 @@ from rotkehlchen.db.constants import HISTORY_MAPPING_KEY_STATE, HistoryMappingSt
 from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.fval import FVal
-from rotkehlchen.history.events.structures.asset_movement import AssetMovementExtraData
 from rotkehlchen.history.events.structures.base import HistoryBaseEntryType
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.history.events.utils import create_group_identifier
@@ -25,6 +24,7 @@ if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.db.drivers.sqlite import DBCursor
     from rotkehlchen.db.upgrade_manager import DBUpgradeProgressHandler
+    from rotkehlchen.history.events.structures.asset_movement import AssetMovementExtraData
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -115,14 +115,14 @@ def _create_legacy_asset_movement_with_fee(
 
 
 @enter_exit_debug_log(name='UserDB v45->v46 upgrade')
-def upgrade_v45_to_v46(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHandler') -> None:
+def upgrade_v45_to_v46(db: DBHandler, progress_handler: DBUpgradeProgressHandler) -> None:
     """Upgrades the DB from v45 to v46. This was in v1.37 release.
 
     - Remove balancer module from settings
     - Refresh icons
     """
     @progress_step(description='Removing balancer module from user settings.')
-    def _remove_balancer_module(write_cursor: 'DBCursor') -> None:
+    def _remove_balancer_module(write_cursor: DBCursor) -> None:
         if (active_modules_result := write_cursor.execute("SELECT value FROM settings where name='active_modules'").fetchone()) is None:  # noqa: E501
             return None
 
@@ -138,7 +138,7 @@ def upgrade_v45_to_v46(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
         )
 
     @progress_step(description='Refreshing icons.')
-    def _refresh_icons(write_cursor: 'DBCursor') -> None:
+    def _refresh_icons(write_cursor: DBCursor) -> None:
         identifiers_to_delete = [
             A_COW.identifier,
             A_LQTY.identifier,
@@ -151,7 +151,7 @@ def upgrade_v45_to_v46(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
             icon_path.unlink(missing_ok=True)
 
     @progress_step(description='Moving EVM event extra data to the history_events table.')
-    def _move_extra_data(write_cursor: 'DBCursor') -> None:
+    def _move_extra_data(write_cursor: DBCursor) -> None:
         write_cursor.execute('ALTER TABLE history_events ADD COLUMN extra_data TEXT;')
         write_cursor.execute(
             'UPDATE history_events SET extra_data = '
@@ -161,7 +161,7 @@ def upgrade_v45_to_v46(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
         write_cursor.execute('ALTER TABLE evm_events_info DROP COLUMN extra_data;')
 
     @progress_step(description='Converting asset movements to history events')
-    def move_asset_movements(write_cursor: 'DBCursor') -> None:
+    def move_asset_movements(write_cursor: DBCursor) -> None:
         new_events: list[LegacyAssetMovement] = []
         # kraken events appear both as history events and asset movements.
         # We get the event_identifiers mapped to labels and then delete the history
@@ -240,7 +240,7 @@ def upgrade_v45_to_v46(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
         write_cursor.execute("DELETE FROM settings WHERE name='account_for_assets_movements'")
 
     @progress_step(description='Resetting decoded events.')
-    def _reset_decoded_events(write_cursor: 'DBCursor') -> None:
+    def _reset_decoded_events(write_cursor: DBCursor) -> None:
         """Reset all decoded evm events except for the customized ones and those in zksync lite.
         Code taken from previous upgrade
         """

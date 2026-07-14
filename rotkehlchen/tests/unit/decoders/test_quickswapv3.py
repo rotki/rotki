@@ -24,8 +24,8 @@ if TYPE_CHECKING:
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('polygon_pos_accounts', [['0x1834E499eA7F6759992AAd97362D985AA2efa5fc']])
 def test_swap(
-        polygon_pos_inquirer: 'PolygonPOSInquirer',
-        polygon_pos_accounts: list['ChecksumEvmAddress'],
+        polygon_pos_inquirer: PolygonPOSInquirer,
+        polygon_pos_accounts: list[ChecksumEvmAddress],
 ):
     tx_hash = deserialize_evm_tx_hash('0x50c55589a2a7b97bdb0c46815783993133c8bd099d9fcc8b91e2e465f00f4687')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=polygon_pos_inquirer, tx_hash=tx_hash)  # noqa: E501
@@ -85,8 +85,8 @@ def test_swap(
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('polygon_pos_accounts', [['0x10cF3DE9B6657E0309324D17653dab2249E20B52']])
 def test_create_lp_position(
-        polygon_pos_inquirer: 'PolygonPOSInquirer',
-        polygon_pos_accounts: list['ChecksumEvmAddress'],
+        polygon_pos_inquirer: PolygonPOSInquirer,
+        polygon_pos_accounts: list[ChecksumEvmAddress],
 ) -> None:
     tx_hash = deserialize_evm_tx_hash('0xf09695f1682f0e6a8bc80eb7cfb7f4e39da22022c283c4633096fcde4e9c5557')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=polygon_pos_inquirer, tx_hash=tx_hash)  # noqa: E501
@@ -147,8 +147,8 @@ def test_create_lp_position(
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('polygon_pos_accounts', [['0xCE339d926E20193d386299De8df6Ff071B6885fF']])
 def test_add_liquidity(
-        polygon_pos_inquirer: 'PolygonPOSInquirer',
-        polygon_pos_accounts: list['ChecksumEvmAddress'],
+        polygon_pos_inquirer: PolygonPOSInquirer,
+        polygon_pos_accounts: list[ChecksumEvmAddress],
 ) -> None:
     tx_hash = deserialize_evm_tx_hash('0x0898cb40572a122d377248eb7f7926fd2a913839318c3b4a8be2b082bfea5b55')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=polygon_pos_inquirer, tx_hash=tx_hash)  # noqa: E501
@@ -196,8 +196,8 @@ def test_add_liquidity(
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('polygon_pos_accounts', [['0x510994fC08e0157e6224e335c7F5a76fC0cD069a']])
 def test_remove_liquidity(
-        polygon_pos_inquirer: 'PolygonPOSInquirer',
-        polygon_pos_accounts: list['ChecksumEvmAddress'],
+        polygon_pos_inquirer: PolygonPOSInquirer,
+        polygon_pos_accounts: list[ChecksumEvmAddress],
 ) -> None:
     tx_hash = deserialize_evm_tx_hash('0x7d9aa2df466775303d7b9f3e108d2ae418b8940d2db3c0681b0fdc3d3f8dca3d')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=polygon_pos_inquirer, tx_hash=tx_hash)  # noqa: E501

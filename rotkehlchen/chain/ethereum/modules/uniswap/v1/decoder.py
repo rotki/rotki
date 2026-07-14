@@ -1,23 +1,24 @@
 import logging
-from collections.abc import Callable
 from typing import TYPE_CHECKING
 
-from rotkehlchen.assets.asset import EvmToken
 from rotkehlchen.chain.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.decoding.utils import maybe_reshuffle_events
 from rotkehlchen.chain.ethereum.modules.aave.v1.decoder import DEFAULT_EVM_DECODING_OUTPUT
 from rotkehlchen.chain.evm.decoding.interfaces import EvmDecoderInterface
-from rotkehlchen.chain.evm.decoding.structures import ActionItem, EvmDecodingOutput
 from rotkehlchen.chain.evm.decoding.uniswap.constants import CPT_UNISWAP_V1, UNISWAP_ICON
-from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
 from rotkehlchen.errors.asset import UnknownAsset, WrongAssetType
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import EvmTransaction
 from rotkehlchen.utils.misc import bytes_to_address
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+
+    from rotkehlchen.assets.asset import EvmToken
+    from rotkehlchen.chain.evm.decoding.structures import ActionItem, EvmDecodingOutput
+    from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
     from rotkehlchen.history.events.structures.evm_event import EvmEvent
+    from rotkehlchen.types import EvmTransaction
 
 
 logger = logging.getLogger(__name__)
@@ -36,7 +37,7 @@ class Uniswapv1Decoder(EvmDecoderInterface):
             token: EvmToken | None,  # pylint: disable=unused-argument
             tx_log: EvmTxReceiptLog,
             transaction: EvmTransaction,  # pylint: disable=unused-argument
-            decoded_events: list['EvmEvent'],
+            decoded_events: list[EvmEvent],
             action_items: list[ActionItem],  # pylint: disable=unused-argument
             all_logs: list[EvmTxReceiptLog],  # pylint: disable=unused-argument
     ) -> EvmDecodingOutput:

@@ -76,7 +76,7 @@ def test_write_transaction_with_savepoint(conn: DBConnection):
 def test_write_transaction_with_savepoint_other_context(conn: DBConnection):
     """Test that opening a savepoint from a different task while a write
     transaction is already open from another task waits for the original to finish"""
-    def other_context(conn: 'DBConnection', first_run: bool) -> None:
+    def other_context(conn: DBConnection, first_run: bool) -> None:
         with conn.savepoint_ctx() as savepoint1_cursor:
             values = (2,) if first_run else (4,)
             savepoint1_cursor.execute('INSERT INTO a VALUES (?)', values)

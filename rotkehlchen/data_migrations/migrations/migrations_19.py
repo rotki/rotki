@@ -17,21 +17,21 @@ log = RotkehlchenLogsAdapter(logger)
 
 
 @enter_exit_debug_log()
-def data_migration_19(rotki: 'Rotkehlchen', progress_handler: 'MigrationProgressHandler') -> None:
+def data_migration_19(rotki: Rotkehlchen, progress_handler: MigrationProgressHandler) -> None:
     """
     Introduced at v1.36.1
 
     - Clean incorrectly created folder `app` in the users/{username} folder
     """
     @progress_step(description="Cleaning up rotki's directory tree.")
-    def _delete_bad_folder(rotki: 'Rotkehlchen') -> None:
+    def _delete_bad_folder(rotki: Rotkehlchen) -> None:
         bad_folder = rotki.user_directory / APPDIR_NAME
         if bad_folder.exists():
             log.info(f'Deleting folder {bad_folder} created by mistake')
             shutil.rmtree(bad_folder)
 
     @progress_step(description='Cleaning unused gnosis bridge logs.')
-    def _delete_old_gnosis_bridge_ranges(rotki: 'Rotkehlchen') -> None:
+    def _delete_old_gnosis_bridge_ranges(rotki: Rotkehlchen) -> None:
         """Delete query ranges for accounts that were deleted"""
         db = rotki.data.db
         with db.conn.read_ctx() as cursor:
@@ -54,7 +54,7 @@ def data_migration_19(rotki: 'Rotkehlchen', progress_handler: 'MigrationProgress
                     )
 
     @progress_step(description='Refresh coinbase queries')
-    def _refresh_coinbase_queries(rotki: 'Rotkehlchen') -> None:
+    def _refresh_coinbase_queries(rotki: Rotkehlchen) -> None:
         with rotki.data.db.user_write() as write_cursor:
             write_cursor.execute('DELETE FROM key_value_cache WHERE name LIKE ? ESCAPE ?', ('coinbase\\_%\\_last\\_query\\_ts', '\\'))  # noqa: E501
 

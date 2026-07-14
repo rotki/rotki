@@ -7,7 +7,6 @@ from rotkehlchen.chain.gnosis.modules.monerium.constants import V1_TO_V2_MONERIU
 from rotkehlchen.chain.gnosis.tokens import GNOSIS_MONERIUM_LEGACY_ADDRESSES
 from rotkehlchen.constants.assets import A_XDAI
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import ChecksumEvmAddress
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.gnosis.node_inquirer import GnosisInquirer
@@ -15,6 +14,7 @@ if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.externalapis.monerium import Monerium
     from rotkehlchen.premium.premium import Premium
+    from rotkehlchen.types import ChecksumEvmAddress
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -26,11 +26,11 @@ class GnosisTransactionDecoder(EVMTransactionDecoder):
 
     def __init__(
             self,
-            database: 'DBHandler',
-            gnosis_inquirer: 'GnosisInquirer',
-            transactions: 'GnosisTransactions',
-            premium: 'Premium | None' = None,
-            monerium: 'Monerium | None' = None,
+            database: DBHandler,
+            gnosis_inquirer: GnosisInquirer,
+            transactions: GnosisTransactions,
+            premium: Premium | None = None,
+            monerium: Monerium | None = None,
     ):
         super().__init__(
             database=database,

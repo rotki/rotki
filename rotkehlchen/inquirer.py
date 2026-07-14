@@ -2,13 +2,11 @@ import logging
 import operator
 from collections.abc import Callable, Iterable, Sequence
 from contextlib import suppress
-from pathlib import Path
 from typing import (
     TYPE_CHECKING,
     Any,
     Literal,
     NamedTuple,
-    Optional,
     TypeVar,
     Union,
     overload,
@@ -157,6 +155,8 @@ from rotkehlchen.utils.misc import timestamp_to_daystart_timestamp, ts_now
 from rotkehlchen.utils.mixins.penalizable_oracle import PenalizablePriceOracleMixin
 
 if TYPE_CHECKING:
+    from pathlib import Path
+
     from rotkehlchen.chain.arbitrum_one.manager import ArbitrumOneManager
     from rotkehlchen.chain.base.manager import BaseManager
     from rotkehlchen.chain.ethereum.manager import EthereumManager
@@ -364,22 +364,22 @@ class CurrentOracleState(NamedTuple):
 
 
 class Inquirer:
-    __instance: Optional['Inquirer'] = None
+    __instance: Inquirer | None = None
     _cached_forex_data: dict
     _cached_current_price: LRUCacheWithRemove[tuple[Asset, Asset], CachedPriceEntry]
     _data_directory: Path
-    _cryptocompare: 'Cryptocompare'
-    _coingecko: 'Coingecko'
-    _alchemy: 'Alchemy'
-    _moralis: 'Moralis'
-    _defillama: 'Defillama'
-    _kraken: 'Kraken'
-    _manualcurrent: 'ManualCurrentOracle'
-    _uniswapv2: Optional['UniswapV2Oracle'] = None
-    _uniswapv3: Optional['UniswapV3Oracle'] = None
-    _evm_managers: dict[ChainID, 'EvmManager']
+    _cryptocompare: Cryptocompare
+    _coingecko: Coingecko
+    _alchemy: Alchemy
+    _moralis: Moralis
+    _defillama: Defillama
+    _kraken: Kraken
+    _manualcurrent: ManualCurrentOracle
+    _uniswapv2: UniswapV2Oracle | None = None
+    _uniswapv3: UniswapV3Oracle | None = None
+    _evm_managers: dict[ChainID, EvmManager]
     _oracle_state: CurrentOracleState | None = None
-    _msg_aggregator: 'MessagesAggregator'
+    _msg_aggregator: MessagesAggregator
     # save only the identifier of the special tokens since we only check if assets are in this set
     special_tokens: set[str]
     # asset identifiers in the EURe collection (collection_id=240), pegged to EUR
@@ -390,15 +390,15 @@ class Inquirer:
     def __new__(     # noqa: PYI034  # singleton is an exception
             cls,
             data_dir: Path | None = None,
-            cryptocompare: Optional['Cryptocompare'] = None,
-            coingecko: Optional['Coingecko'] = None,
-            defillama: Optional['Defillama'] = None,
-            kraken: Optional['Kraken'] = None,
-            alchemy: Optional['Alchemy'] = None,
-            moralis: Optional['Moralis'] = None,
-            manualcurrent: Optional['ManualCurrentOracle'] = None,
-            msg_aggregator: Optional['MessagesAggregator'] = None,
-    ) -> 'Inquirer':
+            cryptocompare: Cryptocompare | None = None,
+            coingecko: Coingecko | None = None,
+            defillama: Defillama | None = None,
+            kraken: Kraken | None = None,
+            alchemy: Alchemy | None = None,
+            moralis: Moralis | None = None,
+            manualcurrent: ManualCurrentOracle | None = None,
+            msg_aggregator: MessagesAggregator | None = None,
+    ) -> Inquirer:
         if Inquirer.__instance is not None:
             return Inquirer.__instance
 
@@ -489,31 +489,31 @@ class Inquirer:
         self._oracle_state = state._replace(instances=instances)
 
     @staticmethod
-    def inject_evm_managers(evm_managers: Sequence[tuple[ChainID, 'EvmManager']]) -> None:
+    def inject_evm_managers(evm_managers: Sequence[tuple[ChainID, EvmManager]]) -> None:
         instance = Inquirer()
         for chain_id, evm_manager in evm_managers:
             instance._evm_managers[chain_id] = evm_manager
 
     @overload
     @staticmethod
-    def get_evm_manager(chain_id: CURVE_CHAIN_ID_TYPE) -> 'ArbitrumOneManager | BaseManager | EthereumManager | GnosisManager | OptimismManager | PolygonPOSManager':  # noqa: E501
+    def get_evm_manager(chain_id: CURVE_CHAIN_ID_TYPE) -> ArbitrumOneManager | BaseManager | EthereumManager | GnosisManager | OptimismManager | PolygonPOSManager:  # noqa: E501
         ...
 
     @overload
     @staticmethod
-    def get_evm_manager(chain_id: ChainID) -> 'EvmManager':
+    def get_evm_manager(chain_id: ChainID) -> EvmManager:
         ...
 
     @staticmethod
-    def get_evm_manager(chain_id: ChainID | CURVE_CHAIN_ID_TYPE) -> 'EvmManager':
+    def get_evm_manager(chain_id: ChainID | CURVE_CHAIN_ID_TYPE) -> EvmManager:
         evm_manager = Inquirer._evm_managers.get(chain_id)
         assert evm_manager is not None, f'evm manager for chain id {chain_id} should have been injected'  # noqa: E501
         return evm_manager
 
     @staticmethod
     def add_defi_oracles(
-            uniswap_v2: Optional['UniswapV2Oracle'],
-            uniswap_v3: Optional['UniswapV3Oracle'],
+            uniswap_v2: UniswapV2Oracle | None,
+            uniswap_v3: UniswapV3Oracle | None,
     ) -> None:
         Inquirer()._uniswapv2 = uniswap_v2
         Inquirer()._uniswapv3 = uniswap_v3
@@ -1219,7 +1219,7 @@ class Inquirer:
             )
             return None
         # Total number of assets price in the pool
-        total_assets_value = sum(map(operator.mul, data, prices))
+        total_assets_value = sum(map(operator.mul, data, prices, strict=True))
         if total_assets_value == 0:
             log.error(
                 f'Curve pool price returned unexpected data {data} that lead to a zero price.',

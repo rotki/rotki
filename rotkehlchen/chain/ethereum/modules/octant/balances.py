@@ -25,14 +25,14 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
-OCTANT_V2_ABI: Final['ABI'] = [{'inputs': [{'name': '', 'type': 'address'}], 'name': 'depositorTotalStaked', 'outputs': [{'name': '', 'type': 'uint256'}], 'stateMutability': 'view', 'type': 'function'}]  # noqa: E501
+OCTANT_V2_ABI: Final[ABI] = [{'inputs': [{'name': '', 'type': 'address'}], 'name': 'depositorTotalStaked', 'outputs': [{'name': '', 'type': 'uint256'}], 'stateMutability': 'view', 'type': 'function'}]  # noqa: E501
 
 
 class OctantBalances(ProtocolWithBalance):
     def __init__(
             self,
-            evm_inquirer: 'EthereumInquirer',
-            tx_decoder: 'EthereumTransactionDecoder',
+            evm_inquirer: EthereumInquirer,
+            tx_decoder: EthereumTransactionDecoder,
     ):
         super().__init__(
             evm_inquirer=evm_inquirer,
@@ -42,7 +42,7 @@ class OctantBalances(ProtocolWithBalance):
         )
         self.glm = A_GLM.resolve_to_evm_token()
 
-    def query_balances(self) -> 'BalancesSheetType':
+    def query_balances(self) -> BalancesSheetType:
         """Query balances of locked GLM in Octant"""
         balances: BalancesSheetType = defaultdict(BalanceSheet)
         # fetch deposit events

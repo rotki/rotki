@@ -1,8 +1,6 @@
 import logging
-from collections.abc import Callable
 from typing import TYPE_CHECKING, Any, Final
 
-from rotkehlchen.assets.asset import CryptoAsset, EvmToken, FVal
 from rotkehlchen.assets.utils import asset_normalized_value
 from rotkehlchen.chain.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.decoding.utils import maybe_reshuffle_events
@@ -24,7 +22,6 @@ from rotkehlchen.chain.evm.decoding.uniswap.v2.utils import (
     decode_uniswap_like_deposit_and_withdrawals,
     decode_uniswap_v2_like_swap,
 )
-from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
 from rotkehlchen.chain.evm.types import ChecksumEvmAddress, string_to_evm_address
 from rotkehlchen.db.evmtx import DBEvmTx
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
@@ -35,6 +32,10 @@ from rotkehlchen.utils.misc import bytes_to_address
 from .constants import CPT_SUSHISWAP, CPT_SUSHISWAP_V2
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+
+    from rotkehlchen.assets.asset import CryptoAsset, EvmToken, FVal
+    from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
     from rotkehlchen.history.events.structures.evm_event import EvmEvent
 
 logger = logging.getLogger(__name__)
@@ -58,7 +59,7 @@ class SushiswapDecoder(EvmDecoderInterface):
             token: EvmToken | None,  # pylint: disable=unused-argument
             tx_log: EvmTxReceiptLog,
             transaction: EvmTransaction,
-            decoded_events: list['EvmEvent'],
+            decoded_events: list[EvmEvent],
             action_items: list[ActionItem],  # pylint: disable=unused-argument
             all_logs: list[EvmTxReceiptLog],  # pylint: disable=unused-argument
     ) -> EvmDecodingOutput:
@@ -80,7 +81,7 @@ class SushiswapDecoder(EvmDecoderInterface):
             token: EvmToken | None,  # pylint: disable=unused-argument
             tx_log: EvmTxReceiptLog,
             transaction: EvmTransaction,  # pylint: disable=unused-argument
-            decoded_events: list['EvmEvent'],
+            decoded_events: list[EvmEvent],
             action_items: list[ActionItem],  # pylint: disable=unused-argument
             all_logs: list[EvmTxReceiptLog],
     ) -> EvmDecodingOutput:
@@ -112,7 +113,7 @@ class SushiswapDecoder(EvmDecoderInterface):
             )
         return DEFAULT_EVM_DECODING_OUTPUT
 
-    def _decode_redsnwap_event(self, context: 'DecoderContext') -> EvmDecodingOutput:
+    def _decode_redsnwap_event(self, context: DecoderContext) -> EvmDecodingOutput:
         """Identify Sushiswap RedSnwap swap events for post-processing."""
         if context.tx_log.topics[0] != REDSNWAP_ROUTE_PROCESSOR_TOPIC:
             return DEFAULT_EVM_DECODING_OUTPUT
@@ -122,9 +123,9 @@ class SushiswapDecoder(EvmDecoderInterface):
     def _handle_post_decoding(
             self,
             transaction: EvmTransaction,
-            decoded_events: list['EvmEvent'],
-            all_logs: list['EvmTxReceiptLog'],
-    ) -> list['EvmEvent']:
+            decoded_events: list[EvmEvent],
+            all_logs: list[EvmTxReceiptLog],
+    ) -> list[EvmEvent]:
         """Process RedSnwap swap events to create proper trade events and fees.
         See: https://docs.sushi.com/contracts/red-snwapper
         """
@@ -195,11 +196,11 @@ class SushiswapDecoder(EvmDecoderInterface):
     def _retrieve_rednswap_fee(
             self,
             transaction: EvmTransaction,
-            decoded_events: list['EvmEvent'],
-            all_logs: list['EvmTxReceiptLog'],
-            asset: 'CryptoAsset | EvmToken',
+            decoded_events: list[EvmEvent],
+            all_logs: list[EvmTxReceiptLog],
+            asset: CryptoAsset | EvmToken,
             asset_address: ChecksumEvmAddress,
-    ) -> tuple[FVal, 'EvmEvent | None']:
+    ) -> tuple[FVal, EvmEvent | None]:
         """Retrieve and create the fee event for Sushiswap RedSnwap swaps.
 
         For ETH swaps, fees are collected via internal transactions to TOKEN_CHOMPER_ADDRESS.

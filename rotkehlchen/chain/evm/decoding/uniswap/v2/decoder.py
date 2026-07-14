@@ -1,7 +1,5 @@
-from collections.abc import Callable
 from typing import TYPE_CHECKING, Final
 
-from rotkehlchen.assets.asset import EvmToken
 from rotkehlchen.chain.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.evm.constants import BURN_TOPIC, MINT_TOPIC
 from rotkehlchen.chain.evm.decoding.interfaces import EvmDecoderInterface
@@ -16,17 +14,19 @@ from rotkehlchen.chain.evm.decoding.uniswap.v2.utils import (
     decode_uniswap_like_deposit_and_withdrawals,
     decode_uniswap_v2_like_swap,
 )
-from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
 from rotkehlchen.constants import ZERO
-from rotkehlchen.types import EvmTransaction
 
 from .constants import UNISWAP_V2_SWAP_SIGNATURE
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+
+    from rotkehlchen.assets.asset import EvmToken
     from rotkehlchen.chain.evm.decoding.base import BaseEvmDecoderTools
     from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
+    from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
     from rotkehlchen.history.events.structures.evm_event import EvmEvent
-    from rotkehlchen.types import ChecksumEvmAddress
+    from rotkehlchen.types import ChecksumEvmAddress, EvmTransaction
     from rotkehlchen.user_messages import MessagesAggregator
 
 UNISWAP_V2_INIT_CODE_HASH: Final = '0x96e8ac4277198ff8b6f785478aa9a39f403cb768dd02cbee326c3e7da348845f'  # noqa: E501
@@ -36,11 +36,11 @@ class Uniswapv2CommonDecoder(EvmDecoderInterface):
 
     def __init__(
             self,
-            evm_inquirer: 'EvmNodeInquirer',
-            base_tools: 'BaseEvmDecoderTools',
-            msg_aggregator: 'MessagesAggregator',
-            router_address: 'ChecksumEvmAddress',
-            factory_address: 'ChecksumEvmAddress',
+            evm_inquirer: EvmNodeInquirer,
+            base_tools: BaseEvmDecoderTools,
+            msg_aggregator: MessagesAggregator,
+            router_address: ChecksumEvmAddress,
+            factory_address: ChecksumEvmAddress,
     ) -> None:
         super().__init__(
             evm_inquirer=evm_inquirer,
@@ -53,7 +53,7 @@ class Uniswapv2CommonDecoder(EvmDecoderInterface):
     def _decode_basic_swap_info(
             self,
             tx_log: EvmTxReceiptLog,
-            decoded_events: list['EvmEvent'],
+            decoded_events: list[EvmEvent],
     ) -> EvmDecodingOutput:
         """
         Decodes only basic swap info. Basic swap info includes trying to find approval, spend and
@@ -84,7 +84,7 @@ class Uniswapv2CommonDecoder(EvmDecoderInterface):
             token: EvmToken | None,  # pylint: disable=unused-argument
             tx_log: EvmTxReceiptLog,
             transaction: EvmTransaction,
-            decoded_events: list['EvmEvent'],
+            decoded_events: list[EvmEvent],
             action_items: list[ActionItem],  # pylint: disable=unused-argument
             all_logs: list[EvmTxReceiptLog],  # pylint: disable=unused-argument
     ) -> EvmDecodingOutput:
@@ -115,7 +115,7 @@ class Uniswapv2CommonDecoder(EvmDecoderInterface):
             token: EvmToken | None,  # pylint: disable=unused-argument
             tx_log: EvmTxReceiptLog,
             transaction: EvmTransaction,
-            decoded_events: list['EvmEvent'],
+            decoded_events: list[EvmEvent],
             action_items: list[ActionItem],  # pylint: disable=unused-argument
             all_logs: list[EvmTxReceiptLog],
     ) -> EvmDecodingOutput:

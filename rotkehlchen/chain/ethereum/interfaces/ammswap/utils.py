@@ -6,11 +6,11 @@ from rotkehlchen.chain.ethereum.interfaces.ammswap.types import (
     LiquidityPool,
     LiquidityPoolAsset,
 )
-from rotkehlchen.fval import FVal
 from rotkehlchen.types import ChainID, ChecksumEvmAddress
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
+    from rotkehlchen.fval import FVal
 
 
 class TokenDetails(NamedTuple):
@@ -32,7 +32,7 @@ def _decode_token(entry: tuple) -> TokenDetails:
     )
 
 
-def decode_result(userdb: 'DBHandler', data: tuple) -> LiquidityPool:
+def decode_result(userdb: DBHandler, data: tuple) -> LiquidityPool:
     """
     Process information obtained from the zerion adapter for uniswap/sushiswap
     pools making sure that involved tokens exist in the globaldb

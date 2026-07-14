@@ -68,18 +68,18 @@ log = RotkehlchenLogsAdapter(logger)
 
 class WooVaultInfo(NamedTuple):
     """Contract addresses for a given WooFi earn vault."""
-    token: 'ChecksumEvmAddress'
-    supercharger: 'ChecksumEvmAddress'
-    withdraw_manager: 'ChecksumEvmAddress'
+    token: ChecksumEvmAddress
+    supercharger: ChecksumEvmAddress
+    withdraw_manager: ChecksumEvmAddress
 
 
 class WooFiCommonDecoder(EvmDecoderInterface):
 
     def __init__(
             self,
-            evm_inquirer: 'EvmNodeInquirer',
-            base_tools: 'BaseEvmDecoderTools',
-            msg_aggregator: 'MessagesAggregator',
+            evm_inquirer: EvmNodeInquirer,
+            base_tools: BaseEvmDecoderTools,
+            msg_aggregator: MessagesAggregator,
             earn_vaults: list[WooVaultInfo],
     ) -> None:
         """Common decoder for the WOOFi protocol.
@@ -168,10 +168,10 @@ class WooFiCommonDecoder(EvmDecoderInterface):
             self,
             context: DecoderContext,
             on_src: bool,
-            user_address: 'ChecksumEvmAddress',
-            bridge_asset_address: 'ChecksumEvmAddress',
+            user_address: ChecksumEvmAddress,
+            bridge_asset_address: ChecksumEvmAddress,
             bridge_amount_raw: int,
-            swap_asset_address: 'ChecksumEvmAddress',
+            swap_asset_address: ChecksumEvmAddress,
             swap_amount_raw: int,
     ) -> EvmDecodingOutput:
         """Decode either the source chain or destination chain WooFi cross-chain swap events.
@@ -402,9 +402,9 @@ class WooFiCommonDecoder(EvmDecoderInterface):
     def _decode_request_withdraw(
             self,
             context: DecoderContext,
-            shares_asset: 'EvmToken',
+            shares_asset: EvmToken,
             return_notes: str,
-            underlying_asset: 'CryptoAsset',
+            underlying_asset: CryptoAsset,
             info_notes: str,
     ) -> EvmDecodingOutput:
         """Decode withdrawal requests for supercharger vaults and WOO staking."""
@@ -574,7 +574,7 @@ class WooFiCommonDecoder(EvmDecoderInterface):
 
     # -- DecoderInterface methods
 
-    def addresses_to_decoders(self) -> dict['ChecksumEvmAddress', tuple[Any, ...]]:
+    def addresses_to_decoders(self) -> dict[ChecksumEvmAddress, tuple[Any, ...]]:
         return {
             WOO_ROUTER_V2: (self._decode_swap,),
             WOO_CROSS_SWAP_ROUTER_V5: (self._decode_cross_swap_router_events,),
@@ -596,13 +596,13 @@ class WooFiStakingDecoder(WooFiCommonDecoder):
 
     def __init__(
             self,
-            evm_inquirer: 'EvmNodeInquirer',
-            base_tools: 'BaseEvmDecoderTools',
-            msg_aggregator: 'MessagesAggregator',
+            evm_inquirer: EvmNodeInquirer,
+            base_tools: BaseEvmDecoderTools,
+            msg_aggregator: MessagesAggregator,
             earn_vaults: list[WooVaultInfo],
-            woo_token_address: 'ChecksumEvmAddress',
-            stake_v1_address: 'ChecksumEvmAddress | None' = None,
-            stake_v2_address: 'ChecksumEvmAddress | None' = None,
+            woo_token_address: ChecksumEvmAddress,
+            stake_v1_address: ChecksumEvmAddress | None = None,
+            stake_v2_address: ChecksumEvmAddress | None = None,
     ) -> None:
         super().__init__(
             evm_inquirer=evm_inquirer,
@@ -706,7 +706,7 @@ class WooFiStakingDecoder(WooFiCommonDecoder):
 
         return DEFAULT_EVM_DECODING_OUTPUT
 
-    def _get_rewarder_address(self, pool_id: int) -> 'ChecksumEvmAddress | None':
+    def _get_rewarder_address(self, pool_id: int) -> ChecksumEvmAddress | None:
         """Get the address of the Rewarder contract associated with a given pool id.
         Stores the address in a temporary cache for future lookups in a given decoding run.
         """
@@ -1023,7 +1023,7 @@ class WooFiStakingDecoder(WooFiCommonDecoder):
 
     # -- DecoderInterface methods
 
-    def addresses_to_decoders(self) -> dict['ChecksumEvmAddress', tuple[Any, ...]]:
+    def addresses_to_decoders(self) -> dict[ChecksumEvmAddress, tuple[Any, ...]]:
         mappings = super().addresses_to_decoders()
         mappings[WOO_REWARD_MASTER_CHEF] = (self._decode_master_chef_events,)
         if self.stake_v1_address is not None:

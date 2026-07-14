@@ -1,10 +1,8 @@
 import logging
-from collections.abc import Callable
 from typing import TYPE_CHECKING, Any
 
 from rotkehlchen.assets.asset import Asset, EvmToken
 from rotkehlchen.assets.utils import token_normalized_value, token_normalized_value_decimals
-from rotkehlchen.chain.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.evm.constants import (
     DEFAULT_TOKEN_DECIMALS,
     DEPOSIT_TOPIC,
@@ -31,7 +29,6 @@ from rotkehlchen.chain.evm.decoding.structures import (
 )
 from rotkehlchen.constants.assets import A_WETH, A_WETH_ARB, A_WETH_OPT
 from rotkehlchen.constants.resolver import identifier_to_evm_address
-from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import CacheType, ChecksumEvmAddress
@@ -45,8 +42,12 @@ from .constants import (
 )
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+
+    from rotkehlchen.chain.decoding.types import CounterpartyDetails
     from rotkehlchen.chain.evm.decoding.base import BaseEvmDecoderTools
     from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
+    from rotkehlchen.fval import FVal
     from rotkehlchen.user_messages import MessagesAggregator
 
 
@@ -57,11 +58,11 @@ log = RotkehlchenLogsAdapter(logger)
 class GearboxCommonDecoder(EvmDecoderInterface, ReloadableCacheDecoderMixin):
     def __init__(
             self,
-            evm_inquirer: 'EvmNodeInquirer',
-            base_tools: 'BaseEvmDecoderTools',
-            msg_aggregator: 'MessagesAggregator',
+            evm_inquirer: EvmNodeInquirer,
+            base_tools: BaseEvmDecoderTools,
+            msg_aggregator: MessagesAggregator,
             staking_contract: ChecksumEvmAddress,
-            gear_token_identifier: 'str',
+            gear_token_identifier: str,
     ) -> None:
         super().__init__(
             evm_inquirer=evm_inquirer,

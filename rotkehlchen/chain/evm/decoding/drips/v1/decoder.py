@@ -41,9 +41,9 @@ class Dripsv1CommonDecoder(EvmDecoderInterface, CustomizableDateMixin):
 
     def __init__(
             self,
-            evm_inquirer: 'EvmNodeInquirer',
-            base_tools: 'BaseEvmDecoderTools',
-            msg_aggregator: 'MessagesAggregator',
+            evm_inquirer: EvmNodeInquirer,
+            base_tools: BaseEvmDecoderTools,
+            msg_aggregator: MessagesAggregator,
             drips_hub: ChecksumEvmAddress,
     ) -> None:
         super().__init__(

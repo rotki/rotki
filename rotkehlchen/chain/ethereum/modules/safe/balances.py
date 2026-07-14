@@ -2,8 +2,6 @@ import logging
 from collections import defaultdict
 from typing import TYPE_CHECKING, Final
 
-from eth_typing.abi import ABI
-
 from rotkehlchen.accounting.structures.balance import BalanceSheet
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.utils import token_normalized_value_decimals
@@ -12,15 +10,17 @@ from rotkehlchen.chain.evm.constants import DEFAULT_TOKEN_DECIMALS
 from rotkehlchen.chain.evm.contracts import EvmContract
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.errors.misc import RemoteError
-from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 
 from .constants import CPT_SAFE, SAFE_LOCKING, SAFE_TOKEN_ID, SAFENET_STAKING
 
 if TYPE_CHECKING:
+    from eth_typing.abi import ABI
+
     from rotkehlchen.chain.ethereum.decoding.decoder import EthereumTransactionDecoder
     from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
+    from rotkehlchen.fval import FVal
     from rotkehlchen.types import ChecksumEvmAddress
 
 logger = logging.getLogger(__name__)
@@ -38,8 +38,8 @@ SAFENET_STAKING_ABI: Final[ABI] = [
 class SafeBalances(ProtocolWithBalance):
     def __init__(
             self,
-            evm_inquirer: 'EthereumInquirer',
-            tx_decoder: 'EthereumTransactionDecoder',
+            evm_inquirer: EthereumInquirer,
+            tx_decoder: EthereumTransactionDecoder,
     ):
         super().__init__(
             evm_inquirer=evm_inquirer,
@@ -50,9 +50,9 @@ class SafeBalances(ProtocolWithBalance):
 
     def _query_locked_safe(
             self,
-            addresses: list['ChecksumEvmAddress'],
+            addresses: list[ChecksumEvmAddress],
             safe_asset: Asset,
-    ) -> list[tuple['ChecksumEvmAddress', Asset, FVal]]:
+    ) -> list[tuple[ChecksumEvmAddress, Asset, FVal]]:
         """Query the amount of SAFE locked in the safe locking contract for each address."""
         lock_contract = self.evm_inquirer.contracts.contract(SAFE_LOCKING)
         calls = [
@@ -85,9 +85,9 @@ class SafeBalances(ProtocolWithBalance):
 
     def _query_safenet_staked(
             self,
-            addresses: list['ChecksumEvmAddress'],
+            addresses: list[ChecksumEvmAddress],
             safe_asset: Asset,
-    ) -> list[tuple['ChecksumEvmAddress', Asset, FVal]]:
+    ) -> list[tuple[ChecksumEvmAddress, Asset, FVal]]:
         """Query the amount of SAFE staked in SafeNet for each address. This includes both the
         actively staked amount and any initiated-but-unclaimed withdrawals, since both are still
         held by the staking contract on behalf of the staker."""
@@ -134,7 +134,7 @@ class SafeBalances(ProtocolWithBalance):
 
         return entries
 
-    def query_balances(self) -> 'BalancesSheetType':
+    def query_balances(self) -> BalancesSheetType:
         """Query balances of locked and SafeNet-staked SAFE tokens if deposit events are found."""
         balances: BalancesSheetType = defaultdict(BalanceSheet)
         entries: list[tuple[ChecksumEvmAddress, Asset, FVal]] = []

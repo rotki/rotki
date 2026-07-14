@@ -1,4 +1,5 @@
 from collections import defaultdict
+from typing import TYPE_CHECKING
 from unittest.mock import patch
 
 import pytest
@@ -7,7 +8,6 @@ from rotkehlchen.accounting.structures.balance import Balance, BalanceSheet
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.utils import get_or_create_evm_token
 from rotkehlchen.chain.evm.types import NodeName, WeightedNode, string_to_evm_address
-from rotkehlchen.chain.hyperliquid.manager import HyperliquidManager
 from rotkehlchen.constants import DEFAULT_BALANCE_LABEL
 from rotkehlchen.constants.assets import A_HYPE, A_USDC
 from rotkehlchen.constants.misc import ONE, ZERO
@@ -15,6 +15,9 @@ from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.externalapis.hyperliquid import HyperliquidAPI
 from rotkehlchen.fval import FVal
 from rotkehlchen.types import ChainID, SupportedBlockchain
+
+if TYPE_CHECKING:
+    from rotkehlchen.chain.hyperliquid.manager import HyperliquidManager
 
 ADDR_A = string_to_evm_address('0x7fC1b7863251Ac7F83c7a4E83ccd00d129Ee844c')
 REPORTED_STHYPE_HOLDER = string_to_evm_address('0xD2D4867b8886C0cfC3DE5CcD5203EC66C6183764')

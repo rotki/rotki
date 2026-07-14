@@ -1,7 +1,6 @@
 import re
-from collections.abc import Sequence
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, Literal, NamedTuple, TypeVar, Union
+from typing import TYPE_CHECKING, Any, Literal, NamedTuple, Union
 
 from eth_utils import is_checksum_address
 
@@ -22,6 +21,8 @@ from rotkehlchen.types import (
 from rotkehlchen.utils.misc import pairwise_longest, rgetattr, timestamp_to_date
 
 if TYPE_CHECKING:
+    from collections.abc import Sequence
+
     from rotkehlchen.balances.manual import ManuallyTrackedBalance
     from rotkehlchen.chain.bitcoin.xpub import XpubData
     from rotkehlchen.db.drivers.sqlite import DBConnection, DBCursor
@@ -85,7 +86,7 @@ class DBAssetBalance:
         )
 
     @classmethod
-    def deserialize_from_db(cls, entry: tuple[str, int, str, str, str]) -> 'DBAssetBalance':
+    def deserialize_from_db(cls, entry: tuple[str, int, str, str, str]) -> DBAssetBalance:
         """Takes a timed balance from the DB and turns it into a `DBAssetBalance` object.
         May raise:
         - DeserializationError if the category from the db is invalid.
@@ -216,8 +217,8 @@ def _prepare_tag_mappings(
 
 
 def insert_tag_mappings(
-        write_cursor: 'DBCursor',
-        data: list['ManuallyTrackedBalance'] | (list[BlockchainAccountData] | list['XpubData'] | list['SingleBlockchainAccountData']),  # noqa: E501
+        write_cursor: DBCursor,
+        data: list[ManuallyTrackedBalance] | (list[BlockchainAccountData] | list[XpubData] | list[SingleBlockchainAccountData]),  # noqa: E501
         object_reference_keys: list[
             Literal['identifier', 'chain', 'address', 'xpub.xpub', 'derivation_path'],
         ],
@@ -237,8 +238,8 @@ def insert_tag_mappings(
 
 
 def replace_tag_mappings(
-        write_cursor: 'DBCursor',
-        data: list['ManuallyTrackedBalance'] | (list[BlockchainAccountData] | list['XpubData'] | list['SingleBlockchainAccountData']),  # noqa: E501
+        write_cursor: DBCursor,
+        data: list[ManuallyTrackedBalance] | (list[BlockchainAccountData] | list[XpubData] | list[SingleBlockchainAccountData]),  # noqa: E501
         object_reference_keys: list[
             Literal['identifier', 'chain', 'address', 'xpub.xpub', 'derivation_path'],
         ],
@@ -311,7 +312,7 @@ def combine_asset_balances(balances: list[SingleDBAssetBalance]) -> list[SingleD
     return new_balances
 
 
-def table_exists(cursor: 'DBCursor', name: str, schema: str | None = None) -> bool:
+def table_exists(cursor: DBCursor, name: str, schema: str | None = None) -> bool:
     exists: bool = cursor.execute(
         "SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name=?", (name,),
     ).fetchone()[0] == 1
@@ -382,7 +383,7 @@ def protect_password_sqlcipher(password: str) -> str:
 
 
 def update_table_schema(
-        write_cursor: 'DBCursor',
+        write_cursor: DBCursor,
         table_name: str,
         schema: str,
         insert_columns: str | None = None,
@@ -450,10 +451,7 @@ def update_table_schema(
     return False
 
 
-T = TypeVar('T')
-
-
-def get_query_chunks(
+def get_query_chunks[T](
         data: Sequence[T],
         chunk_size: int = SQL_VARIABLE_CHUNK_SIZE,
 ) -> list[tuple[Sequence[T], str]]:
@@ -469,7 +467,7 @@ def get_query_chunks(
 
 
 def unlock_database(
-        db_connection: 'DBConnection',
+        db_connection: DBConnection,
         password: str,
         sqlcipher_version: int,
         apply_optimizations: bool = True,

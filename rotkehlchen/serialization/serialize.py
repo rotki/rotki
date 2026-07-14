@@ -1,6 +1,5 @@
 from collections import defaultdict
-from collections.abc import Callable
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from hexbytes import HexBytes
 from packaging.version import Version
@@ -61,6 +60,9 @@ from rotkehlchen.types import (
     TokenKind,
 )
 from rotkehlchen.utils.version_check import VersionCheckResult
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
 
 
 class PreSerializedList(list):  # noqa: FURB189  # we want a genuine list subclass (not UserList) so json.dumps serializes it natively and isinstance(x, list) holds; it adds no methods, just acts as a marker type

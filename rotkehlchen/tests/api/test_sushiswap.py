@@ -6,7 +6,6 @@ import pytest
 import requests
 
 from rotkehlchen.chain.evm.types import string_to_evm_address
-from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.tests.utils.api import (
     ASYNC_TASK_WAIT_TIMEOUT,
     api_url_for,
@@ -23,13 +22,14 @@ from rotkehlchen.types import ChecksumEvmAddress, deserialize_evm_tx_hash
 
 if TYPE_CHECKING:
     from rotkehlchen.api.server import APIServer
+    from rotkehlchen.inquirer import Inquirer
 SWAP_ADDRESS = string_to_evm_address('0x63BC843b9640c4D79d6aE0105bc39F773172d121')
 
 
 @pytest.mark.parametrize('ethereum_accounts', [[SWAP_ADDRESS]])
 @pytest.mark.parametrize('start_with_valid_premium', [True])
 @pytest.mark.parametrize('ethereum_modules', [['eth2']])
-def test_get_balances_module_not_activated(rotkehlchen_api_server: 'APIServer') -> None:
+def test_get_balances_module_not_activated(rotkehlchen_api_server: APIServer) -> None:
     response = requests.get(
         api_url_for(rotkehlchen_api_server, 'evmmodulebalancesresource', module='sushiswap'),
     )
@@ -47,7 +47,7 @@ def test_get_balances_module_not_activated(rotkehlchen_api_server: 'APIServer') 
 @pytest.mark.parametrize('ethereum_manager_connect_at_start', [(INFURA_ETH_NODE,)])
 @pytest.mark.parametrize('should_mock_current_price_queries', [False])
 def test_get_balances(
-        rotkehlchen_api_server: 'APIServer',
+        rotkehlchen_api_server: APIServer,
         inquirer: Inquirer,  # pylint: disable=unused-argument
         ethereum_accounts: list[ChecksumEvmAddress],
 ) -> None:

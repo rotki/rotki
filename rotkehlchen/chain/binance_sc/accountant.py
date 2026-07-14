@@ -12,8 +12,8 @@ class BinanceSCAccountingAggregator(EVMAccountingAggregator):
 
     def __init__(
             self,
-            node_inquirer: 'BinanceSCInquirer',
-            msg_aggregator: 'MessagesAggregator',
+            node_inquirer: BinanceSCInquirer,
+            msg_aggregator: MessagesAggregator,
     ) -> None:
         super().__init__(
             node_inquirer=node_inquirer,

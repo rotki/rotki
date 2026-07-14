@@ -46,10 +46,10 @@ class EnsCommonDecoder(EvmDecoderInterface, CustomizableDateMixin, ABC):
 
     def __init__(
             self,
-            evm_inquirer: 'EvmNodeInquirer',
-            base_tools: 'BaseEvmDecoderTools',
-            msg_aggregator: 'MessagesAggregator',
-            reverse_resolver: 'ChecksumEvmAddress',
+            evm_inquirer: EvmNodeInquirer,
+            base_tools: BaseEvmDecoderTools,
+            msg_aggregator: MessagesAggregator,
+            reverse_resolver: ChecksumEvmAddress,
             counterparty: str,
             suffix: str,
             display_name: str,

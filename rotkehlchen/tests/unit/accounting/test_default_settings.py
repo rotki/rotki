@@ -3,7 +3,6 @@ from typing import TYPE_CHECKING, Any, Literal
 import pytest
 from more_itertools import peekable
 
-from rotkehlchen.accounting.accountant import Accountant
 from rotkehlchen.accounting.cost_basis.base import (
     AssetAcquisitionEvent,
     CostBasisInfo,
@@ -32,6 +31,7 @@ from rotkehlchen.types import Location, Price, Timestamp, TimestampMS
 from rotkehlchen.utils.misc import ts_sec_to_ms
 
 if TYPE_CHECKING:
+    from rotkehlchen.accounting.accountant import Accountant
     from rotkehlchen.accounting.history_base_entries import EventsAccountant
     from rotkehlchen.accounting.mixins.event import AccountingEventMixin
     from rotkehlchen.accounting.pot import AccountingPot
@@ -101,9 +101,9 @@ def fixture_accounting_pot(
 
 
 def _gain_one_ether(
-        events_accountant: 'EventsAccountant',
-        event_type: 'HistoryEventType' = HistoryEventType.RECEIVE,
-        event_subtype: 'HistoryEventSubType' = HistoryEventSubType.NONE,
+        events_accountant: EventsAccountant,
+        event_type: HistoryEventType = HistoryEventType.RECEIVE,
+        event_subtype: HistoryEventSubType = HistoryEventSubType.NONE,
         entry_type: Literal['history_event', 'evm_event'] = 'evm_event',
 ) -> None:
     """Helper function to gain 1 ETH, so that spending events have something to spend"""
@@ -135,7 +135,7 @@ def _gain_one_ether(
     assert consumed_num == 1
 
 
-def test_accounting_no_settings(accounting_pot: 'AccountingPot'):
+def test_accounting_no_settings(accounting_pot: AccountingPot):
     """Test that if there are no settings provided, the event is not taken into account"""
     event = EvmEvent(
         tx_ref=EXAMPLE_EVM_HASH,
@@ -165,9 +165,9 @@ def test_accounting_no_settings(accounting_pot: 'AccountingPot'):
 # Check that accounting rules are applied no matter what event class is used
 @pytest.mark.parametrize('entry_type', ['history_event', 'evm_event'])
 def test_accounting_receive_settings(
-        accounting_pot: 'AccountingPot',
-        event_type: 'HistoryEventType',
-        event_subtype: 'HistoryEventSubType',
+        accounting_pot: AccountingPot,
+        event_type: HistoryEventType,
+        event_subtype: HistoryEventSubType,
         is_taxable: bool,
         entry_type: Literal['history_event', 'evm_event'],
 ):
@@ -217,9 +217,9 @@ def test_accounting_receive_settings(
 ])
 @pytest.mark.parametrize('mocked_price_queries', [MOCKED_PRICES])
 def test_accounting_spend_settings(
-        accounting_pot: 'AccountingPot',
-        event_type: 'HistoryEventType',
-        event_subtype: 'HistoryEventSubType',
+        accounting_pot: AccountingPot,
+        event_type: HistoryEventType,
+        event_subtype: HistoryEventSubType,
         notes: str,
         is_taxable: bool,
         counterparty: str | None,
@@ -298,7 +298,7 @@ def test_accounting_spend_settings(
 
 @pytest.mark.parametrize('mocked_price_queries', [MOCKED_PRICES])
 @pytest.mark.parametrize('counterparty', [None, 'nonexistent_counterparty'])
-def test_accounting_swap_settings(accounting_pot: 'AccountingPot', counterparty: str):
+def test_accounting_swap_settings(accounting_pot: AccountingPot, counterparty: str):
     """
     Test that the default accounting settings for swaps are correct.
     Also checks that if counterparty is not known we fallback to default swaps treatment.
@@ -399,7 +399,7 @@ def test_accounting_swap_settings(accounting_pot: 'AccountingPot', counterparty:
 
 
 @pytest.mark.parametrize('mocked_price_queries', [MOCKED_PRICES])
-def test_accounting_solana_swap_counterparty_fallback(accounting_pot: 'AccountingPot') -> None:
+def test_accounting_solana_swap_counterparty_fallback(accounting_pot: AccountingPot) -> None:
     """Test that solana swap events with a counterparty that has no specific accounting
     rule fall back to the default swap treatment instead of being silently skipped.
 
@@ -441,7 +441,7 @@ def test_accounting_solana_swap_counterparty_fallback(accounting_pot: 'Accountin
 
 
 @pytest.mark.parametrize('mocked_price_queries', [MOCKED_PRICES])
-def test_accounting_multi_trade_skip_warns_user(accounting_pot: 'AccountingPot') -> None:
+def test_accounting_multi_trade_skip_warns_user(accounting_pot: AccountingPot) -> None:
     """Test that multi trade events, which have no accounting rule yet, emit a single
     user-visible warning per swap group instead of being dropped from the report silently.
     """
@@ -520,7 +520,7 @@ MOCKED_PRICES_WITH_WETH = {
 
 
 def _setup_basis_transfer_rules(
-        accounting_pot: 'AccountingPot',
+        accounting_pot: AccountingPot,
         counterparty: str | None = CPT_WETH,
 ) -> None:
     """Insert basis_transfer rules for both wrap and unwrap, then re-reset the pot."""
@@ -558,7 +558,7 @@ def _setup_basis_transfer_rules(
 
 
 @pytest.mark.parametrize('mocked_price_queries', [MOCKED_PRICES_WITH_WETH])
-def test_basis_transfer_weth_wrap(accounting_pot: 'AccountingPot'):
+def test_basis_transfer_weth_wrap(accounting_pot: AccountingPot):
     """
     Test that BASIS_TRANSFER preserves cost basis across ETH → WETH wrapping.
     1. Acquire 1 ETH at 2000 EUR
@@ -635,7 +635,7 @@ def test_basis_transfer_weth_wrap(accounting_pot: 'AccountingPot'):
 
 
 @pytest.mark.parametrize('mocked_price_queries', [MOCKED_PRICES_WITH_WETH])
-def test_basis_transfer_weth_unwrap(accounting_pot: 'AccountingPot'):
+def test_basis_transfer_weth_unwrap(accounting_pot: AccountingPot):
     """
     Test that BASIS_TRANSFER preserves cost basis across WETH → ETH unwrapping.
     1. Acquire 1 WETH at 2000 EUR
@@ -722,7 +722,7 @@ def test_basis_transfer_weth_unwrap(accounting_pot: 'AccountingPot'):
 
 
 @pytest.mark.parametrize('mocked_price_queries', [MOCKED_PRICES_WITH_WETH])
-def test_basis_transfer_different_bucket(accounting_pot: 'AccountingPot'):
+def test_basis_transfer_different_bucket(accounting_pot: AccountingPot):
     """
     Test that BASIS_TRANSFER correctly moves cost basis lots between assets
     in DIFFERENT cost basis buckets: DAI → aDAI (Aave v1 deposit).
@@ -818,7 +818,7 @@ def test_basis_transfer_different_bucket(accounting_pot: 'AccountingPot'):
         'EUR': {TIMESTAMP_2_SECS: Price(ONE)},
     },
 }])
-def test_basis_transfer_missing_out_lots(accounting_pot: 'AccountingPot'):
+def test_basis_transfer_missing_out_lots(accounting_pot: AccountingPot):
     """Regression: BASIS_TRANSFER consumes the in-event.
 
     If out-asset lots are missing, the in-asset acquisition must still be recorded.
@@ -864,7 +864,7 @@ def test_basis_transfer_missing_out_lots(accounting_pot: 'AccountingPot'):
 
 
 @pytest.mark.parametrize('mocked_price_queries', [MOCKED_PRICES])
-def test_basis_transfer_missing_pair(accounting_pot: 'AccountingPot'):
+def test_basis_transfer_missing_pair(accounting_pot: AccountingPot):
     """Test that basis_transfer gracefully handles a missing paired event."""
     _setup_basis_transfer_rules(accounting_pot)
 
@@ -890,7 +890,7 @@ def test_basis_transfer_missing_pair(accounting_pot: 'AccountingPot'):
 
 
 @pytest.mark.parametrize('mocked_price_queries', [MOCKED_PRICES_WITH_WETH])
-def test_basis_transfer_vs_default_rules(accounting_pot: 'AccountingPot'):
+def test_basis_transfer_vs_default_rules(accounting_pot: AccountingPot):
     """
     Demonstrate that WITHOUT basis_transfer, the default rules reset cost basis
     on wrapping. The deposit out-event calls spend_asset() which consumes the

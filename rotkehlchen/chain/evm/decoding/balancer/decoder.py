@@ -1,5 +1,4 @@
 from abc import ABC
-from collections.abc import Callable
 from typing import TYPE_CHECKING, Literal
 
 from rotkehlchen.assets.utils import asset_normalized_value
@@ -22,23 +21,25 @@ from rotkehlchen.chain.evm.decoding.structures import (
     DecoderContext,
     EvmDecodingOutput,
 )
-from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
-from rotkehlchen.types import ChainID, ChecksumEvmAddress, EvmTransaction
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+
     from rotkehlchen.chain.evm.decoding.base import BaseEvmDecoderTools
     from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
+    from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
     from rotkehlchen.history.events.structures.evm_event import EvmEvent
+    from rotkehlchen.types import ChainID, ChecksumEvmAddress, EvmTransaction
     from rotkehlchen.user_messages import MessagesAggregator
 
 
 class BalancerCommonDecoder(EvmDecoderInterface, ReloadablePoolsAndGaugesDecoderMixin, ABC):
     def __init__(
             self,
-            evm_inquirer: 'EvmNodeInquirer',
-            base_tools: 'BaseEvmDecoderTools',
-            msg_aggregator: 'MessagesAggregator',
+            evm_inquirer: EvmNodeInquirer,
+            base_tools: BaseEvmDecoderTools,
+            msg_aggregator: MessagesAggregator,
             counterparty: Literal['balancer-v1', 'balancer-v2', 'balancer-v3'],
             read_fn: Callable[[ChainID], tuple[set[ChecksumEvmAddress], set[ChecksumEvmAddress]]],
     ) -> None:
@@ -130,9 +131,9 @@ class BalancerCommonDecoder(EvmDecoderInterface, ReloadablePoolsAndGaugesDecoder
     def _check_deposits_withdrawals(
             self,
             transaction: EvmTransaction,  # pylint: disable=unused-argument
-            decoded_events: list['EvmEvent'],
+            decoded_events: list[EvmEvent],
             all_logs: list[EvmTxReceiptLog],  # pylint: disable=unused-argument
-    ) -> list['EvmEvent']:
+    ) -> list[EvmEvent]:
         """Order Balancer pool events for accurate accounting.
 
         OUT events precede IN events:
@@ -224,9 +225,9 @@ class BalancerCommonDecoder(EvmDecoderInterface, ReloadablePoolsAndGaugesDecoder
 
     def _finalize_swap_events(
             self,
-            decoded_events: list['EvmEvent'],
-            spend_event: 'EvmEvent',
-            receive_event: 'EvmEvent',
+            decoded_events: list[EvmEvent],
+            spend_event: EvmEvent,
+            receive_event: EvmEvent,
     ) -> None:
         spend_event.event_type, receive_event.event_type = (
             HistoryEventType.TRADE, HistoryEventType.TRADE,

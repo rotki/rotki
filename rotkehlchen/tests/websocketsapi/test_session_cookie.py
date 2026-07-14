@@ -19,7 +19,7 @@ class _FakeSessionStore(NamedTuple):
 class _FakeRestAPI(NamedTuple):
     """Minimal stand-in exposing the attributes the gate reads live."""
     session_key: bytes | None
-    session_store: '_FakeSessionStore | None'
+    session_store: _FakeSessionStore | None
 
 
 def _scope(cookie: str | None = None) -> dict:

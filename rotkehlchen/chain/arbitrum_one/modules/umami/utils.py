@@ -20,9 +20,9 @@ log = RotkehlchenLogsAdapter(logger)
 
 
 def get_umami_vault_token_price(
-        inquirer: 'Inquirer',
-        vault_token: 'EvmToken',
-        evm_inquirer: 'EvmNodeInquirer',
+        inquirer: Inquirer,
+        vault_token: EvmToken,
+        evm_inquirer: EvmNodeInquirer,
 ) -> Price:
     """Gets token price for Umami vault.
     Multiplies vault's price per share by the underlying token's USD price.

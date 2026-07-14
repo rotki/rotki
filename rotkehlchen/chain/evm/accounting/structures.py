@@ -15,9 +15,9 @@ class EventsAccountantCallback(Protocol):
     """Type of a Submodule's accountant callback"""
     def __call__(
             self,
-            pot: 'AccountingPot',
-            event: 'EvmEvent',
-            other_events: "peekable['EvmEvent']",
+            pot: AccountingPot,
+            event: EvmEvent,
+            other_events: peekable[EvmEvent],
     ) -> int:
         """
         Callback to be called by the accounting module.
@@ -56,7 +56,7 @@ class BaseEventSettings:
         self.accounting_treatment = accounting_treatment
 
     @classmethod
-    def deserialize_from_db(cls, entry: ACCOUNTING_SETTING_DB_TUPLE) -> 'BaseEventSettings':
+    def deserialize_from_db(cls, entry: ACCOUNTING_SETTING_DB_TUPLE) -> BaseEventSettings:
         return cls(
             taxable=bool(entry[0]),
             count_entire_amount_spend=bool(entry[1]),
@@ -81,7 +81,7 @@ class BaseEventSettings:
         }
 
     @classmethod
-    def deserialize(cls, entry: dict[str, Any]) -> 'BaseEventSettings':
+    def deserialize(cls, entry: dict[str, Any]) -> BaseEventSettings:
         """Deserialize the accounting settings from a serialized dict.
 
         - May raise a DeserializationError if any required fields are missing

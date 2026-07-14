@@ -1,5 +1,5 @@
 import json
-from collections.abc import Callable
+from typing import TYPE_CHECKING
 from unittest.mock import patch
 
 import pytest
@@ -20,6 +20,9 @@ from rotkehlchen.globaldb.utils import GLOBAL_DB_VERSION
 from rotkehlchen.tests.api.test_assets_updates import mock_asset_updates
 from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.types import ChainID, Timestamp, TokenKind
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
 
 VALID_ASSET_MAPPINGS = """INSERT INTO multiasset_mappings(collection_id, asset) VALUES (5, "ETH");
     *

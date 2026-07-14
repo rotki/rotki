@@ -37,8 +37,8 @@ class ThegraphBalances(ProtocolWithBalance):
 
     def __init__(
             self,
-            evm_inquirer: 'ArbitrumOneInquirer',
-            tx_decoder: 'ArbitrumOneTransactionDecoder',
+            evm_inquirer: ArbitrumOneInquirer,
+            tx_decoder: ArbitrumOneTransactionDecoder,
     ) -> None:
         super().__init__(
             evm_inquirer=evm_inquirer,
@@ -47,7 +47,7 @@ class ThegraphBalances(ProtocolWithBalance):
             deposit_event_types={(HistoryEventType.STAKING, HistoryEventSubType.DEPOSIT_ASSET)},
         )
 
-    def _get_delegations(self) -> list[tuple['ChecksumEvmAddress', 'ChecksumEvmAddress', 'ChecksumEvmAddress', 'ChecksumEvmAddress']]:  # noqa: E501
+    def _get_delegations(self) -> list[tuple[ChecksumEvmAddress, ChecksumEvmAddress, ChecksumEvmAddress, ChecksumEvmAddress]]:  # noqa: E501
         """Get staking events and process them to generate a unique set of delegations.
 
         Pre-Horizon upgrade events don't include the verifier in event logs, so we use the

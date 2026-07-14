@@ -26,8 +26,8 @@ class MorphoBlueBalances(ProtocolWithBalance):
 
     def __init__(
             self,
-            evm_inquirer: 'BaseInquirer',
-            tx_decoder: 'BaseTransactionDecoder',
+            evm_inquirer: BaseInquirer,
+            tx_decoder: BaseTransactionDecoder,
     ) -> None:
         super().__init__(
             evm_inquirer=evm_inquirer,
@@ -38,7 +38,7 @@ class MorphoBlueBalances(ProtocolWithBalance):
             },
         )
 
-    def query_balances(self) -> 'BalancesSheetType':
+    def query_balances(self) -> BalancesSheetType:
         balances: BalancesSheetType = defaultdict(BalanceSheet)
         address_to_events = self.addresses_with_activity(event_types={
             (HistoryEventType.DEPOSIT, HistoryEventSubType.DEPOSIT_TO_PROTOCOL),

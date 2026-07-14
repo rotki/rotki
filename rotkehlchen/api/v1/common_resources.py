@@ -8,6 +8,6 @@ if TYPE_CHECKING:
 
 class BaseMethodView(MethodView):
 
-    def __init__(self, rest_api_object: 'RestAPI', **kwargs: Any) -> None:
+    def __init__(self, rest_api_object: RestAPI, **kwargs: Any) -> None:
         super().__init__(**kwargs)
         self.rest_api = rest_api_object

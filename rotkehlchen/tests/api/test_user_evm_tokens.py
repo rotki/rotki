@@ -55,7 +55,7 @@ def assert_token_entry_exists_in_result(
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
 @pytest.mark.parametrize('generatable_user_ethereum_tokens', [True])
 @pytest.mark.parametrize('user_ethereum_tokens', [create_initial_globaldb_test_tokens])
-def test_query_user_tokens(rotkehlchen_api_server: 'APIServer') -> None:
+def test_query_user_tokens(rotkehlchen_api_server: APIServer) -> None:
     """Test that using the query user ethereum tokens endpoint works"""
     expected_tokens = create_initial_expected_globaldb_test_tokens()
     # Test querying by address
@@ -107,7 +107,7 @@ def test_query_user_tokens(rotkehlchen_api_server: 'APIServer') -> None:
 }])
 @pytest.mark.parametrize('cryptocompare_cache_coinlist', [{'ICP': {}}])
 def test_adding_user_tokens(
-        rotkehlchen_api_server: 'APIServer',
+        rotkehlchen_api_server: APIServer,
         cache_coinlist: list[dict[str, dict]],
 ) -> None:  # pylint: disable=unused-argument
     """Test that the endpoint for adding a user ethereum token works"""
@@ -318,7 +318,7 @@ def test_adding_user_tokens(
 }])
 @pytest.mark.parametrize('cryptocompare_cache_coinlist', [{'ICP': {}}])
 def test_editing_user_tokens(
-        rotkehlchen_api_server: 'APIServer',
+        rotkehlchen_api_server: APIServer,
         cache_coinlist: list[dict[str, dict]],
 ) -> None:  # pylint: disable=unused-argument
     """Test that the endpoint for editing a user ethereum token works"""
@@ -421,7 +421,7 @@ def test_editing_user_tokens(
 @pytest.mark.parametrize('start_with_logged_in_user', [True])
 @pytest.mark.parametrize('generatable_user_ethereum_tokens', [True])
 @pytest.mark.parametrize('user_ethereum_tokens', [create_initial_globaldb_test_tokens])
-def test_deleting_user_tokens(rotkehlchen_api_server: 'APIServer') -> None:
+def test_deleting_user_tokens(rotkehlchen_api_server: APIServer) -> None:
     """Test that the endpoint for deleting a user ethereum token works"""
     initial_tokens = create_initial_globaldb_test_tokens()
     initial_expected_tokens: list[EvmToken] = create_initial_expected_globaldb_test_tokens()
@@ -564,7 +564,7 @@ def test_deleting_user_tokens(rotkehlchen_api_server: 'APIServer') -> None:
 @pytest.mark.parametrize('start_with_logged_in_user', [True])
 @pytest.mark.parametrize('generatable_user_ethereum_tokens', [True])
 @pytest.mark.parametrize('user_ethereum_tokens', [create_initial_globaldb_test_tokens])
-def test_user_tokens_delete_guard(rotkehlchen_api_server: 'APIServer') -> None:
+def test_user_tokens_delete_guard(rotkehlchen_api_server: APIServer) -> None:
     """Test that deleting an owned ethereum token is guarded against"""
     expected_tokens: list[EvmToken] = create_initial_expected_globaldb_test_tokens()
     user_db = rotkehlchen_api_server.rest_api.rotkehlchen.data.db
@@ -596,7 +596,7 @@ def test_user_tokens_delete_guard(rotkehlchen_api_server: 'APIServer') -> None:
     )
 
 
-def test_add_non_ethereum_token(rotkehlchen_api_server: 'APIServer') -> None:
+def test_add_non_ethereum_token(rotkehlchen_api_server: APIServer) -> None:
     response = requests.put(
         api_url_for(
             rotkehlchen_api_server,
@@ -632,7 +632,7 @@ def test_add_non_ethereum_token(rotkehlchen_api_server: 'APIServer') -> None:
     'blackpool-token': {'symbol': 'BPT', 'name': 'Blackpool token'},
 }])
 def test_adding_evm_token_with_underlying_token(
-        rotkehlchen_api_server: 'APIServer',
+        rotkehlchen_api_server: APIServer,
         cache_coinlist: list[dict[str, dict]],
 ) -> None:  # pylint: disable=unused-argument
     """

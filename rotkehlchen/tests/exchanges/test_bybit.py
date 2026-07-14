@@ -1,8 +1,7 @@
 import json
 import os
 import warnings as test_warnings
-from collections.abc import Callable
-from typing import Any
+from typing import TYPE_CHECKING, Any
 from unittest.mock import patch
 
 import pytest
@@ -26,6 +25,9 @@ from rotkehlchen.history.events.structures.types import HistoryEventSubType
 from rotkehlchen.tests.utils.constants import A_SOL, A_XRP
 from rotkehlchen.types import Location, Timestamp, TimestampMS
 from rotkehlchen.utils.misc import ts_now
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
 
 
 def bybit_account_mock(

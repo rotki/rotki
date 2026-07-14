@@ -20,7 +20,7 @@ if TYPE_CHECKING:
 @pytest.mark.vcr
 @pytest.mark.parametrize('solana_accounts', [['54r6W445JsjDf5UGzmVtcczsPpgg3B3J16USuNcu1EY']])
 def test_spl_token_transfer(
-        solana_inquirer: 'SolanaInquirer',
+        solana_inquirer: SolanaInquirer,
         solana_accounts: list[SolanaAddress],
 ) -> None:
     events = get_decoded_events_of_solana_tx(
@@ -60,7 +60,7 @@ def test_spl_token_transfer(
 @pytest.mark.vcr
 @pytest.mark.parametrize('solana_accounts', [['5Sp1e78jLb9b4B8FMFEGobzQCc9kW23tydFNaeGsNJSt']])
 def test_token2022_transfer(
-        solana_inquirer: 'SolanaInquirer',
+        solana_inquirer: SolanaInquirer,
         solana_accounts: list[SolanaAddress],
 ) -> None:
     events = get_decoded_events_of_solana_tx(
@@ -84,7 +84,7 @@ def test_token2022_transfer(
 @pytest.mark.vcr
 @pytest.mark.parametrize('solana_accounts', [['9rJ4QzDLYm5VARnuWcMFMzB4Nr1hKprGQWb8LTfsU6Q2']])
 def test_nft_transfer(
-        solana_inquirer: 'SolanaInquirer',
+        solana_inquirer: SolanaInquirer,
         solana_accounts: list[SolanaAddress],
 ) -> None:
     events = get_decoded_events_of_solana_tx(

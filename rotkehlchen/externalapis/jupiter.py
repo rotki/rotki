@@ -27,22 +27,22 @@ JUPITER_PORTFOLIO_POSITIONS_ENDPOINT: Final = '/portfolio/v1/positions'
 
 
 class JupiterPositionReserve(NamedTuple):
-    token: 'SolanaAddress'
+    token: SolanaAddress
     collateral_amount: FVal
     debt_amount: FVal
 
 
 class JupiterPosition(NamedTuple):
-    owner: 'SolanaAddress'
+    owner: SolanaAddress
     reserves: list[JupiterPositionReserve]
 
 
 class Jupiter(ExternalServiceWithRecommendedApiKey):
 
-    def __init__(self, database: 'DBHandler') -> None:
+    def __init__(self, database: DBHandler) -> None:
         super().__init__(database=database, service_name=ExternalService.JUPITER)
 
-    def get_positions(self, owner: 'SolanaAddress') -> list[JupiterPosition]:
+    def get_positions(self, owner: SolanaAddress) -> list[JupiterPosition]:
         """Query Jupiter Portfolio API for Jupiter Lend positions of the given owner.
         May raise RemoteError if there was a problem with the remote query.
         """
@@ -79,7 +79,7 @@ class Jupiter(ExternalServiceWithRecommendedApiKey):
         return self._deserialize_positions(raw_data=raw_data)
 
     @staticmethod
-    def _deserialize_token_amount(raw_asset: dict[str, Any]) -> tuple['SolanaAddress', FVal]:
+    def _deserialize_token_amount(raw_asset: dict[str, Any]) -> tuple[SolanaAddress, FVal]:
         raw_asset_data = raw_asset['data']
         return (
             deserialize_solana_address(raw_asset_data['address']),

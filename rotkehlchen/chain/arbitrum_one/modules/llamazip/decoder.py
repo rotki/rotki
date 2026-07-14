@@ -18,9 +18,9 @@ class LlamazipDecoder(LlamazipCommonDecoder):
 
     def __init__(
             self,
-            arbitrum_inquirer: 'ArbitrumOneInquirer',
-            base_tools: 'BaseEvmDecoderTools',
-            msg_aggregator: 'MessagesAggregator',
+            arbitrum_inquirer: ArbitrumOneInquirer,
+            base_tools: BaseEvmDecoderTools,
+            msg_aggregator: MessagesAggregator,
     ) -> None:
         super().__init__(
             evm_inquirer=arbitrum_inquirer,

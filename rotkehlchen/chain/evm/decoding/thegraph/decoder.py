@@ -1,9 +1,7 @@
 import logging
 from typing import TYPE_CHECKING, Any
 
-from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.utils import token_normalized_value
-from rotkehlchen.chain.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.decoding.utils import maybe_reshuffle_events
 from rotkehlchen.chain.evm.decoding.interfaces import EvmDecoderInterface
 from rotkehlchen.chain.evm.decoding.structures import (
@@ -36,6 +34,8 @@ from .constants import (
 )
 
 if TYPE_CHECKING:
+    from rotkehlchen.assets.asset import Asset
+    from rotkehlchen.chain.decoding.types import CounterpartyDetails
     from rotkehlchen.chain.evm.decoding.base import BaseEvmDecoderTools
     from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
     from rotkehlchen.user_messages import MessagesAggregator
@@ -47,9 +47,9 @@ log = RotkehlchenLogsAdapter(logger)
 class ThegraphCommonDecoder(EvmDecoderInterface, CustomizableDateMixin):
     def __init__(
             self,
-            evm_inquirer: 'EvmNodeInquirer',
-            base_tools: 'BaseEvmDecoderTools',
-            msg_aggregator: 'MessagesAggregator',
+            evm_inquirer: EvmNodeInquirer,
+            base_tools: BaseEvmDecoderTools,
+            msg_aggregator: MessagesAggregator,
             native_asset: Asset,
             staking_contract: ChecksumEvmAddress,
     ) -> None:

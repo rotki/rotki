@@ -1,8 +1,5 @@
 import logging
-from collections.abc import Callable
 from typing import TYPE_CHECKING, Final
-
-from web3.types import BlockIdentifier
 
 from rotkehlchen.api.websockets.typedefs import ProgressUpdateSubType, WSMessageType
 from rotkehlchen.assets.asset import Asset, EvmToken
@@ -27,7 +24,10 @@ from rotkehlchen.types import (
 from rotkehlchen.utils.misc import ts_now
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+
     from eth_typing import ABI
+    from web3.types import BlockIdentifier
 
     from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
     from rotkehlchen.chain.evm.protocol_constants import LP_TOKEN_AS_POOL_CONTRACT_ABIS
@@ -39,7 +39,7 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
-LP_TOKEN_AS_POOL_PROTOCOL_TO_ABI_NAME: Final[dict[str, 'LP_TOKEN_AS_POOL_CONTRACT_ABIS']] = {
+LP_TOKEN_AS_POOL_PROTOCOL_TO_ABI_NAME: Final[dict[str, LP_TOKEN_AS_POOL_CONTRACT_ABIS]] = {
     CPT_VELODROME: 'VELO_V2_LP',
     CPT_AERODROME: 'VELO_V2_LP',
     CPT_UNISWAP_V2: 'UNISWAP_V2_LP',
@@ -51,7 +51,7 @@ FVAL_ERROR_LOCATION: Final = 'uniswap-like pool price query'
 
 
 def lp_price_from_uniswaplike_pool_contract(
-        evm_inquirer: 'EvmNodeInquirer',
+        evm_inquirer: EvmNodeInquirer,
         token: EvmToken,
         price_func: Callable[[Asset], Price],
         block_identifier: BlockIdentifier,
@@ -200,7 +200,7 @@ def lp_price_from_uniswaplike_pool_contract(
 
 
 def maybe_notify_cache_query_status(
-        msg_aggregator: 'MessagesAggregator',
+        msg_aggregator: MessagesAggregator,
         last_notified_ts: Timestamp,
         protocol: str,
         chain: ChainID,
@@ -229,7 +229,7 @@ def maybe_notify_cache_query_status(
 
 
 def maybe_notify_new_pools_status(
-        msg_aggregator: 'MessagesAggregator',
+        msg_aggregator: MessagesAggregator,
         last_notified_ts: Timestamp,
         protocol: str,
         chain: ChainID,
@@ -248,9 +248,9 @@ def maybe_notify_new_pools_status(
 
 
 def query_contract_response_as_dict(
-        evm_inquirer: 'EvmNodeInquirer',
-        contract_address: 'ChecksumEvmAddress',
-        abi: 'ABI',
+        evm_inquirer: EvmNodeInquirer,
+        contract_address: ChecksumEvmAddress,
+        abi: ABI,
         method: str,
         arguments: list | None = None,
 ) -> dict | None:

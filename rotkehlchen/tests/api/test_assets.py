@@ -1,6 +1,6 @@
 from contextlib import ExitStack
 from http import HTTPStatus
-from typing import Any
+from typing import TYPE_CHECKING, Any
 from uuid import uuid4
 
 import pytest
@@ -8,7 +8,6 @@ import requests
 from polyleven import levenshtein
 
 from rotkehlchen.accounting.structures.balance import Balance, BalanceType
-from rotkehlchen.api.server import APIServer
 from rotkehlchen.assets.asset import Asset, CryptoAsset, CustomAsset, EvmToken
 from rotkehlchen.assets.resolver import AssetResolver
 from rotkehlchen.assets.types import AssetType
@@ -54,6 +53,9 @@ from rotkehlchen.types import (
     TimestampMS,
     TokenKind,
 )
+
+if TYPE_CHECKING:
+    from rotkehlchen.api.server import APIServer
 
 
 def assert_substring_in_search_result(
@@ -162,7 +164,7 @@ def test_query_owned_assets(
 
 
 @pytest.mark.parametrize('new_db_unlock_actions', [None])
-def test_ignored_assets_modification(rotkehlchen_api_server: 'APIServer') -> None:
+def test_ignored_assets_modification(rotkehlchen_api_server: APIServer) -> None:
     """Test that using the ignored assets endpoint to modify the ignored assets list works fine"""
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     clean_ignored_assets(rotki.data.db)
@@ -219,7 +221,7 @@ def test_ignored_assets_modification(rotkehlchen_api_server: 'APIServer') -> Non
 @pytest.mark.parametrize('new_db_unlock_actions', [None])
 @pytest.mark.parametrize('method', ['put', 'delete'])
 @pytest.mark.parametrize('data_migration_version', [0])
-def test_ignored_assets_endpoint_errors(rotkehlchen_api_server: 'APIServer', method: str) -> None:
+def test_ignored_assets_endpoint_errors(rotkehlchen_api_server: APIServer, method: str) -> None:
     """Test errors are handled properly at the ignored assets endpoint"""
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
 
@@ -307,7 +309,7 @@ def test_ignored_assets_endpoint_errors(rotkehlchen_api_server: 'APIServer', met
         assert rotki.data.db.get_ignored_asset_ids(cursor) >= set(ignored_assets)
 
 
-def test_get_all_assets(rotkehlchen_api_server: 'APIServer') -> None:
+def test_get_all_assets(rotkehlchen_api_server: APIServer) -> None:
     """Test that fetching all assets returns a paginated result."""
     response = requests.post(
         api_url_for(
@@ -596,7 +598,7 @@ def test_get_all_assets(rotkehlchen_api_server: 'APIServer') -> None:
     )
 
 
-def test_get_all_assets_levenshtein_ranking(rotkehlchen_api_server: 'APIServer') -> None:
+def test_get_all_assets_levenshtein_ranking(rotkehlchen_api_server: APIServer) -> None:
     """Test that the paginated assets endpoint ranks name/symbol searches by levenshtein
     closeness (like the asset search dropdown) instead of an alphabetical LIKE match, while
     keeping pagination correct. Regression test for https://github.com/rotki/rotki/issues/9316
@@ -671,7 +673,7 @@ def test_get_all_assets_levenshtein_ranking(rotkehlchen_api_server: 'APIServer')
     assert distances == sorted(distances)
 
 
-def test_get_assets_mappings(rotkehlchen_api_server: 'APIServer') -> None:
+def test_get_assets_mappings(rotkehlchen_api_server: APIServer) -> None:
     """Test that providing a list of asset identifiers, the appropriate assets mappings are returned."""  # noqa: E501
     queried_assets = ('BTC', 'TRY', 'EUR', A_DAI.identifier, A_OP.identifier)
     with GlobalDBHandler().conn.write_ctx() as write_cursor:
@@ -752,7 +754,7 @@ def test_get_assets_mappings(rotkehlchen_api_server: 'APIServer') -> None:
     assert all(identifier in {'BTC', 'TRY'} for identifier in assets)
 
 
-def test_search_assets(rotkehlchen_api_server: 'APIServer') -> None:
+def test_search_assets(rotkehlchen_api_server: APIServer) -> None:
     """Test that searching for assets using a keyword works."""
     response = requests.post(
         api_url_for(
@@ -958,7 +960,7 @@ def test_search_assets(rotkehlchen_api_server: 'APIServer') -> None:
     assert_error_response(response, contained_in_msg='Failed to deserialize evm chain value prettychain')  # noqa: E501
 
 
-def test_search_assets_with_levenshtein(rotkehlchen_api_server: 'APIServer') -> None:
+def test_search_assets_with_levenshtein(rotkehlchen_api_server: APIServer) -> None:
     """Test that searching for assets using a keyword works(levenshtein approach)."""
     globaldb = GlobalDBHandler()
     # search by EVM address
@@ -1095,7 +1097,7 @@ def test_search_assets_with_levenshtein(rotkehlchen_api_server: 'APIServer') -> 
     assert 'ETH' in {x['identifier'] for x in result}
 
 
-def test_search_nfts_with_levenshtein(rotkehlchen_api_server: 'APIServer') -> None:
+def test_search_nfts_with_levenshtein(rotkehlchen_api_server: APIServer) -> None:
     with rotkehlchen_api_server.rest_api.rotkehlchen.data.db.user_write() as cursor:
         cursor.execute('INSERT INTO assets VALUES (?)', ('my-nft-identifier',))
         cursor.execute(
@@ -1170,7 +1172,7 @@ def test_search_nfts_with_levenshtein(rotkehlchen_api_server: 'APIServer') -> No
         assert current_levenshtein_distance >= previous_levenshtein_distance
 
 
-def test_native_tokens_in_asset_search(rotkehlchen_api_server: 'APIServer') -> None:
+def test_native_tokens_in_asset_search(rotkehlchen_api_server: APIServer) -> None:
     """Test that native tokens are also included when searching for evm/solana tokens and
     that the native token is prioritized (appears at the beginning of the results).
     """
@@ -1201,7 +1203,7 @@ def test_native_tokens_in_asset_search(rotkehlchen_api_server: 'APIServer') -> N
     assert_asset_at_top_position('BTC', max_position_index=1, result=result)
 
 
-def test_fiat_assets_prioritized_in_search(rotkehlchen_api_server: 'APIServer') -> None:
+def test_fiat_assets_prioritized_in_search(rotkehlchen_api_server: APIServer) -> None:
     # When searching for USD, the USD fiat currency should appear first
     result = assert_proper_sync_response_with_result(requests.post(
         api_url_for(rotkehlchen_api_server, 'assetssearchlevenshteinresource'),
@@ -1233,7 +1235,7 @@ def test_fiat_assets_prioritized_in_search(rotkehlchen_api_server: 'APIServer') 
     assert max(fiat_positions) < min(native_positions)
 
 
-def test_only_ignored_assets(rotkehlchen_api_server: 'APIServer') -> None:
+def test_only_ignored_assets(rotkehlchen_api_server: APIServer) -> None:
     """Test it's possible to ask to only see the ignored assets"""
     clean_ignored_assets(rotkehlchen_api_server.rest_api.rotkehlchen.data.db)
     ignored_assets = [A_GNO.identifier, A_RDN.identifier]
@@ -1435,7 +1437,7 @@ def test_setting_tokens_as_spam(rotkehlchen_api_server: APIServer) -> None:
     assert A_WSOL.resolve_to_solana_token().protocol is None
 
 
-def test_edit_tokens_nullable(rotkehlchen_api_server: 'APIServer') -> None:
+def test_edit_tokens_nullable(rotkehlchen_api_server: APIServer) -> None:
     """Check that evm tokens can be edited with symbol and decimal being None"""
     token = EvmToken.initialize(
         address=make_evm_address(),
@@ -1466,7 +1468,7 @@ def test_edit_tokens_nullable(rotkehlchen_api_server: 'APIServer') -> None:
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
-def test_add_solana_token(rotkehlchen_api_server: 'APIServer') -> None:
+def test_add_solana_token(rotkehlchen_api_server: APIServer) -> None:
     token_identifier = solana_address_to_identifier(
         address=(token_address := SolanaAddress('BENGEso6uSrcCYyRsanYgmDwLi34QSpihU2FX2xvpump')),
         token_type=TokenKind.SPL_TOKEN,
@@ -1526,7 +1528,7 @@ def test_add_solana_token(rotkehlchen_api_server: 'APIServer') -> None:
 @pytest.mark.parametrize('coingecko_cache_coinlist', [{'some-token': {}}])
 @pytest.mark.parametrize('cryptocompare_cache_coinlist', [{'WIF': {}}])
 def test_edit_solana_token(
-        rotkehlchen_api_server: 'APIServer',
+        rotkehlchen_api_server: APIServer,
         cache_coinlist: list[dict[str, dict]],
 ) -> None:
     """Test that editing a solana token via the api works correctly.

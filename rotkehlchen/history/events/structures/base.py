@@ -2,20 +2,17 @@ import json
 import logging
 from abc import ABC, abstractmethod
 from enum import auto
-from typing import TYPE_CHECKING, Any, Generic, TypedDict, TypeVar
+from typing import TYPE_CHECKING, Any, TypedDict, TypeVar
 
 from rotkehlchen.accounting.constants import DEFAULT, EVENT_CATEGORY_MAPPINGS, EXCHANGE
 from rotkehlchen.accounting.mixins.event import AccountingEventMixin, AccountingEventType
-from rotkehlchen.accounting.types import EventAccountingRuleStatus
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.chain.bitcoin.bch.constants import BCH_GROUP_IDENTIFIER_PREFIX
 from rotkehlchen.chain.bitcoin.btc.constants import BTC_GROUP_IDENTIFIER_PREFIX
 from rotkehlchen.chain.ethereum.constants import SHAPPELA_TIMESTAMP
 from rotkehlchen.constants.assets import A_ETH2
-from rotkehlchen.db.constants import HistoryMappingState
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.exchanges.constants import ALL_SUPPORTED_EXCHANGES
-from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.types import (
     EventDirection,
     HistoryEventSubType,
@@ -35,7 +32,10 @@ if TYPE_CHECKING:
     from more_itertools import peekable
 
     from rotkehlchen.accounting.pot import AccountingPot
+    from rotkehlchen.accounting.types import EventAccountingRuleStatus
+    from rotkehlchen.db.constants import HistoryMappingState
     from rotkehlchen.db.settings import DBSettings
+    from rotkehlchen.fval import FVal
     from rotkehlchen.history.events.structures.asset_movement import AssetMovementExtraData
 
 
@@ -157,7 +157,9 @@ T = TypeVar('T', bound='HistoryBaseEntry')
 ExtraDataType = TypeVar('ExtraDataType', bound='dict[str, Any] | AssetMovementExtraData | None')
 
 
-class HistoryBaseEntryData(TypedDict, Generic[ExtraDataType]):
+class HistoryBaseEntryData[
+        ExtraDataType: 'dict[str, Any] | AssetMovementExtraData | None',
+](TypedDict):
     group_identifier: str
     sequence_index: int
     timestamp: TimestampMS
@@ -172,7 +174,9 @@ class HistoryBaseEntryData(TypedDict, Generic[ExtraDataType]):
     extra_data: ExtraDataType | None
 
 
-class HistoryBaseEntry(AccountingEventMixin, ABC, Generic[ExtraDataType]):
+class HistoryBaseEntry[
+        ExtraDataType: 'dict[str, Any] | AssetMovementExtraData | None',
+](AccountingEventMixin, ABC):
     """
     Intended to be the base class for all types of event. All trades, deposits,
     swaps etc. are going to be made up of multiple such entries.
@@ -380,7 +384,7 @@ class HistoryBaseEntry(AccountingEventMixin, ABC, Generic[ExtraDataType]):
     def serialize_for_csv(
             self,
             fiat_value: FVal,
-            settings: 'DBSettings',
+            settings: DBSettings,
     ) -> dict[str, Any]:
         """Serialize event data for CSV export.
 
@@ -565,9 +569,9 @@ class HistoryEvent(HistoryBaseEntry):
 
     @classmethod
     def deserialize_from_db(
-            cls: type['HistoryEvent'],
+            cls: type[HistoryEvent],
             entry: tuple,
-    ) -> 'HistoryEvent':
+    ) -> HistoryEvent:
         """
         May raise:
         - DeserializationError
@@ -590,7 +594,7 @@ class HistoryEvent(HistoryBaseEntry):
         )
 
     @classmethod
-    def deserialize(cls: type['HistoryEvent'], data: dict[str, Any]) -> 'HistoryEvent':
+    def deserialize(cls: type[HistoryEvent], data: dict[str, Any]) -> HistoryEvent:
         return cls(**cls._deserialize_base_history_data(data))
 
     # -- Methods of AccountingEventMixin
@@ -601,8 +605,8 @@ class HistoryEvent(HistoryBaseEntry):
 
     def process(
             self,
-            accounting: 'AccountingPot',
-            events_iterator: "peekable['AccountingEventMixin']",  # pylint: disable=unused-argument
+            accounting: AccountingPot,
+            events_iterator: peekable[AccountingEventMixin],  # pylint: disable=unused-argument
     ) -> int:
         if self.location == Location.KRAKEN and self.event_type == HistoryEventType.STAKING:
             if self.event_subtype != HistoryEventSubType.REWARD:

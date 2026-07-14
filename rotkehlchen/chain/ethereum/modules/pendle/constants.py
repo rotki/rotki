@@ -1,9 +1,10 @@
-from typing import Final
-
-from eth_typing.abi import ABI
+from typing import TYPE_CHECKING, Final
 
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.chain.evm.types import string_to_evm_address
+
+if TYPE_CHECKING:
+    from eth_typing.abi import ABI
 
 VE_PENDLE_CONTRACT_ADDRESS: Final = string_to_evm_address('0x4f30A9D41B80ecC5B94306AB4364951AE3170210')  # noqa: E501
 STAKED_PENDLE_CONTRACT_ADDRESS: Final = string_to_evm_address('0x999999999991E178D52Cd95AFd4b00d066664144')  # noqa: E501

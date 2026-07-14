@@ -123,7 +123,7 @@ def _zipf(count: int) -> tuple[float, ...]:
     return tuple(1.0 / rank for rank in range(1, count + 1))
 
 
-def build(builder: 'ProfileBuilder') -> dict[str, Any] | None:
+def build(builder: ProfileBuilder) -> dict[str, Any] | None:
     factory = DeterministicFactory(SEED)
     evm_accounts = [factory.evm_address() for _ in range(N_EVM_ACCOUNTS)]
     builder.add_accounts(
@@ -216,12 +216,12 @@ def build(builder: 'ProfileBuilder') -> dict[str, Any] | None:
     month_indices = range(ACTIVE_MONTHS)
     month_weights = monthly_ramp_weights(ACTIVE_MONTHS)
 
-    def random_timestamp() -> 'Any':
+    def random_timestamp() -> Any:
         return factory.timestamp_ms_in_month(
             factory.weighted_choice(month_indices, month_weights),
         )
 
-    def generate() -> 'Iterator[HistoryBaseEntry]':
+    def generate() -> Iterator[HistoryBaseEntry]:
         rows = 0
         while rows < EVM_ROWS_TARGET:
             location = factory.weighted_choice(CHAINS, CHAIN_WEIGHTS)

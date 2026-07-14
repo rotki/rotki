@@ -1,4 +1,3 @@
-from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
 from rotkehlchen.data_import.importers.binance import BinanceImporter
@@ -20,11 +19,13 @@ from rotkehlchen.data_import.importers.rotki_events import RotkiGenericEventsImp
 from rotkehlchen.data_import.importers.rotki_trades import RotkiGenericTradesImporter
 from rotkehlchen.data_import.importers.shapeshift_trades import ShapeshiftTradesImporter
 from rotkehlchen.data_import.importers.uphold_transactions import UpholdTransactionsImporter
-from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.utils.mixins.enums import SerializableEnumNameMixin
 
 if TYPE_CHECKING:
+    from pathlib import Path
+
     from rotkehlchen.data_import.utils import BaseExchangeImporter
+    from rotkehlchen.db.dbhandler import DBHandler
 
 
 class DataImportSource(SerializableEnumNameMixin):

@@ -1,11 +1,12 @@
 import functools
 import os
 import sys
-from collections.abc import Callable
 from functools import wraps
 from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+
     from rotkehlchen.data_migrations.progress import MigrationProgressHandler
     from rotkehlchen.rotkehlchen import Rotkehlchen
 
@@ -88,8 +89,8 @@ def gather_caller_functions(depth: int) -> list[tuple[Callable, Callable]]:
 
 
 def perform_userdb_upgrade_steps(
-        db: 'DBHandler',
-        progress_handler: 'DBUpgradeProgressHandler',
+        db: DBHandler,
+        progress_handler: DBUpgradeProgressHandler,
         should_vacuum: bool = False,
 ) -> None:
     """Performs caller introspection and gathers the userDB upgrade steps. Sets the total,
@@ -108,8 +109,8 @@ def perform_userdb_upgrade_steps(
 
 
 def perform_globaldb_upgrade_steps(
-        connection: 'DBConnection',
-        progress_handler: 'DBUpgradeProgressHandler',
+        connection: DBConnection,
+        progress_handler: DBUpgradeProgressHandler,
         should_vacuum: bool = False,
 ) -> None:
     """Performs caller introspection and gathers the globalDB upgrade steps.
@@ -130,8 +131,8 @@ def perform_globaldb_upgrade_steps(
 
 
 def perform_userdb_migration_steps(
-        rotki: 'Rotkehlchen',
-        progress_handler: 'MigrationProgressHandler',
+        rotki: Rotkehlchen,
+        progress_handler: MigrationProgressHandler,
         should_vacuum: bool = False,
 ) -> None:
     """Performs caller introspection and gathers the userDB migration steps. Sets the total,

@@ -1,11 +1,9 @@
 import logging
-from collections.abc import Callable
 from typing import TYPE_CHECKING, Any, Final
 
 from eth_abi import decode as decode_abi
 
 from rotkehlchen.assets.utils import asset_normalized_value
-from rotkehlchen.chain.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
 from rotkehlchen.chain.evm.decoding.interfaces import EvmDecoderInterface
 from rotkehlchen.chain.evm.decoding.structures import (
@@ -25,6 +23,9 @@ from rotkehlchen.types import ChainID, ChecksumEvmAddress
 from rotkehlchen.utils.misc import bytes_to_address, from_wei
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+
+    from rotkehlchen.chain.decoding.types import CounterpartyDetails
     from rotkehlchen.chain.evm.decoding.base import BaseEvmDecoderTools
     from rotkehlchen.chain.scroll.node_inquirer import ScrollInquirer
     from rotkehlchen.user_messages import MessagesAggregator
@@ -51,9 +52,9 @@ RELAY_MESSAGE: Final = b'\x8e\xf13.'
 class ScrollBridgeDecoder(EvmDecoderInterface):
     def __init__(
             self,
-            evm_inquirer: 'ScrollInquirer',
-            base_tools: 'BaseEvmDecoderTools',
-            msg_aggregator: 'MessagesAggregator',
+            evm_inquirer: ScrollInquirer,
+            base_tools: BaseEvmDecoderTools,
+            msg_aggregator: MessagesAggregator,
     ) -> None:
         super().__init__(
             evm_inquirer=evm_inquirer,

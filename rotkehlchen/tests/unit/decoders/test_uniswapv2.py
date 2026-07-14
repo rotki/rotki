@@ -656,8 +656,8 @@ def test_claim_airdrop(ethereum_inquirer, ethereum_accounts):
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('polygon_pos_accounts', [['0x399e196846E1061C34651A1699F3Fac43a861d51']])
 def test_swap_on_polygon(
-        polygon_pos_inquirer: 'PolygonPOSInquirer',
-        polygon_pos_accounts: list['ChecksumEvmAddress'],
+        polygon_pos_inquirer: PolygonPOSInquirer,
+        polygon_pos_accounts: list[ChecksumEvmAddress],
 ) -> None:
     tx_hash = deserialize_evm_tx_hash('0x98f0826b1e937df24afcd1bafe23a7ea8bf2388bf030bdccabc1259652efda6e')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=polygon_pos_inquirer, tx_hash=tx_hash)  # noqa: E501
@@ -716,8 +716,8 @@ def test_swap_on_polygon(
 @pytest.mark.parametrize('db_settings', LEGACY_TESTS_INDEXER_ORDER)
 @pytest.mark.parametrize('optimism_accounts', [['0xB9a10fa58625D8D51D9a049d8933545CE5Ff1F7F']])
 def test_add_liquidity_on_optimism(
-        optimism_inquirer: 'OptimismInquirer',
-        optimism_accounts: list['ChecksumEvmAddress'],
+        optimism_inquirer: OptimismInquirer,
+        optimism_accounts: list[ChecksumEvmAddress],
 ) -> None:
     tx_hash = deserialize_evm_tx_hash('0x72f93bd7801c5cc9bde5ece8fcd4eba9fc264eff1b8b46f13016280152ee232c')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=optimism_inquirer, tx_hash=tx_hash)
@@ -793,8 +793,8 @@ def test_add_liquidity_on_optimism(
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('arbitrum_one_accounts', [['0xe66976075d2ae54a4c1cd32Eb5F37eb5090CA63F']])
 def test_remove_liquidity_on_arbitrum_one(
-        arbitrum_one_inquirer: 'ArbitrumOneInquirer',
-        arbitrum_one_accounts: list['ChecksumEvmAddress'],
+        arbitrum_one_inquirer: ArbitrumOneInquirer,
+        arbitrum_one_accounts: list[ChecksumEvmAddress],
 ):
     tx_hash = deserialize_evm_tx_hash('0x3f6723656fefb152fb2f4880c8ebb2aef7ada52f93605b421a9666429e472724')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=arbitrum_one_inquirer, tx_hash=tx_hash)  # noqa: E501

@@ -1,29 +1,30 @@
 import json
 import logging
-from collections.abc import Sequence
-from typing import TYPE_CHECKING, Any, Generic, Literal, NamedTuple, TypeVar, overload
+from typing import TYPE_CHECKING, Any, Literal, NamedTuple, TypeVar, overload
 
-from eth_typing.abi import ABI, Decodable
 from eth_utils.abi import get_abi_output_types
 from web3 import Web3
 from web3._utils.contracts import find_matching_event_abi
 from web3.exceptions import Web3ValueError
-from web3.types import BlockIdentifier
 
 from rotkehlchen.chain.ethereum.abi import decode_event_data_abi
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import ChainID, ChecksumEvmAddress
 
 if TYPE_CHECKING:
+    from collections.abc import Sequence
+
+    from eth_typing.abi import ABI, Decodable
     from web3.contract.base_contract import BaseContractFunction
+    from web3.types import BlockIdentifier
 
     from rotkehlchen.chain.ethereum.types import ETHEREUM_KNOWN_ABI
     from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
     from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
     from rotkehlchen.chain.evm.types import WeightedNode
     from rotkehlchen.chain.optimism.types import OPTIMISM_KNOWN_ABI
+    from rotkehlchen.types import ChainID, ChecksumEvmAddress
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -51,10 +52,10 @@ class EvmContract(NamedTuple):
 
     def call(
             self,
-            node_inquirer: 'EvmNodeInquirer',
+            node_inquirer: EvmNodeInquirer,
             method_name: str,
             arguments: list[Any] | None = None,
-            call_order: Sequence['WeightedNode'] | None = None,
+            call_order: Sequence[WeightedNode] | None = None,
             block_identifier: BlockIdentifier = 'latest',
     ) -> Any:
         return node_inquirer.call_contract(
@@ -68,12 +69,12 @@ class EvmContract(NamedTuple):
 
     def get_logs(
             self,
-            node_inquirer: 'EvmNodeInquirer',
+            node_inquirer: EvmNodeInquirer,
             event_name: str,
             argument_filters: dict[str, Any],
             from_block: int,
             to_block: int | Literal['latest'] = 'latest',
-            call_order: Sequence['WeightedNode'] | None = None,
+            call_order: Sequence[WeightedNode] | None = None,
     ) -> Any:
         return node_inquirer.get_logs(
             contract_address=self.address,
@@ -110,7 +111,7 @@ class EvmContract(NamedTuple):
 
     def decode_event(
             self,
-            tx_log: 'EvmTxReceiptLog',
+            tx_log: EvmTxReceiptLog,
             event_name: str,
             argument_names: Sequence[str] | None,
     ) -> tuple[list, list]:
@@ -128,7 +129,7 @@ class EvmContract(NamedTuple):
         )
         return decode_event_data_abi(tx_log=tx_log, event_abi=event_abi)
 
-    def decode_input_data(self, input_data: bytes) -> tuple['BaseContractFunction', dict[str, Any]]:  # noqa: E501
+    def decode_input_data(self, input_data: bytes) -> tuple[BaseContractFunction, dict[str, Any]]:
         """Decodes the input data of a contract call. Returns a tuple of the function
         selector and the decoded arguments.
 
@@ -145,7 +146,7 @@ class EvmContract(NamedTuple):
 T = TypeVar('T', bound='ChainID')
 
 
-class EvmContracts(Generic[T]):
+class EvmContracts[T: 'ChainID']:
     """A class allowing to query contract data for an Evm Chain. addresses and ABIs.
 
     Some very frequently used abis are saved as class attributes in order to avoid
@@ -277,15 +278,15 @@ class EvmContracts(Generic[T]):
         return json.loads(result[0])
 
     @overload
-    def abi(self: 'EvmContracts[Literal[ChainID.ETHEREUM]]', name: 'ETHEREUM_KNOWN_ABI') -> ABI:
+    def abi(self: EvmContracts[Literal[ChainID.ETHEREUM]], name: ETHEREUM_KNOWN_ABI) -> ABI:
         ...
 
     @overload
-    def abi(self: 'EvmContracts[Literal[ChainID.OPTIMISM]]', name: 'OPTIMISM_KNOWN_ABI') -> ABI:
+    def abi(self: EvmContracts[Literal[ChainID.OPTIMISM]], name: OPTIMISM_KNOWN_ABI) -> ABI:
         ...
 
     @overload
-    def abi(self: 'EvmContracts[Literal[ChainID.POLYGON_POS, ChainID.ARBITRUM_ONE, ChainID.BASE, ChainID.HYPERLIQUID, ChainID.GNOSIS, ChainID.SCROLL, ChainID.BINANCE_SC, ChainID.MONAD]]', name: Literal['']) -> ABI:  # noqa: E501
+    def abi(self: EvmContracts[Literal[ChainID.POLYGON_POS, ChainID.ARBITRUM_ONE, ChainID.BASE, ChainID.HYPERLIQUID, ChainID.GNOSIS, ChainID.SCROLL, ChainID.BINANCE_SC, ChainID.MONAD]], name: Literal['']) -> ABI:  # noqa: E501
         ...
 
     def abi(self, name: str) -> ABI:

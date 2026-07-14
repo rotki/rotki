@@ -57,7 +57,7 @@ ADDY = string_to_evm_address('0x48ac67dC110BC42FC2D01a68b8E52FD04A5e87AF')
 
 
 def _assert_evm_transaction_status(
-        cursor: 'DBCursor',
+        cursor: DBCursor,
         tx_hash: str,
         chain_id: ChainID,
         address: ChecksumEvmAddress,
@@ -96,7 +96,7 @@ def _assert_evm_transaction_status(
 @pytest.mark.parametrize('start_with_valid_premium', [True])
 @pytest.mark.freeze_time('2022-12-29 10:10:00 GMT')
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
-def test_query_transactions(rotkehlchen_api_server: 'APIServer') -> None:
+def test_query_transactions(rotkehlchen_api_server: APIServer) -> None:
     """Test that querying the evm transactions endpoint for an address with
     transactions in multiple chains works fine.
 
@@ -142,7 +142,7 @@ def test_query_transactions(rotkehlchen_api_server: 'APIServer') -> None:
 @pytest.mark.parametrize('ethereum_accounts', [[ADDY]])
 @pytest.mark.parametrize('solana_accounts', [['4DrfzUpTdNtfr7D1RBVw2WhPshasifw97mH3aj27Skp9']])
 @pytest.mark.parametrize('have_decoders', [[True]])
-def test_transaction_reference_addition(rotkehlchen_api_server: 'APIServer', solana_accounts: list[SolanaAddress]) -> None:  # noqa: E501
+def test_transaction_reference_addition(rotkehlchen_api_server: APIServer, solana_accounts: list[SolanaAddress]) -> None:  # noqa: E501
     """Test that adding a transaction by reference works as expected."""
     is_async_query = random.choice([True, False])
     database = rotkehlchen_api_server.rest_api.rotkehlchen.data.db
@@ -296,8 +296,8 @@ def test_transaction_reference_addition(rotkehlchen_api_server: 'APIServer', sol
 @pytest.mark.parametrize('start_with_valid_premium', [True])
 @pytest.mark.freeze_time('2022-12-30 06:06:00 GMT')
 def test_force_refetch_evm_transactions_success(
-        ethereum_accounts: list['ChecksumEvmAddress'],
-        rotkehlchen_api_server: 'APIServer',
+        ethereum_accounts: list[ChecksumEvmAddress],
+        rotkehlchen_api_server: APIServer,
 ) -> None:
     """Test that force refetching EVM transactions works successfully"""
     now = ts_now()
@@ -398,8 +398,8 @@ def test_force_refetch_evm_transactions_success(
 
 @pytest.mark.parametrize('ethereum_accounts', [[TEST_ADDR1, TEST_ADDR2]])
 def test_history_status_summary(
-        rotkehlchen_api_server: 'APIServer',
-        ethereum_accounts: list['ChecksumEvmAddress'],
+        rotkehlchen_api_server: APIServer,
+        ethereum_accounts: list[ChecksumEvmAddress],
 ) -> None:
     """Test that querying the transactions status endpoint works correctly.
     Checks both with and without txs and queried ranges in the DB.
@@ -472,8 +472,8 @@ def test_history_status_summary(
 
 @pytest.mark.parametrize('ethereum_accounts', [[TEST_ADDR1]])
 def test_force_refetch_transactions_without_chain(
-        rotkehlchen_api_server: 'APIServer',
-        ethereum_accounts: list['ChecksumEvmAddress'],
+        rotkehlchen_api_server: APIServer,
+        ethereum_accounts: list[ChecksumEvmAddress],
 ) -> None:
     """Test that force refetching transactions without specifying a chain works."""
     now = ts_now()

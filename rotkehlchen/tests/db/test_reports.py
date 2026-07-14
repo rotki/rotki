@@ -25,7 +25,7 @@ if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
 
 
-def setup_db_account_settings(database: 'DBHandler') -> tuple[DBAccountingReports, DBSettings]:
+def setup_db_account_settings(database: DBHandler) -> tuple[DBAccountingReports, DBSettings]:
     """Setup accounting reports and settings db"""
     dbreport = DBAccountingReports(database)
 
@@ -212,7 +212,7 @@ def test_report_events_sort_by_columns(database):
                 assert field_value == expected_value
 
 
-def test_get_report_data_pagination_total_count(database: 'DBHandler') -> None:
+def test_get_report_data_pagination_total_count(database: DBHandler) -> None:
     """Test that entries_total is calculated correctly with and without pagination.
 
     This is a regression test for https://github.com/rotki/rotki/issues/11108
@@ -310,7 +310,7 @@ def test_get_report_data_pagination_total_count(database: 'DBHandler') -> None:
     assert entries_total == 2
 
 
-def test_deserialize_event_with_null_notes_can_be_csv_exported(database: 'DBHandler') -> None:
+def test_deserialize_event_with_null_notes_can_be_csv_exported(database: DBHandler) -> None:
     """Regression test: historic reports may have persisted events with a null notes
     field. The CSV export ran EVM_ADDRESS_REGEX.sub on those notes, which raised
     `TypeError: expected string or bytes-like object, got 'NoneType'` for EVM-location

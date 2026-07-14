@@ -1,8 +1,10 @@
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
-from rotkehlchen.db.settings import ModifiableDBSettings
-from rotkehlchen.rotkehlchen import Rotkehlchen
 from rotkehlchen.serialization.serialize import process_result
+
+if TYPE_CHECKING:
+    from rotkehlchen.db.settings import ModifiableDBSettings
+    from rotkehlchen.rotkehlchen import Rotkehlchen
 
 
 class SettingsService:

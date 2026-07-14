@@ -1,14 +1,17 @@
 import uuid
+from typing import TYPE_CHECKING
 from unittest.mock import patch
 
 import pytest
 
-from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.tests.data_migrations.test_migrations import (
     MockRotkiForMigrationsWithExchangeManager,
 )
 from rotkehlchen.tests.utils.data_migrations import run_single_migration
 from rotkehlchen.types import Location
+
+if TYPE_CHECKING:
+    from rotkehlchen.db.dbhandler import DBHandler
 
 
 @pytest.mark.parametrize('data_migration_version', [21])

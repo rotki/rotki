@@ -16,9 +16,9 @@ class Uniswapv3Decoder(Uniswapv3CommonDecoder):
 
     def __init__(
             self,
-            polygon_pos_inquirer: 'PolygonPOSInquirer',
-            base_tools: 'BaseEvmDecoderTools',
-            msg_aggregator: 'MessagesAggregator',
+            polygon_pos_inquirer: PolygonPOSInquirer,
+            base_tools: BaseEvmDecoderTools,
+            msg_aggregator: MessagesAggregator,
     ) -> None:
         super().__init__(
             evm_inquirer=polygon_pos_inquirer,

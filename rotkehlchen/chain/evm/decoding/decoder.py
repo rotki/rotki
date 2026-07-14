@@ -3,10 +3,9 @@ import operator
 import time
 from abc import ABC, abstractmethod
 from collections import defaultdict
-from collections.abc import Callable, Sequence
 from contextlib import suppress
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, NamedTuple, Optional, Protocol
+from typing import TYPE_CHECKING, Any, NamedTuple, Protocol
 
 from eth_abi.exceptions import DecodingError
 from web3.exceptions import Web3Exception
@@ -54,7 +53,6 @@ from rotkehlchen.chain.evm.decoding.weth.constants import (
     CHAINS_WITHOUT_NATIVE_ETH,
 )
 from rotkehlchen.chain.evm.decoding.weth.decoder import WethDecoder
-from rotkehlchen.chain.evm.structures import EvmTxReceipt, EvmTxReceiptLog
 from rotkehlchen.concurrency import checkpoint
 from rotkehlchen.constants import ZERO
 from rotkehlchen.db.evmtx import DBEvmTx
@@ -103,8 +101,11 @@ from .structures import (
 )
 
 if TYPE_CHECKING:
+    from collections.abc import Callable, Sequence
+
     from rotkehlchen.assets.asset import AssetWithOracles, EvmToken
     from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer, EvmNodeInquirerWithProxies
+    from rotkehlchen.chain.evm.structures import EvmTxReceipt, EvmTxReceiptLog
     from rotkehlchen.chain.evm.transactions import EvmTransactions
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.db.drivers.sqlite import DBCursor
@@ -123,10 +124,10 @@ class EventDecoderFunction(Protocol):
 
     def __call__(
             self,
-            token: 'EvmToken | None',
+            token: EvmToken | None,
             tx_log: EvmTxReceiptLog,
             transaction: EvmTransaction,
-            decoded_events: list['EvmEvent'],
+            decoded_events: list[EvmEvent],
             action_items: list[ActionItem],
             all_logs: list[EvmTxReceiptLog],
     ) -> EvmDecodingOutput:
@@ -145,10 +146,10 @@ class EvmDecodingRules(DecodingRulesBase):
     # rules to run after the full batch of txs are decoded. Maps a counterparty
     # to a tuple of rules to apply
     post_processing_rules: dict[str, tuple[Callable]]
-    all_counterparties: set['CounterpartyDetails']
+    all_counterparties: set[CounterpartyDetails]
     addresses_to_counterparties: dict[ChecksumEvmAddress, str]
 
-    def __add__(self, other: 'EvmDecodingRules') -> 'EvmDecodingRules':
+    def __add__(self, other: EvmDecodingRules) -> EvmDecodingRules:
         if not isinstance(other, EvmDecodingRules):
             raise TypeError(
                 f'Can only add EvmDecodingRules to EvmDecodingRules. Got {type(other)}',
@@ -172,25 +173,25 @@ class EvmDecodingRules(DecodingRulesBase):
 
 class EvmTransactionContext(NamedTuple):
     transaction: EvmTransaction
-    receipt: 'EvmTxReceipt'
+    receipt: EvmTxReceipt
 
 
 class EVMTransactionDecoder(TransactionDecoder['EvmTransaction', EvmDecodingRules, 'EvmDecoderInterface', 'EVMTxHash', 'EvmEvent', EvmTransactionContext, 'BaseEvmDecoderTools', DBEvmTx, EvmEventFilterQuery, EvmTransactionsNotDecodedFilterQuery], ABC):  # noqa: E501
 
     def __init__(
             self,
-            database: 'DBHandler',
-            evm_inquirer: 'EvmNodeInquirer',
-            transactions: 'EvmTransactions',
-            value_asset: 'AssetWithOracles',
+            database: DBHandler,
+            evm_inquirer: EvmNodeInquirer,
+            transactions: EvmTransactions,
+            value_asset: AssetWithOracles,
             event_rules: list[EventDecoderFunction],
-            misc_counterparties: list['CounterpartyDetails'],
-            base_tools: 'BaseEvmDecoderTools',
-            premium: 'Premium | None' = None,
+            misc_counterparties: list[CounterpartyDetails],
+            base_tools: BaseEvmDecoderTools,
+            premium: Premium | None = None,
             dbevmtx_class: type[DBEvmTx] = DBEvmTx,
             addresses_exceptions: dict[ChecksumEvmAddress, int] | None = None,
-            beacon_chain: 'BeaconChain | None' = None,
-            monerium: 'Monerium | None' = None,
+            beacon_chain: BeaconChain | None = None,
+            monerium: Monerium | None = None,
     ):
         """
         Initialize an evm chain transaction decoder module for a particular chain.
@@ -320,7 +321,7 @@ class EVMTransactionDecoder(TransactionDecoder['EvmTransaction', EvmDecodingRule
     def _add_single_decoder(
             self,
             class_name: str,
-            decoder_class: type['EvmDecoderInterface'],
+            decoder_class: type[EvmDecoderInterface],
             rules: EvmDecodingRules,
     ) -> None:
         """Initialize a single decoder, add it to the set of decoders to use
@@ -399,7 +400,7 @@ class EVMTransactionDecoder(TransactionDecoder['EvmTransaction', EvmDecodingRule
             chain_id=self.evm_inquirer.chain_id,
         )
 
-    def _reload_single_decoder(self, cursor: 'DBCursor', decoder: 'EvmDecoderInterface') -> None:
+    def _reload_single_decoder(self, cursor: DBCursor, decoder: EvmDecoderInterface) -> None:
         """Reload data for a single decoder"""
         super()._reload_single_decoder(cursor=cursor, decoder=decoder)
         if isinstance(decoder, ReloadableDecoderMixin):
@@ -421,10 +422,10 @@ class EVMTransactionDecoder(TransactionDecoder['EvmTransaction', EvmDecodingRule
 
     def try_all_rules(
             self,
-            token: 'EvmToken | None',
+            token: EvmToken | None,
             tx_log: EvmTxReceiptLog,
             transaction: EvmTransaction,
-            decoded_events: list['EvmEvent'],
+            decoded_events: list[EvmEvent],
             action_items: list[ActionItem],
             all_logs: list[EvmTxReceiptLog],
     ) -> EvmDecodingOutput | None:
@@ -491,10 +492,10 @@ class EVMTransactionDecoder(TransactionDecoder['EvmTransaction', EvmDecodingRule
     def run_all_post_decoding_rules(
             self,
             transaction: EvmTransaction,
-            decoded_events: list['EvmEvent'],
+            decoded_events: list[EvmEvent],
             all_logs: list[EvmTxReceiptLog],
             counterparties: set[str],
-    ) -> tuple[list['EvmEvent'], bool]:
+    ) -> tuple[list[EvmEvent], bool]:
         """
         The post-decoding rules list consists of tuples (priority, rule) and must be
         sorted by priority in ascending order. The higher the priority number the later
@@ -549,8 +550,8 @@ class EVMTransactionDecoder(TransactionDecoder['EvmTransaction', EvmDecodingRule
             self,
             transaction: EvmTransaction,
             tx_receipt: EvmTxReceipt,
-            write_buffer: list[tuple[list['EvmEvent'], str, int]] | None = None,
-    ) -> tuple[list['EvmEvent'], bool, set[str] | None]:
+            write_buffer: list[tuple[list[EvmEvent], str, int]] | None = None,
+    ) -> tuple[list[EvmEvent], bool, set[str] | None]:
         """
         Decodes an evm transaction and its receipt and saves result in the DB.
         If write_buffer is given the DB write is deferred into it instead.
@@ -767,10 +768,10 @@ class EVMTransactionDecoder(TransactionDecoder['EvmTransaction', EvmDecodingRule
             self,
             ignore_cache: bool,
             tx_hashes: list[EVMTxHash],
-            events: list['EvmEvent'] | None = None,
+            events: list[EvmEvent] | None = None,
             send_ws_notifications: bool = False,
             delete_customized: bool = False,
-    ) -> tuple[bool, list['EvmEvent']]:
+    ) -> tuple[bool, list[EvmEvent]]:
         refresh_balances, new_events = super()._decode_transaction_hashes(
             ignore_cache=ignore_cache,
             tx_hashes=tx_hashes,
@@ -791,8 +792,8 @@ class EVMTransactionDecoder(TransactionDecoder['EvmTransaction', EvmDecodingRule
             tx_receipt: EvmTxReceipt,
             ignore_cache: bool,
             delete_customized: bool = False,
-            write_buffer: list[tuple[list['EvmEvent'], str, int]] | None = None,
-    ) -> tuple[list['EvmEvent'], bool, set[str] | None]:
+            write_buffer: list[tuple[list[EvmEvent], str, int]] | None = None,
+    ) -> tuple[list[EvmEvent], bool, set[str] | None]:
         """
         Get a transaction's events if existing in the DB or decode them.
         If write_buffer is given the decoded events' DB write is deferred into it.
@@ -821,7 +822,7 @@ class EVMTransactionDecoder(TransactionDecoder['EvmTransaction', EvmDecodingRule
             self,
             tx: EvmTransaction,
             tx_receipt: EvmTxReceipt,
-            events: list['EvmEvent'],
+            events: list[EvmEvent],
             tx_id: int,
     ) -> None:
         """
@@ -867,7 +868,7 @@ class EVMTransactionDecoder(TransactionDecoder['EvmTransaction', EvmDecodingRule
                 counterparty=counterparty,
             ))
 
-    def _get_eth_transfer_event(self, tx: EvmTransaction) -> Optional['EvmEvent']:
+    def _get_eth_transfer_event(self, tx: EvmTransaction) -> EvmEvent | None:
         direction_result = self.base.decode_direction(
             from_address=tx.from_address,
             to_address=tx.to_address,
@@ -910,10 +911,10 @@ class EVMTransactionDecoder(TransactionDecoder['EvmTransaction', EvmDecodingRule
 
     def _maybe_decode_erc20_approve(
             self,
-            token: 'EvmToken | None',
+            token: EvmToken | None,
             tx_log: EvmTxReceiptLog,
             transaction: EvmTransaction,
-            decoded_events: list['EvmEvent'],  # pylint: disable=unused-argument
+            decoded_events: list[EvmEvent],  # pylint: disable=unused-argument
             action_items: list[ActionItem],  # pylint: disable=unused-argument
             all_logs: list[EvmTxReceiptLog],  # pylint: disable=unused-argument
     ) -> EvmDecodingOutput:
@@ -979,7 +980,7 @@ class EVMTransactionDecoder(TransactionDecoder['EvmTransaction', EvmDecodingRule
             tx: EvmTransaction,
             tx_receipt: EvmTxReceipt,
             tx_id: int,
-    ) -> list['EvmEvent']:
+    ) -> list[EvmEvent]:
         """Decodes normal ETH transfers, internal transactions and gas cost payments"""
         events: list[EvmEvent] = []
         # check for gas spent
@@ -1099,10 +1100,10 @@ class EVMTransactionDecoder(TransactionDecoder['EvmTransaction', EvmDecodingRule
 
     def _maybe_decode_erc20_721_transfer(
             self,
-            token: 'EvmToken | None',
+            token: EvmToken | None,
             tx_log: EvmTxReceiptLog,
             transaction: EvmTransaction,
-            decoded_events: list['EvmEvent'],  # pylint: disable=unused-argument
+            decoded_events: list[EvmEvent],  # pylint: disable=unused-argument
             action_items: list[ActionItem],
             all_logs: list[EvmTxReceiptLog],  # pylint: disable=unused-argument
     ) -> EvmDecodingOutput:
@@ -1235,7 +1236,7 @@ class EVMTransactionDecoder(TransactionDecoder['EvmTransaction', EvmDecodingRule
             process_swaps=enrichment_output.process_swaps,
         )
 
-    def _post_process(self, refresh_balances: bool, events: list['EvmEvent'] | None) -> None:
+    def _post_process(self, refresh_balances: bool, events: list[EvmEvent] | None) -> None:
         """
         Method that handles actions that have to be taken after a batch of transactions gets
         decoded.
@@ -1282,7 +1283,7 @@ class EVMTransactionDecoder(TransactionDecoder['EvmTransaction', EvmDecodingRule
 
     def _load_transaction_context(
             self,
-            cursor: 'DBCursor',
+            cursor: DBCursor,
             tx_hash: EVMTxHash,
     ) -> EvmTransactionContext:
         try:
@@ -1301,8 +1302,8 @@ class EVMTransactionDecoder(TransactionDecoder['EvmTransaction', EvmDecodingRule
             context: EvmTransactionContext,
             ignore_cache: bool,
             delete_customized: bool,
-            write_buffer: list[tuple[list['EvmEvent'], str, int]] | None = None,
-    ) -> tuple[list['EvmEvent'], bool, set[str] | None]:
+            write_buffer: list[tuple[list[EvmEvent], str, int]] | None = None,
+    ) -> tuple[list[EvmEvent], bool, set[str] | None]:
         return self._get_or_decode_transaction_events(
             transaction=context.transaction,
             tx_receipt=context.receipt,
@@ -1316,7 +1317,7 @@ class EVMTransactionDecoder(TransactionDecoder['EvmTransaction', EvmDecodingRule
 
     def _chain_specific_decoder_initialization(
             self,
-            decoder: 'EvmDecoderInterface',  # pylint: disable=unused-argument
+            decoder: EvmDecoderInterface,  # pylint: disable=unused-argument
     ) -> None:
         """Custom initialization for each decoder, based on the type of EVM chain.
 
@@ -1360,11 +1361,11 @@ class EVMTransactionDecoder(TransactionDecoder['EvmTransaction', EvmDecodingRule
 
     def _create_swap_event(
             self,
-            trade_event: 'EvmEvent',
-            spend_event: 'EvmEvent',
+            trade_event: EvmEvent,
+            spend_event: EvmEvent,
             sequence_index: int,
             event_type: HistoryEventType,
-    ) -> 'EvmEvent':
+    ) -> EvmEvent:
         """Creates an EvmSwapEvent from trade event data."""
         return EvmSwapEvent(
             tx_ref=trade_event.tx_ref,
@@ -1399,16 +1400,16 @@ class EVMTransactionDecoder(TransactionDecoder['EvmTransaction', EvmDecodingRule
 class EVMTransactionDecoderWithDSProxy(EVMTransactionDecoder, ABC):
     def __init__(
             self,
-            database: 'DBHandler',
-            evm_inquirer: 'EvmNodeInquirerWithProxies',
-            transactions: 'EvmTransactions',
-            value_asset: 'AssetWithOracles',
+            database: DBHandler,
+            evm_inquirer: EvmNodeInquirerWithProxies,
+            transactions: EvmTransactions,
+            value_asset: AssetWithOracles,
             event_rules: list[EventDecoderFunction],
-            misc_counterparties: list['CounterpartyDetails'],
-            base_tools: 'BaseEvmDecoderToolsWithProxy',
-            beacon_chain: 'BeaconChain | None' = None,
-            premium: 'Premium | None' = None,
-            monerium: 'Monerium | None' = None,
+            misc_counterparties: list[CounterpartyDetails],
+            base_tools: BaseEvmDecoderToolsWithProxy,
+            beacon_chain: BeaconChain | None = None,
+            premium: Premium | None = None,
+            monerium: Monerium | None = None,
     ):
         super().__init__(
             database=database,

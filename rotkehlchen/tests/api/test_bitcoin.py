@@ -112,7 +112,7 @@ def _check_xpub_addition_outcome(outcome: dict[str, Any], xpub: str) -> None:
     # in the test that it is detected as belonging to the xpub
     '1KZB7aFfuZE2skJQPHH56VhSxUpUBjouwQ',
 ]])
-def test_add_delete_xpub(rotkehlchen_api_server: 'APIServer') -> None:
+def test_add_delete_xpub(rotkehlchen_api_server: APIServer) -> None:
     """This test uses real world data (queries actual BTC balances)
 
     Test data from here:
@@ -291,7 +291,7 @@ def test_add_delete_xpub(rotkehlchen_api_server: 'APIServer') -> None:
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('number_of_eth_accounts', [0])
-def test_add_delete_xpub_multiple_chains(rotkehlchen_api_server: 'APIServer') -> None:
+def test_add_delete_xpub_multiple_chains(rotkehlchen_api_server: APIServer) -> None:
     """Test adding xpub for multiple bitcoin chains (BTC/BCH)
 
     This test actually has a VCR cassette in test-caching. It's not used at
@@ -486,7 +486,7 @@ def test_add_delete_xpub_multiple_chains(rotkehlchen_api_server: 'APIServer') ->
     UNIT_BTC_ADDRESS1,
     UNIT_BTC_ADDRESS2,
 ]])
-def test_delete_nonexisting_xpub(rotkehlchen_api_server: 'APIServer') -> None:
+def test_delete_nonexisting_xpub(rotkehlchen_api_server: APIServer) -> None:
     # Disable caching of query results
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     rotki.chains_aggregator.cache_ttl_secs = 0
@@ -529,8 +529,8 @@ def test_delete_nonexisting_xpub(rotkehlchen_api_server: 'APIServer') -> None:
 @pytest.mark.parametrize('number_of_eth_accounts', [0])
 @pytest.mark.parametrize('test_timeout', [60])  # needs longer timeout
 def test_add_xpub_with_conversion_works(
-        rotkehlchen_api_server: 'APIServer',
-        test_session: 'ConfigurableSession',
+        rotkehlchen_api_server: APIServer,
+        test_session: ConfigurableSession,
 ) -> None:
     """Test that an xpub is being converted to ypub/zpub if the prefix does not match"""
     # Disable caching of query results
@@ -573,8 +573,8 @@ def test_add_xpub_with_conversion_works(
 
 @pytest.mark.parametrize('number_of_eth_accounts', [0])
 def test_xpub_addition_errors(
-        rotkehlchen_api_server: 'APIServer',
-        test_session: 'ConfigurableSession',
+        rotkehlchen_api_server: APIServer,
+        test_session: ConfigurableSession,
 ) -> None:
     """Test that errors at xpub addition are handled correctly"""
     # Disable caching of query results
@@ -646,7 +646,7 @@ def test_xpub_addition_errors(
 
 @pytest.mark.parametrize('btc_accounts', [[UNIT_BTC_ADDRESS1, UNIT_BTC_ADDRESS2]])
 def test_delete_btc_account(
-        rotkehlchen_api_server: 'APIServer',
+        rotkehlchen_api_server: APIServer,
         btc_accounts: list[BTCAddress],
 ) -> None:
     """Test that when a btc account is deleted any related uncustomized events are removed,
@@ -719,7 +719,7 @@ def test_delete_btc_account(
 
 
 @pytest.mark.vcr
-def test_get_xpub_balances_ignore_cache_behavior(rotkehlchen_api_server: 'APIServer') -> None:
+def test_get_xpub_balances_ignore_cache_behavior(rotkehlchen_api_server: APIServer) -> None:
     """Test that ignore_cache parameter controls whether xpub derivation is called"""
     assert_proper_sync_response_with_result(requests.put(
         api_url_for(rotkehlchen_api_server, 'btcxpubresource', blockchain='BTC'),

@@ -4,7 +4,6 @@ from typing import TYPE_CHECKING, Any, Final
 from eth_abi import decode as decode_abi
 
 from rotkehlchen.assets.utils import asset_normalized_value
-from rotkehlchen.chain.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.decoding.utils import maybe_reshuffle_events
 from rotkehlchen.chain.evm.decoding.interfaces import EvmDecoderInterface
 from rotkehlchen.chain.evm.decoding.structures import (
@@ -21,15 +20,16 @@ from rotkehlchen.chain.scroll.constants import CPT_SCROLL, SCROLL_CPT_DETAILS
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.fval import FVal
-from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import ChainID, ChecksumEvmAddress
 from rotkehlchen.utils.misc import bytes_to_address, from_wei
 
 if TYPE_CHECKING:
+    from rotkehlchen.chain.decoding.types import CounterpartyDetails
     from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
     from rotkehlchen.chain.evm.decoding.base import BaseEvmDecoderTools
+    from rotkehlchen.history.events.structures.evm_event import EvmEvent
     from rotkehlchen.user_messages import MessagesAggregator
 
 
@@ -53,9 +53,9 @@ FINALIZE_WITHDRAW_ERC20: Final = b'\xc6\xf9\x85\x87;7\x80W\x05\xf6\xbc\xe7V\xdc\
 class ScrollBridgeDecoder(EvmDecoderInterface):
     def __init__(
             self,
-            evm_inquirer: 'EthereumInquirer',
-            base_tools: 'BaseEvmDecoderTools',
-            msg_aggregator: 'MessagesAggregator',
+            evm_inquirer: EthereumInquirer,
+            base_tools: BaseEvmDecoderTools,
+            msg_aggregator: MessagesAggregator,
     ) -> None:
         super().__init__(
             evm_inquirer=evm_inquirer,
@@ -267,7 +267,7 @@ class ScrollBridgeDecoder(EvmDecoderInterface):
 
     def _get_refund_event_index_and_amount(
             self,
-            decoded_events: list['EvmEvent'],
+            decoded_events: list[EvmEvent],
             sender: str,
     ) -> tuple[int | None, FVal]:
         """Finds the refund event and returns its index and amount

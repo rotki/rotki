@@ -19,7 +19,7 @@ if TYPE_CHECKING:
 @pytest.mark.parametrize('polygon_pos_accounts', [['0xCace5b3c29211740E595850E80478416eE77cA21']])  # to connect to nodes  # noqa: E501
 def test_polygon_pos_nodes_prune_and_archive_status(
         polygon_pos_manager_connect_at_start: list[tuple],
-        polygon_pos_inquirer: 'PolygonPOSInquirer',
+        polygon_pos_inquirer: PolygonPOSInquirer,
 ):
     """Checks that connecting to a set of polygon POS nodes, the capabilities of those nodes are
     known and stored. It tests the nodes one by one to avoid the randomness of the connections to

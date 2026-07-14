@@ -96,7 +96,7 @@ def test_coingecko_with_api_key(database):
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
-def test_coingecko_query_multiple_current_prices(session_coingecko: 'Coingecko'):
+def test_coingecko_query_multiple_current_prices(session_coingecko: Coingecko):
     assert session_coingecko.query_multiple_current_prices(
         from_assets=[
             A_BTC.resolve_to_asset_with_oracles(),

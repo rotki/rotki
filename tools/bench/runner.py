@@ -4,12 +4,14 @@ import socket
 import subprocess  # noqa: S404
 import time
 from pathlib import Path
-from types import TracebackType
-from typing import Any, Final, Self
+from typing import TYPE_CHECKING, Any, Final, Self
 
 import requests
 
 from tools.bench.mockserver import ChainState, MockExternalServices
+
+if TYPE_CHECKING:
+    from types import TracebackType
 
 PING_POLL_SECONDS: Final = 0.05
 DEFAULT_START_TIMEOUT: Final = 120

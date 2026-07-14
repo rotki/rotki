@@ -16,7 +16,7 @@ if TYPE_CHECKING:
 
 class BinanceSCManager(EvmManager, CurveManagerMixin):
 
-    def __init__(self, node_inquirer: 'BinanceSCInquirer', premium: 'Premium | None' = None) -> None:  # noqa: E501
+    def __init__(self, node_inquirer: BinanceSCInquirer, premium: Premium | None = None) -> None:
         super().__init__(
             node_inquirer=node_inquirer,
             transactions=(transactions := BinanceSCTransactions(

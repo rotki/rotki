@@ -30,8 +30,8 @@ log = RotkehlchenLogsAdapter(logger)
 class BlurBalances(ProtocolWithBalance):
     def __init__(
             self,
-            evm_inquirer: 'EvmNodeInquirer',
-            tx_decoder: 'EthereumTransactionDecoder',
+            evm_inquirer: EvmNodeInquirer,
+            tx_decoder: EthereumTransactionDecoder,
     ):
         super().__init__(
             evm_inquirer=evm_inquirer,
@@ -40,7 +40,7 @@ class BlurBalances(ProtocolWithBalance):
             deposit_event_types={(HistoryEventType.STAKING, HistoryEventSubType.DEPOSIT_ASSET)},
         )
 
-    def query_balances(self) -> 'BalancesSheetType':
+    def query_balances(self) -> BalancesSheetType:
         """Query balances of staked blur tokens if deposit events are found."""
         balances: BalancesSheetType = defaultdict(BalanceSheet)
 

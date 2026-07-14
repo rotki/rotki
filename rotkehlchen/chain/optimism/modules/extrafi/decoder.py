@@ -24,9 +24,9 @@ class ExtrafiDecoder(ExtrafiCommonDecoder):
 
     def __init__(
             self,
-            optimism_inquirer: 'OptimismInquirer',
-            base_tools: 'BaseEvmDecoderTools',
-            msg_aggregator: 'MessagesAggregator',
+            optimism_inquirer: OptimismInquirer,
+            base_tools: BaseEvmDecoderTools,
+            msg_aggregator: MessagesAggregator,
     ) -> None:
         super().__init__(
             evm_inquirer=optimism_inquirer,
@@ -54,7 +54,7 @@ class ExtrafiDecoder(ExtrafiCommonDecoder):
         )
         return EvmDecodingOutput(action_items=[action_item])
 
-    def addresses_to_decoders(self) -> dict['ChecksumEvmAddress', tuple[Any, ...]]:
+    def addresses_to_decoders(self) -> dict[ChecksumEvmAddress, tuple[Any, ...]]:
         return super().addresses_to_decoders() | {
             EXTRAFI_COMMUNITY_FUND: (self._handle_op_rewards,),
         }

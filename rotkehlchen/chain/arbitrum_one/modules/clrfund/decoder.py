@@ -19,9 +19,9 @@ class ClrfundDecoder(ClrfundCommonDecoder):
 
     def __init__(
             self,
-            evm_inquirer: 'EvmNodeInquirer',
-            base_tools: 'BaseEvmDecoderTools',
-            msg_aggregator: 'MessagesAggregator',  # pylint: disable=unused-argument
+            evm_inquirer: EvmNodeInquirer,
+            base_tools: BaseEvmDecoderTools,
+            msg_aggregator: MessagesAggregator,  # pylint: disable=unused-argument
     ) -> None:
         super().__init__(
             evm_inquirer=evm_inquirer,

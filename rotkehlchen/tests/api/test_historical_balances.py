@@ -68,7 +68,7 @@ DAY_AFTER_START_TS = Timestamp(START_TS + DAY_IN_SECONDS)
 
 
 @pytest.fixture(name='setup_historical_data')
-def fixture_setup_historical_data(rotkehlchen_api_server: 'APIServer') -> None:
+def fixture_setup_historical_data(rotkehlchen_api_server: APIServer) -> None:
     db = rotkehlchen_api_server.rest_api.rotkehlchen.data.db
     events = [
         HistoryEvent(  # Day 1: Initial receive
@@ -145,7 +145,7 @@ def fixture_setup_historical_data(rotkehlchen_api_server: 'APIServer') -> None:
 @pytest.mark.parametrize('start_with_valid_premium', [True])
 @pytest.mark.parametrize('have_decoders', [True])
 def test_get_historical_balance(
-        rotkehlchen_api_server: 'APIServer',
+        rotkehlchen_api_server: APIServer,
         setup_historical_data: None,
 ) -> None:
     response = requests.post(
@@ -187,7 +187,7 @@ def test_get_historical_balance(
 @pytest.mark.parametrize('start_with_valid_premium', [True])
 @pytest.mark.parametrize('have_decoders', [True])
 def test_get_historical_asset_balance(
-        rotkehlchen_api_server: 'APIServer',
+        rotkehlchen_api_server: APIServer,
         setup_historical_data: None,
 ) -> None:
     """Test that the historical asset balance endpoint works correctly with both
@@ -226,7 +226,7 @@ def test_get_historical_asset_balance(
 @pytest.mark.parametrize('start_with_valid_premium', [True])
 @pytest.mark.parametrize('have_decoders', [True])
 def test_get_historical_balance_with_filters(
-        rotkehlchen_api_server: 'APIServer',
+        rotkehlchen_api_server: APIServer,
 ) -> None:
     """Test that the historical balance endpoint correctly filters by location, location_label, and protocol."""  # noqa: E501
     db = rotkehlchen_api_server.rest_api.rotkehlchen.data.db
@@ -465,7 +465,7 @@ def test_get_historical_balance_with_filters(
 @pytest.mark.parametrize('start_with_valid_premium', [True])
 @pytest.mark.parametrize('have_decoders', [True])
 def test_find_onchain_historical_balance_divergence(
-        rotkehlchen_api_server: 'APIServer',
+        rotkehlchen_api_server: APIServer,
 ) -> None:
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     db = rotki.data.db
@@ -553,7 +553,7 @@ def test_find_onchain_historical_balance_divergence(
 
 @pytest.mark.parametrize('start_with_valid_premium', [True])
 def test_get_historical_asset_amounts_over_time(
-        rotkehlchen_api_server: 'APIServer',
+        rotkehlchen_api_server: APIServer,
         setup_historical_data: None,
 ) -> None:
     db = rotkehlchen_api_server.rest_api.rotkehlchen.data.db
@@ -595,7 +595,7 @@ def test_get_historical_asset_amounts_over_time(
 
 @pytest.mark.parametrize('start_with_valid_premium', [True])
 def test_get_historical_asset_amounts_over_time_event_metrics(
-        rotkehlchen_api_server: 'APIServer',
+        rotkehlchen_api_server: APIServer,
         setup_historical_data: None,
 ) -> None:
     db = rotkehlchen_api_server.rest_api.rotkehlchen.data.db
@@ -641,7 +641,7 @@ def test_get_historical_asset_amounts_over_time_event_metrics(
 
 @pytest.mark.parametrize('start_with_valid_premium', [True])
 def test_get_historical_asset_amounts_over_time_with_negative_amount(
-        rotkehlchen_api_server: 'APIServer',
+        rotkehlchen_api_server: APIServer,
         setup_historical_data: None,
 ) -> None:
     """Test that historical asset amounts are returned correctly with pre-processed event_metrics.
@@ -708,7 +708,7 @@ def test_get_historical_asset_amounts_over_time_with_negative_amount(
 
 @pytest.mark.parametrize('start_with_valid_premium', [True])
 def test_get_historical_asset_amounts_over_time_with_negative_amount_event_metrics(
-        rotkehlchen_api_server: 'APIServer',
+        rotkehlchen_api_server: APIServer,
         setup_historical_data: None,
 ) -> None:
     # Add more events to create a scenario with multiple potential negative balance events
@@ -777,7 +777,7 @@ def test_get_historical_asset_amounts_over_time_with_negative_amount_event_metri
 
 @pytest.mark.parametrize('start_with_valid_premium', [True])
 def test_get_historical_assets_in_collection_amounts_over_time(
-        rotkehlchen_api_server: 'APIServer',
+        rotkehlchen_api_server: APIServer,
         setup_historical_data: None,
 ) -> None:
     db = rotkehlchen_api_server.rest_api.rotkehlchen.data.db
@@ -846,7 +846,7 @@ def test_get_historical_assets_in_collection_amounts_over_time(
 @pytest.mark.parametrize('start_with_valid_premium', [True])
 @pytest.mark.parametrize('have_decoders', [True])
 def test_get_historical_balance_before_first_event(
-        rotkehlchen_api_server: 'APIServer',
+        rotkehlchen_api_server: APIServer,
         setup_historical_data: None,
 ) -> None:
     """Test getting historical balances before any events returns processing_required=False
@@ -865,7 +865,7 @@ def test_get_historical_balance_before_first_event(
 
 @pytest.mark.parametrize('start_with_valid_premium', [True])
 @pytest.mark.parametrize('have_decoders', [True])
-def test_get_historical_balance_unknown_asset(rotkehlchen_api_server: 'APIServer') -> None:
+def test_get_historical_balance_unknown_asset(rotkehlchen_api_server: APIServer) -> None:
     response = requests.post(
         api_url_for(
             rotkehlchen_api_server,
@@ -885,7 +885,7 @@ def test_get_historical_balance_unknown_asset(rotkehlchen_api_server: 'APIServer
 
 
 @pytest.mark.parametrize('have_decoders', [True])
-def test_get_historical_asset_balance_without_premium(rotkehlchen_api_server: 'APIServer') -> None:
+def test_get_historical_asset_balance_without_premium(rotkehlchen_api_server: APIServer) -> None:
     response = requests.post(
         api_url_for(
             rotkehlchen_api_server,
@@ -905,7 +905,7 @@ def test_get_historical_asset_balance_without_premium(rotkehlchen_api_server: 'A
 
 @pytest.mark.parametrize('start_with_valid_premium', [True])
 def test_get_historical_netvalue(
-        rotkehlchen_api_server: 'APIServer',
+        rotkehlchen_api_server: APIServer,
         setup_historical_data: None,
 ) -> None:
     db = rotkehlchen_api_server.rest_api.rotkehlchen.data.db
@@ -1013,7 +1013,7 @@ def test_get_historical_netvalue(
 
 @pytest.mark.parametrize('start_with_valid_premium', [True])
 def test_get_historical_netvalue_with_negative_balance_events(
-        rotkehlchen_api_server: 'APIServer',
+        rotkehlchen_api_server: APIServer,
         setup_historical_data: None,
 ) -> None:
     """Test that get_historical_netvalue handles negative balance scenarios properly."""
@@ -1081,8 +1081,8 @@ def test_get_historical_netvalue_with_negative_balance_events(
 @pytest.mark.freeze_time('2025-03-06 00:00:00 GMT')
 @pytest.mark.parametrize('should_mock_price_queries', [False])
 def test_get_historical_prices_per_asset(
-        rotkehlchen_api_server: 'APIServer',
-        globaldb: 'GlobalDBHandler',
+        rotkehlchen_api_server: APIServer,
+        globaldb: GlobalDBHandler,
 ) -> None:
     response = requests.post(
         api_url_for(
@@ -1314,8 +1314,8 @@ def test_get_historical_prices_per_asset(
 
 
 def test_historical_price_cache_only_special_assets(
-        rotkehlchen_api_server: 'APIServer',
-        globaldb: 'GlobalDBHandler',
+        rotkehlchen_api_server: APIServer,
+        globaldb: GlobalDBHandler,
 ) -> None:
     """Test special assets work with only_cache_period."""
     db = rotkehlchen_api_server.rest_api.rotkehlchen.data.db
@@ -1393,7 +1393,7 @@ def test_historical_price_cache_only_special_assets(
 @pytest.mark.parametrize('start_with_valid_premium', [True])
 @pytest.mark.parametrize('have_decoders', [True])
 def test_get_historical_asset_amounts_processing_required(
-        rotkehlchen_api_server: 'APIServer',
+        rotkehlchen_api_server: APIServer,
 ) -> None:
     """Test that processing_required flag is returned correctly and that the
     processing trigger endpoint works."""
@@ -1472,7 +1472,7 @@ def test_get_historical_asset_amounts_processing_required(
 
 @pytest.mark.parametrize('start_with_valid_premium', [True])
 def test_get_historical_asset_amounts_no_events(
-        rotkehlchen_api_server: 'APIServer',
+        rotkehlchen_api_server: APIServer,
 ) -> None:
     """Test that processing_required=False is returned when no events exist in time range."""
     response = requests.post(

@@ -9,7 +9,7 @@ if TYPE_CHECKING:
 
 
 @enter_exit_debug_log(name='globaldb v9->v10 upgrade')
-def migrate_to_v10(connection: 'DBConnection', progress_handler: 'DBUpgradeProgressHandler') -> None:  # noqa: E501
+def migrate_to_v10(connection: DBConnection, progress_handler: DBUpgradeProgressHandler) -> None:
     """This globalDB upgrade does the following:
 
     1. Adds main_asset column to asset_collections table.
@@ -18,7 +18,7 @@ def migrate_to_v10(connection: 'DBConnection', progress_handler: 'DBUpgradeProgr
     """
 
     @progress_step('Adding main_asset column to asset_collections')
-    def add_main_asset_column(write_cursor: 'DBCursor') -> None:
+    def add_main_asset_column(write_cursor: DBCursor) -> None:
         # Disable foreign keys to prevent cascade deletion of multiasset_mappings entries
         write_cursor.executescript('PRAGMA foreign_keys = OFF;')
 

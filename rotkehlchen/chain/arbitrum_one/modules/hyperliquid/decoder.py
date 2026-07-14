@@ -1,6 +1,5 @@
 
 import logging
-from collections.abc import Callable
 from typing import TYPE_CHECKING, Any
 
 from rotkehlchen.assets.utils import token_normalized_value_decimals
@@ -18,6 +17,8 @@ from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.utils.misc import bytes_to_address
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+
     from rotkehlchen.chain.evm.decoding.structures import DecoderContext, EvmDecodingOutput
     from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
     from rotkehlchen.history.events.structures.evm_event import EvmEvent
@@ -33,10 +34,10 @@ class HyperliquidDecoder(EvmDecoderInterface):
 
     def _process_deposit(
             self,
-            transaction: 'EvmTransaction',
-            decoded_events: list['EvmEvent'],
-            all_logs: list['EvmTxReceiptLog'],
-    ) -> list['EvmEvent']:
+            transaction: EvmTransaction,
+            decoded_events: list[EvmEvent],
+            all_logs: list[EvmTxReceiptLog],
+    ) -> list[EvmEvent]:
         """Deposits to Hyperliquid are just transfers to the bridge contract.
         There aren't any contract calls
         """
@@ -55,7 +56,7 @@ class HyperliquidDecoder(EvmDecoderInterface):
 
         return decoded_events
 
-    def _process_withdrawal(self, context: 'DecoderContext') -> 'EvmDecodingOutput':
+    def _process_withdrawal(self, context: DecoderContext) -> EvmDecodingOutput:
         """Withdrawals are initiated on the UI and then a validator executes them by calling a
         method in the bridge contract. Multiple withdrawals can be batched
         in the same transaction.
@@ -88,10 +89,10 @@ class HyperliquidDecoder(EvmDecoderInterface):
 
         return DEFAULT_EVM_DECODING_OUTPUT
 
-    def addresses_to_decoders(self) -> dict['ChecksumEvmAddress', tuple[Any, ...]]:
+    def addresses_to_decoders(self) -> dict[ChecksumEvmAddress, tuple[Any, ...]]:
         return {BRIDGE_ADDRESS: (self._process_withdrawal,)}
 
-    def addresses_to_counterparties(self) -> dict['ChecksumEvmAddress', str]:
+    def addresses_to_counterparties(self) -> dict[ChecksumEvmAddress, str]:
         return {string_to_evm_address('0xaf88d065e77c8cC2239327C5EDb3A432268e5831'): CPT_HYPER}
 
     def post_decoding_rules(self) -> dict[str, list[tuple[int, Callable]]]:

@@ -1,11 +1,11 @@
 import random
 from http import HTTPStatus
+from typing import TYPE_CHECKING
 from unittest.mock import call, patch
 
 import pytest
 import requests
 
-from rotkehlchen.api.server import APIServer
 from rotkehlchen.db.cache import DBCacheStatic
 from rotkehlchen.premium.premium import GNOSIS_PAY_CAPABILITY, MONERIUM_CAPABILITY
 from rotkehlchen.tests.utils.api import (
@@ -17,6 +17,9 @@ from rotkehlchen.tests.utils.api import (
     wait_for_async_task,
 )
 from rotkehlchen.types import ExternalService, Timestamp
+
+if TYPE_CHECKING:
+    from rotkehlchen.api.server import APIServer
 
 
 @pytest.mark.parametrize('number_of_eth_accounts', [0])

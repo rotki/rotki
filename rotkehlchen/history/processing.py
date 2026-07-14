@@ -1,6 +1,9 @@
-from collections.abc import Iterator
 from contextlib import contextmanager
 from threading import Semaphore
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from collections.abc import Iterator
 
 
 class HistoryProcessingCoordinator:

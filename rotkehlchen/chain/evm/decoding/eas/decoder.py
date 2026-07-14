@@ -2,7 +2,6 @@ import logging
 from abc import ABC
 from typing import TYPE_CHECKING, Any
 
-from rotkehlchen.chain.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.evm.decoding.interfaces import EvmDecoderInterface
 from rotkehlchen.chain.evm.decoding.structures import (
     DEFAULT_EVM_DECODING_OUTPUT,
@@ -19,6 +18,7 @@ from rotkehlchen.utils.misc import bytes_to_address
 from .constants import CPT_EAS, EAS_CPT_DETAILS
 
 if TYPE_CHECKING:
+    from rotkehlchen.chain.decoding.types import CounterpartyDetails
     from rotkehlchen.chain.evm.decoding.base import BaseEvmDecoderTools
     from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
     from rotkehlchen.types import ChecksumEvmAddress
@@ -40,10 +40,10 @@ class EASCommonDecoder(EvmDecoderInterface, ABC):
 
     def __init__(  # pylint: disable=super-init-not-called
             self,
-            evm_inquirer: 'EvmNodeInquirer',
-            base_tools: 'BaseEvmDecoderTools',
-            msg_aggregator: 'MessagesAggregator',
-            attestation_service_address: 'ChecksumEvmAddress',
+            evm_inquirer: EvmNodeInquirer,
+            base_tools: BaseEvmDecoderTools,
+            msg_aggregator: MessagesAggregator,
+            attestation_service_address: ChecksumEvmAddress,
     ) -> None:
         super().__init__(
             evm_inquirer=evm_inquirer,
@@ -88,7 +88,7 @@ class EASCommonDecoder(EvmDecoderInterface, ABC):
 
     # -- DecoderInterface methods
 
-    def addresses_to_decoders(self) -> dict['ChecksumEvmAddress', tuple[Any, ...]]:
+    def addresses_to_decoders(self) -> dict[ChecksumEvmAddress, tuple[Any, ...]]:
         return {self.attestation_service_address: (self._decode_attestation_action,)}
 
     @staticmethod

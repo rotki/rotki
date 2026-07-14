@@ -1,6 +1,10 @@
-from rotkehlchen.assets.asset import CryptoAsset, EvmToken
+from typing import TYPE_CHECKING
+
 from rotkehlchen.chain.ethereum.modules.compound.constants import CTOKEN_MAPPING
 from rotkehlchen.errors.asset import UnknownAsset
+
+if TYPE_CHECKING:
+    from rotkehlchen.assets.asset import CryptoAsset, EvmToken
 
 
 def get_compound_underlying_token(token: EvmToken) -> CryptoAsset | None:

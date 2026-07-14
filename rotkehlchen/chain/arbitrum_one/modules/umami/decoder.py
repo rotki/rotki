@@ -26,12 +26,12 @@ from rotkehlchen.chain.evm.decoding.structures import (
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
-from rotkehlchen.types import ChecksumEvmAddress
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.arbitrum_one.node_inquirer import ArbitrumOneInquirer
     from rotkehlchen.chain.evm.decoding.base import BaseEvmDecoderTools
     from rotkehlchen.history.events.structures.evm_event import EvmEvent
+    from rotkehlchen.types import ChecksumEvmAddress
     from rotkehlchen.user_messages import MessagesAggregator
 
 DEPOSIT_EXECUTION_FOUR_BYTES: Final = b'\xdb\x10\xc3\xb9'
@@ -47,9 +47,9 @@ class FoundEventType(Enum):
 class UmamiDecoder(ArbitrumDecoderInterface):
     def __init__(
             self,
-            evm_inquirer: 'ArbitrumOneInquirer',
-            base_tools: 'BaseEvmDecoderTools',
-            msg_aggregator: 'MessagesAggregator',
+            evm_inquirer: ArbitrumOneInquirer,
+            base_tools: BaseEvmDecoderTools,
+            msg_aggregator: MessagesAggregator,
     ) -> None:
         super().__init__(
             evm_inquirer=evm_inquirer,
@@ -59,13 +59,13 @@ class UmamiDecoder(ArbitrumDecoderInterface):
 
     def _decode_deposit_withdraw_request(
             self,
-            event: 'EvmEvent',
-            match_amount: 'FVal',
-            event_type: 'HistoryEventType',
-            event_subtype: 'HistoryEventSubType',
+            event: EvmEvent,
+            match_amount: FVal,
+            event_type: HistoryEventType,
+            event_subtype: HistoryEventSubType,
             event_notes: str,
-            fee_match_amount: 'FVal',
-            fee_event_type: 'HistoryEventType',
+            fee_match_amount: FVal,
+            fee_event_type: HistoryEventType,
     ) -> FoundEventType:
         """Decode a deposit/withdraw request event and its corresponding execution cost event.
         These two events are very similar, and must be differentiated by matching their
@@ -88,7 +88,7 @@ class UmamiDecoder(ArbitrumDecoderInterface):
 
         return FoundEventType.NONE
 
-    def _decode_deposit_request(self, context: DecoderContext, event: 'EvmEvent') -> FoundEventType:  # noqa: E501
+    def _decode_deposit_request(self, context: DecoderContext, event: EvmEvent) -> FoundEventType:
         """Decode deposit request events.
         Returns FoundEventType identifying the type of event found to allow reshuffling later.
         """
@@ -110,7 +110,7 @@ class UmamiDecoder(ArbitrumDecoderInterface):
             fee_event_type=HistoryEventType.DEPOSIT,
         )
 
-    def _decode_withdraw_request(self, context: DecoderContext, event: 'EvmEvent') -> FoundEventType:  # noqa: E501
+    def _decode_withdraw_request(self, context: DecoderContext, event: EvmEvent) -> FoundEventType:
         """Decode withdraw request events.
         Returns FoundEventType identifying the type of event found to allow reshuffling later.
         """

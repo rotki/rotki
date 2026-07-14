@@ -1,5 +1,5 @@
 import logging
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from rotkehlchen.chain.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
@@ -12,7 +12,6 @@ from rotkehlchen.chain.evm.decoding.structures import DEFAULT_EVM_DECODING_OUTPU
 from rotkehlchen.constants.resolver import tokenid_belongs_to_collection
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import ChecksumEvmAddress
 
 from .constants import (
     CPT_ROTKI,
@@ -22,6 +21,9 @@ from .constants import (
     ROTKI_SPONSORSHIP_TIER_MAPPING,
     ROTKI_SPONSORSHIP_TREASURY_ADDRESS,
 )
+
+if TYPE_CHECKING:
+    from rotkehlchen.types import ChecksumEvmAddress
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -67,7 +69,7 @@ class RotkiDecoder(EvmDecoderInterface):
         return {ROTKI_SPONSORSHIP_CONTRACT_ADDRESS: (self._decode_nft_events,)}
 
     @staticmethod
-    def counterparties() -> tuple['CounterpartyDetails', ...]:
+    def counterparties() -> tuple[CounterpartyDetails, ...]:
         return (CounterpartyDetails(
             identifier=CPT_ROTKI,
             label='rotki',

@@ -3,7 +3,6 @@ from typing import TYPE_CHECKING
 import pytest
 import requests
 
-from rotkehlchen.tests.fixtures.websockets import WebsocketReader
 from rotkehlchen.tests.utils.api import (
     api_url_for,
     assert_proper_response,
@@ -14,12 +13,13 @@ from rotkehlchen.types import Location
 
 if TYPE_CHECKING:
     from rotkehlchen.api.server import APIServer
+    from rotkehlchen.tests.fixtures.websockets import WebsocketReader
 
 
 @pytest.mark.parametrize('legacy_messages_via_websockets', [True])
 @pytest.mark.parametrize('added_exchanges', [(Location.POLONIEX,)])
 def test_query_messages(
-        rotkehlchen_api_server_with_exchanges: 'APIServer',
+        rotkehlchen_api_server_with_exchanges: APIServer,
         websocket_connection: WebsocketReader,
     ) -> None:
     """Test that querying the messages endpoint returns notifications for the user"""

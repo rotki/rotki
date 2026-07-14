@@ -2,16 +2,16 @@ from typing import TYPE_CHECKING
 
 from rotkehlchen.assets.asset import CustomAsset
 from rotkehlchen.assets.types import AssetType
-from rotkehlchen.db.filtering import CustomAssetsFilterQuery
 from rotkehlchen.errors.misc import InputError
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
+    from rotkehlchen.db.filtering import CustomAssetsFilterQuery
 
 
 class DBCustomAssets:
-    def __init__(self, db_handler: 'DBHandler') -> None:
+    def __init__(self, db_handler: DBHandler) -> None:
         self.db = db_handler
 
     @staticmethod

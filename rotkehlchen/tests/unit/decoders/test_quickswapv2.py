@@ -24,8 +24,8 @@ if TYPE_CHECKING:
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('polygon_pos_accounts', [['0x52C9bdc011DF28F500027258920CaEA518df2733']])
 def test_swap_to_native(
-        polygon_pos_inquirer: 'PolygonPOSInquirer',
-        polygon_pos_accounts: list['ChecksumEvmAddress'],
+        polygon_pos_inquirer: PolygonPOSInquirer,
+        polygon_pos_accounts: list[ChecksumEvmAddress],
 ) -> None:
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=polygon_pos_inquirer,
@@ -85,8 +85,8 @@ def test_swap_to_native(
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('polygon_pos_accounts', [['0xE7C3e5D4D38bd0e767f9913cfc5Cd8CF25280cAD']])
 def test_swap(
-        polygon_pos_inquirer: 'PolygonPOSInquirer',
-        polygon_pos_accounts: list['ChecksumEvmAddress'],
+        polygon_pos_inquirer: PolygonPOSInquirer,
+        polygon_pos_accounts: list[ChecksumEvmAddress],
 ) -> None:
     tx_hash = deserialize_evm_tx_hash('0x458e77cd77833f48d314edcea1323dd123c3b1f5d4a4b375674cfc4292810548')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=polygon_pos_inquirer, tx_hash=tx_hash)  # noqa: E501
@@ -144,8 +144,8 @@ def test_swap(
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('polygon_pos_accounts', [['0xBc426D4c5d5d86CC657f331c58b054cf2f14C0E5']])
 def test_add_liquidity(
-        polygon_pos_inquirer: 'PolygonPOSInquirer',
-        polygon_pos_accounts: list['ChecksumEvmAddress'],
+        polygon_pos_inquirer: PolygonPOSInquirer,
+        polygon_pos_accounts: list[ChecksumEvmAddress],
 ) -> None:
     tx_hash = deserialize_evm_tx_hash('0x7f8e11dae4291f0e5829af1d1fd023c9aa32e41f1546ca16765eb15aa1672bd1')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=polygon_pos_inquirer, tx_hash=tx_hash)  # noqa: E501
@@ -210,8 +210,8 @@ def test_add_liquidity(
 @pytest.mark.parametrize('db_settings', LEGACY_TESTS_INDEXER_ORDER)
 @pytest.mark.parametrize('base_accounts', [['0x3520f30bC0dFa7C2A3577B23Ad689BaD81D6709c']])
 def test_remove_liquidity(
-        base_inquirer: 'BaseInquirer',
-        base_accounts: list['ChecksumEvmAddress'],
+        base_inquirer: BaseInquirer,
+        base_accounts: list[ChecksumEvmAddress],
 ) -> None:
     tx_hash = deserialize_evm_tx_hash('0xc648a3e4b22fcbffd5375bd3515fc7a41f19cc6f1c3863f475f85a189bfcd8f2')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=base_inquirer, tx_hash=tx_hash)

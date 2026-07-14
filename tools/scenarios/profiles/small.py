@@ -71,7 +71,7 @@ DEFI_COUNTERPARTIES: Final = ('aave-v3', 'lido', 'curve')
 DEFI_WEIGHTS: Final = (0.5, 0.3, 0.2)
 
 
-def build(builder: 'ProfileBuilder') -> dict[str, Any] | None:
+def build(builder: ProfileBuilder) -> dict[str, Any] | None:
     factory = DeterministicFactory(SEED)
     eth_accounts = [factory.evm_address() for _ in range(N_ETH_ACCOUNTS)]
     builder.add_accounts(
@@ -154,7 +154,7 @@ def build(builder: 'ProfileBuilder') -> dict[str, Any] | None:
     month_indices = range(ACTIVE_MONTHS)
     month_weights = monthly_ramp_weights(ACTIVE_MONTHS)
 
-    def generate() -> 'list[HistoryBaseEntry]':
+    def generate() -> list[HistoryBaseEntry]:
         events: list[HistoryBaseEntry] = []
         for _ in range(N_EVM_TX_GROUPS):
             events.extend(make_evm_tx_group(

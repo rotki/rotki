@@ -334,7 +334,7 @@ def test_compound_comp_claim_last_transfer(ethereum_inquirer, ethereum_accounts)
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [[ADDR_BORROWS]])
-def test_compound_borrow(ethereum_inquirer: 'EthereumInquirer') -> None:
+def test_compound_borrow(ethereum_inquirer: EthereumInquirer) -> None:
     """Data taken from:
     https://etherscan.io/tx/0x036338316a076590a496791a729d3459934a89d6eb512f765cf0e28f9eb8b50c
     """
@@ -372,7 +372,7 @@ def test_compound_borrow(ethereum_inquirer: 'EthereumInquirer') -> None:
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [[ADDR_REPAYS]])
-def test_compound_payback(ethereum_inquirer: 'EthereumInquirer') -> None:
+def test_compound_payback(ethereum_inquirer: EthereumInquirer) -> None:
     """Data taken from:
     https://etherscan.io/tx/0x000da925508a1a2f322f6fb74592baf9a75bb9f971cb3a72a5deb0526d39757d
     """
@@ -423,7 +423,7 @@ def test_compound_payback(ethereum_inquirer: 'EthereumInquirer') -> None:
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [[ADDR_BORROWS_ETH]])
-def test_compound_borrow_eth(ethereum_inquirer: 'EthereumInquirer') -> None:
+def test_compound_borrow_eth(ethereum_inquirer: EthereumInquirer) -> None:
     """Data taken from:
     https://etherscan.io/tx/0x00035065f364453ca4585ab5d4ee7dacc59a3f7acc305644c334fdfff3a2527f
     """
@@ -461,7 +461,7 @@ def test_compound_borrow_eth(ethereum_inquirer: 'EthereumInquirer') -> None:
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [[ADDR_REPAYS_ETH]])
-def test_compound_repays_eth(ethereum_inquirer: 'EthereumInquirer') -> None:
+def test_compound_repays_eth(ethereum_inquirer: EthereumInquirer) -> None:
     """Data taken from:
     https://etherscan.io/tx/0x0007416c8caa441ce07c61dbf2455b3068d21d9bffbfbbfca9f1016d7c3ca33f
     """
@@ -500,7 +500,7 @@ def test_compound_repays_eth(ethereum_inquirer: 'EthereumInquirer') -> None:
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0x9bf62c518ffe86bD43D57c7026aA1A4fBeA83b15']])
 def test_compound_liquidate(
-        ethereum_inquirer: 'EthereumInquirer',
+        ethereum_inquirer: EthereumInquirer,
         ethereum_accounts,
 ) -> None:
     """
@@ -529,7 +529,7 @@ def test_compound_liquidate(
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0xD911560979B78821D7b045C79E36E9CbfC2F6C6F']])
 def test_compound_liquidator_side(
-        ethereum_inquirer: 'EthereumInquirer',
+        ethereum_inquirer: EthereumInquirer,
         ethereum_accounts,
 ) -> None:
     """
@@ -573,7 +573,7 @@ def test_compound_liquidator_side(
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0xC440f3C87DC4B6843CABc413916220D4f4FeD117']])
 def test_compound_liquidation_eth(
-        ethereum_inquirer: 'EthereumInquirer',
+        ethereum_inquirer: EthereumInquirer,
         ethereum_accounts,
 ) -> None:
     """Test that repaying a compound loan in a liquidation using ETH is correctly decoded"""

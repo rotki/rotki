@@ -14,8 +14,8 @@ if TYPE_CHECKING:
 class GearboxBalances(GearboxCommonBalances):
     def __init__(
             self,
-            evm_inquirer: 'OptimismInquirer',
-            tx_decoder: 'OptimismTransactionDecoder',
+            evm_inquirer: OptimismInquirer,
+            tx_decoder: OptimismTransactionDecoder,
     ) -> None:
         super().__init__(
             evm_inquirer=evm_inquirer,

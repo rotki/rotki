@@ -1,10 +1,13 @@
 import re
-from collections.abc import Sequence
 from itertools import count
+from typing import TYPE_CHECKING
 
 import pytest
 
 from rotkehlchen.types import Location
+
+if TYPE_CHECKING:
+    from collections.abc import Sequence
 
 
 @pytest.fixture(scope='session', name='port_generator')

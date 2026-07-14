@@ -4,8 +4,7 @@ from write commits on the same DB (WAL mode). See DBConnection.enable_read_pool.
 import threading
 import time
 from contextlib import suppress
-from pathlib import Path
-from typing import Final
+from typing import TYPE_CHECKING, Final
 from unittest.mock import Mock
 
 import pytest
@@ -15,6 +14,9 @@ from sqlcipher3 import dbapi2 as sqlcipher
 from rotkehlchen.concurrency import Task, TaskCancelledError, spawn, wait
 from rotkehlchen.db.drivers.sqlite import DBConnection, DBConnectionType
 from rotkehlchen.db.utils import unlock_database
+
+if TYPE_CHECKING:
+    from pathlib import Path
 
 POOL_SIZE: Final = 2
 USER_DB_PASSWORD: Final = '123'

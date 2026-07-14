@@ -13,12 +13,12 @@ if TYPE_CHECKING:
 
 class DBEns:
 
-    def __init__(self, db_handler: 'DBHandler') -> None:
+    def __init__(self, db_handler: DBHandler) -> None:
         self.db = db_handler
 
     def add_ens_mapping(
             self,
-            write_cursor: 'DBCursor',
+            write_cursor: DBCursor,
             address: ChecksumEvmAddress,
             name: str | None,
             now: Timestamp,
@@ -40,7 +40,7 @@ class DBEns:
 
     def get_reverse_ens(
             self,
-            cursor: 'DBCursor',
+            cursor: DBCursor,
             addresses: list[ChecksumEvmAddress],
             source: str = 'ens',
     ) -> dict[ChecksumEvmAddress, EnsMapping | Timestamp]:
@@ -71,7 +71,7 @@ class DBEns:
 
     def get_address_for_name(
             self,
-            cursor: 'DBCursor',
+            cursor: DBCursor,
             name: str,
     ) -> ChecksumEvmAddress | None:
         """Returns the address for the given name if cached"""
@@ -82,7 +82,7 @@ class DBEns:
 
     def update_values(
             self,
-            write_cursor: 'DBCursor',
+            write_cursor: DBCursor,
             ens_lookup_results: dict[ChecksumEvmAddress, str | None],
             mappings_to_send: dict[ChecksumEvmAddress, str],
             source: str = 'ens',

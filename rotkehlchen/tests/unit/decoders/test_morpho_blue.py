@@ -30,8 +30,8 @@ if TYPE_CHECKING:
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('base_accounts', [['0xB3e305B63bE2cD9EB42d6007a5bB1fE4a13da1e2']])
 def test_morpho_blue_supply(
-        base_inquirer: 'BaseInquirer',
-        base_accounts: list['ChecksumEvmAddress'],
+        base_inquirer: BaseInquirer,
+        base_accounts: list[ChecksumEvmAddress],
 ) -> None:
     tx_hash = deserialize_evm_tx_hash('0x20d40794ca9f5a14b7ae5ccb032294449f02a94470af7ba24926537785dde07c')  # noqa: E501
     with patch(  # skip internal transactions since this tx does not have any
@@ -88,8 +88,8 @@ def test_morpho_blue_supply(
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('base_accounts', [['0xe17C7f14FB0b2F41fbfdCe69346Ba5C192705c91']])
 def test_morpho_blue_borrow(
-        base_inquirer: 'BaseInquirer',
-        base_accounts: list['ChecksumEvmAddress'],
+        base_inquirer: BaseInquirer,
+        base_accounts: list[ChecksumEvmAddress],
 ) -> None:
     tx_hash = deserialize_evm_tx_hash('0xcfffd4c6c60dfa3a94466959e365ff57124ccdc1e31f97b75238b757658d3121')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=base_inquirer, tx_hash=tx_hash)
@@ -126,8 +126,8 @@ def test_morpho_blue_borrow(
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('base_accounts', [['0x20e74013d82fea853AfCa3b4CB1Fd9C2B105F55a']])
 def test_morpho_blue_repay(
-        base_inquirer: 'BaseInquirer',
-        base_accounts: list['ChecksumEvmAddress'],
+        base_inquirer: BaseInquirer,
+        base_accounts: list[ChecksumEvmAddress],
 ) -> None:
     tx_hash = deserialize_evm_tx_hash('0xb40d2edb688afbca34c2dc9cbd364ce83a66e0a55f421231ac4d88281009866f')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=base_inquirer, tx_hash=tx_hash)
@@ -151,8 +151,8 @@ def test_morpho_blue_repay(
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('base_accounts', [['0x2E97fcA0F192AA0f73D7915c7c9a67Fc8991d1A6']])
 def test_morpho_blue_withdrawal(
-        base_inquirer: 'BaseInquirer',
-        base_accounts: list['ChecksumEvmAddress'],
+        base_inquirer: BaseInquirer,
+        base_accounts: list[ChecksumEvmAddress],
 ) -> None:
     tx_hash = deserialize_evm_tx_hash('0xc261393f91a1a295bf06f154db64b43de40c9bc2d6310f84a3d2c2a25f590975')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=base_inquirer, tx_hash=tx_hash)
@@ -189,8 +189,8 @@ def test_morpho_blue_withdrawal(
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('base_accounts', [['0x20e74013d82fea853AfCa3b4CB1Fd9C2B105F55a']])
 def test_morpho_blue_withdraw_collateral(
-        base_inquirer: 'BaseInquirer',
-        base_accounts: list['ChecksumEvmAddress'],
+        base_inquirer: BaseInquirer,
+        base_accounts: list[ChecksumEvmAddress],
 ) -> None:
     tx_hash = deserialize_evm_tx_hash('0x6f22fe65f25aa9e68e4fc8b43d742da52318259531c02c7369342e19a67a0227')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=base_inquirer, tx_hash=tx_hash)
@@ -214,8 +214,8 @@ def test_morpho_blue_withdraw_collateral(
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('base_accounts', [['0xf9c9EDb4A1D096d3580dcB4F8E4a7F7211faB2Bb']])
 def test_morpho_blue_supply_collateral(
-        base_inquirer: 'BaseInquirer',
-        base_accounts: list['ChecksumEvmAddress'],
+        base_inquirer: BaseInquirer,
+        base_accounts: list[ChecksumEvmAddress],
 ) -> None:
     tx_hash = deserialize_evm_tx_hash('0xe0500c132dd33e402613a8f8d933f396d6002f10b51b41d0b20b91ead27ef032')  # noqa: E501
     with patch(  # skip internal transactions since this tx does not have any
@@ -244,8 +244,8 @@ def test_morpho_blue_supply_collateral(
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('base_accounts', [['0x4Dfb028A4d1353D0f0fb876cd9F4eD643E04Cf27']])
 def test_morpho_blue_supply_via_bundler(
-        base_inquirer: 'BaseInquirer',
-        base_accounts: list['ChecksumEvmAddress'],
+        base_inquirer: BaseInquirer,
+        base_accounts: list[ChecksumEvmAddress],
 ) -> None:
     """Test decoding of a supply event through the Morpho bundler.
 
@@ -287,8 +287,8 @@ def test_morpho_blue_supply_via_bundler(
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('base_accounts', [['0x4Dfb028A4d1353D0f0fb876cd9F4eD643E04Cf27']])
 def test_morpho_blue_supply_collateral_and_borrow_via_bundler(
-        base_inquirer: 'BaseInquirer',
-        base_accounts: list['ChecksumEvmAddress'],
+        base_inquirer: BaseInquirer,
+        base_accounts: list[ChecksumEvmAddress],
 ) -> None:
     """Test decoding of a supply collateral + borrow through the Morpho bundler.
 
@@ -340,7 +340,7 @@ def test_morpho_blue_supply_collateral_and_borrow_via_bundler(
 @pytest.mark.parametrize('arbitrum_one_accounts', [['0xc74EA8404f1819609124ae694328699007BcF73b']])
 def test_morpho_blue_arbitrum_withdrawal(
         arbitrum_one_inquirer,
-        arbitrum_one_accounts: list['ChecksumEvmAddress'],
+        arbitrum_one_accounts: list[ChecksumEvmAddress],
 ) -> None:
     tx_hash = deserialize_evm_tx_hash('0x92b92f53d335c457183dda6adb6ba947373bc11b386cb07651648268e553572d')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(

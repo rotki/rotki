@@ -25,7 +25,7 @@ log = RotkehlchenLogsAdapter(logger)
 
 
 @enter_exit_debug_log(name='UserDB v35->v36 upgrade')
-def upgrade_v35_to_v36(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHandler') -> None:
+def upgrade_v35_to_v36(db: DBHandler, progress_handler: DBUpgradeProgressHandler) -> None:
     """Upgrades the DB from v35 to v36. This was in v1.27.0 release.
 
         - Remove adex data
@@ -38,7 +38,7 @@ def upgrade_v35_to_v36(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
         - rename web3_nodes to rpc_nodes
     """
     @progress_step(description='Removing adex.')
-    def _remove_adex(write_cursor: 'DBCursor') -> None:
+    def _remove_adex(write_cursor: DBCursor) -> None:
         """Remove all adex related tables, events, data in other tables"""
         write_cursor.execute('DROP TABLE IF EXISTS adex_events')
         if table_exists(write_cursor, 'used_query_ranges'):
@@ -69,13 +69,13 @@ def upgrade_v35_to_v36(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
             )
 
     @progress_step(description='Upgrading ignored actionids.')
-    def _upgrade_ignored_actionids(write_cursor: 'DBCursor') -> None:
+    def _upgrade_ignored_actionids(write_cursor: DBCursor) -> None:
         """ignored_action_ids of ActionType ETHEREUM_TRANSACTION need chainid prepended"""
         if table_exists(write_cursor, 'used_query_ranges'):
             write_cursor.execute("UPDATE ignored_actions SET identifier = '1' || identifier WHERE type='C'")  # noqa: E501
 
     @progress_step(description='Upgrading account details.')
-    def _upgrade_account_details(write_cursor: 'DBCursor') -> None:
+    def _upgrade_account_details(write_cursor: DBCursor) -> None:
         """Upgrade the account_details table to evm_accounts_details"""
         new_data = []
         last_queried_timestamp_map: dict[str, int] = {}
@@ -121,7 +121,7 @@ def upgrade_v35_to_v36(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
         )
 
     @progress_step(description='Renaming eth to evm.')
-    def _rename_eth_to_evm_add_chainid(write_cursor: 'DBCursor') -> None:
+    def _rename_eth_to_evm_add_chainid(write_cursor: DBCursor) -> None:
         """Rename all eth to evm tables, add chain id and adjust tx mappings"""
         # Get all data in memory and upgrade it
         transactions = []
@@ -386,7 +386,7 @@ def upgrade_v35_to_v36(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
         )
 
     @progress_step(description='Upgrading events mappings.')
-    def _upgrade_events_mappings(write_cursor: 'DBCursor') -> None:
+    def _upgrade_events_mappings(write_cursor: DBCursor) -> None:
         """Upgrade history_events_mappings"""
         new_data = []
         if table_exists(write_cursor, 'history_events_mappings'):
@@ -426,7 +426,7 @@ def upgrade_v35_to_v36(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
         )
 
     @progress_step(description='Updating nfts table schema.')
-    def _upgrade_nfts_table(write_cursor: 'DBCursor') -> None:
+    def _upgrade_nfts_table(write_cursor: DBCursor) -> None:
         """Upgrade nfts table to add image url, collection name and whether its a uniswap LP NFT"""
         write_cursor.execute('DROP TABLE IF EXISTS nfts')
         write_cursor.execute(
@@ -449,7 +449,7 @@ def upgrade_v35_to_v36(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
         )
 
     @progress_step(description='Upgrading rpc node.')
-    def _upgrade_rpc_nodes(write_cursor: 'DBCursor') -> None:
+    def _upgrade_rpc_nodes(write_cursor: DBCursor) -> None:
         """
         Change name of web3_nodes to rpc_nodes and fix the schema. Weight should be
         a float from 0 to 1 saved as string, not an integer.
@@ -489,7 +489,7 @@ def upgrade_v35_to_v36(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
         )
 
     @progress_step(description='Upgrading tags.')
-    def _upgrade_tags(write_cursor: 'DBCursor') -> None:
+    def _upgrade_tags(write_cursor: DBCursor) -> None:
         """All tags tied to addresses should now be tied to chain + address"""
         write_cursor.execute(
             'SELECT A.blockchain, A.account, B.tag_name from blockchain_accounts AS A '
@@ -508,7 +508,7 @@ def upgrade_v35_to_v36(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
         )
 
     @progress_step(description='Upgrading address book table.')
-    def _upgrade_address_book_table(write_cursor: 'DBCursor') -> None:
+    def _upgrade_address_book_table(write_cursor: DBCursor) -> None:
         """Upgrades the address book table by making the blockchain column optional"""
         update_table_schema(
             write_cursor=write_cursor,
@@ -521,11 +521,11 @@ def upgrade_v35_to_v36(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
         )
 
     @progress_step(description='Adding OKX.')
-    def _add_okx(write_cursor: 'DBCursor') -> None:
+    def _add_okx(write_cursor: DBCursor) -> None:
         write_cursor.execute("INSERT OR IGNORE INTO location(location, seq) VALUES ('e', 37);")
 
     @progress_step(description='Removing old tables.')
-    def _remove_old_tables(write_cursor: 'DBCursor') -> None:
+    def _remove_old_tables(write_cursor: DBCursor) -> None:
         """In 1.27.0 we added a check for old tables in the DB.
 
         This found that many old DBs still have an eth_tokens table which was left there
@@ -533,7 +533,7 @@ def upgrade_v35_to_v36(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
         write_cursor.execute('DROP TABLE IF EXISTS eth_tokens')
 
     @progress_step(description='Fixing eth2 pnl genesis.')
-    def _fix_eth2_pnl_genesis(write_cursor: 'DBCursor') -> None:
+    def _fix_eth2_pnl_genesis(write_cursor: DBCursor) -> None:
         """
         To avoid querying beaconchain for all the stats since genesis manually update
         the entries that have a wrong pnl in the database for eth2 daily staking details in the
@@ -558,7 +558,7 @@ def upgrade_v35_to_v36(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
             )
 
     @progress_step(description='Resetting decoded events.')
-    def _reset_decoded_events(write_cursor: 'DBCursor') -> None:
+    def _reset_decoded_events(write_cursor: DBCursor) -> None:
         """
         The code is taken from `delete_events_by_tx_ref` right before 1.27 release.
         Has to happen after `_upgrade_events_mappings` so that the schema is the needed one.

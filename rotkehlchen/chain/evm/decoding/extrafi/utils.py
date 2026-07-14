@@ -20,9 +20,9 @@ if TYPE_CHECKING:
 
 def maybe_query_farm_data(
         vault_id: int,
-        evm_inquirer: 'EvmNodeInquirer',
+        evm_inquirer: EvmNodeInquirer,
         farm_contract: EvmContract | None = None,
-) -> tuple['EvmToken', 'EvmToken', 'EvmToken']:
+) -> tuple[EvmToken, EvmToken, EvmToken]:
     """Query vault information for an extrafi position. First check the cache and if we don't
     have it cached then query the chain.
     """

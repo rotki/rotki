@@ -28,7 +28,7 @@ if TYPE_CHECKING:
 
 def duplicated_events_setup(
         events_db: DBHistoryEvents,
-        write_cursor: 'DBCursor',
+        write_cursor: DBCursor,
         auto_fix_groups: int,
         include_manual_review: bool,
         timestamp: TimestampMS,
@@ -95,7 +95,7 @@ def duplicated_events_setup(
     return auto_fix_events, auto_fix_event_ids, manual_review_event
 
 
-def test_customized_event_duplicates_endpoint(rotkehlchen_api_server: 'APIServer') -> None:
+def test_customized_event_duplicates_endpoint(rotkehlchen_api_server: APIServer) -> None:
     """Ensure the duplicates endpoint separates auto-fix and manual review groups."""
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     events_db = DBHistoryEvents(rotki.data.db)
@@ -123,7 +123,7 @@ def test_customized_event_duplicates_endpoint(rotkehlchen_api_server: 'APIServer
 
 
 def test_fix_customized_event_duplicates(
-        rotkehlchen_api_server: 'APIServer',
+        rotkehlchen_api_server: APIServer,
 ) -> None:
     """Check that auto fixing works properly with and without a group identifier filter"""
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
@@ -161,7 +161,7 @@ def test_fix_customized_event_duplicates(
     assert result['auto_fix_group_ids'] == []
 
 
-def test_fee_events_duplicate_detection(rotkehlchen_api_server: 'APIServer') -> None:
+def test_fee_events_duplicate_detection(rotkehlchen_api_server: APIServer) -> None:
     """Test that fee events are ignored in duplicate detection.
 
     1. fee + donate (customized) -> not flagged
@@ -233,7 +233,7 @@ def test_fee_events_duplicate_detection(rotkehlchen_api_server: 'APIServer') -> 
 
 
 def test_subtype_notes_and_counterparty_change_auto_fix(
-        rotkehlchen_api_server: 'APIServer',
+        rotkehlchen_api_server: APIServer,
 ) -> None:
     """Test that we still auto fix a duplicate even if its event subtype, notes, and counterparty
     are edited in the customized event.
@@ -284,7 +284,7 @@ def test_subtype_notes_and_counterparty_change_auto_fix(
 
 
 def test_balance_tracking_direction_duplicate_detection(
-        rotkehlchen_api_server: 'APIServer',
+        rotkehlchen_api_server: APIServer,
 ) -> None:
     """Test that events with different balance-tracking directions are not flagged as duplicates.
 
@@ -369,7 +369,7 @@ def test_balance_tracking_direction_duplicate_detection(
     assert cex_deposit.group_identifier not in result['manual_review_group_ids']
 
 
-def test_amount_threshold_duplicate_detection(rotkehlchen_api_server: 'APIServer') -> None:
+def test_amount_threshold_duplicate_detection(rotkehlchen_api_server: APIServer) -> None:
     """Test that we only flag as duplicates when the amounts are within a 10% threshold.
 
     1. customized (1 ETH) + non-customized (1.05 ETH) -> flagged (5% difference)
@@ -441,7 +441,7 @@ def test_amount_threshold_duplicate_detection(rotkehlchen_api_server: 'APIServer
     assert over_threshold_event.group_identifier not in result['manual_review_group_ids']
 
 
-def test_ignore_customized_event_duplicates(rotkehlchen_api_server: 'APIServer') -> None:
+def test_ignore_customized_event_duplicates(rotkehlchen_api_server: APIServer) -> None:
     """Test ignoring, unignoring, and ignoring a nonexistent group."""
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
 

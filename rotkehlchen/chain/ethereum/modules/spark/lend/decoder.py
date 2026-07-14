@@ -39,9 +39,9 @@ SPARK_ASSET_ID: Final = 'eip155:1/erc20:0xc20059e0317DE91738d13af027DfC4a50781b0
 class SparklendDecoder(SparklendCommonDecoder, MerkleClaimDecoderInterface):
     def __init__(
             self,
-            evm_inquirer: 'EthereumInquirer',
-            base_tools: 'BaseEvmDecoderTools',
-            msg_aggregator: 'MessagesAggregator',
+            evm_inquirer: EthereumInquirer,
+            base_tools: BaseEvmDecoderTools,
+            msg_aggregator: MessagesAggregator,
     ) -> None:
         super().__init__(
             evm_inquirer=evm_inquirer,
@@ -126,7 +126,7 @@ class SparklendDecoder(SparklendCommonDecoder, MerkleClaimDecoderInterface):
 
         return DEFAULT_EVM_DECODING_OUTPUT
 
-    def addresses_to_decoders(self) -> dict['ChecksumEvmAddress', tuple[Any, ...]]:
+    def addresses_to_decoders(self) -> dict[ChecksumEvmAddress, tuple[Any, ...]]:
         """Map contract addresses to their respective decoder methods"""
         return super().addresses_to_decoders() | {
             SPARK_AIRDROP_DISTRIBUTOR: (self._decode_spark_airdrop_claim,),

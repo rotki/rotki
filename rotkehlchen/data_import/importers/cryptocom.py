@@ -2,7 +2,6 @@ import csv
 import functools
 import logging
 from collections import defaultdict
-from pathlib import Path
 from typing import TYPE_CHECKING, Any, Final, Literal
 
 from rotkehlchen.assets.converters import asset_from_cryptocom
@@ -14,7 +13,6 @@ from rotkehlchen.data_import.utils import (
     UnsupportedCSVEntry,
     hash_csv_row,
 )
-from rotkehlchen.db.drivers.sqlite import DBCursor
 from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.misc import InputError
 from rotkehlchen.errors.serialization import DeserializationError
@@ -32,7 +30,10 @@ from rotkehlchen.types import DEFAULT_TIMEZONE, AssetAmount, Location, Timestamp
 from rotkehlchen.utils.misc import ts_sec_to_ms
 
 if TYPE_CHECKING:
+    from pathlib import Path
+
     from rotkehlchen.db.dbhandler import DBHandler
+    from rotkehlchen.db.drivers.sqlite import DBCursor
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -51,7 +52,7 @@ def hash_csv_row_without_index(csv_row: Any) -> str:
 class CryptocomImporter(BaseExchangeImporter):
     """Crypto.com CSV importer"""
 
-    def __init__(self, db: 'DBHandler') -> None:
+    def __init__(self, db: DBHandler) -> None:
         super().__init__(db=db, name='Crypto.com')
 
     def _consume_cryptocom_entry(

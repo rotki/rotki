@@ -1,5 +1,4 @@
 import csv
-from pathlib import Path
 from typing import TYPE_CHECKING, Any
 from uuid import uuid4
 
@@ -9,7 +8,6 @@ from rotkehlchen.data_import.utils import (
     UnsupportedCSVEntry,
     process_rotki_generic_import_csv_fields,
 )
-from rotkehlchen.db.drivers.sqlite import DBCursor
 from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.misc import InputError
 from rotkehlchen.errors.serialization import DeserializationError
@@ -20,7 +18,10 @@ from rotkehlchen.serialization.deserialize import deserialize_fval
 from .constants import ROTKI_EVENT_PREFIX
 
 if TYPE_CHECKING:
+    from pathlib import Path
+
     from rotkehlchen.db.dbhandler import DBHandler
+    from rotkehlchen.db.drivers.sqlite import DBCursor
 
 GENERIC_TYPE_TO_HISTORY_EVENT_TYPE_MAPPINGS = {
     'Deposit': (HistoryEventType.DEPOSIT, HistoryEventSubType.DEPOSIT_ASSET),
@@ -35,7 +36,7 @@ GENERIC_TYPE_TO_HISTORY_EVENT_TYPE_MAPPINGS = {
 class RotkiGenericEventsImporter(BaseExchangeImporter):
     """Rotki generic events CSV importer"""
 
-    def __init__(self, db: 'DBHandler') -> None:
+    def __init__(self, db: DBHandler) -> None:
         super().__init__(db=db, name='Rotki generic events')
 
     def _consume_rotki_event(

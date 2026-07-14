@@ -17,7 +17,7 @@ if TYPE_CHECKING:
 @pytest.mark.parametrize('gnosis_accounts', [['0xCace5b3c29211740E595850E80478416eE77cA21']])  # to connect to nodes  # noqa: E501
 def test_gnosis_nodes_prune_and_archive_status(
         gnosis_manager_connect_at_start: list[tuple],
-        gnosis_inquirer: 'GnosisInquirer',
+        gnosis_inquirer: GnosisInquirer,
 ):
     """Checks that connecting to a set of gnosis nodes, the capabilities of those nodes are
     known and stored. It tests the nodes one by one to avoid the randomness of the connections to
@@ -65,7 +65,7 @@ GNOSIS_SINGLE_NODE: list[WeightedNode] = [WeightedNode(
 ]])
 def test_gnosis_pay_safe_admins_recovers_frozen_safe(
         gnosis_manager_connect_at_start: list[tuple],
-        gnosis_inquirer: 'GnosisInquirer',
+        gnosis_inquirer: GnosisInquirer,
         gnosis_accounts: list[str],
 ) -> None:
     """Both a new Gnosis Pay safe and an old one whose singleton was frozen by Gnosis Pay's

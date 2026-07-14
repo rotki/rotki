@@ -1,9 +1,10 @@
-from typing import Final
-
-from eth_typing.abi import ABI
+from typing import TYPE_CHECKING, Final
 
 from rotkehlchen.chain.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.evm.types import string_to_evm_address
+
+if TYPE_CHECKING:
+    from eth_typing.abi import ABI
 
 CPT_ECHO: Final = 'echo'
 ECHO_CPT_DETAILS: Final = CounterpartyDetails(

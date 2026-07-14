@@ -5,11 +5,11 @@ from typing import TYPE_CHECKING, Any, Self
 from rotkehlchen.constants import ONE
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.fval import FVal
-from rotkehlchen.types import ChecksumEvmAddress, Eth2PubKey, Timestamp
 from rotkehlchen.utils.mixins.enums import DBIntEnumMixIn
 
 if TYPE_CHECKING:
 
+    from rotkehlchen.types import ChecksumEvmAddress, Eth2PubKey, Timestamp
     VALIDATOR_DETAILS_DB_TUPLE = tuple[int | None, Eth2PubKey, int, str, ChecksumEvmAddress | None, Timestamp | None, Timestamp | None, Timestamp | None]  # noqa: E501
 
 
@@ -31,7 +31,7 @@ class ValidatorType(DBIntEnumMixIn):
     ACCUMULATING = 2
 
     @classmethod
-    def deserialize(cls, value: str) -> 'ValidatorType':
+    def deserialize(cls, value: str) -> ValidatorType:
         if value == '0x00':
             return cls.BLS
         if value == '0x01':
@@ -71,7 +71,7 @@ class ValidatorDetails:
 
         return data
 
-    def serialize_for_db(self) -> 'VALIDATOR_DETAILS_DB_TUPLE':
+    def serialize_for_db(self) -> VALIDATOR_DETAILS_DB_TUPLE:
         """Serialize for DB insertion without touching the ownership proportion since
         the place this is inserted in the DB should not modify ownership"""
         return (
@@ -86,7 +86,7 @@ class ValidatorDetails:
         )
 
     @classmethod
-    def deserialize_from_db(cls, result: 'VALIDATOR_DETAILS_DB_TUPLE') -> Self:
+    def deserialize_from_db(cls, result: VALIDATOR_DETAILS_DB_TUPLE) -> Self:
         return cls(
             validator_index=result[0],
             public_key=result[1],

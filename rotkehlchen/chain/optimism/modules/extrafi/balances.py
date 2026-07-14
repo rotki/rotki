@@ -12,8 +12,8 @@ class ExtrafiBalances(ExtrafiCommonBalances):
 
     def __init__(
             self,
-            evm_inquirer: 'EvmNodeInquirer',
-            tx_decoder: 'EVMTransactionDecoder',
+            evm_inquirer: EvmNodeInquirer,
+            tx_decoder: EVMTransactionDecoder,
     ):
         super().__init__(
             evm_inquirer=evm_inquirer,

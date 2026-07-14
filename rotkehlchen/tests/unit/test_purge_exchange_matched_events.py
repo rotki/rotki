@@ -23,7 +23,7 @@ if TYPE_CHECKING:
 
 
 @pytest.mark.parametrize('function_scope_initialize_mock_rotki_notifier', [True])
-def test_purge_exchange_restores_matched_events(database: 'DBHandler') -> None:
+def test_purge_exchange_restores_matched_events(database: DBHandler) -> None:
     """Test that purging exchange data restores matched events on the other side of the link.
 
     Creates a Kraken withdrawal matched with an onchain receive event, then purges Kraken data
@@ -118,7 +118,7 @@ def test_purge_exchange_restores_matched_events(database: 'DBHandler') -> None:
 
 
 @pytest.mark.parametrize('function_scope_initialize_mock_rotki_notifier', [True])
-def test_purge_exchange_with_adjustment_event(database: 'DBHandler') -> None:
+def test_purge_exchange_with_adjustment_event(database: DBHandler) -> None:
     """Test that EXCHANGE_ADJUSTMENT events created during matching are cleaned up on purge."""
     events_db = DBHistoryEvents(database)
     with database.conn.write_ctx() as write_cursor:

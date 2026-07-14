@@ -1,8 +1,6 @@
 import logging
-from collections.abc import Sequence
 from typing import TYPE_CHECKING, Final, Literal
 
-from eth_typing.abi import ABI
 from web3 import Web3
 
 from rotkehlchen.chain.constants import DEFAULT_RPC_TIMEOUT
@@ -13,10 +11,8 @@ from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.assets import A_XDAI
 from rotkehlchen.errors.misc import BlockchainQueryError, RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
-from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import deserialize_evm_address
-from rotkehlchen.tasks.supervisor import TaskSupervisor
 from rotkehlchen.types import ChainID, ChecksumEvmAddress, EVMTxHash, SupportedBlockchain
 from rotkehlchen.utils.misc import bytes_to_address, get_chunks
 
@@ -28,10 +24,16 @@ from .constants import (
 )
 
 if TYPE_CHECKING:
+    from collections.abc import Sequence
+
+    from eth_typing.abi import ABI
+
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.externalapis.blockscout import Blockscout
     from rotkehlchen.externalapis.etherscan import Etherscan
     from rotkehlchen.externalapis.routescan import Routescan
+    from rotkehlchen.fval import FVal
+    from rotkehlchen.tasks.supervisor import TaskSupervisor
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -56,10 +58,10 @@ class GnosisInquirer(EvmNodeInquirer):
     def __init__(
             self,
             task_supervisor: TaskSupervisor,
-            database: 'DBHandler',
-            etherscan: 'Etherscan',
-            blockscout: 'Blockscout',
-            routescan: 'Routescan',
+            database: DBHandler,
+            etherscan: Etherscan,
+            blockscout: Blockscout,
+            routescan: Routescan,
             rpc_timeout: int = DEFAULT_RPC_TIMEOUT,
     ) -> None:
         contracts = EvmContracts[Literal[ChainID.GNOSIS]](chain_id=ChainID.GNOSIS)

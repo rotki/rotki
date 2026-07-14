@@ -2,8 +2,6 @@ import logging
 from collections import defaultdict
 from typing import TYPE_CHECKING, Final, Literal
 
-from eth_typing.abi import ABI
-
 from rotkehlchen.accounting.structures.balance import Balance, BalanceSheet
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.utils import token_normalized_value_decimals
@@ -18,6 +16,8 @@ from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 
 if TYPE_CHECKING:
+    from eth_typing.abi import ABI
+
     from rotkehlchen.chain.evm.decoding.decoder import EVMTransactionDecoder
     from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
     from rotkehlchen.types import ChecksumEvmAddress
@@ -31,11 +31,11 @@ DEPOSIT_BALANCE_ABI: Final[ABI] = [{'inputs': [{'name': '', 'type': 'address'}],
 class GivethCommonBalances(ProtocolWithBalance):
     def __init__(
             self,
-            evm_inquirer: 'EvmNodeInquirer',
-            tx_decoder: 'EVMTransactionDecoder',
-            staking_address: 'ChecksumEvmAddress',
+            evm_inquirer: EvmNodeInquirer,
+            tx_decoder: EVMTransactionDecoder,
+            staking_address: ChecksumEvmAddress,
             query_method: Literal['balanceOf', 'depositTokenBalance'],
-            giv_token_id: 'str',
+            giv_token_id: str,
     ):
         super().__init__(
             evm_inquirer=evm_inquirer,
@@ -47,7 +47,7 @@ class GivethCommonBalances(ProtocolWithBalance):
         self.giv_token_id = giv_token_id
         self.query_method = query_method
 
-    def query_balances(self) -> 'BalancesSheetType':
+    def query_balances(self) -> BalancesSheetType:
         """Query balances of staked/locked GIV"""
         balances: BalancesSheetType = defaultdict(BalanceSheet)
         address_to_deposits = self.addresses_with_deposits()

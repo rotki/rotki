@@ -1,6 +1,5 @@
 import logging
 import traceback
-from collections.abc import Callable
 from typing import TYPE_CHECKING, NamedTuple
 
 from rotkehlchen.concurrency import TaskCancelledError
@@ -28,6 +27,8 @@ from .constants import LAST_USERDB_DATA_MIGRATION
 from .progress import MigrationProgressHandler
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+
     from rotkehlchen.rotkehlchen import Rotkehlchen
 
 logger = logging.getLogger(__name__)
@@ -36,7 +37,7 @@ log = RotkehlchenLogsAdapter(logger)
 
 class MigrationRecord(NamedTuple):
     version: int
-    function: Callable[['Rotkehlchen', MigrationProgressHandler], None]
+    function: Callable[[Rotkehlchen, MigrationProgressHandler], None]
 
 
 MIGRATION_LIST = [  # remember to bump LAST_USERDB_DATA_MIGRATION if editing this
@@ -63,7 +64,7 @@ MIGRATION_LIST = [  # remember to bump LAST_USERDB_DATA_MIGRATION if editing thi
 
 class DataMigrationManager:
 
-    def __init__(self, rotki: 'Rotkehlchen'):
+    def __init__(self, rotki: Rotkehlchen):
         self.rotki = rotki
 
     def maybe_migrate_data(self) -> None:

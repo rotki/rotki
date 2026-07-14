@@ -35,7 +35,7 @@ if TYPE_CHECKING:
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0x18B5602e067e8D21A077B81914a48f84Fe82Be82']])
-def test_add_liquidity_imbalanced(ethereum_inquirer: 'EthereumInquirer', ethereum_accounts: list['ChecksumEvmAddress']) -> None:  # noqa: E501
+def test_add_liquidity_imbalanced(ethereum_inquirer: EthereumInquirer, ethereum_accounts: list[ChecksumEvmAddress]) -> None:  # noqa: E501
     tx_hash = deserialize_evm_tx_hash('0xbc89bf067bc7ca7cff308538c90401fce967bbfeb11c588454011ff5e1aa21a9')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     assert events == [EvmEvent(
@@ -83,10 +83,10 @@ def test_add_liquidity_imbalanced(ethereum_inquirer: 'EthereumInquirer', ethereu
 @pytest.mark.parametrize('load_global_caches', [[CPT_BALANCER_V3]])
 @pytest.mark.parametrize('arbitrum_one_accounts', [['0x8F747d43b6bFE7A1AC2aCf63B4d6B255Eb3c7383']])
 def test_gauge_claim_rewards_arbitrum(
-        arbitrum_one_inquirer: 'ArbitrumOneInquirer',
-        arbitrum_one_accounts: list['ChecksumEvmAddress'],
+        arbitrum_one_inquirer: ArbitrumOneInquirer,
+        arbitrum_one_accounts: list[ChecksumEvmAddress],
         load_global_caches: list[str],
-        globaldb: 'GlobalDBHandler',
+        globaldb: GlobalDBHandler,
 ) -> None:
     with globaldb.conn.write_ctx() as write_cursor:
         globaldb_set_general_cache_values(
@@ -130,7 +130,7 @@ def test_gauge_claim_rewards_arbitrum(
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('arbitrum_one_accounts', [['0xF8E85fD6A2a73A5d2CC9df4209Ac0C1dc16E15a4']])
-def test_add_liquidity_proportionally(arbitrum_one_inquirer: 'ArbitrumOneInquirer', arbitrum_one_accounts: list['ChecksumEvmAddress']) -> None:  # noqa: E501
+def test_add_liquidity_proportionally(arbitrum_one_inquirer: ArbitrumOneInquirer, arbitrum_one_accounts: list[ChecksumEvmAddress]) -> None:  # noqa: E501
     tx_hash = deserialize_evm_tx_hash('0x0ea5100f442d6a998af7c91226d9d5685acbc628e7c838703d30c5b3002cec6c')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=arbitrum_one_inquirer, tx_hash=tx_hash)  # noqa: E501
     assert events == [EvmEvent(
@@ -202,7 +202,7 @@ def test_add_liquidity_proportionally(arbitrum_one_inquirer: 'ArbitrumOneInquire
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('db_settings', LEGACY_TESTS_INDEXER_ORDER)
 @pytest.mark.parametrize('base_accounts', [['0xDDA0E94955C637E30052CB28e73ce04C265f328b']])
-def test_remove_liquidity_imbalanced(base_inquirer: 'BaseInquirer', base_accounts: list['ChecksumEvmAddress']) -> None:  # noqa: E501
+def test_remove_liquidity_imbalanced(base_inquirer: BaseInquirer, base_accounts: list[ChecksumEvmAddress]) -> None:  # noqa: E501
     tx_hash = deserialize_evm_tx_hash('0x8c6721fe24583cc69a64aa656e2c2235c3a8631ae6d4573807e24cb7ed7ec342')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=base_inquirer, tx_hash=tx_hash)
     assert events == [EvmEvent(
@@ -272,7 +272,7 @@ def test_remove_liquidity_imbalanced(base_inquirer: 'BaseInquirer', base_account
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('gnosis_accounts', [['0x4B5Bed4b42a629Fd6bFF77e6e4444A071f404862']])
-def test_remove_liquidity_proportionally(gnosis_inquirer: 'GnosisInquirer', gnosis_accounts: list['ChecksumEvmAddress']) -> None:  # noqa: E501
+def test_remove_liquidity_proportionally(gnosis_inquirer: GnosisInquirer, gnosis_accounts: list[ChecksumEvmAddress]) -> None:  # noqa: E501
     tx_hash = deserialize_evm_tx_hash('0x6dc9174eb7a4cf8c39bc65b5166359c1de6da8e19c160d896bf4db588496e82a')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=gnosis_inquirer, tx_hash=tx_hash)
     assert events == [EvmEvent(
@@ -369,7 +369,7 @@ def test_remove_liquidity_proportionally(gnosis_inquirer: 'GnosisInquirer', gnos
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('db_settings', LEGACY_TESTS_INDEXER_ORDER)
 @pytest.mark.parametrize('base_accounts', [['0x5aA57B34DaaDB76ea486157B3D4472C4DF536C82']])
-def test_swap_via_batch_router(base_inquirer: 'BaseInquirer', base_accounts: list['ChecksumEvmAddress']) -> None:  # noqa: E501
+def test_swap_via_batch_router(base_inquirer: BaseInquirer, base_accounts: list[ChecksumEvmAddress]) -> None:  # noqa: E501
     tx_hash = deserialize_evm_tx_hash('0xbffb6bd2994f90676be45db667203317f0f70afb4eaa3832271e02e8dffb8101')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=base_inquirer, tx_hash=tx_hash)
     assert events == [EvmEvent(
@@ -413,7 +413,7 @@ def test_swap_via_batch_router(base_inquirer: 'BaseInquirer', base_accounts: lis
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0xD17AE94E595c3987c277114AEcb377e89450Bc07']])
-def test_swap(ethereum_inquirer: 'EthereumInquirer', ethereum_accounts: list['ChecksumEvmAddress']) -> None:  # noqa: E501
+def test_swap(ethereum_inquirer: EthereumInquirer, ethereum_accounts: list[ChecksumEvmAddress]) -> None:  # noqa: E501
     tx_hash = deserialize_evm_tx_hash('0x3dabc20af2bc5bf72c42fd1e915578f789189c2f09ec8049c4a6e3a2921b1baf')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     assert events == [EvmEvent(
@@ -459,10 +459,10 @@ def test_swap(ethereum_inquirer: 'EthereumInquirer', ethereum_accounts: list['Ch
 @pytest.mark.parametrize('load_global_caches', [[CPT_BALANCER_V3]])
 @pytest.mark.parametrize('ethereum_accounts', [['0x719a143654a0C4621F49FA77077800ef3F5C3b40']])
 def test_gauge_deposit(
-        ethereum_inquirer: 'EthereumInquirer',
-        ethereum_accounts: list['ChecksumEvmAddress'],
+        ethereum_inquirer: EthereumInquirer,
+        ethereum_accounts: list[ChecksumEvmAddress],
         load_global_caches: list[str],
-        globaldb: 'GlobalDBHandler',
+        globaldb: GlobalDBHandler,
 ):
     with globaldb.conn.write_ctx() as write_cursor:
         globaldb_set_general_cache_values(
@@ -526,10 +526,10 @@ def test_gauge_deposit(
 @pytest.mark.parametrize('load_global_caches', [[CPT_BALANCER_V3]])
 @pytest.mark.parametrize('base_accounts', [['0x9EE4d24dB1104bDF818391efCB8CCBa8Ff206159']])
 def test_gauge_withdrawal(
-        base_inquirer: 'BaseInquirer',
-        base_accounts: list['ChecksumEvmAddress'],
+        base_inquirer: BaseInquirer,
+        base_accounts: list[ChecksumEvmAddress],
         load_global_caches: list[str],
-        globaldb: 'GlobalDBHandler',
+        globaldb: GlobalDBHandler,
 ):
     with globaldb.conn.write_ctx() as write_cursor:
         globaldb_set_general_cache_values(

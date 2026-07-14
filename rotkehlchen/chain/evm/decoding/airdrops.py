@@ -11,10 +11,10 @@ if TYPE_CHECKING:
 
 
 def match_airdrop_claim(
-        event: 'EvmEvent',
-        user_address: 'ChecksumEvmAddress',
-        amount: 'FVal',
-        asset: 'Asset',
+        event: EvmEvent,
+        user_address: ChecksumEvmAddress,
+        amount: FVal,
+        asset: Asset,
         counterparty: str,
         airdrop_identifier: Literal['shapeshift', 'badger', 'cow_mainnet', 'cow_gnosis', 'convex', 'fpis', 'scroll', 'walletconnect'],  # noqa: E501
         notes: str | None = None,

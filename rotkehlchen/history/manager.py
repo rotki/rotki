@@ -1,26 +1,27 @@
 import logging
-from pathlib import Path
 from typing import TYPE_CHECKING, Literal
 
 from rotkehlchen.constants import ZERO
 from rotkehlchen.db.filtering import HistoryEventFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.errors.misc import RemoteError
-from rotkehlchen.exchanges.manager import ExchangeManager
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.base import HistoryBaseEntry, HistoryEvent
-from rotkehlchen.history.processing import HistoryProcessingCoordinator
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.premium.premium import UserLimitType, get_user_limit
 from rotkehlchen.types import EVM_CHAINS_WITH_TRANSACTIONS, Location, Timestamp
-from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import timestamp_to_date, ts_sec_to_ms
 
 if TYPE_CHECKING:
+    from pathlib import Path
+
     from rotkehlchen.accounting.mixins.event import AccountingEventMixin
     from rotkehlchen.chain.aggregator import ChainsAggregator
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.db.drivers.sqlite import DBCursor
+    from rotkehlchen.exchanges.manager import ExchangeManager
+    from rotkehlchen.history.processing import HistoryProcessingCoordinator
+    from rotkehlchen.user_messages import MessagesAggregator
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -45,10 +46,10 @@ class HistoryQueryingManager:
     def __init__(
             self,
             user_directory: Path,
-            db: 'DBHandler',
+            db: DBHandler,
             msg_aggregator: MessagesAggregator,
             exchange_manager: ExchangeManager,
-            chains_aggregator: 'ChainsAggregator',
+            chains_aggregator: ChainsAggregator,
             processing_coordinator: HistoryProcessingCoordinator,
     ) -> None:
 
@@ -84,7 +85,7 @@ class HistoryQueryingManager:
 
     def query_history_events(
             self,
-            cursor: 'DBCursor',
+            cursor: DBCursor,
             location: Literal[Location.KRAKEN, Location.BINANCE, Location.BINANCEUS],
             filter_query: HistoryEventFilterQuery,
             only_cache: bool,
@@ -129,7 +130,7 @@ class HistoryQueryingManager:
             start_ts: Timestamp,
             end_ts: Timestamp,
             has_premium: bool,
-    ) -> tuple[str, list['AccountingEventMixin']]:
+    ) -> tuple[str, list[AccountingEventMixin]]:
         """
         Creates all events history from start_ts to end_ts. Returns it
         sorted by ascending timestamp.
@@ -146,7 +147,7 @@ class HistoryQueryingManager:
             start_ts: Timestamp,
             end_ts: Timestamp,
             has_premium: bool,
-    ) -> tuple[str, list['AccountingEventMixin']]:
+    ) -> tuple[str, list[AccountingEventMixin]]:
         self._reset_variables()
         step = 0
         total_steps = (

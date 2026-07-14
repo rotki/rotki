@@ -28,7 +28,7 @@ log = RotkehlchenLogsAdapter(logger)
 
 
 def get_existing_pools(
-        cursor: 'DBCursor',
+        cursor: DBCursor,
         cache_type: Literal[CacheType.CONVEX_POOL_ADDRESS],
 ) -> set[ChecksumEvmAddress]:
     """Returns all the convex pool rewards address stored in cache"""
@@ -69,7 +69,7 @@ def read_convex_data_from_cache() -> tuple[dict[ChecksumEvmAddress, str]]:
 
 
 def query_convex_data_from_chain(
-        ethereum: 'EthereumInquirer',
+        ethereum: EthereumInquirer,
         existing_pools: set[ChecksumEvmAddress],
 ) -> dict[ChecksumEvmAddress, str]:
     """
@@ -115,9 +115,9 @@ def query_convex_data_from_chain(
 
 
 def query_convex_data(
-        inquirer: 'EthereumInquirer',
+        inquirer: EthereumInquirer,
         cache_type: Literal[CacheType.CONVEX_POOL_ADDRESS],
-        msg_aggregator: 'MessagesAggregator',  # pylint: disable=unused-argument  # argument is unused to keep the interface consistent with the other functions because they all are called similarly in ensure_cache_data_is_updated and refresh_general_cache
+        msg_aggregator: MessagesAggregator,  # pylint: disable=unused-argument  # argument is unused to keep the interface consistent with the other functions because they all are called similarly in ensure_cache_data_is_updated and refresh_general_cache
         reload_all: bool,  # pylint: disable=unused-argument
 ) -> dict[ChecksumEvmAddress, str] | None:
     """

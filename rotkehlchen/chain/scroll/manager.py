@@ -19,9 +19,9 @@ class ScrollManager(EvmManager):
 
     def __init__(
             self,
-            node_inquirer: 'ScrollInquirer',
-            premium: 'Premium | None' = None,
-            monerium: 'Monerium | None' = None,
+            node_inquirer: ScrollInquirer,
+            premium: Premium | None = None,
+            monerium: Monerium | None = None,
     ) -> None:
         transactions = ScrollTransactions(
             scroll_inquirer=node_inquirer,

@@ -20,7 +20,7 @@ if TYPE_CHECKING:
     from rotkehlchen.api.server import APIServer
 
 
-def test_lookup_evm_transaction_from_db(rotkehlchen_api_server: 'APIServer') -> None:
+def test_lookup_evm_transaction_from_db(rotkehlchen_api_server: APIServer) -> None:
     tx_hash = make_evm_tx_hash()
     from_address = '0x5A0b54D5dc17e0AadC383d2db43B0a0D3E029c4c'
     to_address = '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48'
@@ -93,7 +93,7 @@ def test_lookup_evm_transaction_from_db(rotkehlchen_api_server: 'APIServer') -> 
     active=True,
     weight=ONE,
 ),)])
-def test_lookup_evm_transaction_fetches_and_saves(rotkehlchen_api_server: 'APIServer') -> None:
+def test_lookup_evm_transaction_fetches_and_saves(rotkehlchen_api_server: APIServer) -> None:
     tx_hash = deserialize_evm_tx_hash('0xa2e48bd898741b04f4ed1c26ce93afe0ae7da9921775d4ddc5801cb23fe06fce')  # noqa: E501
     with rotkehlchen_api_server.rest_api.rotkehlchen.data.db.user_write() as write_cursor:
         write_cursor.execute(
@@ -157,7 +157,7 @@ GNOSIS_RPC_NODE = WeightedNode(
 @pytest.mark.vcr(match_on=['match_rpc_calls'])
 @pytest.mark.parametrize('gnosis_manager_connect_at_start', [(GNOSIS_RPC_NODE,)])
 def test_lookup_evm_transaction_returns_not_found_for_wrong_chain(
-        rotkehlchen_api_server: 'APIServer',
+        rotkehlchen_api_server: APIServer,
 ) -> None:
     gnosis_inquirer = rotkehlchen_api_server.rest_api.rotkehlchen.chains_aggregator.gnosis.node_inquirer  # noqa: E501
     with rotkehlchen_api_server.rest_api.rotkehlchen.data.db.user_write() as write_cursor:
@@ -185,7 +185,7 @@ def test_lookup_evm_transaction_returns_not_found_for_wrong_chain(
 
 
 def test_lookup_evm_transaction_returns_conflict_for_remote_errors(
-        rotkehlchen_api_server: 'APIServer',
+        rotkehlchen_api_server: APIServer,
         monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     ethereum_manager = rotkehlchen_api_server.rest_api.rotkehlchen.chains_aggregator.get_evm_manager(ChainID.ETHEREUM)  # noqa: E501
@@ -216,7 +216,7 @@ def test_lookup_evm_transaction_returns_conflict_for_remote_errors(
 
 
 def test_lookup_evm_transaction_rejects_untracked_address(
-        rotkehlchen_api_server: 'APIServer',
+        rotkehlchen_api_server: APIServer,
 ) -> None:
     assert_error_response(
         response=requests.get(

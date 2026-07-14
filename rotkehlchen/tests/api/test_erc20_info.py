@@ -26,7 +26,7 @@ def assert_default_erc20_info_response(result: Any) -> None:
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('number_of_eth_accounts', [0])
-def test_query_token_with_info(rotkehlchen_api_server: 'APIServer') -> None:
+def test_query_token_with_info(rotkehlchen_api_server: APIServer) -> None:
     """Test api for querying evm token details"""
 
     response = requests.get(

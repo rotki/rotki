@@ -22,7 +22,7 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
-def get_quickswap_v4_position_price(inquirer: 'Inquirer', token: 'EvmToken') -> 'Price':
+def get_quickswap_v4_position_price(inquirer: Inquirer, token: EvmToken) -> Price:
     """Get the price of a Quickswap V4 LP position."""
     return get_quickswap_algebra_position_price(
         inquirer=inquirer,

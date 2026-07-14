@@ -1,9 +1,11 @@
-from collections.abc import Sequence
-from typing import Final
-
-from eth_typing import ABI, ABIEvent
+from typing import TYPE_CHECKING, Final
 
 from rotkehlchen.chain.decoding.types import CounterpartyDetails
+
+if TYPE_CHECKING:
+    from collections.abc import Sequence
+
+    from eth_typing import ABI, ABIEvent
 
 CPT_THEGRAPH: Final = 'thegraph'
 THEGRAPH_CPT_DETAILS: Final = CounterpartyDetails(

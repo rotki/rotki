@@ -5,7 +5,6 @@ from unittest.mock import patch
 import pytest
 import requests
 
-from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.timing import ENS_UPDATE_INTERVAL
 from rotkehlchen.db.ens import DBEns
@@ -20,6 +19,7 @@ from rotkehlchen.utils.misc import ts_now
 
 if TYPE_CHECKING:
     from rotkehlchen.api.server import APIServer
+    from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
 
 
 def _get_timestamps(db: DBEns, addresses: list[ChecksumEvmAddress]) -> list[Timestamp]:
@@ -82,7 +82,7 @@ def mocked_find_ens_mappings(
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.freeze_time('2024-04-11 23:00:00 GMT')
-def test_reverse_ens(rotkehlchen_api_server: 'APIServer') -> None:
+def test_reverse_ens(rotkehlchen_api_server: APIServer) -> None:
     """Test that we can reverse resolve ENS names"""
     db = DBEns(rotkehlchen_api_server.rest_api.rotkehlchen.data.db)
     db_conn = rotkehlchen_api_server.rest_api.rotkehlchen.data.db.conn
@@ -171,7 +171,7 @@ def test_reverse_ens(rotkehlchen_api_server: 'APIServer') -> None:
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.freeze_time('2025-03-31 12:00:00 GMT')
-def test_resolve_ens(rotkehlchen_api_server: 'APIServer') -> None:
+def test_resolve_ens(rotkehlchen_api_server: APIServer) -> None:
     """Test that we can resolve ENS names"""
     dbens = DBEns(rotkehlchen_api_server.rest_api.rotkehlchen.data.db)
     response = requests.post(
@@ -199,7 +199,7 @@ def test_resolve_ens(rotkehlchen_api_server: 'APIServer') -> None:
         assert dbens.get_address_for_name(cursor, 'isurelydontexistbecauseifid1drotkitestswouldbreak.eth') is None  # noqa: E501
 
 
-def test_resolve_non_eth_ens_domain(rotkehlchen_api_server: 'APIServer') -> None:
+def test_resolve_non_eth_ens_domain(rotkehlchen_api_server: APIServer) -> None:
     with patch('rotkehlchen.api.services.user_data.maybe_resolve_name') as maybe_resolve_name:
         maybe_resolve_name.return_value = string_to_evm_address(
             '0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12',

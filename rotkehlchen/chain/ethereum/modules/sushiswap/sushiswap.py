@@ -4,14 +4,14 @@ from typing import TYPE_CHECKING
 from rotkehlchen.chain.ethereum.interfaces.ammswap.ammswap import AMMSwapPlatform
 from rotkehlchen.chain.ethereum.modules.sushiswap.constants import CPT_SUSHISWAP_V2
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.premium.premium import Premium
-from rotkehlchen.types import ChecksumEvmAddress
-from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.interfaces import EthereumModule
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
     from rotkehlchen.db.dbhandler import DBHandler
+    from rotkehlchen.premium.premium import Premium
+    from rotkehlchen.types import ChecksumEvmAddress
+    from rotkehlchen.user_messages import MessagesAggregator
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -25,8 +25,8 @@ class Sushiswap(AMMSwapPlatform, EthereumModule):
     """
     def __init__(
             self,
-            ethereum_inquirer: 'EthereumInquirer',
-            database: 'DBHandler',
+            ethereum_inquirer: EthereumInquirer,
+            database: DBHandler,
             premium: Premium | None,
             msg_aggregator: MessagesAggregator,
     ) -> None:

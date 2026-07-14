@@ -54,7 +54,7 @@ IGNORED_PROTOCOLS: Final = {
 
 @dataclass(init=True, repr=False, eq=False, order=False, unsafe_hash=False, frozen=False)
 class DBToken:
-    address: 'ChecksumEvmAddress'
+    address: ChecksumEvmAddress
     type: str
     chain: int
     token_kind: str
@@ -87,8 +87,8 @@ class DBToken:
 
 @requires_env([TestEnvironment.STANDARD])  # skip in nightlies due to github api rate limits
 def test_asset_updates_consistency_with_packaged_db(
-        tmpdir_factory: 'pytest.TempdirFactory',
-        messages_aggregator: 'MessagesAggregator',
+        tmpdir_factory: pytest.TempdirFactory,
+        messages_aggregator: MessagesAggregator,
 ):
     """Test that the globalDB updates are consistent with the packaged one.
     - All assets are present in both cases.
@@ -403,7 +403,7 @@ def test_asset_updates_consistency_with_packaged_db(
         pytest.fail('Found entries that are missing in remote updates:\n' + '\n'.join(missing_in_updates))  # noqa: E501
 
 
-def test_oracle_ids_in_asset_collections(globaldb: 'GlobalDBHandler'):
+def test_oracle_ids_in_asset_collections(globaldb: GlobalDBHandler):
     """Test that for each asset in a collection, their oracle IDs are same."""
     with globaldb.conn.read_ctx() as cursor:
         assets = {
@@ -459,9 +459,9 @@ def test_oracle_ids_in_asset_collections(globaldb: 'GlobalDBHandler'):
 @requires_env([TestEnvironment.STANDARD])  # skip in nightlies due to github api rate limits
 @pytest.mark.parametrize('our_version', ['1.40.0'])  # set latest version so data can be updated
 def test_remote_updates_consistency_with_packaged_db(
-        tmpdir_factory: 'pytest.TempdirFactory',
-        messages_aggregator: 'MessagesAggregator',
-        data_updater: 'RotkiDataUpdater',
+        tmpdir_factory: pytest.TempdirFactory,
+        messages_aggregator: MessagesAggregator,
+        data_updater: RotkiDataUpdater,
 ):
     """Test that the remote updates are consistent with the packaged db for:
     - Location asset mappings

@@ -28,7 +28,6 @@ from rotkehlchen.db.constants import (
     HistoryMappingState,
     UpdateType,
 )
-from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.db.evmtx import DBEvmTx
 from rotkehlchen.db.internal_tx_conflicts import (
     INTERNAL_TX_CONFLICT_ACTION_FIX_REDECODE,
@@ -72,6 +71,7 @@ from rotkehlchen.types import (
 if TYPE_CHECKING:
     from rotkehlchen.api.server import APIServer
     from rotkehlchen.data_migrations.progress import MigrationProgressHandler
+    from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.tasks.supervisor import TaskSupervisor
     from rotkehlchen.tests.fixtures.websockets import WebsocketReader
 
@@ -123,7 +123,7 @@ def assert_progress_message(msg: dict[str, Any], step_num: int, description: str
 
 
 def assert_add_addresses_migration_ws_messages(
-        websocket_connection: 'WebsocketReader',
+        websocket_connection: WebsocketReader,
         migration_version: int,
         migration_steps: int,
         chain_to_added_address: list[dict],
@@ -169,8 +169,8 @@ def detect_accounts_migration_check(
         migration_steps: int,
         migration_list: list[MigrationRecord],
         current_evm_accounts: list[ChecksumEvmAddress],
-        rotkehlchen_api_server: 'APIServer',
-        websocket_connection: 'WebsocketReader',
+        rotkehlchen_api_server: APIServer,
+        websocket_connection: WebsocketReader,
 ) -> None:
     """Tests that a migration that detects accounts with activity in the given evm chains is
     properly applied."""
@@ -300,7 +300,7 @@ def test_failed_migration(database: DBHandler) -> None:
     """Test that a failed migration does not update DB setting and logs error"""
     rotki = MockRotkiForMigrations(database)
 
-    def botched_migration(rotki: MockDataForMigrations, progress_handler: 'MigrationProgressHandler') -> None:  # noqa: E501
+    def botched_migration(rotki: MockDataForMigrations, progress_handler: MigrationProgressHandler) -> None:  # noqa: E501
         raise ValueError('ngmi')
 
     botched_list = [MigrationRecord(version=1, function=botched_migration)]  # type: ignore
@@ -338,7 +338,7 @@ def test_cancelled_migration(database: DBHandler) -> None:
     not get a spurious migration-failure error"""
     rotki = MockRotkiForMigrations(database)
 
-    def cancelled_migration(rotki: MockDataForMigrations, progress_handler: 'MigrationProgressHandler') -> None:  # noqa: E501
+    def cancelled_migration(rotki: MockDataForMigrations, progress_handler: MigrationProgressHandler) -> None:  # noqa: E501
         raise TaskCancelledError('Cancelled due to logout')
 
     rotki.msg_aggregator.consume_errors()  # discard db upgrade notification messages
@@ -361,7 +361,7 @@ def test_cancelled_migration(database: DBHandler) -> None:
 def test_migration_3(
         database: DBHandler,
         data_dir: Path,
-        task_supervisor: 'TaskSupervisor',
+        task_supervisor: TaskSupervisor,
 ) -> None:
     """
     Test that the third data migration for rotki works. This migration removes icons of assets
@@ -390,7 +390,7 @@ def test_migration_3(
 def test_migration_5(
         database: DBHandler,
         data_dir: Path,
-        task_supervisor: 'TaskSupervisor',
+        task_supervisor: TaskSupervisor,
 ) -> None:
     """
     Test that the fifth data migration for rotki works.
@@ -427,9 +427,9 @@ def test_migration_5(
 @pytest.mark.parametrize('ethereum_accounts', [[make_evm_address(), make_evm_address(), make_evm_address(), make_evm_address()]])  # noqa: E501
 @pytest.mark.parametrize('legacy_messages_via_websockets', [True])
 def test_migration_10(
-        rotkehlchen_api_server: 'APIServer',
+        rotkehlchen_api_server: APIServer,
         ethereum_accounts: list[ChecksumEvmAddress],
-        websocket_connection: 'WebsocketReader',
+        websocket_connection: WebsocketReader,
 ) -> None:
     """
     Test that accounts are properly duplicated from ethereum to optimism and avalanche
@@ -492,9 +492,9 @@ def test_migration_10(
 @pytest.mark.parametrize('legacy_messages_via_websockets', [True])
 @pytest.mark.parametrize('network_mocking', [False])
 def test_migration_11(
-        rotkehlchen_api_server: 'APIServer',
+        rotkehlchen_api_server: APIServer,
         ethereum_accounts: list[ChecksumEvmAddress],
-        websocket_connection: 'WebsocketReader',
+        websocket_connection: WebsocketReader,
 ) -> None:
     """
     Test migration 11.
@@ -522,9 +522,9 @@ def test_migration_11(
 @pytest.mark.parametrize('legacy_messages_via_websockets', [True])
 @pytest.mark.parametrize('network_mocking', [False])
 def test_migration_13(
-        rotkehlchen_api_server: 'APIServer',
+        rotkehlchen_api_server: APIServer,
         ethereum_accounts: list[ChecksumEvmAddress],
-        websocket_connection: 'WebsocketReader',
+        websocket_connection: WebsocketReader,
 ) -> None:
     """
     Test migration 13
@@ -556,9 +556,9 @@ def test_migration_13(
 @pytest.mark.parametrize('legacy_messages_via_websockets', [True])
 @pytest.mark.parametrize('network_mocking', [False])
 def test_migration_14(
-        rotkehlchen_api_server: 'APIServer',
+        rotkehlchen_api_server: APIServer,
         ethereum_accounts: list[ChecksumEvmAddress],
-        websocket_connection: 'WebsocketReader',
+        websocket_connection: WebsocketReader,
         allow_scroll_etherscan: None,
 ) -> None:
     """
@@ -583,7 +583,7 @@ def test_migration_14(
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('data_migration_version', [17])
 @pytest.mark.parametrize('perform_upgrades_at_unlock', [False])
-def test_migration_18(rotkehlchen_api_server: 'APIServer') -> None:
+def test_migration_18(rotkehlchen_api_server: APIServer) -> None:
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     ethereum_manager = rotki.chains_aggregator.ethereum
     related_address1, related_address2, other_address, yabireth = '0x9531C059098e3d194fF87FebB587aB07B30B1306', '0x8Fe178db26ebA2eEdb22575265bf10A63c395a3d', '0x3c89cd398aCcFCf0e046d325c4805A98723F8630', '0xc37b40ABdB939635068d3c5f13E7faF686F03B65'  # noqa: E501
@@ -760,7 +760,7 @@ def test_last_data_migration_constant() -> None:
 @pytest.mark.parametrize('network_mocking', [False])
 @pytest.mark.parametrize('gnosis_accounts', [['0xc37b40ABdB939635068d3c5f13E7faF686F03B65']])
 def test_migration_19(
-        rotkehlchen_api_server: 'APIServer',
+        rotkehlchen_api_server: APIServer,
         gnosis_accounts: list[ChecksumEvmAddress],
 ) -> None:
     """

@@ -1,13 +1,15 @@
 import json
 import time
 from collections import deque
-from collections.abc import Generator
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import pytest
 from websocket import WebSocketConnectionClosedException, create_connection
 
 from rotkehlchen.concurrency import spawn, wait
+
+if TYPE_CHECKING:
+    from collections.abc import Generator
 
 
 class WebsocketReader:
@@ -52,7 +54,7 @@ class WebsocketReader:
 @pytest.fixture(name='websocket_connection')
 def fixture_websocket_connection_reader(
         rest_api_port,
-) -> Generator[WebsocketReader, None, None]:
+) -> Generator[WebsocketReader]:
     ws = create_connection(f'ws://127.0.0.1:{rest_api_port}/ws/')
     websocket_reader = WebsocketReader(ws)
     ws.send('{}')  # whatever -- just to subscribe

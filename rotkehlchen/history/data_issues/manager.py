@@ -109,7 +109,7 @@ def _validate_state_transition(current_state: str | IssueState, new_state: Issue
 class DataIssuesManager:
     """Read and write data quality issues for the issues inbox."""
 
-    def __init__(self, database: 'DBHandler') -> None:
+    def __init__(self, database: DBHandler) -> None:
         self.db = database
 
     def write_issue(

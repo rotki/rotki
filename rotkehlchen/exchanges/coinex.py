@@ -1,7 +1,6 @@
 import logging
 import urllib.parse
 from collections import defaultdict
-from collections.abc import Callable, Sequence
 from http import HTTPStatus
 from json.decoder import JSONDecodeError
 from typing import TYPE_CHECKING, Any, Final, Literal, NamedTuple, TypeVar
@@ -15,7 +14,6 @@ from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
-from rotkehlchen.exchanges.data_structures import MarginPosition
 from rotkehlchen.exchanges.exchange import ExchangeInterface, ExchangeQueryBalances
 from rotkehlchen.exchanges.utils import SignatureGeneratorMixin, get_key_if_has_val
 from rotkehlchen.fval import FVal
@@ -51,8 +49,11 @@ from rotkehlchen.utils.mixins.cacheable import cache_response_timewise
 from rotkehlchen.utils.mixins.lockable import protect_with_lock
 
 if TYPE_CHECKING:
+    from collections.abc import Callable, Sequence
+
     from rotkehlchen.assets.asset import AssetWithOracles
     from rotkehlchen.db.dbhandler import DBHandler
+    from rotkehlchen.exchanges.data_structures import MarginPosition
     from rotkehlchen.history.events.structures.base import HistoryBaseEntry
     from rotkehlchen.user_messages import MessagesAggregator
 
@@ -70,8 +71,8 @@ class CoinexMarket(NamedTuple):
     market: str
     base_asset_symbol: str
     quote_asset_symbol: str
-    base_asset: 'AssetWithOracles'
-    quote_asset: 'AssetWithOracles'
+    base_asset: AssetWithOracles
+    quote_asset: AssetWithOracles
 
 
 def deserialize_coinex_timestamp(value: Any) -> TimestampMS:
@@ -96,8 +97,8 @@ class Coinex(ExchangeInterface, SignatureGeneratorMixin):
             name: str,
             api_key: ApiKey,
             secret: ApiSecret,
-            database: 'DBHandler',
-            msg_aggregator: 'MessagesAggregator',
+            database: DBHandler,
+            msg_aggregator: MessagesAggregator,
     ):
         super().__init__(
             name=name,
@@ -485,7 +486,7 @@ class Coinex(ExchangeInterface, SignatureGeneratorMixin):
             start_ts: Timestamp,
             end_ts: Timestamp,
             force_refresh: bool = False,
-    ) -> tuple[Sequence['HistoryBaseEntry'], Timestamp]:
+    ) -> tuple[Sequence[HistoryBaseEntry], Timestamp]:
         events: list[AssetMovement | SwapEvent] = []
         events.extend(self._query_asset_movements(
             movement_type='deposit',

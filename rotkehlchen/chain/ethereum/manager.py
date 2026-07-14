@@ -24,10 +24,10 @@ log = RotkehlchenLogsAdapter(logger)
 class EthereumManager(EvmManager, CurveManagerMixin):
     def __init__(
             self,
-            node_inquirer: 'EthereumInquirer',
-            premium: 'Premium | None' = None,
-            monerium: 'Monerium | None' = None,
-            beacon_chain: 'BeaconChain | None' = None,
+            node_inquirer: EthereumInquirer,
+            premium: Premium | None = None,
+            monerium: Monerium | None = None,
+            beacon_chain: BeaconChain | None = None,
     ) -> None:
         transactions = EthereumTransactions(
             ethereum_inquirer=node_inquirer,

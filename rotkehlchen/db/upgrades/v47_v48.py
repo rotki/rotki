@@ -11,7 +11,6 @@ from rotkehlchen.db.migration_utils import (
 from rotkehlchen.db.utils import update_table_schema
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.fval import FVal
-from rotkehlchen.history.events.structures.swap import SwapEvent
 from rotkehlchen.history.events.structures.types import HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter, enter_exit_debug_log
 from rotkehlchen.types import AssetAmount, Location, Price
@@ -22,6 +21,7 @@ if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.db.drivers.sqlite import DBCursor
     from rotkehlchen.db.upgrade_manager import DBUpgradeProgressHandler
+    from rotkehlchen.history.events.structures.swap import SwapEvent
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -100,11 +100,11 @@ def upgrade_trade_to_swap_events(
 
 
 @enter_exit_debug_log(name='UserDB v47->v48 upgrade')
-def upgrade_v47_to_v48(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHandler') -> None:
+def upgrade_v47_to_v48(db: DBHandler, progress_handler: DBUpgradeProgressHandler) -> None:
     """Upgrades the DB from v47 to v48. This was in v1.39 release."""
 
     @progress_step(description='Removing action_type table and simplifying ignored_actions')
-    def _remove_action_types(write_cursor: 'DBCursor') -> None:
+    def _remove_action_types(write_cursor: DBCursor) -> None:
         """This upgrade drops the action_type table and modifies the ignored_actions table
         to remove the type column, making identifier the primary key.
 
@@ -119,7 +119,7 @@ def upgrade_v47_to_v48(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
         write_cursor.execute('DROP TABLE action_type')
 
     @progress_step(description='Adding evm transactions authorization list table')
-    def _add_evm_transaction_authorization_list_table(write_cursor: 'DBCursor') -> None:
+    def _add_evm_transaction_authorization_list_table(write_cursor: DBCursor) -> None:
         write_cursor.execute("""
         CREATE TABLE IF NOT EXISTS evm_transactions_authorizations (
             tx_id INTEGER NOT NULL PRIMARY KEY,
@@ -130,7 +130,7 @@ def upgrade_v47_to_v48(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
         """)
 
     @progress_step(description='Adding eth2 validator cache table')
-    def _add_eth2_staking_cache_table(write_cursor: 'DBCursor') -> None:
+    def _add_eth2_staking_cache_table(write_cursor: DBCursor) -> None:
         write_cursor.execute("""
         CREATE TABLE IF NOT EXISTS eth_validators_data_cache (
             id INTEGER NOT NULL PRIMARY KEY,
@@ -145,7 +145,7 @@ def upgrade_v47_to_v48(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
         """)  # noqa: E501
 
     @progress_step(description='Resetting decoded events.')
-    def _reset_decoded_events(write_cursor: 'DBCursor') -> None:
+    def _reset_decoded_events(write_cursor: DBCursor) -> None:
         """Reset all decoded evm events except for the customized ones and those in zksync lite.
         Code taken from previous upgrade
         """
@@ -172,7 +172,7 @@ def upgrade_v47_to_v48(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
             )
 
     @progress_step(description='Adding validator_type column to eth2 validators table')
-    def _add_validator_type_column(write_cursor: 'DBCursor') -> None:
+    def _add_validator_type_column(write_cursor: DBCursor) -> None:
         update_table_schema(
             write_cursor=write_cursor,
             table_name='eth2_validators',
@@ -195,7 +195,7 @@ def upgrade_v47_to_v48(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
         )
 
     @progress_step(description='Updating calendar reminders schema')
-    def _update_calendar_reminders_schema(write_cursor: 'DBCursor') -> None:
+    def _update_calendar_reminders_schema(write_cursor: DBCursor) -> None:
         """Upgrades the calendar_reminders table to include acknowledged column."""
         update_table_schema(
             write_cursor=write_cursor,
@@ -212,7 +212,7 @@ def upgrade_v47_to_v48(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
         )
 
     @progress_step(description='Converting trades to history events')
-    def _convert_trades_to_swap_events(write_cursor: 'DBCursor') -> None:
+    def _convert_trades_to_swap_events(write_cursor: DBCursor) -> None:
         new_events: list[SwapEvent] = []
         # Kraken events appear both as history events and trades. We'll convert to SwapEvents
         # from the trades, but preserve the location_labels from the history events.
@@ -284,7 +284,7 @@ def upgrade_v47_to_v48(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
         )
 
     @progress_step(description='Replacing specific history note locations with HISTORY')
-    def _replace_history_note_locations(write_cursor: 'DBCursor') -> None:
+    def _replace_history_note_locations(write_cursor: DBCursor) -> None:
         write_cursor.execute(
             """
             UPDATE user_notes
@@ -298,7 +298,7 @@ def upgrade_v47_to_v48(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
         )
 
     @progress_step(description='Migrating etherscan configuration')
-    def _migrate_etherscan_keys(write_cursor: 'DBCursor') -> None:
+    def _migrate_etherscan_keys(write_cursor: DBCursor) -> None:
         write_cursor.execute(
             'DELETE FROM external_service_credentials WHERE name IN (?, ?, ?, ?, ?, ?, ?)',
             (
@@ -327,7 +327,7 @@ def upgrade_v47_to_v48(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
         write_cursor.execute('DELETE FROM settings WHERE name=?', ('use_unified_etherscan_api',))
 
     @progress_step(description='Resetting asset movement notes')
-    def _reset_asset_movement_notes(write_cursor: 'DBCursor') -> None:
+    def _reset_asset_movement_notes(write_cursor: DBCursor) -> None:
         """Clears auto-generated asset movement notes.
 
         Auto-generated notes were previously stored for asset movements (entry_type=6).
@@ -340,7 +340,7 @@ def upgrade_v47_to_v48(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
         )
 
     @progress_step(description='Upgrade internal transactions table')
-    def _upgrade_internal_transactions(write_cursor: 'DBCursor') -> None:
+    def _upgrade_internal_transactions(write_cursor: DBCursor) -> None:
         """Update the internal transactions table
 
         Again we need to add more info in the internal transactions data due to examples like this:
@@ -369,7 +369,7 @@ def upgrade_v47_to_v48(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
         )
 
     @progress_step(description='Upgrade history events table')
-    def _upgrade_history_events(write_cursor: 'DBCursor') -> None:
+    def _upgrade_history_events(write_cursor: DBCursor) -> None:
         """Update the history events table, adding a new ignored column and populating it from
         the ignored asset values in multisettings.
         Also adds indexes to improve query speed when filtering events.

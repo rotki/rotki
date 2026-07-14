@@ -2,7 +2,6 @@ import json
 import logging
 from typing import TYPE_CHECKING
 
-from eth_typing import ABIEvent
 from eth_utils import event_abi_to_log_topic, get_abi_input_names
 from web3 import Web3
 from web3._utils.abi import (
@@ -18,6 +17,8 @@ from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 
 if TYPE_CHECKING:
+    from eth_typing import ABIEvent
+
     from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
 
 logger = logging.getLogger(__name__)
@@ -27,7 +28,7 @@ WEB3 = Web3()
 
 
 def decode_event_data_abi_str(
-        tx_log: 'EvmTxReceiptLog',
+        tx_log: EvmTxReceiptLog,
         abi_json: str,
 ) -> tuple[list, list]:
     """This is an adjustment of web3's event data decoding to work with our code
@@ -46,7 +47,7 @@ def decode_event_data_abi_str(
 
 
 def decode_event_data_abi(
-        tx_log: 'EvmTxReceiptLog',
+        tx_log: EvmTxReceiptLog,
         event_abi: ABIEvent,
 ) -> tuple[list, list]:
     """This is an adjustment of web3's event data decoding to work with our code

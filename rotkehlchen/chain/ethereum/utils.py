@@ -1,8 +1,7 @@
 import logging
-from collections.abc import Sequence
 from http import HTTPStatus
 from pathlib import Path
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 import requests
 from ens.abis import PUBLIC_RESOLVER_2 as ENS_RESOLVER_ABI
@@ -31,6 +30,8 @@ from rotkehlchen.utils.hexbytes import hexstring_to_bytes
 from rotkehlchen.utils.misc import ts_now
 
 if TYPE_CHECKING:
+    from collections.abc import Sequence
+
     from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.externalapis.opensea import Opensea
@@ -77,7 +78,7 @@ def generate_address_via_create2(
 
 
 def should_update_protocol_cache(
-        userdb: 'DBHandler',
+        userdb: DBHandler,
         cache_key: CacheType,
         args: Sequence[str] | None = None,
 ) -> bool:
@@ -133,8 +134,8 @@ def _get_response_image(response: requests.adapters.Response) -> bytes:
 
 
 def try_download_ens_avatar(
-        eth_inquirer: 'EthereumInquirer',
-        opensea: Optional['Opensea'],
+        eth_inquirer: EthereumInquirer,
+        opensea: Opensea | None,
         avatars_dir: Path,
         ens_name: str,
 ) -> None:

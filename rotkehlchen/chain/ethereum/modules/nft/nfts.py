@@ -1,6 +1,5 @@
 import logging
-from collections.abc import Sequence
-from typing import TYPE_CHECKING, Any, Optional
+from typing import TYPE_CHECKING, Any
 
 from sqlcipher3 import dbapi2 as sqlcipher
 
@@ -17,7 +16,6 @@ from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import deserialize_fval_or_zero
 from rotkehlchen.types import ChecksumEvmAddress, Price
-from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.interfaces import EthereumModule
 from rotkehlchen.utils.mixins.cacheable import CacheableMixIn, cache_response_timewise_immutable
 from rotkehlchen.utils.mixins.lockable import LockableQueryMixIn, protect_with_lock
@@ -26,9 +24,12 @@ from .constants import FREE_NFT_LIMIT
 from .structures import NftLpHandling, NFTResult
 
 if TYPE_CHECKING:
+    from collections.abc import Sequence
+
     from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.premium.premium import Premium
+    from rotkehlchen.user_messages import MessagesAggregator
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -91,9 +92,9 @@ class Nfts(EthereumModule, CacheableMixIn, LockableQueryMixIn):
 
     def __init__(
             self,
-            ethereum_inquirer: 'EthereumInquirer',
-            database: 'DBHandler',
-            premium: Optional['Premium'],
+            ethereum_inquirer: EthereumInquirer,
+            database: DBHandler,
+            premium: Premium | None,
             msg_aggregator: MessagesAggregator,
     ) -> None:  # avoiding super() since cant't call abstract class's __init__
         CacheableMixIn.__init__(self)
@@ -167,7 +168,7 @@ class Nfts(EthereumModule, CacheableMixIn, LockableQueryMixIn):
             entries_limit=FREE_NFT_LIMIT,
         )
 
-    def get_db_nft_balances(self, filter_query: 'NFTFilterQuery') -> dict[str, Any]:
+    def get_db_nft_balances(self, filter_query: NFTFilterQuery) -> dict[str, Any]:
         """Filters (with `filter_query`) and returns cached nft balances in the nfts table"""
         total_usd_value = ZERO
         query, bindings = filter_query.prepare(with_pagination=False)

@@ -5,7 +5,6 @@ from unittest.mock import patch
 import pytest
 import requests
 
-from rotkehlchen.chain.solana.rpc import Signature
 from rotkehlchen.chain.solana.types import SolanaTransaction
 from rotkehlchen.db.filtering import SolanaEventFilterQuery, SolanaTransactionsFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
@@ -23,6 +22,7 @@ from rotkehlchen.utils.misc import ts_now
 
 if TYPE_CHECKING:
     from rotkehlchen.api.server import APIServer
+    from rotkehlchen.chain.solana.rpc import Signature
     from rotkehlchen.tests.fixtures import WebsocketReader
 
 
@@ -30,7 +30,7 @@ if TYPE_CHECKING:
 @pytest.mark.parametrize('ethereum_accounts', [[]])
 @pytest.mark.parametrize('solana_accounts', [['7T8ckKtdc5DH7ACS5AnCny7rVXYJPEsaAbdBri1FhPxY']])
 def test_query_solana_transactions(
-        rotkehlchen_api_server: 'APIServer',
+        rotkehlchen_api_server: APIServer,
         solana_accounts: list[SolanaAddress],
 ) -> None:
     """Test that solana transactions are properly queried and decoded from the RPCs.
@@ -141,7 +141,7 @@ def test_query_solana_transactions(
 @pytest.mark.parametrize('ethereum_accounts', [[]])
 @pytest.mark.parametrize('solana_accounts', [['7T8ckKtdc5DH7ACS5AnCny7rVXYJPEsaAbdBri1FhPxY']])
 def test_query_associated_token_account_transactions(
-        rotkehlchen_api_server: 'APIServer',
+        rotkehlchen_api_server: APIServer,
         solana_accounts: list[SolanaAddress],
 ) -> None:
     """Test that an account's ATAs (Associated Token Accounts) also get their transactions queried
@@ -251,9 +251,9 @@ def test_query_associated_token_account_transactions(
 @pytest.mark.parametrize('solana_accounts', [['7T8ckKtdc5DH7ACS5AnCny7rVXYJPEsaAbdBri1FhPxY']])
 @pytest.mark.parametrize('legacy_messages_via_websockets', [True])
 def test_refetch_txs_in_range(
-        rotkehlchen_api_server: 'APIServer',
+        rotkehlchen_api_server: APIServer,
         solana_accounts: list[SolanaAddress],
-        websocket_connection: 'WebsocketReader',
+        websocket_connection: WebsocketReader,
 ) -> None:
     """Test that refetching transactions in a given range works properly both for the main user
     address and one of its ATAs.

@@ -1,5 +1,4 @@
 import logging
-from collections.abc import Callable, Mapping
 from typing import TYPE_CHECKING, Any
 
 from rotkehlchen.assets.asset import UnderlyingToken
@@ -30,6 +29,8 @@ from .constants import CPT_MORPHO
 from .utils import query_morpho_reward_distributors, query_morpho_vaults
 
 if TYPE_CHECKING:
+    from collections.abc import Callable, Mapping
+
     from rotkehlchen.assets.asset import EvmToken
     from rotkehlchen.chain.evm.decoding.base import BaseEvmDecoderTools
     from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
@@ -46,11 +47,11 @@ class MorphoCommonDecoder(EvmDecoderInterface, ReloadableDecoderMixin):
 
     def __init__(
             self,
-            evm_inquirer: 'EvmNodeInquirer',
-            base_tools: 'BaseEvmDecoderTools',
-            msg_aggregator: 'MessagesAggregator',
-            bundlers: set['ChecksumEvmAddress'],
-            adapters: set['ChecksumEvmAddress'],
+            evm_inquirer: EvmNodeInquirer,
+            base_tools: BaseEvmDecoderTools,
+            msg_aggregator: MessagesAggregator,
+            bundlers: set[ChecksumEvmAddress],
+            adapters: set[ChecksumEvmAddress],
     ) -> None:
         """Initialize the Morpho common decoder.
         For bundler and adapter addresses on each chain see
@@ -66,7 +67,7 @@ class MorphoCommonDecoder(EvmDecoderInterface, ReloadableDecoderMixin):
         self.adapters = adapters
         self.rewards_distributors: list[ChecksumEvmAddress] = []
 
-    def reload_data(self) -> Mapping['ChecksumEvmAddress', tuple[Any, ...]] | None:
+    def reload_data(self) -> Mapping[ChecksumEvmAddress, tuple[Any, ...]] | None:
         """Check that cache is up to date and refresh cache from db.
         Returns a fresh addresses to decoders mapping.
         """
@@ -112,7 +113,7 @@ class MorphoCommonDecoder(EvmDecoderInterface, ReloadableDecoderMixin):
     def _get_vault_event_tokens_and_amounts(
             self,
             context: DecoderContext,
-    ) -> tuple['EvmToken', 'EvmToken', 'FVal', 'FVal'] | None:
+    ) -> tuple[EvmToken, EvmToken, FVal, FVal] | None:
         """Get the vault token, underlying token, and the corresponding amounts.
         Returns the tokens and amounts in a tuple or None on error."""
         try:
@@ -141,7 +142,7 @@ class MorphoCommonDecoder(EvmDecoderInterface, ReloadableDecoderMixin):
     def _decode_deposit(
             self,
             context: DecoderContext,
-    ) -> tuple[list['EvmEvent'], 'EvmEvent | None']:
+    ) -> tuple[list[EvmEvent], EvmEvent | None]:
         """Decode events associated with a deposit.
         Returns out_events and in_event in a tuple to be used for reordering."""
         if (tokens_and_amounts := self._get_vault_event_tokens_and_amounts(context)) is None:
@@ -236,7 +237,7 @@ class MorphoCommonDecoder(EvmDecoderInterface, ReloadableDecoderMixin):
     def _decode_withdraw(
             self,
             context: DecoderContext,
-    ) -> tuple['EvmEvent | None', 'EvmEvent | None']:
+    ) -> tuple[EvmEvent | None, EvmEvent | None]:
         """Decode events associated with a withdrawal.
         Returns out_event and in_event in a tuple to be used for reordering."""
         if (tokens_and_amounts := self._get_vault_event_tokens_and_amounts(context)) is None:
@@ -359,10 +360,10 @@ class MorphoCommonDecoder(EvmDecoderInterface, ReloadableDecoderMixin):
 
     def _remove_unneeded_bundler_events(
             self,
-            transaction: 'EvmTransaction',
-            decoded_events: list['EvmEvent'],
-            all_logs: list['EvmTxReceiptLog'],  # pylint: disable=unused-argument
-    ) -> list['EvmEvent']:
+            transaction: EvmTransaction,
+            decoded_events: list[EvmEvent],
+            all_logs: list[EvmTxReceiptLog],  # pylint: disable=unused-argument
+    ) -> list[EvmEvent]:
         """Remove any transfers to/from the bundler since their amounts are included in
         the deposit/withdrawal vault events."""
         return [
@@ -381,7 +382,7 @@ class MorphoCommonDecoder(EvmDecoderInterface, ReloadableDecoderMixin):
     def addresses_to_decoders(self) -> dict[ChecksumEvmAddress, tuple[Any, ...]]:
         return dict.fromkeys(self.rewards_distributors, (self._decode_reward_claim,)) | dict.fromkeys(self.vaults, (self._decode_vault_events,))  # noqa: E501
 
-    def addresses_to_counterparties(self) -> dict['ChecksumEvmAddress', str]:
+    def addresses_to_counterparties(self) -> dict[ChecksumEvmAddress, str]:
         return dict.fromkeys(self.bundlers, CPT_MORPHO)
 
     def post_decoding_rules(self) -> dict[str, list[tuple[int, Callable]]]:

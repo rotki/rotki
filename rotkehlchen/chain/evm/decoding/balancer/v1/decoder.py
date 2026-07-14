@@ -1,5 +1,4 @@
 import logging
-from collections.abc import Callable
 from typing import TYPE_CHECKING, Any, Final
 
 from rotkehlchen.assets.utils import asset_normalized_value
@@ -20,7 +19,6 @@ from rotkehlchen.chain.evm.decoding.structures import (
     EvmDecodingOutput,
     TransferEnrichmentOutput,
 )
-from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.globaldb.cache import globaldb_get_general_cache_values
 from rotkehlchen.globaldb.handler import GlobalDBHandler
@@ -30,8 +28,11 @@ from rotkehlchen.types import CacheType, ChecksumEvmAddress, EvmTransaction, EVM
 from rotkehlchen.utils.misc import bytes_to_address
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+
     from rotkehlchen.chain.evm.decoding.base import BaseEvmDecoderTools
     from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
+    from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
     from rotkehlchen.history.events.structures.evm_event import EvmEvent
     from rotkehlchen.user_messages import MessagesAggregator
 
@@ -46,9 +47,9 @@ class Balancerv1CommonDecoder(BalancerCommonDecoder):
 
     def __init__(
             self,
-            evm_inquirer: 'EvmNodeInquirer',
-            base_tools: 'BaseEvmDecoderTools',
-            msg_aggregator: 'MessagesAggregator',
+            evm_inquirer: EvmNodeInquirer,
+            base_tools: BaseEvmDecoderTools,
+            msg_aggregator: MessagesAggregator,
     ) -> None:
         super().__init__(
             evm_inquirer=evm_inquirer,
@@ -212,9 +213,9 @@ class Balancerv1CommonDecoder(BalancerCommonDecoder):
     def _check_refunds_v1(
             self,
             transaction: EvmTransaction,  # pylint: disable=unused-argument
-            decoded_events: list['EvmEvent'],
+            decoded_events: list[EvmEvent],
             all_logs: list[EvmTxReceiptLog],  # pylint: disable=unused-argument
-    ) -> list['EvmEvent']:
+    ) -> list[EvmEvent]:
         """
         It can happen that after sending tokens to the DSProxy in balancer V1 the amount of tokens
         required for the deposit is lower than the amount sent and then those tokens are returned
@@ -257,7 +258,7 @@ class Balancerv1CommonDecoder(BalancerCommonDecoder):
             image='balancer.svg',
         ),)
 
-    def addresses_to_counterparties(self) -> dict['ChecksumEvmAddress', str]:
+    def addresses_to_counterparties(self) -> dict[ChecksumEvmAddress, str]:
         with GlobalDBHandler().conn.read_ctx() as cursor:
             return dict.fromkeys(
                 [

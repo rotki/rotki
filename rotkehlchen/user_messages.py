@@ -7,10 +7,10 @@ from rotkehlchen.api.websockets.typedefs import WSMessageType
 from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.serialize import process_result
-from rotkehlchen.types import ExternalService
 
 if TYPE_CHECKING:
     from rotkehlchen.api.websockets.notifier import RotkiNotifier
+    from rotkehlchen.types import ExternalService
 
 
 logger = logging.getLogger(__name__)

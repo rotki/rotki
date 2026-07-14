@@ -78,8 +78,8 @@ def _add_aerodrome_pool(pool: ChecksumEvmAddress) -> None:
 @pytest.mark.parametrize('load_global_caches', [[CPT_AERODROME]])
 @pytest.mark.parametrize('base_accounts', [['0x514c4BA193c698100DdC998F17F24bDF59c7b6fB']])
 def test_add_liquidity(
-        base_transaction_decoder: 'BaseTransactionDecoder',
-        base_accounts: list['ChecksumEvmAddress'],
+        base_transaction_decoder: BaseTransactionDecoder,
+        base_accounts: list[ChecksumEvmAddress],
         load_global_caches: list[str],
         allow_base_routescan: None,
 ) -> None:
@@ -661,8 +661,8 @@ def test_swap(base_transaction_decoder, base_accounts, load_global_caches):
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('base_accounts', [['0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12']])
 def test_swap_via_settler_router_on_base(
-        base_transaction_decoder: 'BaseTransactionDecoder',
-        base_accounts: list['ChecksumEvmAddress'],
+        base_transaction_decoder: BaseTransactionDecoder,
+        base_accounts: list[ChecksumEvmAddress],
         allow_base_routescan: None,
 ) -> None:
     events, _ = get_decoded_events_of_transaction(

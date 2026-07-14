@@ -7,7 +7,6 @@ from typing import TYPE_CHECKING, Final, Literal
 
 from rotkehlchen.api.websockets.typedefs import WSMessageType
 from rotkehlchen.assets.asset import Asset
-from rotkehlchen.chain.accounts import BlockchainAccounts
 from rotkehlchen.chain.decoding.constants import CPT_GAS
 from rotkehlchen.chain.ethereum.constants import EXCHANGES_CPT
 from rotkehlchen.chain.evm.decoding.monerium.constants import CPT_MONERIUM
@@ -58,6 +57,7 @@ from rotkehlchen.utils.misc import is_valid_ethereum_tx_hash, ts_ms_to_sec, ts_n
 if TYPE_CHECKING:
     from collections.abc import Iterable
 
+    from rotkehlchen.chain.accounts import BlockchainAccounts
     from rotkehlchen.chain.aggregator import ChainsAggregator
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.db.drivers.sqlite import DBCursor
@@ -178,8 +178,8 @@ class MovementMatchingState:
 
 
 def process_eth2_events(
-        chains_aggregator: 'ChainsAggregator',
-        database: 'DBHandler',
+        chains_aggregator: ChainsAggregator,
+        database: DBHandler,
 ) -> None:
     """Process ETH2 events and maybe modify or combine them with corresponding tx events."""
     if (eth2 := chains_aggregator.get_module('eth2')) is not None:
@@ -195,7 +195,7 @@ def process_eth2_events(
 
 
 def process_asset_movements(
-        database: 'DBHandler',
+        database: DBHandler,
         should_auto_match: bool = True,
 ) -> None:
     with database.match_asset_movements_lock:
@@ -203,7 +203,7 @@ def process_asset_movements(
 
 
 def _load_customized_event_candidates(
-        database: 'DBHandler',
+        database: DBHandler,
         group_identifiers: list[str] | None = None,
 ) -> dict[str, list[CustomizedEventCandidate]]:
     """Load customized and related non-customized EVM/Solana events grouped by group identifier.
@@ -304,7 +304,7 @@ def _load_customized_event_candidates(
 
 
 def find_customized_event_duplicate_groups(
-        database: 'DBHandler',
+        database: DBHandler,
         group_identifiers: list[str] | None = None,
 ) -> tuple[list[str], list[str], list[int]]:
     """Return group identifiers for auto-fixable duplicates and manual review groups.
@@ -428,8 +428,8 @@ def _should_auto_ignore_movement(asset_movement: AssetMovement) -> bool:
 
 def _get_assets_in_collection(
         asset_movement: AssetMovement,
-        assets_in_collection_cache: dict[str, tuple['Asset', ...]],
-) -> tuple['Asset', ...]:
+        assets_in_collection_cache: dict[str, tuple[Asset, ...]],
+) -> tuple[Asset, ...]:
     """Get assets in collection for movement asset, using cache."""
     asset_identifier = asset_movement.asset.identifier
     assets_in_collection = assets_in_collection_cache.get(asset_identifier)
@@ -487,9 +487,9 @@ def _get_movement_timestamp_range_ms(
 def _build_movement_batch_possible_matches(
         events_db: DBHistoryEvents,
         asset_movements: list[AssetMovement],
-        settings: 'DBSettings',
+        settings: DBSettings,
         assets_in_collection_cache: dict[str, tuple[Asset, ...]],
-        cursor: 'DBCursor',
+        cursor: DBCursor,
 ) -> dict[int, list[HistoryBaseEntry]]:
     """Build candidate match lists for a chunk of asset movements using one DB fetch.
 
@@ -556,7 +556,7 @@ def _build_movement_batch_possible_matches(
 
 def _query_asset_movement_candidates(
         events_db: DBHistoryEvents,
-        cursor: 'DBCursor',
+        cursor: DBCursor,
         asset_timestamp_ranges: list[tuple[tuple[Asset, ...], TimestampMS, TimestampMS]],
 ) -> list[HistoryBaseEntry]:
     """Fetch candidate events for one or more movement ranges with shared query logic."""
@@ -569,7 +569,7 @@ def _query_asset_movement_candidates(
     )
 
 
-def _assets_are_only_unsupported_chains(assets_in_collection: tuple['Asset', ...]) -> bool:
+def _assets_are_only_unsupported_chains(assets_in_collection: tuple[Asset, ...]) -> bool:
     """Return True if none of the assets belong to chains we can query txs for."""
     return not any(
         (
@@ -637,9 +637,9 @@ def _process_movement_candidate_set(
         events_db: DBHistoryEvents,
         asset_movement: AssetMovement,
         fee_events: dict[str, AssetMovement],
-        settings: 'DBSettings',
-        assets_in_collection_cache: dict[str, tuple['Asset', ...]],
-        cursor: 'DBCursor',
+        settings: DBSettings,
+        assets_in_collection_cache: dict[str, tuple[Asset, ...]],
+        cursor: DBCursor,
         blockchain_accounts: BlockchainAccounts,
         asset_movements_by_asset: dict[Asset, list[AssetMovement]],
         matching_state: MovementMatchingState,
@@ -769,7 +769,7 @@ def _process_movement_candidate_set(
 
 
 def match_asset_movements(
-        database: 'DBHandler',
+        database: DBHandler,
         should_auto_match: bool = True,
 ) -> None:
     """Analyze asset movements and find corresponding onchain events, then update those onchain
@@ -876,7 +876,7 @@ def match_asset_movements(
 
 
 def get_unmatched_asset_movements(
-        database: 'DBHandler',
+        database: DBHandler,
 ) -> tuple[list[AssetMovement], dict[str, AssetMovement]]:
     """Get all asset movements that have not been matched yet. Returns a tuple containing the list
     of asset movements and a dict of the corresponding fee events keyed by their group_identifier.
@@ -1249,7 +1249,7 @@ def _match_amount(
 
 
 def get_already_matched_event_ids(
-        cursor: 'DBCursor',
+        cursor: DBCursor,
 ) -> set[int]:
     """Get ids already participating in asset movement matches on either side of the link."""
     event_ids: set[int] = set()
@@ -1269,8 +1269,8 @@ def find_asset_movement_matches(
         is_deposit: bool,
         fee_event: AssetMovement | None,
         match_window: int,
-        cursor: 'DBCursor',
-        assets_in_collection: tuple['Asset', ...],
+        cursor: DBCursor,
+        assets_in_collection: tuple[Asset, ...],
         blockchain_accounts: BlockchainAccounts,
         already_matched_event_ids: set[int],
         exclude_protocol_counterparty: bool = True,

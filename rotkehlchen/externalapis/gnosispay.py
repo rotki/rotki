@@ -6,7 +6,6 @@ from typing import TYPE_CHECKING, Any, Final, Literal, cast
 
 import requests
 
-from rotkehlchen.assets.asset import AssetWithSymbol
 from rotkehlchen.chain.evm.constants import EVM_ADDRESS_REGEX
 from rotkehlchen.chain.gnosis.modules.gnosis_pay.constants import CPT_GNOSIS_PAY
 from rotkehlchen.constants.timing import DAY_IN_SECONDS, HOUR_IN_SECONDS
@@ -43,6 +42,7 @@ from rotkehlchen.utils.network import create_session
 from rotkehlchen.utils.serialization import jsonloads_dict, rlk_jsondumps
 
 if TYPE_CHECKING:
+    from rotkehlchen.assets.asset import AssetWithSymbol
     from rotkehlchen.db.dbhandler import DBHandler
 
 logger = logging.getLogger(__name__)
@@ -118,7 +118,7 @@ class GnosisPay:
     https://usa.visa.com/content/dam/VCOM/download/merchants/visa-merchant-data-standards-manual.pdf
     """
 
-    def __init__(self, database: 'DBHandler', session_token: str) -> None:
+    def __init__(self, database: DBHandler, session_token: str) -> None:
         self.database = database
         self.session = create_session()
         self.session_token = session_token
@@ -648,7 +648,7 @@ class GnosisPay:
             self.maybe_update_event_with_api_data(transaction)
 
 
-def init_gnosis_pay(database: 'DBHandler') -> GnosisPay | None:
+def init_gnosis_pay(database: DBHandler) -> GnosisPay | None:
     """Create a gnosis pay instance using the provided database"""
     with database.conn.read_ctx() as cursor:
         result = cursor.execute(

@@ -1,12 +1,14 @@
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
-from rotkehlchen.assets.asset import AssetWithOracles, FiatAsset
 from rotkehlchen.constants import ONE
 from rotkehlchen.constants.prices import ZERO_PRICE
 from rotkehlchen.inquirer import Inquirer
-from rotkehlchen.rotkehlchen import Rotkehlchen
 from rotkehlchen.serialization.serialize import process_result
 from rotkehlchen.types import Price
+
+if TYPE_CHECKING:
+    from rotkehlchen.assets.asset import AssetWithOracles, FiatAsset
+    from rotkehlchen.rotkehlchen import Rotkehlchen
 
 
 class BalancesService:

@@ -12,7 +12,7 @@ if TYPE_CHECKING:
 
 class WethDecoder(EthBaseWethDecoder):
 
-    def _decode_wrapper(self, context: 'DecoderContext') -> 'EvmDecodingOutput':
+    def _decode_wrapper(self, context: DecoderContext) -> EvmDecodingOutput:
         """WETH on Arbitrum is deployed as proxy, check for transfers to/from ZERO_ADDRESS."""
         if context.tx_log.topics[0] == ERC20_OR_ERC721_TRANSFER:
             from_address = bytes_to_address(context.tx_log.topics[1])

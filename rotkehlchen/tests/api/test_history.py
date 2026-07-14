@@ -29,7 +29,6 @@ from rotkehlchen.history.events.structures.types import (
 )
 from rotkehlchen.history.price import PriceHistorian
 from rotkehlchen.history.types import HistoricalPriceOracle
-from rotkehlchen.tests.fixtures.websockets import WebsocketReader
 from rotkehlchen.tests.utils.api import (
     api_url_for,
     assert_error_response,
@@ -57,6 +56,7 @@ from rotkehlchen.utils.misc import ts_now
 
 if TYPE_CHECKING:
     from rotkehlchen.api.server import APIServer
+    from rotkehlchen.tests.fixtures.websockets import WebsocketReader
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
@@ -77,7 +77,7 @@ if TYPE_CHECKING:
 ])
 @pytest.mark.parametrize('initialize_accounting_rules', [True])
 @pytest.mark.parametrize('legacy_messages_via_websockets', [True])
-def test_query_history(rotkehlchen_api_server_with_exchanges: 'APIServer', start_ts: Timestamp, end_ts: Timestamp, websocket_connection: WebsocketReader) -> None:   # noqa: E501
+def test_query_history(rotkehlchen_api_server_with_exchanges: APIServer, start_ts: Timestamp, end_ts: Timestamp, websocket_connection: WebsocketReader) -> None:   # noqa: E501
     """Test that the history processing REST API endpoint works. Similar to test_history.py
 
     Both a test for full and limited time range.
@@ -184,7 +184,7 @@ def test_query_history(rotkehlchen_api_server_with_exchanges: 'APIServer', start
 )
 @pytest.mark.parametrize('ethereum_accounts', [[ETH_ADDRESS1, ETH_ADDRESS2, ETH_ADDRESS3]])
 @pytest.mark.parametrize('mocked_price_queries', [prices])
-def test_query_history_remote_errors(rotkehlchen_api_server_with_exchanges: 'APIServer') -> None:
+def test_query_history_remote_errors(rotkehlchen_api_server_with_exchanges: APIServer) -> None:
     """Test that the history processing REST API endpoint works. Similar to test_history.py"""
     rotki = rotkehlchen_api_server_with_exchanges.rest_api.rotkehlchen
     setup = prepare_rotki_for_history_processing_test(
@@ -222,7 +222,7 @@ def test_query_history_remote_errors(rotkehlchen_api_server_with_exchanges: 'API
 @pytest.mark.parametrize('have_decoders', [True])
 @pytest.mark.parametrize('ethereum_accounts', [[]])  # no accounts so no history is pulled
 @pytest.mark.parametrize('mocked_price_queries', [prices])
-def test_fatal_error_during_query_history(rotkehlchen_api_server: 'APIServer') -> None:
+def test_fatal_error_during_query_history(rotkehlchen_api_server: APIServer) -> None:
     """Test that an accounting error is propagated correctly to the api"""
     error_patch = patch(
         'rotkehlchen.accounting.accountant.Accountant._process_event',
@@ -247,7 +247,7 @@ def test_fatal_error_during_query_history(rotkehlchen_api_server: 'APIServer') -
 
 
 @pytest.mark.parametrize('have_decoders', [True])
-def test_query_history_errors(rotkehlchen_api_server: 'APIServer') -> None:
+def test_query_history_errors(rotkehlchen_api_server: APIServer) -> None:
     """Test that errors in the history query REST API endpoint are handled properly"""
     # invalid from timestamp value
     response = requests.get(
@@ -289,7 +289,7 @@ def test_query_history_errors(rotkehlchen_api_server: 'APIServer') -> None:
 @pytest.mark.parametrize('ethereum_accounts', [[]])
 @pytest.mark.parametrize('mocked_price_queries', [prices])
 @pytest.mark.parametrize('initialize_accounting_rules', [True])
-def test_query_history_external_exchanges(rotkehlchen_api_server: 'APIServer') -> None:
+def test_query_history_external_exchanges(rotkehlchen_api_server: APIServer) -> None:
     """Test that history is processed for external exchanges too"""
     start_ts = Timestamp(0)
     end_ts = Timestamp(1631455982)
@@ -327,7 +327,7 @@ def test_query_history_external_exchanges(rotkehlchen_api_server: 'APIServer') -
 @pytest.mark.parametrize('ascending_timestamp', [False, True])
 @pytest.mark.parametrize('initialize_accounting_rules', [True])
 def test_query_pnl_report_events_pagination_filtering(
-        rotkehlchen_api_server_with_exchanges: 'APIServer',
+        rotkehlchen_api_server_with_exchanges: APIServer,
         ascending_timestamp: bool,
 ) -> None:
     """Test that for PnL reports pagination, filtering and order work fine"""
@@ -393,7 +393,7 @@ def test_query_pnl_report_events_pagination_filtering(
 
 @pytest.mark.parametrize('ethereum_accounts', [[]])
 @pytest.mark.parametrize('have_decoders', [[True]])
-def test_history_debug_export(rotkehlchen_api_server: 'APIServer') -> None:
+def test_history_debug_export(rotkehlchen_api_server: APIServer) -> None:
     """Check that the format of the data exported matches the expected type."""
     tx_id = '10' + str(make_evm_tx_hash())  # add a random tx id to the ignore list to ensure that at least one kind of event is ignored and is not empty  # noqa: E501
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
@@ -422,7 +422,7 @@ def test_history_debug_export(rotkehlchen_api_server: 'APIServer') -> None:
 
 
 @pytest.mark.parametrize('mocked_price_queries', [prices])
-def test_history_debug_import(rotkehlchen_api_server: 'APIServer') -> None:
+def test_history_debug_import(rotkehlchen_api_server: APIServer) -> None:
     method = random.choice(['PATCH', 'PUT'])
     async_query = random.choice([True, False])
     filepath = Path(__file__).resolve().parent.parent / 'data' / 'pnl_debug.json'
@@ -468,7 +468,7 @@ def test_history_debug_import(rotkehlchen_api_server: 'APIServer') -> None:
 @pytest.mark.parametrize('number_of_eth_accounts', [0])
 @pytest.mark.parametrize('should_mock_price_queries', [False])
 @pytest.mark.parametrize('initialize_accounting_rules', [True])
-def test_missing_prices_in_pnl_report(rotkehlchen_api_server: 'APIServer') -> None:
+def test_missing_prices_in_pnl_report(rotkehlchen_api_server: APIServer) -> None:
     """
     Test missing prices propagated during the PNL report
     """

@@ -1,8 +1,9 @@
-from typing import Final
-
-from eth_typing import ABI
+from typing import TYPE_CHECKING, Final
 
 from rotkehlchen.chain.evm.types import string_to_evm_address
+
+if TYPE_CHECKING:
+    from eth_typing import ABI
 
 CPT_RUNMONEY: Final = 'runmoney'
 RUNMONEY_CONTRACT_ABI: ABI = [{'inputs': [{'name': 'walletAddress', 'type': 'address'}], 'name': 'athletes', 'outputs': [{'name': 'joinedAt', 'type': 'uint256'}, {'name': 'stakedAmount', 'type': 'uint256'}, {'name': 'tokenId', 'type': 'uint256'}], 'stateMutability': 'view', 'type': 'function'}]  # noqa: E501

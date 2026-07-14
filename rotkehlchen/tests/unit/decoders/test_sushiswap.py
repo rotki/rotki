@@ -234,8 +234,8 @@ def test_sushiswap_v2_add_liquidity(ethereum_inquirer):
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0xb5C562D66eaCd89c1A9ED07eF6e45A08BF0C6003']])
 def test_sushiswap_redsnwap_token_to_token(
-        ethereum_inquirer: 'EthereumInquirer',
-        ethereum_accounts: list['ChecksumEvmAddress'],
+        ethereum_inquirer: EthereumInquirer,
+        ethereum_accounts: list[ChecksumEvmAddress],
 ) -> None:
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=ethereum_inquirer,
@@ -295,8 +295,8 @@ def test_sushiswap_redsnwap_token_to_token(
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0x873b5A8bFb25c48344F544A1B036cc4EA424966d']])
 def test_sushiswap_redsnwap_token_to_eth(
-        ethereum_inquirer: 'EthereumInquirer',
-        ethereum_accounts: list['ChecksumEvmAddress'],
+        ethereum_inquirer: EthereumInquirer,
+        ethereum_accounts: list[ChecksumEvmAddress],
 ) -> None:
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=ethereum_inquirer,
@@ -369,8 +369,8 @@ def test_sushiswap_redsnwap_token_to_eth(
 @pytest.mark.parametrize('db_settings', [{'evm_indexers_order': SerializableChainIndexerOrder(order={ChainID.BASE: [EvmIndexer.BLOCKSCOUT]})}])  # noqa: E501
 @pytest.mark.parametrize('base_accounts', [['0xA01f6D0985389a8E106D3158A9441aC21EAC8D8c']])
 def test_sushiswap_swap_eth_to_token(
-        base_inquirer: 'BaseInquirer',
-        base_accounts: list['ChecksumEvmAddress'],
+        base_inquirer: BaseInquirer,
+        base_accounts: list[ChecksumEvmAddress],
 ) -> None:
     """Test that a Sushiswap Route Processor swap of ETH to TYBG on Base is decoded properly."""
     events, _ = get_decoded_events_of_transaction(

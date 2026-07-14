@@ -1,14 +1,16 @@
 import logging
 import platform
 from http import HTTPStatus
-from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import requests
 
 from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.utils.misc import ROTKI_USER_AGENT, get_system_spec, is_production
+
+if TYPE_CHECKING:
+    from pathlib import Path
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)

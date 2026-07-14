@@ -15,12 +15,12 @@ from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import deserialize_evm_address
-from rotkehlchen.types import ChecksumEvmAddress
 
 if TYPE_CHECKING:
     from rotkehlchen.assets.asset import EvmToken
     from rotkehlchen.chain.evm.decoding.decoder import EVMTransactionDecoder
     from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
+    from rotkehlchen.types import ChecksumEvmAddress
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -30,8 +30,8 @@ class CurveControllerCommonBalances(ProtocolWithBalance, ABC):
 
     def __init__(
             self,
-            evm_inquirer: 'EvmNodeInquirer',
-            tx_decoder: 'EVMTransactionDecoder',
+            evm_inquirer: EvmNodeInquirer,
+            tx_decoder: EVMTransactionDecoder,
     ):
         """Common balances class for both curve lend and crvusd controllers.
         `evm_product` is used with addresses_with_deposits to get addresses and events for the
@@ -50,9 +50,9 @@ class CurveControllerCommonBalances(ProtocolWithBalance, ABC):
     @abstractmethod
     def get_collateral_and_borrowed_tokens(
             self,
-            controller_address: 'ChecksumEvmAddress',
+            controller_address: ChecksumEvmAddress,
             controller_contract: EvmContract,
-    ) -> tuple['EvmToken', 'EvmToken'] | None:
+    ) -> tuple[EvmToken, EvmToken] | None:
         """Retrieve the collateral and borrowed tokens for the specified controller."""
 
     def _get_controllers_with_balances(self) -> dict[ChecksumEvmAddress, set[ChecksumEvmAddress]]:
@@ -69,7 +69,7 @@ class CurveControllerCommonBalances(ProtocolWithBalance, ABC):
 
         return controllers
 
-    def query_balances(self) -> 'BalancesSheetType':
+    def query_balances(self) -> BalancesSheetType:
         """Query balances for Curve lending loans and leveraged positions.
         Funds deposited in lending vaults are represented by cvcrvUSD tokens and
         do not need any special logic here.
@@ -157,8 +157,8 @@ class CurveLendBalances(CurveControllerCommonBalances):
 
     def __init__(
             self,
-            evm_inquirer: 'EvmNodeInquirer',
-            tx_decoder: 'EVMTransactionDecoder',
+            evm_inquirer: EvmNodeInquirer,
+            tx_decoder: EVMTransactionDecoder,
     ):
         super().__init__(
             evm_inquirer=evm_inquirer,
@@ -167,9 +167,9 @@ class CurveLendBalances(CurveControllerCommonBalances):
 
     def get_collateral_and_borrowed_tokens(
             self,
-            controller_address: 'ChecksumEvmAddress',
+            controller_address: ChecksumEvmAddress,
             controller_contract: EvmContract,
-    ) -> tuple['EvmToken', 'EvmToken'] | None:
+    ) -> tuple[EvmToken, EvmToken] | None:
         """Retrieve the collateral and borrowed tokens for the specified controller.
         Both tokens must be retrieved from the controller contract for lend controllers.
         """

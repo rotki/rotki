@@ -118,7 +118,7 @@ def assert_csv_export_response(
 ])
 @pytest.mark.parametrize('initialize_accounting_rules', [True])
 def test_history_export_download_csv(
-        rotkehlchen_api_server_with_exchanges: 'APIServer',
+        rotkehlchen_api_server_with_exchanges: APIServer,
         tmpdir_factory: pytest.TempdirFactory,
 ) -> None:
     """Test that the csv export/download REST API endpoint works correctly."""
@@ -296,7 +296,7 @@ def test_history_export_download_csv(
 
 @pytest.mark.parametrize('initialize_accounting_rules', [True])
 def test_report_export_uses_transient_db(
-        rotkehlchen_api_server: 'APIServer',
+        rotkehlchen_api_server: APIServer,
         tmpdir_factory: pytest.TempdirFactory,
 ) -> None:
     """Ensure report CSV export works after clearing in-memory report state."""
@@ -361,7 +361,7 @@ def test_report_export_uses_transient_db(
 @pytest.mark.parametrize('encoding_to_use', ['utf-8', 'cp1252'])
 @pytest.mark.parametrize('initialize_accounting_rules', [True])
 def test_encoding(
-        rotkehlchen_api_server: 'APIServer',
+        rotkehlchen_api_server: APIServer,
         tmpdir_factory: pytest.TempdirFactory,
         encoding_to_use: str,
 ) -> None:
@@ -419,8 +419,9 @@ def test_encoding(
             json={'directory_path': str(export_dir)},
         )
         assert_proper_response(response)
-        with open(export_dir / 'pnl_debug.json', newline='', encoding='utf-8') as debugfile:
-            debug_data = json.loads(debugfile.read())
+        debug_data = json.loads(
+            (export_dir / 'pnl_debug.json').read_text(newline='', encoding='utf-8'),
+        )
 
         events = debug_data['events']
         assert len(events) == 1, 'Should have one event'
@@ -435,7 +436,7 @@ def test_encoding(
 @pytest.mark.parametrize('ethereum_accounts', [[ETH_ADDRESS1, ETH_ADDRESS2, ETH_ADDRESS3]])
 @pytest.mark.parametrize('mocked_price_queries', [prices])
 def test_history_export_csv_errors(
-        rotkehlchen_api_server_with_exchanges: 'APIServer',
+        rotkehlchen_api_server_with_exchanges: APIServer,
         tmpdir_factory: pytest.TempdirFactory,
 ) -> None:
     """Test that errors on the csv export REST API endpoint are handled correctly"""

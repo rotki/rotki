@@ -50,7 +50,7 @@ class FVal:
             ) from e
 
     @classmethod
-    def _from_decimal(cls, num: Decimal) -> 'FVal':
+    def _from_decimal(cls, num: Decimal) -> FVal:
         """Wrap an already-final Decimal without re-running __init__'s type dispatch and
         its redundant Decimal() copy. The arithmetic operators below all produce a finished
         Decimal, so this is a safe, byte-identical fast path."""
@@ -87,46 +87,46 @@ class FVal:
             return self.num == other
         return False
 
-    def __add__(self, other: AcceptableFValOtherInput) -> 'FVal':
+    def __add__(self, other: AcceptableFValOtherInput) -> FVal:
         return FVal._from_decimal(self.num + _evaluate_input(other))
 
-    def __sub__(self, other: AcceptableFValOtherInput) -> 'FVal':
+    def __sub__(self, other: AcceptableFValOtherInput) -> FVal:
         return FVal._from_decimal(self.num - _evaluate_input(other))
 
-    def __mul__(self, other: AcceptableFValOtherInput) -> 'FVal':
+    def __mul__(self, other: AcceptableFValOtherInput) -> FVal:
         return FVal._from_decimal(self.num * _evaluate_input(other))
 
-    def __truediv__(self, other: AcceptableFValOtherInput) -> 'FVal':
+    def __truediv__(self, other: AcceptableFValOtherInput) -> FVal:
         return FVal._from_decimal(self.num / _evaluate_input(other))
 
-    def __floordiv__(self, other: AcceptableFValOtherInput) -> 'FVal':
+    def __floordiv__(self, other: AcceptableFValOtherInput) -> FVal:
         return FVal._from_decimal(self.num // _evaluate_input(other))
 
-    def __pow__(self, other: AcceptableFValOtherInput) -> 'FVal':
+    def __pow__(self, other: AcceptableFValOtherInput) -> FVal:
         return FVal._from_decimal(self.num ** _evaluate_input(other))
 
-    def __radd__(self, other: AcceptableFValOtherInput) -> 'FVal':
+    def __radd__(self, other: AcceptableFValOtherInput) -> FVal:
         return FVal._from_decimal(_evaluate_input(other) + self.num)
 
-    def __rsub__(self, other: AcceptableFValOtherInput) -> 'FVal':
+    def __rsub__(self, other: AcceptableFValOtherInput) -> FVal:
         return FVal._from_decimal(_evaluate_input(other) - self.num)
 
-    def __rmul__(self, other: AcceptableFValOtherInput) -> 'FVal':
+    def __rmul__(self, other: AcceptableFValOtherInput) -> FVal:
         return FVal._from_decimal(_evaluate_input(other) * self.num)
 
-    def __rtruediv__(self, other: AcceptableFValOtherInput) -> 'FVal':
+    def __rtruediv__(self, other: AcceptableFValOtherInput) -> FVal:
         return FVal._from_decimal(_evaluate_input(other) / self.num)
 
-    def __rfloordiv__(self, other: AcceptableFValOtherInput) -> 'FVal':
+    def __rfloordiv__(self, other: AcceptableFValOtherInput) -> FVal:
         return FVal._from_decimal(_evaluate_input(other) // self.num)
 
-    def __mod__(self, other: AcceptableFValOtherInput) -> 'FVal':
+    def __mod__(self, other: AcceptableFValOtherInput) -> FVal:
         return FVal._from_decimal(self.num % _evaluate_input(other))
 
-    def __rmod__(self, other: AcceptableFValOtherInput) -> 'FVal':
+    def __rmod__(self, other: AcceptableFValOtherInput) -> FVal:
         return FVal._from_decimal(_evaluate_input(other) % self.num)
 
-    def __round__(self, ndigits: int) -> 'FVal':
+    def __round__(self, ndigits: int) -> FVal:
         return FVal._from_decimal(round(self.num, ndigits))
 
     def __float__(self) -> float:
@@ -134,15 +134,15 @@ class FVal:
 
     # --- Unary operands
 
-    def __neg__(self) -> 'FVal':
+    def __neg__(self) -> FVal:
         return FVal._from_decimal(-self.num)
 
-    def __abs__(self) -> 'FVal':
+    def __abs__(self) -> FVal:
         return FVal._from_decimal(self.num.copy_abs())
 
     # --- Other operations
 
-    def fma(self, other: AcceptableFValOtherInput, third: AcceptableFValOtherInput) -> 'FVal':
+    def fma(self, other: AcceptableFValOtherInput, third: AcceptableFValOtherInput) -> FVal:
         """
         Fused multiply-add. Return self*other+third with no rounding of the
         intermediate product self*other

@@ -1,10 +1,9 @@
 import logging
-from collections.abc import Callable, Iterable, Sequence
 from functools import partial, wraps
 from http import HTTPStatus
 from json.decoder import JSONDecodeError
 from time import monotonic
-from typing import Any, NamedTuple, cast
+from typing import TYPE_CHECKING, Any, NamedTuple, cast
 from urllib.parse import urlparse
 
 import requests
@@ -27,9 +26,7 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import deserialize_int_from_str
-from rotkehlchen.tasks.supervisor import TaskSupervisor
 from rotkehlchen.types import SUPPORTED_SUBSTRATE_CHAINS_TYPE, SupportedBlockchain
-from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.serialization import jsonloads_dict
 
 from .types import (
@@ -43,6 +40,12 @@ from .types import (
     SubstrateAddress,
 )
 from .utils import SUBSTRATE_NODE_CONNECTION_TIMEOUT
+
+if TYPE_CHECKING:
+    from collections.abc import Callable, Iterable, Sequence
+
+    from rotkehlchen.tasks.supervisor import TaskSupervisor
+    from rotkehlchen.user_messages import MessagesAggregator
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)

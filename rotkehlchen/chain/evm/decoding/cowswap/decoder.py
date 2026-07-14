@@ -1,8 +1,7 @@
 import abc
 import logging
-from collections.abc import Callable
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, Final, Literal, Optional, cast
+from typing import TYPE_CHECKING, Any, Final, Literal, cast
 
 from rotkehlchen.assets.asset import Asset, EvmToken
 from rotkehlchen.assets.utils import (
@@ -10,7 +9,6 @@ from rotkehlchen.assets.utils import (
     asset_normalized_value,
     token_normalized_value,
 )
-from rotkehlchen.chain.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.decoding.utils import maybe_reshuffle_events
 from rotkehlchen.chain.evm.constants import ETH_SPECIAL_ADDRESS
 from rotkehlchen.chain.evm.decoding.airdrops import match_airdrop_claim
@@ -22,7 +20,6 @@ from rotkehlchen.chain.evm.decoding.structures import (
     DecoderContext,
     EvmDecodingOutput,
 )
-from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.resolver import evm_address_to_identifier
@@ -38,11 +35,15 @@ from rotkehlchen.types import ChainID, ChecksumEvmAddress, EvmTransaction, EVMTx
 from rotkehlchen.utils.misc import bytes_to_address
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+
     from rotkehlchen.chain.arbitrum_one.node_inquirer import ArbitrumOneInquirer
     from rotkehlchen.chain.base.node_inquirer import BaseInquirer
     from rotkehlchen.chain.binance_sc.node_inquirer import BinanceSCInquirer
+    from rotkehlchen.chain.decoding.types import CounterpartyDetails
     from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
     from rotkehlchen.chain.evm.decoding.base import BaseEvmDecoderTools
+    from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
     from rotkehlchen.chain.gnosis.node_inquirer import GnosisInquirer
     from rotkehlchen.chain.polygon_pos.node_inquirer import PolygonPOSInquirer
     from rotkehlchen.fval import FVal
@@ -70,10 +71,10 @@ CLAIMED: Final = b'\xd46\xe9\x97=\x1eD\xd4\r\xb4\xd4\x11\x9e<w<\xad\xb12;&9\x81\
 class CowswapSwapData:
     """Data class that holds information about a cowswap swap"""
     from_asset: Asset
-    from_amount: 'FVal'
+    from_amount: FVal
     to_asset: Asset
-    to_amount: 'FVal'
-    fee_amount: 'FVal'
+    to_amount: FVal
+    fee_amount: FVal
     order_uid: str  # a hexstring without the 0x prefix
     order_type: str = 'market'
 
@@ -82,9 +83,9 @@ class CowswapCommonDecoder(EvmDecoderInterface, abc.ABC):
 
     def __init__(
             self,
-            evm_inquirer: 'EthereumInquirer | ArbitrumOneInquirer | GnosisInquirer | BaseInquirer | BinanceSCInquirer | PolygonPOSInquirer',  # noqa: E501
-            base_tools: 'BaseEvmDecoderTools',
-            msg_aggregator: 'MessagesAggregator',
+            evm_inquirer: EthereumInquirer | ArbitrumOneInquirer | GnosisInquirer | BaseInquirer | BinanceSCInquirer | PolygonPOSInquirer,  # noqa: E501
+            base_tools: BaseEvmDecoderTools,
+            msg_aggregator: MessagesAggregator,
     ) -> None:
         super().__init__(
             evm_inquirer=evm_inquirer,
@@ -195,8 +196,8 @@ class CowswapCommonDecoder(EvmDecoderInterface, abc.ABC):
             self,
             transaction: EvmTransaction,
             all_swap_data: list[CowswapSwapData],
-            decoded_events: list['EvmEvent'],
-    ) -> list[tuple['EvmEvent', 'EvmEvent', Optional['EvmEvent'], CowswapSwapData]]:
+            decoded_events: list[EvmEvent],
+    ) -> list[tuple[EvmEvent, EvmEvent, EvmEvent | None, CowswapSwapData]]:
         """
         This function does the following
         1. Detect trades that are relevant to the tracked accounts.
@@ -302,9 +303,9 @@ class CowswapCommonDecoder(EvmDecoderInterface, abc.ABC):
     def _aggregator_post_decoding(
             self,
             transaction: EvmTransaction,
-            decoded_events: list['EvmEvent'],
+            decoded_events: list[EvmEvent],
             all_logs: list[EvmTxReceiptLog],
-    ) -> list['EvmEvent']:
+    ) -> list[EvmEvent]:
         """
         Decodes cowswap trades.
         1. Goes through all the emitted Trade events.
@@ -370,9 +371,9 @@ class CowswapCommonDecoderWithVCOW(CowswapCommonDecoder):
 
     def __init__(
             self,
-            evm_inquirer: 'EthereumInquirer | ArbitrumOneInquirer | GnosisInquirer | BaseInquirer',
-            base_tools: 'BaseEvmDecoderTools',
-            msg_aggregator: 'MessagesAggregator',
+            evm_inquirer: EthereumInquirer | ArbitrumOneInquirer | GnosisInquirer | BaseInquirer,
+            base_tools: BaseEvmDecoderTools,
+            msg_aggregator: MessagesAggregator,
             vcow_token: Asset,
             cow_token: Asset,
             gno_token: Asset,
@@ -389,9 +390,9 @@ class CowswapCommonDecoderWithVCOW(CowswapCommonDecoder):
     def _aggregator_post_decoding(
             self,
             transaction: EvmTransaction,
-            decoded_events: list['EvmEvent'],
-            all_logs: list['EvmTxReceiptLog'],
-    ) -> list['EvmEvent']:
+            decoded_events: list[EvmEvent],
+            all_logs: list[EvmTxReceiptLog],
+    ) -> list[EvmEvent]:
         decoded_events = super()._aggregator_post_decoding(
             transaction=transaction,
             decoded_events=decoded_events,

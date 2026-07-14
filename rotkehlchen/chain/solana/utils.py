@@ -1,9 +1,8 @@
 import logging
 from enum import IntEnum
-from typing import Final, NamedTuple
+from typing import TYPE_CHECKING, Final, NamedTuple
 
 from base58 import b58decode
-from construct import Struct
 from construct.core import ConstructError
 
 from rotkehlchen.chain.solana.rpc import Pubkey, UiCompiledInstruction
@@ -12,9 +11,13 @@ from rotkehlchen.errors.misc import RemoteError, UnableToDecryptRemoteData
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import SolanaAddress
 from rotkehlchen.utils.misc import bytes_to_solana_address
 from rotkehlchen.utils.network import request_get_dict
+
+if TYPE_CHECKING:
+    from construct import Struct
+
+    from rotkehlchen.types import SolanaAddress
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)

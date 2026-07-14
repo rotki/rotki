@@ -1,7 +1,6 @@
 import json
 import logging
 from collections import defaultdict
-from collections.abc import Sequence
 from http import HTTPStatus
 from typing import TYPE_CHECKING, Any, Literal, overload
 from urllib.parse import urlencode
@@ -17,7 +16,6 @@ from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
-from rotkehlchen.exchanges.data_structures import MarginPosition
 from rotkehlchen.exchanges.exchange import (
     ExchangeQueryBalances,
     ExchangeWithoutApiSecret,
@@ -43,16 +41,19 @@ from rotkehlchen.serialization.deserialize import (
     deserialize_int_from_str,
 )
 from rotkehlchen.types import ApiKey, AssetAmount, ExchangeAuthCredentials, Location, Timestamp
-from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import ts_now, ts_sec_to_ms
 from rotkehlchen.utils.mixins.cacheable import cache_response_timewise
 from rotkehlchen.utils.mixins.lockable import protect_with_lock
 from rotkehlchen.utils.serialization import jsonloads_dict
 
 if TYPE_CHECKING:
+    from collections.abc import Sequence
+
     from rotkehlchen.assets.asset import AssetWithOracles
     from rotkehlchen.db.dbhandler import DBHandler
+    from rotkehlchen.exchanges.data_structures import MarginPosition
     from rotkehlchen.history.events.structures.base import HistoryBaseEntry
+    from rotkehlchen.user_messages import MessagesAggregator
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -66,7 +67,7 @@ class Bitpanda(ExchangeWithoutApiSecret):
             self,
             name: str,
             api_key: ApiKey,
-            database: 'DBHandler',
+            database: DBHandler,
             msg_aggregator: MessagesAggregator,
     ):
         super().__init__(
@@ -404,7 +405,7 @@ class Bitpanda(ExchangeWithoutApiSecret):
             from_ts: Timestamp | None,
             to_ts: Timestamp | None,
             options: dict[str, Any] | None = None,
-    ) -> list['HistoryBaseEntry']:
+    ) -> list[HistoryBaseEntry]:
         """Query a paginated endpoint until all pages are read
 
         May raise RemoteError
@@ -496,7 +497,7 @@ class Bitpanda(ExchangeWithoutApiSecret):
             start_ts: Timestamp,
             end_ts: Timestamp,
             force_refresh: bool = False,
-    ) -> tuple[Sequence['HistoryBaseEntry'], Timestamp]:
+    ) -> tuple[Sequence[HistoryBaseEntry], Timestamp]:
         self.first_connection()
         # Should probably also query wallets/transactions for crypto deposits/withdrawals
         # but it does not seem as if they contain them

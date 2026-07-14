@@ -30,7 +30,7 @@ class LidoCsmNodeOperator:
 class DBLidoCsm:
     """Persistence helper for Lido CSM node operator metadata."""
 
-    def __init__(self, database: 'DBHandler') -> None:
+    def __init__(self, database: DBHandler) -> None:
         self.db = database
 
     @staticmethod

@@ -1,6 +1,5 @@
 import logging
 from collections import defaultdict
-from collections.abc import Sequence
 from typing import TYPE_CHECKING, Final
 
 from rotkehlchen.accounting.structures.balance import Balance, BalanceSheet
@@ -14,7 +13,6 @@ from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.externalapis.hyperliquid import HyperliquidAPI
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import ChecksumEvmAddress, Timestamp
 
 from .accountant import HyperliquidAccountingAggregator
 from .decoding.decoder import HyperliquidTransactionDecoder
@@ -22,8 +20,11 @@ from .tokens import HyperliquidTokens
 from .transactions import HyperliquidTransactions
 
 if TYPE_CHECKING:
+    from collections.abc import Sequence
+
     from rotkehlchen.history.events.structures.base import HistoryBaseEntry
     from rotkehlchen.premium.premium import Premium
+    from rotkehlchen.types import ChecksumEvmAddress, Timestamp
 
     from .node_inquirer import HyperliquidInquirer
 
@@ -38,7 +39,7 @@ WSTHYPE_IDENTIFIER: Final = 'eip155:999/erc20:0x94e8396e0869c9F2200760aF0621aFd2
 
 class HyperliquidManager(EvmManager):
     def __init__(
-            self, node_inquirer: 'HyperliquidInquirer', premium: 'Premium | None' = None,
+            self, node_inquirer: HyperliquidInquirer, premium: Premium | None = None,
     ) -> None:
         super().__init__(
             node_inquirer=node_inquirer,
@@ -125,7 +126,7 @@ class HyperliquidManager(EvmManager):
             address: ChecksumEvmAddress,
             range_start: Timestamp,
             range_end: Timestamp,
-    ) -> list['HistoryBaseEntry']:
+    ) -> list[HistoryBaseEntry]:
         """Query Hyperliquid core history for a single address range.
 
         May raise:

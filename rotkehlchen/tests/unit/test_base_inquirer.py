@@ -14,7 +14,7 @@ if TYPE_CHECKING:
 @pytest.mark.parametrize('base_accounts', [['0xCace5b3c29211740E595850E80478416eE77cA21']])  # to connect to nodes  # noqa: E501
 def test_base_nodes_prune_and_archive_status(
         base_manager_connect_at_start: list[tuple],
-        base_inquirer: 'BaseInquirer',
+        base_inquirer: BaseInquirer,
 ):
     """Checks that connecting to a set of base nodes, the capabilities of those nodes are known and
     stored. It tests the nodes one by one to avoid the randomness of the connections to the nodes

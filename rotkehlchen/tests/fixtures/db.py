@@ -1,15 +1,10 @@
-from collections.abc import Generator
 from contextlib import ExitStack
-from pathlib import Path
 from shutil import rmtree
-from typing import Any
+from typing import TYPE_CHECKING, Any
 from unittest.mock import patch
 
 import pytest
 
-from rotkehlchen.assets.asset import Asset
-from rotkehlchen.balances.manual import ManuallyTrackedBalance
-from rotkehlchen.chain.accounts import BlockchainAccounts
 from rotkehlchen.constants.misc import DEFAULT_SQL_VM_INSTRUCTIONS_CB, USERSDIR_NAME
 from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.db.settings import CachedSettings
@@ -28,7 +23,15 @@ from rotkehlchen.tests.utils.database import (
     perform_new_db_unlock_actions,
     run_no_db_upgrades,
 )
-from rotkehlchen.user_messages import MessagesAggregator
+
+if TYPE_CHECKING:
+    from collections.abc import Generator
+    from pathlib import Path
+
+    from rotkehlchen.assets.asset import Asset
+    from rotkehlchen.balances.manual import ManuallyTrackedBalance
+    from rotkehlchen.chain.accounts import BlockchainAccounts
+    from rotkehlchen.user_messages import MessagesAggregator
 
 
 @pytest.fixture(name='username')
@@ -163,7 +166,7 @@ def database(
         sql_vm_instructions_cb,
         perform_upgrades_at_unlock,
         skip_sync_globaldb_assets,
-) -> Generator[DBHandler | None, None, None]:
+) -> Generator[DBHandler | None]:
     if not start_with_logged_in_user:
         yield None
         return

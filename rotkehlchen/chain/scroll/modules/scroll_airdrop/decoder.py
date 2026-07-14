@@ -27,7 +27,7 @@ EXECUTION_SUCCESS_TOPIC: Final = b"D.q_bcF\xe8\xc5C\x81\x00-\xa6\x14\xf6+\xee\x8
 
 class ScrollAirdropDecoder(EvmDecoderInterface):
 
-    def _decode_airdop_claim(self, context: 'DecoderContext') -> 'EvmDecodingOutput':
+    def _decode_airdop_claim(self, context: DecoderContext) -> EvmDecodingOutput:
         """Decodes scroll SCR airdrop claim event."""
         if context.tx_log.topics[0] != CLAIMED_TOPIC:
             return DEFAULT_EVM_DECODING_OUTPUT
@@ -54,8 +54,8 @@ class ScrollAirdropDecoder(EvmDecoderInterface):
 
     def _decode_scroll_batch_airdrop(
             self,
-            context: 'DecoderContext',
-    ) -> 'EvmDecodingOutput':
+            context: DecoderContext,
+    ) -> EvmDecodingOutput:
         """Decodes SCR token airdrop claims from Scroll's offchain distributor.
 
         Handles batch distributions for GitHub/email-based claims that are processed
@@ -82,12 +82,12 @@ class ScrollAirdropDecoder(EvmDecoderInterface):
 
     # -- DecoderInterface methods
 
-    def addresses_to_decoders(self) -> dict['ChecksumEvmAddress', tuple[Any, ...]]:
+    def addresses_to_decoders(self) -> dict[ChecksumEvmAddress, tuple[Any, ...]]:
         return {
             SCROLL_TOKEN_DISTRIBUTOR: (self._decode_airdop_claim,),
             SCROLL_OFFCHAIN_TOKEN_DISTRIBUTOR: (self._decode_scroll_batch_airdrop,),
         }
 
     @staticmethod
-    def counterparties() -> tuple['CounterpartyDetails', ...]:
+    def counterparties() -> tuple[CounterpartyDetails, ...]:
         return (SCROLL_CPT_DETAILS,)

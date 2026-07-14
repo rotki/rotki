@@ -34,7 +34,7 @@ ROTKI_CALENDAR_NAME = 'Rotki Events'
 class GoogleCalendarAPI:
     """Interface for Google Calendar API operations using OAuth 2.0 desktop flow."""
 
-    def __init__(self, database: 'DBHandler') -> None:
+    def __init__(self, database: DBHandler) -> None:
         self.db = database
         self._credentials: Credentials | None = None
         self._service: Any = None
@@ -217,7 +217,7 @@ class GoogleCalendarAPI:
         else:
             return calendar_id
 
-    def sync_events(self, events: 'Sequence[CalendarEntry]') -> dict[str, Any]:
+    def sync_events(self, events: Sequence[CalendarEntry]) -> dict[str, Any]:
         """Sync rotki calendar events to Google Calendar."""
         log.debug('Syncing %s calendar entries to Google Calendar', len(events))
 

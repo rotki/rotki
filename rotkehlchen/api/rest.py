@@ -9,12 +9,11 @@ import threading
 import time
 import traceback
 from collections import defaultdict
-from collections.abc import Callable, Iterator, Mapping, Sequence
 from contextlib import contextmanager
 from functools import wraps
 from http import HTTPStatus
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Final, Literal, Optional, overload
+from typing import TYPE_CHECKING, Any, Final, Literal, overload
 
 from flask import Response, make_response, request, send_file
 from sqlcipher3 import dbapi2 as sqlcipher
@@ -66,20 +65,14 @@ from rotkehlchen.balances.historical import (
     HistoricalBalanceEntry,
     HistoricalBalancesManager,
 )
-from rotkehlchen.balances.manual import ManuallyTrackedBalance
-from rotkehlchen.chain.accounts import OptionalBlockchainAccount, SingleBlockchainAccountData
-from rotkehlchen.chain.balances import BlockchainBalancesUpdate
 from rotkehlchen.chain.ethereum.airdrops import check_airdrops
-from rotkehlchen.chain.ethereum.modules.eth2.structures import PerformanceStatusFilter
 from rotkehlchen.chain.ethereum.modules.lido_csm.metrics import LidoCsmMetricsFetcher
 from rotkehlchen.chain.ethereum.modules.liquity.statistics import get_stats as get_liquity_stats
-from rotkehlchen.chain.ethereum.modules.nft.structures import NftLpHandling
 from rotkehlchen.chain.evm.types import (
     ChainID,
     EvmIndexer,
     WeightedNode,
 )
-from rotkehlchen.chain.solana.rpc import Signature
 from rotkehlchen.concurrency import (
     DEFAULT_CANCEL_GRACE_SECONDS,
     CancellationToken,
@@ -96,9 +89,7 @@ from rotkehlchen.constants.misc import (
     GLOBALDIR_NAME,
     HTTP_STATUS_INTERNAL_DB_ERROR,
 )
-from rotkehlchen.data_import.manager import DataImportSource
 from rotkehlchen.db.cache import IGNORED_CUSTOMIZED_EVENT_DUPLICATE_PREFIX
-from rotkehlchen.db.calendar import CalendarEntry, CalendarFilterQuery, ReminderEntry
 from rotkehlchen.db.constants import (
     HISTORY_MAPPING_KEY_STATE,
     LINKABLE_ACCOUNTING_PROPERTIES,
@@ -129,8 +120,6 @@ from rotkehlchen.db.filtering import (
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.db.lido_csm import DBLidoCsm
 from rotkehlchen.db.reports import DBAccountingReports
-from rotkehlchen.db.settings import ModifiableDBSettings
-from rotkehlchen.db.utils import DBAssetBalance, LocationData
 from rotkehlchen.errors.api import (
     AuthenticationError,
     IncorrectApiKeyFormat,
@@ -160,7 +149,6 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.asset_updates.manager import ASSETS_VERSION_KEY
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.history.data_issues.manager import DataIssuesManager
-from rotkehlchen.history.data_issues.types import DataIssue
 from rotkehlchen.history.events.structures.asset_movement import AssetMovement
 from rotkehlchen.history.events.structures.base import (
     HistoryBaseEntryType,
@@ -172,7 +160,6 @@ from rotkehlchen.history.skipped import (
     get_skipped_external_events_summary,
     reprocess_skipped_external_events,
 )
-from rotkehlchen.history.types import HistoricalPriceOracle
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.premium.premium import (
     ASSET_MOVEMENT_MATCHING_CAPABILITY,
@@ -182,7 +169,6 @@ from rotkehlchen.premium.premium import (
     get_user_limit,
     has_premium_capability,
 )
-from rotkehlchen.rotkehlchen import Rotkehlchen
 from rotkehlchen.serialization.serialize import process_result, process_result_list
 from rotkehlchen.tasks.events import (
     ENTRY_TYPES_TO_EXCLUDE_FROM_MATCHING,
@@ -243,14 +229,29 @@ from rotkehlchen.utils.misc import ts_ms_to_sec, ts_now
 from rotkehlchen.utils.version_check import get_current_version
 
 if TYPE_CHECKING:
+    from collections.abc import Callable, Iterator, Mapping, Sequence
+
     from rotkehlchen.assets.asset import CryptoAsset
+    from rotkehlchen.balances.manual import ManuallyTrackedBalance
+    from rotkehlchen.chain.accounts import OptionalBlockchainAccount, SingleBlockchainAccountData
+    from rotkehlchen.chain.balances import BlockchainBalancesUpdate
     from rotkehlchen.chain.bitcoin.xpub import XpubData
+    from rotkehlchen.chain.ethereum.modules.eth2.structures import PerformanceStatusFilter
+    from rotkehlchen.chain.ethereum.modules.nft.structures import NftLpHandling
     from rotkehlchen.chain.evm.accounting.structures import BaseEventSettings
     from rotkehlchen.chain.evm.manager import EvmManager
+    from rotkehlchen.chain.solana.rpc import Signature
+    from rotkehlchen.data_import.manager import DataImportSource
+    from rotkehlchen.db.calendar import CalendarEntry, CalendarFilterQuery, ReminderEntry
+    from rotkehlchen.db.settings import ModifiableDBSettings
+    from rotkehlchen.db.utils import DBAssetBalance, LocationData
     from rotkehlchen.exchanges.gate import GateLocation
     from rotkehlchen.exchanges.kraken import KrakenAccountType
     from rotkehlchen.exchanges.okx import OkxLocation
+    from rotkehlchen.history.data_issues.types import DataIssue
     from rotkehlchen.history.events.structures.base import HistoryBaseEntry
+    from rotkehlchen.history.types import HistoricalPriceOracle
+    from rotkehlchen.rotkehlchen import Rotkehlchen
 
 
 logger = logging.getLogger(__name__)
@@ -342,7 +343,7 @@ def async_api_call(session_token: bool = False) -> Callable:
     failed create leaves no live session behind for a user that was never created.
     """
     def wrapper(func: Callable[..., dict[str, Any]]) -> Callable[..., Response]:
-        def inner(rest_api: 'RestAPI', async_query: bool = False, **kwargs: Any) -> Response:
+        def inner(rest_api: RestAPI, async_query: bool = False, **kwargs: Any) -> Response:
             token: str | None = None
             # only mint for account creation, and only when it can actually proceed
             mint_session = (
@@ -382,7 +383,7 @@ def _revoke_session_on_failed_create(
     """Wrap an account-creation command so the session minted for `name` on the ack is
     revoked when the create itself fails (every failure path returns `result=None`).
     Runs in the async task worker, so revocation happens once the outcome is known."""
-    def wrapped(rest_api: 'RestAPI', **kwargs: Any) -> dict[str, Any]:
+    def wrapped(rest_api: RestAPI, **kwargs: Any) -> dict[str, Any]:
         result = func(rest_api, **kwargs)
         if result.get('result') is None and rest_api.session_store is not None:
             rest_api.session_store.revoke(name)
@@ -399,7 +400,7 @@ def login_lock() -> Callable:
     function actually runs in the spawned task, and not just while it is dispatched.
     """
     def wrapper(func: Callable[..., Response]) -> Callable[..., Response]:
-        def inner(rest_api: 'RestAPI', **kwargs: Any) -> Response:
+        def inner(rest_api: RestAPI, **kwargs: Any) -> Response:
             with rest_api.login_lock:
                 return func(rest_api, **kwargs)
         return inner
@@ -773,12 +774,12 @@ class RestAPI:
             api_key: ApiKey,
             api_secret: ApiSecret | None,
             passphrase: str | None,
-            kraken_account_type: Optional['KrakenAccountType'],
+            kraken_account_type: KrakenAccountType | None,
             kraken_futures_api_key: ApiKey | None,
             kraken_futures_api_secret: ApiSecret | None,
             binance_markets: list[str] | None,
-            okx_location: Optional['OkxLocation'],
-            gate_location: Optional['GateLocation'],
+            okx_location: OkxLocation | None,
+            gate_location: GateLocation | None,
     ) -> Response:
         result, msg, status_code = self.exchanges_service.setup_exchange(
             name=name,
@@ -803,12 +804,12 @@ class RestAPI:
             api_key: ApiKey | None,
             api_secret: ApiSecret | None,
             passphrase: str | None,
-            kraken_account_type: Optional['KrakenAccountType'],
+            kraken_account_type: KrakenAccountType | None,
             kraken_futures_api_key: ApiKey | None,
             kraken_futures_api_secret: ApiSecret | None,
             binance_markets: list[str] | None,
-            okx_location: Optional['OkxLocation'],
-            gate_location: Optional['GateLocation'],
+            okx_location: OkxLocation | None,
+            gate_location: GateLocation | None,
     ) -> Response:
         result, msg, status_code = self.exchanges_service.edit_exchange(
             name=name,
@@ -1029,7 +1030,7 @@ class RestAPI:
     @async_api_call()
     def get_xpub_balances(
             self,
-            xpub_data: 'XpubData',
+            xpub_data: XpubData,
             ignore_cache: bool = False,
     ) -> dict[str, Any]:
         return self.accounts_service.get_xpub_balances(
@@ -1037,7 +1038,7 @@ class RestAPI:
             ignore_cache=ignore_cache,
         )
 
-    def add_history_events(self, events: list['HistoryBaseEntry']) -> Response:
+    def add_history_events(self, events: list[HistoryBaseEntry]) -> Response:
         """Add list of history events to DB. Returns identifier of first event.
         The first event is the main event, subsequent events are related (e.g. fees).
         """
@@ -1046,7 +1047,7 @@ class RestAPI:
 
     def edit_history_events(
             self,
-            events: list['HistoryBaseEntry'],
+            events: list[HistoryBaseEntry],
             identifiers: list[int] | None,
     ) -> Response:
         response_data = self.history_events_service.edit_history_events(
@@ -1685,20 +1686,20 @@ class RestAPI:
     @async_api_call()
     def add_xpub(
             self,
-            xpub_data: 'XpubData',
+            xpub_data: XpubData,
     ) -> dict[str, Any]:
         return self.accounts_service.add_xpub(xpub_data)
 
     @async_api_call()
     def delete_xpub(
             self,
-            xpub_data: 'XpubData',
+            xpub_data: XpubData,
     ) -> dict[str, Any]:
         return self.accounts_service.delete_xpub(xpub_data)
 
     def edit_xpub(
             self,
-            xpub_data: 'XpubData',
+            xpub_data: XpubData,
     ) -> Response:
         response_data = self.accounts_service.edit_xpub(xpub_data)
         return make_response_from_dict(response_data)
@@ -3328,7 +3329,7 @@ class RestAPI:
             event_type: HistoryEventType,
             event_subtype: HistoryEventSubType,
             counterparty: str | None,
-            rule: 'BaseEventSettings',
+            rule: BaseEventSettings,
             links: dict[LINKABLE_ACCOUNTING_PROPERTIES, LINKABLE_ACCOUNTING_SETTINGS_NAME],
     ) -> Response:
         response_data = self.accounting_service.add_accounting_rule(
@@ -3347,7 +3348,7 @@ class RestAPI:
             event_type: HistoryEventType,
             event_subtype: HistoryEventSubType,
             counterparty: str | None,
-            rule: 'BaseEventSettings',
+            rule: BaseEventSettings,
             links: dict[LINKABLE_ACCOUNTING_PROPERTIES, LINKABLE_ACCOUNTING_SETTINGS_NAME],
             identifier: int,
     ) -> Response:
@@ -4019,7 +4020,7 @@ class RestAPI:
             self,
             from_address: ChecksumEvmAddress,
             to_address: ChecksumEvmAddress,
-            blockchain: 'SUPPORTED_EVM_CHAINS_TYPE',
+            blockchain: SUPPORTED_EVM_CHAINS_TYPE,
             token: EvmToken,
             amount: FVal,
     ) -> dict[str, Any]:
@@ -4055,7 +4056,7 @@ class RestAPI:
             self,
             from_address: ChecksumEvmAddress,
             to_address: ChecksumEvmAddress,
-            chain: 'EVM_CHAIN_IDS_WITH_TRANSACTIONS_TYPE',
+            chain: EVM_CHAIN_IDS_WITH_TRANSACTIONS_TYPE,
             amount: FVal,
     ) -> dict[str, Any]:
         return self.transactions_service.prepare_native_transfer(
@@ -4070,7 +4071,7 @@ class RestAPI:
             self,
             address: ChecksumEvmAddress,
             evm_chain: EVM_CHAIN_IDS_WITH_TRANSACTIONS_TYPE,
-            asset: 'CryptoAsset',
+            asset: CryptoAsset,
     ) -> dict[str, Any]:
         return self.transactions_service.fetch_token_balance_for_address(
             address=address,
@@ -4081,10 +4082,10 @@ class RestAPI:
     @async_api_call()
     def migrate_solana_token(
             self,
-            old_asset: 'CryptoAsset',
-            address: 'SolanaAddress',
+            old_asset: CryptoAsset,
+            address: SolanaAddress,
             decimals: int,
-            token_kind: 'SOLANA_TOKEN_KINDS_TYPE',
+            token_kind: SOLANA_TOKEN_KINDS_TYPE,
     ) -> dict[str, Any]:
         """This is a temporary endpoint to correct custom user input
         solana tokens input before release 1.40.

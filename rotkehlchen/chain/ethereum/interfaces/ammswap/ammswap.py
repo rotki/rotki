@@ -12,7 +12,6 @@ from collections import defaultdict
 from typing import TYPE_CHECKING
 
 from rotkehlchen.assets.asset import Asset
-from rotkehlchen.chain.ethereum.interfaces.ammswap.types import AddressToLPBalances
 from rotkehlchen.chain.ethereum.modules.uniswap.utils import uniswap_lp_token_balances
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants import ZERO
@@ -22,12 +21,13 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.types import HistoryEventSubType
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.premium.premium import Premium
-from rotkehlchen.types import ChecksumEvmAddress
 
 if TYPE_CHECKING:
+    from rotkehlchen.chain.ethereum.interfaces.ammswap.types import AddressToLPBalances
     from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
     from rotkehlchen.db.dbhandler import DBHandler
+    from rotkehlchen.premium.premium import Premium
+    from rotkehlchen.types import ChecksumEvmAddress
     from rotkehlchen.user_messages import MessagesAggregator
 
 
@@ -45,10 +45,10 @@ class AMMSwapPlatform:
     def __init__(
             self,
             counterparties: list[str],
-            ethereum_inquirer: 'EthereumInquirer',
-            database: 'DBHandler',
+            ethereum_inquirer: EthereumInquirer,
+            database: DBHandler,
             premium: Premium | None,
-            msg_aggregator: 'MessagesAggregator',
+            msg_aggregator: MessagesAggregator,
     ) -> None:
         self.counterparties = counterparties
         self.ethereum = ethereum_inquirer

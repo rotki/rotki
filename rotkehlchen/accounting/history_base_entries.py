@@ -38,8 +38,8 @@ class EventsAccountant:
 
     def __init__(
             self,
-            evm_accounting_aggregators: 'EVMAccountingAggregators',
-            pot: 'AccountingPot',
+            evm_accounting_aggregators: EVMAccountingAggregators,
+            pot: AccountingPot,
     ) -> None:
         self.evm_accounting_aggregators = evm_accounting_aggregators
         self.pot = pot
@@ -57,7 +57,7 @@ class EventsAccountant:
     def process(
             self,
             event: HistoryBaseEntry,
-            events_iterator: "peekable['AccountingEventMixin']",
+            events_iterator: peekable[AccountingEventMixin],
     ) -> int:
         """Process a history base entry and return number of actions consumed from the iterator"""
         event_direction = event.maybe_get_direction()

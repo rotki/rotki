@@ -1,8 +1,12 @@
-from collections.abc import Generator
+
+from typing import TYPE_CHECKING
 
 import pytest
 
 from rotkehlchen.mcp.backend import configure_backend, get_backend_config
+
+if TYPE_CHECKING:
+    from collections.abc import Generator
 
 
 @pytest.fixture(autouse=True)

@@ -12,7 +12,7 @@ class ScrollTransactions(L2WithL1FeesTransactions):
 
     def __init__(
             self,
-            scroll_inquirer: 'ScrollInquirer',
-            database: 'DBHandler',
+            scroll_inquirer: ScrollInquirer,
+            database: DBHandler,
     ) -> None:
         super().__init__(node_inquirer=scroll_inquirer, database=database)

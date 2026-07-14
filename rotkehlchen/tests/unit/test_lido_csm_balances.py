@@ -115,9 +115,9 @@ def test_lido_csm_balances_skips_on_error():
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_manager_connect_at_start', [(INFURA_ETH_NODE,)])
 def test_lido_csm_balances_real_data(
-        ethereum_inquirer: 'EthereumInquirer',
-        ethereum_transaction_decoder: 'EthereumTransactionDecoder',
-        inquirer: 'Inquirer',
+        ethereum_inquirer: EthereumInquirer,
+        ethereum_transaction_decoder: EthereumTransactionDecoder,
+        inquirer: Inquirer,
 ):
     """Queries the real Lido CSM contracts for node operator id 1 using VCR."""
     node_operator_address = string_to_evm_address('0xbB8311c7bAD518f0D8f907Cad26c5CcC85a06dC4')

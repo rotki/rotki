@@ -3,13 +3,12 @@ import threading
 import time
 from dataclasses import replace
 from http import HTTPStatus
-from typing import Any
+from typing import TYPE_CHECKING, Any
 from unittest.mock import patch
 
 import pytest
 import requests
 
-from rotkehlchen.api.server import APIServer
 from rotkehlchen.api.websockets.typedefs import WSMessageType
 from rotkehlchen.chain.evm.decoding.monerium.constants import CPT_MONERIUM
 from rotkehlchen.chain.evm.structures import EvmTxReceipt
@@ -18,7 +17,6 @@ from rotkehlchen.constants.assets import A_ETH_EURE
 from rotkehlchen.constants.misc import ONE
 from rotkehlchen.db.cache import DBCacheStatic
 from rotkehlchen.db.constants import HISTORY_MAPPING_KEY_STATE, HistoryMappingState
-from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.db.filtering import EvmEventFilterQuery, HistoryEventFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.errors.misc import RemoteError
@@ -33,6 +31,10 @@ from rotkehlchen.tests.utils.factories import make_ethereum_transaction
 from rotkehlchen.tests.utils.premium import MockResponse
 from rotkehlchen.types import ChainID, Location, TimestampMS, deserialize_evm_tx_hash
 from rotkehlchen.utils.misc import ts_now
+
+if TYPE_CHECKING:
+    from rotkehlchen.api.server import APIServer
+    from rotkehlchen.db.dbhandler import DBHandler
 
 
 def mock_monerium_and_run_periodic_task(database: DBHandler, contents: str) -> None:

@@ -1,8 +1,10 @@
-from collections.abc import Callable
-from typing import Any, NamedTuple
+from typing import TYPE_CHECKING, Any, NamedTuple
 
 from rotkehlchen.api.websockets.typedefs import WSMessageType
 from rotkehlchen.utils.interfaces import ProgressUpdater
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
 
 
 class UpgradeRecord(NamedTuple):

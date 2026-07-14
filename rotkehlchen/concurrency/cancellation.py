@@ -16,9 +16,11 @@ See docs/designs/gevent_to_asyncio.md for the overall plan.
 """
 import threading
 import time
-from collections.abc import Callable
 from contextvars import ContextVar
-from typing import Any, Final
+from typing import TYPE_CHECKING, Any, Final
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
 
 DEFAULT_CANCEL_GRACE_SECONDS: Final = 3.0
 

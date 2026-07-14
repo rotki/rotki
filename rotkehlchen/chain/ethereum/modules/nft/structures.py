@@ -1,11 +1,11 @@
 from enum import auto
 from typing import TYPE_CHECKING, Any, NamedTuple
 
-from rotkehlchen.types import ChecksumEvmAddress
 from rotkehlchen.utils.mixins.enums import SerializableEnumNameMixin
 
 if TYPE_CHECKING:
     from rotkehlchen.externalapis.opensea import NFT
+    from rotkehlchen.types import ChecksumEvmAddress
 
 
 class NftLpHandling(SerializableEnumNameMixin):
@@ -15,7 +15,7 @@ class NftLpHandling(SerializableEnumNameMixin):
 
 
 class NFTResult(NamedTuple):
-    addresses: dict[ChecksumEvmAddress, list['NFT']]
+    addresses: dict[ChecksumEvmAddress, list[NFT]]
     entries_found: int
     entries_limit: int
 

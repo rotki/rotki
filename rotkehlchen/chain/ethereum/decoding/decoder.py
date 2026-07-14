@@ -2,7 +2,6 @@ import json
 import logging
 from typing import TYPE_CHECKING
 
-from rotkehlchen.assets.asset import EvmToken
 from rotkehlchen.chain.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.ethereum.airdrops import AIRDROP_IDENTIFIER_KEY
 from rotkehlchen.chain.ethereum.constants import CPT_KRAKEN, CPT_POLONIEX, CPT_UPHOLD
@@ -18,7 +17,6 @@ from rotkehlchen.chain.evm.decoding.structures import (
     ActionItem,
     EvmDecodingOutput,
 )
-from rotkehlchen.chain.evm.structures import EvmTxReceipt, EvmTxReceiptLog
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import A_1INCH, A_ETH, A_GTC
@@ -30,7 +28,6 @@ from rotkehlchen.history.events.structures.eth2 import EthBlockEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import deserialize_evm_address, deserialize_int_from_str
-from rotkehlchen.types import ChecksumEvmAddress, EvmTransaction
 from rotkehlchen.utils.misc import from_wei, ts_sec_to_ms
 
 from .constants import (
@@ -42,13 +39,16 @@ from .constants import (
 )
 
 if TYPE_CHECKING:
+    from rotkehlchen.assets.asset import EvmToken
     from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
     from rotkehlchen.chain.ethereum.transactions import EthereumTransactions
+    from rotkehlchen.chain.evm.structures import EvmTxReceipt, EvmTxReceiptLog
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.externalapis.beaconchain.service import BeaconChain
     from rotkehlchen.externalapis.monerium import Monerium
     from rotkehlchen.history.events.structures.evm_event import EvmEvent
     from rotkehlchen.premium.premium import Premium
+    from rotkehlchen.types import ChecksumEvmAddress, EvmTransaction
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -58,12 +58,12 @@ class EthereumTransactionDecoder(EVMTransactionDecoderWithDSProxy):
 
     def __init__(
             self,
-            database: 'DBHandler',
-            ethereum_inquirer: 'EthereumInquirer',
-            transactions: 'EthereumTransactions',
-            beacon_chain: 'BeaconChain | None' = None,
-            premium: 'Premium | None' = None,
-            monerium: 'Monerium | None' = None,
+            database: DBHandler,
+            ethereum_inquirer: EthereumInquirer,
+            transactions: EthereumTransactions,
+            beacon_chain: BeaconChain | None = None,
+            premium: Premium | None = None,
+            monerium: Monerium | None = None,
     ):
         self.beacon_node: BeaconNode | None = None
         self.beacon_rpc_endpoint: str | None = None
@@ -132,8 +132,8 @@ class EthereumTransactionDecoder(EVMTransactionDecoderWithDSProxy):
     def _maybe_create_produced_block_event_from_eth_receive(
             self,
             transaction: EvmTransaction,
-            decoded_events: list['EvmEvent'],
-            write_buffer: list[tuple[list['EvmEvent'], str, int]] | None = None,
+            decoded_events: list[EvmEvent],
+            write_buffer: list[tuple[list[EvmEvent], str, int]] | None = None,
     ) -> None:
         """Create block-production events from plain ETH receives in produced blocks.
 
@@ -304,8 +304,8 @@ class EthereumTransactionDecoder(EVMTransactionDecoderWithDSProxy):
             self,
             transaction: EvmTransaction,
             tx_receipt: EvmTxReceipt,
-            write_buffer: list[tuple[list['EvmEvent'], str, int]] | None = None,
-    ) -> tuple[list['EvmEvent'], bool, set[str] | None]:
+            write_buffer: list[tuple[list[EvmEvent], str, int]] | None = None,
+    ) -> tuple[list[EvmEvent], bool, set[str] | None]:
         """Decode an Ethereum transaction and run produced-block fallback enrichment."""
         decoded_events, refresh_balances, reload_decoders = super()._decode_transaction(
             transaction=transaction,
@@ -324,7 +324,7 @@ class EthereumTransactionDecoder(EVMTransactionDecoderWithDSProxy):
             token: EvmToken | None,  # pylint: disable=unused-argument
             tx_log: EvmTxReceiptLog,
             transaction: EvmTransaction,  # pylint: disable=unused-argument
-            decoded_events: list['EvmEvent'],
+            decoded_events: list[EvmEvent],
             action_items: list[ActionItem],  # pylint: disable=unused-argument
             all_logs: list[EvmTxReceiptLog],  # pylint: disable=unused-argument
     ) -> EvmDecodingOutput:

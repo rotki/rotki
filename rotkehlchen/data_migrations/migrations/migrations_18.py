@@ -31,7 +31,7 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
-def data_migration_18(rotki: 'Rotkehlchen', progress_handler: 'MigrationProgressHandler') -> None:  # pylint: disable=unused-argument
+def data_migration_18(rotki: Rotkehlchen, progress_handler: MigrationProgressHandler) -> None:  # pylint: disable=unused-argument
     """
     Introduced at v1.35.1
 
@@ -40,7 +40,7 @@ def data_migration_18(rotki: 'Rotkehlchen', progress_handler: 'MigrationProgress
     - Removes monerium tokens from spam
     """
     @progress_step(description='Cleaning up extra The Graph transactions.')
-    def cleanup_extra_thegraph_txs(rotki: 'Rotkehlchen') -> None:
+    def cleanup_extra_thegraph_txs(rotki: Rotkehlchen) -> None:
         dbevents = DBHistoryEvents(rotki.data.db)
         with rotki.data.db.conn.read_ctx() as cursor:
             tracked_addresses = rotki.data.db.get_evm_accounts(cursor)
@@ -137,7 +137,7 @@ def data_migration_18(rotki: 'Rotkehlchen', progress_handler: 'MigrationProgress
         rotki.data.db.conn.vacuum()  # also since this cleans up a lot of space vacuum
 
     @progress_step(description='Whitelisting monerium assets.')
-    def whitelist_monerium_assets(rotki: 'Rotkehlchen') -> None:
+    def whitelist_monerium_assets(rotki: Rotkehlchen) -> None:
         """Remove from the spam assets all the monerium tokens in
         gnosis and polygon
         """
@@ -177,7 +177,7 @@ def data_migration_18(rotki: 'Rotkehlchen', progress_handler: 'MigrationProgress
                 )
 
     @progress_step(description='Removing spam transactions.')
-    def remove_spam_detection_on_transactions(rotki: 'Rotkehlchen') -> None:
+    def remove_spam_detection_on_transactions(rotki: Rotkehlchen) -> None:
         """We will remove any marked transaction as spam from the database so they can be decoded
         in case something went wrong with the autodetection of spam.
         """
@@ -189,7 +189,7 @@ def data_migration_18(rotki: 'Rotkehlchen', progress_handler: 'MigrationProgress
             )
 
     @progress_step(description='Removing manual current price oracle.')
-    def _remove_manualcurrent_oracle(rotki: 'Rotkehlchen') -> None:
+    def _remove_manualcurrent_oracle(rotki: Rotkehlchen) -> None:
         """Removes the manualcurrent oracle from the current_price_oracles setting
 
         This had already happened in upgrade v41->v42 but the frontend still had the option to
@@ -221,7 +221,7 @@ def data_migration_18(rotki: 'Rotkehlchen', progress_handler: 'MigrationProgress
             )
 
     @progress_step(description='Cleaning up Yearn cache.')
-    def _remove_yearn_cache(rotki: 'Rotkehlchen') -> None:
+    def _remove_yearn_cache(rotki: Rotkehlchen) -> None:
         with GlobalDBHandler().conn.write_ctx() as write_cursor:
             write_cursor.execute('DELETE FROM unique_cache WHERE key=?', ('YEARN_VAULTS',))
 

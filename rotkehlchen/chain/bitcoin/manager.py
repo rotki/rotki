@@ -1,6 +1,5 @@
 import logging
 from collections import defaultdict
-from collections.abc import Callable, Sequence
 from typing import TYPE_CHECKING, Any, Literal, overload
 
 import requests
@@ -11,7 +10,6 @@ from rotkehlchen.api.websockets.typedefs import (
     TransactionStatusSubType,
     WSMessageType,
 )
-from rotkehlchen.assets.asset import Asset
 from rotkehlchen.chain.bitcoin.types import (
     BitcoinTx,
     BtcApiCallback,
@@ -22,11 +20,9 @@ from rotkehlchen.chain.bitcoin.utils import OpCodes
 from rotkehlchen.chain.decoding.utils import decode_transfer_direction
 from rotkehlchen.chain.manager import ChainManagerWithTransactions
 from rotkehlchen.constants.misc import ZERO
-from rotkehlchen.db.cache import DBCacheDynamic
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.errors.misc import RemoteError, UnableToDecryptRemoteData
 from rotkehlchen.errors.serialization import DeserializationError
-from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.base import HistoryEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.inquirer import Inquirer
@@ -35,7 +31,12 @@ from rotkehlchen.types import BTCAddress, Location, SupportedBlockchain, Timesta
 from rotkehlchen.utils.misc import ts_now, ts_sec_to_ms
 
 if TYPE_CHECKING:
+    from collections.abc import Callable, Sequence
+
+    from rotkehlchen.assets.asset import Asset
+    from rotkehlchen.db.cache import DBCacheDynamic
     from rotkehlchen.db.dbhandler import DBHandler
+    from rotkehlchen.fval import FVal
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -46,7 +47,7 @@ class BitcoinCommonManager(ChainManagerWithTransactions[BTCAddress]):
 
     def __init__(
             self,
-            database: 'DBHandler',
+            database: DBHandler,
             blockchain: Literal[SupportedBlockchain.BITCOIN, SupportedBlockchain.BITCOIN_CASH],
             asset: Asset,
             group_identifier_prefix: str,

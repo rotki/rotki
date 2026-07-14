@@ -1,6 +1,5 @@
 import logging
 from collections import defaultdict
-from collections.abc import Sequence
 from typing import TYPE_CHECKING, Any, NamedTuple, TypedDict, cast
 
 from rotkehlchen.accounting.structures.balance import AssetBalance, Balance, BalanceSheet
@@ -14,19 +13,21 @@ from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.fval import FVal
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.premium.premium import Premium
 from rotkehlchen.serialization.deserialize import deserialize_fval
-from rotkehlchen.types import ChecksumEvmAddress, Price
 from rotkehlchen.utils.interfaces import EthereumModule
 from rotkehlchen.utils.misc import from_wei
 
 from .constants import CPT_LIQUITY
 
 if TYPE_CHECKING:
+    from collections.abc import Sequence
+
     from rotkehlchen.assets.asset import Asset
     from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
     from rotkehlchen.chain.evm.contracts import EvmContract
     from rotkehlchen.db.dbhandler import DBHandler
+    from rotkehlchen.premium.premium import Premium
+    from rotkehlchen.types import ChecksumEvmAddress, Price
     from rotkehlchen.user_messages import MessagesAggregator
 
 MIN_COLL_RATE = '1.1'
@@ -72,10 +73,10 @@ class Liquity(EthereumModule):
 
     def __init__(
             self,
-            ethereum_inquirer: 'EthereumInquirer',
-            database: 'DBHandler',
+            ethereum_inquirer: EthereumInquirer,
+            database: DBHandler,
             premium: Premium | None,
-            msg_aggregator: 'MessagesAggregator',
+            msg_aggregator: MessagesAggregator,
     ) -> None:
         self.ethereum = ethereum_inquirer
         self.msg_aggregator = msg_aggregator
@@ -189,11 +190,11 @@ class Liquity(EthereumModule):
 
     def _query_deposits_and_rewards(
             self,
-            contract: 'EvmContract',
+            contract: EvmContract,
             given_addresses: Sequence[ChecksumEvmAddress],
             methods: tuple[str, str, str],
             keys: tuple[str, str, str],
-            assets: tuple['Asset', 'Asset', 'Asset'],
+            assets: tuple[Asset, Asset, Asset],
     ) -> dict[ChecksumEvmAddress, LiquityBalanceWithProxy]:
         """
         For Liquity staking contracts there is always one asset that we stake and two other assets
@@ -321,7 +322,7 @@ class Liquity(EthereumModule):
     def _add_addr_and_proxy_balances(
             balances: defaultdict[ChecksumEvmAddress, BalanceSheet],
             new_balances: dict[ChecksumEvmAddress, LiquityBalanceWithProxy],
-            token: 'Asset',
+            token: Asset,
             key: str,
     ) -> None:
         """

@@ -33,8 +33,8 @@ class WoofiBalances(ProtocolWithBalance):
 
     def __init__(
             self,
-            evm_inquirer: 'EvmNodeInquirer',
-            tx_decoder: 'EVMTransactionDecoder',
+            evm_inquirer: EvmNodeInquirer,
+            tx_decoder: EVMTransactionDecoder,
     ) -> None:
         super().__init__(
             evm_inquirer=evm_inquirer,
@@ -43,7 +43,7 @@ class WoofiBalances(ProtocolWithBalance):
             deposit_event_types={(HistoryEventType.STAKING, HistoryEventSubType.DEPOSIT_ASSET)},
         )
 
-    def query_balances(self) -> 'BalancesSheetType':
+    def query_balances(self) -> BalancesSheetType:
         """Query WOO and vault token staked balances."""
         balances: BalancesSheetType = defaultdict(BalanceSheet)
         if len(address_to_deposits := self.addresses_with_deposits()) == 0:
@@ -95,9 +95,9 @@ class WoofiBalances(ProtocolWithBalance):
     def _query_staked_woo_balances(
             self,
             balances: BalancesSheetType,
-            addresses: list['ChecksumEvmAddress'],
-            woo_token: 'Asset',
-            stake_v2_address: 'ChecksumEvmAddress',
+            addresses: list[ChecksumEvmAddress],
+            woo_token: Asset,
+            stake_v2_address: ChecksumEvmAddress,
     ) -> BalancesSheetType:
         """Query balances of WOO staked in the v2 staking contract.
         Note that v1 uses a wrapped xWOO token so we don't need special balances logic for that.
@@ -148,7 +148,7 @@ class WoofiBalances(ProtocolWithBalance):
     def _query_staked_vault_token_balances(
             self,
             balances: BalancesSheetType,
-            addresses_with_staked_vault_tokens: defaultdict['ChecksumEvmAddress', set[tuple[int, 'Asset']]],  # noqa: E501
+            addresses_with_staked_vault_tokens: defaultdict[ChecksumEvmAddress, set[tuple[int, Asset]]],  # noqa: E501
     ) -> BalancesSheetType:
         """Query balances of vault tokens staked in the reward master chef contract."""
         master_chef_contract = EvmContract(

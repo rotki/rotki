@@ -20,7 +20,7 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
-def query_crvusd_controllers(evm_inquirer: 'EvmNodeInquirer') -> None:
+def query_crvusd_controllers(evm_inquirer: EvmNodeInquirer) -> None:
     """Query crvUSD controller contract addresses from the minter contract and cache them"""
     try:
         number_of_markets = (minter := EvmContract(

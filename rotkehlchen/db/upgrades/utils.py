@@ -6,7 +6,7 @@ if TYPE_CHECKING:
     from rotkehlchen.db.drivers.sqlite import DBCursor
 
 
-def fix_address_book_duplications(write_cursor: 'DBCursor') -> None:
+def fix_address_book_duplications(write_cursor: DBCursor) -> None:
     """
     Ensure that there are no invalid addresses when upgrading the table.
     This code is moved here from migration 17. It could happen that migration 17 wasn't

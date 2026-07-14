@@ -978,7 +978,7 @@ def test_query_online_trade_history(mock_bitstamp, start_ts, since_id):
         assert mock_api_query_paginated.call_args == expected_call
 
 
-def test_deserialize_asset_movement_deposit(mock_bitstamp: 'Bitstamp') -> None:
+def test_deserialize_asset_movement_deposit(mock_bitstamp: Bitstamp) -> None:
     raw_movement = {
         'id': 2,
         'type': '0',
@@ -1088,7 +1088,7 @@ def test_deserialize_asset_movement_deposit(mock_bitstamp: 'Bitstamp') -> None:
     assert movement == expected_movement
 
 
-def test_deserialize_asset_movement_withdrawal(mock_bitstamp: 'Bitstamp') -> None:
+def test_deserialize_asset_movement_withdrawal(mock_bitstamp: Bitstamp) -> None:
     raw_movement = {
         'id': 5,
         'type': '1',
@@ -1228,7 +1228,7 @@ def test_query_online_deposits_withdrawals(mock_bitstamp, start_ts, since_id):
         assert mock_api_query_paginated.call_args == expected_call
 
 
-def test_asset_movement_with_fee_works_correctly(mock_bitstamp: 'Bitstamp') -> None:
+def test_asset_movement_with_fee_works_correctly(mock_bitstamp: Bitstamp) -> None:
     """Regression test for https://github.com/rotki/rotki/issues/9777"""
     def mock_query(endpoint, **kwargs):
         if endpoint == 'user_transactions':

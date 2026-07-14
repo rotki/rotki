@@ -36,12 +36,10 @@ from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.db.internal_tx_conflicts import INTERNAL_TX_CONFLICT_ACTION_REPULL
 from rotkehlchen.db.ranges import DBQueryRanges
 from rotkehlchen.errors.misc import RemoteError
-from rotkehlchen.externalapis.etherscan import Etherscan
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.premium.premium import GNOSIS_PAY_CAPABILITY, MONERIUM_CAPABILITY
-from rotkehlchen.tests.fixtures.websockets import WebsocketReader
 from rotkehlchen.tests.utils.api import (
     api_url_for,
     assert_error_response,
@@ -92,7 +90,9 @@ from rotkehlchen.utils.hexbytes import hexstring_to_bytes
 if TYPE_CHECKING:
     from rotkehlchen.api.server import APIServer
     from rotkehlchen.db.dbhandler import DBHandler
+    from rotkehlchen.externalapis.etherscan import Etherscan
     from rotkehlchen.rotkehlchen import Rotkehlchen
+    from rotkehlchen.tests.fixtures.websockets import WebsocketReader
 
 
 EXPECTED_AFB7_TXS = [
@@ -218,7 +218,7 @@ def assert_txlists_equal(l1: list[EvmTransaction], l2: list[EvmTransaction]) -> 
 
 
 def query_events(
-        server: 'APIServer',
+        server: APIServer,
         json: dict[str, Any],
         expected_num_with_grouping: int,
         expected_totals_with_grouping: int,
@@ -258,7 +258,7 @@ def query_events(
     return remove_added_event_fields(augmented_entries)
 
 
-def assert_force_redecode_txns_works(api_server: 'APIServer') -> None:
+def assert_force_redecode_txns_works(api_server: APIServer) -> None:
     rotki = api_server.rest_api.rotkehlchen
     get_eth_txns_patch = patch.object(
         rotki.chains_aggregator.ethereum.transactions_decoder.transactions,
@@ -293,7 +293,7 @@ def assert_force_redecode_txns_works(api_server: 'APIServer') -> None:
 
 
 def _write_transactions_to_db(
-        db: 'DBHandler',
+        db: DBHandler,
         transactions: list[EvmTransaction],
         extra_transactions: list[EvmTransaction],
         ethereum_accounts: list[ChecksumEvmAddress],
@@ -315,7 +315,7 @@ def _write_transactions_to_db(
                 )
 
 
-def _prepare_repull_test_transaction(db: 'DBHandler') -> tuple[DBEvmTx, EvmTransaction]:
+def _prepare_repull_test_transaction(db: DBHandler) -> tuple[DBEvmTx, EvmTransaction]:
     """Insert a tx, receipt, and one internal tx used by repull regression tests."""
     dbevmtx = DBEvmTx(db)
     transaction = make_ethereum_transaction(tx_hash=make_evm_tx_hash())
@@ -371,7 +371,7 @@ def remove_added_event_fields(returned_events: list[dict[str, Any]]) -> list[dic
 ]])
 @pytest.mark.parametrize('should_mock_price_queries', [True])
 @pytest.mark.parametrize('default_mock_price_value', [FVal(1.5)])
-def test_query_transactions(rotkehlchen_api_server: 'APIServer') -> None:
+def test_query_transactions(rotkehlchen_api_server: APIServer) -> None:
     """Test that querying the ethereum transactions endpoint works as expected.
     Also tests that requesting for transaction decoding works.
 
@@ -443,7 +443,7 @@ def test_query_transactions(rotkehlchen_api_server: 'APIServer') -> None:
 @pytest.mark.parametrize('have_decoders', [True])
 @pytest.mark.parametrize('should_mock_price_queries', [True])
 @pytest.mark.parametrize('default_mock_price_value', [ONE])
-def test_request_transaction_decoding_errors(rotkehlchen_api_server: 'APIServer') -> None:
+def test_request_transaction_decoding_errors(rotkehlchen_api_server: APIServer) -> None:
     """Test that the request transaction decoding endpoint handles input errors"""
     response = requests.put(
         api_url_for(
@@ -519,7 +519,7 @@ def test_request_transaction_decoding_errors(rotkehlchen_api_server: 'APIServer'
 @pytest.mark.parametrize('start_with_valid_premium', [True])
 @pytest.mark.parametrize('should_mock_price_queries', [True])
 @pytest.mark.parametrize('default_mock_price_value', [ONE])
-def test_query_over_10k_transactions(rotkehlchen_api_server: 'APIServer') -> None:
+def test_query_over_10k_transactions(rotkehlchen_api_server: APIServer) -> None:
     """Test that querying for an address with over 10k transactions works
 
     This test uses real etherscan queries and an address that we found that has > 10k transactions.
@@ -598,8 +598,8 @@ def test_query_over_10k_transactions(rotkehlchen_api_server: 'APIServer') -> Non
 @pytest.mark.parametrize('should_mock_price_queries', [True])
 @pytest.mark.parametrize('default_mock_price_value', [ONE])
 def test_query_transactions_removed_address(
-        rotkehlchen_api_server: 'APIServer',
-        ethereum_accounts: list['ChecksumEvmAddress'],
+        rotkehlchen_api_server: APIServer,
+        ethereum_accounts: list[ChecksumEvmAddress],
 ) -> None:
     """Make sure that if an address is removed so are the transactions from the DB.
     Also assure that a transaction is not deleted so long as it touches a tracked
@@ -698,8 +698,8 @@ def test_query_transactions_removed_address(
 @pytest.mark.parametrize('should_mock_price_queries', [True])
 @pytest.mark.parametrize('default_mock_price_value', [ONE])
 def test_transaction_same_hash_same_nonce_two_tracked_accounts(
-        rotkehlchen_api_server: 'APIServer',
-        ethereum_accounts: list['ChecksumEvmAddress'],
+        rotkehlchen_api_server: APIServer,
+        ethereum_accounts: list[ChecksumEvmAddress],
 ) -> None:
     """Make sure that if we track two addresses and they send one transaction
     to each other it's not counted as duplicate in the DB but is returned
@@ -708,7 +708,7 @@ def test_transaction_same_hash_same_nonce_two_tracked_accounts(
 
     def mock_etherscan_transaction_response(
             etherscan: Etherscan,
-            eth_accounts: list['ChecksumEvmAddress'],
+            eth_accounts: list[ChecksumEvmAddress],
     ) -> _patch:
         def mocked_request_dict(url: str, params: dict[str, str], *_args: Any, **_kwargs: Any) -> MockResponse:  # noqa: E501
 
@@ -761,8 +761,8 @@ def test_transaction_same_hash_same_nonce_two_tracked_accounts(
 @pytest.mark.parametrize('should_mock_price_queries', [True])
 @pytest.mark.parametrize('default_mock_price_value', [ONE])
 def test_query_transactions_check_decoded_events(
-        rotkehlchen_api_server: 'APIServer',
-        ethereum_accounts: list['ChecksumEvmAddress'],
+        rotkehlchen_api_server: APIServer,
+        ethereum_accounts: list[ChecksumEvmAddress],
 ) -> None:
     """Test that transactions and associated events can be queried via their respective endpoints.
 
@@ -775,7 +775,7 @@ def test_query_transactions_check_decoded_events(
     end_ts = Timestamp(1642803566)  # time of test writing
     dbevents = DBHistoryEvents(rotki.data.db)
 
-    def query_transactions(rotki: 'Rotkehlchen') -> None:
+    def query_transactions(rotki: Rotkehlchen) -> None:
         rotki.chains_aggregator.ethereum.transactions.single_address_query_transactions(
             address=ethereum_accounts[0],
             start_ts=start_ts,
@@ -1071,8 +1071,8 @@ def test_query_transactions_check_decoded_events(
 @patch.object(EthereumTransactions, '_get_erc20_transfers_for_ranges', lambda *args, **kargs: None)
 @pytest.mark.parametrize('start_with_valid_premium', [True])  # TODO: Test for whichever filters we allow in free  # noqa: E501
 def test_events_filter_params(
-        rotkehlchen_api_server: 'APIServer',
-        ethereum_accounts: list['ChecksumEvmAddress'],
+        rotkehlchen_api_server: APIServer,
+        ethereum_accounts: list[ChecksumEvmAddress],
         start_with_valid_premium: bool,
 ) -> None:
     """Tests filtering by transaction's events' properties
@@ -1239,8 +1239,8 @@ def test_events_filter_params(
 @pytest.mark.parametrize('should_mock_price_queries', [True])
 @pytest.mark.parametrize('default_mock_price_value', [ONE])
 def test_ignored_assets(
-        rotkehlchen_api_server: 'APIServer',
-        ethereum_accounts: list['ChecksumEvmAddress'],
+        rotkehlchen_api_server: APIServer,
+        ethereum_accounts: list[ChecksumEvmAddress],
 ) -> None:
     """This test tests that transactions with ignored assets are excluded when needed"""
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
@@ -1294,7 +1294,7 @@ def test_ignored_assets(
 @patch.object(EthereumTransactions, '_get_erc20_transfers_for_ranges', lambda *args, **kargs: None)
 @pytest.mark.parametrize('should_mock_price_queries', [True])
 @pytest.mark.parametrize('default_mock_price_value', [FVal(1.5)])
-def test_no_value_eth_transfer(rotkehlchen_api_server: 'APIServer') -> None:
+def test_no_value_eth_transfer(rotkehlchen_api_server: APIServer) -> None:
     """Test that eth transactions with no value are correctly decoded and returned in the API.
     In this case we don't need any erc20 or internal transaction, this is why they are omitted
     in this test.
@@ -1339,7 +1339,7 @@ def test_no_value_eth_transfer(rotkehlchen_api_server: 'APIServer') -> None:
 @pytest.mark.parametrize('ethereum_accounts', [[TEST_ADDR1, TEST_ADDR2]])
 @pytest.mark.parametrize('legacy_messages_via_websockets', [True])
 def test_decoding_missing_transactions(
-        rotkehlchen_api_server: 'APIServer',
+        rotkehlchen_api_server: APIServer,
         websocket_connection: WebsocketReader,
 ) -> None:
     """Test that decoding all pending transactions works fine"""
@@ -1397,7 +1397,7 @@ def test_decoding_missing_transactions(
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('have_decoders', [True])
 @pytest.mark.parametrize('ethereum_accounts', [[TEST_ADDR1, TEST_ADDR2]])
-def test_count_transactions_missing_decoding(rotkehlchen_api_server: 'APIServer') -> None:
+def test_count_transactions_missing_decoding(rotkehlchen_api_server: APIServer) -> None:
     """Test that we can correctly count the number of transactions not decoded yet"""
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
 
@@ -1488,7 +1488,7 @@ def test_count_transactions_missing_decoding(rotkehlchen_api_server: 'APIServer'
 @pytest.mark.parametrize('ethereum_accounts', [['0xc37b40ABdB939635068d3c5f13E7faF686F03B65']])
 @pytest.mark.parametrize('should_mock_price_queries', [True])
 @pytest.mark.parametrize('default_mock_price_value', [ONE])
-def test_repulling_transaction_with_internal_txs(rotkehlchen_api_server: 'APIServer') -> None:
+def test_repulling_transaction_with_internal_txs(rotkehlchen_api_server: APIServer) -> None:
     """Check that re-decoding a transaction that has internal ETH transfers correctly
     repulls them"""
     tx_hash = deserialize_evm_tx_hash('0x4ea72ae535e32d5edc543a9ace5f736c7037cc63e4088de38511297c764049b5')  # noqa: E501
@@ -1557,7 +1557,7 @@ def test_repulling_transaction_with_internal_txs(rotkehlchen_api_server: 'APISer
 @pytest.mark.parametrize('have_decoders', [True])
 @pytest.mark.parametrize('ethereum_accounts', [['0xc37b40ABdB939635068d3c5f13E7faF686F03B65']])
 def test_repulling_transaction_fetch_error_does_not_drop_existing_data(
-        rotkehlchen_api_server: 'APIServer',
+        rotkehlchen_api_server: APIServer,
 ) -> None:
     """Ensure a tx repull failure does not drop the existing tx/receipt/internal tx rows."""
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
@@ -1613,7 +1613,7 @@ def test_repulling_transaction_fetch_error_does_not_drop_existing_data(
 @pytest.mark.parametrize('have_decoders', [True])
 @pytest.mark.parametrize('ethereum_accounts', [['0xc37b40ABdB939635068d3c5f13E7faF686F03B65']])
 def test_repull_empty_internals_preserves_db(
-        rotkehlchen_api_server: 'APIServer',
+        rotkehlchen_api_server: APIServer,
 ) -> None:
     """When redecode gets an empty internal-tx payload from the indexer for a tx that already
     has internal txs in DB, the API should reject the redecode (conflict) and keep the existing
@@ -1685,7 +1685,7 @@ def test_repull_empty_internals_preserves_db(
 @pytest.mark.parametrize('have_decoders', [True])
 @pytest.mark.parametrize('ethereum_accounts', [['0xc37b40ABdB939635068d3c5f13E7faF686F03B65']])
 def test_repulling_transaction_internal_fetch_error_restores_previous_internal_txs(
-        rotkehlchen_api_server: 'APIServer',
+        rotkehlchen_api_server: APIServer,
 ) -> None:
     """Ensure old internal txs are restored if internal-tx repull fails."""
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
@@ -1748,7 +1748,7 @@ def test_repulling_transaction_internal_fetch_error_restores_previous_internal_t
 @pytest.mark.parametrize('have_decoders', [True])
 @pytest.mark.parametrize('ethereum_accounts', [['0xc37b40ABdB939635068d3c5f13E7faF686F03B65']])
 def test_repulling_transaction_internal_replace_failure_rolls_back_tx_data(
-        rotkehlchen_api_server: 'APIServer',
+        rotkehlchen_api_server: APIServer,
 ) -> None:
     """Ensure tx+receipt replacement is rolled back if internal replacement fails."""
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
@@ -1824,7 +1824,7 @@ def test_repulling_transaction_internal_replace_failure_rolls_back_tx_data(
 @pytest.mark.parametrize('have_decoders', [True])
 @pytest.mark.parametrize('ethereum_accounts', [['0xc37b40ABdB939635068d3c5f13E7faF686F03B65']])
 def test_redecode_genesis_uses_genesis_data_path(
-        rotkehlchen_api_server: 'APIServer',
+        rotkehlchen_api_server: APIServer,
 ) -> None:
     """Ensure redecode handles genesis tx hash without indexer tx-by-hash query."""
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
@@ -1871,7 +1871,7 @@ def test_redecode_genesis_uses_genesis_data_path(
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('have_decoders', [True])
 @pytest.mark.parametrize('ethereum_accounts', [[TEST_ADDR1]])
-def test_force_redecode_evm_transactions(rotkehlchen_api_server: 'APIServer') -> None:
+def test_force_redecode_evm_transactions(rotkehlchen_api_server: APIServer) -> None:
     """Test that forcefully redecoding transactions does not remove EthWithdrawalEvent or EthBlockEvent instances.
     Regression test for https://github.com/orgs/rotki/projects/11/views/2?pane=issue&itemId=111708772"
     """  # noqa: E501
@@ -1918,7 +1918,7 @@ def test_force_redecode_evm_transactions(rotkehlchen_api_server: 'APIServer') ->
 @pytest.mark.parametrize('start_with_valid_premium', [True, False])
 @pytest.mark.parametrize('have_decoders', [True])
 def test_monerium_gnosis_pay_events_update(
-        rotkehlchen_api_server: 'APIServer',
+        rotkehlchen_api_server: APIServer,
         monerium_credentials: None,
         gnosispay_credentials: None,
         start_with_valid_premium: bool,
@@ -2067,8 +2067,8 @@ def test_monerium_gnosis_pay_events_update(
 @pytest.mark.parametrize('start_with_valid_premium', [True])
 @pytest.mark.parametrize('legacy_messages_via_websockets', [True])
 def test_notify_missing_credentials_on_redecode(
-        rotkehlchen_api_server: 'APIServer',
-        websocket_connection: 'WebsocketReader',
+        rotkehlchen_api_server: APIServer,
+        websocket_connection: WebsocketReader,
 ) -> None:
     """Check that a missing key notification is sent if gnosis pay or monerium events are manually
     redecoded without having the credentials in the db.

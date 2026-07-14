@@ -28,7 +28,7 @@ class PNL:
     def __str__(self) -> str:
         return f'{self.free}/{self.taxable}'
 
-    def __add__(self, x: Any) -> 'PNL':
+    def __add__(self, x: Any) -> PNL:
         if isinstance(x, PNL):
             return PNL(taxable=self.taxable + x.taxable, free=self.free + x.free)
         if isinstance(x, FVal | int):
@@ -38,7 +38,7 @@ class PNL:
 
     __radd__ = __add__
 
-    def __sub__(self, x: Any) -> 'PNL':
+    def __sub__(self, x: Any) -> PNL:
         if isinstance(x, PNL):
             return PNL(taxable=self.taxable - x.taxable, free=self.free - x.free)
         if isinstance(x, FVal | int):
@@ -48,7 +48,7 @@ class PNL:
 
     __rsub__ = __sub__
 
-    def __mul__(self, x: Any) -> 'PNL':
+    def __mul__(self, x: Any) -> PNL:
         if isinstance(x, PNL):
             return PNL(taxable=self.taxable * x.taxable, free=self.free * x.free)
         if isinstance(x, FVal | int):
@@ -61,7 +61,7 @@ class PNL:
 
 class PnlTotals(MutableMapping):
 
-    def __init__(self, totals: dict['AccountingEventType', PNL] | None = None) -> None:
+    def __init__(self, totals: dict[AccountingEventType, PNL] | None = None) -> None:
         self.totals: dict[AccountingEventType, PNL] = defaultdict(PNL)
         if totals is not None:
             for event_type, entry in totals.items():
@@ -73,16 +73,16 @@ class PnlTotals(MutableMapping):
     def __repr__(self) -> str:
         return ','.join(f'{event_type}: {totals}' for event_type, totals in self.totals.items())
 
-    def __getitem__(self, key: 'AccountingEventType') -> PNL:
+    def __getitem__(self, key: AccountingEventType) -> PNL:
         return self.totals[key]
 
-    def __setitem__(self, key: 'AccountingEventType', value: PNL) -> None:
+    def __setitem__(self, key: AccountingEventType, value: PNL) -> None:
         self.totals[key] = value
 
-    def __delitem__(self, key: 'AccountingEventType') -> None:
+    def __delitem__(self, key: AccountingEventType) -> None:
         del self.totals[key]
 
-    def __iter__(self) -> Iterator['AccountingEventType']:
+    def __iter__(self) -> Iterator[AccountingEventType]:
         return self.totals.__iter__()
 
     def __len__(self) -> int:

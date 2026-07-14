@@ -2,7 +2,6 @@ import datetime
 import logging
 import urllib.parse
 from collections import defaultdict
-from collections.abc import Sequence
 from typing import TYPE_CHECKING, Any, Final, Literal
 
 import requests
@@ -47,6 +46,8 @@ from rotkehlchen.types import (
 from rotkehlchen.utils.misc import ts_ms_to_sec, ts_now, ts_sec_to_ms
 
 if TYPE_CHECKING:
+    from collections.abc import Sequence
+
     from rotkehlchen.assets.asset import AssetWithOracles
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.exchanges.data_structures import MarginPosition
@@ -79,8 +80,8 @@ class Htx(ExchangeInterface, SignatureGeneratorMixin):
             name: str,
             api_key: ApiKey,
             secret: ApiSecret,
-            database: 'DBHandler',
-            msg_aggregator: 'MessagesAggregator',
+            database: DBHandler,
+            msg_aggregator: MessagesAggregator,
     ):
         super().__init__(
             name=name,
@@ -331,7 +332,7 @@ class Htx(ExchangeInterface, SignatureGeneratorMixin):
             start_ts: Timestamp,
             end_ts: Timestamp,
             force_refresh: bool = False,
-    ) -> tuple[Sequence['HistoryBaseEntry'], Timestamp]:
+    ) -> tuple[Sequence[HistoryBaseEntry], Timestamp]:
         """Query deposits and withdrawals sequentially
 
         This method sequentially queries for 'deposit' and 'withdrawal' types. Each type
@@ -358,7 +359,7 @@ class Htx(ExchangeInterface, SignatureGeneratorMixin):
             self,
             start_ts: Timestamp,
             end_ts: Timestamp,
-    ) -> list['MarginPosition']:
+    ) -> list[MarginPosition]:
         return []  # noop for htx
 
     def _query_trades(

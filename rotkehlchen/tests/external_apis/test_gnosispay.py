@@ -28,7 +28,7 @@ def mock_unauthorized_requests_get(url, params=None, **kwargs):
     return response
 
 
-def test_gnosis_pay_skip_refund(database: 'DBHandler', gnosispay_credentials: None) -> None:
+def test_gnosis_pay_skip_refund(database: DBHandler, gnosispay_credentials: None) -> None:
     """Test that gnosis pay skips refunds without error, since they are missing data linking
     them to onchain transactions.
     """
@@ -96,7 +96,7 @@ def test_gnosis_pay_unauthorized(database, gnosispay_credentials):
     ('neither', None),
 ])
 def test_gnosis_pay_safe_migration(
-        database: 'DBHandler',
+        database: DBHandler,
         gnosispay_credentials: None,
         tracked_safe: str,
         missing_type: str | None,
@@ -211,7 +211,7 @@ def test_gnosis_pay_safe_migration(
     },
 ])
 def test_gnosis_pay_safe_migration_ignored_responses(
-        database: 'DBHandler',
+        database: DBHandler,
         gnosispay_credentials: None,
         response_data: dict,
 ) -> None:
@@ -230,7 +230,7 @@ def test_gnosis_pay_safe_migration_ignored_responses(
 
 
 def test_gnosis_pay_safe_migration_api_failure(
-        database: 'DBHandler',
+        database: DBHandler,
         gnosispay_credentials: None,
 ) -> None:
     """Test migration API failures do not escape into callers such as scheduled tasks."""

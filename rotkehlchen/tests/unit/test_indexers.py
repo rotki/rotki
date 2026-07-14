@@ -1,5 +1,4 @@
 import json
-from collections.abc import Iterator
 from contextlib import ExitStack
 from typing import TYPE_CHECKING, Final
 from unittest.mock import _patch, patch
@@ -13,6 +12,8 @@ from rotkehlchen.externalapis.etherscan_like import HasChainActivity
 from rotkehlchen.types import deserialize_evm_tx_hash
 
 if TYPE_CHECKING:
+    from collections.abc import Iterator
+
     from rotkehlchen.chain.base.node_inquirer import BaseInquirer
     from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
 
@@ -53,7 +54,7 @@ def fixture_check_all_indexers(request: pytest.FixtureRequest) -> Iterator[None]
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 def test_get_contract_abi(
-        ethereum_inquirer: 'EthereumInquirer',
+        ethereum_inquirer: EthereumInquirer,
         check_all_indexers,
 ) -> None:
     """Check that all the indexers properly retrieve the abi of a verified contract and return
@@ -71,7 +72,7 @@ def test_get_contract_abi(
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 def test_get_contract_creation_hash(
-        ethereum_inquirer: 'EthereumInquirer',
+        ethereum_inquirer: EthereumInquirer,
         check_all_indexers,
 ) -> None:
     """Check that all the indexers properly retrieve the abi of a verified contract and return
@@ -89,7 +90,7 @@ def test_get_contract_creation_hash(
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 def test_has_activity(
-        ethereum_inquirer: 'EthereumInquirer',
+        ethereum_inquirer: EthereumInquirer,
         check_all_indexers,
 ) -> None:
     """Check that all indexers properly return the correct account activity."""
@@ -105,7 +106,7 @@ def test_has_activity(
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 def test_get_code(
-        ethereum_inquirer: 'EthereumInquirer',
+        ethereum_inquirer: EthereumInquirer,
         check_all_indexers,
 ) -> None:
     assert ethereum_inquirer.get_code(
@@ -115,7 +116,7 @@ def test_get_code(
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 def test_call_contract(
-        ethereum_inquirer: 'EthereumInquirer',
+        ethereum_inquirer: EthereumInquirer,
         check_all_indexers,
 ) -> None:
     assert ethereum_inquirer._call_contract(
@@ -128,7 +129,7 @@ def test_call_contract(
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 def test_get_latest_block_number(
-        ethereum_inquirer: 'EthereumInquirer',
+        ethereum_inquirer: EthereumInquirer,
         check_all_indexers,
 ) -> None:
     assert ethereum_inquirer.get_latest_block_number() == 24069561
@@ -136,7 +137,7 @@ def test_get_latest_block_number(
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 def test_get_block_by_number(
-        ethereum_inquirer: 'EthereumInquirer',
+        ethereum_inquirer: EthereumInquirer,
         check_all_indexers,
 ) -> None:
     """Check that all indexers properly return block data by block number."""
@@ -148,7 +149,7 @@ def test_get_block_by_number(
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 def test_get_transaction_receipt(
-        ethereum_inquirer: 'EthereumInquirer',
+        ethereum_inquirer: EthereumInquirer,
         check_all_indexers,
 ) -> None:
     raw_receipt = ethereum_inquirer.get_transaction_receipt(
@@ -161,7 +162,7 @@ def test_get_transaction_receipt(
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 def test_get_transaction_by_hash(
-        ethereum_inquirer: 'EthereumInquirer',
+        ethereum_inquirer: EthereumInquirer,
         check_all_indexers,
 ) -> None:
     tx, _ = ethereum_inquirer.get_transaction_by_hash(
@@ -175,7 +176,7 @@ def test_get_transaction_by_hash(
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 def test_get_transaction_by_hash_l1_fee(
-        base_inquirer: 'BaseInquirer',
+        base_inquirer: BaseInquirer,
 ) -> None:
     """Check that we can properly retrieve the gas amount for a chain that has an L1 fee."""
     tx, _ = base_inquirer.get_transaction_by_hash(
@@ -190,7 +191,7 @@ def test_get_transaction_by_hash_l1_fee(
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 def test_get_logs(
-        ethereum_inquirer: 'EthereumInquirer',
+        ethereum_inquirer: EthereumInquirer,
         check_all_indexers,
 ) -> None:
     assert len(events := ethereum_inquirer.get_logs(

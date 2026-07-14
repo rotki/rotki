@@ -7,7 +7,7 @@ if TYPE_CHECKING:
     from rotkehlchen.rotkehlchen import Rotkehlchen
 
 
-def _do_query_validator_data(rotki: 'Rotkehlchen') -> None:
+def _do_query_validator_data(rotki: Rotkehlchen) -> None:
     """Queries validator data if needed. Also captures the lock of beacon chain
     balance queries so that they do not start unless this is finished"""
     eth2 = rotki.chains_aggregator.get_module('eth2')
@@ -22,7 +22,7 @@ def _do_query_validator_data(rotki: 'Rotkehlchen') -> None:
         eth2.detect_and_refresh_validators(addresses)
 
 
-def data_migration_2(rotki: 'Rotkehlchen', progress_handler: 'MigrationProgressHandler') -> None:  # pylint: disable=unused-argument
+def data_migration_2(rotki: Rotkehlchen, progress_handler: MigrationProgressHandler) -> None:  # pylint: disable=unused-argument
     """
     At v1.23.0 we added a new eth2 validators table and all validators are detected
     from there. But for already existing addresses there is no validators detected

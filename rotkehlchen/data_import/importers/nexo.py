@@ -1,6 +1,5 @@
 import csv
 import logging
-from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
 from rotkehlchen.assets.converters import asset_from_nexo
@@ -11,7 +10,6 @@ from rotkehlchen.data_import.utils import (
     UnsupportedCSVEntry,
     hash_csv_row,
 )
-from rotkehlchen.db.drivers.sqlite import DBCursor
 from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.misc import InputError
 from rotkehlchen.errors.serialization import DeserializationError
@@ -29,7 +27,10 @@ from rotkehlchen.types import DEFAULT_TIMEZONE, AssetAmount, Location, Timezone
 from rotkehlchen.utils.misc import ts_sec_to_ms
 
 if TYPE_CHECKING:
+    from pathlib import Path
+
     from rotkehlchen.db.dbhandler import DBHandler
+    from rotkehlchen.db.drivers.sqlite import DBCursor
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -41,7 +42,7 @@ NEXO_PREFIX = 'NEXO_'
 class NexoImporter(BaseExchangeImporter):
     """Nexo CSV importer"""
 
-    def __init__(self, db: 'DBHandler') -> None:
+    def __init__(self, db: DBHandler) -> None:
         super().__init__(db=db, name='Nexo')
 
     def _consume_nexo(

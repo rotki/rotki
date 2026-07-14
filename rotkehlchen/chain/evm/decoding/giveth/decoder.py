@@ -4,7 +4,6 @@ from typing import TYPE_CHECKING, Any
 
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.utils import asset_normalized_value, token_normalized_value_decimals
-from rotkehlchen.chain.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.decoding.utils import maybe_reshuffle_events
 from rotkehlchen.chain.evm.constants import DEFAULT_TOKEN_DECIMALS, SIMPLE_CLAIM
 from rotkehlchen.chain.evm.decoding.giveth.constants import (
@@ -25,6 +24,7 @@ from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.utils.misc import bytes_to_address
 
 if TYPE_CHECKING:
+    from rotkehlchen.chain.decoding.types import CounterpartyDetails
     from rotkehlchen.chain.evm.decoding.base import BaseEvmDecoderTools
     from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
     from rotkehlchen.types import ChecksumEvmAddress
@@ -47,10 +47,10 @@ class GivethDonationDecoderBase(EvmDecoderInterface):
 
     def __init__(
             self,
-            evm_inquirer: 'EvmNodeInquirer',
-            base_tools: 'BaseEvmDecoderTools',
-            msg_aggregator: 'MessagesAggregator',
-            donation_contract_address: 'ChecksumEvmAddress',
+            evm_inquirer: EvmNodeInquirer,
+            base_tools: BaseEvmDecoderTools,
+            msg_aggregator: MessagesAggregator,
+            donation_contract_address: ChecksumEvmAddress,
     ) -> None:
         super().__init__(
             evm_inquirer=evm_inquirer,
@@ -150,7 +150,7 @@ class GivethDonationDecoderBase(EvmDecoderInterface):
 
     # -- DecoderInterface methods
 
-    def addresses_to_decoders(self) -> dict['ChecksumEvmAddress', tuple[Any, ...]]:
+    def addresses_to_decoders(self) -> dict[ChecksumEvmAddress, tuple[Any, ...]]:
         return {self.donation_contract_address: (self._decode_donation_events,)}
 
     @staticmethod
@@ -162,12 +162,12 @@ class GivethDecoderBase(GivethDonationDecoderBase, ABC):
 
     def __init__(
             self,
-            evm_inquirer: 'EvmNodeInquirer',
-            base_tools: 'BaseEvmDecoderTools',
-            msg_aggregator: 'MessagesAggregator',
-            distro_address: 'ChecksumEvmAddress',
-            givpower_staking_address: 'ChecksumEvmAddress',
-            donation_contract_address: 'ChecksumEvmAddress',
+            evm_inquirer: EvmNodeInquirer,
+            base_tools: BaseEvmDecoderTools,
+            msg_aggregator: MessagesAggregator,
+            distro_address: ChecksumEvmAddress,
+            givpower_staking_address: ChecksumEvmAddress,
+            donation_contract_address: ChecksumEvmAddress,
             giv_token_id: str,
             pow_token_id: str,
 
@@ -258,7 +258,7 @@ class GivethDecoderBase(GivethDonationDecoderBase, ABC):
 
     # -- DecoderInterface methods
 
-    def addresses_to_decoders(self) -> dict['ChecksumEvmAddress', tuple[Any, ...]]:
+    def addresses_to_decoders(self) -> dict[ChecksumEvmAddress, tuple[Any, ...]]:
         return super().addresses_to_decoders() | {
             self.distro_address: (self.decode_claim,),
             self.givpower_staking_address: (self.decode_staking_events,),

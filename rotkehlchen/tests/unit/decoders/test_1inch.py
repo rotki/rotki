@@ -1208,8 +1208,8 @@ def test_1inch_v5_liquidity_book_swap_arbitrum(arbitrum_one_inquirer, arbitrum_o
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('gnosis_accounts', [['0xc37b40ABdB939635068d3c5f13E7faF686F03B65']])
 def test_limit_order_swap(
-        gnosis_inquirer: 'GnosisInquirer',
-        gnosis_accounts: list['ChecksumEvmAddress'],
+        gnosis_inquirer: GnosisInquirer,
+        gnosis_accounts: list[ChecksumEvmAddress],
 ):
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=gnosis_inquirer,

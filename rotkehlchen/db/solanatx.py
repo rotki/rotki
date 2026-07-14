@@ -1,5 +1,4 @@
 from collections import defaultdict
-from collections.abc import Sequence
 from typing import TYPE_CHECKING, Final
 
 from rotkehlchen.chain.solana.rpc import Pubkey, Signature
@@ -15,6 +14,8 @@ from rotkehlchen.db.utils import get_query_chunks
 from rotkehlchen.types import Location, SolanaAddress, SupportedBlockchain, Timestamp
 
 if TYPE_CHECKING:
+    from collections.abc import Sequence
+
     from rotkehlchen.db.drivers.sqlite import DBCursor
 
 
@@ -28,7 +29,7 @@ class DBSolanaTx(DBCommonTx[SolanaAddress, SolanaTransaction, Signature, SolanaT
 
     @staticmethod
     def get_existing_signatures(
-            cursor: 'DBCursor',
+            cursor: DBCursor,
             signatures: Sequence[Signature],
     ) -> set[Signature]:
         """Filter the provided signatures returning only those that already exist in the DB.
@@ -53,7 +54,7 @@ class DBSolanaTx(DBCommonTx[SolanaAddress, SolanaTransaction, Signature, SolanaT
 
     def add_transactions(
             self,
-            write_cursor: 'DBCursor',
+            write_cursor: DBCursor,
             solana_transactions: list[SolanaTransaction],
             relevant_address: SolanaAddress | None,
     ) -> list[Signature]:
@@ -113,7 +114,7 @@ class DBSolanaTx(DBCommonTx[SolanaAddress, SolanaTransaction, Signature, SolanaT
 
     @staticmethod
     def add_token_account_mappings(
-            write_cursor: 'DBCursor',
+            write_cursor: DBCursor,
             token_accounts_mappings: dict[SolanaAddress, tuple[SolanaAddress, SolanaAddress]],
     ) -> None:
         """Save Solana token account to (owner, mint) mappings in the database cache."""
@@ -131,7 +132,7 @@ class DBSolanaTx(DBCommonTx[SolanaAddress, SolanaTransaction, Signature, SolanaT
 
     @staticmethod
     def get_transactions(
-            cursor: 'DBCursor',
+            cursor: DBCursor,
             filter_: SolanaTransactionsFilterQuery,
     ) -> list[SolanaTransaction]:
         """Get solana transactions from the database with filtering"""
@@ -210,7 +211,7 @@ class DBSolanaTx(DBCommonTx[SolanaAddress, SolanaTransaction, Signature, SolanaT
 
     def delete_transaction_data(
             self,
-            write_cursor: 'DBCursor',
+            write_cursor: DBCursor,
             signature: Signature | None = None,
     ) -> None:
         """Deletes solana transactions from the DB. If signature is given, only deletes the
@@ -238,7 +239,7 @@ class DBSolanaTx(DBCommonTx[SolanaAddress, SolanaTransaction, Signature, SolanaT
 
     def delete_data_for_address(
             self,
-            write_cursor: 'DBCursor',
+            write_cursor: DBCursor,
             address: SolanaAddress,
     ) -> None:
         """Deletes all solana transactions and their related data for a given address

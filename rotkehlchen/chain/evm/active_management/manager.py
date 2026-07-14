@@ -17,16 +17,16 @@ log = RotkehlchenLogsAdapter(logger)
 
 class ActiveManager:
 
-    def __init__(self, node_inquirer: 'EvmNodeInquirer'):
+    def __init__(self, node_inquirer: EvmNodeInquirer):
         self.node_inquirer = node_inquirer
 
     def _create_token_transfer(
             self,
-            rpc_client: 'Web3',
-            from_address: 'ChecksumEvmAddress',
-            to_address: 'ChecksumEvmAddress',
-            token: 'EvmToken',
-            amount: 'FVal',
+            rpc_client: Web3,
+            from_address: ChecksumEvmAddress,
+            to_address: ChecksumEvmAddress,
+            token: EvmToken,
+            amount: FVal,
     ) -> dict[str, Any]:
         """Build transaction to transfer erc20 tokens"""
         contract = rpc_client.eth.contract(
@@ -50,10 +50,10 @@ class ActiveManager:
 
     def create_token_transfer(
             self,
-            from_address: 'ChecksumEvmAddress',
-            to_address: 'ChecksumEvmAddress',
-            token: 'EvmToken',
-            amount: 'FVal',
+            from_address: ChecksumEvmAddress,
+            to_address: ChecksumEvmAddress,
+            token: EvmToken,
+            amount: FVal,
     ) -> dict[str, Any]:
         """Wrapper for _create_token_transfer that tries different nodes to create
         the transaction handling errors.
@@ -72,10 +72,10 @@ class ActiveManager:
 
     def _transfer_native_token(
             self,
-            rpc_client: 'Web3',
-            from_address: 'ChecksumEvmAddress',
-            to_address: 'ChecksumEvmAddress',
-            amount: 'FVal',
+            rpc_client: Web3,
+            from_address: ChecksumEvmAddress,
+            to_address: ChecksumEvmAddress,
+            amount: FVal,
     ) -> dict[str, Any]:
         """Build transaction to transfer the native asset of the blockchain"""
         return {
@@ -87,9 +87,9 @@ class ActiveManager:
 
     def transfer_native_token(
             self,
-            from_address: 'ChecksumEvmAddress',
-            to_address: 'ChecksumEvmAddress',
-            amount: 'FVal',
+            from_address: ChecksumEvmAddress,
+            to_address: ChecksumEvmAddress,
+            amount: FVal,
     ) -> dict[str, Any]:
         """Wrapper for _transfer_native_token that tries different nodes to query the required
         information and handles errors.

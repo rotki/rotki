@@ -1,6 +1,5 @@
 from typing import TYPE_CHECKING
 
-from rotkehlchen.chain.evm.accounting.structures import BaseEventSettings, EventsAccountantCallback
 from rotkehlchen.db.accounting_rules import DBAccountingRules
 from rotkehlchen.db.filtering import AccountingRulesFilterQuery
 from rotkehlchen.db.settings import CachedSettings
@@ -10,6 +9,10 @@ from rotkehlchen.history.events.structures.onchain_event import OnchainEvent
 if TYPE_CHECKING:
     from rotkehlchen.accounting.pot import AccountingPot
     from rotkehlchen.chain.evm.accounting.aggregator import EVMAccountingAggregators
+    from rotkehlchen.chain.evm.accounting.structures import (
+        BaseEventSettings,
+        EventsAccountantCallback,
+    )
     from rotkehlchen.db.dbhandler import DBHandler
 
 
@@ -18,9 +21,9 @@ class AccountingRulesManager:
 
     def __init__(
             self,
-            database: 'DBHandler',
-            evm_aggregators: 'EVMAccountingAggregators',
-            pot: 'AccountingPot',
+            database: DBHandler,
+            evm_aggregators: EVMAccountingAggregators,
+            pot: AccountingPot,
     ):
         self.database = database
         self.aggregators = evm_aggregators

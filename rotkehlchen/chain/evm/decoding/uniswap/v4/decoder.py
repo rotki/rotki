@@ -1,5 +1,4 @@
 import logging
-from collections.abc import Callable
 from typing import TYPE_CHECKING, Any
 
 from rotkehlchen.chain.decoding.types import CounterpartyDetails
@@ -20,18 +19,19 @@ from rotkehlchen.chain.evm.decoding.uniswap.v3.constants import SWAP_SIGNATURE a
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import deserialize_evm_address
-from rotkehlchen.types import ChecksumEvmAddress
 from rotkehlchen.utils.misc import bytes_to_address
 
 from .constants import CPT_UNISWAP_V4_LP, MODIFY_LIQUIDITY, POSITION_MANAGER_ABI, V4_SWAP_TOPIC
 from .utils import decode_uniswap_v4_like_swaps
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+
     from rotkehlchen.chain.evm.decoding.base import BaseEvmDecoderTools
     from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
     from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
     from rotkehlchen.history.events.structures.evm_event import EvmEvent
-    from rotkehlchen.types import EvmTransaction
+    from rotkehlchen.types import ChecksumEvmAddress, EvmTransaction
     from rotkehlchen.user_messages import MessagesAggregator
 
 logger = logging.getLogger(__name__)
@@ -42,12 +42,12 @@ class Uniswapv4CommonDecoder(EvmDecoderInterface):
 
     def __init__(
             self,
-            evm_inquirer: 'EvmNodeInquirer',
-            base_tools: 'BaseEvmDecoderTools',
-            msg_aggregator: 'MessagesAggregator',
-            pool_manager: 'ChecksumEvmAddress',
-            position_manager: 'ChecksumEvmAddress',
-            universal_router: 'ChecksumEvmAddress',
+            evm_inquirer: EvmNodeInquirer,
+            base_tools: BaseEvmDecoderTools,
+            msg_aggregator: MessagesAggregator,
+            pool_manager: ChecksumEvmAddress,
+            position_manager: ChecksumEvmAddress,
+            universal_router: ChecksumEvmAddress,
     ) -> None:
         super().__init__(
             evm_inquirer=evm_inquirer,
@@ -58,7 +58,7 @@ class Uniswapv4CommonDecoder(EvmDecoderInterface):
         self.position_manager = position_manager
         self.universal_router = universal_router
 
-    def _decode_modify_liquidity(self, context: 'DecoderContext') -> 'EvmDecodingOutput':
+    def _decode_modify_liquidity(self, context: DecoderContext) -> EvmDecodingOutput:
         if context.tx_log.topics[0] != MODIFY_LIQUIDITY:
             return DEFAULT_EVM_DECODING_OUTPUT
 
@@ -154,10 +154,10 @@ class Uniswapv4CommonDecoder(EvmDecoderInterface):
 
     def _router_post_decoding(
             self,
-            transaction: 'EvmTransaction',
-            decoded_events: list['EvmEvent'],
-            all_logs: list['EvmTxReceiptLog'],
-    ) -> list['EvmEvent']:
+            transaction: EvmTransaction,
+            decoded_events: list[EvmEvent],
+            all_logs: list[EvmTxReceiptLog],
+    ) -> list[EvmEvent]:
         """Decode swaps routed through the Uniswap V4 universal router."""
         return decode_uniswap_v4_like_swaps(
             transaction=transaction,
@@ -171,10 +171,10 @@ class Uniswapv4CommonDecoder(EvmDecoderInterface):
 
     def _lp_post_decoding(
             self,
-            transaction: 'EvmTransaction',
-            decoded_events: list['EvmEvent'],
-            all_logs: list['EvmTxReceiptLog'],
-    ) -> list['EvmEvent']:
+            transaction: EvmTransaction,
+            decoded_events: list[EvmEvent],
+            all_logs: list[EvmTxReceiptLog],
+    ) -> list[EvmEvent]:
         """Decode LP position NFT mint/burn events and properly reshuffle them along with
         the deposit/withdraw events already decoded by _decode_modify_liquidity.
         """
@@ -189,7 +189,7 @@ class Uniswapv4CommonDecoder(EvmDecoderInterface):
 
     # -- DecoderInterface methods
 
-    def addresses_to_decoders(self) -> dict['ChecksumEvmAddress', tuple[Any, ...]]:
+    def addresses_to_decoders(self) -> dict[ChecksumEvmAddress, tuple[Any, ...]]:
         return {self.pool_manager: (self._decode_modify_liquidity,)}
 
     def post_decoding_rules(self) -> dict[str, list[tuple[int, Callable]]]:

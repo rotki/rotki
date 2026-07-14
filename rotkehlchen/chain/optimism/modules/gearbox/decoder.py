@@ -15,9 +15,9 @@ if TYPE_CHECKING:
 class GearboxDecoder(GearboxCommonDecoder):
     def __init__(
             self,
-            ethereum_inquirer: 'OptimismInquirer',
-            base_tools: 'BaseEvmDecoderTools',
-            msg_aggregator: 'MessagesAggregator',
+            ethereum_inquirer: OptimismInquirer,
+            base_tools: BaseEvmDecoderTools,
+            msg_aggregator: MessagesAggregator,
     ) -> None:
         super().__init__(
             evm_inquirer=ethereum_inquirer,

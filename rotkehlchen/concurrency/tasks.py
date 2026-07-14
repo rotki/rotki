@@ -16,9 +16,8 @@ See docs/designs/gevent_to_asyncio.md for the overall plan.
 import sys
 import threading
 import time
-from collections.abc import Callable, Sequence
 from types import TracebackType
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from rotkehlchen.concurrency.cancellation import (
     CancellationToken,
@@ -26,6 +25,9 @@ from rotkehlchen.concurrency.cancellation import (
     current_token,
     run_cancellable,
 )
+
+if TYPE_CHECKING:
+    from collections.abc import Callable, Sequence
 
 ExcInfo = tuple[type[BaseException], BaseException, TracebackType]
 
@@ -70,7 +72,7 @@ class Task:
         self._callback_lock = threading.Lock()
         self._thread = threading.Thread(target=self._run, name=name, daemon=True)
 
-    def start(self) -> 'Task':
+    def start(self) -> Task:
         self._thread.start()
         return self
 
@@ -80,7 +82,7 @@ class Task:
         exception or got cancelled. False while pending in its start delay."""
         return self._dead
 
-    def add_done_callback(self, callback: Callable[['Task'], None]) -> None:
+    def add_done_callback(self, callback: Callable[[Task], None]) -> None:
         """Register a callback invoked with this task once it finishes.
 
         Runs on the task's own thread. If the task has already finished the

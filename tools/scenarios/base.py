@@ -7,8 +7,6 @@ writer only batches them with explicitly assigned identifiers for speed.
 """
 import json
 import sys
-from collections.abc import Iterable, Sequence
-from pathlib import Path
 from typing import TYPE_CHECKING, Any, Final
 
 from rotkehlchen.constants.misc import DEFAULT_SQL_VM_INSTRUCTIONS_CB
@@ -17,6 +15,9 @@ from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.user_messages import MessagesAggregator
 
 if TYPE_CHECKING:
+    from collections.abc import Iterable, Sequence
+    from pathlib import Path
+
     from rotkehlchen.assets.asset import Asset
     from rotkehlchen.balances.manual import ManuallyTrackedBalance
     from rotkehlchen.chain.accounts import BlockchainAccountData
@@ -67,15 +68,15 @@ class ProfileBuilder:
         }
         self._seen_groups: set[str] = set()
 
-    def add_accounts(self, accounts: list['BlockchainAccountData']) -> None:
+    def add_accounts(self, accounts: list[BlockchainAccountData]) -> None:
         with self.db.user_write() as write_cursor:
             self.db.add_blockchain_accounts(write_cursor, accounts)
 
-    def set_settings(self, settings: 'ModifiableDBSettings') -> None:
+    def set_settings(self, settings: ModifiableDBSettings) -> None:
         with self.db.user_write() as write_cursor:
             self.db.set_settings(write_cursor, settings)
 
-    def add_manual_balances(self, balances: list['ManuallyTrackedBalance']) -> None:
+    def add_manual_balances(self, balances: list[ManuallyTrackedBalance]) -> None:
         with self.db.user_write() as write_cursor:
             self.db.add_manually_tracked_balances(write_cursor, balances)
         self.stats.setdefault('manual_balances', []).extend(
@@ -98,7 +99,7 @@ class ProfileBuilder:
         )
         self.stats['blockchain_balances'] = expected
 
-    def add_manual_latest_prices(self, prices: Sequence[tuple['Asset', str]]) -> None:
+    def add_manual_latest_prices(self, prices: Sequence[tuple[Asset, str]]) -> None:
         """Seed manual latest prices (vs USD) into the global DB so balance
         valuations resolve locally instead of querying remote oracles."""
         from rotkehlchen.constants.assets import A_USD  # heavy import kept local
@@ -157,10 +158,10 @@ class ProfileBuilder:
 
     def add_evm_transactions_with_receipts(
             self,
-            chain_id: 'ChainID',
-            transactions: 'Sequence[EvmTransaction]',
-            receipts: 'Sequence[dict[str, Any]]',
-            relevant_address: 'ChecksumEvmAddress',
+            chain_id: ChainID,
+            transactions: Sequence[EvmTransaction],
+            receipts: Sequence[dict[str, Any]],
+            relevant_address: ChecksumEvmAddress,
     ) -> None:
         """Seed EVM transactions and their receipts so a redecode operation can run fully
         offline (the bench mock serves no receipts).
@@ -187,7 +188,7 @@ class ProfileBuilder:
             self.stats.get('decodable_transactions', 0) + len(transactions)
         )
 
-    def add_history_events(self, events: Iterable['HistoryBaseEntry']) -> None:
+    def add_history_events(self, events: Iterable[HistoryBaseEntry]) -> None:
         """Bulk-insert history events with explicitly assigned identifiers.
 
         Identifiers are assigned from a running counter (the tables are fresh,

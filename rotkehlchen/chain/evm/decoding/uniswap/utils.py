@@ -1,5 +1,4 @@
 import logging
-from collections.abc import Callable
 from typing import TYPE_CHECKING, Final, Literal
 
 from rotkehlchen.assets.asset import Asset
@@ -26,6 +25,8 @@ from rotkehlchen.serialization.deserialize import deserialize_evm_address
 from rotkehlchen.types import Price, TokenKind
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+
     from rotkehlchen.assets.asset import CryptoAsset
     from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
     from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
@@ -43,10 +44,10 @@ LOG_PRICE: Final = FVal('1.0001')
 def decode_basic_uniswap_info(
         amount_sent: int,
         amount_received: int,
-        decoded_events: list['EvmEvent'],
+        decoded_events: list[EvmEvent],
         counterparty: str,
-        notify_user: Callable[['EvmEvent', str], None],
-        native_currency: 'CryptoAsset',
+        notify_user: Callable[[EvmEvent, str], None],
+        native_currency: CryptoAsset,
 ) -> EvmDecodingOutput:
     """
     Check last three events and if they are related to the swap, label them as such.
@@ -125,7 +126,7 @@ def decode_basic_uniswap_info(
     return EvmDecodingOutput(process_swaps=True)
 
 
-def get_uniswap_swap_amounts(tx_log: 'EvmTxReceiptLog') -> tuple[int, int]:
+def get_uniswap_swap_amounts(tx_log: EvmTxReceiptLog) -> tuple[int, int]:
     """Get the amount received and amount sent in a swap from the swap tx_log.
 
     Uniswap represents the delta of tokens in the pool with a signed integer.
@@ -175,14 +176,14 @@ def calculate_amount(
 
 
 def get_position_price_from_underlying(
-        evm_inquirer: 'EvmNodeInquirer',
+        evm_inquirer: EvmNodeInquirer,
         token0_raw_address: str,
         token1_raw_address: str,
         tick_lower: int,
         tick_upper: int,
         liquidity: int,
         tick: int,
-        price_func: Callable[['Asset'], Price],
+        price_func: Callable[[Asset], Price],
 ) -> Price:
     """Get a Uniswap LP position's price from its underlying assets and tick/liquidity info.
     price_func is passed to avoid circular imports as well as allowing this function to be used
@@ -232,13 +233,13 @@ def get_position_price_from_underlying(
 
 
 def decode_uniswap_v3_like_position_create_or_exit(
-        decoded_events: list['EvmEvent'],
-        evm_inquirer: 'EvmNodeInquirer',
-        nft_manager: 'ChecksumEvmAddress',
+        decoded_events: list[EvmEvent],
+        evm_inquirer: EvmNodeInquirer,
+        nft_manager: ChecksumEvmAddress,
         counterparty: str,
         token_symbol: str,
         token_name: str,
-) -> list['EvmEvent']:
+) -> list[EvmEvent]:
     """Decode Uniswap V3 like position create/exit events.
     Args:
         decoded_events: the list of decoded events to process.

@@ -22,7 +22,7 @@ class MockResponse:
             status_code: int,
             text: str,
             content: Any = None,
-            headers: dict['str', Any] | None = None,
+            headers: dict[str, Any] | None = None,
     ) -> None:
         self.status_code = status_code
         self.text = text

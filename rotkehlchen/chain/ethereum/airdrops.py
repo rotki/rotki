@@ -1,18 +1,16 @@
 import json
 import logging
 from collections import defaultdict
-from collections.abc import Callable, Iterator, Sequence
 from dataclasses import dataclass
 from http import HTTPStatus
 from json.decoder import JSONDecodeError
 from pathlib import Path
-from typing import Any, Final, NamedTuple
+from typing import TYPE_CHECKING, Any, Final, NamedTuple
 
 import pandas as pd
 import pyarrow as pa
 import pyarrow.parquet as pq
 import requests
-from eth_typing import ABI
 from requests import Response
 from web3 import Web3
 from web3.exceptions import Web3Exception
@@ -30,7 +28,6 @@ from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.misc import AIRDROPSDIR_NAME, AIRDROPSPOAPDIR_NAME, APPDIR_NAME
 from rotkehlchen.db.cache import DBCacheDynamic
-from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.misc import RemoteError
@@ -54,6 +51,13 @@ from rotkehlchen.types import (
 )
 from rotkehlchen.utils.misc import get_chunks, is_production
 from rotkehlchen.utils.serialization import jsonloads_dict, rlk_jsondumps
+
+if TYPE_CHECKING:
+    from collections.abc import Callable, Iterator, Sequence
+
+    from eth_typing import ABI
+
+    from rotkehlchen.db.dbhandler import DBHandler
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -128,7 +132,7 @@ def _enrich_user_airdrop_data(
     user_data[protocol_name]['icon'] = airdrop_data.icon
 
 
-def _parse_airdrops(database: 'DBHandler', airdrops_data: dict[str, Any]) -> dict[str, Airdrop]:
+def _parse_airdrops(database: DBHandler, airdrops_data: dict[str, Any]) -> dict[str, Airdrop]:
     """Parses the airdrops' data from airdrops metadata index. Also, creates the new token if
     it's not present in the DB.
 
@@ -231,7 +235,7 @@ def _parse_airdrops(database: 'DBHandler', airdrops_data: dict[str, Any]) -> dic
     return airdrops
 
 
-def fetch_airdrops_metadata(database: 'DBHandler') -> tuple[dict[str, Airdrop], dict[str, list[str]]]:  # noqa: E501
+def fetch_airdrops_metadata(database: DBHandler) -> tuple[dict[str, Airdrop], dict[str, list[str]]]:  # noqa: E501
     """Fetches airdrop metadata from the rotki/data repository. If it's not cached, parses them,
     and returns them in two parts: a dict of Airdrop instances and a dict of POAP airdrops data.
 

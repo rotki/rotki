@@ -2,14 +2,14 @@ from abc import ABC, abstractmethod
 from enum import auto
 from typing import TYPE_CHECKING, Any
 
-from rotkehlchen.assets.asset import Asset
-from rotkehlchen.types import Timestamp
 from rotkehlchen.utils.mixins.enums import SerializableEnumNameMixin
 
 if TYPE_CHECKING:
     from more_itertools import peekable
 
     from rotkehlchen.accounting.pot import AccountingPot
+    from rotkehlchen.assets.asset import Asset
+    from rotkehlchen.types import Timestamp
 
 
 class AccountingEventType(SerializableEnumNameMixin):
@@ -58,8 +58,8 @@ class AccountingEventMixin(ABC):
     @abstractmethod
     def process(
             self,
-            accounting: 'AccountingPot',
-            events_iterator: "peekable['AccountingEventMixin']",
+            accounting: AccountingPot,
+            events_iterator: peekable[AccountingEventMixin],
     ) -> int:
         """Processes the event for accounting and adds to the respective pot's processed events.
 
@@ -80,5 +80,5 @@ class AccountingEventMixin(ABC):
 
     @classmethod
     @abstractmethod
-    def deserialize(cls, data: dict[str, Any]) -> 'AccountingEventMixin':
+    def deserialize(cls, data: dict[str, Any]) -> AccountingEventMixin:
         """Deserializes the event"""

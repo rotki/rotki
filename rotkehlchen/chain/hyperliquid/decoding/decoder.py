@@ -3,22 +3,22 @@ from typing import TYPE_CHECKING
 from rotkehlchen.chain.evm.decoding.base import BaseEvmDecoderTools
 from rotkehlchen.chain.evm.decoding.decoder import EvmDecodingRules, EVMTransactionDecoder
 from rotkehlchen.constants.assets import A_HYPE
-from rotkehlchen.types import ChecksumEvmAddress
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.hyperliquid.node_inquirer import HyperliquidInquirer
     from rotkehlchen.chain.hyperliquid.transactions import HyperliquidTransactions
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.premium.premium import Premium
+    from rotkehlchen.types import ChecksumEvmAddress
 
 
 class HyperliquidTransactionDecoder(EVMTransactionDecoder):
     def __init__(
             self,
-            database: 'DBHandler',
-            hyperliquid_inquirer: 'HyperliquidInquirer',
-            transactions: 'HyperliquidTransactions',
-            premium: 'Premium | None' = None,
+            database: DBHandler,
+            hyperliquid_inquirer: HyperliquidInquirer,
+            transactions: HyperliquidTransactions,
+            premium: Premium | None = None,
     ):
         super().__init__(
             database=database,

@@ -27,11 +27,11 @@ STAKEDAO_API: Final = 'https://api.stakedao.org/api'
 # This is gotten from:
 # https://github.com/stake-dao/api?tab=readme-ov-file#strategies-data
 SUPPORTED_STAKEDAO_STRATEGIES: Final = {'curve', 'balancer', 'pendle', 'pancakeswap', 'angle'}
-GAUGE_COMPACT_ABI: Final['ABI'] = [{'stateMutability': 'view', 'type': 'function', 'name': 'staking_token', 'inputs': [], 'outputs': [{'name': '', 'type': 'address'}]}]  # noqa: E501
-LIQUITY_GAUGE_ABI: Final['ABI'] = [{'inputs': [], 'name': 'token', 'outputs': [{'name': '', 'type': 'address'}], 'stateMutability': 'view', 'type': 'function'}]  # noqa: E501
+GAUGE_COMPACT_ABI: Final[ABI] = [{'stateMutability': 'view', 'type': 'function', 'name': 'staking_token', 'inputs': [], 'outputs': [{'name': '', 'type': 'address'}]}]  # noqa: E501
+LIQUITY_GAUGE_ABI: Final[ABI] = [{'inputs': [], 'name': 'token', 'outputs': [{'name': '', 'type': 'address'}], 'stateMutability': 'view', 'type': 'function'}]  # noqa: E501
 
 
-def query_stakedao_gauges(evm_inquirer: 'EvmNodeInquirer') -> None:
+def query_stakedao_gauges(evm_inquirer: EvmNodeInquirer) -> None:
     """Query StakeDAO gauges for lockers and strategies from the API and cache them.
 
     Note that item['token'] in lockers and item['lpToken'] in strategies refer
@@ -97,8 +97,8 @@ def query_stakedao_gauges(evm_inquirer: 'EvmNodeInquirer') -> None:
 
 def ensure_gauge_token(
         gauge_address: ChecksumEvmAddress,
-        evm_inquirer: 'EvmNodeInquirer',
-        tx_hash: 'EVMTxHash',
+        evm_inquirer: EvmNodeInquirer,
+        tx_hash: EVMTxHash,
 ) -> None:
     """Ensure that StakeDao tokens are present in the database
 

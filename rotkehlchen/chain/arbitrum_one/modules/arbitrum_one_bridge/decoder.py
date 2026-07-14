@@ -1,15 +1,9 @@
 import logging
-from collections.abc import Callable
 from typing import TYPE_CHECKING, Any, Final
 
-from eth_typing.abi import ABI
-
-from rotkehlchen.assets.asset import EvmToken
 from rotkehlchen.assets.utils import asset_normalized_value, get_or_create_evm_token
 from rotkehlchen.chain.arbitrum_one.constants import ARBITRUM_ONE_CPT_DETAILS, CPT_ARBITRUM_ONE
 from rotkehlchen.chain.arbitrum_one.decoding.interfaces import ArbitrumDecoderInterface
-from rotkehlchen.chain.arbitrum_one.types import ArbitrumOneTransaction
-from rotkehlchen.chain.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
 from rotkehlchen.chain.evm.decoding.structures import (
     DEFAULT_EVM_DECODING_OUTPUT,
@@ -29,7 +23,14 @@ from rotkehlchen.types import ChainID, ChecksumEvmAddress
 from rotkehlchen.utils.misc import bytes_to_address, from_wei
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+
+    from eth_typing.abi import ABI
+
+    from rotkehlchen.assets.asset import EvmToken
     from rotkehlchen.chain.arbitrum_one.node_inquirer import ArbitrumOneInquirer
+    from rotkehlchen.chain.arbitrum_one.types import ArbitrumOneTransaction
+    from rotkehlchen.chain.decoding.types import CounterpartyDetails
     from rotkehlchen.chain.evm.decoding.base import BaseEvmDecoderTools
     from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
     from rotkehlchen.history.events.structures.evm_event import EvmEvent
@@ -73,9 +74,9 @@ log = RotkehlchenLogsAdapter(logger)
 class ArbitrumOneBridgeDecoder(ArbitrumDecoderInterface):
     def __init__(
             self,
-            evm_inquirer: 'ArbitrumOneInquirer',
-            base_tools: 'BaseEvmDecoderTools',
-            msg_aggregator: 'MessagesAggregator',
+            evm_inquirer: ArbitrumOneInquirer,
+            base_tools: BaseEvmDecoderTools,
+            msg_aggregator: MessagesAggregator,
     ) -> None:
         super().__init__(
             evm_inquirer=evm_inquirer,
@@ -211,9 +212,9 @@ class ArbitrumOneBridgeDecoder(ArbitrumDecoderInterface):
     def _decode_eth_deposit_event(
             self,
             transaction: ArbitrumOneTransaction,
-            decoded_events: list['EvmEvent'],
-            all_logs: list['EvmTxReceiptLog'],  # pylint: disable=unused-argument
-    ) -> list['EvmEvent']:
+            decoded_events: list[EvmEvent],
+            all_logs: list[EvmTxReceiptLog],  # pylint: disable=unused-argument
+    ) -> list[EvmEvent]:
         """Decodes an event for withdrawing ETH from the bridge (Receiving ETH to arbitrum one)
 
         An example that Dimitris tried is this: https://arbiscan.io/tx/0x30505174f2f82a6513f21eb5177e59935a6da95d057e4c1972e65da90ea1c547

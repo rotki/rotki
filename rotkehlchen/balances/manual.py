@@ -2,16 +2,16 @@ from dataclasses import asdict, dataclass, field
 from typing import TYPE_CHECKING, Any
 
 from rotkehlchen.accounting.structures.balance import Balance, BalanceType
-from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.constants.prices import ZERO_PRICE
 from rotkehlchen.errors.misc import InputError, RemoteError
-from rotkehlchen.fval import FVal
 from rotkehlchen.inquirer import Inquirer
-from rotkehlchen.types import Location
 
 if TYPE_CHECKING:
+    from rotkehlchen.assets.asset import Asset
     from rotkehlchen.db.dbhandler import DBHandler
+    from rotkehlchen.fval import FVal
+    from rotkehlchen.types import Location
 
 
 @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
@@ -42,7 +42,7 @@ class ManuallyTrackedBalanceWithValue(_BaseManualBalance):
 
 
 def get_manually_tracked_balances(
-        db: 'DBHandler',
+        db: DBHandler,
         balance_type: BalanceType | None = None,
         include_entries_with_missing_assets: bool = False,
 ) -> list[ManuallyTrackedBalanceWithValue]:
@@ -85,7 +85,7 @@ def get_manually_tracked_balances(
 
 
 def add_manually_tracked_balances(
-        db: 'DBHandler',
+        db: DBHandler,
         data: list[ManuallyTrackedBalance],
 ) -> None:
     """Adds manually tracked balances
@@ -106,7 +106,7 @@ def add_manually_tracked_balances(
         db.add_manually_tracked_balances(write_cursor=cursor, data=data)
 
 
-def edit_manually_tracked_balances(db: 'DBHandler', data: list[ManuallyTrackedBalance]) -> None:
+def edit_manually_tracked_balances(db: DBHandler, data: list[ManuallyTrackedBalance]) -> None:
     """Edits manually tracked balances
 
     May raise:
@@ -126,7 +126,7 @@ def edit_manually_tracked_balances(db: 'DBHandler', data: list[ManuallyTrackedBa
         db.edit_manually_tracked_balances(cursor, data)
 
 
-def remove_manually_tracked_balances(db: 'DBHandler', ids: list[int]) -> None:
+def remove_manually_tracked_balances(db: DBHandler, ids: list[int]) -> None:
     """Edits manually tracked balances
 
     May raise:
@@ -138,7 +138,7 @@ def remove_manually_tracked_balances(db: 'DBHandler', ids: list[int]) -> None:
 
 
 def account_for_manually_tracked_asset_balances(
-        db: 'DBHandler',
+        db: DBHandler,
         balances: dict[str, dict[Asset, Balance]],
 ) -> dict[str, Any]:
     """Given the big balances mapping adds to it all manually tracked asset balances"""

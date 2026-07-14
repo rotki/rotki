@@ -1,20 +1,22 @@
 import os
 import tempfile
 from http import HTTPStatus
-from typing import Literal
+from typing import TYPE_CHECKING, Literal
 from unittest.mock import patch
 
 from rotkehlchen.constants import ROTKEHLCHEN_SERVER_TIMEOUT
 from rotkehlchen.constants.misc import USERDB_NAME, USERSDIR_NAME
-from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.db.utils import update_table_schema
 from rotkehlchen.premium.premium import Premium, PremiumCredentials
-from rotkehlchen.rotkehlchen import Rotkehlchen
 from rotkehlchen.tests.utils.constants import A_GBP, DEFAULT_TESTS_MAIN_CURRENCY
 from rotkehlchen.tests.utils.database import mock_db_schema_sanity_check
 from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.types import Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
+
+if TYPE_CHECKING:
+    from rotkehlchen.db.dbhandler import DBHandler
+    from rotkehlchen.rotkehlchen import Rotkehlchen
 
 # Valid format but not "real" premium api key and secret
 VALID_PREMIUM_KEY = (

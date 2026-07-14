@@ -4,14 +4,16 @@ import pickle  # noqa: S403
 import sys
 import threading
 import time
-from types import FrameType
-from typing import IO, Any, NewType
+from typing import IO, TYPE_CHECKING, Any, NewType
 
 import objgraph
 import psutil
 
 from .constants import INTERVAL_SECONDS, MEGA
 from .timer import TIMER, TIMER_SIGNAL, Timer
+
+if TYPE_CHECKING:
+    from types import FrameType
 
 # Improvements:
 # - The objcount itself is not that useful, add the _sys.getsizeof_ to know the

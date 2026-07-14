@@ -3,7 +3,6 @@ from typing import TYPE_CHECKING, Any
 
 import ens
 
-from rotkehlchen.chain.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.decoding.utils import maybe_reshuffle_events
 from rotkehlchen.chain.ethereum.abi import decode_event_data_abi_str
 from rotkehlchen.chain.evm.decoding.ens.decoder import EnsCommonDecoder
@@ -50,6 +49,7 @@ from .constants import (
 )
 
 if TYPE_CHECKING:
+    from rotkehlchen.chain.decoding.types import CounterpartyDetails
     from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
     from rotkehlchen.chain.evm.decoding.base import BaseEvmDecoderTools
     from rotkehlchen.user_messages import MessagesAggregator
@@ -91,9 +91,9 @@ def _save_hash_mappings_get_fullname(name: str, tx_hash: EVMTxHash) -> str:
 class EnsDecoder(GovernableDecoderInterface, EnsCommonDecoder):
     def __init__(  # pylint: disable=super-init-not-called
             self,
-            ethereum_inquirer: 'EthereumInquirer',
-            base_tools: 'BaseEvmDecoderTools',
-            msg_aggregator: 'MessagesAggregator',  # pylint: disable=unused-argument
+            ethereum_inquirer: EthereumInquirer,
+            base_tools: BaseEvmDecoderTools,
+            msg_aggregator: MessagesAggregator,  # pylint: disable=unused-argument
     ) -> None:
         EnsCommonDecoder.__init__(
             self,

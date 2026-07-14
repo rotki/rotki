@@ -28,8 +28,8 @@ log = RotkehlchenLogsAdapter(logger)
 class RunmoneyBalances(ProtocolWithBalance):
     def __init__(
             self,
-            evm_inquirer: 'BaseInquirer',
-            tx_decoder: 'BaseTransactionDecoder',
+            evm_inquirer: BaseInquirer,
+            tx_decoder: BaseTransactionDecoder,
     ):
         super().__init__(
             evm_inquirer=evm_inquirer,
@@ -44,7 +44,7 @@ class RunmoneyBalances(ProtocolWithBalance):
         )
         self.usdc_asset = Asset('eip155:8453/erc20:0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913')
 
-    def query_balances(self) -> 'BalancesSheetType':
+    def query_balances(self) -> BalancesSheetType:
         balances: BalancesSheetType = defaultdict(BalanceSheet)
         if len(addresses_with_deposits := list(self.addresses_with_deposits())) == 0:
             return balances

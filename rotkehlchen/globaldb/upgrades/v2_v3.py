@@ -178,7 +178,7 @@ def _maybe_upgrade_identifier(identifier: str) -> str:
     return maybe_other_chain_new_id if maybe_other_chain_new_id is not None else identifier
 
 
-def upgrade_ethereum_asset_ids_v3(cursor: 'DBCursor') -> EVM_TUPLES_CREATION_TYPE:
+def upgrade_ethereum_asset_ids_v3(cursor: DBCursor) -> EVM_TUPLES_CREATION_TYPE:
     """Query all the information available from ethereum tokens in
     the v2 schema to be used in v3"""
     result = cursor.execute(
@@ -240,7 +240,7 @@ def upgrade_ethereum_asset_ids_v3(cursor: 'DBCursor') -> EVM_TUPLES_CREATION_TYP
     )
 
 
-def upgrade_other_assets(cursor: 'DBCursor') -> ASSET_CREATION_TYPE:
+def upgrade_other_assets(cursor: DBCursor) -> ASSET_CREATION_TYPE:
     """Create the bindings tuple for the assets and common_asset_details tables using the
     information from the V2 tables for non ethereum assets"""
     result = cursor.execute(
@@ -280,7 +280,7 @@ def upgrade_other_assets(cursor: 'DBCursor') -> ASSET_CREATION_TYPE:
     )
 
 
-def translate_underlying_table(cursor: 'DBCursor') -> list[tuple[str, str, str]]:
+def translate_underlying_table(cursor: DBCursor) -> list[tuple[str, str, str]]:
     """Get information about the underlying tokens and upgrade it to the V3 schema from the
     information in the v2 schema"""
     query = cursor.execute(
@@ -304,7 +304,7 @@ def translate_underlying_table(cursor: 'DBCursor') -> list[tuple[str, str, str]]
     return mappings
 
 
-def translate_owned_assets(cursor: 'DBCursor') -> list[tuple[str]]:
+def translate_owned_assets(cursor: DBCursor) -> list[tuple[str]]:
     """Collect and update assets in the user_owned_assets tables to use the new id format"""
     cursor.execute('SELECT asset_id from user_owned_assets;')
     owned_assets = []
@@ -313,7 +313,7 @@ def translate_owned_assets(cursor: 'DBCursor') -> list[tuple[str]]:
     return owned_assets
 
 
-def translate_binance_pairs(cursor: 'DBCursor') -> list[tuple[str, str, str, str]]:
+def translate_binance_pairs(cursor: DBCursor) -> list[tuple[str, str, str, str]]:
     """Collect and update assets in the binance_pairs tables to use the new id format"""
     table_exists = cursor.execute(
         "SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='binance_pairs'",
@@ -342,7 +342,7 @@ def translate_binance_pairs(cursor: 'DBCursor') -> list[tuple[str, str, str, str
     return binance_pairs
 
 
-def translate_assets_in_price_table(cursor: 'DBCursor') -> list[tuple[str, str, str, int, str]]:
+def translate_assets_in_price_table(cursor: DBCursor) -> list[tuple[str, str, str, int, str]]:
     """
     Translate the asset ids in the price table.
 
@@ -373,7 +373,7 @@ def translate_assets_in_price_table(cursor: 'DBCursor') -> list[tuple[str, str, 
 
 
 @enter_exit_debug_log(name='GlobalDB v2->v3 upgrade')
-def migrate_to_v3(connection: 'DBConnection', progress_handler: 'DBUpgradeProgressHandler') -> None:  # noqa: E501
+def migrate_to_v3(connection: DBConnection, progress_handler: DBUpgradeProgressHandler) -> None:
     """Upgrade assets information and migrate globaldb to version 3
 
     At the adding steps to the global DB upgrades, skipped this one. Too old

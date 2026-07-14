@@ -13,9 +13,9 @@ class Uniswapv2Decoder(Uniswapv2CommonDecoder):
 
     def __init__(
             self,
-            optimism_inquirer: 'OptimismInquirer',
-            base_tools: 'BaseEvmDecoderTools',
-            msg_aggregator: 'MessagesAggregator',
+            optimism_inquirer: OptimismInquirer,
+            base_tools: BaseEvmDecoderTools,
+            msg_aggregator: MessagesAggregator,
     ) -> None:
         super().__init__(
             evm_inquirer=optimism_inquirer,

@@ -12,8 +12,8 @@ class BaseAccountingAggregator(EVMAccountingAggregator):
 
     def __init__(
             self,
-            node_inquirer: 'BaseInquirer',
-            msg_aggregator: 'MessagesAggregator',
+            node_inquirer: BaseInquirer,
+            msg_aggregator: MessagesAggregator,
     ) -> None:
         super().__init__(
             node_inquirer=node_inquirer,

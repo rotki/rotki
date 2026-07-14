@@ -109,7 +109,7 @@ def test_defillama_with_api_key(price_historian, database):  # pylint: disable=u
 
 @pytest.mark.vcr
 @pytest.mark.parametrize('should_mock_current_price_queries', [False])
-def test_query_multiple_current_prices(session_defillama: 'Defillama', inquirer):
+def test_query_multiple_current_prices(session_defillama: Defillama, inquirer):
     assert session_defillama.query_multiple_current_prices(
         from_assets=[
             A_ARB.resolve_to_asset_with_oracles(),
@@ -121,7 +121,7 @@ def test_query_multiple_current_prices(session_defillama: 'Defillama', inquirer)
 
 
 @pytest.mark.vcr
-def test_query_multiple_current_prices_handles_exceptions_and_chunking(session_defillama: 'Defillama'):  # noqa: E501
+def test_query_multiple_current_prices_handles_exceptions_and_chunking(session_defillama: Defillama):  # noqa: E501
     """Regression test for query_multiple_current_prices to ensure it properly handles
     exceptions and chunking without failing the entire batch. This prevents the issue where
     large requests cause "413 content too large" errors or individual problematic chunks
@@ -166,8 +166,8 @@ def test_query_multiple_current_prices_handles_exceptions_and_chunking(session_d
 
 @pytest.mark.vcr
 def test_query_solana_token_price_using_address(
-        session_defillama: 'Defillama',
-        solana_inquirer: 'SolanaInquirer',
+        session_defillama: Defillama,
+        solana_inquirer: SolanaInquirer,
 ) -> None:
     """Test that current price queries work correctly for Solana tokens."""
     solana_token = get_or_create_solana_token(  # aura token.

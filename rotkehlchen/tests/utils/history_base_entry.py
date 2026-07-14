@@ -1,14 +1,12 @@
 
-from collections.abc import Sequence
 from itertools import groupby
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from rotkehlchen.chain.decoding.constants import CPT_GAS
 from rotkehlchen.chain.ethereum.modules.gitcoin.constants import GITCOIN_GRANTS_OLD1
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants import ONE
 from rotkehlchen.constants.assets import A_DAI, A_ETH, A_ETH2, A_USDT
-from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.db.filtering import HistoryEventFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.fval import FVal
@@ -30,6 +28,11 @@ from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.swap import SwapEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.types import Location, TimestampMS, deserialize_evm_tx_hash
+
+if TYPE_CHECKING:
+    from collections.abc import Sequence
+
+    from rotkehlchen.db.dbhandler import DBHandler
 
 KEYS_IN_ENTRY_TYPE: dict[HistoryBaseEntryType, set[str]] = {
     HistoryBaseEntryType.HISTORY_EVENT: {'sequence_index', 'location', 'event_type', 'event_subtype', 'asset', 'user_notes', 'group_identifier'},  # noqa: E501
@@ -124,7 +127,7 @@ def entries_to_input_dict(
     return serialized
 
 
-def predefined_events_to_insert() -> list['HistoryBaseEntry']:
+def predefined_events_to_insert() -> list[HistoryBaseEntry]:
     """List of different objects used in tests that will be inserted in the database"""
     return [EvmEvent(
         tx_ref=deserialize_evm_tx_hash('0x64f1982504ab714037467fdd45d3ecf5a6356361403fc97dd325101d8c038c4e'),
@@ -267,7 +270,7 @@ def predefined_events_to_insert() -> list['HistoryBaseEntry']:
     )]
 
 
-def add_entries(events_db: 'DBHistoryEvents') -> list['HistoryBaseEntry']:
+def add_entries(events_db: DBHistoryEvents) -> list[HistoryBaseEntry]:
     """Add history events to the database"""
     entries = predefined_events_to_insert()
     with events_db.db.conn.write_ctx() as write_cursor:

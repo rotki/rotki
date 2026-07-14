@@ -17,7 +17,7 @@ log = RotkehlchenLogsAdapter(logger)
 
 
 @enter_exit_debug_log(name='UserDB v48->v49 upgrade')
-def upgrade_v48_to_v49(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHandler') -> None:
+def upgrade_v48_to_v49(db: DBHandler, progress_handler: DBUpgradeProgressHandler) -> None:
     """Upgrades the DB from v48 to v49. This happened in v1.40 release.
 
     - Fix zksynclite_swaps table schema: change TEXT_NOT NULL to TEXT NOT NULL for to_amount column
@@ -25,7 +25,7 @@ def upgrade_v48_to_v49(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
     - Remove deprecated eth2_daily_staking_details table
     """
     @progress_step(description='Fixing zksynclite_swaps table schema.')
-    def _fix_zksynclite_swaps_schema(write_cursor: 'DBCursor') -> None:
+    def _fix_zksynclite_swaps_schema(write_cursor: DBCursor) -> None:
         # First check if the table exists
         if write_cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='zksynclite_swaps'").fetchone() is None:  # noqa: E501
             log.debug('zksynclite_swaps table does not exist, skipping upgrade')
@@ -53,7 +53,7 @@ def upgrade_v48_to_v49(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
         )
 
     @progress_step(description='Migrating solana assets to CAIPS format.')
-    def _migrate_solana_assets_to_caips(write_cursor: 'DBCursor') -> None:
+    def _migrate_solana_assets_to_caips(write_cursor: DBCursor) -> None:
         write_cursor.switch_foreign_keys('OFF')
         if len(process_solana_asset_migration(
             write_cursor=write_cursor,
@@ -74,17 +74,17 @@ def upgrade_v48_to_v49(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
         write_cursor.execute('DELETE FROM assets WHERE identifier IN (?, ?)', ('TRISIG', 'HODLSOL'))  # noqa: E501
 
     @progress_step(description='Removing deprecated eth2_daily_staking_details table.')
-    def _remove_eth2_daily_staking_details_table(write_cursor: 'DBCursor') -> None:
+    def _remove_eth2_daily_staking_details_table(write_cursor: DBCursor) -> None:
         """Remove the deprecated eth2_daily_staking_details table and its data"""
         write_cursor.execute('DROP TABLE IF EXISTS eth2_daily_staking_details;')
 
     @progress_step(description='Updating global user notes location value.')
-    def _update_user_notes(write_cursor: 'DBCursor') -> None:
+    def _update_user_notes(write_cursor: DBCursor) -> None:
         """Update global user notes location value to 'G' instead of a blank string"""
         write_cursor.execute("UPDATE user_notes SET location='G' WHERE location = ''")
 
     @progress_step(description='Resetting decoded events.')
-    def _reset_decoded_events(write_cursor: 'DBCursor') -> None:
+    def _reset_decoded_events(write_cursor: DBCursor) -> None:
         """Reset all decoded evm events except for the customized ones and those in zksync lite.
         Code taken from previous upgrade
         """
@@ -111,7 +111,7 @@ def upgrade_v48_to_v49(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
             )
 
     @progress_step(description='Adding new locations to the DB.')
-    def _add_new_locations(write_cursor: 'DBCursor') -> None:
+    def _add_new_locations(write_cursor: DBCursor) -> None:
         """Adds Solana as location"""
         write_cursor.execute("INSERT OR IGNORE INTO location(location, seq) VALUES ('w', 55);")
 

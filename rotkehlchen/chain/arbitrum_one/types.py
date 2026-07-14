@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 from rotkehlchen.types import EvmTransaction, EvmTransactionAuthorization
 
@@ -12,12 +12,12 @@ class ArbitrumOneTransaction(EvmTransaction):  # noqa: PLW1641  # hash implement
 
     def __init__(
             self,
-            tx_hash: 'EVMTxHash',
-            chain_id: 'ChainID',
-            timestamp: 'Timestamp',
+            tx_hash: EVMTxHash,
+            chain_id: ChainID,
+            timestamp: Timestamp,
             block_number: int,
-            from_address: 'ChecksumEvmAddress',
-            to_address: Optional['ChecksumEvmAddress'],
+            from_address: ChecksumEvmAddress,
+            to_address: ChecksumEvmAddress | None,
             value: int,
             gas: int,
             gas_price: int,

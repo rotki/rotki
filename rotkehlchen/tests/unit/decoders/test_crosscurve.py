@@ -38,7 +38,7 @@ OPTIMISM_INDEXER_ORDER = [{
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('db_settings', OPTIMISM_INDEXER_ORDER)
 @pytest.mark.parametrize('optimism_accounts', [['0xc37b40ABdB939635068d3c5f13E7faF686F03B65']])
-def test_crosscurve_bridge_send(optimism_inquirer: 'OptimismInquirer', optimism_accounts: list[ChecksumEvmAddress]) -> None:  # noqa: E501
+def test_crosscurve_bridge_send(optimism_inquirer: OptimismInquirer, optimism_accounts: list[ChecksumEvmAddress]) -> None:  # noqa: E501
     """Data taken from
     https://optimistic.etherscan.io/tx/0xa2f971ba5af848948e0930ab0f86b70751d595e7c79111aa863681a117924e71
     """
@@ -89,7 +89,7 @@ def test_crosscurve_bridge_send(optimism_inquirer: 'OptimismInquirer', optimism_
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('arbitrum_one_accounts', [['0xAc305b47BB34AD6BB566288050920e9307fd23A7']])
-def test_crosscurve_bridge_send_arbitrum(arbitrum_one_inquirer: 'ArbitrumOneInquirer', arbitrum_one_accounts: list[ChecksumEvmAddress]) -> None:  # noqa: E501
+def test_crosscurve_bridge_send_arbitrum(arbitrum_one_inquirer: ArbitrumOneInquirer, arbitrum_one_accounts: list[ChecksumEvmAddress]) -> None:  # noqa: E501
     tx_hash = deserialize_evm_tx_hash('0x03177504cf5ed18c8cc29bc19a08c9f3ffb23d7f66b62ca43cdcba92346d621c')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=arbitrum_one_inquirer, tx_hash=tx_hash)  # noqa: E501
     assert events == [
@@ -137,7 +137,7 @@ def test_crosscurve_bridge_send_arbitrum(arbitrum_one_inquirer: 'ArbitrumOneInqu
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('arbitrum_one_accounts', [['0xAc305b47BB34AD6BB566288050920e9307fd23A7']])
-def test_crosscurve_bridge_receive_via_curve(arbitrum_one_inquirer: 'ArbitrumOneInquirer', arbitrum_one_accounts: list[ChecksumEvmAddress]) -> None:  # noqa: E501
+def test_crosscurve_bridge_receive_via_curve(arbitrum_one_inquirer: ArbitrumOneInquirer, arbitrum_one_accounts: list[ChecksumEvmAddress]) -> None:  # noqa: E501
     """CrossCurve uses Curve pool liquidity to deliver bridged assets. The resulting event
     would normally be decoded as a Curve withdrawal, but should be re-decoded as a bridge receive.
     """
@@ -163,7 +163,7 @@ def test_crosscurve_bridge_receive_via_curve(arbitrum_one_inquirer: 'ArbitrumOne
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('gnosis_accounts', [['0xc37b40ABdB939635068d3c5f13E7faF686F03B65']])
-def test_crosscurve_bridge_receive(gnosis_inquirer: 'GnosisInquirer', gnosis_accounts: list[ChecksumEvmAddress]) -> None:  # noqa: E501
+def test_crosscurve_bridge_receive(gnosis_inquirer: GnosisInquirer, gnosis_accounts: list[ChecksumEvmAddress]) -> None:  # noqa: E501
     tx_hash = deserialize_evm_tx_hash('0xd2c1698e07e82e0d0b61c5d22fb2c5f993f21a515322ba890678e772a13d0e08')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=gnosis_inquirer, tx_hash=tx_hash)
     assert events == [

@@ -30,7 +30,7 @@ if TYPE_CHECKING:
 
 
 @pytest.fixture(name='pendle_cache')
-def _pendle_cache(globaldb: 'GlobalDBHandler') -> None:
+def _pendle_cache(globaldb: GlobalDBHandler) -> None:
     """Fixture that preloads Pendle's LPT & SY token addresses into GlobalDB cache."""
     with globaldb.conn.write_ctx() as write_cursor:
         globaldb_set_general_cache_values(

@@ -1,6 +1,5 @@
 import logging
 from collections import defaultdict
-from collections.abc import Sequence
 from typing import TYPE_CHECKING, Literal, NamedTuple
 
 import pandas as pd
@@ -24,6 +23,8 @@ from rotkehlchen.types import EventMetricKey, Location, Timestamp, TimestampMS
 from rotkehlchen.utils.misc import ts_ms_to_sec, ts_sec_to_ms
 
 if TYPE_CHECKING:
+    from collections.abc import Sequence
+
     from rotkehlchen.assets.asset import EvmToken
     from rotkehlchen.chain.evm.manager import EvmManager
     from rotkehlchen.db.dbhandler import DBHandler
@@ -96,7 +97,7 @@ class HistoricalBalancesManager:
         if get_event_direction(event_type=event_type, event_subtype=subtype, for_balance_tracking=True) == EventDirection.NEUTRAL  # noqa: E501
     )
 
-    def __init__(self, db: 'DBHandler') -> None:
+    def __init__(self, db: DBHandler) -> None:
         self.db = db
 
     def get_balances(
@@ -226,9 +227,9 @@ class HistoricalBalancesManager:
 
     def find_onchain_balance_divergence(
             self,
-            evm_manager: 'EvmManager',
-            evm_chain: 'EVM_CHAIN_IDS_WITH_TRANSACTIONS_TYPE',
-            address: 'ChecksumEvmAddress',
+            evm_manager: EvmManager,
+            evm_chain: EVM_CHAIN_IDS_WITH_TRANSACTIONS_TYPE,
+            address: ChecksumEvmAddress,
             asset: Asset,
             tolerance: FVal = ZERO,
     ) -> HistoricalBalanceDivergenceResult:
@@ -348,14 +349,14 @@ class HistoricalBalancesManager:
 
     @staticmethod
     def _probe_onchain_balance_divergence(
-            evm_manager: 'EvmManager',
+            evm_manager: EvmManager,
             events: list[_TrackedBalanceEvent],
             probe_cache: dict[int, HistoricalBalanceDivergenceProbe],
             probes: list[HistoricalBalanceDivergenceProbe],
             index: int,
-            address: 'ChecksumEvmAddress',
+            address: ChecksumEvmAddress,
             asset: Asset,
-            token: 'EvmToken | None',
+            token: EvmToken | None,
             tolerance: FVal,
     ) -> HistoricalBalanceDivergenceProbe:
         if (cached_probe := probe_cache.get(index)) is not None:
@@ -408,9 +409,9 @@ class HistoricalBalancesManager:
 
     def get_erc721_tokens_balances(
             self,
-            address: 'ChecksumEvmAddress',
+            address: ChecksumEvmAddress,
             assets: tuple[Asset, ...],
-    ) -> dict['EvmToken', FVal]:
+    ) -> dict[EvmToken, FVal]:
         """Get current balances for the given erc721 assets of a specific address by processing historical events.
 
         May raise:
@@ -665,9 +666,9 @@ class HistoricalBalancesManager:
 
     def _get_tracked_wallet_balance_events(
             self,
-            evm_chain: 'EVM_CHAIN_IDS_WITH_TRANSACTIONS_TYPE',
+            evm_chain: EVM_CHAIN_IDS_WITH_TRANSACTIONS_TYPE,
             location: Location,
-            address: 'ChecksumEvmAddress',
+            address: ChecksumEvmAddress,
             asset: Asset,
     ) -> list[_TrackedBalanceEvent]:
         """Load processed wallet balance checkpoints for one chain/address/asset.
@@ -725,7 +726,7 @@ class HistoricalBalancesManager:
             from_ts: Timestamp | None = None,
             to_ts: Timestamp | None = None,
             assets: tuple[Asset, ...] | None = None,
-            address: 'ChecksumEvmAddress | None' = None,
+            address: ChecksumEvmAddress | None = None,
     ) -> tuple[list[HistoryEvent], Asset]:
         """Helper method to get events and main currency from DB.
 

@@ -185,7 +185,7 @@ def test_fees_in_received_asset(accountant, google_service):
 }])
 @pytest.mark.parametrize('should_mock_price_queries', [True])
 def test_main_currency_is_respected(
-        accountant: 'Accountant',
+        accountant: Accountant,
         mocked_price_queries: dict[str, dict[str, dict[int, FVal]]],
 ) -> None:
     """Verify that the price after processing trades respects the main currency. We change the
@@ -221,7 +221,7 @@ def test_main_currency_is_respected(
 @pytest.mark.parametrize('mocked_price_queries', [prices])
 @pytest.mark.parametrize('initialize_accounting_rules', [True])
 def test_process_events_with_duplicate_timestamps(
-        rotkehlchen_api_server: 'APIServer',
+        rotkehlchen_api_server: APIServer,
 ) -> None:
     """Verify that events with the same timestamp are properly processed.
     Regression test for https://github.com/orgs/rotki/projects/11?pane=issue&itemId=115660014
@@ -283,7 +283,7 @@ def test_process_events_with_duplicate_timestamps(
 @pytest.mark.parametrize('ethereum_accounts', [[]])
 @pytest.mark.parametrize('initialize_accounting_rules', [True])
 def test_fiat_income_taxable_pnl(
-        rotkehlchen_api_server: 'APIServer',
+        rotkehlchen_api_server: APIServer,
 ) -> None:
     """Check that fiat IN events are properly counted as taxable income.
     Regression test for https://github.com/rotki/rotki/issues/10419
@@ -331,7 +331,7 @@ def test_fiat_income_taxable_pnl(
 @pytest.mark.parametrize('ethereum_accounts', [[]])
 @pytest.mark.parametrize('initialize_accounting_rules', [True])
 @pytest.mark.parametrize('mocked_price_queries', [prices])
-def test_deposit_asset_is_neutral(rotkehlchen_api_server: 'APIServer') -> None:
+def test_deposit_asset_is_neutral(rotkehlchen_api_server: APIServer) -> None:
     """Regression test for an issue where DEPOSIT/DEPOSIT_ASSET events were not being handled
     correctly. Checks that a history like `receive -> exchange withdrawal -> deposit asset -> swap`
     doesn't have missing acquisitions and doesn't have an accounting event for the deposit asset.
@@ -400,7 +400,7 @@ def test_deposit_asset_is_neutral(rotkehlchen_api_server: 'APIServer') -> None:
 
 
 @pytest.mark.parametrize('accounting_initialize_parameters', [True])
-def test_get_prices_for_swap_fiat_price_unavailable(accountant: 'Accountant') -> None:
+def test_get_prices_for_swap_fiat_price_unavailable(accountant: Accountant) -> None:
     """Test that if a fiat asset's price query fails, get_prices_for_swap handles
     it gracefully instead of crashing.
 

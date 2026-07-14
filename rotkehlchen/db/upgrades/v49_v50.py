@@ -15,11 +15,11 @@ log = RotkehlchenLogsAdapter(logger)
 
 
 @enter_exit_debug_log(name='UserDB v49->v50 upgrade')
-def upgrade_v49_to_v50(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHandler') -> None:
+def upgrade_v49_to_v50(db: DBHandler, progress_handler: DBUpgradeProgressHandler) -> None:
     """Upgrades the DB from v49 to v50. This happened in the v1.41 release."""
 
     @progress_step(description='Resetting decoded events.')
-    def _reset_decoded_events(write_cursor: 'DBCursor') -> None:
+    def _reset_decoded_events(write_cursor: DBCursor) -> None:
         """Reset all decoded evm events except for the customized ones and those in zksync lite.
         Notice that it happens first so changes in other tables don't affect this function.
         Code taken from previous upgrade
@@ -47,7 +47,7 @@ def upgrade_v49_to_v50(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
             )
 
     @progress_step(description='Add Crypto.com App event location labels.')
-    def _add_cryptocom_location_labels(write_cursor: 'DBCursor') -> None:
+    def _add_cryptocom_location_labels(write_cursor: DBCursor) -> None:
         """Adds location labels for events imported via CSV from a Crypto.com App account."""
         write_cursor.execute(
             "UPDATE history_events SET location_label='Crypto.com App' WHERE "
@@ -57,7 +57,7 @@ def upgrade_v49_to_v50(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
         )
 
     @progress_step(description='Update accounting_rules table with is_event_specific column and constraint.')  # noqa: E501
-    def _update_accounting_rules_table(write_cursor: 'DBCursor') -> None:
+    def _update_accounting_rules_table(write_cursor: DBCursor) -> None:
         """Does the following:
         - Add is_event_specific column to accounting_rules table
         - Create partial unique index for generic rules only
@@ -95,7 +95,7 @@ def upgrade_v49_to_v50(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
         write_cursor.switch_foreign_keys('ON')
 
     @progress_step(description='Create table for linking accounting rules to specific events.')
-    def _create_accounting_rule_events_table(write_cursor: 'DBCursor') -> None:
+    def _create_accounting_rule_events_table(write_cursor: DBCursor) -> None:
         """Create a table to link accounting rules to specific events."""
         write_cursor.execute("""
         CREATE TABLE IF NOT EXISTS accounting_rule_events(
@@ -109,7 +109,7 @@ def upgrade_v49_to_v50(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
         """)
 
     @progress_step(description='Swap SOL-2 to SOL asset identifier.')
-    def _swap_sol2_to_sol(write_cursor: 'DBCursor') -> None:
+    def _swap_sol2_to_sol(write_cursor: DBCursor) -> None:
         """Swap SOL-2 to SOL throughout the user database."""
         write_cursor.execute(
             'UPDATE assets SET identifier = ? WHERE identifier = ?',
@@ -117,7 +117,7 @@ def upgrade_v49_to_v50(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
         )
 
     @progress_step(description='Add solana transaction tables')
-    def _add_solana_transaction_tables(write_cursor: 'DBCursor') -> None:
+    def _add_solana_transaction_tables(write_cursor: DBCursor) -> None:
         write_cursor.executescript("""
             CREATE TABLE IF NOT EXISTS solana_transactions (
                 identifier INTEGER PRIMARY KEY NOT NULL,
@@ -168,7 +168,7 @@ def upgrade_v49_to_v50(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
         """)  # noqa: E501
 
     @progress_step(description='Refactor EVM events metadata table into chain agnostic table.')
-    def _refactor_evm_events_info_table(write_cursor: 'DBCursor') -> None:
+    def _refactor_evm_events_info_table(write_cursor: DBCursor) -> None:
         write_cursor.switch_foreign_keys('OFF')
         write_cursor.executescript("""
             CREATE TABLE IF NOT EXISTS chain_events_info (
@@ -187,7 +187,7 @@ def upgrade_v49_to_v50(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
         write_cursor.execute('DROP TABLE evm_events_info')
 
     @progress_step(description='Remove monerium and gnosis pay credentials.')
-    def _remove_monerium_and_gnosis_pay_credentials(write_cursor: 'DBCursor') -> None:
+    def _remove_monerium_and_gnosis_pay_credentials(write_cursor: DBCursor) -> None:
         """
         Since monerium authentication switches to oauth and gnosis pay switches to SIWE,
         we should delete user's monerium and gnosis pay credentials from the DB
@@ -198,7 +198,7 @@ def upgrade_v49_to_v50(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
         )
 
     @progress_step(description='Remove gnosis pay reversaltx column.')
-    def _remove_gnosispay_reversal_tx(write_cursor: 'DBCursor') -> None:
+    def _remove_gnosispay_reversal_tx(write_cursor: DBCursor) -> None:
         """This is an unused, not returned by the API field."""
         write_cursor.execute("""
         CREATE TABLE gnosispay_data_new (

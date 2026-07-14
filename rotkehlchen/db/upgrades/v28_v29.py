@@ -6,7 +6,7 @@ if TYPE_CHECKING:
     from rotkehlchen.db.upgrade_manager import DBUpgradeProgressHandler
 
 
-def _create_new_tables(cursor: 'DBCursor') -> None:
+def _create_new_tables(cursor: DBCursor) -> None:
     """Create new tables added at this upgrade
 
     Should be called at the end of the upgrade as it depends on the changes
@@ -54,8 +54,8 @@ def _create_new_tables(cursor: 'DBCursor') -> None:
 
 
 def _upgrade_existing_tables(
-        cursor: 'DBCursor',
-        progress_handler: 'DBUpgradeProgressHandler',
+        cursor: DBCursor,
+        progress_handler: DBUpgradeProgressHandler,
 ) -> None:
     query = cursor.execute('SELECT blockchain, account, label FROM blockchain_accounts;')
     accounts_data = query.fetchall()
@@ -122,7 +122,7 @@ def _upgrade_existing_tables(
     )
 
 
-def upgrade_v28_to_v29(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHandler') -> None:
+def upgrade_v28_to_v29(db: DBHandler, progress_handler: DBUpgradeProgressHandler) -> None:
     """Upgrades the DB from v28 to v29
 
     - Alters the primary key of blockchain accounts to be blockchain type + account

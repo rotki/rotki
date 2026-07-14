@@ -51,7 +51,7 @@ KELSOS_BOOK_ENTRY = AddressbookEntry(
 @pytest.mark.parametrize('empty_global_addressbook', [True])
 @pytest.mark.parametrize('book_type', [AddressbookType.GLOBAL, AddressbookType.PRIVATE])
 def test_get_addressbook(
-        rotkehlchen_api_server: 'APIServer',
+        rotkehlchen_api_server: APIServer,
         book_type: AddressbookType,
 ) -> None:
     generated_entries = make_addressbook_entries()
@@ -228,7 +228,7 @@ def test_get_addressbook(
 @pytest.mark.parametrize('empty_global_addressbook', [True])
 @pytest.mark.parametrize('book_type', [AddressbookType.GLOBAL, AddressbookType.PRIVATE])
 def test_insert_into_addressbook(
-        rotkehlchen_api_server: 'APIServer',
+        rotkehlchen_api_server: APIServer,
         book_type: AddressbookType,
 ) -> None:
     generated_entries = make_addressbook_entries()
@@ -401,7 +401,7 @@ def test_insert_into_addressbook(
 @pytest.mark.parametrize('empty_global_addressbook', [True])
 @pytest.mark.parametrize('book_type', [AddressbookType.GLOBAL, AddressbookType.PRIVATE])
 def test_update_addressbook(
-        rotkehlchen_api_server: 'APIServer',
+        rotkehlchen_api_server: APIServer,
         book_type: AddressbookType,
 ) -> None:
     generated_entries = make_addressbook_entries()
@@ -523,7 +523,7 @@ def test_update_addressbook(
 
 
 @pytest.mark.parametrize('empty_global_addressbook', [True])
-def test_blockchain_type_query_filters(rotkehlchen_api_server: 'APIServer') -> None:
+def test_blockchain_type_query_filters(rotkehlchen_api_server: APIServer) -> None:
     """Add the same address to BTC and BCH, then ensure queries return a multichain entry.
 
     - Add label valid both for BTC and BCH
@@ -580,7 +580,7 @@ def test_blockchain_type_query_filters(rotkehlchen_api_server: 'APIServer') -> N
 @pytest.mark.parametrize('empty_global_addressbook', [True])
 @pytest.mark.parametrize('book_type', [AddressbookType.GLOBAL, AddressbookType.PRIVATE])
 def test_delete_addressbook(
-        rotkehlchen_api_server: 'APIServer',
+        rotkehlchen_api_server: APIServer,
         book_type: AddressbookType,
 ) -> None:
     generated_entries = make_addressbook_entries()
@@ -740,7 +740,7 @@ def test_delete_addressbook(
 
 
 @pytest.mark.parametrize('empty_global_addressbook', [True])
-def test_names_compilation(rotkehlchen_api_server: 'APIServer') -> None:
+def test_names_compilation(rotkehlchen_api_server: APIServer) -> None:
     def names_request(chain_addresses: list[OptionalChainAddress]) -> requests.Response:
         return requests.post(
             api_url_for(
@@ -885,7 +885,7 @@ def test_names_compilation(rotkehlchen_api_server: 'APIServer') -> None:
 @pytest.mark.parametrize('empty_global_addressbook', [True])
 @pytest.mark.parametrize('book_type', [AddressbookType.GLOBAL, AddressbookType.PRIVATE])
 def test_insert_into_addressbook_no_blockchain(
-        rotkehlchen_api_server: 'APIServer',
+        rotkehlchen_api_server: APIServer,
         book_type: AddressbookType,
 ) -> None:
     """
@@ -965,7 +965,7 @@ def test_insert_into_addressbook_no_blockchain(
     assert result == [(test_address, f'{ADDRESSBOOK_BLOCKCHAIN_GROUP_PREFIX}EVMLIKE', 'my address')]  # noqa: E501
 
 
-def test_edit_multichain_address_label(rotkehlchen_api_server: 'APIServer') -> None:
+def test_edit_multichain_address_label(rotkehlchen_api_server: APIServer) -> None:
     """Check that editing the label of a multichain evm address works correctly"""
     test_address = to_checksum_address('0xc37b40ABdB939635068d3c5f13E7faF686F03B65')
     db_addressbook = DBAddressbook(rotkehlchen_api_server.rest_api.rotkehlchen.data.db)
@@ -1006,7 +1006,7 @@ def test_edit_multichain_address_label(rotkehlchen_api_server: 'APIServer') -> N
 @pytest.mark.parametrize('empty_global_addressbook', [True])
 @pytest.mark.parametrize('book_type', [AddressbookType.GLOBAL, AddressbookType.PRIVATE])
 def test_insert_unsupported_ecosystem_address_with_none_blockchain(
-        rotkehlchen_api_server: 'APIServer',
+        rotkehlchen_api_server: APIServer,
         book_type: AddressbookType,
 ) -> None:
     """Trying to add an address with blockchain=None from an unsupported ecosystem fails.
@@ -1039,7 +1039,7 @@ def test_insert_unsupported_ecosystem_address_with_none_blockchain(
 @pytest.mark.parametrize('empty_global_addressbook', [True])
 @pytest.mark.parametrize('book_type', [AddressbookType.PRIVATE])
 def test_insert_solana_address(
-        rotkehlchen_api_server: 'APIServer',
+        rotkehlchen_api_server: APIServer,
         book_type: AddressbookType,
 ) -> None:
     """Check that adding a solana address works fine"""

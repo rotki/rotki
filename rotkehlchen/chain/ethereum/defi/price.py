@@ -1,6 +1,5 @@
 from typing import TYPE_CHECKING
 
-from rotkehlchen.assets.asset import EvmToken
 from rotkehlchen.chain.evm.constants import DEFAULT_TOKEN_DECIMALS
 from rotkehlchen.chain.evm.contracts import EvmContract
 from rotkehlchen.chain.evm.types import string_to_evm_address
@@ -36,10 +35,11 @@ from rotkehlchen.constants.assets import (
     A_YV1_YFI,
 )
 from rotkehlchen.fval import FVal
-from rotkehlchen.types import Price
 
 if TYPE_CHECKING:
+    from rotkehlchen.assets.asset import EvmToken
     from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
+    from rotkehlchen.types import Price
 
 HARVEST_VAULTS = (
     A_FARM_USDC,
@@ -54,7 +54,7 @@ HARVEST_VAULTS = (
 
 
 def _handle_yearn_curve_vault(
-        ethereum: 'EthereumInquirer',
+        ethereum: EthereumInquirer,
         curve_contract: EvmContract,
         yearn_contract: EvmContract,
         div_decimals: int,
@@ -84,7 +84,7 @@ def _handle_yearn_curve_vault(
 
 
 def _handle_curvepool_price(
-        ethereum: 'EthereumInquirer',
+        ethereum: EthereumInquirer,
         contract: EvmContract,
         div_decimals: int,
         asset_price: FVal,
@@ -110,7 +110,7 @@ def _handle_curvepool_price(
 
 
 def handle_underlying_price_yearn_vault(
-        ethereum: 'EthereumInquirer',
+        ethereum: EthereumInquirer,
         contract: EvmContract,
         asset_price: Price,
 ) -> FVal:
@@ -119,7 +119,7 @@ def handle_underlying_price_yearn_vault(
 
 
 def handle_underlying_price_harvest_vault(
-        ethereum: 'EthereumInquirer',
+        ethereum: EthereumInquirer,
         token: EvmToken,
         underlying_asset_price: Price,
 ) -> FVal:
@@ -133,7 +133,7 @@ def handle_underlying_price_harvest_vault(
 
 
 def handle_defi_price_query(
-        ethereum: 'EthereumInquirer',
+        ethereum: EthereumInquirer,
         token: EvmToken,
         underlying_asset_price: Price | None,
 ) -> FVal | None:

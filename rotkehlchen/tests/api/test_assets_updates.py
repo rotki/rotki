@@ -1,7 +1,6 @@
 import json
 import random
 import re
-from collections.abc import Callable
 from http import HTTPStatus
 from typing import TYPE_CHECKING, Any
 from unittest.mock import patch
@@ -28,6 +27,8 @@ from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.types import ChainID, Timestamp, TokenKind
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+
     from rotkehlchen.api.server import APIServer
 
 
@@ -69,7 +70,7 @@ def mock_asset_updates(original_requests_get: Callable[..., requests.Response], 
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
 @pytest.mark.parametrize('use_in_memory_globaldb', [False])
-def test_simple_update(rotkehlchen_api_server: 'APIServer', globaldb: GlobalDBHandler) -> None:
+def test_simple_update(rotkehlchen_api_server: APIServer, globaldb: GlobalDBHandler) -> None:
     """Test that the happy case of update works.
 
     - Test that up_to_version argument works
@@ -251,7 +252,7 @@ INSERT INTO assets(identifier, name, type) VALUES('EUR', 'Ευρώ', 'A'); INSER
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
 @pytest.mark.parametrize('use_in_memory_globaldb', [False])
-def test_update_conflicts(rotkehlchen_api_server: 'APIServer', globaldb: GlobalDBHandler) -> None:
+def test_update_conflicts(rotkehlchen_api_server: APIServer, globaldb: GlobalDBHandler) -> None:
     """Test that conflicts in an asset update are handled properly"""
     async_query = random.choice([False, True])
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
@@ -538,7 +539,7 @@ INSERT INTO assets(identifier, name, type) VALUES('eip155:1/erc20:0x1B175474E890
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
 @pytest.mark.parametrize('use_in_memory_globaldb', [False])
 def test_foreignkey_conflict(
-        rotkehlchen_api_server: 'APIServer',
+        rotkehlchen_api_server: APIServer,
         globaldb: GlobalDBHandler,
 ) -> None:
     """Test that when a conflict that's not solvable happens the entry is ignored
@@ -717,7 +718,7 @@ INSERT INTO assets(identifier, name, type) VALUES("eip155:1/erc20:0xa74476443119
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
 @pytest.mark.parametrize('use_in_memory_globaldb', [False])
 def test_update_from_early_clean_db(
-        rotkehlchen_api_server: 'APIServer',
+        rotkehlchen_api_server: APIServer,
         globaldb: GlobalDBHandler,
 ) -> None:
     """
@@ -868,7 +869,7 @@ INSERT INTO evm_tokens(identifier, token_kind, chain, address, decimals, protoco
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
 @pytest.mark.parametrize('use_in_memory_globaldb', [False])
-def test_update_underlying_tokens(rotkehlchen_api_server: 'APIServer', globaldb: GlobalDBHandler) -> None:  # noqa: E501
+def test_update_underlying_tokens(rotkehlchen_api_server: APIServer, globaldb: GlobalDBHandler) -> None:  # noqa: E501
     """Test that updating underlying tokens is handled properly."""
     update_1 = """DELETE FROM underlying_tokens_list WHERE parent_token_entry="eip155:1/erc20:0x5dbcF33D8c2E976c6b560249878e6F1491Bca25c"; INSERT INTO underlying_tokens_list(identifier, weight, parent_token_entry) VALUES("eip155:1/erc20:0xdF5e0e81Dff6FAF3A7e52BA697820c5e32D806A8", "1", "eip155:1/erc20:0x5dbcF33D8c2E976c6b560249878e6F1491Bca25c");
 INSERT INTO assets(identifier, name, type) VALUES("eip155:1/erc20:0x5dbcF33D8c2E976c6b560249878e6F1491Bca25c", "yearn Curve.fi yDAI/yUSDC/yUSDT/yTUSD", "C"); INSERT INTO evm_tokens(identifier, token_kind, chain, address, decimals, protocol) VALUES("eip155:1/erc20:0x5dbcF33D8c2E976c6b560249878e6F1491Bca25c", "A", 1, "0x5dbcF33D8c2E976c6b560249878e6F1491Bca25c", 18, "yearn_vaults_v1"); INSERT INTO common_asset_details(identifier, symbol, coingecko, cryptocompare, forked, started, swapped_for) VALUES("eip155:1/erc20:0x5dbcF33D8c2E976c6b560249878e6F1491Bca25c", "yyDAI+yUSDC+yUSDT+yTUSD", "yvault-lp-ycurve", "", NULL, 1596091760, NULL); INSERT INTO underlying_tokens_list(identifier, weight, parent_token_entry) VALUES("eip155:1/erc20:0xdF5e0e81Dff6FAF3A7e52BA697820c5e32D806A8", "1", "eip155:1/erc20:0x5dbcF33D8c2E976c6b560249878e6F1491Bca25c");
@@ -912,7 +913,7 @@ INSERT INTO assets(identifier, name, type) VALUES("eip155:1/erc20:0x5dbcF33D8c2E
 @pytest.mark.parametrize('start_with_logged_in_user', [False])
 @pytest.mark.parametrize('number_of_eth_accounts', [0])
 @pytest.mark.parametrize('use_in_memory_globaldb', [False])
-def test_update_no_user_loggedin(rotkehlchen_api_server: 'APIServer') -> None:
+def test_update_no_user_loggedin(rotkehlchen_api_server: APIServer) -> None:
     response = requests.post(
         api_url_for(
             rotkehlchen_api_server,
@@ -923,7 +924,7 @@ def test_update_no_user_loggedin(rotkehlchen_api_server: 'APIServer') -> None:
 
 
 @pytest.mark.parametrize('use_in_memory_globaldb', [False])
-def test_async_db_reset(rotkehlchen_api_server: 'APIServer') -> None:
+def test_async_db_reset(rotkehlchen_api_server: APIServer) -> None:
     """Test the endpoint for resetting the globaldb using an async task"""
     asset_id = 'my_custom_id'
     GlobalDBHandler.add_asset(CryptoAsset.initialize(

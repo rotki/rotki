@@ -1,22 +1,19 @@
 import logging
 import re
 from abc import ABC, abstractmethod
-from collections.abc import Collection, Iterable, Sequence
 from dataclasses import dataclass, field
 from enum import Enum, auto
-from typing import Any, Final, Generic, Literal, NamedTuple, Self, TypeVar
+from typing import TYPE_CHECKING, Any, Final, Literal, NamedTuple, Self, TypeVar
 
 from eth_utils import is_hex_address
 
 from rotkehlchen.accounting.types import SchemaEventType
 from rotkehlchen.api.v1.types import IncludeExcludeFilterData
-from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.ignored_assets_handling import IgnoredAssetsHandling
 from rotkehlchen.assets.types import AssetType
 from rotkehlchen.chain.bitcoin.bch.constants import BCH_GROUP_IDENTIFIER_PREFIX
 from rotkehlchen.chain.bitcoin.btc.constants import BTC_GROUP_IDENTIFIER_PREFIX
 from rotkehlchen.chain.ethereum.modules.nft.structures import NftLpHandling
-from rotkehlchen.chain.evm.types import EvmAccount
 from rotkehlchen.chain.solana.rpc import Signature
 from rotkehlchen.db.constants import (
     CHAIN_EVENT_FIELDS,
@@ -32,7 +29,6 @@ from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.cache import compute_cache_key
 from rotkehlchen.history.events.structures.base import HistoryBaseEntryType
-from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import (
     ADDRESSBOOK_BLOCKCHAIN_GROUP_PREFIX,
@@ -52,6 +48,13 @@ from rotkehlchen.types import (
     TimestampMS,
 )
 from rotkehlchen.utils.misc import ts_now
+
+if TYPE_CHECKING:
+    from collections.abc import Collection, Iterable, Sequence
+
+    from rotkehlchen.assets.asset import Asset
+    from rotkehlchen.chain.evm.types import EvmAccount
+    from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 
 
 class InvalidFilter(InputError):
@@ -573,7 +576,7 @@ class EvmTransactionsFilterQuery(DBFilterQuery, FilterWithTimestamp):
 
     @classmethod
     def make(
-            cls: type['EvmTransactionsFilterQuery'],
+            cls: type[EvmTransactionsFilterQuery],
             and_op: bool = True,
             order_by_rules: Sequence[OrderByRule] | None = None,
             limit: int | None = None,
@@ -583,7 +586,7 @@ class EvmTransactionsFilterQuery(DBFilterQuery, FilterWithTimestamp):
             to_ts: Timestamp | None = None,
             tx_hash: EVMTxHash | None = None,
             chain_id: SUPPORTED_CHAIN_IDS | None = None,
-    ) -> 'EvmTransactionsFilterQuery':
+    ) -> EvmTransactionsFilterQuery:
         """May raise:
         - InvalidFilter for invalid combination of filters
         """
@@ -685,7 +688,7 @@ class DBEqualsFilter(DBNotEqualFilter):
 
 
 @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
-class DBMultiValueFilter(DBFilter, Generic[T]):
+class DBMultiValueFilter[T](DBFilter):
     """Filter a column having a value out of a selection of values"""
     column: str
     values: Sequence[T]
@@ -809,7 +812,7 @@ class ReportDataFilterQuery(DBFilterQuery, FilterWithTimestamp):
 
     @classmethod
     def make(
-            cls: type['ReportDataFilterQuery'],
+            cls: type[ReportDataFilterQuery],
             and_op: bool = True,
             order_by_rules: Sequence[OrderByRule] | None = None,
             limit: int | None = None,
@@ -818,7 +821,7 @@ class ReportDataFilterQuery(DBFilterQuery, FilterWithTimestamp):
             event_type: str | None = None,
             from_ts: Timestamp | None = None,
             to_ts: Timestamp | None = None,
-    ) -> 'ReportDataFilterQuery':
+    ) -> ReportDataFilterQuery:
         if order_by_rules is None:
             order_by_rules = [('timestamp', True)]
 
@@ -1751,7 +1754,7 @@ class EthWithdrawalFilterQuery(EthStakingEventFilterQuery):
 
     @classmethod
     def make(
-            cls: type['EthWithdrawalFilterQuery'],
+            cls: type[EthWithdrawalFilterQuery],
             and_op: bool = True,
             order_by_rules: Sequence[OrderByRule] | None = None,
             limit: int | None = None,
@@ -1778,7 +1781,7 @@ class EthWithdrawalFilterQuery(EthStakingEventFilterQuery):
             max_amount: FVal | None = None,
             validator_indices: list[int] | None = None,
             withdrawal_types_filter: WithdrawalTypesFilter = WithdrawalTypesFilter.ALL,
-    ) -> 'EthWithdrawalFilterQuery':
+    ) -> EthWithdrawalFilterQuery:
         if entry_types is None:
             entry_type_values = [HistoryBaseEntryType.ETH_WITHDRAWAL_EVENT]
             entry_types = IncludeExcludeFilterData(values=entry_type_values)
@@ -1827,7 +1830,7 @@ class EthWithdrawalFilterQuery(EthStakingEventFilterQuery):
 class EthDepositEventFilterQuery(EvmEventFilterQuery, EthStakingEventFilterQuery):
     @classmethod
     def make(  # type: ignore  # it is expected to be incompatible with supertype
-            cls: type['EthDepositEventFilterQuery'],
+            cls: type[EthDepositEventFilterQuery],
             and_op: bool = True,
             order_by_rules: Sequence[OrderByRule] | None = None,
             limit: int | None = None,
@@ -1851,7 +1854,7 @@ class EthDepositEventFilterQuery(EvmEventFilterQuery, EthStakingEventFilterQuery
             state_markers: list[HistoryMappingState] | None = None,
             tx_hashes: list[EVMTxHash] | None = None,
             validator_indices: list[int] | None = None,
-    ) -> 'EthDepositEventFilterQuery':
+    ) -> EthDepositEventFilterQuery:
         if entry_types is None:
             entry_type_values = [HistoryBaseEntryType.ETH_DEPOSIT_EVENT]
             entry_types = IncludeExcludeFilterData(values=entry_type_values)
@@ -1931,7 +1934,7 @@ class UserNotesFilterQuery(DBFilterQuery, FilterWithTimestamp):
 
     @classmethod
     def make(
-            cls: type['UserNotesFilterQuery'],
+            cls: type[UserNotesFilterQuery],
             and_op: bool = True,
             order_by_rules: Sequence[OrderByRule] | None = None,
             limit: int | None = None,
@@ -1940,7 +1943,7 @@ class UserNotesFilterQuery(DBFilterQuery, FilterWithTimestamp):
             to_ts: Timestamp | None = None,
             location: str | None = None,
             substring_search: str | None = None,
-    ) -> 'UserNotesFilterQuery':
+    ) -> UserNotesFilterQuery:
         if order_by_rules is None:
             order_by_rules = [('last_update_timestamp', True)]
         filter_query = cls.create(
@@ -1982,7 +1985,7 @@ class AddressbookFilterQuery(DBFilterQuery):
     """
     @classmethod
     def make(
-            cls: type['AddressbookFilterQuery'],
+            cls: type[AddressbookFilterQuery],
             and_op: bool = True,
             limit: int | None = None,
             offset: int | None = None,
@@ -1991,7 +1994,7 @@ class AddressbookFilterQuery(DBFilterQuery):
             optional_chain_addresses: list[OptionalChainAddress] | None = None,
             substring_search: str | None = None,
             order_by_rules: Sequence[OrderByRule] | None = None,
-    ) -> 'AddressbookFilterQuery':
+    ) -> AddressbookFilterQuery:
         filter_query = cls.create(
             and_op=and_op,
             limit=limit,
@@ -2033,7 +2036,7 @@ class AssetsFilterQuery(DBFilterQuery):
 
     @classmethod
     def make(
-            cls: type['AssetsFilterQuery'],
+            cls: type[AssetsFilterQuery],
             and_op: bool = True,
             order_by_rules: Sequence[OrderByRule] | None = None,
             limit: int | None = None,
@@ -2052,7 +2055,7 @@ class AssetsFilterQuery(DBFilterQuery):
             identifier_column_name: str = 'identifier',
             ignored_assets_handling: IgnoredAssetsHandling = IgnoredAssetsHandling.NONE,
             rank_by_levenshtein: bool = False,
-    ) -> 'AssetsFilterQuery':
+    ) -> AssetsFilterQuery:
         if order_by_rules is None:
             order_by_rules = [('name', True)]
 
@@ -2151,13 +2154,13 @@ class LocationAssetMappingsFilterQuery(DBFilterQuery):
 
     @classmethod
     def make(
-            cls: type['LocationAssetMappingsFilterQuery'],
+            cls: type[LocationAssetMappingsFilterQuery],
             limit: int,
             offset: int,
             location: Location | Literal['common'] | None = None,
             location_symbol: str | None = None,
             and_op: bool = True,
-    ) -> 'LocationAssetMappingsFilterQuery':
+    ) -> LocationAssetMappingsFilterQuery:
         """Make and return the LocationAssetMappingsFilterQuery instance according to the passed
         arguments. `limit` and `offset` are for pagination and works with DBFilterPagination.
         `location` can be a valid Location value, None, or "common". If `location` is None, filter
@@ -2191,13 +2194,13 @@ class CounterpartyAssetMappingsFilterQuery(DBFilterQuery):
     """
     @classmethod
     def make(
-            cls: type['CounterpartyAssetMappingsFilterQuery'],
+            cls: type[CounterpartyAssetMappingsFilterQuery],
             limit: int,
             offset: int,
             counterparty: str | None = None,
             counterparty_symbol: str | None = None,
             and_op: bool = True,
-    ) -> 'CounterpartyAssetMappingsFilterQuery':
+    ) -> CounterpartyAssetMappingsFilterQuery:
         filter_query = cls.create(
             and_op=and_op,
             limit=limit,
@@ -2222,14 +2225,14 @@ class CounterpartyAssetMappingsFilterQuery(DBFilterQuery):
 class CustomAssetsFilterQuery(DBFilterQuery):
     @classmethod
     def make(
-            cls: type['CustomAssetsFilterQuery'],
+            cls: type[CustomAssetsFilterQuery],
             order_by_rules: Sequence[OrderByRule] | None = None,
             limit: int | None = None,
             offset: int | None = None,
             identifier: str | None = None,
             name: str | None = None,
             custom_asset_type: str | None = None,
-    ) -> 'CustomAssetsFilterQuery':
+    ) -> CustomAssetsFilterQuery:
         if order_by_rules is None:
             order_by_rules = [('name', True)]
 
@@ -2267,7 +2270,7 @@ class CustomAssetsFilterQuery(DBFilterQuery):
 class NFTFilterQuery(DBFilterQuery):
     @classmethod
     def make(
-            cls: type['NFTFilterQuery'],
+            cls: type[NFTFilterQuery],
             order_by_rules: Sequence[OrderByRule] | None = None,
             limit: int | None = None,
             offset: int | None = None,
@@ -2280,7 +2283,7 @@ class NFTFilterQuery(DBFilterQuery):
             last_price_asset: Asset | None = None,
             only_with_manual_prices: bool = False,
             with_price: bool = True,
-    ) -> 'NFTFilterQuery':
+    ) -> NFTFilterQuery:
         filter_query = cls.create(
             and_op=True,
             limit=limit,
@@ -2400,7 +2403,7 @@ class LevenshteinFilterQuery(MultiTableFilterQuery):
             address: ChecksumEvmAddress | SolanaAddress | None = None,
             asset_type: AssetType | None = None,
             ignored_assets_handling: IgnoredAssetsHandling = IgnoredAssetsHandling.NONE,
-    ) -> 'LevenshteinFilterQuery':
+    ) -> LevenshteinFilterQuery:
         assert substring_search is not None or address is not None  # substring search and address can't be none at the same time  # noqa: E501
         filter_query = LevenshteinFilterQuery(
             and_op=and_op,
@@ -2492,10 +2495,10 @@ class EvmTransactionsNotDecodedFilterQuery(DBFilterQuery):
     """
     @classmethod
     def make(
-            cls: type['EvmTransactionsNotDecodedFilterQuery'],
+            cls: type[EvmTransactionsNotDecodedFilterQuery],
             limit: int | None = None,
             chain_id: ChainID | None = None,
-    ) -> 'EvmTransactionsNotDecodedFilterQuery':
+    ) -> EvmTransactionsNotDecodedFilterQuery:
         filter_query = cls.create(
             and_op=True,
             limit=limit,
@@ -2514,9 +2517,9 @@ class SolanaTransactionsNotDecodedFilterQuery(DBFilterQuery):
 
     @classmethod
     def make(
-            cls: type['SolanaTransactionsNotDecodedFilterQuery'],
+            cls: type[SolanaTransactionsNotDecodedFilterQuery],
             limit: int | None = None,
-    ) -> 'SolanaTransactionsNotDecodedFilterQuery':
+    ) -> SolanaTransactionsNotDecodedFilterQuery:
         filter_query = cls.create(
             and_op=True,
             limit=limit,
@@ -2540,7 +2543,7 @@ class AccountingRulesFilterQuery(DBFilterQuery):
 
     @classmethod
     def make(
-            cls: type['AccountingRulesFilterQuery'],
+            cls: type[AccountingRulesFilterQuery],
             and_op: bool = True,
             order_by_rules: Sequence[OrderByRule] | None = None,
             limit: int | None = None,
@@ -2551,7 +2554,7 @@ class AccountingRulesFilterQuery(DBFilterQuery):
             identifiers: list[int] | None = None,
             custom_rule_handling: Literal['all', 'only', 'exclude'] = 'all',
             event_ids: list[int] | None = None,
-    ) -> 'AccountingRulesFilterQuery':
+    ) -> AccountingRulesFilterQuery:
         if order_by_rules is None:
             order_by_rules = [('accounting_rules.identifier', False)]
 
@@ -2632,7 +2635,7 @@ class DataIssuesFilterQuery(DBFilterQuery):
             kinds: Sequence[str] | None = None,
             location: Location | None = None,
             location_label: str | None = None,
-            asset: 'Asset | None' = None,
+            asset: Asset | None = None,
     ) -> Self:
         filter_query = cls.create(
             and_op=and_op,
@@ -2690,7 +2693,7 @@ class PaginatedFilterQuery(DBFilterQuery):
             limit: int | None = None,
             offset: int | None = None,
             order_by_rules: Sequence[OrderByRule] | None = None,
-    ) -> 'PaginatedFilterQuery':
+    ) -> PaginatedFilterQuery:
         if order_by_rules is None:
             order_by_rules = [('identifier', False)]
 
@@ -2712,7 +2715,7 @@ class SolanaTransactionsFilterQuery(DBFilterQuery, FilterWithTimestamp):
 
     @classmethod
     def make(
-            cls: type['SolanaTransactionsFilterQuery'],
+            cls: type[SolanaTransactionsFilterQuery],
             and_op: bool = True,
             order_by_rules: Sequence[OrderByRule] | None = None,
             limit: int | None = None,
@@ -2721,7 +2724,7 @@ class SolanaTransactionsFilterQuery(DBFilterQuery, FilterWithTimestamp):
             to_ts: Timestamp | None = None,
             signature: Signature | None = None,
             success: bool | None = None,
-    ) -> 'SolanaTransactionsFilterQuery':
+    ) -> SolanaTransactionsFilterQuery:
         """May raise:
         - InvalidFilter for invalid combination of filters
         """
@@ -2766,7 +2769,7 @@ class HistoricalBalancesFilterQuery(DBFilterQuery, FilterWithTimestamp):
             and_op: bool = True,
             timestamp: Timestamp | None = None,
             from_timestamp: Timestamp | None = None,
-            asset: 'Asset | None' = None,
+            asset: Asset | None = None,
             location: Location | None = None,
             location_label: str | None = None,
             protocol: str | None = None,
@@ -2921,7 +2924,7 @@ class InternalTxConflictsFilterQuery(DBFilterQuery, FilterWithTimestamp):
 
     @classmethod
     def make(
-            cls: type['InternalTxConflictsFilterQuery'],
+            cls: type[InternalTxConflictsFilterQuery],
             from_ts: Timestamp,
             to_ts: Timestamp,
             tx_hash: EVMTxHash | None = None,
@@ -2931,7 +2934,7 @@ class InternalTxConflictsFilterQuery(DBFilterQuery, FilterWithTimestamp):
             limit: int | None = None,
             offset: int | None = None,
             order_by_rules: Sequence[tuple[str, bool]] | None = None,
-    ) -> 'InternalTxConflictsFilterQuery':
+    ) -> InternalTxConflictsFilterQuery:
         if order_by_rules is not None:
             resolved_rules = []
             for attr, asc in order_by_rules:

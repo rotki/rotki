@@ -1,4 +1,3 @@
-from collections.abc import Sequence
 from contextlib import ExitStack
 from typing import TYPE_CHECKING, Any, cast
 from unittest.mock import patch
@@ -14,6 +13,8 @@ from rotkehlchen.tests.utils.optimism import OPTIMISM_MAINNET_NODE
 from rotkehlchen.types import ChainID, SupportedBlockchain, deserialize_evm_tx_hash
 
 if TYPE_CHECKING:
+    from collections.abc import Sequence
+
     from rotkehlchen.chain.evm.l2_with_l1_fees.types import L2WithL1FeesTransaction
     from rotkehlchen.chain.optimism.transactions import OptimismTransactions
     from rotkehlchen.types import ChecksumEvmAddress
@@ -82,8 +83,8 @@ def test_query_transactions_no_fee(optimism_transactions, optimism_accounts):
     WeightedNode(node_info=NodeName(name='mainnet', endpoint='https://mainnet.optimism.io', owned=False, blockchain=SupportedBlockchain.OPTIMISM), active=True, weight=FVal('0.5')),  # noqa: E501
 )])
 def test_l1_fee_queried_when_missing(
-        optimism_transactions: 'OptimismTransactions',
-        optimism_accounts: list['ChecksumEvmAddress'],
+        optimism_transactions: OptimismTransactions,
+        optimism_accounts: list[ChecksumEvmAddress],
         optimism_manager_connect_at_start: Sequence[WeightedNode],
 ):
     """Test that if the L1 fee is initially missing it gets queried from either
@@ -145,8 +146,8 @@ def test_l1_fee_queried_when_missing(
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('optimism_accounts', [['0xd6Ade875eEC93a7aAb7EfB7DBF13d1457443f95B']])
 def test_l1_fee_fetched_during_indexer_tx_query(
-        optimism_transactions: 'OptimismTransactions',
-        optimism_accounts: list['ChecksumEvmAddress'],
+        optimism_transactions: OptimismTransactions,
+        optimism_accounts: list[ChecksumEvmAddress],
 ):
     """Test that L1 fees are fetched via indexer's get_l1_fee during transaction queries.
 

@@ -1,5 +1,4 @@
 import json
-from collections.abc import Callable
 from contextlib import ExitStack
 from typing import TYPE_CHECKING, Any
 from unittest.mock import patch
@@ -34,6 +33,8 @@ from rotkehlchen.types import (
 from rotkehlchen.utils.version_check import VersionCheckResult
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.db.drivers.sqlite import DBCursor
 
@@ -684,7 +685,7 @@ def test_reset_accounting_rules(data_updater: RotkiDataUpdater) -> None:
         ).fetchone()[0] == '1'  # the version pointer is set to the latest applied version
 
 
-def _check_location_asset_mappings(cursor: 'DBCursor', after_upgrade: bool) -> None:
+def _check_location_asset_mappings(cursor: DBCursor, after_upgrade: bool) -> None:
     """Auxiliary function to check the db values before and after the upgrade"""
     assert cursor.execute('SELECT COUNT(*) FROM location_asset_mappings').fetchone()[0] == NUM_PACKAGED_ASSETS_MAPPINGS  # noqa: E501
 
@@ -720,7 +721,7 @@ def _check_location_asset_mappings(cursor: 'DBCursor', after_upgrade: bool) -> N
 
 def test_location_asset_mappings_updates(
         data_updater: RotkiDataUpdater,
-        globaldb: 'GlobalDBHandler',
+        globaldb: GlobalDBHandler,
 ) -> None:
     """Test that remote updates for location asset mappings work"""
     # check state of the location asset mappings before updating
@@ -737,7 +738,7 @@ def test_location_asset_mappings_updates(
         _check_location_asset_mappings(cursor, after_upgrade=True)
 
 
-def _check_counterparty_asset_mappings(cursor: 'DBCursor', after_upgrade: bool) -> None:
+def _check_counterparty_asset_mappings(cursor: DBCursor, after_upgrade: bool) -> None:
     """Auxiliary function to check the db values for counterparty asset mappings before and after the upgrade"""  # noqa: E501
 
     for addition, is_present_count in zip(
@@ -772,7 +773,7 @@ def _check_counterparty_asset_mappings(cursor: 'DBCursor', after_upgrade: bool) 
 
 def test_counterparty_asset_mappings_updates(
         data_updater: RotkiDataUpdater,
-        globaldb: 'GlobalDBHandler',
+        globaldb: GlobalDBHandler,
 ) -> None:
     """Test that remote updates for location asset mappings work"""
     # check state of the location asset mappings before updating
@@ -789,7 +790,7 @@ def test_counterparty_asset_mappings_updates(
         _check_counterparty_asset_mappings(cursor, after_upgrade=True)
 
 
-def test_version_used_in_updates(database: 'DBHandler', monkeypatch: pytest.MonkeyPatch) -> None:
+def test_version_used_in_updates(database: DBHandler, monkeypatch: pytest.MonkeyPatch) -> None:
     """Test that the next higher bugfixes or develop version is used depending on the branch.
     Allows updates intended for the next release to be applied during release testing.
     """

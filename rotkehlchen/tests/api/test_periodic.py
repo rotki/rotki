@@ -1,7 +1,8 @@
+from typing import TYPE_CHECKING
+
 import pytest
 import requests
 
-from rotkehlchen.api.server import APIServer
 from rotkehlchen.chain.evm.types import NodeName, WeightedNode
 from rotkehlchen.db.cache import DBCacheStatic
 from rotkehlchen.fval import FVal
@@ -13,6 +14,9 @@ from rotkehlchen.tests.utils.api import (
 from rotkehlchen.tests.utils.rotkehlchen import setup_balances
 from rotkehlchen.types import Location, SupportedBlockchain
 from rotkehlchen.utils.misc import ts_now
+
+if TYPE_CHECKING:
+    from rotkehlchen.api.server import APIServer
 
 
 @pytest.mark.freeze_time('2026-06-05 04:27:20 GMT', tick=True)

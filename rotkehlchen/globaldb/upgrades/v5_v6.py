@@ -24,7 +24,7 @@ V5_V6_UPGRADE_UNIQUE_CACHE_KEYS: set[CacheType] = {
 
 
 @enter_exit_debug_log(name='GlobalDB v5->v6 upgrade')
-def migrate_to_v6(connection: 'DBConnection', progress_handler: 'DBUpgradeProgressHandler') -> None:  # noqa: E501
+def migrate_to_v6(connection: DBConnection, progress_handler: DBUpgradeProgressHandler) -> None:
     """This globalDB upgrade does the following:
     - Adds the `unique_cache` table.
     - Fixes the multiassets mappings ids to use checksummed addresses
@@ -34,7 +34,7 @@ def migrate_to_v6(connection: 'DBConnection', progress_handler: 'DBUpgradeProgre
     This upgrade takes place in v1.31.0
     """
     @progress_step('Creating unique_cache table.')
-    def _create_and_populate_unique_cache_table(cursor: 'DBCursor') -> None:
+    def _create_and_populate_unique_cache_table(cursor: DBCursor) -> None:
         cursor.execute(
             """
             CREATE TABLE IF NOT EXISTS unique_cache (
@@ -64,7 +64,7 @@ def migrate_to_v6(connection: 'DBConnection', progress_handler: 'DBUpgradeProgre
             )
 
     @progress_step('Fixing unchecksummed assets in multiassets mappings.')
-    def _fix_asset_in_multiasset_mappings(cursor: 'DBCursor') -> None:
+    def _fix_asset_in_multiasset_mappings(cursor: DBCursor) -> None:
         """
         Fix some assets that were not using checksummed addresses in the identifiers
         https://github.com/rotki/rotki/issues/6717
@@ -90,7 +90,7 @@ def migrate_to_v6(connection: 'DBConnection', progress_handler: 'DBUpgradeProgre
         cursor.executemany('UPDATE multiasset_mappings SET asset=? WHERE asset=?', fixes)
 
     @progress_step('Updating multiasset mappings table schema.')
-    def _update_multiasset_mappings(cursor: 'DBCursor') -> None:
+    def _update_multiasset_mappings(cursor: DBCursor) -> None:
         """Update the multiasset mapping table to have unique collection id + asset"""
         update_table_schema(
             write_cursor=cursor,
@@ -104,7 +104,7 @@ def migrate_to_v6(connection: 'DBConnection', progress_handler: 'DBUpgradeProgre
         )
 
     @progress_step('Tidying up VELO asset in the global DB.')
-    def _remove_velo_asset(cursor: 'DBCursor') -> None:
+    def _remove_velo_asset(cursor: DBCursor) -> None:
         """
         Remove the VELO asset from the global DB
 

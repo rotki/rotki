@@ -1,8 +1,6 @@
-from collections.abc import Callable
 from typing import TYPE_CHECKING, Any, Final
 
 from rotkehlchen.assets.utils import token_normalized_value_decimals
-from rotkehlchen.chain.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.ethereum.airdrops import AIRDROP_IDENTIFIER_KEY
 from rotkehlchen.chain.evm.decoding.constants import ERC20_OR_ERC721_TRANSFER, OPTIMISM_CPT_DETAILS
 from rotkehlchen.chain.evm.decoding.interfaces import MerkleClaimDecoderInterface
@@ -16,12 +14,15 @@ from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.chain.optimism.constants import CPT_OPTIMISM
 from rotkehlchen.constants.assets import A_OP
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
-from rotkehlchen.types import ChecksumEvmAddress
 from rotkehlchen.utils.misc import bytes_to_address
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+
+    from rotkehlchen.chain.decoding.types import CounterpartyDetails
     from rotkehlchen.chain.evm.decoding.base import BaseEvmDecoderTools
     from rotkehlchen.chain.optimism.node_inquirer import OptimismInquirer
+    from rotkehlchen.types import ChecksumEvmAddress
     from rotkehlchen.user_messages import MessagesAggregator
 
 PEEL_4BYTE: Final = b'C\x914\x91'
@@ -35,9 +36,9 @@ class AirdropsDecoder(MerkleClaimDecoderInterface):
 
     def __init__(
             self,
-            optimism_inquirer: 'OptimismInquirer',
-            base_tools: 'BaseEvmDecoderTools',
-            msg_aggregator: 'MessagesAggregator',
+            optimism_inquirer: OptimismInquirer,
+            base_tools: BaseEvmDecoderTools,
+            msg_aggregator: MessagesAggregator,
     ) -> None:
         super().__init__(
             evm_inquirer=optimism_inquirer,

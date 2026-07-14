@@ -61,7 +61,7 @@ class Monerium:
     https://monerium.dev/docs/getting-started/auth-flow
     """
 
-    def __init__(self, database: 'DBHandler') -> None:
+    def __init__(self, database: DBHandler) -> None:
         self.database = database
         self.session = create_session()
         set_user_agent(self.session)
@@ -237,7 +237,7 @@ class Monerium:
                     mapping_state=None,
                 )
 
-    def update_events(self, events: list['EvmEvent']) -> None:
+    def update_events(self, events: list[EvmEvent]) -> None:
         """Query and update the event txs individually.
         Skips any events that have already been edited.
         Falls back to simply querying all orders if there are too many individual queries.
@@ -274,7 +274,7 @@ class MoneriumOAuthCredentials:
     user_email: str | None = None
 
     @classmethod
-    def from_dict(cls, data: dict[str, Any]) -> 'MoneriumOAuthCredentials':
+    def from_dict(cls, data: dict[str, Any]) -> MoneriumOAuthCredentials:
         return cls(
             access_token=data['access_token'],
             refresh_token=data['refresh_token'],
@@ -292,7 +292,7 @@ class MoneriumOAuthCredentials:
 class MoneriumOAuthClient:
     """Handles Monerium OAuth token lifecycle and authenticated requests."""
 
-    def __init__(self, database: 'DBHandler', session: requests.Session) -> None:
+    def __init__(self, database: DBHandler, session: requests.Session) -> None:
         """Initialize the OAuth client and preload any cached credentials."""
         self.database = database
         self.session = session

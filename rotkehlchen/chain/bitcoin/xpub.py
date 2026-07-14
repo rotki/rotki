@@ -4,18 +4,18 @@ from typing import TYPE_CHECKING, Any, Literal, NamedTuple
 
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.chain.accounts import BlockchainAccountData
-from rotkehlchen.chain.bitcoin.hdkey import HDKey
 from rotkehlchen.constants.assets import A_BCH, A_BTC
 from rotkehlchen.db.utils import replace_tag_mappings
 from rotkehlchen.errors.misc import RemoteError
-from rotkehlchen.fval import FVal
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import BTCAddress, SupportedBlockchain
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.aggregator import ChainsAggregator
+    from rotkehlchen.chain.bitcoin.hdkey import HDKey
     from rotkehlchen.db.drivers.sqlite import DBCursor
+    from rotkehlchen.fval import FVal
 
 
 logger = logging.getLogger(__name__)
@@ -76,7 +76,7 @@ class XpubManager:
     # of the same xpub would double-add its addresses
     lock = Semaphore()
 
-    def __init__(self, chains_aggregator: 'ChainsAggregator'):
+    def __init__(self, chains_aggregator: ChainsAggregator):
         self.chains_aggregator = chains_aggregator
         self.db = chains_aggregator.database
 
@@ -292,7 +292,7 @@ class XpubManager:
 
     def delete_bitcoin_xpub(
             self,
-            write_cursor: 'DBCursor',
+            write_cursor: DBCursor,
             xpub_data: XpubData,
     ) -> None:
         """
@@ -340,8 +340,8 @@ class XpubManager:
 
     def edit_bitcoin_xpub(
             self,
-            write_cursor: 'DBCursor',
-            xpub_data: 'XpubData',
+            write_cursor: DBCursor,
+            xpub_data: XpubData,
     ) -> None:
         with self.lock:
             # Update the xpub label

@@ -1,6 +1,5 @@
 from abc import ABC
-from collections.abc import Callable
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from rotkehlchen.chain.evm.decoding.paraswap.decoder import ParaswapCommonDecoder
 from rotkehlchen.chain.evm.decoding.structures import (
@@ -10,7 +9,6 @@ from rotkehlchen.chain.evm.decoding.structures import (
 )
 from rotkehlchen.chain.evm.decoding.uniswap.v2.constants import UNISWAP_V2_SWAP_SIGNATURE
 from rotkehlchen.chain.evm.decoding.uniswap.v3.constants import DIRECT_SWAP_SIGNATURE
-from rotkehlchen.types import ChecksumEvmAddress
 from rotkehlchen.utils.misc import bytes_to_address
 
 from .constants import (
@@ -21,6 +19,11 @@ from .constants import (
     SWAP_ON_UNISWAP_V2_FORK_WITH_PERMIT,
     SWAP_SIGNATURE as PARASWAP_SWAP_SIGNATURE,
 )
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
+
+    from rotkehlchen.types import ChecksumEvmAddress
 
 
 class Paraswapv5CommonDecoder(ParaswapCommonDecoder, ABC):

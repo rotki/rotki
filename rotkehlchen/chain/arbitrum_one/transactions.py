@@ -13,8 +13,8 @@ class ArbitrumOneTransactions(EvmTransactions):
 
     def __init__(
             self,
-            arbitrum_one_inquirer: 'ArbitrumOneInquirer',
-            database: 'DBHandler',
+            arbitrum_one_inquirer: ArbitrumOneInquirer,
+            database: DBHandler,
     ) -> None:
         super().__init__(evm_inquirer=arbitrum_one_inquirer, database=database)
         self.dbevmtx = DBArbitrumOneTx(database)

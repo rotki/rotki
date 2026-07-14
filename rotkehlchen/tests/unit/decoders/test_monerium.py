@@ -27,7 +27,7 @@ A_POLYGON_EURE = Asset('eip155:137/erc20:0x18ec0A6E18E5bc3784fDd3a3634b31245ab70
 
 def test_monerium_decoder_initializes_without_api(
         database,
-        arbitrum_one_inquirer: 'ArbitrumOneInquirer',
+        arbitrum_one_inquirer: ArbitrumOneInquirer,
         arbitrum_one_transactions,
         load_global_caches,
 ) -> None:
@@ -212,8 +212,8 @@ def test_burnfrom_monerium_on_gnosis(gnosis_inquirer, gnosis_accounts):
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('gnosis_accounts', [['0xA6Bf663Abd2c749ed479C383457b1a647dAB72E5']])
 def test_mint_v2_eure(
-        gnosis_inquirer: 'GnosisInquirer',
-        gnosis_accounts: list['ChecksumEvmAddress'],
+        gnosis_inquirer: GnosisInquirer,
+        gnosis_accounts: list[ChecksumEvmAddress],
 ):
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=gnosis_inquirer,
@@ -237,8 +237,8 @@ def test_mint_v2_eure(
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('gnosis_accounts', [['0x9c6c56700F4952d45896757ac098968E97695A55']])
 def test_burn_v2_eure_gnosis(
-        gnosis_inquirer: 'GnosisInquirer',
-        gnosis_accounts: list['ChecksumEvmAddress'],
+        gnosis_inquirer: GnosisInquirer,
+        gnosis_accounts: list[ChecksumEvmAddress],
 ):
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=gnosis_inquirer,
@@ -264,8 +264,8 @@ def test_burn_v2_eure_gnosis(
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('arbitrum_one_accounts', [['0xbcBc123312637Be33B36AC49331a9137a784254b']])
 def test_mint_eure_on_arbitrum(
-        arbitrum_one_inquirer: 'ArbitrumOneInquirer',
-        arbitrum_one_accounts: list['ChecksumEvmAddress'],
+        arbitrum_one_inquirer: ArbitrumOneInquirer,
+        arbitrum_one_accounts: list[ChecksumEvmAddress],
 ):
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=arbitrum_one_inquirer,
@@ -289,8 +289,8 @@ def test_mint_eure_on_arbitrum(
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('arbitrum_one_accounts', [['0xfFd0E4eF79c0C7B427D5CA3C455DB0eBCfa2aE4D']])
 def test_burn_eure_on_arbitrum(
-        arbitrum_one_inquirer: 'ArbitrumOneInquirer',
-        arbitrum_one_accounts: list['ChecksumEvmAddress'],
+        arbitrum_one_inquirer: ArbitrumOneInquirer,
+        arbitrum_one_accounts: list[ChecksumEvmAddress],
 ):
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=arbitrum_one_inquirer,
@@ -313,7 +313,7 @@ def test_burn_eure_on_arbitrum(
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('gnosis_accounts', [['0x4A551b4ADddB4CDBA24612bCbb543c9aD4DAE4B6']])
-def test_monerium_token_migration(gnosis_inquirer: 'GnosisInquirer'):
+def test_monerium_token_migration(gnosis_inquirer: GnosisInquirer):
     """Test that mints on the v1 to v2 migration are skipped correctly"""
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=gnosis_inquirer,
@@ -326,7 +326,7 @@ def test_monerium_token_migration(gnosis_inquirer: 'GnosisInquirer'):
 @pytest.mark.parametrize('arbitrum_one_accounts', [['0xfFd0E4eF79c0C7B427D5CA3C455DB0eBCfa2aE4D']])
 def test_monerium_post_processing_handles_remote_error(
         arbitrum_one_transaction_decoder,
-        arbitrum_one_accounts: list['ChecksumEvmAddress'],
+        arbitrum_one_accounts: list[ChecksumEvmAddress],
         caplog,
         start_with_valid_premium: bool,
 ) -> None:
@@ -342,7 +342,7 @@ def test_monerium_post_processing_handles_remote_error(
     class FailingMoneriumAPI:
         oauth_client = FailingOAuthClient()
 
-        def update_events(self, events: list['EvmEvent']) -> None:
+        def update_events(self, events: list[EvmEvent]) -> None:
             raise RemoteError(error_message)
 
     decoder.monerium_api = FailingMoneriumAPI()

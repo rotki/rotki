@@ -41,7 +41,7 @@ def test_evm_abi_data(globaldb):
 
 
 @pytest.mark.parametrize('sql_vm_instructions_cb', [2])
-def test_fallback_to_packaged_db(ethereum_inquirer: 'EthereumInquirer'):
+def test_fallback_to_packaged_db(ethereum_inquirer: EthereumInquirer):
     """
     Test that if a contract / abi is missing in the globaldb, it is searched in the packaged db.
     """

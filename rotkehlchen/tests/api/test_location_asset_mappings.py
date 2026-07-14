@@ -16,7 +16,7 @@ if TYPE_CHECKING:
 NUM_PACKAGED_ASSETS_MAPPINGS: Final = 3734
 
 
-def _get_all_location_mappings(rotkehlchen_api_server: 'APIServer') -> Any:
+def _get_all_location_mappings(rotkehlchen_api_server: APIServer) -> Any:
     """Utility function to return all the location asset mappings in the DB."""
     response = requests.post(
         api_url_for(
@@ -27,7 +27,7 @@ def _get_all_location_mappings(rotkehlchen_api_server: 'APIServer') -> Any:
     return assert_proper_sync_response_with_result(response=response)
 
 
-def test_location_asset_mappings_query(rotkehlchen_api_server: 'APIServer') -> None:
+def test_location_asset_mappings_query(rotkehlchen_api_server: APIServer) -> None:
     """Test the location asset mappings API for querying the mappings."""
     # query all the mappings
     result = _get_all_location_mappings(rotkehlchen_api_server)
@@ -72,7 +72,7 @@ def test_location_asset_mappings_query(rotkehlchen_api_server: 'APIServer') -> N
     )
 
 
-def test_location_asset_mappings_add(rotkehlchen_api_server: 'APIServer') -> None:
+def test_location_asset_mappings_add(rotkehlchen_api_server: APIServer) -> None:
     """Test the location asset mappings API for adding the mappings."""
     all_mappings = _get_all_location_mappings(rotkehlchen_api_server)['entries']
     added_mappings = [{
@@ -117,7 +117,7 @@ def test_location_asset_mappings_add(rotkehlchen_api_server: 'APIServer') -> Non
         assert new_mapping in all_mappings_after_addition
 
 
-def test_location_asset_mappings_update(rotkehlchen_api_server: 'APIServer') -> None:
+def test_location_asset_mappings_update(rotkehlchen_api_server: APIServer) -> None:
     """Test the location asset mappings API for updating the mappings."""
     all_mappings = _get_all_location_mappings(rotkehlchen_api_server)['entries']
 
@@ -145,7 +145,7 @@ def test_location_asset_mappings_update(rotkehlchen_api_server: 'APIServer') -> 
     assert updated_mapping not in all_mappings and updated_mapping in all_mappings_after_update
 
 
-def test_location_asset_mappings_delete(rotkehlchen_api_server: 'APIServer') -> None:
+def test_location_asset_mappings_delete(rotkehlchen_api_server: APIServer) -> None:
     """Test the location asset mappings API for deleting the mappings."""
     all_mappings = _get_all_location_mappings(rotkehlchen_api_server)['entries']
 
@@ -172,7 +172,7 @@ def test_location_asset_mappings_delete(rotkehlchen_api_server: 'APIServer') -> 
     assert all_mappings[0] not in all_mappings_after_deletion
 
 
-def test_location_asset_mappings_pagination(rotkehlchen_api_server: 'APIServer') -> None:
+def test_location_asset_mappings_pagination(rotkehlchen_api_server: APIServer) -> None:
     """Test pagination in location asset mappings APIs."""
     all_mappings = _get_all_location_mappings(rotkehlchen_api_server)['entries']
 
@@ -207,7 +207,7 @@ def test_location_asset_mappings_pagination(rotkehlchen_api_server: 'APIServer')
     assert result['entries_found'] == NUM_PACKAGED_ASSETS_MAPPINGS
 
 
-def test_location_asset_mappings_errors(rotkehlchen_api_server: 'APIServer') -> None:
+def test_location_asset_mappings_errors(rotkehlchen_api_server: APIServer) -> None:
     """Test the conflict errors in location asset mappings APIs."""
     # add a mapping that already exists and expect failure
     response = requests.put(

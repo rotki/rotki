@@ -27,8 +27,8 @@ if TYPE_CHECKING:
 @pytest.mark.parametrize('db_settings', LEGACY_TESTS_INDEXER_ORDER)
 @pytest.mark.parametrize('base_accounts', [['0x31B3c272d4d47c84d1dF60E69d1abdaf2943E5Bc']])
 def test_merkl_morpho_reward(
-        base_inquirer: 'BaseInquirer',
-        base_accounts: list['ChecksumEvmAddress'],
+        base_inquirer: BaseInquirer,
+        base_accounts: list[ChecksumEvmAddress],
 ) -> None:
     tx_hash = deserialize_evm_tx_hash('0xaad239c0266abf4cf17536c8023ad2ebbea638e2e93a88bdcca33931a6a2e12a')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=base_inquirer, tx_hash=tx_hash)
@@ -63,8 +63,8 @@ def test_merkl_morpho_reward(
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0xB81a0e6c38c3Fec8A171cFE9631F60127a0C5bfD']])
 def test_merkl_multi_reward(
-        ethereum_inquirer: 'EthereumInquirer',
-        ethereum_accounts: list['ChecksumEvmAddress'],
+        ethereum_inquirer: EthereumInquirer,
+        ethereum_accounts: list[ChecksumEvmAddress],
 ) -> None:
     tx_hash = deserialize_evm_tx_hash('0xa95d10273815bf576e9873ed75c634fef9f220b2f00e8b45abf63c9478c148d7')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
@@ -112,8 +112,8 @@ def test_merkl_multi_reward(
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0xB81a0e6c38c3Fec8A171cFE9631F60127a0C5bfD']])
 def test_merkl_multi_reward_multiprotocol(
-        ethereum_inquirer: 'EthereumInquirer',
-        ethereum_accounts: list['ChecksumEvmAddress'],
+        ethereum_inquirer: EthereumInquirer,
+        ethereum_accounts: list[ChecksumEvmAddress],
 ) -> None:
     tx_hash = deserialize_evm_tx_hash('0x1d9473e79cc211ab1d4b97a836cf8460eaea431863fb45dad87d27583d55ae94')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)

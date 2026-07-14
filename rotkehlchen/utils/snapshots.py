@@ -1,12 +1,10 @@
 from csv import DictReader
-from pathlib import Path
 from typing import TYPE_CHECKING
 
 from rotkehlchen.accounting.structures.balance import BalanceType
 from rotkehlchen.assets.asset import Asset, AssetWithOracles
 from rotkehlchen.constants import ONE
 from rotkehlchen.constants.assets import A_USD
-from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.db.utils import DBAssetBalance, LocationData
 from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.price import NoPriceForGivenTimestamp
@@ -14,11 +12,14 @@ from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.history.price import PriceHistorian
 from rotkehlchen.serialization.deserialize import deserialize_fval, deserialize_timestamp
 from rotkehlchen.types import Location, Price, Timestamp
-from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import timestamp_to_date
 
 if TYPE_CHECKING:
+    from pathlib import Path
+
+    from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.db.drivers.sqlite import DBCursor
+    from rotkehlchen.user_messages import MessagesAggregator
 
 
 def validate_import_data(
@@ -124,7 +125,7 @@ def _csv_to_dict(file: Path) -> list[dict[str, str]]:
 
 
 def get_main_currency_price(
-        cursor: 'DBCursor',
+        cursor: DBCursor,
         db: DBHandler,
         timestamp: Timestamp,
         msg_aggregator: MessagesAggregator,

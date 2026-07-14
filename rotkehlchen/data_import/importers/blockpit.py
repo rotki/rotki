@@ -1,16 +1,13 @@
 import csv
-from pathlib import Path
 from typing import TYPE_CHECKING, Any, Literal
 from uuid import uuid4
 
-from rotkehlchen.assets.asset import AssetWithOracles
 from rotkehlchen.assets.converters import LOCATION_TO_ASSET_MAPPING
 from rotkehlchen.assets.utils import symbol_to_asset_or_token
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import A_USD
 from rotkehlchen.data_import.importers.constants import BLOCKPIT_EVENT_PREFIX
 from rotkehlchen.data_import.utils import BaseExchangeImporter, UnsupportedCSVEntry, hash_csv_row
-from rotkehlchen.db.drivers.sqlite import DBCursor
 from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.misc import InputError
 from rotkehlchen.errors.serialization import DeserializationError
@@ -27,7 +24,11 @@ from rotkehlchen.types import DEFAULT_TIMEZONE, AssetAmount, Location, Timezone
 from rotkehlchen.utils.misc import ts_sec_to_ms
 
 if TYPE_CHECKING:
+    from pathlib import Path
+
+    from rotkehlchen.assets.asset import AssetWithOracles
     from rotkehlchen.db.dbhandler import DBHandler
+    from rotkehlchen.db.drivers.sqlite import DBCursor
 
 
 def exchange_row_to_location(entry: str) -> Location:
@@ -51,7 +52,7 @@ def exchange_row_to_location(entry: str) -> Location:
 class BlockpitImporter(BaseExchangeImporter):
     """Blockpit CSV importer"""
 
-    def __init__(self, db: 'DBHandler') -> None:
+    def __init__(self, db: DBHandler) -> None:
         super().__init__(db=db, name='Blockpit')
 
     def _consume_blockpit_transaction(

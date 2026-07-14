@@ -1,5 +1,4 @@
 import logging
-from collections.abc import Callable, Mapping
 from typing import TYPE_CHECKING, Any
 
 from rotkehlchen.assets.utils import get_or_create_evm_token, token_normalized_value_decimals
@@ -27,6 +26,8 @@ from .constants import (
 )
 
 if TYPE_CHECKING:
+    from collections.abc import Callable, Mapping
+
     from rotkehlchen.chain.evm.decoding.base import BaseEvmDecoderTools
     from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
     from rotkehlchen.externalapis.monerium import Monerium
@@ -42,10 +43,10 @@ class MoneriumCommonDecoder(EvmDecoderInterface, ReloadableDecoderMixin):
 
     def __init__(
             self,
-            evm_inquirer: 'EvmNodeInquirer',
-            base_tools: 'BaseEvmDecoderTools',
-            msg_aggregator: 'MessagesAggregator',
-            monerium_api: 'Monerium | None',
+            evm_inquirer: EvmNodeInquirer,
+            base_tools: BaseEvmDecoderTools,
+            msg_aggregator: MessagesAggregator,
+            monerium_api: Monerium | None,
             monerium_token_addresses: set[ChecksumEvmAddress],
     ) -> None:
         super().__init__(
@@ -134,7 +135,7 @@ class MoneriumCommonDecoder(EvmDecoderInterface, ReloadableDecoderMixin):
 
     def _handle_post_processing(
             self,
-            decoded_events: list['EvmEvent'],
+            decoded_events: list[EvmEvent],
             has_premium: bool,
     ) -> None:
         if (

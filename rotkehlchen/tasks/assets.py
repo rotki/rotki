@@ -1,6 +1,5 @@
 import logging
 from collections import defaultdict
-from collections.abc import Sequence
 from typing import TYPE_CHECKING, Final, Literal
 
 from rotkehlchen.api.websockets.typedefs import WSMessageType
@@ -54,8 +53,6 @@ from rotkehlchen.db.constants import (
     CHAIN_EVENT_FIELDS,
     HISTORY_BASE_ENTRY_FIELDS,
 )
-from rotkehlchen.db.dbhandler import DBHandler
-from rotkehlchen.db.drivers.sqlite import DBCursor
 from rotkehlchen.db.filtering import EVENTS_WITH_COUNTERPARTY_JOIN
 from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.misc import NotERC20Conformant, RemoteError
@@ -83,8 +80,12 @@ from rotkehlchen.types import (
 from rotkehlchen.utils.misc import ts_now, ts_sec_to_ms
 
 if TYPE_CHECKING:
+    from collections.abc import Sequence
+
     from rotkehlchen.chain.aggregator import ChainsAggregator
     from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
+    from rotkehlchen.db.dbhandler import DBHandler
+    from rotkehlchen.db.drivers.sqlite import DBCursor
     from rotkehlchen.types import ChecksumEvmAddress
 
 
@@ -213,9 +214,9 @@ def update_owned_assets(user_db: DBHandler) -> None:
 
 
 def _find_missing_tokens(
-        token_to_underlying: dict['ChecksumEvmAddress', 'ChecksumEvmAddress'],
+        token_to_underlying: dict[ChecksumEvmAddress, ChecksumEvmAddress],
         chain_id: ChainID,
-) -> tuple['ChecksumEvmAddress', ...]:
+) -> tuple[ChecksumEvmAddress, ...]:
     """Check if aave tokens are stored in the globaldb.
     We consider a token as stored when it has the aave v3 protocol set. This means that
     it was not added by decoders but by the logic of update_aave_v3_underlying_assets.
@@ -239,9 +240,9 @@ def _find_missing_tokens(
 
 
 def _batch_query_properties(
-        node_inquirer: 'EvmNodeInquirer',
-        addresses: tuple['ChecksumEvmAddress', ...],
-) -> dict['ChecksumEvmAddress', tuple[str, str, int]]:
+        node_inquirer: EvmNodeInquirer,
+        addresses: tuple[ChecksumEvmAddress, ...],
+) -> dict[ChecksumEvmAddress, tuple[str, str, int]]:
     """Query details for the provided addresses.
     It queries each property for all the tokens in a multicall.
 
@@ -276,8 +277,8 @@ def _batch_query_properties(
 
 
 def _update_lending_protocol_underlying_assets(
-        chains_aggregator: 'ChainsAggregator',
-        providers_info: Sequence[tuple[ChainID, 'ChecksumEvmAddress']],
+        chains_aggregator: ChainsAggregator,
+        providers_info: Sequence[tuple[ChainID, ChecksumEvmAddress]],
         cache_key: DBCacheStatic,
         protocol: Literal['aave-v3', 'spark'],
 ) -> None:
@@ -392,7 +393,7 @@ def _update_lending_protocol_underlying_assets(
         )
 
 
-def update_aave_v3_underlying_assets(chains_aggregator: 'ChainsAggregator') -> None:
+def update_aave_v3_underlying_assets(chains_aggregator: ChainsAggregator) -> None:
     """Fetch the Aave V3 underlying assets and populate `underlying_tokens_list` in globaldb"""
     _update_lending_protocol_underlying_assets(
         chains_aggregator=chains_aggregator,
@@ -413,7 +414,7 @@ def update_aave_v3_underlying_assets(chains_aggregator: 'ChainsAggregator') -> N
     )
 
 
-def update_spark_underlying_assets(chains_aggregator: 'ChainsAggregator') -> None:
+def update_spark_underlying_assets(chains_aggregator: ChainsAggregator) -> None:
     """Fetch the Spark underlying assets and populate `underlying_tokens_list` in globaldb"""
     _update_lending_protocol_underlying_assets(
         chains_aggregator=chains_aggregator,
@@ -426,7 +427,7 @@ def update_spark_underlying_assets(chains_aggregator: 'ChainsAggregator') -> Non
     )
 
 
-def maybe_detect_new_tokens(database: 'DBHandler') -> None:
+def maybe_detect_new_tokens(database: DBHandler) -> None:
     """Checks newly found history events with IN direction and saves their assets as detected."""
     if not CachedSettings().get_settings().auto_detect_tokens:
         return

@@ -4,7 +4,6 @@ from typing import TYPE_CHECKING, Any, Final
 
 import requests
 
-from rotkehlchen.assets.asset import Asset, AssetWithOracles
 from rotkehlchen.constants.assets import A_USD
 from rotkehlchen.constants.prices import ZERO_PRICE
 from rotkehlchen.db.settings import CachedSettings
@@ -24,7 +23,7 @@ from rotkehlchen.utils.mixins.penalizable_oracle import PenalizablePriceOracleMi
 from rotkehlchen.utils.network import create_session
 
 if TYPE_CHECKING:
-    from rotkehlchen.assets.asset import EvmToken
+    from rotkehlchen.assets.asset import Asset, AssetWithOracles, EvmToken
     from rotkehlchen.db.dbhandler import DBHandler
 
 logger = logging.getLogger(__name__)
@@ -56,7 +55,7 @@ class Moralis(
     block via the Moralis dateToBlock endpoint and then used to query the token price.
     """
 
-    def __init__(self, database: 'DBHandler | None') -> None:
+    def __init__(self, database: DBHandler | None) -> None:
         ExternalServiceWithApiKeyOptionalDB.__init__(
             self,
             database=database,
@@ -69,7 +68,7 @@ class Moralis(
         self.db: DBHandler | None  # type: ignore  # "solve" the self.db discrepancy
 
     @staticmethod
-    def _get_moralis_chain(asset: AssetWithOracles) -> tuple['EvmToken', str]:
+    def _get_moralis_chain(asset: AssetWithOracles) -> tuple[EvmToken, str]:
         """Resolve an asset to its EVM token and the Moralis chain identifier.
 
         May raise:

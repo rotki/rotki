@@ -1,11 +1,11 @@
 from collections import defaultdict
 from contextlib import suppress
+from typing import TYPE_CHECKING
 from unittest.mock import patch
 
 import pytest
 
 from rotkehlchen.accounting.mixins.event import AccountingEventType
-from rotkehlchen.api.server import APIServer
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.chain.evm.accounting.structures import BaseEventSettings
 from rotkehlchen.constants import ONE, ZERO
@@ -28,6 +28,9 @@ from rotkehlchen.types import (
     Timestamp,
     TimestampMS,
 )
+
+if TYPE_CHECKING:
+    from rotkehlchen.api.server import APIServer
 
 
 @pytest.mark.parametrize('have_decoders', [True])

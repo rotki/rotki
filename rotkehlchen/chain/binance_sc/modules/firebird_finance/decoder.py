@@ -13,9 +13,9 @@ class FirebirdFinanceDecoder(FirebirdFinanceCommonDecoder):
 
     def __init__(
             self,
-            evm_inquirer: 'BinanceSCInquirer',
-            base_tools: 'BaseEvmDecoderTools',
-            msg_aggregator: 'MessagesAggregator',
+            evm_inquirer: BinanceSCInquirer,
+            base_tools: BaseEvmDecoderTools,
+            msg_aggregator: MessagesAggregator,
     ) -> None:
         super().__init__(
             evm_inquirer=evm_inquirer,

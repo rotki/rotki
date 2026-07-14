@@ -1,8 +1,6 @@
 import logging
-from collections.abc import Callable, Mapping
 from typing import TYPE_CHECKING, Any, Literal
 
-from rotkehlchen.assets.asset import CryptoAsset, EvmToken
 from rotkehlchen.assets.utils import (
     asset_normalized_value,
     asset_raw_value,
@@ -53,6 +51,9 @@ from .constants import (
 from .utils import query_pendle_markets
 
 if TYPE_CHECKING:
+    from collections.abc import Callable, Mapping
+
+    from rotkehlchen.assets.asset import CryptoAsset, EvmToken
     from rotkehlchen.chain.evm.decoding.base import BaseEvmDecoderTools
     from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
     from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
@@ -67,9 +68,9 @@ log = RotkehlchenLogsAdapter(logger)
 class PendleCommonDecoder(EvmDecoderInterface, ReloadableDecoderMixin):
     def __init__(
             self,
-            evm_inquirer: 'EvmNodeInquirer',
-            base_tools: 'BaseEvmDecoderTools',
-            msg_aggregator: 'MessagesAggregator',
+            evm_inquirer: EvmNodeInquirer,
+            base_tools: BaseEvmDecoderTools,
+            msg_aggregator: MessagesAggregator,
     ) -> None:
         super().__init__(
             evm_inquirer=evm_inquirer,
@@ -609,11 +610,11 @@ class PendleCommonDecoder(EvmDecoderInterface, ReloadableDecoderMixin):
     def _decode_claim_rewards_by_topic(
             self,
             token: EvmToken | None,  # pylint: disable=unused-argument
-            tx_log: 'EvmTxReceiptLog',
-            transaction: 'EvmTransaction',
-            decoded_events: list['EvmEvent'],
+            tx_log: EvmTxReceiptLog,
+            transaction: EvmTransaction,
+            decoded_events: list[EvmEvent],
             action_items: list[ActionItem],
-            all_logs: list['EvmTxReceiptLog'],
+            all_logs: list[EvmTxReceiptLog],
     ) -> EvmDecodingOutput:
         if tx_log.address in self.pools:
             return DEFAULT_EVM_DECODING_OUTPUT  # already handled via addresses_to_decoders
@@ -677,7 +678,7 @@ class PendleCommonDecoder(EvmDecoderInterface, ReloadableDecoderMixin):
         context.decoded_events.remove(sy_out_event)
         return DEFAULT_EVM_DECODING_OUTPUT
 
-    def reload_data(self) -> Mapping['ChecksumEvmAddress', tuple[Any, ...]] | None:
+    def reload_data(self) -> Mapping[ChecksumEvmAddress, tuple[Any, ...]] | None:
         if should_update_protocol_cache(
                 userdb=self.base.database,
                 cache_key=CacheType.PENDLE_POOLS,
@@ -717,7 +718,7 @@ class PendleCommonDecoder(EvmDecoderInterface, ReloadableDecoderMixin):
         return [self._decode_claim_rewards_by_topic]
 
     @staticmethod
-    def counterparties() -> tuple['CounterpartyDetails', ...]:
+    def counterparties() -> tuple[CounterpartyDetails, ...]:
         return (CounterpartyDetails(
             identifier=CPT_PENDLE,
             label='Pendle Finance',

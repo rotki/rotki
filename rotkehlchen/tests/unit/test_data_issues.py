@@ -73,7 +73,7 @@ def _write_current_balance_mismatch_issue(
     )
 
 
-def test_write_and_list_issues(database: 'DBHandler') -> None:
+def test_write_and_list_issues(database: DBHandler) -> None:
     manager = DataIssuesManager(database)
     issue_id = _write_negative_balance_issue(manager)
 
@@ -99,7 +99,7 @@ def test_write_and_list_issues(database: 'DBHandler') -> None:
     assert filtered[0].id == issue_id
 
 
-def test_get_issue(database: 'DBHandler') -> None:
+def test_get_issue(database: DBHandler) -> None:
     manager = DataIssuesManager(database)
     issue_id = _write_negative_balance_issue(manager)
     issue = manager.get_issue(issue_id)
@@ -109,7 +109,7 @@ def test_get_issue(database: 'DBHandler') -> None:
         manager.get_issue(issue_id + 1)
 
 
-def test_state_transitions(database: 'DBHandler') -> None:
+def test_state_transitions(database: DBHandler) -> None:
     manager = DataIssuesManager(database)
     issue_id = _write_negative_balance_issue(manager)
 
@@ -134,7 +134,7 @@ def test_state_transitions(database: 'DBHandler') -> None:
         manager.update_state(issue_id, IssueState.OPEN)
 
 
-def test_dismiss_and_resolve_manually(database: 'DBHandler') -> None:
+def test_dismiss_and_resolve_manually(database: DBHandler) -> None:
     manager = DataIssuesManager(database)
     issue_id = _write_negative_balance_issue(manager)
 
@@ -158,7 +158,7 @@ def test_dismiss_and_resolve_manually(database: 'DBHandler') -> None:
     assert 'resolution' not in issue.payload
 
 
-def test_write_issue_idempotency(database: 'DBHandler') -> None:
+def test_write_issue_idempotency(database: DBHandler) -> None:
     manager = DataIssuesManager(database)
     issue_id = _write_negative_balance_issue(manager)
     same_id = _write_negative_balance_issue(
@@ -171,7 +171,7 @@ def test_write_issue_idempotency(database: 'DBHandler') -> None:
     assert manager.get_issue(issue_id).payload['derived_balance_before_event'] == '2'
 
 
-def test_write_bucket_scoped_issue_idempotency(database: 'DBHandler') -> None:
+def test_write_bucket_scoped_issue_idempotency(database: DBHandler) -> None:
     manager = DataIssuesManager(database)
     issue_id = _write_current_balance_mismatch_issue(manager)
     same_id = _write_current_balance_mismatch_issue(
@@ -190,7 +190,7 @@ def test_write_bucket_scoped_issue_idempotency(database: 'DBHandler') -> None:
         ).fetchone()[0] is None
 
 
-def test_event_scoped_issue_uniqueness_uses_event_identifier(database: 'DBHandler') -> None:
+def test_event_scoped_issue_uniqueness_uses_event_identifier(database: DBHandler) -> None:
     manager = DataIssuesManager(database)
     issue_id = _write_negative_balance_issue(manager, event_identifier=1)
     other_id = _write_negative_balance_issue(manager, event_identifier=2)
@@ -198,7 +198,7 @@ def test_event_scoped_issue_uniqueness_uses_event_identifier(database: 'DBHandle
     assert len(manager.list_issues()) == 2
 
 
-def test_write_issue_dismissed_not_reopened(database: 'DBHandler') -> None:
+def test_write_issue_dismissed_not_reopened(database: DBHandler) -> None:
     manager = DataIssuesManager(database)
     issue_id = _write_negative_balance_issue(manager)
     manager.dismiss(issue_id)
@@ -208,7 +208,7 @@ def test_write_issue_dismissed_not_reopened(database: 'DBHandler') -> None:
     assert manager.get_issue(issue_id).state == IssueState.DISMISSED
 
 
-def test_write_issue_resolved_reopened(database: 'DBHandler') -> None:
+def test_write_issue_resolved_reopened(database: DBHandler) -> None:
     manager = DataIssuesManager(database)
     issue_id = _write_negative_balance_issue(manager)
     manager.resolve_manually(issue_id)
@@ -220,7 +220,7 @@ def test_write_issue_resolved_reopened(database: 'DBHandler') -> None:
     assert issue.resolved_at is None
 
 
-def test_dismiss_not_found(database: 'DBHandler') -> None:
+def test_dismiss_not_found(database: DBHandler) -> None:
     manager = DataIssuesManager(database)
     with pytest.raises(NotFoundError):
         manager.dismiss(999)

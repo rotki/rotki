@@ -12,7 +12,7 @@ if TYPE_CHECKING:
 
 
 @pytest.mark.vcr
-def test_metadata_endpoint(rotkehlchen_api_server: 'APIServer') -> None:
+def test_metadata_endpoint(rotkehlchen_api_server: APIServer) -> None:
     """Test that all the endpoints that query mappings or metadata from the backend work fine"""
     airdrops_response = requests.get(
         api_url_for(rotkehlchen_api_server, 'airdropsmetadataresource'),

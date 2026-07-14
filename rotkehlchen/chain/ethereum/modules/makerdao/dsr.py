@@ -10,7 +10,6 @@ from rotkehlchen.constants.assets import A_DAI
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.fval import FVal
 from rotkehlchen.inquirer import Inquirer
-from rotkehlchen.premium.premium import Premium
 from rotkehlchen.types import (
     ChecksumEvmAddress,
     Price,
@@ -22,6 +21,7 @@ from .constants import RAD
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
     from rotkehlchen.db.dbhandler import DBHandler
+    from rotkehlchen.premium.premium import Premium
     from rotkehlchen.user_messages import MessagesAggregator
 
 
@@ -40,10 +40,10 @@ class MakerdaoDsr(EthereumModule):
 
     def __init__(
             self,
-            ethereum_inquirer: 'EthereumInquirer',
-            database: 'DBHandler',
+            ethereum_inquirer: EthereumInquirer,
+            database: DBHandler,
             premium: Premium | None,
-            msg_aggregator: 'MessagesAggregator',
+            msg_aggregator: MessagesAggregator,
     ) -> None:
         self.ethereum = ethereum_inquirer
         self.ethereum.proxies_inquirer.reset_last_query_ts()  # clean proxies cache at activation

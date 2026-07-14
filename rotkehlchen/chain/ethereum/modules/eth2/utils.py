@@ -1,18 +1,21 @@
 import logging
-from collections.abc import Sequence
-from typing import Final
+from typing import TYPE_CHECKING, Final
 
 from rotkehlchen.api.v1.types import IncludeExcludeFilterData
 from rotkehlchen.chain.ethereum.modules.eth2.constants import (
     DEFAULT_BEACONCHAIN_API_VALIDATOR_CHUNK_SIZE,
 )
 from rotkehlchen.db.filtering import EthStakingEventFilterQuery, HistoryEventFilterQuery
-from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.base import HistoryBaseEntryType
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import ChecksumEvmAddress, Eth2PubKey, Timestamp
 from rotkehlchen.utils.misc import get_chunks
+
+if TYPE_CHECKING:
+    from collections.abc import Sequence
+
+    from rotkehlchen.fval import FVal
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)

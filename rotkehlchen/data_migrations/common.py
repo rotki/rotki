@@ -15,8 +15,8 @@ log = RotkehlchenLogsAdapter(logger)
 
 
 def migrate_addressbook_none_to_ecosystem_key(
-        connection: 'DBConnection',
-        msg_aggregator: 'MessagesAggregator | None' = None,
+        connection: DBConnection,
+        msg_aggregator: MessagesAggregator | None = None,
 ) -> None:
     """Replace 'NONE' blockchain marker in address_book with ecosystem-specific keys.
 

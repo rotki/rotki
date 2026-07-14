@@ -15,14 +15,14 @@ log = RotkehlchenLogsAdapter(logger)
 
 
 @enter_exit_debug_log(name='globaldb v13->v14 upgrade')
-def migrate_to_v14(connection: 'DBConnection', progress_handler: 'DBUpgradeProgressHandler') -> None:  # noqa: E501
+def migrate_to_v14(connection: DBConnection, progress_handler: DBUpgradeProgressHandler) -> None:
     """This globalDB upgrade does the following:
     - Swap SOL-2 to SOL throughout the global database.
 
     This upgrade takes place in v1.41.0"""
 
     @progress_step('Swap SOL-2 to SOL asset identifier in global database')
-    def _swap_sol2_to_sol(write_cursor: 'DBCursor') -> None:
+    def _swap_sol2_to_sol(write_cursor: DBCursor) -> None:
         """Swaps SOL-2 to SOL throughout the global database."""
         asset_columns = [
             ('assets', 'identifier'),
@@ -51,14 +51,14 @@ def migrate_to_v14(connection: 'DBConnection', progress_handler: 'DBUpgradeProgr
             log.error(f'Failed to add WSOL to SOL collection due to {e}')
 
     @progress_step('Remove old Morpho cache key')
-    def _remove_old_morpho_cache_key(write_cursor: 'DBCursor') -> None:
+    def _remove_old_morpho_cache_key(write_cursor: DBCursor) -> None:
         """Remove the old Morpho cache key. The Morpho vault count is now stored by chain
         instead of one count for all chains.
         """
         write_cursor.execute('DELETE FROM unique_cache WHERE key=?', ('MORPHO_VAULTS',))
 
     @progress_step('Update Balancer token protocols')
-    def _update_balancer_token_protocols(write_cursor: 'DBCursor') -> None:
+    def _update_balancer_token_protocols(write_cursor: DBCursor) -> None:
         """Update protocol field for Balancer tokens based on cache entries and chain IDs."""
         for pattern, protocol, prefix_len in [
             ('BALANCER_V1_POOLS%', 'balancer-v1', 18),

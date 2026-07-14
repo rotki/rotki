@@ -1,7 +1,6 @@
 import logging
 from typing import TYPE_CHECKING, Any, Final
 
-from rotkehlchen.chain.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
 from rotkehlchen.chain.evm.decoding.interfaces import EvmDecoderInterface
 from rotkehlchen.chain.evm.decoding.polygon.constants import CPT_POLYGON, CPT_POLYGON_DETAILS
@@ -17,6 +16,7 @@ from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import ChainID, ChecksumEvmAddress, TokenKind
 
 if TYPE_CHECKING:
+    from rotkehlchen.chain.decoding.types import CounterpartyDetails
     from rotkehlchen.history.events.structures.evm_event import EvmEvent
 
 logger = logging.getLogger(__name__)
@@ -110,7 +110,7 @@ class PolygonPosBridgeDecoder(EvmDecoderInterface):
         return DEFAULT_EVM_DECODING_OUTPUT
 
     @staticmethod
-    def _is_exit_nft_event(event: 'EvmEvent', match_event_type: HistoryEventType) -> bool:
+    def _is_exit_nft_event(event: EvmEvent, match_event_type: HistoryEventType) -> bool:
         """Check if the event matches the specified type and involves the Exit NFT."""
         return (
             event.event_type == match_event_type and

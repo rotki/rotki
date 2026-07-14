@@ -1,6 +1,7 @@
+from typing import TYPE_CHECKING
+
 import pytest
 
-from rotkehlchen.accounting.accountant import Accountant
 from rotkehlchen.accounting.types import EventAccountingRuleStatus
 from rotkehlchen.chain.ethereum.modules.compound.constants import CPT_COMPOUND
 from rotkehlchen.chain.evm.accounting.structures import BaseEventSettings, TxAccountingTreatment
@@ -13,7 +14,6 @@ from rotkehlchen.db.accounting_rules import (
     query_missing_accounting_rules,
 )
 from rotkehlchen.db.constants import NO_ACCOUNTING_COUNTERPARTY
-from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.db.filtering import AccountingRulesFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.errors.misc import InputError
@@ -22,6 +22,10 @@ from rotkehlchen.history.events.structures.types import HistoryEventSubType, His
 from rotkehlchen.tests.utils.factories import make_evm_tx_hash
 from rotkehlchen.tests.utils.history_base_entry import add_entries, store_and_retrieve_events
 from rotkehlchen.types import Location, TimestampMS
+
+if TYPE_CHECKING:
+    from rotkehlchen.accounting.accountant import Accountant
+    from rotkehlchen.db.dbhandler import DBHandler
 
 
 def test_managing_accounting_rules(database: DBHandler) -> None:
@@ -125,7 +129,7 @@ def test_errors_with_rules(database: DBHandler) -> None:
 
 @pytest.mark.parametrize('db_settings', [{'include_crypto2crypto': True}])
 @pytest.mark.parametrize('counterparty', ['yabir'])
-def test_accounting_rules_linking(database: 'DBHandler', counterparty: str) -> None:
+def test_accounting_rules_linking(database: DBHandler, counterparty: str) -> None:
     """Test that creating a link for a rule property works as expected"""
     db = DBAccountingRules(database)
     db.add_accounting_rule(
@@ -162,7 +166,7 @@ def test_accounting_rules_linking(database: 'DBHandler', counterparty: str) -> N
 @pytest.mark.parametrize('accountant_without_rules', [True])
 @pytest.mark.parametrize('use_dummy_pot', [True])
 def test_missing_accounting_rules_accounting_treatment(
-        database: 'DBHandler',
+        database: DBHandler,
         accountant: Accountant,
 ) -> None:
     """
@@ -231,7 +235,7 @@ def test_missing_accounting_rules_accounting_treatment(
 @pytest.mark.parametrize('accountant_without_rules', [True])
 @pytest.mark.parametrize('use_dummy_pot', [True])
 def test_events_affected_by_others_accounting_treatment(
-        database: 'DBHandler',
+        database: DBHandler,
         accountant: Accountant,
 ) -> None:
     """
@@ -292,7 +296,7 @@ def test_events_affected_by_others_accounting_treatment(
 @pytest.mark.parametrize('accountant_without_rules', [True])
 @pytest.mark.parametrize('use_dummy_pot', [True])
 def test_events_affected_by_others_accounting_treatment_with_fee(
-        database: 'DBHandler',
+        database: DBHandler,
         accountant: Accountant,
 ) -> None:
     """
@@ -366,7 +370,7 @@ def test_events_affected_by_others_accounting_treatment_with_fee(
 @pytest.mark.parametrize('accountant_without_rules', [True])
 @pytest.mark.parametrize('use_dummy_pot', [True])
 def test_correct_accounting_treatment_is_selected(
-        database: 'DBHandler',
+        database: DBHandler,
         accountant: Accountant,
 ) -> None:
     """

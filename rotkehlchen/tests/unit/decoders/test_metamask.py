@@ -585,8 +585,8 @@ def test_metamask_swap_polygon(polygon_pos_inquirer, polygon_pos_accounts):
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('binance_sc_accounts', [['0x113A6424CF48C467EDF367973B8Dfb4A18a0623A']])
 def test_metamask_swap_binance_sc(
-        binance_sc_inquirer: 'BinanceSCInquirer',
-        binance_sc_accounts: list['ChecksumEvmAddress'],
+        binance_sc_inquirer: BinanceSCInquirer,
+        binance_sc_accounts: list[ChecksumEvmAddress],
 ):
     tx_hash = deserialize_evm_tx_hash('0xa08ff8cf928f0d1c5731b8320bf9055c2adf11dc9e8343ce6e5ff6c570330e14')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=binance_sc_inquirer, tx_hash=tx_hash)  # noqa: E501

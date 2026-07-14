@@ -40,8 +40,8 @@ if TYPE_CHECKING:
 @pytest.mark.parametrize('db_settings', LEGACY_TESTS_INDEXER_ORDER)
 @pytest.mark.parametrize('base_accounts', [['0xc37b40ABdB939635068d3c5f13E7faF686F03B65']])
 def test_basenames_register(
-        base_inquirer: 'BaseInquirer',
-        base_accounts: list['ChecksumEvmAddress'],
+        base_inquirer: BaseInquirer,
+        base_accounts: list[ChecksumEvmAddress],
 ) -> None:
     tx_hash = deserialize_evm_tx_hash('0x20280b43dbcfa86cdf0703d2e9f8f2ef200839b2ee0e819d895515d3adb74eff')  # noqa: E501
     events, decoder = get_decoded_events_of_transaction(evm_inquirer=base_inquirer, tx_hash=tx_hash)  # noqa: E501
@@ -158,8 +158,8 @@ def test_basenames_register(
 @pytest.mark.parametrize('db_settings', LEGACY_TESTS_INDEXER_ORDER)
 @pytest.mark.parametrize('base_accounts', [['0x706A70067BE19BdadBea3600Db0626859Ff25D74']])
 def test_basenames_register_with_discount(
-        base_inquirer: 'BaseInquirer',
-        base_accounts: list['ChecksumEvmAddress'],
+        base_inquirer: BaseInquirer,
+        base_accounts: list[ChecksumEvmAddress],
 ) -> None:
     tx_hash = deserialize_evm_tx_hash('0x9a7021f26ecabdd0d3a3781cec24a452851d97849defa9862a18230a9e72fbd9')  # noqa: E501
     events, decoder = get_decoded_events_of_transaction(evm_inquirer=base_inquirer, tx_hash=tx_hash)  # noqa: E501
@@ -276,8 +276,8 @@ def test_basenames_register_with_discount(
 @pytest.mark.parametrize('db_settings', LEGACY_TESTS_INDEXER_ORDER)
 @pytest.mark.parametrize('base_accounts', [['0x706A70067BE19BdadBea3600Db0626859Ff25D74']])
 def test_basenames_set_attribute(
-        base_inquirer: 'BaseInquirer',
-        base_accounts: list['ChecksumEvmAddress'],
+        base_inquirer: BaseInquirer,
+        base_accounts: list[ChecksumEvmAddress],
 ) -> None:
     tx_hash = deserialize_evm_tx_hash('0xb46d5e9cedf468d6c1cd9c5a07f7147448cfd5a0d591b6f57a8216edc2475cc4')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=base_inquirer, tx_hash=tx_hash)
@@ -316,8 +316,8 @@ def test_basenames_set_attribute(
 @pytest.mark.parametrize('db_settings', LEGACY_TESTS_INDEXER_ORDER)
 @pytest.mark.parametrize('base_accounts', [['0x1208a26FAa0F4AC65B42098419EB4dAA5e580AC6']])
 def test_basenames_content_hash_changed(
-        base_inquirer: 'BaseInquirer',
-        base_accounts: list['ChecksumEvmAddress'],
+        base_inquirer: BaseInquirer,
+        base_accounts: list[ChecksumEvmAddress],
 ) -> None:
     tx_hash = deserialize_evm_tx_hash('0x1803ee8ecced1de613a331de58d7091e9fa0f4f98ec78bb9882b20b27b357aa7')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=base_inquirer, tx_hash=tx_hash)
@@ -427,8 +427,8 @@ def test_basenames_transfer_name(database, base_inquirer, action, base_accounts,
 @pytest.mark.parametrize('db_settings', LEGACY_TESTS_INDEXER_ORDER)
 @pytest.mark.parametrize('base_accounts', [['0x5C68b865B73271A9A1a3ee3792d396DacDe85702']])
 def test_basenames_new_owner(
-        base_inquirer: 'BaseInquirer',
-        base_accounts: list['ChecksumEvmAddress'],
+        base_inquirer: BaseInquirer,
+        base_accounts: list[ChecksumEvmAddress],
 ) -> None:
     tx_hash = deserialize_evm_tx_hash('0x9c107455c41ac041b274d0c9f4a792e2cdccf3fb3abd31a117fb14570461b429')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=base_inquirer, tx_hash=tx_hash)
@@ -489,8 +489,8 @@ def test_basenames_new_owner(
 )])
 @pytest.mark.parametrize('base_accounts', [['0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12']])
 def test_basenames_ignore_untracked_events(
-        base_inquirer: 'BaseInquirer',
-        base_accounts: list['ChecksumEvmAddress'],
+        base_inquirer: BaseInquirer,
+        base_accounts: list[ChecksumEvmAddress],
         allow_base_routescan: None,
 ) -> None:
     """Regression test for https://github.com/rotki/rotki/issues/11551"""

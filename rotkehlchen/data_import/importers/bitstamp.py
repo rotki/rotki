@@ -1,12 +1,10 @@
 import csv
-from pathlib import Path
 from typing import TYPE_CHECKING, Any
 from uuid import uuid4
 
 from rotkehlchen.assets.converters import asset_from_bitstamp
 from rotkehlchen.data_import.importers.constants import BITSTAMP_EVENT_PREFIX
 from rotkehlchen.data_import.utils import BaseExchangeImporter
-from rotkehlchen.db.drivers.sqlite import DBCursor
 from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.misc import InputError
 from rotkehlchen.errors.serialization import DeserializationError
@@ -28,14 +26,17 @@ from rotkehlchen.types import DEFAULT_TIMEZONE, AssetAmount, Location, Price, Ti
 from rotkehlchen.utils.misc import ts_sec_to_ms
 
 if TYPE_CHECKING:
+    from pathlib import Path
+
     from rotkehlchen.db.dbhandler import DBHandler
+    from rotkehlchen.db.drivers.sqlite import DBCursor
     from rotkehlchen.history.events.structures.base import HistoryBaseEntry
 
 
 class BitstampTransactionsImporter(BaseExchangeImporter):
     """Bitstamp CSV importer"""
 
-    def __init__(self, db: 'DBHandler') -> None:
+    def __init__(self, db: DBHandler) -> None:
         super().__init__(db=db, name='Bitstamp')
 
     def _consume_bitstamp_transaction(

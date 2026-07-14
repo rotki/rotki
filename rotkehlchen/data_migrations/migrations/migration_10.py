@@ -10,7 +10,7 @@ if TYPE_CHECKING:
 
 
 @enter_exit_debug_log()
-def data_migration_10(rotki: 'Rotkehlchen', progress_handler: 'MigrationProgressHandler') -> None:
+def data_migration_10(rotki: Rotkehlchen, progress_handler: MigrationProgressHandler) -> None:
     """
     Introduced at polygon addition. v1.29.0
     This migration duplicates accounts if active at polygon only. The reason is to

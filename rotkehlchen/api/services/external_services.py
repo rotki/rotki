@@ -1,12 +1,14 @@
 from http import HTTPStatus
-from typing import Any, Final
+from typing import TYPE_CHECKING, Any, Final
 
 from rotkehlchen.constants.misc import ONE
 from rotkehlchen.externalapis.helius import HELIUS_RPC_NODE_NAME, HELIUS_RPC_URL
 from rotkehlchen.fval import FVal
 from rotkehlchen.premium.premium import has_premium_check
-from rotkehlchen.rotkehlchen import Rotkehlchen
 from rotkehlchen.types import ExternalService, ExternalServiceApiCredentials, SupportedBlockchain
+
+if TYPE_CHECKING:
+    from rotkehlchen.rotkehlchen import Rotkehlchen
 
 HELIUS_RPC_ENDPOINT_PREFIXES = (HELIUS_RPC_URL, HELIUS_RPC_URL.removesuffix('/'))
 HELIUS_RPC_NODE_WEIGHT: Final = FVal('0.5')

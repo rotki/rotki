@@ -1,5 +1,4 @@
 import logging
-from collections.abc import Callable
 from typing import TYPE_CHECKING, Any
 
 from rotkehlchen.assets.asset import Asset, UnderlyingToken
@@ -9,7 +8,6 @@ from rotkehlchen.assets.utils import (
     asset_raw_value,
     get_or_create_evm_token,
 )
-from rotkehlchen.chain.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.decoding.utils import maybe_reshuffle_events
 from rotkehlchen.chain.evm.constants import (
     ADD_LIQUIDITY_DYNAMIC_ASSETS,
@@ -56,7 +54,6 @@ from rotkehlchen.chain.evm.decoding.structures import (
     EvmDecodingOutput,
     TransferEnrichmentOutput,
 )
-from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants import ONE
 from rotkehlchen.constants.assets import A_ETH
@@ -79,8 +76,12 @@ from rotkehlchen.types import (
 from rotkehlchen.utils.misc import bytes_to_address
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+
+    from rotkehlchen.chain.decoding.types import CounterpartyDetails
     from rotkehlchen.chain.evm.decoding.base import BaseEvmDecoderTools
     from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
+    from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
     from rotkehlchen.history.events.structures.evm_event import EvmEvent
     from rotkehlchen.user_messages import MessagesAggregator
 
@@ -93,14 +94,14 @@ class CurveCommonDecoder(EvmDecoderInterface, ReloadablePoolsAndGaugesDecoderMix
 
     def __init__(
             self,
-            evm_inquirer: 'EvmNodeInquirer',  # pylint: disable=unused-argument
-            base_tools: 'BaseEvmDecoderTools',
-            msg_aggregator: 'MessagesAggregator',
-            native_currency: 'Asset',
-            aave_pools: set['ChecksumEvmAddress'],
-            curve_deposit_contracts: set['ChecksumEvmAddress'],
-            curve_swap_routers: set['ChecksumEvmAddress'],
-            crv_minter_addresses: set['ChecksumEvmAddress'] | None = None,
+            evm_inquirer: EvmNodeInquirer,  # pylint: disable=unused-argument
+            base_tools: BaseEvmDecoderTools,
+            msg_aggregator: MessagesAggregator,
+            native_currency: Asset,
+            aave_pools: set[ChecksumEvmAddress],
+            curve_deposit_contracts: set[ChecksumEvmAddress],
+            curve_swap_routers: set[ChecksumEvmAddress],
+            crv_minter_addresses: set[ChecksumEvmAddress] | None = None,
     ) -> None:
         self.native_currency = native_currency
         super().__init__(
@@ -122,9 +123,9 @@ class CurveCommonDecoder(EvmDecoderInterface, ReloadablePoolsAndGaugesDecoderMix
         self.crv_minter_addresses = crv_minter_addresses
 
     def _read_curve_asset(
-            self: 'CurveCommonDecoder',
+            self: CurveCommonDecoder,
             asset_address: ChecksumEvmAddress | None,
-            encounter: 'TokenEncounterInfo | None' = None,
+            encounter: TokenEncounterInfo | None = None,
     ) -> Asset | None:
         """
         A thin wrapper that turns asset address into an asset object.
@@ -298,7 +299,7 @@ class CurveCommonDecoder(EvmDecoderInterface, ReloadablePoolsAndGaugesDecoderMix
             transaction: EvmTransaction,
             tx_log: EvmTxReceiptLog,
             all_logs: list[EvmTxReceiptLog],
-            decoded_events: list['EvmEvent'],
+            decoded_events: list[EvmEvent],
             user_or_contract_address: ChecksumEvmAddress,
     ) -> EvmDecodingOutput:
         """Decode information related to withdrawing assets from curve pools"""
@@ -454,7 +455,7 @@ class CurveCommonDecoder(EvmDecoderInterface, ReloadablePoolsAndGaugesDecoderMix
             transaction: EvmTransaction,
             tx_log: EvmTxReceiptLog,
             all_logs: list[EvmTxReceiptLog],
-            decoded_events: list['EvmEvent'],
+            decoded_events: list[EvmEvent],
             user_or_contract_address: ChecksumEvmAddress,
     ) -> EvmDecodingOutput:
         """Decode information related to depositing assets in curve pools"""

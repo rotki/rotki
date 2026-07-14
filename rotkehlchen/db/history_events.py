@@ -2,9 +2,8 @@ import json
 import logging
 import re
 from collections import defaultdict
-from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, Literal, Optional, TypeAlias, cast, overload
+from typing import TYPE_CHECKING, Any, Literal, cast, overload
 
 from sqlcipher3 import dbapi2 as sqlcipher
 
@@ -16,7 +15,6 @@ from rotkehlchen.chain.bitcoin.bch.validation import is_valid_bitcoin_cash_addre
 from rotkehlchen.chain.bitcoin.btc.constants import BTC_GROUP_IDENTIFIER_PREFIX
 from rotkehlchen.chain.bitcoin.validation import is_valid_btc_address
 from rotkehlchen.chain.evm.types import string_to_evm_address
-from rotkehlchen.chain.solana.rpc import Signature
 from rotkehlchen.constants import ZERO
 from rotkehlchen.db.cache import (
     IGNORED_CUSTOMIZED_EVENT_DUPLICATE_PREFIX,
@@ -94,6 +92,9 @@ from rotkehlchen.types import (
 from rotkehlchen.utils.misc import ts_ms_to_sec, ts_now_in_ms, ts_sec_to_ms
 
 if TYPE_CHECKING:
+    from collections.abc import Mapping, Sequence
+
+    from rotkehlchen.chain.solana.rpc import Signature
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.db.drivers.sqlite import DBCursor
 
@@ -125,7 +126,7 @@ def _get_bitcoin_counterparty_addresses(
 
 
 def _build_matched_movement_exclusion(
-        filter_query: 'HistoryBaseEntryFilterQuery',
+        filter_query: HistoryBaseEntryFilterQuery,
 ) -> tuple[str, list[Any]]:
     """Exclude the non-movement side of matched pairs from aggregated pagination.
 
@@ -171,7 +172,7 @@ def _build_matched_movement_exclusion(
     )
 
 
-HistoryEventsReturnType: TypeAlias = list[HistoryBaseEntry] | list[tuple[int, HistoryBaseEntry]]
+type HistoryEventsReturnType = list[HistoryBaseEntry] | list[tuple[int, HistoryBaseEntry]]
 
 
 @dataclass(frozen=True)
@@ -189,12 +190,12 @@ class HistoryEventsWithCountResult(HistoryEventsResult):
 
 class DBHistoryEvents:
 
-    def __init__(self, database: 'DBHandler') -> None:
+    def __init__(self, database: DBHandler) -> None:
         self.db = database
 
     def _mark_events_modified(
             self,
-            write_cursor: 'DBCursor',
+            write_cursor: DBCursor,
             timestamp: TimestampMS,
     ) -> None:
         """Track earliest modified event timestamp and when modification occurred.
@@ -227,8 +228,8 @@ class DBHistoryEvents:
 
     def _execute_and_track_modified(
             self,
-            write_cursor: 'DBCursor',
-            result: 'DBCursor | Sequence[tuple[TimestampMS]]',
+            write_cursor: DBCursor,
+            result: DBCursor | Sequence[tuple[TimestampMS]],
     ) -> int:
         """Iterate cursor results, track earliest timestamp, and return count.
         Single-pass iteration to compute both count and minimum timestamp.
@@ -245,7 +246,7 @@ class DBHistoryEvents:
 
     def delete_events_and_track(
             self,
-            write_cursor: 'DBCursor',
+            write_cursor: DBCursor,
             where_clause: str,
             where_bindings: tuple,
     ) -> int:
@@ -280,7 +281,7 @@ class DBHistoryEvents:
 
     def update_events_and_track(
             self,
-            write_cursor: 'DBCursor',
+            write_cursor: DBCursor,
             where_clause: str,
             where_bindings: tuple,
             set_clause: str,
@@ -303,7 +304,7 @@ class DBHistoryEvents:
 
     @staticmethod
     def _store_bitcoin_event_counterparty_addresses(
-            write_cursor: 'DBCursor',
+            write_cursor: DBCursor,
             identifier: int,
             location: Location,
             event_type: HistoryEventType,
@@ -349,7 +350,7 @@ class DBHistoryEvents:
 
     def add_history_event(
             self,
-            write_cursor: 'DBCursor',
+            write_cursor: DBCursor,
             event: HistoryBaseEntry,
             mapping_values: dict[str, HistoryMappingState] | None = None,
             skip_tracking: bool = False,
@@ -418,7 +419,7 @@ class DBHistoryEvents:
 
     def add_history_events(
             self,
-            write_cursor: 'DBCursor',
+            write_cursor: DBCursor,
             history: Sequence[HistoryBaseEntry],
     ) -> int:
         """Insert a list of history events in the database with batched modification tracking.
@@ -462,7 +463,7 @@ class DBHistoryEvents:
 
     @staticmethod
     def save_history_event_backup(
-            write_cursor: 'DBCursor',
+            write_cursor: DBCursor,
             identifier: int | None,
     ) -> None:
         """Create a backup copy of an event before modifying it so it can be restored to its
@@ -484,7 +485,7 @@ class DBHistoryEvents:
 
     @staticmethod
     def maybe_restore_history_events_from_backup(
-            write_cursor: 'DBCursor',
+            write_cursor: DBCursor,
             identifiers: list[int],
     ) -> None:
         """Restore multiple history events to their original backed-up state in bulk.
@@ -505,7 +506,7 @@ class DBHistoryEvents:
 
     def restore_matched_events_before_purge(
             self,
-            write_cursor: 'DBCursor',
+            write_cursor: DBCursor,
             location: Location,
     ) -> None:
         """Undo asset movement matching for events linked to the purged location.
@@ -575,7 +576,7 @@ class DBHistoryEvents:
 
     def edit_history_event(
             self,
-            write_cursor: 'DBCursor',
+            write_cursor: DBCursor,
             event: HistoryBaseEntry,
             mapping_state: HistoryMappingState | None,
             save_backup: bool = False,
@@ -680,7 +681,7 @@ class DBHistoryEvents:
 
     @staticmethod
     def set_event_mapping_state(
-            write_cursor: 'DBCursor',
+            write_cursor: DBCursor,
             event: HistoryBaseEntry,
             mapping_state: HistoryMappingState,
     ) -> bool:
@@ -697,7 +698,7 @@ class DBHistoryEvents:
 
     def get_history_events_identifiers(
             self,
-            filter_query: 'HistoryBaseEntryFilterQuery',
+            filter_query: HistoryBaseEntryFilterQuery,
     ) -> list[int]:
         """Get the identifiers of history events matching the given filter.
 
@@ -715,7 +716,7 @@ class DBHistoryEvents:
 
     def delete_history_events_by_filter(
             self,
-            filter_query: 'HistoryBaseEntryFilterQuery',
+            filter_query: HistoryBaseEntryFilterQuery,
             force_delete: bool = False,
             requested_identifiers: list[int] | None = None,
     ) -> tuple[int, str | None]:
@@ -806,7 +807,7 @@ class DBHistoryEvents:
 
     def delete_location_events(
             self,
-            write_cursor: 'DBCursor',
+            write_cursor: DBCursor,
             location: BLOCKCHAIN_LOCATIONS_TYPE,
             address: str | None,
             customized_handling: Literal['preserve_events', 'preserve_transactions'] = 'preserve_events',  # noqa: E501
@@ -867,7 +868,7 @@ class DBHistoryEvents:
 
     def reset_events_for_redecode(
             self,
-            write_cursor: 'DBCursor',
+            write_cursor: DBCursor,
             location: BLOCKCHAIN_LOCATIONS_TYPE,
     ) -> None:
         """Reset the given location's events, etc. for re-decoding.
@@ -931,7 +932,7 @@ class DBHistoryEvents:
 
     @staticmethod
     def _get_customized_exclusions_for_tx_refs(
-            cursor: 'DBCursor',
+            cursor: DBCursor,
             tx_refs: Sequence[EVMTxHash | BTCTxId | Signature],
             location: BLOCKCHAIN_LOCATIONS_TYPE,
             customized_handling: Literal['preserve_events', 'preserve_transactions'],
@@ -980,7 +981,7 @@ class DBHistoryEvents:
 
     def delete_events_by_tx_ref(
             self,
-            write_cursor: 'DBCursor',
+            write_cursor: DBCursor,
             tx_refs: Sequence[EVMTxHash | BTCTxId | Signature],
             location: BLOCKCHAIN_LOCATIONS_TYPE,
             customized_handling: Literal['delete', 'preserve_events', 'preserve_transactions'] = 'preserve_events',  # noqa: E501
@@ -1038,7 +1039,7 @@ class DBHistoryEvents:
     @staticmethod
     @overload
     def get_event_mapping_states(
-            cursor: 'DBCursor',
+            cursor: DBCursor,
             location: Location | None,
             mapping_state: HistoryMappingState,
             entry_identifiers: Sequence[int] | None = None,
@@ -1048,7 +1049,7 @@ class DBHistoryEvents:
     @staticmethod
     @overload
     def get_event_mapping_states(
-            cursor: 'DBCursor',
+            cursor: DBCursor,
             location: Location | None,
             mapping_state: None = None,
             entry_identifiers: Sequence[int] | None = None,
@@ -1057,7 +1058,7 @@ class DBHistoryEvents:
 
     @staticmethod
     def get_event_mapping_states(
-            cursor: 'DBCursor',
+            cursor: DBCursor,
             location: Location | None,
             mapping_state: HistoryMappingState | None = None,
             entry_identifiers: Sequence[int] | None = None,
@@ -1111,7 +1112,7 @@ class DBHistoryEvents:
 
         return mapping_states
 
-    def get_evm_event_by_identifier(self, identifier: int) -> Optional['EvmEvent']:
+    def get_evm_event_by_identifier(self, identifier: int) -> EvmEvent | None:
         """Returns the EVM event with the given identifier"""
         with self.db.conn.read_ctx() as cursor:
             event_data = cursor.execute(
@@ -1309,7 +1310,7 @@ class DBHistoryEvents:
     @overload
     def get_history_events(
             self,
-            cursor: 'DBCursor',
+            cursor: DBCursor,
             filter_query: HistoryEventFilterQuery,
             entries_limit: int | None,
             aggregate_by_group_ids: Literal[True],
@@ -1320,7 +1321,7 @@ class DBHistoryEvents:
     @overload
     def get_history_events(
             self,
-            cursor: 'DBCursor',
+            cursor: DBCursor,
             filter_query: HistoryEventFilterQuery,
             entries_limit: int | None,
             aggregate_by_group_ids: Literal[False] = ...,
@@ -1331,7 +1332,7 @@ class DBHistoryEvents:
     @overload
     def get_history_events(
             self,
-            cursor: 'DBCursor',
+            cursor: DBCursor,
             filter_query: EthDepositEventFilterQuery,
             entries_limit: int | None,
             aggregate_by_group_ids: Literal[True],
@@ -1342,7 +1343,7 @@ class DBHistoryEvents:
     @overload
     def get_history_events(
             self,
-            cursor: 'DBCursor',
+            cursor: DBCursor,
             filter_query: EthDepositEventFilterQuery,
             entries_limit: int | None,
             aggregate_by_group_ids: Literal[False] = ...,
@@ -1353,7 +1354,7 @@ class DBHistoryEvents:
     @overload
     def get_history_events(
             self,
-            cursor: 'DBCursor',
+            cursor: DBCursor,
             filter_query: EthWithdrawalFilterQuery,
             entries_limit: int | None,
             aggregate_by_group_ids: Literal[False] = ...,
@@ -1364,7 +1365,7 @@ class DBHistoryEvents:
     @overload
     def get_history_events(
             self,
-            cursor: 'DBCursor',
+            cursor: DBCursor,
             filter_query: EvmEventFilterQuery,
             entries_limit: int | None,
             aggregate_by_group_ids: Literal[True],
@@ -1375,7 +1376,7 @@ class DBHistoryEvents:
     @overload
     def get_history_events(
             self,
-            cursor: 'DBCursor',
+            cursor: DBCursor,
             filter_query: EvmEventFilterQuery,
             entries_limit: int | None,
             aggregate_by_group_ids: Literal[False] = ...,
@@ -1386,7 +1387,7 @@ class DBHistoryEvents:
     @overload
     def get_history_events(
             self,
-            cursor: 'DBCursor',
+            cursor: DBCursor,
             filter_query: SolanaEventFilterQuery,
             entries_limit: int | None,
             aggregate_by_group_ids: Literal[True],
@@ -1397,7 +1398,7 @@ class DBHistoryEvents:
     @overload
     def get_history_events(
             self,
-            cursor: 'DBCursor',
+            cursor: DBCursor,
             filter_query: SolanaEventFilterQuery,
             entries_limit: int | None,
             aggregate_by_group_ids: Literal[False] = ...,
@@ -1408,7 +1409,7 @@ class DBHistoryEvents:
     @overload
     def get_history_events(
             self,
-            cursor: 'DBCursor',
+            cursor: DBCursor,
             filter_query: HistoryEventWithCounterpartyFilterQuery,
             entries_limit: int | None,
             aggregate_by_group_ids: Literal[True],
@@ -1419,7 +1420,7 @@ class DBHistoryEvents:
     @overload
     def get_history_events(
             self,
-            cursor: 'DBCursor',
+            cursor: DBCursor,
             filter_query: HistoryEventWithCounterpartyFilterQuery,
             entries_limit: int | None,
             aggregate_by_group_ids: Literal[False] = ...,
@@ -1430,7 +1431,7 @@ class DBHistoryEvents:
     @overload
     def get_history_events(
             self,
-            cursor: 'DBCursor',
+            cursor: DBCursor,
             filter_query: HistoryEventWithTxRefFilterQuery,
             entries_limit: int | None,
             aggregate_by_group_ids: Literal[True],
@@ -1441,7 +1442,7 @@ class DBHistoryEvents:
     @overload
     def get_history_events(
             self,
-            cursor: 'DBCursor',
+            cursor: DBCursor,
             filter_query: HistoryEventWithTxRefFilterQuery,
             entries_limit: int | None,
             aggregate_by_group_ids: Literal[False] = ...,
@@ -1452,7 +1453,7 @@ class DBHistoryEvents:
     @overload
     def get_history_events(
             self,
-            cursor: 'DBCursor',
+            cursor: DBCursor,
             filter_query: HistoryEventFilterQuery | HistoryEventWithCounterpartyFilterQuery | HistoryEventWithTxRefFilterQuery | SolanaEventFilterQuery | EvmEventFilterQuery | EthDepositEventFilterQuery | EthWithdrawalFilterQuery,  # noqa: E501
             entries_limit: int | None,
             aggregate_by_group_ids: bool = ...,
@@ -1473,7 +1474,7 @@ class DBHistoryEvents:
 
     def get_history_events(
             self,
-            cursor: 'DBCursor',
+            cursor: DBCursor,
             filter_query: HistoryEventFilterQuery | HistoryEventWithCounterpartyFilterQuery | HistoryEventWithTxRefFilterQuery | SolanaEventFilterQuery | EvmEventFilterQuery | EthDepositEventFilterQuery | EthWithdrawalFilterQuery,  # noqa: E501
             entries_limit: int | None,
             aggregate_by_group_ids: bool = False,
@@ -1500,7 +1501,7 @@ class DBHistoryEvents:
 
     def _get_history_events_with_ignored_groups(
             self,
-            cursor: 'DBCursor',
+            cursor: DBCursor,
             filter_query: HistoryBaseEntryFilterQuery,
             entries_limit: int | None,
             aggregate_by_group_ids: bool = False,
@@ -1654,7 +1655,7 @@ class DBHistoryEvents:
     @overload
     def get_history_events_internal(
             self,
-            cursor: 'DBCursor',
+            cursor: DBCursor,
             filter_query: HistoryEventFilterQuery,
             aggregate_by_group_ids: Literal[True],
             match_exact_events: bool = ...,
@@ -1664,7 +1665,7 @@ class DBHistoryEvents:
     @overload
     def get_history_events_internal(
             self,
-            cursor: 'DBCursor',
+            cursor: DBCursor,
             filter_query: HistoryEventFilterQuery,
             aggregate_by_group_ids: Literal[False] = ...,
             match_exact_events: bool = ...,
@@ -1674,7 +1675,7 @@ class DBHistoryEvents:
     @overload
     def get_history_events_internal(
             self,
-            cursor: 'DBCursor',
+            cursor: DBCursor,
             filter_query: EthDepositEventFilterQuery,
             aggregate_by_group_ids: Literal[True],
             match_exact_events: bool,
@@ -1684,7 +1685,7 @@ class DBHistoryEvents:
     @overload
     def get_history_events_internal(
             self,
-            cursor: 'DBCursor',
+            cursor: DBCursor,
             filter_query: EthDepositEventFilterQuery,
             aggregate_by_group_ids: Literal[False] = ...,
             match_exact_events: bool = ...,
@@ -1694,7 +1695,7 @@ class DBHistoryEvents:
     @overload
     def get_history_events_internal(
             self,
-            cursor: 'DBCursor',
+            cursor: DBCursor,
             filter_query: EthWithdrawalFilterQuery,
             aggregate_by_group_ids: Literal[False] = ...,
             match_exact_events: bool = ...,
@@ -1704,7 +1705,7 @@ class DBHistoryEvents:
     @overload
     def get_history_events_internal(
             self,
-            cursor: 'DBCursor',
+            cursor: DBCursor,
             filter_query: EvmEventFilterQuery,
             aggregate_by_group_ids: Literal[True],
             match_exact_events: bool,
@@ -1714,7 +1715,7 @@ class DBHistoryEvents:
     @overload
     def get_history_events_internal(
             self,
-            cursor: 'DBCursor',
+            cursor: DBCursor,
             filter_query: EvmEventFilterQuery,
             aggregate_by_group_ids: Literal[False] = ...,
             match_exact_events: bool = ...,
@@ -1724,7 +1725,7 @@ class DBHistoryEvents:
     @overload
     def get_history_events_internal(
             self,
-            cursor: 'DBCursor',
+            cursor: DBCursor,
             filter_query: SolanaEventFilterQuery,
             aggregate_by_group_ids: Literal[True],
             match_exact_events: bool,
@@ -1734,7 +1735,7 @@ class DBHistoryEvents:
     @overload
     def get_history_events_internal(
             self,
-            cursor: 'DBCursor',
+            cursor: DBCursor,
             filter_query: SolanaEventFilterQuery,
             aggregate_by_group_ids: Literal[False] = ...,
             match_exact_events: bool = ...,
@@ -1744,7 +1745,7 @@ class DBHistoryEvents:
     @overload
     def get_history_events_internal(
             self,
-            cursor: 'DBCursor',
+            cursor: DBCursor,
             filter_query: HistoryEventWithCounterpartyFilterQuery,
             aggregate_by_group_ids: Literal[True],
             match_exact_events: bool,
@@ -1754,7 +1755,7 @@ class DBHistoryEvents:
     @overload
     def get_history_events_internal(
             self,
-            cursor: 'DBCursor',
+            cursor: DBCursor,
             filter_query: HistoryEventWithCounterpartyFilterQuery,
             aggregate_by_group_ids: Literal[False] = ...,
             match_exact_events: bool = ...,
@@ -1764,7 +1765,7 @@ class DBHistoryEvents:
     @overload
     def get_history_events_internal(
             self,
-            cursor: 'DBCursor',
+            cursor: DBCursor,
             filter_query: HistoryEventWithTxRefFilterQuery,
             aggregate_by_group_ids: Literal[True],
             match_exact_events: bool,
@@ -1774,7 +1775,7 @@ class DBHistoryEvents:
     @overload
     def get_history_events_internal(
             self,
-            cursor: 'DBCursor',
+            cursor: DBCursor,
             filter_query: HistoryEventWithTxRefFilterQuery,
             aggregate_by_group_ids: Literal[False] = ...,
             match_exact_events: bool = ...,
@@ -1784,7 +1785,7 @@ class DBHistoryEvents:
     @overload
     def get_history_events_internal(
             self,
-            cursor: 'DBCursor',
+            cursor: DBCursor,
             filter_query: HistoryEventFilterQuery | HistoryEventWithCounterpartyFilterQuery | HistoryEventWithTxRefFilterQuery | SolanaEventFilterQuery | EvmEventFilterQuery | EthDepositEventFilterQuery | EthWithdrawalFilterQuery,  # noqa: E501
             aggregate_by_group_ids: bool = ...,
             match_exact_events: bool = ...,
@@ -1804,7 +1805,7 @@ class DBHistoryEvents:
 
     def get_history_events_internal(
             self,
-            cursor: 'DBCursor',
+            cursor: DBCursor,
             filter_query: HistoryEventFilterQuery | HistoryEventWithCounterpartyFilterQuery | HistoryEventWithTxRefFilterQuery | SolanaEventFilterQuery | EvmEventFilterQuery | EthDepositEventFilterQuery | EthWithdrawalFilterQuery,  # noqa: E501
             aggregate_by_group_ids: bool = False,
             match_exact_events: bool = True,
@@ -1833,7 +1834,7 @@ class DBHistoryEvents:
     @overload
     def get_history_events_and_limit_info(
             self,
-            cursor: 'DBCursor',
+            cursor: DBCursor,
             filter_query: HistoryBaseEntryFilterQuery,
             entries_limit: int | None,
             aggregate_by_group_ids: Literal[True],
@@ -1845,7 +1846,7 @@ class DBHistoryEvents:
     @overload
     def get_history_events_and_limit_info(
             self,
-            cursor: 'DBCursor',
+            cursor: DBCursor,
             filter_query: HistoryBaseEntryFilterQuery,
             entries_limit: int | None,
             aggregate_by_group_ids: Literal[False] = ...,
@@ -1857,7 +1858,7 @@ class DBHistoryEvents:
     @overload
     def get_history_events_and_limit_info(
             self,
-            cursor: 'DBCursor',
+            cursor: DBCursor,
             filter_query: HistoryBaseEntryFilterQuery,
             entries_limit: int | None,
             aggregate_by_group_ids: bool = False,
@@ -1871,8 +1872,8 @@ class DBHistoryEvents:
 
     def get_history_events_and_limit_info(
             self,
-            cursor: 'DBCursor',
-            filter_query: 'HistoryBaseEntryFilterQuery',
+            cursor: DBCursor,
+            filter_query: HistoryBaseEntryFilterQuery,
             entries_limit: int | None,
             aggregate_by_group_ids: bool = False,
             match_exact_events: bool = False,
@@ -1909,7 +1910,7 @@ class DBHistoryEvents:
 
     def get_entries_assets_history_events(
             self,
-            cursor: 'DBCursor',
+            cursor: DBCursor,
             query_filter: HistoryEventFilterQuery,
     ) -> list[Asset]:
         """Returns asset from base entry events using the desired filter"""
@@ -1974,7 +1975,7 @@ class DBHistoryEvents:
 
     def get_history_events_count(
             self,
-            cursor: 'DBCursor',
+            cursor: DBCursor,
             query_filter: HistoryBaseEntryFilterQuery,
             aggregate_by_group_ids: bool = False,
             entries_limit: int | None = None,
@@ -2024,7 +2025,7 @@ class DBHistoryEvents:
 
     def get_amount_stats(
             self,
-            cursor: 'DBCursor',
+            cursor: DBCursor,
             query_filters: str,
             bindings: list[Any],
     ) -> list[tuple[str, FVal]]:
@@ -2050,7 +2051,7 @@ class DBHistoryEvents:
 
     def get_amount_and_value_stats(
             self,
-            cursor: 'DBCursor',
+            cursor: DBCursor,
             query_filters: str,
             bindings: list[Any],
             counterparty: str,
@@ -2121,7 +2122,7 @@ class DBHistoryEvents:
 
     def get_hidden_event_ids(
             self,
-            cursor: 'DBCursor',
+            cursor: DBCursor,
             entry_identifiers: Sequence[int] | None = None,
     ) -> set[int]:
         """Returns the event identifiers that should be hidden in the UI
@@ -2159,7 +2160,7 @@ class DBHistoryEvents:
 
     def edit_event_extra_data(
             self,
-            write_cursor: 'DBCursor',
+            write_cursor: DBCursor,
             event: HistoryBaseEntry,
             extra_data: Mapping[str, Any],
     ) -> None:
@@ -2308,7 +2309,7 @@ class DBHistoryEvents:
 
     def process_matched_asset_movements(
             self,
-            cursor: 'DBCursor',
+            cursor: DBCursor,
             aggregate_by_group_ids: bool,
             events_result: list[tuple[int, HistoryBaseEntry]] | list[HistoryBaseEntry],
             entries_found: int,

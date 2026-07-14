@@ -3,23 +3,23 @@ from typing import TYPE_CHECKING
 from rotkehlchen.chain.evm.decoding.base import BaseEvmDecoderTools
 from rotkehlchen.chain.evm.decoding.decoder import EVMTransactionDecoder
 from rotkehlchen.constants.assets import A_MON
-from rotkehlchen.types import ChecksumEvmAddress
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.monad.node_inquirer import MonadInquirer
     from rotkehlchen.chain.monad.transactions import MonadTransactions
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.premium.premium import Premium
+    from rotkehlchen.types import ChecksumEvmAddress
 
 
 class MonadTransactionDecoder(EVMTransactionDecoder):
 
     def __init__(
             self,
-            database: 'DBHandler',
-            monad_inquirer: 'MonadInquirer',
-            transactions: 'MonadTransactions',
-            premium: 'Premium | None' = None,
+            database: DBHandler,
+            monad_inquirer: MonadInquirer,
+            transactions: MonadTransactions,
+            premium: Premium | None = None,
     ):
         super().__init__(
             database=database,

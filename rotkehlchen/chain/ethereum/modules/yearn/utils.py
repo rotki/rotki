@@ -161,7 +161,7 @@ def _query_yearn_vault_count(chain_id: ChainID) -> int:
         ) from e
 
 
-def query_yearn_vaults(db: 'DBHandler', ethereum_inquirer: 'EvmNodeInquirer') -> None:
+def query_yearn_vaults(db: DBHandler, ethereum_inquirer: EvmNodeInquirer) -> None:
     """Query yearn API and ensure that all the tokens exist locally. If they exist but the protocol
     is not the correct one, then the asset will be edited.
 

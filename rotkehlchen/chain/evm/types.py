@@ -1,8 +1,7 @@
 import re
-from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from enum import Enum, auto
-from typing import Any, Final, NamedTuple
+from typing import TYPE_CHECKING, Any, Final, NamedTuple
 
 from eth_typing import HexAddress, HexStr
 
@@ -17,6 +16,9 @@ from rotkehlchen.types import (
     SupportedBlockchain,
 )
 from rotkehlchen.utils.mixins.enums import SerializableEnumNameMixin
+
+if TYPE_CHECKING:
+    from collections.abc import Mapping, Sequence
 
 
 def string_to_evm_address(value: str) -> ChecksumEvmAddress:
@@ -78,9 +80,9 @@ class WeightedNode:
 
     @classmethod
     def deserialize(
-            cls: type['WeightedNode'],
+            cls: type[WeightedNode],
             data: dict[str, str],
-    ) -> 'WeightedNode':
+    ) -> WeightedNode:
         return WeightedNode(
             identifier=int(data['identifier']),
             node_info=NodeName(
@@ -136,7 +138,7 @@ class EvmIndexer(SerializableEnumNameMixin):
     BLOCKSCOUT = auto()
     ROUTESCAN = auto()
 
-    def to_internal_tx_source(self) -> 'InternalTxSource':
+    def to_internal_tx_source(self) -> InternalTxSource:
         """Map the indexer to the source enum persisted for its internal tx rows."""
         return EVM_INDEXER_TO_INTERNAL_TX_SOURCE[self]
 

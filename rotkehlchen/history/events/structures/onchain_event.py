@@ -1,11 +1,9 @@
 import logging
 from abc import abstractmethod
-from typing import TYPE_CHECKING, Any, Generic, Self, TypeVar, cast
+from typing import TYPE_CHECKING, Any, Self, TypeVar, cast
 
 from rotkehlchen.accounting.mixins.event import AccountingEventMixin, AccountingEventType
-from rotkehlchen.accounting.types import EventAccountingRuleStatus
 from rotkehlchen.assets.asset import Asset
-from rotkehlchen.db.constants import HistoryMappingState
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.history.events.structures.base import (
     HISTORY_EVENT_DB_TUPLE_WRITE,
@@ -26,6 +24,8 @@ if TYPE_CHECKING:
     from more_itertools import peekable
 
     from rotkehlchen.accounting.pot import AccountingPot
+    from rotkehlchen.accounting.types import EventAccountingRuleStatus
+    from rotkehlchen.db.constants import HistoryMappingState
     from rotkehlchen.history.events.structures.types import CHAIN_EVENT_DB_TUPLE_READ
 
 
@@ -37,7 +37,7 @@ T_TxRef = TypeVar('T_TxRef')
 T_Address = TypeVar('T_Address')
 
 
-class OnchainEvent(HistoryBaseEntry, Generic[T_TxRef, T_Address]):
+class OnchainEvent[T_TxRef, T_Address](HistoryBaseEntry):
     """Abstract base class for blockchain events with common functionality.
 
     This class provides shared behavior for events that occur on different blockchains,
@@ -276,7 +276,7 @@ class OnchainEvent(HistoryBaseEntry, Generic[T_TxRef, T_Address]):
 
     def process(
             self,
-            accounting: 'AccountingPot',
-            events_iterator: "peekable['AccountingEventMixin']",  # pylint: disable=unused-argument
+            accounting: AccountingPot,
+            events_iterator: peekable[AccountingEventMixin],  # pylint: disable=unused-argument
     ) -> int:
         return accounting.events_accountant.process(self, events_iterator)

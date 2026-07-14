@@ -5,7 +5,6 @@ from typing import TYPE_CHECKING, Any, Final, Literal, overload
 
 import requests
 
-from rotkehlchen.chain.evm.l2_with_l1_fees.types import L2ChainIdsWithL1FeesType
 from rotkehlchen.chain.optimism.constants import OP_BEDROCK_BLOCK, OP_BEDROCK_UPGRADE
 from rotkehlchen.chain.structures import TimestampOrBlockRange
 from rotkehlchen.concurrency import cancellable_sleep
@@ -30,7 +29,6 @@ from rotkehlchen.types import (
     ExternalService,
     Timestamp,
 )
-from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import from_wei, iso8601ts_to_timestamp, set_user_agent, ts_sec_to_ms
 from rotkehlchen.utils.network import create_session
 from rotkehlchen.utils.rate_limiter import TokenBucket
@@ -39,8 +37,10 @@ from rotkehlchen.utils.serialization import jsonloads_dict
 if TYPE_CHECKING:
     from collections.abc import Iterator
 
+    from rotkehlchen.chain.evm.l2_with_l1_fees.types import L2ChainIdsWithL1FeesType
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.types import EvmInternalTransaction, EvmTransaction
+    from rotkehlchen.user_messages import MessagesAggregator
 
 # asked in telegram and the default equals to the max and it is 50 entries per page.
 # You can't change it
@@ -70,7 +70,7 @@ class Blockscout(ExternalServiceWithRecommendedApiKey, EtherscanLikeApi):
 
     def __init__(
             self,
-            database: 'DBHandler',
+            database: DBHandler,
             msg_aggregator: MessagesAggregator,
     ) -> None:
         ExternalServiceWithRecommendedApiKey.__init__(
@@ -591,9 +591,9 @@ class Blockscout(ExternalServiceWithRecommendedApiKey, EtherscanLikeApi):
             chain_id: SUPPORTED_CHAIN_IDS,
             account: ChecksumEvmAddress | None,
             action: Literal['txlist', 'txlistinternal'],
-            period_or_hash: 'TimestampOrBlockRange | EVMTxHash | None' = None,
+            period_or_hash: TimestampOrBlockRange | EVMTxHash | None = None,
             tx_timestamp: Timestamp | None = None,
-    ) -> 'Iterator[list[EvmTransaction]] | Iterator[list[EvmInternalTransaction]]':
+    ) -> Iterator[list[EvmTransaction]] | Iterator[list[EvmInternalTransaction]]:
         """Extends the base implementation to skip internal transaction queries on Optimism
         for periods that predate the Bedrock upgrade (block {OP_BEDROCK_BLOCK} /
         timestamp {OP_BEDROCK_UPGRADE}). Blockscout does not properly index internal

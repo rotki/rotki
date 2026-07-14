@@ -1,3 +1,5 @@
+from typing import TYPE_CHECKING
+
 import pytest
 
 from rotkehlchen.assets.asset import Asset
@@ -11,7 +13,6 @@ from rotkehlchen.chain.evm.types import (
     string_to_evm_address,
 )
 from rotkehlchen.chain.optimism.constants import CPT_OPTIMISM
-from rotkehlchen.chain.optimism.node_inquirer import OptimismInquirer
 from rotkehlchen.constants.assets import A_ETH, A_OPTIMISM_ETH
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.fval import FVal
@@ -26,6 +27,9 @@ from rotkehlchen.types import (
     TimestampMS,
     deserialize_evm_tx_hash,
 )
+
+if TYPE_CHECKING:
+    from rotkehlchen.chain.optimism.node_inquirer import OptimismInquirer
 
 BLOCKSCOUT_FIRST_OPTIMISM_ORDER = [{
     'evm_indexers_order': SerializableChainIndexerOrder(

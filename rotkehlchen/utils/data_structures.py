@@ -1,14 +1,16 @@
 import collections
 from collections import OrderedDict
-from collections.abc import Callable, Iterator
 from threading import Lock
-from typing import Generic, TypeVar
+from typing import TYPE_CHECKING, TypeVar
+
+if TYPE_CHECKING:
+    from collections.abc import Callable, Iterator
 
 KT = TypeVar('KT')  # key type
 VT = TypeVar('VT')  # value type
 
 
-class LRUCacheWithRemove(Generic[KT, VT]):
+class LRUCacheWithRemove[KT, VT]:
     """Create a LRU cache with the option to remove keys from the cache.
 
     Instances are shared process-wide (e.g. the Inquirer price cache and the
@@ -93,7 +95,7 @@ class LRUCacheLowerKey(LRUCacheWithRemove[str, VT]):
         super().remove(key.lower())
 
 
-class LRUSetCache(Generic[VT]):
+class LRUSetCache[VT]:
     """
     LRU cache that works like a set.
     Internally it uses an OrderedDict In order to be able to keep the order of insertion

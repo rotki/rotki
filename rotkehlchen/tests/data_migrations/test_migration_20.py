@@ -1,6 +1,7 @@
 """Test for data migration 20 - fixing SwapEvent identifiers"""
 import shutil
 from pathlib import Path
+from typing import TYPE_CHECKING
 from unittest.mock import patch
 
 import pytest
@@ -8,7 +9,6 @@ import pytest
 from rotkehlchen.constants import ONE
 from rotkehlchen.constants.assets import A_BTC, A_ETH, A_USD
 from rotkehlchen.data_migrations.manager import MIGRATION_LIST, DataMigrationManager
-from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.db.drivers.sqlite import DBConnection, DBConnectionType
 from rotkehlchen.db.utils import unlock_database
 from rotkehlchen.exchanges.data_structures import hash_id
@@ -19,6 +19,9 @@ from rotkehlchen.history.events.utils import create_group_identifier
 from rotkehlchen.tests.data_migrations.test_migrations import MockRotkiForMigrations
 from rotkehlchen.types import AssetAmount, Location, TimestampMS
 from rotkehlchen.utils.misc import ts_now
+
+if TYPE_CHECKING:
+    from rotkehlchen.db.dbhandler import DBHandler
 
 
 def _insert_swap_events(db: DBHandler, events: list[SwapEvent]) -> None:

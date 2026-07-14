@@ -1,7 +1,6 @@
 import logging
 from abc import ABC
 from collections import defaultdict
-from collections.abc import Iterator
 from typing import TYPE_CHECKING, Any, cast
 
 from rotkehlchen.accounting.mixins.event import AccountingEventMixin, AccountingEventType
@@ -32,10 +31,13 @@ from rotkehlchen.types import (
 
 from .base import HISTORY_EVENT_DB_TUPLE_WRITE, HistoryBaseEntry, HistoryBaseEntryType
 from .evm_event import EvmEvent
-from .onchain_event import CHAIN_EVENT_FIELDS_TYPE
 
 if TYPE_CHECKING:
+    from collections.abc import Iterator
+
     from rotkehlchen.accounting.pot import AccountingPot
+
+    from .onchain_event import CHAIN_EVENT_FIELDS_TYPE
 
 ETH_STAKING_EVENT_DB_TUPLE_READ = tuple[
     int,            # identifier
@@ -177,7 +179,7 @@ class EthWithdrawalEvent(EthStakingEvent):
         return super().serialize() | {'validator_index': self.validator_index, 'is_exit': self.is_exit_or_blocknumber}  # noqa: E501
 
     @classmethod
-    def deserialize_from_db(cls: type['EthWithdrawalEvent'], entry: tuple) -> 'EthWithdrawalEvent':
+    def deserialize_from_db(cls: type[EthWithdrawalEvent], entry: tuple) -> EthWithdrawalEvent:
         entry = cast('ETH_STAKING_EVENT_DB_TUPLE_READ', entry)
         amount = deserialize_fval(entry[5], 'amount', 'eth withdrawal event')
         return cls(
@@ -191,7 +193,7 @@ class EthWithdrawalEvent(EthStakingEvent):
         )
 
     @classmethod
-    def deserialize(cls: type['EthWithdrawalEvent'], data: dict[str, Any]) -> 'EthWithdrawalEvent':
+    def deserialize(cls: type[EthWithdrawalEvent], data: dict[str, Any]) -> EthWithdrawalEvent:
         base_data = cls._deserialize_base_history_data(data)
         try:
             validator_index = data['validator_index']
@@ -219,8 +221,8 @@ class EthWithdrawalEvent(EthStakingEvent):
 
     def process(
             self,
-            accounting: 'AccountingPot',
-            events_iterator: Iterator['AccountingEventMixin'],  # pylint: disable=unused-argument
+            accounting: AccountingPot,
+            events_iterator: Iterator[AccountingEventMixin],  # pylint: disable=unused-argument
     ) -> int:
         if (validator_info := accounting.get_validator_with_status(self.validator_index)) is None:
             log.error(
@@ -388,7 +390,7 @@ class EthBlockEvent(EthStakingEvent):
         return super().serialize() | {'validator_index': self.validator_index, 'block_number': self.is_exit_or_blocknumber}  # noqa: E501
 
     @classmethod
-    def deserialize_from_db(cls: type['EthBlockEvent'], entry: tuple, fee_recipient_tracked: bool) -> 'EthBlockEvent':  # type: ignore[override]  # noqa: E501
+    def deserialize_from_db(cls: type[EthBlockEvent], entry: tuple, fee_recipient_tracked: bool) -> EthBlockEvent:  # type: ignore[override]  # noqa: E501
         """
         We have an annoying typing problem here. We are breaking the Liskov principle by adding an
         extra argument to the subclass function. But not sure what else to do since we need it.
@@ -410,7 +412,7 @@ class EthBlockEvent(EthStakingEvent):
         )
 
     @classmethod
-    def deserialize(cls: type['EthBlockEvent'], data: dict[str, Any], fee_recipient_tracked: bool) -> 'EthBlockEvent':  # type: ignore[override]  # noqa: E501
+    def deserialize(cls: type[EthBlockEvent], data: dict[str, Any], fee_recipient_tracked: bool) -> EthBlockEvent:  # type: ignore[override]  # noqa: E501
         base_data = cls._deserialize_base_history_data(data)
         try:
             validator_index = data['validator_index']
@@ -440,8 +442,8 @@ class EthBlockEvent(EthStakingEvent):
 
     def process(
             self,
-            accounting: 'AccountingPot',
-            events_iterator: Iterator['AccountingEventMixin'],  # pylint: disable=unused-argument
+            accounting: AccountingPot,
+            events_iterator: Iterator[AccountingEventMixin],  # pylint: disable=unused-argument
     ) -> int:
         """
         For block production events we should consume all 3 possible events directly here
@@ -531,7 +533,7 @@ class EthDepositEvent(EvmEvent, EthStakingEvent):  # noqa: PLW1641  # hash in su
         return super().serialize() | {'validator_index': self.validator_index}
 
     @classmethod
-    def deserialize_from_db(cls: type['EthDepositEvent'], entry: tuple) -> 'EthDepositEvent':
+    def deserialize_from_db(cls: type[EthDepositEvent], entry: tuple) -> EthDepositEvent:
         entry = cast('EVM_DEPOSIT_EVENT_DB_TUPLE_READ', entry)
         amount = deserialize_fval(entry[5], 'amount', 'eth deposit event')
         return cls(
@@ -546,7 +548,7 @@ class EthDepositEvent(EvmEvent, EthStakingEvent):  # noqa: PLW1641  # hash in su
         )
 
     @classmethod
-    def deserialize(cls: type['EthDepositEvent'], data: dict[str, Any]) -> 'EthDepositEvent':
+    def deserialize(cls: type[EthDepositEvent], data: dict[str, Any]) -> EthDepositEvent:
         base_data = cls._deserialize_base_history_data(data)
 
         try:
@@ -580,8 +582,8 @@ class EthDepositEvent(EvmEvent, EthStakingEvent):  # noqa: PLW1641  # hash in su
 
     def process(
             self,
-            accounting: 'AccountingPot',
-            events_iterator: Iterator['AccountingEventMixin'],  # pylint: disable=unused-argument
+            accounting: AccountingPot,
+            events_iterator: Iterator[AccountingEventMixin],  # pylint: disable=unused-argument
     ) -> int:
         """ETH staking deposits are not taxable"""
         return 1

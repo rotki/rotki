@@ -1,9 +1,11 @@
 from dataclasses import dataclass
 from enum import auto
-from typing import Literal
+from typing import TYPE_CHECKING, Literal
 
-from rotkehlchen.history.events.structures.base import HistoryBaseEntryType
 from rotkehlchen.utils.mixins.enums import SerializableEnumNameMixin
+
+if TYPE_CHECKING:
+    from rotkehlchen.history.events.structures.base import HistoryBaseEntryType
 
 
 @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=True)

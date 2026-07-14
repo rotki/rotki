@@ -61,7 +61,7 @@ class GearboxPoolData:
 
 
 def get_existing_pools(
-        cursor: 'DBCursor',
+        cursor: DBCursor,
         cache_type: Literal[CacheType.GEARBOX_POOL_ADDRESS],
         chain_id: ChainID,
 ) -> set[ChecksumEvmAddress]:
@@ -195,7 +195,7 @@ def read_gearbox_farming_token_to_pool_addresses(
 
 
 def register_token(
-        evm_inquirer: 'EvmNodeInquirer',
+        evm_inquirer: EvmNodeInquirer,
         token_address: str,
         pool: GearboxPoolData,
         encounter: TokenEncounterInfo,
@@ -216,9 +216,9 @@ def register_token(
 
 
 def ensure_gearbox_tokens_existence(
-        evm_inquirer: 'EvmNodeInquirer',
+        evm_inquirer: EvmNodeInquirer,
         all_pools: list[GearboxPoolData],
-        msg_aggregator: 'MessagesAggregator',
+        msg_aggregator: MessagesAggregator,
 ) -> list[GearboxPoolData]:
     """This function receives data about gearbox pools and ensures that lp tokens and pool coins
     exist in rotki's database."""
@@ -294,9 +294,9 @@ def ensure_gearbox_tokens_existence(
 
 
 def ensure_gearbox_lp_underlying_tokens(
-        node_inquirer: 'EvmNodeInquirer',
+        node_inquirer: EvmNodeInquirer,
         token_identifier: str,
-        lp_contract: 'EvmContract',
+        lp_contract: EvmContract,
 ) -> EvmToken | None:
     """Ensures that the underlying token of a Gearbox liquidity pool (LP) is stored in the global
     database. If the underlying token is not already saved, it queries the chain to retrieve
@@ -346,7 +346,7 @@ def ensure_gearbox_lp_underlying_tokens(
     return underlying_token
 
 
-def get_gearbox_pool_tokens(inquirer: 'EvmNodeInquirer', pool_data: list[str], underlying_token_address: ChecksumEvmAddress) -> set[ChecksumEvmAddress] | None:  # noqa: E501
+def get_gearbox_pool_tokens(inquirer: EvmNodeInquirer, pool_data: list[str], underlying_token_address: ChecksumEvmAddress) -> set[ChecksumEvmAddress] | None:  # noqa: E501
     """Extracts lp and farming token from the pool data, excluding the underlying token address
     and the special ETH address."""
     try:
@@ -362,9 +362,9 @@ def get_gearbox_pool_tokens(inquirer: 'EvmNodeInquirer', pool_data: list[str], u
 
 
 def query_gearbox_data_from_chain(
-        evm_inquirer: 'EvmNodeInquirer',
+        evm_inquirer: EvmNodeInquirer,
         existing_pools: set[ChecksumEvmAddress],
-        msg_aggregator: 'MessagesAggregator',
+        msg_aggregator: MessagesAggregator,
 ) -> list[GearboxPoolData] | None:
     """
     Query all Gearbox information(lp tokens, pools, lp coins) from data compressor.
@@ -440,9 +440,9 @@ def query_gearbox_data_from_chain(
 
 
 def query_gearbox_data(
-        inquirer: 'EvmNodeInquirer',
+        inquirer: EvmNodeInquirer,
         cache_type: Literal[CacheType.GEARBOX_POOL_ADDRESS],
-        msg_aggregator: 'MessagesAggregator',
+        msg_aggregator: MessagesAggregator,
         reload_all: bool,  # pylint: disable=unused-argument
 ) -> list[GearboxPoolData] | None:
     """

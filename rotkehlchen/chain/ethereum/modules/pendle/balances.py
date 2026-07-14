@@ -28,8 +28,8 @@ log = RotkehlchenLogsAdapter(logger)
 class PendleBalances(ProtocolWithBalance):
     def __init__(
             self,
-            evm_inquirer: 'EthereumInquirer',
-            tx_decoder: 'EthereumTransactionDecoder',
+            evm_inquirer: EthereumInquirer,
+            tx_decoder: EthereumTransactionDecoder,
     ):
         super().__init__(
             tx_decoder=tx_decoder,

@@ -4,13 +4,13 @@ import tempfile
 from copy import deepcopy
 from http import HTTPStatus
 from pathlib import Path
+from typing import TYPE_CHECKING
 from zipfile import ZipFile
 
 import pytest
 import requests
 
 from rotkehlchen.accounting.structures.balance import BalanceType
-from rotkehlchen.api.server import APIServer
 from rotkehlchen.assets.asset import Asset, CustomAsset, EvmToken, SolanaToken
 from rotkehlchen.assets.types import ASSET_TYPES_EXCLUDED_FOR_USERS, AssetType
 from rotkehlchen.balances.manual import ManuallyTrackedBalance
@@ -36,6 +36,9 @@ from rotkehlchen.tests.utils.api import (
 )
 from rotkehlchen.tests.utils.factories import make_evm_address, make_solana_address
 from rotkehlchen.types import Location, TokenKind
+
+if TYPE_CHECKING:
+    from rotkehlchen.api.server import APIServer
 
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])

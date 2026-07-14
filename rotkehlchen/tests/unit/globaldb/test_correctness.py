@@ -1,6 +1,9 @@
+from typing import TYPE_CHECKING
+
 from eth_utils.address import to_checksum_address
 
-from rotkehlchen.globaldb.handler import GlobalDBHandler
+if TYPE_CHECKING:
+    from rotkehlchen.globaldb.handler import GlobalDBHandler
 
 
 def test_checksummed_values(globaldb: GlobalDBHandler):

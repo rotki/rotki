@@ -33,7 +33,7 @@ if TYPE_CHECKING:
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0x373aDc79FF63d5076D0685cA35031339d4E0Da82']])
 def test_compound_v3_claim_comp(
-        ethereum_inquirer: 'EthereumInquirer',
+        ethereum_inquirer: EthereumInquirer,
         ethereum_accounts,
 ) -> None:
     """Test that claiming comp reward for v3 works fine"""
@@ -542,8 +542,8 @@ def test_arbitrum_one_withdraw_eth_with_unwrapping(arbitrum_one_inquirer, arbitr
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0xD413dCf1b80E10a8Ba7Cab329DA7545cCc827319']])
 def test_deposit_native_eth(
-        ethereum_inquirer: 'EthereumInquirer',
-        ethereum_accounts: list['ChecksumEvmAddress'],
+        ethereum_inquirer: EthereumInquirer,
+        ethereum_accounts: list[ChecksumEvmAddress],
 ) -> None:
     """Check that depositing native ETH works correctly."""
     tx_hash = deserialize_evm_tx_hash('0xde4dcd5588a4f2e2c3a6f24b5386cf289aad5f3b7a3f99d5411ca815dccc9fa3')  # noqa: E501

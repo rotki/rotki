@@ -132,10 +132,10 @@ def test_yearn_api(database, ethereum_inquirer):
 @pytest.mark.vcr
 @pytest.mark.parametrize('should_mock_current_price_queries', [False])
 def test_process_staked_vaults(
-        database: 'DBHandler',
-        ethereum_inquirer: 'EthereumInquirer',
-        globaldb: 'GlobalDBHandler',
-        inquirer_defi: 'Inquirer',
+        database: DBHandler,
+        ethereum_inquirer: EthereumInquirer,
+        globaldb: GlobalDBHandler,
+        inquirer_defi: Inquirer,
 ):
     data = """[{
         "address": "0x790a60024bC3aea28385b60480f15a0771f26D09",

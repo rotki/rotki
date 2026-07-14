@@ -1,4 +1,3 @@
-from collections.abc import Callable
 from typing import TYPE_CHECKING
 
 from rotkehlchen.assets.utils import asset_normalized_value
@@ -15,13 +14,15 @@ from rotkehlchen.chain.evm.decoding.uniswap.v2.utils import (
 )
 from rotkehlchen.errors.asset import UnknownAsset, WrongAssetType
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
-from rotkehlchen.types import ChecksumEvmAddress, EvmTransaction
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+
     from rotkehlchen.chain.evm.decoding.base import BaseEvmDecoderTools
     from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
     from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
     from rotkehlchen.history.events.structures.evm_event import EvmEvent
+    from rotkehlchen.types import ChecksumEvmAddress, EvmTransaction
     from rotkehlchen.user_messages import MessagesAggregator
 
 
@@ -29,11 +30,11 @@ class Quickswapv2CommonDecoder(EvmDecoderInterface):
 
     def __init__(
             self,
-            evm_inquirer: 'EvmNodeInquirer',
-            base_tools: 'BaseEvmDecoderTools',
-            msg_aggregator: 'MessagesAggregator',
-            router_address: 'ChecksumEvmAddress',
-            factory_address: 'ChecksumEvmAddress',
+            evm_inquirer: EvmNodeInquirer,
+            base_tools: BaseEvmDecoderTools,
+            msg_aggregator: MessagesAggregator,
+            router_address: ChecksumEvmAddress,
+            factory_address: ChecksumEvmAddress,
     ) -> None:
         super().__init__(
             evm_inquirer=evm_inquirer,
@@ -45,10 +46,10 @@ class Quickswapv2CommonDecoder(EvmDecoderInterface):
 
     def _v2_router_post_decoding(
             self,
-            transaction: 'EvmTransaction',
-            decoded_events: list['EvmEvent'],
-            all_logs: list['EvmTxReceiptLog'],
-    ) -> list['EvmEvent']:
+            transaction: EvmTransaction,
+            decoded_events: list[EvmEvent],
+            all_logs: list[EvmTxReceiptLog],
+    ) -> list[EvmEvent]:
         """Decode the quickswap v2 router events."""
         first_swap_log = last_swap_log = None
         mint_burn_log = None
@@ -96,8 +97,8 @@ class Quickswapv2CommonDecoder(EvmDecoderInterface):
 
     def _maybe_mark_native_output_receive(
             self,
-            last_swap_log: 'EvmTxReceiptLog',
-            decoded_events: list['EvmEvent'],
+            last_swap_log: EvmTxReceiptLog,
+            decoded_events: list[EvmEvent],
     ) -> None:
         amount_out_0 = int.from_bytes(last_swap_log.data[64:96])
         amount_out_1 = int.from_bytes(last_swap_log.data[96:128])

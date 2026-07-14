@@ -3,7 +3,6 @@ from collections import defaultdict
 from typing import TYPE_CHECKING
 
 from rotkehlchen.accounting.structures.balance import Balance, BalanceSheet
-from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.utils import token_normalized_value_decimals
 from rotkehlchen.chain.ethereum.interfaces.balances import BalancesSheetType, ProtocolWithBalance
 from rotkehlchen.chain.evm.constants import DEFAULT_TOKEN_DECIMALS
@@ -15,6 +14,7 @@ from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 
 if TYPE_CHECKING:
+    from rotkehlchen.assets.asset import Asset
     from rotkehlchen.chain.evm.decoding.decoder import EVMTransactionDecoder
     from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
     from rotkehlchen.types import ChecksumEvmAddress
@@ -26,9 +26,9 @@ log = RotkehlchenLogsAdapter(logger)
 class GearboxCommonBalances(ProtocolWithBalance):
     def __init__(
             self,
-            evm_inquirer: 'EvmNodeInquirer',
-            tx_decoder: 'EVMTransactionDecoder',
-            staking_contract: 'ChecksumEvmAddress',
+            evm_inquirer: EvmNodeInquirer,
+            tx_decoder: EVMTransactionDecoder,
+            staking_contract: ChecksumEvmAddress,
             gear_token: Asset,
     ):
         super().__init__(
@@ -40,7 +40,7 @@ class GearboxCommonBalances(ProtocolWithBalance):
         self.gear_token = gear_token
         self.staking_contract = staking_contract
 
-    def query_balances(self) -> 'BalancesSheetType':
+    def query_balances(self) -> BalancesSheetType:
         """Query balances of staked gear tokens if deposit events are found."""
         balances: BalancesSheetType = defaultdict(BalanceSheet)
         if len(addresses_with_deposits := list(self.addresses_with_deposits())) == 0:

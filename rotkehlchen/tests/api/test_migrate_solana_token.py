@@ -1,12 +1,11 @@
 from http import HTTPStatus
-from typing import Any, Final
+from typing import TYPE_CHECKING, Any, Final
 from unittest.mock import patch
 
 import pytest
 import requests
 
 from rotkehlchen.accounting.structures.balance import BalanceType
-from rotkehlchen.api.server import APIServer
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.types import AssetType
 from rotkehlchen.constants.resolver import solana_address_to_identifier
@@ -23,6 +22,9 @@ from rotkehlchen.types import (
     Timestamp,
     TokenKind,
 )
+
+if TYPE_CHECKING:
+    from rotkehlchen.api.server import APIServer
 
 # Test constants
 TEST_SOLANA_ADDRESS: Final = SolanaAddress('BENGEso6uSrcCYyRsanYgmDwLi34QSpihU2FX2xvpump')

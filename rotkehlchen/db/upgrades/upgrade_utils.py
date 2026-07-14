@@ -7,7 +7,7 @@ if TYPE_CHECKING:
 
 
 def process_solana_asset_migration(
-        write_cursor: 'DBCursor',
+        write_cursor: DBCursor,
         table_updates: list[tuple[str, str]],
 ) -> list[tuple]:
     """Read solana tokens CSV and update asset identifiers across specified tables.

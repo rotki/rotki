@@ -18,8 +18,8 @@ class OptimismManager(EvmManager, CurveManagerMixin):
 
     def __init__(
             self,
-            node_inquirer: 'OptimismInquirer',
-            premium: 'Premium | None' = None,
+            node_inquirer: OptimismInquirer,
+            premium: Premium | None = None,
     ) -> None:
         transactions = OptimismTransactions(
             optimism_inquirer=node_inquirer,

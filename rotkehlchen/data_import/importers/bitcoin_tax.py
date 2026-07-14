@@ -1,6 +1,5 @@
 import csv
 import logging
-from pathlib import Path
 from typing import TYPE_CHECKING, Any, Literal
 
 from rotkehlchen.assets.converters import LOCATION_TO_ASSET_MAPPING, asset_from_common_identifier
@@ -11,7 +10,6 @@ from rotkehlchen.data_import.utils import (
     UnsupportedCSVEntry,
     hash_csv_row,
 )
-from rotkehlchen.db.drivers.sqlite import DBCursor
 from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.misc import InputError
 from rotkehlchen.errors.serialization import DeserializationError
@@ -29,7 +27,10 @@ from rotkehlchen.utils.misc import ts_sec_to_ms
 from .constants import ROTKI_EVENT_PREFIX
 
 if TYPE_CHECKING:
+    from pathlib import Path
+
     from rotkehlchen.db.dbhandler import DBHandler
+    from rotkehlchen.db.drivers.sqlite import DBCursor
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -61,7 +62,7 @@ def determine_csv_type(csv_data: csv.DictReader) -> CSVType:
 class BitcoinTaxImporter(BaseExchangeImporter):
     """Bitcoin Tax CSV importer"""
 
-    def __init__(self, db: 'DBHandler') -> None:
+    def __init__(self, db: DBHandler) -> None:
         super().__init__(db=db, name='Bitcoin Tax')
 
     def _consume_trade_event(

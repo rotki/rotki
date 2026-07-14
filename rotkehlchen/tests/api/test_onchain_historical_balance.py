@@ -29,7 +29,7 @@ HISTORICAL_TS: Final = Timestamp(1609459200)  # January 1, 2021
 @pytest.mark.parametrize('start_with_valid_premium', [True])
 @pytest.mark.parametrize('ethereum_accounts', [[TEST_ADDRESS]])
 def test_get_onchain_historical_balance(
-        rotkehlchen_api_server: 'APIServer',
+        rotkehlchen_api_server: APIServer,
         ethereum_accounts: list[str],
 ) -> None:
     address = ethereum_accounts[0]

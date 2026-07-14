@@ -24,7 +24,6 @@ from rotkehlchen.assets.utils import (
     symbol_to_asset_or_token,
 )
 from rotkehlchen.chain.ethereum.modules.compound.constants import CPT_COMPOUND
-from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
 from rotkehlchen.chain.evm.decoding.curve.constants import CPT_CURVE
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants import ONE
@@ -76,6 +75,7 @@ from rotkehlchen.types import (
 from rotkehlchen.utils.misc import ts_now
 
 if TYPE_CHECKING:
+    from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
     from rotkehlchen.db.dbhandler import DBHandler
 
 
@@ -1016,7 +1016,7 @@ def test_edit_token_with_missing_information(database):
 
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
-def test_packaged_db_check_for_constant_assets(globaldb: 'GlobalDBHandler'):
+def test_packaged_db_check_for_constant_assets(globaldb: GlobalDBHandler):
     """Check that UnknownAsset & WrongAssetType is not raised for an asset in CONSTANT_ASSETS"""
     # delete one entry in `CONSTANT_ASSETS`
     with globaldb.conn.write_ctx() as cursor:
@@ -1096,7 +1096,7 @@ def test_get_assets_missing_information_by_symbol(globaldb):
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
-def test_for_spam_tokens(database: 'DBHandler', ethereum_inquirer: EthereumInquirer) -> None:
+def test_for_spam_tokens(database: DBHandler, ethereum_inquirer: EthereumInquirer) -> None:
     """Test different cases of spam assets that we already know"""
     assert check_if_spam_token(symbol='USDC', name='USD-SWAP˳COM') is True  # test for unicode symbols that might resemble dots  # noqa: E501
     # $ aavereward.com

@@ -24,9 +24,9 @@ MAX_ADDRESSES_IN_REVERSE_GNS_QUERY = 80
 
 
 def gns_reverse_lookup(
-        inquirer: 'EthereumInquirer',
-        addresses: list['ChecksumEvmAddress'],
-) -> dict['ChecksumEvmAddress', str | None]:
+        inquirer: EthereumInquirer,
+        addresses: list[ChecksumEvmAddress],
+) -> dict[ChecksumEvmAddress, str | None]:
     """Performs a reverse gwei name lookup on a list of addresses via multicall.
 
     reverseResolve returns the primary name of an address and performs the
@@ -60,7 +60,7 @@ def gns_reverse_lookup(
     return names
 
 
-def gns_resolve(inquirer: 'EthereumInquirer', name: str) -> 'ChecksumEvmAddress | None':
+def gns_resolve(inquirer: EthereumInquirer, name: str) -> ChecksumEvmAddress | None:
     """Resolve a gwei name to an address using the ENS-compatible addr(bytes32) method.
 
     The token id of a name equals the uint256 of its EIP-137 namehash, so the node

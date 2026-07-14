@@ -1,10 +1,8 @@
 from collections import defaultdict
-from collections.abc import Iterator
 from typing import TYPE_CHECKING, cast
 
 from rotkehlchen.accounting.mixins.event import AccountingEventType
 from rotkehlchen.chain.evm.accounting.interfaces import ModuleAccountantInterface
-from rotkehlchen.chain.evm.accounting.structures import EventsAccountantCallback
 from rotkehlchen.chain.evm.decoding.thegraph.constants import CPT_THEGRAPH
 from rotkehlchen.constants import ZERO
 from rotkehlchen.fval import FVal
@@ -12,7 +10,10 @@ from rotkehlchen.history.events.structures.base import get_event_type_identifier
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 
 if TYPE_CHECKING:
+    from collections.abc import Iterator
+
     from rotkehlchen.accounting.pot import AccountingPot
+    from rotkehlchen.chain.evm.accounting.structures import EventsAccountantCallback
     from rotkehlchen.history.events.structures.evm_event import EvmEvent
     from rotkehlchen.types import ChecksumEvmAddress
 
@@ -23,18 +24,18 @@ class ThegraphAccountant(ModuleAccountantInterface):
 
     def _process_deposit(
             self,
-            pot: 'AccountingPot',  # pylint: disable=unused-argument
-            event: 'EvmEvent',
-            other_events: Iterator['EvmEvent'],  # pylint: disable=unused-argument
+            pot: AccountingPot,  # pylint: disable=unused-argument
+            event: EvmEvent,
+            other_events: Iterator[EvmEvent],  # pylint: disable=unused-argument
     ) -> int:
         self.assets_supplied[event.location_label] += event.amount  # type: ignore[index]
         return 1
 
     def _process_withdraw(
             self,
-            pot: 'AccountingPot',
-            event: 'EvmEvent',
-            other_events: Iterator['EvmEvent'],  # pylint: disable=unused-argument
+            pot: AccountingPot,
+            event: EvmEvent,
+            other_events: Iterator[EvmEvent],  # pylint: disable=unused-argument
     ) -> int:
         address = cast('ChecksumEvmAddress', event.location_label)
         self.assets_supplied[address] -= event.amount

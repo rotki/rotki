@@ -1,8 +1,12 @@
 """Test for data migration 21 - address_book NONE -> ecosystem key"""
+from typing import TYPE_CHECKING
+
 import pytest
 
-from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.tests.utils.data_migrations import run_single_migration
+
+if TYPE_CHECKING:
+    from rotkehlchen.db.dbhandler import DBHandler
 
 
 @pytest.mark.parametrize('data_migration_version', [20])

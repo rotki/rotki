@@ -45,9 +45,9 @@ class FarcasterDecoder(EvmDecoderInterface):
         context.action_items.append(action_item)
         return DEFAULT_EVM_DECODING_OUTPUT
 
-    def addresses_to_decoders(self) -> dict['ChecksumEvmAddress', tuple[Any, ...]]:
+    def addresses_to_decoders(self) -> dict[ChecksumEvmAddress, tuple[Any, ...]]:
         return {FARCASTER_PRO: (self._decode_purchase_log,)}
 
     @staticmethod
-    def counterparties() -> tuple['CounterpartyDetails', ...]:
+    def counterparties() -> tuple[CounterpartyDetails, ...]:
         return (FARCASTER_CPT_DETAILS,)

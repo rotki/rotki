@@ -35,7 +35,7 @@ if TYPE_CHECKING:
 SESSION_KEY = b'a-test-session-signing-key'
 
 
-def _enable_session(api_server: 'APIServer') -> SessionStore:
+def _enable_session(api_server: APIServer) -> SessionStore:
     """Turn the cookie gate on live: set the key and build a real SessionStore (the
     server started without the env key, so its store is None). Mirrors production wiring
     at rest_api.__init__ but at test time. Returns the store for introspection."""
@@ -49,7 +49,7 @@ def _enable_session(api_server: 'APIServer') -> SessionStore:
     return store
 
 
-def _disable_session(api_server: 'APIServer') -> None:
+def _disable_session(api_server: APIServer) -> None:
     """Turn the gate back off and close the store (test cleanup)."""
     rest_api = api_server.rest_api
     if rest_api.session_store is not None:
@@ -65,7 +65,7 @@ def _cookie_sid(token: str) -> str:
     return claims.sid
 
 
-def _logout(api_server: 'APIServer', username: str) -> None:
+def _logout(api_server: APIServer, username: str) -> None:
     requests.patch(
         api_url_for(api_server, 'usersbynameresource', name=username),
         json={'action': 'logout'},
@@ -92,7 +92,7 @@ def test_verify_session_token_roundtrip_and_failures() -> None:
 
 @pytest.mark.parametrize('start_with_logged_in_user', [True])
 def test_authenticate_sets_cookie_for_correct_password(
-        rotkehlchen_api_server: 'APIServer',
+        rotkehlchen_api_server: APIServer,
         username: str,
 ) -> None:
     """authenticate validates the password and ships a signed HttpOnly cookie; the
@@ -125,7 +125,7 @@ def test_authenticate_sets_cookie_for_correct_password(
 
 @pytest.mark.parametrize('start_with_logged_in_user', [True])
 def test_authenticate_is_inert_without_a_key(
-        rotkehlchen_api_server: 'APIServer',
+        rotkehlchen_api_server: APIServer,
         username: str,
 ) -> None:
     """No session key ⇒ the feature is off: authenticate returns success without
@@ -144,7 +144,7 @@ def test_authenticate_is_inert_without_a_key(
 # --- the gate: deny-by-default + cookie-less allowlist ----------------------
 
 @pytest.mark.parametrize('start_with_logged_in_user', [True])
-def test_cookie_gate(rotkehlchen_api_server: 'APIServer', username: str) -> None:
+def test_cookie_gate(rotkehlchen_api_server: APIServer, username: str) -> None:
     """A gated route needs the cookie; the cookie-less allowlist does not; a valid
     cookie lets a gated route through; logout drops the cookie and the active sid."""
     store = _enable_session(rotkehlchen_api_server)
@@ -184,7 +184,7 @@ def test_cookie_gate(rotkehlchen_api_server: 'APIServer', username: str) -> None
 
 @pytest.mark.parametrize('start_with_logged_in_user', [True])
 def test_cookie_less_patch_user_is_gated(
-        rotkehlchen_api_server: 'APIServer',
+        rotkehlchen_api_server: APIServer,
         username: str,
 ) -> None:
     """`PATCH /users/<name>` shares its rule with POST (login), but PATCH changes
@@ -214,7 +214,7 @@ def test_cookie_less_patch_user_is_gated(
 
 
 @pytest.mark.parametrize('start_with_logged_in_user', [True])
-def test_rolling_refresh(rotkehlchen_api_server: 'APIServer', username: str) -> None:
+def test_rolling_refresh(rotkehlchen_api_server: APIServer, username: str) -> None:
     """An authenticated request re-issues the cookie only once it is past half its
     lifetime — a fresh cookie is left untouched (no Set-Cookie on every response)."""
     store = _enable_session(rotkehlchen_api_server)
@@ -252,7 +252,7 @@ def test_rolling_refresh(rotkehlchen_api_server: 'APIServer', username: str) -> 
 
 @pytest.mark.parametrize('start_with_logged_in_user', [True])
 def test_new_session_rotates_sid_and_kicks_the_old_window(
-        rotkehlchen_api_server: 'APIServer',
+        rotkehlchen_api_server: APIServer,
         username: str,
 ) -> None:
     """A new-location login (same user, no cookie) rotates the active sid: the
@@ -287,7 +287,7 @@ def test_new_session_rotates_sid_and_kicks_the_old_window(
 
 @pytest.mark.parametrize('start_with_logged_in_user', [True])
 def test_reload_with_cookie_keeps_sid_and_pending_tasks(
-        rotkehlchen_api_server: 'APIServer',
+        rotkehlchen_api_server: APIServer,
         username: str,
 ) -> None:
     """A same-browser reload carries the cookie (sid == active): authenticate
@@ -318,7 +318,7 @@ def test_reload_with_cookie_keeps_sid_and_pending_tasks(
 
 @pytest.mark.parametrize('start_with_logged_in_user', [True])
 def test_authenticate_different_user_conflicts(
-        rotkehlchen_api_server: 'APIServer',
+        rotkehlchen_api_server: APIServer,
         username: str,
 ) -> None:
     """While a user is logged in, authenticating as a *different* user is a 409
@@ -337,7 +337,7 @@ def test_authenticate_different_user_conflicts(
 
 @pytest.mark.parametrize('start_with_logged_in_user', [True])
 def test_failed_create_while_logged_in_keeps_the_live_session(
-        rotkehlchen_api_server: 'APIServer',
+        rotkehlchen_api_server: APIServer,
         username: str,
 ) -> None:
     """Creating an account while a user is logged in 409s — and must not touch the
@@ -368,7 +368,7 @@ def test_failed_create_while_logged_in_keeps_the_live_session(
 
 @pytest.mark.parametrize('start_with_logged_in_user', [False])
 def test_failed_create_revokes_the_minted_session(
-        rotkehlchen_api_server: 'APIServer',
+        rotkehlchen_api_server: APIServer,
 ) -> None:
     """With no user logged in a create mints the session up front (so its gated
     `/tasks` poll carries the cookie), but if the create then fails the session is
@@ -387,7 +387,7 @@ def test_failed_create_revokes_the_minted_session(
         _disable_session(rotkehlchen_api_server)
 
 
-def test_cookie_less_rules_all_exist(rotkehlchen_api_server: 'APIServer') -> None:
+def test_cookie_less_rules_all_exist(rotkehlchen_api_server: APIServer) -> None:
     """Anti-drift: every (rule, method) in the cookie-less allowlist is a real
     registered route/verb. A typo/rename would make an allowlist entry dead —
     silently gating an endpoint the login screen needs — so pin it to the url map."""
@@ -400,7 +400,7 @@ def test_cookie_less_rules_all_exist(rotkehlchen_api_server: 'APIServer') -> Non
     assert missing == set(), f'cookie-less allowlist references unknown routes: {missing}'
 
 
-def test_cookie_less_rules_pinned(rotkehlchen_api_server: 'APIServer') -> None:
+def test_cookie_less_rules_pinned(rotkehlchen_api_server: APIServer) -> None:
     """Anti-drift: pin the *exact* set of pre-auth-reachable (rule, method) pairs.
     Everything else is deny-by-default once a session key is set, so adding/removing
     an entry widens or narrows what the unauthenticated network can reach — a

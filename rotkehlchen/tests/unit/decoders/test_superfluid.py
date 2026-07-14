@@ -52,7 +52,7 @@ def _setup_super_token_cache(
 
 
 @pytest.fixture(name='usdcx_super_token')
-def _fixture_usdcx_super_token() -> tuple['ChecksumEvmAddress', 'ChecksumEvmAddress']:
+def _fixture_usdcx_super_token() -> tuple[ChecksumEvmAddress, ChecksumEvmAddress]:
     _setup_super_token_cache(
         chain_id=ChainID.ARBITRUM_ONE,
         super_token=(super_token_address := string_to_evm_address('0xFc55F2854e74b4f42D01a6d3DAAC4c52D9dfdcFf')),  # noqa: E501
@@ -64,9 +64,9 @@ def _fixture_usdcx_super_token() -> tuple['ChecksumEvmAddress', 'ChecksumEvmAddr
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('arbitrum_one_accounts', [['0x56a1A34F0d33788ebA53e2706854A37A5F275536']])
 def test_token_upgrade(
-        arbitrum_one_inquirer: 'ArbitrumOneInquirer',
-        arbitrum_one_accounts: list['ChecksumEvmAddress'],
-        usdcx_super_token: tuple['ChecksumEvmAddress', 'ChecksumEvmAddress'],
+        arbitrum_one_inquirer: ArbitrumOneInquirer,
+        arbitrum_one_accounts: list[ChecksumEvmAddress],
+        usdcx_super_token: tuple[ChecksumEvmAddress, ChecksumEvmAddress],
 ) -> None:
     super_token_address, underlying_token_address = usdcx_super_token
     tx_hash = deserialize_evm_tx_hash('0x33f13f009fa63df4689bf9011df3174e268cd3b8c15e785bc4693f63dec44bbd')  # noqa: E501
@@ -119,8 +119,8 @@ def test_token_upgrade(
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0x9dB850A236A4AF48eFc4B549e07FFBAc8D5d6388']])
 def test_native_upgrade(
-        ethereum_inquirer: 'EthereumInquirer',
-        ethereum_accounts: list['ChecksumEvmAddress'],
+        ethereum_inquirer: EthereumInquirer,
+        ethereum_accounts: list[ChecksumEvmAddress],
 ) -> None:
     _setup_super_token_cache(
         chain_id=ethereum_inquirer.chain_id,
@@ -173,8 +173,8 @@ def test_native_upgrade(
 @pytest.mark.parametrize('optimism_manager_connect_at_start', [(OPTIMISM_MAINNET_NODE,)])
 @pytest.mark.parametrize('optimism_accounts', [['0x0BeBD2FcA9854F657329324aA7dc90F656395189']])
 def test_token_downgrade(
-        optimism_inquirer: 'OptimismInquirer',
-        optimism_accounts: list['ChecksumEvmAddress'],
+        optimism_inquirer: OptimismInquirer,
+        optimism_accounts: list[ChecksumEvmAddress],
 ) -> None:
     _setup_super_token_cache(
         chain_id=optimism_inquirer.chain_id,
@@ -228,8 +228,8 @@ def test_token_downgrade(
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('gnosis_accounts', [['0xC224cd7Ab43c5150Dfc60B153a433a43600107F2']])
 def test_wrapped_native_downgrade(
-        gnosis_inquirer: 'GnosisInquirer',
-        gnosis_accounts: list['ChecksumEvmAddress'],
+        gnosis_inquirer: GnosisInquirer,
+        gnosis_accounts: list[ChecksumEvmAddress],
 ) -> None:
     _setup_super_token_cache(
         chain_id=gnosis_inquirer.chain_id,
@@ -281,9 +281,9 @@ def test_wrapped_native_downgrade(
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('arbitrum_one_accounts', [['0x56a1A34F0d33788ebA53e2706854A37A5F275536']])
 def test_start_stream(
-        arbitrum_one_inquirer: 'OptimismInquirer',
-        arbitrum_one_accounts: list['ChecksumEvmAddress'],
-        usdcx_super_token: tuple['ChecksumEvmAddress', 'ChecksumEvmAddress'],
+        arbitrum_one_inquirer: OptimismInquirer,
+        arbitrum_one_accounts: list[ChecksumEvmAddress],
+        usdcx_super_token: tuple[ChecksumEvmAddress, ChecksumEvmAddress],
 ) -> None:
     super_token_address, _ = usdcx_super_token
     tx_hash = deserialize_evm_tx_hash('0xb0a06c89d0352da273d504270d045fb87892818ce40890d221bbdb042efc9419')  # noqa: E501
@@ -318,9 +318,9 @@ def test_start_stream(
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('arbitrum_one_accounts', [['0x56a1A34F0d33788ebA53e2706854A37A5F275536']])
 def test_stop_stream(
-        arbitrum_one_inquirer: 'OptimismInquirer',
-        arbitrum_one_accounts: list['ChecksumEvmAddress'],
-        usdcx_super_token: tuple['ChecksumEvmAddress', 'ChecksumEvmAddress'],
+        arbitrum_one_inquirer: OptimismInquirer,
+        arbitrum_one_accounts: list[ChecksumEvmAddress],
+        usdcx_super_token: tuple[ChecksumEvmAddress, ChecksumEvmAddress],
 ) -> None:
     super_token_address, _ = usdcx_super_token
     tx_hash = deserialize_evm_tx_hash('0x749e683d1761ddfcd2cce863650a9e8a1a9ca93cf4a3d4ba111318520a4c723b')  # noqa: E501

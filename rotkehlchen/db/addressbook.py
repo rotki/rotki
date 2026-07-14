@@ -1,5 +1,4 @@
 import logging
-from collections.abc import Generator
 from contextlib import contextmanager
 from typing import TYPE_CHECKING
 
@@ -16,6 +15,8 @@ from rotkehlchen.types import (
 )
 
 if TYPE_CHECKING:
+    from collections.abc import Generator
+
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.db.drivers.sqlite import DBCursor
     from rotkehlchen.db.filtering import AddressbookFilterQuery
@@ -27,11 +28,11 @@ log = RotkehlchenLogsAdapter(logger)
 
 class DBAddressbook:
 
-    def __init__(self, db_handler: 'DBHandler') -> None:
+    def __init__(self, db_handler: DBHandler) -> None:
         self.db = db_handler
 
     @contextmanager
-    def read_ctx(self, book_type: AddressbookType) -> Generator['DBCursor', None, None]:
+    def read_ctx(self, book_type: AddressbookType) -> Generator[DBCursor]:
         if book_type == AddressbookType.GLOBAL:
             with GlobalDBHandler().conn.read_ctx() as cursor:
                 yield cursor
@@ -41,7 +42,7 @@ class DBAddressbook:
             yield cursor
 
     @contextmanager
-    def write_ctx(self, book_type: AddressbookType) -> Generator['DBCursor', None, None]:
+    def write_ctx(self, book_type: AddressbookType) -> Generator[DBCursor]:
         if book_type == AddressbookType.GLOBAL:
             with GlobalDBHandler().conn.write_ctx() as cursor:
                 yield cursor
@@ -52,8 +53,8 @@ class DBAddressbook:
 
     def get_addressbook_entries(
             self,
-            cursor: 'DBCursor',
-            filter_query: 'AddressbookFilterQuery',
+            cursor: DBCursor,
+            filter_query: AddressbookFilterQuery,
     ) -> tuple[list[AddressbookEntry], int]:
         """
         Returns paginated addressbook entries for the given pairs (address, blockchain).
@@ -77,7 +78,7 @@ class DBAddressbook:
 
     def add_or_update_addressbook_entries(
             self,
-            write_cursor: 'DBCursor',
+            write_cursor: DBCursor,
             entries: list[AddressbookEntry],
             update_existing: bool = True,
     ) -> None:

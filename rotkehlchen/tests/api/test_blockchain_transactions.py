@@ -19,7 +19,7 @@ if TYPE_CHECKING:
 
 
 @pytest.mark.parametrize('ethereum_accounts', [[]])
-def test_query_transactions_errors(rotkehlchen_api_server: 'APIServer') -> None:
+def test_query_transactions_errors(rotkehlchen_api_server: APIServer) -> None:
     """Check various validation errors when querying blockchain transactions."""
     for json_data, error_msg in (
         (  # Untracked/malformed address with no chain specified
@@ -59,7 +59,7 @@ def test_query_transactions_errors(rotkehlchen_api_server: 'APIServer') -> None:
 @pytest.mark.parametrize('start_with_valid_premium', [True])
 @pytest.mark.parametrize('ethereum_accounts', [['0xc37b40ABdB939635068d3c5f13E7faF686F03B65']])
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
-def test_decode_given_transactions_custom_indexer(rotkehlchen_api_server: 'APIServer') -> None:
+def test_decode_given_transactions_custom_indexer(rotkehlchen_api_server: APIServer) -> None:
     """Ensure a custom indexer is used first when redecode endpoint is called with one.
     In this test we check that the validation passes correctly the order and they are reset after
     executing the logic.

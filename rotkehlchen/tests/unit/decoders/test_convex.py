@@ -38,7 +38,7 @@ if TYPE_CHECKING:
 def test_booster_deposit(
         ethereum_accounts,
         database,
-        ethereum_inquirer: 'EthereumInquirer',
+        ethereum_inquirer: EthereumInquirer,
 ) -> None:
 
     user_address = ethereum_accounts[0]

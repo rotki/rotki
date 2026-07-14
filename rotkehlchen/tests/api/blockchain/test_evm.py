@@ -1,6 +1,5 @@
 import operator
 import time
-from collections.abc import Callable
 from contextlib import ExitStack
 from http import HTTPStatus
 from typing import TYPE_CHECKING, Any, Literal
@@ -52,6 +51,8 @@ from rotkehlchen.types import (
 from rotkehlchen.utils.misc import ts_now
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+
     from rotkehlchen.api.server import APIServer
     from rotkehlchen.db.drivers.sqlite import DBCursor
     from rotkehlchen.tests.fixtures.websockets import WebsocketReader
@@ -60,7 +61,7 @@ ADDY = string_to_evm_address('0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045')
 
 
 @pytest.mark.parametrize('number_of_eth_accounts', [0])
-def test_add_same_evm_account_for_multiple_chains(rotkehlchen_api_server: 'APIServer') -> None:
+def test_add_same_evm_account_for_multiple_chains(rotkehlchen_api_server: APIServer) -> None:
     """Test adding an Avalanche blockchain account when the same account is input
     in Ethereum works fine
     """
@@ -120,7 +121,7 @@ def test_add_same_evm_account_for_multiple_chains(rotkehlchen_api_server: 'APISe
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('have_decoders', [True])
 @pytest.mark.parametrize('ethereum_accounts', [['0x9531C059098e3d194fF87FebB587aB07B30B1306']])
-def test_deleting_ens_account_works(rotkehlchen_api_server: 'APIServer') -> None:
+def test_deleting_ens_account_works(rotkehlchen_api_server: APIServer) -> None:
     """Test that deleting an ENS eth account can be handled properly
 
     This test mocks all etherscan queries apart from the ENS ones
@@ -149,7 +150,7 @@ def test_deleting_ens_account_works(rotkehlchen_api_server: 'APIServer') -> None
 
 
 @pytest.mark.parametrize('number_of_eth_accounts', [0])
-def test_adding_non_checksummed_eth_account_works(rotkehlchen_api_server: 'APIServer') -> None:
+def test_adding_non_checksummed_eth_account_works(rotkehlchen_api_server: APIServer) -> None:
     """Test that adding a non checksummed eth account can be handled properly"""
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     account = '0x7bd904a3db59fa3879bd4c246303e6ef3ac3a4c6'
@@ -175,7 +176,7 @@ def test_adding_non_checksummed_eth_account_works(rotkehlchen_api_server: 'APISe
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('number_of_eth_accounts', [0])
-def test_adding_editing_ens_account_works(rotkehlchen_api_server: 'APIServer') -> None:
+def test_adding_editing_ens_account_works(rotkehlchen_api_server: APIServer) -> None:
     """Test that adding an ENS eth account can be handled properly"""
     resolved_account = '0x9531C059098e3d194fF87FebB587aB07B30B1306'
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
@@ -233,7 +234,7 @@ def test_adding_editing_ens_account_works(rotkehlchen_api_server: 'APIServer') -
 
 @pytest.mark.parametrize('number_of_eth_accounts', [0])
 @pytest.mark.parametrize('gnosis_accounts', [['0x7277F7849966426d345D8F6B9AFD1d3d89183083']])
-def test_add_multievm_accounts(rotkehlchen_api_server: 'APIServer') -> None:
+def test_add_multievm_accounts(rotkehlchen_api_server: APIServer) -> None:
     """Test that adding accounts to multiple evm chains works fine
 
     TODO: Needs mocking with the data at the time of test writing
@@ -265,7 +266,7 @@ def test_add_multievm_accounts(rotkehlchen_api_server: 'APIServer') -> None:
     original_modify_blockchain_accounts = rotki.chains_aggregator.modify_blockchain_accounts
 
     def new_modify_blockchain_accounts(
-            write_cursor: 'DBCursor',
+            write_cursor: DBCursor,
             blockchain: SupportedBlockchain,
             accounts: ListOfBlockchainAddresses,
             append_or_remove: Literal['append', 'remove'],
@@ -399,9 +400,9 @@ def test_add_multievm_accounts(rotkehlchen_api_server: 'APIServer') -> None:
 @pytest.mark.parametrize('ethereum_accounts', [['0xc37b40ABdB939635068d3c5f13E7faF686F03B65']])
 @pytest.mark.parametrize('legacy_messages_via_websockets', [True])
 def test_detect_evm_accounts(
-        rotkehlchen_api_server: 'APIServer',
+        rotkehlchen_api_server: APIServer,
         ethereum_accounts: list[ChecksumEvmAddress],
-        websocket_connection: 'WebsocketReader',
+        websocket_connection: WebsocketReader,
 ) -> None:
     """
     Test that the endpoint to detect new evm addresses works properly
@@ -476,8 +477,8 @@ def test_detect_evm_accounts(
 @pytest.mark.parametrize('have_decoders', [True])
 @pytest.mark.parametrize('ethereum_accounts', [[make_evm_address() for _ in range(3)]])
 def test_evm_account_deletion_does_not_wait_for_pending_txn_queries(
-        rotkehlchen_api_server: 'APIServer',
-        ethereum_accounts: list['ChecksumEvmAddress'],
+        rotkehlchen_api_server: APIServer,
+        ethereum_accounts: list[ChecksumEvmAddress],
 ) -> None:
     """
     Test that if transactions for an address are being queried and removal is
@@ -560,7 +561,7 @@ def test_evm_account_deletion_does_not_wait_for_pending_txn_queries(
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('number_of_eth_accounts', [0])
-def test_evm_address_async(rotkehlchen_api_server: 'APIServer') -> None:
+def test_evm_address_async(rotkehlchen_api_server: APIServer) -> None:
     """Test that doing async validation for the evm addresses endpoints works"""
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     common_account = string_to_evm_address('0x9531C059098e3d194fF87FebB587aB07B30B1306')
@@ -627,7 +628,7 @@ def test_evm_address_async(rotkehlchen_api_server: 'APIServer') -> None:
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('have_decoders', [True])
 @pytest.mark.parametrize('number_of_eth_accounts', [0])
-def test_argent_names(rotkehlchen_api_server: 'APIServer') -> None:
+def test_argent_names(rotkehlchen_api_server: APIServer) -> None:
     name, address = 'mysticryuujin.argent.xyz', '0xeA6457DeA80349063cA9eBEfa450E8C4637e33A2'
     response = requests.put(api_url_for(
         rotkehlchen_api_server,
@@ -652,7 +653,7 @@ def test_argent_names(rotkehlchen_api_server: 'APIServer') -> None:
 @pytest.mark.parametrize('optimism_manager_connect_at_start', [(OPTIMISM_MAINNET_NODE,)])
 @pytest.mark.parametrize('binance_sc_manager_connect_at_start', BSC_NODES_TO_CONNECT)
 @pytest.mark.parametrize('base_manager_connect_at_start', [(BASE_MAINNET_NODE,)])
-def test_adding_safe(rotkehlchen_api_server: 'APIServer', allow_base_routescan: None) -> None:
+def test_adding_safe(rotkehlchen_api_server: APIServer, allow_base_routescan: None) -> None:
     """Test adding a safe proxy. The address is deployed on arb and base only"""
     safe_address = string_to_evm_address('0x9d25AdBcffE28923E619f4Af88ECDe732c985b63')
     request_data = {'accounts': [{'address': safe_address}]}
@@ -692,7 +693,7 @@ def test_adding_safe(rotkehlchen_api_server: 'APIServer', allow_base_routescan: 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('number_of_eth_accounts', [0])
-def test_evm_account_addition_preserves_labels_across_chains(rotkehlchen_api_server: 'APIServer') -> None:  # noqa: E501
+def test_evm_account_addition_preserves_labels_across_chains(rotkehlchen_api_server: APIServer) -> None:  # noqa: E501
     initial_accounts_data, addies_to_start_with = [], [(SupportedBlockchain.ETHEREUM, addy := string_to_evm_address('0x9531C059098e3d194fF87FebB587aB07B30B1306'), (label := 'rotki ens'))]  # noqa: E501
     blockchain = rotkehlchen_api_server.rest_api.rotkehlchen.chains_aggregator
     for chain, addy, label in addies_to_start_with:
@@ -752,7 +753,7 @@ def test_evm_account_addition_preserves_labels_across_chains(rotkehlchen_api_ser
 
 
 @pytest.mark.parametrize('have_decoders', [True])
-def test_decoding_only_uses_hashes_from_queried_chain(rotkehlchen_api_server: 'APIServer') -> None:
+def test_decoding_only_uses_hashes_from_queried_chain(rotkehlchen_api_server: APIServer) -> None:
     """Check that when decoding txs it only tries to decode txs from the queried chain.
     Regression test for a bug where the non-decoded txs query was getting txs for all chains.
     """

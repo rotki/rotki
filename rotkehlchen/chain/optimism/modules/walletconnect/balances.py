@@ -25,8 +25,8 @@ log = RotkehlchenLogsAdapter(logger)
 class WalletconnectBalances(ProtocolWithBalance):
     def __init__(
             self,
-            evm_inquirer: 'OptimismInquirer',
-            tx_decoder: 'OptimismTransactionDecoder',
+            evm_inquirer: OptimismInquirer,
+            tx_decoder: OptimismTransactionDecoder,
     ):
         super().__init__(
             evm_inquirer=evm_inquirer,
@@ -38,7 +38,7 @@ class WalletconnectBalances(ProtocolWithBalance):
             },
         )
 
-    def query_balances(self) -> 'BalancesSheetType':
+    def query_balances(self) -> BalancesSheetType:
         """Query balances of staked WalletConnect"""
         balances: BalancesSheetType = defaultdict(BalanceSheet)
         wct_token = Asset(WCT_TOKEN_ID)

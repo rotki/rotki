@@ -3,7 +3,6 @@ import json
 import logging
 import operator
 from abc import ABC
-from collections.abc import Iterator
 from contextlib import suppress
 from enum import Enum, auto
 from http import HTTPStatus
@@ -12,10 +11,8 @@ from typing import TYPE_CHECKING, Any, Final, Literal, overload
 
 import requests
 from requests import Response
-from web3.types import BlockIdentifier
 
 from rotkehlchen.chain.evm.constants import GENESIS_HASH, ZERO_ADDRESS
-from rotkehlchen.chain.evm.l2_with_l1_fees.types import L2ChainIdsWithL1FeesType
 from rotkehlchen.chain.structures import TimestampOrBlockRange
 from rotkehlchen.concurrency import cancellable_sleep
 from rotkehlchen.db.constants import TX_DECODED
@@ -47,12 +44,17 @@ from rotkehlchen.types import (
 )
 from rotkehlchen.utils.misc import convert_to_int, hexstr_to_int, set_user_agent
 from rotkehlchen.utils.network import create_session
-from rotkehlchen.utils.rate_limiter import TokenBucket
 from rotkehlchen.utils.serialization import jsonloads_dict
 
 if TYPE_CHECKING:
+    from collections.abc import Iterator
+
+    from web3.types import BlockIdentifier
+
+    from rotkehlchen.chain.evm.l2_with_l1_fees.types import L2ChainIdsWithL1FeesType
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.user_messages import MessagesAggregator
+    from rotkehlchen.utils.rate_limiter import TokenBucket
 
 TRANSACTIONS_BATCH_NUM: Final = 10
 
@@ -91,8 +93,8 @@ class EtherscanLikeApi(ABC):
 
     def __init__(
             self,
-            database: 'DBHandler',
-            msg_aggregator: 'MessagesAggregator',
+            database: DBHandler,
+            msg_aggregator: MessagesAggregator,
             name: Literal['Etherscan', 'Blockscout', 'Routescan'],
             pagination_limit: int,
             default_api_key: ApiKey,

@@ -5,7 +5,6 @@ from threading import Semaphore
 from typing import TYPE_CHECKING, Any, NamedTuple
 
 from rotkehlchen.accounting.structures.balance import Balance, BalanceSheet
-from rotkehlchen.assets.asset import CryptoAsset
 from rotkehlchen.chain.ethereum.constants import RAY
 from rotkehlchen.chain.evm.proxies_inquirer import ProxyType
 from rotkehlchen.chain.evm.types import string_to_evm_address
@@ -17,9 +16,7 @@ from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.fval import FVal
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.premium.premium import Premium
 from rotkehlchen.serialization.deserialize import deserialize_evm_address
-from rotkehlchen.types import ChecksumEvmAddress, EVMTxHash, Timestamp
 from rotkehlchen.utils.interfaces import EthereumModule
 from rotkehlchen.utils.misc import (
     ts_now,
@@ -29,9 +26,11 @@ from .cache import collateral_type_to_underlying_asset
 from .constants import CPT_VAULT, MAKERDAO_REQUERY_PERIOD, WAD
 
 if TYPE_CHECKING:
-    from rotkehlchen.assets.asset import Asset
+    from rotkehlchen.assets.asset import Asset, CryptoAsset
     from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
     from rotkehlchen.db.dbhandler import DBHandler
+    from rotkehlchen.premium.premium import Premium
+    from rotkehlchen.types import ChecksumEvmAddress, EVMTxHash, Timestamp
     from rotkehlchen.user_messages import MessagesAggregator
 
 logger = logging.getLogger(__name__)
@@ -133,10 +132,10 @@ class MakerdaoVaults(EthereumModule):
 
     def __init__(
             self,
-            ethereum_inquirer: 'EthereumInquirer',
-            database: 'DBHandler',
+            ethereum_inquirer: EthereumInquirer,
+            database: DBHandler,
             premium: Premium | None,
-            msg_aggregator: 'MessagesAggregator',
+            msg_aggregator: MessagesAggregator,
     ) -> None:
         self.ethereum = ethereum_inquirer
         self.msg_aggregator = msg_aggregator

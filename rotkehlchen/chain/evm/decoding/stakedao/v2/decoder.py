@@ -1,5 +1,4 @@
 import logging
-from collections.abc import Mapping
 from typing import TYPE_CHECKING, Any
 
 from eth_abi import decode as decode_abi
@@ -42,6 +41,8 @@ from rotkehlchen.types import CacheType, ChainID, ChecksumEvmAddress
 from rotkehlchen.utils.misc import bytes_to_address
 
 if TYPE_CHECKING:
+    from collections.abc import Mapping
+
     from rotkehlchen.chain.evm.decoding.base import BaseEvmDecoderTools
     from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
     from rotkehlchen.user_messages import MessagesAggregator
@@ -55,9 +56,9 @@ class Stakedaov2CommonDecoder(EvmDecoderInterface, ReloadableDecoderMixin):
 
     def __init__(
             self,
-            evm_inquirer: 'EvmNodeInquirer',
-            base_tools: 'BaseEvmDecoderTools',
-            msg_aggregator: 'MessagesAggregator',
+            evm_inquirer: EvmNodeInquirer,
+            base_tools: BaseEvmDecoderTools,
+            msg_aggregator: MessagesAggregator,
             accountant_address: ChecksumEvmAddress | None,
             reward_token_address: ChecksumEvmAddress | None,
     ):
@@ -66,7 +67,7 @@ class Stakedaov2CommonDecoder(EvmDecoderInterface, ReloadableDecoderMixin):
         self.accountant_address = accountant_address
         self.reward_token_address = reward_token_address
 
-    def reload_data(self) -> Mapping['ChecksumEvmAddress', tuple[Any, ...]] | None:
+    def reload_data(self) -> Mapping[ChecksumEvmAddress, tuple[Any, ...]] | None:
         """Refresh the vaults cache."""
         if should_update_protocol_cache(
             userdb=self.base.database,

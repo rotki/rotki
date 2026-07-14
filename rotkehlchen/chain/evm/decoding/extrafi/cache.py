@@ -40,9 +40,9 @@ def get_existing_reward_pools(chain_id: ChainID) -> tuple[set[ChecksumEvmAddress
 
 
 def query_extrafi_data(
-        inquirer: 'EvmNodeInquirer',
+        inquirer: EvmNodeInquirer,
         cache_type: Literal[CacheType.EXTRAFI_NEXT_RESERVE_ID],
-        msg_aggregator: 'MessagesAggregator',
+        msg_aggregator: MessagesAggregator,
         reload_all: bool,
 ) -> list[ChecksumEvmAddress] | None:
     """Query and store information of rewards pools.

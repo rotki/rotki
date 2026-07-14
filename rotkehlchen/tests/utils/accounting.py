@@ -1,18 +1,14 @@
 import csv
 import dataclasses
 import tempfile
-from collections.abc import Sequence
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Optional
+from typing import TYPE_CHECKING, Any
 
 import requests
 
 from rotkehlchen.accounting.export.csv import CSV_INDEX_OFFSET, FILENAME_ALL_CSV
 from rotkehlchen.accounting.mixins.event import AccountingEventMixin, AccountingEventType
 from rotkehlchen.accounting.pnl import PNL, PnlTotals
-from rotkehlchen.accounting.structures.processed_event import ProcessedAccountingEvent
-from rotkehlchen.api.server import APIServer
-from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants import ONE, ZERO
 from rotkehlchen.constants.assets import A_BTC, A_ETH, A_EUR, A_USDC, A_WBTC
 from rotkehlchen.db.filtering import ReportDataFilterQuery
@@ -28,7 +24,12 @@ from rotkehlchen.types import AssetAmount, Location, Price, Timestamp, Timestamp
 from rotkehlchen.utils.version_check import get_current_version
 
 if TYPE_CHECKING:
+    from collections.abc import Sequence
+
     from rotkehlchen.accounting.accountant import Accountant
+    from rotkehlchen.accounting.structures.processed_event import ProcessedAccountingEvent
+    from rotkehlchen.api.server import APIServer
+    from rotkehlchen.assets.asset import Asset
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.rotkehlchen import Rotkehlchen
     from rotkehlchen.tests.fixtures.google import GoogleService
@@ -87,7 +88,7 @@ history1 = [
 
 def _get_pnl_report_after_processing(
         report_id: int,
-        database: 'DBHandler',
+        database: DBHandler,
 ) -> tuple[dict[str, Any], list[ProcessedAccountingEvent]]:
     dbpnl = DBAccountingReports(database)
     report = dbpnl.get_reports(
@@ -102,7 +103,7 @@ def _get_pnl_report_after_processing(
 
 
 def accounting_create_and_process_history(
-        rotki: 'Rotkehlchen',
+        rotki: Rotkehlchen,
         start_ts: Timestamp,
         end_ts: Timestamp,
 ) -> tuple[dict[str, Any], list[ProcessedAccountingEvent]]:
@@ -112,7 +113,7 @@ def accounting_create_and_process_history(
 
 
 def accounting_history_process(
-        accountant: 'Accountant',
+        accountant: Accountant,
         start_ts: Timestamp,
         end_ts: Timestamp,
         history_list: Sequence[AccountingEventMixin],
@@ -126,9 +127,9 @@ def accounting_history_process(
 
 
 def check_pnls_and_csv(
-        accountant: 'Accountant',
+        accountant: Accountant,
         expected_pnls: PnlTotals,
-        google_service: Optional['GoogleService'] = None,
+        google_service: GoogleService | None = None,
 ) -> None:
     pnls = accountant.pots[0].pnls
     assert_pnl_totals_close(expected=expected_pnls, got=pnls)
@@ -164,7 +165,7 @@ def assert_pnl_totals_close(expected: PnlTotals, got: PnlTotals) -> None:
     assert len(iterate_pnl) == len(check_pnl) + reduced_length
 
 
-def _check_boolean_settings(row: dict[str, Any], accountant: 'Accountant'):
+def _check_boolean_settings(row: dict[str, Any], accountant: Accountant):
     """Check boolean settings are exported correctly to the spreadsheet CSV"""
     booleans = ('include_crypto2crypto', 'include_gas_costs', 'calculate_past_cost_basis')
 
@@ -174,7 +175,7 @@ def _check_boolean_settings(row: dict[str, Any], accountant: 'Accountant'):
             break
 
 
-def _check_summaries_row(row: dict[str, Any], accountant: 'Accountant'):
+def _check_summaries_row(row: dict[str, Any], accountant: Accountant):
     if row['free_amount'] == 'rotki version':
         assert row['taxable_amount'] == str(get_current_version().our_version)
     elif row['free_amount'] == 'taxfree_after_period':
@@ -209,7 +210,7 @@ def _check_total(sheet_id: str, offset: int, total_type: str, expected_pnls: Pnl
 
 
 def upload_csv_and_check(
-        service: 'GoogleService',
+        service: GoogleService,
         csv_data: list[dict[str, Any]],
         expected_csv_data: list[dict[str, Any]],
         expected_pnls: PnlTotals,
@@ -258,9 +259,9 @@ def upload_csv_and_check(
 
 
 def assert_csv_export(
-        accountant: 'Accountant',
+        accountant: Accountant,
         expected_pnls: PnlTotals,
-        google_service: Optional['GoogleService'] = None,
+        google_service: GoogleService | None = None,
 ) -> None:
     """Test the contents of the csv export match the actual result
 

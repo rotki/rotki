@@ -61,7 +61,7 @@ LEDGER_ACTION_TYPE_TO_NAME = {
 
 
 @enter_exit_debug_log(name='UserDB v39->v40 upgrade')
-def upgrade_v39_to_v40(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHandler') -> None:
+def upgrade_v39_to_v40(db: DBHandler, progress_handler: DBUpgradeProgressHandler) -> None:
     """Upgrades the DB from v39 to v40. This was in v1.31.0 release.
 
         - Migrate rotki events that were broken due to https://github.com/rotki/rotki/issues/6550
@@ -70,7 +70,7 @@ def upgrade_v39_to_v40(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
         - Replace VELO asset in favor of the binance chain version
     """
     @progress_step(description='Adding new tables.')
-    def _add_new_tables(write_cursor: 'DBCursor') -> None:
+    def _add_new_tables(write_cursor: DBCursor) -> None:
         """
         Add new tables for this upgrade
         """
@@ -112,7 +112,7 @@ def upgrade_v39_to_v40(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
         """)
 
     @progress_step(description='Migrating rotki events.')
-    def _migrate_rotki_events(write_cursor: 'DBCursor') -> None:
+    def _migrate_rotki_events(write_cursor: DBCursor) -> None:
         """
         Migrate rotki events that were broken due to https://github.com/rotki/rotki/issues/6550.
         and events that need to update their types after the consolidation made in 1.31
@@ -135,7 +135,7 @@ def upgrade_v39_to_v40(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
         write_cursor.execute('DELETE from used_query_ranges WHERE name=?', ('last_withdrawals_query_ts',))  # noqa: E501
 
     @progress_step(description='Purging Kraken events.')
-    def _purge_kraken_events(write_cursor: 'DBCursor') -> None:
+    def _purge_kraken_events(write_cursor: DBCursor) -> None:
         """
         Purge kraken events, after the changes that allows for processing of new assets.
         We may have had missed events so now let's repull. And since we will also
@@ -153,7 +153,7 @@ def upgrade_v39_to_v40(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
             write_cursor.execute(f'DELETE FROM {table} WHERE location = ?;', (location,))
 
     @progress_step(description='Adding new supported chains locations.')
-    def _add_new_supported_chains_locations(write_cursor: 'DBCursor') -> None:
+    def _add_new_supported_chains_locations(write_cursor: DBCursor) -> None:
         write_cursor.executemany(
             'INSERT OR IGNORE INTO location(location, seq) '
             'VALUES (?, ?)',
@@ -161,7 +161,7 @@ def upgrade_v39_to_v40(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
         )
 
     @progress_step(description='Upgrading rotki events.')
-    def _upgrade_rotki_events(write_cursor: 'DBCursor') -> None:
+    def _upgrade_rotki_events(write_cursor: DBCursor) -> None:
         """Upgrade the rotki events schema table to specify location as a type"""
         write_cursor.executescript('PRAGMA foreign_keys = OFF;')
         update_table_schema(
@@ -186,7 +186,7 @@ def upgrade_v39_to_v40(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
         write_cursor.executescript('PRAGMA foreign_keys = ON;')
 
     @progress_step(description='Migrating ledger airdop accounting setting.')
-    def _migrate_ledger_airdrop_accounting_setting(write_cursor: 'DBCursor') -> None:
+    def _migrate_ledger_airdrop_accounting_setting(write_cursor: DBCursor) -> None:
         """
         Migrates the accounting setting for airdrops to the new table for accounting
         rules. It requires the existence of the accounting_rules table and the existence of
@@ -222,7 +222,7 @@ def upgrade_v39_to_v40(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
         )
 
     @progress_step(description='Migrating ledger actions.')
-    def _migrate_ledger_actions(write_cursor: 'DBCursor') -> None:
+    def _migrate_ledger_actions(write_cursor: DBCursor) -> None:
         """
         Migrate all ledger actions to history events, so that we can get rid of the
         deprecated ledger action structure.
@@ -329,7 +329,7 @@ def upgrade_v39_to_v40(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
         write_cursor.execute('DELETE FROM action_type WHERE type=?', ('D',))
 
     @progress_step(description='Resetting decoded events.')
-    def _reset_decoded_events(write_cursor: 'DBCursor') -> None:
+    def _reset_decoded_events(write_cursor: DBCursor) -> None:
         """
         Reset all decoded evm events except the customized ones for ethereum mainnet,
         arbitrum, optimism and polygon.
@@ -359,7 +359,7 @@ def upgrade_v39_to_v40(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
         )
 
     @progress_step(description='Replacing velo identifier.')
-    def _replace_velo_identifier(write_cursor: 'DBCursor') -> None:
+    def _replace_velo_identifier(write_cursor: DBCursor) -> None:
         """
         Replace VELO with the binance version of the token. This is done as part of a consolidation
         process where we added VELO V1 and VELO V2 from Velodrome but our database also contained a

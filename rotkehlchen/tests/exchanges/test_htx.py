@@ -1,8 +1,7 @@
 
 import json
 import warnings as test_warnings
-from collections.abc import Callable
-from typing import Any
+from typing import TYPE_CHECKING, Any
 from unittest.mock import patch
 
 import pytest
@@ -21,6 +20,9 @@ from rotkehlchen.history.events.utils import create_group_identifier_from_unique
 from rotkehlchen.tests.utils.constants import A_DOGE
 from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.types import Location, Timestamp, TimestampMS
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
 
 
 def htx_account_mock(

@@ -1,5 +1,4 @@
 import json
-from collections.abc import Callable
 from contextlib import suppress
 from typing import TYPE_CHECKING, Any, Final, Self
 from unittest.mock import MagicMock, patch
@@ -51,6 +50,8 @@ from rotkehlchen.types import (
 )
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+
     from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
 
 
@@ -231,7 +232,7 @@ def test_call_contract(ethereum_inquirer, ethereum_manager_connect_at_start):
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_manager_connect_at_start', [(INFURA_ETH_NODE, EVM_INDEXERS_NODE)])  # noqa: E501
 def test_rpc_request_timeout(
-        ethereum_inquirer: 'EthereumInquirer',
+        ethereum_inquirer: EthereumInquirer,
         ethereum_manager_connect_at_start: list[WeightedNode],
 ) -> None:
     """Test that rpc timeout errors result in the node being marked as `failed to connect`.
@@ -381,7 +382,7 @@ BLOCKNUMBER_BY_TS: Final = Timestamp(1577836800)
 BLOCKNUMBER_BY_TS_BLOCK: Final = 9193265
 
 
-def _test_get_blocknumber_by_time(ethereum_inquirer: 'EthereumInquirer') -> None:
+def _test_get_blocknumber_by_time(ethereum_inquirer: EthereumInquirer) -> None:
     result = ethereum_inquirer.get_blocknumber_by_time(BLOCKNUMBER_BY_TS)
     assert result == BLOCKNUMBER_BY_TS_BLOCK
 
@@ -420,7 +421,7 @@ def _test_get_blocknumber_by_time(ethereum_inquirer: 'EthereumInquirer') -> None
     ],
 )
 def test_get_blocknumber_by_time(
-        ethereum_inquirer: 'EthereumInquirer',
+        ethereum_inquirer: EthereumInquirer,
         order: tuple[EvmIndexer],
         effects: dict[str, Any],
         expected_calls: list[str],
@@ -457,7 +458,7 @@ def test_get_blocknumber_by_time(
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize(*ETHEREUM_NODES_PARAMETERS_WITH_PRUNED_AND_NOT_ARCHIVED)
 def test_ethereum_nodes_prune_and_archive_status(
-        ethereum_inquirer: 'EthereumInquirer',
+        ethereum_inquirer: EthereumInquirer,
         ethereum_manager_connect_at_start: list[WeightedNode],
 ):
     """Checks that connecting to a set of ethereum nodes, the capabilities of those nodes are known and stored."""  # noqa: E501
@@ -747,7 +748,7 @@ def test_is_contract_eip7702(ethereum_inquirer):
 
 class _MockBatchRequests:
     """Mimics web3's batch_requests context manager for a node serving `outcome`"""
-    def __init__(self, outcome: 'list[Any] | Exception') -> None:
+    def __init__(self, outcome: list[Any] | Exception) -> None:
         self.outcome = outcome
         self.added = 0
 
@@ -767,7 +768,7 @@ class _MockBatchRequests:
         return self.outcome
 
 
-def test_get_transaction_receipts_batched(ethereum_inquirer: 'EthereumInquirer') -> None:
+def test_get_transaction_receipts_batched(ethereum_inquirer: EthereumInquirer) -> None:
     """Test the batched receipt query. Without connected rpc nodes it returns None
     (indexers don't support batching), with a connected node it returns the receipts
     in the order of the given hashes special-casing the genesis hash, and a node

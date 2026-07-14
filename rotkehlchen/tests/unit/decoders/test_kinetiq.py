@@ -1,3 +1,5 @@
+from typing import TYPE_CHECKING
+
 import pytest
 
 from rotkehlchen.assets.asset import Asset
@@ -10,13 +12,15 @@ from rotkehlchen.chain.hyperliquid.modules.kinetiq.constants import (
     KINETIQ_EARN_VAULT,
     KINETIQ_STAKING_MANAGER,
 )
-from rotkehlchen.chain.hyperliquid.node_inquirer import HyperliquidInquirer
 from rotkehlchen.constants.assets import A_HYPE
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
 from rotkehlchen.types import ChecksumEvmAddress, Location, TimestampMS, deserialize_evm_tx_hash
+
+if TYPE_CHECKING:
+    from rotkehlchen.chain.hyperliquid.node_inquirer import HyperliquidInquirer
 
 A_KHYPE = Asset('eip155:999/erc20:0xfD739d4e423301CE9385c1fb8850539D657C296D')
 A_VKHYPE = Asset('eip155:999/erc20:0x9BA2EDc44E0A4632EB4723E81d4142353e1bB160')

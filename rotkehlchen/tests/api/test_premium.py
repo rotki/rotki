@@ -1,6 +1,7 @@
 import json
 from contextlib import ExitStack
 from http import HTTPStatus
+from typing import TYPE_CHECKING
 from unittest.mock import patch
 
 import machineid
@@ -8,7 +9,6 @@ import pytest
 import requests
 
 from rotkehlchen.accounting.constants import FREE_PNL_EVENTS_LIMIT, FREE_REPORTS_LOOKUP_LIMIT
-from rotkehlchen.api.server import APIServer
 from rotkehlchen.constants.limits import FREE_HISTORY_EVENTS_LIMIT
 from rotkehlchen.tests.utils.api import (
     api_url_for,
@@ -19,6 +19,9 @@ from rotkehlchen.tests.utils.api import (
 )
 from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.tests.utils.premium import create_patched_requests_get_for_premium
+
+if TYPE_CHECKING:
+    from rotkehlchen.api.server import APIServer
 
 CURRENT_DEVICE_ID = machineid.hashed_id('yabirgb')
 

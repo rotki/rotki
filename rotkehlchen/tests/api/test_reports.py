@@ -1,4 +1,5 @@
 from http import HTTPStatus
+from typing import TYPE_CHECKING
 
 import pytest
 import requests
@@ -7,7 +8,6 @@ from rotkehlchen.accounting.constants import FREE_PNL_EVENTS_LIMIT
 from rotkehlchen.accounting.mixins.event import AccountingEventType
 from rotkehlchen.accounting.pnl import PNL
 from rotkehlchen.accounting.structures.processed_event import ProcessedAccountingEvent
-from rotkehlchen.api.server import APIServer
 from rotkehlchen.constants import ONE, ZERO
 from rotkehlchen.constants.assets import A_DAI, A_ETH
 from rotkehlchen.db.reports import DBAccountingReports
@@ -21,6 +21,9 @@ from rotkehlchen.tests.utils.api import (
 from rotkehlchen.tests.utils.constants import A_GBP, TEST_PREMIUM_PNL_EVENTS_LIMIT
 from rotkehlchen.types import Location, Price, Timestamp
 from rotkehlchen.utils.misc import timestamp_to_date
+
+if TYPE_CHECKING:
+    from rotkehlchen.api.server import APIServer
 
 
 def setup_report_events(database) -> tuple[int, list[ProcessedAccountingEvent]]:
@@ -136,7 +139,7 @@ def test_get_report_data_with_premium(
 
 
 def test_get_report_data_invalid_report(
-        rotkehlchen_api_server: 'APIServer',
+        rotkehlchen_api_server: APIServer,
 ) -> None:
     """Test that requesting invalid report ID is handled correctly"""
     response = requests.post(

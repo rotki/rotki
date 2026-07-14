@@ -3,7 +3,7 @@ import logging
 import shutil
 from contextlib import ExitStack
 from pathlib import Path
-from typing import Any, Final
+from typing import TYPE_CHECKING, Any, Final
 from unittest.mock import patch
 
 import pytest
@@ -55,9 +55,11 @@ from rotkehlchen.types import (
     Timestamp,
     TokenKind,
 )
-from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import ts_now
 from rotkehlchen.utils.upgrades import UpgradeRecord
+
+if TYPE_CHECKING:
+    from rotkehlchen.user_messages import MessagesAggregator
 
 # Needs on-disk globaldb files for upgrade paths and backups.
 # TODO: Perhaps have a saved version of that global DB for the tests and query it too?

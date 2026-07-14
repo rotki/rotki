@@ -1,9 +1,11 @@
 from dataclasses import dataclass
-from typing import Final
+from typing import TYPE_CHECKING, Final
 
 from rotkehlchen.chain.decoding.structures import CommonDecodingOutput
-from rotkehlchen.chain.solana.types import SolanaAddress, SolanaInstruction, SolanaTransaction
 from rotkehlchen.history.events.structures.solana_event import SolanaEvent
+
+if TYPE_CHECKING:
+    from rotkehlchen.chain.solana.types import SolanaAddress, SolanaInstruction, SolanaTransaction
 
 
 @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)

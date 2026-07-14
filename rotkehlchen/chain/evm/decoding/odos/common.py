@@ -13,7 +13,6 @@ from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.constants.resolver import evm_address_to_identifier
 from rotkehlchen.errors.misc import DataIntegrityError, RemoteError
 from rotkehlchen.fval import FVal
-from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import ChecksumEvmAddress, TokenKind
@@ -22,6 +21,7 @@ from rotkehlchen.utils.misc import bytes_to_address
 if TYPE_CHECKING:
     from rotkehlchen.chain.evm.decoding.base import BaseEvmDecoderTools
     from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
+    from rotkehlchen.history.events.structures.evm_event import EvmEvent
     from rotkehlchen.user_messages import MessagesAggregator
 
 logger = logging.getLogger(__name__)
@@ -31,9 +31,9 @@ log = RotkehlchenLogsAdapter(logger)
 class OdosCommonDecoderBase(EvmDecoderInterface):
     def __init__(
             self,
-            evm_inquirer: 'EvmNodeInquirer',
-            base_tools: 'BaseEvmDecoderTools',
-            msg_aggregator: 'MessagesAggregator',
+            evm_inquirer: EvmNodeInquirer,
+            base_tools: BaseEvmDecoderTools,
+            msg_aggregator: MessagesAggregator,
             router_address: ChecksumEvmAddress,
     ) -> None:
         super().__init__(
@@ -48,8 +48,8 @@ class OdosCommonDecoderBase(EvmDecoderInterface):
 
     def _calculate_router_fee(
             self,
-            context: 'DecoderContext',
-            sender: 'ChecksumEvmAddress',
+            context: DecoderContext,
+            sender: ChecksumEvmAddress,
             output_tokens: dict[str, FVal],
     ) -> list[EvmEvent]:
         """Calculates the fees collected by the router and returns the fee events.
@@ -127,11 +127,11 @@ class OdosCommonDecoderBase(EvmDecoderInterface):
 
     def decode_swap(
             self,
-            context: 'DecoderContext',
-            sender: 'ChecksumEvmAddress',
+            context: DecoderContext,
+            sender: ChecksumEvmAddress,
             input_tokens: dict[str, FVal],
             output_tokens: dict[str, FVal],
-    ) -> 'EvmDecodingOutput':
+    ) -> EvmDecodingOutput:
         """Decodes swaps done using an Odos v1/v2 router"""
         fee_events = self._calculate_router_fee(
             context=context,

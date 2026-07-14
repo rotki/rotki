@@ -1,10 +1,9 @@
 """Functions dealing with the general_cache table of the Global DB"""
 import operator
-from collections.abc import Iterable
+from typing import TYPE_CHECKING
 
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
 from rotkehlchen.chain.evm.types import string_to_evm_address
-from rotkehlchen.db.drivers.sqlite import DBCursor
 from rotkehlchen.types import (
     UNIQUE_CACHE_KEYS,
     CacheType,
@@ -15,6 +14,11 @@ from rotkehlchen.types import (
     UniqueCacheType,
 )
 from rotkehlchen.utils.misc import ts_now
+
+if TYPE_CHECKING:
+    from collections.abc import Iterable
+
+    from rotkehlchen.db.drivers.sqlite import DBCursor
 
 
 def compute_cache_key(key_parts: Iterable[str | CacheType]) -> str:
@@ -247,9 +251,9 @@ def globaldb_update_cache_last_ts(
 
 
 def read_curve_pool_tokens(
-        cursor: 'DBCursor',
+        cursor: DBCursor,
         pool_address: ChecksumEvmAddress,
-        chain_id: 'ChainID',
+        chain_id: ChainID,
 ) -> list[ChecksumEvmAddress]:
     """
     Reads tokens for a particular curve pool. Tokens are stored with their indices to make sure

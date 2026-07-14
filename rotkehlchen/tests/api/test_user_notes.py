@@ -22,7 +22,7 @@ if TYPE_CHECKING:
     from rotkehlchen.api.server import APIServer
 
 
-def test_add_get_user_notes(rotkehlchen_api_server: 'APIServer') -> None:
+def test_add_get_user_notes(rotkehlchen_api_server: APIServer) -> None:
     response = requests.put(
         api_url_for(
             rotkehlchen_api_server,
@@ -144,7 +144,7 @@ def test_add_get_user_notes(rotkehlchen_api_server: 'APIServer') -> None:
         )
 
 
-def test_edit_user_notes(rotkehlchen_api_server: 'APIServer') -> None:
+def test_edit_user_notes(rotkehlchen_api_server: APIServer) -> None:
     generated_entries = make_user_notes_entries()
     for entry in generated_entries:
         rotkehlchen_api_server.rest_api.rotkehlchen.data.db.add_user_note(
@@ -207,7 +207,7 @@ def test_edit_user_notes(rotkehlchen_api_server: 'APIServer') -> None:
     )
 
 
-def test_delete_user_notes(rotkehlchen_api_server: 'APIServer') -> None:
+def test_delete_user_notes(rotkehlchen_api_server: APIServer) -> None:
     generated_entries = make_user_notes_entries()
     for entry in generated_entries:
         rotkehlchen_api_server.rest_api.rotkehlchen.data.db.add_user_note(
@@ -257,7 +257,7 @@ def test_delete_user_notes(rotkehlchen_api_server: 'APIServer') -> None:
 
 @pytest.mark.parametrize('start_with_valid_premium', [True, False])
 def test_premium_limits(
-        rotkehlchen_api_server: 'APIServer',
+        rotkehlchen_api_server: APIServer,
         start_with_valid_premium: bool,
 ) -> None:
     """Test that premium limits are set correctly"""

@@ -1,7 +1,6 @@
 import json
 import logging
 import threading
-from collections.abc import Callable
 from contextlib import suppress
 from typing import TYPE_CHECKING, Any
 
@@ -10,6 +9,8 @@ from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.serialize import process_result
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+
     from rotkehlchen.api.asgi import AsgiWebsocketSubscriber
     from rotkehlchen.api.websockets.typedefs import WSMessageType
 
@@ -18,7 +19,7 @@ log = RotkehlchenLogsAdapter(logger)
 
 
 def _ws_send_impl(
-        websocket: 'AsgiWebsocketSubscriber',
+        websocket: AsgiWebsocketSubscriber,
         lock: threading.Lock,
         to_send_msg: str,
         success_callback: Callable | None = None,
@@ -64,13 +65,13 @@ class RotkiNotifier:
         for message in messages:
             self.undelivered_callback(message)
 
-    def subscribe(self, websocket: 'AsgiWebsocketSubscriber') -> None:
+    def subscribe(self, websocket: AsgiWebsocketSubscriber) -> None:
         log.info('Websocket with hash id %s subscribed to rotki notifier', hash(websocket))
         with self.subscribers_lock:
             self.subscribers.append(websocket)
             self.locks[websocket] = threading.Lock()
 
-    def unsubscribe(self, websocket: 'AsgiWebsocketSubscriber') -> None:
+    def unsubscribe(self, websocket: AsgiWebsocketSubscriber) -> None:
         with self.subscribers_lock:
             self.locks.pop(websocket, None)
             try:
@@ -82,7 +83,7 @@ class RotkiNotifier:
 
     def broadcast(
             self,
-            message_type: 'WSMessageType',
+            message_type: WSMessageType,
             to_send_data: dict[str, Any] | list[Any],
             success_callback: Callable | None = None,
             success_callback_args: dict[str, Any] | None = None,

@@ -9,10 +9,12 @@ import time
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from signal import SIGINT, SIGQUIT, SIGTERM, signal
-from types import FrameType
-from typing import Any
+from typing import TYPE_CHECKING, Any
 from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
+
+if TYPE_CHECKING:
+    from types import FrameType
 
 logger = logging.getLogger('monitor')
 logging.basicConfig(level=logging.DEBUG)

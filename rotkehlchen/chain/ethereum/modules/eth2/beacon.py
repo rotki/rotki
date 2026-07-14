@@ -2,7 +2,6 @@ import json
 import logging
 import operator
 from collections import defaultdict
-from collections.abc import Sequence
 from http import HTTPStatus
 from typing import TYPE_CHECKING, Any, Literal, overload
 from urllib.parse import urlparse
@@ -34,6 +33,8 @@ from .structures import ValidatorDetails, ValidatorID, ValidatorType
 from .utils import calculate_query_chunks, epoch_to_timestamp
 
 if TYPE_CHECKING:
+    from collections.abc import Sequence
+
     from rotkehlchen.externalapis.beaconchain.service import BeaconChain
 
 logger = logging.getLogger(__name__)
@@ -197,7 +198,7 @@ class BeaconNode:
 
 class BeaconInquirer:
 
-    def __init__(self, rpc_endpoint: str | None, beaconchain: 'BeaconChain') -> None:
+    def __init__(self, rpc_endpoint: str | None, beaconchain: BeaconChain) -> None:
         self.node = None
         if rpc_endpoint:  # truthy check on purpose as empty string can also get here
             try:

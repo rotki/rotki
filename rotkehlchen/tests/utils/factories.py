@@ -164,7 +164,7 @@ def make_ethereum_event(
 
 
 def generate_events_response(
-        data: list['HistoryBaseEntry'],
+        data: list[HistoryBaseEntry],
         accounting_status: EventAccountingRuleStatus = EventAccountingRuleStatus.PROCESSED,
         has_ignored_assets: list[bool] | None = None,
 ) -> list:

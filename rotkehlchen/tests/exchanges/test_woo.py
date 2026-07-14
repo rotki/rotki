@@ -395,7 +395,7 @@ def test_deserialize_trade_sell(mock_woo):
     )]
 
 
-def test_deserialize_asset_movement_deposit(mock_woo: 'Woo') -> None:
+def test_deserialize_asset_movement_deposit(mock_woo: Woo) -> None:
     mock_deposit = {
         'created_time': '1579399877.041',
         'updated_time': '1579399877.041',
@@ -432,7 +432,7 @@ def test_deserialize_asset_movement_deposit(mock_woo: 'Woo') -> None:
     )]
 
 
-def test_deserialize_asset_movement_withdrawal(mock_woo: 'Woo') -> None:
+def test_deserialize_asset_movement_withdrawal(mock_woo: Woo) -> None:
     mock_withdrawal = {
         'id': '23061317355600291',
         'token': 'SOL',

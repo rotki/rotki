@@ -1,10 +1,9 @@
 import json
 import logging
 from collections import defaultdict
-from collections.abc import Iterator
 from dataclasses import dataclass
 from http import HTTPStatus
-from typing import Any, Final, Literal, NotRequired, TypedDict
+from typing import TYPE_CHECKING, Any, Final, Literal, NotRequired, TypedDict
 
 import requests
 
@@ -39,6 +38,9 @@ from rotkehlchen.types import (
 )
 from rotkehlchen.utils.misc import ts_sec_to_ms
 from rotkehlchen.utils.network import create_session
+
+if TYPE_CHECKING:
+    from collections.abc import Iterator
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)

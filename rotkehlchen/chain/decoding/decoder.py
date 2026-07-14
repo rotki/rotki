@@ -5,7 +5,7 @@ import time
 from abc import ABC, abstractmethod
 from contextlib import suppress
 from threading import Semaphore
-from typing import TYPE_CHECKING, Final, Generic, Literal, TypeVar
+from typing import TYPE_CHECKING, Final, Literal
 
 from more_itertools import peekable
 
@@ -13,19 +13,16 @@ from rotkehlchen.api.websockets.typedefs import ProgressUpdateSubType, WSMessage
 from rotkehlchen.concurrency import checkpoint
 from rotkehlchen.db.cache import DBCacheDynamic
 from rotkehlchen.db.constants import TX_DECODED, TX_SPAM
-from rotkehlchen.db.dbtx import DBCommonTx, T_Transaction, T_TxHash, T_TxNotDecodedFilterQuery
+from rotkehlchen.db.dbtx import DBCommonTx
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.errors.asset import UnknownAsset, WrongAssetType
 from rotkehlchen.errors.misc import InputError, RemoteError
 from rotkehlchen.errors.serialization import ConversionError, DeserializationError
-from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import BLOCKCHAIN_LOCATIONS_TYPE
 from rotkehlchen.utils.mixins.customizable_date import CustomizableDateMixin
 
 from .constants import CPT_GAS
-from .structures import T_Event
 from .tools import BaseDecoderTools
 from .types import CounterpartyDetails, DecodingRulesBase
 
@@ -33,9 +30,18 @@ if TYPE_CHECKING:
     from types import ModuleType
 
     from rotkehlchen.assets.asset import AssetWithOracles
+    from rotkehlchen.chain.solana.rpc import Signature
+    from rotkehlchen.chain.solana.types import SolanaTransaction
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.db.drivers.sqlite import DBCursor
+    from rotkehlchen.db.filtering import (
+        EvmTransactionsNotDecodedFilterQuery,
+        SolanaTransactionsNotDecodedFilterQuery,
+    )
+    from rotkehlchen.fval import FVal
+    from rotkehlchen.history.events.structures.base import HistoryBaseEntry
     from rotkehlchen.premium.premium import Premium
+    from rotkehlchen.types import BLOCKCHAIN_LOCATIONS_TYPE, EvmTransaction, EVMTxHash
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -47,26 +53,29 @@ log = RotkehlchenLogsAdapter(logger)
 EVENT_WRITES_BATCH_SIZE: Final = 25
 
 
-T_DecodingRules = TypeVar('T_DecodingRules', bound=DecodingRulesBase)
-T_DecoderInterface = TypeVar('T_DecoderInterface')
-T_DecoderTools = TypeVar('T_DecoderTools', bound=BaseDecoderTools)
-T_TransactionDecodingContext = TypeVar('T_TransactionDecodingContext')
-T_DBTx = TypeVar('T_DBTx', bound=DBCommonTx)
-T_EventFilterQuery = TypeVar('T_EventFilterQuery')
-
-
-class TransactionDecoder(ABC, Generic[T_Transaction, T_DecodingRules, T_DecoderInterface, T_TxHash, T_Event, T_TransactionDecodingContext, T_DecoderTools, T_DBTx, T_EventFilterQuery, T_TxNotDecodedFilterQuery]):  # noqa: E501
+class TransactionDecoder[
+        T_Transaction: 'SolanaTransaction | EvmTransaction',
+        T_DecodingRules: DecodingRulesBase,
+        T_DecoderInterface,
+        T_TxHash: 'EVMTxHash | Signature',
+        T_Event: 'HistoryBaseEntry',
+        T_TransactionDecodingContext,
+        T_DecoderTools: BaseDecoderTools,
+        T_DBTx: DBCommonTx,
+        T_EventFilterQuery,
+        T_TxNotDecodedFilterQuery: EvmTransactionsNotDecodedFilterQuery | SolanaTransactionsNotDecodedFilterQuery,  # noqa: E501
+](ABC):
     def __init__(
             self,
-            database: 'DBHandler',
+            database: DBHandler,
             dbtx: T_DBTx,
             tx_mappings_table: Literal['evm_tx_mappings', 'solana_tx_mappings'],
             chain_name: str,
-            value_asset: 'AssetWithOracles',
+            value_asset: AssetWithOracles,
             rules: T_DecodingRules,
             misc_counterparties: list[CounterpartyDetails],
             base_tools: T_DecoderTools,
-            premium: 'Premium | None' = None,
+            premium: Premium | None = None,
             possible_decoding_exceptions: tuple[type[Exception], ...] | None = None,
     ) -> None:
         """Initialize a transaction decoder module for a particular blockchain.
@@ -141,7 +150,7 @@ class TransactionDecoder(ABC, Generic[T_Transaction, T_DecodingRules, T_DecoderI
 
     def _recursively_initialize_decoders(
             self,
-            package: 'str | ModuleType',
+            package: str | ModuleType,
     ) -> T_DecodingRules:
         """Discover decoder modules under `package` and merge their rules.
         May raise:
@@ -177,12 +186,12 @@ class TransactionDecoder(ABC, Generic[T_Transaction, T_DecodingRules, T_DecoderI
 
         return rules
 
-    def _reload_single_decoder(self, cursor: 'DBCursor', decoder: T_DecoderInterface) -> None:
+    def _reload_single_decoder(self, cursor: DBCursor, decoder: T_DecoderInterface) -> None:
         """Reload data for a single decoder"""
         if isinstance(decoder, CustomizableDateMixin):
             decoder.reload_settings(cursor)
 
-    def reload_data(self, cursor: 'DBCursor') -> None:
+    def reload_data(self, cursor: DBCursor) -> None:
         """Reload all related settings from DB and data that any decoder may require from the chain
         so that decoding happens with latest data
         """
@@ -190,7 +199,7 @@ class TransactionDecoder(ABC, Generic[T_Transaction, T_DecodingRules, T_DecoderI
         for decoder in self.decoders.values():
             self._reload_single_decoder(cursor, decoder)
 
-    def reload_specific_decoders(self, cursor: 'DBCursor', decoders: set[str]) -> None:
+    def reload_specific_decoders(self, cursor: DBCursor, decoders: set[str]) -> None:
         """Reload DB data for the given decoders. Decoders are identified by the class name
         (without the Decoder suffix)
         """
@@ -285,7 +294,7 @@ class TransactionDecoder(ABC, Generic[T_Transaction, T_DecodingRules, T_DecoderI
     @abstractmethod
     def _load_transaction_context(
             self,
-            cursor: 'DBCursor',
+            cursor: DBCursor,
             tx_hash: T_TxHash,
     ) -> T_TransactionDecodingContext:
         """Return the chain-specific decoding context for `tx_hash`.
@@ -556,7 +565,7 @@ class TransactionDecoder(ABC, Generic[T_Transaction, T_DecodingRules, T_DecoderI
 
     def _write_tx_events(
             self,
-            write_cursor: 'DBCursor',
+            write_cursor: DBCursor,
             events: list[T_Event],
             action_id: str,
             db_id: int,

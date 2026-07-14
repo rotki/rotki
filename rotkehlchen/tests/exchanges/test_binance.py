@@ -317,7 +317,7 @@ def test_binance_query_balances_include_features(function_scope_binance: Binance
     assert balances[A_AXS].amount == FVal('122.09202928')
 
 
-def test_binance_query_trade_history(function_scope_binance: 'Binance'):
+def test_binance_query_trade_history(function_scope_binance: Binance):
     """Test that turning a binance trade as returned by the server to our format works"""
     binance = function_scope_binance
 
@@ -574,7 +574,7 @@ def test_binance_query_trade_history_unexpected_data(function_scope_binance):
     query_binance_and_test(input_str)
 
 
-def test_binance_query_deposits_withdrawals(function_scope_binance: 'Binance') -> None:
+def test_binance_query_deposits_withdrawals(function_scope_binance: Binance) -> None:
     """Test the happy case of binance deposit withdrawal query
 
     NB: set `start_ts` and `end_ts` with a difference less than 90 days to
@@ -1047,8 +1047,8 @@ def test_binance_query_trade_history_custom_markets(function_scope_binance):
 
 @pytest.mark.parametrize('default_mock_price_value', [ONE])
 def test_binance_query_lending_interests_history(
-        function_scope_binance: 'Binance',
-        price_historian: 'PriceHistorian',
+        function_scope_binance: Binance,
+        price_historian: PriceHistorian,
 ):
     binance_api_key = ApiKey('binance_api_key')
     binance_api_secret = ApiSecret(b'binance_api_secret')
@@ -1134,8 +1134,8 @@ def test_binance_query_lending_interests_history(
 
 @pytest.mark.parametrize('default_mock_price_value', [ONE])
 def test_binance_query_lending_interests_history_chunks_30_days(
-        function_scope_binance: 'Binance',
-        price_historian: 'PriceHistorian',  # pylint: disable=unused-argument
+        function_scope_binance: Binance,
+        price_historian: PriceHistorian,  # pylint: disable=unused-argument
 ):
     """Regression test for https://github.com/rotki/rotki/issues/12416
 
@@ -1184,7 +1184,7 @@ def test_binance_query_lending_interests_history_chunks_30_days(
     assert len(binance.msg_aggregator.consume_warnings()) == 0
 
 
-def test_binance_query_convert_trades(function_scope_binance: 'Binance') -> None:
+def test_binance_query_convert_trades(function_scope_binance: Binance) -> None:
     """Test that Binance Convert trades are queried and deserialized correctly"""
     def mock_convert_trades(url, params, *args, **kwargs):  # pylint: disable=unused-argument
         if 'convert/tradeFlow' in url:

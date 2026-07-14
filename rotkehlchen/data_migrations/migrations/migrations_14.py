@@ -12,7 +12,7 @@ if TYPE_CHECKING:
 
 
 @enter_exit_debug_log()
-def data_migration_14(rotki: 'Rotkehlchen', progress_handler: 'MigrationProgressHandler') -> None:
+def data_migration_14(rotki: Rotkehlchen, progress_handler: MigrationProgressHandler) -> None:
     """
     Introduced at v1.33.0
 

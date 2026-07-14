@@ -1,5 +1,4 @@
 import random
-from collections.abc import Sequence
 from http import HTTPStatus
 from typing import TYPE_CHECKING
 
@@ -30,11 +29,13 @@ from rotkehlchen.tests.utils.substrate import (
 from rotkehlchen.types import SupportedBlockchain
 
 if TYPE_CHECKING:
+    from collections.abc import Sequence
+
     from rotkehlchen.api.server import APIServer
 
 
 @pytest.mark.parametrize('number_of_eth_accounts', [0])
-def test_add_ksm_blockchain_account_invalid(rotkehlchen_api_server: 'APIServer') -> None:
+def test_add_ksm_blockchain_account_invalid(rotkehlchen_api_server: APIServer) -> None:
     """Test adding an invalid Kusama blockchain account works as expected.
     """
     response = requests.put(
@@ -59,7 +60,7 @@ def test_add_ksm_blockchain_account_invalid(rotkehlchen_api_server: 'APIServer')
 @pytest.mark.parametrize('ksm_rpc_endpoint', [KUSAMA_TEST_RPC_ENDPOINT], ids=['KUSAMA_TEST_RPC_ENDPOINT'])  # setting ids to rename the argument to be processed by vcr since its value can contain characters that are illegal in windows. Affects all other similar fixtures in this file # noqa: E501
 @pytest.mark.parametrize('network_mocking', [False])
 def test_add_ksm_blockchain_account(
-        rotkehlchen_api_server: 'APIServer',
+        rotkehlchen_api_server: APIServer,
         kusama_manager_connect_at_start: Sequence[KusamaNodeName],
 ) -> None:
     """Test adding a Kusama blockchain account when there is none in the db
@@ -113,7 +114,7 @@ def test_add_ksm_blockchain_account(
 @pytest.mark.parametrize('kusama_manager_connect_at_start', [(KusamaNodeName.OWN,)])
 @pytest.mark.parametrize('ksm_rpc_endpoint', [KUSAMA_TEST_RPC_ENDPOINT], ids=['KUSAMA_TEST_RPC_ENDPOINT'])  # noqa: E501
 @pytest.mark.parametrize('network_mocking', [False])
-def test_remove_ksm_blockchain_account(rotkehlchen_api_server: 'APIServer') -> None:
+def test_remove_ksm_blockchain_account(rotkehlchen_api_server: APIServer) -> None:
     """Test removing a Kusama blockchain account works as expected by returning
     only the balances of the other Kusama accounts.
     """
@@ -158,7 +159,7 @@ def test_remove_ksm_blockchain_account(rotkehlchen_api_server: 'APIServer') -> N
 
 
 @pytest.mark.parametrize('number_of_eth_accounts', [0])
-def test_add_ksm_blockchain_account_invalid_ens_domain(rotkehlchen_api_server: 'APIServer') -> None:  # noqa: E501
+def test_add_ksm_blockchain_account_invalid_ens_domain(rotkehlchen_api_server: APIServer) -> None:
     """Test adding an invalid Kusama blockchain account via ENS domain works as
     expected.
     """
@@ -185,7 +186,7 @@ def test_add_ksm_blockchain_account_invalid_ens_domain(rotkehlchen_api_server: '
 @pytest.mark.parametrize('kusama_manager_connect_at_start', [(KusamaNodeName.OWN,)])
 @pytest.mark.parametrize('ksm_rpc_endpoint', [KUSAMA_TEST_RPC_ENDPOINT], ids=['KUSAMA_TEST_RPC_ENDPOINT'])  # noqa: E501
 @pytest.mark.parametrize('network_mocking', [False])
-def test_add_ksm_blockchain_account_ens_domain(rotkehlchen_api_server: 'APIServer') -> None:
+def test_add_ksm_blockchain_account_ens_domain(rotkehlchen_api_server: APIServer) -> None:
     """Test adding a Kusama blockchain account via ENS domain when there is none
     in the db works as expected"""
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
@@ -221,7 +222,7 @@ def test_add_ksm_blockchain_account_ens_domain(rotkehlchen_api_server: 'APIServe
 @pytest.mark.parametrize('kusama_manager_connect_at_start', [(KusamaNodeName.OWN,)])
 @pytest.mark.parametrize('ksm_rpc_endpoint', [KUSAMA_TEST_RPC_ENDPOINT], ids=['KUSAMA_TEST_RPC_ENDPOINT'])  # noqa: E501
 @pytest.mark.parametrize('network_mocking', [False])
-def test_remove_ksm_blockchain_account_ens_domain(rotkehlchen_api_server: 'APIServer') -> None:
+def test_remove_ksm_blockchain_account_ens_domain(rotkehlchen_api_server: APIServer) -> None:
     """Test removing a Kusama blockchain account via ENS domain works as expected
     Also tests Totals calculation."""
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen

@@ -17,7 +17,6 @@ from rotkehlchen.assets.resolver import AssetResolver
 from rotkehlchen.assets.utils import TokenEncounterInfo, get_or_create_evm_token
 from rotkehlchen.chain.ethereum.modules.sushiswap.constants import CPT_SUSHISWAP_V2
 from rotkehlchen.chain.ethereum.modules.yearn.constants import CPT_YEARN_V3
-from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
 from rotkehlchen.chain.evm.contracts import find_matching_event_abi
 from rotkehlchen.chain.evm.decoding.balancer.constants import (
     CPT_BALANCER_V1,
@@ -120,6 +119,7 @@ if TYPE_CHECKING:
     from rotkehlchen.chain.aggregator import ChainsAggregator
     from rotkehlchen.chain.arbitrum_one.manager import ArbitrumOneManager
     from rotkehlchen.chain.arbitrum_one.node_inquirer import ArbitrumOneInquirer
+    from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
     from rotkehlchen.chain.optimism.node_inquirer import OptimismInquirer
     from rotkehlchen.db.dbhandler import DBHandler
 
@@ -493,7 +493,7 @@ def test_find_uniswap_v2_lp_token_price(inquirer, ethereum_manager, globaldb):
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
 @pytest.mark.parametrize('should_mock_current_price_queries', [False])
-def test_find_uniswap_v2_like_lp_token_price(database: 'DBHandler', inquirer_defi: 'Inquirer') -> None:  # noqa: E501
+def test_find_uniswap_v2_like_lp_token_price(database: DBHandler, inquirer_defi: Inquirer) -> None:
     """Tests that LP token prices are correctly found for protocols
     similar to Uniswap V2 (Sushiswap & Quickswap V2).
     """
@@ -516,7 +516,7 @@ def test_find_uniswap_v2_like_lp_token_price(database: 'DBHandler', inquirer_def
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
 @pytest.mark.parametrize('should_mock_current_price_queries', [False])
-def test_find_quickswap_algrebra_lp_token_price(database: 'DBHandler', inquirer_defi: 'Inquirer') -> None:  # noqa: E501
+def test_find_quickswap_algrebra_lp_token_price(database: DBHandler, inquirer_defi: Inquirer) -> None:  # noqa: E501
     """Tests that Quickswap V3/V4 Algebra LP token prices are correctly found."""
     assert inquirer_defi.find_usd_price(asset=get_or_create_evm_token(
         userdb=database,
@@ -576,7 +576,7 @@ def test_find_aerodrome_lp_token_price(inquirer, base_manager):
 @pytest.mark.vcr(filter_query_parameters=['apikey'], match_on=['uri', 'method', 'body'])
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
 @pytest.mark.parametrize('should_mock_current_price_queries', [False])
-def test_find_curve_lp_token_price(inquirer: 'Inquirer', blockchain: 'ChainsAggregator'):
+def test_find_curve_lp_token_price(inquirer: Inquirer, blockchain: ChainsAggregator):
     tested_tokens: dict[ChainID, tuple[str, FVal]] = {
         ChainID.ETHEREUM: ('0xA3D87FffcE63B53E0d54fAa1cc983B7eB0b74A9c', FVal('954.52')),
         # 3CRV-OP-gauge
@@ -649,7 +649,7 @@ def test_find_curve_lp_token_price(inquirer: 'Inquirer', blockchain: 'ChainsAggr
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
 @pytest.mark.parametrize('should_mock_current_price_queries', [False])
-def test_zero_supply_curve_lp_price(inquirer_defi: 'Inquirer'):
+def test_zero_supply_curve_lp_price(inquirer_defi: Inquirer):
     """Regression test for a division by zero error when querying the price of a curve lp token
     for a pool with zero supply."""
     with patch('rotkehlchen.chain.evm.decoding.curve.curve_cache.request_get_dict'):
@@ -676,7 +676,7 @@ def test_find_kfee_price_non_usd(inquirer):
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('should_mock_current_price_queries', [False])
-def test_bsq_price_non_usd(inquirer: 'Inquirer') -> None:
+def test_bsq_price_non_usd(inquirer: Inquirer) -> None:
     """Test that we can query BSQ price in non-USD currency"""
     bsq_eur_price = Inquirer.find_price(from_asset=A_BSQ, to_asset=A_EUR)
     btc_eur_price = Inquirer.find_price(from_asset=A_BTC, to_asset=A_EUR)
@@ -684,7 +684,7 @@ def test_bsq_price_non_usd(inquirer: 'Inquirer') -> None:
 
 
 @pytest.mark.parametrize('should_mock_current_price_queries', [False])
-def test_eur_pegged_asset_special_price(inquirer: 'Inquirer') -> None:
+def test_eur_pegged_asset_special_price(inquirer: Inquirer) -> None:
     """Test that assets in the EURe collection (collection 240) are priced
     using the EUR exchange rate via _get_special_prices."""
     # Verify the asset is loaded in the cached set
@@ -716,7 +716,7 @@ def test_eur_pegged_asset_special_price(inquirer: 'Inquirer') -> None:
 
 
 @pytest.mark.parametrize('should_mock_current_price_queries', [False])
-def test_eur_pegged_asset_special_price_non_usd(inquirer: 'Inquirer') -> None:
+def test_eur_pegged_asset_special_price_non_usd(inquirer: Inquirer) -> None:
     """Test that EURe collection assets are correctly priced in non-USD target currencies."""
     eur_jpy_rate = Price(FVal('162.5'))
 
@@ -746,7 +746,7 @@ def test_eur_pegged_asset_special_price_non_usd(inquirer: 'Inquirer') -> None:
 
 
 @pytest.mark.parametrize('should_mock_current_price_queries', [False])
-def test_eur_pegged_collection_asset_to_crypto_target(inquirer: 'Inquirer') -> None:
+def test_eur_pegged_collection_asset_to_crypto_target(inquirer: Inquirer) -> None:
     """EURe collection assets are worth 1 EUR and should be converted to crypto targets."""
     eur_btc_price = Price(FVal('0.000009'))
     with patch.object(Inquirer, 'find_price', return_value=eur_btc_price) as find_price_mock:
@@ -757,7 +757,7 @@ def test_eur_pegged_collection_asset_to_crypto_target(inquirer: 'Inquirer') -> N
 
 
 @pytest.mark.parametrize('should_mock_current_price_queries', [False])
-def test_eur_pegged_collection_asset_to_crypto_target_unavailable(inquirer: 'Inquirer') -> None:
+def test_eur_pegged_collection_asset_to_crypto_target_unavailable(inquirer: Inquirer) -> None:
     """Regression test for EURe collection assets when the target currency is crypto.
 
     If the EUR->target rate is unavailable, the collection main asset must remain in the
@@ -779,7 +779,7 @@ def test_eur_pegged_collection_asset_to_crypto_target_unavailable(inquirer: 'Inq
 
 
 @pytest.mark.parametrize('should_mock_current_price_queries', [False])
-def test_special_price_unpriced_when_target_rate_unavailable(inquirer: 'Inquirer') -> None:
+def test_special_price_unpriced_when_target_rate_unavailable(inquirer: Inquirer) -> None:
     """Regression test: a special-asset USD price must not be returned labeled as a
     non-USD target currency when the USD->target rate is unavailable. Otherwise e.g. a
     0.01 USD KFEE value would be shown as 0.01 of the (very different) target currency.
@@ -803,7 +803,7 @@ def test_special_price_unpriced_when_target_rate_unavailable(inquirer: 'Inquirer
 
 
 @pytest.mark.parametrize('should_mock_current_price_queries', [False])
-def test_special_price_cached_for_non_usd_target(inquirer: 'Inquirer') -> None:
+def test_special_price_cached_for_non_usd_target(inquirer: Inquirer) -> None:
     """Regression test: for a non-USD target currency the underlying onchain USD price of a
     protocol/LP token must be queried only once and then served from cache (converted to the
     target currency). Previously only the USD price was cached while lookups used the
@@ -1019,9 +1019,9 @@ def test_find_yearn_vaults_v2_price(inquirer_defi, globaldb):
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
 @pytest.mark.parametrize('should_mock_current_price_queries', [False])
 def test_find_yearn_vaults_v3_price(
-        database: 'DBHandler',
-        inquirer_defi: 'Inquirer',
-        globaldb: 'GlobalDBHandler',
+        database: DBHandler,
+        inquirer_defi: Inquirer,
+        globaldb: GlobalDBHandler,
 ) -> None:
     """Check that we can find the price of a yearn v3 vault asset.
     The v3 assets are retrieved via query_yearn_vaults when the app runs,
@@ -1056,7 +1056,7 @@ def test_find_yearn_vaults_v3_price(
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
 @pytest.mark.parametrize('should_mock_current_price_queries', [False])
-def test_find_gearbox_lp_price(inquirer: 'Inquirer', arbitrum_one_manager: 'ArbitrumOneManager'):
+def test_find_gearbox_lp_price(inquirer: Inquirer, arbitrum_one_manager: ArbitrumOneManager):
     dwethv3 = EvmToken('eip155:42161/erc20:0x04419d3509f13054f60d253E0c79491d9E683399')
     sdwethv3 = EvmToken('eip155:42161/erc20:0x6773fF780Dd38175247795545Ee37adD6ab6139a')
 
@@ -1199,7 +1199,7 @@ def test_connect_rpc_with_hex_chainid(ethereum_inquirer: EthereumInquirer):
 
 
 @pytest.mark.parametrize('should_mock_current_price_queries', [False])
-def test_fake_symbol_doesnt_query_cc(inquirer: 'Inquirer'):
+def test_fake_symbol_doesnt_query_cc(inquirer: Inquirer):
     """Test that a token that has the symbol of another token (like USDC) doesn't trigger
     a price query"""
     with patch.object(inquirer._cryptocompare, '_get_api_key', return_value=ApiKey('test')):
@@ -1254,7 +1254,7 @@ def test_recursion_handling_in_inquirer(inquirer: Inquirer, globaldb: GlobalDBHa
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
 @pytest.mark.parametrize('should_mock_current_price_queries', [False])
-def test_find_vthor_price(inquirer_defi: 'Inquirer', database: 'DBHandler'):
+def test_find_vthor_price(inquirer_defi: Inquirer, database: DBHandler):
     """Test that we can query price for vTHOR using the ratio that it maintains with THOR"""
     inquirer_defi._oracle_instances = [inquirer_defi._defillama]
     get_or_create_evm_token(
@@ -1283,7 +1283,7 @@ def test_find_vthor_price(inquirer_defi: 'Inquirer', database: 'DBHandler'):
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
 @pytest.mark.parametrize('should_mock_current_price_queries', [False])
-def test_find_morpho_vault_price(database: 'DBHandler', inquirer_defi: 'Inquirer') -> None:
+def test_find_morpho_vault_price(database: DBHandler, inquirer_defi: Inquirer) -> None:
     """Test that we get the correct price for Morpho vault tokens."""
     usual_boosted_usdc_vault = get_or_create_evm_token(
         userdb=database,
@@ -1307,7 +1307,7 @@ def test_find_morpho_vault_price(database: 'DBHandler', inquirer_defi: 'Inquirer
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
 @pytest.mark.parametrize('should_mock_current_price_queries', [False])
-def test_find_balancer_pool_price(database: 'DBHandler', inquirer_defi: 'Inquirer') -> None:
+def test_find_balancer_pool_price(database: DBHandler, inquirer_defi: Inquirer) -> None:
     """Test that we get the correct price for Balancer pool tokens."""
     pufeth_wseth_token = get_or_create_evm_token(  # v2 pool
         userdb=database,
@@ -1379,7 +1379,7 @@ def test_find_balancer_pool_price(database: 'DBHandler', inquirer_defi: 'Inquire
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
 @pytest.mark.parametrize('should_mock_current_price_queries', [False])
-def test_find_balancer_v3_pool_price(database: 'DBHandler', inquirer_defi: 'Inquirer') -> None:
+def test_find_balancer_v3_pool_price(database: DBHandler, inquirer_defi: Inquirer) -> None:
     oseth_waweth_token = get_or_create_evm_token(  # v3 pool
         userdb=database,
         evm_address=string_to_evm_address('0x57c23c58B1D8C3292c15BEcF07c62C5c52457A42'),
@@ -1430,8 +1430,8 @@ def test_find_balancer_v3_pool_price(database: 'DBHandler', inquirer_defi: 'Inqu
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
 @pytest.mark.parametrize('should_mock_current_price_queries', [False])
 def test_find_curve_lending_vault_price(
-        inquirer_defi: 'Inquirer',
-        ethereum_vault_token: 'EvmToken',
+        inquirer_defi: Inquirer,
+        ethereum_vault_token: EvmToken,
 ) -> None:
     """Test that we get the correct price for Curve lending vault tokens."""
     assert inquirer_defi.find_usd_price(asset=ethereum_vault_token) == FVal('0.001070537672945388847465')  # noqa: E501
@@ -1440,7 +1440,7 @@ def test_find_curve_lending_vault_price(
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
 @pytest.mark.parametrize('should_mock_current_price_queries', [False])
-def test_find_savings_crvusd_price(inquirer_defi: 'Inquirer') -> None:
+def test_find_savings_crvusd_price(inquirer_defi: Inquirer) -> None:
     """Test that we get the correct price for scrvUSD token"""
     price = inquirer_defi.find_usd_price(asset=Asset('eip155:1/erc20:0x0655977FEb2f289A4aB78af67BAB0d17aAb84367'))  # noqa: E501
     assert price == FVal('1.041968030723485250')
@@ -1449,7 +1449,7 @@ def test_find_savings_crvusd_price(inquirer_defi: 'Inquirer') -> None:
 @pytest.mark.vcr(filter_query_parameters=['apikey'], match_on=['uri', 'method', 'body'])
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
 @pytest.mark.parametrize('should_mock_current_price_queries', [False])
-def test_find_pendle_yield_tokens_prices(database: 'DBHandler', inquirer_defi: 'Inquirer') -> None:
+def test_find_pendle_yield_tokens_prices(database: DBHandler, inquirer_defi: Inquirer) -> None:
     """Test that we get the correct prices for Pendle yield tokens"""
     sy_lbtc = get_or_create_evm_token(
         userdb=database,
@@ -1508,7 +1508,7 @@ def test_find_pendle_yield_tokens_prices(database: 'DBHandler', inquirer_defi: '
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
 @pytest.mark.parametrize('should_mock_current_price_queries', [False])
-def test_find_stakedao_gauge_price(ethereum_inquirer: 'EthereumInquirer', database: 'DBHandler', inquirer_defi: 'Inquirer') -> None:  # noqa: E501
+def test_find_stakedao_gauge_price(ethereum_inquirer: EthereumInquirer, database: DBHandler, inquirer_defi: Inquirer) -> None:  # noqa: E501
     """Test that we get the correct prices for StakeDAO gauges"""
     sdcrv_gauge = get_or_create_evm_token(
         userdb=database,
@@ -1565,7 +1565,7 @@ def test_find_stakedao_gauge_price(ethereum_inquirer: 'EthereumInquirer', databa
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
 @pytest.mark.parametrize('should_mock_current_price_queries', [False])
-def test_find_beefy_finance_vaults_price(ethereum_inquirer: 'EthereumInquirer', database: 'DBHandler', inquirer_defi: 'Inquirer') -> None:  # noqa: E501
+def test_find_beefy_finance_vaults_price(ethereum_inquirer: EthereumInquirer, database: DBHandler, inquirer_defi: Inquirer) -> None:  # noqa: E501
     """Test that we get the correct prices for Beefy finance vaults"""
     moo_usdc_usdf_vault = get_or_create_evm_token(
         userdb=database,
@@ -1599,8 +1599,8 @@ def test_find_beefy_finance_vaults_price(ethereum_inquirer: 'EthereumInquirer', 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
 @pytest.mark.parametrize('should_mock_current_price_queries', [False])
 def test_find_beefy_finance_boost_vault_price(
-        database: 'DBHandler',
-        inquirer_defi: 'Inquirer',
+        database: DBHandler,
+        inquirer_defi: Inquirer,
 ) -> None:
     """Test that we get the correct price for Beefy finance boost vault (rmoo) tokens.
     This particular vault is a bit special - it wraps a clm vault (cowVelomooBIFI-USDC) in a
@@ -1652,8 +1652,8 @@ def test_find_beefy_finance_boost_vault_price(
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
 @pytest.mark.parametrize('should_mock_current_price_queries', [False])
 def test_find_beefy_finance_clm_vaults_price(
-        database: 'DBHandler',
-        inquirer_defi: 'Inquirer',
+        database: DBHandler,
+        inquirer_defi: Inquirer,
 ) -> None:
     """Test that we get the correct prices for Beefy finance CLM vault tokens.
     Checks both the cow token and the rcow token (reward pool token that always has the
@@ -1692,7 +1692,7 @@ def test_find_beefy_finance_clm_vaults_price(
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
 @pytest.mark.parametrize('should_mock_current_price_queries', [False])
-def test_find_beefy_finance_reward_pool_vault_price(ethereum_inquirer: 'EthereumInquirer', database: 'DBHandler', inquirer_defi: 'Inquirer') -> None:  # noqa: E501
+def test_find_beefy_finance_reward_pool_vault_price(ethereum_inquirer: EthereumInquirer, database: DBHandler, inquirer_defi: Inquirer) -> None:  # noqa: E501
     """Test that we get the correct prices for Beefy finance reward pool vaults"""
     vault_token = get_or_create_evm_token(
         userdb=database,
@@ -1730,7 +1730,7 @@ def test_find_beefy_finance_reward_pool_vault_price(ethereum_inquirer: 'Ethereum
 }])
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
 @pytest.mark.parametrize('should_mock_current_price_queries', [False])
-def test_find_uniswap_v3_position_price(database: 'DBHandler', inquirer_defi: 'Inquirer') -> None:
+def test_find_uniswap_v3_position_price(database: DBHandler, inquirer_defi: Inquirer) -> None:
     """Test that we get the correct price for Uniswap V3 position NFTs in all supported chains."""
 
     def get_position_price(
@@ -1788,7 +1788,7 @@ def test_find_uniswap_v3_position_price(database: 'DBHandler', inquirer_defi: 'I
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
 @pytest.mark.parametrize('should_mock_current_price_queries', [False])
-def test_find_uniswap_v4_position_price(database: 'DBHandler', inquirer_defi: 'Inquirer') -> None:
+def test_find_uniswap_v4_position_price(database: DBHandler, inquirer_defi: Inquirer) -> None:
     assert inquirer_defi.find_usd_price(asset=get_or_create_evm_token(
         userdb=database,
         evm_address=string_to_evm_address('0xd88F38F930b7952f2DB2432Cb002E7abbF3dD869'),
@@ -1805,9 +1805,9 @@ def test_find_uniswap_v4_position_price(database: 'DBHandler', inquirer_defi: 'I
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
 @pytest.mark.parametrize('should_mock_current_price_queries', [False])
 def test_find_xwoo_price(
-        arbitrum_one_inquirer: 'ArbitrumOneInquirer',
-        database: 'DBHandler',
-        inquirer_defi: 'Inquirer',
+        arbitrum_one_inquirer: ArbitrumOneInquirer,
+        database: DBHandler,
+        inquirer_defi: Inquirer,
 ) -> None:
     """Test that we get the correct price for WOOFi's xWOO token"""
     xwoo_token = get_or_create_evm_token(
@@ -1836,9 +1836,9 @@ def test_find_xwoo_price(
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
 @pytest.mark.parametrize('should_mock_current_price_queries', [False])
 def test_find_woo_fi_supercharger_vault_token_price(
-        optimism_inquirer: 'OptimismInquirer',
-        database: 'DBHandler',
-        inquirer_defi: 'Inquirer',
+        optimism_inquirer: OptimismInquirer,
+        database: DBHandler,
+        inquirer_defi: Inquirer,
 ) -> None:
     """Test that we get the correct price for a WOOFi supercharger vault token."""
     vault_token = get_or_create_evm_token(
@@ -1942,7 +1942,7 @@ def test_errors_web3_logs():
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('should_mock_current_price_queries', [False])
-def test_bsq_price(inquirer: 'Inquirer') -> None:
+def test_bsq_price(inquirer: Inquirer) -> None:
     """Test that we can query bisq for market prices"""
     btc_price = Inquirer.find_usd_price(A_BTC)
     bsq_price = Inquirer.find_usd_price(A_BSQ.resolve_to_crypto_asset())
@@ -1951,7 +1951,7 @@ def test_bsq_price(inquirer: 'Inquirer') -> None:
 
 @pytest.mark.vcr(filter_query_parameters=['apikey', 'api_key'])
 @pytest.mark.parametrize('should_mock_current_price_queries', [False])
-def test_batch_price_query(inquirer: 'Inquirer'):
+def test_batch_price_query(inquirer: Inquirer):
     """Test that finding multiple prices at once works as expected."""
     inquirer._cryptocompare.api_key = ApiKey('dummy-api-key')
     inquirer._cryptocompare.last_ts = ts_now()

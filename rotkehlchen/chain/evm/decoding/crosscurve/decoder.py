@@ -1,7 +1,6 @@
 import logging
 from typing import TYPE_CHECKING, Any
 
-from rotkehlchen.chain.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.evm.decoding.crosscurve.constants import (
     CPT_CROSSCURVE,
     CROSSCHAIN_SWAP_COMPLETED,
@@ -18,17 +17,17 @@ from rotkehlchen.chain.evm.decoding.structures import (
 )
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import ChecksumEvmAddress
 from rotkehlchen.utils.misc import bytes_to_address
 
 if TYPE_CHECKING:
     from collections.abc import Callable
 
+    from rotkehlchen.chain.decoding.types import CounterpartyDetails
     from rotkehlchen.chain.evm.decoding.base import BaseEvmDecoderTools
     from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
     from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
     from rotkehlchen.history.events.structures.evm_event import EvmEvent
-    from rotkehlchen.types import EvmTransaction
+    from rotkehlchen.types import ChecksumEvmAddress, EvmTransaction
     from rotkehlchen.user_messages import MessagesAggregator
 
 logger = logging.getLogger(__name__)
@@ -39,9 +38,9 @@ class CrossCurveCommonDecoder(EvmDecoderInterface):
 
     def __init__(
             self,
-            evm_inquirer: 'EvmNodeInquirer',
-            base_tools: 'BaseEvmDecoderTools',
-            msg_aggregator: 'MessagesAggregator',
+            evm_inquirer: EvmNodeInquirer,
+            base_tools: BaseEvmDecoderTools,
+            msg_aggregator: MessagesAggregator,
             router_addresses: tuple[ChecksumEvmAddress, ...],
     ) -> None:
         super().__init__(
@@ -53,10 +52,10 @@ class CrossCurveCommonDecoder(EvmDecoderInterface):
 
     def _post_decode_send(
             self,
-            transaction: 'EvmTransaction',
-            decoded_events: list['EvmEvent'],
-            all_logs: list['EvmTxReceiptLog'],
-    ) -> list['EvmEvent']:
+            transaction: EvmTransaction,
+            decoded_events: list[EvmEvent],
+            all_logs: list[EvmTxReceiptLog],
+    ) -> list[EvmEvent]:
         """Run after all events are decoded to label CrossCurve bridge send events.
 
         Scans all_logs for CROSSCHAIN_SWAP_INITIATED events on our router addresses.
@@ -142,7 +141,7 @@ class CrossCurveCommonDecoder(EvmDecoderInterface):
     def addresses_to_counterparties(self) -> dict[ChecksumEvmAddress, str]:
         return dict.fromkeys(self.router_addresses, CPT_CROSSCURVE)
 
-    def post_decoding_rules(self) -> dict[str, list[tuple[int, 'Callable']]]:
+    def post_decoding_rules(self) -> dict[str, list[tuple[int, Callable]]]:
         return {CPT_CROSSCURVE: [(0, self._post_decode_send)]}
 
     @staticmethod

@@ -1,9 +1,10 @@
-from typing import Final
-
-from eth_typing.abi import ABI
+from typing import TYPE_CHECKING, Final
 
 from rotkehlchen.chain.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.evm.types import string_to_evm_address
+
+if TYPE_CHECKING:
+    from eth_typing.abi import ABI
 
 CPT_EIGENLAYER: Final = 'eigenlayer'
 EIGENPOD_MANAGER: Final = string_to_evm_address('0x91E677b07F7AF907ec9a428aafA9fc14a0d3A338')

@@ -25,7 +25,7 @@ if TYPE_CHECKING:
     from rotkehlchen.api.server import APIServer
 
 
-def test_get_pending_internal_tx_conflicts_endpoint(rotkehlchen_api_server: 'APIServer') -> None:
+def test_get_pending_internal_tx_conflicts_endpoint(rotkehlchen_api_server: APIServer) -> None:
     tx_hash_pending = make_evm_tx_hash()
     tx_hash_pending_redecode = make_evm_tx_hash()
     tx_hash_done = make_evm_tx_hash()
@@ -216,7 +216,7 @@ def test_get_pending_internal_tx_conflicts_endpoint(rotkehlchen_api_server: 'API
 
 
 def test_get_pending_internal_tx_conflicts_chain_and_timestamp_filters(
-        rotkehlchen_api_server: 'APIServer',
+        rotkehlchen_api_server: APIServer,
 ) -> None:
     tx_hash_eth_early = make_evm_tx_hash()
     tx_hash_optimism = make_evm_tx_hash()
@@ -320,7 +320,7 @@ def test_get_pending_internal_tx_conflicts_chain_and_timestamp_filters(
 
 
 def test_post_pending_internal_tx_conflicts_count_endpoint(
-        rotkehlchen_api_server: 'APIServer',
+        rotkehlchen_api_server: APIServer,
 ) -> None:
     with rotkehlchen_api_server.rest_api.rotkehlchen.data.db.user_write() as write_cursor:
         write_cursor.executemany(
@@ -349,7 +349,7 @@ def test_post_pending_internal_tx_conflicts_count_endpoint(
 @pytest.mark.parametrize('have_decoders', [True])
 @pytest.mark.parametrize('optimism_accounts', [['0xc37b40ABdB939635068d3c5f13E7faF686F03B65']])
 def test_redecode_keeps_optimism_l1_fee_and_relevant_address(
-        rotkehlchen_api_server: 'APIServer',
+        rotkehlchen_api_server: APIServer,
         optimism_accounts: list[str],
 ) -> None:
     """Decode an Optimism tx, assert L1 fee + address mapping in DB, then redecode and

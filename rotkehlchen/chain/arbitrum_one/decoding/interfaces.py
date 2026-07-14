@@ -1,7 +1,10 @@
 from abc import ABC
-from collections.abc import Callable
+from typing import TYPE_CHECKING
 
 from rotkehlchen.chain.evm.decoding.interfaces import EvmDecoderInterface
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
 
 
 class ArbitrumDecoderInterface(EvmDecoderInterface, ABC):

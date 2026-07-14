@@ -1,9 +1,11 @@
 import time
 from threading import Semaphore
-from types import TracebackType
-from typing import Final, Self
+from typing import TYPE_CHECKING, Final, Self
 
 from rotkehlchen.concurrency import cancellable_sleep, checkpoint
+
+if TYPE_CHECKING:
+    from types import TracebackType
 
 # Hysteresis: don't churn the bucket on every response. Only update when the
 # observed rate differs from the current by at least this fraction.

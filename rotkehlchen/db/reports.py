@@ -1,26 +1,27 @@
 import logging
-from collections.abc import Callable
 from copy import deepcopy
 from typing import TYPE_CHECKING, Any, Literal, overload
 
 from sqlcipher3 import dbapi2 as sqlcipher
 
-from rotkehlchen.accounting.pnl import PnlTotals
 from rotkehlchen.accounting.structures.processed_event import ProcessedAccountingEvent
-from rotkehlchen.db.settings import DBSettings
 from rotkehlchen.errors.asset import WrongAssetType
 from rotkehlchen.errors.misc import InputError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import Timestamp
 from rotkehlchen.utils.misc import ts_now
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+
+    from rotkehlchen.accounting.pnl import PnlTotals
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.db.filtering import ReportDataFilterQuery
+    from rotkehlchen.db.settings import DBSettings
+    from rotkehlchen.types import Timestamp
 
 
 @overload
@@ -80,7 +81,7 @@ def _get_reports_or_events_maybe_limit(
 
 class DBAccountingReports:
 
-    def __init__(self, database: 'DBHandler'):
+    def __init__(self, database: DBHandler):
         self.db = database
 
     def add_report(
@@ -308,7 +309,7 @@ class DBAccountingReports:
 
     def get_report_data(
             self,
-            filter_: 'ReportDataFilterQuery',
+            filter_: ReportDataFilterQuery,
             limit: int,
     ) -> tuple[list[ProcessedAccountingEvent], int, int]:
         """Retrieve the event data of a PnL report depending on the given filter

@@ -66,7 +66,7 @@ class MintedSessionToken(TypedDict):
     exp: int
 
 
-def set_session_cookie(response: 'Response', token: str) -> None:
+def set_session_cookie(response: Response, token: str) -> None:
     """Attach the signed session token as the HttpOnly ``rotki_session`` cookie.
 
     ``HttpOnly`` keeps it out of JS (XSS can't exfiltrate it); ``SameSite=Lax``
@@ -84,7 +84,7 @@ def set_session_cookie(response: 'Response', token: str) -> None:
     )
 
 
-def clear_session_cookie(response: 'Response') -> None:
+def clear_session_cookie(response: Response) -> None:
     """Delete the session cookie (logout)."""
     response.delete_cookie(SESSION_COOKIE_NAME, path='/')
 

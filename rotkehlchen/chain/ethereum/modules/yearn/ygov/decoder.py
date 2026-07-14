@@ -28,9 +28,9 @@ class YearnygovDecoder(EvmDecoderInterface):
 
     def __init__(
             self,
-            ethereum_inquirer: 'EthereumInquirer',
-            base_tools: 'BaseEvmDecoderTools',
-            msg_aggregator: 'MessagesAggregator',
+            ethereum_inquirer: EthereumInquirer,
+            base_tools: BaseEvmDecoderTools,
+            msg_aggregator: MessagesAggregator,
     ) -> None:
         super().__init__(
             evm_inquirer=ethereum_inquirer,
@@ -38,7 +38,7 @@ class YearnygovDecoder(EvmDecoderInterface):
             msg_aggregator=msg_aggregator,
         )
 
-    def _decode_withdrawal(self, context: 'DecoderContext') -> None:
+    def _decode_withdrawal(self, context: DecoderContext) -> None:
         """Handle withdraw from the governance contract"""
         withdrawn_amount = token_normalized_value_decimals(
             token_amount=int.from_bytes(context.tx_log.data),
@@ -58,7 +58,7 @@ class YearnygovDecoder(EvmDecoderInterface):
                 event.notes = f'Withdraw {event.amount} YFI reward from ygov.finance'
                 break
 
-    def _decode_reward_token(self, context: 'DecoderContext') -> None:
+    def _decode_reward_token(self, context: DecoderContext) -> None:
         """Handle rewards claim"""
         withdrawn_amount = token_normalized_value_decimals(
             token_amount=int.from_bytes(context.tx_log.data),
@@ -77,7 +77,7 @@ class YearnygovDecoder(EvmDecoderInterface):
                 event.notes = f'Collect reward of {event.amount} YFI from ygov.finance'
                 break
 
-    def _decode_stake(self, context: 'DecoderContext') -> None:
+    def _decode_stake(self, context: DecoderContext) -> None:
         """Decode depositing the crv pool token in the gov contract"""
         staked_amount = token_normalized_value_decimals(
             token_amount=int.from_bytes(context.tx_log.data),
@@ -97,7 +97,7 @@ class YearnygovDecoder(EvmDecoderInterface):
                 event.notes = f'Deposit {event.amount} yDAI+yUSDC+yUSDT+yTUSD in ygov.finance'
                 break
 
-    def decode_gov_events(self, context: 'DecoderContext') -> 'EvmDecodingOutput':
+    def decode_gov_events(self, context: DecoderContext) -> EvmDecodingOutput:
         if context.tx_log.topics[0] == REWARD_PAID_TOPIC_V2:
             self._decode_reward_token(context)
         elif context.tx_log.topics[0] == WITHDRAWN:
@@ -107,7 +107,7 @@ class YearnygovDecoder(EvmDecoderInterface):
 
         return DEFAULT_EVM_DECODING_OUTPUT
 
-    def addresses_to_decoders(self) -> dict['ChecksumEvmAddress', tuple[Any, ...]]:
+    def addresses_to_decoders(self) -> dict[ChecksumEvmAddress, tuple[Any, ...]]:
         return {YGOV_ADDRESS: (self.decode_gov_events,)}
 
     @staticmethod

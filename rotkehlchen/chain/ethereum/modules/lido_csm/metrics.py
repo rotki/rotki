@@ -22,12 +22,12 @@ from rotkehlchen.chain.evm.contracts import EvmContract
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import A_STETH
 from rotkehlchen.errors.misc import RemoteError
-from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.utils.network import query_file
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
+    from rotkehlchen.fval import FVal
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -68,7 +68,7 @@ class LidoCsmMetricsFetcher:
     """Fetches and normalizes Lido CSM metrics from on-chain contracts and IPFS."""
     def __init__(
             self,
-            evm_inquirer: 'EthereumInquirer',
+            evm_inquirer: EthereumInquirer,
     ) -> None:
         # TODO: share conversion logic here mirrors balances.py; extract a shared helper.
         self.accounting_contract = EvmContract(

@@ -778,8 +778,8 @@ def test_aave_v2_repay(database, ethereum_inquirer, eth_transactions):
 @pytest.mark.vcr
 @pytest.mark.parametrize('ethereum_accounts', [['0x1dB64086b4cdA94884E4FC296799a512dfc564CA']])
 def test_aave_v2_liquidation(
-        ethereum_inquirer: 'EthereumInquirer',
-        ethereum_accounts: list['ChecksumEvmAddress'],
+        ethereum_inquirer: EthereumInquirer,
+        ethereum_accounts: list[ChecksumEvmAddress],
 ) -> None:
     """Data taken from
     https://etherscan.io/tx/0x2077a54ecae4a06c553f96c120acc0237887fdd1fc2596aab103f6681712974d
@@ -822,8 +822,8 @@ def test_aave_v2_liquidation(
 @pytest.mark.vcr
 @pytest.mark.parametrize('ethereum_accounts', [['0x8ca7ED9b02ec1E8bEee868a32495Ed5b157eeE08']])
 def test_aave_v1_liquidation(
-        ethereum_inquirer: 'EthereumInquirer',
-        ethereum_accounts: list['ChecksumEvmAddress'],
+        ethereum_inquirer: EthereumInquirer,
+        ethereum_accounts: list[ChecksumEvmAddress],
 ) -> None:
     """Data taken from
     https://etherscan.io/tx/0x75ef28b5593efd3f0f9eff338e234f59b2bd34a7148a90ce020122900722a832
@@ -990,7 +990,7 @@ def test_aave_v2_borrow_polygon(polygon_pos_inquirer, polygon_pos_accounts) -> N
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0x6A61Ea7832f84C3096c70f042aB88D9a56732D7B']])
-def test_aave_stake(ethereum_inquirer: 'EthereumInquirer', ethereum_accounts: list['ChecksumEvmAddress']) -> None:  # noqa: E501
+def test_aave_stake(ethereum_inquirer: EthereumInquirer, ethereum_accounts: list[ChecksumEvmAddress]) -> None:  # noqa: E501
     """Test that the decoder can decode the stake event from Aave"""
     tx_hash = deserialize_evm_tx_hash('0xfaf96358784483a96a61db6aa4ecf4ac87294b841671ca208de6b5d8f83edf17')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
@@ -1051,7 +1051,7 @@ def test_aave_stake(ethereum_inquirer: 'EthereumInquirer', ethereum_accounts: li
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0xeD62616a7c1DD354801f4E72389299a81493e004']])
-def test_aave_stake_behalfof(ethereum_inquirer: 'EthereumInquirer', ethereum_accounts: list['ChecksumEvmAddress']) -> None:  # noqa: E501
+def test_aave_stake_behalfof(ethereum_inquirer: EthereumInquirer, ethereum_accounts: list[ChecksumEvmAddress]) -> None:  # noqa: E501
     """Test that the decoder can decode the stake event from Aave from 2022
     The implementation of the proxy contract was different back then."""
     tx_hash = deserialize_evm_tx_hash('0x5532a19bdd4aa26656dc5099d80862a5218cbaf7c96f30cae4a8bb0d19803bfc')  # noqa: E501
@@ -1113,7 +1113,7 @@ def test_aave_stake_behalfof(ethereum_inquirer: 'EthereumInquirer', ethereum_acc
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0x201B93778C36Aad0510d96c0a3733A6Efa9d0bC5']])
-def test_aave_unstake(ethereum_inquirer: 'EthereumInquirer', ethereum_accounts: list['ChecksumEvmAddress']) -> None:  # noqa: E501
+def test_aave_unstake(ethereum_inquirer: EthereumInquirer, ethereum_accounts: list[ChecksumEvmAddress]) -> None:  # noqa: E501
     """Test that the decoder can decode the unstake/redeem event from Aave"""
     tx_hash = deserialize_evm_tx_hash('0xaaef5990d08a0f4cb83b0f98b995f734c96ab6dca41bf7de54c3719fe463ce24')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
@@ -1162,7 +1162,7 @@ def test_aave_unstake(ethereum_inquirer: 'EthereumInquirer', ethereum_accounts: 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0x76d098850ff14b5922774d156a2D3eb842d88B4a']])
-def test_aave_unstake_old(ethereum_inquirer: 'EthereumInquirer', ethereum_accounts: list['ChecksumEvmAddress']) -> None:  # noqa: E501
+def test_aave_unstake_old(ethereum_inquirer: EthereumInquirer, ethereum_accounts: list[ChecksumEvmAddress]) -> None:  # noqa: E501
     """Test that the decoder can decode the unstake/redeem event from Aave back in 2022"""
     tx_hash = deserialize_evm_tx_hash('0x4d28e34be9ccc8a64d0fe9bc30982700b042cd0bdbe7c3bc3968107dce6471e3')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
@@ -1211,7 +1211,7 @@ def test_aave_unstake_old(ethereum_inquirer: 'EthereumInquirer', ethereum_accoun
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0x9C836687964D89B52Ae80E3e941745Ddd67e5222']])
-def test_stake_reward(ethereum_inquirer: 'EthereumInquirer', ethereum_accounts: list['ChecksumEvmAddress']) -> None:  # noqa: E501
+def test_stake_reward(ethereum_inquirer: EthereumInquirer, ethereum_accounts: list[ChecksumEvmAddress]) -> None:  # noqa: E501
     """Test that the decoder can decode aave reward claiming"""
     tx_hash = deserialize_evm_tx_hash('0xc8ed217572a15a81891ad6480a56150d5b2721c9e517564c3e8ead4439cdcb62')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
@@ -1248,7 +1248,7 @@ def test_stake_reward(ethereum_inquirer: 'EthereumInquirer', ethereum_accounts: 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0x3d5Cb9a945542732f9943fA787e12cD7F468b273']])
-def test_stake_reward_and_restake(ethereum_inquirer: 'EthereumInquirer', ethereum_accounts: list['ChecksumEvmAddress']) -> None:  # noqa: E501
+def test_stake_reward_and_restake(ethereum_inquirer: EthereumInquirer, ethereum_accounts: list[ChecksumEvmAddress]) -> None:  # noqa: E501
     """Test claim+stake where AAVE transfer is internal to the staking contract."""
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=ethereum_inquirer,
@@ -1313,7 +1313,7 @@ def test_stake_reward_and_restake(ethereum_inquirer: 'EthereumInquirer', ethereu
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0x6Cf9AA65EBaD7028536E353393630e2340ca6049']])
-def test_stake_reward_from_incentives(ethereum_inquirer: 'EthereumInquirer', ethereum_accounts: list['ChecksumEvmAddress']) -> None:  # noqa: E501
+def test_stake_reward_from_incentives(ethereum_inquirer: EthereumInquirer, ethereum_accounts: list[ChecksumEvmAddress]) -> None:  # noqa: E501
     """Test that the decoder can decode aave staking reward claiming in the old way ~2022
     which takes it from the aave incentives"""
     tx_hash = deserialize_evm_tx_hash('0x376c51a492f3f309c408b00278fbb77e54adcbb883f9e0fc190c5478fc153bbf')  # noqa: E501
@@ -1377,7 +1377,7 @@ def test_stake_reward_from_incentives(ethereum_inquirer: 'EthereumInquirer', eth
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('polygon_pos_accounts', [['0x9131C96c791A5aAd3dF4F8C85Acc755a8dD487Ed']])
-def test_polygon_incentives(polygon_pos_inquirer: 'PolygonPOSInquirer', polygon_pos_accounts: list['ChecksumEvmAddress']) -> None:  # noqa: E501
+def test_polygon_incentives(polygon_pos_inquirer: PolygonPOSInquirer, polygon_pos_accounts: list[ChecksumEvmAddress]) -> None:  # noqa: E501
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=polygon_pos_inquirer,
         tx_hash=(tx_hash := deserialize_evm_tx_hash('0x6ebaa1502335caa7aa9b6589169885d0361e96bab9ed3b1264308a716d6524c3')),  # noqa: E501

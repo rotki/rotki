@@ -1185,8 +1185,8 @@ def test_transaction_to_self_event(ethereum_inquirer, ethereum_accounts):
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0x9fC3dc011b461664c835F2527fffb1169b3C213e']])
 def test_onchain_message(
-        ethereum_inquirer: 'EthereumInquirer',
-        ethereum_accounts: list['ChecksumEvmAddress'],
+        ethereum_inquirer: EthereumInquirer,
+        ethereum_accounts: list[ChecksumEvmAddress],
 ) -> None:
     """Test that onchain messages are decoded correctly."""
     tx_hash = deserialize_evm_tx_hash('0x7b6494743e99a8638d579b7725b0061eca590df20e023df483404f353dcd8bad')  # noqa: E501
@@ -1209,8 +1209,8 @@ def test_onchain_message(
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12']])
 def test_onchain_message_failed_call(
-        ethereum_inquirer: 'EthereumInquirer',
-        ethereum_accounts: list['ChecksumEvmAddress'],
+        ethereum_inquirer: EthereumInquirer,
+        ethereum_accounts: list[ChecksumEvmAddress],
 ) -> None:
     """Test that a transaction that fails calling a contract (not a Safe)
     doesn't decode as a message,

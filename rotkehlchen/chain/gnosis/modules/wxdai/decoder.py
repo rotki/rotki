@@ -14,9 +14,9 @@ if TYPE_CHECKING:
 class WxdaiDecoder(WethDecoderBase):
     def __init__(
             self,
-            gnosis_inquirer: 'GnosisInquirer',
-            base_tools: 'BaseEvmDecoderTools',
-            msg_aggregator: 'MessagesAggregator',
+            gnosis_inquirer: GnosisInquirer,
+            base_tools: BaseEvmDecoderTools,
+            msg_aggregator: MessagesAggregator,
     ) -> None:
         super().__init__(
             evm_inquirer=gnosis_inquirer,

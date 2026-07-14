@@ -4,7 +4,6 @@ from typing import TYPE_CHECKING
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.utils import asset_normalized_value
 from rotkehlchen.chain.ethereum.interfaces.balances import BalancesSheetType, ProtocolWithGauges
-from rotkehlchen.chain.evm.contracts import EvmContract
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import A_CVX
 from rotkehlchen.db.settings import CachedSettings
@@ -12,14 +11,15 @@ from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import ChecksumEvmAddress
 
 from .constants import CPT_CONVEX, CVX_LOCKER_V2, CVX_REWARDS
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.decoding.decoder import EthereumTransactionDecoder
     from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
+    from rotkehlchen.chain.evm.contracts import EvmContract
     from rotkehlchen.history.events.structures.evm_event import EvmEvent
+    from rotkehlchen.types import ChecksumEvmAddress
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -30,8 +30,8 @@ class ConvexBalances(ProtocolWithGauges):
 
     def __init__(
             self,
-            evm_inquirer: 'EthereumInquirer',
-            tx_decoder: 'EthereumTransactionDecoder',
+            evm_inquirer: EthereumInquirer,
+            tx_decoder: EthereumTransactionDecoder,
     ):
         super().__init__(
             evm_inquirer=evm_inquirer,
@@ -42,14 +42,14 @@ class ConvexBalances(ProtocolWithGauges):
         )
         self.cvx = A_CVX.resolve_to_evm_token()
 
-    def get_gauge_address(self, event: 'EvmEvent') -> ChecksumEvmAddress | None:
+    def get_gauge_address(self, event: EvmEvent) -> ChecksumEvmAddress | None:
         if event.extra_data is None:
             return None
         return event.extra_data.get('gauge_address')  # can be None
 
     def _query_staked_cvx(
             self,
-            balances: 'BalancesSheetType',
+            balances: BalancesSheetType,
             staking_contract: EvmContract,
             addresses_with_stake: list[ChecksumEvmAddress],
     ) -> None:
@@ -86,7 +86,7 @@ class ConvexBalances(ProtocolWithGauges):
 
         return None
 
-    def query_balances(self) -> 'BalancesSheetType':
+    def query_balances(self) -> BalancesSheetType:
         balances = super().query_balances()  # Query the gauges
         addresses_with_stake_mapping = self.addresses_with_activity(
             event_types=self.deposit_event_types,

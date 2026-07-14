@@ -41,8 +41,8 @@ if TYPE_CHECKING:
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('polygon_pos_accounts', [['0x9b3Df1109CD696f08eEDa860C6D5dA56D3DA2daF']])
 def test_openocean_swap_token_to_token(
-        polygon_pos_inquirer: 'PolygonPOSInquirer',
-        polygon_pos_accounts: list['ChecksumEvmAddress'],
+        polygon_pos_inquirer: PolygonPOSInquirer,
+        polygon_pos_accounts: list[ChecksumEvmAddress],
 ):
     tx_hash = deserialize_evm_tx_hash('0x4c335999c657e3d6f4dfe875d50911a844580c42a667d6952211459c0eae587d')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=polygon_pos_inquirer, tx_hash=tx_hash)  # noqa: E501
@@ -105,8 +105,8 @@ def test_openocean_swap_token_to_token(
 @pytest.mark.parametrize('db_settings', LEGACY_TESTS_INDEXER_ORDER)
 @pytest.mark.parametrize('base_accounts', [['0x9fC0784d90bcac115129366AcD2acB1EFa575009']])
 def test_openocean_swap_eth_to_token(
-        base_inquirer: 'BaseInquirer',
-        base_accounts: list['ChecksumEvmAddress'],
+        base_inquirer: BaseInquirer,
+        base_accounts: list[ChecksumEvmAddress],
 ):
     tx_hash = deserialize_evm_tx_hash('0xe45c138f3086f821c6598b24999c9cc0ca9ed95ecccc08b57f751d7146fd01ca')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=base_inquirer, tx_hash=tx_hash)
@@ -156,8 +156,8 @@ def test_openocean_swap_eth_to_token(
 @pytest.mark.parametrize('db_settings', LEGACY_TESTS_INDEXER_ORDER)
 @pytest.mark.parametrize('optimism_accounts', [['0xB3cbefF0336BaA4863Cb51238bD6C35BDAaB3D84']])
 def test_openocean_swap_token_to_eth(
-        optimism_inquirer: 'OptimismInquirer',
-        optimism_accounts: list['ChecksumEvmAddress'],
+        optimism_inquirer: OptimismInquirer,
+        optimism_accounts: list[ChecksumEvmAddress],
 ):
     tx_hash = deserialize_evm_tx_hash('0x076fdb84e51d17d2f9727c34f4b73cc1ffcd3671165764a0a287fe09a0cab36e')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=optimism_inquirer, tx_hash=tx_hash)
@@ -219,8 +219,8 @@ def test_openocean_swap_token_to_eth(
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('arbitrum_one_accounts', [['0x9531C059098e3d194fF87FebB587aB07B30B1306']])
 def test_openocean_swap_uniswap_with_swapped_log(
-        arbitrum_one_inquirer: 'ArbitrumOneInquirer',
-        arbitrum_one_accounts: list['ChecksumEvmAddress'],
+        arbitrum_one_inquirer: ArbitrumOneInquirer,
+        arbitrum_one_accounts: list[ChecksumEvmAddress],
 ):
     tx_hash = deserialize_evm_tx_hash('0xf882a6a323bdc7ac05e78e2c346fddb489249afc04e68f09b1858ab357c8ede0')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=arbitrum_one_inquirer, tx_hash=tx_hash)  # noqa: E501
@@ -281,8 +281,8 @@ def test_openocean_swap_uniswap_with_swapped_log(
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0xfACcCDaC14056e2Cb7E95ddd1E8E9924bE8CAdBe']])
 def test_openocean_swap_uniswapv2(
-        ethereum_inquirer: 'EthereumInquirer',
-        ethereum_accounts: list['ChecksumEvmAddress'],
+        ethereum_inquirer: EthereumInquirer,
+        ethereum_accounts: list[ChecksumEvmAddress],
 ):
     tx_hash = deserialize_evm_tx_hash('0x497acb2385e7d7bc39160097348bd6423ecfe50f616dd2841cecd25a6561fae2')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
@@ -331,8 +331,8 @@ def test_openocean_swap_uniswapv2(
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0xd79A19c88D34538dC56926021D07B1F719BBbF3c']])
 def test_openocean_swap_uniswapv3(
-        ethereum_inquirer: 'EthereumInquirer',
-        ethereum_accounts: list['ChecksumEvmAddress'],
+        ethereum_inquirer: EthereumInquirer,
+        ethereum_accounts: list[ChecksumEvmAddress],
 ):
     tx_hash = deserialize_evm_tx_hash('0xb8caa647073e36ea91c2c22e57b49ddd1721c6c8b18ef51c3043adaa2950251b')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
@@ -381,8 +381,8 @@ def test_openocean_swap_uniswapv3(
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('binance_sc_accounts', [['0xbF10AEcf9b1D6EbBF3d23237BA90d74600a7Cb3e']])
 def test_openocean_swap_on_binance_sc(
-        binance_sc_inquirer: 'BinanceSCInquirer',
-        binance_sc_accounts: list['ChecksumEvmAddress'],
+        binance_sc_inquirer: BinanceSCInquirer,
+        binance_sc_accounts: list[ChecksumEvmAddress],
 ) -> None:
     tx_hash = deserialize_evm_tx_hash('0x401b2209ef972bf9f3e77b743df65b9a0057e21e3a325b790811902d6faa6f2f')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=binance_sc_inquirer, tx_hash=tx_hash)  # noqa: E501
@@ -442,8 +442,8 @@ def test_openocean_swap_on_binance_sc(
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('gnosis_accounts', [['0x1Bc91Ad00C40ddE565a055bbe39069b84868738e']])
 def test_openocean_swap_xdai_to_token(
-        gnosis_inquirer: 'GnosisInquirer',
-        gnosis_accounts: list['ChecksumEvmAddress'],
+        gnosis_inquirer: GnosisInquirer,
+        gnosis_accounts: list[ChecksumEvmAddress],
 ):
     tx_hash = deserialize_evm_tx_hash('0x806a840fd2c7ed43eefb2069a3a1d1921b668f3762a3ec6928549055d5b65453')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=gnosis_inquirer, tx_hash=tx_hash)
@@ -492,8 +492,8 @@ def test_openocean_swap_xdai_to_token(
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('arbitrum_one_accounts', [['0xc992007929b1841eA94eCFE52a600CcF8A594668']])
 def test_openocean_distribution(
-        arbitrum_one_inquirer: 'ArbitrumOneInquirer',
-        arbitrum_one_accounts: list['ChecksumEvmAddress'],
+        arbitrum_one_inquirer: ArbitrumOneInquirer,
+        arbitrum_one_accounts: list[ChecksumEvmAddress],
 ):
     tx_hash = deserialize_evm_tx_hash('0xaaa23c4ce149a1c72159816e4fa4cd820143a9e0a933b10fd4c78c78884370ff')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=arbitrum_one_inquirer, tx_hash=tx_hash)  # noqa: E501

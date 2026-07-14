@@ -1,4 +1,5 @@
 import logging
+from typing import TYPE_CHECKING
 
 import requests
 from bs4 import BeautifulSoup, SoupStrainer
@@ -10,8 +11,10 @@ from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.history.deserialization import deserialize_price
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import Price, Timestamp
 from rotkehlchen.utils.misc import timestamp_to_date
+
+if TYPE_CHECKING:
+    from rotkehlchen.types import Price, Timestamp
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)

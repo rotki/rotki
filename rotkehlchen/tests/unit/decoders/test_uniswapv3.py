@@ -575,8 +575,8 @@ def test_uniswap_v3_add_liquidity(ethereum_inquirer):
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('arbitrum_one_accounts', [['0x706A70067BE19BdadBea3600Db0626859Ff25D74']])
 def test_uniswap_v3_create_lp_position_with_native_refund(
-        arbitrum_one_inquirer: 'ArbitrumOneInquirer',
-        arbitrum_one_accounts: list['ChecksumEvmAddress'],
+        arbitrum_one_inquirer: ArbitrumOneInquirer,
+        arbitrum_one_accounts: list[ChecksumEvmAddress],
 ) -> None:
     """Test decoding of a lp creation with a native token deposit where a small amount of the
     deposited native token is returned (receive amount is subtracted from the deposit and the
@@ -1025,8 +1025,8 @@ def test_add_liquidity_on_optimism(optimism_inquirer, optimism_accounts):
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('binance_sc_accounts', [['0xEF575087F1e7BeC54046F98119c8C392a37c51dd']])
 def test_swap_on_binance_sc(
-        binance_sc_inquirer: 'BinanceSCInquirer',
-        binance_sc_accounts: list['ChecksumEvmAddress'],
+        binance_sc_inquirer: BinanceSCInquirer,
+        binance_sc_accounts: list[ChecksumEvmAddress],
 ) -> None:
     tx_hash = deserialize_evm_tx_hash('0x3cfb94c6c4a3ba05759cab565148fe5a0c1894479603c29c6c2201dbed943365')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=binance_sc_inquirer, tx_hash=tx_hash)  # noqa: E501
@@ -1075,8 +1075,8 @@ def test_swap_on_binance_sc(
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('arbitrum_one_accounts', [['0x706A70067BE19BdadBea3600Db0626859Ff25D74']])
 def test_receive_position_token_on_arbitrum(
-        arbitrum_one_inquirer: 'ArbitrumOneInquirer',
-        arbitrum_one_accounts: list['ChecksumEvmAddress'],
+        arbitrum_one_inquirer: ArbitrumOneInquirer,
+        arbitrum_one_accounts: list[ChecksumEvmAddress],
 ) -> None:
     """Test that erc721 approval and transfer events work correctly.
     The approval event is on an untracked address, but is what creates the token initially.

@@ -177,7 +177,7 @@ def test_okx_query_balances(mock_okx: Okx):
     assert len(errors) == 0
 
 
-def test_okx_query_trades(mock_okx: 'Okx') -> None:
+def test_okx_query_trades(mock_okx: Okx) -> None:
     def mock_okx_trades(method, url, **_kwargs):  # pylint: disable=unused-argument
         if 'trade/orders-history-archive' in url:
             data = """
@@ -799,7 +799,7 @@ def test_okx_query_trades(mock_okx: 'Okx') -> None:
         )]
 
 
-def test_okx_query_deposits_withdrawals(mock_okx: 'Okx') -> None:
+def test_okx_query_deposits_withdrawals(mock_okx: Okx) -> None:
     def mock_okx_deposits_withdrawals(method, url, **_kwargs):     # pylint: disable=unused-argument
         if 'deposit' in url:
             data = """
@@ -971,7 +971,7 @@ def test_okx_query_deposits_withdrawals(mock_okx: 'Okx') -> None:
     assert asset_movements == expected_asset_movements
 
 
-def test_okx_withdrawals_pagination(mock_okx: 'Okx') -> None:
+def test_okx_withdrawals_pagination(mock_okx: Okx) -> None:
     """Regression test for withdrawal history pagination.
 
     Withdrawal records have no `ordId` field (only trade records do), so

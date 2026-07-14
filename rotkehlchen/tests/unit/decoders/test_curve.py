@@ -79,7 +79,7 @@ CURVE_SWAP_ROUTER_NG: Final = string_to_evm_address('0xd6681e74eEA20d196c15038C5
 
 
 @pytest.fixture(name='populate_curve_pool_cache')
-def _populate_curve_pool_cache(globaldb: 'GlobalDBHandler') -> None:
+def _populate_curve_pool_cache(globaldb: GlobalDBHandler) -> None:
     """Function to add into the cache the information for:
         - EURe pool in arbitrum
         - ZCHF/CRVUSD in ethereum
@@ -2747,8 +2747,8 @@ def test_deposit_order(gnosis_inquirer, gnosis_accounts, load_global_caches):
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('binance_sc_accounts', [['0x1b414E1977EAA94FA57c3e669683769aD19E88D5']])
 def test_curve_swap_router_binance_sc(
-        binance_sc_inquirer: 'BinanceSCInquirer',
-        binance_sc_accounts: list['ChecksumEvmAddress'],
+        binance_sc_inquirer: BinanceSCInquirer,
+        binance_sc_accounts: list[ChecksumEvmAddress],
 ):
     tx_hash = deserialize_evm_tx_hash('0x79bda33cfae80c8d7b26def223f409e54cfddc33ec7e009523fb5bc708e85042')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=binance_sc_inquirer, tx_hash=tx_hash)  # noqa: E501
@@ -2957,8 +2957,8 @@ def test_withdraw_eure_arb(
 @pytest.mark.parametrize('load_global_caches', [[CPT_CURVE]])
 @pytest.mark.parametrize('arbitrum_one_accounts', [['0x3Ba6eB0e4327B96aDe6D4f3b578724208a590CEF']])
 def test_remove_liquidity_single_token(
-        arbitrum_one_inquirer: 'ArbitrumOneInquirer',
-        arbitrum_one_accounts: list['ChecksumEvmAddress'],
+        arbitrum_one_inquirer: ArbitrumOneInquirer,
+        arbitrum_one_accounts: list[ChecksumEvmAddress],
         load_global_caches: list[str],
 ) -> None:
     events, _ = get_decoded_events_of_transaction(
@@ -3011,8 +3011,8 @@ def test_remove_liquidity_single_token(
 @pytest.mark.parametrize('arbitrum_one_accounts', [['0x3Ba6eB0e4327B96aDe6D4f3b578724208a590CEF']])
 @pytest.mark.parametrize('load_global_caches', [[CPT_CURVE]])
 def test_remove_liquidity_single_token_2(
-        arbitrum_one_inquirer: 'ArbitrumOneInquirer',
-        arbitrum_one_accounts: list['ChecksumEvmAddress'],
+        arbitrum_one_inquirer: ArbitrumOneInquirer,
+        arbitrum_one_accounts: list[ChecksumEvmAddress],
         load_global_caches: list[str],
         database,
         populate_curve_pool_cache,
@@ -3070,8 +3070,8 @@ def test_remove_liquidity_single_token_2(
 @pytest.mark.parametrize('arbitrum_one_accounts', [['0x3Ba6eB0e4327B96aDe6D4f3b578724208a590CEF']])
 @pytest.mark.parametrize('load_global_caches', [[CPT_CURVE]])
 def test_remove_liquidity_two_assets(
-        arbitrum_one_inquirer: 'ArbitrumOneInquirer',
-        arbitrum_one_accounts: list['ChecksumEvmAddress'],
+        arbitrum_one_inquirer: ArbitrumOneInquirer,
+        arbitrum_one_accounts: list[ChecksumEvmAddress],
         load_global_caches: list[str],
 ) -> None:
     events, _ = get_decoded_events_of_transaction(
@@ -3137,8 +3137,8 @@ def test_remove_liquidity_two_assets(
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('arbitrum_one_accounts', [['0xfA0Bd4E927a5C2F04f387633E108A2A104C993c1']])
 def test_mint_crv_arb(
-        arbitrum_one_inquirer: 'ArbitrumOneInquirer',
-        arbitrum_one_accounts: list['ChecksumEvmAddress'],
+        arbitrum_one_inquirer: ArbitrumOneInquirer,
+        arbitrum_one_accounts: list[ChecksumEvmAddress],
 ) -> None:
     """Check that minting CRV happens correctly in L2s.
     This happens when claiming from gauges since CRV gets minted in the
@@ -3182,7 +3182,7 @@ def test_mint_crv_arb(
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('db_settings', LEGACY_TESTS_INDEXER_ORDER)
 @pytest.mark.parametrize('base_accounts', [['0x77BDF564A1f9cE5A5785a36Fc77cC4fFbEcD3a19']])
-def test_curve_router_v1_2(base_inquirer: 'BaseInquirer', base_accounts: list['ChecksumEvmAddress']) -> None:  # noqa: E501
+def test_curve_router_v1_2(base_inquirer: BaseInquirer, base_accounts: list[ChecksumEvmAddress]) -> None:  # noqa: E501
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=base_inquirer,
         tx_hash=(tx_hash := deserialize_evm_tx_hash('0x72e4c09bd07884df800dea65063b5a2cff22ec697f5644bb17dea14db5cb99e1')),  # noqa: E501

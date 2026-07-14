@@ -41,8 +41,8 @@ if TYPE_CHECKING:
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0x3eD56F271Ea3B86523e44ff1eE0D21f40d68d94F']])
 def test_swap_eth_to_token(
-        ethereum_inquirer: 'EthereumInquirer',
-        ethereum_accounts: list['ChecksumEvmAddress'],
+        ethereum_inquirer: EthereumInquirer,
+        ethereum_accounts: list[ChecksumEvmAddress],
 ) -> None:
     """Test decoding of a swap from native to token via the V4 router and pool manager."""
     tx_hash = deserialize_evm_tx_hash('0x4a3d3205385105f5159b905c8a1471a6328452909d826f55ef2f0690381d9aa7')  # noqa: E501
@@ -101,8 +101,8 @@ def test_swap_eth_to_token(
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('arbitrum_one_accounts', [['0xB2Fb1E31bAFFaCeE52D4B9AB79009EcCCCB856e5']])
 def test_swap_token_to_eth(
-        arbitrum_one_inquirer: 'ArbitrumOneInquirer',
-        arbitrum_one_accounts: list['ChecksumEvmAddress'],
+        arbitrum_one_inquirer: ArbitrumOneInquirer,
+        arbitrum_one_accounts: list[ChecksumEvmAddress],
 ) -> None:
     """Test decoding of a swap from token to native via the V4 router and a V3 pool."""
     tx_hash = deserialize_evm_tx_hash('0x3ea90c2f3882c798185d135307a5ee3c366790c62bf9755f1035ff6bd9fb5381')  # noqa: E501
@@ -162,8 +162,8 @@ def test_swap_token_to_eth(
 @pytest.mark.parametrize('db_settings', LEGACY_TESTS_INDEXER_ORDER)
 @pytest.mark.parametrize('optimism_accounts', [['0x09ae5e9e7E64F68fB9085EA4Cda20Dfb8428Ba46']])
 def test_swap_token_to_token(
-        optimism_inquirer: 'OptimismInquirer',
-        optimism_accounts: list['ChecksumEvmAddress'],
+        optimism_inquirer: OptimismInquirer,
+        optimism_accounts: list[ChecksumEvmAddress],
 ) -> None:
     """Test decoding of a swap from token to token via the V4 router and pool manager."""
     tx_hash = deserialize_evm_tx_hash('0xb1501f9d4d188c769cd1bda14a5fe87e828470fbef968bb8e5e7b702344e8e73')  # noqa: E501
@@ -222,8 +222,8 @@ def test_swap_token_to_token(
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('binance_sc_accounts', [['0x5dFF28ea9284C853baA4b8316Aeaf558e3d12488']])
 def test_swap_token_to_bnb(
-        binance_sc_inquirer: 'BinanceSCInquirer',
-        binance_sc_accounts: list['ChecksumEvmAddress'],
+        binance_sc_inquirer: BinanceSCInquirer,
+        binance_sc_accounts: list[ChecksumEvmAddress],
 ) -> None:
     """Test decoding of a swap from token to native on a non-ETH chain."""
     tx_hash = deserialize_evm_tx_hash('0xf4da4f7c2da6f02db3de87a2d11b1da3a37a7b92bbfad0f09d9bc9cfd0282793')  # noqa: E501
@@ -298,8 +298,8 @@ def test_swap_token_to_bnb(
     '0x070143e489aa791C10b3b39c7CAdf45c36BA9e60',
 ]])
 def test_multi_pool_swap_to_second_address(
-        optimism_inquirer: 'OptimismInquirer',
-        optimism_accounts: list['ChecksumEvmAddress'],
+        optimism_inquirer: OptimismInquirer,
+        optimism_accounts: list[ChecksumEvmAddress],
 ) -> None:
     """Test decoding of a swap routed through two V3 pools with the result
     sent to a second address.
@@ -348,8 +348,8 @@ def test_multi_pool_swap_to_second_address(
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('polygon_pos_accounts', [['0x7E25f8488D25152437dBECC787F655966DD00C67']])
 def test_create_lp_position(
-        polygon_pos_inquirer: 'PolygonPOSInquirer',
-        polygon_pos_accounts: list['ChecksumEvmAddress'],
+        polygon_pos_inquirer: PolygonPOSInquirer,
+        polygon_pos_accounts: list[ChecksumEvmAddress],
 ) -> None:
     tx_hash = deserialize_evm_tx_hash('0x2277ee48d4e5394a59500a9f70ab29c12b27b28398973e6ca2666143dd690358')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=polygon_pos_inquirer, tx_hash=tx_hash)  # noqa: E501
@@ -434,8 +434,8 @@ def test_create_lp_position(
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('arbitrum_one_accounts', [['0x706A70067BE19BdadBea3600Db0626859Ff25D74']])
 def test_create_lp_position_with_native_refund(
-        arbitrum_one_inquirer: 'ArbitrumOneInquirer',
-        arbitrum_one_accounts: list['ChecksumEvmAddress'],
+        arbitrum_one_inquirer: ArbitrumOneInquirer,
+        arbitrum_one_accounts: list[ChecksumEvmAddress],
 ) -> None:
     """Test decoding of a lp creation with a native token deposit where a small amount of the
     deposited native token is returned (receive amount is subtracted from the deposit and the
@@ -501,8 +501,8 @@ def test_create_lp_position_with_native_refund(
 @pytest.mark.parametrize('db_settings', LEGACY_TESTS_INDEXER_ORDER)
 @pytest.mark.parametrize('optimism_accounts', [['0x8605355cA4E07C1B2cEB548a052876A18028d7Fd']])
 def test_increase_liquidity(
-        optimism_inquirer: 'OptimismInquirer',
-        optimism_accounts: list['ChecksumEvmAddress'],
+        optimism_inquirer: OptimismInquirer,
+        optimism_accounts: list[ChecksumEvmAddress],
 ) -> None:
     tx_hash = deserialize_evm_tx_hash('0xe65d2fe847aa7e8143f01f67567f2659efa750eaa254421aeb27ba090df5ea2e')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=optimism_inquirer, tx_hash=tx_hash)
@@ -550,8 +550,8 @@ def test_increase_liquidity(
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0x076E7D08170036FFa56142372723c03326ee27E9']])
 def test_exit_lp_position(
-        ethereum_inquirer: 'EthereumInquirer',
-        ethereum_accounts: list['ChecksumEvmAddress'],
+        ethereum_inquirer: EthereumInquirer,
+        ethereum_accounts: list[ChecksumEvmAddress],
 ) -> None:
     tx_hash = deserialize_evm_tx_hash('0xd96f3bdbdcb28e0e038a14afd343858a8dc72ddb41c16651a07d9422b6b04694')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
@@ -612,8 +612,8 @@ def test_exit_lp_position(
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('polygon_pos_accounts', [['0x2fCC69eaa8c9F33538CBac50eb5432c422825e6D']])
 def test_decrease_liquidity(
-        polygon_pos_inquirer: 'PolygonPOSInquirer',
-        polygon_pos_accounts: list['ChecksumEvmAddress'],
+        polygon_pos_inquirer: PolygonPOSInquirer,
+        polygon_pos_accounts: list[ChecksumEvmAddress],
 ) -> None:
     tx_hash = deserialize_evm_tx_hash('0x550832040e57647103a03e23eba5ce869f8a96c3e8b92f1f9258024a286e2525')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=polygon_pos_inquirer, tx_hash=tx_hash)  # noqa: E501
@@ -661,8 +661,8 @@ def test_decrease_liquidity(
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('arbitrum_one_accounts', [['0x21f2a9b5F420245d86E8Faa753022dA01946B13F']])
 def test_uniswapv4_swap_with_internal_fee_transaction(
-        arbitrum_one_inquirer: 'ArbitrumOneInquirer',
-        arbitrum_one_accounts: list['ChecksumEvmAddress'],
+        arbitrum_one_inquirer: ArbitrumOneInquirer,
+        arbitrum_one_accounts: list[ChecksumEvmAddress],
 ) -> None:
     """Regression test for Uniswap V4 swap
     where the ETH fee is sent via an internal transaction."""
@@ -722,8 +722,8 @@ def test_uniswapv4_swap_with_internal_fee_transaction(
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('base_accounts', [['0x1440D247172A622Ac56b7f9eCE3F3C01DF35148C']])
 def test_swap_via_erc4337_bundled_tx_on_base(
-        base_inquirer: 'BaseInquirer',
-        base_accounts: list['ChecksumEvmAddress'],
+        base_inquirer: BaseInquirer,
+        base_accounts: list[ChecksumEvmAddress],
 ) -> None:
     """Test that a Uniswap V4 swap executed via an ERC-4337 bundled transaction
     is correctly decoded as a swap. The bundler submits multiple UserOperations

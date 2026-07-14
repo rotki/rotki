@@ -1,8 +1,9 @@
-from typing import Final, Literal
-
-from eth_typing import ABI
+from typing import TYPE_CHECKING, Final, Literal
 
 from rotkehlchen.types import CacheType, ChainID
+
+if TYPE_CHECKING:
+    from eth_typing import ABI
 
 BALANCER_LABEL: Final = 'Balancer'
 CPT_BALANCER_V1: Final = 'balancer-v1'

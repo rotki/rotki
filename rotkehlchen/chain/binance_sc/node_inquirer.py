@@ -6,8 +6,6 @@ from rotkehlchen.chain.evm.contracts import EvmContracts
 from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.assets import A_BSC_BNB
-from rotkehlchen.fval import FVal
-from rotkehlchen.tasks.supervisor import TaskSupervisor
 from rotkehlchen.types import (
     ChainID,
     ChecksumEvmAddress,
@@ -27,6 +25,8 @@ if TYPE_CHECKING:
     from rotkehlchen.externalapis.blockscout import Blockscout
     from rotkehlchen.externalapis.etherscan import Etherscan
     from rotkehlchen.externalapis.routescan import Routescan
+    from rotkehlchen.fval import FVal
+    from rotkehlchen.tasks.supervisor import TaskSupervisor
 
 
 class BinanceSCInquirer(EvmNodeInquirer):
@@ -34,10 +34,10 @@ class BinanceSCInquirer(EvmNodeInquirer):
     def __init__(
             self,
             task_supervisor: TaskSupervisor,
-            database: 'DBHandler',
-            etherscan: 'Etherscan',
-            blockscout: 'Blockscout',
-            routescan: 'Routescan',
+            database: DBHandler,
+            etherscan: Etherscan,
+            blockscout: Blockscout,
+            routescan: Routescan,
             rpc_timeout: int = DEFAULT_RPC_TIMEOUT,
     ) -> None:
         super().__init__(

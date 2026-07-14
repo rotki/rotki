@@ -1,19 +1,16 @@
 import json
 import logging
 from collections import defaultdict
-from collections.abc import Iterable, Iterator, Sequence
 from http import HTTPStatus
 from json.decoder import JSONDecodeError
 from typing import TYPE_CHECKING, Any, Final, Literal
 from urllib.parse import urlencode
 
 import requests
-from eth_typing.abi import ABI
 from sqlcipher3.dbapi2 import IntegrityError
 
 from rotkehlchen.accounting.structures.balance import Balance, BalanceSheet
 from rotkehlchen.api.websockets.typedefs import ProgressUpdateSubType, WSMessageType
-from rotkehlchen.assets.asset import Asset, CryptoAsset
 from rotkehlchen.assets.utils import (
     TokenEncounterInfo,
     asset_normalized_value,
@@ -32,7 +29,6 @@ from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.misc import NotERC20Conformant, RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
-from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.inquirer import Inquirer
@@ -52,9 +48,15 @@ from rotkehlchen.utils.network import create_session
 from rotkehlchen.utils.serialization import jsonloads_dict
 
 if TYPE_CHECKING:
+    from collections.abc import Iterable, Iterator, Sequence
+
+    from eth_typing.abi import ABI
+
+    from rotkehlchen.assets.asset import Asset, CryptoAsset
     from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.db.drivers.sqlite import DBCursor
+    from rotkehlchen.fval import FVal
 
 from .constants import ZKL_IDENTIFIER, ZKSYNCLITE_MAX_LIMIT
 from .structures import ZKSyncLiteSwapData, ZKSyncLiteTransaction, ZKSyncLiteTXType
@@ -71,8 +73,8 @@ class ZksyncLiteManager(ChainManagerWithTransactions[ChecksumEvmAddress], ChainW
 
     def __init__(
             self,
-            ethereum_inquirer: 'EthereumInquirer',
-            database: 'DBHandler',
+            ethereum_inquirer: EthereumInquirer,
+            database: DBHandler,
     ) -> None:
         self.database = database
         self.session = create_session()
@@ -578,7 +580,7 @@ class ZksyncLiteManager(ChainManagerWithTransactions[ChecksumEvmAddress], ChainW
 
     def _add_zksynctxs_db(
             self,
-            write_cursor: 'DBCursor',
+            write_cursor: DBCursor,
             transactions: Iterable[ZKSyncLiteTransaction],
     ) -> None:
         for transaction in transactions:

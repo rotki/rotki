@@ -23,12 +23,10 @@ import random
 import threading
 import time
 from collections import deque
-from collections.abc import Callable, Generator, Sequence
 from contextlib import contextmanager, suppress
 from enum import Enum, auto
 from pathlib import Path
-from types import TracebackType
-from typing import TYPE_CHECKING, Any, Literal, Optional, Self, TypeAlias
+from typing import TYPE_CHECKING, Any, Literal, Self
 from uuid import uuid4
 
 import rsqlite
@@ -45,10 +43,13 @@ from rotkehlchen.globaldb.minimized_schema import (
 from rotkehlchen.utils.misc import ts_now
 
 if TYPE_CHECKING:
+    from collections.abc import Callable, Generator, Sequence
+    from types import TracebackType
+
     from rotkehlchen.logging import RotkehlchenLogger
 
-UnderlyingCursor: TypeAlias = rsqlite.Cursor | sqlcipher.Cursor  # pylint: disable=no-member
-UnderlyingConnection: TypeAlias = rsqlite.Connection | sqlcipher.Connection  # pylint: disable=no-member
+type UnderlyingCursor = rsqlite.Cursor | sqlcipher.Cursor  # pylint: disable=no-member
+type UnderlyingConnection = rsqlite.Connection | sqlcipher.Connection  # pylint: disable=no-member
 
 CONTEXT_SWITCH_WAIT = 0.025  # seconds between cancellation checks while waiting for the transaction slot  # noqa: E501
 # Rows a cursor prefetches per statement_lock acquisition when iterated. Iteration
@@ -65,7 +66,7 @@ DISABLE_READ_POOL_DRAIN_SECONDS = 3.0
 # their read contexts to unwind and return them.
 DISABLE_READ_POOL_INTERRUPT_GRACE_SECONDS = 1.0
 
-logger: 'RotkehlchenLogger' = logging.getLogger(__name__)  # type: ignore
+logger: RotkehlchenLogger = logging.getLogger(__name__)  # type: ignore
 
 
 class ContextError(Exception):
@@ -86,7 +87,7 @@ def _maybe_raise_cancelled(error: Exception) -> None:
 
 class DBCursor:
 
-    def __init__(self, connection: 'DBConnection', cursor: UnderlyingCursor) -> None:
+    def __init__(self, connection: DBConnection, cursor: UnderlyingCursor) -> None:
         self._cursor = cursor
         self.connection = connection
         # Rows prefetched by __next__ and not yet consumed. Emptied by execute*()
@@ -95,7 +96,7 @@ class DBCursor:
         # iteration with fetch calls keeps the underlying cursor's semantics.
         self._prefetched_rows: deque[Any] = deque()
 
-    def __iter__(self) -> 'DBCursor':
+    def __iter__(self) -> DBCursor:
         if __debug__:
             logger.trace(f'Getting iterator for cursor {id(self)}')
         return self
@@ -138,7 +139,7 @@ class DBCursor:
         self.close()
         return False
 
-    def execute(self, statement: str, *bindings: Sequence) -> 'DBCursor':
+    def execute(self, statement: str, *bindings: Sequence) -> DBCursor:
         if __debug__:
             logger.trace(f'EXECUTE {statement} with bindings {bindings} for cursor {id(self)}')
         self._prefetched_rows.clear()  # a new statement discards the previous result set
@@ -161,8 +162,8 @@ class DBCursor:
     def executemany(
             self,
             statement: str,
-            *bindings: Sequence[Sequence] | Generator[Sequence, None, None],
-    ) -> 'DBCursor':
+            *bindings: Sequence[Sequence] | Generator[Sequence],
+    ) -> DBCursor:
         if __debug__:
             logger.trace(f'EXECUTEMANY {statement} with bindings {bindings} for cursor {id(self)}')
         self._prefetched_rows.clear()  # a new statement discards the previous result set
@@ -176,7 +177,7 @@ class DBCursor:
             logger.trace(f'FINISH EXECUTEMANY {statement} with bindings {bindings} for cursor {id(self)}')  # noqa: E501
         return self
 
-    def executescript(self, script: str) -> 'DBCursor':
+    def executescript(self, script: str) -> DBCursor:
         """Remember this always issues a COMMIT before
         https://docs.python.org/3/library/sqlite3.html#sqlite3.Cursor.executescript
         """
@@ -292,10 +293,10 @@ class DBConnectionType(Enum):
 # progress handler. Having a global mapping and 3 different progress callbacks is
 # a sort of ugly hack. If anybody knows of a better way to make it work let's improve it.
 # With this approach we have named connections and a different progress callback per connection.
-CONNECTION_MAP: dict[DBConnectionType, 'DBConnection'] = {}
+CONNECTION_MAP: dict[DBConnectionType, DBConnection] = {}
 
 
-def _progress_callback(connection: Optional['DBConnection']) -> int:
+def _progress_callback(connection: DBConnection | None) -> int:
     """Needs to be a static function. Cannot be a connection class method
     or sqlite breaks in funny ways. Raises random Operational errors.
     """
@@ -532,7 +533,7 @@ class DBConnection:
     def enable_read_pool(
             self,
             size: int = 4,
-            reader_setup: 'Callable[[DBConnection], None] | None' = None,
+            reader_setup: Callable[[DBConnection], None] | None = None,
     ) -> None:
         """Configure the pool of read-only connections that read_ctx() borrows from.
 
@@ -606,7 +607,7 @@ class DBConnection:
         self._close_idle_readers(read_pool)
 
     @staticmethod
-    def _close_idle_readers(read_pool: 'queue.LifoQueue[DBConnection]') -> None:
+    def _close_idle_readers(read_pool: queue.LifoQueue[DBConnection]) -> None:
         """Detach and close all readers that are currently idle in the pool."""
         with read_pool.mutex:
             readers = list(read_pool.queue)
@@ -616,8 +617,8 @@ class DBConnection:
 
     def _create_reader(
             self,
-            reader_setup: 'Callable[[DBConnection], None] | None',
-    ) -> 'DBConnection':
+            reader_setup: Callable[[DBConnection], None] | None,
+    ) -> DBConnection:
         """Create and prepare one read-only connection for the pool."""
         reader = DBConnection(
             path=self._path,
@@ -635,8 +636,8 @@ class DBConnection:
 
     def _borrow_reader(
             self,
-            read_pool: 'queue.LifoQueue[DBConnection]',
-    ) -> 'DBConnection | None':
+            read_pool: queue.LifoQueue[DBConnection],
+    ) -> DBConnection | None:
         """Borrow an idle reader, lazily creating one while below the pool limit.
 
         If all readers are borrowed, wait while staying responsive to task
@@ -700,8 +701,8 @@ class DBConnection:
 
     def _return_reader(
             self,
-            reader: 'DBConnection',
-            source_pool: 'queue.LifoQueue[DBConnection]',
+            reader: DBConnection,
+            source_pool: queue.LifoQueue[DBConnection],
     ) -> None:
         with self._readers_returned:
             self._borrowed_readers_count -= 1
@@ -713,7 +714,7 @@ class DBConnection:
         reader.close()  # its source pool was closed while this reader was borrowed
 
     @contextmanager
-    def read_ctx(self) -> Generator['DBCursor', None, None]:
+    def read_ctx(self) -> Generator[DBCursor]:
         if (
                 (read_pool := self._read_pool) is None or
                 self.write_task_ident == (current_id := threading.get_ident()) or
@@ -788,7 +789,7 @@ class DBConnection:
             checkpoint()  # cancelled tasks should not keep waiting for the DB
 
     @contextmanager
-    def write_ctx(self, commit_ts: bool = False) -> Generator['DBCursor', None, None]:
+    def write_ctx(self, commit_ts: bool = False) -> Generator[DBCursor]:
         """Opens a transaction to the database. This should be used kept open for
         as little time as possible.
 
@@ -834,7 +835,7 @@ class DBConnection:
     def savepoint_ctx(
             self,
             savepoint_name: str | None = None,
-    ) -> Generator['DBCursor', None, None]:
+    ) -> Generator[DBCursor]:
         """
         Creates a savepoint context with the provided name. If the code inside the savepoint fails,
         rolls back this savepoint, otherwise releases it (aka forgets it -- this is not committed to the DB).
@@ -850,7 +851,7 @@ class DBConnection:
             self.release_savepoint(savepoint_name)
             cursor.close()
 
-    def _enter_savepoint(self, savepoint_name: str | None = None) -> tuple['DBCursor', str]:
+    def _enter_savepoint(self, savepoint_name: str | None = None) -> tuple[DBCursor, str]:
         """
         Creates an sqlite savepoint with the given name. If None is given, a uuid is created.
         Returns cursor and savepoint's name.
@@ -953,7 +954,7 @@ class DBConnection:
         self._modify_savepoint(rollback_or_release='RELEASE', savepoint_name=savepoint_name)
 
     @contextmanager
-    def critical_section(self) -> Generator[None, None, None]:
+    def critical_section(self) -> Generator[None]:
         """Disable the progress callback's effects for the duration of the context.
 
         The sqlite progress handler must NOT be toggled here:
@@ -981,7 +982,7 @@ class DBConnection:
                 self.critical_section_owner = None
 
     @contextmanager
-    def _transaction_slot(self) -> Generator[None, None, None]:
+    def _transaction_slot(self) -> Generator[None]:
         """Holds the transaction slot for the duration of the context.
 
         Always acquire the slot BEFORE entering a critical section: write_ctx does the
@@ -997,7 +998,7 @@ class DBConnection:
     def critical_section_and_transaction_lock(
             self,
             cancellable: bool = True,
-    ) -> Generator[None, None, None]:
+    ) -> Generator[None]:
         """Hold the transaction slot and a critical section, in that order (the
         reverse creates a deadlock cycle against write_ctx).
 

@@ -1,8 +1,6 @@
-import argparse
 import logging.config
 import re
 import threading
-from collections.abc import Callable, MutableMapping
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Final
 
@@ -72,6 +70,8 @@ def add_logging_level(
 
 
 if TYPE_CHECKING:
+    import argparse
+    from collections.abc import Callable, MutableMapping
     class RotkehlchenLogger(logging.Logger):
         """Just for typing. Have not found another way to do correct type checking
         for custom log level loggers"""
@@ -222,9 +222,9 @@ def configure_logging(args: argparse.Namespace) -> None:
 log = RotkehlchenLogsAdapter(logging.getLogger(__name__))
 
 
-def enter_exit_debug_log(name: str | None = None) -> 'Callable':
+def enter_exit_debug_log(name: str | None = None) -> Callable:
     """Decorator to debug log enter and exit events of a function"""
-    def log_decorator(function: 'Callable') -> 'Callable':
+    def log_decorator(function: Callable) -> Callable:
         def log_wrapped(*args: tuple[Any, ...], **kwargs: dict[str, Any]) -> None:
             function_name = function.__name__ if name is None else name
             log.debug(f'Enter {function_name}')

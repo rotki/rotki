@@ -1,17 +1,20 @@
-from collections.abc import Iterable
-from contextlib import ExitStack
 from copy import deepcopy
-from typing import Literal
+from typing import TYPE_CHECKING, Literal
 from unittest.mock import patch
 
 from rotkehlchen.assets.asset import EvmToken, UnderlyingToken
 from rotkehlchen.constants.assets import A_MKR
-from rotkehlchen.db.drivers.sqlite import DBCursor
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.cache import compute_cache_key
 from rotkehlchen.globaldb.upgrades.manager import UPGRADES_LIST
 from rotkehlchen.tests.utils.factories import make_evm_address
 from rotkehlchen.types import CacheType, ChainID, Timestamp, TokenKind
+
+if TYPE_CHECKING:
+    from collections.abc import Iterable
+    from contextlib import ExitStack
+
+    from rotkehlchen.db.drivers.sqlite import DBCursor
 
 underlying_address1 = make_evm_address()
 underlying_address2 = make_evm_address()

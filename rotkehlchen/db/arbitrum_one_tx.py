@@ -33,7 +33,7 @@ class DBArbitrumOneTx(DBEvmTx):
         )
         return f'{base_select} {query}', bindings
 
-    def _build_evm_transaction(self, result: tuple[Any, ...], authorization_list_result: list[tuple[int, 'ChecksumEvmAddress']]) -> ArbitrumOneTransaction:  # noqa: E501
+    def _build_evm_transaction(self, result: tuple[Any, ...], authorization_list_result: list[tuple[int, ChecksumEvmAddress]]) -> ArbitrumOneTransaction:  # noqa: E501
         """Builds an arbitrum transaction
 
         May raise:

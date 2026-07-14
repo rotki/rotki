@@ -1,12 +1,13 @@
-from typing import Final
-
-from eth_typing.abi import ABI
+from typing import TYPE_CHECKING, Final
 
 from rotkehlchen.types import (
     SUPPORTED_BLOCKCHAIN_TO_CHAINID,
     SUPPORTED_EVMLIKE_CHAINS,
     SupportedBlockchain,
 )
+
+if TYPE_CHECKING:
+    from eth_typing.abi import ABI
 
 PROXY_BALANCE_PROTOCOL_TEMPLATE: Final = 'proxy:{type}:{address}'
 DEFAULT_RPC_TIMEOUT = 10

@@ -1,5 +1,4 @@
 import logging
-from collections.abc import Sequence
 from typing import TYPE_CHECKING, Any
 
 from rotkehlchen.chain.bitcoin.bch.constants import (
@@ -24,7 +23,6 @@ from rotkehlchen.chain.bitcoin.utils import (
 from rotkehlchen.constants import HOUR_IN_SECONDS
 from rotkehlchen.db.cache import DBCacheDynamic
 from rotkehlchen.errors.misc import RemoteError, UnableToDecryptRemoteData
-from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import (
     deserialize_fval,
@@ -37,7 +35,10 @@ from rotkehlchen.utils.misc import get_chunks, satoshis_to_btc, ts_now
 from rotkehlchen.utils.network import request_get, request_get_dict
 
 if TYPE_CHECKING:
+    from collections.abc import Sequence
+
     from rotkehlchen.db.dbhandler import DBHandler
+    from rotkehlchen.fval import FVal
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -45,7 +46,7 @@ log = RotkehlchenLogsAdapter(logger)
 
 class BitcoinCashManager(BitcoinCommonManager):
 
-    def __init__(self, database: 'DBHandler') -> None:
+    def __init__(self, database: DBHandler) -> None:
         super().__init__(
             database=database,
             blockchain=SupportedBlockchain.BITCOIN_CASH,
@@ -233,7 +234,7 @@ class BitcoinCashManager(BitcoinCommonManager):
             processing_fn=self.deserialize_tx_from_haskoin,
         )
 
-    def deserialize_tx_from_haskoin(self, data: dict[str, Any]) -> 'BitcoinTx':
+    def deserialize_tx_from_haskoin(self, data: dict[str, Any]) -> BitcoinTx:
         """Deserialize a transaction from a haskoin API.
         May raise DeserializationError, KeyError, ValueError.
         """
@@ -258,7 +259,7 @@ class BitcoinCashManager(BitcoinCommonManager):
     def deserialize_tx_io_from_haskoin(
             data: dict[str, Any],
             direction: BtcTxIODirection,
-    ) -> 'BtcTxIO':
+    ) -> BtcTxIO:
         """Deserialize a TxIO from a haskoin API.
         May raise DeserializationError, KeyError, ValueError.
         """

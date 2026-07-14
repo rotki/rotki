@@ -3,13 +3,11 @@ import logging
 import shutil
 import urllib.parse
 from http import HTTPStatus
-from pathlib import Path
 from typing import TYPE_CHECKING
 
 import requests
 from flask import Response, make_response
 
-from rotkehlchen.assets.asset import Asset, AssetWithNameAndType
 from rotkehlchen.constants.misc import (
     ALLASSETIMAGESDIR_NAME,
     ASSETIMAGESDIR_NAME,
@@ -25,6 +23,9 @@ from rotkehlchen.utils.data_structures import LRUSetCache
 from rotkehlchen.utils.hashing import file_md5
 
 if TYPE_CHECKING:
+    from pathlib import Path
+
+    from rotkehlchen.assets.asset import Asset, AssetWithNameAndType
     from rotkehlchen.tasks.supervisor import TaskSupervisor
 
 
@@ -105,7 +106,7 @@ class IconManager:
             self,
             data_dir: Path,
             coingecko: Coingecko,
-            task_supervisor: 'TaskSupervisor',
+            task_supervisor: TaskSupervisor,
     ) -> None:
         asset_images_dir = data_dir / IMAGESDIR_NAME / ASSETIMAGESDIR_NAME
         self.icons_dir = asset_images_dir / ALLASSETIMAGESDIR_NAME

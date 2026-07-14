@@ -5,17 +5,17 @@ from rotkehlchen.chain.bitcoin.btc.constants import (
     BLOCKCYPHER_BASE_URL,
     BLOCKCYPHER_TX_IO_LIMIT,
 )
-from rotkehlchen.history.events.structures.base import HistoryEvent
 from rotkehlchen.types import BTCAddress
 from rotkehlchen.utils.network import request_get_dict
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.bitcoin.btc.manager import BitcoinManager
     from rotkehlchen.chain.bitcoin.types import BitcoinTx
+    from rotkehlchen.history.events.structures.base import HistoryEvent
 
 
 def get_decoded_events_of_bitcoin_tx(
-        bitcoin_manager: 'BitcoinManager',
+        bitcoin_manager: BitcoinManager,
         tx_id: str,
         use_blockcypher: bool = False,
 ) -> list[HistoryEvent]:

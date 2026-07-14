@@ -18,7 +18,7 @@ if TYPE_CHECKING:
 
 
 @pytest.mark.parametrize('start_with_logged_in_user', [False])
-def test_querying_exchange_rates(rotkehlchen_api_server: 'APIServer') -> None:
+def test_querying_exchange_rates(rotkehlchen_api_server: APIServer) -> None:
     """Make sure that querying exchange rates works also without logging in"""
     # Test with empty list of currencies
     response = requests.get(
@@ -62,7 +62,7 @@ def test_querying_exchange_rates(rotkehlchen_api_server: 'APIServer') -> None:
 
 
 @pytest.mark.parametrize('start_with_logged_in_user', [False])
-def test_querying_exchange_rates_errors(rotkehlchen_api_server: 'APIServer') -> None:
+def test_querying_exchange_rates_errors(rotkehlchen_api_server: APIServer) -> None:
     """Make sure that querying exchange rates with wrong input is handled"""
 
     # Test with invalid type for currency

@@ -56,7 +56,7 @@ def _make_balance_event(timestamp: int, amount: str = '10') -> EvmEvent:
     )
 
 
-def _get_stale_cache_values(database: 'DBHandler') -> tuple[int | None, int | None]:
+def _get_stale_cache_values(database: DBHandler) -> tuple[int | None, int | None]:
     """Return the stale historical balances cache markers.
 
     The returned tuple contains:
@@ -80,8 +80,8 @@ def _get_stale_cache_values(database: 'DBHandler') -> tuple[int | None, int | No
 
 
 def _assert_resume_from_stale_timestamp(
-        database: 'DBHandler',
-        messages_aggregator: 'MessagesAggregator',
+        database: DBHandler,
+        messages_aggregator: MessagesAggregator,
         expected_from_ts: int,
 ) -> None:
     """Assert stale balances resume from the stored timestamp and clear both cache markers.
@@ -101,8 +101,8 @@ def _assert_resume_from_stale_timestamp(
 
 
 def test_process_historical_balances_clears_stale_marker(
-        database: 'DBHandler',
-        messages_aggregator: 'MessagesAggregator',
+        database: DBHandler,
+        messages_aggregator: MessagesAggregator,
 ) -> None:
     cache_key = DBCacheStatic.STALE_BALANCES_FROM_TS.value
 
@@ -140,8 +140,8 @@ def test_process_historical_balances_clears_stale_marker(
 
 
 def test_add_history_event_marks_balances_stale(
-        database: 'DBHandler',
-        messages_aggregator: 'MessagesAggregator',
+        database: DBHandler,
+        messages_aggregator: MessagesAggregator,
 ) -> None:
     with database.user_write() as write_cursor:
         assert DBHistoryEvents(database).add_history_event(
@@ -154,8 +154,8 @@ def test_add_history_event_marks_balances_stale(
 
 
 def test_add_history_events_marks_balances_stale_from_min_timestamp(
-        database: 'DBHandler',
-        messages_aggregator: 'MessagesAggregator',
+        database: DBHandler,
+        messages_aggregator: MessagesAggregator,
 ) -> None:
     with database.user_write() as write_cursor:
         DBHistoryEvents(database).add_history_events(
@@ -168,8 +168,8 @@ def test_add_history_events_marks_balances_stale_from_min_timestamp(
 
 
 def test_delete_events_and_track_marks_balances_stale_from_deleted_timestamp(
-        database: 'DBHandler',
-        messages_aggregator: 'MessagesAggregator',
+        database: DBHandler,
+        messages_aggregator: MessagesAggregator,
 ) -> None:
     events_db = DBHistoryEvents(database)
     with database.user_write() as write_cursor:
@@ -195,8 +195,8 @@ def test_delete_events_and_track_marks_balances_stale_from_deleted_timestamp(
 
 
 def test_update_events_and_track_marks_balances_stale_from_updated_timestamp(
-        database: 'DBHandler',
-        messages_aggregator: 'MessagesAggregator',
+        database: DBHandler,
+        messages_aggregator: MessagesAggregator,
 ) -> None:
     events_db = DBHistoryEvents(database)
     with database.user_write() as write_cursor:
@@ -224,8 +224,8 @@ def test_update_events_and_track_marks_balances_stale_from_updated_timestamp(
 
 
 def test_edit_history_event_marks_balances_stale_from_earliest_timestamp(
-        database: 'DBHandler',
-        messages_aggregator: 'MessagesAggregator',
+        database: DBHandler,
+        messages_aggregator: MessagesAggregator,
 ) -> None:
     events_db = DBHistoryEvents(database)
     with database.user_write() as write_cursor:
@@ -254,8 +254,8 @@ def test_edit_history_event_marks_balances_stale_from_earliest_timestamp(
 
 
 def test_edit_history_event_notes_only_does_not_mark_balances_stale(
-        database: 'DBHandler',
-        messages_aggregator: 'MessagesAggregator',
+        database: DBHandler,
+        messages_aggregator: MessagesAggregator,
 ) -> None:
     events_db = DBHistoryEvents(database)
     with database.user_write() as write_cursor:
@@ -278,8 +278,8 @@ def test_edit_history_event_notes_only_does_not_mark_balances_stale(
 
 
 def test_has_unprocessed_events(
-        database: 'DBHandler',
-        messages_aggregator: 'MessagesAggregator',
+        database: DBHandler,
+        messages_aggregator: MessagesAggregator,
 ) -> None:
     """Test _has_unprocessed_events correctly uses stale marker to determine processing state.
 
@@ -387,8 +387,8 @@ def test_has_unprocessed_events(
 
 
 def test_get_balances_with_unprocessed_events_and_timestamp_filter(
-        database: 'DBHandler',
-        messages_aggregator: 'MessagesAggregator',
+        database: DBHandler,
+        messages_aggregator: MessagesAggregator,
 ) -> None:
     """Regression test ensuring FVal timestamp scaling results are int-converted for SQL binding.
 
@@ -425,8 +425,8 @@ def test_get_balances_with_unprocessed_events_and_timestamp_filter(
 
 
 def test_get_balances_skips_zero_amounts(
-        database: 'DBHandler',
-        messages_aggregator: 'MessagesAggregator',
+        database: DBHandler,
+        messages_aggregator: MessagesAggregator,
 ) -> None:
     """Test that get_balances excludes assets with zero balance from results."""
     manager = HistoricalBalancesManager(database)
@@ -477,8 +477,8 @@ def test_get_balances_skips_zero_amounts(
 
 
 def test_transfer_updates_sender_and_receiver_buckets(
-        database: 'DBHandler',
-        messages_aggregator: 'MessagesAggregator',
+        database: DBHandler,
+        messages_aggregator: MessagesAggregator,
 ) -> None:
     """Test TRANSFER/NONE events create metrics for sender and receiver buckets.
 
@@ -577,8 +577,8 @@ def test_transfer_updates_sender_and_receiver_buckets(
 
 
 def test_exchange_transfer_does_not_update_bucket(
-        database: 'DBHandler',
-        messages_aggregator: 'MessagesAggregator',
+        database: DBHandler,
+        messages_aggregator: MessagesAggregator,
 ) -> None:
     """Test TRANSFER/NONE events in exchange locations don't affect balance buckets."""
     with database.user_write() as write_cursor:
@@ -617,8 +617,8 @@ def test_exchange_transfer_does_not_update_bucket(
 
 
 def test_deposit_to_protocol_updates_wallet_and_protocol_buckets(
-        database: 'DBHandler',
-        messages_aggregator: 'MessagesAggregator',
+        database: DBHandler,
+        messages_aggregator: MessagesAggregator,
 ) -> None:
     """Test DEPOSIT/DEPOSIT_TO_PROTOCOL and WITHDRAWAL/WITHDRAW_FROM_PROTOCOL events.
 
@@ -680,8 +680,8 @@ def test_deposit_to_protocol_updates_wallet_and_protocol_buckets(
 
 
 def test_empty_counterparty_does_not_create_protocol_bucket(
-        database: 'DBHandler',
-        messages_aggregator: 'MessagesAggregator',
+        database: DBHandler,
+        messages_aggregator: MessagesAggregator,
 ) -> None:
     """Test that an empty counterparty is not considered a valid protocol bucket."""
     with database.user_write() as write_cursor:
@@ -736,8 +736,8 @@ def test_empty_counterparty_does_not_create_protocol_bucket(
 
 
 def test_staking_deposit_and_withdraw_updates_wallet_and_protocol_buckets(
-        database: 'DBHandler',
-        messages_aggregator: 'MessagesAggregator',
+        database: DBHandler,
+        messages_aggregator: MessagesAggregator,
 ) -> None:
     """Test STAKING DEPOSIT_ASSET and REMOVE_ASSET events.
 
@@ -799,8 +799,8 @@ def test_staking_deposit_and_withdraw_updates_wallet_and_protocol_buckets(
 
 
 def test_treat_eth2_as_eth_setting_combines_balance_buckets(
-        database: 'DBHandler',
-        messages_aggregator: 'MessagesAggregator',
+        database: DBHandler,
+        messages_aggregator: MessagesAggregator,
 ) -> None:
     """Test the treat_eth2_as_eth setting maps ETH2 events to the ETH balance bucket."""
     with database.user_write() as write_cursor:
@@ -843,8 +843,8 @@ def test_treat_eth2_as_eth_setting_combines_balance_buckets(
 
 
 def test_kraken_staking_lock_does_not_change_balance(
-        database: 'DBHandler',
-        messages_aggregator: 'MessagesAggregator',
+        database: DBHandler,
+        messages_aggregator: MessagesAggregator,
 ) -> None:
     """Test Kraken staking lock/unlock events don't affect the exchange account balance."""
     with database.user_write() as write_cursor:
@@ -906,8 +906,8 @@ def test_kraken_staking_lock_does_not_change_balance(
 
 
 def test_wrapped_deposit_and_redeem_updates_wallet_bucket(
-        database: 'DBHandler',
-        messages_aggregator: 'MessagesAggregator',
+        database: DBHandler,
+        messages_aggregator: MessagesAggregator,
 ) -> None:
     """Test DEPOSIT_FOR_WRAPPED and REDEEM_WRAPPED with protocol assets.
 
@@ -980,8 +980,8 @@ def test_wrapped_deposit_and_redeem_updates_wallet_bucket(
     {'auto_create_profit_events': False},
 ])
 def test_synthetic_profit_event_when_protocol_withdrawal_exceeds_deposit(
-        database: 'DBHandler',
-        messages_aggregator: 'MessagesAggregator',
+        database: DBHandler,
+        messages_aggregator: MessagesAggregator,
         db_settings: dict,
 ) -> None:
     """Test synthetic profit event creation when withdrawing more than deposited.
@@ -1080,7 +1080,7 @@ def test_synthetic_profit_event_when_protocol_withdrawal_exceeds_deposit(
     {'auto_create_profit_events': False},
 ])
 def test_profit_event_when_protocol_withdrawal_amount_is_all_profit(
-        database: 'DBHandler',
+        database: DBHandler,
         db_settings: dict,
 ) -> None:
     """Test the profit event when withdrawing from a protocol when the full withdrawal amount
@@ -1139,8 +1139,8 @@ def test_profit_event_when_protocol_withdrawal_amount_is_all_profit(
 
 
 def test_weth_wrap_then_swap_updates_wallet_buckets(
-        database: 'DBHandler',
-        messages_aggregator: 'MessagesAggregator',
+        database: DBHandler,
+        messages_aggregator: MessagesAggregator,
 ) -> None:
     """Test ETH wrapping followed by WETH swap updates the wallet WETH bucket.
 
@@ -1225,8 +1225,8 @@ def test_weth_wrap_then_swap_updates_wallet_buckets(
 
 
 def test_protocol_token_spend_from_wallet_bucket(
-        database: 'DBHandler',
-        messages_aggregator: 'MessagesAggregator',
+        database: DBHandler,
+        messages_aggregator: MessagesAggregator,
 ) -> None:
     """Test non-trade OUT event deducts from the wallet bucket for protocol tokens.
 
@@ -1280,8 +1280,8 @@ def test_protocol_token_spend_from_wallet_bucket(
 
 
 def test_staking_protocol_lp_token_received_from_untracked_address(
-        database: 'DBHandler',
-        messages_aggregator: 'MessagesAggregator',
+        database: DBHandler,
+        messages_aggregator: MessagesAggregator,
 ) -> None:
     """Test staking a protocol LP token that was received via RECEIVE/NONE from untracked address.
 
@@ -1340,8 +1340,8 @@ def test_staking_protocol_lp_token_received_from_untracked_address(
 
 
 def test_swapped_for_asset_tracked_under_new_identifier(
-        database: 'DBHandler',
-        messages_aggregator: 'MessagesAggregator',
+        database: DBHandler,
+        messages_aggregator: MessagesAggregator,
         globaldb,  # pylint: disable=unused-argument
 ) -> None:
     """Test that events with v1 tokens (that have swapped_for set) are tracked under v2 identifier.
@@ -1418,8 +1418,8 @@ def test_swapped_for_asset_tracked_under_new_identifier(
 
 
 def test_negative_balance_writes_data_issue(
-        database: 'DBHandler',
-        messages_aggregator: 'MessagesAggregator',
+        database: DBHandler,
+        messages_aggregator: MessagesAggregator,
 ) -> None:
     """Negative balance detection should write a data issue without changing WS/halt behavior."""
     events_db = DBHistoryEvents(database)
@@ -1497,8 +1497,8 @@ def test_negative_balance_writes_data_issue(
 
 
 def test_negative_balance_reopens_resolved_data_issue(
-        database: 'DBHandler',
-        messages_aggregator: 'MessagesAggregator',
+        database: DBHandler,
+        messages_aggregator: MessagesAggregator,
 ) -> None:
     with database.user_write() as write_cursor:
         DBHistoryEvents(database).add_history_event(

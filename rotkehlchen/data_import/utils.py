@@ -1,7 +1,6 @@
 import hashlib
 import logging
 from abc import ABC, abstractmethod
-from collections.abc import Mapping, Sequence
 from typing import TYPE_CHECKING, Any
 
 from rotkehlchen.api.websockets.typedefs import ProgressUpdateSubType, WSMessageType
@@ -10,13 +9,13 @@ from rotkehlchen.db.constants import HISTORY_MAPPING_KEY_STATE, HistoryMappingSt
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.errors.misc import InputError
 from rotkehlchen.errors.serialization import DeserializationError
-from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import deserialize_fval, deserialize_timestamp
 from rotkehlchen.types import Location, TimestampMS
 from rotkehlchen.utils.misc import timestamp_to_date, ts_ms_to_sec
 
 if TYPE_CHECKING:
+    from collections.abc import Mapping, Sequence
     from pathlib import Path
 
     from rotkehlchen.assets.asset import Asset, AssetWithOracles
@@ -26,6 +25,7 @@ if TYPE_CHECKING:
     from rotkehlchen.fval import FVal
     from rotkehlchen.history.events.structures.asset_movement import AssetMovementExtraData
     from rotkehlchen.history.events.structures.base import HistoryBaseEntry
+    from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 
 
 ITEMS_PER_DB_WRITE = 400
@@ -37,7 +37,7 @@ log = RotkehlchenLogsAdapter(logger)
 
 
 class BaseExchangeImporter(ABC):
-    def __init__(self, db: 'DBHandler', name: str) -> None:
+    def __init__(self, db: DBHandler, name: str) -> None:
         self.db = db
         self.history_db = DBHistoryEvents(self.db)
         self._margin_trades: list[MarginPosition] = []
@@ -52,7 +52,7 @@ class BaseExchangeImporter(ABC):
         self.import_msgs: list[dict] = []
         self.max_msgs: bool = False
 
-    def import_csv(self, filepath: 'Path', **kwargs: Any) -> tuple[bool, str]:
+    def import_csv(self, filepath: Path, **kwargs: Any) -> tuple[bool, str]:
         self.reset()
 
         try:
@@ -89,25 +89,25 @@ class BaseExchangeImporter(ABC):
             return True, ''
 
     @abstractmethod
-    def _import_csv(self, write_cursor: 'DBCursor', filepath: 'Path', **kwargs: Any) -> None:
+    def _import_csv(self, write_cursor: DBCursor, filepath: Path, **kwargs: Any) -> None:
         """The method that processes csv. Should be implemented by subclasses.
         May raise:
         - InputError if one of the rows is malformed
         """
 
-    def add_margin_trade(self, write_cursor: 'DBCursor', margin_trade: 'MarginPosition') -> None:
+    def add_margin_trade(self, write_cursor: DBCursor, margin_trade: MarginPosition) -> None:
         self._margin_trades.append(margin_trade)
         self.maybe_flush_all(write_cursor)
 
-    def add_history_events(self, write_cursor: 'DBCursor', history_events: Sequence['HistoryBaseEntry']) -> None:  # noqa: E501
+    def add_history_events(self, write_cursor: DBCursor, history_events: Sequence[HistoryBaseEntry]) -> None:  # noqa: E501
         self._history_events.extend(history_events)
         self.maybe_flush_all(write_cursor)
 
-    def maybe_flush_all(self, cursor: 'DBCursor') -> None:
+    def maybe_flush_all(self, cursor: DBCursor) -> None:
         if len(self._margin_trades) + len(self._history_events) >= ITEMS_PER_DB_WRITE:
             self.flush_all(cursor)
 
-    def flush_all(self, write_cursor: 'DBCursor') -> None:
+    def flush_all(self, write_cursor: DBCursor) -> None:
         self.db.add_margin_positions(write_cursor, margin_positions=self._margin_trades)
         for event in self._history_events:
             if self.history_db.add_history_event(
@@ -179,7 +179,7 @@ class SkippedCSVEntry(Exception):
 def process_rotki_generic_import_csv_fields(
         csv_row: dict[str, Any],
         currency_colname: str,
-) -> tuple['AssetWithOracles', 'FVal | None', 'Asset | None', Location, TimestampMS]:
+) -> tuple[AssetWithOracles, FVal | None, Asset | None, Location, TimestampMS]:
     """
     Process the imported csv for generic rotki trades and events
     """
@@ -208,13 +208,13 @@ def hash_csv_row(csv_row: Mapping[str, Any]) -> str:
 def detect_duplicate_event(
         event_type: HistoryEventType,
         event_subtype: HistoryEventSubType,
-        amount: 'FVal',
-        asset: 'Asset',
+        amount: FVal,
+        asset: Asset,
         timestamp_ms: TimestampMS,
         location: Location,
         event_prefix: str,
         importer: BaseExchangeImporter,
-        write_cursor: 'DBCursor',
+        write_cursor: DBCursor,
 ) -> bool:
     """Detect if an event with these attributes is already in the database.
     Returns True if the event is found, and False if not found.
@@ -236,8 +236,8 @@ def detect_duplicate_event(
 def maybe_set_transaction_extra_data(
         address: str | None,
         transaction_id: str | None,
-        extra_data: 'AssetMovementExtraData | None' = None,
-) -> 'AssetMovementExtraData | None':
+        extra_data: AssetMovementExtraData | None = None,
+) -> AssetMovementExtraData | None:
     """Add address and transaction id (if present) to extra_data from the provided csv_row.
     Returns extra_data or None if nothing was added."""
     if extra_data is None:

@@ -171,7 +171,7 @@ def test_serialize(blockchain_balances):
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [[ETH_ADDRESS1, ETH_ADDRESS2]])
 @pytest.mark.parametrize('ethereum_modules', [['liquity']])
-def test_protocol_balances(blockchain: 'ChainsAggregator') -> None:
+def test_protocol_balances(blockchain: ChainsAggregator) -> None:
     """
     Test that liquity is injected in balances properly when querying module balances.
     ETH_ADDRESS1 has a DSProxy with deposits in liquity and ETH_ADDRESS2 doesn't have anything
@@ -187,7 +187,7 @@ def test_protocol_balances(blockchain: 'ChainsAggregator') -> None:
     assert blockchain.balances.eth[ETH_ADDRESS2].assets == {}
 
 
-def test_partial_balance_refresh_keeps_other_accounts(blockchain: 'ChainsAggregator') -> None:
+def test_partial_balance_refresh_keeps_other_accounts(blockchain: ChainsAggregator) -> None:
     """Test that refreshing balances for a subset of addresses does not replace the
     balance sheets of the other tracked accounts.
 
@@ -224,7 +224,7 @@ def test_partial_balance_refresh_keeps_other_accounts(blockchain: 'ChainsAggrega
     assert blockchain.balances.eth[other_address] == other_sheet
 
 
-def test_blockchain_balances_cache_removes_spent_token(blockchain: 'ChainsAggregator') -> None:
+def test_blockchain_balances_cache_removes_spent_token(blockchain: ChainsAggregator) -> None:
     """Test that refreshing an address removes token balances no longer returned."""
     address = make_evm_address()
     asset_balances = blockchain.balances.eth[address].assets
@@ -254,7 +254,7 @@ def test_blockchain_balances_cache_removes_spent_token(blockchain: 'ChainsAggreg
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('polygon_pos_accounts', [['0x4bBa290826C253BD854121346c370a9886d1bC26']])
 def test_native_token_balance(
-        blockchain: 'ChainsAggregator',
+        blockchain: ChainsAggregator,
         polygon_pos_accounts: list[ChecksumEvmAddress],
 ):
     """
@@ -319,7 +319,7 @@ def test_native_token_balance(
 @pytest.mark.parametrize('number_of_eth_accounts', [0])
 @pytest.mark.parametrize('gnosis_accounts', [['0x586AD5760a2fe5847c58deEc2933e11B5f595dBF']])
 def test_cached_gnosis_balance_uses_manual_current_price(
-        blockchain: 'ChainsAggregator',
+        blockchain: ChainsAggregator,
         gnosis_accounts: list[ChecksumEvmAddress],
 ) -> None:
     """Regression test for cached GET repricing preferring manual current prices.

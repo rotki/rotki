@@ -1,6 +1,5 @@
 import logging
 from abc import ABC
-from collections.abc import Sequence
 from typing import TYPE_CHECKING, Any, Final
 
 from rotkehlchen.assets.asset import Asset, EvmToken
@@ -20,6 +19,8 @@ from rotkehlchen.types import ChainID, ChecksumEvmAddress, TokenKind
 from rotkehlchen.utils.misc import bytes_to_address
 
 if TYPE_CHECKING:
+    from collections.abc import Sequence
+
     from rotkehlchen.chain.decoding.types import CounterpartyDetails
     from rotkehlchen.chain.evm.decoding.base import BaseEvmDecoderTools
     from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
@@ -36,12 +37,12 @@ log = RotkehlchenLogsAdapter(logger)
 class SuperchainL2SideBridgeCommonDecoder(EvmDecoderInterface, ABC):
     def __init__(
             self,
-            evm_inquirer: 'EvmNodeInquirer',
-            base_tools: 'BaseEvmDecoderTools',
-            msg_aggregator: 'MessagesAggregator',
-            native_assets: Sequence['Asset'],
-            bridge_addresses: tuple['ChecksumEvmAddress', ...],
-            counterparty: 'CounterpartyDetails',
+            evm_inquirer: EvmNodeInquirer,
+            base_tools: BaseEvmDecoderTools,
+            msg_aggregator: MessagesAggregator,
+            native_assets: Sequence[Asset],
+            bridge_addresses: tuple[ChecksumEvmAddress, ...],
+            counterparty: CounterpartyDetails,
     ):
         super().__init__(
             evm_inquirer=evm_inquirer,

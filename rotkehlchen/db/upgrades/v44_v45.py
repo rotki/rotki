@@ -18,21 +18,21 @@ log = RotkehlchenLogsAdapter(logger)
 
 
 @enter_exit_debug_log(name='UserDB v44->v45 upgrade')
-def upgrade_v44_to_v45(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHandler') -> None:
+def upgrade_v44_to_v45(db: DBHandler, progress_handler: DBUpgradeProgressHandler) -> None:
     """Upgrades the DB from v44 to v45. This was in v1.36 release.
 
     - Add coinbase prime location
     - reset decoded events
     """
     @progress_step(description='Adding new locations to the DB.')
-    def _add_new_locations(write_cursor: 'DBCursor') -> None:
+    def _add_new_locations(write_cursor: DBCursor) -> None:
         write_cursor.executescript("""
         /* Coinbase Prime */
         INSERT OR IGNORE INTO location(location, seq) VALUES ('u', 53);
         """)
 
     @progress_step(description='Resetting decoded events.')
-    def _reset_decoded_events(write_cursor: 'DBCursor') -> None:
+    def _reset_decoded_events(write_cursor: DBCursor) -> None:
         """Reset all decoded evm events except for the customized ones and those in zksync lite.
         Code taken from previous upgrade
         """

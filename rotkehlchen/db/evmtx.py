@@ -68,7 +68,7 @@ class DBEvmTx(DBCommonTx[ChecksumEvmAddress, EvmTransaction, EVMTxHash, EvmTrans
 
     def add_transactions(
             self,
-            write_cursor: 'DBCursor',
+            write_cursor: DBCursor,
             evm_transactions: list[EvmTransaction],
             relevant_address: ChecksumEvmAddress | None,
     ) -> list[EVMTxHash]:
@@ -131,7 +131,7 @@ class DBEvmTx(DBCommonTx[ChecksumEvmAddress, EvmTransaction, EVMTxHash, EvmTrans
 
     def add_evm_internal_transactions(
             self,
-            write_cursor: 'DBCursor',
+            write_cursor: DBCursor,
             transactions: list[EvmInternalTransaction],
             relevant_address: ChecksumEvmAddress | None,
             source: InternalTxSource = InternalTxSource.LEGACY,
@@ -175,7 +175,7 @@ class DBEvmTx(DBCommonTx[ChecksumEvmAddress, EvmTransaction, EVMTxHash, EvmTrans
 
     def delete_evm_internal_transactions_by_parent_tx_hash(
             self,
-            write_cursor: 'DBCursor',
+            write_cursor: DBCursor,
             parent_tx_hash: EVMTxHash,
             chain_id: ChainID,
     ) -> None:
@@ -188,7 +188,7 @@ class DBEvmTx(DBCommonTx[ChecksumEvmAddress, EvmTransaction, EVMTxHash, EvmTrans
 
     def delete_evm_internal_transactions_by_parent_tx_hash_and_address(
             self,
-            write_cursor: 'DBCursor',
+            write_cursor: DBCursor,
             parent_tx_hash: EVMTxHash,
             chain_id: ChainID,
             address: ChecksumEvmAddress,
@@ -246,7 +246,7 @@ class DBEvmTx(DBCommonTx[ChecksumEvmAddress, EvmTransaction, EVMTxHash, EvmTrans
 
     def get_transactions(
             self,
-            cursor: 'DBCursor',
+            cursor: DBCursor,
             filter_: EvmTransactionsFilterQuery,
     ) -> list[EvmTransaction]:
         """Returns a list of evm transactions optionally filtered by
@@ -281,7 +281,7 @@ class DBEvmTx(DBCommonTx[ChecksumEvmAddress, EvmTransaction, EVMTxHash, EvmTrans
 
     def delete_evm_transaction_data(
             self,
-            write_cursor: 'DBCursor',
+            write_cursor: DBCursor,
             chain: SUPPORTED_EVM_CHAINS_TYPE | None = None,
             tx_hash: EVMTxHash | None = None,
     ) -> None:
@@ -354,7 +354,7 @@ class DBEvmTx(DBCommonTx[ChecksumEvmAddress, EvmTransaction, EVMTxHash, EvmTrans
 
     def add_or_ignore_receipt_data(
             self,
-            write_cursor: 'DBCursor',
+            write_cursor: DBCursor,
             chain_id: ChainID,
             data: dict[str, Any],
     ) -> int:
@@ -429,7 +429,7 @@ class DBEvmTx(DBCommonTx[ChecksumEvmAddress, EvmTransaction, EVMTxHash, EvmTrans
 
     def get_receipt(
             self,
-            cursor: 'DBCursor',
+            cursor: DBCursor,
             tx_hash: EVMTxHash,
             chain_id: ChainID,
     ) -> EvmTxReceipt | None:
@@ -489,7 +489,7 @@ class DBEvmTx(DBCommonTx[ChecksumEvmAddress, EvmTransaction, EVMTxHash, EvmTrans
 
     def delete_transactions(
             self,
-            write_cursor: 'DBCursor',
+            write_cursor: DBCursor,
             address: ChecksumEvmAddress,
             chain: SUPPORTED_EVM_CHAINS_TYPE,
     ) -> None:
@@ -584,7 +584,7 @@ class DBEvmTx(DBCommonTx[ChecksumEvmAddress, EvmTransaction, EVMTxHash, EvmTrans
 
     def get_queried_range(
             self,
-            cursor: 'DBCursor',
+            cursor: DBCursor,
             address: ChecksumEvmAddress,
             chain: SUPPORTED_EVM_CHAINS_TYPE,
     ) -> tuple[Timestamp, Timestamp]:
@@ -727,7 +727,7 @@ class DBEvmTx(DBCommonTx[ChecksumEvmAddress, EvmTransaction, EVMTxHash, EvmTrans
             cursor.execute(query, bindings)
             return cursor.fetchone()[0]
 
-    def get_transaction_block_by_hash(self, cursor: 'DBCursor', tx_hash: EVMTxHash) -> int | None:
+    def get_transaction_block_by_hash(self, cursor: DBCursor, tx_hash: EVMTxHash) -> int | None:
         """Return the block number of a transaction"""
         cursor.execute('SELECT block_number FROM evm_transactions WHERE tx_hash=?', (tx_hash,))
         if (result := cursor.fetchone()) is None:

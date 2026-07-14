@@ -22,8 +22,8 @@ NATIVE_TOKEN_IDS: Final = {
 
 
 def _search_only_nfts_levenstein(
-        cursor: 'DBCursor',
-        filter_query: 'LevenshteinFilterQuery',
+        cursor: DBCursor,
+        filter_query: LevenshteinFilterQuery,
 ) -> list[tuple[int, dict[str, Any]]]:
     query, bindings = filter_query.prepare('nfts')
     cursor.execute('SELECT identifier, name, collection_name FROM nfts ' + query, bindings)
@@ -52,9 +52,9 @@ def _search_only_nfts_levenstein(
 
 
 def _search_only_assets_levenstein(
-        userdb_cursor: 'DBCursor',
-        userdb: 'DBHandler',
-        filter_query: 'LevenshteinFilterQuery',
+        userdb_cursor: DBCursor,
+        userdb: DBHandler,
+        filter_query: LevenshteinFilterQuery,
 ) -> list[tuple[int, dict[str, Any]]]:
     search_result: list[tuple[int, dict[str, Any]]] = []
     should_skip = filter_query.ignored_assets_handling.get_should_skip_handler()
@@ -110,8 +110,8 @@ def _search_only_assets_levenstein(
 
 
 def search_assets_levenshtein(
-        db: 'DBHandler',
-        filter_query: 'LevenshteinFilterQuery',
+        db: DBHandler,
+        filter_query: LevenshteinFilterQuery,
         limit: int | None,
         search_nfts: bool,
 ) -> list[dict[str, Any]]:

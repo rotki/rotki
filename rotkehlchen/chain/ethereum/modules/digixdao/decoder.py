@@ -1,4 +1,4 @@
-from typing import Any, Final
+from typing import TYPE_CHECKING, Any, Final
 
 from rotkehlchen.assets.utils import token_normalized_value_decimals
 from rotkehlchen.chain.decoding.types import CounterpartyDetails
@@ -16,8 +16,10 @@ from rotkehlchen.chain.evm.decoding.structures import (
 )
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
-from rotkehlchen.types import ChecksumEvmAddress
 from rotkehlchen.utils.misc import bytes_to_address
+
+if TYPE_CHECKING:
+    from rotkehlchen.types import ChecksumEvmAddress
 
 REFUND_TOPIC: Final = b's\xf0J\xf9\xdc\xc5\x82\xa9#\xec\x15\xd3\xee\xa9\x90\xfe4\xad\xab\xff\xf2\x87\x9e(\xd4Er\xe0\x1aT\xab\xb6'  # noqa: E501
 

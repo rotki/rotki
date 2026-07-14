@@ -1,4 +1,4 @@
-from typing import Literal
+from typing import TYPE_CHECKING, Literal
 
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.utils import symbol_to_asset_or_token
@@ -38,8 +38,6 @@ from rotkehlchen.history.events.structures.base import HistoryBaseEntry, History
 from rotkehlchen.history.events.structures.swap import SwapEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.history.events.utils import create_group_identifier_from_unique_id
-from rotkehlchen.rotkehlchen import Rotkehlchen
-from rotkehlchen.tests.fixtures.websockets import WebsocketReader
 from rotkehlchen.tests.utils.constants import (
     A_ADA,
     A_AXS,
@@ -58,6 +56,10 @@ from rotkehlchen.tests.utils.constants import (
 )
 from rotkehlchen.types import Location, Timestamp, TimestampMS
 from rotkehlchen.utils.misc import ts_sec_to_ms
+
+if TYPE_CHECKING:
+    from rotkehlchen.rotkehlchen import Rotkehlchen
+    from rotkehlchen.tests.fixtures.websockets import WebsocketReader
 
 
 def get_cryptocom_note(desc: str):

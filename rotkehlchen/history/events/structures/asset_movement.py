@@ -6,7 +6,6 @@ from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.location_details import get_formatted_location_name
 from rotkehlchen.errors.serialization import DeserializationError
-from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.base import (
     HISTORY_EVENT_DB_TUPLE_WRITE,
     HistoryBaseEntry,
@@ -27,6 +26,7 @@ if TYPE_CHECKING:
 
     from rotkehlchen.accounting.mixins.event import AccountingEventMixin
     from rotkehlchen.accounting.pot import AccountingPot
+    from rotkehlchen.fval import FVal
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -41,7 +41,7 @@ class AssetMovementExtraData(TypedDict):
     # Internal reference used in exchanges.
     reference: NotRequired[str]
     # Internal use only. Used for matching the corresponding crypto_transaction. Removed before being saved to the DB.  # noqa: E501
-    fee: NotRequired['FVal']
+    fee: NotRequired[FVal]
     # Blockchain that the funds are moving from/to. Simply a string since it could be unsupported.
     # Note that if it is a supported chain, it should be a serialized SupportedBlockchain value
     # so we can properly read the value during asset movement matching.
@@ -125,7 +125,7 @@ class AssetMovement(HistoryBaseEntry[AssetMovementExtraData | None]):
         return (self._serialize_base_tuple_for_db(),)
 
     @classmethod
-    def deserialize_from_db(cls: type['AssetMovement'], entry: tuple) -> 'AssetMovement':
+    def deserialize_from_db(cls: type[AssetMovement], entry: tuple) -> AssetMovement:
         """Deserialize an AssetMovement DB tuple.
         May raise:
         - DeserializationError
@@ -183,7 +183,7 @@ class AssetMovement(HistoryBaseEntry[AssetMovementExtraData | None]):
         return serialized_data
 
     @classmethod
-    def deserialize(cls: type['AssetMovement'], data: dict[str, Any]) -> 'AssetMovement':
+    def deserialize(cls: type[AssetMovement], data: dict[str, Any]) -> AssetMovement:
         base_data = cls._deserialize_base_history_data(data)
         event_subtype = base_data['event_subtype']
         if event_subtype not in (
@@ -220,8 +220,8 @@ class AssetMovement(HistoryBaseEntry[AssetMovementExtraData | None]):
 
     def process(
             self,
-            accounting: 'AccountingPot',
-            events_iterator: "peekable['AccountingEventMixin']",  # pylint: disable=unused-argument
+            accounting: AccountingPot,
+            events_iterator: peekable[AccountingEventMixin],  # pylint: disable=unused-argument
     ) -> int:
         if self.asset.identifier == 'KFEE' or self.amount == ZERO:
             # There is no reason to process deposits of KFEE for kraken as it has only value
@@ -258,7 +258,7 @@ def create_asset_movement_with_fee(
         location: Location,
         event_subtype: AssetMovementTransferSubtype,
         asset: Asset,
-        amount: 'FVal',
+        amount: FVal,
         fee: AssetAmount | None = None,
         location_label: str | None = None,
         unique_id: str | None = None,

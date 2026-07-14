@@ -4,10 +4,13 @@ import os
 import pickle  # noqa: S403
 import time
 import tracemalloc
-from types import FrameType
+from typing import TYPE_CHECKING
 
 from .constants import MINUTE
 from .timer import Timer
+
+if TYPE_CHECKING:
+    from types import FrameType
 
 
 def _serialize_statistics(statistics):

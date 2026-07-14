@@ -5,7 +5,7 @@ from collections.abc import Callable, Iterator, Sequence
 from contextlib import contextmanager
 from functools import wraps
 from threading import Lock
-from typing import TYPE_CHECKING, Any, Final, Literal, Optional, TypeVar, cast, overload
+from typing import TYPE_CHECKING, Any, Final, Literal, cast, overload
 
 from rotkehlchen.api.websockets.typedefs import (
     TransactionStatusStep,
@@ -66,15 +66,13 @@ log = RotkehlchenLogsAdapter(logger)
 # nodes commonly cap the number of calls allowed in a single batch.
 RECEIPTS_QUERY_BATCH_SIZE: Final = 25
 
-T = TypeVar('T', bound=Callable[..., Any])
 
-
-def with_tx_status_messaging(func: T) -> T:
+def with_tx_status_messaging[T: Callable[..., Any]](func: T) -> T:
     """Decorator to handle transaction query locking and status messaging."""
 
     @wraps(func)
     def wrapper(
-            self: 'EvmTransactions',
+            self: EvmTransactions,
             address: ChecksumEvmAddress,
             start_ts: Timestamp,
             end_ts: Timestamp,
@@ -115,8 +113,8 @@ class EvmTransactions(ABC):  # noqa: B024
 
     def __init__(
             self,
-            evm_inquirer: 'EvmNodeInquirer',
-            database: 'DBHandler',
+            evm_inquirer: EvmNodeInquirer,
+            database: DBHandler,
     ) -> None:
         super().__init__()
         self.evm_inquirer = evm_inquirer
@@ -747,7 +745,7 @@ class EvmTransactions(ABC):  # noqa: B024
 
     def _replace_internal_transactions_for_parent_hash(
             self,
-            write_cursor: 'DBCursor',
+            write_cursor: DBCursor,
             parent_tx_hash: EVMTxHash,
             transactions: list[EvmInternalTransaction],
             indexer_source: EvmIndexer | None,
@@ -1118,10 +1116,10 @@ class EvmTransactions(ABC):  # noqa: B024
 
     def ensure_tx_data_exists(
             self,
-            cursor: 'DBCursor',
-            tx_hash: 'EVMTxHash',
-            relevant_address: Optional['ChecksumEvmAddress'],
-    ) -> tuple['EvmTransaction', 'EvmTxReceipt']:
+            cursor: DBCursor,
+            tx_hash: EVMTxHash,
+            relevant_address: ChecksumEvmAddress | None,
+    ) -> tuple[EvmTransaction, EvmTxReceipt]:
         """Makes sure that the required data for the transaction are in the database.
         If not, pulls them and stores them. For most chains this is the transaction and the
         receipt. Can be extended by subclasses for chain-specific information.
@@ -1174,12 +1172,12 @@ class EvmTransactions(ABC):  # noqa: B024
 
     def get_and_ensure_internal_txns_of_parent_in_db(
             self,
-            tx_hash: 'EVMTxHash',
+            tx_hash: EVMTxHash,
             chain_id: ChainID,
-            user_address: 'ChecksumEvmAddress',
+            user_address: ChecksumEvmAddress,
             tx_timestamp: Timestamp | None = None,
-            to_address: 'ChecksumEvmAddress | None' = None,
-            from_address: 'ChecksumEvmAddress | None' = None,
+            to_address: ChecksumEvmAddress | None = None,
+            from_address: ChecksumEvmAddress | None = None,
     ) -> list[EvmInternalTransaction]:
         """Queries the internal transactions of a parent tx_hash, saves them in the DB and returns
         them. Uses tx mappings to avoid querying the same parent hash repeatedly.
@@ -1235,10 +1233,10 @@ class EvmTransactions(ABC):  # noqa: B024
 
     def get_or_create_transaction(
             self,
-            cursor: 'DBCursor',
+            cursor: DBCursor,
             tx_hash: EVMTxHash,
-            relevant_address: Optional['ChecksumEvmAddress'],
-    ) -> tuple['EvmTransaction', 'EvmTxReceipt']:
+            relevant_address: ChecksumEvmAddress | None,
+    ) -> tuple[EvmTransaction, EvmTxReceipt]:
         """Gets an evm transaction and its receipt from the database or
         if it doesn't exist, it pulls it from the data source and stores it in the database.
         It ensures that the requirements of
@@ -1262,7 +1260,7 @@ class EvmTransactions(ABC):  # noqa: B024
 
         return evm_tx, evm_tx_receipt
 
-    def ensure_genesis_tx_data_exists(self) -> tuple['EvmTransaction', 'EvmTxReceipt']:
+    def ensure_genesis_tx_data_exists(self) -> tuple[EvmTransaction, EvmTxReceipt]:
         """
         For each tracked account, query to see if it had any transactions in the genesis
         block. We check this even if there already is a 0x0..0 transaction in the db
@@ -1310,7 +1308,7 @@ class EvmTransactions(ABC):  # noqa: B024
 
         return added_tx[0], tx_receipt  # type: ignore  # tx_receipt was just added in the DB so should be there
 
-    def get_or_query_transaction_receipt(self, tx_hash: EVMTxHash) -> 'EvmTxReceipt':
+    def get_or_query_transaction_receipt(self, tx_hash: EVMTxHash) -> EvmTxReceipt:
         """
         Gets the receipt from the DB if it exists. If not queries the chain for it,
         saves it in the DB and then returns it.
@@ -1399,7 +1397,7 @@ class EvmTransactions(ABC):  # noqa: B024
             tx_hash: EVMTxHash,
             associated_address: ChecksumEvmAddress,
             must_exist: bool = False,
-    ) -> tuple['EvmTransaction', 'EvmTxReceipt']:
+    ) -> tuple[EvmTransaction, EvmTxReceipt]:
         """Adds a transaction to the database by its hash and associates it with the provided address.
 
         May raise:

@@ -95,7 +95,7 @@ def test_hash_does_not_collide_on_digit_boundary():
 
 
 @pytest.mark.parametrize('base_accounts', [[make_evm_address()]])
-def test_informational_events(database: 'DBHandler', base_accounts: list[ChecksumEvmAddress]):
+def test_informational_events(database: DBHandler, base_accounts: list[ChecksumEvmAddress]):
     """Test that informational events don't trigger price queries"""
     dbevents = DBHistoryEvents(database)
     tx = make_ethereum_transaction()
@@ -134,7 +134,7 @@ def test_informational_events(database: 'DBHandler', base_accounts: list[Checksu
         ])
 
 
-def test_edited_event_caches_original_position(database: 'DBHandler') -> None:
+def test_edited_event_caches_original_position(database: DBHandler) -> None:
     """Test that editing an onchain event caches its original position.
 
     Verifies:
@@ -220,7 +220,7 @@ def test_edited_event_caches_original_position(database: 'DBHandler') -> None:
         ).fetchone() is None
 
 
-def test_non_onchain_edits_skip_cache(database: 'DBHandler') -> None:
+def test_non_onchain_edits_skip_cache(database: DBHandler) -> None:
     """Test that editing non-onchain events (HistoryEvent) does not create cache entries."""
     events_db = DBHistoryEvents(database)
 
@@ -256,7 +256,7 @@ def test_non_onchain_edits_skip_cache(database: 'DBHandler') -> None:
         ).fetchone() is None
 
 
-def test_edit_bitcoin_event_updates_counterparty_mappings(database: 'DBHandler') -> None:
+def test_edit_bitcoin_event_updates_counterparty_mappings(database: DBHandler) -> None:
     events_db = DBHistoryEvents(database)
     first_counterparty = '1G3MiaKdccQmiTr4gYSKmrCVDaLQ5nvBRp'
     second_counterparty = '1BoatSLRHtKNngkdXEeobR76b53LETtpyT'
@@ -301,7 +301,7 @@ def test_edit_bitcoin_event_updates_counterparty_mappings(database: 'DBHandler')
         ).fetchone()[0] == 0
 
 
-def test_add_history_events_returns_only_inserted_count(database: 'DBHandler') -> None:
+def test_add_history_events_returns_only_inserted_count(database: DBHandler) -> None:
     events_db = DBHistoryEvents(database)
     event = HistoryEvent(
         group_identifier='duplicate_batch_insert_test',
@@ -323,7 +323,7 @@ def test_add_history_events_returns_only_inserted_count(database: 'DBHandler') -
         ).fetchone()[0] == 1
 
 
-def test_add_history_events_sets_ignored_flag(database: 'DBHandler') -> None:
+def test_add_history_events_sets_ignored_flag(database: DBHandler) -> None:
     """Batch insert must set the `ignored` flag from the precomputed ignored-asset set: 1 for
     events whose asset is ignored, 0 (the column default) otherwise. Regression test for the
     optimization that replaced the per-event correlated subquery with a once-per-batch lookup.
@@ -332,7 +332,7 @@ def test_add_history_events_sets_ignored_flag(database: 'DBHandler') -> None:
     with database.user_write() as write_cursor:
         database.add_to_ignored_assets(write_cursor=write_cursor, asset=A_BTC)
 
-    def make_event(group_identifier: str, asset: 'Asset') -> HistoryEvent:
+    def make_event(group_identifier: str, asset: Asset) -> HistoryEvent:
         return HistoryEvent(
             group_identifier=group_identifier,
             sequence_index=0,
@@ -358,7 +358,7 @@ def test_add_history_events_sets_ignored_flag(database: 'DBHandler') -> None:
     assert ignored_by_asset[A_ETH.identifier] == 0
 
 
-def test_get_history_events_internal_skips_ignored_group_lookup(database: 'DBHandler') -> None:
+def test_get_history_events_internal_skips_ignored_group_lookup(database: DBHandler) -> None:
     """get_history_events_internal discards ignored_group_identifiers, so it must not run the
     per-group `... IN (...) AND ignored=1` lookup.
 
@@ -399,14 +399,14 @@ def test_get_history_events_internal_skips_ignored_group_lookup(database: 'DBHan
         'internal full-history fetch must not run the per-group ignored lookup'
 
 
-def test_ignored_group_lookup_detects_across_chunks(database: 'DBHandler') -> None:
+def test_ignored_group_lookup_detects_across_chunks(database: DBHandler) -> None:
     """The path that consumes ignored_group_identifiers must still flag ignored groups, and
     must do so across the chunk boundaries of the (now chunked) IN(...) lookup."""
     events_db = DBHistoryEvents(database)
     with database.user_write() as write_cursor:
         database.add_to_ignored_assets(write_cursor=write_cursor, asset=A_BTC)
 
-    def make_event(group_identifier: str, asset: 'Asset') -> HistoryEvent:
+    def make_event(group_identifier: str, asset: Asset) -> HistoryEvent:
         return HistoryEvent(
             group_identifier=group_identifier,
             sequence_index=0,

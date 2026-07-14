@@ -1,5 +1,4 @@
-from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.data_import.importers.rotki_events import RotkiGenericEventsImporter
@@ -10,6 +9,9 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.base import HistoryEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.types import Location, TimestampMS
+
+if TYPE_CHECKING:
+    from pathlib import Path
 
 
 class DummyImporter(BaseExchangeImporter):

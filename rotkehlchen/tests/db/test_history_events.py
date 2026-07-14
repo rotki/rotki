@@ -1,7 +1,6 @@
 import json
 import time
-from collections.abc import Mapping
-from typing import Any
+from typing import TYPE_CHECKING, Any
 from unittest.mock import patch
 
 import pytest
@@ -21,7 +20,6 @@ from rotkehlchen.db.constants import (
     HistoryEventLinkType,
     HistoryMappingState,
 )
-from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.db.evmtx import DBEvmTx
 from rotkehlchen.db.filtering import (
     EthDepositEventFilterQuery,
@@ -55,6 +53,11 @@ from rotkehlchen.types import (
     TimestampMS,
     deserialize_evm_tx_hash,
 )
+
+if TYPE_CHECKING:
+    from collections.abc import Mapping
+
+    from rotkehlchen.db.dbhandler import DBHandler
 
 
 def test_get_event_mapping_states(database):
@@ -580,7 +583,7 @@ def test_delete_last_event(database):
         assert len(db.get_history_events_internal(cursor, HistoryEventFilterQuery.make())) == 1, 'EVM event should be left'  # noqa: E501
 
 
-def test_get_history_events_free_filter(database: 'DBHandler'):
+def test_get_history_events_free_filter(database: DBHandler):
     """Test that the history events filter works consistently with has_premium=True/False"""
     history_events = DBHistoryEvents(database=database)
     group_identifiers = [str(make_evm_tx_hash()) for _ in range(6)]
@@ -767,7 +770,7 @@ def test_get_history_events_free_filter(database: 'DBHandler'):
                     assert free_event.identifier > 3, 'Free sub-events should be from the latest 3 event groups'  # noqa: E501
 
 
-def test_history_events_with_ignored_groups_excluding_assets(database: 'DBHandler') -> None:
+def test_history_events_with_ignored_groups_excluding_assets(database: DBHandler) -> None:
     db = DBHistoryEvents(database)
     group_identifier = 'group_with_ignored_asset'
     timestamp = TimestampMS(1)
@@ -824,7 +827,7 @@ def test_history_events_with_ignored_groups_excluding_assets(database: 'DBHandle
 
 
 @pytest.mark.parametrize('start_with_valid_premium', [True, False])
-def test_match_exact_events(database: 'DBHandler', start_with_valid_premium: bool) -> None:
+def test_match_exact_events(database: DBHandler, start_with_valid_premium: bool) -> None:
     """Test that when toggling the match with exact events options
     we receive the expected number of events in both free and premium tiers
     """
@@ -925,7 +928,7 @@ def test_match_exact_events(database: 'DBHandler', start_with_valid_premium: boo
 
 
 @pytest.mark.accounting_update
-def test_event_modification_tracks_earliest_timestamp(database: 'DBHandler') -> None:
+def test_event_modification_tracks_earliest_timestamp(database: DBHandler) -> None:
     db = DBHistoryEvents(database)
     event_ts_key = DBCacheStatic.STALE_BALANCES_FROM_TS.value
     modification_ts_key = DBCacheStatic.STALE_BALANCES_MODIFICATION_TS.value
@@ -1060,7 +1063,7 @@ def test_event_modification_tracks_earliest_timestamp(database: 'DBHandler') -> 
 
 
 @pytest.mark.accounting_update
-def test_modification_ts_updated_on_each_modification(database: 'DBHandler') -> None:
+def test_modification_ts_updated_on_each_modification(database: DBHandler) -> None:
     db = DBHistoryEvents(database)
     event_ts_key = DBCacheStatic.STALE_BALANCES_FROM_TS.value
     modification_ts_key = DBCacheStatic.STALE_BALANCES_MODIFICATION_TS.value
@@ -1111,7 +1114,7 @@ def test_modification_ts_updated_on_each_modification(database: 'DBHandler') -> 
         ).fetchone()[0]) >= modification_ts1
 
 
-def test_get_history_event_group_position(database: 'DBHandler') -> None:
+def test_get_history_event_group_position(database: DBHandler) -> None:
     """Test that get_history_event_group_position returns the correct 0-based position
     of a group in the filtered and sorted (timestamp DESC) list of groups.
     """
@@ -1211,7 +1214,7 @@ def test_get_history_event_group_position(database: 'DBHandler') -> None:
     assert db.get_history_event_group_position('GROUP4', eth_asset_filter) is None
 
 
-def test_get_history_event_group_position_with_same_timestamp(database: 'DBHandler') -> None:
+def test_get_history_event_group_position_with_same_timestamp(database: DBHandler) -> None:
     """Test that groups with the same timestamp are ordered by group_identifier as tiebreaker."""
     db = DBHistoryEvents(database)
 
@@ -1258,7 +1261,7 @@ def test_get_history_event_group_position_with_same_timestamp(database: 'DBHandl
     assert db.get_history_event_group_position('GROUP_C', filter_query) == 2
 
 
-def test_matched_filter_returns_canonical_entries(database: 'DBHandler') -> None:
+def test_matched_filter_returns_canonical_entries(database: DBHandler) -> None:
     """Test that filtering by MATCHED returns only the canonical (movement) side per group.
 
     When matching, the MATCHED marker is placed on the matched_event (right_event_id in

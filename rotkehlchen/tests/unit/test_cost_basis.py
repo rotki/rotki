@@ -6,12 +6,10 @@ from typing import TYPE_CHECKING, cast
 
 import pytest
 
-from rotkehlchen.accounting.accountant import Accountant
 from rotkehlchen.accounting.cost_basis import AssetAcquisitionEvent
 from rotkehlchen.accounting.export.csv import FILENAME_ALL_CSV, CSVExporter
 from rotkehlchen.accounting.mixins.event import AccountingEventType
 from rotkehlchen.accounting.pnl import PNL, PnlTotals
-from rotkehlchen.accounting.pot import AccountingPot
 from rotkehlchen.accounting.types import MissingAcquisition
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.chain.evm.accounting.structures import BaseEventSettings, TxAccountingTreatment
@@ -45,7 +43,9 @@ from rotkehlchen.types import (
 from rotkehlchen.utils.misc import ts_ms_to_sec
 
 if TYPE_CHECKING:
+    from rotkehlchen.accounting.accountant import Accountant
     from rotkehlchen.accounting.cost_basis.base import AverageCostBasisMethod
+    from rotkehlchen.accounting.pot import AccountingPot
     from rotkehlchen.db.dbhandler import DBHandler
 
 
@@ -1223,7 +1223,7 @@ def test_taxable_acquisition(accountant: Accountant) -> None:
     ),
 ])
 @pytest.mark.parametrize('accounting_initialize_parameters', [True])
-def test_fees(accountant: 'Accountant', expected_pnls: list[FVal]):
+def test_fees(accountant: Accountant, expected_pnls: list[FVal]):
     """
     Tests that fees are properly either calculated as standalone events or included in the price.
     Values for the example are taken from the Canada example from this issue comment
@@ -1277,7 +1277,7 @@ def test_fees(accountant: 'Accountant', expected_pnls: list[FVal]):
     [FVal(10), ZERO, ZERO, ZERO, ZERO, FVal(-20), ZERO],
 )])
 @pytest.mark.parametrize('accounting_initialize_parameters', [True])
-def test_swaps_with_multiple_fees(accountant: 'Accountant', expected_pnls: list[FVal]):
+def test_swaps_with_multiple_fees(accountant: Accountant, expected_pnls: list[FVal]):
     """Check that a swap with multiple fees is handled properly."""
     history = [HistoryEvent(
         group_identifier='1xyz',
@@ -1316,7 +1316,7 @@ def test_swaps_with_multiple_fees(accountant: 'Accountant', expected_pnls: list[
 
 
 @pytest.mark.parametrize('db_settings', [{'frontend_settings': '{"explorers":{"eth":{"transaction":"myexplorer.eth"}, "polygon_pos":{"transaction":"myexplorer.polygon"}}}'}])  # noqa: E501
-def test_csv_exporter_settings(database: 'DBHandler') -> None:
+def test_csv_exporter_settings(database: DBHandler) -> None:
     """
     Test that the user configuration for the tx explorer in CSV exporter
     is correctly picked

@@ -151,7 +151,7 @@ def test_api_key_change_invalidates_cached_tier(temp_etherscan: Etherscan) -> No
         ) == 'standard'
 
 
-def test_etherscan_uses_account_pagination_limit(temp_etherscan: 'Etherscan') -> None:
+def test_etherscan_uses_account_pagination_limit(temp_etherscan: Etherscan) -> None:
     assert temp_etherscan._get_account_pagination_options(action='txlist', options={}) == {
         'page': '1',
         'offset': str(ETHERSCAN_PAGINATION_LIMIT),
@@ -170,7 +170,7 @@ def test_etherscan_uses_account_pagination_limit(temp_etherscan: 'Etherscan') ->
     ) is None
 
 
-def test_get_logs_dedup_keeps_no_duplicates(temp_etherscan: 'Etherscan') -> None:
+def test_get_logs_dedup_keeps_no_duplicates(temp_etherscan: Etherscan) -> None:
     """Regression test for the get_logs overlap dedup.
 
     When etherscan returns the 1000-log page cap, pagination re-queries from the last returned
@@ -363,7 +363,7 @@ def test_etherscan_get_transactions_genesis_block(eth_transactions):
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
-def test_has_activity(temp_etherscan: 'Etherscan') -> None:
+def test_has_activity(temp_etherscan: Etherscan) -> None:
     """Test to check if an address has any activity on ethereum mainnet"""
     assert temp_etherscan.has_activity(ChainID.ETHEREUM, string_to_evm_address('0x95222290DD7278Aa3Ddd389Cc1E1d165CC4BAfe5')) == HasChainActivity.TRANSACTIONS  # noqa: E501
     assert temp_etherscan.has_activity(ChainID.ETHEREUM, string_to_evm_address('0x725E35e01bbEDadd6ac13cE1c4a98bA4Cf00dF21')) == HasChainActivity.TRANSACTIONS  # noqa: E501
@@ -372,7 +372,7 @@ def test_has_activity(temp_etherscan: 'Etherscan') -> None:
     assert temp_etherscan.has_activity(ChainID.ETHEREUM, string_to_evm_address('0x6c66149E65c517605e0a2e4F707550ca342f9c1B')) == HasChainActivity.NONE  # noqa: E501
 
 
-def test_eth_call_historical_block_refused(temp_etherscan: 'Etherscan') -> None:
+def test_eth_call_historical_block_refused(temp_etherscan: Etherscan) -> None:
     """Etherscan silently executes eth_call at the latest block when given a block tag,
     so historical calls must be refused instead of returning wrong data"""
     with (

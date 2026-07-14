@@ -21,7 +21,7 @@ TX_MISSING_TOKEN_ACCOUNT_INFO: Final = '[{"description":"AV6VwqhnPSPJQU9i4xfHNsc
 
 
 @pytest.fixture(name='mock_helius')
-def fixture_mock_helius(database: 'DBHandler') -> Helius:
+def fixture_mock_helius(database: DBHandler) -> Helius:
     """Create helius with a fake api key so it doesn't do a missing api key error.
     Any Helius api requests must be mocked.
     """

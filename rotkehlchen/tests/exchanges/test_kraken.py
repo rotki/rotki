@@ -94,7 +94,7 @@ def _check_trade_history_events_order(db, expected):
             assert event.event_subtype == expected[event.sequence_index][2]
 
 
-def _patch_ledger(kraken: 'MockKraken', ledger_data: str) -> _patch:
+def _patch_ledger(kraken: MockKraken, ledger_data: str) -> _patch:
     kraken.random_trade_data = False
     kraken.random_ledgers_data = False
     kraken.cache_ttl_secs = 0
@@ -1435,7 +1435,7 @@ def test_kraken_event_serialization_with_custom_asset(database):
 
 @pytest.mark.parametrize('have_decoders', [True])
 @pytest.mark.parametrize('added_exchanges', [(Location.KRAKEN,)])
-def test_margin_trading_events(rotkehlchen_api_server_with_exchanges: 'APIServer'):
+def test_margin_trading_events(rotkehlchen_api_server_with_exchanges: APIServer):
     """Test that we correctly handle margin trade events"""
     rotki = rotkehlchen_api_server_with_exchanges.rest_api.rotkehlchen
     with _patch_ledger(

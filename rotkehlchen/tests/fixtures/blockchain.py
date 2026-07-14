@@ -1,6 +1,5 @@
-from collections.abc import Sequence
 from contextlib import ExitStack
-from typing import Literal
+from typing import TYPE_CHECKING, Literal
 from unittest.mock import patch
 
 import pytest
@@ -25,7 +24,6 @@ from rotkehlchen.chain.ethereum.manager import EthereumManager
 from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
 from rotkehlchen.chain.ethereum.transactions import EthereumTransactions
 from rotkehlchen.chain.evm.contracts import EvmContracts
-from rotkehlchen.chain.evm.types import NodeName, WeightedNode
 from rotkehlchen.chain.gnosis.manager import GnosisManager
 from rotkehlchen.chain.gnosis.node_inquirer import GnosisInquirer
 from rotkehlchen.chain.gnosis.transactions import GnosisTransactions
@@ -44,7 +42,6 @@ from rotkehlchen.chain.scroll.node_inquirer import ScrollInquirer
 from rotkehlchen.chain.solana.manager import SolanaManager
 from rotkehlchen.chain.solana.node_inquirer import SolanaInquirer
 from rotkehlchen.chain.substrate.manager import SubstrateChainProperties, SubstrateManager
-from rotkehlchen.chain.substrate.types import SubstrateAddress
 from rotkehlchen.chain.zksync_lite.manager import ZksyncLiteManager
 from rotkehlchen.constants.assets import A_DOT, A_KSM
 from rotkehlchen.db.settings import DEFAULT_BTC_DERIVATION_GAP_LIMIT
@@ -71,6 +68,12 @@ from rotkehlchen.tests.utils.substrate import (
     wait_until_all_substrate_nodes_connected,
 )
 from rotkehlchen.types import BTCAddress, ChecksumEvmAddress, SolanaAddress, SupportedBlockchain
+
+if TYPE_CHECKING:
+    from collections.abc import Sequence
+
+    from rotkehlchen.chain.evm.types import NodeName, WeightedNode
+    from rotkehlchen.chain.substrate.types import SubstrateAddress
 
 
 def _initialize_and_yield_evm_inquirer_fixture(

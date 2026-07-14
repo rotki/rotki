@@ -34,7 +34,7 @@ class Graph(ExternalServiceWithApiKey):
     def __init__(
             self,
             subgraph_id: str,
-            database: 'DBHandler',
+            database: DBHandler,
             label: str,
     ) -> None:
         """

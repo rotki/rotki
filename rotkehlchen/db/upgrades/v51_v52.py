@@ -47,11 +47,11 @@ def _extract_addresses_from_notes(location: Location, notes: str) -> list[str]:
 
 
 @enter_exit_debug_log(name='UserDB v51->v52 upgrade')
-def upgrade_v51_to_v52(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHandler') -> None:
+def upgrade_v51_to_v52(db: DBHandler, progress_handler: DBUpgradeProgressHandler) -> None:
     """Upgrades the DB from v51 to v52. This happened in 1.43."""
 
     @progress_step(description='Create bitcoin event address mappings table.')
-    def _create_bitcoin_address_mappings_table(write_cursor: 'DBCursor') -> None:
+    def _create_bitcoin_address_mappings_table(write_cursor: DBCursor) -> None:
         write_cursor.execute("""
         CREATE TABLE IF NOT EXISTS bitcoin_events_addresses (
             event_identifier INTEGER NOT NULL,
@@ -68,7 +68,7 @@ def upgrade_v51_to_v52(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
         )
 
     @progress_step(description='Create blockchain balances cache table.')
-    def _create_blockchain_balances_cache_table(write_cursor: 'DBCursor') -> None:
+    def _create_blockchain_balances_cache_table(write_cursor: DBCursor) -> None:
         write_cursor.execute("""
         CREATE TABLE IF NOT EXISTS blockchain_balances_cache (
             blockchain TEXT NOT NULL,
@@ -83,7 +83,7 @@ def upgrade_v51_to_v52(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
         """)
 
     @progress_step(description='Backfill bitcoin event address mappings from notes.')
-    def _backfill_bitcoin_address_mappings(write_cursor: 'DBCursor') -> None:
+    def _backfill_bitcoin_address_mappings(write_cursor: DBCursor) -> None:
         rows = write_cursor.execute(
             'SELECT identifier, location, notes FROM history_events '
             'WHERE location IN (?, ?) AND notes IS NOT NULL AND type IN (?, ?, ?)',
@@ -126,7 +126,7 @@ def upgrade_v51_to_v52(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
         )
 
     @progress_step(description='Adding Hyperliquid and Monad location to the DB.')
-    def _add_locations(write_cursor: 'DBCursor') -> None:
+    def _add_locations(write_cursor: DBCursor) -> None:
         write_cursor.executemany(
             'INSERT OR IGNORE INTO location(location, seq) VALUES (?, ?)',
             (
@@ -136,7 +136,7 @@ def upgrade_v51_to_v52(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
         )
 
     @progress_step(description='Adding UNIQUE constraint to manually_tracked_balances label column.')  # noqa: E501
-    def _add_unique_label_constraint(write_cursor: 'DBCursor') -> None:
+    def _add_unique_label_constraint(write_cursor: DBCursor) -> None:
         """Add UNIQUE constraint to the label column of manually_tracked_balances.
         First deduplicate any existing entries by appending a suffix.
         """
@@ -181,14 +181,14 @@ def upgrade_v51_to_v52(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
         write_cursor.switch_foreign_keys('ON')
 
     @progress_step(description='Deleting legacy blockscout api key credentials.')
-    def _delete_legacy_blockscout_credentials(write_cursor: 'DBCursor') -> None:
+    def _delete_legacy_blockscout_credentials(write_cursor: DBCursor) -> None:
         write_cursor.executemany(
             'DELETE FROM external_service_credentials WHERE name=?',
             [(service_name,) for service_name in BLOCKSCOUT_SERVICES_TO_DELETE],
         )
 
     @progress_step(description='Resetting decoded events.')
-    def _reset_decoded_events(write_cursor: 'DBCursor') -> None:
+    def _reset_decoded_events(write_cursor: DBCursor) -> None:
         """Reset all decoded evm and solana events except those in zksync lite.
         If any event in a transaction is customized, all events in that transaction
         are preserved along with its decoded status.

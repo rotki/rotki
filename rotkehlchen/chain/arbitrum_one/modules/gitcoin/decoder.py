@@ -11,13 +11,13 @@ from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import ChecksumEvmAddress
 from rotkehlchen.utils.misc import bytes_to_address, from_wei
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.arbitrum_one.node_inquirer import ArbitrumOneInquirer
     from rotkehlchen.chain.evm.decoding.base import BaseEvmDecoderTools
     from rotkehlchen.chain.evm.decoding.structures import DecoderContext
+    from rotkehlchen.types import ChecksumEvmAddress
     from rotkehlchen.user_messages import MessagesAggregator
 
 logger = logging.getLogger(__name__)
@@ -31,9 +31,9 @@ class GitcoinDecoder(GitcoinV2CommonDecoder):
 
     def __init__(  # pylint: disable=super-init-not-called
             self,
-            optimism_inquirer: 'ArbitrumOneInquirer',
-            base_tools: 'BaseEvmDecoderTools',
-            msg_aggregator: 'MessagesAggregator',
+            optimism_inquirer: ArbitrumOneInquirer,
+            base_tools: BaseEvmDecoderTools,
+            msg_aggregator: MessagesAggregator,
     ) -> None:
         super().__init__(
             evm_inquirer=optimism_inquirer,
@@ -64,7 +64,7 @@ class GitcoinDecoder(GitcoinV2CommonDecoder):
             direct_allocation_strategy_addresses=[string_to_evm_address('0x91AD709FE04E214eF53218572D8d8690a8b4FdD0')],
         )
 
-    def _decode_donation_impact_minting(self, context: 'DecoderContext') -> EvmDecodingOutput:
+    def _decode_donation_impact_minting(self, context: DecoderContext) -> EvmDecodingOutput:
         if context.tx_log.topics[0] != ON_ATTESTED:
             return DEFAULT_EVM_DECODING_OUTPUT
 

@@ -1,5 +1,4 @@
 from collections import defaultdict
-from collections.abc import Sequence
 from http import HTTPStatus
 from typing import TYPE_CHECKING
 from unittest.mock import patch
@@ -9,7 +8,6 @@ import requests
 from eth_utils import to_checksum_address
 
 from rotkehlchen.accounting.structures.balance import Balance, BalanceSheet
-from rotkehlchen.assets.asset import Asset
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.chain.zksync_lite.structures import ZKSyncLiteTransaction, ZKSyncLiteTXType
 from rotkehlchen.constants.assets import A_DAI, A_ETH, A_GNO
@@ -37,14 +35,17 @@ from rotkehlchen.types import (
 from rotkehlchen.utils.misc import ts_now
 
 if TYPE_CHECKING:
+    from collections.abc import Sequence
+
     from rotkehlchen.api.server import APIServer
+    from rotkehlchen.assets.asset import Asset
 
 
 @pytest.mark.parametrize('number_of_eth_accounts', [0])
 @pytest.mark.parametrize('zksync_lite_accounts', [[make_evm_address(), make_evm_address()]])
 def test_evmlike_transactions_refresh(
-        rotkehlchen_api_server: 'APIServer',
-        zksync_lite_accounts: list['ChecksumEvmAddress'],
+        rotkehlchen_api_server: APIServer,
+        zksync_lite_accounts: list[ChecksumEvmAddress],
 ) -> None:
     """Just tests the api part of refreshing evmlike transactions. Since at the moment
     this only concerns zksynclite, actual data check is in
@@ -53,7 +54,7 @@ def test_evmlike_transactions_refresh(
 
     # Timestamps are optional args here since zksynclite doesn't use them
     def mock_fetch_transactions(
-            address: 'ChecksumEvmAddress',
+            address: ChecksumEvmAddress,
             start_ts: int = 0,
             end_ts: int = now,
     ) -> None:
@@ -87,8 +88,8 @@ def test_evmlike_transactions_refresh(
 @pytest.mark.parametrize('number_of_eth_accounts', [0])
 @pytest.mark.parametrize('zksync_lite_accounts', [[make_evm_address(), make_evm_address()]])
 def test_evmlike_blockchain_balances(
-        rotkehlchen_api_server: 'APIServer',
-        zksync_lite_accounts: list['ChecksumEvmAddress'],
+        rotkehlchen_api_server: APIServer,
+        zksync_lite_accounts: list[ChecksumEvmAddress],
 ) -> None:
     """Just tests the api part of refreshing evmlike transactions. Since at the moment
     this only concerns zksynclite, actual data check is in
@@ -160,7 +161,7 @@ def test_evmlike_blockchain_balances(
 
 
 @pytest.mark.parametrize('number_of_eth_accounts', [0])
-def test_evmlike_add_accounts(rotkehlchen_api_server: 'APIServer') -> None:
+def test_evmlike_add_accounts(rotkehlchen_api_server: APIServer) -> None:
     """We will just add some zksync lite addresses
 
     This is a really fast test and tests the existing api for evmlike addresses
@@ -255,8 +256,8 @@ def compare_events_without_id(e1: dict, e2: dict) -> None:
 @pytest.mark.parametrize('number_of_eth_accounts', [0])
 @pytest.mark.parametrize('zksync_lite_accounts', [['0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12']])
 def test_decode_pending_evmlike(
-        rotkehlchen_api_server: 'APIServer',
-        zksync_lite_accounts: list['ChecksumEvmAddress'],
+        rotkehlchen_api_server: APIServer,
+        zksync_lite_accounts: list[ChecksumEvmAddress],
 ) -> None:
     """Tests pulling and decoding evmlike (zksync lite) transactions
 
@@ -472,8 +473,8 @@ def test_decode_pending_evmlike(
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('zksync_lite_accounts', [['0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12']])
 def test_add_edit_evmlike_event(
-        rotkehlchen_api_server: 'APIServer',
-        zksync_lite_accounts: list['ChecksumEvmAddress'],
+        rotkehlchen_api_server: APIServer,
+        zksync_lite_accounts: list[ChecksumEvmAddress],
 ) -> None:
     """Test that adding and editing evmlike events works correctly and properly validates
     transaction hashes depending on if there is a corresponding transaction in the DB.

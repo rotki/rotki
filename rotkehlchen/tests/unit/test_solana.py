@@ -1,5 +1,4 @@
 import struct
-from collections.abc import Callable
 from contextlib import suppress
 from functools import partial
 from types import SimpleNamespace
@@ -42,6 +41,8 @@ from rotkehlchen.types import SolanaAddress, SupportedBlockchain, Timestamp, Tok
 from rotkehlchen.utils.misc import ts_now
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+
     from rotkehlchen.chain.solana.manager import SolanaManager
     from rotkehlchen.chain.solana.node_inquirer import SolanaInquirer
     from rotkehlchen.globaldb.handler import GlobalDBHandler
@@ -148,8 +149,8 @@ def test_solana_rpc_method_decode_errors_raise_serde_error() -> None:
     SolanaAddress('FkzRQKW8Mzip4xXHamibLZB28sjqN9ZLFacQdbuVEYxa'),
 ]])
 def test_solana_balances(
-        solana_manager: 'SolanaManager',
-        solana_accounts: list['SolanaAddress'],
+        solana_manager: SolanaManager,
+        solana_accounts: list[SolanaAddress],
 ) -> None:
     assert solana_manager.get_multi_balance(accounts=solana_accounts) == {
         solana_accounts[0]: FVal('3.063908962'),
@@ -160,8 +161,8 @@ def test_solana_balances(
 @pytest.mark.vcr
 @pytest.mark.parametrize('solana_accounts', [['7pFGok3zuvacRP797Ke3bUZqbq24PbVQNLvwopfErvih']])
 def test_solana_token_balances(
-        solana_manager: 'SolanaManager',
-        solana_accounts: list['SolanaAddress'],
+        solana_manager: SolanaManager,
+        solana_accounts: list[SolanaAddress],
 ) -> None:
     """Test that the solana token balances are returned correctly.
     The address tested currently holds 3 tokens and 11 NFTs according to solscan.
@@ -188,8 +189,8 @@ def test_solana_token_balances(
 
 @pytest.mark.vcr
 def test_solana_query_token_metadata(
-        solana_inquirer: 'SolanaInquirer',
-        globaldb: 'GlobalDBHandler',
+        solana_inquirer: SolanaInquirer,
+        globaldb: GlobalDBHandler,
 ) -> None:
     """Test that the solana token metadata is queried correctly for different types of tokens.
     Also check that get_solana_token can load tokens and nfts from the db using only the address.
@@ -253,7 +254,7 @@ def test_is_nft_via_offchain_metadata() -> None:
 
 
 @pytest.mark.vcr
-def test_query_tx_from_rpc(solana_inquirer: 'SolanaInquirer') -> None:
+def test_query_tx_from_rpc(solana_inquirer: SolanaInquirer) -> None:
     tx, token_account_mapping = solana_inquirer.get_transaction_for_signature(
         signature=(signature := deserialize_tx_signature('58F9fNP78FiBCbVc2Gdy6on2d6pZiJcTbqib4MsTfNcgAXqS7UGp3a3eeEy7fRWnLiXaJjncUHdqtpCnEFuVsVEM')),  # noqa: E501
     )
@@ -309,7 +310,7 @@ def test_query_tx_from_rpc(solana_inquirer: 'SolanaInquirer') -> None:
 
 
 @pytest.mark.vcr
-def test_query_signatures_for_address(solana_inquirer: 'SolanaInquirer') -> None:
+def test_query_signatures_for_address(solana_inquirer: SolanaInquirer) -> None:
     signatures = solana_inquirer.query_tx_signatures_for_address(
         address=SolanaAddress('7T8ckKtdc5DH7ACS5AnCny7rVXYJPEsaAbdBri1FhPxY'),
     )
@@ -324,7 +325,7 @@ def test_query_signatures_for_address(solana_inquirer: 'SolanaInquirer') -> None
     WeightedNode(node_info=NodeName(name='solana.com', endpoint='https://api.mainnet-beta.solana.com', blockchain=SupportedBlockchain.SOLANA, owned=False), weight=ONE, active=True),  # noqa: E501
 )])
 def test_only_archive_nodes(
-        solana_manager: 'SolanaManager',
+        solana_manager: SolanaManager,
         solana_accounts: list[SolanaAddress],
 ) -> None:
     """Test that non-archive nodes are skipped when making a request for historical data.
@@ -380,7 +381,7 @@ def test_only_archive_nodes(
 
 
 def test_rate_limit_handling(
-        solana_inquirer: 'SolanaInquirer',
+        solana_inquirer: SolanaInquirer,
 ) -> None:
     """Test that rate limits are properly handled so that other non-rate limited nodes are used
     instead of blocking until the rate limit backoff time is over.
@@ -566,7 +567,7 @@ def test_deserialize_stake_account_too_short() -> None:
         deserialize_stake_account(account_data=bytes(50), lamports=1_000_000)
 
 
-def test_get_staked_balance(solana_manager: 'SolanaManager') -> None:
+def test_get_staked_balance(solana_manager: SolanaManager) -> None:
     """Test that staked SOL balance is correctly computed from stake accounts."""
     staker_addr = 'updtkJ8HAhh3rSkBCd3p9Z1Q74yJW4rMhSbScRskDPM'
     voter_addr = '7Sys29UqSSRwczo8N4VZ3phNUtGhGdYTkKMGCR4bx6wH'
@@ -600,7 +601,7 @@ def test_get_staked_balance(solana_manager: 'SolanaManager') -> None:
         assert result == FVal('8')  # 5 + 3 SOL
 
 
-def test_get_staked_balance_no_accounts(solana_manager: 'SolanaManager') -> None:
+def test_get_staked_balance_no_accounts(solana_manager: SolanaManager) -> None:
     """Test that zero is returned when there are no stake accounts."""
     mock_response = SimpleNamespace(value=[])
     with patch.object(
@@ -615,7 +616,7 @@ def test_get_staked_balance_no_accounts(solana_manager: 'SolanaManager') -> None
 
 
 def test_known_capabilities_skip_probing(
-        solana_inquirer: 'SolanaInquirer',
+        solana_inquirer: SolanaInquirer,
 ) -> None:
     """Test that nodes with pre-declared capabilities (e.g. Helius) skip the slow
     _is_archive and _supports_program_accounts probes at connection time."""
@@ -654,7 +655,7 @@ def test_known_capabilities_skip_probing(
 
 
 def test_archive_queries_prefer_helius(
-        solana_inquirer: 'SolanaInquirer',
+        solana_inquirer: SolanaInquirer,
 ) -> None:
     call_order = [WeightedNode(
         node_info=(public_node := NodeName(
@@ -695,7 +696,7 @@ def test_archive_queries_prefer_helius(
 
 
 def test_stake_query_skips_unsupported_nodes(
-        solana_inquirer: 'SolanaInquirer',
+        solana_inquirer: SolanaInquirer,
 ) -> None:
     """Test that get_stake_accounts skips nodes that don't support getProgramAccounts
     and only queries nodes that do."""

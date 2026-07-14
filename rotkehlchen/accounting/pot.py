@@ -11,29 +11,29 @@ from rotkehlchen.accounting.history_base_entries import EventsAccountant
 from rotkehlchen.accounting.mixins.event import AccountingEventType
 from rotkehlchen.accounting.pnl import PNL, PnlTotals
 from rotkehlchen.accounting.structures.processed_event import ProcessedAccountingEvent
-from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants import ONE, ZERO
 from rotkehlchen.constants.assets import A_KFEE
 from rotkehlchen.constants.prices import ZERO_PRICE
 from rotkehlchen.db.eth2 import DBEth2
 from rotkehlchen.db.reports import DBAccountingReports
-from rotkehlchen.db.settings import DBSettings
 from rotkehlchen.errors.misc import InputError, RemoteError
 from rotkehlchen.errors.price import NoPriceForGivenTimestamp, PriceQueryUnsupportedAsset
 from rotkehlchen.errors.serialization import DeserializationError
-from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.types import EventDirection
 from rotkehlchen.history.price import PriceHistorian
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import Location, Price, Timestamp
-from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.data_structures import LRUCacheWithRemove
 from rotkehlchen.utils.mixins.customizable_date import CustomizableDateMixin
 
 if TYPE_CHECKING:
+    from rotkehlchen.assets.asset import Asset
     from rotkehlchen.chain.ethereum.modules.eth2.structures import ValidatorDetailsWithStatus
     from rotkehlchen.chain.evm.accounting.aggregator import EVMAccountingAggregators
     from rotkehlchen.db.dbhandler import DBHandler
+    from rotkehlchen.db.settings import DBSettings
+    from rotkehlchen.fval import FVal
+    from rotkehlchen.user_messages import MessagesAggregator
 
 # keeping it small since reusing will only be assets in same event since we only go forward in time
 PROFIT_CURRENCY_RATE_CACHE_SIZE: Final = 64
@@ -53,8 +53,8 @@ class AccountingPot(CustomizableDateMixin):
 
     def __init__(
             self,
-            database: 'DBHandler',
-            evm_accounting_aggregators: 'EVMAccountingAggregators',
+            database: DBHandler,
+            evm_accounting_aggregators: EVMAccountingAggregators,
             msg_aggregator: MessagesAggregator,
             is_dummy_pot: bool = False,
     ) -> None:
@@ -101,7 +101,7 @@ class AccountingPot(CustomizableDateMixin):
         # of re-scanning the whole eth2_validators table per event. None means not yet loaded.
         self._validators_with_status: dict[int, ValidatorDetailsWithStatus] | None = None
 
-    def get_validator_with_status(self, validator_index: int) -> 'ValidatorDetailsWithStatus | None':  # noqa: E501
+    def get_validator_with_status(self, validator_index: int) -> ValidatorDetailsWithStatus | None:
         """Return the status details for a tracked validator, loading and caching all
         validators on the first call of a report. Returns None if the index is not tracked."""
         if self._validators_with_status is None:

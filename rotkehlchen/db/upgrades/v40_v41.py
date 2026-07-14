@@ -20,7 +20,7 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
-def maybe_move_value(write_cursor: 'DBCursor', pattern: str) -> None:
+def maybe_move_value(write_cursor: DBCursor, pattern: str) -> None:
     """An auxiliary function to move `name` and `end_ts` from `used_query_ranges` table to
     `key_value_cache` table if it matches the given pattern"""
     rows = write_cursor.execute(
@@ -37,7 +37,7 @@ def maybe_move_value(write_cursor: 'DBCursor', pattern: str) -> None:
 
 
 @enter_exit_debug_log(name='UserDB v40->v41 upgrade')
-def upgrade_v40_to_v41(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHandler') -> None:
+def upgrade_v40_to_v41(db: DBHandler, progress_handler: DBUpgradeProgressHandler) -> None:
     """Upgrades the DB from v40 to v41. This was in v1.32 release.
 
         - Create a new table for key-value cache
@@ -47,7 +47,7 @@ def upgrade_v40_to_v41(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
         - Move labels to `address_book` and drop its column from `blockchain_accounts`
     """
     @progress_step(description='Adding cache table.')
-    def _add_cache_table(write_cursor: 'DBCursor') -> None:
+    def _add_cache_table(write_cursor: DBCursor) -> None:
         """Add a new key-value cache table for this upgrade"""
         write_cursor.execute("""CREATE TABLE IF NOT EXISTS key_value_cache (
             name TEXT NOT NULL PRIMARY KEY,
@@ -55,14 +55,14 @@ def upgrade_v40_to_v41(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
         );""")
 
     @progress_step(description='Removing covalent api key.')
-    def _remove_covalent_api_key(write_cursor: 'DBCursor') -> None:
+    def _remove_covalent_api_key(write_cursor: DBCursor) -> None:
         write_cursor.execute(
             'DELETE FROM external_service_credentials WHERE name=?',
             ('covalent', ),
         )
 
     @progress_step(description='Removing Bittrex data.')
-    def _remove_bittrex_data(write_cursor: 'DBCursor') -> None:
+    def _remove_bittrex_data(write_cursor: DBCursor) -> None:
         """
         Removes bittrex settings and credentials from the DB.
         Code taken from v36->v37 upgrade from ftx.
@@ -94,7 +94,7 @@ def upgrade_v40_to_v41(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
                 )
 
     @progress_step(description='Upgrading external service credentials.')
-    def _upgrade_external_service_credentials(write_cursor: 'DBCursor') -> None:
+    def _upgrade_external_service_credentials(write_cursor: DBCursor) -> None:
         """Upgrade the external service credentials schema table to add a secret"""
         update_table_schema(
             write_cursor=write_cursor,
@@ -106,7 +106,7 @@ def upgrade_v40_to_v41(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
         )
 
     @progress_step(description='Moving non settings mappings to cache.')
-    def _move_non_settings_mappings_to_cache(write_cursor: 'DBCursor') -> None:
+    def _move_non_settings_mappings_to_cache(write_cursor: DBCursor) -> None:
         """Move the non-settings value from `settings` to a separate `key_value_cache` table"""
         settings_moved = (
             'last_balance_save',
@@ -131,7 +131,7 @@ def upgrade_v40_to_v41(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
         )
 
     @progress_step(description='Moving non intervals from used query ranges to cache.')
-    def _move_non_intervals_from_used_query_ranges_to_cache(write_cursor: 'DBCursor') -> None:
+    def _move_non_intervals_from_used_query_ranges_to_cache(write_cursor: DBCursor) -> None:
         """Move timestamps that are not ranges from `used_query_ranges` to the `key_value_cache` table"""  # noqa: E501
         value_patterns = {
             '{pattern}%': (  # to match patterns with prefixes
@@ -154,14 +154,14 @@ def upgrade_v40_to_v41(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
                 maybe_move_value(write_cursor, key.format(pattern=pattern))
 
     @progress_step(description='Adding new supported locations.')
-    def _add_new_supported_locations(write_cursor: 'DBCursor') -> None:
+    def _add_new_supported_locations(write_cursor: DBCursor) -> None:
         write_cursor.execute(
             'INSERT OR IGNORE INTO location(location, seq) VALUES (?, ?)',
             ('m', 45),
         )
 
     @progress_step(description='Moving labels to address book.')
-    def _move_labels_to_addressbook(write_cursor: 'DBCursor') -> None:
+    def _move_labels_to_addressbook(write_cursor: DBCursor) -> None:
         """Move all the `label` column values from `blockchain_accounts` table to the `name` column
         of the 'address_book` table. If a `name` already exists in the `address_book` table, then
         `address_name_priority` setting is used to determine which one to keep. Defaults to
@@ -206,7 +206,7 @@ def upgrade_v40_to_v41(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
         write_cursor.execute('ALTER TABLE blockchain_accounts DROP COLUMN label')
 
     @progress_step(description='Resetting decoded events.')
-    def _reset_decoded_events(write_cursor: 'DBCursor') -> None:
+    def _reset_decoded_events(write_cursor: DBCursor) -> None:
         """Reset all decoded evm events except the customized ones."""
         if write_cursor.execute('SELECT COUNT(*) FROM evm_transactions').fetchone()[0] > 0:
             customized_events = write_cursor.execute(
@@ -231,7 +231,7 @@ def upgrade_v40_to_v41(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
             )
 
     @progress_step(description='Upgrading eth2 validators.')
-    def _upgrade_eth2_validators(write_cursor: 'DBCursor') -> None:
+    def _upgrade_eth2_validators(write_cursor: DBCursor) -> None:
         """
         Upgrade the eth2 validators DB table while preserving eth2 daily stats table.
         Foreign keys off so that recreation of table does not delete all daily stats"""
@@ -252,7 +252,7 @@ def upgrade_v40_to_v41(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
         write_cursor.executescript('PRAGMA foreign_keys = ON;')
 
     @progress_step(description='Removing bad Kraken events.')
-    def _remove_bad_kraken_events(write_cursor: 'DBCursor') -> None:
+    def _remove_bad_kraken_events(write_cursor: DBCursor) -> None:
         """Remove events that were created by error in the kraken logic"""
         write_cursor.execute(
             'DELETE FROM history_events WHERE location=? AND type=? AND subtype=?',

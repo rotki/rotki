@@ -8,11 +8,12 @@ driver in harness.py, not here, since their timing brackets differ.
 PnL/accounting operations are deliberately absent until the accounting rework
 lands (design §4.1).
 """
-from collections.abc import Callable
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, Final
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+
     from tools.bench.runner import BackendRunner
 
 EVENTS_PAGE_SIZE: Final = 50
@@ -22,24 +23,24 @@ EVENTS_PAGE_SIZE: Final = 50
 class Operation:
     name: str
     profiles: tuple[str, ...]  # profiles this operation runs on
-    run: Callable[['BackendRunner', dict[str, Any]], None]  # (backend, expected.json)
+    run: Callable[[BackendRunner, dict[str, Any]], None]  # (backend, expected.json)
 
 
-def _history_events_p1(backend: 'BackendRunner', _expected: dict[str, Any]) -> None:
+def _history_events_p1(backend: BackendRunner, _expected: dict[str, Any]) -> None:
     backend.request('POST', '/history/events', {
         'limit': EVENTS_PAGE_SIZE,
         'offset': 0,
     })
 
 
-def _history_events_deep(backend: 'BackendRunner', expected: dict[str, Any]) -> None:
+def _history_events_deep(backend: BackendRunner, expected: dict[str, Any]) -> None:
     backend.request('POST', '/history/events', {
         'limit': EVENTS_PAGE_SIZE,
         'offset': int(expected['total_events'] * 2 / 3),
     })
 
 
-def _history_events_filtered(backend: 'BackendRunner', _expected: dict[str, Any]) -> None:
+def _history_events_filtered(backend: BackendRunner, _expected: dict[str, Any]) -> None:
     backend.request('POST', '/history/events', {
         'limit': EVENTS_PAGE_SIZE,
         'offset': 0,
@@ -48,7 +49,7 @@ def _history_events_filtered(backend: 'BackendRunner', _expected: dict[str, Any]
     })
 
 
-def _history_events_by_location(backend: 'BackendRunner', _expected: dict[str, Any]) -> None:
+def _history_events_by_location(backend: BackendRunner, _expected: dict[str, Any]) -> None:
     backend.request('POST', '/history/events', {
         'limit': EVENTS_PAGE_SIZE,
         'offset': 0,
@@ -56,30 +57,30 @@ def _history_events_by_location(backend: 'BackendRunner', _expected: dict[str, A
     })
 
 
-def _asset_search(backend: 'BackendRunner', _expected: dict[str, Any]) -> None:
+def _asset_search(backend: BackendRunner, _expected: dict[str, Any]) -> None:
     backend.request('POST', '/assets/search/levenshtein', {
         'value': 'usd',
         'limit': 50,
     })
 
 
-def _manual_balances(backend: 'BackendRunner', _expected: dict[str, Any]) -> None:
+def _manual_balances(backend: BackendRunner, _expected: dict[str, Any]) -> None:
     # valuation resolves via the manual latest prices seeded by the profiles
     backend.request('GET', '/balances/manual')
 
 
-def _netvalue_stats(backend: 'BackendRunner', _expected: dict[str, Any]) -> None:
+def _netvalue_stats(backend: BackendRunner, _expected: dict[str, Any]) -> None:
     # reads the seeded timed_location_data snapshots
     backend.request('GET', '/statistics/netvalue')
 
 
-def _blockchain_balances_eth(backend: 'BackendRunner', _expected: dict[str, Any]) -> None:
+def _blockchain_balances_eth(backend: BackendRunner, _expected: dict[str, Any]) -> None:
     # POST = forced refresh: every pass measures the full chain query path
     # (served by the harness mock rpc node), not the in-memory cache
     backend.request('POST', '/balances/blockchains/eth')
 
 
-def _redecode_transactions(backend: 'BackendRunner', _expected: dict[str, Any]) -> None:
+def _redecode_transactions(backend: BackendRunner, _expected: dict[str, Any]) -> None:
     # ignore_cache forces a full redecode of the profile's seeded ethereum transactions
     # (the only ones with backing evm_transactions rows and receipts). Decoding runs from
     # the stored receipts so the whole decode pipeline is measured without any network.

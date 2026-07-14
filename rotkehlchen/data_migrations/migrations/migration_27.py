@@ -14,14 +14,14 @@ log = RotkehlchenLogsAdapter(logger)
 
 
 @enter_exit_debug_log()
-def data_migration_27(rotki: 'Rotkehlchen', progress_handler: 'MigrationProgressHandler') -> None:
+def data_migration_27(rotki: Rotkehlchen, progress_handler: MigrationProgressHandler) -> None:
     """Introduced at v1.43.3
 
     Remove the defunct Loopring module from active modules, queried addresses, cached account id
     mappings, and external service credentials.
     """
     @progress_step(description='Removing loopring module settings')
-    def _remove_loopring_module_settings(rotki: 'Rotkehlchen') -> None:
+    def _remove_loopring_module_settings(rotki: Rotkehlchen) -> None:
         with rotki.data.db.conn.write_ctx() as write_cursor:
             if (active_modules_result := write_cursor.execute("SELECT value FROM settings WHERE name='active_modules'").fetchone()) is not None:  # noqa: E501
                 try:

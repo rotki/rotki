@@ -1,5 +1,4 @@
 import logging
-from collections.abc import Callable
 from typing import TYPE_CHECKING
 
 from rotkehlchen.assets.utils import asset_normalized_value
@@ -13,6 +12,8 @@ from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.utils.misc import bytes_to_address
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+
     from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
     from rotkehlchen.history.events.structures.evm_event import EvmEvent
     from rotkehlchen.types import EvmTransaction
@@ -25,10 +26,10 @@ log = RotkehlchenLogsAdapter(logger)
 class WethDecoder(EthBaseWethDecoder):
     def _maybe_add_base_fallback_unwrap(
             self,
-            transaction: 'EvmTransaction',
-            decoded_events: list['EvmEvent'],
-            all_logs: list['EvmTxReceiptLog'],
-    ) -> list['EvmEvent']:
+            transaction: EvmTransaction,
+            decoded_events: list[EvmEvent],
+            all_logs: list[EvmTxReceiptLog],
+    ) -> list[EvmEvent]:
         if not self.base.is_tracked(transaction.from_address):
             return decoded_events
 

@@ -1,6 +1,5 @@
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
-from rotkehlchen.chain.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.evm.decoding.constants import DELEGATE_CHANGED, OPTIMISM_CPT_DETAILS
 from rotkehlchen.chain.evm.decoding.interfaces import EvmDecoderInterface
 from rotkehlchen.chain.evm.decoding.structures import (
@@ -13,8 +12,11 @@ from rotkehlchen.chain.optimism.constants import CPT_OPTIMISM
 from rotkehlchen.constants.assets import A_OP
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
-from rotkehlchen.types import ChecksumEvmAddress
 from rotkehlchen.utils.misc import bytes_to_address
+
+if TYPE_CHECKING:
+    from rotkehlchen.chain.decoding.types import CounterpartyDetails
+    from rotkehlchen.types import ChecksumEvmAddress
 
 OPTIMISM_TOKEN = string_to_evm_address('0x4200000000000000000000000000000000000042')
 

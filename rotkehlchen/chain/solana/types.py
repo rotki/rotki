@@ -1,10 +1,10 @@
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
-from rotkehlchen.chain.solana.rpc import Pubkey, Signature
 from rotkehlchen.types import SolanaAddress, Timestamp
 
 if TYPE_CHECKING:
+    from rotkehlchen.chain.solana.rpc import Pubkey, Signature
     from rotkehlchen.db.drivers.sqlite import DBCursor
 
 
@@ -30,7 +30,7 @@ class SolanaTransaction:
     instructions: list[SolanaInstruction]  # all instructions executed in this transaction
     db_id: int = -1
 
-    def get_or_query_db_id(self, cursor: 'DBCursor') -> int:
+    def get_or_query_db_id(self, cursor: DBCursor) -> int:
         """Returns the DB identifier for the transaction. Assumes it exists in the DB"""
         if self.db_id == -1:
             db_id = cursor.execute(

@@ -71,7 +71,7 @@ YEARN_ABI_GROUP_4 = [
 ]
 
 
-def _get_abi(cursor: 'DBCursor', name: str) -> int:
+def _get_abi(cursor: DBCursor, name: str) -> int:
     cursor.execute('SELECT id FROM contract_abi WHERE name=?', (name,))
     result = cursor.fetchone()
     if result is None:
@@ -82,7 +82,7 @@ def _get_abi(cursor: 'DBCursor', name: str) -> int:
     return result[0]
 
 
-def _insert_abi_return_id(cursor: 'DBCursor', name: str, serialized_abi: str) -> int:
+def _insert_abi_return_id(cursor: DBCursor, name: str, serialized_abi: str) -> int:
     cursor.execute(
         'INSERT INTO contract_abi(value, name) VALUES(?, ?)',
         (serialized_abi, name),
@@ -91,7 +91,7 @@ def _insert_abi_return_id(cursor: 'DBCursor', name: str, serialized_abi: str) ->
 
 
 def _get_or_create_common_abi(
-        cursor: 'DBCursor',
+        cursor: DBCursor,
         name: str,
         serialized_abi: str,
 ) -> int:
@@ -107,7 +107,7 @@ def _get_or_create_common_abi(
     )
 
 
-def _add_eth_contracts_json(cursor: 'DBCursor') -> tuple[int, int, int]:
+def _add_eth_contracts_json(cursor: DBCursor) -> tuple[int, int, int]:
     eth_scan_abi_id, multicall_abi_id, ds_registry_abi_id = None, None, None
     root_dir = Path(__file__).resolve().parent.parent.parent
     contract_entries = json.loads((root_dir / 'data' / 'eth_contracts.json').read_text(encoding='utf8'))  # noqa: E501
@@ -196,7 +196,7 @@ def _add_eth_contracts_json(cursor: 'DBCursor') -> tuple[int, int, int]:
 
 
 def _add_optimism_contracts(
-        cursor: 'DBCursor',
+        cursor: DBCursor,
         eth_scan_abi_id: int,
         multicall_abi_id: int,
         ds_registry_abi_id: int,
@@ -227,7 +227,7 @@ def _add_optimism_contracts(
 
 
 def _copy_assets_from_packaged_db(
-        cursor: 'DBCursor',
+        cursor: DBCursor,
         assets_ids: list[str],
         root_dir: Path,
 ) -> None:
@@ -254,7 +254,7 @@ def _copy_assets_from_packaged_db(
 
 
 @enter_exit_debug_log(name='GlobalDB v3->v4 upgrade')
-def migrate_to_v4(connection: 'DBConnection', progress_handler: 'DBUpgradeProgressHandler') -> None:  # noqa: E501
+def migrate_to_v4(connection: DBConnection, progress_handler: DBUpgradeProgressHandler) -> None:
     """Upgrades globalDB to v4 by creating and populating the contract data + abi tables.
 
     Also making sure to not repeat existing abis. Ran a script to determine which
@@ -266,7 +266,7 @@ def migrate_to_v4(connection: 'DBConnection', progress_handler: 'DBUpgradeProgre
     root_dir = Path(__file__).resolve().parent.parent.parent
 
     @progress_step('Adding new tables.')
-    def _create_new_tables(cursor: 'DBCursor') -> None:
+    def _create_new_tables(cursor: DBCursor) -> None:
         cursor.execute(
             """
             CREATE TABLE IF NOT EXISTS contract_abi (
@@ -287,7 +287,7 @@ def migrate_to_v4(connection: 'DBConnection', progress_handler: 'DBUpgradeProgre
             );""")
 
     @progress_step('Adding new ABIs.')
-    def _add_eth_abis_json(cursor: 'DBCursor') -> None:
+    def _add_eth_abis_json(cursor: DBCursor) -> None:
         root_dir = Path(__file__).resolve().parent.parent.parent
         abi_entries = json.loads((root_dir / 'data' / 'eth_abi.json').read_text(encoding='utf8'))
         abi_entries_tuples = []
@@ -296,17 +296,17 @@ def migrate_to_v4(connection: 'DBConnection', progress_handler: 'DBUpgradeProgre
         cursor.executemany('INSERT INTO contract_abi(name, value) VALUES(?, ?)', abi_entries_tuples)  # noqa: E501
 
     @progress_step('Adding new contracts.')
-    def _add_new_contracts(cursor: 'DBCursor') -> None:
+    def _add_new_contracts(cursor: DBCursor) -> None:
         eth_scan_abi_id, multicall_abi_id, ds_registry_abi_id = _add_eth_contracts_json(cursor)
         _add_optimism_contracts(cursor, eth_scan_abi_id, multicall_abi_id, ds_registry_abi_id)
 
     @progress_step('Populating asset collections.')
-    def _populate_asset_collections(cursor: 'DBCursor') -> None:
+    def _populate_asset_collections(cursor: DBCursor) -> None:
         """Insert into the collections table the information about known collections"""
         cursor.execute((root_dir / 'data' / 'populate_asset_collections.sql').read_text(encoding='utf8'))  # noqa: E501
 
     @progress_step('Populating multiasset mappings.')
-    def _populate_multiasset_mappings(cursor: 'DBCursor') -> None:
+    def _populate_multiasset_mappings(cursor: DBCursor) -> None:
         """
         Insert into the assets_mappings table the information about each asset's collection
         If any of the assets that needs to go in the collections is missing we copy it from the
@@ -339,7 +339,7 @@ def migrate_to_v4(connection: 'DBConnection', progress_handler: 'DBUpgradeProgre
         cursor.execute(sql_sentences)
 
     @progress_step('Upgrading address book table.')
-    def _upgrade_address_book_table(cursor: 'DBCursor') -> None:
+    def _upgrade_address_book_table(cursor: DBCursor) -> None:
         """Upgrades the address book table if it exists by making the blockchain column optional"""
         update_table_schema(
             write_cursor=cursor,
@@ -352,7 +352,7 @@ def migrate_to_v4(connection: 'DBConnection', progress_handler: 'DBUpgradeProgre
         )
 
     @progress_step('Updating protocol name for yearn assets.')
-    def _update_yearn_v1_protocol(cursor: 'DBCursor') -> None:
+    def _update_yearn_v1_protocol(cursor: DBCursor) -> None:
         """Update the protocol name for yearn assets"""
         cursor.execute("UPDATE evm_tokens SET protocol=? WHERE protocol='yearn-v1'", ('yearn_vaults_v1',))  # noqa: E501
 

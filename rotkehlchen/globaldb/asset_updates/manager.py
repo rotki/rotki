@@ -12,9 +12,7 @@ import rsqlite
 
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.resolver import AssetResolver
-from rotkehlchen.assets.types import AssetData
 from rotkehlchen.constants.misc import GLOBALDB_NAME, GLOBALDIR_NAME
-from rotkehlchen.db.drivers.sqlite import DBCursor
 from rotkehlchen.db.settings import DEFAULT_CONNECT_TIMEOUT, DEFAULT_READ_TIMEOUT
 from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.misc import RemoteError
@@ -28,7 +26,8 @@ from .parsers import AssetCollectionParser, AssetParser, MultiAssetMappingsParse
 from .types import UpdateFileType
 
 if TYPE_CHECKING:
-    from rotkehlchen.db.drivers.sqlite import DBConnection
+    from rotkehlchen.assets.types import AssetData
+    from rotkehlchen.db.drivers.sqlite import DBConnection, DBCursor
     from rotkehlchen.globaldb.handler import GlobalDBHandler
     from rotkehlchen.user_messages import MessagesAggregator
 
@@ -58,7 +57,7 @@ def executeall(cursor: DBCursor, statements: str) -> None:
 
 
 def _replace_assets_from_db_cursor(
-        write_cursor: 'DBCursor',
+        write_cursor: DBCursor,
         sourcedb_path: Path,
 ) -> None:
     # First handle token_kinds & asset_types since other tables reference it
@@ -119,7 +118,7 @@ def _replace_assets_from_db_cursor(
 
 
 def _replace_assets_from_db(
-        connection: 'DBConnection',
+        connection: DBConnection,
         sourcedb_path: Path,
 ) -> None:
     """Replace asset-related tables with data from source database.
@@ -187,7 +186,7 @@ def _force_remote_asset(cursor: DBCursor, local_asset: Asset, full_insert: str) 
 
 class AssetsUpdater:
 
-    def __init__(self, msg_aggregator: 'MessagesAggregator', globaldb: 'GlobalDBHandler') -> None:
+    def __init__(self, msg_aggregator: MessagesAggregator, globaldb: GlobalDBHandler) -> None:
         self.globaldb = globaldb
         self.msg_aggregator = msg_aggregator
         self.local_assets_version = globaldb.get_setting_value(ASSETS_VERSION_KEY, 0)
@@ -248,7 +247,7 @@ class AssetsUpdater:
 
     def _process_asset_collection(
             self,
-            connection: 'DBConnection',
+            connection: DBConnection,
             action: str,
             full_insert: str,
             version: int,
@@ -277,7 +276,7 @@ class AssetsUpdater:
 
     def _process_multiasset_mapping(
             self,
-            connection: 'DBConnection',
+            connection: DBConnection,
             action: str,
             full_insert: str,
             version: int,
@@ -308,7 +307,7 @@ class AssetsUpdater:
 
     def _handle_asset_update(
             self,
-            connection: 'DBConnection',
+            connection: DBConnection,
             remote_asset_data: AssetData,
             assets_conflicts: dict[Asset, Literal['remote', 'local']] | None,
             action: str,
@@ -384,7 +383,7 @@ class AssetsUpdater:
 
     def _apply_single_version_update(
             self,
-            connection: 'DBConnection',
+            connection: DBConnection,
             version: int,
             text: str,
             assets_conflicts: dict[Asset, Literal['remote', 'local']] | None,
@@ -572,7 +571,7 @@ class AssetsUpdater:
 
     def _perform_update(
             self,
-            connection: 'DBConnection',
+            connection: DBConnection,
             assets_conflicts: dict[Asset, Literal['remote', 'local']] | None,
             up_to_version: int | None,
             updates: dict[int, dict[UpdateFileType, str]],

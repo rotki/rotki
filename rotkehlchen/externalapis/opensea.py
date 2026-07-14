@@ -9,7 +9,6 @@ from eth_utils import to_checksum_address
 
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.utils import asset_normalized_value, get_or_create_evm_token
-from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
 from rotkehlchen.concurrency import cancellable_sleep
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import A_ETH, A_USD
@@ -19,7 +18,6 @@ from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.externalapis.interface import ExternalServiceWithApiKey
-from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -30,11 +28,13 @@ from rotkehlchen.serialization.deserialize import (
     deserialize_optional_to_optional_fval,
 )
 from rotkehlchen.types import ChainID, ChecksumEvmAddress, ExternalService, TokenKind
-from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.network import create_session
 
 if TYPE_CHECKING:
+    from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
     from rotkehlchen.db.dbhandler import DBHandler
+    from rotkehlchen.fval import FVal
+    from rotkehlchen.user_messages import MessagesAggregator
 
 ASSETS_MAX_LIMIT: Final = 50  # according to opensea docs
 
@@ -133,7 +133,7 @@ class Opensea(ExternalServiceWithApiKey):
     """https://docs.opensea.io/reference/api-overview"""
     def __init__(
             self,
-            database: 'DBHandler',
+            database: DBHandler,
             msg_aggregator: MessagesAggregator,
             ethereum_inquirer: EthereumInquirer,
     ) -> None:
@@ -228,7 +228,7 @@ class Opensea(ExternalServiceWithApiKey):
             entry: dict[str, Any],
             owner_address: ChecksumEvmAddress,
             eth_usd_price: FVal,
-    ) -> 'NFT':
+    ) -> NFT:
         """May raise:
 
         - DeserializationError if the given dict can't be deserialized or

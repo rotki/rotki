@@ -69,10 +69,10 @@ def _setup_gearbox_cache(globaldb):
 @pytest.mark.parametrize('load_global_caches', [[CPT_GEARBOX]])
 @pytest.mark.parametrize('ethereum_accounts', [['0xfAebCbFbB35935e45afBD6b7EAfA93aB9c4fEc05']])
 def test_gearbox_deposit_non_farming_pool(
-        ethereum_inquirer: 'EthereumInquirer',
-        ethereum_accounts: list['ChecksumEvmAddress'],
+        ethereum_inquirer: EthereumInquirer,
+        ethereum_accounts: list[ChecksumEvmAddress],
         load_global_caches: list[str],
-        globaldb: 'GlobalDBHandler',
+        globaldb: GlobalDBHandler,
 ):
     """Test a deposit to a pool that doesn't have any farming/lp tokens."""
     pool_token = get_or_create_evm_token(
@@ -159,8 +159,8 @@ def test_gearbox_deposit_non_farming_pool(
 @pytest.mark.parametrize('load_global_caches', [[CPT_GEARBOX]])
 @pytest.mark.parametrize('ethereum_accounts', [['0x3630220f243288E3EAC4C5676fC191CFf5756431']])
 def test_gearbox_deposit(
-        ethereum_inquirer: 'EthereumInquirer',
-        ethereum_accounts: list['ChecksumEvmAddress'],
+        ethereum_inquirer: EthereumInquirer,
+        ethereum_accounts: list[ChecksumEvmAddress],
         load_global_caches: list[str],
 ):
     events, _ = get_decoded_events_of_transaction(
@@ -215,8 +215,8 @@ def test_gearbox_deposit(
 @pytest.mark.parametrize('load_global_caches', [[CPT_GEARBOX]])
 @pytest.mark.parametrize('ethereum_accounts', [['0xb99a2c4C1C4F1fc27150681B740396F6CE1cBcF5']])
 def test_gearbox_deposit_usdc(
-        ethereum_inquirer: 'EthereumInquirer',
-        ethereum_accounts: list['ChecksumEvmAddress'],
+        ethereum_inquirer: EthereumInquirer,
+        ethereum_accounts: list[ChecksumEvmAddress],
         load_global_caches: list[str],
 ):
     events, _ = get_decoded_events_of_transaction(
@@ -284,8 +284,8 @@ def test_gearbox_deposit_usdc(
 @pytest.mark.parametrize('load_global_caches', [[CPT_GEARBOX]])
 @pytest.mark.parametrize('ethereum_accounts', [['0x9167B9d55BA7E7D6163bAAa97C099dfE3d1D9420']])
 def test_gearbox_withdraw(
-        ethereum_inquirer: 'EthereumInquirer',
-        ethereum_accounts: list['ChecksumEvmAddress'],
+        ethereum_inquirer: EthereumInquirer,
+        ethereum_accounts: list[ChecksumEvmAddress],
         load_global_caches: list[str],
 ):
     events, _ = get_decoded_events_of_transaction(
@@ -340,8 +340,8 @@ def test_gearbox_withdraw(
 @pytest.mark.parametrize('load_global_caches', [[CPT_GEARBOX]])
 @pytest.mark.parametrize('arbitrum_one_accounts', [['0x0e414c1c4780df6c09c2f1070990768D44B70b1D']])
 def test_gearbox_deposit_arbitrum(
-        arbitrum_one_inquirer: 'ArbitrumOneInquirer',
-        arbitrum_one_accounts: list['ChecksumEvmAddress'],
+        arbitrum_one_inquirer: ArbitrumOneInquirer,
+        arbitrum_one_accounts: list[ChecksumEvmAddress],
         load_global_caches: list[str],
 ):
     events, _ = get_decoded_events_of_transaction(
@@ -396,8 +396,8 @@ def test_gearbox_deposit_arbitrum(
 @pytest.mark.parametrize('load_global_caches', [[CPT_GEARBOX]])
 @pytest.mark.parametrize('arbitrum_one_accounts', [['0x0e414c1c4780df6c09c2f1070990768D44B70b1D']])
 def test_gearbox_deposit_arbitrum_lp(
-        arbitrum_one_inquirer: 'ArbitrumOneInquirer',
-        arbitrum_one_accounts: list['ChecksumEvmAddress'],
+        arbitrum_one_inquirer: ArbitrumOneInquirer,
+        arbitrum_one_accounts: list[ChecksumEvmAddress],
         load_global_caches: list[str],
 ):
     events, _ = get_decoded_events_of_transaction(
@@ -452,8 +452,8 @@ def test_gearbox_deposit_arbitrum_lp(
 @pytest.mark.parametrize('load_global_caches', [[CPT_GEARBOX]])
 @pytest.mark.parametrize('arbitrum_one_accounts', [['0xE2fb883fDc13BEA0bFa73a329718323f00FBb777']])
 def test_gearbox_deposit_arbitrum_receive_leg_from_farming_wrapper(
-        arbitrum_one_inquirer: 'ArbitrumOneInquirer',
-        arbitrum_one_accounts: list['ChecksumEvmAddress'],
+        arbitrum_one_inquirer: ArbitrumOneInquirer,
+        arbitrum_one_accounts: list[ChecksumEvmAddress],
         load_global_caches: list[str],
 ):
     """Regression test for wrapper-based Gearbox deposits with farm-token receive."""
@@ -509,8 +509,8 @@ def test_gearbox_deposit_arbitrum_receive_leg_from_farming_wrapper(
 @pytest.mark.parametrize('load_global_caches', [[CPT_GEARBOX]])
 @pytest.mark.parametrize('arbitrum_one_accounts', [['0x3a212d3d7504dC4A39E21C731d0E80b114A2108b']])
 def test_gearbox_withdraw_arbitrum(
-        arbitrum_one_inquirer: 'EthereumInquirer',
-        arbitrum_one_accounts: list['ChecksumEvmAddress'],
+        arbitrum_one_inquirer: EthereumInquirer,
+        arbitrum_one_accounts: list[ChecksumEvmAddress],
         load_global_caches: list[str],
 ):
     events, _ = get_decoded_events_of_transaction(
@@ -565,8 +565,8 @@ def test_gearbox_withdraw_arbitrum(
 @pytest.mark.parametrize('load_global_caches', [[CPT_GEARBOX]])
 @pytest.mark.parametrize('arbitrum_one_accounts', [['0x7b007E8c0f77B50bEC8009f0e97F523DBa6FE506']])
 def test_gearbox_deposit_usdc_arbitrum(
-        arbitrum_one_inquirer: 'ArbitrumOneInquirer',
-        arbitrum_one_accounts: list['ChecksumEvmAddress'],
+        arbitrum_one_inquirer: ArbitrumOneInquirer,
+        arbitrum_one_accounts: list[ChecksumEvmAddress],
         load_global_caches: list[str],
 ):
     events, _ = get_decoded_events_of_transaction(
@@ -646,8 +646,8 @@ def test_gearbox_deposit_usdc_arbitrum(
 @pytest.mark.parametrize('load_global_caches', [[CPT_GEARBOX]])
 @pytest.mark.parametrize('optimism_accounts', [['0xb8150a1B6945e75D05769D685b127b41E6335Bbc']])
 def test_gearbox_deposit_optimism(
-        optimism_inquirer: 'OptimismInquirer',
-        optimism_accounts: list['ChecksumEvmAddress'],
+        optimism_inquirer: OptimismInquirer,
+        optimism_accounts: list[ChecksumEvmAddress],
         load_global_caches: list[str],
 ):
     events, _ = get_decoded_events_of_transaction(
@@ -703,8 +703,8 @@ def test_gearbox_deposit_optimism(
 @pytest.mark.parametrize('load_global_caches', [[CPT_GEARBOX]])
 @pytest.mark.parametrize('optimism_accounts', [['0xb8150a1B6945e75D05769D685b127b41E6335Bbc']])
 def test_gearbox_deposit_usdc_optimism(
-        optimism_inquirer: 'OptimismInquirer',
-        optimism_accounts: list['ChecksumEvmAddress'],
+        optimism_inquirer: OptimismInquirer,
+        optimism_accounts: list[ChecksumEvmAddress],
         load_global_caches: list[str],
 ):
     events, _ = get_decoded_events_of_transaction(
@@ -772,8 +772,8 @@ def test_gearbox_deposit_usdc_optimism(
 @pytest.mark.parametrize('load_global_caches', [[CPT_GEARBOX]])
 @pytest.mark.parametrize('optimism_accounts', [['0x42ccF4f456D7c7fEBF274242CACcD74AAa0a53d7']])
 def test_gearbox_withdraw_optimism_usdc(
-        optimism_inquirer: 'OptimismInquirer',
-        optimism_accounts: list['ChecksumEvmAddress'],
+        optimism_inquirer: OptimismInquirer,
+        optimism_accounts: list[ChecksumEvmAddress],
         load_global_caches: list[str],
 ):
     events, _ = get_decoded_events_of_transaction(
@@ -827,8 +827,8 @@ def test_gearbox_withdraw_optimism_usdc(
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0x0e414c1c4780df6c09c2f1070990768D44B70b1D']])
 def test_gearbox_staking(
-        ethereum_inquirer: 'EthereumInquirer',
-        ethereum_accounts: list['ChecksumEvmAddress'],
+        ethereum_inquirer: EthereumInquirer,
+        ethereum_accounts: list[ChecksumEvmAddress],
 ):
     tx_hash = deserialize_evm_tx_hash('0x5de7647a4c8f8ca1e5434725dd09b27ce05e41954d72c3f1f4d639c8b7019f4a')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
@@ -889,8 +889,8 @@ def test_gearbox_staking(
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0xe4283e107fB8E96F3175955EC7269afb51ECa6ea']])
 def test_gearbox_unstaking(
-        ethereum_inquirer: 'EthereumInquirer',
-        ethereum_accounts: list['ChecksumEvmAddress'],
+        ethereum_inquirer: EthereumInquirer,
+        ethereum_accounts: list[ChecksumEvmAddress],
 ):
     tx_hash = deserialize_evm_tx_hash('0xb50badadb71b7c8c4ab2d0f9691931396322b2395da2396bee1ed65755e3882a')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
@@ -928,8 +928,8 @@ def test_gearbox_unstaking(
 @pytest.mark.parametrize('load_global_caches', [[CPT_GEARBOX]])
 @pytest.mark.parametrize('ethereum_accounts', [['0xC5d494aa0CBabD7871af0Ef122fB410Fa25c3379']])
 def test_gearbox_claim_from_angle(
-        ethereum_inquirer: 'EthereumInquirer',
-        ethereum_accounts: list['ChecksumEvmAddress'],
+        ethereum_inquirer: EthereumInquirer,
+        ethereum_accounts: list[ChecksumEvmAddress],
         load_global_caches: list[str],
 ):
     events, _ = get_decoded_events_of_transaction(
@@ -970,8 +970,8 @@ def test_gearbox_claim_from_angle(
 @pytest.mark.parametrize('ethereum_accounts', [['0xC5d494aa0CBabD7871af0Ef122fB410Fa25c3379']])
 def test_gearbox_claim(
         setup_gearbox_cache,
-        ethereum_inquirer: 'EthereumInquirer',
-        ethereum_accounts: list['ChecksumEvmAddress'],
+        ethereum_inquirer: EthereumInquirer,
+        ethereum_accounts: list[ChecksumEvmAddress],
         load_global_caches: list[str],
 ):
     events, _ = get_decoded_events_of_transaction(
@@ -1012,8 +1012,8 @@ def test_gearbox_claim(
 @pytest.mark.parametrize('ethereum_accounts', [['0xC5d494aa0CBabD7871af0Ef122fB410Fa25c3379']])
 def test_gearbox_claim_farming_token(
         setup_gearbox_cache,
-        ethereum_inquirer: 'EthereumInquirer',
-        ethereum_accounts: list['ChecksumEvmAddress'],
+        ethereum_inquirer: EthereumInquirer,
+        ethereum_accounts: list[ChecksumEvmAddress],
         load_global_caches: list[str],
 ):
     """Getting a transfer from a gearbox farming token should be a reward claim"""

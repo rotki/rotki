@@ -14,9 +14,9 @@ if TYPE_CHECKING:
 class WmonDecoder(WethDecoderBase):
     def __init__(
             self,
-            monad_inquirer: 'MonadInquirer',
-            base_tools: 'BaseEvmDecoderTools',
-            msg_aggregator: 'MessagesAggregator',
+            monad_inquirer: MonadInquirer,
+            base_tools: BaseEvmDecoderTools,
+            msg_aggregator: MessagesAggregator,
     ) -> None:
         super().__init__(
             evm_inquirer=monad_inquirer,

@@ -67,7 +67,7 @@ class HistoricalPrice(NamedTuple):
         )
 
     @classmethod
-    def deserialize_from_db(cls, value: tuple[str, str, str, int, str]) -> 'HistoricalPrice':
+    def deserialize_from_db(cls, value: tuple[str, str, str, int, str]) -> HistoricalPrice:
         """Deserialize a HistoricalPrice entry from the DB.
 
         May raise:

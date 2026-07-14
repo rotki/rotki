@@ -1,5 +1,4 @@
 import logging
-from collections.abc import Mapping
 from typing import TYPE_CHECKING, Any, Final
 
 from rotkehlchen.assets.asset import EvmToken, UnderlyingToken
@@ -37,6 +36,8 @@ from rotkehlchen.types import CacheType, ChecksumEvmAddress, TokenKind
 from rotkehlchen.utils.misc import bytes_to_address
 
 if TYPE_CHECKING:
+    from collections.abc import Mapping
+
     from rotkehlchen.chain.evm.decoding.base import BaseEvmDecoderTools
     from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
     from rotkehlchen.user_messages import MessagesAggregator
@@ -54,16 +55,16 @@ class SuperfluidCommonDecoder(EvmDecoderInterface, ReloadableDecoderMixin):
 
     def __init__(
             self,
-            evm_inquirer: 'EvmNodeInquirer',
-            base_tools: 'BaseEvmDecoderTools',
-            msg_aggregator: 'MessagesAggregator',
+            evm_inquirer: EvmNodeInquirer,
+            base_tools: BaseEvmDecoderTools,
+            msg_aggregator: MessagesAggregator,
     ):
         super().__init__(evm_inquirer, base_tools, msg_aggregator)
         self.supertoken_addresses: dict[ChecksumEvmAddress, ChecksumEvmAddress | None] = {}
         assert self.node_inquirer.chain_id in CFA_V1_ADDRESSES, f'No Superfluid CFA address defined for {self.node_inquirer.chain_id.name}'  # noqa: E501
         self.cfa_v1_address = CFA_V1_ADDRESSES[self.node_inquirer.chain_id]
 
-    def reload_data(self) -> Mapping['ChecksumEvmAddress', tuple[Any, ...]] | None:
+    def reload_data(self) -> Mapping[ChecksumEvmAddress, tuple[Any, ...]] | None:
         """Ensure the super token list is up to date.
         Returns a fresh addresses to decoders mapping.
         """
@@ -89,7 +90,7 @@ class SuperfluidCommonDecoder(EvmDecoderInterface, ReloadableDecoderMixin):
 
         return self.addresses_to_decoders()
 
-    def _get_or_create_super_token(self, address: ChecksumEvmAddress) -> 'EvmToken':
+    def _get_or_create_super_token(self, address: ChecksumEvmAddress) -> EvmToken:
         """Ensure the super token exists in the DB with the proper protocol and underlying tokens.
         Returns the super token.
         """

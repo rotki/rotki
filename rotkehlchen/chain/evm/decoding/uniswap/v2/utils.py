@@ -1,5 +1,4 @@
 import logging
-from collections.abc import Callable
 from typing import TYPE_CHECKING
 
 from eth_utils import to_hex
@@ -27,7 +26,6 @@ from rotkehlchen.chain.evm.decoding.structures import (
     ActionItem,
     EvmDecodingOutput,
 )
-from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import A_ETH, A_WETH
 from rotkehlchen.errors.asset import UnknownAsset, WrongAssetType
@@ -46,7 +44,10 @@ from rotkehlchen.types import (
 from rotkehlchen.utils.misc import bytes_to_address
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+
     from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
+    from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.history.events.structures.evm_event import EvmEvent
 
@@ -56,13 +57,13 @@ log = RotkehlchenLogsAdapter(logger)
 
 def decode_uniswap_v2_like_swap(
         tx_log: EvmTxReceiptLog,
-        decoded_events: list['EvmEvent'],
+        decoded_events: list[EvmEvent],
         transaction: EvmTransaction,
         counterparty: str,
         router_address: ChecksumEvmAddress,
-        database: 'DBHandler',
-        evm_inquirer: 'EvmNodeInquirer',
-        notify_user: Callable[['EvmEvent', str], None],
+        database: DBHandler,
+        evm_inquirer: EvmNodeInquirer,
+        notify_user: Callable[[EvmEvent, str], None],
 ) -> EvmDecodingOutput:
     """Common logic for decoding uniswap v2 like protocols (uniswap and sushiswap atm)
 
@@ -182,12 +183,12 @@ def decode_uniswap_v2_like_swap(
 
 def decode_uniswap_like_deposit_and_withdrawals(
         tx_log: EvmTxReceiptLog,
-        decoded_events: list['EvmEvent'],
+        decoded_events: list[EvmEvent],
         all_logs: list[EvmTxReceiptLog],
         is_deposit: bool,
         counterparty: str,
-        database: 'DBHandler',
-        evm_inquirer: 'EvmNodeInquirer',
+        database: DBHandler,
+        evm_inquirer: EvmNodeInquirer,
         factory_address: ChecksumEvmAddress,
         init_code_hash: str,
         tx_hash: EVMTxHash,

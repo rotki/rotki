@@ -1,6 +1,5 @@
 from typing import TYPE_CHECKING
 
-from flask import Response
 from webargs.flaskparser import use_kwargs
 
 from rotkehlchen.api.v1.common_resources import BaseMethodView
@@ -12,6 +11,8 @@ from rotkehlchen.api.v1.schemas import (
 )
 
 if TYPE_CHECKING:
+    from flask import Response
+
     from rotkehlchen.assets.asset import CryptoAsset, EvmToken
     from rotkehlchen.types import ChainID, ChecksumEvmAddress, FVal
 
@@ -23,10 +24,10 @@ class PrepareTokenTransferResource(BaseMethodView):
     @use_kwargs(post_schema, location='json_and_view_args')
     def post(
             self,
-            from_address: 'ChecksumEvmAddress',
-            to_address: 'ChecksumEvmAddress',
-            token: 'EvmToken',
-            amount: 'FVal',
+            from_address: ChecksumEvmAddress,
+            to_address: ChecksumEvmAddress,
+            token: EvmToken,
+            amount: FVal,
     ) -> Response:
         return self.rest_api.prepare_token_transfer(
             from_address=from_address,
@@ -44,10 +45,10 @@ class PrepareNativeTransferResource(BaseMethodView):
     @use_kwargs(post_schema, location='json_and_view_args')
     def post(
             self,
-            from_address: 'ChecksumEvmAddress',
-            to_address: 'ChecksumEvmAddress',
-            chain: 'ChainID',
-            amount: 'FVal',
+            from_address: ChecksumEvmAddress,
+            to_address: ChecksumEvmAddress,
+            chain: ChainID,
+            amount: FVal,
     ) -> Response:
         return self.rest_api.prepare_native_transfer(
             from_address=from_address,
@@ -64,8 +65,8 @@ class AddressesInteractedResource(BaseMethodView):
     @use_kwargs(post_schema, location='json_and_view_args')
     def post(
             self,
-            from_address: 'ChecksumEvmAddress',
-            to_address: 'ChecksumEvmAddress',
+            from_address: ChecksumEvmAddress,
+            to_address: ChecksumEvmAddress,
     ) -> Response:
         return self.rest_api.addresses_interacted_before(
             from_address=from_address,
@@ -79,9 +80,9 @@ class AccountTokenBalanceResource(BaseMethodView):
     @use_kwargs(post_schema, location='json_and_view_args')
     def post(
             self,
-            asset: 'CryptoAsset',
-            evm_chain: 'ChainID',
-            address: 'ChecksumEvmAddress',
+            asset: CryptoAsset,
+            evm_chain: ChainID,
+            address: ChecksumEvmAddress,
             async_query: bool,
     ) -> Response:
         return self.rest_api.fetch_token_balance_for_address(

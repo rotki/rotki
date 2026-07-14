@@ -3,11 +3,10 @@ from collections import deque
 from enum import StrEnum
 from itertools import pairwise
 from json.decoder import JSONDecodeError
-from typing import TYPE_CHECKING, Any, Final, Literal, Optional, overload
+from typing import TYPE_CHECKING, Any, Final, Literal, overload
 
 import requests
 
-from rotkehlchen.assets.asset import Asset, AssetWithOracles
 from rotkehlchen.concurrency import cancellable_sleep
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import (
@@ -63,6 +62,7 @@ from rotkehlchen.utils.serialization import jsonloads_dict
 if TYPE_CHECKING:
     from collections.abc import Callable
 
+    from rotkehlchen.assets.asset import Asset, AssetWithOracles
     from rotkehlchen.db.dbhandler import DBHandler
 
 logger = logging.getLogger(__name__)
@@ -214,7 +214,7 @@ class Cryptocompare(
         HistoricalPriceOracleWithCoinListInterface,
         PenalizablePriceOracleMixin,
 ):
-    def __init__(self, database: Optional['DBHandler']) -> None:
+    def __init__(self, database: DBHandler | None) -> None:
         HistoricalPriceOracleWithCoinListInterface.__init__(self, oracle_name='cryptocompare')
         ExternalServiceWithApiKeyOptionalDB.__init__(
             self,
@@ -570,7 +570,7 @@ class Cryptocompare(
 
     def query_multiple_current_prices(
             self,
-            from_assets: 'list[AssetWithOracles]',
+            from_assets: list[AssetWithOracles],
             to_asset: AssetWithOracles,
             handling_special_case: bool = False,
     ) -> dict[AssetWithOracles, Price]:

@@ -6,7 +6,7 @@ if TYPE_CHECKING:
     from rotkehlchen.db.upgrade_manager import DBUpgradeProgressHandler
 
 
-def _do_upgrade(cursor: 'DBCursor', progress_handler: 'DBUpgradeProgressHandler') -> None:
+def _do_upgrade(cursor: DBCursor, progress_handler: DBUpgradeProgressHandler) -> None:
     progress_handler.new_step(name='Deleting all ignored ethereum transaction ids.')
     # Should exist -- but we are being extremely pedantic here
     ignored_actions_exists = cursor.execute(  # always returns value
@@ -188,7 +188,7 @@ SELECT * from trades
     );""")
 
 
-def upgrade_v30_to_v31(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHandler') -> None:
+def upgrade_v30_to_v31(db: DBHandler, progress_handler: DBUpgradeProgressHandler) -> None:
     """Upgrades the DB from v30 to v31
 
     - Add the new eth2 validator table and upgrade the old ones to have foreign key relationships.

@@ -5,9 +5,12 @@ imported if trace level has been setup"""
 import re
 import sqlite3
 from contextlib import closing
-from pathlib import Path
+from typing import TYPE_CHECKING
 
 from sqlcipher3 import dbapi2 as sqlcipher
+
+if TYPE_CHECKING:
+    from pathlib import Path
 
 
 def get_sqlcipher_version_string() -> str:

@@ -1,11 +1,11 @@
 from collections import defaultdict
 from contextlib import ExitStack, nullcontext
+from typing import TYPE_CHECKING
 
 import pytest
 from web3 import Web3
 
 from rotkehlchen.accounting.structures.balance import Balance, BalanceSheet
-from rotkehlchen.assets.asset import Asset
 from rotkehlchen.chain.ethereum.modules.makerdao.cache import (
     ilk_cache_foreach,
     query_ilk_registry_and_maybe_update_cache,
@@ -29,6 +29,9 @@ from rotkehlchen.tests.utils.constants import A_GNO
 from rotkehlchen.tests.utils.factories import make_evm_address
 from rotkehlchen.tests.utils.globaldb import patch_for_globaldb_migrations
 from rotkehlchen.tests.utils.makerdao import VaultTestData, create_web3_mock
+
+if TYPE_CHECKING:
+    from rotkehlchen.assets.asset import Asset
 
 
 def assert_vaults_equal(a: MakerdaoVault, b: MakerdaoVault) -> None:

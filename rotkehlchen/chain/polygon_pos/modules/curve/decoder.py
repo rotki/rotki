@@ -21,9 +21,9 @@ class CurveDecoder(CurveCommonDecoder):
 
     def __init__(
             self,
-            evm_inquirer: 'PolygonPOSInquirer',
-            base_tools: 'BaseEvmDecoderTools',
-            msg_aggregator: 'MessagesAggregator',
+            evm_inquirer: PolygonPOSInquirer,
+            base_tools: BaseEvmDecoderTools,
+            msg_aggregator: MessagesAggregator,
     ) -> None:
         super().__init__(
             evm_inquirer=evm_inquirer,

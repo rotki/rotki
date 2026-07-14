@@ -5,7 +5,6 @@ from typing import TYPE_CHECKING, Any, Final
 
 import requests
 
-from rotkehlchen.assets.asset import Asset, AssetWithOracles
 from rotkehlchen.constants import ONE
 from rotkehlchen.constants.assets import A_USD
 from rotkehlchen.constants.prices import ZERO_PRICE
@@ -28,6 +27,7 @@ from rotkehlchen.utils.network import create_session
 from rotkehlchen.utils.rate_limiter import TokenBucket
 
 if TYPE_CHECKING:
+    from rotkehlchen.assets.asset import Asset, AssetWithOracles
     from rotkehlchen.db.dbhandler import DBHandler
 
 logger = logging.getLogger(__name__)
@@ -55,7 +55,7 @@ class Defillama(
         PenalizablePriceOracleMixin,
 ):
 
-    def __init__(self, database: 'DBHandler | None') -> None:
+    def __init__(self, database: DBHandler | None) -> None:
         ExternalServiceWithApiKeyOptionalDB.__init__(
             self,
             database=database,

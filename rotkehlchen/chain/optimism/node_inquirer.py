@@ -7,9 +7,7 @@ from rotkehlchen.chain.evm.contracts import EvmContracts
 from rotkehlchen.chain.evm.node_inquirer import DSProxyInquirerWithCacheData
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.assets import A_ETH
-from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.tasks.supervisor import TaskSupervisor
 from rotkehlchen.types import ChainID, ChecksumEvmAddress, EVMTxHash, SupportedBlockchain
 
 from .constants import (
@@ -24,6 +22,8 @@ if TYPE_CHECKING:
     from rotkehlchen.externalapis.blockscout import Blockscout
     from rotkehlchen.externalapis.etherscan import Etherscan
     from rotkehlchen.externalapis.routescan import Routescan
+    from rotkehlchen.fval import FVal
+    from rotkehlchen.tasks.supervisor import TaskSupervisor
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -34,10 +34,10 @@ class OptimismInquirer(DSProxyInquirerWithCacheData):
     def __init__(
             self,
             task_supervisor: TaskSupervisor,
-            database: 'DBHandler',
-            etherscan: 'Etherscan',
-            blockscout: 'Blockscout',
-            routescan: 'Routescan',
+            database: DBHandler,
+            etherscan: Etherscan,
+            blockscout: Blockscout,
+            routescan: Routescan,
             rpc_timeout: int = DEFAULT_RPC_TIMEOUT,
     ) -> None:
         contracts = EvmContracts[Literal[ChainID.OPTIMISM]](chain_id=ChainID.OPTIMISM)

@@ -1,5 +1,4 @@
 import csv
-from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
 from rotkehlchen.assets.utils import symbol_to_asset_or_token
@@ -7,7 +6,6 @@ from rotkehlchen.data_import.utils import (
     BaseExchangeImporter,
     process_rotki_generic_import_csv_fields,
 )
-from rotkehlchen.db.drivers.sqlite import DBCursor
 from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.misc import InputError
 from rotkehlchen.errors.serialization import DeserializationError
@@ -17,13 +15,16 @@ from rotkehlchen.serialization.deserialize import deserialize_fval
 from rotkehlchen.types import AssetAmount
 
 if TYPE_CHECKING:
+    from pathlib import Path
+
     from rotkehlchen.db.dbhandler import DBHandler
+    from rotkehlchen.db.drivers.sqlite import DBCursor
 
 
 class RotkiGenericTradesImporter(BaseExchangeImporter):
     """Rotki generic trades CSV importer"""
 
-    def __init__(self, db: 'DBHandler') -> None:
+    def __init__(self, db: DBHandler) -> None:
         super().__init__(db=db, name='Rotki generic trades')
 
     def _consume_rotki_trades(

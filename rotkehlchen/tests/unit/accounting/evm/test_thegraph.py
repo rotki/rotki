@@ -32,7 +32,7 @@ HASH1, HASH2, HASH3 = make_evm_tx_hash(), make_evm_tx_hash(), make_evm_tx_hash()
 
 @pytest.mark.parametrize('default_mock_price_value', [ONE])
 @pytest.mark.parametrize('accounting_initialize_parameters', [True])
-def test_delegation_reward(accountant: 'Accountant'):
+def test_delegation_reward(accountant: Accountant):
     pot = accountant.pots[0]
     events_iterator = peekable([EvmEvent(
         tx_ref=HASH1,

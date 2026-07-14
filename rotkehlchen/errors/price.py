@@ -1,6 +1,10 @@
-from rotkehlchen.assets.asset import Asset
-from rotkehlchen.types import Timestamp
+from typing import TYPE_CHECKING
+
 from rotkehlchen.utils.misc import timestamp_to_date
+
+if TYPE_CHECKING:
+    from rotkehlchen.assets.asset import Asset
+    from rotkehlchen.types import Timestamp
 
 
 class NoPriceForGivenTimestamp(Exception):

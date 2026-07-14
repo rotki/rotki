@@ -36,7 +36,7 @@ if TYPE_CHECKING:
 
 
 @pytest.fixture(name='arbitrum_vault_underlying_token')
-def fixture_arbitrum_vault_underlying_token(database: 'DBHandler') -> 'EvmToken':
+def fixture_arbitrum_vault_underlying_token(database: DBHandler) -> EvmToken:
     return get_or_create_evm_token(
         userdb=database,
         evm_address=string_to_evm_address('0x498Bf2B1e120FeD3ad3D42EA2165E9b73f99C1e5'),
@@ -48,9 +48,9 @@ def fixture_arbitrum_vault_underlying_token(database: 'DBHandler') -> 'EvmToken'
 
 @pytest.fixture(name='arbitrum_vault_token')
 def fixture_arbitrum_vault_token(
-        database: 'DBHandler',
-        arbitrum_vault_underlying_token: 'EvmToken',
-) -> 'EvmToken':
+        database: DBHandler,
+        arbitrum_vault_underlying_token: EvmToken,
+) -> EvmToken:
     return get_or_create_evm_token(
         userdb=database,
         evm_address=string_to_evm_address('0xd3cA9BEc3e681b0f578FD87f20eBCf2B7e0bb739'),
@@ -68,9 +68,9 @@ def fixture_arbitrum_vault_token(
 
 @pytest.fixture(name='arbitrum_vault_token_with_gauge')
 def fixture_arbitrum_vault_token_with_gauge(
-        database: 'DBHandler',
-        globaldb: 'GlobalDBHandler',
-) -> 'EvmToken':
+        database: DBHandler,
+        globaldb: GlobalDBHandler,
+) -> EvmToken:
     vault_token = get_or_create_evm_token(
         userdb=database,
         evm_address=string_to_evm_address('0x0E6Ad128D7E217439bEEa90695FE7ec859c7F98C'),
@@ -90,7 +90,7 @@ def fixture_arbitrum_vault_token_with_gauge(
 
 
 @pytest.fixture(name='ethereum_vault_underlying_token')
-def fixture_ethereum_vault_underlying_token(database: 'DBHandler') -> 'EvmToken':
+def fixture_ethereum_vault_underlying_token(database: DBHandler) -> EvmToken:
     return get_or_create_evm_token(
         userdb=database,
         evm_address=string_to_evm_address('0xf939E0A03FB07F59A73314E73794Be0E57ac1b4E'),
@@ -102,9 +102,9 @@ def fixture_ethereum_vault_underlying_token(database: 'DBHandler') -> 'EvmToken'
 
 @pytest.fixture(name='ethereum_vault_token')
 def fixture_ethereum_vault_token(
-        database: 'DBHandler',
-        ethereum_vault_underlying_token: 'EvmToken',
-) -> 'EvmToken':
+        database: DBHandler,
+        ethereum_vault_underlying_token: EvmToken,
+) -> EvmToken:
     return get_or_create_evm_token(
         userdb=database,
         evm_address=string_to_evm_address('0xccd37EB6374Ae5b1f0b85ac97eFf14770e0D0063'),
@@ -121,7 +121,7 @@ def fixture_ethereum_vault_token(
 
 
 @pytest.fixture(name='optimism_vault_underlying_token')
-def fixture_optimism_vault_underlying_token(database: 'DBHandler') -> 'EvmToken':
+def fixture_optimism_vault_underlying_token(database: DBHandler) -> EvmToken:
     return get_or_create_evm_token(
         userdb=database,
         evm_address=string_to_evm_address('0xC52D7F23a2e460248Db6eE192Cb23dD12bDDCbf6'),
@@ -133,9 +133,9 @@ def fixture_optimism_vault_underlying_token(database: 'DBHandler') -> 'EvmToken'
 
 @pytest.fixture(name='optimism_vault_token')
 def fixture_optimism_vault_token(
-        database: 'DBHandler',
-        optimism_vault_underlying_token: 'EvmToken',
-) -> 'EvmToken':
+        database: DBHandler,
+        optimism_vault_underlying_token: EvmToken,
+) -> EvmToken:
     return get_or_create_evm_token(
         userdb=database,
         evm_address=string_to_evm_address('0xE8dd743E376EcA40cc9547236D46eD83e06Fd471'),
@@ -154,10 +154,10 @@ def fixture_optimism_vault_token(
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('arbitrum_one_accounts', [['0x706A70067BE19BdadBea3600Db0626859Ff25D74']])
 def test_vault_deposit(
-        arbitrum_one_inquirer: 'ArbitrumOneInquirer',
-        arbitrum_one_accounts: list['ChecksumEvmAddress'],
-        arbitrum_vault_token: 'EvmToken',
-        arbitrum_vault_underlying_token: 'EvmToken',
+        arbitrum_one_inquirer: ArbitrumOneInquirer,
+        arbitrum_one_accounts: list[ChecksumEvmAddress],
+        arbitrum_vault_token: EvmToken,
+        arbitrum_vault_underlying_token: EvmToken,
 ) -> None:
     tx_hash = deserialize_evm_tx_hash('0xd7e237db5c10970fd4a5a8bccfc87412fad75680d1358a5d39b4a76ba9ffafa6')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=arbitrum_one_inquirer, tx_hash=tx_hash)  # noqa: E501
@@ -221,10 +221,10 @@ def test_vault_deposit(
 @pytest.mark.parametrize('db_settings', LEGACY_TESTS_INDEXER_ORDER)
 @pytest.mark.parametrize('optimism_accounts', [['0x4D26f0e78C154f8FDA7AcF6646246Fa135507017']])
 def test_vault_withdraw(
-        optimism_inquirer: 'OptimismInquirer',
-        optimism_accounts: list['ChecksumEvmAddress'],
-        optimism_vault_token: 'EvmToken',
-        optimism_vault_underlying_token: 'EvmToken',
+        optimism_inquirer: OptimismInquirer,
+        optimism_accounts: list[ChecksumEvmAddress],
+        optimism_vault_token: EvmToken,
+        optimism_vault_underlying_token: EvmToken,
 ) -> None:
     tx_hash = deserialize_evm_tx_hash('0x8f4fe62eebad90a24fd8fb74835dfa3c3cf9d3c38b20ade6425dde54ca98bdd4')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=optimism_inquirer, tx_hash=tx_hash)
@@ -275,10 +275,10 @@ def test_vault_withdraw(
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0x1D6702bD3DA0108a4428415FFc74B0efd2F86E4f']])
 def test_create_loan(
-        ethereum_inquirer: 'EthereumInquirer',
-        ethereum_accounts: list['ChecksumEvmAddress'],
-        ethereum_vault_token: 'EvmToken',
-        ethereum_vault_underlying_token: 'EvmToken',
+        ethereum_inquirer: EthereumInquirer,
+        ethereum_accounts: list[ChecksumEvmAddress],
+        ethereum_vault_token: EvmToken,
+        ethereum_vault_underlying_token: EvmToken,
 ) -> None:
     tx_hash = deserialize_evm_tx_hash('0xcaaba5f6206de1a1d3a82a213616548b928397052300057a420ff8083d385b78')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
@@ -330,10 +330,10 @@ def test_create_loan(
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0xF4BD7B061f379ff54Ab54a5A5097A18a93CA8819']])
 def test_borrow_more(
-        ethereum_inquirer: 'EthereumInquirer',
-        ethereum_accounts: list['ChecksumEvmAddress'],
-        ethereum_vault_token: 'EvmToken',
-        ethereum_vault_underlying_token: 'EvmToken',
+        ethereum_inquirer: EthereumInquirer,
+        ethereum_accounts: list[ChecksumEvmAddress],
+        ethereum_vault_token: EvmToken,
+        ethereum_vault_underlying_token: EvmToken,
 ) -> None:
     tx_hash = deserialize_evm_tx_hash('0x6b18af9bf79af5b73a88d6049a4c4e6e67cb6ff43f505b6363e48f3c7aa492ff')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
@@ -385,9 +385,9 @@ def test_borrow_more(
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0xc452b963254a1d1794e0C1ebf0460d79C02e4276']])
 def test_create_leveraged_position_with_collateral_asset(
-        ethereum_inquirer: 'EthereumInquirer',
-        ethereum_accounts: list['ChecksumEvmAddress'],
-        ethereum_vault_token: 'EvmToken',
+        ethereum_inquirer: EthereumInquirer,
+        ethereum_accounts: list[ChecksumEvmAddress],
+        ethereum_vault_token: EvmToken,
 ) -> None:
     tx_hash = deserialize_evm_tx_hash('0x94b703880541dd23c4d0d76b3d5bb4ed36e97e5ef7c164fcc8ec081395953699')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
@@ -426,10 +426,10 @@ def test_create_leveraged_position_with_collateral_asset(
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('arbitrum_one_accounts', [['0x59C5B1298DC6Fa9da6d9a911352336e1d879D0C8']])
 def test_create_leveraged_position_with_borrowed_asset(
-        arbitrum_one_inquirer: 'ArbitrumOneInquirer',
-        arbitrum_one_accounts: list['ChecksumEvmAddress'],
-        arbitrum_vault_token: 'EvmToken',
-        arbitrum_vault_underlying_token: 'EvmToken',
+        arbitrum_one_inquirer: ArbitrumOneInquirer,
+        arbitrum_one_accounts: list[ChecksumEvmAddress],
+        arbitrum_vault_token: EvmToken,
+        arbitrum_vault_underlying_token: EvmToken,
 ) -> None:
     tx_hash = deserialize_evm_tx_hash('0x609e8b1b6cf5465441b6d7093b3429b6f8b3c19e0f73c45c8b8f66a47fa9f1bd')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=arbitrum_one_inquirer, tx_hash=tx_hash)  # noqa: E501
@@ -480,10 +480,10 @@ def test_create_leveraged_position_with_borrowed_asset(
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('arbitrum_one_accounts', [['0x36B0aF26728b88BcCDa7d22Be24C21ea560E901F']])
 def test_partially_repay_loan(
-        arbitrum_one_inquirer: 'ArbitrumOneInquirer',
-        arbitrum_one_accounts: list['ChecksumEvmAddress'],
-        arbitrum_vault_token: 'EvmToken',
-        arbitrum_vault_underlying_token: 'EvmToken',
+        arbitrum_one_inquirer: ArbitrumOneInquirer,
+        arbitrum_one_accounts: list[ChecksumEvmAddress],
+        arbitrum_vault_token: EvmToken,
+        arbitrum_vault_underlying_token: EvmToken,
 ) -> None:
     tx_hash = deserialize_evm_tx_hash('0xec6ea0854141775c7adaf90e5e29c7f34574d3725411f7fe2d354505bb2377ac')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=arbitrum_one_inquirer, tx_hash=tx_hash)  # noqa: E501
@@ -533,10 +533,10 @@ def test_partially_repay_loan(
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('arbitrum_one_accounts', [['0x706A70067BE19BdadBea3600Db0626859Ff25D74']])
 def test_close_loan_using_collateral(
-        arbitrum_one_inquirer: 'ArbitrumOneInquirer',
-        arbitrum_one_accounts: list['ChecksumEvmAddress'],
-        arbitrum_vault_token: 'EvmToken',
-        arbitrum_vault_underlying_token: 'EvmToken',
+        arbitrum_one_inquirer: ArbitrumOneInquirer,
+        arbitrum_one_accounts: list[ChecksumEvmAddress],
+        arbitrum_vault_token: EvmToken,
+        arbitrum_vault_underlying_token: EvmToken,
 ) -> None:
     tx_hash = deserialize_evm_tx_hash('0xcca62e6832e2df6f4ff3ca5240069e2d4548dfd23ed8f08c448e4917b916d3df')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=arbitrum_one_inquirer, tx_hash=tx_hash)  # noqa: E501
@@ -587,10 +587,10 @@ def test_close_loan_using_collateral(
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('arbitrum_one_accounts', [['0x13cbd624Af484c4C695ff0E1d0B7e125d45F2C76']])
 def test_close_loan_using_borrowed(
-        arbitrum_one_inquirer: 'ArbitrumOneInquirer',
-        arbitrum_one_accounts: list['ChecksumEvmAddress'],
-        arbitrum_vault_token: 'EvmToken',
-        arbitrum_vault_underlying_token: 'EvmToken',
+        arbitrum_one_inquirer: ArbitrumOneInquirer,
+        arbitrum_one_accounts: list[ChecksumEvmAddress],
+        arbitrum_vault_token: EvmToken,
+        arbitrum_vault_underlying_token: EvmToken,
 ) -> None:
     tx_hash = deserialize_evm_tx_hash('0x34443f7d317affc6bd2c05207f1ff57b29a15039f7bdc0442feb53e279ba81b2')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=arbitrum_one_inquirer, tx_hash=tx_hash)  # noqa: E501
@@ -653,9 +653,9 @@ def test_close_loan_using_borrowed(
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('arbitrum_one_accounts', [['0x13cbd624Af484c4C695ff0E1d0B7e125d45F2C76']])
 def test_remove_collateral(
-        arbitrum_one_inquirer: 'ArbitrumOneInquirer',
-        arbitrum_one_accounts: list['ChecksumEvmAddress'],
-        arbitrum_vault_token: 'EvmToken',
+        arbitrum_one_inquirer: ArbitrumOneInquirer,
+        arbitrum_one_accounts: list[ChecksumEvmAddress],
+        arbitrum_vault_token: EvmToken,
 ) -> None:
     tx_hash = deserialize_evm_tx_hash('0x9798a5e29c83428b79279202514cc61137c04f3fe2150ab36cf4c767a0fb5aab')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=arbitrum_one_inquirer, tx_hash=tx_hash)  # noqa: E501
@@ -693,9 +693,9 @@ def test_remove_collateral(
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('arbitrum_one_accounts', [['0x8228DFbAE77037A5662957Ec8c2111276cF48e92']])
 def test_add_collateral(
-        arbitrum_one_inquirer: 'ArbitrumOneInquirer',
-        arbitrum_one_accounts: list['ChecksumEvmAddress'],
-        arbitrum_vault_token: 'EvmToken',
+        arbitrum_one_inquirer: ArbitrumOneInquirer,
+        arbitrum_one_accounts: list[ChecksumEvmAddress],
+        arbitrum_vault_token: EvmToken,
 ) -> None:
     tx_hash = deserialize_evm_tx_hash('0x8090a4ac2314e1700ea6e77d480a2cb576722110febb6a9ea321df7ae7a2988d')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=arbitrum_one_inquirer, tx_hash=tx_hash)  # noqa: E501
@@ -745,9 +745,9 @@ def test_add_collateral(
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('arbitrum_one_accounts', [['0xb84212f378bfb4C552899F2580a2b43a9241b651']])
 def test_deposit_into_lending_vault_gauge(
-        arbitrum_one_inquirer: 'ArbitrumOneInquirer',
-        arbitrum_one_accounts: list['ChecksumEvmAddress'],
-        arbitrum_vault_token_with_gauge: 'EvmToken',
+        arbitrum_one_inquirer: ArbitrumOneInquirer,
+        arbitrum_one_accounts: list[ChecksumEvmAddress],
+        arbitrum_vault_token_with_gauge: EvmToken,
 ) -> None:
     tx_hash = deserialize_evm_tx_hash('0x547aa41360bb39e32e14d4d70bf2a2285635d6c9306549f5e62fbaa355500f9e')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=arbitrum_one_inquirer, tx_hash=tx_hash)  # noqa: E501
@@ -798,9 +798,9 @@ def test_deposit_into_lending_vault_gauge(
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('arbitrum_one_accounts', [['0x7e1E1c5ac70038a9718431C92A618F01f8DADa18']])
 def test_withdraw_from_lending_vault_gauge(
-        arbitrum_one_inquirer: 'ArbitrumOneInquirer',
-        arbitrum_one_accounts: list['ChecksumEvmAddress'],
-        arbitrum_vault_token_with_gauge: 'EvmToken',
+        arbitrum_one_inquirer: ArbitrumOneInquirer,
+        arbitrum_one_accounts: list[ChecksumEvmAddress],
+        arbitrum_vault_token_with_gauge: EvmToken,
 ) -> None:
     tx_hash = deserialize_evm_tx_hash('0xe4e6ce22451a1dbadbb72b99123ce4a04d8b56f63be6fd49f0b6493430bdb772')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=arbitrum_one_inquirer, tx_hash=tx_hash)  # noqa: E501
@@ -851,9 +851,9 @@ def test_withdraw_from_lending_vault_gauge(
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('arbitrum_one_accounts', [['0xadDD1457C5Fd1a4F2b3161cA614b519b368a3184']])
 def test_claim_rewards_from_lending_vault_gauge(
-        arbitrum_one_inquirer: 'ArbitrumOneInquirer',
-        arbitrum_one_accounts: list['ChecksumEvmAddress'],
-        arbitrum_vault_token_with_gauge: 'EvmToken',
+        arbitrum_one_inquirer: ArbitrumOneInquirer,
+        arbitrum_one_accounts: list[ChecksumEvmAddress],
+        arbitrum_vault_token_with_gauge: EvmToken,
 ) -> None:
     tx_hash = deserialize_evm_tx_hash('0x8ada83b9904451335617d625c9f9ba255af193be786149c2914a1f81468d85fe')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=arbitrum_one_inquirer, tx_hash=tx_hash)  # noqa: E501

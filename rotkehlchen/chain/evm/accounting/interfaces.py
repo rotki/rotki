@@ -18,8 +18,8 @@ class ModuleAccountantInterface(ABC):
 
     def __init__(
             self,
-            node_inquirer: 'EvmNodeInquirer',  # pylint: disable=unused-argument
-            msg_aggregator: 'MessagesAggregator',  # pylint: disable=unused-argument
+            node_inquirer: EvmNodeInquirer,  # pylint: disable=unused-argument
+            msg_aggregator: MessagesAggregator,  # pylint: disable=unused-argument
     ) -> None:
         """This is the evm module accountant interface. All module accountants
         should implement it
@@ -32,7 +32,7 @@ class ModuleAccountantInterface(ABC):
         self.reset()
 
     @abstractmethod
-    def event_callbacks(self) -> dict[int, tuple[int, 'EventsAccountantCallback']]:
+    def event_callbacks(self) -> dict[int, tuple[int, EventsAccountantCallback]]:
         """
         Subclasses implement this to specify callbacks that should be executed for combinations of
         type, subtype and counterparty.

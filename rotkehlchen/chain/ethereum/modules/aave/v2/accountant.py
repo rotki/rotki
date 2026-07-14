@@ -1,10 +1,8 @@
 from collections import defaultdict
-from collections.abc import Iterator
 from typing import TYPE_CHECKING
 
 from rotkehlchen.accounting.mixins.event import AccountingEventType
 from rotkehlchen.chain.evm.accounting.interfaces import ModuleAccountantInterface
-from rotkehlchen.chain.evm.accounting.structures import EventsAccountantCallback
 from rotkehlchen.chain.evm.decoding.aave.constants import CPT_AAVE_V2
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants import ZERO
@@ -13,8 +11,11 @@ from rotkehlchen.history.events.structures.base import get_event_type_identifier
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 
 if TYPE_CHECKING:
+    from collections.abc import Iterator
+
     from rotkehlchen.accounting.pot import AccountingPot
     from rotkehlchen.assets.asset import Asset
+    from rotkehlchen.chain.evm.accounting.structures import EventsAccountantCallback
     from rotkehlchen.history.events.structures.evm_event import EvmEvent
     from rotkehlchen.types import ChecksumEvmAddress
 
@@ -27,18 +28,18 @@ class Aavev2Accountant(ModuleAccountantInterface):
 
     def _process_borrow(
             self,
-            pot: 'AccountingPot',  # pylint: disable=unused-argument
-            event: 'EvmEvent',
-            other_events: Iterator['EvmEvent'],  # pylint: disable=unused-argument
+            pot: AccountingPot,  # pylint: disable=unused-argument
+            event: EvmEvent,
+            other_events: Iterator[EvmEvent],  # pylint: disable=unused-argument
     ) -> int:
         self.assets_borrowed[string_to_evm_address(event.location_label), event.asset] += event.amount  # type: ignore[arg-type]  # location_label can't be None here  # noqa: E501
         return 1
 
     def _process_payback(
             self,
-            pot: 'AccountingPot',
-            event: 'EvmEvent',
-            other_events: Iterator['EvmEvent'],  # pylint: disable=unused-argument
+            pot: AccountingPot,
+            event: EvmEvent,
+            other_events: Iterator[EvmEvent],  # pylint: disable=unused-argument
     ) -> int:
         """
         Process payback events. If the paid back amount is higher that the borrowed amount,
@@ -65,18 +66,18 @@ class Aavev2Accountant(ModuleAccountantInterface):
 
     def _process_deposit(
             self,
-            pot: 'AccountingPot',  # pylint: disable=unused-argument
-            event: 'EvmEvent',
-            other_events: Iterator['EvmEvent'],  # pylint: disable=unused-argument
+            pot: AccountingPot,  # pylint: disable=unused-argument
+            event: EvmEvent,
+            other_events: Iterator[EvmEvent],  # pylint: disable=unused-argument
     ) -> int:
         self.assets_supplied[string_to_evm_address(event.location_label), event.asset] += event.amount  # type: ignore[arg-type]  # location_label can't be None here  # noqa: E501
         return 1
 
     def _process_withdraw(
             self,
-            pot: 'AccountingPot',
-            event: 'EvmEvent',
-            other_events: Iterator['EvmEvent'],  # pylint: disable=unused-argument
+            pot: AccountingPot,
+            event: EvmEvent,
+            other_events: Iterator[EvmEvent],  # pylint: disable=unused-argument
     ) -> int:
         """
         Process withdrawal events. If the withdrawn amount is higher that the deposited amount,

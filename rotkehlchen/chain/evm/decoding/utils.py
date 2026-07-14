@@ -1,12 +1,7 @@
 import logging
-from collections.abc import Callable, Iterable, Sequence
 from typing import TYPE_CHECKING, Any, Literal
 
-from eth_typing import ABI
-
-from rotkehlchen.assets.asset import AssetWithSymbol
 from rotkehlchen.assets.utils import get_evm_token, token_normalized_value
-from rotkehlchen.chain.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.chain.evm.utils import maybe_notify_cache_query_status
 from rotkehlchen.constants.prices import ZERO_PRICE
@@ -17,7 +12,6 @@ from rotkehlchen.errors.misc import (
     RemoteError,
 )
 from rotkehlchen.errors.serialization import DeserializationError
-from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.cache import (
     globaldb_get_general_cache_values,
     globaldb_get_unique_cache_value,
@@ -36,11 +30,17 @@ from rotkehlchen.types import (
 )
 
 if TYPE_CHECKING:
-    from rotkehlchen.assets.asset import CryptoAsset, EvmToken
+    from collections.abc import Callable, Iterable, Sequence
+
+    from eth_typing import ABI
+
+    from rotkehlchen.assets.asset import AssetWithSymbol, CryptoAsset, EvmToken
+    from rotkehlchen.chain.decoding.types import CounterpartyDetails
     from rotkehlchen.chain.evm.decoding.structures import DecoderContext
     from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
     from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
     from rotkehlchen.db.dbhandler import DBHandler
+    from rotkehlchen.fval import FVal
     from rotkehlchen.history.events.structures.evm_event import EvmEvent
     from rotkehlchen.inquirer import Inquirer
 
@@ -49,7 +49,7 @@ log = RotkehlchenLogsAdapter(logger)
 
 
 def bridge_prepare_data(
-        tx_log: 'EvmTxReceiptLog',
+        tx_log: EvmTxReceiptLog,
         deposit_topics: Sequence[bytes],
         source_chain: ChainID,
         target_chain: ChainID,
@@ -80,7 +80,7 @@ def bridge_prepare_data(
 
 
 def bridge_match_transfer(
-        event: 'EvmEvent',
+        event: EvmEvent,
         from_address: ChecksumEvmAddress,
         to_address: ChecksumEvmAddress,
         from_chain: ChainID,
@@ -127,13 +127,13 @@ def _update_cache_vault_count(
 
 
 def update_cached_vaults(
-        database: 'DBHandler',
+        database: DBHandler,
         display_name: str,
         counterparty: str,
         chain: ChainID,
         cache_key: Iterable[str | UniqueCacheType],
         query_vaults: Callable[..., list[dict[str, Any]] | None],
-        process_vault: Callable[['DBHandler', dict[str, Any]], None],
+        process_vault: Callable[[DBHandler, dict[str, Any]], None],
 ) -> None:
     """Update vaults in the cache using the specified query and processing functions.
     Args:
@@ -195,9 +195,9 @@ def update_cached_vaults(
 
 
 def get_vault_price(
-        inquirer: 'Inquirer',
-        vault_token: 'EvmToken',
-        evm_inquirer: 'EvmNodeInquirer',
+        inquirer: Inquirer,
+        vault_token: EvmToken,
+        evm_inquirer: EvmNodeInquirer,
         display_name: str,
         vault_abi: ABI,
         pps_method: Literal['pricePerShare', 'convertToAssets', 'getPricePerFullShare'],
@@ -242,12 +242,12 @@ def get_vault_price(
 
 
 def get_donation_event_params(
-        context: 'DecoderContext',
+        context: DecoderContext,
         sender_address: ChecksumEvmAddress,
         recipient_address: ChecksumEvmAddress,
         sender_tracked: bool,
         recipient_tracked: bool,
-        asset: 'CryptoAsset',
+        asset: CryptoAsset,
         amount: FVal,
         payer_address: ChecksumEvmAddress,
         counterparty: Literal['giveth', 'gitcoin'],

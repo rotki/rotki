@@ -62,7 +62,7 @@ def query_pendle_markets(chain: ChainID) -> None:
         )
 
 
-def query_pendle_price(token: 'EvmToken') -> Price:
+def query_pendle_price(token: EvmToken) -> Price:
     """Query USD price for a given Pendle PT/YT/SY/LP token"""
     try:
         result = request_get_dict(f'https://api-v2.pendle.finance/core/v1/{token.chain_id.serialize()}/assets/prices?addresses={token.evm_address}')

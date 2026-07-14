@@ -741,7 +741,7 @@ def _do_spawn(database, stop_event):
 @pytest.mark.parametrize('number_of_eth_accounts', [100])
 @pytest.mark.parametrize('sql_vm_instructions_cb', [10])
 def test_flaky_binding_parameter_zero(
-        database: 'DBHandler',
+        database: DBHandler,
         ethereum_accounts: list[ChecksumEvmAddress],
 ) -> None:
     """Test that reproduces https://github.com/rotki/rotki/issues/5432 reliably.
@@ -793,7 +793,7 @@ def test_flaky_binding_parameter_zero(
 
 
 @pytest.mark.parametrize('number_of_eth_accounts', [1])
-def test_old_curve_gauge(ethereum_inquirer: 'EthereumInquirer'):
+def test_old_curve_gauge(ethereum_inquirer: EthereumInquirer):
     """Test that querying new and old gauges get the data correctly.
     Old one should pick the default values provided and the new one should
     get the values from the chain
@@ -842,7 +842,7 @@ def test_old_curve_gauge(ethereum_inquirer: 'EthereumInquirer'):
 
 
 @pytest.mark.parametrize('number_of_eth_accounts', [1])
-def test_chain_is_not_queried_when_details(ethereum_inquirer: 'EthereumInquirer'):
+def test_chain_is_not_queried_when_details(ethereum_inquirer: EthereumInquirer):
     """Test that if we provide the values of name, decimals and symbol we don't query
     the chain without need
     """
@@ -876,7 +876,7 @@ def test_chain_is_not_queried_when_details(ethereum_inquirer: 'EthereumInquirer'
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('gnosis_accounts', [['0x7bF5421a72E9bcDA25A706450af95D5645C9d33f']])
 def test_monerium_queries(
-        gnosis_manager: 'GnosisManager',
+        gnosis_manager: GnosisManager,
         gnosis_accounts: list[ChecksumEvmAddress],
         inquirer: Inquirer,
 ):
@@ -930,9 +930,9 @@ def test_monerium_queries(
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0xbe4f0cdf3834bD876813A1037137DcFAD79AcD99']])
 def test_erc721_token_ownership_verification(
-        ethereum_inquirer: 'EthereumInquirer',
+        ethereum_inquirer: EthereumInquirer,
         ethereum_accounts: list[ChecksumEvmAddress],
-        database: 'DBHandler',
+        database: DBHandler,
 ):
     """Test that when a user has historical events for two NFTs from the same collection
     but only currently owns one, we correctly identify only the currently owned NFT.
@@ -1075,8 +1075,8 @@ def test_erc721_token_ownership_verification(
 
 
 def test_superfluid_constant_flow_nfts_are_in_token_exceptions(
-        blockchain: 'ChainsAggregator',
-        globaldb: 'GlobalDBHandler',
+        blockchain: ChainsAggregator,
+        globaldb: GlobalDBHandler,
 ) -> None:
     for chain_id in get_args(SUPPORTED_CHAIN_IDS):
         manager = getattr(blockchain, chain_id.to_name())

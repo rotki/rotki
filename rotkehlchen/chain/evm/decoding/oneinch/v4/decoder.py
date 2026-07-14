@@ -1,10 +1,8 @@
 import logging
 from abc import ABC
-from collections.abc import Callable
 from typing import TYPE_CHECKING
 
 from rotkehlchen.chain.decoding.constants import CPT_GAS
-from rotkehlchen.chain.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.decoding.utils import maybe_reshuffle_events
 from rotkehlchen.chain.ethereum.modules.oneinch.constants import CPT_ONEINCH_V4
 from rotkehlchen.chain.evm.constants import DEPOSIT_TOPIC_V2, SWAPPED_TOPIC
@@ -31,15 +29,18 @@ from rotkehlchen.chain.evm.decoding.uniswap.v3.constants import (
 )
 from rotkehlchen.chain.evm.decoding.velodrome.decoder import SWAP_V2 as VELODROME_SWAP_SIGNATURE
 from rotkehlchen.chain.evm.decoding.weth.decoder import WETH_WITHDRAW_TOPIC
-from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import ChecksumEvmAddress, EvmTransaction
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+
+    from rotkehlchen.chain.decoding.types import CounterpartyDetails
     from rotkehlchen.chain.evm.decoding.base import BaseEvmDecoderTools
     from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
+    from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
     from rotkehlchen.history.events.structures.evm_event import EvmEvent
+    from rotkehlchen.types import ChecksumEvmAddress, EvmTransaction
     from rotkehlchen.user_messages import MessagesAggregator
 
 logger = logging.getLogger(__name__)
@@ -51,9 +52,9 @@ class Oneinchv3n4DecoderBase(OneinchCommonDecoder, ABC):
 
     def __init__(
             self,
-            evm_inquirer: 'EvmNodeInquirer',
-            base_tools: 'BaseEvmDecoderTools',
-            msg_aggregator: 'MessagesAggregator',
+            evm_inquirer: EvmNodeInquirer,
+            base_tools: BaseEvmDecoderTools,
+            msg_aggregator: MessagesAggregator,
             counterparty: str,
             router_address: ChecksumEvmAddress,
             limit_order_topics: list[bytes] | None = None,
@@ -130,9 +131,9 @@ class Oneinchv3n4DecoderBase(OneinchCommonDecoder, ABC):
     def _handle_post_decoding(
             self,
             transaction: EvmTransaction,
-            decoded_events: list['EvmEvent'],
+            decoded_events: list[EvmEvent],
             all_logs: list[EvmTxReceiptLog],
-    ) -> list['EvmEvent']:
+    ) -> list[EvmEvent]:
         """
         It handles the case where a swap is done via 1inch v4 on any of the known pool contracts.
         In that case there are 3 simple decoded events already created: Fee, spend and receive.

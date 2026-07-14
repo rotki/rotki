@@ -847,8 +847,8 @@ def test_balancer_v2_join_gnosis(gnosis_inquirer, gnosis_accounts):
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('arbitrum_one_accounts', [['0x5dCFE1fb21Fb50fA793de3bA8519e6F9Be6C0617']])
 def test_reth_arb(
-        arbitrum_one_inquirer: 'ArbitrumOneInquirer',
-        arbitrum_one_accounts: list['ChecksumEvmAddress'],
+        arbitrum_one_inquirer: ArbitrumOneInquirer,
+        arbitrum_one_accounts: list[ChecksumEvmAddress],
 ):
     """Test the case of rETH on arb where the order of events is not the usual one"""
     tx_hash = deserialize_evm_tx_hash('0x6b380e483cb301cb060434e31bf053c0b55cd357e8c18f01d3573d850273954e')  # noqa: E501

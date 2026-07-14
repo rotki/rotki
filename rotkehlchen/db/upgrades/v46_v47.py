@@ -23,27 +23,27 @@ log = RotkehlchenLogsAdapter(logger)
 
 
 @enter_exit_debug_log(name='UserDB v46->v47 upgrade')
-def upgrade_v46_to_v47(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHandler') -> None:
+def upgrade_v46_to_v47(db: DBHandler, progress_handler: DBUpgradeProgressHandler) -> None:
     """Upgrades the DB from v46 to v47. This was in v1.38 release.
 
     - Add Binance Smart Chain location
     """
     @progress_step(description='Adding new locations to the DB.')
-    def _add_new_locations(write_cursor: 'DBCursor') -> None:
+    def _add_new_locations(write_cursor: DBCursor) -> None:
         write_cursor.executescript("""
             /* Binance Smart Chain */
             INSERT OR IGNORE INTO location(location, seq) VALUES ('v', 54);
             """)
 
     @progress_step(description='Remove extrainternaltx cache.')
-    def _clean_cache(write_cursor: 'DBCursor') -> None:
+    def _clean_cache(write_cursor: DBCursor) -> None:
         write_cursor.execute(
             'DELETE FROM key_value_cache WHERE name LIKE ? ESCAPE ?',
             ('extrainternaltx\\_%', '\\'),
         )
 
     @progress_step(description='Resetting decoded events.')
-    def _reset_decoded_events(write_cursor: 'DBCursor') -> None:
+    def _reset_decoded_events(write_cursor: DBCursor) -> None:
         """Reset all decoded evm events except for the customized ones and those in zksync lite.
         Code taken from previous upgrade
         """
@@ -70,7 +70,7 @@ def upgrade_v46_to_v47(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
             )
 
     @progress_step(description='Adjust block production events.')
-    def _adjust_block_production_events(write_cursor: 'DBCursor') -> None:
+    def _adjust_block_production_events(write_cursor: DBCursor) -> None:
         """Due to the block production changes we need to make sure that all MEV
         events are recalculated and that we properly use INFORMATIONAL when the recipient
         is not tracked.
@@ -108,7 +108,7 @@ def upgrade_v46_to_v47(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
         """)
 
     @progress_step(description='Remove unneeded nft collection assets (may take some time).')
-    def _remove_nft_collection_assets(write_cursor: 'DBCursor') -> None:
+    def _remove_nft_collection_assets(write_cursor: DBCursor) -> None:
         """Remove erc721 assets that have no collectible id, and also any erc20 assets
         with the same address that were incorrectly added.
         """
@@ -216,7 +216,7 @@ def upgrade_v46_to_v47(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
             )
 
     @progress_step(description='Reset exchanges events and cache')
-    def _reset_exchanges_events_and_cache(write_cursor: 'DBCursor') -> None:
+    def _reset_exchanges_events_and_cache(write_cursor: DBCursor) -> None:
         for location in (Location.GEMINI, Location.BYBIT, Location.COINBASE):
             write_cursor.execute(
                 'DELETE FROM history_events WHERE location=? AND event_identifier NOT LIKE ?',
@@ -242,7 +242,7 @@ def upgrade_v46_to_v47(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
         )
 
     @progress_step(description='Remove old accounting rules')
-    def _remove_old_accounting_rules(write_cursor: 'DBCursor') -> None:
+    def _remove_old_accounting_rules(write_cursor: DBCursor) -> None:
         """Remove unused `deposit asset` and `remove asset` accounting rules.
         This must be done here as the accounting rule updates don't currently support deletion.
         See https://github.com/orgs/rotki/projects/11?pane=issue&itemId=96831912
@@ -261,7 +261,7 @@ def upgrade_v46_to_v47(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
         )
 
     @progress_step(description='Remove manual historical oracle')
-    def _remove_manual_historical_price_oracle(write_cursor: 'DBCursor') -> None:
+    def _remove_manual_historical_price_oracle(write_cursor: DBCursor) -> None:
         write_cursor.execute(
             'SELECT value FROM settings WHERE name=?',
             ('historical_price_oracles',),
@@ -281,7 +281,7 @@ def upgrade_v46_to_v47(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
         )
 
     @progress_step(description='Remove deleted ethereum modules')
-    def _remove_deleted_ethereum_modules(write_cursor: 'DBCursor') -> None:
+    def _remove_deleted_ethereum_modules(write_cursor: DBCursor) -> None:
         deleted_modules = ('compound', 'yearn_vaults', 'yearn_vaults_v2', 'aave')
         write_cursor.execute(
             'SELECT value FROM settings WHERE name=?',
@@ -309,17 +309,17 @@ def upgrade_v46_to_v47(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
         )
 
     @progress_step(description='Remove old accounting rules')
-    def _drop_usd_value_column(write_cursor: 'DBCursor') -> None:
+    def _drop_usd_value_column(write_cursor: DBCursor) -> None:
         """Drops the usd value column from history events"""
         write_cursor.execute('ALTER TABLE history_events DROP COLUMN usd_value;')
 
     @progress_step(description='Remove old setting')
-    def _remove_old_setting(write_cursor: 'DBCursor') -> None:
+    def _remove_old_setting(write_cursor: DBCursor) -> None:
         """Removes a key that wasn't correctly deleted for one user and might affect others"""
         write_cursor.execute("DELETE FROM settings WHERE name='last_data_upload_ts'")
 
     @progress_step(description='Upgrading old style binance and avalanche tokens')
-    def _upgrade_binance_avalanche_tokens(write_cursor: 'DBCursor') -> None:
+    def _upgrade_binance_avalanche_tokens(write_cursor: DBCursor) -> None:
         """If a user has any old style binance and avalanche tokens that were upgraded in the
         global DB we have to upgrade them here"""
         changed_ids_mappings = {

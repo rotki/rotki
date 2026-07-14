@@ -1,16 +1,19 @@
 import os
 import platform
 import time
-from collections.abc import Sequence
 from http import HTTPStatus
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import psutil
 import requests
 from flask import url_for
 
 from rotkehlchen.api.server import APIServer, RestAPI
-from rotkehlchen.rotkehlchen import Rotkehlchen
+
+if TYPE_CHECKING:
+    from collections.abc import Sequence
+
+    from rotkehlchen.rotkehlchen import Rotkehlchen
 
 if platform.system() == 'Darwin':
     ASYNC_TASK_WAIT_TIMEOUT = 60

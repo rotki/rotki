@@ -224,7 +224,7 @@ def test_hop_eth_bridge_optimism(optimism_inquirer, optimism_accounts):
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('gnosis_accounts', [['0xc5DE997A4809c15b64560b04E1141416B1a2A71e']])
-def test_hop_eth_bridge_gnosis(gnosis_inquirer: 'GnosisInquirer', gnosis_accounts):
+def test_hop_eth_bridge_gnosis(gnosis_inquirer: GnosisInquirer, gnosis_accounts):
     tx_hash = deserialize_evm_tx_hash('0x8765cf6596ff1794679509fcc0ecd5adf921464859f08992944f6d6a7e905d98')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=gnosis_inquirer, tx_hash=tx_hash)
     user_address = gnosis_accounts[0]
@@ -248,7 +248,7 @@ def test_hop_eth_bridge_gnosis(gnosis_inquirer: 'GnosisInquirer', gnosis_account
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('gnosis_accounts', [['0x0B8B3648060b97447C023E9EE227BB92E35B30FE']])
-def test_hop_usdc_bridge_gnosis(gnosis_inquirer: 'GnosisInquirer', gnosis_accounts):
+def test_hop_usdc_bridge_gnosis(gnosis_inquirer: GnosisInquirer, gnosis_accounts):
     tx_hash = deserialize_evm_tx_hash('0xd00e4cd1223d962ef841c16977142856c1f54d4e87fae417c58520270e3a9420')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=gnosis_inquirer, tx_hash=tx_hash)
     user_address = gnosis_accounts[0]
@@ -272,7 +272,7 @@ def test_hop_usdc_bridge_gnosis(gnosis_inquirer: 'GnosisInquirer', gnosis_accoun
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('gnosis_accounts', [['0x3b6a814bFbfdae6649Bc3753018e746B8e605342']])
-def test_hop_hop_bridge_gnosis(gnosis_inquirer: 'GnosisInquirer', gnosis_accounts):
+def test_hop_hop_bridge_gnosis(gnosis_inquirer: GnosisInquirer, gnosis_accounts):
     tx_hash = deserialize_evm_tx_hash('0x93a644818341e6ac22e499ac1ab73c11b6d8e55ff52ecc529125dc28790d7df1')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=gnosis_inquirer, tx_hash=tx_hash)
     user_address = gnosis_accounts[0]
@@ -296,7 +296,7 @@ def test_hop_hop_bridge_gnosis(gnosis_inquirer: 'GnosisInquirer', gnosis_account
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('polygon_pos_accounts', [['0x8f7043fF95c088b5727bF7889b4d868DF92F6a58']])
-def test_hop_eth_bridge_polygon_pos(polygon_pos_inquirer: 'PolygonPOSInquirer', polygon_pos_accounts):  # noqa: E501
+def test_hop_eth_bridge_polygon_pos(polygon_pos_inquirer: PolygonPOSInquirer, polygon_pos_accounts):  # noqa: E501
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=polygon_pos_inquirer,
         tx_hash=(tx_hash := deserialize_evm_tx_hash('0xcb26a59c87d41de4d6dd688a9ff8400b4e981f7e38d25787616ec0f81b4dccca')),  # noqa: E501
@@ -323,7 +323,7 @@ def test_hop_eth_bridge_polygon_pos(polygon_pos_inquirer: 'PolygonPOSInquirer', 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('db_settings', LEGACY_TESTS_INDEXER_ORDER)
 @pytest.mark.parametrize('base_accounts', [['0xC0b263b8315FAABC27BC0479a5A547281c049C1c']])
-def test_hop_eth_bridge_base(base_inquirer: 'BaseInquirer', base_accounts):
+def test_hop_eth_bridge_base(base_inquirer: BaseInquirer, base_accounts):
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=base_inquirer,
         tx_hash=(tx_hash := deserialize_evm_tx_hash('0xd78eb0f79fa4af1e140641ef260499a6e138b6398d2c4cdcd2e7c488ee8cb20e')),  # noqa: E501
@@ -349,7 +349,7 @@ def test_hop_eth_bridge_base(base_inquirer: 'BaseInquirer', base_accounts):
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('arbitrum_one_accounts', [['0x32C885EcE06EBC8F6bEf6C2052E400226C087e08']])
-def test_hop_eth_bridge_l2_to_l1_arbitrum_one(arbitrum_one_inquirer: 'ArbitrumOneInquirer', arbitrum_one_accounts):  # noqa: E501
+def test_hop_eth_bridge_l2_to_l1_arbitrum_one(arbitrum_one_inquirer: ArbitrumOneInquirer, arbitrum_one_accounts):  # noqa: E501
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=arbitrum_one_inquirer,
         tx_hash=(tx_hash := deserialize_evm_tx_hash('0x4fb91812763e6af24465ee014a306b8322beb612aa51f26b657772447744ae94')),  # noqa: E501
@@ -400,7 +400,7 @@ def test_hop_eth_bridge_l2_to_l1_arbitrum_one(arbitrum_one_inquirer: 'ArbitrumOn
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0x32C885EcE06EBC8F6bEf6C2052E400226C087e08']])
-def test_hop_eth_bridge_l2_to_l1_ethereum(ethereum_inquirer: 'EthereumInquirer', ethereum_accounts):  # noqa: E501
+def test_hop_eth_bridge_l2_to_l1_ethereum(ethereum_inquirer: EthereumInquirer, ethereum_accounts):
     tx_hash = deserialize_evm_tx_hash('0x15704d966705b423b1f747d9413a474f35647e676a5f7ec2bed5ae83bf4f5e38')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     user_address = ethereum_accounts[0]
@@ -424,7 +424,7 @@ def test_hop_eth_bridge_l2_to_l1_ethereum(ethereum_inquirer: 'EthereumInquirer',
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('arbitrum_one_accounts', [['0x0a6c69327d517568E6308F1E1CD2fD2B2b3cd4BF']])
-def test_hop_magic_bridge_l2_to_l1_arbitrum_one(arbitrum_one_inquirer: 'ArbitrumOneInquirer', arbitrum_one_accounts):  # noqa: E501
+def test_hop_magic_bridge_l2_to_l1_arbitrum_one(arbitrum_one_inquirer: ArbitrumOneInquirer, arbitrum_one_accounts):  # noqa: E501
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=arbitrum_one_inquirer,
         tx_hash=(tx_hash := deserialize_evm_tx_hash('0x05c2c5f18e9acc193f34c611e176d9e65f34d420ba80c7546e0ba0c124d510e3')),  # noqa: E501
@@ -488,7 +488,7 @@ def test_hop_magic_bridge_l2_to_l1_arbitrum_one(arbitrum_one_inquirer: 'Arbitrum
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0xebe61c49901a46c954e37B8945Bfb87D238F8f45']])
-def test_hop_usdc_bridge_l2_to_l1_ethereum(ethereum_inquirer: 'EthereumInquirer', ethereum_accounts):  # noqa: E501
+def test_hop_usdc_bridge_l2_to_l1_ethereum(ethereum_inquirer: EthereumInquirer, ethereum_accounts):
     tx_hash = deserialize_evm_tx_hash('0xc76dbb99825d1e53488426b5cf93f7ff71b5fd1fccd41259537e84824a950cc9')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     user_address = ethereum_accounts[0]
@@ -512,7 +512,7 @@ def test_hop_usdc_bridge_l2_to_l1_ethereum(ethereum_inquirer: 'EthereumInquirer'
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('gnosis_accounts', [['0xebe61c49901a46c954e37B8945Bfb87D238F8f45']])
-def test_hop_usdc_bridge_l2_to_l1_gnosis(gnosis_inquirer: 'GnosisInquirer', gnosis_accounts):
+def test_hop_usdc_bridge_l2_to_l1_gnosis(gnosis_inquirer: GnosisInquirer, gnosis_accounts):
     tx_hash = deserialize_evm_tx_hash('0x0c6084399c873b06407f073acec89ffd9693ac0c7df4befd9e45e4178b5ae869')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=gnosis_inquirer, tx_hash=tx_hash)
     user_address = gnosis_accounts[0]
@@ -548,7 +548,7 @@ def test_hop_usdc_bridge_l2_to_l1_gnosis(gnosis_inquirer: 'GnosisInquirer', gnos
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('arbitrum_one_accounts', [['0x0e414c1c4780df6c09c2f1070990768D44B70b1D', '0xA63734db2c674122EEd383aea7698C68aAbf749e']])  # noqa: E501
-def test_hop_eth_bridge_arbitrum_custom_recipient(arbitrum_one_inquirer: 'ArbitrumOneInquirer', arbitrum_one_accounts):  # noqa: E501
+def test_hop_eth_bridge_arbitrum_custom_recipient(arbitrum_one_inquirer: ArbitrumOneInquirer, arbitrum_one_accounts):  # noqa: E501
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=arbitrum_one_inquirer,
         tx_hash=(tx_hash := deserialize_evm_tx_hash('0x88b6fce15afacab9fa77caaf8d42d30d7a517f9f5ae6b7d6c37795309ac90383')),  # noqa: E501
@@ -602,10 +602,10 @@ def test_hop_eth_bridge_arbitrum_custom_recipient(arbitrum_one_inquirer: 'Arbitr
 @pytest.mark.parametrize('should_mock_current_price_queries', [False])
 @pytest.mark.parametrize('base_accounts', [['0xAE70bC0Cbe03ceF2a14eCA507a2863441C6Df7A1']])
 def test_hop_add_liquidity(
-        inquirer: 'Inquirer',
-        base_manager: 'BaseManager',
-        base_inquirer: 'BaseInquirer',
-        base_accounts: list['ChecksumEvmAddress'],
+        inquirer: Inquirer,
+        base_manager: BaseManager,
+        base_inquirer: BaseInquirer,
+        base_accounts: list[ChecksumEvmAddress],
 ):
     tx_hash = deserialize_evm_tx_hash('0xa50286f6288ca13452a490d766aaf969d20cce7035b514423a7b1432fd329cc5')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=base_inquirer, tx_hash=tx_hash)
@@ -668,8 +668,8 @@ def test_hop_add_liquidity(
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('arbitrum_one_accounts', [['0x0e414c1c4780df6c09c2f1070990768D44B70b1D']])
 def test_hop_add_liquidity_2(
-        arbitrum_one_inquirer: 'ArbitrumOneInquirer',
-        arbitrum_one_accounts: list['ChecksumEvmAddress'],
+        arbitrum_one_inquirer: ArbitrumOneInquirer,
+        arbitrum_one_accounts: list[ChecksumEvmAddress],
 ):
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=arbitrum_one_inquirer,
@@ -759,8 +759,8 @@ def test_hop_add_liquidity_2(
 @pytest.mark.parametrize('db_settings', LEGACY_TESTS_INDEXER_ORDER)
 @pytest.mark.parametrize('base_accounts', [['0xA38b8E0cA73916fD611Bbf9E854FDBB25865e42a']])
 def test_hop_remove_liquidity(
-        base_inquirer: 'BaseInquirer',
-        base_accounts: list['ChecksumEvmAddress'],
+        base_inquirer: BaseInquirer,
+        base_accounts: list[ChecksumEvmAddress],
 ):
     tx_hash = deserialize_evm_tx_hash('0xc3662d3d68f845dd848c9df2aef4efedf9c9a01580872619a2f4eaafdbf98feb')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=base_inquirer, tx_hash=tx_hash)
@@ -823,8 +823,8 @@ def test_hop_remove_liquidity(
 @pytest.mark.parametrize('db_settings', LEGACY_TESTS_INDEXER_ORDER)
 @pytest.mark.parametrize('base_accounts', [['0x8Df3480a31B5a32508Cd1E29A6Ff84fd03b96430']])
 def test_hop_remove_liquidity_2(
-        base_inquirer: 'BaseInquirer',
-        base_accounts: list['ChecksumEvmAddress'],
+        base_inquirer: BaseInquirer,
+        base_accounts: list[ChecksumEvmAddress],
 ):
     tx_hash = deserialize_evm_tx_hash('0x4995c8896bb845ab506b759530d35e306d6ef5418630b60bbf26ca0fae90fcaa')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=base_inquirer, tx_hash=tx_hash)
@@ -899,8 +899,8 @@ def test_hop_remove_liquidity_2(
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('gnosis_accounts', [['0xCe0945D35cCc4ccA674e13D3cc2918843C4B56d6']])
 def test_hop_remove_liquidity_usdc_gnosis(
-        gnosis_inquirer: 'GnosisInquirer',
-        gnosis_accounts: list['ChecksumEvmAddress'],
+        gnosis_inquirer: GnosisInquirer,
+        gnosis_accounts: list[ChecksumEvmAddress],
 ):
     tx_hash = deserialize_evm_tx_hash('0x5833d34d7f20ee4e71b902dac85a025f40739a1d646091553104a3e345a38f81')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=gnosis_inquirer, tx_hash=tx_hash)
@@ -976,10 +976,10 @@ def test_hop_remove_liquidity_usdc_gnosis(
 @pytest.mark.parametrize('should_mock_current_price_queries', [False])
 @pytest.mark.parametrize('arbitrum_one_accounts', [['0x0e414c1c4780df6c09c2f1070990768D44B70b1D']])
 def test_hop_stake(
-        inquirer: 'Inquirer',
-        arbitrum_one_manager: 'ArbitrumOneManager',
-        arbitrum_one_inquirer: 'ArbitrumOneInquirer',
-        arbitrum_one_accounts: list['ChecksumEvmAddress'],
+        inquirer: Inquirer,
+        arbitrum_one_manager: ArbitrumOneManager,
+        arbitrum_one_inquirer: ArbitrumOneInquirer,
+        arbitrum_one_accounts: list[ChecksumEvmAddress],
 ):
     get_decoded_events_of_transaction(  # decode the deposit tx to process the LP token
         evm_inquirer=arbitrum_one_inquirer,
@@ -1036,8 +1036,8 @@ def test_hop_stake(
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('arbitrum_one_accounts', [['0x0e414c1c4780df6c09c2f1070990768D44B70b1D']])
 def test_hop_stake_2(
-        arbitrum_one_inquirer: 'ArbitrumOneInquirer',
-        arbitrum_one_accounts: list['ChecksumEvmAddress'],
+        arbitrum_one_inquirer: ArbitrumOneInquirer,
+        arbitrum_one_accounts: list[ChecksumEvmAddress],
 ):
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=arbitrum_one_inquirer,
@@ -1088,8 +1088,8 @@ def test_hop_stake_2(
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('arbitrum_one_accounts', [['0x73F809c0B3cF18d40463D05Ba4b95067cb51393B']])
 def test_hop_claim_rewards(
-        arbitrum_one_inquirer: 'ArbitrumOneInquirer',
-        arbitrum_one_accounts: list['ChecksumEvmAddress'],
+        arbitrum_one_inquirer: ArbitrumOneInquirer,
+        arbitrum_one_accounts: list[ChecksumEvmAddress],
 ):
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=arbitrum_one_inquirer,
@@ -1128,8 +1128,8 @@ def test_hop_claim_rewards(
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('arbitrum_one_accounts', [['0xA252bd92293B0eb9BEB1C2cF72F794F8a3a54348']])
 def test_hop_claim_rewards_2(
-        arbitrum_one_inquirer: 'ArbitrumOneInquirer',
-        arbitrum_one_accounts: list['ChecksumEvmAddress'],
+        arbitrum_one_inquirer: ArbitrumOneInquirer,
+        arbitrum_one_accounts: list[ChecksumEvmAddress],
 ):
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=arbitrum_one_inquirer,
@@ -1169,8 +1169,8 @@ def test_hop_claim_rewards_2(
 @pytest.mark.parametrize('db_settings', LEGACY_TESTS_INDEXER_ORDER)
 @pytest.mark.parametrize('optimism_accounts', [['0xCA16fAf47686aCFEbD6CFC74419fcC9Cbf833067']])
 def test_hop_claim_merkle_rewards(
-        optimism_inquirer: 'OptimismInquirer',
-        optimism_accounts: list['ChecksumEvmAddress'],
+        optimism_inquirer: OptimismInquirer,
+        optimism_accounts: list[ChecksumEvmAddress],
 ):
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=optimism_inquirer,
@@ -1209,8 +1209,8 @@ def test_hop_claim_merkle_rewards(
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('arbitrum_one_accounts', [['0x73F809c0B3cF18d40463D05Ba4b95067cb51393B']])
 def test_hop_unstake(
-        arbitrum_one_inquirer: 'ArbitrumOneInquirer',
-        arbitrum_one_accounts: list['ChecksumEvmAddress'],
+        arbitrum_one_inquirer: ArbitrumOneInquirer,
+        arbitrum_one_accounts: list[ChecksumEvmAddress],
 ):
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=arbitrum_one_inquirer,
@@ -1262,8 +1262,8 @@ def test_hop_unstake(
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('gnosis_accounts', [['0x5d58727c200E96347235a907d9b856A1B0089D86']])
 def test_hop_stake_gnosis(
-        gnosis_inquirer: 'GnosisInquirer',
-        gnosis_accounts: list['ChecksumEvmAddress'],
+        gnosis_inquirer: GnosisInquirer,
+        gnosis_accounts: list[ChecksumEvmAddress],
 ):
     tx_hash = deserialize_evm_tx_hash('0xf3b00cb365594bf9b2894af0edf852d04411db49b5fe9c07708186f75bce5385')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=gnosis_inquirer, tx_hash=tx_hash)
@@ -1312,8 +1312,8 @@ def test_hop_stake_gnosis(
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('gnosis_accounts', [['0x5d58727c200E96347235a907d9b856A1B0089D86']])
 def test_hop_claim_rewards_gnosis(
-        gnosis_inquirer: 'GnosisInquirer',
-        gnosis_accounts: list['ChecksumEvmAddress'],
+        gnosis_inquirer: GnosisInquirer,
+        gnosis_accounts: list[ChecksumEvmAddress],
 ):
     tx_hash = deserialize_evm_tx_hash('0x5ad3d5050d43ec08883c76116d9328b6bf61dd8478c082bfe21bd97eb237c4b1')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=gnosis_inquirer, tx_hash=tx_hash)
@@ -1350,8 +1350,8 @@ def test_hop_claim_rewards_gnosis(
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('gnosis_accounts', [['0x95e62E8FF84ed8456fDc9739eE4A9597Bb6E4c1f']])
 def test_hop_unstake_gnosis(
-        gnosis_inquirer: 'GnosisInquirer',
-        gnosis_accounts: list['ChecksumEvmAddress'],
+        gnosis_inquirer: GnosisInquirer,
+        gnosis_accounts: list[ChecksumEvmAddress],
 ):
     tx_hash = deserialize_evm_tx_hash('0x10e32923be7fd7beda4551badb4fb3ca1a708268884e540d92c73b88596f3ac4')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=gnosis_inquirer, tx_hash=tx_hash)
@@ -1436,8 +1436,8 @@ def test_vote_cast(ethereum_inquirer):
 @pytest.mark.parametrize('db_settings', LEGACY_TESTS_INDEXER_ORDER)
 @pytest.mark.parametrize('optimism_accounts', [['0x9531C059098e3d194fF87FebB587aB07B30B1306']])
 def test_hop_add_liquidity_optimism_usdc(
-        optimism_inquirer: 'BaseInquirer',
-        optimism_accounts: list['ChecksumEvmAddress'],
+        optimism_inquirer: BaseInquirer,
+        optimism_accounts: list[ChecksumEvmAddress],
 ):
     tx_hash = deserialize_evm_tx_hash('0x891d2b68a1ecc36b1c14943ddaece1ee50d0d895ca20b9ad61640aa531b8755e')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=optimism_inquirer, tx_hash=tx_hash)

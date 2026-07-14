@@ -1,5 +1,4 @@
 import logging
-from collections.abc import Callable
 from typing import TYPE_CHECKING
 
 from rotkehlchen.chain.decoding.types import CounterpartyDetails
@@ -7,16 +6,17 @@ from rotkehlchen.chain.evm.decoding.quickswap.constants import CPT_QUICKSWAP_V4
 from rotkehlchen.chain.evm.decoding.quickswap.v3.decoder import Quickswapv3LikeLPDecoder
 from rotkehlchen.chain.evm.decoding.uniswap.v4.utils import decode_uniswap_v4_like_swaps
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import ChecksumEvmAddress
 
 from .constants import CPT_QUICKSWAP_V4_ROUTER, QUICKSWAP_SWAP_TOPIC, QUICKSWAP_V4_NFT_MANAGER_ABI
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+
     from rotkehlchen.chain.evm.decoding.base import BaseEvmDecoderTools
     from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
     from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
     from rotkehlchen.history.events.structures.evm_event import EvmEvent
-    from rotkehlchen.types import EvmTransaction
+    from rotkehlchen.types import ChecksumEvmAddress, EvmTransaction
     from rotkehlchen.user_messages import MessagesAggregator
 
 logger = logging.getLogger(__name__)
@@ -33,11 +33,11 @@ class Quickswapv4CommonDecoder(Quickswapv3LikeLPDecoder):
 
     def __init__(
             self,
-            evm_inquirer: 'EvmNodeInquirer',
-            base_tools: 'BaseEvmDecoderTools',
-            msg_aggregator: 'MessagesAggregator',
-            swap_router: 'ChecksumEvmAddress',
-            nft_manager: 'ChecksumEvmAddress',
+            evm_inquirer: EvmNodeInquirer,
+            base_tools: BaseEvmDecoderTools,
+            msg_aggregator: MessagesAggregator,
+            swap_router: ChecksumEvmAddress,
+            nft_manager: ChecksumEvmAddress,
     ) -> None:
         super().__init__(
             evm_inquirer=evm_inquirer,
@@ -52,10 +52,10 @@ class Quickswapv4CommonDecoder(Quickswapv3LikeLPDecoder):
 
     def _router_post_decoding(
             self,
-            transaction: 'EvmTransaction',
-            decoded_events: list['EvmEvent'],
-            all_logs: list['EvmTxReceiptLog'],
-    ) -> list['EvmEvent']:
+            transaction: EvmTransaction,
+            decoded_events: list[EvmEvent],
+            all_logs: list[EvmTxReceiptLog],
+    ) -> list[EvmEvent]:
         """Decode swaps routed through the Quickswap v4 router."""
         return decode_uniswap_v4_like_swaps(
             transaction=transaction,

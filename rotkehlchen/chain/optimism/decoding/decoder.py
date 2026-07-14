@@ -6,13 +6,13 @@ from rotkehlchen.chain.evm.l2_with_l1_fees.decoding.decoder import L2WithL1FeesT
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.db.l2withl1feestx import DBL2WithL1FeesTx
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import ChecksumEvmAddress
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.optimism.node_inquirer import OptimismInquirer
     from rotkehlchen.chain.optimism.transactions import OptimismTransactions
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.premium.premium import Premium
+    from rotkehlchen.types import ChecksumEvmAddress
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -22,10 +22,10 @@ class OptimismTransactionDecoder(L2WithL1FeesTransactionDecoder):
 
     def __init__(
             self,
-            database: 'DBHandler',
-            optimism_inquirer: 'OptimismInquirer',
-            transactions: 'OptimismTransactions',
-            premium: 'Premium | None' = None,
+            database: DBHandler,
+            optimism_inquirer: OptimismInquirer,
+            transactions: OptimismTransactions,
+            premium: Premium | None = None,
     ):
         super().__init__(
             database=database,

@@ -25,7 +25,7 @@ if TYPE_CHECKING:
 
 
 def _write_issue(
-        server: 'APIServer',
+        server: APIServer,
         event_identifier: int = 1,
         state: IssueState = IssueState.OPEN,
         location: Location = Location.ETHEREUM,
@@ -62,7 +62,7 @@ def _write_issue(
     return issue_id
 
 
-def test_data_issues_list_detail_and_pagination(rotkehlchen_api_server: 'APIServer') -> None:
+def test_data_issues_list_detail_and_pagination(rotkehlchen_api_server: APIServer) -> None:
     database = rotkehlchen_api_server.rest_api.rotkehlchen.data.db
     group_identifier = 'negative-balance-group'
     with database.user_write() as write_cursor:
@@ -172,7 +172,7 @@ def test_data_issues_list_detail_and_pagination(rotkehlchen_api_server: 'APIServ
     )
 
 
-def test_data_issue_write_endpoints(rotkehlchen_api_server: 'APIServer') -> None:
+def test_data_issue_write_endpoints(rotkehlchen_api_server: APIServer) -> None:
     issue_id = _write_issue(rotkehlchen_api_server)
 
     result = assert_proper_sync_response_with_result(requests.patch(api_url_for(

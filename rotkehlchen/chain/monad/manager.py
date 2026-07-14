@@ -15,7 +15,7 @@ if TYPE_CHECKING:
 
 class MonadManager(EvmManager):
 
-    def __init__(self, node_inquirer: 'MonadInquirer', premium: 'Premium | None' = None) -> None:
+    def __init__(self, node_inquirer: MonadInquirer, premium: Premium | None = None) -> None:
         super().__init__(
             node_inquirer=node_inquirer,
             transactions=(transactions := MonadTransactions(
