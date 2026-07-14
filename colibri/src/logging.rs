@@ -8,7 +8,7 @@ use std::sync::{
 };
 
 use file_rotate::{compression::Compression, suffix::AppendCount, ContentLimit, FileRotate};
-use tracing_subscriber::filter::{EnvFilter, LevelFilter};
+use tracing_subscriber::filter::LevelFilter;
 use tracing_subscriber::{prelude::*, reload, Registry};
 
 #[repr(usize)]
@@ -98,14 +98,7 @@ impl RotkiLogLevel {
 }
 
 static CURRENT_LOG_LEVEL: AtomicUsize = AtomicUsize::new(RotkiLogLevel::Info as usize);
-static LOG_FILTER_RELOAD_HANDLE: OnceLock<reload::Handle<EnvFilter, Registry>> = OnceLock::new();
-
-fn env_filter_for_level(level: RotkiLogLevel) -> EnvFilter {
-    EnvFilter::builder()
-        .with_default_directive(Into::<LevelFilter>::into(level).into())
-        .parse("")
-        .unwrap()
-}
+static LOG_FILTER_RELOAD_HANDLE: OnceLock<reload::Handle<LevelFilter, Registry>> = OnceLock::new();
 
 pub fn current_log_level() -> RotkiLogLevel {
     RotkiLogLevel::from_usize(CURRENT_LOG_LEVEL.load(Ordering::Relaxed))
@@ -114,7 +107,7 @@ pub fn current_log_level() -> RotkiLogLevel {
 pub fn set_log_level(level: RotkiLogLevel) -> Result<(), String> {
     if let Some(handle) = LOG_FILTER_RELOAD_HANDLE.get() {
         handle
-            .modify(|filter| *filter = env_filter_for_level(level))
+            .modify(|filter| *filter = level.into())
             .map_err(|error| format!("Failed to update log level: {}", error))?;
     }
     CURRENT_LOG_LEVEL.store(level as usize, Ordering::Relaxed);
@@ -125,7 +118,7 @@ pub fn set_log_level(level: RotkiLogLevel) -> Result<(), String> {
 // or to the stdout. If logs are stored in files they are rotated
 // based on size and there is a max of `max_logfiles_num` files saved.
 pub fn config_logging(args: Args) {
-    let (filter, reload_handle) = reload::Layer::new(env_filter_for_level(args.log_level));
+    let (filter, reload_handle) = reload::Layer::new(args.log_level.into());
     CURRENT_LOG_LEVEL.store(args.log_level as usize, Ordering::Relaxed);
     let _ = LOG_FILTER_RELOAD_HANDLE.set(reload_handle);
 

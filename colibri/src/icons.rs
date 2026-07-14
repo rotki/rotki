@@ -1,9 +1,9 @@
 use crate::blockchain::{
-    parse_asset_identifier, AssetAddress, EvmInquirerManager, EvmNodeInquirer, SupportedBlockchain,
+    parse_asset_identifier, AssetAddress, EvmAddress, EvmInquirerManager, EvmNodeInquirer,
+    SupportedBlockchain,
 };
 use crate::coingecko;
 use crate::globaldb;
-use alloy_primitives::{Address, U256};
 use axum::body::Bytes;
 use axum::http::StatusCode;
 use base64::{engine::general_purpose::STANDARD, Engine as _};
@@ -74,7 +74,7 @@ async fn smoldapp_image_query(
 
 // extract the bytes for an image from the provided CDN
 async fn query_image_from_cdn(url: &str) -> Option<Bytes> {
-    smoldapp_image_query(&Client::new(), url, "")
+    smoldapp_image_query(&crate::http::client(), url, "")
         .await
         .map(|(bytes, _)| bytes)
 }
@@ -84,7 +84,7 @@ async fn query_token_icon_and_extension(
     address: AssetAddress,
     base_url: &str,
 ) -> Option<(Bytes, &'static str)> {
-    let client = Client::new();
+    let client = crate::http::client();
     let address_str = address.as_str();
 
     let urls = vec![
@@ -108,13 +108,33 @@ async fn query_token_icon_and_extension(
 }
 
 /// Build the calldata for a tokenURI(uint256) call.
-fn build_token_uri_calldata(token_id: U256) -> String {
-    format!("0x{TOKENURI_SELECTOR}{token_id:064x}")
+fn build_token_uri_calldata(token_id: &str) -> Option<String> {
+    if token_id.is_empty() {
+        return None;
+    }
+
+    let mut encoded = [0_u8; 32];
+    for digit in token_id.bytes() {
+        if !digit.is_ascii_digit() {
+            return None;
+        }
+        let mut carry = u16::from(digit - b'0');
+        for byte in encoded.iter_mut().rev() {
+            let value = u16::from(*byte) * 10 + carry;
+            *byte = value as u8;
+            carry = value >> 8;
+        }
+        if carry != 0 {
+            return None;
+        }
+    }
+
+    Some(format!("0x{TOKENURI_SELECTOR}{}", hex::encode(encoded)))
 }
 
 /// Make a raw JSON-RPC eth_call to an RPC endpoint.
-async fn eth_call(endpoint: &str, to: &Address, data: &str) -> Result<String, String> {
-    let client = Client::builder()
+async fn eth_call(endpoint: &str, to: &EvmAddress, data: &str) -> Result<String, String> {
+    let client = crate::http::builder()
         .timeout(Duration::from_secs(10))
         .build()
         .map_err(|e| format!("Failed to build HTTP client: {e}"))?;
@@ -165,8 +185,7 @@ fn decode_abi_string(hex_result: &str) -> Option<String> {
         return None;
     }
     let str_start = offset + 32;
-    let str_len =
-        u32::from_be_bytes(bytes[offset + 28..offset + 32].try_into().ok()?) as usize;
+    let str_len = u32::from_be_bytes(bytes[offset + 28..offset + 32].try_into().ok()?) as usize;
     if str_start + str_len > bytes.len() {
         return None;
     }
@@ -177,16 +196,19 @@ fn decode_abi_string(hex_result: &str) -> Option<String> {
 async fn query_uniswap_position_icon(
     chain_id: u64,
     token_id: &str,
-    contract_address: Address,
+    contract_address: EvmAddress,
     inquirer: Arc<EvmNodeInquirer>,
 ) -> Option<(Bytes, &'static str)> {
-    let token_id: U256 = token_id.parse().map_err(|e| {
-        error!(
-            "Invalid token ID '{}' for NFT position on chain ID {} ({}): {}",
-            token_id, chain_id, inquirer.blockchain.as_str(), e
-        )
-    }).ok()?;
-    let calldata = build_token_uri_calldata(token_id);
+    let calldata = build_token_uri_calldata(token_id)
+        .ok_or_else(|| {
+            error!(
+                "Invalid token ID '{}' for NFT position on chain ID {} ({})",
+                token_id,
+                chain_id,
+                inquirer.blockchain.as_str()
+            )
+        })
+        .ok()?;
 
     for node in inquirer.rpc_nodes.read().await.clone() {
         let result = match eth_call(&node.endpoint, &contract_address, &calldata).await {
@@ -539,40 +561,49 @@ pub async fn query_icon_remotely(
 
 #[cfg(test)]
 mod tests {
-    use crate::blockchain::{AssetAddress, EvmNodeInquirer, SupportedBlockchain};
+    use crate::blockchain::{AssetAddress, EvmAddress, EvmNodeInquirer, SupportedBlockchain};
     use crate::create_globaldb;
     use crate::icons::{
         build_token_uri_calldata, decode_abi_string, get_asset_path,
         query_token_icon_and_extension, query_uniswap_position_icon, TOKENURI_SELECTOR,
     };
-    use alloy_primitives::Address;
     use axum::body::Bytes;
     use base64::{engine::general_purpose::STANDARD, Engine as _};
     use std::path::Path;
-    use std::str::FromStr;
     use std::sync::Arc;
 
     /// Parse a checksummed address string (replaces `address!` macro in tests).
-    fn test_address(s: &str) -> Address {
-        Address::from_str(s).expect("valid address")
+    fn test_address(s: &str) -> EvmAddress {
+        EvmAddress::parse_checksummed(s).expect("valid checksummed address")
     }
 
     #[test]
     fn test_build_token_uri_calldata() {
-        let calldata = build_token_uri_calldata(alloy_primitives::U256::from(150));
+        let calldata = build_token_uri_calldata("150").unwrap();
         assert_eq!(
             calldata,
             format!(
                 "0x{TOKENURI_SELECTOR}0000000000000000000000000000000000000000000000000000000000000096"
             )
         );
-        let calldata =
-            build_token_uri_calldata(alloy_primitives::U256::from(61908u64));
+        let calldata = build_token_uri_calldata("61908").unwrap();
         assert_eq!(
             calldata,
             format!(
                 "0x{TOKENURI_SELECTOR}000000000000000000000000000000000000000000000000000000000000f1d4"
             )
+        );
+        assert_eq!(
+            build_token_uri_calldata(
+                "115792089237316195423570985008687907853269984665640564039457584007913129639935",
+            ),
+            Some(format!("0x{TOKENURI_SELECTOR}{}", "f".repeat(64))),
+        );
+        assert_eq!(
+            build_token_uri_calldata(
+                "115792089237316195423570985008687907853269984665640564039457584007913129639936",
+            ),
+            None,
         );
     }
 

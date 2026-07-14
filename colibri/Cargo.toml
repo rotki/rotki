@@ -2,12 +2,14 @@
 name = "colibri"
 version = "1.43.2"
 edition = "2021"
+rust-version = "1.86"
 
 [dependencies]
 # For logging
 log = "=0.4.29"
 # For the asynchronous Rest API
-reqwest = { version = "=0.13.2", features = ["json", "query"]}
+reqwest = { version = "=0.13.2", default-features = false, features = ["json", "query", "rustls-no-provider"]}
+rustls = { version = "=0.23.40", default-features = false, features = ["ring", "std", "tls12"] }
 tokio = { version = "=1.51.1", features = ["rt-multi-thread", "fs"]}
 axum = "=0.8.9"
 # for serialization of structs via the API
@@ -30,14 +32,12 @@ tower-http = {version = "=0.6.8", features = ["cors", "trace"]}
 # a request happens and keeps information about it. We use tracing to extract those events and
 # log them.
 tracing = "=0.1.44"
-tracing-subscriber = { version = "=0.3.23", features = ["env-filter"]}
+tracing-subscriber = { version = "=0.3.23", default-features = false, features = ["ansi", "fmt", "tracing-log"]}
 # Used to keep log files that rotate when they reach certain size. Is not available in tracing
 # directly (they have a PR but not merged)
 file-rotate = "=0.8.0"
 # used when parsing cors. It is from rust itself
 glob = "=0.3.3"
-# used for EVM address parsing and U256 arithmetic
-alloy-primitives = "=1.5.7"
 # for hex encoding/decoding in ABI calls
 hex = "=0.4.3"
 base64 = "=0.22.1"
@@ -47,6 +47,8 @@ strsim = "=0.11.1"
 # HMAC-SHA256 to validate the signed session cookie (Docker), minted by core
 hmac = "=0.12.1"
 sha2 = "=0.10.9"
+# EIP-55 checksum validation for EVM addresses
+sha3 = "=0.10.9"
 # constant-time comparison for the session-cookie signature check
 subtle = "=2.6.1"
 
@@ -57,6 +59,3 @@ rand = "=0.10.1"
 regex = "=1.12.3"
 # `oneshot` for exercising the session middleware in tests
 tower = "=0.5.3"
-
-[build-dependencies]
-rustc_version = "=0.4.1"

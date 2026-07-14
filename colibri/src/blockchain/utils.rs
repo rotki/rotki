@@ -1,8 +1,45 @@
-use alloy_primitives::Address;
+use sha3::{Digest, Keccak256};
+use std::fmt::{Display, Formatter};
+
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub struct EvmAddress([u8; 20]);
+
+impl EvmAddress {
+    pub fn parse_checksummed(value: &str) -> Option<Self> {
+        let address = value.strip_prefix("0x")?;
+        if address.len() != 40 {
+            return None;
+        }
+
+        let bytes: [u8; 20] = hex::decode(address).ok()?.try_into().ok()?;
+        let lowercase = address.to_ascii_lowercase();
+        let hash = Keccak256::digest(lowercase.as_bytes());
+        for (index, character) in address.bytes().enumerate() {
+            if character.is_ascii_alphabetic() {
+                let hash_nibble = if index % 2 == 0 {
+                    hash[index / 2] >> 4
+                } else {
+                    hash[index / 2] & 0x0f
+                };
+                if character.is_ascii_uppercase() != (hash_nibble >= 8) {
+                    return None;
+                }
+            }
+        }
+
+        Some(Self(bytes))
+    }
+}
+
+impl Display for EvmAddress {
+    fn fmt(&self, formatter: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(formatter, "0x{}", hex::encode(self.0))
+    }
+}
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum AssetAddress {
-    Evm(Address),
+    Evm(EvmAddress),
     Solana(String),
 }
 
@@ -75,7 +112,7 @@ fn parse_evm_identifier(parts: &[&str]) -> Option<AssetIdentifier> {
         return None;
     }
 
-    let contract_address = Address::parse_checksummed(contract_address_str, None).ok()?;
+    let contract_address = EvmAddress::parse_checksummed(contract_address_str)?;
     let token_id = parts.get(2).map(|s| s.to_string());
 
     Some(AssetIdentifier {
@@ -115,7 +152,6 @@ fn parse_solana_identifier(parts: &[&str]) -> Option<AssetIdentifier> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use alloy_primitives::address;
 
     #[test]
     fn test_parse_asset_identifier_valid() {
@@ -123,9 +159,10 @@ mod tests {
         let erc20 = "eip155:1/erc20:0x6B175474E89094C44Da98b954EedeAC495271d0F";
         let expected_erc20 = AssetIdentifier {
             chain_id: 1,
-            contract_address: AssetAddress::Evm(address!(
-                "0x6B175474E89094C44Da98b954EedeAC495271d0F"
-            )),
+            contract_address: AssetAddress::Evm(
+                EvmAddress::parse_checksummed("0x6B175474E89094C44Da98b954EedeAC495271d0F")
+                    .unwrap(),
+            ),
             token_id: None,
         };
         assert_eq!(parse_asset_identifier(erc20), Some(expected_erc20));
@@ -134,9 +171,10 @@ mod tests {
         let erc721 = "eip155:1/erc721:0xBC4CA0EdA7647A8aB7C2061c2E118A18a936f13D/1";
         let expected_erc721 = AssetIdentifier {
             chain_id: 1,
-            contract_address: AssetAddress::Evm(address!(
-                "0xBC4CA0EdA7647A8aB7C2061c2E118A18a936f13D"
-            )),
+            contract_address: AssetAddress::Evm(
+                EvmAddress::parse_checksummed("0xBC4CA0EdA7647A8aB7C2061c2E118A18a936f13D")
+                    .unwrap(),
+            ),
             token_id: Some("1".to_string()),
         };
         assert_eq!(parse_asset_identifier(erc721), Some(expected_erc721));
@@ -208,6 +246,12 @@ mod tests {
         // Invalid hex address
         assert_eq!(
             parse_asset_identifier("eip155:1/erc20:0xInvalidAddress"),
+            None
+        );
+
+        // Invalid EIP-55 checksum
+        assert_eq!(
+            parse_asset_identifier("eip155:1/erc20:0x6B175474E89094C44Da98b954EedeAC495271d0f"),
             None
         );
 
