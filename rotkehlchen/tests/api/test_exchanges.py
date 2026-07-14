@@ -15,7 +15,6 @@ from rotkehlchen.db.constants import KRAKEN_ACCOUNT_TYPE_KEY
 from rotkehlchen.db.filtering import HistoryEventFilterQuery
 from rotkehlchen.db.history_events import HISTORY_BASE_ENTRY_FIELDS, DBHistoryEvents
 from rotkehlchen.errors.misc import InputError
-from rotkehlchen.exchanges.binance import BinancePair
 from rotkehlchen.exchanges.bitfinex import API_KEY_ERROR_MESSAGE as BITFINEX_API_KEY_ERROR_MESSAGE
 from rotkehlchen.exchanges.bitstamp import (
     API_KEY_ERROR_CODE_ACTION as BITSTAMP_API_KEY_ERROR_CODE_ACTION,
@@ -25,6 +24,7 @@ from rotkehlchen.exchanges.constants import (
     EXCHANGES_WITHOUT_API_SECRET,
     SUPPORTED_EXCHANGES,
 )
+from rotkehlchen.exchanges.data_structures import BinancePair
 from rotkehlchen.exchanges.kraken import DEFAULT_KRAKEN_ACCOUNT_TYPE, KrakenAccountType
 from rotkehlchen.exchanges.kucoin import API_KEY_ERROR_CODE_ACTION as KUCOIN_API_KEY_ERROR_CODE
 from rotkehlchen.exchanges.okx import OkxLocation

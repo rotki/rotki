@@ -210,7 +210,7 @@ def assert_txlists_equal(l1: list[EvmTransaction], l2: list[EvmTransaction]) -> 
     l2.sort(key=lambda x: x.timestamp)
 
     for idx, tx1 in enumerate(l1):
-        for attr_name in tx1.__annotations__:
+        for attr_name in EvmTransaction.__annotations__:
             if attr_name == 'db_id':
                 continue
 

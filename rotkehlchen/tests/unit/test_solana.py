@@ -35,8 +35,8 @@ from rotkehlchen.constants.misc import ONE, ZERO
 from rotkehlchen.errors.misc import InputError, RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.externalapis.helius import HELIUS_RPC_NODE_NAME
+from rotkehlchen.fval import FVal
 from rotkehlchen.serialization.deserialize import deserialize_tx_signature
-from rotkehlchen.tests.utils.makerdao import FVal
 from rotkehlchen.types import SolanaAddress, SupportedBlockchain, Timestamp, TokenKind
 from rotkehlchen.utils.misc import ts_now
 
