@@ -123,7 +123,7 @@ export const RotkiCoreConfig = {
 
     if (isDev) {
       const devServerUrl = import.meta.env.VITE_DEV_SERVER_URL as string;
-      const pythonInterpreterArgs = ['-X', 'gil=0'];
+      const pythonInterpreterArgs = process.env.ROTKI_GIL === 'false' ? ['-X', 'gil=0'] : [];
       const pythonModuleArgs = ['-m', 'rotkehlchen'];
       if (profilingCmd) {
         command = builder.setCommand(

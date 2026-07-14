@@ -7,6 +7,7 @@ vi.stubEnv('VITE_DEV_SERVER_URL', 'http://localhost:5173/');
 describe('rotkiCoreConfig', () => {
   beforeEach((): void => {
     vi.restoreAllMocks();
+    delete process.env.ROTKI_GIL;
   });
 
   it('should default the backend loglevel to debug in dev builds', () => {
@@ -16,7 +17,13 @@ describe('rotkiCoreConfig', () => {
     expect(args[idx + 1]).toBe('debug');
   });
 
-  it('should disable the GIL for the development backend', () => {
+  it('should keep the GIL enabled by default for the development backend', () => {
+    const { args } = RotkiCoreConfig.create(true, {}).build();
+    expect(args).not.toContain('gil=0');
+  });
+
+  it('should disable the GIL when ROTKI_GIL is false', () => {
+    vi.stubEnv('ROTKI_GIL', 'false');
     const { args } = RotkiCoreConfig.create(true, {}).build();
     const gilArgIndex = args.indexOf('gil=0');
     expect(args.slice(gilArgIndex - 1, gilArgIndex + 3)).toEqual([
