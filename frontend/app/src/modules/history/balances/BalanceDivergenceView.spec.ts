@@ -11,6 +11,14 @@ const mockFetchLocationLabels = vi.fn();
 const mockRequestNavigation = vi.fn();
 const mockSetHighlightTarget = vi.fn();
 
+const { archiveState } = vi.hoisted(() => ({ archiveState: { hasArchive: true } }));
+
+vi.mock('@/modules/settings/api/use-evm-nodes-api', () => ({
+  useEvmNodesApi: (): object => ({
+    fetchEvmNodes: async (): Promise<{ isArchive: boolean }[]> => [{ isArchive: archiveState.hasArchive }],
+  }),
+}));
+
 vi.mock('@/modules/core/common/use-supported-chains', () => ({
   useSupportedChains: (): object => ({
     getEvmChainName: (chain: string): string | undefined => chain === 'eth' ? 'ethereum' : undefined,
@@ -25,11 +33,15 @@ vi.mock('@/modules/balances/api/use-historical-balances-api', () => ({
   }),
 }));
 
+const { taskControl } = vi.hoisted(() => ({ taskControl: { failure: null as null | Record<string, unknown> } }));
+
 vi.mock('@/modules/core/tasks/use-task-handler', () => ({
+  isActionableFailure: (outcome: { success: boolean; cancelled: boolean; skipped: boolean }): boolean =>
+    !outcome.success && !outcome.cancelled && !outcome.skipped,
   useTaskHandler: (): object => ({
     runTask: async (task: () => Promise<unknown>): Promise<object> => {
       await task();
-      return makeDivergenceResult();
+      return taskControl.failure ?? makeDivergenceResult();
     },
   }),
 }));
@@ -86,6 +98,12 @@ const stubs = {
     template: '<button :disabled="disabled"><slot name="prepend" /><slot /></button>',
   }),
   RuiIcon: { template: '<i class="icon" />' },
+  RuiTooltip: { template: '<div><slot name="activator" /><slot /></div>' },
+  I18nT: { template: '<span><slot name="chain" /><slot name="link" /></span>' },
+  InternalLink: { template: '<a><slot /></a>' },
+  HashLink: { props: ['text'], template: '<span class="hash">{{ text }}</span>' },
+  RuiAlert: { template: '<div class="alert"><slot /></div>' },
+  HistoryEventNote: { props: ['notes'], template: '<div class="notes">{{ notes }}</div>' },
 };
 
 function makeDivergenceResult(): object {
@@ -145,6 +163,8 @@ function mountView(): VueWrapper {
 
 describe('balanceDivergenceView.vue', () => {
   beforeEach(() => {
+    archiveState.hasArchive = true;
+    taskControl.failure = null;
     mockFetchLocationLabels.mockResolvedValue(undefined);
     mockFindDivergence.mockReset();
     mockRequestNavigation.mockReset();
@@ -155,6 +175,7 @@ describe('balanceDivergenceView.vue', () => {
     const wrapper = mountView();
 
     await nextTick();
+    await flushPromises();
     await wrapper.find('[data-testid=asset-select-input]').setValue('ETH');
     await wrapper.find('[data-testid=find-divergence]').trigger('click');
     await flushPromises();
@@ -180,10 +201,41 @@ describe('balanceDivergenceView.vue', () => {
     });
   });
 
+  it('should block the search and link to rpc settings when the selected chain has no archive node', async () => {
+    archiveState.hasArchive = false;
+    const wrapper = mountView();
+
+    await nextTick();
+    await flushPromises();
+
+    expect(wrapper.find('[data-testid=balance-divergence-missing-archive]').exists()).toBe(true);
+    expect(wrapper.find('[data-testid=find-divergence]').attributes('disabled')).toBeDefined();
+  });
+
+  it('should render an actionable failure as an alert with the parsed message', async () => {
+    taskControl.failure = {
+      cancelled: false,
+      message: 'No historical wallet balance data found for eip155:1/erc20:0xA at 0xA on ethereum',
+      skipped: false,
+      success: false,
+    };
+    const wrapper = mountView();
+
+    await nextTick();
+    await flushPromises();
+    await wrapper.find('[data-testid=asset-select-input]').setValue('ETH');
+    await wrapper.find('[data-testid=find-divergence]').trigger('click');
+    await flushPromises();
+
+    const alert = wrapper.find('[data-testid=divergence-error]');
+    expect(alert.exists()).toBe(true);
+    expect(alert.text()).toContain('No historical wallet balance data');
+  });
+
   it('should emit close when the panel header is closed', async () => {
     const wrapper = mountView();
 
-    await wrapper.find('button').trigger('click');
+    await wrapper.find('[data-testid=balance-divergence-close]').trigger('click');
 
     expect(wrapper.emitted('close')).toHaveLength(1);
   });

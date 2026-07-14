@@ -1754,6 +1754,7 @@
     "asset": "Asset",
     "block": "Block",
     "chain": "Chain",
+    "chain_missing_archive_node": "No archive node configured for {chain}. Configure one in {link} to run this check for this chain.",
     "checked": "Checked {probes} points.",
     "difference": "Difference",
     "event": "Tx",
@@ -1764,6 +1765,7 @@
     "no_divergence": "The latest tracked and on-chain balances match. No persistent divergence to locate. Checked {probes} points.",
     "no_options": "No EVM location labels are available.",
     "onchain": "On-chain",
+    "settings_link": "RPC node settings",
     "task": {
       "title": "Finding balance divergence for {asset}"
     },
