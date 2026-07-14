@@ -79,7 +79,7 @@ Before installing rotki, ensure you have the following dependencies:
 📌 **Required Software**:
 - `Node.js`
 - `npm` (Node Package Manager)
-- `Python 3.14t`
+- `Python 3.14`
 - `uv` (Python Package Manager)
 - `Docker`
 

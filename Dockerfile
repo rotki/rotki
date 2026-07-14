@@ -32,7 +32,7 @@ ARG PYINSTALLER_VERSION=v6.21.0
 WORKDIR /app
 COPY pyproject.toml uv.lock* ./
 
-ENV UV_PYTHON=3.14t
+ENV UV_PYTHON=3.14
 RUN uv python install "$UV_PYTHON" && \
     uv sync --locked --no-dev --no-install-project
 
@@ -43,7 +43,7 @@ RUN sed "s/fallback_version.*/fallback_version = \"$PACKAGE_FALLBACK_VERSION\"/"
     if [ "$TARGETARCH" != "amd64" ]; then \
       git clone https://github.com/pyinstaller/pyinstaller.git && \
       cd pyinstaller && git checkout ${PYINSTALLER_VERSION} && \
-      cd bootloader && ./waf all && cd .. && \
+      cd bootloader && uv run --project /app --no-sync python ./waf all && cd .. && \
       uv pip install "pyinstaller @ ."; \
     else \
       uv pip install pyinstaller==${PYINSTALLER_VERSION}; \

@@ -5,7 +5,6 @@ import os
 import re
 import shutil
 import sys
-import sysconfig
 import tempfile
 import threading
 import warnings as test_warnings
@@ -161,9 +160,6 @@ from rotkehlchen.tests.fixtures import *  # noqa: F403
 
 assert sys.version_info.major == 3, 'Need to use python 3 for rotki'
 assert sys.version_info.minor == 14, 'Need to use python 3.14 for rotki'
-assert sysconfig.get_config_var('Py_GIL_DISABLED') == 1, (
-    'Need to use a free-threaded python build for rotki'
-)
 
 
 @pytest.fixture(name='force_beacon_rpc_fallback')
