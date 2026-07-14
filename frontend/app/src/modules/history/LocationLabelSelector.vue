@@ -1,14 +1,9 @@
 <script setup lang="ts">
-import type { AddressData, BlockchainAccount } from '@/modules/accounts/blockchain-accounts';
 import type { LocationLabel } from '@/modules/core/common/location';
-import { getTextToken } from '@rotki/common';
-import { hasAccountAddress } from '@/modules/accounts/account-helpers';
-import { getAccountAddress } from '@/modules/accounts/account-utils';
-import { useAddressNameResolution } from '@/modules/accounts/address-book/use-address-name-resolution';
-import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
-import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
-import { useHistoryStore } from '@/modules/history/use-history-store';
-import AccountDisplay from '@/modules/shell/components/display/AccountDisplay.vue';
+import { truncateAddress } from '@/modules/core/common/display/truncate';
+import { useLocationLabels } from '@/modules/history/use-location-labels';
+import { useScramble } from '@/modules/settings/use-scramble';
+import EnsAvatar from '@/modules/shell/components/display/EnsAvatar.vue';
 import LocationIcon from '@/modules/shell/components/display/LocationIcon.vue';
 import TagDisplay from '@/modules/tags/TagDisplay.vue';
 
@@ -24,91 +19,18 @@ const modelValue = defineModel<string[] | string>({
 
 const { options } = defineProps<{
   options?: LocationLabel[];
-  noTruncate?: boolean;
 }>();
 
 const { t } = useI18n({ useScope: 'global' });
-const { locationLabels: storeLocationLabels } = storeToRefs(useHistoryStore());
+const { scrambleAddress } = useScramble();
 
-const locationLabelOptions = computed<LocationLabel[]>(() => options ?? get(storeLocationLabels));
-const { allTxChainsInfo, matchChain } = useSupportedChains();
-const txChainIds = useArrayMap(allTxChainsInfo, x => x.id);
-
-const { accounts: accountsPerChain } = storeToRefs(useBlockchainAccountsStore());
-const { getAddressName } = useAddressNameResolution();
-
-const accounts = computed<BlockchainAccount<AddressData>[]>(() =>
-  Object.values(get(accountsPerChain))
-    .flatMap(x => x)
-    .filter(hasAccountAddress),
-);
-
-function getBlockchainLocation(location: string): string | undefined {
-  const chain = matchChain(location);
-  if (!chain)
-    return undefined;
-
-  if (!get(txChainIds).includes(chain))
-    return undefined;
-
-  return chain;
-}
-
-function getTags(item: LocationLabel): string[] {
-  const registeredAccounts = getRegisteredAccounts(item);
-  if (registeredAccounts.length === 0)
-    return [];
-
-  return registeredAccounts[0].tags || [];
-}
-
-function getRegisteredAccounts(item: LocationLabel): BlockchainAccount<AddressData>[] {
-  const chain = getBlockchainLocation(item.location);
-
-  if (!chain)
-    return [];
-
-  return get(accounts).filter(acc => getAccountAddress(acc) === item.locationLabel && acc.chain === chain);
-}
-
-function getTrackedAccountLabel(item: LocationLabel): string | undefined {
-  const label = getRegisteredAccounts(item)[0]?.label;
-  return label && label !== item.locationLabel ? label : undefined;
-}
-
-function filter(item: LocationLabel, queryText: string): boolean {
-  const locationLabel = getTextToken(item.locationLabel);
-  const query = getTextToken(queryText);
-
-  const locationLabelMatches = locationLabel.includes(query);
-
-  if (locationLabelMatches) {
-    return true;
-  }
-
-  const chain = getBlockchainLocation(item.location);
-
-  if (!chain) {
-    return false;
-  }
-
-  const text = getTextToken(getAddressName(item.locationLabel, chain) ?? '');
-  const trackedAccountLabel = getTextToken(getTrackedAccountLabel(item) ?? '');
-
-  const labelMatches = text.includes(query) || trackedAccountLabel.includes(query);
-
-  if (labelMatches) {
-    return true;
-  }
-
-  const tags = getTags(item);
-  return tags
-    ? tags
-        .map(tag => getTextToken(tag))
-        .join(' ')
-        .includes(query)
-    : false;
-}
+const {
+  filter,
+  getAccountName,
+  getBlockchainLocation,
+  getTags,
+  locationLabelOptions,
+} = useLocationLabels(() => options);
 
 const [DefineLocationItem, ReuseLocationItem] = createReusableTemplate<{ item: LocationLabel; dense: boolean }>();
 </script>
@@ -117,21 +39,50 @@ const [DefineLocationItem, ReuseLocationItem] = createReusableTemplate<{ item: L
   <DefineLocationItem #default="{ item, dense }">
     <div
       v-if="getBlockchainLocation(item.location)"
-      :class="{ 'py-1': !dense }"
-      class="flex items-center gap-2 min-w-0"
+      class="flex items-center gap-2.5 min-w-0"
     >
-      <AccountDisplay
-        :size="dense ? '16px' : '24px'"
-        :account="{ address: item.locationLabel, chain: getBlockchainLocation(item.location)! }"
-        hide-chain-icon
-        :no-truncate="noTruncate"
+      <EnsAvatar
+        :address="scrambleAddress(item.locationLabel)"
+        avatar
+        class="shrink-0"
+        :size="dense ? '22px' : '28px'"
       />
-      <span
-        v-if="getTrackedAccountLabel(item)"
-        class="text-rui-text-secondary truncate"
+      <!-- field: keep the name and address on one compact line -->
+      <div
+        v-if="dense"
+        class="flex items-baseline gap-1.5 min-w-0"
       >
-        {{ getTrackedAccountLabel(item) }}
-      </span>
+        <span
+          v-if="getAccountName(item)"
+          class="truncate text-sm"
+        >
+          {{ getAccountName(item) }}
+        </span>
+        <span
+          class="truncate font-mono text-xs"
+          :class="getAccountName(item) ? 'text-rui-text-secondary' : 'text-rui-text'"
+        >
+          {{ truncateAddress(scrambleAddress(item.locationLabel), 4) }}
+        </span>
+      </div>
+      <!-- dropdown: name over the muted address -->
+      <div
+        v-else
+        class="flex flex-col min-w-0 leading-tight"
+      >
+        <span
+          v-if="getAccountName(item)"
+          class="truncate text-sm font-medium"
+        >
+          {{ getAccountName(item) }}
+        </span>
+        <span
+          class="truncate font-mono text-xs"
+          :class="getAccountName(item) ? 'text-rui-text-secondary' : 'text-rui-text'"
+        >
+          {{ truncateAddress(scrambleAddress(item.locationLabel), 10) }}
+        </span>
+      </div>
     </div>
     <div
       v-else
@@ -151,13 +102,14 @@ const [DefineLocationItem, ReuseLocationItem] = createReusableTemplate<{ item: L
   <RuiAutoComplete
     v-model="modelValue"
     :options="locationLabelOptions"
-    :item-height="40"
+    :item-height="56"
     clearable
     key-attr="locationLabel"
     text-attr="locationLabel"
     :filter="filter"
     :label="t('transactions.filter.account')"
     variant="outlined"
+    menu-class="!min-w-full"
     v-bind="$attrs"
   >
     <template #selection="{ item }">
