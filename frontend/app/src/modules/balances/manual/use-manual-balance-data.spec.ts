@@ -1,6 +1,7 @@
 import type { AssetPrices } from '@/modules/assets/prices/price-types';
 import type { ManualBalanceWithValue } from '@/modules/balances/types/manual-balances';
 import { bigNumberify } from '@rotki/common';
+import { mockUseTaskHandler } from '@test/utils/mocks/task-runner';
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { Currency, CURRENCY_USD } from '@/modules/assets/amount-display/currencies';
 import { useManualBalancesApi } from '@/modules/balances/api/use-manual-balances-api';
@@ -12,7 +13,7 @@ import { useBalancesStore } from '@/modules/balances/use-balances-store';
 import { TRADE_LOCATION_BANKS, TRADE_LOCATION_BLOCKCHAIN } from '@/modules/core/common/defaults';
 import { useSettingsRepo } from '@/modules/settings/settings-repo';
 
-const runTaskMock = vi.fn();
+const { runTaskMock } = vi.hoisted(() => ({ runTaskMock: vi.fn() }));
 
 vi.mock('@/modules/balances/api/use-manual-balances-api', () => ({
   useManualBalancesApi: vi.fn().mockReturnValue({
@@ -23,17 +24,8 @@ vi.mock('@/modules/balances/api/use-manual-balances-api', () => ({
   }),
 }));
 
-vi.mock('@/modules/core/tasks/use-task-handler', async importOriginal => ({
-  ...(await importOriginal<Record<string, unknown>>()),
-  useTaskHandler: vi.fn().mockReturnValue({
-    runTask: async (taskFn: () => Promise<unknown>, ...rest: unknown[]): Promise<unknown> => {
-      await taskFn();
-      return runTaskMock(taskFn, ...rest);
-    },
-    cancelTask: vi.fn(),
-    cancelTaskByTaskType: vi.fn(),
-  }),
-}));
+vi.mock('@/modules/core/tasks/use-task-handler', async importOriginal =>
+  mockUseTaskHandler(await importOriginal<Record<string, unknown>>(), { runTask: runTaskMock }));
 
 interface ManualBalance extends Omit<ManualBalanceWithValue, 'amount' | 'value'> {
   amount: string;
