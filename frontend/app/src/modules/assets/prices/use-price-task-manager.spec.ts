@@ -1,5 +1,6 @@
 import { bigNumberify } from '@rotki/common';
 import { updateGeneralSettings } from '@test/utils/general-settings';
+import { mockUseTaskHandler } from '@test/utils/mocks/task-runner';
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useCurrencies } from '@/modules/assets/amount-display/currencies';
 import { usePriceTaskManager } from '@/modules/assets/prices/use-price-task-manager';
@@ -7,19 +8,10 @@ import { usePriceApi } from '@/modules/balances/api/use-price-api';
 import { useBalancePricesStore } from '@/modules/balances/use-balance-prices-store';
 import { PriceOracle } from '@/modules/settings/types/price-oracle';
 
-const runTaskMock = vi.fn();
+const { runTaskMock } = vi.hoisted(() => ({ runTaskMock: vi.fn() }));
 
-vi.mock('@/modules/core/tasks/use-task-handler', async importOriginal => ({
-  ...(await importOriginal<Record<string, unknown>>()),
-  useTaskHandler: vi.fn().mockReturnValue({
-    runTask: async (taskFn: () => Promise<unknown>, ...rest: unknown[]): Promise<unknown> => {
-      await taskFn();
-      return runTaskMock(taskFn, ...rest);
-    },
-    cancelTask: vi.fn(),
-    cancelTaskByTaskType: vi.fn(),
-  }),
-}));
+vi.mock('@/modules/core/tasks/use-task-handler', async importOriginal =>
+  mockUseTaskHandler(await importOriginal<Record<string, unknown>>(), { runTask: runTaskMock }));
 
 interface PriceResponse {
   assets: Record<string, [number, number]>;

@@ -1,28 +1,17 @@
 import { bigNumberify } from '@rotki/common';
+import { mockUseNotifications } from '@test/utils/mocks/notifications';
+import { mockUseTaskHandler } from '@test/utils/mocks/task-runner';
 import flushPromises from 'flush-promises';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { effectScope } from 'vue';
 import { usePriceApi } from '@/modules/balances/api/use-price-api';
 
-const runTaskMock = vi.fn();
+const { runTaskMock } = vi.hoisted(() => ({ runTaskMock: vi.fn() }));
 
-vi.mock('@/modules/core/tasks/use-task-handler', async importOriginal => ({
-  ...(await importOriginal<Record<string, unknown>>()),
-  useTaskHandler: vi.fn().mockReturnValue({
-    runTask: async (taskFn: () => Promise<unknown>, ...rest: unknown[]): Promise<unknown> => {
-      await taskFn();
-      return runTaskMock(taskFn, ...rest);
-    },
-    cancelTask: vi.fn(),
-    cancelTaskByTaskType: vi.fn(),
-  }),
-}));
+vi.mock('@/modules/core/tasks/use-task-handler', async importOriginal =>
+  mockUseTaskHandler(await importOriginal<Record<string, unknown>>(), { runTask: runTaskMock }));
 
-vi.mock('@/modules/core/notifications/use-notifications', () => ({
-  useNotifications: vi.fn(() => ({
-    notifyError: vi.fn(),
-  })),
-}));
+vi.mock('@/modules/core/notifications/use-notifications', () => mockUseNotifications());
 
 /** Exceeds CACHE_EXPIRY (10 min) from item-cache.ts to ensure cache invalidation */
 const PAST_CACHE_EXPIRY_MS = 1000 * 60 * 11;

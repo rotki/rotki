@@ -1,22 +1,16 @@
 import { bigNumberify } from '@rotki/common';
+import { mockUseTaskHandler } from '@test/utils/mocks/task-runner';
 import { get } from '@vueuse/core';
 import flushPromises from 'flush-promises';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const runTaskMock = vi.fn();
+const { runTaskMock } = vi.hoisted(() => ({ runTaskMock: vi.fn() }));
 const mockFindDivergence = vi.fn();
 const mockRequestNavigation = vi.fn();
 const mockSetHighlightTarget = vi.fn();
 
-vi.mock('@/modules/core/tasks/use-task-handler', async importOriginal => ({
-  ...(await importOriginal<typeof import('@/modules/core/tasks/use-task-handler')>()),
-  useTaskHandler: vi.fn().mockReturnValue({
-    runTask: async (taskFn: () => Promise<unknown>, ...rest: unknown[]): Promise<unknown> => {
-      await taskFn();
-      return runTaskMock(...rest);
-    },
-  }),
-}));
+vi.mock('@/modules/core/tasks/use-task-handler', async importOriginal =>
+  mockUseTaskHandler(await importOriginal<Record<string, unknown>>(), { runTask: runTaskMock }));
 
 vi.mock('@/modules/balances/api/use-historical-balances-api', () => ({
   useHistoricalBalancesApi: (): object => ({
