@@ -1,4 +1,5 @@
 import type { Ref } from 'vue';
+import { mockUseTaskHandler } from '@test/utils/mocks/task-runner';
 import flushPromises from 'flush-promises';
 import { createPinia, setActivePinia } from 'pinia';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -6,23 +7,16 @@ import { ApiValidationError } from '@/modules/core/api/types/errors';
 import { useHistoryEventsApi } from '@/modules/history/api/events/use-history-events-api';
 import { useEvmTxAutoFill } from '@/modules/history/management/forms/use-evm-tx-lookup';
 
-const runTaskMock = vi.fn();
-const cancelTaskByTaskTypeMock = vi.fn();
+const { runTaskMock, cancelTaskByTaskTypeMock } = vi.hoisted(() => ({
+  cancelTaskByTaskTypeMock: vi.fn(),
+  runTaskMock: vi.fn(),
+}));
 
-vi.mock('@/modules/core/tasks/use-task-handler', async (importOriginal) => {
-  const actual = await importOriginal<Record<string, unknown>>();
-  return {
-    ...actual,
-    useTaskHandler: (): Record<string, unknown> => ({
-      cancelTask: vi.fn(),
-      cancelTaskByTaskType: cancelTaskByTaskTypeMock,
-      runTask: async (taskFn: () => Promise<unknown>, ...rest: unknown[]): Promise<unknown> => {
-        await taskFn();
-        return runTaskMock(taskFn, ...rest);
-      },
-    }),
-  };
-});
+vi.mock('@/modules/core/tasks/use-task-handler', async importOriginal =>
+  mockUseTaskHandler(await importOriginal<Record<string, unknown>>(), {
+    cancelTaskByTaskType: cancelTaskByTaskTypeMock,
+    runTask: runTaskMock,
+  }));
 
 vi.mock('@/modules/history/api/events/use-history-events-api', async (importOriginal) => {
   const actual = await importOriginal<Record<string, unknown>>();

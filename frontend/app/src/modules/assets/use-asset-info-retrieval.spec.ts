@@ -1,4 +1,5 @@
 import type { ERC20Token } from '@/modules/accounts/blockchain-accounts';
+import { mockUseTaskHandler } from '@test/utils/mocks/task-runner';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useAssetInfoApi } from '@/modules/assets/api/use-asset-info-api';
 import { CUSTOM_ASSET } from '@/modules/assets/types';
@@ -7,8 +8,10 @@ import { useAssetInfoRetrieval } from '@/modules/assets/use-asset-info-retrieval
 import { useNotificationDispatcher } from '@/modules/core/notifications/use-notification-dispatcher';
 import { TaskType } from '@/modules/core/tasks/task-type';
 
-const runTaskMock = vi.fn();
-const cancelTaskByTaskTypeMock = vi.fn();
+const { runTaskMock, cancelTaskByTaskTypeMock } = vi.hoisted(() => ({
+  cancelTaskByTaskTypeMock: vi.fn(),
+  runTaskMock: vi.fn(),
+}));
 
 vi.mock('@/modules/assets/api/use-asset-info-api', () => ({
   useAssetInfoApi: vi.fn().mockReturnValue({
@@ -16,17 +19,11 @@ vi.mock('@/modules/assets/api/use-asset-info-api', () => ({
   }),
 }));
 
-vi.mock('@/modules/core/tasks/use-task-handler', async importOriginal => ({
-  ...(await importOriginal<Record<string, unknown>>()),
-  useTaskHandler: vi.fn().mockReturnValue({
-    runTask: async (taskFn: () => Promise<unknown>, ...rest: unknown[]): Promise<unknown> => {
-      await taskFn();
-      return runTaskMock(taskFn, ...rest);
-    },
-    cancelTask: vi.fn(),
-    cancelTaskByTaskType: async (...args: unknown[]): Promise<unknown> => cancelTaskByTaskTypeMock(...args),
-  }),
-}));
+vi.mock('@/modules/core/tasks/use-task-handler', async importOriginal =>
+  mockUseTaskHandler(await importOriginal<Record<string, unknown>>(), {
+    cancelTaskByTaskType: cancelTaskByTaskTypeMock,
+    runTask: runTaskMock,
+  }));
 
 vi.mock('@/modules/core/notifications/use-notification-dispatcher', () => ({
   useNotificationDispatcher: vi.fn().mockReturnValue({
