@@ -11,7 +11,7 @@ const { t } = useI18n({ useScope: 'global' });
 </script>
 
 <template>
-  <SettingsItem>
+  <SettingsItem setting-key="askUserUponSizeDiscrepancy">
     <template
       v-if="!dialog"
       #title

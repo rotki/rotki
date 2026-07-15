@@ -447,40 +447,47 @@ The contribution guide can be seen here: https://docs.rotki.com/contribution-gui
 
 When adding a new setting to the frontend, follow these steps:
 
-#### 1. Register IDs in `frontend/app/src/modules/settings/setting-highlight-ids.ts`
+Settings are declared once in the **settings registry**, the single source of truth for a setting's
+storage channel, value type, search row and scroll target. `SettingsItem` and the settings search both
+derive from it - there is no hand-maintained search list.
 
-- Add a **highlight ID** to `SettingsHighlightIds` (used to scroll-to and highlight the setting):
-  ```typescript
-  export const SettingsHighlightIds = {
-    // ... existing entries (keep alphabetically sorted)
-    MY_NEW_SETTING: 'setting-my-new-setting',
-  } as const;
-  ```
-- If the setting belongs to a **new category**, also add a category ID to `SettingsCategoryIds`:
-  ```typescript
-  export const SettingsCategoryIds = {
-    // ... existing entries
-    MY_CATEGORY: 'my-category',
-  } as const;
-  ```
+#### 1. Add the highlight (anchor) id in `frontend/app/src/modules/settings/setting-highlight-ids.ts`
 
-#### 2. Create the setting component
+The **anchor** is the DOM scroll-to target for the settings search. Add one to `SettingsHighlightIds`
+(keep alphabetical). Several settings may share one anchor (a *composite*, e.g. amount format).
+```typescript
+export const SettingsHighlightIds = {
+  // ... existing entries (keep alphabetically sorted)
+  MY_NEW_SETTING: 'setting-my-new-setting',
+} as const;
+```
+If the setting needs a **new category** on its page, also add a `SettingsCategoryIds` entry.
 
-Create the component under `frontend/app/src/modules/settings/` (alongside the other setting components). Use `SettingsOption` as a wrapper — it handles debounced updates, success/error messages, and API calls.
+#### 2. Register the setting in the registry
 
+Add the key to its channel slice (`settings-registry-{general,frontend,session,accounting}.ts`). The
+channel builder validates the wire key against that channel's settings type. Give it the `anchor`, and -
+for a value setting that should appear in search - a `search` block (title/keywords are `msg.$t`-branded
+i18n keys; `category` must be declared in `SEARCH_CATEGORIES`, see step 5):
+```typescript
+myNewSetting: general('myNewSetting', {
+  anchor: SettingsHighlightIds.MY_NEW_SETTING,
+  search: {
+    category: SettingsCategoryIds.GENERAL,
+    titleKey: msg.$t('my_setting.title'),
+    keywords: [msg.$t('my_setting.subtitle')],
+  },
+}),
+```
+For a composite anchor (several keys, one highlight) put the `search` block on ONE representative key.
+
+#### 3. Create the setting component
+
+Use `SettingsOption` as a wrapper — it handles debounced updates, success/error messages, and API calls.
+It accepts `setting` (backend), `frontendSetting`, or `sessionSetting` to target the right store.
 ```vue
-<script setup lang="ts">
-import SettingsOption from '@/modules/settings/controls/SettingsOption.vue';
-
-const { t } = useI18n({ useScope: 'global' });
-const value = ref<boolean>(false);
-</script>
-
 <template>
-  <SettingsOption
-    setting="myNewSetting"
-    :error-message="t('my_setting.error')"
-  >
+  <SettingsOption setting="myNewSetting" :error-message="t('my_setting.error')">
     <template #title>{{ t('my_setting.title') }}</template>
     <template #default="{ error, success, updateImmediate }">
       <RuiSwitch
@@ -494,82 +501,60 @@ const value = ref<boolean>(false);
 </template>
 ```
 
-`SettingsOption` accepts `setting` (backend setting), `frontendSetting` (frontend-only), or `sessionSetting` (session-only) to target the right store.
+#### 4. Add the setting to its category component
 
-#### 3. Add the setting to its category component
-
-In the relevant category component (e.g., `GeneralSettingsCategory.vue`), wrap the new setting in a `SettingsItem` with the highlight ID:
-
+Wrap it in a `SettingsItem` and pass `setting-key` — the DOM id is derived from that key's registry
+`anchor`, so the scroll target is single-sourced (no hardcoded `:id`):
 ```vue
-<SettingsItem :id="SettingsHighlightIds.MY_NEW_SETTING">
+<SettingsItem setting-key="myNewSetting">
   <template #title>{{ t('my_setting.title') }}</template>
   <template #subtitle>{{ t('my_setting.subtitle') }}</template>
   <MyNewSetting />
 </SettingsItem>
 ```
+A **composite** item (several settings under one shared anchor) passes the representative key, e.g.
+`<SettingsItem setting-key="currency">`. An **action/info** row with no registry value (purge, change
+password, db version) declares its `settingsActions` key instead — `<SettingsItem action-key="purgeData">`,
+or `:id="anchorId('rpcNodes')"` on a bare section element that is not a `SettingsItem`. No template
+restates a `SettingsHighlightIds` value.
 
-The `:id` prop is what enables scroll-to-highlight from the settings search.
+#### 5. Settings search
 
-#### 4. Register in settings search (`frontend/app/src/modules/settings/use-settings-search.ts`)
+Search rows are **derived**; there is no hand-maintained list. A value setting with a `search` block
+(step 2) is surfaced automatically. Otherwise:
+- a category new to search → add a `SEARCH_CATEGORIES` entry in `settings-search-catalog.ts` (its tab +
+  header title; set `flat: true` for a page whose settings are not nested under a category heading);
+- a row with no registry value (an action, an info row, or a categoryless section) → add an entry to
+  `settingsActions` in `settings-actions.ts` (an `anchor` + `titleKey`/`keywords`; a `category` row nests
+  under a header, a `tab` row sits on its tab), then reference it from the template with
+  `action-key="<key>"` or `:id="anchorId('<key>')"`.
 
-Add an entry to the appropriate `TabGroup` and `CategoryDef` in the `tabs` array inside `getEntries()`:
+#### 6. If adding a new category
 
-```typescript
-{ tab: routes.SETTINGS_GENERAL, categories: [
-  { categoryId: SettingsCategoryIds.GENERAL, children: [
-    // ... existing entries
-    {
-      texts: [t('general_settings.title'), t('my_setting.title')],
-      highlightId: SettingsHighlightIds.MY_NEW_SETTING,
-      keywords: [t('my_setting.subtitle')],
-    },
-  ] },
-] },
-```
+Create a category component wrapping `<SettingCategory>` + `<SettingsItem>`s, then in the page file
+(e.g. `frontend/app/src/pages/settings/general/index.vue`) add the category id to the `navigation` array
+and render the component with `:id="SettingsCategoryIds.MY_CATEGORY"`.
 
-- `texts` — breadcrumb path shown in search results (category name, then setting name)
-- `highlightId` — links to the `SettingsItem` `:id` for scroll-and-highlight
-- `keywords` — optional extra search terms (subtitles, descriptions)
+#### 7. Add translations
 
-#### 5. If adding a new category
-
-If the setting requires a new category on an existing settings page:
-
-1. Create a new category component wrapping settings in `<SettingCategory>` + `<SettingsItem>`
-2. In the page file (e.g., `frontend/app/src/pages/settings/general/index.vue`):
-   - Add the category ID to the `navigation` array
-   - Add the category component to the template with `:id="SettingsCategoryIds.MY_CATEGORY"`
-
-```vue
-<script setup lang="ts">
-const navigation = computed<{ id: string; label: string }[]>(() => [
-  // ... existing entries
-  { id: SettingsCategoryIds.MY_CATEGORY, label: t('my_category.title') },
-]);
-</script>
-
-<template>
-  <SettingsPage :navigation="navigation">
-    <!-- ... existing categories -->
-    <MyCategorySettings :id="SettingsCategoryIds.MY_CATEGORY" />
-  </SettingsPage>
-</template>
-```
-
-#### 6. Add translations
-
-Add all labels, subtitles, and error messages to `frontend/app/src/locales/en.json` (keys must be alphabetically sorted).
+Add all labels, subtitles, and error messages to `frontend/app/src/locales/en.json` (keys must be
+alphabetically sorted). A key referenced only from the registry/catalog must be branded with
+`msg.$t(...)` so the unused-key lint rule counts it as used.
 
 #### Key files reference
 
 | Purpose | File |
 |---------|------|
-| Highlight & category IDs | `frontend/app/src/modules/settings/setting-highlight-ids.ts` |
-| Search registration | `frontend/app/src/modules/settings/use-settings-search.ts` |
+| Highlight (anchor) & category IDs | `frontend/app/src/modules/settings/setting-highlight-ids.ts` |
+| Setting registry (source of truth) | `frontend/app/src/modules/settings/settings-registry.ts` + `settings-registry-<channel>.ts` |
+| Registry builders & types | `frontend/app/src/modules/settings/settings-channels.ts` |
+| Search category headers | `frontend/app/src/modules/settings/settings-search-catalog.ts` |
+| Search action/info rows + `anchorId` | `frontend/app/src/modules/settings/settings-actions.ts` |
+| Search deriver | `frontend/app/src/modules/settings/use-settings-search.ts` |
 | Highlight/scroll logic | `frontend/app/src/modules/settings/use-settings-highlight.ts` |
-| Page layout with navigation | `frontend/app/src/modules/settings/controls/SettingsPage.vue` |
+| i18n key branding helper | `frontend/app/src/message-key.ts` (`msg.$t`) |
 | Setting update wrapper | `frontend/app/src/modules/settings/controls/SettingsOption.vue` |
-| Setting layout wrapper | `frontend/app/src/modules/settings/controls/SettingsItem.vue` |
+| Setting layout wrapper (`setting-key`/`action-key` → id) | `frontend/app/src/modules/settings/controls/SettingsItem.vue` |
 | Category visual grouping | `frontend/app/src/modules/settings/SettingCategory.vue` |
 | Settings pages | `frontend/app/src/pages/settings/*/index.vue` |
 
@@ -600,7 +585,7 @@ Rules of thumb:
 - **Drawer entry**: set `drawer` (the test id). Top-level items also set `section` + `order`; sub-items set `parent` + `order` (the parent route must also have a `nav`). `useNavigationMenu` builds the tree.
 - **Search palette**: every route with `nav` is searchable automatically (the superset of the drawer) unless `searchable: false`. The breadcrumb is the `nav.labelKey` of the route named by `parent`. `useRouteSearch` builds it; `GlobalSearch.vue` renders it.
 - **Sub-page tab bars**: use `useChildNavTabs('/parent/')` when the bar is every child of a parent (e.g. price-manager), or `useNavTabs(['/a/', '/b/'])` for a specific subset/order (e.g. asset-manager/more). Both live in `use-nav-tabs.ts`.
-- **Settings tabs**: each tab's route/label/icon comes from its page `nav`; only the per-setting rows are listed in `use-settings-search.ts`.
+- **Settings tabs**: each tab's route/label/icon comes from its page `nav`; the per-setting search rows are derived from the settings registry + `settings-search-catalog.ts` (no hand-maintained per-tab list).
 
 | Purpose | File |
 |---------|------|

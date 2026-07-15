@@ -8,7 +8,6 @@ import MainCurrencySetting from '@/modules/settings/general/amount/MainCurrencyS
 import NumericSeparatorsSettings from '@/modules/settings/general/amount/NumericSeparatorsSettings.vue';
 import RoundingSettings from '@/modules/settings/general/amount/RoundingSettings.vue';
 import CurrencyLocationSetting from '@/modules/settings/general/CurrencyLocationSetting.vue';
-import { SettingsHighlightIds } from '@/modules/settings/setting-highlight-ids';
 import SettingCategory from '@/modules/settings/SettingCategory.vue';
 import SubscriptToggle from './general/amount/SubscriptToggle.vue';
 
@@ -26,7 +25,7 @@ const amountExample = bigNumberify(123456.789);
       {{ t('general_settings.amount.subtitle') }}
     </template>
 
-    <SettingsItem :id="SettingsHighlightIds.AMOUNT_FORMAT">
+    <SettingsItem setting-key="currency">
       <template #title>
         {{ t('general_settings.amount.label.amount') }}
       </template>
@@ -43,17 +42,14 @@ const amountExample = bigNumberify(123456.789);
       </div>
     </SettingsItem>
 
-    <SettingsItem :id="SettingsHighlightIds.SUBSCRIPT">
-      <template #title>
-        {{ t('rounding_settings.subscript.title') }}
-      </template>
+    <SettingsItem setting-key="subscriptDecimals">
       <template #subtitle>
         {{ t('rounding_settings.subscript.subtitle') }}
       </template>
       <SubscriptToggle />
     </SettingsItem>
 
-    <SettingsItem :id="SettingsHighlightIds.ROUNDING">
+    <SettingsItem setting-key="amountRoundingMode">
       <template #title>
         {{ t('rounding_settings.title') }}
       </template>
@@ -63,17 +59,14 @@ const amountExample = bigNumberify(123456.789);
       <RoundingSettings />
     </SettingsItem>
 
-    <SettingsItem :id="SettingsHighlightIds.ABBREVIATION">
+    <SettingsItem setting-key="abbreviateNumber">
       <template #title>
         {{ t('general_settings.amount.label.abbreviation') }}
       </template>
       <AbbreviateNumberSetting />
     </SettingsItem>
 
-    <SettingsItem :id="SettingsHighlightIds.CURRENCY_LOCATION">
-      <template #title>
-        {{ t('general_settings.amount.label.currency_location') }}
-      </template>
+    <SettingsItem setting-key="currencyLocation">
       <CurrencyLocationSetting />
     </SettingsItem>
   </SettingCategory>

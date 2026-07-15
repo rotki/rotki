@@ -13,7 +13,6 @@ import DisabledChainQueriesSettings from '@/modules/settings/general/disabled-ch
 import DisplayDateInLocaltimeSetting from '@/modules/settings/general/DisplayDateInLocaltimeSetting.vue';
 import UsageAnalyticsSetting from '@/modules/settings/general/UsageAnalyticsSetting.vue';
 import VersionUpdateFrequencySetting from '@/modules/settings/general/VersionUpdateFrequencySetting.vue';
-import { SettingsHighlightIds } from '@/modules/settings/setting-highlight-ids';
 import SettingCategory from '@/modules/settings/SettingCategory.vue';
 import { useSetting } from '@/modules/settings/use-setting';
 
@@ -30,22 +29,13 @@ const autoDetectTokensOnLogin = useSetting('autoDetectTokensOnLogin');
     <template #subtitle>
       {{ t('general_settings.subtitle') }}
     </template>
-    <SettingsItem :id="SettingsHighlightIds.USAGE_ANALYTICS">
-      <template #title>
-        {{ t('general_settings.usage_analytics.title') }}
-      </template>
+    <SettingsItem setting-key="submitUsageAnalytics">
       <UsageAnalyticsSetting />
     </SettingsItem>
-    <SettingsItem :id="SettingsHighlightIds.AUTO_DETECT_TOKENS">
-      <template #title>
-        {{ t('general_settings.auto_detect_tokens.title') }}
-      </template>
+    <SettingsItem setting-key="autoDetectTokens">
       <AutoDetectTokensSetting />
     </SettingsItem>
-    <SettingsItem :id="SettingsHighlightIds.AUTO_DETECT_TOKENS_ON_LOGIN">
-      <template #title>
-        {{ t('general_settings.auto_detect_tokens_on_login.title') }}
-      </template>
+    <SettingsItem setting-key="autoDetectTokensOnLogin">
       <template #subtitle>
         {{ t('general_settings.auto_detect_tokens_on_login.subtitle') }}
       </template>
@@ -53,50 +43,32 @@ const autoDetectTokensOnLogin = useSetting('autoDetectTokensOnLogin');
     </SettingsItem>
     <SettingsItem
       v-if="autoDetectTokensOnLogin"
-      :id="SettingsHighlightIds.AUTO_DETECT_TOKENS_COOLDOWN"
+      setting-key="autoDetectTokensCooldownHours"
     >
-      <template #title>
-        {{ t('general_settings.auto_detect_tokens_cooldown.title') }}
-      </template>
       <template #subtitle>
         {{ t('general_settings.auto_detect_tokens_cooldown.subtitle') }}
       </template>
       <AutoDetectTokensCooldownSetting />
     </SettingsItem>
-    <SettingsItem :id="SettingsHighlightIds.DISPLAY_DATE_IN_LOCALTIME">
-      <template #title>
-        {{ t('general_settings.display_date_in_localtime.title') }}
-      </template>
+    <SettingsItem setting-key="displayDateInLocaltime">
       <div class="flex flex-col gap-2">
         <DisplayDateInLocaltimeSetting />
         <CsvExportDelimiterSetting />
       </div>
     </SettingsItem>
-    <AskUserUponSizeDiscrepancySetting :id="SettingsHighlightIds.ASK_SIZE_DISCREPANCY" />
-    <VersionUpdateFrequencySetting :id="SettingsHighlightIds.VERSION_UPDATE_CHECK" />
-    <SettingsItem :id="SettingsHighlightIds.BALANCE_SAVE_FREQUENCY">
-      <template #title>
-        {{ t('general_settings.balance_frequency.title') }}
-      </template>
+    <AskUserUponSizeDiscrepancySetting />
+    <VersionUpdateFrequencySetting />
+    <SettingsItem setting-key="balanceSaveFrequency">
       <BalanceSaveFrequencySetting />
     </SettingsItem>
-    <SettingsItem :id="SettingsHighlightIds.BTC_DERIVATION_GAP">
-      <template #title>
-        {{ t('general_settings.labels.btc_derivation_gap') }}
-      </template>
+    <SettingsItem setting-key="btcDerivationGapLimit">
       <BtcDerivationGapLimitSetting />
     </SettingsItem>
-    <SettingsItem :id="SettingsHighlightIds.DATE_FORMAT">
-      <template #title>
-        {{ t('date_format_help.title') }}
-      </template>
+    <SettingsItem setting-key="dateDisplayFormat">
       <DateDisplayFormatSetting />
       <DateInputFormatSetting />
     </SettingsItem>
-    <SettingsItem :id="SettingsHighlightIds.DISABLED_CHAIN_QUERIES">
-      <template #title>
-        {{ t('general_settings.disabled_chain_queries.title') }}
-      </template>
+    <SettingsItem setting-key="disabledChainQueries">
       <template #subtitle>
         {{ t('general_settings.disabled_chain_queries.subtitle') }}
       </template>

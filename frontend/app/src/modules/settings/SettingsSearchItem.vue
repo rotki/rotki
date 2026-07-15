@@ -13,7 +13,10 @@ const lastIndex = computed<number>(() => texts.length - 1);
 </script>
 
 <template>
-  <div class="flex items-center text-body-2 w-full">
+  <div
+    class="flex items-center text-body-2 w-full"
+    data-testid="settings-search-item"
+  >
     <RuiIcon
       :name="icon"
       size="20"

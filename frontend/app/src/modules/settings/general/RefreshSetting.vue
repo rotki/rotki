@@ -10,10 +10,7 @@ const { t } = useI18n({ useScope: 'global' });
 </script>
 
 <template>
-  <SettingsItem>
-    <template #title>
-      {{ t('frontend_settings.refresh_balance.title') }}
-    </template>
+  <SettingsItem setting-key="refreshPeriod">
     <SettingToggleNumber
       setting="refreshPeriod"
       :enabled-value="minRefreshPeriod"

@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { useUnifiedProgress } from '@/modules/dashboard/progress/use-unified-progress';
 import SettingsItem from '@/modules/settings/controls/SettingsItem.vue';
-import { SettingsHighlightIds } from '@/modules/settings/setting-highlight-ids';
 import SettingCategory from '@/modules/settings/SettingCategory.vue';
 import HistoryQueryIndicatorDismissalThresholdSetting from './HistoryQueryIndicatorDismissalThresholdSetting.vue';
 import HistoryQueryIndicatorMinOutOfSyncPeriodSetting from './HistoryQueryIndicatorMinOutOfSyncPeriodSetting.vue';
@@ -38,26 +37,20 @@ onUnmounted(() => {
     <template #title>
       {{ t('frontend_settings.history_query_indicator.title') }}
     </template>
-    <SettingsItem :id="SettingsHighlightIds.MIN_OUT_OF_SYNC_PERIOD">
-      <template #title>
-        {{ t('frontend_settings.history_query_indicator.min_out_of_sync_period.title') }}
-      </template>
+    <SettingsItem setting-key="evmQueryIndicatorMinOutOfSyncPeriod">
       <template #subtitle>
         {{ t('frontend_settings.history_query_indicator.min_out_of_sync_period.subtitle') }}
       </template>
       <HistoryQueryIndicatorMinOutOfSyncPeriodSetting />
     </SettingsItem>
-    <SettingsItem :id="SettingsHighlightIds.DISMISSAL_THRESHOLD">
-      <template #title>
-        {{ t('frontend_settings.history_query_indicator.dismissal_threshold.title') }}
-      </template>
+    <SettingsItem setting-key="evmQueryIndicatorDismissalThreshold">
       <template #subtitle>
         {{ t('frontend_settings.history_query_indicator.dismissal_threshold.subtitle') }}
       </template>
       <HistoryQueryIndicatorDismissalThresholdSetting />
     </SettingsItem>
     <div>
-      <SettingsItem :id="SettingsHighlightIds.RESET_DISMISSAL_STATUS">
+      <SettingsItem action-key="resetDismissalStatus">
         <template #title>
           {{ t('frontend_settings.history_query_indicator.reset_dismissal_status.title') }}
         </template>

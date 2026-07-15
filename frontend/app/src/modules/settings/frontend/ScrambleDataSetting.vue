@@ -15,7 +15,7 @@ const {
 </script>
 
 <template>
-  <SettingsItem>
+  <SettingsItem setting-key="scrambleData">
     <template #title>
       {{ t('frontend_settings.scramble.title') }}
     </template>

@@ -2,13 +2,12 @@
 import PnlCsvSummarySetting from '@/modules/settings/accounting/PnlCsvSummarySetting.vue';
 import PnlCsvWithFormulasSetting from '@/modules/settings/accounting/PnlCsvWithFormulasSetting.vue';
 import SettingsItem from '@/modules/settings/controls/SettingsItem.vue';
-import { SettingsHighlightIds } from '@/modules/settings/setting-highlight-ids';
 
 const { t } = useI18n({ useScope: 'global' });
 </script>
 
 <template>
-  <SettingsItem :id="SettingsHighlightIds.CSV_EXPORT">
+  <SettingsItem setting-key="pnlCsvHaveSummary">
     <template #title>
       {{ t('account_settings.csv_export_settings.title') }}
     </template>

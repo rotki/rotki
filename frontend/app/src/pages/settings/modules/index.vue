@@ -3,8 +3,8 @@ import { msg } from '@/message-key';
 import { NoteLocation } from '@/modules/core/common/notes';
 import SettingsPage from '@/modules/settings/controls/SettingsPage.vue';
 import ModuleSelector from '@/modules/settings/modules/ModuleSelector.vue';
-import { SettingsHighlightIds } from '@/modules/settings/setting-highlight-ids';
 import SettingCategory from '@/modules/settings/SettingCategory.vue';
+import { anchorId } from '@/modules/settings/settings-actions';
 
 definePage({
   meta: {
@@ -19,7 +19,7 @@ const { t } = useI18n({ useScope: 'global' });
 <template>
   <SettingsPage>
     <SettingCategory
-      :id="SettingsHighlightIds.MODULES"
+      :id="anchorId('modules')"
       class="mt-4"
     >
       <template #title>

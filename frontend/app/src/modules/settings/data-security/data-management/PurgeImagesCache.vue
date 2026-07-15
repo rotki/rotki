@@ -6,7 +6,6 @@ import { useAssetsStore } from '@/modules/assets/use-assets-store';
 import { PurgeableImageCache } from '@/modules/session/purge';
 import { useCacheClear } from '@/modules/session/use-cache-clear';
 import SettingsItem from '@/modules/settings/controls/SettingsItem.vue';
-import { SettingsHighlightIds } from '@/modules/settings/setting-highlight-ids';
 import ActionStatusIndicator from '@/modules/shell/components/error/ActionStatusIndicator.vue';
 import AssetSelect from '@/modules/shell/components/inputs/AssetSelect.vue';
 
@@ -72,7 +71,7 @@ const { pending, showConfirmation, status } = useCacheClear<PurgeableImageCache>
 </script>
 
 <template>
-  <SettingsItem :id="SettingsHighlightIds.PURGE_IMAGES_CACHE">
+  <SettingsItem action-key="purgeImagesCache">
     <template #title>
       {{ t('data_management.purge_images_cache.title') }}
     </template>

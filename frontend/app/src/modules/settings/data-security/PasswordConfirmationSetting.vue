@@ -83,7 +83,10 @@ async function saveSettings(): Promise<void> {
 </script>
 
 <template>
-  <SettingsItem data-cy="password-confirmation-setting">
+  <SettingsItem
+    setting-key="enablePasswordConfirmation"
+    data-cy="password-confirmation-setting"
+  >
     <template #title>
       {{ t('password_confirmation_setting.title') }}
     </template>

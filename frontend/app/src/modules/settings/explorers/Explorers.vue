@@ -93,7 +93,7 @@ onMounted(() => {
 </script>
 
 <template>
-  <SettingsItem>
+  <SettingsItem setting-key="explorers">
     <CreateSelection #default="{ item }">
       <ChainDisplay
         v-if="!Array.prototype.includes.call(extraExplorers, item)"

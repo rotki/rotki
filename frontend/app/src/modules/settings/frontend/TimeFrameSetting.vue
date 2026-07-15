@@ -66,7 +66,7 @@ onMounted(() => {
 </script>
 
 <template>
-  <SettingsItem>
+  <SettingsItem setting-key="timeframeSetting">
     <template #title>
       {{ t('timeframe_settings.default_timeframe') }}
     </template>

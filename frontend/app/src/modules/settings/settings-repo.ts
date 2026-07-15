@@ -6,7 +6,8 @@ import { TimeFramePeriod } from '@rotki/common';
 import { useCurrencies } from '@/modules/assets/amount-display/currencies';
 import { useAnimationsEnabled } from '@/modules/session/use-animations-enabled';
 import { defaultAccountingSettings, defaultGeneralSettings } from '@/modules/settings/factories';
-import { Channel, registryEntries, type RegistryEntry, type SettingChannel } from '@/modules/settings/settings-registry';
+import { Channel, type RegistryEntry, type SettingChannel } from '@/modules/settings/settings-channels';
+import { registryEntries } from '@/modules/settings/settings-registry';
 import { type FrontendSettings, getDefaultFrontendSettings } from '@/modules/settings/types/frontend-settings';
 
 /** Resolves each registry entry that declares a `mirror` factory to its external shared ref, once. */

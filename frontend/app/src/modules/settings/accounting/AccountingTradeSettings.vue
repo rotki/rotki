@@ -8,14 +8,13 @@ import GasCostSetting from '@/modules/settings/accounting/GasCostSetting.vue';
 import TaxFreeSetting from '@/modules/settings/accounting/TaxFreeSetting.vue';
 import UseAssetCollectionsInCostBasisSetting from '@/modules/settings/accounting/UseAssetCollectionsInCostBasisSetting.vue';
 import SettingsItem from '@/modules/settings/controls/SettingsItem.vue';
-import { SettingsHighlightIds } from '@/modules/settings/setting-highlight-ids';
 
 const { t } = useI18n({ useScope: 'global' });
 </script>
 
 <template>
   <SettingsItem
-    :id="SettingsHighlightIds.ACCOUNTING_TRADE"
+    setting-key="costBasisMethod"
     class="border-t mt-6"
   >
     <template #title>

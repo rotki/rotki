@@ -1,5 +1,6 @@
+import type { ChannelTypeMap, RegistryEntry } from '@/modules/settings/settings-channels';
 import { type Ref, toRef } from 'vue';
-import { type ChannelTypeMap, type RegistryEntry, settingsRegistry } from '@/modules/settings/settings-registry';
+import { settingsRegistry } from '@/modules/settings/settings-registry';
 import { useSettingsRepo } from '@/modules/settings/settings-repo';
 
 /** The logical key of every registered setting; the single source of setting names. */

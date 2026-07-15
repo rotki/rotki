@@ -74,6 +74,7 @@ watchDebounced(search, (keyword: string) => {
     auto-select-first
     :label="t('settings.search.placeholder')"
     class="max-w-[400px] w-full"
+    data-testid="settings-search"
     @update:model-value="onSelect($event)"
   >
     <template #selection>
