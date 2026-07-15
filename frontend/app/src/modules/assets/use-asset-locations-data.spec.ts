@@ -1,6 +1,7 @@
 import type { AddressData, AssetBreakdown, BlockchainAccount } from '@/modules/accounts/blockchain-accounts';
 import { bigNumberify } from '@rotki/common';
 import { createMock } from '@test/utils/create-mock';
+import { mockUseSupportedChains } from '@test/utils/mocks/supported-chains';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useAssetLocationsData } from './use-asset-locations-data';
 
@@ -34,9 +35,8 @@ vi.mock('@/modules/accounts/address-book/use-address-name-resolution', () => ({
 vi.mock('@/modules/balances/use-aggregated-balances', () => ({
   useAggregatedBalances: (): object => ({ getAssetPriceInfo: spies.getAssetPriceInfo }),
 }));
-vi.mock('@/modules/core/common/use-supported-chains', () => ({
-  useSupportedChains: (): object => ({ getChainName: spies.getChainName, matchChain: spies.matchChain }),
-}));
+vi.mock('@/modules/core/common/use-supported-chains', () =>
+  mockUseSupportedChains({ getChainName: spies.getChainName, matchChain: spies.matchChain }));
 vi.mock('@/modules/balances/use-asset-balances-breakdown', () => ({
   useAssetBalancesBreakdown: (): object => ({ getAssetBreakdown: spies.getAssetBreakdown }),
 }));

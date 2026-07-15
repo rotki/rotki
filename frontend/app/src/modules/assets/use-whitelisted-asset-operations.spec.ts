@@ -1,3 +1,4 @@
+import { mockUseNotifications } from '@test/utils/mocks/notifications';
 import { assert, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useWhitelistedAssetOperations } from '@/modules/assets/use-whitelisted-asset-operations';
 
@@ -21,13 +22,10 @@ vi.mock('@/modules/assets/use-ignored-asset-operations', () => ({
   })),
 }));
 
-const mockNotifyError = vi.fn();
+const { mockNotifyError } = vi.hoisted(() => ({ mockNotifyError: vi.fn() }));
 
-vi.mock('@/modules/core/notifications/use-notifications', () => ({
-  useNotifications: vi.fn(() => ({
-    notifyError: mockNotifyError,
-  })),
-}));
+vi.mock('@/modules/core/notifications/use-notifications', () =>
+  mockUseNotifications({ notifyError: mockNotifyError }));
 
 describe('useWhitelistedAssetOperations', () => {
   beforeEach(() => {

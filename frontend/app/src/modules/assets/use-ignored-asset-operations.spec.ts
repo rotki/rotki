@@ -1,3 +1,4 @@
+import { mockUseNotifications } from '@test/utils/mocks/notifications';
 import { assert, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useIgnoredAssetOperations } from '@/modules/assets/use-ignored-asset-operations';
 
@@ -25,15 +26,13 @@ vi.mock('@/modules/balances/manual/use-manual-balance-data', () => ({
   })),
 }));
 
-const mockNotifyError = vi.fn();
-const mockShowErrorMessage = vi.fn();
-
-vi.mock('@/modules/core/notifications/use-notifications', () => ({
-  useNotifications: vi.fn(() => ({
-    notifyError: mockNotifyError,
-    showErrorMessage: mockShowErrorMessage,
-  })),
+const { mockNotifyError, mockShowErrorMessage } = vi.hoisted(() => ({
+  mockNotifyError: vi.fn(),
+  mockShowErrorMessage: vi.fn(),
 }));
+
+vi.mock('@/modules/core/notifications/use-notifications', () =>
+  mockUseNotifications({ notifyError: mockNotifyError, showErrorMessage: mockShowErrorMessage }));
 
 describe('useIgnoredAssetOperations', () => {
   beforeEach(() => {
