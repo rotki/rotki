@@ -1,9 +1,10 @@
 import type { NftResponse } from '@/modules/assets/nfts';
+import { mockUseTaskHandler } from '@test/utils/mocks/task-runner';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useAssetsApi } from '@/modules/assets/api/use-assets-api';
 import { useNfts } from '@/modules/assets/use-asset-nft';
 
-const runTaskMock = vi.fn();
+const { runTaskMock } = vi.hoisted(() => ({ runTaskMock: vi.fn() }));
 
 vi.mock('@/modules/assets/api/use-assets-api', () => ({
   useAssetsApi: vi.fn().mockReturnValue({
@@ -11,17 +12,8 @@ vi.mock('@/modules/assets/api/use-assets-api', () => ({
   }),
 }));
 
-vi.mock('@/modules/core/tasks/use-task-handler', async importOriginal => ({
-  ...(await importOriginal<Record<string, unknown>>()),
-  useTaskHandler: vi.fn().mockReturnValue({
-    runTask: async (taskFn: () => Promise<unknown>, ...rest: unknown[]): Promise<unknown> => {
-      await taskFn();
-      return runTaskMock(taskFn, ...rest);
-    },
-    cancelTask: vi.fn(),
-    cancelTaskByTaskType: vi.fn(),
-  }),
-}));
+vi.mock('@/modules/core/tasks/use-task-handler', async importOriginal =>
+  mockUseTaskHandler(await importOriginal<Record<string, unknown>>(), { runTask: runTaskMock }));
 
 describe('useNftStore', () => {
   setActivePinia(createPinia());
