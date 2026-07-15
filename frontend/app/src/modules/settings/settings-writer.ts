@@ -1,6 +1,7 @@
 import type { ActionStatus } from '@/modules/core/common/action';
 import type { SettingKey, SettingValue } from '@/modules/settings/use-setting';
-import { Channel, type RegistryEntry, settingsRegistry } from '@/modules/settings/settings-registry';
+import { Channel, type RegistryEntry } from '@/modules/settings/settings-channels';
+import { settingsRegistry } from '@/modules/settings/settings-registry';
 import { useSettingsRepo } from '@/modules/settings/settings-repo';
 import { useSettingsOperations } from '@/modules/settings/use-settings-operations';
 

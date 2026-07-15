@@ -159,7 +159,7 @@ async function reProcessSkippedEvents() {
 </script>
 
 <template>
-  <SettingsItem>
+  <SettingsItem action-key="skippedEvents">
     <template #title>
       {{ t('general_settings.history_event.skipped_events.title') }}
     </template>

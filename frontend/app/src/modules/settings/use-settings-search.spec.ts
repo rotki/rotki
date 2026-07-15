@@ -1,8 +1,11 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
+  SettingsCategoryIds,
+  type SettingsHighlightId,
   SettingsHighlightIds,
   type SettingsSearchEntry,
 } from '@/modules/settings/setting-highlight-ids';
+import { actionKeysForAnchor } from '@/modules/settings/settings-actions';
 import { getRegistryEntry, registryEntries, registryKeysForAnchor } from '@/modules/settings/settings-registry';
 
 // The settings tabs derive their route/label/icon from each page's `nav` meta via the router.
@@ -79,26 +82,6 @@ describe('useSettingsSearch', () => {
   });
 
   describe('registry <-> anchor coverage', () => {
-    // Anchors that intentionally back no registry setting: action targets, info displays, backend
-    // settings and subsystems that are not part of the settings registry. Keeping this list explicit
-    // makes "this anchor has no setting" a reviewed decision rather than silent drift.
-    const keylessAnchors: string[] = [
-      SettingsHighlightIds.ACCOUNTING_RULE,
-      SettingsHighlightIds.ASSET_UPDATE,
-      SettingsHighlightIds.CHANGE_PASSWORD,
-      SettingsHighlightIds.GLOBALDB_INFO,
-      SettingsHighlightIds.LOG_LEVEL,
-      SettingsHighlightIds.MODULES,
-      SettingsHighlightIds.PURGE_DATA,
-      SettingsHighlightIds.PURGE_IMAGES_CACHE,
-      SettingsHighlightIds.REFRESH_CACHE,
-      SettingsHighlightIds.RESET_DISMISSAL_STATUS,
-      SettingsHighlightIds.RESTORE_ASSETS_DB,
-      SettingsHighlightIds.RPC_NODES,
-      SettingsHighlightIds.SKIPPED_EVENTS,
-      SettingsHighlightIds.USERDB_INFO,
-    ].sort();
-
     it('should only anchor registry entries to defined highlight ids', () => {
       const definedIds = new Set<string>(Object.values(SettingsHighlightIds));
       const invalid = registryEntries()
@@ -127,11 +110,64 @@ describe('useSettingsSearch', () => {
       }
     });
 
-    it('should keep the keyless-anchor allowlist in sync with the registry', () => {
-      const keyless = Object.values(SettingsHighlightIds)
-        .filter(id => registryKeysForAnchor(id).length === 0)
-        .sort();
-      expect(keyless).toEqual(keylessAnchors);
+    it('should own every highlight id in exactly one registry (setting xor action)', () => {
+      // Every anchor is owned by exactly one source: a registry setting (via its `anchor`) or a
+      // `settingsActions` entry. This derived invariant replaces a hand-kept keyless allowlist, so an
+      // anchor that loses its owner (or gains a second) fails here instead of drifting silently.
+      const ids = Object.values(SettingsHighlightIds);
+      const ownedByBoth = ids.filter(id => registryKeysForAnchor(id).length > 0 && actionKeysForAnchor(id).length > 0);
+      const ownedByNeither = ids.filter(id => registryKeysForAnchor(id).length === 0 && actionKeysForAnchor(id).length === 0);
+      expect(ownedByBoth, 'highlight ids owned by both a setting and an action').toEqual([]);
+      expect(ownedByNeither, 'highlight ids owned by neither a setting nor an action').toEqual([]);
+    });
+
+    it('should derive migrated category rows from the registry search blocks', () => {
+      // the external service category no longer lives in a getXTab builder; its header and per-setting
+      // rows are derived from SEARCH_CATEGORIES + the registry `search` blocks.
+      const rows = allEntries.filter(entry => entry.categoryId === SettingsCategoryIds.EXTERNAL_SERVICE);
+      const headers = rows.filter(entry => entry.highlightId === undefined);
+      const anchors = rows.map(entry => entry.highlightId).filter(Boolean);
+
+      expect(headers, 'exactly one category header row').toHaveLength(1);
+      expect(anchors).toEqual(expect.arrayContaining([
+        SettingsHighlightIds.CONNECT_TIMEOUT,
+        SettingsHighlightIds.QUERY_RETRY_LIMIT,
+        SettingsHighlightIds.READ_TIMEOUT,
+        SettingsHighlightIds.SUPPRESS_MISSING_KEY,
+      ]));
+      // the tab breadcrumb is resolved from the `/settings/general/` nav meta, never restated
+      rows.forEach(entry => expect(entry.texts[0]).toBe('General'));
+    });
+
+    it('should build flat and sub-group breadcrumbs for the interface tab', () => {
+      const rowFor = (id: SettingsHighlightId): SettingsSearchEntry | undefined =>
+        allEntries.find(entry => entry.highlightId === id);
+
+      // a flat category (interface) drops the category segment: breadcrumb is tab > setting
+      const language = rowFor(SettingsHighlightIds.LANGUAGE);
+      expect(language?.texts).toEqual(['Interface', 'general_settings.language.title']);
+
+      // a sub-group setting inserts its group segment: tab > group > setting (still no category)
+      const minOutOfSync = rowFor(SettingsHighlightIds.MIN_OUT_OF_SYNC_PERIOD);
+      expect(minOutOfSync?.texts).toEqual([
+        'Interface',
+        'frontend_settings.history_query_indicator.title',
+        'frontend_settings.history_query_indicator.min_out_of_sync_period.title',
+      ]);
+
+      // a non-flat category keeps the category segment: tab > category > setting
+      const graphBasis = rowFor(SettingsHighlightIds.GRAPH_BASIS);
+      expect(graphBasis?.texts).toEqual([
+        'Interface',
+        'frontend_settings.subtitle.graph_settings',
+        'frontend_settings.graph_basis.title',
+      ]);
+    });
+
+    it('should build a two-level breadcrumb for categoryless action rows', () => {
+      const rpc = allEntries.find(entry => entry.highlightId === SettingsHighlightIds.RPC_NODES);
+      expect(rpc?.categoryId).toBeUndefined();
+      expect(rpc?.texts).toEqual(['RPC Nodes', 'general_settings.rpc_node_setting.title']);
     });
 
     it('should find settings by their derived enum-value keywords', () => {

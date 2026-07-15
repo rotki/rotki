@@ -5,7 +5,6 @@ import { useChangePassword } from '@/modules/auth/use-change-password';
 import { toMessages } from '@/modules/core/common/validation/validation';
 import { usePremiumStore } from '@/modules/premium/use-premium-store';
 import SettingsItem from '@/modules/settings/controls/SettingsItem.vue';
-import { SettingsHighlightIds } from '@/modules/settings/setting-highlight-ids';
 
 const currentPassword = ref<string>('');
 const newPassword = ref<string>('');
@@ -61,7 +60,7 @@ async function change(): Promise<void> {
   >
     {{ t('change_password.sync_warning') }}
   </RuiAlert>
-  <SettingsItem :id="SettingsHighlightIds.CHANGE_PASSWORD">
+  <SettingsItem action-key="changePassword">
     <template #title>
       {{ t('change_password.title') }}
     </template>

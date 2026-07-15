@@ -20,8 +20,8 @@ import AccountingRuleTable from '@/modules/settings/accounting/rule/AccountingRu
 import { useRuleEventsLink } from '@/modules/settings/accounting/rule/use-rule-events-link';
 import { useAccountingSettings } from '@/modules/settings/accounting/use-accounting-settings';
 import { useAccountingApi } from '@/modules/settings/api/use-accounting-api';
-import { SettingsHighlightIds } from '@/modules/settings/setting-highlight-ids';
 import SettingCategoryHeader from '@/modules/settings/SettingCategoryHeader.vue';
+import { anchorId } from '@/modules/settings/settings-actions';
 import { getPlaceholderRule } from '@/modules/settings/settings-utils';
 
 const CustomRuleHandling = {
@@ -325,7 +325,7 @@ const importFileDialog = ref<boolean>(false);
 
 <template>
   <div
-    :id="SettingsHighlightIds.ACCOUNTING_RULE"
+    :id="anchorId('accountingRule')"
     class="mt-4"
   >
     <div class="pb-5 border-b border-default flex flex-wrap gap-2 items-center justify-between">

@@ -7,7 +7,7 @@ import IndexerOrderSetting from '@/modules/settings/evm/IndexerOrderSetting.vue'
 import SuppressedNoIndexerChainsSetting from '@/modules/settings/evm/SuppressedNoIndexerChainsSetting.vue';
 import EvmChainsToIgnoreSettings from '@/modules/settings/general/EvmChainsToIgnoreSettings.vue';
 import TreatEthAsEth2Setting from '@/modules/settings/general/TreatEthAsEth2Setting.vue';
-import { SettingsCategoryIds, SettingsHighlightIds } from '@/modules/settings/setting-highlight-ids';
+import { SettingsCategoryIds } from '@/modules/settings/setting-highlight-ids';
 import SettingCategory from '@/modules/settings/SettingCategory.vue';
 
 definePage({
@@ -34,19 +34,13 @@ const navigation = computed<{ id: string; label: string }[]>(() => [
       <template #title>
         {{ t('evm_settings.general.title') }}
       </template>
-      <SettingsItem :id="SettingsHighlightIds.TREAT_ETH2_AS_ETH">
-        <template #title>
-          {{ t('evm_settings.general.treat_eth2_as_eth.title') }}
-        </template>
+      <SettingsItem setting-key="treatEth2AsEth">
         <template #subtitle>
           {{ t('evm_settings.general.treat_eth2_as_eth.subtitle') }}
         </template>
         <TreatEthAsEth2Setting />
       </SettingsItem>
-      <SettingsItem :id="SettingsHighlightIds.CHAINS_TO_SKIP_DETECTION">
-        <template #title>
-          {{ t('evm_settings.general.chains_to_skip_detection.title') }}
-        </template>
+      <SettingsItem setting-key="evmchainsToSkipDetection">
         <template #subtitle>
           {{ t('evm_settings.general.chains_to_skip_detection.subtitle') }}
         </template>

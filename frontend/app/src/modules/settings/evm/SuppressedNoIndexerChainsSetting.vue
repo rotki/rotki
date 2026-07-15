@@ -3,7 +3,6 @@ import type { EvmChainInfo } from '@/modules/core/api/types/chains';
 import { useSupportedChains } from '@/modules/core/common/use-supported-chains';
 import SettingMultiSelect from '@/modules/settings/controls/SettingMultiSelect.vue';
 import SettingsItem from '@/modules/settings/controls/SettingsItem.vue';
-import { SettingsHighlightIds } from '@/modules/settings/setting-highlight-ids';
 import ChainIcon from '@/modules/shell/components/ChainIcon.vue';
 
 const { t } = useI18n({ useScope: 'global' });
@@ -24,12 +23,9 @@ const [DefineChainItem, ReuseChainItem] = createReusableTemplate<{ item: EvmChai
   </DefineChainItem>
 
   <SettingsItem
-    :id="SettingsHighlightIds.SUPPRESSED_NO_INDEXER_CHAINS"
+    setting-key="suppressNoIndexerChains"
     data-testid="suppressed-no-indexer-chains-setting"
   >
-    <template #title>
-      {{ t('evm_settings.indexer.suppressed_no_indexer_chains.title') }}
-    </template>
     <template #subtitle>
       {{ t('evm_settings.indexer.suppressed_no_indexer_chains.subtitle') }}
     </template>

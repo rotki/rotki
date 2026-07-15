@@ -75,7 +75,7 @@ describe('useSettingsPageHighlight', () => {
       await flushPromises();
 
       expect(scrollToElement).toHaveBeenCalledWith(element);
-      expect(element.classList.contains('outline')).toBe(true);
+      expect(element.classList.contains('rounded-lg')).toBe(true);
       expect(element.animate).toHaveBeenCalledOnce();
       expect(animation.onfinish).toBeTypeOf('function');
     });
@@ -117,7 +117,7 @@ describe('useSettingsPageHighlight', () => {
       set(mockHighlightTarget, { categoryId: CATEGORY });
       await flushPromises();
 
-      expect(element.classList.contains('outline')).toBe(true);
+      expect(element.classList.contains('rounded-lg')).toBe(true);
     });
   });
 
@@ -132,7 +132,7 @@ describe('useSettingsPageHighlight', () => {
 
       animation.onfinish?.(createMock<AnimationPlaybackEvent>());
 
-      expect(element.classList.contains('outline')).toBe(false);
+      expect(element.classList.contains('rounded-lg')).toBe(false);
       expect(mockClearHighlight).toHaveBeenCalledOnce();
     });
 
@@ -148,8 +148,8 @@ describe('useSettingsPageHighlight', () => {
       await flushPromises();
 
       expect(first.animation.cancel).toHaveBeenCalledOnce();
-      expect(first.element.classList.contains('outline')).toBe(false);
-      expect(second.element.classList.contains('outline')).toBe(true);
+      expect(first.element.classList.contains('rounded-lg')).toBe(false);
+      expect(second.element.classList.contains('rounded-lg')).toBe(true);
     });
   });
 
@@ -162,7 +162,7 @@ describe('useSettingsPageHighlight', () => {
       await flushPromises();
 
       expect(scrollToElement).toHaveBeenCalledWith(element);
-      expect(element.classList.contains('outline')).toBe(true);
+      expect(element.classList.contains('rounded-lg')).toBe(true);
     });
 
     it('should do nothing at mount when there is no pending target', async () => {

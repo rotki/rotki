@@ -4,8 +4,8 @@ import type SimpleRpcNodeManager from '@/modules/settings/general/rpc/simple/Sim
 import { startPromise } from '@shared/utils';
 import RpcSettingOption from '@/modules/settings/general/rpc/RpcSettingOption.vue';
 import { isChainTab, tabKey, useRpcSettingsTabs } from '@/modules/settings/general/rpc/use-rpc-settings-tabs';
-import { SettingsHighlightIds } from '@/modules/settings/setting-highlight-ids';
 import SettingCategoryHeader from '@/modules/settings/SettingCategoryHeader.vue';
+import { anchorId } from '@/modules/settings/settings-actions';
 
 const BlockchainRpcNodeManagerAsync = defineAsyncComponent(() => import('@/modules/settings/general/rpc/BlockchainRpcNodeManager.vue'));
 const SimpleRpcNodeManagerAsync = defineAsyncComponent(() => import('@/modules/settings/general/rpc/simple/SimpleRpcNodeManager.vue'));
@@ -50,7 +50,7 @@ watch(rpcSettingTabs, () => scrollActiveIntoView());
 
 <template>
   <div
-    :id="SettingsHighlightIds.RPC_NODES"
+    :id="anchorId('rpcNodes')"
     class="mt-4 md:h-full md:flex md:flex-col md:min-h-0"
   >
     <div class="pb-5 border-b border-default flex flex-wrap gap-4 items-center justify-between">

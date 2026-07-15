@@ -1,6 +1,12 @@
 import { type HighlightRequest, useSettingsHighlight } from '@/modules/settings/use-settings-highlight';
 
-const HIGHLIGHT_CLASSES = ['outline', 'outline-2', 'outline-offset-[12px]', 'rounded-sm'] as const;
+// A brief background flash, rounded and with horizontal padding, so the highlighted row reads as a
+// contained highlight instead of a bare outline hugging the text. `-mx-4` cancels the `px-4` for layout
+// (the surrounding content column already pads by the same amount), so nothing shifts while it is applied.
+const HIGHLIGHT_CLASSES = ['rounded-lg', 'px-4', '-mx-4'] as const;
+
+/** The rui primary, exposed as a theme-aware `r, g, b` triplet; falls back to the light-theme value. */
+const FALLBACK_PRIMARY = '78, 91, 166';
 
 interface UseSettingsPageHighlightOptions {
   scrollToElement: (el?: string | Element) => Promise<void>;
@@ -20,11 +26,14 @@ export function useSettingsPageHighlight({ scrollToElement, isElementInViewport 
 
     element.classList.add(...HIGHLIGHT_CLASSES);
 
+    const primary = getComputedStyle(element).getPropertyValue('--rui-primary-main').trim() || FALLBACK_PRIMARY;
+    const tint = `rgba(${primary}, 0.2)`;
+
     const animation: Animation = element.animate([
-      { outlineColor: '#eab308', offset: 0 },
-      { outlineColor: '#eab308', offset: 0.33 },
-      { outlineColor: 'transparent', offset: 1 },
-    ], { duration: 700, fill: 'forwards' });
+      { backgroundColor: tint, offset: 0 },
+      { backgroundColor: tint, offset: 0.6 },
+      { backgroundColor: 'transparent', offset: 1 },
+    ], { duration: 1500, easing: 'ease-out', fill: 'forwards' });
 
     activeHighlight = { animation, element };
 

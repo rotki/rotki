@@ -59,7 +59,7 @@ onBeforeMount(async () => {
 </script>
 
 <template>
-  <SettingsItem>
+  <SettingsItem action-key="logLevel">
     <template #title>
       {{ t('backend_settings.settings.log_level.label') }}
     </template>

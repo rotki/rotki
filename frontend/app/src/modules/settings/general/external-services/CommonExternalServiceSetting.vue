@@ -33,7 +33,7 @@ const rules = {
 </script>
 
 <template>
-  <SettingsItem>
+  <SettingsItem :setting-key="setting">
     <template #title>
       {{ label }}
     </template>

@@ -9,7 +9,6 @@ import { useSessionApi } from '@/modules/session/api/use-session-api';
 import { useCacheClear } from '@/modules/session/use-cache-clear';
 import { useSessionPurge } from '@/modules/session/use-purge';
 import SettingsItem from '@/modules/settings/controls/SettingsItem.vue';
-import { SettingsHighlightIds } from '@/modules/settings/setting-highlight-ids';
 import ActionStatusIndicator from '@/modules/shell/components/error/ActionStatusIndicator.vue';
 
 const source = ref<string>();
@@ -85,7 +84,7 @@ onMounted(() => {
 </script>
 
 <template>
-  <SettingsItem :id="SettingsHighlightIds.REFRESH_CACHE">
+  <SettingsItem action-key="refreshCache">
     <template #title>
       {{ t('data_management.refresh_cache.title') }}
     </template>

@@ -4,7 +4,7 @@ import { NoteLocation } from '@/modules/core/common/notes';
 import SettingsPage from '@/modules/settings/controls/SettingsPage.vue';
 import ChangePassword from '@/modules/settings/data-security/ChangePassword.vue';
 import PasswordConfirmationSetting from '@/modules/settings/data-security/PasswordConfirmationSetting.vue';
-import { SettingsCategoryIds, SettingsHighlightIds } from '@/modules/settings/setting-highlight-ids';
+import { SettingsCategoryIds } from '@/modules/settings/setting-highlight-ids';
 import SettingCategory from '@/modules/settings/SettingCategory.vue';
 
 definePage({
@@ -34,7 +34,7 @@ const navigation = computed<{ id: string; label: string }[]>(() => [
       </template>
 
       <ChangePassword />
-      <PasswordConfirmationSetting :id="SettingsHighlightIds.PASSWORD_CONFIRMATION" />
+      <PasswordConfirmationSetting />
     </SettingCategory>
   </SettingsPage>
 </template>

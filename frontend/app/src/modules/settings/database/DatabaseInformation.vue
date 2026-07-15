@@ -6,7 +6,6 @@ import { logger } from '@/modules/core/common/logging/logging';
 import { useNotificationDispatcher } from '@/modules/core/notifications/use-notification-dispatcher';
 import { useBackupApi } from '@/modules/session/api/use-backup-api';
 import SettingsItem from '@/modules/settings/controls/SettingsItem.vue';
-import { SettingsHighlightIds } from '@/modules/settings/setting-highlight-ids';
 import CopyButton from '@/modules/shell/components/CopyButton.vue';
 
 interface UserDbInfo {
@@ -148,13 +147,13 @@ onMounted(loadInfo);
       </div>
     </RuiCard>
   </DefineRow>
-  <SettingsItem :id="SettingsHighlightIds.USERDB_INFO">
+  <SettingsItem action-key="userDbInfo">
     <template #title>
       {{ t('database_settings.database_info.labels.userdb') }}
     </template>
     <ReuseRow :details="userDetails" />
   </SettingsItem>
-  <SettingsItem :id="SettingsHighlightIds.GLOBALDB_INFO">
+  <SettingsItem action-key="globalDbInfo">
     <template #title>
       {{ t('database_settings.database_info.labels.globaldb') }}
     </template>

@@ -4,7 +4,6 @@ import { supportedLanguages } from '@/modules/core/common/supported-language';
 import { useLocale } from '@/modules/session/use-locale';
 import SettingsItem from '@/modules/settings/controls/SettingsItem.vue';
 import LanguageSelectorItem from '@/modules/settings/general/language/LanguageSelectorItem.vue';
-import { SettingsHighlightIds } from '@/modules/settings/setting-highlight-ids';
 import { SupportedLanguage } from '@/modules/settings/types/frontend-settings';
 import { useClearableMessages } from '@/modules/settings/use-clearable-messages';
 import { useSettingModel } from '@/modules/settings/use-setting-model';
@@ -64,12 +63,9 @@ onMounted(() => {
 
 <template>
   <SettingsItem
-    :id="SettingsHighlightIds.LANGUAGE"
+    setting-key="language"
     class="w-full"
   >
-    <template #title>
-      {{ t('general_settings.language.title') }}
-    </template>
     <template #subtitle>
       {{ t('general_settings.language.subtitle') }}
     </template>

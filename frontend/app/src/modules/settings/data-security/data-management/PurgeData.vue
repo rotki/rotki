@@ -13,7 +13,6 @@ import { useCacheClear } from '@/modules/session/use-cache-clear';
 import { useSessionPurge } from '@/modules/session/use-purge';
 import SettingsItem from '@/modules/settings/controls/SettingsItem.vue';
 import DefiModuleSelector from '@/modules/settings/modules/DefiModuleSelector.vue';
-import { SettingsHighlightIds } from '@/modules/settings/setting-highlight-ids';
 import ActionStatusIndicator from '@/modules/shell/components/error/ActionStatusIndicator.vue';
 
 const purgeableOnlyModules = Object.values(PurgeableOnlyModule);
@@ -157,7 +156,7 @@ const chainsSelection = useArrayMap(allTxChainsInfo, item => item.id);
 </script>
 
 <template>
-  <SettingsItem :id="SettingsHighlightIds.PURGE_DATA">
+  <SettingsItem action-key="purgeData">
     <template #title>
       {{ t('data_management.purge_data.title') }}
     </template>

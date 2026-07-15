@@ -76,7 +76,7 @@ watch(frequencyWriteError, (message) => {
 
 <template>
   <div :class="compact ? 'flex flex-col gap-3 pt-4' : undefined">
-    <SettingsItem>
+    <SettingsItem setting-key="internalTxsToRepull">
       <template
         v-if="!compact"
         #title

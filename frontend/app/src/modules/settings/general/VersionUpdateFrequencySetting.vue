@@ -9,10 +9,7 @@ const { t } = useI18n({ useScope: 'global' });
 </script>
 
 <template>
-  <SettingsItem>
-    <template #title>
-      {{ t('general_settings.version_update_check.title') }}
-    </template>
+  <SettingsItem setting-key="versionUpdateCheckFrequency">
     <SettingToggleNumber
       setting="versionUpdateCheckFrequency"
       :enabled-value="24"
