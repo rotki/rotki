@@ -1,5 +1,6 @@
 import { assert, type Notification, type NotificationAction, NotificationGroup } from '@rotki/common';
 import { mockT } from '@test/i18n';
+import { mockUseSupportedChains } from '@test/utils/mocks/supported-chains';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useConfirmStore } from '@/modules/core/common/use-confirm-store';
 import { createNoAvailableIndexersHandler } from '@/modules/core/messaging/handlers/no-available-indexers';
@@ -17,11 +18,8 @@ vi.mock('@/modules/settings/use-settings-operations', () => ({
   }),
 }));
 
-vi.mock('@/modules/core/common/use-supported-chains', () => ({
-  useSupportedChains: (): { getChainName: (chain: string) => string } => ({
-    getChainName: (chain: string): string => chain.toUpperCase(),
-  }),
-}));
+vi.mock('@/modules/core/common/use-supported-chains', () =>
+  mockUseSupportedChains({ getChainName: (chain: string): string => chain.toUpperCase() }));
 
 const router = { push: vi.fn() };
 
