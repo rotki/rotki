@@ -1698,8 +1698,7 @@
     "generic": {
       "message": "Nous avons rencontré une erreur interne lors du traitement de votre demande. Si ce problème persiste, veuillez contacter notre équipe d'assistance avec les détails suivants : \nCode d'erreur : {code} \nMessage d'erreur : {message} \nChemin : {path}",
       "title": "Quelque chose s'est mal passé"
-    },
-    "process_running": "Un processus rotki backend est déjà en cours d'exécution. Cela est connu pour entraîner des problèmes de fonctionnement de l'application. Veuillez fermer ces processus avec les ID : [{pids}] et redémarrer l'application."
+    }
   },
   "error_screen": {
     "backend_error": "Il y a un problème avec le backend.",

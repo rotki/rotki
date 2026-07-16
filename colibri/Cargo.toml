@@ -10,7 +10,10 @@ log = "=0.4.29"
 # For the asynchronous Rest API
 reqwest = { version = "=0.13.2", default-features = false, features = ["json", "query", "rustls-no-provider"]}
 rustls = { version = "=0.23.40", default-features = false, features = ["ring", "std", "tls12"] }
-tokio = { version = "=1.51.1", features = ["rt-multi-thread", "fs"]}
+# `signal` powers the graceful-shutdown hook in main: starling stops us with
+# CTRL_BREAK (windows) / SIGTERM (unix), and without a handler the OS default
+# terminator kills us mid-flight instead of letting us close the database.
+tokio = { version = "=1.51.1", features = ["rt-multi-thread", "fs", "signal"]}
 axum = "=0.8.9"
 # for serialization of structs via the API
 serde = { version = "=1.0.228", features = ["derive"] }

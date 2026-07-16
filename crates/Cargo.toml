@@ -1,0 +1,32 @@
+[workspace]
+resolver = "2"
+members = ["starling", "starling-core"]
+
+[workspace.package]
+edition = "2021"
+license = "AGPL-3.0-only"
+rust-version = "1.86.0"
+repository = "https://github.com/rotki/rotki"
+
+[workspace.dependencies]
+tokio = { version = "1", features = [
+    "rt-multi-thread",
+    "macros",
+    "process",
+    "time",
+    "signal",
+    "net",
+    "sync",
+    "io-util",
+    "io-std",
+] }
+async-trait = "0.1"
+thiserror = "2"
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+serde = { version = "1", features = ["derive"] }
+clap = { version = "4", features = ["derive"] }
+
+[profile.release]
+strip = true
+lto = "thin"

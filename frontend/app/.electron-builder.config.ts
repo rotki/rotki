@@ -81,8 +81,8 @@ export default {
     to: 'colibri',
     filter: ['**/*'],
   }, {
-    from: './dist/vendor',
-    to: 'vendor',
+    from: '../../build/starling/bin',
+    to: 'starling',
     filter: ['**/*'],
   }],
   dmg: {

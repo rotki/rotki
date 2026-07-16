@@ -1,0 +1,201 @@
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+
+// The dev launchers probe the filesystem (is the warm-up build there?) and shell
+// out to uv (which interpreter?). Both are mocked so these run identically on a
+// CI box with no rust target dir and no uv installed.
+const { existsSyncMock, execSyncMock, buildCargoEnvMock } = vi.hoisted(() => ({
+  existsSyncMock: vi.fn(),
+  execSyncMock: vi.fn(),
+  buildCargoEnvMock: vi.fn(),
+}));
+
+// Stubbed so the cargo-env assertions hold on every platform: the real helper
+// returns undefined off windows, which would make them windows-only.
+const CARGO_ENV = { Path: 'C:\\Strawberry\\perl\\bin;C:\\Windows' };
+vi.mock('@shared/cargo-env', () => ({
+  buildCargoEnv: buildCargoEnvMock,
+  STRAWBERRY_MISSING_WARNING: 'strawberry missing',
+}));
+
+vi.mock('node:fs', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('node:fs')>();
+  return { ...actual, default: { ...actual, existsSync: existsSyncMock }, existsSync: existsSyncMock };
+});
+
+vi.mock('node:child_process', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('node:child_process')>();
+  return { ...actual, default: { ...actual, execSync: execSyncMock }, execSync: execSyncMock };
+});
+
+const VENV_PYTHON = '/repo/.venv/bin/python';
+
+const devInput = {
+  isDev: true,
+  corePort: 4242,
+  colibriPort: 4343,
+  apiHost: '127.0.0.1',
+  logsDir: '/tmp/logs',
+  options: {},
+};
+
+/**
+ * `starling-args` caches uv detection and interpreter resolution in module
+ * scope, so each case needs a fresh module graph to exercise its own stubs.
+ */
+async function buildDevInvocation(): Promise<import('./starling-args').StarlingInvocation> {
+  vi.resetModules();
+  const { buildStarlingInvocation } = await import('./starling-args');
+  return buildStarlingInvocation(devInput);
+}
+
+function flagValue(args: string[], flag: string): string | undefined {
+  const index = args.indexOf(flag);
+  return index === -1 ? undefined : args[index + 1];
+}
+
+describe('buildStarlingInvocation (dev launchers)', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    delete process.env.VIRTUAL_ENV;
+    delete process.env.ROTKI_BACKEND_PROFILING_CMD;
+    delete process.env.ROTKI_BACKEND_PROFILING_ARGS;
+    delete process.env.ROTKI_GIL;
+    buildCargoEnvMock.mockReturnValue(CARGO_ENV);
+    execSyncMock.mockImplementation((cmd: string) => {
+      if (cmd.includes('--version'))
+        return '';
+      return `${VENV_PYTHON}\n`;
+    });
+  });
+
+  describe('when the warm-up builds are present', () => {
+    beforeEach(() => {
+      existsSyncMock.mockReturnValue(true);
+    });
+
+    it('should launch the built starling binary rather than cargo', async () => {
+      const invocation = await buildDevInvocation();
+      expect(invocation.command).not.toBe('cargo');
+      expect(invocation.command).toMatch(/starling(\.exe)?$/);
+    });
+
+    it('should point colibri at the built binary rather than cargo', async () => {
+      const { args } = await buildDevInvocation();
+      expect(flagValue(args, '--colibri-binary')).toMatch(/colibri(\.exe)?$/);
+      expect(args).not.toContain('--colibri-prefix=run');
+    });
+
+    // The regression this guards: starling signals the whole process group but
+    // wait()s only on its direct child. A wrapper that dies faster than the
+    // service (uv takes CTRL_BREAK straight to the default terminator) reports
+    // "stopped" while python is still closing its DB, and the tree reap then
+    // kills it mid-shutdown - leaving the sqlite WAL/SHM behind.
+    it('should resolve core to a real interpreter, never the uv wrapper', async () => {
+      const { args } = await buildDevInvocation();
+      expect(flagValue(args, '--core-binary')).toBe(VENV_PYTHON);
+      expect(args).not.toContain('--core-prefix=run');
+      expect(args).toContain('--core-prefix=-m');
+      expect(args).toContain('--core-prefix=rotkehlchen');
+    });
+  });
+
+  // The two launchers decide independently, so they can disagree: a prebuilt
+  // starling still spawns colibri through cargo when only that build is missing.
+  // The Strawberry Perl shim has to follow the cargo, not starling's own branch,
+  // or that colibri builds vendored openssl with mingw perl and fails.
+  it('should still pass the cargo env when only colibri falls back to cargo', async () => {
+    existsSyncMock.mockImplementation((p: string) => !String(p).includes('colibri'));
+    const invocation = await buildDevInvocation();
+    expect(invocation.command).toMatch(/starling(\.exe)?$/);
+    expect(flagValue(invocation.args, '--colibri-binary')).toBe('cargo');
+    expect(invocation.env).toEqual(CARGO_ENV);
+  });
+
+  it('should not pass a cargo env when nothing needs cargo', async () => {
+    existsSyncMock.mockReturnValue(true);
+    const invocation = await buildDevInvocation();
+    expect(invocation.env).toBeUndefined();
+  });
+
+  describe('when the warm-up builds are missing', () => {
+    beforeEach(() => {
+      existsSyncMock.mockReturnValue(false);
+    });
+
+    it('should fall back to compiling starling on the fly', async () => {
+      const invocation = await buildDevInvocation();
+      expect(invocation.command).toBe('cargo');
+      expect(invocation.args.slice(0, 4)).toEqual(['run', '--locked', '-p', 'starling']);
+    });
+
+    it('should fall back to running colibri through cargo', async () => {
+      const { args } = await buildDevInvocation();
+      expect(flagValue(args, '--colibri-binary')).toBe('cargo');
+      expect(args).toContain('--colibri-prefix=run');
+    });
+  });
+
+  it('should use the venv python directly when a virtualenv is active', async () => {
+    existsSyncMock.mockReturnValue(true);
+    process.env.VIRTUAL_ENV = '/repo/.venv';
+    const { args } = await buildDevInvocation();
+    expect(flagValue(args, '--core-binary')).toBe('python');
+    // uv must not even be probed once a venv is active.
+    expect(execSyncMock).not.toHaveBeenCalled();
+  });
+
+  it('should keep the profiling command as the core binary when set', async () => {
+    existsSyncMock.mockReturnValue(true);
+    process.env.ROTKI_BACKEND_PROFILING_CMD = 'py-spy';
+    const { args } = await buildDevInvocation();
+    expect(flagValue(args, '--core-binary')).toBe('py-spy');
+  });
+
+  // GIL opt-out, carried over from core-args when starling replaced it.
+  describe('gIL', () => {
+    beforeEach(() => {
+      existsSyncMock.mockReturnValue(true);
+      delete process.env.ROTKI_GIL;
+    });
+
+    it('should keep the GIL enabled by default', async () => {
+      const { args } = await buildDevInvocation();
+      expect(args).not.toContain('--core-prefix=gil=0');
+    });
+
+    // `-X gil=0` configures the interpreter, so it is only honoured ahead of
+    // `-m`; after it, python passes it through to rotkehlchen as a module arg.
+    it('should disable the GIL before the module args when ROTKI_GIL is false', async () => {
+      process.env.ROTKI_GIL = 'false';
+      const { args } = await buildDevInvocation();
+      const prefix = args.filter(a => a.startsWith('--core-prefix='));
+      expect(prefix).toEqual([
+        '--core-prefix=-X',
+        '--core-prefix=gil=0',
+        '--core-prefix=-m',
+        '--core-prefix=rotkehlchen',
+      ]);
+    });
+
+    it('should hand the GIL switch to the python the profiler launches', async () => {
+      process.env.ROTKI_GIL = 'false';
+      process.env.ROTKI_BACKEND_PROFILING_CMD = 'py-spy';
+      process.env.ROTKI_BACKEND_PROFILING_ARGS = 'record -o out.svg --';
+      const { args } = await buildDevInvocation();
+      expect(flagValue(args, '--core-binary')).toBe('py-spy');
+      const prefix = args.filter(a => a.startsWith('--core-prefix=')).map(a => a.slice('--core-prefix='.length));
+      expect(prefix).toEqual(['record', '-o', 'out.svg', '--', 'python', '-X', 'gil=0', '-m', 'rotkehlchen']);
+    });
+  });
+
+  it('should fall back to python when uv cannot resolve an interpreter', async () => {
+    existsSyncMock.mockReturnValue(true);
+    execSyncMock.mockImplementation((cmd: string) => {
+      if (cmd.includes('--version'))
+        return '';
+      throw new Error('uv exploded');
+    });
+    const { args } = await buildDevInvocation();
+    expect(flagValue(args, '--core-binary')).toBe('python');
+  });
+});

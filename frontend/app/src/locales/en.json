@@ -2847,8 +2847,7 @@
     "generic": {
       "message": "We encountered an internal error while processing your request. If this issue persists, please contact our support team with the details below: \nError Code: {code} \nError Message: {message} \nPath: {path}",
       "title": "Something went wrong"
-    },
-    "process_running": "A rotki backend process is already running. This is known to cause problems with the operation of the application. Please kill these processes pids: [{pids}] and restart the application."
+    }
   },
   "error_screen": {
     "backend_error": "There is a problem with the backend.",

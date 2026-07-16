@@ -1498,8 +1498,7 @@
     "generic": {
       "message": "Αντιμετωπίσαμε ένα εσωτερικό σφάλμα κατά την επεξεργασία του αιτήματός σας. Εάν αυτό το πρόβλημα παραμένει, επικοινωνήστε με την ομάδα υποστήριξής μας με τα παρακάτω στοιχεία: \nΚωδικός σφάλματος: {code} \nΜήνυμα σφάλματος: {message} \nΔιαδρομή: {path}",
       "title": "Κάτι πήγε στραβά"
-    },
-    "process_running": "A rotki backend process is already running. This is known to cause problems with the operation of the application. Please kill these processes pids: [{pids}] and restart the application."
+    }
   },
   "error_screen": {
     "backend_error": "There is a problem with the backend.",

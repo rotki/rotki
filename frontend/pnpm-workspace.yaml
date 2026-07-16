@@ -104,7 +104,6 @@ catalog:
   plainfp: 0.1.1
   postcss: 8.5.15
   postcss-html: 1.8.1
-  ps-list: 9.0.0
   qrcode: 1.5.4
   rimraf: 6.1.3
   semver: 7.8.5

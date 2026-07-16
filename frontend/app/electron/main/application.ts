@@ -8,7 +8,7 @@ import { parseToken } from '@electron/main/oauth-utils';
 import { DEFAULT_COLIBRI_PORT, DEFAULT_PORT } from '@electron/main/port-utils';
 import { resolveLogLevel } from '@electron/main/resolve-log-level';
 import { SettingsManager } from '@electron/main/settings-manager';
-import { SubprocessHandler } from '@electron/main/subprocess-handler';
+import { StarlingHandler } from '@electron/main/starling-handler';
 import { TrayManager } from '@electron/main/tray-manager';
 import { WindowManager } from '@electron/main/window-manager';
 import { checkIfDevelopment, startPromise } from '@shared/utils';
@@ -33,7 +33,7 @@ export class Application {
   private readonly tray: TrayManager;
   private readonly ipc: IpcManager;
   private readonly logger: LogService;
-  private readonly processHandler: SubprocessHandler;
+  private readonly processHandler: StarlingHandler;
   private readonly menu: MenuManager;
   private readonly settings: SettingsManager;
   private protocolRegistrationFailed: boolean = false;
@@ -54,7 +54,7 @@ export class Application {
     this.logger = new LogService(app);
     this.logger.setLogLevel(resolveLogLevel(undefined, this.appConfig.isDev));
     this.settings = new SettingsManager(app);
-    this.processHandler = new SubprocessHandler(this.logger, this.appConfig);
+    this.processHandler = new StarlingHandler(this.logger, this.appConfig);
     this.window = new WindowManager(this.logger);
     this.menu = new MenuManager(this.logger, this.settings, this.appConfig);
     this.tray = new TrayManager(this.settings, this.appConfig);
@@ -168,8 +168,7 @@ export class Application {
       updatePremiumMenu: isPremium => this.menu.updatePremiumStatus(isPremium),
       restartSubprocesses: async (options) => {
         this.logger.setLogLevel(resolveLogLevel(options.loglevel, this.appConfig.isDev));
-        await this.processHandler.terminateProcesses(true);
-        await this.processHandler.startProcesses(options, {
+        await this.processHandler.restartBackend(options, {
           onProcessError: (message, code) => this.window.setStartupError(message, code),
         });
       },
@@ -178,11 +177,9 @@ export class Application {
           this.window.cleanup();
           this.cleanup();
         }
-        await this.processHandler.terminateProcesses();
+        await this.processHandler.stop();
       },
       updateDownloadProgress: progress => this.window.updateProgress(progress),
-      getRunningCorePIDs: async () => this.processHandler.checkForBackendProcess(),
-      isCoreRunning: () => this.processHandler.isCoreRunning,
       getProtocolRegistrationFailed: () => this.protocolRegistrationFailed,
       openOAuthInWindow: async (url: string) => this.window.openOAuthWindow(url),
       sendIpcMessage: (channel: string, ...args: any[]) => this.window.sendIpcMessage(channel, ...args),
@@ -239,13 +236,15 @@ export class Application {
     this.tray.cleanup();
     this.ipc.cleanup();
     try {
-      await this.processHandler.terminateProcesses();
+      await this.processHandler.stop();
     }
     finally {
+      // `will-quit` preventDefault()s, so this is the only thing that ends the
+      // process - every platform must reach it.
+      //
       // In some cases the app object might be already disposed
       try {
-        if (process.platform !== 'win32')
-          app.exit();
+        app.exit();
       }
       catch (error: any) {
         if (error.message !== 'Object has been destroyed')

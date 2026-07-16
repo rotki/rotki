@@ -280,6 +280,7 @@ class Storage:
         self.temporary_directory = self.build_directory / 'temp'
         self.backend_directory = self.build_directory / 'backend'
         self.colibri_directory = self.build_directory / 'colibri'
+        self.starling_directory = self.build_directory / 'starling'
         self.build_directory.mkdir(parents=True, exist_ok=True)
 
     def prepare_backend(self) -> None:
@@ -642,6 +643,11 @@ class BackendBuilder:
         colibri_dir = self.__storage.colibri_directory
         self.__storage.copy_to_dist(colibri_dir / 'bin', sub_dir='colibri')
 
+    def _move_starling_to_dist(self) -> None:
+        """Move the starling supervisor binary to dist"""
+        starling_dir = self.__storage.starling_directory
+        self.__storage.copy_to_dist(starling_dir / 'bin', sub_dir='starling')
+
     @log_group('backend_build')
     def build(self) -> None:
         """
@@ -669,6 +675,7 @@ class BackendBuilder:
             os.environ.setdefault('GITHUB_REF', github_ref)
 
         self.__create_rust_binary()
+        self.__create_starling_binary()
         self.__install_pyinstaller()
         self.__sanity_check()
         self.__package()
@@ -679,6 +686,7 @@ class BackendBuilder:
 
         self.__move_to_dist()
         self._move_colibri_to_dist()
+        self._move_starling_to_dist()
 
     @staticmethod
     def __rust_add_target(target: str) -> None:
@@ -754,6 +762,47 @@ class BackendBuilder:
 
         binary_directory.mkdir(exist_ok=True, parents=True)
         shutil.copy(backend_binary, binary_directory / binary_name)
+
+        if self.__mac is not None:
+            self.__mac.sign(binary_directory.glob('**/*'))
+
+    @log_group('starling cargo build')
+    def __create_starling_binary(self) -> None:
+        starling_directory = self.__storage.starling_directory
+
+        build_env: dict[str, str] = os.environ.copy()
+        if self.__win is not None:
+            build_env = self.__get_windows_cargo_env()
+        if self.__debug_symbols:
+            # Keep release optimizations while emitting debug symbols for symbolization/testing.
+            build_env['CARGO_PROFILE_RELEASE_DEBUG'] = '1'
+
+        build_ret_code = subprocess.call(
+            f'cargo build --target-dir {starling_directory} '
+            f'--manifest-path ./crates/Cargo.toml --release -p starling',
+            shell=True,
+            env=build_env,
+        )
+        if build_ret_code != 0:
+            logger.error('starling packaging failed')
+            sys.exit(1)
+
+        binary_name = 'starling'
+        if self.__win is not None:
+            binary_name = f'{binary_name}.exe'
+
+        starling_binary = starling_directory / 'release' / binary_name
+
+        ret_code = subprocess.call(f'{starling_binary} --version', shell=True)
+
+        if ret_code != 0:
+            logger.error('starling binary check failed')
+            sys.exit(1)
+
+        binary_directory = starling_directory / 'bin'
+
+        binary_directory.mkdir(exist_ok=True, parents=True)
+        shutil.copy(starling_binary, binary_directory / binary_name)
 
         if self.__mac is not None:
             self.__mac.sign(binary_directory.glob('**/*'))
