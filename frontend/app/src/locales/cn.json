@@ -2793,8 +2793,7 @@
     "actionable": {
       "actions": {
         "pin_section": "引脚部分",
-        "regenerate_report": "重新生成报告",
-        "unpin_section": "取消固定部分"
+        "regenerate_report": "重新生成报告"
       },
       "issues_found": "在生成的报告中发现了 {total} 个问题",
       "missing_acquisitions": {

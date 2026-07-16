@@ -186,7 +186,10 @@ defineExpose({
       </RuiTab>
     </RuiTabs>
 
-    <div class="flex flex-col md:flex-row md:items-center gap-2 px-4 pt-4 pb-2 shrink-0">
+    <div
+      class="flex flex-col md:flex-row md:items-center gap-2 pt-4 pb-2 shrink-0"
+      :class="compact ? 'px-3' : 'px-4'"
+    >
       <div class="flex items-center gap-3">
         <template v-if="isRunning">
           <RuiProgress
@@ -239,7 +242,7 @@ defineExpose({
 
     <ScrollableDialogContent
       fill
-      :class="{ 'px-1': compact }"
+      :class="{ 'px-3': compact }"
     >
       <RuiDataTable
         v-model:sort.external="sort"

@@ -1326,8 +1326,7 @@
       "restore_selected_confirm": "Are you sure you want to restore {count} selected asset movement(s) to the unmatched list?"
     },
     "actions_pin": {
-      "pin_section": "Pin Section",
-      "unpin_section": "Unpin Section"
+      "pin_section": "Pin Section"
     },
     "auto_match": {
       "error": "Failed to run automatic matching: {error}",
@@ -2633,9 +2632,7 @@
       "clear_selection": "Clear selection",
       "goto_event": "Go to event",
       "highlighting_event": "Highlighting the selected issue's event",
-      "pin": "Pin to sidebar",
       "title": "Data issues",
-      "unpin": "Unpin",
       "view_all": "View all"
     },
     "refresh_tooltip": "Reload the issues list.",
@@ -4236,8 +4233,7 @@
       "pin": "Pin to sidebar",
       "repull": "Repull",
       "settings": "Toggle settings",
-      "show_in_events": "Show in history events",
-      "unpin": "Unpin section"
+      "show_in_events": "Show in history events"
     },
     "banner": {
       "action": "Review",
@@ -5466,8 +5462,7 @@
     "actionable": {
       "actions": {
         "pin_section": "Pin Section",
-        "regenerate_report": "Re-Generate Report",
-        "unpin_section": "Unpin Section"
+        "regenerate_report": "Re-Generate Report"
       },
       "issues_found": "{total} issues found with the generated report",
       "missing_acquisitions": {

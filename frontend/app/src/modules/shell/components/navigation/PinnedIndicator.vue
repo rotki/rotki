@@ -1,11 +1,13 @@
 <script setup lang="ts">
-import { useAreaVisibilityStore } from '@/modules/core/common/use-area-visibility-store';
 import MenuTooltipButton from '@/modules/shell/components/MenuTooltipButton.vue';
+import { usePinnedTabs } from '@/modules/shell/pinned/use-pinned-tabs';
 
 const visible = defineModel<boolean>('visible', { required: true });
 
-const { pinned } = storeToRefs(useAreaVisibilityStore());
+const { tabs } = usePinnedTabs();
 const { t } = useI18n({ useScope: 'global' });
+
+const count = computed<number>(() => get(tabs).length);
 
 function toggleVisibility(): void {
   set(visible, !get(visible));
@@ -14,13 +16,15 @@ function toggleVisibility(): void {
 
 <template>
   <MenuTooltipButton
-    v-if="pinned"
+    v-if="count > 0"
     :tooltip="t('pinned.tooltip')"
+    data-testid="pinned-indicator"
     @click="toggleVisibility()"
   >
     <RuiBadge
       color="primary"
-      dot
+      :dot="count < 2"
+      :text="count.toString()"
       placement="top"
       offset-y="4"
       size="lg"

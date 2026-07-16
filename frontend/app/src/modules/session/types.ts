@@ -1,5 +1,6 @@
 import type { TimeFramePeriod } from '@rotki/common';
 import type { Module } from '@/modules/core/common/modules';
+import type { Report } from '@/modules/reports/report-types';
 import { z } from 'zod';
 
 export const PeriodicClientQueryResultSchema = z.object({
@@ -34,9 +35,46 @@ export const PinnedNames = {
 
 export type PinnedName = typeof PinnedNames[keyof typeof PinnedNames];
 
-export interface Pinned {
-  name: PinnedName;
-  props: Record<string, any>;
+/**
+ * Typed props each pinnable panel accepts. This is the checkable boundary: pinning
+ * a panel with a payload that does not match its entry fails to compile. Keep each
+ * entry in sync with the corresponding `*Pinned.vue` host's `defineProps`.
+ */
+export interface PinnedPanelProps {
+  [PinnedNames.DATA_ISSUES]: Record<never, never>;
+  [PinnedNames.INTERNAL_TX_CONFLICTS]: {
+    highlightedGroupIdentifier?: string;
+    highlightedTxHash?: string;
+  };
+  [PinnedNames.MATCH_ASSET_MOVEMENTS]: {
+    highlightedGroupIdentifier?: string;
+    highlightedPotentialMatchIdentifier?: number;
+    potentialMatchGroupIdentifier?: string;
+  };
+  [PinnedNames.REPORT_ACTIONABLE_CARD]: {
+    report: Report;
+    isPinned?: boolean;
+  };
+}
+
+/**
+ * Discriminated union over `name` so `props` is narrowed to the matching panel's
+ * payload. Replaces the old untyped `props: Record<string, any>` boundary.
+ */
+export type Pinned = {
+  [K in PinnedName]: { name: K; props: PinnedPanelProps[K] };
+}[PinnedName];
+
+/**
+ * Builds a `Pinned` entry from a name and its typed props. Callers stay fully
+ * checked via the generic `props` param; the single unavoidable assertion lives
+ * here because TS cannot prove the generic `{ name: K; props: PinnedPanelProps[K] }`
+ * collapses to one arm of the distributive `Pinned` union. This is the one place
+ * the pinned payload is asserted.
+ */
+export function toPinned<K extends PinnedName>(name: K, props: PinnedPanelProps[K]): Pinned {
+  // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
+  return { name, props } as Pinned;
 }
 
 export interface PremiumCredentialsPayload {

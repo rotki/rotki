@@ -4,7 +4,6 @@ import type { ProfitLossReportDebugPayload, ProfitLossReportPeriod } from '@/mod
 import { Priority, Severity } from '@rotki/common';
 import { displayDateFormatter } from '@/modules/core/common/date-formatter';
 import { downloadFileByTextContent } from '@/modules/core/common/file/download';
-import { useAreaVisibilityStore } from '@/modules/core/common/use-area-visibility-store';
 import { getErrorMessage, useNotifications } from '@/modules/core/notifications/use-notifications';
 import { TaskType } from '@/modules/core/tasks/task-type';
 import { useTaskHandler } from '@/modules/core/tasks/use-task-handler';
@@ -14,6 +13,7 @@ import { useReportsApi } from '@/modules/reports/use-reports-api';
 import { PinnedNames } from '@/modules/session/types';
 import { useSetting } from '@/modules/settings/use-setting';
 import { useInterop } from '@/modules/shell/app/use-electron-interop';
+import { usePinnedPanel } from '@/modules/shell/pinned/use-pinned-panel';
 
 interface UseReportsPageActionsOptions {
   /** Resolves a local file path from a File object (Electron only) */
@@ -39,7 +39,7 @@ export function useReportsPageActions(options: UseReportsPageActionsOptions): Us
   const { runTask } = useTaskHandler();
   const { exportReportData, generateReport } = useReportGeneration();
   const { fetchReports } = useReportOperations();
-  const { pinned } = storeToRefs(useAreaVisibilityStore());
+  const { unpin: unpinReportCard } = usePinnedPanel(PinnedNames.REPORT_ACTIONABLE_CARD);
   const { notify, showErrorMessage, showSuccessMessage } = useNotifications();
   const dateDisplayFormat = useSetting('dateDisplayFormat');
   const { appSession, openDirectory } = useInterop();
@@ -48,8 +48,8 @@ export function useReportsPageActions(options: UseReportsPageActionsOptions): Us
   const importDataLoading = shallowRef<boolean>(false);
 
   async function generate(period: ProfitLossReportPeriod): Promise<void> {
-    if (get(pinned)?.name === PinnedNames.REPORT_ACTIONABLE_CARD)
-      set(pinned, null);
+    // Clear the report-issues pin (if it is the active one) before regenerating.
+    unpinReportCard();
 
     const formatDate = (timestamp: number): string =>
       displayDateFormatter.format(new Date(timestamp * 1000), get(dateDisplayFormat));

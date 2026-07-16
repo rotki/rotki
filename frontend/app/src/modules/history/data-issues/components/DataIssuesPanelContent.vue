@@ -19,17 +19,11 @@ import { useSyncCompleted } from '@/modules/shell/sync-progress/use-sync-complet
 /** Mirrors whether a stacked detail/resolve overlay is open, so the host drawer can stay stateless. */
 const subDialogOpen = defineModel<boolean>('subDialogOpen', { default: false });
 
-const { pinned = false } = defineProps<{
-  pinned?: boolean;
-}>();
-
 const emit = defineEmits<{
-  'close': [];
-  'toggle-pin': [];
+  close: [];
 }>();
 
 const { t } = useI18n({ useScope: 'global' });
-const { isLgAndDown } = useBreakpoint();
 
 const issues = ref<DataIssue[]>([]);
 const loading = ref<boolean>(false);
@@ -211,17 +205,42 @@ function onResolveFromCard(issue: DataIssue): void {
 
 const { pause, resume } = useIntervalFn(reloadAll, 10_000, { immediate: false });
 
-watch(hasRemediatingRows, (remediating) => {
-  if (remediating)
+// While the panel is backgrounded under <KeepAlive> its reactivity stays live, so
+// gate the poll and the sync-refetch on activation: a hidden inbox must not keep
+// hitting the network. Deferred sync refreshes are caught up once it is shown again.
+const active = ref<boolean>(true);
+const pendingRefresh = ref<boolean>(false);
+
+function syncPolling(): void {
+  if (get(active) && get(hasRemediatingRows))
     resume();
   else
     pause();
-});
+}
+
+watch(hasRemediatingRows, syncPolling);
 
 // Reload when the history sync finishes so the inbox reflects the freshly detected
 // issues (or the all-clear shield) without waiting for the slow poll or a manual refresh.
 watch(syncCompleted, () => {
-  startPromise(reloadAll());
+  if (get(active))
+    startPromise(reloadAll());
+  else
+    set(pendingRefresh, true);
+});
+
+onActivated(() => {
+  set(active, true);
+  syncPolling();
+  if (get(pendingRefresh)) {
+    set(pendingRefresh, false);
+    startPromise(reloadAll());
+  }
+});
+
+onDeactivated(() => {
+  set(active, false);
+  pause();
 });
 
 watch([modelDrawerOpen, modelResolveOpen, filterEngaged], ([drawer, resolve, filter]) => {
@@ -257,50 +276,6 @@ onMounted(() => {
 
 <template>
   <div class="h-full flex-1 min-h-0 overflow-hidden flex flex-col">
-    <div
-      class="flex justify-between items-center pl-4 pr-2 border-b border-default"
-      :class="pinned ? 'h-10 py-4' : 'py-2'"
-    >
-      <div
-        class="font-medium"
-        :class="pinned ? 'text-md' : 'text-xl'"
-      >
-        {{ t('data_issues.panel.title') }}
-      </div>
-      <div class="flex items-center gap-1">
-        <RuiTooltip
-          v-if="!isLgAndDown"
-          :open-delay="300"
-        >
-          <template #activator>
-            <RuiButton
-              variant="text"
-              icon
-              size="sm"
-              :active="pinned"
-              data-testid="data-issues-panel-pin"
-              @click="emit('toggle-pin')"
-            >
-              <RuiIcon
-                :name="pinned ? 'lu-pin-off' : 'lu-pin'"
-              />
-            </RuiButton>
-          </template>
-          {{ pinned ? t('data_issues.panel.unpin') : t('data_issues.panel.pin') }}
-        </RuiTooltip>
-        <RuiButton
-          variant="text"
-          icon
-          size="sm"
-          @click="emit('close')"
-        >
-          <RuiIcon
-            name="lu-x"
-          />
-        </RuiButton>
-      </div>
-    </div>
-
     <div
       ref="filterWrapper"
       class="px-3 py-2 border-b border-default shrink-0"

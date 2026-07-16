@@ -85,7 +85,7 @@ onBeforeMount(async () => {
   <RuiTabItems
     v-model="activeTab"
     class="my-4"
-    :class="{ 'px-4': isPinned }"
+    :class="{ 'px-3': isPinned }"
   >
     <RuiTabItem>
       <UnmatchedMovementsList
@@ -121,7 +121,7 @@ onBeforeMount(async () => {
 
   <div
     class="w-full flex justify-between gap-2"
-    :class="isPinned ? 'p-2 border-t border-default' : 'pb-4'"
+    :class="isPinned ? 'px-3 py-2 border-t border-default' : 'pb-4'"
   >
     <div
       v-if="activeTab === 0"

@@ -2,11 +2,11 @@
 import type { Component } from 'vue';
 import type { DialogType } from '@/modules/core/common/dialogs';
 import type { EditableMissingPrice, MissingAcquisition, MissingPrice, Report } from '@/modules/reports/report-types';
-import { type Nullable, toSentenceCase } from '@rotki/common';
-import { useAreaVisibilityStore } from '@/modules/core/common/use-area-visibility-store';
+import { toSentenceCase } from '@rotki/common';
 import { useConfirmStore } from '@/modules/core/common/use-confirm-store';
 import { useReportsStore } from '@/modules/reports/use-reports-store';
-import { type Pinned, PinnedNames } from '@/modules/session/types';
+import { PinnedNames } from '@/modules/session/types';
+import { usePinnedPanel } from '@/modules/shell/pinned/use-pinned-panel';
 
 const {
   isPinned = false,
@@ -27,7 +27,7 @@ const ReportMissingAcquisitions = defineAsyncComponent(
 const ReportMissingPrices = defineAsyncComponent(() => import('@/modules/reports/ReportMissingPrices.vue'));
 
 const { t } = useI18n({ useScope: 'global' });
-const { pinned, showPinned } = storeToRefs(useAreaVisibilityStore());
+const { pin: pinPanel, unpin: unpinPanel } = usePinnedPanel(PinnedNames.REPORT_ACTIONABLE_CARD);
 
 function setDialog(dialog: boolean) {
   emit('set-dialog', dialog);
@@ -61,20 +61,8 @@ const actionableItemsLength = computed(() => {
   };
 });
 
-function setPinned(pin: Nullable<Pinned>) {
-  set(pinned, pin);
-}
-
 function pinSection() {
-  const pinned: Pinned = {
-    name: PinnedNames.REPORT_ACTIONABLE_CARD,
-    props: {
-      isPinned: true,
-      report,
-    },
-  };
-
-  setPinned(pinned);
+  pinPanel({ isPinned: true, report });
   setDialog(false);
 }
 
@@ -179,7 +167,7 @@ function submitActionableItems(missingPrices: EditableMissingPrice[]) {
 
 function ignoreIssues() {
   if (isPinned)
-    setPinned(null);
+    unpinPanel();
 
   setDialog(false);
 }
@@ -190,12 +178,8 @@ function regenerateReport() {
 
 function close() {
   if (isPinned)
-    setPinned(null);
+    unpinPanel();
   else setDialog(false);
-}
-
-function closePinnedSidebar() {
-  set(showPinned, false);
 }
 </script>
 
@@ -207,9 +191,12 @@ function closePinnedSidebar() {
     content-class="flex flex-col flex-1 min-h-0 overflow-hidden"
     variant="flat"
   >
-    <div class="flex bg-rui-primary text-white p-2 shrink-0">
+    <!-- Dialog mode keeps its own header; when pinned, the rail's tab provides title + close. -->
+    <div
+      v-if="!isPinned"
+      class="flex bg-rui-primary text-white p-2 shrink-0"
+    >
       <RuiButton
-        v-if="!isPinned"
         variant="text"
         icon
         @click="close()"
@@ -219,27 +206,8 @@ function closePinnedSidebar() {
           name="lu-x"
         />
       </RuiButton>
-      <RuiButton
-        v-else
-        variant="text"
-        size="sm"
-        icon
-        @click="closePinnedSidebar()"
-      >
-        <RuiIcon
-          class="text-white"
-          name="lu-chevron-right"
-          size="20"
-        />
-      </RuiButton>
 
-      <h6
-        class="flex items-center"
-        :class="{
-          'pl-2 text-h6': !isPinned,
-          'text-body-1': isPinned,
-        }"
-      >
+      <h6 class="flex items-center pl-2 text-h6">
         {{
           t('profit_loss_report.actionable.issues_found', {
             total: actionableItemsLength.total,
@@ -257,28 +225,15 @@ function closePinnedSidebar() {
           <RuiButton
             variant="text"
             icon
-            :size="isPinned ? 'sm' : undefined"
-            @click="isPinned ? setPinned(null) : pinSection()"
+            @click="pinSection()"
           >
             <RuiIcon
-              v-if="isPinned"
-              size="20"
-              class="text-white"
-              name="lu-x"
-            />
-            <RuiIcon
-              v-else
               class="text-white"
               name="lu-pin"
             />
           </RuiButton>
         </template>
-        <span v-if="isPinned">
-          {{ t('profit_loss_report.actionable.actions.unpin_section') }}
-        </span>
-        <span v-else>
-          {{ t('profit_loss_report.actionable.actions.pin_section') }}
-        </span>
+        {{ t('profit_loss_report.actionable.actions.pin_section') }}
       </RuiTooltip>
     </div>
 
@@ -289,7 +244,10 @@ function closePinnedSidebar() {
       :class="{ 'py-2': isPinned, 'py-4': !isPinned }"
     />
 
-    <div class="flex-1 min-h-0 flex flex-col">
+    <div
+      class="flex-1 min-h-0 flex flex-col"
+      :class="{ 'px-3': isPinned }"
+    >
       <template
         v-for="(content, index) of stepperContents"
         :key="content.key"
@@ -304,7 +262,7 @@ function closePinnedSidebar() {
           <template #actions="{ items }">
             <div
               class="border-t-2 border-rui-grey-300 dark:border-rui-grey-800 relative z-[2] flex items-center justify-between gap-4"
-              :class="isPinned ? 'p-2' : 'p-4'"
+              :class="isPinned ? 'py-2' : 'p-4'"
             >
               <div
                 v-if="content.hint"

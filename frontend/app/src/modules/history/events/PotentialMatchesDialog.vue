@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import type { UnmatchedAssetMovement } from '@/modules/history/events/use-unmatched-asset-movements';
-import { useAreaVisibilityStore } from '@/modules/core/common/use-area-visibility-store';
 import PotentialMatchesContent from '@/modules/history/events/PotentialMatchesContent.vue';
-import { type Pinned, PinnedNames } from '@/modules/session/types';
+import { PinnedNames } from '@/modules/session/types';
 import CardTitle from '@/modules/shell/components/CardTitle.vue';
+import { usePinnedPanel } from '@/modules/shell/pinned/use-pinned-panel';
 
 const modelValue = defineModel<boolean>({ required: true });
 
@@ -17,7 +17,7 @@ const emit = defineEmits<{
 }>();
 
 const { t } = useI18n({ useScope: 'global' });
-const { pinned, showPinned } = storeToRefs(useAreaVisibilityStore());
+const { pin } = usePinnedPanel(PinnedNames.MATCH_ASSET_MOVEMENTS);
 
 function closeDialog(): void {
   set(modelValue, false);
@@ -29,29 +29,17 @@ function onMatched(): void {
 }
 
 function showUnmatchedInEvents(): void {
-  const pin: Pinned = {
-    name: PinnedNames.MATCH_ASSET_MOVEMENTS,
-    props: { highlightedGroupIdentifier: movement.groupIdentifier },
-  };
-
-  set(pinned, pin);
-  set(showPinned, true);
+  pin({ highlightedGroupIdentifier: movement.groupIdentifier });
   set(modelValue, false);
   emit('pinned');
 }
 
 function showPotentialMatchInEvents(data: { identifier: number; groupIdentifier: string }): void {
-  const pin: Pinned = {
-    name: PinnedNames.MATCH_ASSET_MOVEMENTS,
-    props: {
-      highlightedGroupIdentifier: movement.groupIdentifier,
-      highlightedPotentialMatchIdentifier: data.identifier,
-      potentialMatchGroupIdentifier: data.groupIdentifier,
-    },
-  };
-
-  set(pinned, pin);
-  set(showPinned, true);
+  pin({
+    highlightedGroupIdentifier: movement.groupIdentifier,
+    highlightedPotentialMatchIdentifier: data.identifier,
+    potentialMatchGroupIdentifier: data.groupIdentifier,
+  });
   set(modelValue, false);
   emit('pinned');
 }

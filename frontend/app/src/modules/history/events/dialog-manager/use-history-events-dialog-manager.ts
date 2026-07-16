@@ -1,9 +1,9 @@
 import type { Ref } from 'vue';
 import type { DialogState } from './types';
 import { set } from '@vueuse/core';
-import { useAreaVisibilityStore } from '@/modules/core/common/use-area-visibility-store';
 import { DIALOG_TYPES, type DialogShowOptions } from '@/modules/history/events/dialog-types';
 import { PinnedNames } from '@/modules/session/types';
+import { usePinnedPanel } from '@/modules/shell/pinned/use-pinned-panel';
 
 interface UseHistoryEventsDialogManager {
   show: (options: DialogShowOptions) => Promise<void>;
@@ -13,7 +13,7 @@ interface UseHistoryEventsDialogManager {
 
 export function useHistoryEventsDialogManager(): UseHistoryEventsDialogManager {
   const router = useRouter();
-  const { pinned, showPinned } = storeToRefs(useAreaVisibilityStore());
+  const internalTxConflicts = usePinnedPanel(PinnedNames.INTERNAL_TX_CONFLICTS);
 
   const currentDialog = ref<DialogState>({ type: 'closed' });
 
@@ -74,8 +74,9 @@ export function useHistoryEventsDialogManager(): UseHistoryEventsDialogManager {
         openDialog({ data: undefined, type: DIALOG_TYPES.CUSTOMIZED_EVENT_DUPLICATES });
         break;
       case DIALOG_TYPES.INTERNAL_TX_CONFLICTS:
-        if (get(pinned)?.name === PinnedNames.INTERNAL_TX_CONFLICTS) {
-          set(showPinned, true);
+        // Already pinned: bring its tab to the front instead of reopening the dialog.
+        if (get(internalTxConflicts.isPinned)) {
+          internalTxConflicts.focus();
           return;
         }
         openDialog({ data: undefined, type: DIALOG_TYPES.INTERNAL_TX_CONFLICTS });

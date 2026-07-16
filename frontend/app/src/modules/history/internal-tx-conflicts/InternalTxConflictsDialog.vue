@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import type { InternalTxConflict } from './types';
-import { useAreaVisibilityStore } from '@/modules/core/common/use-area-visibility-store';
 import { PinnedNames } from '@/modules/session/types';
 import InternalTxConflictRepullSettings from '@/modules/settings/general/InternalTxConflictRepullSettings.vue';
 import CardTitle from '@/modules/shell/components/CardTitle.vue';
+import { usePinnedPanel } from '@/modules/shell/pinned/use-pinned-panel';
 import InternalTxConflictsContent from './InternalTxConflictsContent.vue';
 
 const modelValue = defineModel<boolean>({ default: false });
@@ -11,17 +11,14 @@ const modelValue = defineModel<boolean>({ default: false });
 const { t } = useI18n({ useScope: 'global' });
 
 const showSettings = ref<boolean>(false);
-const { pinned } = storeToRefs(useAreaVisibilityStore());
+const { pin } = usePinnedPanel(PinnedNames.INTERNAL_TX_CONFLICTS);
 
 function closeDialog(): void {
   set(modelValue, false);
 }
 
 function pinSection(): void {
-  set(pinned, {
-    name: PinnedNames.INTERNAL_TX_CONFLICTS,
-    props: {},
-  });
+  pin({});
   closeDialog();
 }
 
@@ -29,10 +26,7 @@ function showInEvents(conflict: InternalTxConflict): void {
   if (!conflict.groupIdentifier)
     return;
 
-  set(pinned, {
-    name: PinnedNames.INTERNAL_TX_CONFLICTS,
-    props: { highlightedGroupIdentifier: conflict.groupIdentifier, highlightedTxHash: conflict.txHash },
-  });
+  pin({ highlightedGroupIdentifier: conflict.groupIdentifier, highlightedTxHash: conflict.txHash });
   closeDialog();
 }
 </script>

@@ -1,29 +1,21 @@
 <script setup lang="ts">
 import { startPromise } from '@shared/utils';
-import { useAreaVisibilityStore } from '@/modules/core/common/use-area-visibility-store';
-import { useDataIssuesInboxStore } from '@/modules/history/data-issues/use-data-issues-inbox-store';
 import { useDataIssuesSummary } from '@/modules/history/data-issues/use-data-issues-summary';
 import { PinnedNames } from '@/modules/session/types';
+import { usePinnedPanel } from '@/modules/shell/pinned/use-pinned-panel';
 import { useSyncCompleted } from '@/modules/shell/sync-progress/use-sync-completed';
 
 const { t } = useI18n({ useScope: 'global' });
 
 const { actionableCount, refreshSummary } = useDataIssuesSummary();
-const { pinned } = storeToRefs(useAreaVisibilityStore());
-const { overlayVisible } = storeToRefs(useDataIssuesInboxStore());
+const { isPinned, toggle: togglePanel } = usePinnedPanel(PinnedNames.DATA_ISSUES);
 const { syncCompleted } = useSyncCompleted();
 
-const isPinned = computed<boolean>(() => get(pinned)?.name === PinnedNames.DATA_ISSUES);
-const active = computed<boolean>(() => get(overlayVisible) || get(isPinned));
+const active = isPinned;
 
 function toggle(): void {
-  // While the panel lives in the pinned rail, the toggle closes it there instead of
-  // opening a second overlay copy.
-  if (get(isPinned)) {
-    set(pinned, null);
-    return;
-  }
-  set(overlayVisible, !get(overlayVisible));
+  // The inbox lives only in the pinned rail now: pin it (and focus/reveal) or close it.
+  togglePanel({});
 }
 
 // Keep the badge count in step with the inbox: refresh when the history sync finishes.
